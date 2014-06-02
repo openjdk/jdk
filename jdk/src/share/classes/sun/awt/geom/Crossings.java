@@ -77,14 +77,14 @@ public abstract class Crossings {
 
     public abstract boolean covers(double ystart, double yend);
 
-    public static Crossings findCrossings(Vector curves,
+    public static Crossings findCrossings(Vector<? extends Curve> curves,
                                           double xlo, double ylo,
                                           double xhi, double yhi)
     {
         Crossings cross = new EvenOdd(xlo, ylo, xhi, yhi);
-        Enumeration enum_ = curves.elements();
+        Enumeration<? extends Curve> enum_ = curves.elements();
         while (enum_.hasMoreElements()) {
-            Curve c = (Curve) enum_.nextElement();
+            Curve c = enum_.nextElement();
             if (c.accumulateCrossings(cross)) {
                 return null;
             }
@@ -237,7 +237,7 @@ public abstract class Crossings {
         return false;
     }
 
-    private Vector tmp = new Vector();
+    private Vector<Curve> tmp = new Vector<>();
 
     public boolean accumulateQuad(double x0, double y0, double coords[]) {
         if (y0 < ylo && coords[1] < ylo && coords[3] < ylo) {
@@ -258,9 +258,9 @@ public abstract class Crossings {
             return false;
         }
         Curve.insertQuad(tmp, x0, y0, coords);
-        Enumeration enum_ = tmp.elements();
+        Enumeration<Curve> enum_ = tmp.elements();
         while (enum_.hasMoreElements()) {
-            Curve c = (Curve) enum_.nextElement();
+            Curve c = enum_.nextElement();
             if (c.accumulateCrossings(this)) {
                 return true;
             }
@@ -296,9 +296,9 @@ public abstract class Crossings {
             return false;
         }
         Curve.insertCubic(tmp, x0, y0, coords);
-        Enumeration enum_ = tmp.elements();
+        Enumeration<Curve> enum_ = tmp.elements();
         while (enum_.hasMoreElements()) {
-            Curve c = (Curve) enum_.nextElement();
+            Curve c = enum_.nextElement();
             if (c.accumulateCrossings(this)) {
                 return true;
             }

@@ -25,6 +25,7 @@
 
 package sun.awt.X11;
 
+import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 
 import java.io.ByteArrayOutputStream;
@@ -87,7 +88,7 @@ public final class XSelection {
     /* The contents supplied by the current owner. */
     private Transferable contents = null;
     /* The format-to-flavor map for the current owner. */
-    private Map formatMap = null;
+    private Map<Long, DataFlavor> formatMap = null;
     /* The formats supported by the current owner was set. */
     private long[] formats = null;
     /* The AppContext in which the current owner was set. */
@@ -134,7 +135,8 @@ public final class XSelection {
         return selectionAtom;
     }
 
-    public synchronized boolean setOwner(Transferable contents, Map formatMap,
+    public synchronized boolean setOwner(Transferable contents,
+                                         Map<Long, DataFlavor> formatMap,
                                          long[] formats, long time)
     {
         long owner = XWindow.getXAWTRootWindow().getWindow();

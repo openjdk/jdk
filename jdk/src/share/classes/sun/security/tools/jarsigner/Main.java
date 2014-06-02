@@ -1560,8 +1560,7 @@ public class Main {
             first = false;
         }
         try {
-            CertPath cp = certificateFactory.generateCertPath(certs);
-            validator.validate(cp, pkixParameters);
+            validateCertChain(certs);
         } catch (Exception e) {
             if (debug) {
                 e.printStackTrace();
@@ -1871,8 +1870,7 @@ public class Main {
             printCert("", certChain[0], true, null, true);
 
             try {
-                CertPath cp = certificateFactory.generateCertPath(Arrays.asList(certChain));
-                validator.validate(cp, pkixParameters);
+                validateCertChain(Arrays.asList(certChain));
             } catch (Exception e) {
                 if (debug) {
                     e.printStackTrace();
@@ -1935,6 +1933,22 @@ public class Main {
             e.printStackTrace();
         }
         System.exit(1);
+    }
+
+    void validateCertChain(List<? extends Certificate> certs) throws Exception {
+        int cpLen = 0;
+        out: for (; cpLen<certs.size(); cpLen++) {
+            for (TrustAnchor ta: pkixParameters.getTrustAnchors()) {
+                if (ta.getTrustedCert().equals(certs.get(cpLen))) {
+                    break out;
+                }
+            }
+        }
+        if (cpLen > 0) {
+            CertPath cp = certificateFactory.generateCertPath(
+                    (cpLen == certs.size())? certs: certs.subList(0, cpLen));
+            validator.validate(cp, pkixParameters);
+        }
     }
 
     char[] getPass(String prompt)

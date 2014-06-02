@@ -25,6 +25,9 @@
 
 package javax.accessibility;
 
+import sun.awt.AWTAccessor;
+import sun.awt.AppContext;
+
 import java.util.Locale;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeSupport;
@@ -78,6 +81,26 @@ import java.awt.IllegalComponentStateException;
  * @author      Lynn Monsanto
  */
 public abstract class AccessibleContext {
+
+    /**
+     * The AppContext that should be used to dispatch events for this
+     * AccessibleContext
+     */
+    private volatile AppContext targetAppContext;
+
+    static {
+        AWTAccessor.setAccessibleContextAccessor(new AWTAccessor.AccessibleContextAccessor() {
+            @Override
+            public void setAppContext(AccessibleContext accessibleContext, AppContext appContext) {
+                accessibleContext.targetAppContext = appContext;
+            }
+
+            @Override
+            public AppContext getAppContext(AccessibleContext accessibleContext) {
+                return accessibleContext.targetAppContext;
+            }
+        });
+    }
 
    /**
     * Constant used to determine when the accessibleName property has

@@ -28,6 +28,7 @@ package com.sun.tools.javac.jvm;
 import com.sun.tools.javac.code.Kinds;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.TypeTag;
 import com.sun.tools.javac.code.Type;
 import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.code.Types.UniqueType;
@@ -127,7 +128,14 @@ public class Pool {
         } else if (o instanceof VarSymbol) {
             return new Variable((VarSymbol)o, types);
         } else if (o instanceof Type) {
-            return new UniqueType((Type)o, types);
+            Type t = (Type)o;
+            // ClassRefs can come from ClassSymbols or from Types.
+            // Return the symbol for these types to avoid duplicates
+            // in the constant pool
+            if (t.hasTag(TypeTag.CLASS))
+                return t.tsym;
+            else
+                return new UniqueType(t, types);
         } else {
             return o;
         }

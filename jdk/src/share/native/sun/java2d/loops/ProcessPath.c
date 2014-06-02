@@ -189,34 +189,34 @@
 
 #define PROCESS_POINT(hnd, fX, fY, checkBounds, pixelInfo)                  \
     do {                                                                    \
-        jint _X = (fX)>> MDP_PREC;                                          \
-        jint _Y = (fY)>> MDP_PREC;                                          \
+        jint X_ = (fX)>> MDP_PREC;                                          \
+        jint Y_ = (fY)>> MDP_PREC;                                          \
         if (checkBounds &&                                                  \
-            (hnd->dhnd->yMin > _Y  ||                                       \
-             hnd->dhnd->yMax <= _Y ||                                       \
-             hnd->dhnd->xMin > _X  ||                                       \
-             hnd->dhnd->xMax <= _X)) break;                                 \
+            (hnd->dhnd->yMin > Y_  ||                                       \
+             hnd->dhnd->yMax <= Y_ ||                                       \
+             hnd->dhnd->xMin > X_  ||                                       \
+             hnd->dhnd->xMax <= X_)) break;                                 \
 /*                                                                          \
- *       (_X,_Y) should be inside boundaries                                \
+ *       (X_,Y_) should be inside boundaries                                \
  *                                                                          \
- *       assert(hnd->dhnd->yMin <= _Y &&                                    \
- *              hnd->dhnd->yMax >  _Y &&                                    \
- *              hnd->dhnd->xMin <= _X &&                                    \
- *              hnd->dhnd->xMax >  _X);                                     \
+ *       assert(hnd->dhnd->yMin <= Y_ &&                                    \
+ *              hnd->dhnd->yMax >  Y_ &&                                    \
+ *              hnd->dhnd->xMin <= X_ &&                                    \
+ *              hnd->dhnd->xMax >  X_);                                     \
  *                                                                          \
  */                                                                         \
         if (pixelInfo[0] == 0) {                                            \
             pixelInfo[0] = 1;                                               \
-            pixelInfo[1] = _X;                                              \
-            pixelInfo[2] = _Y;                                              \
-            pixelInfo[3] = _X;                                              \
-            pixelInfo[4] = _Y;                                              \
-            hnd->dhnd->pDrawPixel(hnd->dhnd, _X, _Y);                       \
-        } else if ((_X != pixelInfo[3] || _Y != pixelInfo[4]) &&            \
-                   (_X != pixelInfo[1] || _Y != pixelInfo[2])) {            \
-            hnd->dhnd->pDrawPixel(hnd->dhnd, _X, _Y);                       \
-            pixelInfo[3] = _X;                                              \
-            pixelInfo[4] = _Y;                                              \
+            pixelInfo[1] = X_;                                              \
+            pixelInfo[2] = Y_;                                              \
+            pixelInfo[3] = X_;                                              \
+            pixelInfo[4] = Y_;                                              \
+            hnd->dhnd->pDrawPixel(hnd->dhnd, X_, Y_);                       \
+        } else if ((X_ != pixelInfo[3] || Y_ != pixelInfo[4]) &&            \
+                   (X_ != pixelInfo[1] || Y_ != pixelInfo[2])) {            \
+            hnd->dhnd->pDrawPixel(hnd->dhnd, X_, Y_);                       \
+            pixelInfo[3] = X_;                                              \
+            pixelInfo[4] = Y_;                                              \
         }                                                                   \
     } while(0)
 

@@ -324,11 +324,18 @@ public abstract class FileSystemView {
 
     /**
      * Creates a new folder with a default folder name.
+     *
+     * @param containingDir a {@code File} object denoting directory to contain the new folder
+     * @return a {@code File} object denoting the newly created folder
+     * @throws IOException if new folder could not be created
      */
     public abstract File createNewFolder(File containingDir) throws IOException;
 
     /**
      * Returns whether a file is hidden or not.
+     *
+     * @param f a {@code File} object
+     * @return true if the given {@code File} denotes a hidden file
      */
     public boolean isHiddenFile(File f) {
         return f.isHidden();
@@ -395,6 +402,9 @@ public abstract class FileSystemView {
      * Returns all root partitions on this system. For example, on
      * Windows, this would be the "Desktop" folder, while on DOS this
      * would be the A: through Z: drives.
+     *
+     * @return an array of {@code File} objects representing all root partitions
+     *         on this system
      */
     public File[] getRoots() {
         // Don't cache this array, because filesystem might change
@@ -435,6 +445,10 @@ public abstract class FileSystemView {
 
     /**
      * Returns a File object constructed in dir from the given filename.
+     *
+     * @param dir an abstract pathname denoting a directory
+     * @param filename a {@code String} representation of a pathname
+     * @return a {@code File} object created from {@code dir} and {@code filename}
      */
     public File createFileObject(File dir, String filename) {
         if(dir == null) {
@@ -446,6 +460,9 @@ public abstract class FileSystemView {
 
     /**
      * Returns a File object constructed from the given path string.
+     *
+     * @param path {@code String} representation of path
+     * @return a {@code File} object created from the given {@code path}
      */
     public File createFileObject(String path) {
         File f = new File(path);
@@ -458,6 +475,12 @@ public abstract class FileSystemView {
 
     /**
      * Gets the list of shown (i.e. not hidden) files.
+     *
+     * @param dir the root directory of files to be returned
+     * @param useFileHiding determine if hidden files are returned
+     * @return an array of {@code File} objects representing files and
+     *         directories in the given {@code dir}. It includes hidden
+     *         files if {@code useFileHiding} is false.
      */
     public File[] getFiles(File dir, boolean useFileHiding) {
         List<File> files = new ArrayList<File>();
