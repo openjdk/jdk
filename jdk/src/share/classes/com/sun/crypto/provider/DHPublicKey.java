@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -260,8 +260,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
     public String toString() {
         String LINE_SEP = System.getProperty("line.separator");
 
-        StringBuffer strbuf
-            = new StringBuffer("SunJCE Diffie-Hellman Public Key:"
+        StringBuilder sb
+            = new StringBuilder("SunJCE Diffie-Hellman Public Key:"
                                + LINE_SEP + "y:" + LINE_SEP
                                + Debug.toHexString(this.y)
                                + LINE_SEP + "p:" + LINE_SEP
@@ -269,8 +269,8 @@ javax.crypto.interfaces.DHPublicKey, Serializable {
                                + LINE_SEP + "g:" + LINE_SEP
                                + Debug.toHexString(this.g));
         if (this.l != 0)
-            strbuf.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
-        return strbuf.toString();
+            sb.append(LINE_SEP + "l:" + LINE_SEP + "    " + this.l);
+        return sb.toString();
     }
 
     private void parseKeyBits() throws InvalidKeyException {

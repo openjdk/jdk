@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,6 +102,7 @@ class DTD implements DTDConstants {
 
     /**
      * Gets an entity by name.
+     * @param name  the entity name
      * @return the <code>Entity</code> corresponding to the
      *   <code>name</code> <code>String</code>
      */
@@ -111,6 +112,7 @@ class DTD implements DTDConstants {
 
     /**
      * Gets a character entity.
+     * @param ch  the character
      * @return the <code>Entity</code> corresponding to the
      *    <code>ch</code> character
      */
@@ -193,13 +195,15 @@ class DTD implements DTDConstants {
      * specified parameters.  If one doesn't exist, a new
      * one is created and returned.
      *
-     * @param name the name of the <code>Element</code>
-     * @param type the type of the <code>Element</code>
-     * @param omitStart <code>true</code> if start should be omitted
-     * @param omitEnd  <code>true</code> if end should be omitted
-     * @param content  the <code>ContentModel</code>
-     * @param atts the <code>AttributeList</code> specifying the
-     *    <code>Element</code>
+     * @param name        the name of the <code>Element</code>
+     * @param type        the type of the <code>Element</code>
+     * @param omitStart   <code>true</code> if start should be omitted
+     * @param omitEnd     <code>true</code> if end should be omitted
+     * @param content     the <code>ContentModel</code>
+     * @param exclusions  the set of elements that must not occur inside the element
+     * @param inclusions  the set of elements that can occur inside the element
+     * @param atts        the <code>AttributeList</code> specifying the
+     *                    <code>Element</code>
      * @return the <code>Element</code> specified
      */
     public Element defineElement(String name, int type,
@@ -231,6 +235,8 @@ class DTD implements DTDConstants {
     /**
      * Creates and returns a character <code>Entity</code>.
      * @param name the entity's name
+     * @param type the entity's type
+     * @param ch   the entity's value (character)
      * @return the new character <code>Entity</code>
      */
     public Entity defEntity(String name, int type, int ch) {
@@ -241,6 +247,8 @@ class DTD implements DTDConstants {
     /**
      * Creates and returns an <code>Entity</code>.
      * @param name the entity's name
+     * @param type the entity's type
+     * @param str  the entity's data section
      * @return the new <code>Entity</code>
      */
     protected Entity defEntity(String name, int type, String str) {
@@ -252,7 +260,14 @@ class DTD implements DTDConstants {
 
     /**
      * Creates and returns an <code>Element</code>.
-     * @param name the element's name
+     * @param name        the element's name
+     * @param type        the element's type
+     * @param omitStart   {@code true} if the element needs no starting tag
+     * @param omitEnd     {@code true} if the element needs no closing tag
+     * @param content     the element's content
+     * @param exclusions  the elements that must be excluded from the content of the element
+     * @param inclusions  the elements that can be included as the content of the element
+     * @param atts        the attributes of the element
      * @return the new <code>Element</code>
      */
     protected Element defElement(String name, int type,
@@ -280,11 +295,18 @@ class DTD implements DTDConstants {
     }
 
     /**
-     * Creates and returns an <code>AttributeList</code>.
-     * @param name the attribute list's name
+     * Creates and returns an <code>AttributeList</code> responding to a new attribute.
+     * @param name      the attribute's name
+     * @param type      the attribute's type
+     * @param modifier  the attribute's modifier
+     * @param value     the default value of the attribute
+     * @param values    the allowed values for the attribute (multiple values could be separated by '|')
+     * @param atts      the previous attribute of the element; to be placed to {@code AttributeList.next},
+     *                  creating a linked list
      * @return the new <code>AttributeList</code>
      */
-    protected AttributeList defAttributeList(String name, int type, int modifier, String value, String values, AttributeList atts) {
+    protected AttributeList defAttributeList(String name, int type, int modifier,
+                                             String value, String values, AttributeList atts) {
         Vector<String> vals = null;
         if (values != null) {
             vals = new Vector<String>();
@@ -301,6 +323,8 @@ class DTD implements DTDConstants {
     /**
      * Creates and returns a new content model.
      * @param type the type of the new content model
+     * @param obj  the content of the content model
+     * @param next pointer to the next content model
      * @return the new <code>ContentModel</code>
      */
     protected ContentModel defContentModel(int type, Object obj, ContentModel next) {
@@ -332,6 +356,7 @@ class DTD implements DTDConstants {
      *
      * @param name the name of the DTD
      * @return the DTD which corresponds to <code>name</code>
+     * @throws IOException if an I/O error occurs
      */
     public static DTD getDTD(String name) throws IOException {
         name = name.toLowerCase();
@@ -359,6 +384,7 @@ class DTD implements DTDConstants {
     /**
      * Recreates a DTD from an archived format.
      * @param in  the <code>DataInputStream</code> to read from
+     * @throws IOException if an I/O error occurs
      */
     public void read(DataInputStream in) throws IOException {
         if (in.readInt() != FILE_VERSION) {

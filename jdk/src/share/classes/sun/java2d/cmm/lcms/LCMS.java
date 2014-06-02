@@ -189,7 +189,7 @@ public class LCMS implements PCMM {
                                            LCMSImageLayout dest);
     public static native void freeTransform(long ID);
 
-    public static native void initLCMS(Class Trans, Class IL, Class Pf);
+    public static native void initLCMS(Class<?> Trans, Class<?> IL, Class<?> Pf);
 
     private LCMS() {};
 
@@ -201,7 +201,7 @@ public class LCMS implements PCMM {
         }
 
         java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction() {
+                new java.security.PrivilegedAction<Object>() {
                     public Object run() {
                         /* We need to load awt here because of usage trace and
                          * disposer frameworks

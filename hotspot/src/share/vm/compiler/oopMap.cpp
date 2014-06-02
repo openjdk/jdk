@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -633,8 +633,8 @@ void DerivedPointerTable::add(oop *derived_loc, oop *base_loc) {
       tty->print_cr(
         "Add derived pointer@" INTPTR_FORMAT
         " - Derived: " INTPTR_FORMAT
-        " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: %d)",
-        derived_loc, (address)*derived_loc, (address)*base_loc, base_loc, offset
+        " Base: " INTPTR_FORMAT " (@" INTPTR_FORMAT ") (Offset: " INTX_FORMAT ")",
+        p2i(derived_loc), p2i((address)*derived_loc), p2i((address)*base_loc), p2i(base_loc), offset
       );
     }
     // Set derived oop location to point to base.
@@ -661,8 +661,8 @@ void DerivedPointerTable::update_pointers() {
 
     if (TraceDerivedPointers) {
       tty->print_cr("Updating derived pointer@" INTPTR_FORMAT
-                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: %d)",
-          derived_loc, (address)*derived_loc, (address)base, offset);
+                    " - Derived: " INTPTR_FORMAT "  Base: " INTPTR_FORMAT " (Offset: " INTX_FORMAT ")",
+          p2i(derived_loc), p2i((address)*derived_loc), p2i((address)base), offset);
     }
 
     // Delete entry

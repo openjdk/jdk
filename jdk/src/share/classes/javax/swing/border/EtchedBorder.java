@@ -77,6 +77,7 @@ public class EtchedBorder extends AbstractBorder
      * whose colors will be derived
      * from the background color of the component passed into
      * the paintBorder method.
+     *
      * @param etchType the type of etch to be drawn by the border
      */
     public EtchedBorder(int etchType)    {
@@ -86,6 +87,7 @@ public class EtchedBorder extends AbstractBorder
     /**
      * Creates a lowered etched border with the specified highlight and
      * shadow colors.
+     *
      * @param highlight the color to use for the etched highlight
      * @param shadow the color to use for the etched shadow
      */
@@ -96,6 +98,7 @@ public class EtchedBorder extends AbstractBorder
     /**
      * Creates an etched border with the specified etch-type,
      * highlight and shadow colors.
+     *
      * @param etchType the type of etch to be drawn by the border
      * @param highlight the color to use for the etched highlight
      * @param shadow the color to use for the etched shadow
@@ -110,6 +113,7 @@ public class EtchedBorder extends AbstractBorder
     /**
      * Paints the border for the specified component with the
      * specified position and size.
+     *
      * @param c the component for which this border is being painted
      * @param g the paint graphics
      * @param x the x position of the painted border
@@ -138,6 +142,7 @@ public class EtchedBorder extends AbstractBorder
 
     /**
      * Reinitialize the insets parameter with this Border's current Insets.
+     *
      * @param c the component for which this border insets value applies
      * @param insets the object to be reinitialized
      */
@@ -148,11 +153,16 @@ public class EtchedBorder extends AbstractBorder
 
     /**
      * Returns whether or not the border is opaque.
+     * This implementation returns true.
+     *
+     * @return true
      */
     public boolean isBorderOpaque() { return true; }
 
     /**
      * Returns which etch-type is set on the etched border.
+     *
+     * @return the etched border type, either {@code RAISED} or {@code LOWERED}
      */
     public int getEtchType() {
         return etchType;
@@ -163,7 +173,9 @@ public class EtchedBorder extends AbstractBorder
      * when rendered on the specified component.  If no highlight
      * color was specified at instantiation, the highlight color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the highlight may be derived
+     * @return the highlight {@code Color} of this {@code EtchedBorder}
      * @since 1.3
      */
     public Color getHighlightColor(Component c)   {
@@ -175,6 +187,9 @@ public class EtchedBorder extends AbstractBorder
      * Returns the highlight color of the etched border.
      * Will return null if no highlight color was specified
      * at instantiation.
+     *
+     * @return the highlight {@code Color} of this {@code EtchedBorder} or null
+     *         if none was specified
      * @since 1.3
      */
     public Color getHighlightColor()   {
@@ -186,7 +201,9 @@ public class EtchedBorder extends AbstractBorder
      * when rendered on the specified component.  If no shadow
      * color was specified at instantiation, the shadow color
      * is derived from the specified component's background color.
+     *
      * @param c the component for which the shadow may be derived
+     * @return the shadow {@code Color} of this {@code EtchedBorder}
      * @since 1.3
      */
     public Color getShadowColor(Component c)   {
@@ -197,6 +214,9 @@ public class EtchedBorder extends AbstractBorder
      * Returns the shadow color of the etched border.
      * Will return null if no shadow color was specified
      * at instantiation.
+     *
+     * @return the shadow {@code Color} of this {@code EtchedBorder} or null
+     *         if none was specified
      * @since 1.3
      */
     public Color getShadowColor()   {

@@ -32,6 +32,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Property;
@@ -48,6 +49,7 @@ public final class NashornGuards {
     private static final MethodHandle IS_MAP_SCRIPTOBJECT = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
     private static final MethodHandle IS_INSTANCEOF_2     = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
     private static final MethodHandle IS_SCRIPTOBJECT     = findOwnMH("isScriptObject", boolean.class, Object.class);
+    private static final MethodHandle IS_NOT_JSOBJECT     = findOwnMH("isNotJSObject", boolean.class, Object.class);
     private static final MethodHandle SAME_OBJECT       = findOwnMH("sameObject", boolean.class, Object.class, WeakReference.class);
     //TODO - maybe put this back in ScriptFunction instead of the ClassCastException.class relinkage
     //private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
@@ -82,6 +84,14 @@ public final class NashornGuards {
     public static MethodHandle getScriptObjectGuard() {
         return IS_SCRIPTOBJECT;
     }
+
+   /**
+    * Get the guard that checks if an item is not a {@code JSObject}
+    * @return method handle for guard
+    */
+   public static MethodHandle getNotJSObjectGuard() {
+       return IS_NOT_JSOBJECT;
+   }
 
     /**
      * Returns a guard that does an instanceof ScriptObject check on the receiver
@@ -196,6 +206,11 @@ public final class NashornGuards {
     @SuppressWarnings("unused")
     private static boolean isMap(final ScriptObject self, final PropertyMap map) {
         return self.getMap() == map;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isNotJSObject(final Object self) {
+        return !(self instanceof JSObject);
     }
 
     @SuppressWarnings("unused")

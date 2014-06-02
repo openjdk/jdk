@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -288,14 +288,14 @@ void CardTableRS::younger_refs_in_space_iterate(Space* sp,
          err_msg("Did you forget to call save_marks()? "
                  "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
                  "[" PTR_FORMAT ", " PTR_FORMAT ")",
-                 urasm.start(), urasm.end(), ur.start(), ur.end()));
+                 p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end())));
   // In the case of CMS+ParNew, issue a warning
   if (!ur.contains(urasm)) {
     assert(UseConcMarkSweepGC && UseParNewGC, "Tautology: see assert above");
     warning("CMS+ParNew: Did you forget to call save_marks()? "
             "[" PTR_FORMAT ", " PTR_FORMAT ") is not contained in "
             "[" PTR_FORMAT ", " PTR_FORMAT ")",
-             urasm.start(), urasm.end(), ur.start(), ur.end());
+             p2i(urasm.start()), p2i(urasm.end()), p2i(ur.start()), p2i(ur.end()));
     MemRegion ur2 = sp->used_region();
     MemRegion urasm2 = sp->used_region_at_save_marks();
     if (!ur.equals(ur2)) {
@@ -349,12 +349,12 @@ protected:
     assert(jp >= _begin && jp < _end,
            err_msg("Error: jp " PTR_FORMAT " should be within "
                    "[_begin, _end) = [" PTR_FORMAT "," PTR_FORMAT ")",
-                   jp, _begin, _end));
+                   p2i(jp), p2i(_begin), p2i(_end)));
     oop obj = oopDesc::load_decode_heap_oop(p);
     guarantee(obj == NULL || (HeapWord*)obj >= _boundary,
               err_msg("pointer " PTR_FORMAT " at " PTR_FORMAT " on "
                       "clean card crosses boundary" PTR_FORMAT,
-                      (HeapWord*)obj, jp, _boundary));
+                      p2i((HeapWord*)obj), p2i(jp), p2i(_boundary)));
   }
 
 public:
@@ -362,10 +362,10 @@ public:
     _boundary(b), _begin(begin), _end(end) {
     assert(b <= begin,
            err_msg("Error: boundary " PTR_FORMAT " should be at or below begin " PTR_FORMAT,
-                   b, begin));
+                   p2i(b), p2i(begin)));
     assert(begin <= end,
            err_msg("Error: begin " PTR_FORMAT " should be strictly below end " PTR_FORMAT,
-                   begin, end));
+                   p2i(begin), p2i(end)));
   }
 
   virtual void do_oop(oop* p)       { VerifyCleanCardClosure::do_oop_work(p); }

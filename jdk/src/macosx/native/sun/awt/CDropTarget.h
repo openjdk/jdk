@@ -48,7 +48,7 @@
 + (CDropTarget *) currentDropTarget;
 
 // Common methods:
-- (id)init:(jobject)dropTarget component:(jobject)jcomponent peer:(jobject)jpeer control:(id)control;
+- (id)init:(jobject)dropTarget component:(jobject)jcomponent control:(id)control;
 - (void)controlModelControlValid;
 - (void)removeFromView:(JNIEnv *)env;
 

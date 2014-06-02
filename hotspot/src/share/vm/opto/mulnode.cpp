@@ -235,23 +235,23 @@ const Type *MulINode::mul_ring(const Type *t0, const Type *t1) const {
   const TypeInt *r1 = t1->is_int();
 
   // Fetch endpoints of all ranges
-  int32 lo0 = r0->_lo;
+  int32_t lo0 = r0->_lo;
   double a = (double)lo0;
-  int32 hi0 = r0->_hi;
+  int32_t hi0 = r0->_hi;
   double b = (double)hi0;
-  int32 lo1 = r1->_lo;
+  int32_t lo1 = r1->_lo;
   double c = (double)lo1;
-  int32 hi1 = r1->_hi;
+  int32_t hi1 = r1->_hi;
   double d = (double)hi1;
 
   // Compute all endpoints & check for overflow
-  int32 A = lo0*lo1;
+  int32_t A = lo0*lo1;
   if( (double)A != a*c ) return TypeInt::INT; // Overflow?
-  int32 B = lo0*hi1;
+  int32_t B = lo0*hi1;
   if( (double)B != a*d ) return TypeInt::INT; // Overflow?
-  int32 C = hi0*lo1;
+  int32_t C = hi0*lo1;
   if( (double)C != b*c ) return TypeInt::INT; // Overflow?
-  int32 D = hi0*hi1;
+  int32_t D = hi0*hi1;
   if( (double)D != b*d ) return TypeInt::INT; // Overflow?
 
   if( A < B ) { lo0 = A; hi0 = B; } // Sort range endpoints
@@ -1228,12 +1228,12 @@ const Type *URShiftINode::Value( PhaseTransform *phase ) const {
   //
   //   const TypeInstPtr *o = t1->is_instptr();
   //   if( t1->singleton() )
-  //     return TypeInt::make( ((uint32)o->const_oop() + o->_offset) >> shift );
+  //     return TypeInt::make( ((uint32_t)o->const_oop() + o->_offset) >> shift );
   // }
   // else if( t1->base() == Type::KlassPtr ) {
   //   const TypeKlassPtr *o = t1->is_klassptr();
   //   if( t1->singleton() )
-  //     return TypeInt::make( ((uint32)o->const_oop() + o->_offset) >> shift );
+  //     return TypeInt::make( ((uint32_t)o->const_oop() + o->_offset) >> shift );
   // }
 
   return TypeInt::INT;

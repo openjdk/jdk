@@ -52,7 +52,7 @@ import javax.swing.plaf.FontUIResource;
 import sun.awt.AppContext;
 import sun.awt.FontConfiguration;
 import sun.awt.SunToolkit;
-import sun.misc.ThreadGroupUtils;
+import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.FontSupport;
 import sun.util.logging.PlatformLogger;
 
@@ -1161,6 +1161,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
             case FONTFORMAT_NATIVE:
                 NativeFont nf = new NativeFont(fileName, false);
                 physicalFont = addToFontList(nf, fontRank);
+                break;
             default:
 
             }

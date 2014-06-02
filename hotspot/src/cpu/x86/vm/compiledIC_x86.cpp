@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ void CompiledStaticCall::set_to_interpreted(methodHandle callee, address entry) 
   if (TraceICs) {
     ResourceMark rm;
     tty->print_cr("CompiledStaticCall@" INTPTR_FORMAT ": set_to_interpreted %s",
-                  instruction_address(),
+                  p2i(instruction_address()),
                   callee->name_and_sig_as_C_string());
   }
 

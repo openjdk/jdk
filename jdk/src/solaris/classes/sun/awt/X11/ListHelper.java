@@ -55,10 +55,10 @@ public class ListHelper implements XScrollbarClient {
 
     private final int SCROLLBAR_WIDTH;  // Width of a scrollbar
 
-    private java.util.List items;        // List of items
+    private java.util.List<String> items;        // List of items
 
     // TODO: maybe this would be better as a simple int[]
-    private java.util.List selected;     // List of selected items
+    private java.util.List<Integer> selected;     // List of selected items
     private boolean multiSelect;         // Can multiple items be selected
                                          // at once?
     private int focusedIndex;
@@ -100,8 +100,8 @@ public class ListHelper implements XScrollbarClient {
         this.peer = peer;
         this.colors = colors;
         this.multiSelect = multiSelect;
-        items = new ArrayList(initialSize);
-        selected = new ArrayList(1);
+        items = new ArrayList<>(initialSize);
+        selected = new ArrayList<>(1);
         selected.add(Integer.valueOf(-1));
 
         this.maxVisItems = maxVisItems;
@@ -190,7 +190,7 @@ public class ListHelper implements XScrollbarClient {
     /* if called for multiselect, return -1 */
     public int getSelectedIndex() {
         if (!multiSelect) {
-            Integer val = (Integer)selected.get(0);
+            Integer val = selected.get(0);
             return val.intValue();
         }
         return -1;
@@ -217,7 +217,7 @@ public class ListHelper implements XScrollbarClient {
     }
 
     public String getItem(int index) {
-        return (String) items.get(index);
+        return items.get(index);
     }
 
     /**********************************************************************/
@@ -576,9 +576,9 @@ public class ListHelper implements XScrollbarClient {
     }
 
     boolean isItemSelected(int index) {
-        Iterator itr = selected.iterator();
+        Iterator<Integer> itr = selected.iterator();
         while (itr.hasNext()) {
-            Integer val = (Integer)itr.next();
+            Integer val = itr.next();
             if (val.intValue() == index) {
                 return true;
             }

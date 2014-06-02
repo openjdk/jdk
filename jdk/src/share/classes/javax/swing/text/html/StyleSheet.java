@@ -2324,6 +2324,7 @@ public class StyleSheet extends StyleContext {
          * @param itemNum number to format
          * @param type    type of ordered list
          */
+        @SuppressWarnings("fallthrough")
         String formatItemNum(int itemNum, char type) {
             String numStyle = "1";
 

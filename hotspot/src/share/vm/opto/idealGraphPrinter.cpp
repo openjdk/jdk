@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ IdealGraphPrinter::IdealGraphPrinter() {
     } else {
       // It would be nice if we could shut down cleanly but it should
       // be an error if we can't connect to the visualizer.
-      fatal(err_msg_res("Couldn't connect to visualizer at %s:%d",
+      fatal(err_msg_res("Couldn't connect to visualizer at %s:" INTX_FORMAT,
                         PrintIdealGraphAddress, PrintIdealGraphPort));
     }
   }
@@ -195,7 +195,7 @@ IdealGraphPrinter::~IdealGraphPrinter() {
 
 
 void IdealGraphPrinter::begin_elem(const char *s) {
-  _xml->begin_elem(s);
+  _xml->begin_elem("%s", s);
 }
 
 void IdealGraphPrinter::end_elem() {
@@ -203,7 +203,7 @@ void IdealGraphPrinter::end_elem() {
 }
 
 void IdealGraphPrinter::begin_head(const char *s) {
-  _xml->begin_head(s);
+  _xml->begin_head("%s", s);
 }
 
 void IdealGraphPrinter::end_head() {
@@ -223,7 +223,7 @@ void IdealGraphPrinter::print_attr(const char *name, const char *val) {
 }
 
 void IdealGraphPrinter::head(const char *name) {
-  _xml->head(name);
+  _xml->head("%s", name);
 }
 
 void IdealGraphPrinter::tail(const char *name) {
@@ -231,7 +231,7 @@ void IdealGraphPrinter::tail(const char *name) {
 }
 
 void IdealGraphPrinter::text(const char *s) {
-  _xml->text(s);
+  _xml->text("%s", s);
 }
 
 void IdealGraphPrinter::print_prop(const char *name, int val) {
@@ -359,7 +359,7 @@ void IdealGraphPrinter::end_method() {
 void IdealGraphPrinter::print_indent() {
   tty->print_cr("printing ident %d", _depth);
   for (int i = 0; i < _depth; i++) {
-    _xml->print(INDENT);
+    _xml->print("%s", INDENT);
   }
 }
 

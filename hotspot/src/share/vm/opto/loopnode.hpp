@@ -339,11 +339,11 @@ public:
 
   Node_List _body;              // Loop body for inner loops
 
-  uint8 _nest;                  // Nesting depth
-  uint8 _irreducible:1,         // True if irreducible
-        _has_call:1,            // True if has call safepoint
-        _has_sfpt:1,            // True if has non-call safepoint
-        _rce_candidate:1;       // True if candidate for range check elimination
+  uint8_t _nest;                // Nesting depth
+  uint8_t _irreducible:1,       // True if irreducible
+          _has_call:1,          // True if has call safepoint
+          _has_sfpt:1,          // True if has non-call safepoint
+          _rce_candidate:1;     // True if candidate for range check elimination
 
   Node_List* _safepts;          // List of safepoints in this loop
   Node_List* _required_safept;  // A inner loop cannot delete these safepts;

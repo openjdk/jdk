@@ -96,7 +96,6 @@ public class Enter extends JCTree.Visitor {
     Symtab syms;
     Check chk;
     TreeMaker make;
-    ClassReader reader;
     Annotate annotate;
     MemberEnter memberEnter;
     Types types;
@@ -118,7 +117,6 @@ public class Enter extends JCTree.Visitor {
         context.put(enterKey, this);
 
         log = Log.instance(context);
-        reader = ClassReader.instance(context);
         make = TreeMaker.instance(context);
         syms = Symtab.instance(context);
         chk = Check.instance(context);

@@ -37,13 +37,15 @@ import sun.jvm.hotspot.utilities.*;
 // dynamic type check.  It consists of a counter which counts the total times
 // that the check is reached, and a series of (Klass, count) pairs
 // which are used to store a type profile for the receiver of the check.
-public class ReceiverTypeData extends CounterData {
+public class ReceiverTypeData<K,M> extends CounterData {
   static final int   receiver0Offset = counterCellCount;
   static final int     count0Offset = receiver0Offset + 1;
   static final int     receiverTypeRowCellCount = (count0Offset + 1) - receiver0Offset;
+  final MethodDataInterface<K,M> methodData;
 
-  public ReceiverTypeData(DataLayout layout) {
+  public ReceiverTypeData(MethodDataInterface<K,M> methodData, DataLayout layout) {
     super(layout);
+    this.methodData = methodData;
     //assert(layout.tag() == DataLayout.receiverTypeDataTag ||
     //       layout.tag() == DataLayout.virtualCallDataTag, "wrong type");
   }
@@ -73,14 +75,14 @@ public class ReceiverTypeData extends CounterData {
   // gc; it does not assert the receiver is a klass.  During compaction of the
   // perm gen, the klass may already have moved, so the isKlass() predicate
   // would fail.  The 'normal' version should be used whenever possible.
-  Klass receiverUnchecked(int row) {
+  K receiverUnchecked(int row) {
     //assert(row < rowLimit(), "oob");
     Address recv = addressAt(receiverCellIndex(row));
-    return (Klass)Metadata.instantiateWrapperFor(recv);
+    return methodData.getKlassAtAddress(recv);
   }
 
-  public Klass receiver(int row) {
-    Klass recv = receiverUnchecked(row);
+  public K receiver(int row) {
+    K recv = receiverUnchecked(row);
     //assert(recv == NULL || ((oop)recv).isKlass(), "wrong type");
     return recv;
   }
@@ -111,7 +113,7 @@ public class ReceiverTypeData extends CounterData {
     for (row = 0; row < rowLimit(); row++) {
       if (receiver(row) != null) {
         tab(st);
-        receiver(row).printValueOn(st);
+        methodData.printKlassValueOn(receiver(row), st);
         st.println("(" + receiverCount(row) + ")");
       }
     }

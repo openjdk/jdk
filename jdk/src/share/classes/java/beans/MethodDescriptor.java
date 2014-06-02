@@ -162,6 +162,16 @@ public class MethodDescriptor extends FeatureDescriptor {
                 : null;
     }
 
+    private static Method resolve(Method oldMethod, Method newMethod) {
+        if (oldMethod == null) {
+            return newMethod;
+        }
+        if (newMethod == null) {
+            return oldMethod;
+        }
+        return !oldMethod.isSynthetic() && newMethod.isSynthetic() ? oldMethod : newMethod;
+    }
+
     /*
      * Package-private constructor
      * Merge two method descriptors.  Where they conflict, give the
@@ -173,8 +183,7 @@ public class MethodDescriptor extends FeatureDescriptor {
     MethodDescriptor(MethodDescriptor x, MethodDescriptor y) {
         super(x, y);
 
-        Method method = y.methodRef.get();
-        this.methodRef.set(null != method ? method : x.methodRef.get());
+        this.methodRef.set(resolve(x.methodRef.get(), y.methodRef.get()));
         params = x.params;
         if (y.params != null) {
             params = y.params;

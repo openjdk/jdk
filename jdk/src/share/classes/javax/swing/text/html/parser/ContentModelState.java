@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,12 +92,14 @@ class ContentModelState {
      * tokens required in the input stream.
      * @return true if the model can terminate without further input
      */
+    @SuppressWarnings("fallthrough")
     public boolean terminate() {
         switch (model.type) {
           case '+':
             if ((value == 0) && !(model).empty()) {
                 return false;
             }
+            // Fall through
           case '*':
           case '?':
             return (next == null) || next.terminate();

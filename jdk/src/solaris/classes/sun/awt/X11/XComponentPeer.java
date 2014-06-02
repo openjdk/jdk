@@ -236,8 +236,8 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         return false;
     }
 
-    private static Class seClass;
-    private static Constructor seCtor;
+    private static Class<?> seClass;
+    private static Constructor<?> seCtor;
 
     final static AWTEvent wrapInSequenced(AWTEvent event) {
         try {
@@ -246,9 +246,11 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
             }
 
             if (seCtor == null) {
-                seCtor = (Constructor) AccessController.doPrivileged(new PrivilegedExceptionAction() {
-                        public Object run() throws Exception {
-                            Constructor ctor = seClass.getConstructor(new Class[] { AWTEvent.class });
+                seCtor = AccessController.doPrivileged(new
+                    PrivilegedExceptionAction<Constructor<?>>() {
+                        public Constructor<?> run() throws Exception {
+                            Constructor<?> ctor = seClass.getConstructor(
+                                new Class<?>[] { AWTEvent.class });
                             ctor.setAccessible(true);
                             return ctor;
                         }
@@ -1322,7 +1324,7 @@ public class XComponentPeer extends XWindow implements ComponentPeer, DropTarget
         }
     }
 
-    private void addTree(Collection order, Set set, Container cont) {
+    private void addTree(Collection<Long> order, Set<Long> set, Container cont) {
         for (int i = 0; i < cont.getComponentCount(); i++) {
             Component comp = cont.getComponent(i);
             ComponentPeer peer = comp.getPeer();

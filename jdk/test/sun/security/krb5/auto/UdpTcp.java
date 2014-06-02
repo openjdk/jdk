@@ -43,9 +43,15 @@ public class UdpTcp {
         OneKDC kdc = new OneKDC(null);
         kdc.writeJAASConf();
 
-        KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
-                "udp_preference_limit = "
-                        + (args[0].equals("UDP") ? "1000" : "100"));
+        // Two styles of kdc_timeout setting. One global, one realm-specific.
+        if (args[0].equals("UDP")) {
+            KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                    "kdc_timeout = 10s");
+        } else {
+            kdc.addConf("kdc_timeout = 10s");
+            KDC.saveConfig(OneKDC.KRB5_CONF, kdc,
+                    "udp_preference_limit = 1");
+        }
         Config.refresh();
 
         ByteArrayOutputStream bo = new ByteArrayOutputStream();
@@ -56,7 +62,7 @@ public class UdpTcp {
 
         for (String line: new String(bo.toByteArray()).split("\n")) {
             if (line.contains(">>> KDCCommunication")) {
-                if (!line.contains(args[0])) {
+                if (!line.contains(args[0]) || !line.contains("timeout=10000")) {
                     throw new Exception("No " + args[0] + " in: " + line);
                 }
             }
