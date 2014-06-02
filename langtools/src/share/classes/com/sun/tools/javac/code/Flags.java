@@ -296,8 +296,8 @@ public class Flags {
         ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT,
         InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
         AnnotationTypeElementMask   = ABSTRACT | PUBLIC,
-        LocalVarFlags               = FINAL | PARAMETER,
-        BridgeMethodMask            = AccessFlags | FINAL | STRICTFP;
+        LocalVarFlags               = FINAL | PARAMETER;
+
 
     public static Set<Modifier> asModifierSet(long flags) {
         Set<Modifier> modifiers = modifierSets.get(flags);
