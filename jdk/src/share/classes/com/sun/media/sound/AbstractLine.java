@@ -48,7 +48,7 @@ abstract class AbstractLine implements Line {
     protected Control[] controls;
     AbstractMixer mixer;
     private boolean open     = false;
-    private final Vector listeners = new Vector();
+    private final Vector<Object> listeners = new Vector<>();
 
     /**
      * Contains event dispatcher per thread group.

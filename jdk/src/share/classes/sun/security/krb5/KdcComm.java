@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,7 +144,8 @@ public final class KdcComm {
         try {
             Config cfg = Config.getInstance();
             String temp = cfg.get("libdefaults", "kdc_timeout");
-            timeout = parsePositiveIntString(temp);
+            timeout = parseTimeString(temp);
+
             temp = cfg.get("libdefaults", "max_retries");
             max_retries = parsePositiveIntString(temp);
             temp = cfg.get("libdefaults", "udp_preference_limit");
@@ -426,6 +427,25 @@ public final class KdcComm {
     }
 
     /**
+     * Parses a time value string. If it ends with "s", parses as seconds.
+     * Otherwise, parses as milliseconds.
+     * @param s the time string
+     * @return the integer value in milliseconds, or -1 if input is null or
+     * has an invalid format
+     */
+    private static int parseTimeString(String s) {
+        if (s == null) {
+            return -1;
+        }
+        if (s.endsWith("s")) {
+            int seconds = parsePositiveIntString(s.substring(0, s.length()-1));
+            return (seconds < 0) ? -1 : (seconds*1000);
+        } else {
+            return parsePositiveIntString(s);
+        }
+    }
+
+    /**
      * Returns krb5.conf setting of {@code key} for a specific realm,
      * which can be:
      * 1. defined in the sub-stanza for the given realm inside [realms], or
@@ -446,7 +466,11 @@ public final class KdcComm {
         try {
             String value =
                Config.getInstance().get("realms", realm, key);
-            temp = parsePositiveIntString(value);
+            if (key.equals("kdc_timeout")) {
+                temp = parseTimeString(value);
+            } else {
+                temp = parsePositiveIntString(value);
+            }
         } catch (Exception exc) {
             // Ignored, defValue will be picked up
         }

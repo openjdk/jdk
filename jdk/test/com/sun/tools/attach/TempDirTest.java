@@ -38,8 +38,8 @@ import jdk.testlibrary.ProcessThread;
  * @bug 8033104
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
  * @library /lib/testlibrary
- * @run build Application Shutdown RunnerUtil
- * @run main/timeout=10 TempDirTest
+ * @run build jdk.testlibrary.* Application Shutdown RunnerUtil
+ * @run main TempDirTest
  */
 
 public class TempDirTest {

@@ -158,6 +158,8 @@ final public class JInfo {
                         sysprops(pid);
                         System.out.println();
                         flags(pid);
+                        System.out.println();
+                        commandLine(pid);
                     } else {
                         usage(1);
                     }
@@ -245,6 +247,12 @@ final public class JInfo {
         HotSpotVirtualMachine vm = (HotSpotVirtualMachine) attach(pid);
         InputStream in = vm.executeJCmd("VM.flags");
         System.out.println("VM Flags:");
+        drain(vm, in);
+    }
+
+    private static void commandLine(String pid) throws IOException {
+        HotSpotVirtualMachine vm = (HotSpotVirtualMachine) attach(pid);
+        InputStream in = vm.executeJCmd("VM.command_line");
         drain(vm, in);
     }
 

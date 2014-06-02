@@ -37,11 +37,19 @@ import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.MethodSymbol;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
+import com.sun.tools.javac.code.Symbol.VarSymbol;
 import com.sun.tools.javac.code.Type.ClassType;
 import com.sun.tools.javac.comp.Check;
+import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.tree.JCTree;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCPackageDecl;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
 
@@ -71,21 +79,21 @@ public class DocEnv {
         return instance;
     }
 
-    private Messager messager;
-
     DocLocale doclocale;
 
+    private final Messager messager;
+
     /** Predefined symbols known to the compiler. */
-    Symtab syms;
+    final Symtab syms;
 
     /** Referenced directly in RootDocImpl. */
-    JavadocClassReader reader;
+    private final ClassFinder finder;
 
     /** Javadoc's own version of the compiler's enter phase. */
-    JavadocEnter enter;
+    final Enter enter;
 
     /** The name table. */
-    Names names;
+    private Names names;
 
     /** The encoding name. */
     private String encoding;
@@ -139,8 +147,8 @@ public class DocEnv {
 
         messager = Messager.instance0(context);
         syms = Symtab.instance(context);
-        reader = JavadocClassReader.instance0(context);
-        enter = JavadocEnter.instance0(context);
+        finder = JavadocClassFinder.instance(context);
+        enter = JavadocEnter.instance(context);
         names = Names.instance(context);
         externalizableSym = syms.enterClass(names.fromString("java.io.Externalizable"));
         chk = Check.instance(context);
@@ -176,7 +184,7 @@ public class DocEnv {
      */
     public ClassDocImpl loadClass(String name) {
         try {
-            ClassSymbol c = reader.loadClass(names.fromString(name));
+            ClassSymbol c = finder.loadClass(names.fromString(name));
             return getClassDoc(c);
         } catch (CompletionFailure ex) {
             chk.completionError(null, ex);

@@ -79,7 +79,7 @@ public class ToolkitImage extends Image {
 
     private int width = -1;
     private int height = -1;
-    private Hashtable properties;
+    private Hashtable<?, ?> properties;
 
     private int availinfo;
 
@@ -254,9 +254,9 @@ public class ToolkitImage extends Image {
         addInfo(ImageObserver.WIDTH | ImageObserver.HEIGHT);
     }
 
-    void setProperties(Hashtable props) {
+    void setProperties(Hashtable<?, ?> props) {
         if (props == null) {
-            props = new Hashtable();
+            props = new Hashtable<String, Object>();
         }
         properties = props;
         addInfo(ImageObserver.PROPERTIES);

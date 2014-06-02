@@ -280,7 +280,9 @@ public class IdentityLinkedList<E>
         Entry<E> successor = (index==size ? header : entry(index));
         Entry<E> predecessor = successor.previous;
         for (int i=0; i<numNew; i++) {
-            Entry<E> e = new Entry<E>((E)a[i], successor, predecessor);
+            @SuppressWarnings("unchecked")
+            E tmp = (E) a[i];
+            Entry<E> e = new Entry<E>(tmp, successor, predecessor);
             predecessor.next = e;
             predecessor = e;
         }
@@ -396,7 +398,7 @@ public class IdentityLinkedList<E>
      */
     public int indexOf(Object o) {
         int index = 0;
-        for (Entry e = header.next; e != header; e = e.next) {
+        for (Entry<E> e = header.next; e != header; e = e.next) {
             if (o == e.element) {
                 return index;
             }
@@ -418,7 +420,7 @@ public class IdentityLinkedList<E>
      */
     public int lastIndexOf(Object o) {
         int index = size;
-        for (Entry e = header.previous; e != header; e = e.previous) {
+        for (Entry<E> e = header.previous; e != header; e = e.previous) {
             index--;
             if (o == e.element) {
                 return index;
@@ -787,7 +789,7 @@ public class IdentityLinkedList<E>
     }
 
     /** Adapter to provide descending iterators via ListItr.previous */
-    private class DescendingIterator implements Iterator {
+    private class DescendingIterator implements Iterator<E> {
         final ListItr itr = new ListItr(size());
         public boolean hasNext() {
             return itr.hasPrevious();
@@ -860,6 +862,7 @@ public class IdentityLinkedList<E>
      *         this list
      * @throws NullPointerException if the specified array is null
      */
+    @SuppressWarnings("unchecked")
     public <T> T[] toArray(T[] a) {
         if (a.length < size)
             a = (T[])java.lang.reflect.Array.newInstance(

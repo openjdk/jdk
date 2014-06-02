@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,11 +108,21 @@ public class ClassFile {
         V50(50, 0),   // JDK 1.6: stackmaps
         V51(51, 0),   // JDK 1.7
         V52(52, 0);   // JDK 1.8: lambda, type annos, param names
+        // JDK9 still marked as V52 // V53(53, 0);   // JDK 1.9
+
         Version(int major, int minor) {
             this.major = major;
             this.minor = minor;
         }
         public final int major, minor;
+
+        private static final Version MIN = values()[0];
+        /** Return the least version supported, MIN */
+        public static Version MIN() { return MIN; }
+
+        private static final Version MAX = values()[values().length-1];
+        /** Return the largest version supported, MAX */
+        public static Version MAX() { return MAX; }
     }
 
 

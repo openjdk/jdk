@@ -214,7 +214,8 @@ public class HToolkit extends SunToolkit
         throw new HeadlessException();
     }
 
-    public Map mapInputMethodHighlight(InputMethodHighlight highlight)
+    public Map<java.awt.font.TextAttribute, ?> mapInputMethodHighlight(
+            InputMethodHighlight highlight)
         throws HeadlessException {
         throw new HeadlessException();
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,7 +36,7 @@ import java.nio.*;
 import java.io.*;
 import java.nio.channels.*;
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.jvm.ClassReader.BadClassFile;
+import com.sun.tools.javac.code.ClassFinder.BadClassFile;
 import com.sun.tools.javac.main.JavaCompiler;
 import javax.tools.ToolProvider;
 
