@@ -25,7 +25,7 @@
  * @test
  * @bug 4990825
  * @library /lib/testlibrary
- * @build JstatdTest JstatGCUtilParser
+ * @build jdk.testlibrary.* JstatdTest JstatGCUtilParser
  * @run main/timeout=60 TestJstatdPort
  */
 public class TestJstatdPort {

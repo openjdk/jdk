@@ -72,7 +72,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
 
     protected int depth;
 
-    private static native void initIDs(Class xorComp, boolean tryDGA);
+    private static native void initIDs(Class<?> xorComp, boolean tryDGA);
     protected native void initSurface(int depth, int width, int height,
                                       long drawable);
 
@@ -515,6 +515,7 @@ public abstract class X11SurfaceData extends XSurfaceData {
         return getSurfaceType(gc, transparency, false);
     }
 
+    @SuppressWarnings("fallthrough")
     public static SurfaceType getSurfaceType(X11GraphicsConfig gc,
                                              int transparency,
                                              boolean pixmapSurface)

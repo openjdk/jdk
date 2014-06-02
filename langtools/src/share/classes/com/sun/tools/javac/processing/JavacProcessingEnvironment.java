@@ -54,8 +54,6 @@ import com.sun.tools.javac.comp.Check;
 import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.jvm.*;
-import com.sun.tools.javac.jvm.ClassReader.BadClassFile;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
@@ -203,7 +201,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         symtab = Symtab.instance(context);
         names = Names.instance(context);
         enter = Enter.instance(context);
-        initialCompleter = ClassReader.instance(context).getCompleter();
+        initialCompleter = ClassFinder.instance(context).getCompleter();
         chk = Check.instance(context);
         initProcessorClassLoader();
     }
@@ -799,7 +797,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
                                          RoundEnvironment renv) {
         try {
             return proc.process(tes, renv);
-        } catch (BadClassFile ex) {
+        } catch (ClassFinder.BadClassFile ex) {
             log.error("proc.cant.access.1", ex.sym, ex.getDetailValue());
             return false;
         } catch (CompletionFailure ex) {
@@ -1308,7 +1306,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
         }
 
         @Override public void complete(Symbol sym) throws CompletionFailure {
-            compiler.complete(topLevel, (ClassSymbol) sym);
+            compiler.readSourceFile(topLevel, (ClassSymbol) sym);
         }
     }
 

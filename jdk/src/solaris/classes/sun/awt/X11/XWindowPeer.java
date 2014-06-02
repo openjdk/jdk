@@ -950,7 +950,7 @@ class XWindowPeer extends XPanelPeer implements WindowPeer,
         // make new hash of toplevels of all windows from 'windows' hash.
         // FIXME: do not call them "toplevel" as it is misleading.
         //
-        HashSet toplevels = new HashSet();
+        HashSet<Long> toplevels = new HashSet<>();
         long topl = 0, mytopl = 0;
 
         for (XWindowPeer xp : windows) {

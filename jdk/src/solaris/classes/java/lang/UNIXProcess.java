@@ -97,6 +97,7 @@ final class UNIXProcess extends Process {
                 EnumSet.copyOf(Arrays.asList(launchMechanisms));
         }
 
+        @SuppressWarnings("fallthrough")
         private String helperPath(String javahome, String osArch) {
             switch (this) {
                 case SOLARIS:
@@ -480,6 +481,11 @@ final class UNIXProcess extends Process {
     public Process destroyForcibly() {
         destroy(true);
         return this;
+    }
+
+    @Override
+    public long getPid() {
+        return pid;
     }
 
     @Override

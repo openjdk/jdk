@@ -91,7 +91,7 @@ public final class PCMtoPCMCodec extends SunCodec {
         // filter out targetEncoding from the old getOutputFormats( sourceFormat ) method
 
         AudioFormat[] formats = getOutputFormats( sourceFormat );
-        Vector newFormats = new Vector();
+        Vector<AudioFormat> newFormats = new Vector<>();
         for(int i=0; i<formats.length; i++ ) {
             if( formats[i].getEncoding().equals( targetEncoding ) ) {
                 newFormats.addElement( formats[i] );
@@ -101,7 +101,7 @@ public final class PCMtoPCMCodec extends SunCodec {
         AudioFormat[] formatArray = new AudioFormat[newFormats.size()];
 
         for (int i = 0; i < formatArray.length; i++) {
-            formatArray[i] = (AudioFormat)(newFormats.elementAt(i));
+            formatArray[i] = newFormats.elementAt(i);
         }
 
         return formatArray;
@@ -181,7 +181,7 @@ public final class PCMtoPCMCodec extends SunCodec {
     /*  public AudioFormat[] getOutputFormats(AudioFormat inputFormat) { */
     private AudioFormat[] getOutputFormats(AudioFormat inputFormat) {
 
-        Vector formats = new Vector();
+        Vector<AudioFormat> formats = new Vector<>();
         AudioFormat format;
 
         int sampleSize = inputFormat.getSampleSizeInBits();
@@ -335,7 +335,7 @@ public final class PCMtoPCMCodec extends SunCodec {
 
             for (int i = 0; i < formatArray.length; i++) {
 
-                formatArray[i] = (AudioFormat)(formats.elementAt(i));
+                formatArray[i] = formats.elementAt(i);
             }
         }
 

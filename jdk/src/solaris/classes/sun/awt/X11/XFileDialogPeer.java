@@ -146,9 +146,9 @@ class XFileDialogPeer extends XDialogPeer implements FileDialogPeer, ActionListe
         savedDir = target.getDirectory();
         // Shouldn't save 'user.dir' to 'savedDir'
         // since getDirectory() will be incorrect after handleCancel
-        userDir = (String)AccessController.doPrivileged(
-            new PrivilegedAction() {
-                public Object run() {
+        userDir = AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                public String run() {
                     return System.getProperty("user.dir");
                 }
             });

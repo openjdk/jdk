@@ -33,11 +33,9 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.nio.file.Files;
-import java.nio.file.LinkOption;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.nio.file.attribute.PosixFileAttributeView;
-import java.util.stream.Stream;
 
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -163,34 +161,66 @@ public class LogGeneratedClassesTest extends LUtils {
         tr.assertZero("Should still return 0");
     }
 
+    private static boolean isWriteableDirectory(Path p) {
+        if (!Files.isDirectory(p)) {
+            return false;
+        }
+        Path test = p.resolve(Paths.get("test"));
+        try {
+            Files.createFile(test);
+            assertTrue(Files.exists(test));
+            return true;
+        } catch (IOException e) {
+            assertFalse(Files.exists(test));
+            return false;
+        } finally {
+            if (Files.exists(test)) {
+                try {
+                    Files.delete(test);
+                } catch (IOException e) {
+                    throw new Error(e);
+                }
+            }
+        }
+    }
+
     @Test
     public void testDumpDirNotWritable() throws IOException {
-        if (! Files.getFileStore(Paths.get("."))
-                   .supportsFileAttributeView(PosixFileAttributeView.class)) {
+        if (!Files.getFileStore(Paths.get("."))
+                  .supportsFileAttributeView(PosixFileAttributeView.class)) {
             // No easy way to setup readonly directory without POSIX
             // We would like to skip the test with a cause with
             //     throw new SkipException("Posix not supported");
             // but jtreg will report failure so we just pass the test
             // which we can look at if jtreg changed its behavior
+            System.out.println("WARNING: POSIX is not supported. Skipping testDumpDirNotWritable test.");
             return;
         }
 
         Files.createDirectory(Paths.get("readOnly"),
                               asFileAttribute(fromString("r-xr-xr-x")));
+        try {
+            if (isWriteableDirectory(Paths.get("readOnly"))) {
+                // Skipping the test: it's allowed to write into read-only directory
+                // (e.g. current user is super user).
+                System.out.println("WARNING: readOnly directory is writeable. Skipping testDumpDirNotWritable test.");
+                return;
+            }
 
-        TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
-                               "-cp", ".",
-                               "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
-                               "-Djava.security.manager",
-                               "com.example.TestLambda");
-        assertEquals(tr.testOutput.stream()
-                                  .filter(s -> s.startsWith("WARNING"))
-                                  .peek(s -> assertTrue(s.contains("not writable")))
-                                  .count(),
-                     1, "only show error once");
-        tr.assertZero("Should still return 0");
-
-        TestUtil.removeAll(Paths.get("readOnly"));
+            TestResult tr = doExec(JAVA_CMD.getAbsolutePath(),
+                                   "-cp", ".",
+                                   "-Djdk.internal.lambda.dumpProxyClasses=readOnly",
+                                   "-Djava.security.manager",
+                                   "com.example.TestLambda");
+            assertEquals(tr.testOutput.stream()
+                                      .filter(s -> s.startsWith("WARNING"))
+                                      .peek(s -> assertTrue(s.contains("not writable")))
+                                      .count(),
+                         1, "only show error once");
+            tr.assertZero("Should still return 0");
+        } finally {
+            TestUtil.removeAll(Paths.get("readOnly"));
+        }
     }
 
     @Test

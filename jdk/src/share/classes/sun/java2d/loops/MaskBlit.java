@@ -143,8 +143,8 @@ public class MaskBlit extends GraphicsPrimitive
         MaskBlit performop;
         Blit convertresult;
 
-        WeakReference srcTmp;
-        WeakReference dstTmp;
+        WeakReference<SurfaceData> srcTmp;
+        WeakReference<SurfaceData> dstTmp;
 
         public General(SurfaceType srctype,
                        CompositeType comptype,
@@ -184,14 +184,14 @@ public class MaskBlit extends GraphicsPrimitive
             } else {
                 SurfaceData cachedSrc = null;
                 if (srcTmp != null) {
-                    cachedSrc = (SurfaceData) srcTmp.get();
+                    cachedSrc = srcTmp.get();
                 }
                 src = convertFrom(convertsrc, srcData, srcx, srcy,
                                   width, height, cachedSrc);
                 sx = 0;
                 sy = 0;
                 if (src != cachedSrc) {
-                    srcTmp = new WeakReference(src);
+                    srcTmp = new WeakReference<>(src);
                 }
             }
 
@@ -204,7 +204,7 @@ public class MaskBlit extends GraphicsPrimitive
                 // assert: convertresult != null
                 SurfaceData cachedDst = null;
                 if (dstTmp != null) {
-                    cachedDst = (SurfaceData) dstTmp.get();
+                    cachedDst = dstTmp.get();
                 }
                 dst = convertFrom(convertdst, dstData, dstx, dsty,
                                   width, height, cachedDst);
@@ -212,7 +212,7 @@ public class MaskBlit extends GraphicsPrimitive
                 dy = 0;
                 opclip = null;
                 if (dst != cachedDst) {
-                    dstTmp = new WeakReference(dst);
+                    dstTmp = new WeakReference<>(dst);
                 }
             }
 

@@ -62,6 +62,8 @@ public final class ContentModel implements Serializable {
 
     /**
      * Create a content model for an element.
+     *
+     * @param content  the element
      */
     public ContentModel(Element content) {
         this(0, content, null);
@@ -69,6 +71,9 @@ public final class ContentModel implements Serializable {
 
     /**
      * Create a content model of a particular type.
+     *
+     * @param type     the type
+     * @param content  the content
      */
     public ContentModel(int type, ContentModel content) {
         this(type, content, null);
@@ -76,6 +81,10 @@ public final class ContentModel implements Serializable {
 
     /**
      * Create a content model of a particular type.
+     *
+     * @param type     the type
+     * @param content  the content
+     * @param next     the next content model
      */
     public ContentModel(int type, Object content, ContentModel next) {
         this.type = type;
@@ -86,6 +95,9 @@ public final class ContentModel implements Serializable {
     /**
      * Return true if the content model could
      * match an empty input stream.
+     *
+     * @return {@code true} if the content model could
+     *         match an empty input stream
      */
     public boolean empty() {
         switch (type) {
@@ -119,6 +131,8 @@ public final class ContentModel implements Serializable {
     /**
      * Update elemVec with the list of elements that are
      * part of the this contentModel.
+     *
+     * @param elemVec  the list of elements
      */
      public void getElements(Vector<Element> elemVec) {
          switch (type) {
@@ -148,6 +162,11 @@ public final class ContentModel implements Serializable {
     /**
      * Return true if the token could potentially be the
      * first token in the input stream.
+     *
+     * @param token  the token
+     *
+     * @return {@code true} if the token could potentially be the first token
+     *         in the input stream
      */
     public boolean first(Object token) {
         switch (type) {
@@ -206,6 +225,8 @@ public final class ContentModel implements Serializable {
 
     /**
      * Return the element that must be next.
+     *
+     * @return the element that must be next
      */
     public Element first() {
         switch (type) {
@@ -226,6 +247,8 @@ public final class ContentModel implements Serializable {
 
     /**
      * Convert to a string.
+     *
+     * @return the string representation of this {@code ContentModel}
      */
     public String toString() {
         switch (type) {

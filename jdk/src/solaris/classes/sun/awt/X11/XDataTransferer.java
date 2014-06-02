@@ -45,9 +45,11 @@ import java.net.URISyntaxException;
 
 import java.util.ArrayList;
 import java.util.Iterator;
+import java.util.LinkedHashSet;
 import java.util.List;
 
 import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
 import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
@@ -258,28 +260,9 @@ public class XDataTransferer extends DataTransferer {
                                   Transferable localeTransferable)
       throws IOException {
 
-        String charset = null;
-        if (localeTransferable != null &&
-            isLocaleDependentTextFormat(format) &&
-            localeTransferable.isDataFlavorSupported(javaTextEncodingFlavor)) {
-            try {
-                charset = new String(
-                    (byte[])localeTransferable.getTransferData(javaTextEncodingFlavor),
-                    "UTF-8"
-                );
-            } catch (UnsupportedFlavorException cannotHappen) {
-            }
-        } else {
-            charset = getCharsetForTextFormat(format);
-        }
-        if (charset == null) {
-            // Only happens when we have a custom text type.
-            charset = getDefaultTextCharset();
-        }
-
-        BufferedReader reader = null;
-        try {
-            reader = new BufferedReader(new InputStreamReader(stream, charset));
+        String charset = getBestCharsetForTextFormat(format, localeTransferable);
+        try (InputStreamReader isr = new InputStreamReader(stream, charset);
+             BufferedReader reader = new BufferedReader(isr)) {
             String line;
             ArrayList<URI> uriList = new ArrayList<>();
             URI uri;
@@ -292,9 +275,6 @@ public class XDataTransferer extends DataTransferer {
                 uriList.add(uri);
             }
             return uriList.toArray(new URI[uriList.size()]);
-        } finally {
-            if (reader != null)
-                reader.close();
         }
     }
 
@@ -330,8 +310,8 @@ public class XDataTransferer extends DataTransferer {
      * type can be translated by the Data Transfer subsystem.
      */
     @Override
-    public List<DataFlavor> getPlatformMappingsForNative(String nat) {
-        List<DataFlavor> flavors = new ArrayList<>();
+    public LinkedHashSet<DataFlavor> getPlatformMappingsForNative(String nat) {
+        LinkedHashSet<DataFlavor> flavors = new LinkedHashSet<>();
 
         if (nat == null) {
             return flavors;
@@ -354,7 +334,7 @@ public class XDataTransferer extends DataTransferer {
         // flavors to enable dynamic text native-to-flavor mapping generation.
         // See SystemFlavorMap.getFlavorsForNative() for details.
         if ("image".equals(primaryType)) {
-            Iterator readers = ImageIO.getImageReadersByMIMEType(baseType);
+            Iterator<ImageReader> readers = ImageIO.getImageReadersByMIMEType(baseType);
             if (readers.hasNext()) {
                 flavors.add(DataFlavor.imageFlavor);
             }
@@ -392,8 +372,8 @@ public class XDataTransferer extends DataTransferer {
      * Transfer subsystem.
      */
     @Override
-    public List<String> getPlatformMappingsForFlavor(DataFlavor df) {
-        List<String> natives = new ArrayList<>(1);
+    public LinkedHashSet<String> getPlatformMappingsForFlavor(DataFlavor df) {
+        LinkedHashSet<String> natives = new LinkedHashSet<>(1);
 
         if (df == null) {
             return natives;
