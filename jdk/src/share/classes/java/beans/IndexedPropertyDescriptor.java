@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -353,7 +353,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
         Class<?> indexedPropertyType = null;
 
         if (indexedReadMethod != null) {
-            Class params[] = getParameterTypes(getClass0(), indexedReadMethod);
+            Class<?>[] params = getParameterTypes(getClass0(), indexedReadMethod);
             if (params.length != 1) {
                 throw new IntrospectionException("bad indexed read method arg count");
             }
@@ -366,7 +366,7 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
             }
         }
         if (indexedWriteMethod != null) {
-            Class params[] = getParameterTypes(getClass0(), indexedWriteMethod);
+            Class<?>[] params = getParameterTypes(getClass0(), indexedWriteMethod);
             if (params.length != 2) {
                 throw new IntrospectionException("bad indexed write method arg count");
             }
