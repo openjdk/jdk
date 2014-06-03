@@ -992,8 +992,8 @@ public class UnixPrintJob implements CancelablePrintJob {
                     }
                 } finally {
                     pw.flush();
-                    throw new IOException(sw.toString());
                 }
+                throw new IOException(sw.toString());
             }
         }
 

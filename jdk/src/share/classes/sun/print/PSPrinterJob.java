@@ -708,8 +708,8 @@ public class PSPrinterJob extends RasterPrinterJob {
                     }
                 } finally {
                     pw.flush();
-                    throw new IOException(sw.toString());
                 }
+                throw new IOException(sw.toString());
             }
         }
 
