@@ -187,10 +187,10 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     private static final String SCRIPTFUNCTION_IMPL_NAME = Type.getInternalName(ScriptFunctionImpl.class);
     private static final Type   SCRIPTFUNCTION_IMPL_TYPE   = Type.typeFor(ScriptFunction.class);
 
-    private static final Call INIT_REWRITE_EXCEPTION = CompilerConstants.specialCallNoLookup(RewriteException.class,
-            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class, String[].class);
-    private static final Call INIT_REWRITE_EXCEPTION_REST_OF = CompilerConstants.specialCallNoLookup(RewriteException.class,
-            "<init>", void.class, UnwarrantedOptimismException.class, Object[].class, String[].class, int[].class);
+    private static final Call CREATE_REWRITE_EXCEPTION = CompilerConstants.staticCallNoLookup(RewriteException.class,
+            "create", RewriteException.class, UnwarrantedOptimismException.class, Object[].class, String[].class);
+    private static final Call CREATE_REWRITE_EXCEPTION_REST_OF = CompilerConstants.staticCallNoLookup(RewriteException.class,
+            "create", RewriteException.class, UnwarrantedOptimismException.class, Object[].class, String[].class, int[].class);
 
     private static final Call ENSURE_INT = CompilerConstants.staticCallNoLookup(OptimisticReturnFilters.class,
             "ensureInt", int.class, Object.class, int.class);
@@ -4952,16 +4952,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                 // At this point we have the UnwarrantedOptimismException and the Object[] with local variables on
                 // stack. We need to create a RewriteException, push two references to it below the constructor
                 // arguments, invoke the constructor, and throw the exception.
-                method._new(RewriteException.class);
-                method.dup(2);
-                method.dup(2);
-                method.pop();
                 loadConstant(getByteCodeSymbolNames(fn));
                 if (isRestOf()) {
                     loadConstant(getContinuationEntryPoints());
-                    method.invoke(INIT_REWRITE_EXCEPTION_REST_OF);
+                    method.invoke(CREATE_REWRITE_EXCEPTION_REST_OF);
                 } else {
-                    method.invoke(INIT_REWRITE_EXCEPTION);
+                    method.invoke(CREATE_REWRITE_EXCEPTION);
                 }
                 method.athrow();
             }
