@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Block;
@@ -185,7 +184,8 @@ final class FoldConstants extends NodeVisitor<LexicalContext> implements Loggabl
             }
 
             final LiteralNode<?> rhs = (LiteralNode<?>)rhsNode;
-            final boolean rhsInteger = rhs.getType().isInteger();
+            final Type rhsType = rhs.getType();
+            final boolean rhsInteger = rhsType.isInteger() || rhsType.isBoolean();
 
             LiteralNode<?> literalNode;
 
