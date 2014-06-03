@@ -1384,7 +1384,7 @@ public class Introspector {
      * parameter list on a given class.
      */
     private static Method internalFindMethod(Class<?> start, String methodName,
-                                                 int argCount, Class args[]) {
+                                                 int argCount, Class<?> args[]) {
         // For overriden methods we need to find the most derived version.
         // So we start with the given class and walk up the superclass chain.
 
@@ -1426,7 +1426,7 @@ public class Introspector {
         // Now check any inherited interfaces.  This is necessary both when
         // the argument class is itself an interface, and when the argument
         // class is an abstract class.
-        Class ifcs[] = start.getInterfaces();
+        Class<?>[] ifcs = start.getInterfaces();
         for (int i = 0 ; i < ifcs.length; i++) {
             // Note: The original implementation had both methods calling
             // the 3 arg method. This is preserved but perhaps it should
@@ -1459,7 +1459,7 @@ public class Introspector {
      * @return the method or null if not found
      */
     static Method findMethod(Class<?> cls, String methodName, int argCount,
-                             Class args[]) {
+                             Class<?>[] args) {
         if (methodName == null) {
             return null;
         }
@@ -1502,7 +1502,7 @@ public class Introspector {
      * Return true iff the given method throws the given exception.
      */
     private boolean throwsException(Method method, Class<?> exception) {
-        Class exs[] = method.getExceptionTypes();
+        Class<?>[] exs = method.getExceptionTypes();
         for (int i = 0; i < exs.length; i++) {
             if (exs[i] == exception) {
                 return true;
