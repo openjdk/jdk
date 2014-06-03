@@ -822,7 +822,9 @@ public:
   // Called to abort the marking cycle after a Full GC takes place.
   void abort();
 
-  bool has_aborted()      { return _has_aborted; }
+  bool has_aborted()       { return _has_aborted; }
+  void set_has_aborted()   { _has_aborted = true; }
+  void clear_has_aborted() { _has_aborted = false; }
 
   // This prints the global/local fingers. It is used for debugging.
   NOT_PRODUCT(void print_finger();)
