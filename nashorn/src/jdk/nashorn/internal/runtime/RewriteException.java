@@ -82,6 +82,17 @@ public class RewriteException extends Exception {
     /** Call for asserting the length of an array. */
     public static final Call ASSERT_ARRAY_LENGTH = staticCallNoLookup(RewriteException.class, "assertArrayLength", void.class, Object[].class, int.class);
 
+    private RewriteException(
+            final UnwarrantedOptimismException e,
+            final Object[] byteCodeSlots,
+            final String[] byteCodeSymbolNames,
+            final int[] previousContinuationEntryPoints) {
+        super("", e, false, Context.DEBUG);
+        this.byteCodeSlots = byteCodeSlots;
+        this.runtimeScope = mergeSlotsWithScope(byteCodeSlots, byteCodeSymbolNames);
+        this.previousContinuationEntryPoints = previousContinuationEntryPoints;
+    }
+
     /**
      * Constructor for a rewrite exception thrown from an optimistic function.
      * @param e the {@link UnwarrantedOptimismException} that triggered this exception.
@@ -91,12 +102,12 @@ public class RewriteException extends Exception {
      * effort to assist evaluation of expressions for their types by the compiler doing the deoptimizing recompilation,
      * and can thus be incomplete - the more complete it is, the more expressions can be evaluated by the compiler, and
      * the more unnecessary deoptimizing compilations can be avoided.
+     * @return a new rewrite exception
      */
-    public RewriteException(
-            final UnwarrantedOptimismException e,
+    public static RewriteException create(final UnwarrantedOptimismException e,
             final Object[] byteCodeSlots,
             final String[] byteCodeSymbolNames) {
-        this(e, byteCodeSlots, byteCodeSymbolNames, null);
+        return create(e, byteCodeSlots, byteCodeSymbolNames, null);
     }
 
     /**
@@ -110,16 +121,13 @@ public class RewriteException extends Exception {
      * the more unnecessary deoptimizing compilations can be avoided.
      * @param previousContinuationEntryPoints an array of continuation entry points that were already executed during
      * one logical invocation of the function (a rest-of triggering a rest-of triggering a...)
+     * @return a new rewrite exception
      */
-    public RewriteException(
-            final UnwarrantedOptimismException e,
+    public static RewriteException create(final UnwarrantedOptimismException e,
             final Object[] byteCodeSlots,
             final String[] byteCodeSymbolNames,
             final int[] previousContinuationEntryPoints) {
-        super("", e, false, Context.DEBUG);
-        this.byteCodeSlots = byteCodeSlots;
-        this.runtimeScope = mergeSlotsWithScope(byteCodeSlots, byteCodeSymbolNames);
-        this.previousContinuationEntryPoints = previousContinuationEntryPoints;
+        return new RewriteException(e, byteCodeSlots, byteCodeSymbolNames, previousContinuationEntryPoints);
     }
 
     /**
