@@ -122,28 +122,35 @@ JNIEXPORT jlong JNICALL Java_sun_security_smartcardio_PCSC_SCardEstablishContext
 /**
  * Convert a multi string to a java string array,
  */
-jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec, DWORD size) {
+jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec) {
     jobjectArray result;
     jclass stringClass;
-    char* tab[PCSCLITE_MAX_READERS_CONTEXTS];
+    char *cp, **tab = NULL;
     jstring js;
     int cnt = 0;
-    DWORD i;
 
-    if (spec && size) {
-        spec[size - 1] = 0;
-        for (i = 0; i < size && spec[i]; ++i) {
-            tab[cnt++] = spec + i;
-            if (cnt == PCSCLITE_MAX_READERS_CONTEXTS) {
-                break;
-            }
-            for (++i; i < size && spec[i]; ++i) {
-            }
-        }
+    cp = spec;
+    while (*cp != 0) {
+        cp += (strlen(cp) + 1);
+        ++cnt;
+    }
+
+    tab = (char **)malloc(cnt * sizeof(char *));
+    if (tab == NULL) {
+        throwOutOfMemoryError(env, NULL);
+        return NULL;
+    }
+
+    cnt = 0;
+    cp = spec;
+    while (*cp != 0) {
+        tab[cnt++] = cp;
+        cp += (strlen(cp) + 1);
     }
 
     stringClass = (*env)->FindClass(env, "java/lang/String");
     if (stringClass == NULL) {
+        free(tab);
         return NULL;
     }
 
@@ -152,15 +159,18 @@ jobjectArray pcsc_multi2jstring(JNIEnv *env, char *spec, DWORD size) {
         while (cnt-- > 0) {
             js = (*env)->NewStringUTF(env, tab[cnt]);
             if ((*env)->ExceptionCheck(env)) {
+                free(tab);
                 return NULL;
             }
             (*env)->SetObjectArrayElement(env, result, cnt, js);
             if ((*env)->ExceptionCheck(env)) {
+                free(tab);
                 return NULL;
             }
             (*env)->DeleteLocalRef(env, js);
         }
     }
+    free(tab);
     return result;
 }
 
@@ -195,7 +205,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_security_smartcardio_PCSC_SCardListReade
         dprintf1("-String: %s\n", mszReaders);
     }
 
-    result = pcsc_multi2jstring(env, mszReaders, size);
+    result = pcsc_multi2jstring(env, mszReaders);
     free(mszReaders);
     return result;
 }

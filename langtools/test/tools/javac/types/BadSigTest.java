@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,17 +21,20 @@
  * questions.
  */
 
-package jdk.nashorn.internal.ir.annotations;
-
-import java.lang.annotation.Retention;
-import java.lang.annotation.RetentionPolicy;
-
-/**
- * Reference node in AST, i.e. anything not a copy. Important for
- * AST traversal and cloning. Cloning currently as a rule uses
- * existingOrSame for references and otherwise existingOrCopy
+/*
+ * @test
+ * @bug 8037934
+ * @summary Javac generates invalid signatures for local types
+ * @run main BadSigTest
  */
-@Retention(value=RetentionPolicy.RUNTIME)
-public @interface Reference {
-    // EMPTY
+
+public class BadSigTest<Outer> {
+    void m(){
+        class Local1{}
+        class Local2 extends Local1{}
+        Local2.class.getTypeParameters();
+    }
+    public static void main(String[] args) {
+        new BadSigTest().m();
+    }
 }

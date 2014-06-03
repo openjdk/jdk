@@ -102,7 +102,7 @@ public final class CorbanameUrl {
         }
         location = url.substring(addrStart, addrEnd);
 
-        int keyStart = location.indexOf("/");
+        int keyStart = location.indexOf('/');
         if (keyStart >= 0) {
             // Has key string
             if (keyStart == (location.length() -1)) {

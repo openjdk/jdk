@@ -475,7 +475,7 @@ public class XTree extends JTree {
     private static Map<String, String> extractKeyValuePairs(
             String props, ObjectName mbean) {
         Map<String, String> map = new LinkedHashMap<String, String>();
-        int eq = props.indexOf("=");
+        int eq = props.indexOf('=');
         while (eq != -1) {
             String key = props.substring(0, eq);
             String value = mbean.getKeyProperty(key);
@@ -484,7 +484,7 @@ public class XTree extends JTree {
             if (props.startsWith(",")) {
                 props = props.substring(1);
             }
-            eq = props.indexOf("=");
+            eq = props.indexOf('=');
         }
         return map;
     }
@@ -821,7 +821,7 @@ public class XTree extends JTree {
         }
 
         private void buildKeyValue() {
-            int index = tokenValue.indexOf("=");
+            int index = tokenValue.indexOf('=');
             if (index < 0) {
                 key = tokenValue;
                 value = tokenValue;
