@@ -901,7 +901,7 @@ void ConcurrentMark::checkpointRootsInitialPre() {
   G1CollectedHeap*   g1h = G1CollectedHeap::heap();
   G1CollectorPolicy* g1p = g1h->g1_policy();
 
-  _has_aborted = false;
+  clear_has_aborted();
 
 #ifndef PRODUCT
   if (G1PrintReachableAtInitialMark) {
@@ -3261,7 +3261,7 @@ void ConcurrentMark::abort() {
   }
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();
-  _has_aborted = true;
+  set_has_aborted();
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
   satb_mq_set.abandon_partial_marking();
