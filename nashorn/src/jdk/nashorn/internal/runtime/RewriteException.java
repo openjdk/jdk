@@ -28,6 +28,9 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup;
 
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
@@ -47,7 +50,7 @@ import jdk.nashorn.internal.objects.Global;
  * Used to signal to the linker to relink the callee
  */
 @SuppressWarnings("serial")
-public class RewriteException extends Exception {
+public final class RewriteException extends Exception {
     private static final MethodHandleFunctionality MH = MethodHandleFactory.getFunctionality();
 
     // Runtime scope in effect at the time of the compilation. Used to evaluate types of expressions and prevent overly
@@ -406,4 +409,11 @@ public class RewriteException extends Exception {
         return sb.toString();
     }
 
+    private void writeObject(final ObjectOutputStream out) throws NotSerializableException {
+        throw new NotSerializableException(getClass().getName());
+    }
+
+    private void readObject(final ObjectInputStream in) throws NotSerializableException {
+        throw new NotSerializableException(getClass().getName());
+    }
 }

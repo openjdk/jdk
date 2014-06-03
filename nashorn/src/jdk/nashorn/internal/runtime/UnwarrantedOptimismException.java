@@ -24,6 +24,9 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import java.io.NotSerializableException;
+import java.io.ObjectInputStream;
+import java.io.ObjectOutputStream;
 import jdk.nashorn.internal.codegen.types.Type;
 
 /**
@@ -153,4 +156,12 @@ public final class UnwarrantedOptimismException extends RuntimeException {
             ")]";
     }
 
+
+    private void writeObject(final ObjectOutputStream out) throws NotSerializableException {
+        throw new NotSerializableException(getClass().getName());
+    }
+
+    private void readObject(final ObjectInputStream in) throws NotSerializableException {
+        throw new NotSerializableException(getClass().getName());
+    }
 }
