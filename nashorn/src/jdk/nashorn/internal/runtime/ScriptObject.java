@@ -155,8 +155,6 @@ public abstract class ScriptObject implements PropertyAccess {
 
     /** Method handle to retrieve prototype of this object */
     public static final MethodHandle GETPROTO      = findOwnMH_V("getProto", ScriptObject.class);
-    /** Method handle to set prototype of this object */
-    public static final MethodHandle SETPROTOCHECK = findOwnMH_V("setProtoCheck", void.class, Object.class);
 
     static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
@@ -191,7 +189,7 @@ public abstract class ScriptObject implements PropertyAccess {
     public static final Call SET_GLOBAL_OBJECT_PROTO = staticCallNoLookup(ScriptObject.class, "setGlobalObjectProto", void.class, ScriptObject.class);
 
     /** Method handle for setting the proto of a ScriptObject after checking argument */
-    public static final Call SET_PROTO_CHECK    = virtualCallNoLookup(ScriptObject.class, "setProtoCheck", void.class, Object.class);
+    public static final Call SET_PROTO_FROM_LITERAL    = virtualCallNoLookup(ScriptObject.class, "setProtoFromLiteral", void.class, Object.class);
 
     /** Method handle for setting the user accessors of a ScriptObject */
     //TODO fastpath this
@@ -1268,14 +1266,22 @@ public abstract class ScriptObject implements PropertyAccess {
 
     /**
      * Set the __proto__ of an object with checks.
+     * This is the built-in operation [[SetPrototypeOf]]
+     * See ES6 draft spec: 9.1.2 [[SetPrototypeOf]] (V)
+     *
      * @param newProto Prototype to set.
      */
-    public final void setProtoCheck(final Object newProto) {
-        if (!isExtensible()) {
-            throw typeError("__proto__.set.non.extensible", ScriptRuntime.safeToString(this));
-        }
-
+    public final void setPrototypeOf(final Object newProto) {
         if (newProto == null || newProto instanceof ScriptObject) {
+            if (! isExtensible()) {
+                // okay to set same proto again - even if non-extensible
+
+                if (newProto == getProto()) {
+                    return;
+                }
+                throw typeError("__proto__.set.non.extensible", ScriptRuntime.safeToString(this));
+            }
+
             // check for circularity
             ScriptObject p = (ScriptObject)newProto;
             while (p != null) {
@@ -1286,14 +1292,27 @@ public abstract class ScriptObject implements PropertyAccess {
             }
             setProto((ScriptObject)newProto);
         } else {
-            final Global global = Context.getGlobal();
-            final Object  newProtoObject = JSType.toScriptObject(global, newProto);
+            throw typeError("cant.set.proto.to.non.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(newProto));
+        }
+    }
 
-            if (newProtoObject instanceof ScriptObject) {
-                setProto((ScriptObject)newProtoObject);
-            } else {
-                throw typeError(global, "cant.set.proto.to.non.object", ScriptRuntime.safeToString(this), ScriptRuntime.safeToString(newProto));
-            }
+    /**
+     * Set the __proto__ of an object from an object literal.
+     * See ES6 draft spec: B.3.1 __proto__ Property Names in
+     * Object Initializers. Step 6 handling of "__proto__".
+     *
+     * @param newProto Prototype to set.
+     */
+    public final void setProtoFromLiteral(final Object newProto) {
+        if (newProto == null || newProto instanceof ScriptObject) {
+            setPrototypeOf(newProto);
+        } else {
+            // Some non-object, non-null. Then, we need to set
+            // Object.prototype as the new __proto__
+            //
+            // var obj = { __proto__ : 34 };
+            // print(obj.__proto__ === Object.prototype); // => true
+            setPrototypeOf(Global.objectPrototype());
         }
     }
 

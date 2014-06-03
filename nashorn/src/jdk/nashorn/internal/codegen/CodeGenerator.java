@@ -2346,7 +2346,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.dup();
         if (protoNode != null) {
             loadExpressionAsObject(protoNode);
-            method.invoke(ScriptObject.SET_PROTO_CHECK);
+            // take care of { __proto__: 34 } or some such!
+            method.convert(Type.OBJECT);
+            method.invoke(ScriptObject.SET_PROTO_FROM_LITERAL);
         } else {
             method.invoke(ScriptObject.SET_GLOBAL_OBJECT_PROTO);
         }
