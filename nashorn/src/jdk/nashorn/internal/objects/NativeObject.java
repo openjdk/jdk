@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -74,6 +75,9 @@ import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
  */
 @ScriptClass("Object")
 public final class NativeObject {
+    public static final MethodHandle GET__PROTO__ = findOwnMH("get__proto__", ScriptObject.class, Object.class);
+    public static final MethodHandle SET__PROTO__ = findOwnMH("set__proto__", Object.class, Object.class, Object.class);
+
     private static final Object TO_STRING = new Object();
 
     private static InvokeByName getTO_STRING() {
@@ -84,6 +88,33 @@ public final class NativeObject {
                         return new InvokeByName("toString", ScriptObject.class);
                     }
                 });
+    }
+
+    @SuppressWarnings("unused")
+    private static ScriptObject get__proto__(final Object self) {
+        // See ES6 draft spec: B.2.2.1.1 get Object.prototype.__proto__
+        // Step 1 Let O be the result of calling ToObject passing the this.
+        final ScriptObject sobj = Global.checkObject(Global.toObject(self));
+        return sobj.getProto();
+    }
+
+    @SuppressWarnings("unused")
+    private static Object set__proto__(final Object self, final Object proto) {
+        // See ES6 draft spec: B.2.2.1.2 set Object.prototype.__proto__
+        // Step 1
+        Global.checkObjectCoercible(self);
+        // Step 4
+        if (! (self instanceof ScriptObject)) {
+            return UNDEFINED;
+        }
+
+        final ScriptObject sobj = (ScriptObject)self;
+        // __proto__ assignment ignores non-nulls and non-objects
+        // step 3: If Type(proto) is neither Object nor Null, then return undefined.
+        if (proto == null || proto instanceof ScriptObject) {
+            sobj.setPrototypeOf(proto);
+        }
+        return UNDEFINED;
     }
 
     private static final MethodType MIRROR_GETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class);
@@ -160,7 +191,7 @@ public final class NativeObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
         if (obj instanceof ScriptObject) {
-            ((ScriptObject)obj).setProtoCheck(proto);
+            ((ScriptObject)obj).setPrototypeOf(proto);
             return obj;
         } else if (obj instanceof ScriptObjectMirror) {
             ((ScriptObjectMirror)obj).setProto(proto);
@@ -776,5 +807,9 @@ public final class NativeObject {
     private static LinkRequest createLinkRequest(final String operation, final MethodType methodType, final Object source) {
         return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
                 methodType), null, 0, false, source);
+    }
+
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), NativeObject.class, name, MH.type(rtype, types));
     }
 }
