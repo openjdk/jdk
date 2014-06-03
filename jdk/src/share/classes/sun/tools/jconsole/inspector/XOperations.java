@@ -113,7 +113,7 @@ public abstract class XOperations extends JPanel implements ActionListener {
             if (methodLabel.getText().length() > 20) {
                 methodLabel.setText(methodLabel.getText().
                         substring(methodLabel.getText().
-                        lastIndexOf(".") + 1,
+                        lastIndexOf('.') + 1,
                         methodLabel.getText().length()));
             }
 

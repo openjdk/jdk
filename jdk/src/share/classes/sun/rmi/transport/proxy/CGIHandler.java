@@ -141,7 +141,7 @@ public final class CGIHandler {
     {
         try {
             String command, param;
-            int delim = QueryString.indexOf("=");
+            int delim = QueryString.indexOf('=');
             if (delim == -1) {
                 command = QueryString;
                 param = "";

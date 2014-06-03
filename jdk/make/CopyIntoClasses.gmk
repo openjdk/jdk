@@ -30,7 +30,6 @@ COPY_PATTERNS := .icu _dict .dat _options .js aliasmap .spp .wav .css \
 
 # These directories should not be copied at all
 EXCLUDES += \
-    com/sun/org/apache/xml/internal/security/resource/schema \
     java/awt/doc-files \
     java/lang/doc-files \
     javax/swing/doc-files \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,13 +99,6 @@ public class Standard {
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new Exception("Some tests failed");
     }
-    private static abstract class Fun {abstract void f() throws Throwable;}
-    private static void THROWS(Class<? extends Throwable> k, Fun... fs) {
-          for (Fun f : fs)
-              try { f.f(); fail("Expected " + k.getName() + " not thrown"); }
-              catch (Throwable t) {
-                  if (k.isAssignableFrom(t.getClass())) pass();
-                  else unexpected(t);}}
     static byte[] serializedForm(Object obj) {
         try {
             ByteArrayOutputStream baos = new ByteArrayOutputStream();

@@ -442,11 +442,6 @@ else
 
 endif
 
-ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
-  UNPACKEXE_CFLAGS += -xregs=no%appl
-  UNPACKEXE_LDFLAGS_solaris += -xmemalign=4s
-endif
-
 UNPACKEXE_LANG := C
 ifeq ($(OPENJDK_TARGET_OS), solaris)
   UNPACKEXE_LANG := C++

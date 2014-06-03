@@ -338,7 +338,7 @@ final class SunX509KeyManagerImpl extends X509ExtendedKeyManager {
         }
         String sigType;
         if (keyType.contains("_")) {
-            int k = keyType.indexOf("_");
+            int k = keyType.indexOf('_');
             sigType = keyType.substring(k + 1);
             keyType = keyType.substring(0, k);
         } else {

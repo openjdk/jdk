@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 7047734 8027660
- * @summary The LVT is not generated correctly during some try/catch scenarios;
+ * @bug 7047734 8027660 8037937
+ * @summary The LVT is not generated correctly during some try/catch scenarios
  *          javac crash while creating LVT entry for a local variable defined in
  *          an inner block
  * @library /tools/javac/lib
@@ -120,7 +120,7 @@ public class LVTHarness {
         for (Map.Entry<ElementKey, AliveRanges> entry : aliveRangeMap.entrySet()) {
             if (!seenAliveRanges.contains(entry.getKey())) {
                 error("Redundant @AliveRanges annotation on method " +
-                        entry.getKey().elem);
+                        entry.getKey().elem + " with key " + entry.getKey());
             }
         }
     }
@@ -134,7 +134,7 @@ public class LVTHarness {
         for (Method method : classFile.methods) {
             for (ElementKey elementKey: aliveRangeMap.keySet()) {
                 String methodDesc = method.getName(constantPool) +
-                        method.descriptor.getParameterTypes(constantPool);
+                        method.descriptor.getParameterTypes(constantPool).replace(" ", "");
                 if (methodDesc.equals(elementKey.elem.toString())) {
                     checkMethod(constantPool, method, aliveRangeMap.get(elementKey));
                     seenAliveRanges.add(elementKey);
