@@ -965,7 +965,7 @@ public class JEditorPane extends JTextComponent {
         // The type could have optional info is part of it,
         // for example some charset info.  We need to strip that
         // of and save it.
-        int parm = type.indexOf(";");
+        int parm = type.indexOf(';');
         if (parm > -1) {
             // Save the paramList.
             String paramList = type.substring(parm);

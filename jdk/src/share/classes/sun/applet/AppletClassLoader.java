@@ -168,7 +168,7 @@ public class AppletClassLoader extends URLClassLoader {
      */
     protected Class findClass(String name) throws ClassNotFoundException {
 
-        int index = name.indexOf(";");
+        int index = name.indexOf(';');
         String cookie = "";
         if(index != -1) {
                 cookie = name.substring(index, name.length());
@@ -608,7 +608,7 @@ public class AppletClassLoader extends URLClassLoader {
 
         // deal with URL rewriting
         String cookie = null;
-        int index = name.indexOf(";");
+        int index = name.indexOf(';');
         if(index != -1) {
                 cookie = name.substring(index, name.length());
                 name = name.substring(0, index);

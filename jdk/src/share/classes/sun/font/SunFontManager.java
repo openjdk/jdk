@@ -2872,8 +2872,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
                 new java.security.PrivilegedAction<Object>() {
                         public Object run() {
                             SecurityManager sm = System.getSecurityManager();
-                            return new Boolean
-                                (sm instanceof sun.applet.AppletSecurity);
+                            return sm instanceof sun.applet.AppletSecurity;
                         }
                     });
         return appletSM.booleanValue();

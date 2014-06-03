@@ -653,7 +653,7 @@ public final class NimbusStyle extends SynthStyle {
 
         // strip off the prefix, if there is one.
         String fullKey = key.toString();
-        String partialKey = fullKey.substring(fullKey.indexOf(".") + 1);
+        String partialKey = fullKey.substring(fullKey.indexOf('.') + 1);
 
         Object obj = null;
         int xstate = getExtendedState(ctx, v);
