@@ -313,7 +313,8 @@ public class LambdaMetafactory {
      * reference expression</em> features of the Java Programming Language.
      *
      * <p>This is the general, more flexible metafactory; a streamlined version
-     * is provided by {@link #altMetafactory(MethodHandles.Lookup, String, MethodType, Object...)}.
+     * is provided by {@link #metafactory(java.lang.invoke.MethodHandles.Lookup,
+     * String, MethodType, MethodType, MethodHandle, MethodType)}.
      * A general description of the behavior of this method is provided
      * {@link LambdaMetafactory above}.
      *
