@@ -737,6 +737,12 @@ public final class NativeRegExp extends ScriptObject {
             if (nextChar == '$') {
                 // Skip past $
                 cursor++;
+                if (cursor == replacement.length()) {
+                    // nothing after "$"
+                    sb.append('$');
+                    break;
+                }
+
                 nextChar = replacement.charAt(cursor);
                 final int firstDigit = nextChar - '0';
 
