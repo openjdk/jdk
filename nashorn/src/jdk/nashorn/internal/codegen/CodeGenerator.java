@@ -3579,7 +3579,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     }
 
     private void loadSUB(final UnaryNode unaryNode, final TypeBounds resultBounds) {
-        assert unaryNode.getType().isNumeric();
+        final Type type = unaryNode.getType();
+        assert type.isNumeric();
         final TypeBounds numericBounds = resultBounds.booleanToInt();
         new OptimisticOperation(unaryNode, numericBounds) {
             @Override
@@ -3589,6 +3590,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
             @Override
             void consumeStack() {
+                // Must do an explicit conversion to the operation's type when it's double so that we correctly handle
+                // negation of an int 0 to a double -0. With this, we get the correct negation of a local variable after
+                // it deoptimized, e.g. "iload_2; i2d; dneg". Without this, we get "iload_2; ineg; i2d".
+                if(type.isNumber()) {
+                    method.convert(type);
+                }
                 method.neg(getProgramPoint());
             }
         }.emit();
