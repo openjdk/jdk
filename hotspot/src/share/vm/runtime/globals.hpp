@@ -1097,7 +1097,7 @@ class CommandLineFlags {
           "Call loadClassInternal() rather than loadClass()")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
-          "Throw away obvious excess yield calls (for Solaris only)")       \
+          "Throw away obvious excess yield calls")                          \
                                                                             \
   product_pd(bool, ConvertSleepToYield,                                     \
           "Convert sleep(0) to thread yield "                               \
@@ -1105,7 +1105,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, ConvertYieldToSleep, false,                                 \
           "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
-          "behavior (Solaris only)")                                        \
+          "behavior")                                                       \
                                                                             \
   product(bool, UseBoundThreads, true,                                      \
           "Bind user level threads to kernel threads (for Solaris only)")   \
@@ -1143,8 +1143,8 @@ class CommandLineFlags {
           "avoid NPTL-FUTEX hang pthread_cond_timedwait")                   \
                                                                             \
   product(bool, FilterSpuriousWakeups, true,                                \
-          "Prevent spurious or premature wakeups from object.wait "         \
-          "(Solaris only)")                                                 \
+          "When true prevents OS-level spurious, or premature, wakeups "    \
+          "from Object.wait (Ignored for Windows)")                         \
                                                                             \
   product(intx, NativeMonitorTimeout, -1, "(Unstable)")                     \
                                                                             \
