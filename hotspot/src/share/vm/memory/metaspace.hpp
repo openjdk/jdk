@@ -225,6 +225,9 @@ class Metaspace : public CHeapObj<mtClass> {
   size_t used_bytes_slow(MetadataType mdtype) const;
   size_t capacity_bytes_slow(MetadataType mdtype) const;
 
+  size_t allocated_blocks_bytes() const;
+  size_t allocated_chunks_bytes() const;
+
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             bool read_only, MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
