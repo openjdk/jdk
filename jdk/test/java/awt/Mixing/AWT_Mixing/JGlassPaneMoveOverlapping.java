@@ -32,6 +32,7 @@ import java.awt.event.MouseEvent;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test with JInternalFrame being moved in GlassPane.
@@ -44,6 +45,8 @@ import javax.swing.SwingUtilities;
 @bug 6637655 6981919
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JGlassPaneMoveOverlapping
  */
 public class JGlassPaneMoveOverlapping extends OverlappingTestBase {
@@ -70,7 +73,7 @@ public class JGlassPaneMoveOverlapping extends OverlappingTestBase {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Where is internal frame?");
         }
 
         // run robot
