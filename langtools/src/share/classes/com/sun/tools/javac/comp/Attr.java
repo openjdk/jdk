@@ -2060,7 +2060,7 @@ public class Attr extends JCTree.Visitor {
                 tree.constructor = constructor.baseSymbol();
 
                 final TypeSymbol csym = clazztype.tsym;
-                ResultInfo diamondResult = new ResultInfo(MTH, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
+                ResultInfo diamondResult = new ResultInfo(pkind, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
                     @Override
                     public void report(DiagnosticPosition _unused, JCDiagnostic details) {
                         enclosingContext.report(tree.clazz,
