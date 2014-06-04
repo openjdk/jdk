@@ -31,7 +31,6 @@ import static org.testng.AssertJUnit.assertTrue;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import jdk.nashorn.api.scripting.NashornScriptEngine;
 import org.testng.TestNG;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
@@ -46,7 +45,6 @@ public class NumberBoxingTest {
 
     private static ScriptEngine e;
     private static SharedObject o;
-    private static boolean optimistic;
 
     public static void main(final String[] args) {
         TestNG.main(args);
@@ -56,7 +54,6 @@ public class NumberBoxingTest {
     public static void setUpClass() throws ScriptException {
         final ScriptEngineManager m = new ScriptEngineManager();
         e = m.getEngineByName("nashorn");
-        optimistic = ((NashornScriptEngine)e).isOptimistic();
         o = new SharedObject();
         e.put("o", o);
         e.eval("var SharedObject = Packages.jdk.nashorn.api.javaaccess.SharedObject;");
@@ -141,7 +138,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFieldByteBoxing() throws ScriptException {
         e.eval("var p_byte = o.publicByteBox;");
-        assertEqualsInt(o.publicByteBox, "p_byte");
+        assertEqualsDouble(o.publicByteBox, "p_byte");
         e.eval("o.publicByteBox = 16;");
         assertEquals(Byte.valueOf((byte)16), o.publicByteBox);
     }
@@ -149,7 +146,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFieldByteBoxing() throws ScriptException {
         e.eval("var ps_byte = SharedObject.publicStaticByte;");
-        assertEqualsInt(SharedObject.publicStaticByte, "ps_byte");
+        assertEqualsDouble(SharedObject.publicStaticByte, "ps_byte");
         e.eval("SharedObject.publicStaticByte = 16;");
         assertEquals(16, SharedObject.publicStaticByte);
     }
@@ -157,7 +154,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFinalFieldByteBoxing() throws ScriptException {
         e.eval("var pf_byte = o.publicFinalByteBox;");
-        assertEqualsInt(o.publicFinalByteBox, "pf_byte");
+        assertEqualsDouble(o.publicFinalByteBox, "pf_byte");
         e.eval("o.publicFinalByteBox = 16;");
         assertEquals(Byte.valueOf((byte)19), o.publicFinalByteBox);
     }
@@ -165,7 +162,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFinalFieldByteBoxing() throws ScriptException {
         e.eval("var psf_byte = SharedObject.publicStaticFinalByte;");
-        assertEqualsInt(SharedObject.publicStaticFinalByte, "psf_byte");
+        assertEqualsDouble(SharedObject.publicStaticFinalByte, "psf_byte");
         e.eval("SharedObject.publicStaticFinalByte = 16;");
         assertEquals(-70, SharedObject.publicStaticFinalByte);
     }
@@ -175,23 +172,19 @@ public class NumberBoxingTest {
     @Test
     public void accessFieldShortBoxing() throws ScriptException {
         e.eval("var p_short = o.publicShortBox;");
-        assertEqualsInt(o.publicShortBox, "p_short");
+        assertEqualsDouble(o.publicShortBox, "p_short");
         e.eval("o.publicShortBox = 18;");
         assertEquals(Short.valueOf((short)18), o.publicShortBox);
     }
 
-    private static void assertEqualsInt(final Number n, final String name) {
-        if(optimistic) {
-            assertEquals(n.intValue(), e.get(name));
-        } else {
-            assertEquals(n, e.get(name));
-        }
+    private static void assertEqualsDouble(final Number n, final String name) {
+        assertEquals(n.doubleValue(), ((Number)e.get(name)).doubleValue());
     }
 
     @Test
     public void accessStaticFieldShortBoxing() throws ScriptException {
         e.eval("var ps_short = SharedObject.publicStaticShort;");
-        assertEqualsInt(SharedObject.publicStaticShort, "ps_short");
+        assertEqualsDouble(SharedObject.publicStaticShort, "ps_short");
         e.eval("SharedObject.publicStaticShort = 180;");
         assertEquals(180, SharedObject.publicStaticShort);
     }
@@ -199,7 +192,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFinalFieldShortBoxing() throws ScriptException {
         e.eval("var pf_short = o.publicFinalShortBox;");
-        assertEqualsInt(o.publicFinalShortBox, "pf_short");
+        assertEqualsDouble(o.publicFinalShortBox, "pf_short");
         e.eval("o.publicFinalShortBox = 180;");
         assertEquals(Short.valueOf((short)-26777), o.publicFinalShortBox);
     }
@@ -207,7 +200,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFinalFieldShortBoxing() throws ScriptException {
         e.eval("var psf_short = SharedObject.publicStaticFinalShort;");
-        assertEqualsInt(SharedObject.publicStaticFinalShort, "psf_short");
+        assertEqualsDouble(SharedObject.publicStaticFinalShort, "psf_short");
         e.eval("SharedObject.publicStaticFinalShort = 180;");
         assertEquals(8888, SharedObject.publicStaticFinalShort);
     }
@@ -258,7 +251,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFieldFloatBoxing() throws ScriptException {
         e.eval("var p_float = o.publicFloatBox;");
-        assertEqualsFloat(o.publicFloatBox, "p_float");
+        assertEqualsDouble(o.publicFloatBox, "p_float");
         o.publicFloatBox = 0.0f / 0.0f;
         assertEquals(true, e.eval("isNaN(o.publicFloatBox)"));
         o.publicFloatBox = 1.0f / 0.0f;
@@ -275,17 +268,10 @@ public class NumberBoxingTest {
         assertEquals(Float.NEGATIVE_INFINITY, o.publicFloatBox, 1e-10);
     }
 
-    private static void assertEqualsFloat(final Float n, final String name) {
-        if(optimistic) {
-            assertEquals(n, ((Number)e.get(name)).floatValue());
-        } else {
-            assertEquals(n, e.get(name));
-        }
-    }
     @Test
     public void accessStaticFieldFloatBoxing() throws ScriptException {
         e.eval("var ps_float = SharedObject.publicStaticFloat;");
-        assertEqualsFloat(SharedObject.publicStaticFloat, "ps_float");
+        assertEqualsDouble(SharedObject.publicStaticFloat, "ps_float");
         SharedObject.publicStaticFloat = 0.0f / 0.0f;
         assertEquals(true, e.eval("isNaN(SharedObject.publicStaticFloat)"));
         SharedObject.publicStaticFloat = 1.0f / 0.0f;
@@ -305,7 +291,7 @@ public class NumberBoxingTest {
     @Test
     public void accessFinalFloatBoxing() throws ScriptException {
         e.eval("var pf_float = o.publicFinalFloatBox;");
-        assertEqualsFloat(o.publicFinalFloatBox, "pf_float");
+        assertEqualsDouble(o.publicFinalFloatBox, "pf_float");
         e.eval("o.publicFinalFloatBox = 20.0;");
         assertEquals(1.372e4f, o.publicFinalFloatBox, 1e-10);
     }
@@ -313,7 +299,7 @@ public class NumberBoxingTest {
     @Test
     public void accessStaticFinalFieldFloatBoxing() throws ScriptException {
         e.eval("var psf_float = SharedObject.publicStaticFinalFloat;");
-        assertEqualsFloat(SharedObject.publicStaticFinalFloat, "psf_float");
+        assertEqualsDouble(SharedObject.publicStaticFinalFloat, "psf_float");
         e.eval("SharedObject.publicStaticFinalFloat = 20.0;");
         assertEquals(0.72e8f, SharedObject.publicStaticFinalFloat, 1e-10);
     }

@@ -364,6 +364,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   </target>
 
   <target name="test" depends="jar, check-testng, check-external-tests, compile-test, generate-policy-file" if="testng.available">
+    <delete dir="${build.dir}/nashorn_code_cache"/>
     <fileset id="test.classes" dir="${build.test.classes.dir}">
       <include name="**/api/javaaccess/*Test.class"/>
       <include name="**/api/scripting/*Test.class"/>
@@ -373,29 +374,11 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
       <include name="**/runtime/regexp/*Test.class"/>
       <include name="**/runtime/regexp/joni/*Test.class"/>
       <include name="**/framework/*Test.class"/>
-      <exclude name="jdk/nashorn/internal/runtime/CodeStoreAndPathTest.class"/>
     </fileset>
 
     <fileset id="test.nosecurity.classes" dir="${build.test.classes.dir}">
       <include name="**/framework/ScriptTest.class"/>
     </fileset>
-
-    <fileset id="test.nooptimistic.classes" dir="${build.test.classes.dir}">
-      <include name="jdk/nashorn/internal/runtime/CodeStoreAndPathTest.class"/>
-    </fileset>
-
-    <testng outputdir="${build.nooptimistic.test.results.dir}" classfilesetref="test.nooptimistic.classes"
-       verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
-      <jvmarg line="${ext.class.path}"/>
-      <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs}"/>
-      <sysproperty key="nashorn.optimistic" value="false"/>
-      <propertyset>
-        <propertyref prefix="nashorn."/>
-      </propertyset>
-      <classpath>
-          <pathelement path="${run.test.classpath}"/>
-      </classpath>
-    </testng>
 
     <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">

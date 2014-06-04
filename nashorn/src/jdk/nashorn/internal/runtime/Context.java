@@ -440,7 +440,7 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            if (env._lazy_compilation || ScriptEnvironment.globalOptimistic()) {
+            if (env._lazy_compilation || env._optimistic_types) {
                 getErr().println("Can not use persistent class caching with lazy compilation or optimistic compilation.");
             } else {
                 try {

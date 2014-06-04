@@ -29,7 +29,6 @@
  * @fork
  * @option -Dnashorn.debug=true
  * @option --log=recompile:quiet
- * @option --lazy-compilation
  */
 
 print(Debug);

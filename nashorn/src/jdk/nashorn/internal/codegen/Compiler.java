@@ -143,8 +143,6 @@ public final class Compiler implements Loggable {
      */
     private RecompilableScriptFunctionData compiledFunction;
 
-    private static boolean initialized = false;
-
     /**
      * Compilation phases that a compilation goes through
      */
@@ -368,14 +366,7 @@ public final class Compiler implements Loggable {
         this.firstCompileUnitName     = firstCompileUnitName();
         this.strict                   = isStrict;
 
-        if (!initialized) {
-            initialized = true;
-            if (!ScriptEnvironment.globalOptimistic()) {
-                log.warning("Running without optimistic types. This is a configuration that may be deprecated.");
-            }
-        }
-
-        this.optimistic = ScriptEnvironment.globalOptimistic();
+        this.optimistic = env._optimistic_types;
     }
 
     private static String safeSourceName(final ScriptEnvironment env, final CodeInstaller<ScriptEnvironment> installer, final Source source) {

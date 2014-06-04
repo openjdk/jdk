@@ -118,16 +118,6 @@ public final class ScriptEnvironment {
         ERROR
     }
 
-    private static final boolean GLOBAL_OPTIMISTIC = Options.getBooleanProperty("nashorn.optimistic", true);
-
-    /**
-     * What is the default optimistic compilation policy?
-     * @return true if optimistic, false otherwise
-     */
-    public static boolean globalOptimistic() {
-        return GLOBAL_OPTIMISTIC;
-    }
-
     /**
      * Behavior when encountering a function declaration in a lexical context where only statements are acceptable
      * (function declarations are source elements, but not statements).
@@ -136,6 +126,9 @@ public final class ScriptEnvironment {
 
     /** Should lazy compilation take place */
     public final boolean _lazy_compilation;
+
+    /** Should optimistic types be used */
+    public final boolean _optimistic_types;
 
     /** Create a new class loaded for each compilation */
     public final boolean _loader_per_compile;
@@ -244,6 +237,7 @@ public final class ScriptEnvironment {
         _fx                   = options.getBoolean("fx");
         _global_per_engine    = options.getBoolean("global.per.engine");
         _lazy_compilation     = options.getBoolean("lazy.compilation");
+        _optimistic_types     = options.getBoolean("optimistic.types");
         _loader_per_compile   = options.getBoolean("loader.per.compile");
         _no_java              = options.getBoolean("no.java");
         _no_syntax_extensions = options.getBoolean("no.syntax.extensions");
