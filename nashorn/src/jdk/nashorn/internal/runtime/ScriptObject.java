@@ -156,7 +156,7 @@ public abstract class ScriptObject implements PropertyAccess {
     /** Method handle to retrieve prototype of this object */
     public static final MethodHandle GETPROTO      = findOwnMH_V("getProto", ScriptObject.class);
 
-    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class, boolean.class);
+    static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
 
     private static final MethodHandle TRUNCATINGFILTER   = findOwnMH_S("truncatingFilter", Object[].class, int.class, Object[].class);
@@ -1924,7 +1924,7 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
-            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator), isScope() && NashornCallSiteDescriptor.isScope(desc));
+            return findMegaMorphicGetMethod(desc, name, "getMethod".equals(operator));
         }
 
         final FindProperty find = findProperty(name, true);
@@ -1983,21 +1983,18 @@ public abstract class ScriptObject implements PropertyAccess {
         return inv.addSwitchPoint(reservedNameSwitchPoint);
     }
 
-    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod, final boolean isScope) {
+    private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
         Context.getContextTrusted().getLogger(ObjectClassGenerator.class).warning("Megamorphic getter: " + desc + " " + name + " " +isMethod);
-        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod, isScope);
+        final MethodHandle invoker = MH.insertArguments(MEGAMORPHIC_GET, 1, name, isMethod);
         final MethodHandle guard   = getScriptObjectGuard(desc.getMethodType(), true);
         return new GuardedInvocation(invoker, guard);
     }
 
     @SuppressWarnings("unused")
-    private Object megamorphicGet(final String key, final boolean isMethod, final boolean isScope) {
+    private Object megamorphicGet(final String key, final boolean isMethod) {
         final FindProperty find = findProperty(key, true);
         if (find != null) {
             return find.getObjectValue();
-        }
-        if (isScope) {
-            throw referenceError("not.defined", key);
         }
 
         return isMethod ? getNoSuchMethod(key, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
