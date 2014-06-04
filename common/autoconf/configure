@@ -49,7 +49,7 @@ fi
 ###
 
 run_autogen_or_fail() {
-  if test "x`which autoconf 2> /dev/null`" = x; then
+  if test "x`which autoconf 2> /dev/null | grep -v '^no autoconf in'`" = x; then
     echo "Cannot locate autoconf, unable to correct situation."
     echo "Please install autoconf and run 'bash autogen.sh' to update the generated files."
     echo "Error: Cannot continue" 1>&2
@@ -80,7 +80,7 @@ check_autoconf_timestamps() {
 }
 
 check_hg_updates() {
-  if test "x`which hg 2> /dev/null`" != x; then
+  if test "x`which hg 2> /dev/null | grep -v '^no hg in'`" != x; then
     conf_updated_autoconf_files=`cd $conf_script_dir && hg status -mard 2> /dev/null | grep autoconf`
     if test "x$conf_updated_autoconf_files" != x; then
       echo "Configure source code has been updated, checking time stamps"
