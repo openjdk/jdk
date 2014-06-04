@@ -3968,8 +3968,14 @@ bool Threads::destroy_vm() {
     // GC vm_operations can get caught at the safepoint, and the
     // heap is unparseable if they are caught. Grab the Heap_lock
     // to prevent this. The GC vm_operations will not be able to
-    // queue until after the vm thread is dead. After this point,
-    // we'll never emerge out of the safepoint before the VM exits.
+    // queue until after the vm thread is dead.
+    // After this point, we'll never emerge out of the safepoint before
+    // the VM exits, so concurrent GC threads do not need to be explicitly
+    // stopped; they remain inactive until the process exits.
+    // Note: some concurrent G1 threads may be running during a safepoint,
+    // but these will not be accessing the heap, just some G1-specific side
+    // data structures that are not accessed by any other threads but them
+    // after this point in a terminal safepoint.
 
     MutexLocker ml(Heap_lock);
 
