@@ -200,6 +200,17 @@ sysIPMutexEnter(sys_ipmutex_t mutex, sys_event_t event)
     rc = WaitForMultipleObjects(count, handles,
                                 FALSE,              /* wait for either, not both */
                                 INFINITE);          /* infinite timeout */
+
+    /* If the mutex is abandoned we will consider this a fatal error
+     * and abort with appropriate message.
+     *
+     * Note that only mutexes can be abandoned and that our mutex is
+     * always at position 0 in the handles array. Thus we only need
+     * to check WAIT_ABANDONED_0 (not WAIT_ABANDONED_0 + x).
+     */
+    if (rc == WAIT_ABANDONED_0) {
+        exitTransportWithError("Observed abandoned IP mutex. Aborting.",THIS_FILE, __DATE__, __LINE__);
+    }
     return (rc == WAIT_OBJECT_0) ? SYS_OK : SYS_ERR;
 }
 
