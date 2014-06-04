@@ -28,7 +28,6 @@
  * @fork
  * @option -Dnashorn.debug=true
  * @option --log=recompile:quiet
- * @option --lazy-compilation
  */
 
 var forName       = java.lang.Class["forName(String)"];

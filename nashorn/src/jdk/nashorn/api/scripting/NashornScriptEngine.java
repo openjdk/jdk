@@ -59,7 +59,6 @@ import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.Property;
-import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -634,15 +633,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 return NashornScriptEngine.this;
             }
         };
-    }
-
-    /**
-     * Check if the global script environment tells us to do optimistic
-     * compilation
-     * @return true if optimistic compilation enabled
-     */
-    public static boolean isOptimistic() {
-        return ScriptEnvironment.globalOptimistic();
     }
 
     private ScriptFunction compileImpl(final Source source, final ScriptContext ctxt) throws ScriptException {

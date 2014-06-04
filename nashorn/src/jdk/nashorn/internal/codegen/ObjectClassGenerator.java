@@ -99,13 +99,6 @@ public final class ObjectClassGenerator implements Loggable {
     private final DebugLogger log;
 
     /**
-     * is field debugging enabled. Several modules in codegen and properties use this, hence
-     * public access.
-     */
-
-    private static final boolean EXPLICIT_OBJECT = Options.getBooleanProperty("nashorn.fields.objects");
-
-    /**
      * Should the runtime only use java.lang.Object slots for fields? If this is false, the representation
      * will be a primitive 64-bit long value used for all primitives and a java.lang.Object for references.
      * This introduces a larger number of method handles in the system, as we need to have different getters
@@ -113,7 +106,7 @@ public final class ObjectClassGenerator implements Loggable {
      *
      * This is engineered to plug into the TaggedArray implementation, when it's done.
      */
-    public static final boolean OBJECT_FIELDS_ONLY = EXPLICIT_OBJECT || !ScriptEnvironment.globalOptimistic();
+    public static final boolean OBJECT_FIELDS_ONLY = Options.getBooleanProperty("nashorn.fields.objects");
 
     /** The field types in the system */
     private static final List<Type> FIELD_TYPES = new LinkedList<>();

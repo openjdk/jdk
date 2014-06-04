@@ -424,11 +424,6 @@ final class CompiledFunction {
     }
 
     boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
-        if (!ScriptEnvironment.globalOptimistic()) {
-            // Without optimistic recompilation, always choose the first eagerly compiled version.
-            return true;
-        }
-
         final MethodType type  = type();
         final int fnParamCount = getParamCount(type);
         final boolean isVarArg = fnParamCount == Integer.MAX_VALUE;

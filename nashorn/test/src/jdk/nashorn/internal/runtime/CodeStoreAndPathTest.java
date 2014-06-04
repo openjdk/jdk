@@ -96,6 +96,8 @@ public class CodeStoreAndPathTest {
     final String codeCache = "build/nashorn_code_cache";
     final String oldUserDir = System.getProperty("user.dir");
 
+    private static final String[] ENGINE_OPTIONS = new String[]{"--persistent-code-cache", "--optimistic-types=false", "--lazy-compilation=false"};
+
     public void checkCompiledScripts(final DirectoryStream<Path> stream, int numberOfScripts) throws IOException {
         for (final Path file : stream) {
             numberOfScripts--;
@@ -106,11 +108,9 @@ public class CodeStoreAndPathTest {
 
     @Test
     public void pathHandlingTest() throws ScriptException, IOException {
-        assertFalse(ScriptEnvironment.globalOptimistic());
         System.setProperty("nashorn.persistent.code.cache", codeCache);
-        final String[] options = new String[]{"--persistent-code-cache"};
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(options);
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
         final Path expectedCodeCachePath = FileSystems.getDefault().getPath(oldUserDir + File.separator + codeCache);
         final Path actualCodeCachePath = FileSystems.getDefault().getPath(System.getProperty(
                             "nashorn.persistent.code.cache")).toAbsolutePath();
@@ -124,11 +124,9 @@ public class CodeStoreAndPathTest {
 
     @Test
     public void changeUserDirTest() throws ScriptException, IOException {
-        assertFalse(ScriptEnvironment.globalOptimistic());
         System.setProperty("nashorn.persistent.code.cache", codeCache);
-        final String[] options = new String[]{"--persistent-code-cache"};
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(options);
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
         final Path codeCachePath = FileSystems.getDefault().getPath(System.getProperty(
                             "nashorn.persistent.code.cache")).toAbsolutePath();
         final String newUserDir = "build/newUserDir";
@@ -148,11 +146,9 @@ public class CodeStoreAndPathTest {
 
     @Test
     public void codeCacheTest() throws ScriptException, IOException {
-        assertFalse(ScriptEnvironment.globalOptimistic());
         System.setProperty("nashorn.persistent.code.cache", codeCache);
-        final String[] options = new String[]{"--persistent-code-cache"};
         final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
-        final ScriptEngine e = fac.getScriptEngine(options);
+        final ScriptEngine e = fac.getScriptEngine(ENGINE_OPTIONS);
         final Path codeCachePath = FileSystems.getDefault().getPath(System.getProperty(
                             "nashorn.persistent.code.cache")).toAbsolutePath();
         e.eval(code1);
