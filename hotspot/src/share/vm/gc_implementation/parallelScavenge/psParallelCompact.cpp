@@ -51,6 +51,7 @@
 #include "oops/methodData.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/vmThread.hpp"

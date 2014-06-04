@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "services/memPtr.hpp"
 #include "services/memTracker.hpp"
 

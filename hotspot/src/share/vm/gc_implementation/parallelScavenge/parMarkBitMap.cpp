@@ -26,6 +26,7 @@
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "services/memTracker.hpp"
