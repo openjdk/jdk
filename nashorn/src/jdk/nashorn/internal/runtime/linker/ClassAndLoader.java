@@ -75,7 +75,7 @@ final class ClassAndLoader {
         return representativeClass;
     }
 
-    boolean canSee(ClassAndLoader other) {
+    boolean canSee(final ClassAndLoader other) {
         try {
             final Class<?> otherClass = other.getRepresentativeClass();
             return Class.forName(otherClass.getName(), false, getLoader()) == otherClass;

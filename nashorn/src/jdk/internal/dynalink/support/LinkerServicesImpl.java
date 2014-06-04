@@ -117,32 +117,32 @@ public class LinkerServicesImpl implements LinkerServices {
     }
 
     @Override
-    public boolean canConvert(Class<?> from, Class<?> to) {
+    public boolean canConvert(final Class<?> from, final Class<?> to) {
         return typeConverterFactory.canConvert(from, to);
     }
 
     @Override
-    public MethodHandle asType(MethodHandle handle, MethodType fromType) {
+    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
         return typeConverterFactory.asType(handle, fromType);
     }
 
     @Override
-    public MethodHandle asTypeLosslessReturn(MethodHandle handle, MethodType fromType) {
+    public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
         return Implementation.asTypeLosslessReturn(this, handle, fromType);
     }
 
     @Override
-    public MethodHandle getTypeConverter(Class<?> sourceType, Class<?> targetType) {
+    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         return typeConverterFactory.getTypeConverter(sourceType, targetType);
     }
 
     @Override
-    public Comparison compareConversion(Class<?> sourceType, Class<?> targetType1, Class<?> targetType2) {
+    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
         return typeConverterFactory.compareConversion(sourceType, targetType1, targetType2);
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest) throws Exception {
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest) throws Exception {
         final LinkRequest prevLinkRequest = threadLinkRequest.get();
         threadLinkRequest.set(linkRequest);
         try {
@@ -159,7 +159,7 @@ public class LinkerServicesImpl implements LinkerServices {
      * permission.
      */
     public static LinkRequest getCurrentLinkRequest() {
-        SecurityManager sm = System.getSecurityManager();
+        final SecurityManager sm = System.getSecurityManager();
         if(sm != null) {
             sm.checkPermission(GET_CURRENT_LINK_REQUEST);
         }

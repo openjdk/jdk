@@ -185,17 +185,17 @@ public final class UserAccessorProperty extends SpillProperty {
     }
 
     @Override
-    public int getIntValue(ScriptObject self, ScriptObject owner) {
+    public int getIntValue(final ScriptObject self, final ScriptObject owner) {
         return (int)getObjectValue(self, owner);
     }
 
     @Override
-    public long getLongValue(ScriptObject self, ScriptObject owner) {
+    public long getLongValue(final ScriptObject self, final ScriptObject owner) {
         return (long)getObjectValue(self, owner);
     }
 
     @Override
-    public double getDoubleValue(ScriptObject self, ScriptObject owner) {
+    public double getDoubleValue(final ScriptObject self, final ScriptObject owner) {
         return (double)getObjectValue(self, owner);
     }
 
@@ -205,17 +205,17 @@ public final class UserAccessorProperty extends SpillProperty {
     }
 
     @Override
-    public void setValue(ScriptObject self, ScriptObject owner, int value, boolean strict) {
+    public void setValue(final ScriptObject self, final ScriptObject owner, final int value, final boolean strict) {
         setValue(self, owner, value, strict);
     }
 
     @Override
-    public void setValue(ScriptObject self, ScriptObject owner, long value, boolean strict) {
+    public void setValue(final ScriptObject self, final ScriptObject owner, final long value, final boolean strict) {
         setValue(self, owner, value, strict);
     }
 
     @Override
-    public void setValue(ScriptObject self, ScriptObject owner, double value, boolean strict) {
+    public void setValue(final ScriptObject self, final ScriptObject owner, final double value, final boolean strict) {
         setValue(self, owner, value, strict);
     }
 

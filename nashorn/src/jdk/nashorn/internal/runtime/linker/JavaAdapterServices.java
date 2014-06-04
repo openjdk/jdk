@@ -150,7 +150,7 @@ public final class JavaAdapterServices {
         return Context.getGlobal();
     }
 
-    static void setClassOverrides(ScriptObject overrides) {
+    static void setClassOverrides(final ScriptObject overrides) {
         classOverrides.set(overrides);
     }
 
@@ -183,7 +183,7 @@ public final class JavaAdapterServices {
             public ClassLoader run() {
                 return new SecureClassLoader(null) {
                     @Override
-                    protected Class<?> findClass(String name) throws ClassNotFoundException {
+                    protected Class<?> findClass(final String name) throws ClassNotFoundException {
                         if(name.equals(className)) {
                             return defineClass(name, bytes, 0, bytes.length, new ProtectionDomain(
                                     new CodeSource(null, (CodeSigner[])null), new Permissions()));
@@ -197,7 +197,7 @@ public final class JavaAdapterServices {
         try {
             return MethodHandles.lookup().findStatic(Class.forName(className, true, loader), "invoke",
                     MethodType.methodType(void.class, MethodHandle.class, Object.class));
-        } catch(ReflectiveOperationException e) {
+        } catch(final ReflectiveOperationException e) {
             throw new AssertionError(e.getMessage(), e);
         }
     }

@@ -41,11 +41,11 @@ public abstract class Matcher extends IntHolder {
     protected int msaBegin;
     protected int msaEnd;
 
-    public Matcher(Regex regex, char[] chars) {
+    public Matcher(final Regex regex, final char[] chars) {
         this(regex, chars, 0, chars.length);
     }
 
-    public Matcher(Regex regex, char[] chars, int p, int end) {
+    public Matcher(final Regex regex, final char[] chars, final int p, final int end) {
         this.regex = regex;
 
         this.chars = chars;
@@ -70,16 +70,16 @@ public abstract class Matcher extends IntHolder {
         return msaEnd;
     }
 
-    protected final void msaInit(int option, int start) {
+    protected final void msaInit(final int option, final int start) {
         msaOptions = option;
         msaStart = start;
         if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) msaBestLen = -1;
     }
 
-    public final int match(int at, int range, int option) {
+    public final int match(final int at, final int range, final int option) {
         msaInit(option, at);
 
-        int prev = EncodingHelper.prevCharHead(str, at);
+        final int prev = EncodingHelper.prevCharHead(str, at);
 
         if (Config.USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE) {
             return matchAt(end /*range*/, at, prev);
@@ -89,7 +89,7 @@ public abstract class Matcher extends IntHolder {
     }
 
     int low, high; // these are the return values
-    private boolean forwardSearchRange(char[] chars, int str, int end, int s, int range, IntHolder lowPrev) {
+    private boolean forwardSearchRange(final char[] chars, final int str, final int end, final int s, final int range, final IntHolder lowPrev) {
         int pprev = -1;
         int p = s;
 
@@ -120,7 +120,7 @@ public abstract class Matcher extends IntHolder {
                     switch (regex.subAnchor) {
                     case AnchorType.BEGIN_LINE:
                         if (p != str) {
-                            int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
+                            final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
                             if (!EncodingHelper.isNewLine(chars, prev, end)) {
                                 // goto retry_gate;
                                 pprev = p;
@@ -133,7 +133,7 @@ public abstract class Matcher extends IntHolder {
                     case AnchorType.END_LINE:
                         if (p == end) {
                             if (!Config.USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE) {
-                                int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
+                                final int prev = EncodingHelper.prevCharHead((pprev != -1) ? pprev : str, p);
                                 if (prev != -1 && EncodingHelper.isNewLine(chars, prev, end)) {
                                     // goto retry_gate;
                                     pprev = p;
@@ -196,7 +196,7 @@ public abstract class Matcher extends IntHolder {
     }
 
     // low, high
-    private boolean backwardSearchRange(char[] chars, int str, int end, int s, int range, int adjrange) {
+    private boolean backwardSearchRange(final char[] chars, final int str, final int end, final int s, int range, final int adjrange) {
         range += regex.dMin;
         int p = s;
 
@@ -208,7 +208,7 @@ public abstract class Matcher extends IntHolder {
                     switch (regex.subAnchor) {
                     case AnchorType.BEGIN_LINE:
                         if (p != str) {
-                            int prev = EncodingHelper.prevCharHead(str, p);
+                            final int prev = EncodingHelper.prevCharHead(str, p);
                             if (!EncodingHelper.isNewLine(chars, prev, end)) {
                                 p = prev;
                                 continue retry;
@@ -219,7 +219,7 @@ public abstract class Matcher extends IntHolder {
                     case AnchorType.END_LINE:
                         if (p == end) {
                             if (!Config.USE_NEWLINE_AT_END_OF_STRING_HAS_EMPTY_LINE) {
-                                int prev = EncodingHelper.prevCharHead(adjrange, p);
+                                final int prev = EncodingHelper.prevCharHead(adjrange, p);
                                 if (prev == -1) return false;
                                 if (EncodingHelper.isNewLine(chars, prev, end)) {
                                     p = prev;
@@ -256,7 +256,7 @@ public abstract class Matcher extends IntHolder {
     }
 
     // MATCH_AND_RETURN_CHECK
-    private boolean matchCheck(int upperRange, int s, int prev) {
+    private boolean matchCheck(final int upperRange, final int s, final int prev) {
         if (Config.USE_MATCH_RANGE_MUST_BE_INSIDE_OF_SPECIFIED_RANGE) {
             if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) {
                 //range = upperRange;
@@ -281,10 +281,10 @@ public abstract class Matcher extends IntHolder {
         return false;
     }
 
-    public final int search(int start, int range, int option) {
+    public final int search(int start, int range, final int option) {
         int s, prev;
         int origStart = start;
-        int origRange = range;
+        final int origRange = range;
 
         if (Config.DEBUG_SEARCH) {
             Config.log.println("onig_search (entry point): "+
@@ -326,7 +326,7 @@ public abstract class Matcher extends IntHolder {
                 // !end_buf:!
                 if (endBuf(start, range, minSemiEnd, maxSemiEnd)) return -1; // mismatch_no_msa;
             } else if ((regex.anchor & AnchorType.SEMI_END_BUF) != 0) {
-                int preEnd = EncodingHelper.stepBack(str, end, 1);
+                final int preEnd = EncodingHelper.stepBack(str, end, 1);
                 maxSemiEnd = end;
                 if (EncodingHelper.isNewLine(chars, preEnd, end)) {
                     minSemiEnd = preEnd;
@@ -488,7 +488,7 @@ public abstract class Matcher extends IntHolder {
         return mismatch();
     }
 
-    private boolean endBuf(int start, int range, int minSemiEnd, int maxSemiEnd) {
+    private boolean endBuf(int start, int range, final int minSemiEnd, final int maxSemiEnd) {
         if ((maxSemiEnd - str) < regex.anchorDmin) return true; // mismatch_no_msa;
 
         if (range > start) {
@@ -515,14 +515,14 @@ public abstract class Matcher extends IntHolder {
         return false;
     }
 
-    private int match(int s) {
+    private int match(final int s) {
         return s - str; // sstart ???
     }
 
     private int mismatch() {
         if (Config.USE_FIND_LONGEST_SEARCH_ALL_OF_RANGE) {
             if (msaBestLen >= 0) {
-                int s = msaBestS;
+                final int s = msaBestS;
                 return match(s);
             }
         }

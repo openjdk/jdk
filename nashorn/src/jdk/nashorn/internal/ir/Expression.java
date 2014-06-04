@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.ir;
 
 import java.util.function.Function;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 

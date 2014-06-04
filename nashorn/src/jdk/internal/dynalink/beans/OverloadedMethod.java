@@ -112,8 +112,8 @@ class OverloadedMethod {
     private final ArrayList<MethodHandle> fixArgMethods;
     private final ArrayList<MethodHandle> varArgMethods;
 
-    OverloadedMethod(List<MethodHandle> methodHandles, OverloadedDynamicMethod parent, MethodType callSiteType,
-            LinkerServices linkerServices) {
+    OverloadedMethod(final List<MethodHandle> methodHandles, final OverloadedDynamicMethod parent, final MethodType callSiteType,
+            final LinkerServices linkerServices) {
         this.parent = parent;
         final Class<?> commonRetType = getCommonReturnType(methodHandles);
         this.callSiteType = callSiteType.changeReturnType(commonRetType);
@@ -151,7 +151,7 @@ class OverloadedMethod {
             MethodHandle.class, Object[].class);
 
     @SuppressWarnings("unused")
-    private MethodHandle selectMethod(Object[] args) throws NoSuchMethodException {
+    private MethodHandle selectMethod(final Object[] args) throws NoSuchMethodException {
         final Class<?>[] argTypes = new Class[args.length];
         for(int i = 0; i < argTypes.length; ++i) {
             final Object arg = args[i];
@@ -188,7 +188,7 @@ class OverloadedMethod {
         return method;
     }
 
-    private MethodHandle getNoSuchMethodThrower(Class<?>[] argTypes) {
+    private MethodHandle getNoSuchMethodThrower(final Class<?>[] argTypes) {
         return adaptThrower(MethodHandles.insertArguments(THROW_NO_SUCH_METHOD, 0, this, argTypes));
     }
 
@@ -196,7 +196,7 @@ class OverloadedMethod {
             "throwNoSuchMethod", void.class, Class[].class);
 
     @SuppressWarnings("unused")
-    private void throwNoSuchMethod(Class<?>[] argTypes) throws NoSuchMethodException {
+    private void throwNoSuchMethod(final Class<?>[] argTypes) throws NoSuchMethodException {
         if(varArgMethods.isEmpty()) {
             throw new NoSuchMethodException("None of the fixed arity signatures " + getSignatureList(fixArgMethods) +
                     " of method " + parent.getName() + " match the argument types " + argTypesString(argTypes));
@@ -206,11 +206,11 @@ class OverloadedMethod {
                 parent.getName() + " match the argument types " + argTypesString(argTypes));
     }
 
-    private MethodHandle getAmbiguousMethodThrower(Class<?>[] argTypes, List<MethodHandle> methods) {
+    private MethodHandle getAmbiguousMethodThrower(final Class<?>[] argTypes, final List<MethodHandle> methods) {
         return adaptThrower(MethodHandles.insertArguments(THROW_AMBIGUOUS_METHOD, 0, this, argTypes, methods));
     }
 
-    private MethodHandle adaptThrower(MethodHandle rawThrower) {
+    private MethodHandle adaptThrower(final MethodHandle rawThrower) {
         return MethodHandles.dropArguments(rawThrower, 0, callSiteType.parameterList()).asType(callSiteType);
     }
 
@@ -218,20 +218,20 @@ class OverloadedMethod {
             "throwAmbiguousMethod", void.class, Class[].class, List.class);
 
     @SuppressWarnings("unused")
-    private void throwAmbiguousMethod(Class<?>[] argTypes, List<MethodHandle> methods) throws NoSuchMethodException {
+    private void throwAmbiguousMethod(final Class<?>[] argTypes, final List<MethodHandle> methods) throws NoSuchMethodException {
         final String arity = methods.get(0).isVarargsCollector() ? "variable" : "fixed";
         throw new NoSuchMethodException("Can't unambiguously select between " + arity + " arity signatures " +
                 getSignatureList(methods) + " of the method " + parent.getName() + " for argument types " +
                 argTypesString(argTypes));
     }
 
-    private static String argTypesString(Class<?>[] classes) {
+    private static String argTypesString(final Class<?>[] classes) {
         final StringBuilder b = new StringBuilder().append('[');
         appendTypes(b, classes, false);
         return b.append(']').toString();
     }
 
-    private static String getSignatureList(List<MethodHandle> methods) {
+    private static String getSignatureList(final List<MethodHandle> methods) {
         final StringBuilder b = new StringBuilder().append('[');
         final Iterator<MethodHandle> it = methods.iterator();
         if(it.hasNext()) {
@@ -243,13 +243,13 @@ class OverloadedMethod {
         return b.append(']').toString();
     }
 
-    private static void appendSig(StringBuilder b, MethodHandle m) {
+    private static void appendSig(final StringBuilder b, final MethodHandle m) {
         b.append('(');
         appendTypes(b, m.type().parameterArray(), m.isVarargsCollector());
         b.append(')');
     }
 
-    private static void appendTypes(StringBuilder b, Class<?>[] classes, boolean varArg) {
+    private static void appendTypes(final StringBuilder b, final Class<?>[] classes, final boolean varArg) {
         final int l = classes.length;
         if(!varArg) {
             if(l > 1) {
@@ -266,7 +266,7 @@ class OverloadedMethod {
         }
     }
 
-    private static Class<?> getCommonReturnType(List<MethodHandle> methodHandles) {
+    private static Class<?> getCommonReturnType(final List<MethodHandle> methodHandles) {
         final Iterator<MethodHandle> it = methodHandles.iterator();
         Class<?> retType = it.next().type().returnType();
         while(it.hasNext()) {

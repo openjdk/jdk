@@ -36,7 +36,7 @@ class Lexer extends ScannerSupport {
     protected final Syntax syntax;              // fast access to syntax
     protected final Token token = new Token();  // current token
 
-    protected Lexer(ScanEnvironment env, char[] chars, int p, int end) {
+    protected Lexer(final ScanEnvironment env, final char[] chars, final int p, final int end) {
         super(chars, p, end);
         this.env = env;
         this.syntax = env.syntax;
@@ -48,7 +48,7 @@ class Lexer extends ScannerSupport {
      */
     private int fetchRangeQuantifier() {
         mark();
-        boolean synAllow = syntax.allowInvalidInterval();
+        final boolean synAllow = syntax.allowInvalidInterval();
 
         if (!left()) {
             if (synAllow) {
@@ -89,7 +89,7 @@ class Lexer extends ScannerSupport {
         int up;
         int ret = 0;
         if (c == ',') {
-            int prev = p; // ??? last
+            final int prev = p; // ??? last
             up = scanUnsignedNumber();
             if (up < 0) {
                 throw new ValueException(ERR_TOO_BIG_NUMBER_FOR_REPEAT_RANGE);
@@ -130,7 +130,7 @@ class Lexer extends ScannerSupport {
         return ret; /* 0: normal {n,m}, 2: fixed {n} */
     }
 
-    private int invalidRangeQuantifier(boolean synAllow) {
+    private int invalidRangeQuantifier(final boolean synAllow) {
         if (synAllow) {
             restore();
             return 1;
@@ -218,7 +218,7 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    private int nameEndCodePoint(int start) {
+    private int nameEndCodePoint(final int start) {
         switch(start) {
         case '<':
             return '>';
@@ -229,7 +229,7 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    private void fetchTokenInCCFor_charType(boolean flag, int type) {
+    private void fetchTokenInCCFor_charType(final boolean flag, final int type) {
         token.type = TokenType.CHAR_TYPE;
         token.setPropCType(type);
         token.setPropNot(flag);
@@ -237,16 +237,16 @@ class Lexer extends ScannerSupport {
 
     private void fetchTokenInCCFor_x() {
         if (!left()) return;
-        int last = p;
+        final int last = p;
 
         if (peekIs('{') && syntax.opEscXBraceHex8()) {
             inc();
-            int num = scanUnsignedHexadecimalNumber(8);
+            final int num = scanUnsignedHexadecimalNumber(8);
             if (num < 0) {
                 throw new ValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
             }
             if (left()) {
-                int c2 = peek();
+                final int c2 = peek();
                 if (EncodingHelper.isXDigit(c2)) {
                     throw new ValueException(ERR_TOO_LONG_WIDE_CHAR_VALUE);
                 }
@@ -275,7 +275,7 @@ class Lexer extends ScannerSupport {
 
     private void fetchTokenInCCFor_u() {
         if (!left()) return;
-        int last = p;
+        final int last = p;
 
         if (syntax.op2EscUHex4()) {
             int num = scanUnsignedHexadecimalNumber(4);
@@ -293,7 +293,7 @@ class Lexer extends ScannerSupport {
     private void fetchTokenInCCFor_digit() {
         if (syntax.opEscOctal3()) {
             unfetch();
-            int last = p;
+            final int last = p;
             int num = scanUnsignedOctalNumber(3);
             if (num < 0) {
                 throw new ValueException(ERR_TOO_BIG_NUMBER);
@@ -381,7 +381,7 @@ class Lexer extends ScannerSupport {
 
             default:
                 unfetch();
-                int num = fetchEscapedValue();
+                final int num = fetchEscapedValue();
                 if (token.getC() != num) {
                     token.setCode(num);
                     token.type = TokenType.CODE_POINT;
@@ -395,7 +395,7 @@ class Lexer extends ScannerSupport {
         return token.type;
     }
 
-    private void fetchTokenFor_repeat(int lower, int upper) {
+    private void fetchTokenFor_repeat(final int lower, final int upper) {
         token.type = TokenType.OP_REPEAT;
         token.setRepeatLower(lower);
         token.setRepeatUpper(upper);
@@ -418,7 +418,7 @@ class Lexer extends ScannerSupport {
         } // inner switch
     }
 
-    private void fetchTokenFor_anchor(int subType) {
+    private void fetchTokenFor_anchor(final int subType) {
         token.type = TokenType.ANCHOR;
         token.setAnchor(subType);
     }
@@ -426,10 +426,10 @@ class Lexer extends ScannerSupport {
     private void fetchTokenFor_xBrace() {
         if (!left()) return;
 
-        int last = p;
+        final int last = p;
         if (peekIs('{') && syntax.opEscXBraceHex8()) {
             inc();
-            int num = scanUnsignedHexadecimalNumber(8);
+            final int num = scanUnsignedHexadecimalNumber(8);
             if (num < 0) {
                 throw new ValueException(ERR_TOO_BIG_WIDE_CHAR_VALUE);
             }
@@ -462,7 +462,7 @@ class Lexer extends ScannerSupport {
 
     private void fetchTokenFor_uHex() {
         if (!left()) return;
-        int last = p;
+        final int last = p;
 
         if (syntax.op2EscUHex4()) {
             int num = scanUnsignedHexadecimalNumber(4);
@@ -479,8 +479,8 @@ class Lexer extends ScannerSupport {
 
     private void fetchTokenFor_digit() {
         unfetch();
-        int last = p;
-        int num = scanUnsignedNumber();
+        final int last = p;
+        final int num = scanUnsignedNumber();
         if (num < 0 || num > Config.MAX_BACKREF_NUM) { // goto skip_backref
         } else if (syntax.opDecimalBackref() && (num <= env.numMem || num <= 9)) { /* This spec. from GNU regex */
             if (syntax.strictCheckBackref()) {
@@ -505,7 +505,7 @@ class Lexer extends ScannerSupport {
 
     private void fetchTokenFor_zero() {
         if (syntax.opEscOctal3()) {
-            int last = p;
+            final int last = p;
             int num = scanUnsignedOctalNumber(c == '0' ? 2 : 3);
             if (num < 0) {
                 throw new ValueException(ERR_TOO_BIG_NUMBER);
@@ -659,7 +659,7 @@ class Lexer extends ScannerSupport {
 
                 default:
                     unfetch();
-                    int num = fetchEscapedValue();
+                    final int num = fetchEscapedValue();
 
                     /* set_raw: */
                     if (token.getC() != num) {
@@ -798,11 +798,11 @@ class Lexer extends ScannerSupport {
         }
     }
 
-    protected final void syntaxWarn(String message, char c) {
+    protected final void syntaxWarn(final String message, final char c) {
         syntaxWarn(message.replace("<%n>", Character.toString(c)));
     }
 
-    protected final void syntaxWarn(String message) {
+    protected final void syntaxWarn(final String message) {
         if (Config.USE_WARN) {
             env.reg.warnings.warn(message + ": /" + new String(chars, getBegin(), getEnd()) + "/");
         }

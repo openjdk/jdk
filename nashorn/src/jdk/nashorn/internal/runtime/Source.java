@@ -105,7 +105,7 @@ public final class Source implements Loggable {
                 CACHE.put(newSource, newSource);
                 return newSource;
             }
-        } catch (RuntimeException e) {
+        } catch (final RuntimeException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IOException) {
                 throw (IOException) cause;
@@ -164,7 +164,7 @@ public final class Source implements Loggable {
         }
 
         @Override
-        public boolean equals(Object obj) {
+        public boolean equals(final Object obj) {
             if (this == obj) {
                 return true;
             }
@@ -225,7 +225,7 @@ public final class Source implements Loggable {
         }
 
         @Override
-        public boolean equals(Object other) {
+        public boolean equals(final Object other) {
             if (this == other) {
                 return true;
             }
@@ -233,7 +233,7 @@ public final class Source implements Loggable {
                 return false;
             }
 
-            URLData otherData = (URLData) other;
+            final URLData otherData = (URLData) other;
 
             if (url.equals(otherData.url)) {
                 // Make sure both have meta data loaded
@@ -245,7 +245,7 @@ public final class Source implements Loggable {
                     } else if (otherData.isDeferred()) {
                         otherData.loadMeta();
                     }
-                } catch (IOException e) {
+                } catch (final IOException e) {
                     throw new RuntimeException(e);
                 }
 
@@ -737,7 +737,7 @@ public final class Source implements Loggable {
                     md.update(getURL().toString().getBytes(StandardCharsets.UTF_8));
                 }
                 digest = md.digest(bytes);
-            } catch (NoSuchAlgorithmException e) {
+            } catch (final NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
         }
@@ -854,7 +854,7 @@ public final class Source implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(Context context) {
+    public DebugLogger initLogger(final Context context) {
         return context.getLogger(this.getClass());
     }
 

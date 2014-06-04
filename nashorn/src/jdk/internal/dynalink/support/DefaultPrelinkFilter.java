@@ -93,7 +93,7 @@ import jdk.internal.dynalink.linker.LinkerServices;
  */
 public class DefaultPrelinkFilter implements GuardedInvocationFilter {
     @Override
-    public GuardedInvocation filter(GuardedInvocation inv, LinkRequest request, LinkerServices linkerServices) {
+    public GuardedInvocation filter(final GuardedInvocation inv, final LinkRequest request, final LinkerServices linkerServices) {
         return inv.asType(linkerServices, request.getCallSiteDescriptor().getMethodType());
     }
 }

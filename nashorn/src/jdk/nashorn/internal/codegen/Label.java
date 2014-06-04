@@ -30,7 +30,6 @@ import java.util.BitSet;
 import java.util.Iterator;
 import java.util.List;
 import java.util.ListIterator;
-
 import jdk.nashorn.internal.codegen.types.Type;
 
 /**

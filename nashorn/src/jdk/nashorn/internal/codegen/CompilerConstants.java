@@ -369,7 +369,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, desc, false);
             }
         };
@@ -408,7 +408,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, desc, false);
             }
         };
@@ -448,7 +448,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
@@ -473,7 +473,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, className, name, descriptor, true);
             }
         };
@@ -574,7 +574,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, descriptor, false);
             }
         };
@@ -599,7 +599,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
@@ -625,7 +625,7 @@ public enum CompilerConstants {
             }
 
             @Override
-            public void invoke(MethodVisitor mv) {
+            public void invoke(final MethodVisitor mv) {
                 mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, descriptor, false);
             }
         };

@@ -46,7 +46,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
 
     @Override
     public ArrayData copy() {
-        UndefinedArrayFilter copy = new UndefinedArrayFilter(underlying.copy());
+        final UndefinedArrayFilter copy = new UndefinedArrayFilter(underlying.copy());
         copy.getUndefined().copy(undefined);
         return copy;
     }
@@ -155,7 +155,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public int getIntOptimistic(int index, int programPoint) {
+    public int getIntOptimistic(final int index, final int programPoint) {
         if (undefined.isSet(index)) {
             throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
         }
@@ -173,7 +173,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public long getLongOptimistic(int index, int programPoint) {
+    public long getLongOptimistic(final int index, final int programPoint) {
         if (undefined.isSet(index)) {
             throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
         }
@@ -191,7 +191,7 @@ final class UndefinedArrayFilter extends ArrayFilter {
     }
 
     @Override
-    public double getDoubleOptimistic(int index, int programPoint) {
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         if (undefined.isSet(index)) {
             throw new UnwarrantedOptimismException(UNDEFINED, programPoint);
         }

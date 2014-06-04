@@ -95,7 +95,7 @@ class ObjectType extends Type {
     }
 
     @Override
-    public Type loadForcedInitializer(MethodVisitor method) {
+    public Type loadForcedInitializer(final MethodVisitor method) {
         method.visitInsn(ACONST_NULL);
         // TODO: do we need a special type for null, e.g. Type.NULL? It should be assignable to any other object type
         // without a checkast in convert.

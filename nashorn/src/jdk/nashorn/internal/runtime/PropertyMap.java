@@ -173,7 +173,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
         assert className != null;
         final Class<?> structure = Context.forStructureClass(className);
-        for (Property prop : props) {
+        for (final Property prop : props) {
             prop.initMethodHandles(structure);
         }
     }

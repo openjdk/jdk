@@ -909,7 +909,7 @@ public final class NativeString extends ScriptObject {
         return splitString(str, JSType.toString(separator), lim);
     }
 
-    private static ScriptObject splitString(String str, String separator, long limit) {
+    private static ScriptObject splitString(final String str, final String separator, final long limit) {
         if (separator.isEmpty()) {
             final int length = (int) Math.min(str.length(), limit);
             final Object[] array = new Object[length];

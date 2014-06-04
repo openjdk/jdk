@@ -29,15 +29,15 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
 abstract class LexicalContextExpression extends Expression implements LexicalContextNode {
 
-    LexicalContextExpression(LexicalContextExpression expr) {
+    LexicalContextExpression(final LexicalContextExpression expr) {
         super(expr);
     }
 
-    LexicalContextExpression(long token, int start, int finish) {
+    LexicalContextExpression(final long token, final int start, final int finish) {
         super(token, start, finish);
     }
 
-    LexicalContextExpression(long token, int finish) {
+    LexicalContextExpression(final long token, final int finish) {
         super(token, finish);
     }
 

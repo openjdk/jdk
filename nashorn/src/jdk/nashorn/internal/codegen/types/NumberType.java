@@ -94,7 +94,7 @@ class NumberType extends NumericType {
     }
 
     @Override
-    public Type loadForcedInitializer(MethodVisitor method) {
+    public Type loadForcedInitializer(final MethodVisitor method) {
         method.visitInsn(DCONST_0);
         return NUMBER;
     }

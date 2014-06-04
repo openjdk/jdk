@@ -82,17 +82,17 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public void shiftLeft(int by) {
+    public void shiftLeft(final int by) {
         throw unsupported("shiftLeft");
     }
 
     @Override
-    public ArrayData shiftRight(int by) {
+    public ArrayData shiftRight(final int by) {
         throw unsupported("shiftRight");
     }
 
     @Override
-    public ArrayData ensure(long safeIndex) {
+    public ArrayData ensure(final long safeIndex) {
         if (safeIndex < buf.capacity()) {
             return this;
         }
@@ -101,12 +101,12 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData shrink(long newLength) {
+    public ArrayData shrink(final long newLength) {
         throw unsupported("shrink");
     }
 
     @Override
-    public ArrayData set(int index, Object value, boolean strict) {
+    public ArrayData set(final int index, final Object value, final boolean strict) {
         if (value instanceof Number) {
             buf.put(index, ((Number)value).byteValue());
             return this;
@@ -116,45 +116,45 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData set(int index, int value, boolean strict) {
+    public ArrayData set(final int index, final int value, final boolean strict) {
         buf.put(index, (byte)value);
         return this;
     }
 
     @Override
-    public ArrayData set(int index, long value, boolean strict) {
+    public ArrayData set(final int index, final long value, final boolean strict) {
         buf.put(index, (byte)value);
         return this;
     }
 
     @Override
-    public ArrayData set(int index, double value, boolean strict) {
+    public ArrayData set(final int index, final double value, final boolean strict) {
         buf.put(index, (byte)value);
         return this;
     }
 
     @Override
-    public int getInt(int index) {
+    public int getInt(final int index) {
         return 0x0ff & buf.get(index);
     }
 
     @Override
-    public long getLong(int index) {
+    public long getLong(final int index) {
         return 0x0ff & buf.get(index);
     }
 
     @Override
-    public double getDouble(int index) {
+    public double getDouble(final int index) {
         return 0x0ff & buf.get(index);
     }
 
     @Override
-    public Object getObject(int index) {
+    public Object getObject(final int index) {
         return (int)(0x0ff & buf.get(index));
     }
 
     @Override
-    public boolean has(int index) {
+    public boolean has(final int index) {
         return index > -1 && index < buf.capacity();
     }
 
@@ -169,12 +169,12 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData delete(int index) {
+    public ArrayData delete(final int index) {
         throw unsupported("delete");
     }
 
     @Override
-    public ArrayData delete(long fromIndex, long toIndex) {
+    public ArrayData delete(final long fromIndex, final long toIndex) {
         throw unsupported("delete");
     }
 
@@ -189,7 +189,7 @@ final class ByteBufferArrayData extends ArrayData {
     }
 
     @Override
-    public ArrayData slice(long from, long to) {
+    public ArrayData slice(final long from, final long to) {
         throw unsupported("slice");
     }
 

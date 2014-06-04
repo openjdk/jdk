@@ -211,7 +211,7 @@ $STAGE.scene = new Scene(stack);
 var timer = new AnimationTimerExtend() {
     handle: function handle(now) {
         if (frame < 200) {
-		    draw_frame();
+            draw_frame();
         } else {
             checkImageAndExit();
             timer.stop();

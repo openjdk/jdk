@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.runtime.events;
 
 import java.util.logging.Level;
-
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.RewriteException;

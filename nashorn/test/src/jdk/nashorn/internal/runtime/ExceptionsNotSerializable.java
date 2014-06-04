@@ -67,9 +67,9 @@ public class ExceptionsNotSerializable {
         try {
             new ObjectOutputStream(new ByteArrayOutputStream()).writeObject(obj);
             fail();
-        } catch (NotSerializableException e) {
+        } catch (final NotSerializableException e) {
             assertEquals(e.getMessage(), obj.getClass().getName());
-        } catch (IOException e) {
+        } catch (final IOException e) {
             fail("", e);
         }
 

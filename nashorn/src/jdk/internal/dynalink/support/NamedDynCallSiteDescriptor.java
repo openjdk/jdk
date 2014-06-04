@@ -89,7 +89,7 @@ import jdk.internal.dynalink.CallSiteDescriptor;
 class NamedDynCallSiteDescriptor extends UnnamedDynCallSiteDescriptor {
     private final String name;
 
-    NamedDynCallSiteDescriptor(String op, String name, MethodType methodType) {
+    NamedDynCallSiteDescriptor(final String op, final String name, final MethodType methodType) {
         super(op, methodType);
         this.name = name;
     }
@@ -100,7 +100,7 @@ class NamedDynCallSiteDescriptor extends UnnamedDynCallSiteDescriptor {
     }
 
     @Override
-    public String getNameToken(int i) {
+    public String getNameToken(final int i) {
         switch(i) {
             case 0: return "dyn";
             case 1: return getOp();
@@ -110,7 +110,7 @@ class NamedDynCallSiteDescriptor extends UnnamedDynCallSiteDescriptor {
     }
 
     @Override
-    public CallSiteDescriptor changeMethodType(MethodType newMethodType) {
+    public CallSiteDescriptor changeMethodType(final MethodType newMethodType) {
         return CallSiteDescriptorFactory.getCanonicalPublicDescriptor(new NamedDynCallSiteDescriptor(getOp(), name,
                 newMethodType));
     }

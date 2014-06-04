@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8010709  org on the top level doesn't resolve 
+ * JDK-8010709  org on the top level doesn't resolve
  *
  * @test
  * @run

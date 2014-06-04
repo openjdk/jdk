@@ -21,8 +21,8 @@
  * questions.
  */
 
-/** 
- * Ask Debug for an event log of favourable events instead of using --log flags printing to screen 
+/**
+ * Ask Debug for an event log of favourable events instead of using --log flags printing to screen
  * @test
  * @bug 8037086,8038398
  * @fork
@@ -46,13 +46,13 @@ function checkExpectedRecompilation(f, expectedValues, testCase) {
     print(f());
     events = Debug.getRuntimeEvents();
     //make sure we got runtime events
-    print("events = " + (events.toString().indexOf("RuntimeEvent") != -1)); 
+    print("events = " + (events.toString().indexOf("RuntimeEvent") != -1));
     if (events.length ==  expectedValues.length) {
         for (var i in events) {
             var e = events[i];
             var returnValue = getReturnValue.invoke(e);
             if (typeof returnValue != 'undefined') {
-	        setReturnTypeAndValue[i] = [getReturnType.invoke(getValue.invoke(e)), returnValue];
+            setReturnTypeAndValue[i] = [getReturnType.invoke(getValue.invoke(e)), returnValue];
             } else {
                 returnValue = "undefined";
                 setReturnTypeAndValue[i] = [getReturnType.invoke(getValue.invoke(e)), returnValue];
@@ -62,22 +62,22 @@ function checkExpectedRecompilation(f, expectedValues, testCase) {
             }
         }
     } else {
-        fail("Number of Deoptimizing recompilation is not correct, expected: " + expectedValues.length + " and found: " + events.length + " in test case: " + f);       
-    }    
+        fail("Number of Deoptimizing recompilation is not correct, expected: " + expectedValues.length + " and found: " + events.length + " in test case: " + f);
+    }
 }
 
-checkExpectedRecompilation(function divisionByZeroTest() {var x = { a: 2, b:1 }; x.a = Number.POSITIVE_INFINITY; x.b = 0; print(x.a/x.b); return 1;}, 
+checkExpectedRecompilation(function divisionByZeroTest() {var x = { a: 2, b:1 }; x.a = Number.POSITIVE_INFINITY; x.b = 0; print(x.a/x.b); return 1;},
                            expectedValues =[['double', 'Infinity']]);
 checkExpectedRecompilation(function divisionWithRemainderTest() {var x = { a: 7, b:2 }; print(x.a/x.b); return 1;}, expectedValues =[['double', '3.5']]);
-checkExpectedRecompilation(function infinityMultiplicationTest() {var x = { a: Number.POSITIVE_INFINITY, b: Number.POSITIVE_INFINITY}; print(x.a*x.b); return 1;}, 
+checkExpectedRecompilation(function infinityMultiplicationTest() {var x = { a: Number.POSITIVE_INFINITY, b: Number.POSITIVE_INFINITY}; print(x.a*x.b); return 1;},
                            expectedValues =[['double', 'Infinity']]);
-checkExpectedRecompilation(function maxValueMultiplicationTest() {var x = { a: Number.MAX_VALUE, b: Number.MAX_VALUE}; print(x.a*x.b); return 1;}, 
+checkExpectedRecompilation(function maxValueMultiplicationTest() {var x = { a: Number.MAX_VALUE, b: Number.MAX_VALUE}; print(x.a*x.b); return 1;},
                            expectedValues =[['double', '1.7976931348623157e+308']]);
-checkExpectedRecompilation(function divisionByInfinityTest() {var x = { a: -1, b: Number.POSITIVE_INFINITY}; print(x.a/x.b); return 1;}, 
+checkExpectedRecompilation(function divisionByInfinityTest() {var x = { a: -1, b: Number.POSITIVE_INFINITY}; print(x.a/x.b); return 1;},
                            expectedValues =[['double', 'Infinity']]);
-checkExpectedRecompilation(function divisionByStringTest() {var x = { a: Number.POSITIVE_INFINITY, b: 'Hello'}; print(x.a/x.b); return 1;}, 
+checkExpectedRecompilation(function divisionByStringTest() {var x = { a: Number.POSITIVE_INFINITY, b: 'Hello'}; print(x.a/x.b); return 1;},
                            expectedValues =[['double', 'Infinity']]);
-checkExpectedRecompilation(function nestedFunctionTest() {var a=3,b,c; function f() {var x = 2, y =1; function g(){var y = x; var z = a; z = x*y; print(a*b)} g()}f(); return 1;}, 
+checkExpectedRecompilation(function nestedFunctionTest() {var a=3,b,c; function f() {var x = 2, y =1; function g(){var y = x; var z = a; z = x*y; print(a*b)} g()}f(); return 1;},
                            expectedValues =[['object', 'undefined']]);
 checkExpectedRecompilation(function functionTest(a,b,c) { d = (a + b) * c; print(d); return 1;}, expectedValues =[['double', 'NaN']]);
 checkExpectedRecompilation(function andTest(a,b) { d = a && b; print(d); return 1;}, expectedValues =[['object', 'undefined']]);

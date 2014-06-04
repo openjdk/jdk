@@ -160,7 +160,7 @@ public class JSONParser extends AbstractParser {
                 }
 
                 // First digit of number.
-                int digit = convertDigit(ch0, 10);
+                final int digit = convertDigit(ch0, 10);
 
                 // skip first digit
                 skip(1);

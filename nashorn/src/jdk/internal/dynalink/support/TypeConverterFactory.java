@@ -91,7 +91,6 @@ import java.security.AccessController;
 import java.security.PrivilegedAction;
 import java.util.LinkedList;
 import java.util.List;
-
 import jdk.internal.dynalink.linker.ConversionComparator;
 import jdk.internal.dynalink.linker.ConversionComparator.Comparison;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -116,12 +115,12 @@ public class TypeConverterFactory {
         protected ClassMap<MethodHandle> computeValue(final Class<?> sourceType) {
             return new ClassMap<MethodHandle>(getClassLoader(sourceType)) {
                 @Override
-                protected MethodHandle computeValue(Class<?> targetType) {
+                protected MethodHandle computeValue(final Class<?> targetType) {
                     try {
                         return createConverter(sourceType, targetType);
-                    } catch (RuntimeException e) {
+                    } catch (final RuntimeException e) {
                         throw e;
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -134,7 +133,7 @@ public class TypeConverterFactory {
         protected ClassMap<MethodHandle> computeValue(final Class<?> sourceType) {
             return new ClassMap<MethodHandle>(getClassLoader(sourceType)) {
                 @Override
-                protected MethodHandle computeValue(Class<?> targetType) {
+                protected MethodHandle computeValue(final Class<?> targetType) {
                     if(!canAutoConvert(sourceType, targetType)) {
                         final MethodHandle converter = getCacheableTypeConverter(sourceType, targetType);
                         if(converter != IDENTITY_CONVERSION) {
@@ -152,12 +151,12 @@ public class TypeConverterFactory {
         protected ClassMap<Boolean> computeValue(final Class<?> sourceType) {
             return new ClassMap<Boolean>(getClassLoader(sourceType)) {
                 @Override
-                protected Boolean computeValue(Class<?> targetType) {
+                protected Boolean computeValue(final Class<?> targetType) {
                     try {
                         return getTypeConverterNull(sourceType, targetType) != null;
-                    } catch (RuntimeException e) {
+                    } catch (final RuntimeException e) {
                         throw e;
-                    } catch (Exception e) {
+                    } catch (final Exception e) {
                         throw new RuntimeException(e);
                     }
                 }
@@ -179,10 +178,10 @@ public class TypeConverterFactory {
      *
      * @param factories the {@link GuardingTypeConverterFactory} instances to compose.
      */
-    public TypeConverterFactory(Iterable<? extends GuardingTypeConverterFactory> factories) {
+    public TypeConverterFactory(final Iterable<? extends GuardingTypeConverterFactory> factories) {
         final List<GuardingTypeConverterFactory> l = new LinkedList<>();
         final List<ConversionComparator> c = new LinkedList<>();
-        for(GuardingTypeConverterFactory factory: factories) {
+        for(final GuardingTypeConverterFactory factory: factories) {
             l.add(factory);
             if(factory instanceof ConversionComparator) {
                 c.add((ConversionComparator)factory);
@@ -207,7 +206,7 @@ public class TypeConverterFactory {
      * {@link MethodHandles#filterArguments(MethodHandle, int, MethodHandle...)} with
      * {@link GuardingTypeConverterFactory} produced type converters as filters.
      */
-    public MethodHandle asType(MethodHandle handle, final MethodType fromType) {
+    public MethodHandle asType(final MethodHandle handle, final MethodType fromType) {
         MethodHandle newHandle = handle;
         final MethodType toType = newHandle.type();
         final int l = toType.parameterCount();
@@ -251,7 +250,7 @@ public class TypeConverterFactory {
         return newHandle.asType(fromType);
     }
 
-    private static MethodHandle applyConverters(MethodHandle handle, int pos, List<MethodHandle> converters) {
+    private static MethodHandle applyConverters(final MethodHandle handle, final int pos, final List<MethodHandle> converters) {
         if(converters.isEmpty()) {
             return handle;
         }
@@ -286,8 +285,8 @@ public class TypeConverterFactory {
      * @return one of Comparison constants that establish which - if any - of the target types is preferable for the
      * conversion.
      */
-    public Comparison compareConversion(Class<?> sourceType, Class<?> targetType1, Class<?> targetType2) {
-        for(ConversionComparator comparator: comparators) {
+    public Comparison compareConversion(final Class<?> sourceType, final Class<?> targetType1, final Class<?> targetType2) {
+        for(final ConversionComparator comparator: comparators) {
             final Comparison result = comparator.compareConversion(sourceType, targetType1, targetType2);
             if(result != Comparison.INDETERMINATE) {
                 return result;
@@ -314,20 +313,20 @@ public class TypeConverterFactory {
         return TypeUtilities.isMethodInvocationConvertible(fromType, toType);
     }
 
-    /*private*/ MethodHandle getCacheableTypeConverterNull(Class<?> sourceType, Class<?> targetType) {
+    /*private*/ MethodHandle getCacheableTypeConverterNull(final Class<?> sourceType, final Class<?> targetType) {
         final MethodHandle converter = getCacheableTypeConverter(sourceType, targetType);
         return converter == IDENTITY_CONVERSION ? null : converter;
     }
 
-    /*private*/ MethodHandle getTypeConverterNull(Class<?> sourceType, Class<?> targetType) {
+    /*private*/ MethodHandle getTypeConverterNull(final Class<?> sourceType, final Class<?> targetType) {
         try {
             return getCacheableTypeConverterNull(sourceType, targetType);
-        } catch(NotCacheableConverter e) {
+        } catch(final NotCacheableConverter e) {
             return e.converter;
         }
     }
 
-    /*private*/ MethodHandle getCacheableTypeConverter(Class<?> sourceType, Class<?> targetType) {
+    /*private*/ MethodHandle getCacheableTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         return converterMap.get(sourceType).get(targetType);
     }
 
@@ -340,15 +339,15 @@ public class TypeConverterFactory {
      * @param targetType the type to convert to
      * @return a method handle performing the conversion.
      */
-    public MethodHandle getTypeConverter(Class<?> sourceType, Class<?> targetType) {
+    public MethodHandle getTypeConverter(final Class<?> sourceType, final Class<?> targetType) {
         try {
             return converterIdentityMap.get(sourceType).get(targetType);
-        } catch(NotCacheableConverter e) {
+        } catch(final NotCacheableConverter e) {
             return e.converter;
         }
     }
 
-    /*private*/ MethodHandle createConverter(Class<?> sourceType, Class<?> targetType) throws Exception {
+    /*private*/ MethodHandle createConverter(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final MethodType type = MethodType.methodType(targetType, sourceType);
         final MethodHandle identity = IDENTITY_CONVERSION.asType(type);
         MethodHandle last = identity;

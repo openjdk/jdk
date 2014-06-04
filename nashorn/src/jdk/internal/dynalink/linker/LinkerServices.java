@@ -192,7 +192,7 @@ public interface LinkerServices {
          * @param fromType the passed type
          * @return the converted method handle, as per the {@code asTypeSafeReturn} semantics.
          */
-        public static MethodHandle asTypeLosslessReturn(LinkerServices linkerServices, MethodHandle handle, MethodType fromType) {
+        public static MethodHandle asTypeLosslessReturn(final LinkerServices linkerServices, final MethodHandle handle, final MethodType fromType) {
             final Class<?> handleReturnType = handle.type().returnType();
             return linkerServices.asType(handle, TypeUtilities.isConvertibleWithoutLoss(handleReturnType, fromType.returnType()) ?
                     fromType : fromType.changeReturnType(handleReturnType));

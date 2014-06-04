@@ -221,7 +221,7 @@ final class JavaAdapterBytecodeGenerator {
      * filterReturnValue on the delegate handle, as that would create a new converter handle wrapping the function's
      * handle for every instance of the adapter, causing the handle.invokeExact() call sites to become megamorphic.
      */
-    private Map<Class<?>, String> converterFields = new LinkedHashMap<>();
+    private final Map<Class<?>, String> converterFields = new LinkedHashMap<>();
 
     /**
      * Subset of possible return types for all methods; namely, all possible return types of the SAM methods (we
@@ -229,7 +229,7 @@ final class JavaAdapterBytecodeGenerator {
      * overloads with multiple return types. We use this set when emitting the constructor taking a ScriptFunction (the
      * SAM initializer) to avoid populating converter fields that will never be used by SAM methods.
      */
-    private Set<Class<?>> samReturnTypes = new HashSet<>();
+    private final Set<Class<?>> samReturnTypes = new HashSet<>();
 
     private final ClassWriter cw;
 
@@ -411,7 +411,7 @@ final class JavaAdapterBytecodeGenerator {
 
     private void generateConverterInit(final InstructionAdapter mv, final boolean samOnly) {
         assert !samOnly || !classOverride;
-        for(Map.Entry<Class<?>, String> converterField: converterFields.entrySet()) {
+        for(final Map.Entry<Class<?>, String> converterField: converterFields.entrySet()) {
             final Class<?> returnType = converterField.getKey();
             if(!classOverride) {
                 mv.visitVarInsn(ALOAD, 0);
@@ -496,7 +496,7 @@ final class JavaAdapterBytecodeGenerator {
         // Invoke super constructor with the same arguments.
         mv.visitVarInsn(ALOAD, 0);
         int offset = 1; // First arg is at position 1, after this.
-        for (Type argType: argTypes) {
+        for (final Type argType: argTypes) {
             mv.load(offset, argType);
             offset += argType.getSize();
         }
@@ -976,7 +976,7 @@ final class JavaAdapterBytecodeGenerator {
         }
     }
 
-    private void generateSuperMethod(MethodInfo mi) {
+    private void generateSuperMethod(final MethodInfo mi) {
         final Method method = mi.method;
 
         final String methodDesc = mi.type.toMethodDescriptorString();

@@ -147,7 +147,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
      * @param sourceType the source method type for filtering
      * @return a type adapted filter
      */
-    private static MethodHandle asFilterType(final MethodHandle filter, int pos, MethodType targetType, MethodType sourceType) {
+    private static MethodHandle asFilterType(final MethodHandle filter, final int pos, final MethodType targetType, final MethodType sourceType) {
         return filter.asType(MethodType.methodType(targetType.parameterType(pos), sourceType.parameterType(pos)));
     }
 
@@ -175,7 +175,7 @@ final class JavaSuperAdapterLinker implements TypeBasedGuardingDynamicLinker {
      * @return true if the receiver is a super adapter, and its underlying adapter is of the specified class
      */
     @SuppressWarnings("unused")
-    private static boolean isAdapterOfClass(Class<?> clazz, Object obj) {
+    private static boolean isAdapterOfClass(final Class<?> clazz, final Object obj) {
         return obj instanceof JavaSuperAdapter && clazz == (((JavaSuperAdapter)obj).getAdapter()).getClass();
     }
 }

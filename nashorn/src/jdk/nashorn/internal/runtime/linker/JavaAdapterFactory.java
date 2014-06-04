@@ -113,15 +113,15 @@ public final class JavaAdapterFactory {
      * @throws ECMAException with a TypeError if the adapter class can not be generated because the original class is
      * final, non-public, or has no public or protected constructors.
      */
-    public static StaticClass getAdapterClassFor(final Class<?>[] types, ScriptObject classOverrides, final MethodHandles.Lookup lookup) {
+    public static StaticClass getAdapterClassFor(final Class<?>[] types, final ScriptObject classOverrides, final MethodHandles.Lookup lookup) {
         return getAdapterClassFor(types, classOverrides, getProtectionDomain(lookup));
     }
 
-    private static StaticClass getAdapterClassFor(final Class<?>[] types, ScriptObject classOverrides, final ProtectionDomain protectionDomain) {
+    private static StaticClass getAdapterClassFor(final Class<?>[] types, final ScriptObject classOverrides, final ProtectionDomain protectionDomain) {
         assert types != null && types.length > 0;
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
-            for (Class<?> type : types) {
+            for (final Class<?> type : types) {
                 // check for restricted package access
                 Context.checkPackageAccess(type);
                 // check for classes, interfaces in reflection
@@ -257,7 +257,7 @@ public final class JavaAdapterFactory {
         final boolean autoConvertibleFromFunction;
         final AdaptationResult adaptationResult;
 
-        AdapterInfo(Class<?> superClass, List<Class<?>> interfaces, ClassAndLoader definingLoader) throws AdaptationException {
+        AdapterInfo(final Class<?> superClass, final List<Class<?>> interfaces, final ClassAndLoader definingLoader) throws AdaptationException {
             this.commonLoader = findCommonLoader(definingLoader);
             final JavaAdapterBytecodeGenerator gen = new JavaAdapterBytecodeGenerator(superClass, interfaces, commonLoader, false);
             this.autoConvertibleFromFunction = gen.isAutoConvertibleFromFunction();

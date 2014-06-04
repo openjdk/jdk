@@ -41,7 +41,7 @@ function assertEq(a, b) {
 
 function pprint(x) {
     if (verbose_run) {
-	print(x);
+    print(x);
     }
 }
 
@@ -97,14 +97,14 @@ for (var i = 0; i < args.length; i++) {
     if (args[i] === '--verbose') {
         verbose_run = true;
     } else if (args[i] === '--times') {
-	i++;
-	rtimes = +args[i];
+    i++;
+    rtimes = +args[i];
     } else if (args[i] === '--single') {
-	i++;
-	single = args[i];
+    i++;
+    single = args[i];
     } else if (args[i] === '--runall') {
-	i++;
-	runall = true;
+    i++;
+    runall = true;
     }
 }
 
@@ -114,7 +114,7 @@ function runsuite(tests) {
     var oldRandom = Math.random;
 
     try {
-	for (var n = 0; n < tests.length; n++) {
+    for (var n = 0; n < tests.length; n++) {
             try {
                 path = dir + '../external/sunspider/tests/sunspider-1.0.2/' + tests[n].name
 
@@ -135,13 +135,13 @@ function runsuite(tests) {
                     var elemsPerPercent = to / 100;
                     var po = 0|(to / 10);
 
-		    pprint("Doing warmup.");
+            pprint("Doing warmup.");
                     for (times = 0; times < to; times++) {
                         initrandom();
                         tests[n].rerun();
                     }
 
-		    pprint("Doing hot runs.");
+            pprint("Doing hot runs.");
                     for (times = 0; times < to; times++) {
                         initrandom();
                         tests[n].rerun();
@@ -170,35 +170,35 @@ function runsuite(tests) {
             }
         }
     } catch (e) {
-	print("FAIL!");
-	throw e;
+    print("FAIL!");
+    throw e;
         // no scripting or something, silently fail
     } finally {
-	Math.random = oldRandom;
+    Math.random = oldRandom;
     }
 
-    for (var n = 0; n < tests.length; n++) {	
-	
-	var time = "" + res[n];
-	while (time.length < 6) {
-	    time = " " + time;
-	}
-	time += " ms";
-	if (res[n] == -1) {
-	    time = "<couldn't be rerun>";
-	}
-	var str = tests[n].name;
-	for (var spaces = str.length; spaces < 32; spaces++) {
-	    str += " ";
-	}
-	str += " ";
-	str += time;
+    for (var n = 0; n < tests.length; n++) {
 
-	if (tests[n].times > 0) {
-	    str += " [";
-	    str += tests[n].times + " reruns]";
-	}
-	pprint(str);
+    var time = "" + res[n];
+    while (time.length < 6) {
+        time = " " + time;
+    }
+    time += " ms";
+    if (res[n] == -1) {
+        time = "<couldn't be rerun>";
+    }
+    var str = tests[n].name;
+    for (var spaces = str.length; spaces < 32; spaces++) {
+        str += " ";
+    }
+    str += " ";
+    str += time;
+
+    if (tests[n].times > 0) {
+        str += " [";
+        str += tests[n].times + " reruns]";
+    }
+    pprint(str);
     }
 
     return changed;
@@ -219,10 +219,10 @@ var tests = [
 
     { name: 'regexp-dna.js',
       actual: function() {
-	  return dnaOutputString + dnaInput;
+      return dnaOutputString + dnaInput;
       },
       expected: function() {
-	  return expectedDNAOutputString + expectedDNAInput;
+      return expectedDNAOutputString + expectedDNAInput;
       },
     },
 
@@ -235,28 +235,28 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  toBinaryTable = [
-		  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-		  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
-		  -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
-	          52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1,
-		  -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
-	           15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
-		  -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
-	          41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
-	  ];
-	  var str = "";	
-	  for (var i = 0; i < 8192; i++)
+      toBinaryTable = [
+          -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+          -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,-1,
+          -1,-1,-1,-1, -1,-1,-1,-1, -1,-1,-1,62, -1,-1,-1,63,
+              52,53,54,55, 56,57,58,59, 60,61,-1,-1, -1, 0,-1,-1,
+          -1, 0, 1, 2,  3, 4, 5, 6,  7, 8, 9,10, 11,12,13,14,
+               15,16,17,18, 19,20,21,22, 23,24,25,-1, -1,-1,-1,-1,
+          -1,26,27,28, 29,30,31,32, 33,34,35,36, 37,38,39,40,
+              41,42,43,44, 45,46,47,48, 49,50,51,-1, -1,-1,-1,-1
+      ];
+      var str = "";
+      for (var i = 0; i < 8192; i++)
               str += String.fromCharCode((25 * Math.random()) + 97);
-	
-	  for (var i = 8192; i <= 16384; i *= 2) {	
-	      var base64;
-	      base64 = toBase64(str);
-	      var encoded = base64ToString(base64);
 
-	      str += str;
-	  }
-	  toBinaryTable = null;
+      for (var i = 8192; i <= 16384; i *= 2) {
+          var base64;
+          base64 = toBase64(str);
+          var encoded = base64ToString(base64);
+
+          str += str;
+      }
+      toBinaryTable = null;
       }
     },
     { name: 'date-format-xparb.js',
@@ -268,14 +268,14 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  date = new Date("1/1/2007 1:11:11");	
-	  for (i = 0; i < 4000; ++i) {
-	      var shortFormat = date.dateFormat("Y-m-d");
-	      var longFormat = date.dateFormat("l, F d, Y g:i:s A");
-	      date.setTime(date.getTime() + 84266956);
-	  }
+      date = new Date("1/1/2007 1:11:11");
+      for (i = 0; i < 4000; ++i) {
+          var shortFormat = date.dateFormat("Y-m-d");
+          var longFormat = date.dateFormat("l, F d, Y g:i:s A");
+          date.setTime(date.getTime() + 84266956);
       }
-	
+      }
+
     },
     { name: 'string-validate-input.js',
       actual: function() {
@@ -286,8 +286,8 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  doTest();
-      },	
+      doTest();
+      },
     },
     { name: '3d-morph.js',
       actual: function() {
@@ -298,18 +298,18 @@ var tests = [
           return true;
       },
       times: rtimes,
-      rerun: function() {	
-	  a = Array()
-	  for (var i=0; i < nx*nz*3; ++i)
-	      a[i] = 0
-	  for (var i = 0; i < loops; ++i) {
-	      morph(a, i/loops)
-	  }
-	  testOutput = 0;
-	  for (var i = 0; i < nx; i++)
-	      testOutput += a[3*(i*nx+i)+1];
-	  a = null;
-	
+      rerun: function() {
+      a = Array()
+      for (var i=0; i < nx*nz*3; ++i)
+          a[i] = 0
+      for (var i = 0; i < loops; ++i) {
+          morph(a, i/loops)
+      }
+      testOutput = 0;
+      for (var i = 0; i < nx; i++)
+          testOutput += a[3*(i*nx+i)+1];
+      a = null;
+
       }
     },
     { name: 'crypto-aes.js',
@@ -321,9 +321,9 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  cipherText = AESEncryptCtr(plainText, password, 256);
-	  decryptedText = AESDecryptCtr(cipherText, password, 256);
-	
+      cipherText = AESEncryptCtr(plainText, password, 256);
+      decryptedText = AESDecryptCtr(cipherText, password, 256);
+
       }
     },
     { name: 'crypto-md5.js',
@@ -335,7 +335,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  md5Output = hex_md5(plainText);
+      md5Output = hex_md5(plainText);
       }
     },
 
@@ -348,7 +348,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  sha1Output = hex_sha1(plainText);	
+      sha1Output = hex_sha1(plainText);
       }
     },
 
@@ -361,11 +361,11 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  bitwiseAndValue = 4294967296;
-	  for (var i = 0; i < 600000; i++) {
-	      bitwiseAndValue = bitwiseAndValue & i;	
-	  }
-	  result = bitwiseAndValue;
+      bitwiseAndValue = 4294967296;
+      for (var i = 0; i < 600000; i++) {
+          bitwiseAndValue = bitwiseAndValue & i;
+      }
+      result = bitwiseAndValue;
       }
     },
 
@@ -378,7 +378,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  result = TimeFunc(bitsinbyte);
+      result = TimeFunc(bitsinbyte);
       }
     },
 
@@ -396,7 +396,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  result = sieve();
+      result = sieve();
       }
     },
 
@@ -409,7 +409,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  sum = TimeFunc(fast3bitlookup);	
+      sum = TimeFunc(fast3bitlookup);
       }
     },
 
@@ -422,21 +422,21 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  var ret = 0;	
-	  for (var n = 3; n <= 24; n *= 2) {
-	      (function(){
-		  var bodies = new NBodySystem( Array(
-		      Sun(),Jupiter(),Saturn(),Uranus(),Neptune()
-		  ));
-		  var max = n * 100;
-		
-		  ret += bodies.energy();
-		  for (var i=0; i<max; i++){
-		      bodies.advance(0.01);
-		  }
-		  ret += bodies.energy();
-	      })();
-	  }
+      var ret = 0;
+      for (var n = 3; n <= 24; n *= 2) {
+          (function(){
+          var bodies = new NBodySystem( Array(
+              Sun(),Jupiter(),Saturn(),Uranus(),Neptune()
+          ));
+          var max = n * 100;
+
+          ret += bodies.energy();
+          for (var i=0; i<max; i++){
+              bodies.advance(0.01);
+          }
+          ret += bodies.energy();
+          })();
+      }
       }
     },
 
@@ -449,28 +449,28 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  ret = 0;
-	
-	  for (var n = 4; n <= 7; n += 1) {
-	      var minDepth = 4;
-	      var maxDepth = Math.max(minDepth + 2, n);
-	      var stretchDepth = maxDepth + 1;
-	
-	      var check = bottomUpTree(0,stretchDepth).itemCheck();
-	
-	      var longLivedTree = bottomUpTree(0,maxDepth);
-	      for (var depth=minDepth; depth<=maxDepth; depth+=2){
-		  var iterations = 1 << (maxDepth - depth + minDepth);
-		
-		  check = 0;
-		  for (var i=1; i<=iterations; i++){
-		      check += bottomUpTree(i,depth).itemCheck();
-		      check += bottomUpTree(-i,depth).itemCheck();
-		  }
-	      }
-	
-	      ret += longLivedTree.itemCheck();
-	  }
+      ret = 0;
+
+      for (var n = 4; n <= 7; n += 1) {
+          var minDepth = 4;
+          var maxDepth = Math.max(minDepth + 2, n);
+          var stretchDepth = maxDepth + 1;
+
+          var check = bottomUpTree(0,stretchDepth).itemCheck();
+
+          var longLivedTree = bottomUpTree(0,maxDepth);
+          for (var depth=minDepth; depth<=maxDepth; depth+=2){
+          var iterations = 1 << (maxDepth - depth + minDepth);
+
+          check = 0;
+          for (var i=1; i<=iterations; i++){
+              check += bottomUpTree(i,depth).itemCheck();
+              check += bottomUpTree(-i,depth).itemCheck();
+          }
+          }
+
+          ret += longLivedTree.itemCheck();
+      }
       }
     },
 
@@ -483,8 +483,8 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  n = 8;
-	  ret = fannkuch(n);	
+      n = 8;
+      ret = fannkuch(n);
       }
     },
 
@@ -501,10 +501,10 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  total = 0;	
-	  for (var i = 6; i <= 48; i *= 2) {
-	      total += spectralnorm(i);
-	  }
+      total = 0;
+      for (var i = 6; i <= 48; i *= 2) {
+          total += spectralnorm(i);
+      }
       }
     },
 
@@ -517,7 +517,7 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  testOutput = arrayToCanvasCommands(raytraceScene());	
+      testOutput = arrayToCanvasCommands(raytraceScene());
       }
     },
 
@@ -530,8 +530,8 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  total = 0;
-	  cordic(25000);
+      total = 0;
+      cordic(25000);
       }
     },
 
@@ -550,12 +550,12 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  result = 0;	
-	  for (var i = 3; i <= 5; i++) {
-	      result += ack(3,i);
-	      result += fib(17.0+i);
-	      result += tak(3*i+3,2*i+2,i+1);
-	  }
+      result = 0;
+      for (var i = 3; i <= 5; i++) {
+          result += ack(3,i);
+          result += fib(17.0+i);
+          result += tak(3*i+3,2*i+2,i+1);
+      }
       }
     },
 
@@ -568,12 +568,12 @@ var tests = [
       },
       times: rtimes,
       rerun: function() {
-	  date = new Date("1/1/2007 1:11:11");	
-	  for (i = 0; i < 500; ++i) {
-	      var shortFormat = date.formatDate("Y-m-d");
-	      var longFormat = date.formatDate("l, F d, Y g:i:s A");
-	      date.setTime(date.getTime() + 84266956);
-	  }
+      date = new Date("1/1/2007 1:11:11");
+      for (i = 0; i < 500; ++i) {
+          var shortFormat = date.formatDate("Y-m-d");
+          var longFormat = date.formatDate("l, F d, Y g:i:s A");
+          date.setTime(date.getTime() + 84266956);
+      }
       }
     },
 
@@ -588,53 +588,53 @@ var tests = [
           return 295906;
       },
       times: rtimes,
-      rerun: function() {	
-	  tagInfo = tagInfoJSON.parseJSON(function(a, b) { if (a == "popularity") { return Math.log(b) / log2; } else {return b; } });
-	  tagcloud = makeTagCloud(tagInfo);
+      rerun: function() {
+      tagInfo = tagInfoJSON.parseJSON(function(a, b) { if (a == "popularity") { return Math.log(b) / log2; } else {return b; } });
+      tagcloud = makeTagCloud(tagInfo);
       }
     },
 
     { name: 'math-partial-sums.js',
       actual: function() {
-	  return total;
+      return total;
       },
       expected: function() {
-	  return 60.08994194659945;
+      return 60.08994194659945;
       },
       times: rtimes,
       rerun: function() {
-	  total = 0;
-	  for (var i = 1024; i <= 16384; i *= 2) {
-	      total += partial(i);
-	  }
+      total = 0;
+      for (var i = 1024; i <= 16384; i *= 2) {
+          total += partial(i);
+      }
       }
     },
 
     { name: 'access-nsieve.js',
       actual: function() {
-	  return result;
+      return result;
       },
       expected: function() {
-	  return 14302;
+      return 14302;
       },
       times: rtimes,
       rerun: function() {
-	  result = sieve();
+      result = sieve();
       }
     },
 
     { name: '3d-cube.js',
       times: rtimes,
       rerun: function() {
-	  Q = new Array();
-	  MTrans = new Array();  // transformation matrix
-	  MQube = new Array();  // position information of qube
-	  I = new Array();      // entity matrix
-	  Origin = new Object();
-	  Testing = new Object();	
-	  for ( var i = 20; i <= 160; i *= 2 ) {
-	      Init(i);
-	  }
+      Q = new Array();
+      MTrans = new Array();  // transformation matrix
+      MQube = new Array();  // position information of qube
+      I = new Array();      // entity matrix
+      Origin = new Object();
+      Testing = new Object();
+      for ( var i = 20; i <= 160; i *= 2 ) {
+          Init(i);
+      }
       }
     },
 
@@ -642,11 +642,11 @@ var tests = [
     { name: 'string-fasta.js',
       times: rtimes,
       rerun: function() {
-	  ret = 0;
-	  count = 7;
-	  fastaRepeat(2*count*100000, ALU);
-	  fastaRandom(3*count*1000, IUB);
-	  fastaRandom(5*count*1000, HomoSap);
+      ret = 0;
+      count = 7;
+      fastaRepeat(2*count*100000, ALU);
+      fastaRandom(3*count*1000, IUB);
+      fastaRandom(5*count*1000, HomoSap);
       }
     },
 
@@ -659,7 +659,7 @@ var tests = [
               decompressedMochiKit[82556] == '>';
       },
       expected: function() {
-	  return true;
+      return true;
       },
     },
 
@@ -668,14 +668,14 @@ var tests = [
 tests.sort(function(a,b) { return a.name.localeCompare(b.name); });
 if (typeof single !== 'undefined') {
     for (i in tests) {
-	if (tests[i].name === single) {
-	    singleTest = tests[i];
-	    tests = [singleTest];
-	    break;
-	}
+    if (tests[i].name === single) {
+        singleTest = tests[i];
+        tests = [singleTest];
+        break;
+    }
     }
     if (tests.length != 1) {
-	throw "unknown single test '" + single + "'";
+    throw "unknown single test '" + single + "'";
     }
 }
 

@@ -72,7 +72,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
     public void runTest() throws IOException {
         try {
             super.runTest();
-        } catch(AssertionError e) {
+        } catch(final AssertionError e) {
             throw new AssertionError("Failed executing test " + testFile, e);
         }
     }
@@ -88,7 +88,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
     // avoid direct System.out.println - use reporter to capture
     @Override
-    protected void log(String msg) {
+    protected void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 
@@ -176,7 +176,7 @@ public final class ScriptRunnable extends AbstractScriptRunnable implements ITes
 
         cmd.add(System.getProperty("java.home") + separator + "bin" + separator + "java");
         cmd.add("-Djava.ext.dirs=dist");
-        for (String str : forkJVMOptions) {
+        for (final String str : forkJVMOptions) {
             if(!str.isEmpty()) {
                 cmd.add(str);
             }

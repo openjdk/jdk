@@ -34,4 +34,4 @@ if ("hello".replace("h", "$") != "$ello") {
 
 if ("hello".replace("o", "$x") != "hell$x") {
     fail("String.prototype.replace failed to handle '$x' as replacement");
-} 
+}

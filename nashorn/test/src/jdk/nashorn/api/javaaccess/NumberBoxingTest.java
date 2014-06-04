@@ -180,7 +180,7 @@ public class NumberBoxingTest {
         assertEquals(Short.valueOf((short)18), o.publicShortBox);
     }
 
-    private static void assertEqualsInt(Number n, String name) {
+    private static void assertEqualsInt(final Number n, final String name) {
         if(optimistic) {
             assertEquals(n.intValue(), e.get(name));
         } else {
@@ -275,7 +275,7 @@ public class NumberBoxingTest {
         assertEquals(Float.NEGATIVE_INFINITY, o.publicFloatBox, 1e-10);
     }
 
-    private static void assertEqualsFloat(Float n, String name) {
+    private static void assertEqualsFloat(final Float n, final String name) {
         if(optimistic) {
             assertEquals(n, ((Number)e.get(name)).floatValue());
         } else {

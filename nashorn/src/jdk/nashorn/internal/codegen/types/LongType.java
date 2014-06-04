@@ -239,7 +239,7 @@ class LongType extends BitwiseType {
     }
 
     @Override
-    public Type loadForcedInitializer(MethodVisitor method) {
+    public Type loadForcedInitializer(final MethodVisitor method) {
         method.visitInsn(LCONST_0);
         return LONG;
     }

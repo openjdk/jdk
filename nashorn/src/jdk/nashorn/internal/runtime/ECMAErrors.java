@@ -47,7 +47,7 @@ public final class ECMAErrors {
     /** We assume that compiler generates script classes into the known package. */
     private static final String scriptPackage;
     static {
-        String name = JS.class.getName();
+        final String name = JS.class.getName();
         scriptPackage = name.substring(0, name.lastIndexOf('.'));
     }
 

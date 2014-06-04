@@ -115,20 +115,20 @@ class OverloadedDynamicMethod extends DynamicMethod {
      * @param clazz the class this method belongs to
      * @param name the name of the method
      */
-    OverloadedDynamicMethod(Class<?> clazz, String name) {
+    OverloadedDynamicMethod(final Class<?> clazz, final String name) {
         this(new LinkedList<SingleDynamicMethod>(), clazz.getClassLoader(), getClassAndMethodName(clazz, name));
     }
 
-    private OverloadedDynamicMethod(LinkedList<SingleDynamicMethod> methods, ClassLoader classLoader, String name) {
+    private OverloadedDynamicMethod(final LinkedList<SingleDynamicMethod> methods, final ClassLoader classLoader, final String name) {
         super(name);
         this.methods = methods;
         this.classLoader = classLoader;
     }
 
     @Override
-    SingleDynamicMethod getMethodForExactParamTypes(String paramTypes) {
+    SingleDynamicMethod getMethodForExactParamTypes(final String paramTypes) {
         final LinkedList<SingleDynamicMethod> matchingMethods = new LinkedList<>();
-        for(SingleDynamicMethod method: methods) {
+        for(final SingleDynamicMethod method: methods) {
             final SingleDynamicMethod matchingMethod = method.getMethodForExactParamTypes(paramTypes);
             if(matchingMethod != null) {
                 matchingMethods.add(matchingMethod);
@@ -217,7 +217,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
                 // has an already determined Lookup.
                 final List<MethodHandle> methodHandles = new ArrayList<>(invokables.size());
                 final MethodHandles.Lookup lookup = callSiteDescriptor.getLookup();
-                for(SingleDynamicMethod method: invokables) {
+                for(final SingleDynamicMethod method: invokables) {
                     methodHandles.add(method.getTarget(lookup));
                 }
                 return new OverloadedMethod(methodHandles, this, callSiteType, linkerServices).getInvoker();
@@ -227,8 +227,8 @@ class OverloadedDynamicMethod extends DynamicMethod {
     }
 
     @Override
-    public boolean contains(SingleDynamicMethod m) {
-        for(SingleDynamicMethod method: methods) {
+    public boolean contains(final SingleDynamicMethod m) {
+        for(final SingleDynamicMethod method: methods) {
             if(method.contains(m)) {
                 return true;
             }
@@ -240,8 +240,8 @@ class OverloadedDynamicMethod extends DynamicMethod {
         return classLoader;
     }
 
-    private static boolean isApplicableDynamically(LinkerServices linkerServices, MethodType callSiteType,
-            SingleDynamicMethod m) {
+    private static boolean isApplicableDynamically(final LinkerServices linkerServices, final MethodType callSiteType,
+            final SingleDynamicMethod m) {
         final MethodType methodType = m.getMethodType();
         final boolean varArgs = m.isVarArgs();
         final int fixedArgLen = methodType.parameterCount() - (varArgs ? 1 : 0);
@@ -287,13 +287,13 @@ class OverloadedDynamicMethod extends DynamicMethod {
         return true;
     }
 
-    private static boolean isApplicableDynamically(LinkerServices linkerServices, Class<?> callSiteType,
-            Class<?> methodType) {
+    private static boolean isApplicableDynamically(final LinkerServices linkerServices, final Class<?> callSiteType,
+            final Class<?> methodType) {
         return TypeUtilities.isPotentiallyConvertible(callSiteType, methodType)
                 || linkerServices.canConvert(callSiteType, methodType);
     }
 
-    private ApplicableOverloadedMethods getApplicables(MethodType callSiteType, ApplicabilityTest test) {
+    private ApplicableOverloadedMethods getApplicables(final MethodType callSiteType, final ApplicabilityTest test) {
         return new ApplicableOverloadedMethods(methods, callSiteType, test);
     }
 
@@ -302,7 +302,7 @@ class OverloadedDynamicMethod extends DynamicMethod {
      *
      * @param method a method to add
      */
-    public void addMethod(SingleDynamicMethod method) {
+    public void addMethod(final SingleDynamicMethod method) {
         methods.add(method);
     }
 }

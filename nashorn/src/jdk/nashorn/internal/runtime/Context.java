@@ -1143,7 +1143,7 @@ public final class Context {
 
         installer.initialize(installedClasses.values(), source, constants);
 
-        for (Object constant : constants) {
+        for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
                 ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
             }

@@ -72,42 +72,42 @@ public final class Regex implements RegexState {
     char[][] templates;
     int templateNum;
 
-    public Regex(CharSequence cs) {
+    public Regex(final CharSequence cs) {
         this(cs.toString());
     }
 
-    public Regex(String str) {
+    public Regex(final String str) {
         this(str.toCharArray(), 0, str.length(), 0);
     }
 
-    public Regex(char[] chars) {
+    public Regex(final char[] chars) {
         this(chars, 0, chars.length, 0);
     }
 
-    public Regex(char[] chars, int p, int end) {
+    public Regex(final char[] chars, final int p, final int end) {
         this(chars, p, end, 0);
     }
 
-    public Regex(char[] chars, int p, int end, int option) {
+    public Regex(final char[] chars, final int p, final int end, final int option) {
         this(chars, p, end, option, Syntax.RUBY, WarnCallback.DEFAULT);
     }
 
     // onig_new
-    public Regex(char[] chars, int p, int end, int option, Syntax syntax) {
+    public Regex(final char[] chars, final int p, final int end, final int option, final Syntax syntax) {
         this(chars, p, end, option, Config.ENC_CASE_FOLD_DEFAULT, syntax, WarnCallback.DEFAULT);
     }
 
-    public Regex(char[]chars, int p, int end, int option, WarnCallback warnings) {
+    public Regex(final char[]chars, final int p, final int end, final int option, final WarnCallback warnings) {
         this(chars, p, end, option, Syntax.RUBY, warnings);
     }
 
     // onig_new
-    public Regex(char[] chars, int p, int end, int option, Syntax syntax, WarnCallback warnings) {
+    public Regex(final char[] chars, final int p, final int end, final int option, final Syntax syntax, final WarnCallback warnings) {
         this(chars, p, end, option, Config.ENC_CASE_FOLD_DEFAULT, syntax, warnings);
     }
 
     // onig_alloc_init
-    public Regex(char[] chars, int p, int end, int option, int caseFoldFlag, Syntax syntax, WarnCallback warnings) {
+    public Regex(final char[] chars, final int p, final int end, int option, final int caseFoldFlag, final Syntax syntax, final WarnCallback warnings) {
 
         if ((option & (Option.DONT_CAPTURE_GROUP | Option.CAPTURE_GROUP)) ==
             (Option.DONT_CAPTURE_GROUP | Option.CAPTURE_GROUP)) {
@@ -140,11 +140,11 @@ public final class Regex implements RegexState {
         return factory;
     }
 
-    public Matcher matcher(char[] chars) {
+    public Matcher matcher(final char[] chars) {
         return matcher(chars, 0, chars.length);
     }
 
-    public Matcher matcher(char[] chars, int p, int end) {
+    public Matcher matcher(final char[] chars, final int p, final int end) {
         MatcherFactory matcherFactory = factory;
         if (matcherFactory == null) {
             matcherFactory = compile();
@@ -162,10 +162,10 @@ public final class Regex implements RegexState {
 
     /* set skip map for Boyer-Moor search */
     void setupBMSkipMap() {
-        char[] chars = exact;
-        int p = exactP;
-        int end = exactEnd;
-        int len = end - p;
+        final char[] chars = exact;
+        final int p = exactP;
+        final int end = exactEnd;
+        final int len = end - p;
 
         if (len < Config.CHAR_TABLE_SIZE) {
             // map/skip
@@ -180,7 +180,7 @@ public final class Regex implements RegexState {
         }
     }
 
-    void setExactInfo(OptExactInfo e) {
+    void setExactInfo(final OptExactInfo e) {
         if (e.length == 0) return;
 
         // shall we copy that ?
@@ -207,7 +207,7 @@ public final class Regex implements RegexState {
         }
     }
 
-    void setOptimizeMapInfo(OptMapInfo m) {
+    void setOptimizeMapInfo(final OptMapInfo m) {
         map = m.map;
 
         searchAlgorithm = SearchAlgorithm.MAP;
@@ -219,7 +219,7 @@ public final class Regex implements RegexState {
         }
     }
 
-    void setSubAnchor(OptAnchorInfo anc) {
+    void setSubAnchor(final OptAnchorInfo anc) {
         subAnchor |= anc.leftAnchor & AnchorType.BEGIN_LINE;
         subAnchor |= anc.rightAnchor & AnchorType.END_LINE;
     }
@@ -236,7 +236,7 @@ public final class Regex implements RegexState {
     }
 
     public String optimizeInfoToString() {
-        StringBuilder s = new StringBuilder();
+        final StringBuilder s = new StringBuilder();
         s.append("optimize: ").append(searchAlgorithm.getName()).append("\n");
         s.append("  anchor:     ").append(OptAnchorInfo.anchorToString(anchor));
 

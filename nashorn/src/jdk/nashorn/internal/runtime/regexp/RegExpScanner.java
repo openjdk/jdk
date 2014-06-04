@@ -31,7 +31,6 @@ import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
 import java.util.regex.PatternSyntaxException;
-
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.parser.Scanner;
 import jdk.nashorn.internal.runtime.BitVector;
@@ -101,7 +100,7 @@ final class RegExpScanner extends Scanner {
 
     private void processForwardReferences() {
 
-        Iterator<Integer> iterator = forwardReferences.descendingIterator();
+        final Iterator<Integer> iterator = forwardReferences.descendingIterator();
         while (iterator.hasNext()) {
             final int pos = iterator.next();
             final int num = iterator.next();

@@ -31,7 +31,7 @@ public final class BitSet {
     private static final int BITS_TO_STRING_WRAP = 4;
     @Override
     public String toString() {
-        StringBuilder buffer = new StringBuilder();
+        final StringBuilder buffer = new StringBuilder();
         buffer.append("BitSet");
         for (int i=0; i<SINGLE_BYTE_SIZE; i++) {
             if ((i % (SINGLE_BYTE_SIZE / BITS_TO_STRING_WRAP)) == 0) buffer.append("\n  ");
@@ -40,15 +40,15 @@ public final class BitSet {
         return buffer.toString();
     }
 
-    public boolean at(int pos) {
+    public boolean at(final int pos) {
         return (bits[pos >>> ROOM_SHIFT] & bit(pos)) != 0;
     }
 
-    public void set(int pos) {
+    public void set(final int pos) {
         bits[pos >>> ROOM_SHIFT] |= bit(pos);
     }
 
-    public void clear(int pos) {
+    public void clear(final int pos) {
         bits[pos >>> ROOM_SHIFT] &= ~bit(pos);
     }
 
@@ -63,7 +63,7 @@ public final class BitSet {
         return true;
     }
 
-    public void setRange(int from, int to) {
+    public void setRange(final int from, final int to) {
         for (int i=from; i<=to && i < SINGLE_BYTE_SIZE; i++) set(i);
     }
 
@@ -71,19 +71,19 @@ public final class BitSet {
         for (int i=0; i<BITSET_SIZE; i++) bits[i] = ~bits[i];
     }
 
-    public void invertTo(BitSet to) {
+    public void invertTo(final BitSet to) {
         for (int i=0; i<BITSET_SIZE; i++) to.bits[i] = ~bits[i];
     }
 
-    public void and(BitSet other) {
+    public void and(final BitSet other) {
         for (int i=0; i<BITSET_SIZE; i++) bits[i] &= other.bits[i];
     }
 
-    public void or(BitSet other) {
+    public void or(final BitSet other) {
         for (int i=0; i<BITSET_SIZE; i++) bits[i] |= other.bits[i];
     }
 
-    public void copy(BitSet other) {
+    public void copy(final BitSet other) {
         for (int i=0; i<BITSET_SIZE; i++) bits[i] = other.bits[i];
     }
 
@@ -95,7 +95,7 @@ public final class BitSet {
         return num;
     }
 
-    static int bit(int pos){
+    static int bit(final int pos){
         return 1 << (pos % SINGLE_BYTE_SIZE);
     }
 
