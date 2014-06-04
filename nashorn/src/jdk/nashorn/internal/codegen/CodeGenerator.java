@@ -2423,7 +2423,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         assert undefinedSymbol != null; //remove warning
-        if (undefinedSymbol == null || !undefinedSymbol.isScope()) {
+        if (!undefinedSymbol.isScope()) {
             return false; //disallow undefined as local var or parameter
         }
 
@@ -2437,11 +2437,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // the current chain of rest-of compilations used to have a type narrower than Object (so it was primitive).
             // We must not perform undefined check specialization for them, as then we'd violate the basic rule of
             // "Thou shalt not alter the stack shape between a deoptimized method and any of its (transitive) rest-ofs."
-            return false;
-        }
-
-        // TODO: why?
-        if (isRestOf()) {
             return false;
         }
 
