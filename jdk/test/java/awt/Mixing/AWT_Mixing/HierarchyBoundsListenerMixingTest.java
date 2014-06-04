@@ -76,7 +76,6 @@ public class HierarchyBoundsListenerMixingTest {
             @Override
             public void windowClosing(WindowEvent event) {
                 System.err.println("User closed the window");
-                System.exit(1);
             }
         });
 
@@ -131,7 +130,7 @@ public class HierarchyBoundsListenerMixingTest {
             Thread.sleep(delay * 10);
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Robot creation exception.");
         }
 
         robot.mouseMove((int) components[0].getLocationOnScreen().x + components[0].getSize().width / 2,
@@ -595,7 +594,7 @@ class Sysout {
     public static void createDialogWithInstructions(String[] instructions) {
         dialog = new TestDialog(new Frame(), "Instructions");
         dialog.printInstructions(instructions);
-        dialog.setVisible(true);
+        //dialog.setVisible(true);
         println("Any messages for the tester will display here.");
     }
 
@@ -603,7 +602,7 @@ class Sysout {
         dialog = new TestDialog(new Frame(), "Instructions");
         String[] defInstr = {"Instructions will appear here. ", ""};
         dialog.printInstructions(defInstr);
-        dialog.setVisible(true);
+        //dialog.setVisible(true);
         println("Any messages for the tester will display here.");
     }
 
@@ -643,7 +642,7 @@ class TestDialog extends Dialog {
 
         pack();
 
-        setVisible(true);
+        //setVisible(true);
     }// TestDialog()
 
     //DO NOT call this directly, go through Sysout

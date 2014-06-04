@@ -31,6 +31,8 @@
 @test
 @bug 6994264
 @summary Opaque overlapping test for Choice AWT component
+@library ../../regtesthelpers
+@build Util
 @run main OpaqueOverlappingChoice
  */
 public class OpaqueOverlappingChoice extends OpaqueOverlapping  {
