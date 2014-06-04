@@ -35,7 +35,7 @@ public class LocalStateRestorationInfo {
     private final Type[] localVariableTypes;
     private final int[] stackLoads;
 
-    LocalStateRestorationInfo(Type[] localVariableTypes, final int[] stackLoads) {
+    LocalStateRestorationInfo(final Type[] localVariableTypes, final int[] stackLoads) {
         this.localVariableTypes = localVariableTypes;
         this.stackLoads = stackLoads;
     }

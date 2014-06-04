@@ -494,7 +494,7 @@ public final class NashornTextifier extends Printer {
     }
 
     @Override
-    public void visitInvokeDynamicInsn(String name, String desc, Handle bsm, Object... bsmArgs) {
+    public void visitInvokeDynamicInsn(final String name, final String desc, final Handle bsm, final Object... bsmArgs) {
         final StringBuilder sb = new StringBuilder();
 
         appendOpcode(sb, Opcodes.INVOKEDYNAMIC).append(' ');
@@ -1005,7 +1005,7 @@ public final class NashornTextifier extends Printer {
         private static final String COLOR_DEFAULT   = "\"#99bb99\"";
         private static final String COLOR_LOCALVARS = "\"#999999\"";
 
-        Graph(String name) {
+        Graph(final String name) {
             this.name         = name;
             this.nodes        = new LinkedHashSet<>();
             this.contents     = new HashMap<>();
@@ -1016,7 +1016,7 @@ public final class NashornTextifier extends Printer {
             this.exceptionMap = new HashMap<>();
          }
 
-        void addEdge(String from, String to) {
+        void addEdge(final String from, final String to) {
             Set<String> edgeSet = edges.get(from);
             if (edgeSet == null) {
                 edgeSet = new LinkedHashSet<>();
@@ -1026,7 +1026,7 @@ public final class NashornTextifier extends Printer {
             hasPreds.add(to);
         }
 
-        void addTryCatch(String tryNode, String catchNode) {
+        void addTryCatch(final String tryNode, final String catchNode) {
             Set<String> tryNodes = exceptionMap.get(catchNode);
             if (tryNodes == null) {
                 tryNodes = new HashSet<>();
@@ -1038,20 +1038,20 @@ public final class NashornTextifier extends Printer {
             tryNodes.add(tryNode);
         }
 
-        void addNode(String node) {
+        void addNode(final String node) {
             assert !nodes.contains(node);
             nodes.add(node);
         }
 
-        void setNoFallThru(String node) {
+        void setNoFallThru(final String node) {
             noFallThru.add(node);
         }
 
-        boolean isNoFallThru(String node) {
+        boolean isNoFallThru(final String node) {
             return noFallThru.contains(node);
         }
 
-        void setIsCatch(String node, String exception) {
+        void setIsCatch(final String node, final String exception) {
             catches.put(node, exception);
         }
 
@@ -1187,47 +1187,47 @@ public final class NashornTextifier extends Printer {
     }
 
     @Override
-    public Printer visitClassAnnotation(String arg0, boolean arg1) {
+    public Printer visitClassAnnotation(final String arg0, final boolean arg1) {
         return this;
     }
 
     @Override
-    public void visitClassAttribute(Attribute arg0) {
+    public void visitClassAttribute(final Attribute arg0) {
         throw new AssertionError();
     }
 
     @Override
-    public Printer visitFieldAnnotation(String arg0, boolean arg1) {
+    public Printer visitFieldAnnotation(final String arg0, final boolean arg1) {
         throw new AssertionError();
     }
 
     @Override
-    public void visitFieldAttribute(Attribute arg0) {
+    public void visitFieldAttribute(final Attribute arg0) {
         throw new AssertionError();
     }
 
     @Override
-    public Printer visitMethodAnnotation(String arg0, boolean arg1) {
+    public Printer visitMethodAnnotation(final String arg0, final boolean arg1) {
         return this;
     }
 
     @Override
-    public void visitMethodAttribute(Attribute arg0) {
+    public void visitMethodAttribute(final Attribute arg0) {
         throw new AssertionError();
     }
 
     @Override
-    public Printer visitParameterAnnotation(int arg0, String arg1, boolean arg2) {
+    public Printer visitParameterAnnotation(final int arg0, final String arg1, final boolean arg2) {
         throw new AssertionError();
     }
 
     @Override
-    public void visit(String arg0, Object arg1) {
+    public void visit(final String arg0, final Object arg1) {
         throw new AssertionError();
     }
 
     @Override
-    public Printer visitAnnotation(String arg0, String arg1) {
+    public Printer visitAnnotation(final String arg0, final String arg1) {
         throw new AssertionError();
     }
 
@@ -1237,17 +1237,17 @@ public final class NashornTextifier extends Printer {
     }
 
     @Override
-    public Printer visitArray(String arg0) {
+    public Printer visitArray(final String arg0) {
         throw new AssertionError();
     }
 
     @Override
-    public void visitEnum(String arg0, String arg1, String arg2) {
+    public void visitEnum(final String arg0, final String arg1, final String arg2) {
         throw new AssertionError();
     }
 
     @Override
-    public void visitInnerClass(String arg0, String arg1, String arg2, int arg3) {
+    public void visitInnerClass(final String arg0, final String arg1, final String arg2, final int arg3) {
         throw new AssertionError();
     }
 }

@@ -29,7 +29,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
-
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassVisitor;
@@ -58,27 +57,27 @@ public class NashornClassReader extends ClassReader {
         return labelMap.get(key);
     }
 
-    private static int readByte(final byte[] bytecode, int index) {
+    private static int readByte(final byte[] bytecode, final int index) {
         return (byte)(bytecode[index] & 0xff);
     }
 
-    private static int readShort(final byte[] bytecode, int index) {
+    private static int readShort(final byte[] bytecode, final int index) {
         return (short)((bytecode[index] & 0xff) << 8) | (bytecode[index + 1] & 0xff);
     }
 
-    private static int readInt(final byte[] bytecode, int index) {
+    private static int readInt(final byte[] bytecode, final int index) {
         return ((bytecode[index] & 0xff) << 24) | ((bytecode[index + 1] & 0xff) << 16) | ((bytecode[index + 2] & 0xff) << 8) | (bytecode[index + 3] & 0xff);
     }
 
-    private static long readLong(final byte[] bytecode, int index) {
-        int hi = readInt(bytecode, index);
-        int lo = readInt(bytecode, index + 4);
+    private static long readLong(final byte[] bytecode, final int index) {
+        final int hi = readInt(bytecode, index);
+        final int lo = readInt(bytecode, index + 4);
         return ((long)hi << 32) | lo;
     }
 
-    private static String readUTF(int index, final int utfLen, final byte[] bytecode) {
-        int endIndex = index + utfLen;
-        char buf[] = new char[utfLen * 2];
+    private static String readUTF(final int index, final int utfLen, final byte[] bytecode) {
+        final int endIndex = index + utfLen;
+        final char buf[] = new char[utfLen * 2];
         int strLen = 0;
         int c;
         int st = 0;
@@ -123,7 +122,7 @@ public class NashornClassReader extends ClassReader {
 
         int u = 0;
 
-        int magic = readInt(bytecode, u);
+        final int magic = readInt(bytecode, u);
         u += 4; //magic
         assert magic == 0xcafebabe : Integer.toHexString(magic);
         readShort(bytecode, u); //minor
@@ -131,9 +130,9 @@ public class NashornClassReader extends ClassReader {
         readShort(bytecode, u); //major
         u += 2; //minor
 
-        int cpc = readShort(bytecode, u);
+        final int cpc = readShort(bytecode, u);
         u += 2;
-        ArrayList<Constant> cp = new ArrayList<>(cpc);
+        final ArrayList<Constant> cp = new ArrayList<>(cpc);
         cp.add(null);
 
         for (int i = 1; i < cpc; i++) {
@@ -180,7 +179,7 @@ public class NashornClassReader extends ClassReader {
                 u += 4;
                 break;
             case 1:  //utf8
-                int len = readShort(bytecode, u);
+                final int len = readShort(bytecode, u);
                 u += 2;
                 cp.add(new DirectInfo<>(cp, tag, readUTF(u, len, bytecode)));
                 u += len;
@@ -200,7 +199,7 @@ public class NashornClassReader extends ClassReader {
                 u += 4;
                 break;
             case 15: //methodhandle
-                int kind = readByte(bytecode, u);
+                final int kind = readByte(bytecode, u);
                 assert kind >= 1 && kind <= 9 : kind;
                 cp.add(new IndexInfo2(cp, tag, kind, readShort(bytecode, u + 1)) {
                     @Override
@@ -219,16 +218,16 @@ public class NashornClassReader extends ClassReader {
 
         readShort(bytecode, u); //access flags
         u += 2; //access
-        int cls = readShort(bytecode, u);
+        final int cls = readShort(bytecode, u);
         u += 2; //this_class
         thisClassName = cp.get(cls).toString();
         u += 2; //super
 
-        int ifc = readShort(bytecode, u);
+        final int ifc = readShort(bytecode, u);
         u += 2;
         u += ifc * 2;
 
-        int fc = readShort(bytecode, u);
+        final int fc = readShort(bytecode, u);
         u += 2; //fields
 
         for (int i = 0 ; i < fc ; i++) {
@@ -236,41 +235,41 @@ public class NashornClassReader extends ClassReader {
             readShort(bytecode, u); //fieldname
             u += 2; //name
             u += 2; //descriptor
-            int ac = readShort(bytecode, u);
+            final int ac = readShort(bytecode, u);
             u += 2;
             //field attributes
             for (int j = 0; j < ac; j++) {
                 u += 2; //attribute name
-                int len = readInt(bytecode, u);
+                final int len = readInt(bytecode, u);
                 u += 4;
                 u += len;
             }
         }
 
-        int mc = readShort(bytecode, u);
+        final int mc = readShort(bytecode, u);
         u += 2;
         for (int i = 0 ; i < mc ; i++) {
             readShort(bytecode, u);
             u += 2; //access
 
-            int methodNameIndex = readShort(bytecode, u);
+            final int methodNameIndex = readShort(bytecode, u);
             u += 2;
             final String methodName = cp.get(methodNameIndex).toString();
 
-            int methodDescIndex = readShort(bytecode, u);
+            final int methodDescIndex = readShort(bytecode, u);
             u += 2;
             final String methodDesc = cp.get(methodDescIndex).toString();
 
-            int ac = readShort(bytecode, u);
+            final int ac = readShort(bytecode, u);
             u += 2;
 
             //method attributes
             for (int j = 0; j < ac; j++) {
-                int nameIndex = readShort(bytecode, u);
+                final int nameIndex = readShort(bytecode, u);
                 u += 2;
-                String attrName = cp.get(nameIndex).toString();
+                final String attrName = cp.get(nameIndex).toString();
 
-                int attrLen = readInt(bytecode, u);
+                final int attrLen = readInt(bytecode, u);
                 u += 4;
 
                 if ("Code".equals(attrName)) {
@@ -278,20 +277,20 @@ public class NashornClassReader extends ClassReader {
                     u += 2; //max stack
                     readShort(bytecode, u);
                     u += 2; //max locals
-                    int len = readInt(bytecode, u);
+                    final int len = readInt(bytecode, u);
                     u += 4;
                     parseCode(bytecode, u, len, fullyQualifiedName(thisClassName, methodName, methodDesc));
                     u += len;
-                    int elen = readShort(bytecode, u); //exception table length
+                    final int elen = readShort(bytecode, u); //exception table length
                     u += 2;
                     u += elen * 8;
 
                     //method attributes
-                    int ac2 = readShort(bytecode, u);
+                    final int ac2 = readShort(bytecode, u);
                     u += 2;
                     for (int k = 0; k < ac2; k++) {
                         u += 2; //name;
-                        int aclen = readInt(bytecode, u);
+                        final int aclen = readInt(bytecode, u);
                         u += 4; //length
                         u += aclen; //bytes;
                     }
@@ -301,13 +300,13 @@ public class NashornClassReader extends ClassReader {
             }
         }
 
-        int ac = readShort(bytecode, u);
+        final int ac = readShort(bytecode, u);
         u += 2;
         //other attributes
         for (int i = 0 ; i < ac ; i++) {
             readShort(bytecode, u); //name index
             u += 2;
-            int len = readInt(bytecode, u);
+            final int len = readInt(bytecode, u);
             u += 4;
             u += len;
             //attribute
@@ -327,7 +326,7 @@ public class NashornClassReader extends ClassReader {
         boolean wide = false;
 
         for (int i = index; i < index + len;) {
-            int opcode = bytecode[i];
+            final int opcode = bytecode[i];
             labels.add(new NashornLabel(opcode, i - index));
 
             switch (opcode & 0xff) {
@@ -345,7 +344,7 @@ public class NashornClassReader extends ClassReader {
                 }
                 readInt(bytecode, i);
                 i += 4; //defaultbyte
-                int npairs = readInt(bytecode, i);
+                final int npairs = readInt(bytecode, i);
                 i += 4;
                 i += 8 * npairs;
                 break;
@@ -356,9 +355,9 @@ public class NashornClassReader extends ClassReader {
                 }
                 readInt(bytecode, i); //default
                 i += 4;
-                int lo = readInt(bytecode, i);
+                final int lo = readInt(bytecode, i);
                 i += 4;
-                int hi = readInt(bytecode, i);
+                final int hi = readInt(bytecode, i);
                 i += 4;
                 i += 4 * (hi - lo + 1);
                 break;
@@ -437,13 +436,13 @@ public class NashornClassReader extends ClassReader {
     }
 
     @Override
-    public void accept(final ClassVisitor classVisitor, Attribute[] attrs, final int flags) {
+    public void accept(final ClassVisitor classVisitor, final Attribute[] attrs, final int flags) {
         super.accept(classVisitor, attrs, flags);
     }
 
     @Override
     protected Label readLabel(final int offset, final Label[] labels) {
-        Label label = super.readLabel(offset, labels);
+        final Label label = super.readLabel(offset, labels);
         label.info = (int)offset;
         return label;
     }
@@ -451,7 +450,7 @@ public class NashornClassReader extends ClassReader {
     private abstract static class Constant {
         protected ArrayList<Constant> cp;
         protected int tag;
-        protected Constant(final ArrayList<Constant> cp, int tag) {
+        protected Constant(final ArrayList<Constant> cp, final int tag) {
             this.cp = cp;
             this.tag = tag;
         }
@@ -469,7 +468,7 @@ public class NashornClassReader extends ClassReader {
     private static class IndexInfo extends Constant {
         protected final int index;
 
-        IndexInfo(final ArrayList<Constant> cp, int tag, int index) {
+        IndexInfo(final ArrayList<Constant> cp, final int tag, final int index) {
             super(cp, tag);
             this.index = index;
         }
@@ -483,7 +482,7 @@ public class NashornClassReader extends ClassReader {
     private static class IndexInfo2 extends IndexInfo {
         protected final int index2;
 
-        IndexInfo2(final ArrayList<Constant> cp, int tag, int index, int index2) {
+        IndexInfo2(final ArrayList<Constant> cp, final int tag, final int index, final int index2) {
             super(cp, tag, index);
             this.index2 = index2;
         }
@@ -497,7 +496,7 @@ public class NashornClassReader extends ClassReader {
     private static class DirectInfo<T> extends Constant {
         protected final T info;
 
-        DirectInfo(final ArrayList<Constant> cp, int tag, T info) {
+        DirectInfo(final ArrayList<Constant> cp, final int tag, final T info) {
             super(cp, tag);
             this.info = info;
         }

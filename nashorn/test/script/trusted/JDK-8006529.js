@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- * 
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.
- * 
+ *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- * 
+ *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -33,7 +33,7 @@
  * This test script depends on nashorn Compiler internals. It uses reflection
  * to get access to private field and many public methods of Compiler and
  * FunctionNode classes. Note that this is trusted code and access to such
- * internal package classes and methods is okay. But, if you modify any 
+ * internal package classes and methods is okay. But, if you modify any
  * Compiler or FunctionNode class, you may have to revisit this script.
  * We cannot use direct Java class (via dynalink bean linker) to Compiler
  * and FunctionNode because of package-access check and so reflective calls.
@@ -108,8 +108,8 @@ function findFunction(node) {
         return findFunction(rhsMethod.invoke(node))
     } else if(node instanceof BinaryNode) {
         return findFunction(lhsMethod.invoke(node)) || findFunction(binaryRhsMethod.invoke(node))
-	} else if(node instanceof ExpressionStatement) {
-		return findFunction(getExpressionMethod.invoke(node))
+    } else if(node instanceof ExpressionStatement) {
+        return findFunction(getExpressionMethod.invoke(node))
     } else if(node instanceof FunctionNode) {
         return node
     }
@@ -122,8 +122,8 @@ var sourceForMethod = Source.class.getMethod("sourceFor", java.lang.String.class
 var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
 var CompilerConstructor = Compiler.class.getConstructor(Context.class, ScriptEnvironment.class, CodeInstaller.class, Source.class, String.class, boolean.class);
 
-// compile(script) -- compiles a script specified as a string with its 
-// source code, returns a jdk.nashorn.internal.ir.FunctionNode object 
+// compile(script) -- compiles a script specified as a string with its
+// source code, returns a jdk.nashorn.internal.ir.FunctionNode object
 // representing it.
 function compile(source, phases) {
     var source = sourceForMethod.invoke(null, "<no name>", source);
@@ -203,7 +203,7 @@ testFirstFn("function f() { function arguments() {}; arguments; }")
 // A function defining "arguments" as a local variable will be vararg.
 testFirstFn("function f() { var arguments; arguments; }", 'isVarArg', 'needsCallee')
 
-// A self-referencing function defined as a statement doesn't need a self 
+// A self-referencing function defined as a statement doesn't need a self
 // symbol, as it'll rather obtain itself from the parent scope.
 testFirstFn("function f() { f() }", 'needsCallee', 'needsParentScope')
 
@@ -223,7 +223,7 @@ testFirstFn("(function f(x) { function g() { x } })", 'hasScopeBlock')
 // scope in parent
 testFirstFn("(function f() { function g() { x } })", 'needsParentScope', 'needsCallee')
 
-// A child function redefining a local variable from its parent should not 
+// A child function redefining a local variable from its parent should not
 // affect the parent function in any way
 testFirstFn("(function f() { var x; function g() { var x; x } })")
 

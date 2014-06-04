@@ -155,7 +155,7 @@ public final class OptimisticReturnFilters {
         return guard;
     }
 
-    private static int getProvableTypeIndex(Class<?> provable) {
+    private static int getProvableTypeIndex(final Class<?> provable) {
         final int accTypeIndex = getAccessorTypeIndex(provable);
         if(accTypeIndex != -1) {
             return accTypeIndex;

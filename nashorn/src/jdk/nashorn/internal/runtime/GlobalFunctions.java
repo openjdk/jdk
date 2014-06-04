@@ -486,7 +486,7 @@ loop:
         return ScriptRuntime.UNDEFINED;
     }
 
-    private static int fastDigit(int ch, int radix) {
+    private static int fastDigit(final int ch, final int radix) {
         int n = -1;
         if (ch >= '0' && ch <= '9') {
             n = ch - '0';

@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import java.util.Collections;
 import java.util.List;
-
 import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;

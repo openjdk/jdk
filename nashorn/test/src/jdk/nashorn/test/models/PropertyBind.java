@@ -37,14 +37,14 @@ public class PropertyBind {
     public final int publicFinalInt = 42;
 
     private int readWrite;
-    private int readOnly = 123;
+    private final int readOnly = 123;
     private int writeOnly;
 
     public int getReadWrite() {
         return readWrite;
     }
 
-    public void setReadWrite(int readWrite) {
+    public void setReadWrite(final int readWrite) {
         this.readWrite = readWrite;
     }
 
@@ -52,7 +52,7 @@ public class PropertyBind {
         return readOnly;
     }
 
-    public void setWriteOnly(int writeOnly) {
+    public void setWriteOnly(final int writeOnly) {
         this.writeOnly = writeOnly;
     }
 
@@ -64,7 +64,7 @@ public class PropertyBind {
         return staticReadWrite;
     }
 
-    public static void setStaticReadWrite(int staticReadWrite) {
+    public static void setStaticReadWrite(final int staticReadWrite) {
         PropertyBind.staticReadWrite = staticReadWrite;
     }
 
@@ -72,7 +72,7 @@ public class PropertyBind {
         return staticReadOnly;
     }
 
-    public static void setStaticWriteOnly(int staticWriteOnly) {
+    public static void setStaticWriteOnly(final int staticWriteOnly) {
         PropertyBind.staticWriteOnly = staticWriteOnly;
     }
 

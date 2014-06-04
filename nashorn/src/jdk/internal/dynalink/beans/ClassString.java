@@ -104,16 +104,16 @@ final class ClassString {
     private final Class<?>[] classes;
     private int hashCode;
 
-    ClassString(Class<?>[] classes) {
+    ClassString(final Class<?>[] classes) {
         this.classes = classes;
     }
 
-    ClassString(MethodType type) {
+    ClassString(final MethodType type) {
         this(type.parameterArray());
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(final Object other) {
         if(!(other instanceof ClassString)) {
             return false;
         }
@@ -150,7 +150,7 @@ final class ClassString {
         return true;
     }
 
-    List<MethodHandle> getMaximallySpecifics(List<MethodHandle> methods, LinkerServices linkerServices, boolean varArg) {
+    List<MethodHandle> getMaximallySpecifics(final List<MethodHandle> methods, final LinkerServices linkerServices, final boolean varArg) {
         return MaximallySpecific.getMaximallySpecificMethodHandles(getApplicables(methods, linkerServices, varArg),
                 varArg, classes, linkerServices);
     }
@@ -158,7 +158,7 @@ final class ClassString {
     /**
      * Returns all methods that are applicable to actual parameter classes represented by this ClassString object.
      */
-    LinkedList<MethodHandle> getApplicables(List<MethodHandle> methods, LinkerServices linkerServices, boolean varArg) {
+    LinkedList<MethodHandle> getApplicables(final List<MethodHandle> methods, final LinkerServices linkerServices, final boolean varArg) {
         final LinkedList<MethodHandle> list = new LinkedList<>();
         for(final MethodHandle member: methods) {
             if(isApplicable(member, linkerServices, varArg)) {
@@ -173,7 +173,7 @@ final class ClassString {
      * object.
      *
      */
-    private boolean isApplicable(MethodHandle method, LinkerServices linkerServices, boolean varArg) {
+    private boolean isApplicable(final MethodHandle method, final LinkerServices linkerServices, final boolean varArg) {
         final Class<?>[] formalTypes = method.type().parameterArray();
         final int cl = classes.length;
         final int fl = formalTypes.length - (varArg ? 1 : 0);
@@ -203,7 +203,7 @@ final class ClassString {
         return true;
     }
 
-    private static boolean canConvert(LinkerServices ls, Class<?> from, Class<?> to) {
+    private static boolean canConvert(final LinkerServices ls, final Class<?> from, final Class<?> to) {
         if(from == NULL_CLASS) {
             return !to.isPrimitive();
         }

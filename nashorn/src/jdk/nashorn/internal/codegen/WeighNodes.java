@@ -101,7 +101,7 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
      *
      * @param weightCache cache of already calculated block weights
      */
-    private WeighNodes(FunctionNode topFunction, final Map<Node, Long> weightCache) {
+    private WeighNodes(final FunctionNode topFunction, final Map<Node, Long> weightCache) {
         super(new LexicalContext());
         this.topFunction = topFunction;
         this.weightCache = weightCache;

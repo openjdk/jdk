@@ -105,7 +105,7 @@ public final class ASTWriter {
 
         final boolean isReference = field != null && field.isAnnotationPresent(Reference.class);
 
-        Class<?> clazz = node.getClass();
+        final Class<?> clazz = node.getClass();
         String   type  = clazz.getName();
 
         type = type.substring(type.lastIndexOf('.') + 1, type.length());

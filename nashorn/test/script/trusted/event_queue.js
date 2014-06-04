@@ -23,8 +23,8 @@
 
 /**
  * Debug.eventqueue test - instead of screen scraping, test the concept of asking Debug for
- * an event log of favourable events. 
- * 
+ * an event log of favourable events.
+ *
  * @test
  * @fork
  * @option -Dnashorn.debug=true
@@ -37,8 +37,8 @@ print();
 
 var forName       = java.lang.Class["forName(String)"];
 var RuntimeEvent  = forName("jdk.nashorn.internal.runtime.events.RuntimeEvent").static;
-var getValue      = RuntimeEvent.class.getMethod("getValue"); 
-var getValueClass = RuntimeEvent.class.getMethod("getValueClass"); 
+var getValue      = RuntimeEvent.class.getMethod("getValue");
+var getValueClass = RuntimeEvent.class.getMethod("getValueClass");
 
 print(RuntimeEvent);
 
@@ -51,7 +51,7 @@ var a = [1.1, 2.2];
 function f() {
     var sum = 2;
     for (var i = 0; i < a.length; i++) {
-	sum *= a[i];
+    sum *= a[i];
     }
     return sum;
 }
@@ -59,7 +59,7 @@ function f() {
 function g() {
     var diff = 17;
     for (var i = 0; i < a.length; i++) {
-	diff -= a[i];
+    diff -= a[i];
     }
     return diff;
 }

@@ -223,7 +223,7 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 return null;
             }
 
-            for (Class<?> iface : clazz.getInterfaces()) {
+            for (final Class<?> iface : clazz.getInterfaces()) {
                 // check accessiblity up-front
                 if (! Context.isAccessibleClass(iface)) {
                     continue;

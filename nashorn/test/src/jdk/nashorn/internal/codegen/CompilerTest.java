@@ -56,7 +56,7 @@ public class CompilerTest {
         public boolean exclude(File file, String content);
     }
 
-    private void log(String msg) {
+    private void log(final String msg) {
         org.testng.Reporter.log(msg, true);
     }
 

@@ -104,7 +104,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
 
     private static final MethodHandle CAN_CONVERT_TO = Lookup.findOwnStatic(MethodHandles.lookup(), "canConvertTo", boolean.class, LinkerServices.class, Class.class, Object.class);
 
-    SingleDynamicMethod(String name) {
+    SingleDynamicMethod(final String name) {
         super(name);
     }
 
@@ -128,22 +128,22 @@ abstract class SingleDynamicMethod extends DynamicMethod {
     abstract MethodHandle getTarget(MethodHandles.Lookup lookup);
 
     @Override
-    MethodHandle getInvocation(CallSiteDescriptor callSiteDescriptor, LinkerServices linkerServices) {
+    MethodHandle getInvocation(final CallSiteDescriptor callSiteDescriptor, final LinkerServices linkerServices) {
         return getInvocation(getTarget(callSiteDescriptor.getLookup()), callSiteDescriptor.getMethodType(),
                 linkerServices);
     }
 
     @Override
-    SingleDynamicMethod getMethodForExactParamTypes(String paramTypes) {
+    SingleDynamicMethod getMethodForExactParamTypes(final String paramTypes) {
         return typeMatchesDescription(paramTypes, getMethodType()) ? this : null;
     }
 
     @Override
-    boolean contains(SingleDynamicMethod method) {
+    boolean contains(final SingleDynamicMethod method) {
         return getMethodType().parameterList().equals(method.getMethodType().parameterList());
     }
 
-    static String getMethodNameWithSignature(MethodType type, String methodName) {
+    static String getMethodNameWithSignature(final MethodType type, final String methodName) {
         final String typeStr = type.toString();
         final int retTypeIndex = typeStr.lastIndexOf(')') + 1;
         int secondParamIndex = typeStr.indexOf(',') + 1;
@@ -164,7 +164,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
      * @param linkerServices the linker services used for type conversions
      * @return the adapted method handle.
      */
-    static MethodHandle getInvocation(MethodHandle target, MethodType callSiteType, LinkerServices linkerServices) {
+    static MethodHandle getInvocation(final MethodHandle target, final MethodType callSiteType, final LinkerServices linkerServices) {
         final MethodType methodType = target.type();
         final int paramsLen = methodType.parameterCount();
         final boolean varArgs = target.isVarargsCollector();
@@ -266,7 +266,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
     }
 
     @SuppressWarnings("unused")
-    private static boolean canConvertTo(final LinkerServices linkerServices, Class<?> to, Object obj) {
+    private static boolean canConvertTo(final LinkerServices linkerServices, final Class<?> to, final Object obj) {
         return obj == null ? false : linkerServices.canConvert(obj.getClass(), to);
     }
 
@@ -279,7 +279,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
      * @param parameterCount the total number of arguments in the new method handle
      * @return a collecting method handle
      */
-    static MethodHandle collectArguments(MethodHandle target, final int parameterCount) {
+    static MethodHandle collectArguments(final MethodHandle target, final int parameterCount) {
         final MethodType methodType = target.type();
         final int fixParamsLen = methodType.parameterCount() - 1;
         final Class<?> arrayType = methodType.parameterType(fixParamsLen);
@@ -291,7 +291,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
         return linkerServices.asTypeLosslessReturn(sizedMethod, callSiteType);
     }
 
-    private static boolean typeMatchesDescription(String paramTypes, MethodType type) {
+    private static boolean typeMatchesDescription(final String paramTypes, final MethodType type) {
         final StringTokenizer tok = new StringTokenizer(paramTypes, ", ");
         for(int i = 1; i < type.parameterCount(); ++i) { // i = 1 as we ignore the receiver
             if(!(tok.hasMoreTokens() && typeNameMatches(tok.nextToken(), type.parameterType(i)))) {
@@ -301,7 +301,7 @@ abstract class SingleDynamicMethod extends DynamicMethod {
         return !tok.hasMoreTokens();
     }
 
-    private static boolean typeNameMatches(String typeName, Class<?> type) {
+    private static boolean typeNameMatches(final String typeName, final Class<?> type) {
         return  typeName.equals(typeName.indexOf('.') == -1 ? type.getSimpleName() : type.getCanonicalName());
     }
 }

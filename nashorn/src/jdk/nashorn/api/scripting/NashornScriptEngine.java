@@ -281,7 +281,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     private static Source makeSource(final Reader reader, final ScriptContext ctxt) throws ScriptException {
         try {
             return sourceFor(getScriptName(ctxt), reader);
-        } catch (IOException e) {
+        } catch (final IOException e) {
             throw new ScriptException(e);
         }
     }

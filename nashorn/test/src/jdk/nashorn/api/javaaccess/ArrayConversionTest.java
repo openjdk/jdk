@@ -111,25 +111,25 @@ public class ArrayConversionTest {
         e.eval("Java.type('" + ArrayConversionTest.class.getName() + "')." + testMethodName + "(" + argument + ")");
     }
 
-    public static void assertNullIntArray(int[] array) {
+    public static void assertNullIntArray(final int[] array) {
         assertNull(array);
     }
 
-    public static void assertNullIntIntArray(int[][] array) {
+    public static void assertNullIntIntArray(final int[][] array) {
         assertNull(array);
     }
 
-    public static void assertEmptyIntArray(int[] array) {
+    public static void assertEmptyIntArray(final int[] array) {
         assertEquals(0, array.length);
     }
 
-    public static void assertSingle42IntArray(int[] array) {
+    public static void assertSingle42IntArray(final int[] array) {
         assertEquals(1, array.length);
         assertEquals(42, array[0]);
     }
 
 
-    public static void assertIntArrayConversions(int[] array) {
+    public static void assertIntArrayConversions(final int[] array) {
         assertEquals(13, array.length);
         assertEquals(0, array[0]); // false
         assertEquals(1, array[1]); // true
@@ -146,21 +146,21 @@ public class ArrayConversionTest {
         assertEquals(0, array[12]); // [1, 2]
     }
 
-    public static void assertEmptyIntIntArray(int[][] array) {
+    public static void assertEmptyIntIntArray(final int[][] array) {
         assertEquals(0, array.length);
     }
 
-    public static void assertSingleEmptyIntIntArray(int[][] array) {
+    public static void assertSingleEmptyIntIntArray(final int[][] array) {
         assertEquals(1, array.length);
         assertTrue(Arrays.equals(new int[0], array[0]));
     }
 
-    public static void assertSingleNullIntIntArray(int[][] array) {
+    public static void assertSingleNullIntIntArray(final int[][] array) {
         assertEquals(1, array.length);
         assertNull(null, array[0]);
     }
 
-    public static void assertLargeIntIntArray(int[][] array) {
+    public static void assertLargeIntIntArray(final int[][] array) {
         assertEquals(5, array.length);
         assertTrue(Arrays.equals(new int[] { 0 }, array[0]));
         assertTrue(Arrays.equals(new int[] { 1 }, array[1]));
@@ -169,7 +169,7 @@ public class ArrayConversionTest {
         assertTrue(Arrays.equals(new int[] { 7, 8 }, array[4]));
     }
 
-    public static void assertLargeObjectObjectArray(Object[][] array) throws ScriptException {
+    public static void assertLargeObjectObjectArray(final Object[][] array) throws ScriptException {
         assertEquals(4, array.length);
         assertTrue(Arrays.equals(new Object[] { Boolean.FALSE }, array[0]));
         assertTrue(Arrays.equals(new Object[] { 1 }, array[1]));
@@ -179,7 +179,7 @@ public class ArrayConversionTest {
         assertEquals(17, e.eval("obj.x"));
     }
 
-    public static void assertBooleanArrayConversions(boolean[] array) {
+    public static void assertBooleanArrayConversions(final boolean[] array) {
         assertEquals(16, array.length);
         assertFalse(array[0]); // false
         assertTrue(array[1]); // true
@@ -199,26 +199,26 @@ public class ArrayConversionTest {
         assertFalse(array[15]); // undefined
     }
 
-    public static void assertListArray(List<?>[] array) {
+    public static void assertListArray(final List<?>[] array) {
         assertEquals(2, array.length);
         assertEquals(Arrays.asList("foo", "bar"), array[0]);
         assertEquals(Arrays.asList("apple", "orange"), array[1]);
     }
 
-    public static void assertVarArg_42_17(Object... args) throws ScriptException {
+    public static void assertVarArg_42_17(final Object... args) throws ScriptException {
         assertEquals(2, args.length);
         assertEquals(42, ((Number)args[0]).intValue());
         assertEquals(17, ((Number)args[1]).intValue());
     }
 
-    public static void assertVarArg_array_17(Object... args) throws ScriptException {
+    public static void assertVarArg_array_17(final Object... args) throws ScriptException {
         assertEquals(2, args.length);
         e.getBindings(ScriptContext.ENGINE_SCOPE).put("arr", args[0]);
         assertTrue((Boolean)e.eval("arr instanceof Array && arr.length == 1 && arr[0] == 42"));
         assertEquals(18, ((Number)args[1]).intValue());
     }
 
-    public static void assertVarArg_function(Object... args) throws ScriptException {
+    public static void assertVarArg_function(final Object... args) throws ScriptException {
         assertEquals(1, args.length);
         e.getBindings(ScriptContext.ENGINE_SCOPE).put("fn", args[0]);
         assertEquals("Hello", e.eval("fn()"));
@@ -226,10 +226,10 @@ public class ArrayConversionTest {
 
 
 
-    public static void x(String y) {
+    public static void x(final String y) {
         assertEquals("abc", y);
     }
-    public static void x(String[] y) {
+    public static void x(final String[] y) {
         assertTrue(Arrays.equals(new String[] { "foo", "bar"}, y));
     }
 }

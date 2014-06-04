@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- * 
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.
- * 
+ *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- * 
+ *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -24,7 +24,7 @@
 /**
  * JDK-8038945.js : test various undefined strict intrinsics and that they
  * aren't erroneously applied when undefined is in any scope but global
- * 
+ *
  * @test
  * @run
  */
@@ -45,7 +45,7 @@ function f2(x, undefined) {
 function f3(x) {
     //f3$f3_2 internals={} externals={x=0}
     function f3_2(undefined) {
-	return x === undefined;
+    return x === undefined;
     }
     return f3_2(17);
 }
@@ -54,8 +54,8 @@ function f3(x) {
 function f4(x) {
     //f4$f4_2 internals={} externals={x=0}
     function f4_2() {
-	var undefined = 17;
-	return x === undefined;
+    var undefined = 17;
+    return x === undefined;
     }
     return f4_2();
 }
@@ -65,7 +65,7 @@ function f5(x) {
     var undefined = 17;
     //f5$f5_2 internals={} externals={x=0, undefined=0}
     function f5_2() {
-	return x === undefined;
+    return x === undefined;
     }
     return f5_2();
 }
@@ -97,7 +97,7 @@ function g2(x, undefined) {
 function g3(x) {
     //g3$g3_2 internals={} externals={x=0}
     function g3_2(undefined) {
-	return x !== undefined;
+    return x !== undefined;
     }
     return g3_2(17);
 }
@@ -106,8 +106,8 @@ function g3(x) {
 function g4(x) {
     //f4$f4_2 internals={} externals={x=0}
     function g4_2() {
-	var undefined = 17;
-	return x !== undefined;
+    var undefined = 17;
+    return x !== undefined;
     }
     return g4_2();
 }
@@ -117,7 +117,7 @@ function g5(x) {
     var undefined = 17;
     //g5$g5_2 internals={} externals={x=0, undefined=0}
     function g5_2() {
-	return x !== undefined;
+    return x !== undefined;
     }
     return g5_2();
 }
@@ -149,7 +149,7 @@ function h2(x, undefined) {
 function h3(x) {
     //h3$f3_2 internals={} externals={x=0}
     function h3_2(undefined) {
-	return undefined === x;
+    return undefined === x;
     }
     return h3_2(17);
 }
@@ -158,8 +158,8 @@ function h3(x) {
 function h4(x) {
     //h4$h4_2 internals={} externals={x=0}
     function h4_2() {
-	var undefined = 17;
-	return undefined === x;
+    var undefined = 17;
+    return undefined === x;
     }
     return h4_2();
 }
@@ -169,7 +169,7 @@ function h5(x) {
     var undefined = 17;
     //h5$h5_2 internals={} externals={x=0, undefined=0}
     function h5_2() {
-	return undefined === x;
+    return undefined === x;
     }
     return h5_2();
 }
@@ -201,7 +201,7 @@ function i2(x, undefined) {
 function i3(x) {
     //i3$f3_2 internals={} externals={x=0}
     function i3_2(undefined) {
-	return undefined !== x;
+    return undefined !== x;
     }
     return i3_2(17);
 }
@@ -210,8 +210,8 @@ function i3(x) {
 function i4(x) {
     //i4$i4_2 internals={} externals={x=0}
     function i4_2() {
-	var undefined = 17;
-	return undefined !== x;
+    var undefined = 17;
+    return undefined !== x;
     }
     return i4_2();
 }
@@ -221,7 +221,7 @@ function i5(x) {
     var undefined = 17;
     //i5$i5_2 internals={} externals={x=0, undefined=0}
     function i5_2() {
-	return undefined !== x;
+    return undefined !== x;
     }
     return i5_2();
 }

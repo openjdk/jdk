@@ -146,47 +146,47 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         }
 
         @Override
-        public int getInt(int index) {
+        public int getInt(final int index) {
             return getElem(index);
         }
 
         @Override
-        public long getLong(int index) {
+        public long getLong(final int index) {
             return getInt(index);
         }
 
         @Override
-        public double getDouble(int index) {
+        public double getDouble(final int index) {
             return getInt(index);
         }
 
         @Override
-        public Object getObject(int index) {
+        public Object getObject(final int index) {
             return getInt(index);
         }
 
         @Override
-        public ArrayData set(int index, Object value, boolean strict) {
+        public ArrayData set(final int index, final Object value, final boolean strict) {
             return set(index, JSType.toNumber(value), strict);
         }
 
         @Override
-        public ArrayData set(int index, int value, boolean strict) {
+        public ArrayData set(final int index, final int value, final boolean strict) {
             setElem(index, value);
             return this;
         }
 
         @Override
-        public ArrayData set(int index, long value, boolean strict) {
+        public ArrayData set(final int index, final long value, final boolean strict) {
             return set(index, (int)value, strict);
         }
 
         @Override
-        public ArrayData set(int index, double value, boolean strict) {
+        public ArrayData set(final int index, final double value, final boolean strict) {
             return set(index, rint(value), strict);
         }
 
-        private static double rint(double rint) {
+        private static double rint(final double rint) {
             return (int)Math.rint(rint);
         }
 

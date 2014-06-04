@@ -30,18 +30,18 @@ package jdk.nashorn.test.models;
  */
 public class Jdk8011362TestSubject {
     // This is selected for overloaded("", null)
-    public String overloaded(String a, String b) {
+    public String overloaded(final String a, final String b) {
         return "overloaded(String, String)";
     }
 
     // This is selected for overloaded(0, null)
-    public String overloaded(Double a, Double b) {
+    public String overloaded(final Double a, final Double b) {
         return "overloaded(Double, Double)";
     }
 
     // This method is added to test that null will not match a primitive type, that is overloaded(0, null) will always
     // select the (Double, Double) over (Double, double).
-    public String overloaded(Double a, double b) {
+    public String overloaded(final Double a, final double b) {
         return "overloaded(Double, double)";
     }
 }

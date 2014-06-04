@@ -267,7 +267,7 @@ class IntType extends BitwiseType {
     }
 
     @Override
-    public Type loadForcedInitializer(MethodVisitor method) {
+    public Type loadForcedInitializer(final MethodVisitor method) {
         method.visitInsn(ICONST_0);
         return INT;
     }

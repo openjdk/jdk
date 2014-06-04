@@ -45,7 +45,7 @@ final class DeletedArrayFilter extends ArrayFilter {
 
     @Override
     public ArrayData copy() {
-        DeletedArrayFilter copy = new DeletedArrayFilter(underlying.copy());
+        final DeletedArrayFilter copy = new DeletedArrayFilter(underlying.copy());
         copy.getDeleted().copy(deleted);
         return copy;
     }

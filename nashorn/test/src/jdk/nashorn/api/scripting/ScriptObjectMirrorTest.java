@@ -25,6 +25,11 @@
 
 package jdk.nashorn.api.scripting;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
+
 import java.nio.ByteBuffer;
 import java.util.HashMap;
 import java.util.List;
@@ -34,10 +39,6 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 
 /**
@@ -133,7 +134,7 @@ public class ScriptObjectMirrorTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
         try {
             e.eval("var obj = { '1': 'world', func: function() { return this.bar; }, bar: 'hello' }");
-            ScriptObjectMirror obj = (ScriptObjectMirror) e.get("obj");
+            final ScriptObjectMirror obj = (ScriptObjectMirror) e.get("obj");
 
             // try basic get on existing properties
             if (!obj.getMember("bar").equals("hello")) {
@@ -190,7 +191,7 @@ public class ScriptObjectMirrorTest {
         final ScriptEngineManager m = new ScriptEngineManager();
         final ScriptEngine e = m.getEngineByName("nashorn");
         try {
-            Object obj = e.eval("new TypeError('wrong type')");
+            final Object obj = e.eval("new TypeError('wrong type')");
             assertEquals(obj.toString(), "TypeError: wrong type", "toString returns wrong value");
         } catch (final Throwable t) {
             t.printStackTrace();
@@ -198,7 +199,7 @@ public class ScriptObjectMirrorTest {
         }
 
         try {
-            Object obj = e.eval("function func() { print('hello'); }");
+            final Object obj = e.eval("function func() { print('hello'); }");
             assertEquals(obj.toString(), "function func() { print('hello'); }", "toString returns wrong value");
         } catch (final Throwable t) {
             t.printStackTrace();

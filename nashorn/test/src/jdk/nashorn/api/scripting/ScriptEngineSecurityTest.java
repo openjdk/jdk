@@ -27,8 +27,8 @@ package jdk.nashorn.api.scripting;
 
 import static org.testng.Assert.fail;
 
-import java.lang.reflect.Method;
 import java.lang.reflect.InvocationHandler;
+import java.lang.reflect.Method;
 import java.lang.reflect.Proxy;
 import java.util.Objects;
 import javax.script.Invocable;

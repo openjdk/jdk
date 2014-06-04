@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.lang.invoke.MethodHandle;
 import java.util.Iterator;
 import java.util.concurrent.Callable;
@@ -38,8 +40,6 @@ import jdk.nashorn.internal.parser.JSONParser;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.arrays.ArrayIndex;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
-
-import static jdk.nashorn.internal.runtime.Source.sourceFor;
 
 /**
  * Utilities used by "JSON" object implementation.

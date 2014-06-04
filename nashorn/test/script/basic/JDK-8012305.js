@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8012305: Function.bind can't be called on prototype function inside constructor 
+ * JDK-8012305: Function.bind can't be called on prototype function inside constructor
  *
  * @test
  * @run
@@ -36,4 +36,4 @@ function MyObject() {
 
 MyObject.prototype._process = function() { print("Message "); }
 
-var s = new MyObject(); 
+var s = new MyObject();

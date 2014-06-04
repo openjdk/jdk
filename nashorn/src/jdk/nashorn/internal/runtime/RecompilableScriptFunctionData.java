@@ -710,7 +710,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
     }
 
-    private void readObject(java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+    private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
         createLogger();
     }

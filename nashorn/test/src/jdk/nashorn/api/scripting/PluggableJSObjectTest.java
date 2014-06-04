@@ -25,6 +25,10 @@
 
 package jdk.nashorn.api.scripting;
 
+import static org.testng.Assert.assertEquals;
+import static org.testng.Assert.assertFalse;
+import static org.testng.Assert.fail;
+
 import java.nio.IntBuffer;
 import java.util.Collection;
 import java.util.HashMap;
@@ -32,11 +36,6 @@ import java.util.LinkedHashMap;
 import java.util.Set;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineManager;
-import javax.script.ScriptException;
-import static org.testng.Assert.assertEquals;
-import static org.testng.Assert.assertTrue;
-import static org.testng.Assert.assertFalse;
-import static org.testng.Assert.fail;
 import org.testng.annotations.Test;
 
 /**
@@ -54,22 +53,22 @@ public class PluggableJSObjectTest {
         }
 
         @Override
-        public Object getMember(String name) {
+        public Object getMember(final String name) {
             return map.get(name);
         }
 
         @Override
-        public void setMember(String name, Object value) {
+        public void setMember(final String name, final Object value) {
             map.put(name, value);
         }
 
         @Override
-        public boolean hasMember(String name) {
+        public boolean hasMember(final String name) {
             return map.containsKey(name);
         }
 
         @Override
-        public void removeMember(String name) {
+        public void removeMember(final String name) {
             map.remove(name);
         }
 
@@ -112,7 +111,7 @@ public class PluggableJSObjectTest {
     public static class BufferObject extends AbstractJSObject {
         private final IntBuffer buf;
 
-        public BufferObject(int size) {
+        public BufferObject(final int size) {
             buf = IntBuffer.allocate(size);
         }
 
@@ -121,22 +120,22 @@ public class PluggableJSObjectTest {
         }
 
         @Override
-        public Object getMember(String name) {
+        public Object getMember(final String name) {
             return name.equals("length")? buf.capacity() : null;
         }
 
         @Override
-        public boolean hasSlot(int i) {
+        public boolean hasSlot(final int i) {
             return i > -1 && i < buf.capacity();
         }
 
         @Override
-        public Object getSlot(int i) {
+        public Object getSlot(final int i) {
             return buf.get(i);
         }
 
         @Override
-        public void setSlot(int i, Object value) {
+        public void setSlot(final int i, final Object value) {
             buf.put(i, ((Number)value).intValue());
         }
 
@@ -172,9 +171,9 @@ public class PluggableJSObjectTest {
 
     public static class Adder extends AbstractJSObject {
         @Override
-        public Object call(Object thiz, Object... args) {
+        public Object call(final Object thiz, final Object... args) {
             double res = 0.0;
-            for (Object arg : args) {
+            for (final Object arg : args) {
                 res += ((Number)arg).doubleValue();
             }
             return res;
@@ -204,7 +203,7 @@ public class PluggableJSObjectTest {
 
     public static class Factory extends AbstractJSObject {
         @Override
-        public Object newObject(Object... args) {
+        public Object newObject(final Object... args) {
             return new HashMap<Object, Object>();
         }
 

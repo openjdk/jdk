@@ -24,14 +24,14 @@ import jdk.nashorn.internal.runtime.regexp.joni.ast.CClassNode;
 final class ApplyCaseFold {
 
     // i_apply_case_fold
-    public void apply(int from, int to, Object o) {
-        ApplyCaseFoldArg arg = (ApplyCaseFoldArg)o;
+    public void apply(final int from, final int to, final Object o) {
+        final ApplyCaseFoldArg arg = (ApplyCaseFoldArg)o;
 
-        ScanEnvironment env = arg.env;
-        CClassNode cc = arg.cc;
-        BitSet bs = cc.bs;
+        final ScanEnvironment env = arg.env;
+        final CClassNode cc = arg.cc;
+        final BitSet bs = cc.bs;
 
-        boolean inCC = cc.isCodeInCC(from);
+        final boolean inCC = cc.isCodeInCC(from);
 
         if (Config.CASE_FOLD_IS_APPLIED_INSIDE_NEGATIVE_CCLASS) {
             if ((inCC && !cc.isNot()) || (!inCC && cc.isNot())) {

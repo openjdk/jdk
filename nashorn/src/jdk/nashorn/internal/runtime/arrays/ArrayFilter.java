@@ -141,7 +141,7 @@ abstract class ArrayFilter extends ArrayData {
         return this;
     }
 
-    private static void printTrace(final Throwable t, String msg) {
+    private static void printTrace(final Throwable t, final String msg) {
         final java.io.StringWriter sw = new java.io.StringWriter();
         final java.io.PrintWriter pw = new java.io.PrintWriter(sw, false);
         pw.println(msg);

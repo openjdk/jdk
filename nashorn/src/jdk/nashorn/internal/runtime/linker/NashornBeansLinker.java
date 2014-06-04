@@ -100,7 +100,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         }
 
         @Override
-        public MethodHandle asTypeLosslessReturn(MethodHandle handle, MethodType fromType) {
+        public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
             return Implementation.asTypeLosslessReturn(this, handle, fromType);
         }
 

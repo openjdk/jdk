@@ -112,7 +112,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         private final List<TypeBasedGuardingDynamicLinker>[] singletonLinkers;
 
         @SuppressWarnings("unchecked")
-        ClassToLinker(TypeBasedGuardingDynamicLinker[] linkers) {
+        ClassToLinker(final TypeBasedGuardingDynamicLinker[] linkers) {
             this.linkers = linkers;
             singletonLinkers = new List[linkers.length];
             for(int i = 0; i < linkers.length; ++i) {
@@ -121,7 +121,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         }
 
         @Override
-        protected List<TypeBasedGuardingDynamicLinker> computeValue(Class<?> clazz) {
+        protected List<TypeBasedGuardingDynamicLinker> computeValue(final Class<?> clazz) {
             List<TypeBasedGuardingDynamicLinker> list = NO_LINKER;
             for(int i = 0; i < linkers.length; ++i) {
                 final TypeBasedGuardingDynamicLinker linker = linkers[i];
@@ -152,27 +152,27 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
      *
      * @param linkers the component linkers
      */
-    public CompositeTypeBasedGuardingDynamicLinker(Iterable<? extends TypeBasedGuardingDynamicLinker> linkers) {
+    public CompositeTypeBasedGuardingDynamicLinker(final Iterable<? extends TypeBasedGuardingDynamicLinker> linkers) {
         final List<TypeBasedGuardingDynamicLinker> l = new LinkedList<>();
-        for(TypeBasedGuardingDynamicLinker linker: linkers) {
+        for(final TypeBasedGuardingDynamicLinker linker: linkers) {
             l.add(linker);
         }
         this.classToLinker = new ClassToLinker(l.toArray(new TypeBasedGuardingDynamicLinker[l.size()]));
     }
 
     @Override
-    public boolean canLinkType(Class<?> type) {
+    public boolean canLinkType(final Class<?> type) {
         return !classToLinker.get(type).isEmpty();
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, final LinkerServices linkerServices)
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices)
             throws Exception {
         final Object obj = linkRequest.getReceiver();
         if(obj == null) {
             return null;
         }
-        for(TypeBasedGuardingDynamicLinker linker: classToLinker.get(obj.getClass())) {
+        for(final TypeBasedGuardingDynamicLinker linker: classToLinker.get(obj.getClass())) {
             final GuardedInvocation invocation = linker.getGuardedInvocation(linkRequest, linkerServices);
             if(invocation != null) {
                 return invocation;
@@ -189,10 +189,10 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
      * @param linkers the list of linkers to optimize
      * @return the optimized list
      */
-    public static List<GuardingDynamicLinker> optimize(Iterable<? extends GuardingDynamicLinker> linkers) {
+    public static List<GuardingDynamicLinker> optimize(final Iterable<? extends GuardingDynamicLinker> linkers) {
         final List<GuardingDynamicLinker> llinkers = new LinkedList<>();
         final List<TypeBasedGuardingDynamicLinker> tblinkers = new LinkedList<>();
-        for(GuardingDynamicLinker linker: linkers) {
+        for(final GuardingDynamicLinker linker: linkers) {
             if(linker instanceof TypeBasedGuardingDynamicLinker) {
                 tblinkers.add((TypeBasedGuardingDynamicLinker)linker);
             } else {
@@ -204,8 +204,8 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         return llinkers;
     }
 
-    private static void addTypeBased(List<GuardingDynamicLinker> llinkers,
-            List<TypeBasedGuardingDynamicLinker> tblinkers) {
+    private static void addTypeBased(final List<GuardingDynamicLinker> llinkers,
+            final List<TypeBasedGuardingDynamicLinker> tblinkers) {
         switch(tblinkers.size()) {
             case 0: {
                 break;

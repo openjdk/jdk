@@ -245,7 +245,7 @@ public final class NativeNumber extends ScriptObject {
      * @return number in decimal exponentiation notation or decimal fixed notation depending on {@code precision}
      */
     @SpecializedFunction
-    public static String toPrecision(Object self, final int precision) {
+    public static String toPrecision(final Object self, final int precision) {
         return toPrecision(getNumberValue(self), precision);
     }
 

@@ -162,7 +162,7 @@ public class SharedObject {
         return engine;
     }
 
-    public void setEngine(ScriptEngine engine) {
+    public void setEngine(final ScriptEngine engine) {
         this.engine = engine;
     }
 
@@ -414,51 +414,51 @@ public class SharedObject {
         t.start();
     }
 
-    public String overloadedMethodDoubleVSint(int arg) {
+    public String overloadedMethodDoubleVSint(final int arg) {
         return "int";
     }
 
-    public String overloadedMethodDoubleVSint(double arg) {
+    public String overloadedMethodDoubleVSint(final double arg) {
         return "double";
     }
 
-    public int overloadedMethod(int arg) {
+    public int overloadedMethod(final int arg) {
         return arg*2;
     }
 
-    public int overloadedMethod(String arg) {
+    public int overloadedMethod(final String arg) {
         return arg.length();
     }
 
-    public int overloadedMethod(boolean arg) {
+    public int overloadedMethod(final boolean arg) {
         return (arg) ? 1 : 0;
     }
 
-    public int overloadedMethod(Person arg) {
+    public int overloadedMethod(final Person arg) {
         return arg.id*2;
     }
 
-    public int firstLevelMethodInt(int arg) throws ScriptException, NoSuchMethodException {
+    public int firstLevelMethodInt(final int arg) throws ScriptException, NoSuchMethodException {
         return (int) ((Invocable)engine).invokeFunction("secondLevelMethodInt", arg);
     }
 
-    public int thirdLevelMethodInt(int arg) {
+    public int thirdLevelMethodInt(final int arg) {
         return arg*5;
     }
 
-    public int firstLevelMethodInteger(Integer arg) throws ScriptException, NoSuchMethodException {
+    public int firstLevelMethodInteger(final Integer arg) throws ScriptException, NoSuchMethodException {
         return (int) ((Invocable)engine).invokeFunction("secondLevelMethodInteger", arg);
     }
 
-    public int thirdLevelMethodInteger(Integer arg) {
+    public int thirdLevelMethodInteger(final Integer arg) {
         return arg*10;
     }
 
-    public Person firstLevelMethodObject(Person p) throws ScriptException, NoSuchMethodException {
+    public Person firstLevelMethodObject(final Person p) throws ScriptException, NoSuchMethodException {
         return (Person) ((Invocable)engine).invokeFunction("secondLevelMethodObject", p);
     }
 
-    public Person thirdLevelMethodObject(Person p) {
+    public Person thirdLevelMethodObject(final Person p) {
         p.id *= 10;
         return p;
     }

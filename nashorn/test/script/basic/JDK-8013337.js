@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8013337: Issues with Date.prototype's get, set functions 
+ * JDK-8013337: Issues with Date.prototype's get, set functions
  *
  * @test
  * @option -timezone=Asia/Calcutta
@@ -63,7 +63,7 @@ checkGetterCalled("setMonth");
 checkGetterCalled("setUTCMonth");
 
 try {
-    Date.prototype.setTime.call({}, { valueOf: function() { throw "err" } }) 
+    Date.prototype.setTime.call({}, { valueOf: function() { throw "err" } })
 } catch (e) {
     if (! (e instanceof TypeError)) {
         fail("TypeError expected, got " + e);

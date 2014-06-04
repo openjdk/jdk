@@ -55,7 +55,7 @@ public class SplitMethodEmitter extends MethodEmitter {
      */
     private final List<BreakableNode> externalTargetNodes = new ArrayList<>();
 
-    SplitMethodEmitter(final ClassEmitter classEmitter, final MethodVisitor mv, SplitNode splitNode) {
+    SplitMethodEmitter(final ClassEmitter classEmitter, final MethodVisitor mv, final SplitNode splitNode) {
         super(classEmitter, mv);
         this.splitNode = splitNode;
     }

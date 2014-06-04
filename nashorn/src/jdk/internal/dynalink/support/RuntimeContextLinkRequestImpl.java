@@ -109,8 +109,8 @@ public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
      * runtime specific context arguments.
      * @throws IllegalArgumentException if runtimeContextArgCount is less than 1.
      */
-    public RuntimeContextLinkRequestImpl(CallSiteDescriptor callSiteDescriptor, Object callSiteToken,
-            int linkCount, boolean callSiteUnstable, Object[] arguments, int runtimeContextArgCount) {
+    public RuntimeContextLinkRequestImpl(final CallSiteDescriptor callSiteDescriptor, final Object callSiteToken,
+            final int linkCount, final boolean callSiteUnstable, final Object[] arguments, final int runtimeContextArgCount) {
         super(callSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, arguments);
         if(runtimeContextArgCount < 1) {
             throw new IllegalArgumentException("runtimeContextArgCount < 1");
@@ -129,7 +129,7 @@ public class RuntimeContextLinkRequestImpl extends LinkRequestImpl {
     }
 
     @Override
-    public LinkRequest replaceArguments(CallSiteDescriptor callSiteDescriptor, Object[] arguments) {
+    public LinkRequest replaceArguments(final CallSiteDescriptor callSiteDescriptor, final Object[] arguments) {
         return new RuntimeContextLinkRequestImpl(callSiteDescriptor, getCallSiteToken(), getLinkCount(), isCallSiteUnstable(), arguments,
                 runtimeContextArgCount);
     }

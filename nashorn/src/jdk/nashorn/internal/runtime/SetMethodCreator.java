@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
-
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;

@@ -25,7 +25,7 @@
  * JDK-8010946: AccessController.doPrivileged() doesn't work as expected.
  * This is actually a broader issue of having Dynalink correctly handle
  * caller-sensitive methods.
- * 
+ *
  * NOTE: This is not a standalone test file, it is loaded by JDK-801946.js
  * @subtest
  */
