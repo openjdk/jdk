@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ class OGLBlitLoops {
             // surface->sw ops
             new OGLSurfaceToSwBlit(SurfaceType.IntArgb,
                                    OGLSurfaceData.PF_INT_ARGB),
+            new OGLSurfaceToSwBlit(SurfaceType.IntArgbPre,
+                                   OGLSurfaceData.PF_INT_ARGB_PRE),
 
             // sw->surface ops
             blitIntArgbPreToSurface,
@@ -505,12 +507,12 @@ class OGLRTTSurfaceToSurfaceTransform extends TransformBlit {
     }
 }
 
-class OGLSurfaceToSwBlit extends Blit {
+final class OGLSurfaceToSwBlit extends Blit {
 
-    private int typeval;
+    private final int typeval;
 
-    // REMIND: destination will actually be opaque/premultiplied...
-    OGLSurfaceToSwBlit(SurfaceType dstType, int typeval) {
+    // destination will actually be ArgbPre or Argb
+    OGLSurfaceToSwBlit(final SurfaceType dstType,final int typeval) {
         super(OGLSurfaceData.OpenGLSurface,
               CompositeType.SrcNoEa,
               dstType);
