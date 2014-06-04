@@ -512,6 +512,23 @@ public class ScopeTest {
         assertEquals(e.eval("x", newCtxt), 2);
     }
 
+    // @bug 8044750: megamorphic getter for scope objects does not call __noSuchProperty__ hook
+    @Test
+    public static void testMegamorphicGetInGlobal() throws Exception {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine engine = m.getEngineByName("nashorn");
+        final String script = "foo";
+        // "foo" is megamorphic because of different global scopes.
+        // Make sure ScriptContext variable search works even after
+        // it becomes megamorphic.
+        for (int index = 0; index < 25; index++) {
+            final Bindings bindings = new SimpleBindings();
+            bindings.put("foo", index);
+            final Number value = (Number)engine.eval(script, bindings);
+            assertEquals(index, value.intValue());
+        }
+    }
+
     /**
      * Test "slow" scopes involving {@code with} and {@code eval} statements for shared script classes with multiple globals.
      */
