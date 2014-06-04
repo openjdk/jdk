@@ -679,8 +679,8 @@ public class JEditorPane extends JTextComponent {
                         }
                     });
                 }
-                return (pageLoaded ? page : old);
             }
+            return (pageLoaded ? page : old);
         }
 
         /**
