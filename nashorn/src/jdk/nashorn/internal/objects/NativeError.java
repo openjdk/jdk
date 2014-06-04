@@ -316,7 +316,12 @@ public final class NativeError extends ScriptObject {
         final Object exception = ECMAException.getException(sobj);
         if (exception instanceof Throwable) {
             final Object value = getScriptStackString(sobj, (Throwable)exception);
-            sobj.put(STACK, value, false);
+            if (sobj.hasOwnProperty(STACK)) {
+                sobj.put(STACK, value, false);
+            } else {
+                sobj.addOwnProperty(STACK, Attribute.NOT_ENUMERABLE, value);
+            }
+
             return value;
         }
 
@@ -334,7 +339,11 @@ public final class NativeError extends ScriptObject {
      */
     public static Object setStack(final Object self, final Object value) {
         final ScriptObject sobj = Global.checkObject(self);
-        sobj.set(STACK, value, false);
+        if (sobj.hasOwnProperty(STACK)) {
+            sobj.put(STACK, value, false);
+        } else {
+            sobj.addOwnProperty(STACK, Attribute.NOT_ENUMERABLE, value);
+        }
         return value;
     }
 
