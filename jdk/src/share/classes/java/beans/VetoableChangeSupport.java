@@ -77,6 +77,7 @@ import java.util.Map.Entry;
  * non-serializable listeners will be skipped during serialization.
  *
  * @see PropertyChangeSupport
+ * @since 1.1
  */
 public class VetoableChangeSupport implements Serializable {
     private VetoableChangeListenerMap map = new VetoableChangeListenerMap();
@@ -191,6 +192,7 @@ public class VetoableChangeSupport implements Serializable {
      *
      * @param propertyName  The name of the property to listen on.
      * @param listener  The VetoableChangeListener to be added
+     * @since 1.2
      */
     public void addVetoableChangeListener(
                                 String propertyName,
@@ -216,6 +218,7 @@ public class VetoableChangeSupport implements Serializable {
      *
      * @param propertyName  The name of the property that was listened on.
      * @param listener  The VetoableChangeListener to be removed
+     * @since 1.2
      */
     public void removeVetoableChangeListener(
                                 String propertyName,
@@ -292,6 +295,7 @@ public class VetoableChangeSupport implements Serializable {
      * @param oldValue      the old value of the property
      * @param newValue      the new value of the property
      * @throws PropertyVetoException if one of listeners vetoes the property update
+     * @since 1.2
      */
     public void fireVetoableChange(String propertyName, int oldValue, int newValue)
             throws PropertyVetoException {
@@ -320,6 +324,7 @@ public class VetoableChangeSupport implements Serializable {
      * @param oldValue      the old value of the property
      * @param newValue      the new value of the property
      * @throws PropertyVetoException if one of listeners vetoes the property update
+     * @since 1.2
      */
     public void fireVetoableChange(String propertyName, boolean oldValue, boolean newValue)
             throws PropertyVetoException {
@@ -343,6 +348,7 @@ public class VetoableChangeSupport implements Serializable {
      *
      * @param event  the {@code PropertyChangeEvent} to be fired
      * @throws PropertyVetoException if one of listeners vetoes the property update
+     * @since 1.2
      */
     public void fireVetoableChange(PropertyChangeEvent event)
             throws PropertyVetoException {
@@ -399,6 +405,7 @@ public class VetoableChangeSupport implements Serializable {
      *
      * @param propertyName  the property name.
      * @return true if there are one or more listeners for the given property
+     * @since 1.2
      */
     public boolean hasListeners(String propertyName) {
         return this.map.hasListeners(propertyName);

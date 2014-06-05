@@ -36,6 +36,8 @@ import java.lang.reflect.Modifier;
  * The given group of events are all delivered as method calls on a single
  * event listener interface, and an event listener object can be registered
  * via a call on a registration method supplied by the event source.
+ *
+ * @since 1.1
  */
 public class EventSetDescriptor extends FeatureDescriptor {
 

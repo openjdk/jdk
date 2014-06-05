@@ -32,6 +32,7 @@ import java.lang.reflect.Constructor;
 /**
  * A PropertyDescriptor describes one property that a Java Bean
  * exports via a pair of accessor methods.
+ * @since 1.1
  */
 public class PropertyDescriptor extends FeatureDescriptor {
 
@@ -244,6 +245,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *
      * @param readMethod The new read method.
      * @throws IntrospectionException if the read method is invalid
+     * @since 1.2
      */
     public synchronized void setReadMethod(Method readMethod)
                                 throws IntrospectionException {
@@ -314,6 +316,7 @@ public class PropertyDescriptor extends FeatureDescriptor {
      *
      * @param writeMethod The new write method.
      * @throws IntrospectionException if the write method is invalid
+     * @since 1.2
      */
     public synchronized void setWriteMethod(Method writeMethod)
                                 throws IntrospectionException {

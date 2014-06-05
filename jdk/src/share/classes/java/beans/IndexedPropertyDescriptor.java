@@ -36,6 +36,8 @@ import java.lang.reflect.Method;
  * An indexed property may also provide simple non-indexed read and write
  * methods.  If these are present, they read and write arrays of the type
  * returned by the indexed read method.
+ *
+ * @since 1.1
  */
 
 public class IndexedPropertyDescriptor extends PropertyDescriptor {
@@ -209,6 +211,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param readMethod The new indexed read method.
      * @throws IntrospectionException if an exception occurs during
      * introspection.
+     *
+     * @since 1.2
      */
     public synchronized void setIndexedReadMethod(Method readMethod)
         throws IntrospectionException {
@@ -288,6 +292,8 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
      * @param writeMethod The new indexed write method.
      * @throws IntrospectionException if an exception occurs during
      * introspection.
+     *
+     * @since 1.2
      */
     public synchronized void setIndexedWriteMethod(Method writeMethod)
         throws IntrospectionException {
