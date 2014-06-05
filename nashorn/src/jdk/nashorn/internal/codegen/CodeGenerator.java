@@ -4312,8 +4312,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         assert data != null : functionNode.getName() + " has no data";
 
-        final FunctionNode parentFn = lc.getParentFunction(functionNode);
-        if (parentFn == null && functionNode.isProgram()) {
+        if (functionNode.isProgram() && !compiler.isOnDemandCompilation()) {
             final CompileUnit fnUnit = functionNode.getCompileUnit();
             final MethodEmitter createFunction = fnUnit.getClassEmitter().method(
                     EnumSet.of(Flag.PUBLIC, Flag.STATIC), CREATE_PROGRAM_FUNCTION.symbolName(),
