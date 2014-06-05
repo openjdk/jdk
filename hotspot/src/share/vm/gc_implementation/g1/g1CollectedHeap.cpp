@@ -2246,12 +2246,9 @@ void G1CollectedHeap::ref_processing_init() {
                                 // degree of mt discovery
                            false,
                                 // Reference discovery is not atomic
-                           &_is_alive_closure_cm,
+                           &_is_alive_closure_cm);
                                 // is alive closure
                                 // (for efficiency/performance)
-                           true);
-                                // Setting next fields of discovered
-                                // lists requires a barrier.
 
   // STW ref processor
   _ref_processor_stw =
@@ -2266,12 +2263,9 @@ void G1CollectedHeap::ref_processing_init() {
                                 // degree of mt discovery
                            true,
                                 // Reference discovery is atomic
-                           &_is_alive_closure_stw,
+                           &_is_alive_closure_stw);
                                 // is alive closure
                                 // (for efficiency/performance)
-                           false);
-                                // Setting next fields of discovered
-                                // lists does not require a barrier.
 }
 
 size_t G1CollectedHeap::capacity() const {

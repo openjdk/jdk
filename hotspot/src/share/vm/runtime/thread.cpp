@@ -3543,6 +3543,8 @@ jint Threads::create_vm(JavaVMInitArgs* args, bool* canTryAgain) {
   // debug stuff, that does not work until all basic classes have been initialized.
   set_init_completed();
 
+  Metaspace::post_initialize();
+
   HOTSPOT_VM_INIT_END();
 
   // record VM initialization completion time

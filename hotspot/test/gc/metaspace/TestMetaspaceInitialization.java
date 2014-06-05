@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,16 +21,28 @@
  * questions.
  */
 
-/*
- * @test TestStringDeduplicationMemoryUsage
- * @summary Test string deduplication memory usage
- * @bug 8029075
- * @key gc
- * @library /testlibrary
- */
+import java.util.ArrayList;
 
-public class TestStringDeduplicationMemoryUsage {
-    public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testMemoryUsage();
+/* @test TestMetaspaceInitialization
+ * @bug 8042933
+ * @summary Tests to initialize metaspace with a very low MetaspaceSize
+ * @library /testlibrary
+ * @run main/othervm -XX:MetaspaceSize=2m TestMetaspaceInitialization
+ */
+public class TestMetaspaceInitialization {
+    private class Internal {
+        public int x;
+        public Internal(int x) {
+            this.x = x;
+        }
+    }
+
+    private void test() {
+        ArrayList<Internal> l = new ArrayList<>();
+        l.add(new Internal(17));
+    }
+
+    public static void main(String[] args) {
+        new TestMetaspaceInitialization().test();
     }
 }
