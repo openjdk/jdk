@@ -37,10 +37,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
-import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Modifier;
 import java.net.MalformedURLException;
 import java.net.URL;
@@ -119,6 +120,9 @@ public final class Context {
     private static final String LOAD_CLASSPATH = "classpath:";
     private static final String LOAD_FX = "fx:";
     private static final String LOAD_NASHORN = "nashorn:";
+
+    private static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+    private static MethodType CREATE_PROGRAM_FUNCTION_TYPE = MethodType.methodType(ScriptFunction.class, ScriptObject.class);
 
     /* Force DebuggerSupport to be loaded. */
     static {
@@ -538,11 +542,12 @@ public final class Context {
      */
     public MultiGlobalCompiledScript compileScript(final Source source) {
         final Class<?> clazz = compile(source, this.errors, this._strict);
+        final MethodHandle createProgramFunctionHandle = getCreateProgramFunctionHandle(clazz);
 
         return new MultiGlobalCompiledScript() {
             @Override
             public ScriptFunction getFunction(final Global newGlobal) {
-                return getProgramFunction(clazz, newGlobal);
+                return invokeCreateProgramFunctionHandle(createProgramFunctionHandle, newGlobal);
             }
         };
     }
@@ -1009,15 +1014,24 @@ public final class Context {
     }
 
     private static ScriptFunction getProgramFunction(final Class<?> script, final ScriptObject scope) {
-        if (script == null) {
-            return null;
-        }
+        return invokeCreateProgramFunctionHandle(getCreateProgramFunctionHandle(script), scope);
+    }
 
+    private static MethodHandle getCreateProgramFunctionHandle(final Class<?> script) {
         try {
-            return (ScriptFunction)script.getMethod(CREATE_PROGRAM_FUNCTION.symbolName(), ScriptObject.class).invoke(null, scope);
-        } catch (IllegalAccessException | IllegalArgumentException | InvocationTargetException | NoSuchMethodException
-                | SecurityException e) {
-            throw new RuntimeException("Failed to create a program function for " + script.getName(), e);
+            return LOOKUP.findStatic(script, CREATE_PROGRAM_FUNCTION.symbolName(), CREATE_PROGRAM_FUNCTION_TYPE);
+        } catch (NoSuchMethodException | IllegalAccessException e) {
+            throw new AssertionError("Failed to retrieve a handle for the program function for " + script.getName(), e);
+        }
+    }
+
+    private static ScriptFunction invokeCreateProgramFunctionHandle(final MethodHandle createProgramFunctionHandle, final ScriptObject scope) {
+        try {
+            return (ScriptFunction)createProgramFunctionHandle.invokeExact(scope);
+        } catch (final RuntimeException|Error e) {
+            throw e;
+        } catch (final Throwable t) {
+            throw new AssertionError("Failed to create a program function", t);
         }
     }
 
