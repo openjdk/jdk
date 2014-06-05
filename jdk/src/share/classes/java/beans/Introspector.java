@@ -90,6 +90,8 @@ import sun.reflect.misc.ReflectUtil;
  * For more information about introspection and design patterns, please
  * consult the
  *  <a href="http://www.oracle.com/technetwork/java/javase/documentation/spec-136004.html">JavaBeans&trade; specification</a>.
+ *
+ * @since 1.1
  */
 
 public class Introspector {
@@ -97,14 +99,17 @@ public class Introspector {
     // Flags that can be used to control getBeanInfo:
     /**
      * Flag to indicate to use of all beaninfo.
+     * @since 1.2
      */
     public final static int USE_ALL_BEANINFO           = 1;
     /**
      * Flag to indicate to ignore immediate beaninfo.
+     * @since 1.2
      */
     public final static int IGNORE_IMMEDIATE_BEANINFO  = 2;
     /**
      * Flag to indicate to ignore all beaninfo.
+     * @since 1.2
      */
     public final static int IGNORE_ALL_BEANINFO        = 3;
 
@@ -214,6 +219,7 @@ public class Introspector {
      * @return  A BeanInfo object describing the target bean.
      * @exception IntrospectionException if an exception occurs during
      *              introspection.
+     * @since 1.2
      */
     public static BeanInfo getBeanInfo(Class<?> beanClass, int flags)
                                                 throws IntrospectionException {
@@ -354,6 +360,8 @@ public class Introspector {
      * not normally required.  It is normally only needed by advanced
      * tools that update existing "Class" objects in-place and need
      * to make the Introspector re-analyze existing Class objects.
+     *
+     * @since 1.2
      */
 
     public static void flushCaches() {
@@ -377,6 +385,7 @@ public class Introspector {
      *
      * @param clz  Class object to be flushed.
      * @throws NullPointerException If the Class object is null.
+     * @since 1.2
      */
     public static void flushFromCaches(Class<?> clz) {
         if (clz == null) {
