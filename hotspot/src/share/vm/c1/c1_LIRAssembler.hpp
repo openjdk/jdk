@@ -144,7 +144,7 @@ class LIR_Assembler: public CompilationResourceObj {
   // stubs
   void emit_slow_case_stubs();
   void emit_static_call_stub();
-  void emit_code_stub(CodeStub* op);
+  void append_code_stub(CodeStub* op);
   void add_call_info_here(CodeEmitInfo* info)                              { add_call_info(code_offset(), info); }
 
   // code patterns
