@@ -1181,7 +1181,7 @@ public:
   static oop              target(         oop site)             { return site->obj_field(             _target_offset);         }
   static void         set_target(         oop site, oop target) {        site->obj_field_put(         _target_offset, target); }
 
-  static volatile oop     target_volatile(oop site)             { return site->obj_field_volatile(    _target_offset);         }
+  static volatile oop     target_volatile(oop site)             { return oop((oopDesc *)(site->obj_field_volatile(_target_offset))); }
   static void         set_target_volatile(oop site, oop target) {        site->obj_field_put_volatile(_target_offset, target); }
 
   // Testers

@@ -563,6 +563,7 @@ void* Arena::grow(size_t x, AllocFailType alloc_failmode) {
   _chunk = new (alloc_failmode, len) Chunk(len);
 
   if (_chunk == NULL) {
+    _chunk = k;                 // restore the previous value of _chunk
     return NULL;
   }
   if (k) k->set_next(_chunk);   // Append new chunk to end of linked list

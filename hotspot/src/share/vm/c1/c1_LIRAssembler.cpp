@@ -336,7 +336,6 @@ void LIR_Assembler::check_no_unbound_labels() {
 
 
 void LIR_Assembler::add_debug_info_for_branch(CodeEmitInfo* info) {
-  _masm->code_section()->relocate(pc(), relocInfo::poll_type);
   int pc_offset = code_offset();
   flush_debug_info(pc_offset);
   info->record_debug_info(compilation()->debug_info_recorder(), pc_offset);

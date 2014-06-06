@@ -74,19 +74,21 @@ $(UNIVERSAL_COPY_LIST):
 
 
 # Replace arch specific binaries with universal binaries
+# Do not touch jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
+# That symbolic link belongs to the 'jdk' build.
 export_universal:
 	$(RM) -r $(EXPORT_PATH)/jre/lib/{i386,amd64}
 	$(RM) -r $(JDK_IMAGE_DIR)/jre/lib/{i386,amd64}
-	$(RM) $(JDK_IMAGE_DIR)/jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
 	($(CD) $(EXPORT_PATH) && \
 	  $(TAR) -cf - *) | \
 	  ($(CD) $(JDK_IMAGE_DIR) && $(TAR) -xpf -)
 
 
 # Overlay universal binaries
+# Do not touch jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
+# That symbolic link belongs to the 'jdk' build.
 copy_universal:
 	$(RM) -r $(JDK_IMAGE_DIR)$(COPY_SUBDIR)/jre/lib/{i386,amd64}
-	$(RM) $(JDK_IMAGE_DIR)$(COPY_SUBDIR)/jre/lib/{client,server}/libjsig.$(LIBRARY_SUFFIX)
 	($(CD) $(EXPORT_PATH)$(COPY_SUBDIR) && \
 	  $(TAR) -cf - *) | \
 	  ($(CD) $(JDK_IMAGE_DIR)$(COPY_SUBDIR) && $(TAR) -xpf -)

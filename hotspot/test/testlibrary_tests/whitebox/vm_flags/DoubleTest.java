@@ -22,15 +22,26 @@
  */
 
 /*
- * @test TestStringDeduplicationMemoryUsage
- * @summary Test string deduplication memory usage
- * @bug 8029075
- * @key gc
- * @library /testlibrary
+ * @test DoubleTest
+ * @bug 8028756
+ * @library /testlibrary /testlibrary/whitebox
+ * @build DoubleTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DoubleTest
+ * @summary testing of WB::set/getDoubleVMFlag()
+ * @author igor.ignatyev@oracle.com
  */
 
-public class TestStringDeduplicationMemoryUsage {
+public class DoubleTest {
+    private static final String FLAG_NAME = null;
+    private static final Double[] TESTS = {0d, -0d, -1d, 1d,
+            Double.MAX_VALUE, Double.MIN_VALUE, Double.NaN,
+            Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY};
+
     public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testMemoryUsage();
+        VmFlagTest.runTest(FLAG_NAME, TESTS,
+            VmFlagTest.WHITE_BOX::setDoubleVMFlag,
+            VmFlagTest.WHITE_BOX::getDoubleVMFlag);
     }
 }
+
