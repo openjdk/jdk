@@ -27,6 +27,7 @@ package javax.swing;
 
 import sun.awt.EmbeddedFrame;
 import sun.awt.OSInfo;
+import sun.swing.SwingAccessor;
 
 import java.applet.Applet;
 import java.awt.*;
@@ -60,6 +61,16 @@ import static javax.swing.ClientPropertyKey.PopupFactory_FORCE_HEAVYWEIGHT_POPUP
  * @since 1.4
  */
 public class PopupFactory {
+
+    static {
+        SwingAccessor.setPopupFactoryAccessor(new SwingAccessor.PopupFactoryAccessor() {
+            @Override
+            public Popup getHeavyWeightPopup(PopupFactory factory, Component owner,
+                                             Component contents, int ownerX, int ownerY) {
+                return factory.getPopup(owner, contents, ownerX, ownerY, HEAVY_WEIGHT_POPUP);
+            }
+        });
+    }
     /**
      * The shared instanceof <code>PopupFactory</code> is per
      * <code>AppContext</code>. This is the key used in the
