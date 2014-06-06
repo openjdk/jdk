@@ -42,7 +42,6 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.lookup.Lookup;
-import jdk.nashorn.internal.lookup.MethodHandleFactory;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -59,7 +58,7 @@ import jdk.nashorn.internal.runtime.linker.Bootstrap;
 public final class RuntimeCallSite extends MutableCallSite {
     static final Call BOOTSTRAP = staticCallNoLookup(Bootstrap.class, "runtimeBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
 
-    private static final MethodHandle NEXT = findOwnMH("next",  MethodHandle.class, String.class);
+    private static final MethodHandle NEXT = findOwnMH_V("next",  MethodHandle.class, String.class);
 
     private final RuntimeNode.Request request;
 
@@ -89,7 +88,7 @@ public final class RuntimeCallSite extends MutableCallSite {
         }
 
         /**
-         * The first type to try to use for this genrated runtime node
+         * The first type to try to use for this generated runtime node
          *
          * @return a type
          */
@@ -351,19 +350,19 @@ public final class RuntimeCallSite extends MutableCallSite {
     /** Unbox cache */
     private static final Map<Class<?>, MethodHandle> UNBOX;
 
-    private static final MethodHandle CHECKCAST  = findOwnMH("checkcast", boolean.class, Class.class, Object.class);
-    private static final MethodHandle CHECKCAST2 = findOwnMH("checkcast", boolean.class, Class.class, Object.class, Object.class);
-    private static final MethodHandle ADDCHECK   = findOwnMH("ADDcheck",  boolean.class, int.class, int.class);
+    private static final MethodHandle CHECKCAST  = findOwnMH_S("checkcast", boolean.class, Class.class, Object.class);
+    private static final MethodHandle CHECKCAST2 = findOwnMH_S("checkcast", boolean.class, Class.class, Object.class, Object.class);
+    private static final MethodHandle ADDCHECK   = findOwnMH_S("ADDcheck",  boolean.class, int.class, int.class);
 
     /**
      * Build maps of correct boxing operations
      */
     static {
         UNBOX = new HashMap<>();
-        UNBOX.put(Boolean.class, findOwnMH("unboxZ", int.class, Object.class));
-        UNBOX.put(Integer.class, findOwnMH("unboxI", int.class, Object.class));
-        UNBOX.put(Long.class,    findOwnMH("unboxJ", long.class, Object.class));
-        UNBOX.put(Number.class,  findOwnMH("unboxD", double.class, Object.class));
+        UNBOX.put(Boolean.class, findOwnMH_S("unboxZ", int.class, Object.class));
+        UNBOX.put(Integer.class, findOwnMH_S("unboxI", int.class, Object.class));
+        UNBOX.put(Long.class,    findOwnMH_S("unboxJ", long.class, Object.class));
+        UNBOX.put(Number.class,  findOwnMH_S("unboxD", double.class, Object.class));
 
         METHODS = new HashMap<>();
 
@@ -375,9 +374,9 @@ public final class RuntimeCallSite extends MutableCallSite {
 
                 final boolean isCmp = Request.isComparison(req);
 
-                METHODS.put(req.name() + "int",    findOwnMH(req.name(), (isCmp ? boolean.class : int.class),  int.class, int.class));
-                METHODS.put(req.name() + "long",   findOwnMH(req.name(), (isCmp ? boolean.class : long.class), long.class, long.class));
-                METHODS.put(req.name() + "double", findOwnMH(req.name(), (isCmp ? boolean.class : double.class), double.class, double.class));
+                METHODS.put(req.name() + "int",    findOwnMH_S(req.name(), (isCmp ? boolean.class : int.class),  int.class, int.class));
+                METHODS.put(req.name() + "long",   findOwnMH_S(req.name(), (isCmp ? boolean.class : long.class), long.class, long.class));
+                METHODS.put(req.name() + "double", findOwnMH_S(req.name(), (isCmp ? boolean.class : double.class), double.class, double.class));
             }
         }
 
@@ -674,12 +673,11 @@ public final class RuntimeCallSite extends MutableCallSite {
         return ((Number)obj).doubleValue();
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        try {
-            return MH.findStatic(MethodHandles.lookup(), RuntimeCallSite.class, name, MH.type(rtype, types));
-        } catch (final MethodHandleFactory.LookupException e) {
-            return MH.findVirtual(MethodHandles.lookup(), RuntimeCallSite.class, name, MH.type(rtype, types));
-        }
+    private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), RuntimeCallSite.class, name, MH.type(rtype, types));
     }
 
+    private static MethodHandle findOwnMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findVirtual(MethodHandles.lookup(), RuntimeCallSite.class, name, MH.type(rtype, types));
+    }
 }

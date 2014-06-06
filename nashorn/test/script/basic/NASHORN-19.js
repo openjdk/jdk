@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
- * 
+ *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
  * published by the Free Software Foundation.
- * 
+ *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
  * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
  * version 2 for more details (a copy is included in the LICENSE file that
  * accompanied this code).
- * 
+ *
  * You should have received a copy of the GNU General Public License version
  * 2 along with this work; if not, write to the Free Software Foundation,
  * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
- * 
+ *
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
@@ -38,8 +38,8 @@ var myscope = {
 
 do {
     with(myscope) {
-	myvalue = 12;
-	break;
+    myvalue = 12;
+    break;
     }
 } while (false);
 
@@ -62,15 +62,15 @@ var scope = {value:10};
 var scope2 = {value:20};
 while (true) {
     with (scope) {
-	print(value);
-	value = 11;
-	print(value);
-	with (scope2) {
-	    print(value);
-	    value = 21;
-	    print(value);
-	    break;
-	}
+    print(value);
+    value = 11;
+    print(value);
+    with (scope2) {
+        print(value);
+        value = 21;
+        print(value);
+        break;
+    }
     }
 }
 
@@ -83,19 +83,19 @@ function test1() {
     var scope = {value:10};
     var scope2 = {value:20};
     while (true) {
-	with (scope) {
-	    print(value);
-	    value = 11;
-	    print(value);
-	    with (scope2) {
-		print(value);
-		value = 21;
-		print(value);
-		break;
-	    }
-	}
+    with (scope) {
+        print(value);
+        value = 11;
+        print(value);
+        with (scope2) {
+        print(value);
+        value = 21;
+        print(value);
+        break;
+        }
     }
-    
+    }
+
     print(value);
 }
 
@@ -104,14 +104,14 @@ function test2() {
     var value = "hello";
     var scope = {value:10};
     while (true) {
-	with (scope) {
-	    print(value);
-	    value = 11;
-	    print(value);
-	    if (value > ten()) {
-		break;
-	    }
-	}
+    with (scope) {
+        print(value);
+        value = 11;
+        print(value);
+        if (value > ten()) {
+        break;
+        }
+    }
     }
     print(value);
 }
@@ -123,24 +123,24 @@ function test3() {
     var scope2 = {value:20};
     var outer = 0;
     while (outer < 5) {
-	var i=0;
-	while (i < 10) {
-	    with(scope) {
-		print("loop header "+i);
-		with (scope2) {
-		    value = 11;
-		    i++;
-		    if ((i & 1) != 0) {
-			print("continue");
-			continue;
-		    }
-		}
-	    }
-	    print(value);
-	}
-	outer++;
+    var i=0;
+    while (i < 10) {
+        with(scope) {
+        print("loop header "+i);
+        with (scope2) {
+            value = 11;
+            i++;
+            if ((i & 1) != 0) {
+            print("continue");
+            continue;
+            }
+        }
+        }
+        print(value);
     }
-} 
+    outer++;
+    }
+}
 
 //continue one level
 function test4() {
@@ -148,15 +148,15 @@ function test4() {
     var scope = {value:10};
     var i=0;
     while (i < 10) {
-	print("loop header "+i);
-	with (scope) {
-	    value = 11;
-	    i++;
-	    if ((i & 1) != 0) {
-		print("continue");
-		continue;
-	    }
-	}
+    print("loop header "+i);
+    with (scope) {
+        value = 11;
+        i++;
+        if ((i & 1) != 0) {
+        print("continue");
+        continue;
+        }
+    }
     }
     print(value);
 }
@@ -170,24 +170,24 @@ function test5() {
     var outer = 0;
     outer_label:
     while (outer < 5) {
-	var i=0;
-	while (i < 10) {
-	    with(scope) {
-		print("loop header "+i);
-		with (scope2) {
-		    value = 11;
-		    i++;
-		    if ((i & 1) != 0) {
-			print("continue");
-			outer++;
-			continue outer_label;
-		    }
-		}
-	    }
-	    print(value);
-	}
+    var i=0;
+    while (i < 10) {
+        with(scope) {
+        print("loop header "+i);
+        with (scope2) {
+            value = 11;
+            i++;
+            if ((i & 1) != 0) {
+            print("continue");
+            outer++;
+            continue outer_label;
+            }
+        }
+        }
+        print(value);
     }
-} 
+    }
+}
 
 //labelled break
 function test6() {
@@ -196,21 +196,21 @@ function test6() {
     var scope2 = {value:20};
     outer:
     {
-	var i=0;
-	while (i < 10) {
-	    with(scope) {
-		print("loop header "+i);
-		with (scope2) {
-		    value = 11;
-		    i++;
-		    if ((i & 1) != 0) {
-			print("break");
-			break outer;
-		    }
-		}
-	    }
-	    print(value);
-	}
+    var i=0;
+    while (i < 10) {
+        with(scope) {
+        print("loop header "+i);
+        with (scope2) {
+            value = 11;
+            i++;
+            if ((i & 1) != 0) {
+            print("break");
+            break outer;
+            }
+        }
+        }
+        print(value);
+    }
     }
 }
 
@@ -218,32 +218,32 @@ function test6() {
 function test7() {
     var value = "hello";
     var scope = {value:10};
-    var scope2 = {value:20};    
+    var scope2 = {value:20};
     var global = false;
     try {
-	with(scope) {
-	    try {
-		print(value);
-		value = 4711;
-		print(value);
-		with(scope2) {
-		    print(value);
-		    value = 17;
-		    print(value);
-		    global = true;
-		    throw "inner";
-		}
-	    } catch (ei) {
-		print(ei);
-		print(value);
-		if (global) {
-		    throw "outer";
-		}
-	    }
-	}
+    with(scope) {
+        try {
+        print(value);
+        value = 4711;
+        print(value);
+        with(scope2) {
+            print(value);
+            value = 17;
+            print(value);
+            global = true;
+            throw "inner";
+        }
+        } catch (ei) {
+        print(ei);
+        print(value);
+        if (global) {
+            throw "outer";
+        }
+        }
+    }
     } catch (eo) {
-	print(eo);
-	print(value);
+    print(eo);
+    print(value);
     }
     print(value);
 }

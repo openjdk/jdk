@@ -30,7 +30,7 @@ public final class Syntax implements SyntaxProperties{
     public final int options;
     public final MetaCharTable metaCharTable;
 
-    public Syntax(int op, int op2, int behavior, int options, MetaCharTable metaCharTable) {
+    public Syntax(final int op, final int op2, final int behavior, final int options, final MetaCharTable metaCharTable) {
         this.op = op;
         this.op2 = op2;
         this.behavior = behavior;
@@ -46,8 +46,8 @@ public final class Syntax implements SyntaxProperties{
         public final int oneOrMoreTime;
         public final int anyCharAnyTime;
 
-        public MetaCharTable(int esc, int anyChar, int anyTime,
-                             int zeroOrOneTime, int oneOrMoreTime, int anyCharAnyTime) {
+        public MetaCharTable(final int esc, final int anyChar, final int anyTime,
+                             final int zeroOrOneTime, final int oneOrMoreTime, final int anyCharAnyTime) {
             this.esc = esc;
             this.anyChar = anyChar;
             this.anyTime = anyTime;
@@ -61,7 +61,7 @@ public final class Syntax implements SyntaxProperties{
      * OP
      *
      */
-    protected boolean isOp(int opm) {
+    protected boolean isOp(final int opm) {
         return (op & opm) != 0;
     }
 
@@ -194,7 +194,7 @@ public final class Syntax implements SyntaxProperties{
      * OP
      *
      */
-    protected boolean isOp2(int opm) {
+    protected boolean isOp2(final int opm) {
         return (op2 & opm) != 0;
     }
 
@@ -282,7 +282,7 @@ public final class Syntax implements SyntaxProperties{
      * BEHAVIOR
      *
      */
-    protected boolean isBehavior(int bvm) {
+    protected boolean isBehavior(final int bvm) {
         return (behavior & bvm) != 0;
     }
 

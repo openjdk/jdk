@@ -44,9 +44,11 @@ import jdk.internal.dynalink.linker.GuardingTypeConverterFactory;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.linker.LinkerServices;
 import jdk.internal.dynalink.support.Guards;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
  * Nashorn bottom linker; used as a last-resort catch-all linker for all linking requests that fall through all other
@@ -104,10 +106,10 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 if (callType.parameterCount() != m.getParameterCount() + 2) {
                     throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
                 }
-                return new GuardedInvocation(
+                return Bootstrap.asTypeSafeReturn(new GuardedInvocation(
                         // drop 'thiz' passed from the script.
                         MH.dropArguments(desc.getLookup().unreflect(m), 1, callType.parameterType(1)),
-                        Guards.getInstanceOfGuard(m.getDeclaringClass())).asType(callType);
+                        Guards.getInstanceOfGuard(m.getDeclaringClass())), linkerServices, desc);
             }
             if(BeansLinker.isDynamicMethod(self)) {
                 throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
@@ -118,6 +120,9 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             throw typeError("no.such.function", getArgument(linkRequest), ScriptRuntime.safeToString(self));
         case "getProp":
         case "getElem":
+            if(NashornCallSiteDescriptor.isOptimistic(desc)) {
+                throw new UnwarrantedOptimismException(UNDEFINED, NashornCallSiteDescriptor.getProgramPoint(desc), Type.OBJECT);
+            }
             if (desc.getOperand() != null) {
                 return getInvocation(EMPTY_PROP_GETTER, self, linkerServices, desc);
             }
@@ -151,14 +156,14 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
     private static GuardedInvocation convertToTypeNoCast(final Class<?> sourceType, final Class<?> targetType) throws Exception {
         final MethodHandle mh = CONVERTERS.get(targetType);
         if (mh != null) {
-            return new GuardedInvocation(mh, null);
+            return new GuardedInvocation(mh);
         }
 
         return null;
     }
 
     private static GuardedInvocation getInvocation(final MethodHandle handle, final Object self, final LinkerServices linkerServices, final CallSiteDescriptor desc) {
-        return Bootstrap.asType(new GuardedInvocation(handle, Guards.getClassGuard(self.getClass())), linkerServices, desc);
+        return Bootstrap.asTypeSafeReturn(new GuardedInvocation(handle, Guards.getClassGuard(self.getClass())), linkerServices, desc);
     }
 
     // Used solely in an assertion to figure out if the object we get here is something we in fact expect. Objects
@@ -218,7 +223,7 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                 return null;
             }
 
-            for (Class<?> iface : clazz.getInterfaces()) {
+            for (final Class<?> iface : clazz.getInterfaces()) {
                 // check accessiblity up-front
                 if (! Context.isAccessibleClass(iface)) {
                     continue;

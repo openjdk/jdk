@@ -35,7 +35,7 @@ public final class EncloseNode extends StateNode implements EncloseType {
     public int optCount;            // referenced count in optimize_node_left()
 
     // node_new_enclose / onig_node_new_enclose
-    public EncloseNode(int type) {
+    public EncloseNode(final int type) {
         this.type = type;
         callAddr = -1;
     }
@@ -46,7 +46,7 @@ public final class EncloseNode extends StateNode implements EncloseType {
     }
 
     // node_new_option
-    public EncloseNode(int option, int i) {
+    public EncloseNode(final int option, final int i) {
         this(OPTION);
         this.option = option;
     }
@@ -57,7 +57,7 @@ public final class EncloseNode extends StateNode implements EncloseType {
     }
 
     @Override
-    protected void setChild(Node newChild) {
+    protected void setChild(final Node newChild) {
         target = newChild;
     }
 
@@ -66,7 +66,7 @@ public final class EncloseNode extends StateNode implements EncloseType {
         return target;
     }
 
-    public void setTarget(Node tgt) {
+    public void setTarget(final Node tgt) {
         target = tgt;
         tgt.parent = this;
     }
@@ -77,8 +77,8 @@ public final class EncloseNode extends StateNode implements EncloseType {
     }
 
     @Override
-    public String toString(int level) {
-        StringBuilder value = new StringBuilder(super.toString(level));
+    public String toString(final int level) {
+        final StringBuilder value = new StringBuilder(super.toString(level));
         value.append("\n  type: " + typeToString());
         value.append("\n  regNum: " + regNum);
         value.append("\n  option: " + Option.toString(option));
@@ -93,7 +93,7 @@ public final class EncloseNode extends StateNode implements EncloseType {
     }
 
     public String typeToString() {
-        StringBuilder types = new StringBuilder();
+        final StringBuilder types = new StringBuilder();
         if (isStopBacktrack()) types.append("STOP_BACKTRACK ");
         if (isMemory()) types.append("MEMORY ");
         if (isOption()) types.append("OPTION ");

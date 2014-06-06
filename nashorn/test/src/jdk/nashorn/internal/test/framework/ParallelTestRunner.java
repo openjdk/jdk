@@ -149,7 +149,7 @@ public class ParallelTestRunner {
         }
 
         @Override
-        protected void log(String msg) {
+        protected void log(final String msg) {
             System.err.println(msg);
         }
 
@@ -235,6 +235,7 @@ public class ParallelTestRunner {
                             outputFile.write(out.toByteArray());
                             errorFile.write(err.toByteArray());
                         }
+                        ex.printStackTrace();
                         throw ex;
                     }
                 }
@@ -280,6 +281,7 @@ public class ParallelTestRunner {
             } catch (final Throwable ex) {
                 result.exception = ex;
                 result.passed = false;
+                ex.printStackTrace();
             }
             return result;
         }
@@ -306,12 +308,12 @@ public class ParallelTestRunner {
 
         final TestFactory<ScriptRunnable> testFactory = new TestFactory<ScriptRunnable>() {
             @Override
-            public ScriptRunnable createTest(String framework, File testFile, List<String> engineOptions, Map<String, String> testOptions, List<String> arguments) {
+            public ScriptRunnable createTest(final String framework, final File testFile, final List<String> engineOptions, final Map<String, String> testOptions, final List<String> arguments) {
                 return new ScriptRunnable(framework, testFile, engineOptions, testOptions, arguments);
             }
 
             @Override
-            public void log(String msg) {
+            public void log(final String msg) {
                 System.err.println(msg);
             }
         };
@@ -431,7 +433,9 @@ public class ParallelTestRunner {
     public static void main(final String[] args) throws Exception {
         parseArgs(args);
 
-        while(new ParallelTestRunner().run());
+        while(new ParallelTestRunner().run()) {
+            ;
+        }
     }
 
     private static void parseArgs(final String[] args) {

@@ -116,14 +116,14 @@ public class AutoDiscovery {
      * @return a list of guarding dynamic linkers available through the specified class loader. Can be zero-length list
      * but not null.
      */
-    public static List<GuardingDynamicLinker> loadLinkers(ClassLoader cl) {
+    public static List<GuardingDynamicLinker> loadLinkers(final ClassLoader cl) {
         return getLinkers(ServiceLoader.load(GuardingDynamicLinker.class, cl));
     }
 
     /**
      * I can't believe there's no Collections API for making a List given an Iterator...
      */
-    private static <T> List<T> getLinkers(ServiceLoader<T> loader) {
+    private static <T> List<T> getLinkers(final ServiceLoader<T> loader) {
         final List<T> list = new LinkedList<>();
         for(final T linker: loader) {
             list.add(linker);

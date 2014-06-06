@@ -29,7 +29,6 @@ import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertNotNull;
 import static org.testng.Assert.assertTrue;
 
-import jdk.nashorn.internal.runtime.ParserException;
 import org.testng.annotations.Test;
 
 /**
@@ -45,8 +44,8 @@ public class JdkRegExpTest {
      */
     @Test
     public void testMatcher() {
-        RegExp regexp = new RegExpFactory().compile("f(o)o", "");
-        RegExpMatcher matcher = regexp.match("foo");
+        final RegExp regexp = new RegExpFactory().compile("f(o)o", "");
+        final RegExpMatcher matcher = regexp.match("foo");
         assertNotNull(matcher);
         assertTrue(matcher.search(0));
         assertEquals(matcher.getInput(), "foo");

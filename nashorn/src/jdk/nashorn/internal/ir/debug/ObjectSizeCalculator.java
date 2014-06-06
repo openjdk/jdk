@@ -52,8 +52,6 @@ import java.util.Map;
  * this fact and will report incorrect sizes, as it will presume the default JVM
  * behavior.
  */
-
-@SuppressWarnings("StaticNonFinalUsedInInitialization")
 public class ObjectSizeCalculator {
 
     /**
@@ -307,7 +305,7 @@ public class ObjectSizeCalculator {
         public ClassSizeInfo(final Class<?> clazz) {
             long newFieldsSize = 0;
             final List<Field> newReferenceFields = new LinkedList<>();
-            for (Field f : clazz.getDeclaredFields()) {
+            for (final Field f : clazz.getDeclaredFields()) {
                 if (Modifier.isStatic(f.getModifiers())) {
                     continue;
                 }
@@ -338,10 +336,10 @@ public class ObjectSizeCalculator {
         }
 
         public void enqueueReferencedObjects(final Object obj, final ObjectSizeCalculator calc) {
-            for (Field f : referenceFields) {
+            for (final Field f : referenceFields) {
                 try {
                     calc.enqueue(f.get(obj));
-                } catch (IllegalAccessException e) {
+                } catch (final IllegalAccessException e) {
                     final AssertionError ae = new AssertionError(
                             "Unexpected denial of access to " + f);
                     ae.initCause(e);

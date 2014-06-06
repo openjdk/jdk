@@ -101,10 +101,16 @@ public interface GuardingDynamicLinker {
      * @return a guarded invocation with a method handle suitable for the arguments, as well as a guard condition that
      * if fails should trigger relinking. Must return null if it can't resolve the invocation. If the returned
      * invocation is unconditional (which is actually quite rare), the guard in the return value can be null. The
-     * invocation can also have a switch point for asynchronous invalidation of the linkage. If the linker does not
-     * recognize any native language runtime contexts in arguments, or does recognize its own, but receives a call site
-     * descriptor without its recognized context in the arguments, it should invoke
-     * {@link LinkRequest#withoutRuntimeContext()} and link for that.
+     * invocation can also have a switch point for asynchronous invalidation of the linkage, as well as a
+     * {@link Throwable} subclass that describes an expected exception condition that also triggers relinking (often it
+     * is faster to rely on an infrequent but expected {@link ClassCastException} than on an always evaluated
+     * {@code instanceof} guard). If the linker does not recognize any native language runtime contexts in arguments, or
+     * does recognize its own, but receives a call site descriptor without its recognized context in the arguments, it
+     * should invoke {@link LinkRequest#withoutRuntimeContext()} and link for that. While the linker must produce an
+     * invocation with parameter types matching those in the call site descriptor of the link request, it should not try
+     * to match the return type expected at the call site except when it can do it with only the conversions that lose
+     * neither precision nor magnitude, see {@link LinkerServices#asTypeLosslessReturn(java.lang.invoke.MethodHandle,
+     * java.lang.invoke.MethodType)}.
      * @throws Exception if the operation fails for whatever reason
      */
     public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, LinkerServices linkerServices)

@@ -107,12 +107,12 @@ class SimpleDynamicMethod extends SingleDynamicMethod {
      * @param clazz the class declaring the method
      * @param name the simple name of the method
      */
-    SimpleDynamicMethod(MethodHandle target, Class<?> clazz, String name) {
+    SimpleDynamicMethod(final MethodHandle target, final Class<?> clazz, final String name) {
         super(getName(target, clazz, name));
         this.target = target;
     }
 
-    private static String getName(MethodHandle target, Class<?> clazz, String name) {
+    private static String getName(final MethodHandle target, final Class<?> clazz, final String name) {
         return getMethodNameWithSignature(target.type(), getClassAndMethodName(clazz, name));
     }
 
@@ -127,7 +127,7 @@ class SimpleDynamicMethod extends SingleDynamicMethod {
     }
 
     @Override
-    MethodHandle getTarget(Lookup lookup) {
+    MethodHandle getTarget(final Lookup lookup) {
         return target;
     }
 }

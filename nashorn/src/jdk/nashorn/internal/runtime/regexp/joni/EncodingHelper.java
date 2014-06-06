@@ -19,10 +19,9 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni;
 
+import java.util.Arrays;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.IntHolder;
-
-import java.util.Arrays;
 
 public final class EncodingHelper {
 
@@ -34,19 +33,19 @@ public final class EncodingHelper {
     final static char[] EMPTYCHARS = new char[0];
     final static int[][] codeRanges = new int[15][];
 
-    public static int digitVal(int code) {
+    public static int digitVal(final int code) {
         return code - '0';
     }
 
-    public static int odigitVal(int code) {
+    public static int odigitVal(final int code) {
         return digitVal(code);
     }
 
-    public static boolean isXDigit(int code) {
+    public static boolean isXDigit(final int code) {
         return Character.isDigit(code) || (code >= 'a' && code <= 'f') || (code >= 'A' && code <= 'F');
     }
 
-    public static int xdigitVal(int code) {
+    public static int xdigitVal(final int code) {
         if (Character.isDigit(code)) {
             return code - '0';
         } else if (code >= 'a' && code <= 'f') {
@@ -56,36 +55,36 @@ public final class EncodingHelper {
         }
     }
 
-    public static boolean isDigit(int code) {
+    public static boolean isDigit(final int code) {
         return code >= '0' && code <= '9';
     }
 
-    public static boolean isWord(int code) {
+    public static boolean isWord(final int code) {
         // letter, digit, or '_'
         return (1 << Character.getType(code) & CharacterType.WORD_MASK) != 0;
     }
 
-    public static boolean isNewLine(int code) {
+    public static boolean isNewLine(final int code) {
         return code == NEW_LINE || code == RETURN || code == LINE_SEPARATOR || code == PARAGRAPH_SEPARATOR;
     }
 
-    public static boolean isNewLine(char[] chars, int p, int end) {
+    public static boolean isNewLine(final char[] chars, final int p, final int end) {
         return p < end && isNewLine(chars[p]);
     }
 
     // Encoding.prevCharHead
-    public static int prevCharHead(int p, int s) {
+    public static int prevCharHead(final int p, final int s) {
         return s <= p ? -1 : s - 1;
     }
 
     /* onigenc_get_right_adjust_char_head_with_prev */
-    public static int rightAdjustCharHeadWithPrev(int s, IntHolder prev) {
+    public static int rightAdjustCharHeadWithPrev(final int s, final IntHolder prev) {
         if (prev != null) prev.value = -1; /* Sorry */
         return s;
     }
 
     // Encoding.stepBack
-    public static int stepBack(int p, int s, int n) {
+    public static int stepBack(final int p, int s, int n) {
        while (s != -1 && n-- > 0) {
            if (s <= p) return -1;
            s--;
@@ -97,7 +96,7 @@ public final class EncodingHelper {
         return 0x80;
     }
 
-    public static char[] caseFoldCodesByString(int flag, char c) {
+    public static char[] caseFoldCodesByString(final int flag, final char c) {
         char[] codes = EMPTYCHARS;
         final char upper = toUpperCase(c);
 
@@ -117,7 +116,7 @@ public final class EncodingHelper {
         return codes;
     }
 
-    public static void applyAllCaseFold(int flag, ApplyCaseFold fun, Object arg) {
+    public static void applyAllCaseFold(final int flag, final ApplyCaseFold fun, final Object arg) {
         for (int c = 0; c < 0xffff; c++) {
             if (Character.isLowerCase(c)) {
                 final int upper = toUpperCase(c);
@@ -140,34 +139,34 @@ public final class EncodingHelper {
         }
     }
 
-    public static char toLowerCase(char c) {
+    public static char toLowerCase(final char c) {
         return (char)toLowerCase((int)c);
     }
 
-    public static int toLowerCase(int c) {
+    public static int toLowerCase(final int c) {
         if (c < 128) {
             return ('A' <= c && c <= 'Z') ? (c + ('a' - 'A')) : c;
         }
         // Do not convert non-ASCII upper case character to ASCII lower case.
-        int lower = Character.toLowerCase(c);
+        final int lower = Character.toLowerCase(c);
         return (lower < 128) ? c : lower;
 
     }
 
-    public static char toUpperCase(char c) {
+    public static char toUpperCase(final char c) {
         return (char)toUpperCase((int)c);
     }
 
-    public static int toUpperCase(int c) {
+    public static int toUpperCase(final int c) {
         if (c < 128) {
             return ('a' <= c && c <= 'z') ? c + ('A' - 'a') : c;
         }
         // Do not convert non-ASCII lower case character to ASCII upper case.
-        int upper = Character.toUpperCase(c);
+        final int upper = Character.toUpperCase(c);
         return (upper < 128) ? c : upper;
     }
 
-    public static int[] ctypeCodeRange(int ctype, IntHolder sbOut) {
+    public static int[] ctypeCodeRange(final int ctype, final IntHolder sbOut) {
         sbOut.value = 0x100; // use bitset for codes smaller than 256
         int[] range = null;
 
@@ -206,13 +205,13 @@ public final class EncodingHelper {
     }
 
     // CodeRange.isInCodeRange
-    public static boolean isInCodeRange(int[] p, int offset, int code) {
+    public static boolean isInCodeRange(final int[] p, final int offset, final int code) {
         int low = 0;
-        int n = p[offset];
+        final int n = p[offset];
         int high = n ;
 
         while (low < high) {
-            int x = (low + high) >> 1;
+            final int x = (low + high) >> 1;
             if (code > p[(x << 1) + 2 + offset]) {
                 low = x + 1;
             } else {
@@ -225,7 +224,7 @@ public final class EncodingHelper {
     /**
      * @see <a href="http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt">http://www.geocities.jp/kosako3/oniguruma/doc/RE.txt</a>
      */
-    public static boolean isCodeCType(int code, int ctype) {
+    public static boolean isCodeCType(final int code, final int ctype) {
         int type;
         switch (ctype) {
             case CharacterType.NEWLINE:
