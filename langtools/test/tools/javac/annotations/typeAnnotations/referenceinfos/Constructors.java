@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8026791
+ * @bug 8026791 8042451
  * @summary Test population of reference info for constructor results
  * @compile -g Driver.java ReferenceInfoUtil.java Constructors.java
  * @run main Driver Constructors
@@ -33,52 +33,44 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 
 public class Constructors {
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = METHOD_RETURN),
-        @TADescription(annotation = "TB", type = METHOD_RETURN),
-        @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
-    })
+    @TADescription(annotation = "TA", type = METHOD_RETURN)
+    @TADescription(annotation = "TB", type = METHOD_RETURN)
+    @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     public String regularClass() {
-        return "class Test { @TA Test() {}" +
-                           " @TB Test(@TC int b) {} }";
+        return "class %TEST_CLASS_NAME% { @TA %TEST_CLASS_NAME%() {}" +
+                           " @TB %TEST_CLASS_NAME%(@TC int b) {} }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = METHOD_RETURN, genericLocation = {1, 0}),
-        @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0}),
-        @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
-    })
-    @TestClass("Test$Inner")
+    @TADescription(annotation = "TA", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "TC", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClass() {
-        return "class Test { class Inner {" +
+        return "class %TEST_CLASS_NAME% { class Inner {" +
                " @TA Inner() {}" +
                " @TB Inner(@TC int b) {}" +
                " } }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = METHOD_RECEIVER),
-        @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0}),
-        @TADescription(annotation = "TC", type = METHOD_RECEIVER),
-        @TADescription(annotation = "TD", type = METHOD_RETURN, genericLocation = {1, 0}),
-        @TADescription(annotation = "TE", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
-    })
-    @TestClass("Test$Inner")
+    @TADescription(annotation = "TA", type = METHOD_RECEIVER)
+    @TADescription(annotation = "TB", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "TC", type = METHOD_RECEIVER)
+    @TADescription(annotation = "TD", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "TE", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    @TestClass("%TEST_CLASS_NAME%$Inner")
     public String innerClass2() {
-        return "class Test { class Inner {" +
-               " @TB Inner(@TA Test Test.this) {}" +
-               " @TD Inner(@TC Test Test.this, @TE int b) {}" +
+        return "class %TEST_CLASS_NAME% { class Inner {" +
+               " @TB Inner(@TA %TEST_CLASS_NAME% %TEST_CLASS_NAME%.this) {}" +
+               " @TD Inner(@TC %TEST_CLASS_NAME% %TEST_CLASS_NAME%.this, @TE int b) {}" +
                " } }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = METHOD_RECEIVER),
-        @TADescription(annotation = "TB", type = METHOD_RECEIVER, genericLocation = {1, 0}),
-        @TADescription(annotation = "TC", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0}),
-        @TADescription(annotation = "TD", type = METHOD_RECEIVER, genericLocation = {1, 0}),
-        @TADescription(annotation = "TE", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0}),
-        @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
-    })
+    @TADescription(annotation = "TA", type = METHOD_RECEIVER)
+    @TADescription(annotation = "TB", type = METHOD_RECEIVER, genericLocation = {1, 0})
+    @TADescription(annotation = "TC", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
+    @TADescription(annotation = "TD", type = METHOD_RECEIVER, genericLocation = {1, 0})
+    @TADescription(annotation = "TE", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
+    @TADescription(annotation = "TF", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
     @TestClass("Outer$Middle$Inner")
     public String innerClass3() {
         return "class Outer { class Middle { class Inner {" +
@@ -87,24 +79,49 @@ public class Constructors {
                " } } }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
-                typeIndex = 0, offset = 4),
-        @TADescription(annotation = "TB", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
-                typeIndex = 0, offset = 0)
-    })
-    public String generic1() {
-        return "class Test { <T> Test(int i) { new <@TA T>Test(); }" +
-                           " <T> Test() { <@TB String>this(0); } }";
+    @TADescription(annotation = "RTAs", type = METHOD_RETURN)
+    @TADescription(annotation = "RTBs", type = METHOD_RETURN)
+    @TADescription(annotation = "RTCs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    public String regularClassRepeatableAnnotation() {
+        return "class %TEST_CLASS_NAME% { @RTA  @RTA %TEST_CLASS_NAME%() {}" +
+                " @RTB @RTB %TEST_CLASS_NAME%(@RTC @RTC int b) {} }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CONSTRUCTOR_INVOCATION_TYPE_ARGUMENT,
-                typeIndex = 0, offset = 0)
-    })
-    public String generic2() {
-        return "class Super { <T> Super(int i) { } } " +
-                "class Test extends Super { <T> Test() { <@TA String>super(0); } }";
+    @TADescription(annotation = "RTAs", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "RTBs", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "RTCs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    @TestClass("%TEST_CLASS_NAME%$Inner")
+    public String innerClassRepeatableAnnotation() {
+        return "class %TEST_CLASS_NAME% { class Inner {" +
+                " @RTA @RTA Inner() {}" +
+                " @RTB @RTB Inner(@RTC @RTC int b) {}" +
+                " } }";
     }
 
+    @TADescription(annotation = "RTAs", type = METHOD_RECEIVER)
+    @TADescription(annotation = "RTBs", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "RTCs", type = METHOD_RECEIVER)
+    @TADescription(annotation = "RTDs", type = METHOD_RETURN, genericLocation = {1, 0})
+    @TADescription(annotation = "RTEs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    @TestClass("%TEST_CLASS_NAME%$Inner")
+    public String innerClassRepeatableAnnotation2() {
+        return "class %TEST_CLASS_NAME% { class Inner {" +
+                " @RTB @RTB Inner(@RTA @RTA %TEST_CLASS_NAME% %TEST_CLASS_NAME%.this) {}" +
+                " @RTD @RTD Inner(@RTC @RTC %TEST_CLASS_NAME% %TEST_CLASS_NAME%.this, @RTE @RTE int b) {}" +
+                " } }";
+    }
+
+    @TADescription(annotation = "RTAs", type = METHOD_RECEIVER)
+    @TADescription(annotation = "RTBs", type = METHOD_RECEIVER, genericLocation = {1, 0})
+    @TADescription(annotation = "RTCs", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
+    @TADescription(annotation = "RTDs", type = METHOD_RECEIVER, genericLocation = {1, 0})
+    @TADescription(annotation = "RTEs", type = METHOD_RETURN, genericLocation = {1, 0, 1, 0})
+    @TADescription(annotation = "RTFs", type = METHOD_FORMAL_PARAMETER, paramIndex = 0)
+    @TestClass("Outer$Middle$Inner")
+    public String innerClassRepatableAnnotation3() {
+        return "class Outer { class Middle { class Inner {" +
+                " @RTC @RTC Inner(@RTA @RTA Outer. @RTB @RTB Middle Middle.this) {}" +
+                " @RTE @RTE Inner(@RTD @RTD Middle Outer.Middle.this, @RTF @RTF int b) {}" +
+                " } } }";
+    }
 }
