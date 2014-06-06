@@ -99,7 +99,6 @@ private:
   oop                _referent;
   OopClosure*        _keep_alive;
   BoolObjectClosure* _is_alive;
-  bool               _discovered_list_needs_post_barrier;
 
   DEBUG_ONLY(
   oop                _first_seen; // cyclic linked list check
@@ -113,8 +112,7 @@ private:
 public:
   inline DiscoveredListIterator(DiscoveredList&    refs_list,
                                 OopClosure*        keep_alive,
-                                BoolObjectClosure* is_alive,
-                                bool               discovered_list_needs_post_barrier = false):
+                                BoolObjectClosure* is_alive):
     _refs_list(refs_list),
     _prev_next(refs_list.adr_head()),
     _prev(NULL),
@@ -128,8 +126,7 @@ public:
 #endif
     _next(NULL),
     _keep_alive(keep_alive),
-    _is_alive(is_alive),
-    _discovered_list_needs_post_barrier(discovered_list_needs_post_barrier)
+    _is_alive(is_alive)
 { }
 
   // End Of List.
@@ -229,14 +226,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   bool        _discovery_is_atomic;     // if discovery is atomic wrt
                                         // other collectors in configuration
   bool        _discovery_is_mt;         // true if reference discovery is MT.
-
-  // If true, setting "next" field of a discovered refs list requires
-  // write post barrier.  (Must be true if used in a collector in which
-  // elements of a discovered list may be moved during discovery: for
-  // example, a collector like Garbage-First that moves objects during a
-  // long-term concurrent marking phase that does weak reference
-  // discovery.)
-  bool        _discovered_list_needs_post_barrier;
 
   bool        _enqueuing_is_done;       // true if all weak references enqueued
   bool        _processing_is_mt;        // true during phases when
@@ -382,11 +371,6 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
   void enqueue_discovered_reflists(HeapWord* pending_list_addr, AbstractRefProcTaskExecutor* task_executor);
 
  protected:
-  // Set the 'discovered' field of the given reference to
-  // the given value - emitting post barriers depending upon
-  // the value of _discovered_list_needs_post_barrier.
-  void set_discovered(oop ref, oop value);
-
   // "Preclean" the given discovered reference list
   // by removing references with strongly reachable referents.
   // Currently used in support of CMS only.
@@ -427,8 +411,7 @@ class ReferenceProcessor : public CHeapObj<mtGC> {
                      bool mt_processing = false, uint mt_processing_degree = 1,
                      bool mt_discovery  = false, uint mt_discovery_degree  = 1,
                      bool atomic_discovery = true,
-                     BoolObjectClosure* is_alive_non_header = NULL,
-                     bool discovered_list_needs_post_barrier = false);
+                     BoolObjectClosure* is_alive_non_header = NULL);
 
   // RefDiscoveryPolicy values
   enum DiscoveryPolicy {

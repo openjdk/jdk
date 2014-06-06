@@ -294,55 +294,6 @@ class TestStringDeduplicationTools {
         }
     }
 
-    private static class MemoryUsageTest {
-        public static void main(String[] args) {
-            System.out.println("Begin: MemoryUsageTest");
-
-            final boolean useStringDeduplication = Boolean.parseBoolean(args[0]);
-            final int numberOfStrings = LargeNumberOfStrings;
-            final int numberOfUniqueStrings = 1;
-
-            ArrayList<String> list = createStrings(numberOfStrings, numberOfUniqueStrings);
-            forceDeduplication(DefaultAgeThreshold, FullGC);
-
-            if (useStringDeduplication) {
-                verifyStrings(list, numberOfUniqueStrings);
-            }
-
-            System.gc();
-
-            System.out.println("Heap Memory Usage: " + ManagementFactory.getMemoryMXBean().getHeapMemoryUsage().getUsed());
-            System.out.println("Array Header Size: " + unsafe.ARRAY_CHAR_BASE_OFFSET);
-
-            System.out.println("End: MemoryUsageTest");
-        }
-
-        public static OutputAnalyzer run(boolean useStringDeduplication) throws Exception {
-            String[] extraArgs = new String[0];
-
-            if (useStringDeduplication) {
-                extraArgs = new String[] {
-                    "-XX:+UseStringDeduplication",
-                    "-XX:+PrintStringDeduplicationStatistics",
-                    "-XX:StringDeduplicationAgeThreshold=" + DefaultAgeThreshold
-                };
-            }
-
-            String[] defaultArgs = new String[] {
-                "-XX:+PrintGC",
-                "-XX:+PrintGCDetails",
-                MemoryUsageTest.class.getName(),
-                "" + useStringDeduplication
-            };
-
-            ArrayList<String> args = new ArrayList<String>();
-            args.addAll(Arrays.asList(extraArgs));
-            args.addAll(Arrays.asList(defaultArgs));
-
-            return runTest(args.toArray(new String[args.size()]));
-        }
-    }
-
     /*
      * Tests
      */
@@ -479,45 +430,5 @@ class TestStringDeduplicationTools {
         // Test that interned strings are deduplicated before being interned
         OutputAnalyzer output = InternedTest.run();
         output.shouldHaveExitValue(0);
-    }
-
-    public static void testMemoryUsage() throws Exception {
-        // Test that memory usage is reduced after deduplication
-        OutputAnalyzer output;
-        final String heapMemoryUsagePattern = "Heap Memory Usage: (\\d+)";
-        final String arrayHeaderSizePattern = "Array Header Size: (\\d+)";
-
-        // Run without deduplication
-        output = MemoryUsageTest.run(false);
-        output.shouldHaveExitValue(0);
-        final long heapMemoryUsageWithoutDedup = Long.parseLong(output.firstMatch(heapMemoryUsagePattern, 1));
-        final long arrayHeaderSizeWithoutDedup = Long.parseLong(output.firstMatch(arrayHeaderSizePattern, 1));
-
-        // Run with deduplication
-        output = MemoryUsageTest.run(true);
-        output.shouldHaveExitValue(0);
-        final long heapMemoryUsageWithDedup = Long.parseLong(output.firstMatch(heapMemoryUsagePattern, 1));
-        final long arrayHeaderSizeWithDedup = Long.parseLong(output.firstMatch(arrayHeaderSizePattern, 1));
-
-        // Sanity check to make sure one instance isn't using compressed class pointers and the other not
-        if (arrayHeaderSizeWithoutDedup != arrayHeaderSizeWithDedup) {
-            throw new Exception("Unexpected difference between array header sizes");
-        }
-
-        // Calculate expected memory usage with deduplication enabled. This calculation does
-        // not take alignment and padding into account, so it's a conservative estimate.
-        final long sizeOfChar = unsafe.ARRAY_CHAR_INDEX_SCALE;
-        final long sizeOfCharArray = StringLength * sizeOfChar + arrayHeaderSizeWithoutDedup;
-        final long bytesSaved = (LargeNumberOfStrings - 1) * sizeOfCharArray;
-        final long heapMemoryUsageWithDedupExpected = heapMemoryUsageWithoutDedup - bytesSaved;
-
-        System.out.println("Memory usage summary:");
-        System.out.println("   heapMemoryUsageWithoutDedup:      " + heapMemoryUsageWithoutDedup);
-        System.out.println("   heapMemoryUsageWithDedup:         " + heapMemoryUsageWithDedup);
-        System.out.println("   heapMemoryUsageWithDedupExpected: " + heapMemoryUsageWithDedupExpected);
-
-        if (heapMemoryUsageWithDedup > heapMemoryUsageWithDedupExpected) {
-            throw new Exception("Unexpected memory usage, heapMemoryUsageWithDedup should be less or equal to heapMemoryUsageWithDedupExpected");
-        }
     }
 }
