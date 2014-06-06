@@ -793,7 +793,7 @@ public class URLClassPath {
         boolean validIndex(final String name) {
             String packageName = name;
             int pos;
-            if((pos = name.lastIndexOf("/")) != -1) {
+            if((pos = name.lastIndexOf('/')) != -1) {
                 packageName = name.substring(0, pos);
             }
 
@@ -803,7 +803,7 @@ public class URLClassPath {
             while (enum_.hasMoreElements()) {
                 entry = enum_.nextElement();
                 entryName = entry.getName();
-                if((pos = entryName.lastIndexOf("/")) != -1)
+                if((pos = entryName.lastIndexOf('/')) != -1)
                     entryName = entryName.substring(0, pos);
                 if (entryName.equals(packageName)) {
                     return true;
@@ -900,7 +900,7 @@ public class URLClassPath {
                              */
                             JarIndex newIndex = newLoader.getIndex();
                             if(newIndex != null) {
-                                int pos = jarName.lastIndexOf("/");
+                                int pos = jarName.lastIndexOf('/');
                                 newIndex.merge(this.index, (pos == -1 ?
                                     null : jarName.substring(0, pos + 1)));
                             }

@@ -258,7 +258,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                     d = null;
                 }
                 if (d != null && time != null) {
-                    int c = time.indexOf(":");
+                    int c = time.indexOf(':');
                     now.setTime(d);
                     now.set(Calendar.HOUR, Integer.parseInt(time.substring(0, c)));
                     now.set(Calendar.MINUTE, Integer.parseInt(time.substring(c + 1)));
@@ -294,7 +294,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
 
         public FtpDirEntry parseLine(String line) {
             String name = null;
-            int i = line.lastIndexOf(";");
+            int i = line.lastIndexOf(';');
             if (i > 0) {
                 name = line.substring(i + 1).trim();
                 line = line.substring(0, i);
@@ -305,7 +305,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
             FtpDirEntry file = new FtpDirEntry(name);
             while (!line.isEmpty()) {
                 String s;
-                i = line.indexOf(";");
+                i = line.indexOf(';');
                 if (i > 0) {
                     s = line.substring(0, i);
                     line = line.substring(i + 1);
@@ -313,7 +313,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                     s = line;
                     line = "";
                 }
-                i = s.indexOf("=");
+                i = s.indexOf('=');
                 if (i > 0) {
                     String fact = s.substring(0, i);
                     String value = s.substring(i + 1);

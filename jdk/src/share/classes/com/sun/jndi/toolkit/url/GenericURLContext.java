@@ -149,7 +149,7 @@ abstract public class GenericURLContext implements Context {
       * foo:rest/of/name                        foo:
       */
     protected String getURLPrefix(String url) throws NamingException {
-        int start = url.indexOf(":");
+        int start = url.indexOf(':');
 
         if (start < 0) {
             throw new OperationNotSupportedException("Invalid URL: " + url);
@@ -160,7 +160,7 @@ abstract public class GenericURLContext implements Context {
             start += 2;  // skip double slash
 
             // find last slash
-            int posn = url.indexOf("/", start);
+            int posn = url.indexOf('/', start);
             if (posn >= 0) {
                 start = posn;
             } else {
