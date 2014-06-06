@@ -1206,10 +1206,10 @@ void MachPrologNode::format( PhaseRegAlloc *ra_, outputStream *st ) const {
   }
 
   if (Assembler::is_simm13(-framesize)) {
-    st->print   ("SAVE   R_SP,-%d,R_SP",framesize);
+    st->print   ("SAVE   R_SP,-" SIZE_FORMAT ",R_SP",framesize);
   } else {
-    st->print_cr("SETHI  R_SP,hi%%(-%d),R_G3",framesize); st->print("\t");
-    st->print_cr("ADD    R_G3,lo%%(-%d),R_G3",framesize); st->print("\t");
+    st->print_cr("SETHI  R_SP,hi%%(-" SIZE_FORMAT "),R_G3",framesize); st->print("\t");
+    st->print_cr("ADD    R_G3,lo%%(-" SIZE_FORMAT "),R_G3",framesize); st->print("\t");
     st->print   ("SAVE   R_SP,R_G3,R_SP");
   }
 

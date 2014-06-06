@@ -274,23 +274,6 @@ void DUIterator_Last::verify_step(uint num_edges) {
 // The value NULL is reserved for the top node only.
 #define NO_OUT_ARRAY ((Node**)-1)
 
-// This funny expression handshakes with Node::operator new
-// to pull Compile::current out of the new node's _out field,
-// and then calls a subroutine which manages most field
-// initializations.  The only one which is tricky is the
-// _idx field, which is const, and so must be initialized
-// by a return value, not an assignment.
-//
-// (Aren't you thankful that Java finals don't require so many tricks?)
-#define IDX_INIT(req) this->Init((req), (Compile*) this->_out)
-#ifdef _MSC_VER // the IDX_INIT hack falls foul of warning C4355
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif
-#ifdef __clang__
-#pragma clang diagnostic push
-#pragma GCC diagnostic ignored "-Wuninitialized"
-#endif
-
 // Out-of-line code from node constructors.
 // Executed only when extra debug info. is being passed around.
 static void init_node_notes(Compile* C, int idx, Node_Notes* nn) {
@@ -298,8 +281,8 @@ static void init_node_notes(Compile* C, int idx, Node_Notes* nn) {
 }
 
 // Shared initialization code.
-inline int Node::Init(int req, Compile* C) {
-  assert(Compile::current() == C, "must use operator new(Compile*)");
+inline int Node::Init(int req) {
+  Compile* C = Compile::current();
   int idx = C->next_unique();
 
   // Allocate memory for the necessary number of edges.
@@ -328,7 +311,7 @@ inline int Node::Init(int req, Compile* C) {
 //------------------------------Node-------------------------------------------
 // Create a Node, with a given number of required edges.
 Node::Node(uint req)
-  : _idx(IDX_INIT(req))
+  : _idx(Init(req))
 {
   assert( req < (uint)(MaxNodeLimit - NodeLimitFudgeFactor), "Input limit exceeded" );
   debug_only( verify_construction() );
@@ -347,7 +330,7 @@ Node::Node(uint req)
 
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0)
-  : _idx(IDX_INIT(1))
+  : _idx(Init(1))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -359,7 +342,7 @@ Node::Node(Node *n0)
 
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1)
-  : _idx(IDX_INIT(2))
+  : _idx(Init(2))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -373,7 +356,7 @@ Node::Node(Node *n0, Node *n1)
 
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2)
-  : _idx(IDX_INIT(3))
+  : _idx(Init(3))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -389,7 +372,7 @@ Node::Node(Node *n0, Node *n1, Node *n2)
 
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
-  : _idx(IDX_INIT(4))
+  : _idx(Init(4))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -407,7 +390,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3)
 
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
-  : _idx(IDX_INIT(5))
+  : _idx(Init(5))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -428,7 +411,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3, Node *n4)
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
                      Node *n4, Node *n5)
-  : _idx(IDX_INIT(6))
+  : _idx(Init(6))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -451,7 +434,7 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
 //------------------------------Node-------------------------------------------
 Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
                      Node *n4, Node *n5, Node *n6)
-  : _idx(IDX_INIT(7))
+  : _idx(Init(7))
 {
   debug_only( verify_construction() );
   NOT_PRODUCT(nodes_created++);
@@ -472,10 +455,6 @@ Node::Node(Node *n0, Node *n1, Node *n2, Node *n3,
   _in[5] = n5; if (n5 != NULL) n5->add_out((Node *)this);
   _in[6] = n6; if (n6 != NULL) n6->add_out((Node *)this);
 }
-
-#ifdef __clang__
-#pragma clang diagnostic pop
-#endif
 
 
 //------------------------------clone------------------------------------------
@@ -1066,15 +1045,15 @@ const Type *Node::Value( PhaseTransform * ) const {
 //    set_req(2, phase->intcon(7));
 //    return this;
 // Example: reshape "X*4" into "X<<2"
-//    return new (C) LShiftINode(in(1), phase->intcon(2));
+//    return new LShiftINode(in(1), phase->intcon(2));
 //
 // You must call 'phase->transform(X)' on any new Nodes X you make, except
 // for the returned root node.  Example: reshape "X*31" with "(X<<5)-X".
-//    Node *shift=phase->transform(new(C)LShiftINode(in(1),phase->intcon(5)));
-//    return new (C) AddINode(shift, in(1));
+//    Node *shift=phase->transform(new LShiftINode(in(1),phase->intcon(5)));
+//    return new AddINode(shift, in(1));
 //
 // When making a Node for a constant use 'phase->makecon' or 'phase->intcon'.
-// These forms are faster than 'phase->transform(new (C) ConNode())' and Do
+// These forms are faster than 'phase->transform(new ConNode())' and Do
 // The Right Thing with def-use info.
 //
 // You cannot bury the 'this' Node inside of a graph reshape.  If the reshaped

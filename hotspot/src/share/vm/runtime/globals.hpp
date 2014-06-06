@@ -362,37 +362,37 @@ class DoubleFlagSetting {
 
 class CommandLineFlags {
  public:
-  static bool boolAt(char* name, size_t len, bool* value);
-  static bool boolAt(char* name, bool* value)      { return boolAt(name, strlen(name), value); }
-  static bool boolAtPut(char* name, size_t len, bool* value, Flag::Flags origin);
-  static bool boolAtPut(char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
+  static bool boolAt(const char* name, size_t len, bool* value);
+  static bool boolAt(const char* name, bool* value)      { return boolAt(name, strlen(name), value); }
+  static bool boolAtPut(const char* name, size_t len, bool* value, Flag::Flags origin);
+  static bool boolAtPut(const char* name, bool* value, Flag::Flags origin)   { return boolAtPut(name, strlen(name), value, origin); }
 
-  static bool intxAt(char* name, size_t len, intx* value);
-  static bool intxAt(char* name, intx* value)      { return intxAt(name, strlen(name), value); }
-  static bool intxAtPut(char* name, size_t len, intx* value, Flag::Flags origin);
-  static bool intxAtPut(char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
+  static bool intxAt(const char* name, size_t len, intx* value);
+  static bool intxAt(const char* name, intx* value)      { return intxAt(name, strlen(name), value); }
+  static bool intxAtPut(const char* name, size_t len, intx* value, Flag::Flags origin);
+  static bool intxAtPut(const char* name, intx* value, Flag::Flags origin)   { return intxAtPut(name, strlen(name), value, origin); }
 
-  static bool uintxAt(char* name, size_t len, uintx* value);
-  static bool uintxAt(char* name, uintx* value)    { return uintxAt(name, strlen(name), value); }
-  static bool uintxAtPut(char* name, size_t len, uintx* value, Flag::Flags origin);
-  static bool uintxAtPut(char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
+  static bool uintxAt(const char* name, size_t len, uintx* value);
+  static bool uintxAt(const char* name, uintx* value)    { return uintxAt(name, strlen(name), value); }
+  static bool uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
+  static bool uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
 
-  static bool uint64_tAt(char* name, size_t len, uint64_t* value);
-  static bool uint64_tAt(char* name, uint64_t* value) { return uint64_tAt(name, strlen(name), value); }
-  static bool uint64_tAtPut(char* name, size_t len, uint64_t* value, Flag::Flags origin);
-  static bool uint64_tAtPut(char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
+  static bool uint64_tAt(const char* name, size_t len, uint64_t* value);
+  static bool uint64_tAt(const char* name, uint64_t* value) { return uint64_tAt(name, strlen(name), value); }
+  static bool uint64_tAtPut(const char* name, size_t len, uint64_t* value, Flag::Flags origin);
+  static bool uint64_tAtPut(const char* name, uint64_t* value, Flag::Flags origin) { return uint64_tAtPut(name, strlen(name), value, origin); }
 
-  static bool doubleAt(char* name, size_t len, double* value);
-  static bool doubleAt(char* name, double* value)    { return doubleAt(name, strlen(name), value); }
-  static bool doubleAtPut(char* name, size_t len, double* value, Flag::Flags origin);
-  static bool doubleAtPut(char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
+  static bool doubleAt(const char* name, size_t len, double* value);
+  static bool doubleAt(const char* name, double* value)    { return doubleAt(name, strlen(name), value); }
+  static bool doubleAtPut(const char* name, size_t len, double* value, Flag::Flags origin);
+  static bool doubleAtPut(const char* name, double* value, Flag::Flags origin) { return doubleAtPut(name, strlen(name), value, origin); }
 
-  static bool ccstrAt(char* name, size_t len, ccstr* value);
-  static bool ccstrAt(char* name, ccstr* value)    { return ccstrAt(name, strlen(name), value); }
+  static bool ccstrAt(const char* name, size_t len, ccstr* value);
+  static bool ccstrAt(const char* name, ccstr* value)    { return ccstrAt(name, strlen(name), value); }
   // Contract:  Flag will make private copy of the incoming value.
   // Outgoing value is always malloc-ed, and caller MUST call free.
-  static bool ccstrAtPut(char* name, size_t len, ccstr* value, Flag::Flags origin);
-  static bool ccstrAtPut(char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
+  static bool ccstrAtPut(const char* name, size_t len, ccstr* value, Flag::Flags origin);
+  static bool ccstrAtPut(const char* name, ccstr* value, Flag::Flags origin) { return ccstrAtPut(name, strlen(name), value, origin); }
 
   // Returns false if name is not a command line flag.
   static bool wasSetOnCmdline(const char* name, bool* value);
@@ -1097,7 +1097,7 @@ class CommandLineFlags {
           "Call loadClassInternal() rather than loadClass()")               \
                                                                             \
   product_pd(bool, DontYieldALot,                                           \
-          "Throw away obvious excess yield calls (for Solaris only)")       \
+          "Throw away obvious excess yield calls")                          \
                                                                             \
   product_pd(bool, ConvertSleepToYield,                                     \
           "Convert sleep(0) to thread yield "                               \
@@ -1105,7 +1105,7 @@ class CommandLineFlags {
                                                                             \
   product(bool, ConvertYieldToSleep, false,                                 \
           "Convert yield to a sleep of MinSleepInterval to simulate Win32 " \
-          "behavior (Solaris only)")                                        \
+          "behavior")                                                       \
                                                                             \
   product(bool, UseBoundThreads, true,                                      \
           "Bind user level threads to kernel threads (for Solaris only)")   \
@@ -1143,8 +1143,8 @@ class CommandLineFlags {
           "avoid NPTL-FUTEX hang pthread_cond_timedwait")                   \
                                                                             \
   product(bool, FilterSpuriousWakeups, true,                                \
-          "Prevent spurious or premature wakeups from object.wait "         \
-          "(Solaris only)")                                                 \
+          "When true prevents OS-level spurious, or premature, wakeups "    \
+          "from Object.wait (Ignored for Windows)")                         \
                                                                             \
   product(intx, NativeMonitorTimeout, -1, "(Unstable)")                     \
                                                                             \

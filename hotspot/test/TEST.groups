@@ -81,6 +81,7 @@ needs_jdk = \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
+  runtime/Thread/TestThreadDumpMonitorContention.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
   serviceability/jvmti/8036666/GetObjectLockCount.java \
@@ -116,6 +117,7 @@ compact3 = \
 # Tests that require compact3 API's
 #
 needs_compact3 = \
+  compiler/8009761/Test8009761.java \
   compiler/whitebox/DeoptimizeMethodTest.java \
   compiler/whitebox/SetForceInlineMethodTest.java \
   compiler/whitebox/SetDontInlineMethodTest.java \
