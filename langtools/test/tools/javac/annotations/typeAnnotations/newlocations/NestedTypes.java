@@ -128,6 +128,7 @@ class Test1 {
     MyList<Outer . @Cv("Data") Static> f9;
     // Illegal:
     // MyList<@A Outer . @Cv("Data") Static> f9;
+
 }
 
 class Test2 {

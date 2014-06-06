@@ -142,7 +142,7 @@ public abstract class Attribute implements AnnotationValue {
          *  access this attribute.
          */
         public final List<Pair<MethodSymbol,Attribute>> values;
-        public TypeAnnotationPosition position;
+        public final TypeAnnotationPosition position;
 
         private boolean synthesized = false;
 
@@ -170,51 +170,7 @@ public abstract class Attribute implements AnnotationValue {
 
         @Override
         public TypeAnnotationPosition getPosition() {
-            if (hasUnknownPosition()) {
-                if (values.size() != 0) {
-                    Name valueName = values.head.fst.name.table.names.value;
-                    Pair<MethodSymbol, Attribute> res = getElemPair(valueName);
-                    position = res == null ? null : res.snd.getPosition();
-                }
-            }
             return position;
-        }
-
-        public boolean isContainerTypeCompound() {
-            if (isSynthesized() && values.size() == 1)
-                return getFirstEmbeddedTC() != null;
-            return false;
-        }
-
-        private Compound getFirstEmbeddedTC() {
-            if (values.size() == 1) {
-                Pair<MethodSymbol, Attribute> val = values.get(0);
-                if (val.fst.getSimpleName().contentEquals("value")
-                        && val.snd instanceof Array) {
-                    Array arr = (Array) val.snd;
-                    if (arr.values.length != 0
-                            && arr.values[0] instanceof Attribute.TypeCompound)
-                        return (Attribute.TypeCompound) arr.values[0];
-                }
-            }
-            return null;
-        }
-
-        public boolean tryFixPosition() {
-            if (!isContainerTypeCompound())
-                return false;
-
-            Compound from = getFirstEmbeddedTC();
-            if (from != null && from.position != null &&
-                    from.position.type != TargetType.UNKNOWN) {
-                position = from.position;
-                return true;
-            }
-            return false;
-        }
-
-        public boolean hasUnknownPosition() {
-            return position.type == TargetType.UNKNOWN;
         }
 
         public void accept(Visitor v) { v.visitCompound(this); }
@@ -280,6 +236,12 @@ public abstract class Attribute implements AnnotationValue {
                 valmap.put(value.fst, value.snd);
             return valmap;
         }
+
+        public TypeCompound toTypeCompound() {
+            // It is safe to alias the position.
+            return new TypeCompound(this, this.position);
+        }
+
     }
 
     public static class TypeCompound extends Compound {
