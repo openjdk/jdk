@@ -407,7 +407,7 @@ Method* ConstantPoolCacheEntry::method_if_resolved(constantPoolHandle cpool) {
 
 
 oop ConstantPoolCacheEntry::appendix_if_resolved(constantPoolHandle cpool) {
-  if (is_f1_null() || !has_appendix())
+  if (!has_appendix())
     return NULL;
   const int ref_index = f2_as_index() + _indy_resolved_references_appendix_offset;
   objArrayOop resolved_references = cpool->resolved_references();
@@ -416,7 +416,7 @@ oop ConstantPoolCacheEntry::appendix_if_resolved(constantPoolHandle cpool) {
 
 
 oop ConstantPoolCacheEntry::method_type_if_resolved(constantPoolHandle cpool) {
-  if (is_f1_null() || !has_method_type())
+  if (!has_method_type())
     return NULL;
   const int ref_index = f2_as_index() + _indy_resolved_references_method_type_offset;
   objArrayOop resolved_references = cpool->resolved_references();

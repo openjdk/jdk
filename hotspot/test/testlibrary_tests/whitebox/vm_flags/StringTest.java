@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,44 +19,27 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "runtime/os.hpp"
-#include "vm_version_sparc.hpp"
+/*
+ * @test StringTest
+ * @bug 8028756
+ * @library /testlibrary /testlibrary/whitebox
+ * @build StringTest
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StringTest
+ * @summary testing of WB::set/getStringVMFlag()
+ * @author igor.ignatyev@oracle.com
+ */
 
-static bool detect_niagara() {
-  char cpu[128];
-  bool rv = false;
+public class StringTest {
+    private static final String FLAG_NAME = "CompileOnly";
+    private static final String[] TESTS = {"StringTest::*", ""};
 
-  FILE* fp = fopen("/proc/cpuinfo", "r");
-  if (fp == NULL) {
-    return rv;
-  }
-
-  while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
-      if (strstr(cpu, "Niagara") != NULL) {
-        rv = true;
-      }
-      break;
+    public static void main(String[] args) throws Exception {
+        VmFlagTest.runTest(FLAG_NAME, TESTS,
+            VmFlagTest.WHITE_BOX::setStringVMFlag,
+            VmFlagTest.WHITE_BOX::getStringVMFlag);
     }
-  }
-
-  fclose(fp);
-
-  return rv;
 }
 
-int VM_Version::platform_features(int features) {
-  // Default to generic v9
-  features = generic_v9_m;
-
-  if (detect_niagara()) {
-    NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
-    features = niagara1_m;
-  }
-
-  return features;
-}

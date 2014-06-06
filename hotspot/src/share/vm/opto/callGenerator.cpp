@@ -136,7 +136,7 @@ JVMState* DirectCallGenerator::generate(JVMState* jvms, Parse* parent_parser) {
     kit.C->log()->elem("direct_call bci='%d'", jvms->bci());
   }
 
-  CallStaticJavaNode *call = new (kit.C) CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
+  CallStaticJavaNode *call = new CallStaticJavaNode(kit.C, tf(), target, method(), kit.bci());
   _call_node = call;  // Save the call node in case we need it later
   if (!is_static) {
     // Make an explicit receiver null_check as part of this call.
@@ -225,7 +225,7 @@ JVMState* VirtualCallGenerator::generate(JVMState* jvms, Parse* parent_parser) {
          "no vtable calls if +UseInlineCaches ");
   address target = SharedRuntime::get_resolve_virtual_call_stub();
   // Normal inline cache used for call
-  CallDynamicJavaNode *call = new (kit.C) CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
+  CallDynamicJavaNode *call = new CallDynamicJavaNode(tf(), target, method(), _vtable_index, kit.bci());
   kit.set_arguments_for_java_call(call);
   kit.set_edges_for_java_call(call);
   Node* ret = kit.set_results_for_java_call(call);
@@ -350,7 +350,7 @@ void LateInlineCallGenerator::do_late_inline() {
   JVMState* old_jvms = call->jvms();
   JVMState* jvms = old_jvms->clone_shallow(C);
   uint size = call->req();
-  SafePointNode* map = new (C) SafePointNode(size, jvms);
+  SafePointNode* map = new SafePointNode(size, jvms);
   for (uint i1 = 0; i1 < size; i1++) {
     map->init_req(i1, call->in(i1));
   }
@@ -717,7 +717,7 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms, Parse* parent_parser)
 
   // Finish the diamond.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new (kit.C) RegionNode(3);
+  RegionNode* region = new RegionNode(3);
   region->init_req(1, kit.control());
   region->init_req(2, slow_map->control());
   kit.set_control(gvn.transform(region));
@@ -825,7 +825,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
           const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
           const Type*       sig_type = TypeOopPtr::make_from_klass(signature->accessing_klass());
           if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-            Node* cast_obj = gvn.transform(new (C) CheckCastPPNode(kit.control(), arg, sig_type));
+            Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
             kit.set_argument(0, cast_obj);
           }
         }
@@ -837,7 +837,7 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
             const TypeOopPtr* arg_type = arg->bottom_type()->isa_oopptr();
             const Type*       sig_type = TypeOopPtr::make_from_klass(t->as_klass());
             if (arg_type != NULL && !arg_type->higher_equal(sig_type)) {
-              Node* cast_obj = gvn.transform(new (C) CheckCastPPNode(kit.control(), arg, sig_type));
+              Node* cast_obj = gvn.transform(new CheckCastPPNode(kit.control(), arg, sig_type));
               kit.set_argument(receiver_skip + i, cast_obj);
             }
           }
@@ -978,7 +978,7 @@ JVMState* PredictedIntrinsicGenerator::generate(JVMState* jvms, Parse* parent_pa
 
   // Finish the diamond.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new (kit.C) RegionNode(3);
+  RegionNode* region = new RegionNode(3);
   region->init_req(1, kit.control());
   region->init_req(2, slow_map->control());
   kit.set_control(gvn.transform(region));

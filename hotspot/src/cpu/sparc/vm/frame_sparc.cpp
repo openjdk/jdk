@@ -557,7 +557,8 @@ void frame::patch_pc(Thread* thread, address pc) {
     // QQQ this assert is invalid (or too strong anyway) sice _pc could
     // be original pc and frame could have the deopt pc.
     // assert(_pc == *O7_addr() + pc_return_offset, "frame has wrong pc");
-    tty->print_cr("patch_pc at address  0x%x [0x%x -> 0x%x] ", O7_addr(), _pc, pc);
+    tty->print_cr("patch_pc at address " INTPTR_FORMAT " [" INTPTR_FORMAT " -> " INTPTR_FORMAT "]",
+                  p2i(O7_addr()), p2i(_pc), p2i(pc));
   }
   _cb = CodeCache::find_blob(pc);
   *O7_addr() = pc - pc_return_offset;
