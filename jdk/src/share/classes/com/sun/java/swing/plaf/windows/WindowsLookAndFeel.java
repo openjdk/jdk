@@ -2327,8 +2327,9 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
         }
 
         public Object getXPValue(UIDefaults table) {
-            Border xpBorder = XPStyle.getXP().getBorder(null, (Part)xpValue);
-            if (extraMargin != null) {
+            XPStyle xp = XPStyle.getXP();
+            Border xpBorder = xp != null ? xp.getBorder(null, (Part)xpValue) : null;
+            if (xpBorder != null && extraMargin != null) {
                 return new BorderUIResource.
                         CompoundBorderUIResource(xpBorder, extraMargin);
             } else {
@@ -2344,7 +2345,8 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
 
         public Object getXPValue(UIDefaults table) {
             XPColorValueKey key = (XPColorValueKey)xpValue;
-            return XPStyle.getXP().getColor(key.skin, key.prop, null);
+            XPStyle xp = XPStyle.getXP();
+            return xp != null ? xp.getColor(key.skin, key.prop, null) : null;
         }
 
         private static class XPColorValueKey {
