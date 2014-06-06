@@ -214,6 +214,11 @@ public class EventQueue {
                                             FwDispatcher dispatcher) {
                     eventQueue.setFwDispatcher(dispatcher);
                 }
+
+                @Override
+                public long getMostRecentEventTime(EventQueue eventQueue) {
+                    return eventQueue.getMostRecentEventTimeImpl();
+                }
             });
     }
 
