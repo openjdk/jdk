@@ -100,11 +100,11 @@ public class ReturnNode extends Statement {
 
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append(isYield() ? "yield" : "return");
         if (expression != null) {
             sb.append(' ');
-            expression.toString(sb);
+            expression.toString(sb, printType);
         }
     }
 

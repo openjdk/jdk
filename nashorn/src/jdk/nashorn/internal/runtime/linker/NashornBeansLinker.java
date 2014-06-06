@@ -67,8 +67,7 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
         return delegateLinker.getGuardedInvocation(linkRequest, new NashornBeansLinkerServices(linkerServices));
     }
 
-    @SuppressWarnings("unused")
-    private static Object exportArgument(final Object arg) {
+    static Object exportArgument(final Object arg) {
         return arg instanceof ConsString ? arg.toString() : arg;
     }
 
@@ -98,6 +97,11 @@ public class NashornBeansLinker implements GuardingDynamicLinker {
             }
 
             return filters != null ? MethodHandles.filterArguments(typed, 0, filters) : typed;
+        }
+
+        @Override
+        public MethodHandle asTypeLosslessReturn(final MethodHandle handle, final MethodType fromType) {
+            return Implementation.asTypeLosslessReturn(this, handle, fromType);
         }
 
         private static boolean shouldConvert(final Class<?> handleType, final Class<?> fromType) {

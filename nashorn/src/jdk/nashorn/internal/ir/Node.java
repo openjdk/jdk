@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
@@ -82,15 +81,6 @@ public abstract class Node implements Cloneable {
     }
 
     /**
-     * Is this an atom node - for example a literal or an identity
-     *
-     * @return true if atom
-     */
-    public boolean isAtom() {
-        return false;
-    }
-
-    /**
      * Is this a loop node?
      *
      * @return true if atom
@@ -106,31 +96,6 @@ public abstract class Node implements Cloneable {
      * @return true if assignment
      */
     public boolean isAssignment() {
-        return false;
-    }
-
-    /**
-     * Is this a self modifying assignment?
-     * @return true if self modifying, e.g. a++, or a*= 17
-     */
-    public boolean isSelfModifying() {
-        return false;
-    }
-
-    /**
-     * Returns widest operation type of this operation.
-     *
-     * @return the widest type for this operation
-     */
-    public Type getWidestOperationType() {
-        return Type.OBJECT;
-    }
-
-    /**
-     * Returns true if this node represents a comparison operator
-     * @return true if comparison
-     */
-    public boolean isComparison() {
         return false;
     }
 
@@ -164,7 +129,19 @@ public abstract class Node implements Cloneable {
      *
      * @param sb a StringBuilder
      */
-    public abstract void toString(StringBuilder sb);
+    public void toString(final StringBuilder sb) {
+        toString(sb, true);
+    }
+
+    /**
+     * Print logic that decides whether to show the optimistic type
+     * or not - for example it should not be printed after just parse,
+     * when it hasn't been computed, or has been set to a trivially provable
+     * value
+     * @param sb   string builder
+     * @param printType print type?
+     */
+    public abstract void toString(final StringBuilder sb, final boolean printType);
 
     /**
      * Check if this node has terminal flags, i.e. ends or breaks control flow

@@ -19,7 +19,12 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
-import jdk.nashorn.internal.runtime.regexp.joni.*;
+import jdk.nashorn.internal.runtime.regexp.joni.BitSet;
+import jdk.nashorn.internal.runtime.regexp.joni.CodeRangeBuffer;
+import jdk.nashorn.internal.runtime.regexp.joni.Config;
+import jdk.nashorn.internal.runtime.regexp.joni.EncodingHelper;
+import jdk.nashorn.internal.runtime.regexp.joni.ScanEnvironment;
+import jdk.nashorn.internal.runtime.regexp.joni.Syntax;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.CCSTATE;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.CCVALTYPE;
 import jdk.nashorn.internal.runtime.regexp.joni.encoding.CharacterType;
@@ -94,9 +99,9 @@ public final class CClassNode extends Node {
     }
 
     @Override
-    public boolean equals(Object other) {
+    public boolean equals(final Object other) {
         if (!(other instanceof CClassNode)) return false;
-        CClassNode cc = (CClassNode)other;
+        final CClassNode cc = (CClassNode)other;
         return ctype == cc.ctype && isNot() == cc.isNot();
     }
 
@@ -113,8 +118,8 @@ public final class CClassNode extends Node {
     }
 
     @Override
-    public String toString(int level) {
-        StringBuilder value = new StringBuilder();
+    public String toString(final int level) {
+        final StringBuilder value = new StringBuilder();
         value.append("\n  flags: " + flagsToString());
         value.append("\n  bs: " + pad(bs, level + 1));
         value.append("\n  mbuf: " + pad(mbuf, level + 1));
@@ -123,7 +128,7 @@ public final class CClassNode extends Node {
     }
 
     public String flagsToString() {
-        StringBuilder flags = new StringBuilder();
+        final StringBuilder flags = new StringBuilder();
         if (isNot()) flags.append("NOT ");
         if (isShare()) flags.append("SHARE ");
         return flags.toString();
@@ -133,11 +138,11 @@ public final class CClassNode extends Node {
         return mbuf == null && bs.isEmpty();
     }
 
-    public void addCodeRangeToBuf(int from, int to) {
+    public void addCodeRangeToBuf(final int from, final int to) {
         mbuf = CodeRangeBuffer.addCodeRangeToBuff(mbuf, from, to);
     }
 
-    public void addCodeRange(ScanEnvironment env, int from, int to) {
+    public void addCodeRange(final ScanEnvironment env, final int from, final int to) {
         mbuf = CodeRangeBuffer.addCodeRange(mbuf, env, from, to);
     }
 
@@ -155,22 +160,22 @@ public final class CClassNode extends Node {
     }
 
     // and_cclass
-    public void and(CClassNode other) {
-        boolean not1 = isNot();
+    public void and(final CClassNode other) {
+        final boolean not1 = isNot();
         BitSet bsr1 = bs;
-        CodeRangeBuffer buf1 = mbuf;
-        boolean not2 = other.isNot();
+        final CodeRangeBuffer buf1 = mbuf;
+        final boolean not2 = other.isNot();
         BitSet bsr2 = other.bs;
-        CodeRangeBuffer buf2 = other.mbuf;
+        final CodeRangeBuffer buf2 = other.mbuf;
 
         if (not1) {
-            BitSet bs1 = new BitSet();
+            final BitSet bs1 = new BitSet();
             bsr1.invertTo(bs1);
             bsr1 = bs1;
         }
 
         if (not2) {
-            BitSet bs2 = new BitSet();
+            final BitSet bs2 = new BitSet();
             bsr2.invertTo(bs2);
             bsr2 = bs2;
         }
@@ -202,22 +207,22 @@ public final class CClassNode extends Node {
     }
 
     // or_cclass
-    public void or(CClassNode other) {
-        boolean not1 = isNot();
+    public void or(final CClassNode other) {
+        final boolean not1 = isNot();
         BitSet bsr1 = bs;
-        CodeRangeBuffer buf1 = mbuf;
-        boolean not2 = other.isNot();
+        final CodeRangeBuffer buf1 = mbuf;
+        final boolean not2 = other.isNot();
         BitSet bsr2 = other.bs;
-        CodeRangeBuffer buf2 = other.mbuf;
+        final CodeRangeBuffer buf2 = other.mbuf;
 
         if (not1) {
-            BitSet bs1 = new BitSet();
+            final BitSet bs1 = new BitSet();
             bsr1.invertTo(bs1);
             bsr1 = bs1;
         }
 
         if (not2) {
-            BitSet bs2 = new BitSet();
+            final BitSet bs2 = new BitSet();
             bsr2.invertTo(bs2);
             bsr2 = bs2;
         }
@@ -246,8 +251,8 @@ public final class CClassNode extends Node {
     }
 
     // add_ctype_to_cc_by_range // Encoding out!
-    public void addCTypeByRange(int ctype, boolean not, int sbOut, int mbr[]) {
-        int n = mbr[0];
+    public void addCTypeByRange(final int ctype, final boolean not, final int sbOut, final int mbr[]) {
+        final int n = mbr[0];
 
         if (!not) {
             for (int i=0; i<n; i++) {
@@ -314,7 +319,7 @@ public final class CClassNode extends Node {
         }
     }
 
-    public void addCType(int ctype, boolean not, ScanEnvironment env, IntHolder sbOut) {
+    public void addCType(int ctype, final boolean not, final ScanEnvironment env, final IntHolder sbOut) {
         if (Config.NON_UNICODE_SDW) {
             switch(ctype) {
             case CharacterType.D:
@@ -343,7 +348,7 @@ public final class CClassNode extends Node {
             }
         }
 
-        int[] ranges = EncodingHelper.ctypeCodeRange(ctype, sbOut);
+        final int[] ranges = EncodingHelper.ctypeCodeRange(ctype, sbOut);
         if (ranges != null) {
             addCTypeByRange(ctype, not, sbOut.value, ranges);
             return;
@@ -416,7 +421,7 @@ public final class CClassNode extends Node {
         public CCSTATE state;
     }
 
-    public void nextStateClass(CCStateArg arg, ScanEnvironment env) {
+    public void nextStateClass(final CCStateArg arg, final ScanEnvironment env) {
         if (arg.state == CCSTATE.RANGE) throw new SyntaxException(ErrorMessages.ERR_CHAR_CLASS_VALUE_AT_END_OF_RANGE);
 
         if (arg.state == CCSTATE.VALUE && arg.type != CCVALTYPE.CLASS) {
@@ -430,7 +435,7 @@ public final class CClassNode extends Node {
         arg.type = CCVALTYPE.CLASS;
     }
 
-    public void nextStateValue(CCStateArg arg, ScanEnvironment env) {
+    public void nextStateValue(final CCStateArg arg, final ScanEnvironment env) {
 
         switch(arg.state) {
         case VALUE:
@@ -493,7 +498,7 @@ public final class CClassNode extends Node {
     }
 
     // onig_is_code_in_cc_len
-    public boolean isCodeInCCLength(int code) {
+    public boolean isCodeInCCLength(final int code) {
         boolean found;
 
         if (code > 0xff) {
@@ -510,7 +515,7 @@ public final class CClassNode extends Node {
     }
 
     // onig_is_code_in_cc
-    public boolean isCodeInCC(int code) {
+    public boolean isCodeInCC(final int code) {
          return isCodeInCCLength(code);
     }
 

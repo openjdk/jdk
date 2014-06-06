@@ -22,7 +22,7 @@
  */
 
 /**
- * JDK-8015354: JSON.parse should not use [[Put]] but use [[DefineOwnProperty]] instead 
+ * JDK-8015354: JSON.parse should not use [[Put]] but use [[DefineOwnProperty]] instead
  *
  * @test
  * @run

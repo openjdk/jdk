@@ -33,8 +33,8 @@ public final class AnyCharNode extends Node {
     }
 
     @Override
-    public String toString(int level) {
-        String value = "";
+    public String toString(final int level) {
+        final String value = "";
         return value;
     }
 }

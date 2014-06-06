@@ -63,7 +63,7 @@ public final class ScriptTest {
             }
 
             @Override
-            public void log(String msg) {
+            public void log(final String msg) {
                 org.testng.Reporter.log(msg, true);
             }
         };

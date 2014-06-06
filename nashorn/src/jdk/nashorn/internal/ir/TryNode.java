@@ -28,8 +28,6 @@ package jdk.nashorn.internal.ir;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-
-import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -37,7 +35,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation of a TRY statement.
  */
 @Immutable
-public final class TryNode extends Statement {
+public final class TryNode extends Statement implements JoinPredecessor {
     /** Try statements. */
     private final Block body;
 
@@ -47,14 +45,13 @@ public final class TryNode extends Statement {
     /** Finally clause. */
     private final Block finallyBody;
 
-    /** Exit label. */
-    private final Label exit;
-
     /** Exception symbol. */
     private Symbol exception;
 
     /** Catchall exception for finally expansion, where applicable */
     private Symbol finallyCatchAll;
+
+    private final LocalVariableConversion conversion;
 
     /**
      * Constructor
@@ -71,21 +68,22 @@ public final class TryNode extends Statement {
         this.body        = body;
         this.catchBlocks = catchBlocks;
         this.finallyBody = finallyBody;
-        this.exit        = new Label("exit");
+        this.conversion  = null;
     }
 
-    private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody) {
+    private TryNode(final TryNode tryNode, final Block body, final List<Block> catchBlocks, final Block finallyBody, final LocalVariableConversion conversion) {
         super(tryNode);
         this.body        = body;
         this.catchBlocks = catchBlocks;
         this.finallyBody = finallyBody;
-        this.exit        = new Label(tryNode.exit);
+        this.conversion  = conversion;
+        this.exception = tryNode.exception;
     }
 
     @Override
     public Node ensureUniqueLabels(final LexicalContext lc) {
         //try nodes are never in lex context
-        return new TryNode(this, body, catchBlocks, finallyBody);
+        return new TryNode(this, body, catchBlocks, finallyBody, conversion);
     }
 
     @Override
@@ -115,7 +113,6 @@ public final class TryNode extends Statement {
                 setBody(newBody).
                 setFinallyBody(newFinallyBody).
                 setCatchBlocks(Node.accept(visitor, Block.class, catchBlocks)).
-                setException(exception).
                 setFinallyCatchAll(finallyCatchAll));
         }
 
@@ -123,7 +120,7 @@ public final class TryNode extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("try ");
     }
 
@@ -144,7 +141,7 @@ public final class TryNode extends Statement {
         if (this.body == body) {
             return this;
         }
-        return new TryNode(this,  body, catchBlocks, finallyBody);
+        return new TryNode(this,  body, catchBlocks, finallyBody, conversion);
     }
 
     /**
@@ -154,9 +151,13 @@ public final class TryNode extends Statement {
     public List<CatchNode> getCatches() {
         final List<CatchNode> catches = new ArrayList<>(catchBlocks.size());
         for (final Block catchBlock : catchBlocks) {
-            catches.add((CatchNode)catchBlock.getStatements().get(0));
+            catches.add(getCatchNodeFromBlock(catchBlock));
         }
         return Collections.unmodifiableList(catches);
+    }
+
+    private static CatchNode getCatchNodeFromBlock(final Block catchBlock) {
+        return (CatchNode)catchBlock.getStatements().get(0);
     }
 
     /**
@@ -176,7 +177,7 @@ public final class TryNode extends Statement {
         if (this.catchBlocks == catchBlocks) {
             return this;
         }
-        return new TryNode(this, body, catchBlocks, finallyBody);
+        return new TryNode(this, body, catchBlocks, finallyBody, conversion);
     }
 
     /**
@@ -186,7 +187,6 @@ public final class TryNode extends Statement {
     public Symbol getException() {
         return exception;
     }
-
     /**
      * Set the exception symbol for this try block
      * @param exception a symbol for the compiler to store the exception in
@@ -219,14 +219,6 @@ public final class TryNode extends Statement {
     }
 
     /**
-     * Get the exit label for this try block
-     * @return exit label
-     */
-    public Label getExit() {
-        return exit;
-    }
-
-    /**
      * Get the body of the finally clause for this try
      * @return finally body, or null if no finally
      */
@@ -243,6 +235,19 @@ public final class TryNode extends Statement {
         if (this.finallyBody == finallyBody) {
             return this;
         }
-        return new TryNode(this, body, catchBlocks, finallyBody);
+        return new TryNode(this, body, catchBlocks, finallyBody, conversion);
+    }
+
+    @Override
+    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
+        if(this.conversion == conversion) {
+            return this;
+        }
+        return new TryNode(this, body, catchBlocks, finallyBody, conversion);
+    }
+
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return conversion;
     }
 }

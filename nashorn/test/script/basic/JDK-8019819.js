@@ -23,14 +23,14 @@
 
 /**
  * JDK-8019819: scope symbol didn't get a slot in certain cases
- * 
+ *
  * @test
  * @run
  */
 function f() {
     try {
-    } catch(e if [].g(e)) { 
-        with({}) { 
+    } catch(e if [].g(e)) {
+        with({}) {
             throw e;
         }
     }
@@ -38,8 +38,8 @@ function f() {
 
 function g() {
     try {
-    } catch(e) { 
-        with({}) { 
+    } catch(e) {
+        with({}) {
             throw e;
         }
     }

@@ -124,34 +124,14 @@ final class JavaArgumentConverters {
         return s.charAt(0);
     }
 
-    @SuppressWarnings("unused")
-    private static char toCharPrimitive(final Object obj0) {
+    static char toCharPrimitive(final Object obj0) {
         final Character c = toChar(obj0);
         return c == null ? (char)0 : c;
     }
 
-    // Almost identical to ScriptRuntime.toString, but doesn't handle StaticClass specially, and it returns null for
-    // null instead of the string "null".
-    private static String toString(final Object obj0) {
-        for (Object obj = obj0; ;) {
-            if (obj == null) {
-                return null;
-            } else if (obj instanceof String) {
-                return (String) obj;
-            } else if (obj instanceof ConsString) {
-                return obj.toString();
-            } else if (obj instanceof Number) {
-                return JSType.toString(((Number)obj).doubleValue());
-            } else if (obj instanceof Boolean) {
-                return ((Boolean) obj).toString();
-            } else if (obj == UNDEFINED) {
-                return "undefined";
-            } else if (obj instanceof ScriptObject) {
-                obj = JSType.toPrimitive(obj, String.class);
-                continue;
-            }
-            throw assertUnexpectedType(obj);
-        }
+    // Almost identical to ScriptRuntime.toString, but returns null for null instead of the string "null".
+    static String toString(final Object obj) {
+        return obj == null ? null : JSType.toString(obj);
     }
 
     @SuppressWarnings("unused")

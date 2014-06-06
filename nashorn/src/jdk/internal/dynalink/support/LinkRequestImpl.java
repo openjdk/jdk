@@ -95,18 +95,24 @@ import jdk.internal.dynalink.linker.LinkRequest;
 public class LinkRequestImpl implements LinkRequest {
 
     private final CallSiteDescriptor callSiteDescriptor;
+    private final Object callSiteToken;
     private final Object[] arguments;
     private final boolean callSiteUnstable;
+    private final int linkCount;
 
     /**
      * Creates a new link request.
      *
      * @param callSiteDescriptor the descriptor for the call site being linked
+     * @param callSiteToken the opaque token for the call site being linked.
+     * @param linkCount how many times this callsite has been linked/relinked
      * @param callSiteUnstable true if the call site being linked is considered unstable
      * @param arguments the arguments for the invocation
      */
-    public LinkRequestImpl(CallSiteDescriptor callSiteDescriptor, boolean callSiteUnstable, Object... arguments) {
+    public LinkRequestImpl(final CallSiteDescriptor callSiteDescriptor, final Object callSiteToken, final int linkCount, final boolean callSiteUnstable, final Object... arguments) {
         this.callSiteDescriptor = callSiteDescriptor;
+        this.callSiteToken = callSiteToken;
+        this.linkCount = linkCount;
         this.callSiteUnstable = callSiteUnstable;
         this.arguments = arguments;
     }
@@ -127,8 +133,18 @@ public class LinkRequestImpl implements LinkRequest {
     }
 
     @Override
+    public Object getCallSiteToken() {
+        return callSiteToken;
+    }
+
+    @Override
     public boolean isCallSiteUnstable() {
         return callSiteUnstable;
+    }
+
+    @Override
+    public int getLinkCount() {
+        return linkCount;
     }
 
     @Override
@@ -137,7 +153,7 @@ public class LinkRequestImpl implements LinkRequest {
     }
 
     @Override
-    public LinkRequest replaceArguments(CallSiteDescriptor newCallSiteDescriptor, Object[] newArguments) {
-        return new LinkRequestImpl(newCallSiteDescriptor, callSiteUnstable, newArguments);
+    public LinkRequest replaceArguments(final CallSiteDescriptor newCallSiteDescriptor, final Object[] newArguments) {
+        return new LinkRequestImpl(newCallSiteDescriptor, callSiteToken, linkCount, callSiteUnstable, newArguments);
     }
 }

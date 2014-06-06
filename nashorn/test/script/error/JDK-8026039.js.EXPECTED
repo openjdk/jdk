@@ -2,7 +2,7 @@ test/script/error/JDK-8026039.js:30:9 "public" cannot be used as function name i
 function public() {"use strict"}
          ^
 test/script/error/JDK-8026039.js:32:11 Expected ident but found public
-function f(public) {"use strict"} 
+function f(public) {"use strict"}
            ^
 test/script/error/JDK-8026039.js:33:0 Expected } but found eof
 

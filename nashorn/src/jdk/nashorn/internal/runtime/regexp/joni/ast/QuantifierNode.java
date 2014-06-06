@@ -19,11 +19,17 @@
  */
 package jdk.nashorn.internal.runtime.regexp.joni.ast;
 
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.A;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.AQ;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.ASIS;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.DEL;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.PQ_Q;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.P_QQ;
+import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.QQ;
+
 import jdk.nashorn.internal.runtime.regexp.joni.Config;
 import jdk.nashorn.internal.runtime.regexp.joni.ScanEnvironment;
 import jdk.nashorn.internal.runtime.regexp.joni.constants.TargetInfo;
-
-import static jdk.nashorn.internal.runtime.regexp.joni.ast.QuantifierNode.ReduceType.*;
 
 public final class QuantifierNode extends StateNode {
 
@@ -66,7 +72,7 @@ public final class QuantifierNode extends StateNode {
     };
 
 
-    public QuantifierNode(int lower, int upper, boolean byNumber) {
+    public QuantifierNode(final int lower, final int upper, final boolean byNumber) {
         this.lower = lower;
         this.upper = upper;
         greedy = true;
@@ -81,7 +87,7 @@ public final class QuantifierNode extends StateNode {
     }
 
     @Override
-    protected void setChild(Node newChild) {
+    protected void setChild(final Node newChild) {
         target = newChild;
     }
 
@@ -90,13 +96,13 @@ public final class QuantifierNode extends StateNode {
         return target;
     }
 
-    public void setTarget(Node tgt) {
+    public void setTarget(final Node tgt) {
         target = tgt;
         tgt.parent = this;
     }
 
-    public StringNode convertToString(int flag) {
-        StringNode sn = new StringNode();
+    public StringNode convertToString(final int flag) {
+        final StringNode sn = new StringNode();
         sn.flag = flag;
         sn.swap(this);
         return sn;
@@ -108,8 +114,8 @@ public final class QuantifierNode extends StateNode {
     }
 
     @Override
-    public String toString(int level) {
-        StringBuilder value = new StringBuilder(super.toString(level));
+    public String toString(final int level) {
+        final StringBuilder value = new StringBuilder(super.toString(level));
         value.append("\n  target: " + pad(target, level + 1));
         value.append("\n  lower: " + lower);
         value.append("\n  upper: " + upper);
@@ -146,7 +152,7 @@ public final class QuantifierNode extends StateNode {
         return -1;
     }
 
-    protected void set(QuantifierNode other) {
+    protected void set(final QuantifierNode other) {
         setTarget(other.target);
         other.target = null;
         lower = other.lower;
@@ -161,9 +167,9 @@ public final class QuantifierNode extends StateNode {
         isRefered = other.isRefered;
     }
 
-    public void reduceNestedQuantifier(QuantifierNode other) {
-        int pnum = popularNum();
-        int cnum = other.popularNum();
+    public void reduceNestedQuantifier(final QuantifierNode other) {
+        final int pnum = popularNum();
+        final int cnum = other.popularNum();
 
         if (pnum < 0 || cnum < 0) return;
 
@@ -224,16 +230,16 @@ public final class QuantifierNode extends StateNode {
     }
 
     @SuppressWarnings("fallthrough")
-    public int setQuantifier(Node tgt, boolean group, ScanEnvironment env, char[] chars, int p, int end) {
+    public int setQuantifier(final Node tgt, final boolean group, final ScanEnvironment env, final char[] chars, final int p, final int end) {
         if (lower == 1 && upper == 1) return 1;
 
         switch(tgt.getType()) {
 
         case STR:
             if (!group) {
-                StringNode sn = (StringNode)tgt;
+                final StringNode sn = (StringNode)tgt;
                 if (sn.canBeSplit()) {
-                    StringNode n = sn.splitLastChar();
+                    final StringNode n = sn.splitLastChar();
                     if (n != null) {
                         setTarget(n);
                         return 2;
@@ -245,9 +251,9 @@ public final class QuantifierNode extends StateNode {
         case QTFR:
             /* check redundant double repeat. */
             /* verbose warn (?:.?)? etc... but not warn (.?)? etc... */
-            QuantifierNode qnt = (QuantifierNode)tgt;
-            int nestQNum = popularNum();
-            int targetQNum = qnt.popularNum();
+            final QuantifierNode qnt = (QuantifierNode)tgt;
+            final int nestQNum = popularNum();
+            final int targetQNum = qnt.popularNum();
 
             if (Config.USE_WARNING_REDUNDANT_NESTED_REPEAT_OPERATOR) {
                 if (!isByNumber() && !qnt.isByNumber() && env.syntax.warnReduntantNestedRepeat()) {
@@ -290,7 +296,7 @@ public final class QuantifierNode extends StateNode {
     }
 
     public static final int REPEAT_INFINITE         = -1;
-    public static boolean isRepeatInfinite(int n) {
+    public static boolean isRepeatInfinite(final int n) {
         return n == REPEAT_INFINITE;
     }
 

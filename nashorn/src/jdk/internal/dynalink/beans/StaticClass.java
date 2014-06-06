@@ -96,7 +96,7 @@ import java.io.Serializable;
 public class StaticClass implements Serializable {
     private static final ClassValue<StaticClass> staticClasses = new ClassValue<StaticClass>() {
         @Override
-        protected StaticClass computeValue(Class<?> type) {
+        protected StaticClass computeValue(final Class<?> type) {
             return new StaticClass(type);
         }
     };
@@ -105,7 +105,7 @@ public class StaticClass implements Serializable {
 
     private final Class<?> clazz;
 
-    /*private*/ StaticClass(Class<?> clazz) {
+    /*private*/ StaticClass(final Class<?> clazz) {
         clazz.getClass(); // NPE check
         this.clazz = clazz;
     }
@@ -115,7 +115,7 @@ public class StaticClass implements Serializable {
      * @param clazz the class for which the static facet is requested.
      * @return the {@link StaticClass} instance representing the specified class.
      */
-    public static StaticClass forClass(Class<?> clazz) {
+    public static StaticClass forClass(final Class<?> clazz) {
         return staticClasses.get(clazz);
     }
 

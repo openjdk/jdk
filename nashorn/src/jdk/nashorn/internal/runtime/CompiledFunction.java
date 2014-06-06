@@ -24,51 +24,214 @@
  */
 package jdk.nashorn.internal.runtime;
 
-import java.lang.invoke.MethodHandle;
-import java.lang.invoke.MethodType;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
+import java.lang.invoke.CallSite;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
+import java.lang.invoke.MutableCallSite;
+import java.lang.invoke.SwitchPoint;
+import java.util.Iterator;
+import java.util.Map;
+import java.util.TreeMap;
+import java.util.logging.Level;
+import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
+import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.runtime.events.RecompilationEvent;
+import jdk.nashorn.internal.runtime.linker.Bootstrap;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
  * An version of a JavaScript function, native or JavaScript.
  * Supports lazily generating a constructor version of the invocation.
  */
-final class CompiledFunction implements Comparable<CompiledFunction> {
+final class CompiledFunction {
 
-    /** The method type may be more specific than the invoker, if. e.g.
-     *  the invoker is guarded, and a guard with a generic object only
-     *  fallback, while the target is more specific, we still need the
-     *  more specific type for sorting */
-    private final MethodType   type;
-    private final MethodHandle invoker;
+    private static final MethodHandle NEWFILTER = findOwnMH("newFilter", Object.class, Object.class, Object.class);
+    private static final MethodHandle RELINK_COMPOSABLE_INVOKER = findOwnMH("relinkComposableInvoker", void.class, CallSite.class, CompiledFunction.class, boolean.class);
+    private static final MethodHandle HANDLE_REWRITE_EXCEPTION = findOwnMH("handleRewriteException", MethodHandle.class, CompiledFunction.class, OptimismInfo.class, RewriteException.class);
+    private static final MethodHandle RESTOF_INVOKER = MethodHandles.exactInvoker(MethodType.methodType(Object.class, RewriteException.class));
+
+    private final DebugLogger log;
+
+    /**
+     * The method type may be more specific than the invoker, if. e.g.
+     * the invoker is guarded, and a guard with a generic object only
+     * fallback, while the target is more specific, we still need the
+     * more specific type for sorting
+     */
+    private MethodHandle invoker;
     private MethodHandle constructor;
+    private OptimismInfo optimismInfo;
+    private int flags; // from FunctionNode
 
-    CompiledFunction(final MethodType type, final MethodHandle invoker) {
-        this(type, invoker, null);
+    CompiledFunction(final MethodHandle invoker) {
+        this(invoker, null);
     }
 
-    CompiledFunction(final MethodType type, final MethodHandle invoker, final MethodHandle constructor) {
-        assert type != null;
-        this.type        = type;
-        this.invoker     = invoker;
+    static CompiledFunction createBuiltInConstructor(final MethodHandle invoker) {
+        return new CompiledFunction(MH.insertArguments(invoker, 0, false), createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)));
+    }
+
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
+        this(invoker, constructor, DebugLogger.DISABLED_LOGGER);
+    }
+
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final DebugLogger log) {
+        this.invoker = invoker;
         this.constructor = constructor;
+        this.log = log;
+    }
+
+    CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final int flags) {
+        this(invoker, null, functionData.getLogger());
+        this.flags = flags;
+        if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
+            optimismInfo = new OptimismInfo(functionData);
+        } else {
+            optimismInfo = null;
+        }
+    }
+
+    int getFlags() {
+        return flags;
+    }
+
+    boolean isApplyToCall() {
+        return (flags & FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION) != 0;
+    }
+
+    boolean isVarArg() {
+        return isVarArgsType(invoker.type());
     }
 
     @Override
     public String toString() {
-        return "<callSiteType= " + type + " invoker=" + invoker + " ctor=" + constructor + ">";
+        return "[invokerType=" + invoker.type() + " ctor=" + constructor + " weight=" + weight() + " isApplyToCall=" + isApplyToCall() + "]";
     }
 
-    MethodHandle getInvoker() {
-        return invoker;
+    boolean needsCallee() {
+        return ScriptFunctionData.needsCallee(invoker);
     }
 
+    /**
+     * Returns an invoker method handle for this function. Note that the handle is safely composable in
+     * the sense that you can compose it with other handles using any combinators even if you can't affect call site
+     * invalidation. If this compiled function is non-optimistic, then it returns the same value as
+     * {@link #getInvoker()}. However, if the function is optimistic, then this handle will incur an overhead as it will
+     * add an intermediate internal call site that can relink itself when the function needs to regenerate its code to
+     * always point at the latest generated code version.
+     * @return a guaranteed composable invoker method handle for this function.
+     */
+    MethodHandle createComposableInvoker() {
+        return createComposableInvoker(false);
+    }
+
+    /**
+     * Returns an invoker method handle for this function when invoked as a constructor. Note that the handle should be
+     * considered non-composable in the sense that you can only compose it with other handles using any combinators if
+     * you can ensure that the composition is guarded by {@link #getOptimisticAssumptionsSwitchPoint()} if it's
+     * non-null, and that you can relink the call site it is set into as a target if the switch point is invalidated. In
+     * all other cases, use {@link #createComposableConstructor()}.
+     * @return a direct constructor method handle for this function.
+     */
     MethodHandle getConstructor() {
+        if (constructor == null) {
+            constructor = createConstructorFromInvoker(createInvokerForPessimisticCaller());
+        }
+
         return constructor;
     }
 
-    void setConstructor(final MethodHandle constructor) {
-        this.constructor = constructor;
+    /**
+     * Creates a version of the invoker intended for a pessimistic caller (return type is Object, no caller optimistic
+     * program point available).
+     * @return a version of the invoker intended for a pessimistic caller.
+     */
+    private MethodHandle createInvokerForPessimisticCaller() {
+        return createInvoker(Object.class, INVALID_PROGRAM_POINT);
+    }
+
+    /**
+     * Compose a constructor from an invoker.
+     *
+     * @param invoker         invoker
+     * @param needsCallee  do we need to pass a callee
+     *
+     * @return the composed constructor
+     */
+    private static MethodHandle createConstructorFromInvoker(final MethodHandle invoker) {
+        final boolean needsCallee = ScriptFunctionData.needsCallee(invoker);
+        // If it was (callee, this, args...), permute it to (this, callee, args...). We're doing this because having
+        // "this" in the first argument position is what allows the elegant folded composition of
+        // (newFilter x constructor x allocator) further down below in the code. Also, ensure the composite constructor
+        // always returns Object.
+        final MethodHandle swapped = needsCallee ? swapCalleeAndThis(invoker) : invoker;
+
+        final MethodHandle returnsObject = MH.asType(swapped, swapped.type().changeReturnType(Object.class));
+
+        final MethodType ctorType = returnsObject.type();
+
+        // Construct a dropping type list for NEWFILTER, but don't include constructor "this" into it, so it's actually
+        // captured as "allocation" parameter of NEWFILTER after we fold the constructor into it.
+        // (this, [callee, ]args...) => ([callee, ]args...)
+        final Class<?>[] ctorArgs = ctorType.dropParameterTypes(0, 1).parameterArray();
+
+        // Fold constructor into newFilter that replaces the return value from the constructor with the originally
+        // allocated value when the originally allocated value is a JS primitive (String, Boolean, Number).
+        // (result, this, [callee, ]args...) x (this, [callee, ]args...) => (this, [callee, ]args...)
+        final MethodHandle filtered = MH.foldArguments(MH.dropArguments(NEWFILTER, 2, ctorArgs), returnsObject);
+
+        // allocate() takes a ScriptFunction and returns a newly allocated ScriptObject...
+        if (needsCallee) {
+            // ...we either fold it into the previous composition, if we need both the ScriptFunction callee object and
+            // the newly allocated object in the arguments, so (this, callee, args...) x (callee) => (callee, args...),
+            // or...
+            return MH.foldArguments(filtered, ScriptFunction.ALLOCATE);
+        }
+
+        // ...replace the ScriptFunction argument with the newly allocated object, if it doesn't need the callee
+        // (this, args...) filter (callee) => (callee, args...)
+        return MH.filterArguments(filtered, 0, ScriptFunction.ALLOCATE);
+    }
+
+    /**
+     * Permutes the parameters in the method handle from {@code (callee, this, ...)} to {@code (this, callee, ...)}.
+     * Used when creating a constructor handle.
+     * @param mh a method handle with order of arguments {@code (callee, this, ...)}
+     * @return a method handle with order of arguments {@code (this, callee, ...)}
+     */
+    private static MethodHandle swapCalleeAndThis(final MethodHandle mh) {
+        final MethodType type = mh.type();
+        assert type.parameterType(0) == ScriptFunction.class : type;
+        assert type.parameterType(1) == Object.class : type;
+        final MethodType newType = type.changeParameterType(0, Object.class).changeParameterType(1, ScriptFunction.class);
+        final int[] reorder = new int[type.parameterCount()];
+        reorder[0] = 1;
+        assert reorder[1] == 0;
+        for (int i = 2; i < reorder.length; ++i) {
+            reorder[i] = i;
+        }
+        return MethodHandles.permuteArguments(mh, newType, reorder);
+    }
+
+    /**
+     * Returns an invoker method handle for this function when invoked as a constructor. Note that the handle is safely
+     * composable in the sense that you can compose it with other handles using any combinators even if you can't affect
+     * call site invalidation. If this compiled function is non-optimistic, then it returns the same value as
+     * {@link #getConstructor()}. However, if the function is optimistic, then this handle will incur an overhead as it
+     * will add an intermediate internal call site that can relink itself when the function needs to regenerate its code
+     * to always point at the latest generated code version.
+     * @return a guaranteed composable constructor method handle for this function.
+     */
+    MethodHandle createComposableConstructor() {
+        return createComposableInvoker(true);
     }
 
     boolean hasConstructor() {
@@ -76,45 +239,10 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
     }
 
     MethodType type() {
-        return type;
+        return invoker.type();
     }
 
-    @Override
-    public int compareTo(final CompiledFunction o) {
-        return compareMethodTypes(type(), o.type());
-    }
-
-    private static int compareMethodTypes(final MethodType ownType, final MethodType otherType) {
-        // Comparable interface demands that compareTo() should only return 0 if objects are equal.
-        // Failing to meet this requirement causes same weight functions to replace each other in TreeSet,
-        // so we go some lengths to come up with an ordering between same weight functions,
-        // first falling back to parameter count and then to hash code.
-        if (ownType.equals(otherType)) {
-            return 0;
-        }
-
-        final int diff = weight(ownType) - weight(otherType);
-        if (diff != 0) {
-            return diff;
-        }
-        if (ownType.parameterCount() != otherType.parameterCount()) {
-            return ownType.parameterCount() - otherType.parameterCount();
-        }
-        // We're just interested in not returning 0 here, not correct ordering
-        return ownType.hashCode() - otherType.hashCode();
-    }
-
-    @Override
-    public boolean equals(Object obj) {
-        return obj instanceof CompiledFunction && type().equals(((CompiledFunction)obj).type());
-    }
-
-    @Override
-    public int hashCode() {
-        return type().hashCode();
-    }
-
-    private int weight() {
+    int weight() {
         return weight(type());
     }
 
@@ -124,76 +252,508 @@ final class CompiledFunction implements Comparable<CompiledFunction> {
         }
 
         int weight = Type.typeFor(type.returnType()).getWeight();
-        for (final Class<?> paramType : type.parameterArray()) {
+        for (int i = 0 ; i < type.parameterCount() ; i++) {
+            final Class<?> paramType = type.parameterType(i);
             final int pweight = Type.typeFor(paramType).getWeight() * 2; //params are more important than call types as return values are always specialized
             weight += pweight;
         }
+
+        weight += type.parameterCount(); //more params outweigh few parameters
+
         return weight;
     }
 
-    private static boolean isVarArgsType(final MethodType type) {
+    static boolean isVarArgsType(final MethodType type) {
         assert type.parameterCount() >= 1 : type;
         return type.parameterType(type.parameterCount() - 1) == Object[].class;
     }
 
-    boolean moreGenericThan(final CompiledFunction o) {
-        return weight() > o.weight();
+    static boolean moreGenericThan(final MethodType mt0, final MethodType mt1) {
+        return weight(mt0) > weight(mt1);
     }
 
-    boolean moreGenericThan(final MethodType mt) {
-        return weight() > weight(mt);
+    boolean betterThanFinal(final CompiledFunction other, final MethodType callSiteMethodType) {
+        // Prefer anything over nothing, as we can't compile new versions.
+        if (other == null) {
+            return true;
+        }
+        return betterThanFinal(type(), other.type(), callSiteMethodType);
     }
 
-    /**
-     * Check whether a given method descriptor is compatible with this invocation.
-     * It is compatible if the types are narrower than the invocation type so that
-     * a semantically equivalent linkage can be performed.
-     *
-     * @param mt type to check against
-     * @return true if types are compatible
-     */
-    boolean typeCompatible(final MethodType mt) {
-        final int wantedParamCount   = mt.parameterCount();
-        final int existingParamCount = type.parameterCount();
+    static boolean betterThanFinal(final MethodType thisMethodType, final MethodType otherMethodType, final MethodType callSiteMethodType) {
+        final int thisParamCount = getParamCount(thisMethodType);
+        final int otherParamCount = getParamCount(otherMethodType);
+        final int callSiteRawParamCount = getParamCount(callSiteMethodType);
+        final boolean csVarArg = callSiteRawParamCount == Integer.MAX_VALUE;
+        // Subtract 1 for callee for non-vararg call sites
+        final int callSiteParamCount = csVarArg ? callSiteRawParamCount : callSiteRawParamCount - 1;
 
-        //if we are not examining a varargs type, the number of parameters must be the same
-        if (wantedParamCount != existingParamCount && !isVarArgsType(mt)) {
+        // Prefer the function that discards less parameters
+        final int thisDiscardsParams = Math.max(callSiteParamCount - thisParamCount, 0);
+        final int otherDiscardsParams = Math.max(callSiteParamCount - otherParamCount, 0);
+        if(thisDiscardsParams < otherDiscardsParams) {
+            return true;
+        }
+        if(thisDiscardsParams > otherDiscardsParams) {
             return false;
         }
 
-        //we only go as far as the shortest array. the only chance to make this work if
-        //parameters lengths do not match is if our type ends with a varargs argument.
-        //then every trailing parameter in the given callsite can be folded into it, making
-        //us compatible (albeit slower than a direct specialization)
-        final int lastParamIndex = Math.min(wantedParamCount, existingParamCount);
-        for (int i = 0; i < lastParamIndex; i++) {
-            final Type w = Type.typeFor(mt.parameterType(i));
-            final Type e = Type.typeFor(type.parameterType(i));
+        final boolean thisVarArg = thisParamCount == Integer.MAX_VALUE;
+        final boolean otherVarArg = otherParamCount == Integer.MAX_VALUE;
+        if(!(thisVarArg && otherVarArg && csVarArg)) {
+            // At least one of them isn't vararg
+            final Type[] thisType = toTypeWithoutCallee(thisMethodType, 0); // Never has callee
+            final Type[] otherType = toTypeWithoutCallee(otherMethodType, 0); // Never has callee
+            final Type[] callSiteType = toTypeWithoutCallee(callSiteMethodType, 1); // Always has callee
 
-            //don't specialize on booleans, we have the "true" vs int 1 ambiguity in resolution
-            //we also currently don't support boolean as a javascript function callsite type.
-            //it will always box.
-            if (w.isBoolean()) {
+            int narrowWeightDelta = 0;
+            int widenWeightDelta = 0;
+            final int minParamsCount = Math.min(Math.min(thisParamCount, otherParamCount), callSiteParamCount);
+            for(int i = 0; i < minParamsCount; ++i) {
+                final int callSiteParamWeight = getParamType(i, callSiteType, csVarArg).getWeight();
+                // Delta is negative for narrowing, positive for widening
+                final int thisParamWeightDelta = getParamType(i, thisType, thisVarArg).getWeight() - callSiteParamWeight;
+                final int otherParamWeightDelta = getParamType(i, otherType, otherVarArg).getWeight() - callSiteParamWeight;
+                // Only count absolute values of narrowings
+                narrowWeightDelta += Math.max(-thisParamWeightDelta, 0) - Math.max(-otherParamWeightDelta, 0);
+                // Only count absolute values of widenings
+                widenWeightDelta += Math.max(thisParamWeightDelta, 0) - Math.max(otherParamWeightDelta, 0);
+            }
+
+            // If both functions accept more arguments than what is passed at the call site, account for ability
+            // to receive Undefined un-narrowed in the remaining arguments.
+            if(!thisVarArg) {
+                for(int i = callSiteParamCount; i < thisParamCount; ++i) {
+                    narrowWeightDelta += Math.max(Type.OBJECT.getWeight() - thisType[i].getWeight(), 0);
+                }
+            }
+            if(!otherVarArg) {
+                for(int i = callSiteParamCount; i < otherParamCount; ++i) {
+                    narrowWeightDelta -= Math.max(Type.OBJECT.getWeight() - otherType[i].getWeight(), 0);
+                }
+            }
+
+            // Prefer function that narrows less
+            if(narrowWeightDelta < 0) {
+                return true;
+            }
+            if(narrowWeightDelta > 0) {
                 return false;
             }
 
-            //This callsite type has a vararg here. it will swallow all remaining args.
-            //for consistency, check that it's the last argument
-            if (e.isArray()) {
+            // Prefer function that widens less
+            if(widenWeightDelta < 0) {
                 return true;
             }
-
-            //Our arguments must be at least as wide as the wanted one, if not wider
-            if (Type.widest(w, e) != e) {
-                //e.g. this invocation takes double and callsite says "object". reject. won't fit
-                //but if invocation takes a double and callsite says "int" or "long" or "double", that's fine
+            if(widenWeightDelta > 0) {
                 return false;
             }
         }
 
-        return true; // anything goes for return type, take the convenient one and it will be upcasted thru dynalink magic.
+        // Prefer the function that exactly matches the arity of the call site.
+        if(thisParamCount == callSiteParamCount && otherParamCount != callSiteParamCount) {
+            return true;
+        }
+        if(thisParamCount != callSiteParamCount && otherParamCount == callSiteParamCount) {
+            return false;
+        }
+
+        // Otherwise, neither function matches arity exactly. We also know that at this point, they both can receive
+        // more arguments than call site, otherwise we would've already chosen the one that discards less parameters.
+        // Note that variable arity methods are preferred, as they actually match the call site arity better, since they
+        // really have arbitrary arity.
+        if(thisVarArg) {
+            if(!otherVarArg) {
+                return true; //
+            }
+        } else if(otherVarArg) {
+            return false;
+        }
+
+        // Neither is variable arity; chose the one that has less extra parameters.
+        final int fnParamDelta = thisParamCount - otherParamCount;
+        if(fnParamDelta < 0) {
+            return true;
+        }
+        if(fnParamDelta > 0) {
+            return false;
+        }
+
+        final int callSiteRetWeight = Type.typeFor(callSiteMethodType.returnType()).getWeight();
+        // Delta is negative for narrower return type, positive for wider return type
+        final int thisRetWeightDelta = Type.typeFor(thisMethodType.returnType()).getWeight() - callSiteRetWeight;
+        final int otherRetWeightDelta = Type.typeFor(otherMethodType.returnType()).getWeight() - callSiteRetWeight;
+
+        // Prefer function that returns a less wide return type
+        final int widenRetDelta = Math.max(thisRetWeightDelta, 0) - Math.max(otherRetWeightDelta, 0);
+        if(widenRetDelta < 0) {
+            return true;
+        }
+        if(widenRetDelta > 0) {
+            return false;
+        }
+
+        // Prefer function that returns a less narrow return type
+        final int narrowRetDelta = Math.max(-thisRetWeightDelta, 0) - Math.max(-otherRetWeightDelta, 0);
+        if(narrowRetDelta < 0) {
+            return true;
+        }
+        if(narrowRetDelta > 0) {
+            return false;
+        }
+
+        throw new AssertionError(thisMethodType + " identically applicable to " + otherMethodType + " for " + callSiteMethodType); // Signatures are identical
     }
 
+    private static Type[] toTypeWithoutCallee(final MethodType type, final int thisIndex) {
+        final int paramCount = type.parameterCount();
+        final Type[] t = new Type[paramCount - thisIndex];
+        for(int i = thisIndex; i < paramCount; ++i) {
+            t[i - thisIndex] = Type.typeFor(type.parameterType(i));
+        }
+        return t;
+    }
 
+    private static Type getParamType(final int i, final Type[] paramTypes, final boolean isVarArg) {
+        final int fixParamCount = paramTypes.length - (isVarArg ? 1 : 0);
+        if(i < fixParamCount) {
+            return paramTypes[i];
+        }
+        assert isVarArg;
+        return ((ArrayType)paramTypes[paramTypes.length - 1]).getElementType();
+    }
 
+    boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
+        final MethodType type  = type();
+        final int fnParamCount = getParamCount(type);
+        final boolean isVarArg = fnParamCount == Integer.MAX_VALUE;
+        if (isVarArg) {
+            return pickVarArg;
+        }
+
+        final int csParamCount = getParamCount(callSiteType);
+        final boolean csIsVarArg = csParamCount == Integer.MAX_VALUE;
+        final int thisThisIndex = needsCallee() ? 1 : 0; // Index of "this" parameter in this function's type
+
+        final int fnParamCountNoCallee = fnParamCount - thisThisIndex;
+        final int minParams = Math.min(csParamCount - 1, fnParamCountNoCallee); // callSiteType always has callee, so subtract 1
+        // We must match all incoming parameters, except "this". Starting from 1 to skip "this".
+        for(int i = 1; i < minParams; ++i) {
+            final Type fnType = Type.typeFor(type.parameterType(i + thisThisIndex));
+            final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(callSiteType.parameterType(i + 1));
+            if(!fnType.isEquivalentTo(csType)) {
+                return false;
+            }
+        }
+
+        // Must match any undefined parameters to Object type.
+        for(int i = minParams; i < fnParamCountNoCallee; ++i) {
+            if(!Type.typeFor(type.parameterType(i + thisThisIndex)).isEquivalentTo(Type.OBJECT)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    private static int getParamCount(final MethodType type) {
+        final int paramCount = type.parameterCount();
+        return type.parameterType(paramCount - 1).isArray() ? Integer.MAX_VALUE : paramCount;
+    }
+
+    /**
+     * Returns the switch point embodying the optimistic assumptions in this compiled function. It should be used to
+     * guard any linking to the function's invoker or constructor.
+     * @return the switch point embodying the optimistic assumptions in this compiled function. Null is returned if the
+     * function has no optimistic assumptions.
+     */
+    SwitchPoint getOptimisticAssumptionsSwitchPoint() {
+        return canBeDeoptimized() ? optimismInfo.optimisticAssumptions : null;
+    }
+
+    boolean canBeDeoptimized() {
+        return optimismInfo != null;
+    }
+
+    private MethodHandle createComposableInvoker(final boolean isConstructor) {
+        final MethodHandle handle = getInvokerOrConstructor(isConstructor);
+
+        // If compiled function is not optimistic, it can't ever change its invoker/constructor, so just return them
+        // directly.
+        if(!canBeDeoptimized()) {
+            return handle;
+        }
+
+        // Otherwise, we need a new level of indirection; need to introduce a mutable call site that can relink itslef
+        // to the compiled function's changed target whenever the optimistic assumptions are invalidated.
+        final CallSite cs = new MutableCallSite(handle.type());
+        relinkComposableInvoker(cs, this, isConstructor);
+        return cs.dynamicInvoker();
+    }
+    private static void relinkComposableInvoker(final CallSite cs, final CompiledFunction inv, final boolean constructor) {
+        final MethodHandle handle = inv.getInvokerOrConstructor(constructor);
+        final SwitchPoint assumptions = inv.getOptimisticAssumptionsSwitchPoint();
+        final MethodHandle target;
+        if(assumptions == null) {
+            target = handle;
+        } else {
+            // This assertion can obviously fail in a multithreaded environment, as we can be in a situation where
+            // one thread is in the middle of a deoptimizing compilation when we hit this and thus, it has invalidated
+            // the old switch point, but hasn't created the new one yet. Note that the behavior of invalidating the old
+            // switch point before recompilation, and only creating the new one after recompilation is by design.
+            // TODO: We need to think about thread safety of CompiledFunction objects.
+            assert !assumptions.hasBeenInvalidated();
+            final MethodHandle relink = MethodHandles.insertArguments(RELINK_COMPOSABLE_INVOKER, 0, cs, inv, constructor);
+            target = assumptions.guardWithTest(handle, MethodHandles.foldArguments(cs.dynamicInvoker(), relink));
+        }
+        cs.setTarget(target.asType(cs.type()));
+    }
+
+    private MethodHandle getInvokerOrConstructor(final boolean selectCtor) {
+        return selectCtor ? getConstructor() : createInvokerForPessimisticCaller();
+    }
+
+    MethodHandle createInvoker(final Class<?> callSiteReturnType, final int callerProgramPoint) {
+        final boolean isOptimistic = canBeDeoptimized();
+        MethodHandle handleRewriteException = isOptimistic ? createRewriteExceptionHandler() : null;
+
+        MethodHandle inv = invoker;
+        if(isValid(callerProgramPoint)) {
+            inv = OptimisticReturnFilters.filterOptimisticReturnValue(inv, callSiteReturnType, callerProgramPoint);
+            inv = changeReturnType(inv, callSiteReturnType);
+            if(callSiteReturnType.isPrimitive() && handleRewriteException != null) {
+                // because handleRewriteException always returns Object
+                handleRewriteException = OptimisticReturnFilters.filterOptimisticReturnValue(handleRewriteException,
+                        callSiteReturnType, callerProgramPoint);
+            }
+        } else if(isOptimistic) {
+            // Required so that rewrite exception has the same return type. It'd be okay to do it even if we weren't
+            // optimistic, but it isn't necessary as the linker upstream will eventually convert the return type.
+            inv = changeReturnType(inv, callSiteReturnType);
+        }
+
+        if(isOptimistic) {
+            assert handleRewriteException != null;
+            final MethodHandle typedHandleRewriteException = changeReturnType(handleRewriteException, inv.type().returnType());
+            return MH.catchException(inv, RewriteException.class, typedHandleRewriteException);
+        }
+        return inv;
+    }
+
+    private MethodHandle createRewriteExceptionHandler() {
+        return MH.foldArguments(RESTOF_INVOKER, MH.insertArguments(HANDLE_REWRITE_EXCEPTION, 0, this, optimismInfo));
+    }
+
+    private static MethodHandle changeReturnType(final MethodHandle mh, final Class<?> newReturnType) {
+        return Bootstrap.getLinkerServices().asType(mh, mh.type().changeReturnType(newReturnType));
+    }
+
+    @SuppressWarnings("unused")
+    private static MethodHandle handleRewriteException(final CompiledFunction function, final OptimismInfo oldOptimismInfo, final RewriteException re) {
+        return function.handleRewriteException(oldOptimismInfo, re);
+    }
+
+    /**
+     * Debug function for printing out all invalidated program points and their
+     * invalidation mapping to next type
+     * @param ipp
+     * @return string describing the ipp map
+     */
+    private static String toStringInvalidations(final Map<Integer, Type> ipp) {
+        if (ipp == null) {
+            return "";
+        }
+
+        final StringBuilder sb = new StringBuilder();
+
+        for (final Iterator<Map.Entry<Integer, Type>> iter = ipp.entrySet().iterator(); iter.hasNext(); ) {
+            final Map.Entry<Integer, Type> entry = iter.next();
+            final char bct = entry.getValue().getBytecodeStackType();
+
+            sb.append('[').
+                    append(entry.getKey()).
+                    append("->").
+                    append(bct == 'A' ? 'O' : bct).
+                    append(']');
+
+            if (iter.hasNext()) {
+                sb.append(' ');
+            }
+        }
+
+        return sb.toString();
+    }
+
+    private void logRecompile(final String reason, final FunctionNode fn, final MethodType callSiteType, final Map<Integer, Type> ipp) {
+        if (log.isEnabled()) {
+            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", callSiteType, " ", toStringInvalidations(ipp));
+        }
+    }
+
+    /**
+     * Handles a {@link RewriteException} raised during the execution of this function by recompiling (if needed) the
+     * function with an optimistic assumption invalidated at the program point indicated by the exception, and then
+     * executing a rest-of method to complete the execution with the deoptimized version.
+     * @param oldOptimismInfo the optimism info of this function. We must store it explicitly as a bound argument in the
+     * method handle, otherwise it would be null for handling a rewrite exception in an outer invocation of a recursive
+     * function when inner invocations of the function have completely deoptimized it.
+     * @param re the rewrite exception that was raised
+     * @return the method handle for the rest-of method, for folding composition.
+     */
+    private MethodHandle handleRewriteException(final OptimismInfo oldOptimismInfo, final RewriteException re) {
+        if (log.isEnabled()) {
+            log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "RewriteException ", re.getMessageShort());
+        }
+
+        final MethodType type = type();
+
+        // Compiler needs a call site type as its input, which always has a callee parameter, so we must add it if
+        // this function doesn't have a callee parameter.
+        final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ?
+                type :
+                type.insertParameterTypes(0, ScriptFunction.class);
+        final boolean shouldRecompile = oldOptimismInfo.requestRecompile(re);
+        final boolean  canBeDeoptimized;
+
+        FunctionNode fn = oldOptimismInfo.reparse();
+        final Compiler compiler = oldOptimismInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
+
+        if (!shouldRecompile) {
+            // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
+            // recompiled a deoptimized version for an inner invocation.
+            // We still need to do the rest of from the beginning
+            canBeDeoptimized = canBeDeoptimized();
+            assert !canBeDeoptimized || optimismInfo == oldOptimismInfo;
+            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+            return restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_ALL_RESTOF), canBeDeoptimized);
+        }
+
+        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        fn = compiler.compile(fn, CompilationPhases.COMPILE_UPTO_BYTECODE);
+        log.info("Reusable IR generated");
+
+        assert optimismInfo == oldOptimismInfo;
+
+        // compile the rest of the function, and install it
+        log.info("Generating and installing bytecode from reusable IR...");
+        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE);
+
+        FunctionNode fn2 = oldOptimismInfo.reparse();
+        fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
+        log.info("Done.");
+
+        canBeDeoptimized = normalFn.canBeDeoptimized();
+
+        if (log.isEnabled()) {
+            log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ") ", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
+        }
+
+        log.info("Looking up invoker...");
+
+        final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
+        invoker     = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
+        constructor = null; // Will be regenerated when needed
+
+        log.info("Done: ", invoker);
+        final MethodHandle restOf = restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE_RESTOF), canBeDeoptimized);
+
+        // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
+        if (canBeDeoptimized) {
+            oldOptimismInfo.newOptimisticAssumptions(); // Otherwise, set a new switch point.
+        } else {
+            optimismInfo = null; // If we got to a point where we no longer have optimistic assumptions, let the optimism info go.
+        }
+
+        return restOf;
+    }
+
+    private MethodHandle restOfHandle(final OptimismInfo info, final FunctionNode restOfFunction, final boolean canBeDeoptimized) {
+        assert info != null;
+        assert restOfFunction.getCompileUnit().getUnitClassName().indexOf("restOf") != -1;
+        final MethodHandle restOf =
+                changeReturnType(
+                        info.data.lookupWithExplicitType(
+                                restOfFunction,
+                                MH.type(restOfFunction.getReturnType().getTypeClass(),
+                                        RewriteException.class)),
+                        Object.class);
+
+        if (!canBeDeoptimized) {
+            return restOf;
+        }
+
+        // If rest-of is itself optimistic, we must make sure that we can repeat a deoptimization if it, too hits an exception.
+        return MH.catchException(restOf, RewriteException.class, createRewriteExceptionHandler());
+
+    }
+
+    private static class OptimismInfo {
+        // TODO: this is pointing to its owning ScriptFunctionData. Re-evaluate if that's okay.
+        private final RecompilableScriptFunctionData data;
+        private final Map<Integer, Type> invalidatedProgramPoints = new TreeMap<>();
+        private SwitchPoint optimisticAssumptions;
+        private final DebugLogger log;
+
+        OptimismInfo(final RecompilableScriptFunctionData data) {
+            this.data = data;
+            this.log  = data.getLogger();
+            newOptimisticAssumptions();
+        }
+
+        private void newOptimisticAssumptions() {
+            optimisticAssumptions = new SwitchPoint();
+        }
+
+        boolean requestRecompile(final RewriteException e) {
+            final Type retType            = e.getReturnType();
+            final Type previousFailedType = invalidatedProgramPoints.put(e.getProgramPoint(), retType);
+
+            if (previousFailedType != null && !previousFailedType.narrowerThan(retType)) {
+                final StackTraceElement[] stack      = e.getStackTrace();
+                final String              functionId = stack.length == 0 ?
+                        data.getName() :
+                        stack[0].getClassName() + "." + stack[0].getMethodName();
+
+                log.info("RewriteException for an already invalidated program point ", e.getProgramPoint(), " in ", functionId, ". This is okay for a recursive function invocation, but a bug otherwise.");
+
+                return false;
+            }
+
+            SwitchPoint.invalidateAll(new SwitchPoint[] { optimisticAssumptions });
+
+            return true;
+        }
+
+        Compiler getCompiler(final FunctionNode fn, final MethodType actualCallSiteType, final RewriteException e) {
+            return data.getCompiler(fn, actualCallSiteType, e.getRuntimeScope(), invalidatedProgramPoints, getEntryPoints(e));
+        }
+
+        private static int[] getEntryPoints(final RewriteException e) {
+            final int[] prevEntryPoints = e.getPreviousContinuationEntryPoints();
+            final int[] entryPoints;
+            if (prevEntryPoints == null) {
+                entryPoints = new int[1];
+            } else {
+                final int l = prevEntryPoints.length;
+                entryPoints = new int[l + 1];
+                System.arraycopy(prevEntryPoints, 0, entryPoints, 1, l);
+            }
+            entryPoints[0] = e.getProgramPoint();
+            return entryPoints;
+        }
+
+        FunctionNode reparse() {
+            return data.reparse();
+        }
+    }
+
+    @SuppressWarnings("unused")
+    private static Object newFilter(final Object result, final Object allocation) {
+        return (result instanceof ScriptObject || !JSType.isPrimitive(result))? result : allocation;
+    }
+
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), CompiledFunction.class, name, MH.type(rtype, types));
+    }
 }
