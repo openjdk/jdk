@@ -1730,7 +1730,7 @@ Node *PhaseChaitin::find_base_for_derived( Node **derived_base_map, Node *derive
 
   // Now we see we need a base-Phi here to merge the bases
   const Type *t = base->bottom_type();
-  base = new (C) PhiNode( derived->in(0), t );
+  base = new PhiNode( derived->in(0), t );
   for( i = 1; i < derived->req(); i++ ) {
     base->init_req(i, find_base_for_derived(derived_base_map, derived->in(i), maxlrg));
     t = t->meet(base->in(i)->bottom_type());
@@ -1800,7 +1800,7 @@ bool PhaseChaitin::stretch_base_pointer_live_ranges(ResourceArea *a) {
           Block *phi_block = _cfg.get_block_for_node(phi);
           if (_cfg.get_block_for_node(phi_block->pred(2)) == block) {
             const RegMask *mask = C->matcher()->idealreg2spillmask[Op_RegI];
-            Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::LoopPhiInput, phi, *mask, *mask);
+            Node *spill = new MachSpillCopyNode(MachSpillCopyNode::LoopPhiInput, phi, *mask, *mask);
             insert_proj( phi_block, 1, spill, maxlrg++ );
             n->set_req(1,spill);
             must_recompute_live = true;

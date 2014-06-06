@@ -56,7 +56,7 @@ Node *PhaseIdealLoop::split_thru_phi( Node *n, Node *region, int policy ) {
     int iid    = t_oop->instance_id();
     int index  = C->get_alias_index(t_oop);
     int offset = t_oop->offset();
-    phi = new (C) PhiNode(region, type, NULL, iid, index, offset);
+    phi = new PhiNode(region, type, NULL, iid, index, offset);
   } else {
     phi = PhiNode::make_blank(region, n);
   }
@@ -363,9 +363,9 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
         _igvn.type( add->in(1) ) != TypeInt::ZERO ) {
       Node *zero = _igvn.intcon(0);
       set_ctrl(zero, C->root());
-      Node *neg = new (C) SubINode( _igvn.intcon(0), add->in(2) );
+      Node *neg = new SubINode( _igvn.intcon(0), add->in(2) );
       register_new_node( neg, get_ctrl(add->in(2) ) );
-      add = new (C) AddINode( add->in(1), neg );
+      add = new AddINode( add->in(1), neg );
       register_new_node( add, add_ctrl );
     }
     if( add->Opcode() != Op_AddI ) return NULL;
@@ -391,14 +391,14 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
       return NULL;              // No invariant part of the add?
 
     // Yes!  Reshape address expression!
-    Node *inv_scale = new (C) LShiftINode( add_invar, scale );
+    Node *inv_scale = new LShiftINode( add_invar, scale );
     Node *inv_scale_ctrl =
       dom_depth(add_invar_ctrl) > dom_depth(scale_ctrl) ?
       add_invar_ctrl : scale_ctrl;
     register_new_node( inv_scale, inv_scale_ctrl );
-    Node *var_scale = new (C) LShiftINode( add_var, scale );
+    Node *var_scale = new LShiftINode( add_var, scale );
     register_new_node( var_scale, n_ctrl );
-    Node *var_add = new (C) AddINode( var_scale, inv_scale );
+    Node *var_add = new AddINode( var_scale, inv_scale );
     register_new_node( var_add, n_ctrl );
     _igvn.replace_node( n, var_add );
     return var_add;
@@ -430,10 +430,10 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
         IdealLoopTree *n23_loop = get_loop( n23_ctrl );
         if( n22loop != n_loop && n22loop->is_member(n_loop) &&
             n23_loop == n_loop ) {
-          Node *add1 = new (C) AddPNode( n->in(1), n->in(2)->in(2), n->in(3) );
+          Node *add1 = new AddPNode( n->in(1), n->in(2)->in(2), n->in(3) );
           // Stuff new AddP in the loop preheader
           register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
-          Node *add2 = new (C) AddPNode( n->in(1), add1, n->in(2)->in(3) );
+          Node *add2 = new AddPNode( n->in(1), add1, n->in(2)->in(3) );
           register_new_node( add2, n_ctrl );
           _igvn.replace_node( n, add2 );
           return add2;
@@ -451,10 +451,10 @@ Node *PhaseIdealLoop::remix_address_expressions( Node *n ) {
           Node *tmp = V; V = I; I = tmp;
         }
         if( !is_member(n_loop,get_ctrl(I)) ) {
-          Node *add1 = new (C) AddPNode( n->in(1), n->in(2), I );
+          Node *add1 = new AddPNode( n->in(1), n->in(2), I );
           // Stuff new AddP in the loop preheader
           register_new_node( add1, n_loop->_head->in(LoopNode::EntryControl) );
-          Node *add2 = new (C) AddPNode( n->in(1), add1, V );
+          Node *add2 = new AddPNode( n->in(1), add1, V );
           register_new_node( add2, n_ctrl );
           _igvn.replace_node( n, add2 );
           return add2;
@@ -1104,8 +1104,8 @@ BoolNode *PhaseIdealLoop::clone_iff( PhiNode *phi, IdealLoopTree *loop ) {
   Node *sample_cmp  = sample_bool->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  PhiNode *phi1 = new (C) PhiNode( phi->in(0), Type::TOP );
-  PhiNode *phi2 = new (C) PhiNode( phi->in(0), Type::TOP );
+  PhiNode *phi1 = new PhiNode( phi->in(0), Type::TOP );
+  PhiNode *phi2 = new PhiNode( phi->in(0), Type::TOP );
   for( i = 1; i < phi->req(); i++ ) {
     Node *n1 = phi->in(i)->in(1)->in(1);
     Node *n2 = phi->in(i)->in(1)->in(2);
@@ -1172,8 +1172,8 @@ CmpNode *PhaseIdealLoop::clone_bool( PhiNode *phi, IdealLoopTree *loop ) {
   Node *sample_cmp = phi->in(1);
 
   // Make Phis to merge the Cmp's inputs.
-  PhiNode *phi1 = new (C) PhiNode( phi->in(0), Type::TOP );
-  PhiNode *phi2 = new (C) PhiNode( phi->in(0), Type::TOP );
+  PhiNode *phi1 = new PhiNode( phi->in(0), Type::TOP );
+  PhiNode *phi2 = new PhiNode( phi->in(0), Type::TOP );
   for( uint j = 1; j < phi->req(); j++ ) {
     Node *cmp_top = phi->in(j); // Inputs are all Cmp or TOP
     Node *n1, *n2;
@@ -1337,7 +1337,7 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
 
         // We need a Region to merge the exit from the peeled body and the
         // exit from the old loop body.
-        RegionNode *r = new (C) RegionNode(3);
+        RegionNode *r = new RegionNode(3);
         // Map the old use to the new merge point
         old_new.map( use->_idx, r );
         uint dd_r = MIN2(dom_depth(newuse),dom_depth(use));
@@ -1684,13 +1684,13 @@ ProjNode* PhaseIdealLoop::insert_if_before_proj(Node* left, bool Signed, BoolTes
   ProjNode* proj2 = proj_clone(proj, iff);
   register_node(proj2, loop, iff, ddepth);
 
-  Node* cmp = Signed ? (Node*) new (C)CmpINode(left, right) : (Node*) new (C)CmpUNode(left, right);
+  Node* cmp = Signed ? (Node*) new CmpINode(left, right) : (Node*) new CmpUNode(left, right);
   register_node(cmp, loop, proj2, ddepth);
 
-  BoolNode* bol = new (C)BoolNode(cmp, relop);
+  BoolNode* bol = new BoolNode(cmp, relop);
   register_node(bol, loop, proj2, ddepth);
 
-  IfNode* new_if = new (C)IfNode(proj2, bol, iff->_prob, iff->_fcnt);
+  IfNode* new_if = new IfNode(proj2, bol, iff->_prob, iff->_fcnt);
   register_node(new_if, loop, proj2, ddepth);
 
   proj->set_req(0, new_if); // reattach
@@ -1742,11 +1742,11 @@ RegionNode* PhaseIdealLoop::insert_region_before_proj(ProjNode* proj) {
   ProjNode* proj2 = proj_clone(proj, iff);
   register_node(proj2, loop, iff, ddepth);
 
-  RegionNode* reg = new (C)RegionNode(2);
+  RegionNode* reg = new RegionNode(2);
   reg->set_req(1, proj2);
   register_node(reg, loop, iff, ddepth);
 
-  IfNode* dum_if = new (C)IfNode(reg, short_circuit_if(NULL, proj), iff->_prob, iff->_fcnt);
+  IfNode* dum_if = new IfNode(reg, short_circuit_if(NULL, proj), iff->_prob, iff->_fcnt);
   register_node(dum_if, loop, reg, ddepth);
 
   proj->set_req(0, dum_if); // reattach
@@ -2569,7 +2569,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
 
   // Create new loop head for new phis and to hang
   // the nodes being moved (sinked) from the peel region.
-  LoopNode* new_head = new (C) LoopNode(last_peel, last_peel);
+  LoopNode* new_head = new LoopNode(last_peel, last_peel);
   new_head->set_unswitch_count(head->unswitch_count()); // Preserve
   _igvn.register_new_node_with_optimizer(new_head);
   assert(first_not_peeled->in(0) == last_peel, "last_peel <- first_not_peeled");
@@ -2769,11 +2769,11 @@ void PhaseIdealLoop::reorg_offsets(IdealLoopTree *loop) {
       if (dom_lca(exit, u_ctrl) != exit) continue;
       // Hit!  Refactor use to use the post-incremented tripcounter.
       // Compute a post-increment tripcounter.
-      Node *opaq = new (C) Opaque2Node( C, cle->incr() );
+      Node *opaq = new Opaque2Node( C, cle->incr() );
       register_new_node( opaq, u_ctrl );
       Node *neg_stride = _igvn.intcon(-cle->stride_con());
       set_ctrl(neg_stride, C->root());
-      Node *post = new (C) AddINode( opaq, neg_stride);
+      Node *post = new AddINode( opaq, neg_stride);
       register_new_node( post, u_ctrl );
       _igvn.rehash_node_delayed(use);
       for (uint j = 1; j < use->req(); j++) {
