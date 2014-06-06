@@ -28,6 +28,12 @@ import com.oracle.java.testlibrary.cli.*;
  * Test on bit manipulation related command line options,
  * that should be executed on CPU that does not support
  * required features.
+ *
+ * Note that this test intended to verify that VM could be launched with
+ * specific options and that values of these options processed correctly.
+ * In order to do that test launch a new VM with tested options, the same
+ * flavor-specific flag as one that was used for parent VM (-client, -server,
+ * -minimal, -graal) and '-version'.
  */
 public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
 
@@ -64,28 +70,38 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
      */
     public void unsupportedX86CPUTestCases() throws Throwable {
 
-        // verify that VM will succesfully start up, but output will
-        // contain a warning
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:+" + optionName,
-                             new String[] { warningMessage },
-                             new String[] { errorMessage },
-                             ExitCode.OK);
+        /*
+          Verify that VM will successfully start up, but output will contain a
+          warning. VM will be launched with following options:
+          -XX:+<tested option> -version
+        */
+        CommandLineOptionTest.verifySameJVMStartup(
+                new String[] { warningMessage }, new String[] { errorMessage },
+                ExitCode.OK, CommandLineOptionTest.prepareBooleanFlag(
+                        optionName, true));
 
-        // verify that VM will succesfully startup without any warnings
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:-" + optionName,
-                             null,
-                             new String[] { warningMessage, errorMessage },
-                             ExitCode.OK);
+        /*
+          Verify that VM will successfully startup without any warnings.
+          VM will be launched with following options:
+          -XX:-<tested option> -version
+        */
+        CommandLineOptionTest.verifySameJVMStartup(null,
+                new String[] { warningMessage, errorMessage }, ExitCode.OK,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, false));
 
-        // verify that on unsupported CPUs option is off by default
-        CommandLineOptionTest.verifyOptionValue(optionName, "false");
+        /*
+          Verify that on unsupported CPUs option is off by default.
+          VM will be launched with following options: -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false");
 
-        // verify that on unsupported CPUs option will be off even if
-        // it was explicitly turned on by uset
-        CommandLineOptionTest.verifyOptionValue(optionName, "false",
-                                                     "-XX:+" + optionName);
+        /*
+          Verify that on unsupported CPUs option will be off even if
+          it was explicitly turned on by user. VM will be launched with
+          following options: -XX:+<tested option> -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
     }
 
@@ -97,18 +113,17 @@ public class BMIUnsupportedCPUTest extends BMICommandLineOptionTestBase {
      */
     public void unsupportedNonX86CPUTestCases() throws Throwable {
 
-        // verify that VM known nothing about tested option
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:+" + optionName,
-                             new String[] { errorMessage },
-                             null,
-                             ExitCode.FAIL);
+        /*
+          Verify that VM known nothing about tested option. VM will be launched
+          with following options: -XX:[+-]<tested option> -version
+        */
+        CommandLineOptionTest.verifySameJVMStartup(
+                new String[] { errorMessage }, null, ExitCode.FAIL,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true));
 
-        CommandLineOptionTest.
-            verifyJVMStartup("-XX:-" + optionName,
-                             new String[] { errorMessage },
-                             null,
-                             ExitCode.FAIL);
+        CommandLineOptionTest.verifySameJVMStartup(
+                new String[] { errorMessage }, null, ExitCode.FAIL,
+                CommandLineOptionTest.prepareBooleanFlag(optionName, false));
     }
 }
 
