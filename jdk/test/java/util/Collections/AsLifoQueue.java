@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,8 +56,7 @@ public class AsLifoQueue {
             equal(q.size(), 3);
             check(! q.offer("d"));
             equal(q.size(), 3);
-            THROWS(IllegalStateException.class,
-                   new Fun(){void f(){ q.add("d"); }});
+            THROWS(IllegalStateException.class, () -> q.add("d"));
             equal(q.size(), 3);
             equal(q.toString(), "[c, b, a]");
             equal(q.peek(), "c");
@@ -66,8 +65,7 @@ public class AsLifoQueue {
             equal(q.poll(), "b");
             equal(q.peek(), "a");
             equal(q.remove(), "a");
-            THROWS(NoSuchElementException.class,
-                   new Fun(){void f(){ q.remove(); }});
+            THROWS(NoSuchElementException.class, () -> q.remove());
             equal(q.poll(), null);
             check(q.isEmpty());
             equal(q.size(), 0);
@@ -88,7 +86,7 @@ public class AsLifoQueue {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    static abstract class Fun { abstract void f() throws Throwable; }
+    interface Fun {void f() throws Throwable;}
     private static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

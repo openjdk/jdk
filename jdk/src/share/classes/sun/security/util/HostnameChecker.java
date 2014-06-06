@@ -300,8 +300,8 @@ public class HostnameChecker {
         template = template.toLowerCase(Locale.ENGLISH);
 
         // Retreive leftmost component
-        int templateIdx = template.indexOf(".");
-        int nameIdx = name.indexOf(".");
+        int templateIdx = template.indexOf('.');
+        int nameIdx = name.indexOf('.');
 
         if (templateIdx == -1)
             templateIdx = template.length();
@@ -326,7 +326,7 @@ public class HostnameChecker {
      */
     private static boolean matchWildCards(String name, String template) {
 
-        int wildcardIdx = template.indexOf("*");
+        int wildcardIdx = template.indexOf('*');
         if (wildcardIdx == -1)
             return name.equals(template);
 
@@ -349,7 +349,7 @@ public class HostnameChecker {
 
             // update the match scope
             name = name.substring(beforeStartIdx + beforeWildcard.length());
-            wildcardIdx = afterWildcard.indexOf("*");
+            wildcardIdx = afterWildcard.indexOf('*');
         }
         return name.endsWith(afterWildcard);
     }

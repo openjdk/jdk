@@ -1251,7 +1251,7 @@ ifndef BUILD_HEADLESS_ONLY
   LIBSPLASHSCREEN_LDFLAGS_SUFFIX :=
 
   ifneq ($(USE_EXTERNAL_LIBZ), true)
-    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.5
+    LIBSPLASHSCREEN_DIRS += $(JDK_TOPDIR)/src/share/native/java/util/zip/zlib-1.2.8
     LIBSPLASHSCREEN_CFLAGS += $(ZLIB_CPPFLAGS)
   endif
 

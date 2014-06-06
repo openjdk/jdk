@@ -98,7 +98,7 @@ public class SignatureFileVerifier {
         } finally {
             Providers.stopJarVerification(obj);
         }
-        this.name = name.substring(0, name.lastIndexOf("."))
+        this.name = name.substring(0, name.lastIndexOf('.'))
                                                    .toUpperCase(Locale.ENGLISH);
         this.md = md;
         this.signerCache = signerCache;
