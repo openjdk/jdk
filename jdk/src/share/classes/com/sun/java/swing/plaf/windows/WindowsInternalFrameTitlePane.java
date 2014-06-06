@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,14 +86,15 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
             }
         } else {
             buttonWidth += 2;
-            selectedTitleGradientColor =
-                    UIManager.getColor("InternalFrame.activeTitleGradient");
-            notSelectedTitleGradientColor =
-                    UIManager.getColor("InternalFrame.inactiveTitleGradient");
             Color activeBorderColor =
                     UIManager.getColor("InternalFrame.activeBorderColor");
             setBorder(BorderFactory.createLineBorder(activeBorderColor, 1));
         }
+        // JDK-8039383: initialize these colors because getXP() may return null when theme is changed
+        selectedTitleGradientColor =
+                UIManager.getColor("InternalFrame.activeTitleGradient");
+        notSelectedTitleGradientColor =
+                UIManager.getColor("InternalFrame.inactiveTitleGradient");
     }
 
     protected void uninstallListeners() {
@@ -388,7 +389,7 @@ public class WindowsInternalFrameTitlePane extends BasicInternalFrameTitlePane {
     public class WindowsTitlePaneLayout extends BasicInternalFrameTitlePane.TitlePaneLayout {
         private Insets captionMargin = null;
         private Insets contentMargin = null;
-        private XPStyle xp = XPStyle.getXP();
+        private final XPStyle xp = XPStyle.getXP();
 
         WindowsTitlePaneLayout() {
             if (xp != null) {

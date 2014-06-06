@@ -61,6 +61,8 @@ public final class ThemeReader {
     private static final Lock readLock = readWriteLock.readLock();
     private static final Lock writeLock = readWriteLock.writeLock();
 
+    static volatile boolean xpStyleEnabled;
+
     static void flush() {
         writeLock.lock();
         try {
@@ -75,6 +77,10 @@ public final class ThemeReader {
     }
 
     public static native boolean isThemed();
+
+    public static boolean isXPStyleEnabled() {
+        return xpStyleEnabled;
+    }
 
     // this should be called only with writeLock held
     private static Long getThemeImpl(String widget) {

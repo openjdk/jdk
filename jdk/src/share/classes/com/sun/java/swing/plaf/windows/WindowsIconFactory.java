@@ -623,8 +623,8 @@ public class WindowsIconFactory implements Serializable
     @SuppressWarnings("serial") // Same-version serialization only
     private static class MenuArrowIcon implements Icon, UIResource, Serializable {
         public void paintIcon(Component c, Graphics g, int x, int y) {
-            if (WindowsMenuItemUI.isVistaPainting()) {
-                XPStyle xp = XPStyle.getXP();
+            XPStyle xp = XPStyle.getXP();
+            if (xp != null && WindowsMenuItemUI.isVistaPainting()) {
                 State state = State.NORMAL;
                 if (c instanceof JMenuItem) {
                     state = ((JMenuItem) c).getModel().isEnabled()
@@ -657,16 +657,18 @@ public class WindowsIconFactory implements Serializable
             }
         }
         public int getIconWidth() {
-            if (WindowsMenuItemUI.isVistaPainting()) {
-                Skin skin = XPStyle.getXP().getSkin(null, Part.MP_POPUPSUBMENU);
+            XPStyle xp = XPStyle.getXP();
+            if (xp != null && WindowsMenuItemUI.isVistaPainting()) {
+                Skin skin = xp.getSkin(null, Part.MP_POPUPSUBMENU);
                 return skin.getWidth();
             } else {
                 return 4;
             }
         }
         public int getIconHeight() {
-            if (WindowsMenuItemUI.isVistaPainting()) {
-                Skin skin = XPStyle.getXP().getSkin(null, Part.MP_POPUPSUBMENU);
+            XPStyle xp = XPStyle.getXP();
+            if (xp != null && WindowsMenuItemUI.isVistaPainting()) {
+                Skin skin = xp.getSkin(null, Part.MP_POPUPSUBMENU);
                 return skin.getHeight();
             } else {
                 return 8;
@@ -692,7 +694,8 @@ public class WindowsIconFactory implements Serializable
         }
 
         static int getIconWidth() {
-            return XPStyle.getXP().getSkin(null, Part.MP_POPUPCHECK).getWidth()
+            XPStyle xp = XPStyle.getXP();
+            return ((xp != null) ? xp.getSkin(null, Part.MP_POPUPCHECK).getWidth() : 16)
                 + 2 * OFFSET;
         }
 
@@ -756,12 +759,17 @@ public class WindowsIconFactory implements Serializable
                 Icon icon = getIcon();
                 int height = 0;
                 if (icon != null) {
-                    height = icon.getIconHeight() + 2 * OFFSET;
+                    height = icon.getIconHeight();
                 } else {
-                    Skin skin =
-                        XPStyle.getXP().getSkin(null, Part.MP_POPUPCHECK);
-                    height = skin.getHeight() + 2 * OFFSET;
+                    XPStyle xp = XPStyle.getXP();
+                    if (xp != null) {
+                        Skin skin = xp.getSkin(null, Part.MP_POPUPCHECK);
+                        height = skin.getHeight();
+                    } else {
+                        height = 16;
+                    }
                 }
+                height +=  2 * OFFSET;
                 return height;
             }
 
@@ -809,14 +817,16 @@ public class WindowsIconFactory implements Serializable
                                   ? State.BULLETDISABLED
                                   : State.CHECKMARKDISABLED;
                         }
-                        Skin skin;
                         XPStyle xp = XPStyle.getXP();
-                        skin =  xp.getSkin(c, backgroundPart);
-                        skin.paintSkin(g, x, y,
-                            getIconWidth(), getIconHeight(), backgroundState);
-                        if (icon == null) {
-                            skin = xp.getSkin(c, part);
-                            skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                        if (xp != null) {
+                            Skin skin;
+                            skin =  xp.getSkin(c, backgroundPart);
+                            skin.paintSkin(g, x, y,
+                                getIconWidth(), getIconHeight(), backgroundState);
+                            if (icon == null) {
+                                skin = xp.getSkin(c, part);
+                                skin.paintSkin(g, x + OFFSET, y + OFFSET, state);
+                            }
                         }
                     }
                 }

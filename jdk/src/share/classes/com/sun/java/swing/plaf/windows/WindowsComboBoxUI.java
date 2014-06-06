@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@ import java.awt.*;
 import static com.sun.java.swing.plaf.windows.TMSchema.Part;
 import static com.sun.java.swing.plaf.windows.TMSchema.State;
 import static com.sun.java.swing.plaf.windows.XPStyle.Skin;
+
 import sun.swing.DefaultLookup;
 import sun.swing.StringUIClientPropertyKey;
 
@@ -231,6 +232,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
     private void paintXPComboBoxBackground(Graphics g, JComponent c) {
         XPStyle xp = XPStyle.getXP();
+        if (xp == null) {
+            return;
+        }
         State state = getXPComboBoxState(c);
         Skin skin = null;
         if (! comboBox.isEditable()
@@ -400,8 +404,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @return a button which represents the popup control
      */
     protected JButton createArrowButton() {
-        if (XPStyle.getXP() != null) {
-            return new XPComboBoxButton();
+        XPStyle xp = XPStyle.getXP();
+        if (xp != null) {
+            return new XPComboBoxButton(xp);
         } else {
             return super.createArrowButton();
         }
@@ -409,9 +414,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     private class XPComboBoxButton extends XPStyle.GlyphButton {
-        public XPComboBoxButton() {
+        public XPComboBoxButton(XPStyle xp) {
             super(null,
-                  (! XPStyle.getXP().isSkinDefined(comboBox, Part.CP_DROPDOWNBUTTONRIGHT))
+                  (! xp.isSkinDefined(comboBox, Part.CP_DROPDOWNBUTTONRIGHT))
                    ? Part.CP_DROPDOWNBUTTON
                    : (comboBox.getComponentOrientation() == ComponentOrientation.RIGHT_TO_LEFT)
                      ? Part.CP_DROPDOWNBUTTONLEFT
@@ -424,10 +429,11 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
         protected State getState() {
             State rv;
             rv = super.getState();
+            XPStyle xp = XPStyle.getXP();
             if (rv != State.DISABLED
                 && comboBox != null && ! comboBox.isEditable()
-                && XPStyle.getXP().isSkinDefined(comboBox,
-                                                 Part.CP_DROPDOWNBUTTONRIGHT)) {
+                && xp != null && xp.isSkinDefined(comboBox,
+                                                  Part.CP_DROPDOWNBUTTONRIGHT)) {
                 /*
                  * for non editable ComboBoxes Vista seems to have the
                  * same glyph for all non DISABLED states
