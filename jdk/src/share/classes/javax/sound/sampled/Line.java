@@ -230,7 +230,7 @@ public interface Line extends AutoCloseable {
         /**
          * The class of the line described by the info object.
          */
-        private final Class lineClass;
+        private final Class<?> lineClass;
 
         /**
          * Constructs an info object that describes a line of the specified
