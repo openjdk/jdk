@@ -388,10 +388,11 @@ public class AudioFormat {
      * @see #getProperty(String)
      * @since 1.5
      */
+    @SuppressWarnings("unchecked") // Cast of result of clone.
     public Map<String,Object> properties() {
         Map<String,Object> ret;
         if (properties == null) {
-            ret = new HashMap<String,Object>(0);
+            ret = new HashMap<>(0);
         } else {
             ret = (Map<String,Object>) (properties.clone());
         }
