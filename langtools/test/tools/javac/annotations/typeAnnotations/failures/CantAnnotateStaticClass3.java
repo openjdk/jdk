@@ -1,9 +1,8 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 8006733 8006775
+ * @bug 8006733 8006775 8027262
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
- * @ignore
  * @compile/fail/ref=CantAnnotateStaticClass3.out -XDrawDiagnostics CantAnnotateStaticClass3.java
  */
 

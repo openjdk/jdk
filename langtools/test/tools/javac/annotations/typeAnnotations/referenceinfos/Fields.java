@@ -30,7 +30,6 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
  * @run main Driver Fields
  */
 public class Fields {
-
     // field types
     @TADescription(annotation = "TA", type = FIELD)
     public String fieldAsPrimitive() {
@@ -124,5 +123,4 @@ public class Fields {
     public String staticFieldAsParametrized() {
         return "static @TA Map<@TB String, @TC List<@TD String>> test;";
     }
-
 }
