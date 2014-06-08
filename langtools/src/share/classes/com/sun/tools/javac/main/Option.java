@@ -83,6 +83,7 @@ public enum Option {
 
     XLINT_CUSTOM("-Xlint:", EXTENDED, BASIC, ANYOF, getXLintChoices()) {
         private static final String LINT_KEY_FORMAT = "         %-19s %s";
+        @Override
         void help(Log log, OptionKind kind) {
             if (this.kind != kind)
                 return;
@@ -667,6 +668,8 @@ public enum Option {
             }
         }
         helper.put(option, arg);
+        if (group == OptionGroup.FILEMANAGER)
+            helper.handleFileManagerOption(this, arg);
         return false;
     }
 
