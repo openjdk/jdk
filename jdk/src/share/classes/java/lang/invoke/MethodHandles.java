@@ -1612,23 +1612,30 @@ return mh1;
                 checkSecurityManager(refc, method);
             assert(!method.isMethodHandleInvoke());
 
-            Class<?> refcAsSuper;
             if (refKind == REF_invokeSpecial &&
                 refc != lookupClass() &&
                 !refc.isInterface() &&
-                refc != (refcAsSuper = lookupClass().getSuperclass()) &&
+                refc != lookupClass().getSuperclass() &&
                 refc.isAssignableFrom(lookupClass())) {
                 assert(!method.getName().equals("<init>"));  // not this code path
                 // Per JVMS 6.5, desc. of invokespecial instruction:
                 // If the method is in a superclass of the LC,
                 // and if our original search was above LC.super,
-                // repeat the search (symbolic lookup) from LC.super.
+                // repeat the search (symbolic lookup) from LC.super
+                // and continue with the direct superclass of that class,
+                // and so forth, until a match is found or no further superclasses exist.
                 // FIXME: MemberName.resolve should handle this instead.
-                MemberName m2 = new MemberName(refcAsSuper,
-                                               method.getName(),
-                                               method.getMethodType(),
-                                               REF_invokeSpecial);
-                m2 = IMPL_NAMES.resolveOrNull(refKind, m2, lookupClassOrNull());
+                Class<?> refcAsSuper = lookupClass();
+                MemberName m2;
+                do {
+                    refcAsSuper = refcAsSuper.getSuperclass();
+                    m2 = new MemberName(refcAsSuper,
+                                        method.getName(),
+                                        method.getMethodType(),
+                                        REF_invokeSpecial);
+                    m2 = IMPL_NAMES.resolveOrNull(refKind, m2, lookupClassOrNull());
+                } while (m2 == null &&         // no method is found yet
+                         refc != refcAsSuper); // search up to refc
                 if (m2 == null)  throw new InternalError(method.toString());
                 method = m2;
                 refc = refcAsSuper;
