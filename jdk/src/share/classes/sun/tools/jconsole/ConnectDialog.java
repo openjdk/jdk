@@ -325,7 +325,7 @@ public class ConnectDialog extends InternalDialog
                         } else {
                             String host = remoteTF.getText().trim();
                             String port = "0";
-                            int index = host.lastIndexOf(":");
+                            int index = host.lastIndexOf(':');
                             if (index >= 0) {
                                 port = host.substring(index + 1);
                                 host = host.substring(0, index);

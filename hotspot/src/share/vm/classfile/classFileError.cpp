@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,9 @@
 
 // Keep these in a separate file to prevent inlining
 
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED
+
 void ClassFileParser::classfile_parse_error(const char* msg, TRAPS) {
     ResourceMark rm(THREAD);
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
@@ -52,6 +55,8 @@ void ClassFileParser::classfile_parse_error(const char* msg, int index, const ch
     Exceptions::fthrow(THREAD_AND_LOCATION, vmSymbols::java_lang_ClassFormatError(),
                        msg, index, name, _class_name->as_C_string());
 }
+
+PRAGMA_DIAG_POP
 
 void StackMapStream::stackmap_format_error(const char* msg, TRAPS) {
   ResourceMark rm(THREAD);

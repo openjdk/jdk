@@ -101,7 +101,7 @@ class CheckRestrictedPackage {
      * @param clazz the class to test
      * @return true if the class is either not public, or it resides in a package with restricted access.
      */
-    static boolean isRestrictedClass(Class<?> clazz) {
+    static boolean isRestrictedClass(final Class<?> clazz) {
         if(!Modifier.isPublic(clazz.getModifiers())) {
             // Non-public classes are always restricted
             return true;
@@ -126,7 +126,7 @@ class CheckRestrictedPackage {
                     return null;
                 }
             }, NO_PERMISSIONS_CONTEXT);
-        } catch(SecurityException e) {
+        } catch(final SecurityException e) {
             return true;
         }
         return false;

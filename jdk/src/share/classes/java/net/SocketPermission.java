@@ -777,7 +777,7 @@ public final class SocketPermission extends Permission
                 // Literal IPv6 address
                 host = getName().substring(1, getName().indexOf(']'));
             } else {
-                int i = getName().indexOf(":");
+                int i = getName().indexOf(':');
                 if (i == -1)
                     host = getName();
                 else {

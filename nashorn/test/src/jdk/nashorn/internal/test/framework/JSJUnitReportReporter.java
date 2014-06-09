@@ -34,7 +34,7 @@ import org.testng.reporters.JUnitReportReporter;
  */
 public class JSJUnitReportReporter extends JUnitReportReporter {
     @Override
-    protected String getTestName(ITestResult tr) {
+    protected String getTestName(final ITestResult tr) {
         final String testName = tr.getTestName();
         return (testName != null && testName.endsWith(".js"))? testName : super.getTestName(tr);
     }

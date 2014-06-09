@@ -43,13 +43,13 @@ import java.util.Set;
 import java.util.concurrent.Callable;
 import javax.script.Bindings;
 import jdk.nashorn.internal.objects.Global;
-import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.runtime.arrays.ArrayData;
 
 /**
  * Mirror object that wraps a given Nashorn Script object.
@@ -169,6 +169,12 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         });
     }
 
+    /**
+     * Call member function
+     * @param functionName function name
+     * @param args         arguments
+     * @return return value of function
+     */
     public Object callMember(final String functionName, final Object... args) {
         functionName.getClass(); // null check
         final Global oldGlobal = Context.getGlobal();
@@ -496,7 +502,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     public void setProto(final Object proto) {
         inGlobal(new Callable<Void>() {
             @Override public Void call() {
-                sobj.setProtoCheck(unwrap(proto, global));
+                sobj.setPrototypeOf(unwrap(proto, global));
                 return null;
             }
         });
@@ -621,6 +627,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
     /**
      * Utilitity to convert this script object to the given type.
      *
+     * @param <T> destination type to convert to
      * @param type destination type to convert to
      * @return converted object
      */
@@ -728,7 +735,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
         return global;
     }
 
-    static Object translateUndefined(Object obj) {
+    static Object translateUndefined(final Object obj) {
         return (obj == ScriptRuntime.UNDEFINED)? null : obj;
     }
 

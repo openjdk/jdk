@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,8 @@
 #ifdef SHARK
 #include "shark/shark_globals.hpp"
 #endif
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 RUNTIME_FLAGS(MATERIALIZE_DEVELOPER_FLAG, MATERIALIZE_PD_DEVELOPER_FLAG, \
               MATERIALIZE_PRODUCT_FLAG, MATERIALIZE_PD_PRODUCT_FLAG, \
@@ -283,6 +285,7 @@ bool Flag::is_external() const {
 // Length of format string (e.g. "%.1234s") for printing ccstr below
 #define FORMAT_BUFFER_LEN 16
 
+PRAGMA_FORMAT_NONLITERAL_IGNORED_EXTERNAL
 void Flag::print_on(outputStream* st, bool withComments) {
   // Don't print notproduct and develop flags in a product build.
   if (is_constant_in_binary()) {
@@ -315,7 +318,10 @@ void Flag::print_on(outputStream* st, bool withComments) {
         size_t llen = pointer_delta(eol, cp, sizeof(char));
         jio_snprintf(format_buffer, FORMAT_BUFFER_LEN,
             "%%." SIZE_FORMAT "s", llen);
+PRAGMA_DIAG_PUSH
+PRAGMA_FORMAT_NONLITERAL_IGNORED_INTERNAL
         st->print(format_buffer, cp);
+PRAGMA_DIAG_POP
         st->cr();
         cp = eol+1;
         st->print("%5s %-35s += ", "", _name);
@@ -372,7 +378,7 @@ void Flag::print_kind(outputStream* st) {
         } else {
           st->print(" ");
         }
-        st->print(d.name);
+        st->print("%s", d.name);
       }
     }
 

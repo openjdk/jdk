@@ -426,7 +426,7 @@ public abstract class Log {
          * Mimic old log messages that only contain unqualified names.
          */
         private static String unqualifiedName(String name) {
-            int lastDot = name.lastIndexOf(".");
+            int lastDot = name.lastIndexOf('.');
             if (lastDot >= 0) {
                 name = name.substring(lastDot + 1);
             }

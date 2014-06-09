@@ -48,11 +48,14 @@ typedef struct _ciMethodDataRecord {
 
   intptr_t* _data;
   char*     _orig_data;
-  jobject*  _oops_handles;
-  int*      _oops_offsets;
+  Klass**   _classes;
+  Method**  _methods;
+  int*      _classes_offsets;
+  int*      _methods_offsets;
   int       _data_length;
   int       _orig_data_length;
-  int       _oops_length;
+  int       _classes_length;
+  int       _methods_length;
 } ciMethodDataRecord;
 
 typedef struct _ciMethodRecord {
@@ -565,7 +568,7 @@ class CompileReplay : public StackObj {
     rec->_instructions_size = parse_int("instructions_size");
   }
 
-  // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length>
+  // ciMethodData <klass> <name> <signature> <state> <current mileage> orig <length> # # ... data <length> # # ... oops <length> # ... methods <length>
   void process_ciMethodData(TRAPS) {
     Method* method = parse_method(CHECK);
     if (had_error()) return;
@@ -602,21 +605,34 @@ class CompileReplay : public StackObj {
     if (rec->_data == NULL) {
       return;
     }
-    if (!parse_tag_and_count("oops", rec->_oops_length)) {
+    if (!parse_tag_and_count("oops", rec->_classes_length)) {
       return;
     }
-    rec->_oops_handles = NEW_RESOURCE_ARRAY(jobject, rec->_oops_length);
-    rec->_oops_offsets = NEW_RESOURCE_ARRAY(int, rec->_oops_length);
-    for (int i = 0; i < rec->_oops_length; i++) {
+    rec->_classes = NEW_RESOURCE_ARRAY(Klass*, rec->_classes_length);
+    rec->_classes_offsets = NEW_RESOURCE_ARRAY(int, rec->_classes_length);
+    for (int i = 0; i < rec->_classes_length; i++) {
       int offset = parse_int("offset");
       if (had_error()) {
         return;
       }
       Klass* k = parse_klass(CHECK);
-      rec->_oops_offsets[i] = offset;
-      KlassHandle *kh = NEW_C_HEAP_OBJ(KlassHandle, mtCompiler);
-      ::new ((void*)kh) KlassHandle(THREAD, k);
-      rec->_oops_handles[i] = (jobject)kh;
+      rec->_classes_offsets[i] = offset;
+      rec->_classes[i] = k;
+    }
+
+    if (!parse_tag_and_count("methods", rec->_methods_length)) {
+      return;
+    }
+    rec->_methods = NEW_RESOURCE_ARRAY(Method*, rec->_methods_length);
+    rec->_methods_offsets = NEW_RESOURCE_ARRAY(int, rec->_methods_length);
+    for (int i = 0; i < rec->_methods_length; i++) {
+      int offset = parse_int("offset");
+      if (had_error()) {
+        return;
+      }
+      Method* m = parse_method(CHECK);
+      rec->_methods_offsets[i] = offset;
+      rec->_methods[i] = m;
     }
   }
 
@@ -1105,14 +1121,22 @@ void ciReplay::initialize(ciMethodData* m) {
     m->_state = rec->_state;
     m->_current_mileage = rec->_current_mileage;
     if (rec->_data_length != 0) {
-      assert(m->_data_size == rec->_data_length * (int)sizeof(rec->_data[0]), "must agree");
+      assert(m->_data_size + m->_extra_data_size == rec->_data_length * (int)sizeof(rec->_data[0]) ||
+             m->_data_size == rec->_data_length * (int)sizeof(rec->_data[0]), "must agree");
 
       // Write the correct ciObjects back into the profile data
       ciEnv* env = ciEnv::current();
-      for (int i = 0; i < rec->_oops_length; i++) {
-        KlassHandle *h = (KlassHandle *)rec->_oops_handles[i];
-        *(ciMetadata**)(rec->_data + rec->_oops_offsets[i]) =
-          env->get_metadata((*h)());
+      for (int i = 0; i < rec->_classes_length; i++) {
+        Klass *k = rec->_classes[i];
+        // In case this class pointer is is tagged, preserve the tag
+        // bits
+        rec->_data[rec->_classes_offsets[i]] =
+          ciTypeEntries::with_status(env->get_metadata(k)->as_klass(), rec->_data[rec->_classes_offsets[i]]);
+      }
+      for (int i = 0; i < rec->_methods_length; i++) {
+        Method *m = rec->_methods[i];
+        *(ciMetadata**)(rec->_data + rec->_methods_offsets[i]) =
+          env->get_metadata(m);
       }
       // Copy the updated profile data into place as intptr_ts
 #ifdef _LP64

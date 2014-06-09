@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -672,6 +672,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_list(NULL),
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
+                  _print_inlining_output(NULL),
                   _preserve_jvm_state(0),
                   _interpreter_frame_size(0) {
   C = this;
@@ -978,6 +979,7 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_list(NULL),
     _print_inlining_stream(NULL),
     _print_inlining_idx(0),
+    _print_inlining_output(NULL),
     _preserve_jvm_state(0),
     _allowed_reasons(0),
     _interpreter_frame_size(0) {
@@ -1089,6 +1091,7 @@ void Compile::Init(int aliaslevel) {
   set_do_scheduling(OptoScheduling);
   set_do_count_invocations(false);
   set_do_method_data_update(false);
+  set_age_code(has_method() && method()->profile_aging());
   set_rtm_state(NoRTM); // No RTM lock eliding by default
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking && has_method() && (method()->method_data_or_null() != NULL)) {
@@ -2206,7 +2209,7 @@ void Compile::Optimize() {
 
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
-  dump_inlining();
+  process_print_inlining();
   // A method with only infinite loops has no edges entering loops from root
   {
     NOT_PRODUCT( TracePhase t2("graphReshape", &_t_graphReshaping, TimeCompiler); )
@@ -2424,7 +2427,7 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
         starts_bundle = ' ';
         tty->print("\t");
         delay->format(_regalloc, tty);
-        tty->print_cr("");
+        tty->cr();
         delay = NULL;
       }
 
@@ -2438,12 +2441,12 @@ void Compile::dump_asm(int *pcs, uint pc_limit) {
     if (pcs && n->_idx < pc_limit)
       tty->print_cr("%3.3x", pcs[n->_idx]);
     else
-      tty->print_cr("");
+      tty->cr();
 
     assert(cut_short || delay == NULL, "no unconditional delay branch");
 
   } // End of per-block dump
-  tty->print_cr("");
+  tty->cr();
 
   if (cut_short)  tty->print_cr("*** disassembly is cut short ***");
 }
@@ -3688,7 +3691,8 @@ void Compile::ConstantTable::emit(CodeBuffer& cb) {
     default: ShouldNotReachHere();
     }
     assert(constant_addr, "consts section too small");
-    assert((constant_addr - _masm.code()->consts()->start()) == con.offset(), err_msg_res("must be: %d == %d", constant_addr - _masm.code()->consts()->start(), con.offset()));
+    assert((constant_addr - _masm.code()->consts()->start()) == con.offset(),
+            err_msg_res("must be: %d == %d", (int) (constant_addr - _masm.code()->consts()->start()), (int)(con.offset())));
   }
 }
 
@@ -3768,7 +3772,7 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
 
   for (uint i = 0; i < n->outcnt(); i++) {
     address* constant_addr = &jump_table_base[i];
-    assert(*constant_addr == (((address) n) + i), err_msg_res("all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, *constant_addr, (((address) n) + i)));
+    assert(*constant_addr == (((address) n) + i), err_msg_res("all jump-table entries must contain adjusted node pointer: " INTPTR_FORMAT " == " INTPTR_FORMAT, p2i(*constant_addr), p2i(((address) n) + i)));
     *constant_addr = cb.consts()->target(*labels.at(i), (address) constant_addr);
     cb.consts()->relocate((address) constant_addr, relocInfo::internal_word_type);
   }
@@ -3866,7 +3870,7 @@ void Compile::print_inlining_assert_ready() {
   assert(!_print_inlining || _print_inlining_stream->size() == 0, "loosing data");
 }
 
-void Compile::dump_inlining() {
+void Compile::process_print_inlining() {
   bool do_print_inlining = print_inlining() || print_intrinsics();
   if (do_print_inlining || log() != NULL) {
     // Print inlining message for candidates that we couldn't inline
@@ -3883,9 +3887,21 @@ void Compile::dump_inlining() {
     }
   }
   if (do_print_inlining) {
+    ResourceMark rm;
+    stringStream ss;
     for (int i = 0; i < _print_inlining_list->length(); i++) {
-      tty->print(_print_inlining_list->adr_at(i)->ss()->as_string());
+      ss.print("%s", _print_inlining_list->adr_at(i)->ss()->as_string());
     }
+    size_t end = ss.size();
+    _print_inlining_output = NEW_ARENA_ARRAY(comp_arena(), char, end+1);
+    strncpy(_print_inlining_output, ss.base(), end+1);
+    _print_inlining_output[end] = 0;
+  }
+}
+
+void Compile::dump_print_inlining() {
+  if (_print_inlining_output != NULL) {
+    tty->print_raw(_print_inlining_output);
   }
 }
 

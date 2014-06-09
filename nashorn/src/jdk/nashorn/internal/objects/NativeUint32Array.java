@@ -25,6 +25,13 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
+import java.nio.ByteBuffer;
+import java.nio.ByteOrder;
+import java.nio.IntBuffer;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
@@ -35,6 +42,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
+import jdk.nashorn.internal.runtime.arrays.TypedArrayData;
 
 /**
  * Uint32 array for TypedArray extension
@@ -56,55 +64,108 @@ public final class NativeUint32Array extends ArrayBufferView {
         public ArrayBufferView construct(final NativeArrayBuffer buffer, final int byteBegin, final int length) {
             return new NativeUint32Array(buffer, byteBegin, length);
         }
+
         @Override
-        public ArrayData createArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
-            return new Uint32ArrayData(buffer, byteOffset, length);
+        public Uint32ArrayData createArrayData(final ByteBuffer nb, final int start, final int end) {
+            return new Uint32ArrayData(nb.order(ByteOrder.nativeOrder()).asIntBuffer(), start, end);
+        }
+
+        @Override
+        public String getClassName() {
+            return "Uint32Array";
         }
     };
 
-    private static final class Uint32ArrayData extends ArrayDataImpl {
-        private Uint32ArrayData(final NativeArrayBuffer buffer, final int byteOffset, final int elementLength) {
-            super(buffer, byteOffset, elementLength);
+    private static final class Uint32ArrayData extends TypedArrayData<IntBuffer> {
+
+        private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Uint32ArrayData.class, "getElem", long.class, int.class).methodHandle();
+        private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Uint32ArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+        private Uint32ArrayData(final IntBuffer nb, final int start, final int end) {
+            super(((IntBuffer)nb.position(start).limit(end)).slice(), end - start);
         }
 
         @Override
-        protected int byteIndex(final int index) {
-            return index * BYTES_PER_ELEMENT + byteOffset;
+        protected MethodHandle getGetElem() {
+            return GET_ELEM;
         }
 
         @Override
-        protected int getIntImpl(final int index) {
-            final int byteIndex = byteIndex(index);
-            final byte[] byteArray = buffer.getByteArray();
-            return byteArray[byteIndex  ]       & 0x0000_00ff |
-                   byteArray[byteIndex+1] <<  8 & 0x0000_ff00 |
-                   byteArray[byteIndex+2] << 16 & 0x00ff_0000 |
-                   byteArray[byteIndex+3] << 24 & 0xff00_0000 ;
+        protected MethodHandle getSetElem() {
+            return SET_ELEM;
         }
 
         @Override
-        protected long getLongImpl(final int key) {
-            return getIntImpl(key) & JSType.MAX_UINT;
+        public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+            if (returnType == int.class) {
+                return null;
+            }
+            return getContinuousElementGetter(getClass(), GET_ELEM, returnType, programPoint);
+        }
+
+        private long getElem(final int index) {
+            try {
+                return nb.get(index) & JSType.MAX_UINT;
+            } catch (final IndexOutOfBoundsException e) {
+                throw new ClassCastException(); //force relink - this works for unoptimistic too
+            }
+        }
+
+        private void setElem(final int index, final int elem) {
+            try {
+                nb.put(index, elem);
+            } catch (final IndexOutOfBoundsException e) {
+                //swallow valid array indexes. it's ok.
+                if (index < 0) {
+                    throw new ClassCastException();
+                }
+            }
         }
 
         @Override
-        protected double getDoubleImpl(final int key) {
-            return getIntImpl(key) & JSType.MAX_UINT;
+        public boolean isUnsigned() {
+            return true;
         }
 
         @Override
-        protected Object getObjectImpl(final int key) {
-            return getIntImpl(key) & JSType.MAX_UINT;
+        public int getInt(final int index) {
+            return (int)getLong(index);
         }
 
         @Override
-        protected void setImpl(final int index, final int value) {
-            final int byteIndex = byteIndex(index);
-            final byte[] byteArray = buffer.getByteArray();
-            byteArray[byteIndex  ] = (byte)(value        & 0xff);
-            byteArray[byteIndex+1] = (byte)(value >>>  8 & 0xff);
-            byteArray[byteIndex+2] = (byte)(value >>> 16 & 0xff);
-            byteArray[byteIndex+3] = (byte)(value >>> 24 & 0xff);
+        public long getLong(final int index) {
+            return getElem(index);
+        }
+
+        @Override
+        public double getDouble(final int index) {
+            return getLong(index);
+        }
+
+        @Override
+        public Object getObject(final int index) {
+            return getLong(index);
+        }
+
+        @Override
+        public ArrayData set(final int index, final Object value, final boolean strict) {
+            return set(index, JSType.toInt32(value), strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final int value, final boolean strict) {
+            setElem(index, value);
+            return this;
+        }
+
+        @Override
+        public ArrayData set(final int index, final long value, final boolean strict) {
+            return set(index, (int)value, strict);
+        }
+
+        @Override
+        public ArrayData set(final int index, final double value, final boolean strict) {
+            return set(index, (int)value, strict);
         }
     }
 
@@ -119,16 +180,11 @@ public final class NativeUint32Array extends ArrayBufferView {
      */
     @Constructor(arity = 1)
     public static NativeUint32Array constructor(final boolean newObj, final Object self, final Object... args) {
-        return (NativeUint32Array)constructorImpl(args, FACTORY);
+        return (NativeUint32Array)constructorImpl(newObj, args, FACTORY);
     }
 
     NativeUint32Array(final NativeArrayBuffer buffer, final int byteOffset, final int length) {
         super(buffer, byteOffset, length);
-    }
-
-    @Override
-    public String getClassName() {
-        return "Uint32Array";
     }
 
     @Override

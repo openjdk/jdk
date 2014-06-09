@@ -25,20 +25,19 @@
 
 package jdk.nashorn.internal.codegen;
 
-import jdk.nashorn.internal.runtime.Property;
-import jdk.nashorn.internal.runtime.PropertyMap;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import jdk.nashorn.internal.runtime.Property;
+import jdk.nashorn.internal.runtime.PropertyMap;
 
 /**
  * Manages constants needed by code generation.  Objects are maintained in an
  * interning maps to remove duplicates.
  */
-class ConstantData {
+final class ConstantData {
     /** Constant table. */
     final List<Object> constants;
 
@@ -64,7 +63,7 @@ class ConstantData {
         private int calcHashCode() {
             final Class<?> cls = array.getClass();
 
-            if (cls == Object[].class) {
+            if (!cls.getComponentType().isPrimitive()) {
                 return Arrays.hashCode((Object[])array);
             } else if (cls == double[].class) {
                 return Arrays.hashCode((double[])array);
@@ -92,7 +91,7 @@ class ConstantData {
             final Class<?> cls = array.getClass();
 
             if (cls == otherArray.getClass()) {
-                if (cls == Object[].class) {
+                if (!cls.getComponentType().isPrimitive()) {
                     return Arrays.equals((Object[])array, (Object[])otherArray);
                 } else if (cls == double[].class) {
                     return Arrays.equals((double[])array, (double[])otherArray);
@@ -185,6 +184,7 @@ class ConstantData {
      * @return the index in the constant pool that the object was given
      */
     public int add(final Object object) {
+        assert object != null;
         final Object  entry;
         if (object.getClass().isArray()) {
             entry = new ArrayWrapper(object);

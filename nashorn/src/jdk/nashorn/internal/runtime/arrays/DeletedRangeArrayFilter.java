@@ -36,9 +36,16 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     private long lo, hi;
 
     DeletedRangeArrayFilter(final ArrayData underlying, final long lo, final long hi) {
-        super(underlying);
+        super(maybeSparse(underlying, hi));
         this.lo = lo;
         this.hi = hi;
+    }
+
+    private static ArrayData maybeSparse(final ArrayData underlying, final long hi) {
+        if(hi < SparseArrayData.MAX_DENSE_LENGTH || underlying instanceof SparseArrayData) {
+            return underlying;
+        }
+        return new SparseArrayData(underlying, underlying.length());
     }
 
     private boolean isEmpty() {
@@ -46,7 +53,8 @@ final class DeletedRangeArrayFilter extends ArrayFilter {
     }
 
     private boolean isDeleted(final int index) {
-        return lo <= index && index <= hi;
+        final long longIndex = ArrayIndex.toLongIndex(index);
+        return lo <= longIndex && longIndex <= hi;
     }
 
     @Override

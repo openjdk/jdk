@@ -356,8 +356,8 @@ public class ParseUtil {
              * because we must not quote a literal IPv6 address
              */
             if (opaquePart.startsWith("//[")) {
-                int end =  opaquePart.indexOf("]");
-                if (end != -1 && opaquePart.indexOf(":")!=-1) {
+                int end =  opaquePart.indexOf(']');
+                if (end != -1 && opaquePart.indexOf(':')!=-1) {
                     String doquote, dontquote;
                     if (end == opaquePart.length()) {
                         dontquote = opaquePart;
@@ -408,8 +408,8 @@ public class ParseUtil {
         } else if (authority != null) {
             sb.append("//");
             if (authority.startsWith("[")) {
-                int end = authority.indexOf("]");
-                if (end != -1 && authority.indexOf(":")!=-1) {
+                int end = authority.indexOf(']');
+                if (end != -1 && authority.indexOf(':')!=-1) {
                     String doquote, dontquote;
                     if (end == authority.length()) {
                         dontquote = authority;

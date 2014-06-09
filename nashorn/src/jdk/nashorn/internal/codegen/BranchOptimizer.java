@@ -32,10 +32,10 @@ import static jdk.nashorn.internal.codegen.Condition.LE;
 import static jdk.nashorn.internal.codegen.Condition.LT;
 import static jdk.nashorn.internal.codegen.Condition.NE;
 
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.BinaryNode;
 import jdk.nashorn.internal.ir.Expression;
-import jdk.nashorn.internal.ir.TernaryNode;
+import jdk.nashorn.internal.ir.JoinPredecessorExpression;
+import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.UnaryNode;
 
 /**
@@ -57,7 +57,7 @@ final class BranchOptimizer {
     }
 
     private void branchOptimizer(final UnaryNode unaryNode, final Label label, final boolean state) {
-        final Expression rhs = unaryNode.rhs();
+        final Expression rhs = unaryNode.getExpression();
 
         switch (unaryNode.tokenType()) {
         case NOT:
@@ -71,13 +71,7 @@ final class BranchOptimizer {
             break;
         }
 
-        // convert to boolean
-        codegen.load(unaryNode, Type.BOOLEAN);
-        if (state) {
-            method.ifne(label);
-        } else {
-            method.ifeq(label);
-        }
+        loadTestAndJump(unaryNode, label, state);
     }
 
     private void branchOptimizer(final BinaryNode binaryNode, final Label label, final boolean state) {
@@ -88,86 +82,97 @@ final class BranchOptimizer {
         case AND:
             if (state) {
                 final Label skip = new Label("skip");
-                branchOptimizer(lhs, skip, false);
-                branchOptimizer(rhs, label, true);
+                optimizeLogicalOperand(lhs, skip,  false, false);
+                optimizeLogicalOperand(rhs, label, true,  true);
                 method.label(skip);
             } else {
-                branchOptimizer(lhs, label, false);
-                branchOptimizer(rhs, label, false);
+                optimizeLogicalOperand(lhs, label, false, false);
+                optimizeLogicalOperand(rhs, label, false, true);
             }
             return;
 
         case OR:
             if (state) {
-                branchOptimizer(lhs, label, true);
-                branchOptimizer(rhs, label, true);
+                optimizeLogicalOperand(lhs, label, true, false);
+                optimizeLogicalOperand(rhs, label, true, true);
             } else {
                 final Label skip = new Label("skip");
-                branchOptimizer(lhs, skip, true);
-                branchOptimizer(rhs, label, false);
+                optimizeLogicalOperand(lhs, skip,  true,  false);
+                optimizeLogicalOperand(rhs, label, false, true);
                 method.label(skip);
             }
             return;
 
         case EQ:
         case EQ_STRICT:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
+            codegen.loadBinaryOperands(binaryNode);
             method.conditionalJump(state ? EQ : NE, true, label);
             return;
 
         case NE:
         case NE_STRICT:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
+            codegen.loadBinaryOperands(binaryNode);
             method.conditionalJump(state ? NE : EQ, true, label);
             return;
 
         case GE:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? GE : LT, !state, label);
+            codegen.loadBinaryOperands(binaryNode);
+            method.conditionalJump(state ? GE : LT, false, label);
             return;
 
         case GT:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? GT : LE, !state, label);
+            codegen.loadBinaryOperands(binaryNode);
+            method.conditionalJump(state ? GT : LE, false, label);
             return;
 
         case LE:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? LE : GT, state, label);
+            codegen.loadBinaryOperands(binaryNode);
+            method.conditionalJump(state ? LE : GT, true, label);
             return;
 
         case LT:
-            codegen.loadBinaryOperands(lhs, rhs, Type.widest(lhs.getType(), rhs.getType()));
-            method.conditionalJump(state ? LT : GE, state, label);
+            codegen.loadBinaryOperands(binaryNode);
+            method.conditionalJump(state ? LT : GE, true, label);
             return;
 
         default:
             break;
         }
 
-        codegen.load(binaryNode, Type.BOOLEAN);
-        if (state) {
-            method.ifne(label);
-        } else {
-            method.ifeq(label);
-        }
+        loadTestAndJump(binaryNode, label, state);
     }
 
+    private void optimizeLogicalOperand(final Expression expr, final Label label, final boolean state, final boolean isRhs) {
+        final JoinPredecessorExpression jpexpr = (JoinPredecessorExpression)expr;
+        if(LocalVariableConversion.hasLiveConversion(jpexpr)) {
+            final Label after = new Label("after");
+            branchOptimizer(jpexpr.getExpression(), after, !state);
+            method.beforeJoinPoint(jpexpr);
+            method._goto(label);
+            method.label(after);
+            if(isRhs) {
+                method.beforeJoinPoint(jpexpr);
+            }
+        } else {
+            branchOptimizer(jpexpr.getExpression(), label, state);
+        }
+    }
     private void branchOptimizer(final Expression node, final Label label, final boolean state) {
-        if (!(node instanceof TernaryNode)) {
-
-            if (node instanceof BinaryNode) {
-                branchOptimizer((BinaryNode)node, label, state);
-                return;
-            }
-
-            if (node instanceof UnaryNode) {
-                branchOptimizer((UnaryNode)node, label, state);
-                return;
-            }
+        if (node instanceof BinaryNode) {
+            branchOptimizer((BinaryNode)node, label, state);
+            return;
         }
 
-        codegen.load(node, Type.BOOLEAN);
+        if (node instanceof UnaryNode) {
+            branchOptimizer((UnaryNode)node, label, state);
+            return;
+        }
+
+        loadTestAndJump(node, label, state);
+    }
+
+    private void loadTestAndJump(final Expression node, final Label label, final boolean state) {
+        codegen.loadExpressionAsBoolean(node);
         if (state) {
             method.ifne(label);
         } else {

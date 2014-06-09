@@ -960,7 +960,7 @@ JRT_LEAF(void, OptoRuntime::profile_receiver_type_C(DataLayout* data, oopDesc* r
   } else {
     // Receiver did not match any saved receiver and there is no empty row for it.
     // Increment total counter to indicate polymorphic case.
-    intptr_t* count_p = (intptr_t*)(((byte*)(data)) + in_bytes(CounterData::count_offset()));
+    intptr_t* count_p = (intptr_t*)(((uint8_t*)(data)) + in_bytes(CounterData::count_offset()));
     *count_p += DataLayout::counter_increment;
   }
 JRT_END
@@ -1393,7 +1393,7 @@ static void trace_exception(oop exception_oop, address exception_pc, const char*
   } else {
     tty->print("<unknown>");
   }
-  tty->print(" at " INTPTR_FORMAT,  exception_pc);
+  tty->print(" at " INTPTR_FORMAT,  p2i(exception_pc));
   tty->print_cr("]");
 }
 

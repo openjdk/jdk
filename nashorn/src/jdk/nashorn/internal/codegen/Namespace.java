@@ -80,7 +80,6 @@ public class Namespace {
             if (counter != null) {
                 final int count = counter + 1;
                 namespaceDirectory.put(base, count);
-
                 return base + '-' + count;
             }
         }

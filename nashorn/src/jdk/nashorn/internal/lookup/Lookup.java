@@ -68,6 +68,12 @@ public final class Lookup {
     /** Method handle to the most generic of setters, the one that takes an Object */
     public static final MethodType SET_OBJECT_TYPE = MH.type(void.class, Object.class, Object.class);
 
+    /** Method handle to the primitive getters, the one that returns an long/int/double */
+    public static final MethodType GET_PRIMITIVE_TYPE = MH.type(long.class, Object.class);
+
+    /** Method handle to the primitive getters, the one that returns an long/int/double */
+    public static final MethodType SET_PRIMITIVE_TYPE = MH.type(void.class, Object.class, long.class);
+
     private Lookup() {
     }
 
@@ -123,6 +129,53 @@ public final class Lookup {
     }
 
     /**
+     * This method filters primitive argument types using JavaScript semantics. For example,
+     * an (int) cast of a double in Java land is not the same thing as invoking toInt32 on it.
+     * If you are returning values to JavaScript that have to be of a specific type, this is
+     * the correct return value filter to use, as the explicitCastArguments just uses the
+     * Java boxing equivalents
+     *
+     * @param mh   method handle for which to filter argument value
+     * @param n    argument index
+     * @param from old argument type, the new one is given by the sent method handle
+     * @return method handle for appropriate argument type conversion
+     */
+    public static MethodHandle filterArgumentType(final MethodHandle mh, final int n, final Class<?> from) {
+        final Class<?> to = mh.type().parameterType(n);
+
+        if (from == int.class) {
+            //fallthru
+        } else if (from == long.class) {
+            if (to == int.class) {
+                return MH.filterArguments(mh, n, JSType.TO_INT32_L.methodHandle());
+            }
+            //fallthru
+        } else if (from == double.class) {
+            if (to == int.class) {
+                return MH.filterArguments(mh, n, JSType.TO_INT32_D.methodHandle());
+            } else if (to == long.class) {
+                return MH.filterArguments(mh, n, JSType.TO_UINT32_D.methodHandle());
+            }
+            //fallthru
+        } else if (!from.isPrimitive()) {
+            if (to == int.class) {
+                return MH.filterArguments(mh, n, JSType.TO_INT32.methodHandle());
+            } else if (to == long.class) {
+                return MH.filterArguments(mh, n, JSType.TO_UINT32.methodHandle());
+            } else if (to == double.class) {
+                return MH.filterArguments(mh, n, JSType.TO_NUMBER.methodHandle());
+            } else if (!to.isPrimitive()) {
+                return mh;
+            }
+
+            assert false : "unsupported Lookup.filterReturnType type " + from + " -> " + to;
+        }
+
+        //use a standard cast - we don't need to check JavaScript special cases
+        return MH.explicitCastArguments(mh, mh.type().changeParameterType(n, from));
+    }
+
+    /**
      * This method filters primitive return types using JavaScript semantics. For example,
      * an (int) cast of a double in Java land is not the same thing as invoking toInt32 on it.
      * If you are returning values to JavaScript that have to be of a specific type, this is
@@ -139,6 +192,9 @@ public final class Lookup {
         if (retType == int.class) {
             //fallthru
         } else if (retType == long.class) {
+            if (type == int.class) {
+                return MH.filterReturnValue(mh, JSType.TO_INT32_L.methodHandle());
+            }
             //fallthru
         } else if (retType == double.class) {
             if (type == int.class) {

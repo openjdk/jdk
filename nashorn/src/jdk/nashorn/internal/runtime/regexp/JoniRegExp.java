@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.runtime.regexp;
 
+import java.util.regex.Pattern;
+import java.util.regex.PatternSyntaxException;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.regexp.joni.Matcher;
 import jdk.nashorn.internal.runtime.regexp.joni.Option;
@@ -32,9 +34,6 @@ import jdk.nashorn.internal.runtime.regexp.joni.Regex;
 import jdk.nashorn.internal.runtime.regexp.joni.Region;
 import jdk.nashorn.internal.runtime.regexp.joni.Syntax;
 import jdk.nashorn.internal.runtime.regexp.joni.exception.JOniException;
-
-import java.util.regex.Pattern;
-import java.util.regex.PatternSyntaxException;
 
 /**
  * Regular expression implementation based on the Joni engine from the JRuby project.
@@ -77,7 +76,7 @@ public class JoniRegExp extends RegExp {
             }
 
             if (parsed != null) {
-                char[] javaPattern = parsed.getJavaPattern().toCharArray();
+                final char[] javaPattern = parsed.getJavaPattern().toCharArray();
                 this.regex = new Regex(javaPattern, 0, javaPattern.length, option, Syntax.JAVASCRIPT);
                 this.groupsInNegativeLookahead = parsed.getGroupsInNegativeLookahead();
             }

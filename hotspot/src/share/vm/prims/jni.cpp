@@ -275,7 +275,7 @@ const int MAX_REASONABLE_LOCAL_CAPACITY = 4*K;
 
   class JNITraceWrapper : public StackObj {
    public:
-    JNITraceWrapper(const char* format, ...) {
+    JNITraceWrapper(const char* format, ...) ATTRIBUTE_PRINTF(2, 3) {
       if (TraceJNICalls) {
         va_list ap;
         va_start(ap, format);
@@ -544,7 +544,7 @@ JNI_ENTRY(jobject, jni_ToReflectedMethod(JNIEnv *env, jclass cls, jmethodID meth
   if (m->is_initializer()) {
     reflection_method = Reflection::new_constructor(m, CHECK_NULL);
   } else {
-    reflection_method = Reflection::new_method(m, UseNewReflection, false, CHECK_NULL);
+    reflection_method = Reflection::new_method(m, false, CHECK_NULL);
   }
   ret = JNIHandles::make_local(env, reflection_method);
   return ret;
@@ -2272,7 +2272,7 @@ JNI_ENTRY(jobject, jni_ToReflectedField(JNIEnv *env, jclass cls, jfieldID fieldI
     found = InstanceKlass::cast(k)->find_field_from_offset(offset, false, &fd);
   }
   assert(found, "bad fieldID passed into jni_ToReflectedField");
-  oop reflected = Reflection::new_field(&fd, UseNewReflection, CHECK_NULL);
+  oop reflected = Reflection::new_field(&fd, CHECK_NULL);
   ret = JNIHandles::make_local(env, reflected);
   return ret;
 JNI_END

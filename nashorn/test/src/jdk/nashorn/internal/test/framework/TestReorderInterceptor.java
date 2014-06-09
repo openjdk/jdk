@@ -38,7 +38,7 @@ import org.testng.ITestContext;
  */
 public final class TestReorderInterceptor implements IMethodInterceptor {
     @Override
-    public List<IMethodInstance> intercept(List<IMethodInstance> methods, ITestContext context) {
+    public List<IMethodInstance> intercept(final List<IMethodInstance> methods, final ITestContext context) {
         Collections.sort(methods, new Comparator<IMethodInstance>() {
             @Override
             public int compare(final IMethodInstance mi1, final IMethodInstance mi2) {

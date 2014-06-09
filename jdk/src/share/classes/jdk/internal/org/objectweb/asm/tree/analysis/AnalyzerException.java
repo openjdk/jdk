@@ -66,7 +66,7 @@ import jdk.internal.org.objectweb.asm.tree.AbstractInsnNode;
  * @author Bing Ran
  * @author Eric Bruneton
  */
-@SuppressWarnings("serial") // implementation class
+@SuppressWarnings("serial")
 public class AnalyzerException extends Exception {
 
     public final AbstractInsnNode node;

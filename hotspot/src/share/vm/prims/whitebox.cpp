@@ -27,15 +27,17 @@
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/classLoaderData.hpp"
 
 #include "prims/whitebox.hpp"
 #include "prims/wbtestmethods/parserTests.hpp"
 
+#include "runtime/thread.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
@@ -52,6 +54,8 @@
 
 #include "compiler/compileBroker.hpp"
 #include "runtime/compilationPolicy.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define SIZE_T_MAX_VALUE ((size_t) -1)
 
@@ -493,8 +497,8 @@ WB_ENTRY(void, WB_ClearMethodState(JNIEnv* env, jobject o, jobject method))
 
 #ifdef TIERED
     mcs->set_rate(0.0F);
-    mh->set_prev_event_count(0, THREAD);
-    mh->set_prev_time(0, THREAD);
+    mh->set_prev_event_count(0);
+    mh->set_prev_time(0);
 #endif
   }
 WB_END
@@ -573,6 +577,15 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   return result;
 WB_END
 
+
+WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
+  return (jlong) Thread::current()->stack_size();
+WB_END
+
+WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
+  JavaThread* t = JavaThread::current();
+  return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong) StackShadowPages * os::vm_page_size();
+WB_END
 
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
@@ -688,6 +701,8 @@ static JNINativeMethod methods[] = {
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
+  {CC"getThreadStackSize", CC"()J",                   (void*)&WB_GetThreadStackSize },
+  {CC"getThreadRemainingStackSize", CC"()J",          (void*)&WB_GetThreadRemainingStackSize },
 };
 
 #undef CC

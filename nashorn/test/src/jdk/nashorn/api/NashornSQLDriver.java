@@ -25,7 +25,12 @@
 
 package jdk.nashorn.api;
 
-import java.sql.*;
+import java.sql.Connection;
+import java.sql.Driver;
+import java.sql.DriverManager;
+import java.sql.DriverPropertyInfo;
+import java.sql.SQLException;
+import java.sql.SQLFeatureNotSupportedException;
 import java.util.Properties;
 import java.util.logging.Logger;
 
@@ -36,18 +41,18 @@ public final class NashornSQLDriver implements Driver {
     static {
         try {
             DriverManager.registerDriver(new NashornSQLDriver(), null);
-        } catch (SQLException se) {
+        } catch (final SQLException se) {
             throw new RuntimeException(se);
         }
     }
 
     @Override
-    public boolean acceptsURL(String url) {
+    public boolean acceptsURL(final String url) {
         return url.startsWith("jdbc:nashorn:");
     }
 
     @Override
-    public Connection connect(String url, Properties info) {
+    public Connection connect(final String url, final Properties info) {
         throw new UnsupportedOperationException("I am a dummy!!");
     }
 
@@ -62,7 +67,7 @@ public final class NashornSQLDriver implements Driver {
     }
 
     @Override
-    public DriverPropertyInfo[] getPropertyInfo(String url, Properties info) {
+    public DriverPropertyInfo[] getPropertyInfo(final String url, final Properties info) {
         return new DriverPropertyInfo[0];
     }
 

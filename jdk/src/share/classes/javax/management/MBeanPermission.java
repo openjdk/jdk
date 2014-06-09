@@ -290,7 +290,7 @@ public class MBeanPermission extends Permission {
 
         // Parse ObjectName
 
-        int openingBracket = name.indexOf("[");
+        int openingBracket = name.indexOf('[');
         if (openingBracket == -1) {
             // If "[on]" missing then ObjectName("*:*")
             //
@@ -329,7 +329,7 @@ public class MBeanPermission extends Permission {
 
         // Parse member
 
-        int poundSign = name.indexOf("#");
+        int poundSign = name.indexOf('#');
 
         if (poundSign == -1)
             setMember("*");

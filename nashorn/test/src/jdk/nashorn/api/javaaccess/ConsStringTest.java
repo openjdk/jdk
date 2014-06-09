@@ -88,7 +88,7 @@ public class ConsStringTest {
     public static class ArrayHolder {
         private Object[] array;
 
-        public void setArray(Object[] array) {
+        public void setArray(final Object[] array) {
             this.array = array;
         }
 

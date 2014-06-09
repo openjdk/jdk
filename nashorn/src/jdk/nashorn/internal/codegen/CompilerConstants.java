@@ -29,7 +29,11 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.util.HashSet;
 import java.util.Iterator;
+import java.util.Set;
+import jdk.internal.org.objectweb.asm.MethodVisitor;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -41,7 +45,6 @@ import jdk.nashorn.internal.runtime.Source;
  */
 
 public enum CompilerConstants {
-
     /** the __FILE__ variable */
     __FILE__,
 
@@ -50,9 +53,6 @@ public enum CompilerConstants {
 
     /** the __LINE__ variable */
     __LINE__,
-
-    /** lazy prefix for classes of jitted methods */
-    LAZY("Lazy"),
 
     /** constructor name */
     INIT("<init>"),
@@ -78,15 +78,18 @@ public enum CompilerConstants {
     /** function prefix for anonymous functions */
     ANON_FUNCTION_PREFIX("L:"),
 
-    /** method name for Java method that is script entry point */
-    RUN_SCRIPT("runScript"),
+    /** method name for Java method that is the program entry point */
+    PROGRAM(":program"),
+
+    /** method name for Java method that creates the script function for the program */
+    CREATE_PROGRAM_FUNCTION(":createProgramFunction"),
 
     /**
      * "this" name symbol for a parameter representing ECMAScript "this" in static methods that are compiled
      * representations of ECMAScript functions. It is not assigned a slot, as its position in the method signature is
      * dependent on other factors (most notably, callee can precede it).
      */
-    THIS("this"),
+    THIS("this", Object.class),
 
     /** this debugger symbol */
     THIS_DEBUGGER(":this"),
@@ -110,13 +113,16 @@ public enum CompilerConstants {
     /** the internal arguments object, when necessary (not visible to scripts, can't be reassigned). */
     ARGUMENTS(":arguments", ScriptObject.class),
 
+    /** prefix for apply-to-call exploded arguments */
+    EXPLODED_ARGUMENT_PREFIX(":xarg"),
+
     /** prefix for iterators for for (x in ...) */
     ITERATOR_PREFIX(":i", Iterator.class),
 
     /** prefix for tag variable used for switch evaluation */
     SWITCH_TAG_PREFIX(":s"),
 
-    /** prefix for all exceptions */
+    /** prefix for JVM exceptions */
     EXCEPTION_PREFIX(":e", Throwable.class),
 
     /** prefix for quick slots generated in Store */
@@ -161,7 +167,7 @@ public enum CompilerConstants {
     /** get map */
     GET_MAP(":getMap"),
 
-    /** get map */
+    /** set map */
     SET_MAP(":setMap"),
 
     /** get array prefix */
@@ -170,10 +176,22 @@ public enum CompilerConstants {
     /** get array suffix */
     GET_ARRAY_SUFFIX("$array");
 
+    /** To save memory - intern the compiler constant symbol names, as they are frequently reused */
+    static {
+        for (final CompilerConstants c : values()) {
+            final String symbolName = c.symbolName();
+            if (symbolName != null) {
+                symbolName.intern();
+            }
+        }
+    }
+
+    private static Set<String> symbolNames;
+
     /**
      * Prefix used for internal methods generated in script clases.
      */
-    public static final String INTERNAL_METHOD_PREFIX = ":";
+    private static final String INTERNAL_METHOD_PREFIX = ":";
 
     private final String symbolName;
     private final Class<?> type;
@@ -198,9 +216,28 @@ public enum CompilerConstants {
     }
 
     private CompilerConstants(final String symbolName, final Class<?> type, final int slot) {
-        this.symbolName  = symbolName;
-        this.type = type;
-        this.slot = slot;
+        this.symbolName = symbolName;
+        this.type       = type;
+        this.slot       = slot;
+    }
+
+    /**
+     * Check whether a name is that of a reserved compiler constnat
+     * @param name name
+     * @return true if compiler constant name
+     */
+    public static boolean isCompilerConstant(final String name) {
+        ensureSymbolNames();
+        return symbolNames.contains(name);
+    }
+
+    private static void ensureSymbolNames() {
+        if(symbolNames == null) {
+            symbolNames = new HashSet<>();
+            for(final CompilerConstants cc: CompilerConstants.values()) {
+                symbolNames.add(cc.symbolName);
+            }
+        }
     }
 
     /**
@@ -327,8 +364,13 @@ public enum CompilerConstants {
     public static Call specialCallNoLookup(final String className, final String name, final String desc) {
         return new Call(null, className, name, desc) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokespecial(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, desc, false);
             }
         };
     }
@@ -361,8 +403,13 @@ public enum CompilerConstants {
     public static Call staticCallNoLookup(final String className, final String name, final String desc) {
         return new Call(null, className, name, desc) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokestatic(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, desc, false);
             }
         };
     }
@@ -396,8 +443,13 @@ public enum CompilerConstants {
     public static Call virtualCallNoLookup(final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokevirtual(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
     }
@@ -416,8 +468,13 @@ public enum CompilerConstants {
     public static Call interfaceCallNoLookup(final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(null, className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokeinterface(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEINTERFACE, className, name, descriptor, true);
             }
         };
     }
@@ -512,8 +569,13 @@ public enum CompilerConstants {
     public static Call staticCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(MH.findStatic(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokestatic(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESTATIC, className, name, descriptor, false);
             }
         };
     }
@@ -532,11 +594,54 @@ public enum CompilerConstants {
     public static Call virtualCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Call(MH.findVirtual(lookup, clazz, name, MH.type(rtype, ptypes)), className(clazz), name, methodDescriptor(rtype, ptypes)) {
             @Override
-            public MethodEmitter invoke(final MethodEmitter method) {
+            MethodEmitter invoke(final MethodEmitter method) {
                 return method.invokevirtual(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKEVIRTUAL, className, name, descriptor, false);
             }
         };
     }
+
+    /**
+     * Create a special call, given an explicit lookup, looking up the method handle for it at the same time.
+     * clazz is used as this class
+     *
+     * @param lookup    the lookup
+     * @param clazz     the class
+     * @param name      the name of the method
+     * @param rtype     the return type
+     * @param ptypes    the parameter types
+     *
+     * @return the call object representing the virtual call
+     */
+    public static Call specialCall(final MethodHandles.Lookup lookup, final Class<?> clazz, final String name, final Class<?> rtype, final Class<?>... ptypes) {
+        return new Call(MH.findSpecial(lookup, clazz, name, MH.type(rtype, ptypes), clazz), className(clazz), name, methodDescriptor(rtype, ptypes)) {
+            @Override
+            MethodEmitter invoke(final MethodEmitter method) {
+                return method.invokespecial(className, name, descriptor);
+            }
+
+            @Override
+            public void invoke(final MethodVisitor mv) {
+                mv.visitMethodInsn(Opcodes.INVOKESPECIAL, className, name, descriptor, false);
+            }
+        };
+    }
+
+    /**
+     * Returns true if the passed string looks like a method name of an internally generated Nashorn method. Basically,
+     * if it starts with a colon character {@code :} but is not the name of the program method {@code :program}.
+     * Program function is not considered internal as we want it to show up in exception stack traces.
+     * @param methodName the name of a method
+     * @return true if it looks like an internal Nashorn method name.
+     * @throws NullPointerException if passed null
+     */
+    public static boolean isInternalMethodName(final String methodName) {
+        return methodName.startsWith(INTERNAL_METHOD_PREFIX) && !methodName.equals(PROGRAM.symbolName);
+     }
 
     /**
      * Private class representing an access. This can generate code into a method code or
@@ -668,7 +773,14 @@ public enum CompilerConstants {
          *
          * @return the method emitter
          */
-        protected abstract MethodEmitter invoke(final MethodEmitter emitter);
+        abstract MethodEmitter invoke(final MethodEmitter emitter);
+
+        /**
+         * Generate invocation code for the method
+         *
+         * @param mv a method visitor
+         */
+        public abstract void invoke(final MethodVisitor mv);
     }
 
 }

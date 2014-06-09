@@ -199,6 +199,7 @@
 # include "runtime/perfData.hpp"
 # include "runtime/perfMemory.hpp"
 # include "runtime/prefetch.hpp"
+# include "runtime/prefetch.inline.hpp"
 # include "runtime/reflection.hpp"
 # include "runtime/reflectionUtils.hpp"
 # include "runtime/registerMap.hpp"
@@ -247,7 +248,6 @@
 # include "utilities/yieldingWorkgroup.hpp"
 #ifdef COMPILER2
 # include "libadt/dict.hpp"
-# include "libadt/port.hpp"
 # include "libadt/set.hpp"
 # include "libadt/vectset.hpp"
 # include "opto/addnode.hpp"

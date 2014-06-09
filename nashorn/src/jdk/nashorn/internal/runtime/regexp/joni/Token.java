@@ -33,21 +33,21 @@ final class Token {
     int getC() {
         return INT1;
     }
-    void setC(int c) {
+    void setC(final int c) {
         INT1 = c;
     }
 
     int getCode() {
         return INT1;
     }
-    void setCode(int code) {
+    void setCode(final int code) {
         INT1 = code;
     }
 
     int getAnchor() {
         return INT1;
     }
-    void setAnchor(int anchor) {
+    void setAnchor(final int anchor) {
         INT1 = anchor;
     }
 
@@ -55,35 +55,35 @@ final class Token {
     int getRepeatLower() {
         return INT1;
     }
-    void setRepeatLower(int lower) {
+    void setRepeatLower(final int lower) {
         INT1 = lower;
     }
 
     int getRepeatUpper() {
         return INT2;
     }
-    void setRepeatUpper(int upper) {
+    void setRepeatUpper(final int upper) {
         INT2 = upper;
     }
 
     boolean getRepeatGreedy() {
         return INT3 != 0;
     }
-    void setRepeatGreedy(boolean greedy) {
+    void setRepeatGreedy(final boolean greedy) {
         INT3 = greedy ? 1 : 0;
     }
 
     boolean getRepeatPossessive() {
         return INT4 != 0;
     }
-    void setRepeatPossessive(boolean possessive) {
+    void setRepeatPossessive(final boolean possessive) {
         INT4 = possessive ? 1 : 0;
     }
 
     int getBackrefRef() {
         return INT2;
     }
-    void setBackrefRef(int ref1) {
+    void setBackrefRef(final int ref1) {
         INT2 = ref1;
     }
 
@@ -91,14 +91,14 @@ final class Token {
     int getPropCType() {
         return INT1;
     }
-    void setPropCType(int ctype) {
+    void setPropCType(final int ctype) {
         INT1 = ctype;
     }
 
     boolean getPropNot() {
         return INT2 != 0;
     }
-    void setPropNot(boolean not) {
+    void setPropNot(final boolean not) {
         INT2 = not ? 1 : 0;
     }
 }
