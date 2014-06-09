@@ -832,6 +832,10 @@ public class JavaCompiler {
                         List<String> classnames,
                         Iterable<? extends Processor> processors)
     {
+        if (!taskListener.isEmpty()) {
+            taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
+        }
+
         if (processors != null && processors.iterator().hasNext())
             explicitAnnotationProcessingRequested = true;
         // as a JavaCompiler can only be used once, throw an exception if
@@ -904,6 +908,9 @@ public class JavaCompiler {
             if (!log.hasDiagnosticListener()) {
                 printCount("error", errorCount());
                 printCount("warn", warningCount());
+            }
+            if (!taskListener.isEmpty()) {
+                taskListener.finished(new TaskEvent(TaskEvent.Kind.COMPILATION));
             }
             close();
             if (procEnvImpl != null)

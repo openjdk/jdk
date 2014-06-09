@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,13 @@ public class T6358024 extends AbstractProcessor {
 
         test(fm, f,
              new Option[] { new Option("-d", ".")},
-             7);
+             8);
 
         test(fm, f,
              new Option[] { new XOption("-XprintRounds"),
                             new Option("-processorpath", "."),
                             new Option("-processor", self) },
-             12);
+             13);
     }
 
     static void test(JavacFileManager fm, JavaFileObject f, Option[] opts, int expect) throws Throwable {
