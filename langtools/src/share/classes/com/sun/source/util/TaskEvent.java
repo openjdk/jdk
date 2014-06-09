@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -68,7 +68,15 @@ public final class TaskEvent
         /**
          * For events relating to an individual annotation processing round.
          **/
-        ANNOTATION_PROCESSING_ROUND
+        ANNOTATION_PROCESSING_ROUND,
+        /**
+         * Sent before parsing first source file, and after writing the last output file.
+         * This event is not sent when using {@link JavacTask#parse()},
+         * {@link JavacTask#analyze()} or {@link JavacTask#generate()}.
+         *
+         * @since 1.9
+         */
+        COMPILATION,
     }
 
     public TaskEvent(Kind kind) {
