@@ -1403,7 +1403,8 @@ void PhaseIdealLoop::clone_loop( IdealLoopTree *loop, Node_List &old_new, int dd
         // loop.  Happens if people set a loop-exit flag; then test the flag
         // in the loop to break the loop, then test is again outside of the
         // loop to determine which way the loop exited.
-        if( use->is_If() || use->is_CMove() ) {
+        // Loop predicate If node connects to Bool node through Opaque1 node.
+        if (use->is_If() || use->is_CMove() || C->is_predicate_opaq(use)) {
           // Since this code is highly unlikely, we lazily build the worklist
           // of such Nodes to go split.
           if( !split_if_set )
