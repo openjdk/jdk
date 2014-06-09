@@ -39,7 +39,7 @@ class Krb5Util {
     static String getTGSName(GSSNameElement name)
         throws GSSException {
         String krbPrinc = name.getKrbName();
-        int atIndex = krbPrinc.indexOf("@");
+        int atIndex = krbPrinc.indexOf('@');
         String realm = krbPrinc.substring(atIndex + 1);
         StringBuffer buf = new StringBuffer("krbtgt/");
         buf.append(realm).append('@').append(realm);

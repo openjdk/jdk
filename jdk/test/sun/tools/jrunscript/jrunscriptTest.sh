@@ -42,7 +42,7 @@ fi
 rm -f jrunscriptTest.out 2>/dev/null
 ${JRUNSCRIPT} -J-Djava.awt.headless=true -l nashorn > jrunscriptTest.out 2>&1 <<EOF
 v = 2 + 5;
-v *= 5;
+v *= 5; v.doubleValue();
 v = v + " is the value";
 if (v != 0) { println('yes v != 0'); }
 java.lang.System.out.println('hello world from script');

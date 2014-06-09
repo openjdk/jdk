@@ -29,54 +29,60 @@ import java.io.PrintWriter;
 import java.util.HashSet;
 import java.util.Set;
 import java.util.StringTokenizer;
-import jdk.nashorn.internal.codegen.types.Range;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.options.Options;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
-
 /**
- * Maps a name to specific data.
+ * Symbol is a symbolic address for a value ("variable" if you wish). Identifiers in JavaScript source, as well as
+ * certain synthetic variables created by the compiler are represented by Symbol objects. Symbols can address either
+ * local variable slots in bytecode ("slotted symbol"), or properties in scope objects ("scoped symbol"). A symbol can
+ * also end up being defined but then not used during symbol assignment calculations; such symbol will be neither
+ * scoped, nor slotted; it represents a dead variable (it might be written to, but is never read). Finally, a symbol can
+ * be both slotted and in scope. This special case can only occur with bytecode method parameters. They all come in as
+ * slotted, but if they are used by a nested function (or eval) then they will be copied into the scope object, and used
+ * from there onwards. Two further special cases are parameters stored in {@code NativeArguments} objects and parameters
+ * stored in {@code Object[]} parameter to variable-arity functions. Those use the {@code #getFieldIndex()} property to
+ * refer to their location.
  */
 
 public final class Symbol implements Comparable<Symbol> {
-    /** Symbol kinds. Kind ordered by precedence. */
-    public static final int IS_TEMP     = 1;
     /** Is this Global */
-    public static final int IS_GLOBAL   = 2;
+    public static final int IS_GLOBAL   = 1;
     /** Is this a variable */
-    public static final int IS_VAR      = 3;
+    public static final int IS_VAR      = 2;
     /** Is this a parameter */
-    public static final int IS_PARAM    = 4;
+    public static final int IS_PARAM    = 3;
     /** Is this a constant */
-    public static final int IS_CONSTANT = 5;
+    public static final int IS_CONSTANT = 4;
     /** Mask for kind flags */
     public static final int KINDMASK = (1 << 3) - 1; // Kinds are represented by lower three bits
 
-    /** Is this scope */
-    public static final int IS_SCOPE             = 1 <<  4;
+    /** Is this symbol in scope */
+    public static final int IS_SCOPE                = 1 <<  3;
     /** Is this a this symbol */
-    public static final int IS_THIS              = 1 <<  5;
-    /** Can this symbol ever be undefined */
-    public static final int CAN_BE_UNDEFINED     = 1 <<  6;
-    /** Is this symbol always defined? */
-    public static final int IS_ALWAYS_DEFINED    = 1 <<  8;
-    /** Can this symbol ever have primitive types */
-    public static final int CAN_BE_PRIMITIVE     = 1 <<  9;
+    public static final int IS_THIS                 = 1 <<  4;
     /** Is this a let */
-    public static final int IS_LET               = 1 << 10;
+    public static final int IS_LET                  = 1 <<  5;
     /** Is this an internal symbol, never represented explicitly in source code */
-    public static final int IS_INTERNAL          = 1 << 11;
+    public static final int IS_INTERNAL             = 1 <<  6;
     /** Is this a function self-reference symbol */
-    public static final int IS_FUNCTION_SELF     = 1 << 12;
-    /** Is this a specialized param? */
-    public static final int IS_SPECIALIZED_PARAM = 1 << 13;
-    /** Is this symbol a shared temporary? */
-    public static final int IS_SHARED            = 1 << 14;
+    public static final int IS_FUNCTION_SELF        = 1 <<  7;
     /** Is this a function declaration? */
-    public static final int IS_FUNCTION_DECLARATION = 1 << 15;
+    public static final int IS_FUNCTION_DECLARATION = 1 <<  8;
+    /** Is this a program level symbol? */
+    public static final int IS_PROGRAM_LEVEL        = 1 <<  9;
+    /** Are this symbols' values stored in local variable slots? */
+    public static final int HAS_SLOT                = 1 << 10;
+    /** Is this symbol known to store an int value ? */
+    public static final int HAS_INT_VALUE           = 1 << 11;
+    /** Is this symbol known to store a long value ? */
+    public static final int HAS_LONG_VALUE          = 1 << 12;
+    /** Is this symbol known to store a double value ? */
+    public static final int HAS_DOUBLE_VALUE        = 1 << 13;
+    /** Is this symbol known to store an object value ? */
+    public static final int HAS_OBJECT_VALUE        = 1 << 14;
 
     /** Null or name identifying symbol. */
     private final String name;
@@ -84,20 +90,15 @@ public final class Symbol implements Comparable<Symbol> {
     /** Symbol flags. */
     private int flags;
 
-    /** Type of symbol. */
-    private Type type;
-
-    /** Local variable slot. -1 indicates external property. */
-    private int slot;
+    /** First bytecode method local variable slot for storing the value(s) of this variable. -1 indicates the variable
+     * is not stored in local variable slots or it is not yet known. */
+    private int firstSlot = -1;
 
     /** Field number in scope or property; array index in varargs when not using arguments object. */
     private int fieldIndex;
 
     /** Number of times this symbol is used in code */
     private int useCount;
-
-    /** Range for symbol */
-    private Range range;
 
     /** Debugging option - dump info and stack trace when symbols with given names are manipulated */
     private static final Set<String> TRACE_SYMBOLS;
@@ -109,7 +110,7 @@ public final class Symbol implements Comparable<Symbol> {
         if (stacktrace != null) {
             trace = stacktrace; //stacktrace always implies trace as well
             TRACE_SYMBOLS_STACKTRACE = new HashSet<>();
-            for (StringTokenizer st = new StringTokenizer(stacktrace, ","); st.hasMoreTokens(); ) {
+            for (final StringTokenizer st = new StringTokenizer(stacktrace, ","); st.hasMoreTokens(); ) {
                 TRACE_SYMBOLS_STACKTRACE.add(st.nextToken());
             }
         } else {
@@ -119,7 +120,7 @@ public final class Symbol implements Comparable<Symbol> {
 
         if (trace != null) {
             TRACE_SYMBOLS = new HashSet<>();
-            for (StringTokenizer st = new StringTokenizer(trace, ","); st.hasMoreTokens(); ) {
+            for (final StringTokenizer st = new StringTokenizer(trace, ","); st.hasMoreTokens(); ) {
                 TRACE_SYMBOLS.add(st.nextToken());
             }
         } else {
@@ -132,17 +133,16 @@ public final class Symbol implements Comparable<Symbol> {
      *
      * @param name  name of symbol
      * @param flags symbol flags
-     * @param type  type of this symbol
      * @param slot  bytecode slot for this symbol
      */
-    protected Symbol(final String name, final int flags, final Type type, final int slot) {
+    protected Symbol(final String name, final int flags, final int slot) {
         this.name       = name;
         this.flags      = flags;
-        this.type       = type;
-        this.slot       = slot;
+        this.firstSlot  = slot;
         this.fieldIndex = -1;
-        this.range      = Range.createUnknownRange();
-        trace("CREATE SYMBOL");
+        if(shouldTrace()) {
+            trace("CREATE SYMBOL " + name);
+        }
     }
 
     /**
@@ -152,29 +152,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @param flags symbol flags
      */
     public Symbol(final String name, final int flags) {
-        this(name, flags, Type.UNKNOWN, -1);
-    }
-
-    /**
-     * Constructor
-     *
-     * @param name  name of symbol
-     * @param flags symbol flags
-     * @param type  type of this symbol
-     */
-    public Symbol(final String name, final int flags, final Type type) {
-        this(name, flags, type, -1);
-    }
-
-    private Symbol(final Symbol base, final String name, final int flags) {
-        this.flags = flags;
-        this.name  = name;
-
-        this.fieldIndex = base.fieldIndex;
-        this.slot       = base.slot;
-        this.type       = base.type;
-        this.useCount   = base.useCount;
-        this.range      = base.range;
+        this(name, flags, -1);
     }
 
     private static String align(final String string, final int max) {
@@ -188,74 +166,59 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Return the type for this symbol. Normally, if there is no type override,
-     * this is where any type for any node is stored. If the node has a TypeOverride,
-     * it may override this, e.g. when asking for a scoped field as a double
-     *
-     * @return symbol type
-     */
-    public final Type getSymbolType() {
-        return type;
-    }
-
-    /**
      * Debugging .
      *
      * @param stream Stream to print to.
      */
 
     void print(final PrintWriter stream) {
-        final String printName = align(name, 20);
-        final String printType = align(type.toString(), 10);
-        final String printSlot = align(slot == -1 ? "none" : "" + slot, 10);
-        String printFlags = "";
+        final StringBuilder sb = new StringBuilder();
+
+        sb.append(align(name, 20)).
+            append(": ").
+            append(", ").
+            append(align(firstSlot == -1 ? "none" : "" + firstSlot, 10));
 
         switch (flags & KINDMASK) {
-        case IS_TEMP:
-            printFlags = "temp " + printFlags;
-            break;
         case IS_GLOBAL:
-            printFlags = "global " + printFlags;
+            sb.append(" global");
             break;
         case IS_VAR:
-            printFlags = "var " + printFlags;
+            sb.append(" var");
             break;
         case IS_PARAM:
-            printFlags = "param " + printFlags;
+            sb.append(" param");
             break;
         case IS_CONSTANT:
-            printFlags = "CONSTANT " + printFlags;
+            sb.append(" const");
             break;
         default:
             break;
         }
 
         if (isScope()) {
-            printFlags += "scope ";
+            sb.append(" scope");
         }
 
         if (isInternal()) {
-            printFlags += "internal ";
+            sb.append(" internal");
         }
 
         if (isLet()) {
-            printFlags += "let ";
+            sb.append(" let");
         }
 
         if (isThis()) {
-            printFlags += "this ";
+            sb.append(" this");
         }
 
-        if (!canBeUndefined()) {
-            printFlags += "always_def ";
+        if (isProgramLevel()) {
+            sb.append(" program");
         }
 
-        if (canBePrimitive()) {
-            printFlags += "can_be_prim ";
-        }
+        sb.append('\n');
 
-        stream.print(printName + ": " + printType + ", " + printSlot + ", " + printFlags);
-        stream.println();
+        stream.print(sb.toString());
     }
 
     /**
@@ -272,9 +235,16 @@ public final class Symbol implements Comparable<Symbol> {
      * Allocate a slot for this symbol.
      *
      * @param needsSlot True if symbol needs a slot.
+     * @return the symbol
      */
-    public void setNeedsSlot(final boolean needsSlot) {
-        setSlot(needsSlot ? 0 : -1);
+    public Symbol setNeedsSlot(final boolean needsSlot) {
+        if(needsSlot) {
+            assert !isScope();
+            flags |= HAS_SLOT;
+        } else {
+            flags &= ~HAS_SLOT;
+        }
+        return this;
     }
 
     /**
@@ -283,7 +253,14 @@ public final class Symbol implements Comparable<Symbol> {
      * @return Number of slots.
      */
     public int slotCount() {
-        return type.isCategory2() ? 2 : 1;
+        return ((flags & HAS_INT_VALUE)    == 0 ? 0 : 1) +
+               ((flags & HAS_LONG_VALUE)   == 0 ? 0 : 2) +
+               ((flags & HAS_DOUBLE_VALUE) == 0 ? 0 : 2) +
+               ((flags & HAS_OBJECT_VALUE) == 0 ? 0 : 1);
+    }
+
+    private boolean isSlotted() {
+        return firstSlot != -1 && ((flags & HAS_SLOT) != 0);
     }
 
     @Override
@@ -291,17 +268,18 @@ public final class Symbol implements Comparable<Symbol> {
         final StringBuilder sb = new StringBuilder();
 
         sb.append(name).
-            append(' ').
-            append('(').
-            append(getSymbolType().getTypeClass().getSimpleName()).
-            append(')');
+            append(' ');
 
         if (hasSlot()) {
             sb.append(' ').
                 append('(').
                 append("slot=").
-                append(slot).
-                append(')');
+                append(firstSlot).append(' ');
+            if((flags & HAS_INT_VALUE) != 0) { sb.append('I'); }
+            if((flags & HAS_LONG_VALUE) != 0) { sb.append('J'); }
+            if((flags & HAS_DOUBLE_VALUE) != 0) { sb.append('D'); }
+            if((flags & HAS_OBJECT_VALUE) != 0) { sb.append('O'); }
+            sb.append(')');
         }
 
         if (isScope()) {
@@ -310,10 +288,6 @@ public final class Symbol implements Comparable<Symbol> {
             } else {
                 sb.append(" S");
             }
-        }
-
-        if (canBePrimitive()) {
-            sb.append(" P?");
         }
 
         return sb.toString();
@@ -325,21 +299,31 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Does this symbol have an allocated bytecode slot. If not, it is scope
-     * and must be loaded from memory upon access
+     * Does this symbol have an allocated bytecode slot? Note that having an allocated bytecode slot doesn't necessarily
+     * mean the symbol's value will be stored in it. Namely, a function parameter can have a bytecode slot, but if it is
+     * in scope, then the bytecode slot will not be used. See {@link #isBytecodeLocal()}.
      *
      * @return true if this symbol has a local bytecode slot
      */
     public boolean hasSlot() {
-        return slot >= 0;
+        return (flags & HAS_SLOT) != 0;
     }
 
     /**
-     * Check if this is a temporary symbol
-     * @return true if temporary
+     * Is this symbol a local variable stored in bytecode local variable slots? This is true for a slotted variable that
+     * is not in scope. (E.g. a parameter that is in scope is slotted, but it will not be a local variable).
+     * @return true if this symbol is using bytecode local slots for its storage.
      */
-    public boolean isTemp() {
-        return (flags & KINDMASK) == IS_TEMP;
+    public boolean isBytecodeLocal() {
+        return hasSlot() && !isScope();
+    }
+
+    /**
+     * Returns true if this symbol is dead (it is a local variable that is statically proven to never be read in any type).
+     * @return true if this symbol is dead
+     */
+    public boolean isDead() {
+        return (flags & (HAS_SLOT | IS_SCOPE)) == 0;
     }
 
     /**
@@ -349,16 +333,8 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if this is scoped
      */
     public boolean isScope() {
-        assert ((flags & KINDMASK) != IS_GLOBAL) || ((flags & IS_SCOPE) == IS_SCOPE) : "global without scope flag";
-        return (flags & IS_SCOPE) == IS_SCOPE;
-    }
-
-    /**
-     * Returns true if this symbol is a temporary that is being shared across expressions.
-     * @return true if this symbol is a temporary that is being shared across expressions.
-     */
-    public boolean isShared() {
-        return (flags & IS_SHARED) == IS_SHARED;
+        assert (flags & KINDMASK) != IS_GLOBAL || (flags & IS_SCOPE) == IS_SCOPE : "global without scope flag";
+        return (flags & IS_SCOPE) != 0;
     }
 
     /**
@@ -366,51 +342,34 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if a function declaration
      */
     public boolean isFunctionDeclaration() {
-        return (flags & IS_FUNCTION_DECLARATION) == IS_FUNCTION_DECLARATION;
-    }
-
-    /**
-     * Creates an unshared copy of a symbol. The symbol must be currently shared.
-     * @param newName the name for the new symbol.
-     * @return a new, unshared symbol.
-     */
-    public Symbol createUnshared(final String newName) {
-        assert isShared();
-        return new Symbol(this, newName, flags & ~IS_SHARED);
+        return (flags & IS_FUNCTION_DECLARATION) != 0;
     }
 
     /**
      * Flag this symbol as scope as described in {@link Symbol#isScope()}
+     * @return the symbol
      */
-    /**
-     * Flag this symbol as scope as described in {@link Symbol#isScope()}
-     */
-     public void setIsScope() {
+     public Symbol setIsScope() {
         if (!isScope()) {
-            trace("SET IS SCOPE");
-            assert !isShared();
+            if(shouldTrace()) {
+                trace("SET IS SCOPE");
+            }
             flags |= IS_SCOPE;
+            if(!isParam()) {
+                flags &= ~HAS_SLOT;
+            }
         }
+        return this;
     }
-
-     /**
-      * Mark this symbol as one being shared by multiple expressions. The symbol must be a temporary.
-      */
-     public void setIsShared() {
-         if (!isShared()) {
-             assert isTemp();
-             trace("SET IS SHARED");
-             flags |= IS_SHARED;
-         }
-     }
-
 
     /**
      * Mark this symbol as a function declaration.
      */
     public void setIsFunctionDeclaration() {
         if (!isFunctionDeclaration()) {
-            trace("SET IS FUNCTION DECLARATION");
+            if(shouldTrace()) {
+                trace("SET IS FUNCTION DECLARATION");
+            }
             flags |= IS_FUNCTION_DECLARATION;
         }
     }
@@ -440,84 +399,11 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Check if this symbol is always defined, which overrides all canBeUndefined tags
-     * @return true if always defined
+     * Check if this is a program (script) level definition
+     * @return true if program level
      */
-    public boolean isAlwaysDefined() {
-        return isParam() || (flags & IS_ALWAYS_DEFINED) == IS_ALWAYS_DEFINED;
-    }
-
-    /**
-     * Get the range for this symbol
-     * @return range for symbol
-     */
-    public Range getRange() {
-        return range;
-    }
-
-    /**
-     * Set the range for this symbol
-     * @param range range
-     */
-    public void setRange(final Range range) {
-        this.range = range;
-    }
-
-    /**
-     * Check if this symbol represents a return value with a known non-generic type.
-     * @return true if specialized return value
-     */
-    public boolean isNonGenericReturn() {
-        return getName().equals(RETURN.symbolName()) && type != Type.OBJECT;
-    }
-
-    /**
-     * Check if this symbol is a function parameter of known
-     * narrowest type
-     * @return true if parameter
-     */
-    public boolean isSpecializedParam() {
-        return (flags & IS_SPECIALIZED_PARAM) == IS_SPECIALIZED_PARAM;
-    }
-
-    /**
-     * Check whether this symbol ever has primitive assignments. Conservative
-     * @return true if primitive assignments exist
-     */
-    public boolean canBePrimitive() {
-        return (flags & CAN_BE_PRIMITIVE) == CAN_BE_PRIMITIVE;
-    }
-
-    /**
-     * Check if this symbol can ever be undefined
-     * @return true if can be undefined
-     */
-    public boolean canBeUndefined() {
-        return (flags & CAN_BE_UNDEFINED) == CAN_BE_UNDEFINED;
-    }
-
-    /**
-     * Flag this symbol as potentially undefined in parts of the program
-     */
-    public void setCanBeUndefined() {
-        assert type.isObject() : type;
-        if (isAlwaysDefined()) {
-            return;
-        } else if (!canBeUndefined()) {
-            assert !isShared();
-            flags |= CAN_BE_UNDEFINED;
-        }
-    }
-
-    /**
-     * Flag this symbol as potentially primitive
-     * @param type the primitive type it occurs with, currently unused but can be used for width guesses
-     */
-    public void setCanBePrimitive(final Type type) {
-        if(!canBePrimitive()) {
-            assert !isShared();
-            flags |= CAN_BE_PRIMITIVE;
-        }
+    public boolean isProgramLevel() {
+        return (flags & IS_PROGRAM_LEVEL) != 0;
     }
 
     /**
@@ -550,15 +436,14 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if let
      */
     public boolean isLet() {
-        return (flags & IS_LET) == IS_LET;
+        return (flags & IS_LET) != 0;
     }
 
     /**
      * Flag this symbol as a let
      */
     public void setIsLet() {
-        if(!isLet()) {
-            assert !isShared();
+        if (!isLet()) {
             flags |= IS_LET;
         }
     }
@@ -568,7 +453,7 @@ public final class Symbol implements Comparable<Symbol> {
      * @return true if this symbol as a function's self-referencing symbol.
      */
     public boolean isFunctionSelf() {
-        return (flags & IS_FUNCTION_SELF) == IS_FUNCTION_SELF;
+        return (flags & IS_FUNCTION_SELF) != 0;
     }
 
     /**
@@ -587,12 +472,13 @@ public final class Symbol implements Comparable<Symbol> {
      * and get allocated in a JO-prefixed ScriptObject subclass.
      *
      * @param fieldIndex field index - a positive integer
+     * @return the symbol
      */
-    public void setFieldIndex(final int fieldIndex) {
-        if(this.fieldIndex != fieldIndex) {
-            assert !isShared();
+    public Symbol setFieldIndex(final int fieldIndex) {
+        if (this.fieldIndex != fieldIndex) {
             this.fieldIndex = fieldIndex;
         }
+        return this;
     }
 
     /**
@@ -606,12 +492,37 @@ public final class Symbol implements Comparable<Symbol> {
     /**
      * Set the symbol flags
      * @param flags flags
+     * @return the symbol
      */
-    public void setFlags(final int flags) {
-        if(this.flags != flags) {
-            assert !isShared();
+    public Symbol setFlags(final int flags) {
+        if (this.flags != flags) {
             this.flags = flags;
         }
+        return this;
+    }
+
+    /**
+     * Set a single symbol flag
+     * @param flag flag to set
+     * @return the symbol
+     */
+    public Symbol setFlag(final int flag) {
+        if ((this.flags & flag) == 0) {
+            this.flags |= flag;
+        }
+        return this;
+    }
+
+    /**
+     * Clears a single symbol flag
+     * @param flag flag to set
+     * @return the symbol
+     */
+    public Symbol clearFlag(final int flag) {
+        if ((this.flags & flag) != 0) {
+            this.flags &= ~flag;
+        }
+        return this;
     }
 
     /**
@@ -623,18 +534,82 @@ public final class Symbol implements Comparable<Symbol> {
     }
 
     /**
-     * Get the byte code slot for this symbol
-     * @return byte code slot, or -1 if no slot allocated/possible
+     * Get the index of the first bytecode slot for this symbol
+     * @return byte code slot
      */
-    public int getSlot() {
-        return slot;
+    public int getFirstSlot() {
+        assert isSlotted();
+        return firstSlot;
+    }
+
+    /**
+     * Get the index of the bytecode slot for this symbol for storing a value of the specified type.
+     * @param type the requested type
+     * @return byte code slot
+     */
+    public int getSlot(final Type type) {
+        assert isSlotted();
+        int typeSlot = firstSlot;
+        if(type.isBoolean() || type.isInteger()) {
+            assert (flags & HAS_INT_VALUE) != 0;
+            return typeSlot;
+        }
+        typeSlot += ((flags & HAS_INT_VALUE) == 0 ? 0 : 1);
+        if(type.isLong()) {
+            assert (flags & HAS_LONG_VALUE) != 0;
+            return typeSlot;
+        }
+        typeSlot += ((flags & HAS_LONG_VALUE) == 0 ? 0 : 2);
+        if(type.isNumber()) {
+            assert (flags & HAS_DOUBLE_VALUE) != 0;
+            return typeSlot;
+        }
+        assert type.isObject();
+        assert (flags & HAS_OBJECT_VALUE) != 0 : name;
+        return typeSlot + ((flags & HAS_DOUBLE_VALUE) == 0 ? 0 : 2);
+    }
+
+    /**
+     * Returns true if this symbol has a local variable slot for storing a value of specific type.
+     * @param type the type
+     * @return true if this symbol has a local variable slot for storing a value of specific type.
+     */
+    public boolean hasSlotFor(final Type type) {
+        if(type.isBoolean() || type.isInteger()) {
+            return (flags & HAS_INT_VALUE) != 0;
+        } else if(type.isLong()) {
+            return (flags & HAS_LONG_VALUE) != 0;
+        } else if(type.isNumber()) {
+            return (flags & HAS_DOUBLE_VALUE) != 0;
+        }
+        assert type.isObject();
+        return (flags & HAS_OBJECT_VALUE) != 0;
+    }
+
+    /**
+     * Marks this symbol as having a local variable slot for storing a value of specific type.
+     * @param type the type
+     */
+    public void setHasSlotFor(final Type type) {
+        if(type.isBoolean() || type.isInteger()) {
+            setFlag(HAS_INT_VALUE);
+        } else if(type.isLong()) {
+            setFlag(HAS_LONG_VALUE);
+        } else if(type.isNumber()) {
+            setFlag(HAS_DOUBLE_VALUE);
+        } else {
+            assert type.isObject();
+            setFlag(HAS_OBJECT_VALUE);
+        }
     }
 
     /**
      * Increase the symbol's use count by one.
+     * @return the symbol
      */
-    public void increaseUseCount() {
+    public Symbol increaseUseCount() {
         useCount++;
+        return this;
     }
 
     /**
@@ -647,76 +622,16 @@ public final class Symbol implements Comparable<Symbol> {
 
     /**
      * Set the bytecode slot for this symbol
-     * @param slot valid bytecode slot, or -1 if not available
+     * @param  firstSlot valid bytecode slot
+     * @return the symbol
      */
-    public void setSlot(final int slot) {
-        if (slot != this.slot) {
-            assert !isShared();
-            trace("SET SLOT " + slot);
-            this.slot = slot;
-        }
-    }
-
-    /**
-     * Assign a specific subclass of Object to the symbol
-     *
-     * @param type  the type
-     */
-    public void setType(final Class<?> type) {
-        assert !type.isPrimitive() && !Number.class.isAssignableFrom(type) : "Class<?> types can only be subclasses of object";
-        setType(Type.typeFor(type));
-    }
-
-    /**
-     * Assign a type to the symbol
-     *
-     * @param type the type
-     */
-    public void setType(final Type type) {
-        setTypeOverride(Type.widest(this.type, type));
-    }
-
-    /**
-     * Returns true if calling {@link #setType(Type)} on this symbol would effectively change its type.
-     * @param newType the new type to test for
-     * @return true if setting this symbols type to a new value would effectively change its type.
-     */
-    public boolean wouldChangeType(final Type newType) {
-        return Type.widest(this.type, newType) != this.type;
-    }
-
-    /**
-     * Only use this if you know about an existing type
-     * constraint - otherwise a type can only be
-     * widened
-     *
-     * @param type  the type
-     */
-    public void setTypeOverride(final Type type) {
-        final Type old = this.type;
-        if (old != type) {
-            assert !isShared();
-            trace("TYPE CHANGE: " + old + "=>" + type + " == " + type);
-            this.type = type;
-        }
-    }
-
-    /**
-     * Sets the type of the symbol to the specified type. If the type would be changed, but this symbol is a shared
-     * temporary, it will instead return a different temporary symbol of the requested type from the passed temporary
-     * symbols. That way, it never mutates the type of a shared temporary.
-     * @param type the new type for the symbol
-     * @param ts a holder of temporary symbols
-     * @return either this symbol, or a different symbol if this symbol is a shared temporary and it type would have to
-     * be changed.
-     */
-    public Symbol setTypeOverrideShared(final Type type, final TemporarySymbols ts) {
-        if(getSymbolType() != type) {
-            if(isShared()) {
-                assert !hasSlot();
-                return ts.getTypedTemporarySymbol(type);
+    public Symbol setFirstSlot(final int firstSlot) {
+        assert firstSlot >= 0 && firstSlot <= 65535;
+        if (firstSlot != this.firstSlot) {
+            if(shouldTrace()) {
+                trace("SET SLOT " + firstSlot);
             }
-            setTypeOverride(type);
+            this.firstSlot = firstSlot;
         }
         return this;
     }
@@ -728,22 +643,26 @@ public final class Symbol implements Comparable<Symbol> {
      * when flags need to be tagged, but block is in the
      * middle of evaluation and cannot be modified.
      *
-     * @param lc     lexical context
-     * @param symbol symbol
+     * @param  lc     lexical context
+     * @param  symbol symbol
+     * @return the symbol
      */
-    public static void setSymbolIsScope(final LexicalContext lc, final Symbol symbol) {
+    public static Symbol setSymbolIsScope(final LexicalContext lc, final Symbol symbol) {
         symbol.setIsScope();
         if (!symbol.isGlobal()) {
             lc.setBlockNeedsScope(lc.getDefiningBlock(symbol));
         }
+        return symbol;
+    }
+
+    private boolean shouldTrace() {
+        return TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name));
     }
 
     private void trace(final String desc) {
-        if (TRACE_SYMBOLS != null && (TRACE_SYMBOLS.isEmpty() || TRACE_SYMBOLS.contains(name))) {
-            Context.err(Debug.id(this) + " SYMBOL: '" + name + "' " + desc);
-            if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
-                new Throwable().printStackTrace(Context.getCurrentErr());
-            }
+        Context.err(Debug.id(this) + " SYMBOL: '" + name + "' " + desc);
+        if (TRACE_SYMBOLS_STACKTRACE != null && (TRACE_SYMBOLS_STACKTRACE.isEmpty() || TRACE_SYMBOLS_STACKTRACE.contains(name))) {
+            new Throwable().printStackTrace(Context.getCurrentErr());
         }
     }
 }

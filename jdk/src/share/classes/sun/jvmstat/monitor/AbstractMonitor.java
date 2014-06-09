@@ -84,7 +84,7 @@ public abstract class AbstractMonitor implements Monitor  {
      * {@inheritDoc}
      */
     public String getBaseName() {
-        int baseIndex = name.lastIndexOf(".")+1;
+        int baseIndex = name.lastIndexOf('.') + 1;
         return name.substring(baseIndex);
     }
 

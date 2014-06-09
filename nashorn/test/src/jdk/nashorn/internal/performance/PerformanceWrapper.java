@@ -72,8 +72,8 @@ public class PerformanceWrapper extends jdk.nashorn.tools.Shell {
     }
 
 
-    protected void runExecuteOnlyTest(final String name, final int numberOfIterations, final int runsPerIteration, final String testURL, final OutputStream out, final OutputStream err, String[] newargs) throws Throwable {
-        String[] args=new String[newargs.length+1];
+    protected void runExecuteOnlyTest(final String name, final int numberOfIterations, final int runsPerIteration, final String testURL, final OutputStream out, final OutputStream err, final String[] newargs) throws Throwable {
+        final String[] args=new String[newargs.length+1];
         System.arraycopy(newargs, 0, args, 1, newargs.length);
         args[0]=name;
 

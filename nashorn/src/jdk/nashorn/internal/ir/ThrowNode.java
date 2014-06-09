@@ -32,14 +32,13 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * IR representation for THROW statements.
  */
 @Immutable
-public final class ThrowNode extends Statement {
+public final class ThrowNode extends Statement implements JoinPredecessor {
     /** Exception expression. */
     private final Expression expression;
 
-    private final int flags;
+    private final LocalVariableConversion conversion;
 
-    /** Is this block a synthethic rethrow created by finally inlining? */
-    public static final int IS_SYNTHETIC_RETHROW = 1;
+    private final boolean isSyntheticRethrow;
 
     /**
      * Constructor
@@ -48,18 +47,21 @@ public final class ThrowNode extends Statement {
      * @param token      token
      * @param finish     finish
      * @param expression expression to throw
-     * @param flags      flags
+     * @param isSyntheticRethrow true if this throw node is part of a synthetic rethrow.
      */
-    public ThrowNode(final int lineNumber, final long token, final int finish, final Expression expression, final int flags) {
+    public ThrowNode(final int lineNumber, final long token, final int finish, final Expression expression, final boolean isSyntheticRethrow) {
         super(lineNumber, token, finish);
         this.expression = expression;
-        this.flags = flags;
+        this.isSyntheticRethrow = isSyntheticRethrow;
+        this.conversion = null;
     }
 
-    private ThrowNode(final ThrowNode node, final Expression expression, final int flags) {
+    private ThrowNode(final ThrowNode node, final Expression expression, final boolean isSyntheticRethrow,
+            final LocalVariableConversion conversion) {
         super(node);
         this.expression = expression;
-        this.flags = flags;
+        this.isSyntheticRethrow = isSyntheticRethrow;
+        this.conversion = conversion;
     }
 
     @Override
@@ -81,11 +83,14 @@ public final class ThrowNode extends Statement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("throw ");
 
         if (expression != null) {
-            expression.toString(sb);
+            expression.toString(sb, printType);
+        }
+        if (conversion != null) {
+            conversion.toString(sb);
         }
     }
 
@@ -106,7 +111,7 @@ public final class ThrowNode extends Statement {
         if (this.expression == expression) {
             return this;
         }
-        return new ThrowNode(this, expression, flags);
+        return new ThrowNode(this, expression, isSyntheticRethrow, conversion);
     }
 
     /**
@@ -116,7 +121,20 @@ public final class ThrowNode extends Statement {
      * @return true if synthetic throw node
      */
     public boolean isSyntheticRethrow() {
-        return (flags & IS_SYNTHETIC_RETHROW) == IS_SYNTHETIC_RETHROW;
+        return isSyntheticRethrow;
+    }
+
+    @Override
+    public JoinPredecessor setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {
+        if(this.conversion == conversion) {
+            return this;
+        }
+        return new ThrowNode(this, expression, isSyntheticRethrow, conversion);
+    }
+
+    @Override
+    public LocalVariableConversion getLocalVariableConversion() {
+        return conversion;
     }
 
 }

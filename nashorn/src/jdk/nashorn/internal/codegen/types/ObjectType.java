@@ -65,8 +65,13 @@ class ObjectType extends Type {
     }
 
     @Override
-    public Type add(final MethodVisitor method) {
-        invokeStatic(method, ScriptRuntime.ADD);
+    public String getShortDescriptor() {
+        return getTypeClass() == Object.class ? "Object" : getTypeClass().getSimpleName();
+    }
+
+    @Override
+    public Type add(final MethodVisitor method, final int programPoint) {
+        invokestatic(method, ScriptRuntime.ADD);
         return Type.OBJECT;
     }
 
@@ -74,7 +79,7 @@ class ObjectType extends Type {
     public Type load(final MethodVisitor method, final int slot) {
         assert slot != -1;
         method.visitVarInsn(ALOAD, slot);
-        return Type.OBJECT;
+        return this;
     }
 
     @Override
@@ -86,13 +91,21 @@ class ObjectType extends Type {
     @Override
     public Type loadUndefined(final MethodVisitor method) {
         method.visitFieldInsn(GETSTATIC, className(ScriptRuntime.class), "UNDEFINED", typeDescriptor(Undefined.class));
+        return UNDEFINED;
+    }
+
+    @Override
+    public Type loadForcedInitializer(final MethodVisitor method) {
+        method.visitInsn(ACONST_NULL);
+        // TODO: do we need a special type for null, e.g. Type.NULL? It should be assignable to any other object type
+        // without a checkast in convert.
         return OBJECT;
     }
 
     @Override
     public Type loadEmpty(final MethodVisitor method) {
         method.visitFieldInsn(GETSTATIC, className(ScriptRuntime.class), "EMPTY", typeDescriptor(Undefined.class));
-        return OBJECT;
+        return UNDEFINED;
     }
 
     @Override
@@ -108,10 +121,10 @@ class ObjectType extends Type {
             method.visitLdcInsn(c);
             return Type.typeFor(MethodHandle.class);
         } else {
-            assert false : "implementation missing for class " + c.getClass() + " value=" + c;
+            throw new UnsupportedOperationException("implementation missing for class " + c.getClass() + " value=" + c);
         }
 
-        return OBJECT;
+        return Type.OBJECT;
     }
 
     @Override
@@ -138,6 +151,10 @@ class ObjectType extends Type {
                 }
                 return to;
             } else if (to.isObject()) {
+                final Class<?> toClass = to.getTypeClass();
+                if(!toClass.isAssignableFrom(getTypeClass())) {
+                    method.visitTypeInsn(CHECKCAST, CompilerConstants.className(toClass));
+                }
                 return to;
             }
         } else if (isString()) {
@@ -145,17 +162,17 @@ class ObjectType extends Type {
         }
 
         if (to.isInteger()) {
-            invokeStatic(method, JSType.TO_INT32);
+            invokestatic(method, JSType.TO_INT32);
         } else if (to.isNumber()) {
-            invokeStatic(method, JSType.TO_NUMBER);
+            invokestatic(method, JSType.TO_NUMBER);
         } else if (to.isLong()) {
-            invokeStatic(method, JSType.TO_INT64);
+            invokestatic(method, JSType.TO_LONG);
         } else if (to.isBoolean()) {
-            invokeStatic(method, JSType.TO_BOOLEAN);
+            invokestatic(method, JSType.TO_BOOLEAN);
         } else if (to.isString()) {
-            invokeStatic(method, JSType.TO_PRIMITIVE_TO_STRING);
+            invokestatic(method, JSType.TO_PRIMITIVE_TO_STRING);
         } else {
-            assert false : "Illegal conversion " + this + " -> " + to + " " + isString() + " " + toString;
+            throw new UnsupportedOperationException("Illegal conversion " + this + " -> " + to + " " + isString() + " " + toString);
         }
 
         return to;
@@ -164,5 +181,10 @@ class ObjectType extends Type {
     @Override
     public void _return(final MethodVisitor method) {
         method.visitInsn(ARETURN);
+    }
+
+    @Override
+    public char getBytecodeStackType() {
+        return 'A';
     }
 }

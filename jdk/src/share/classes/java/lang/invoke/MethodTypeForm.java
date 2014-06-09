@@ -91,8 +91,10 @@ final class MethodTypeForm {
         return lambdaForms[which];
     }
 
-    public LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
-        // Should we perform some sort of CAS, to avoid racy duplication?
+    synchronized public LambdaForm setCachedLambdaForm(int which, LambdaForm form) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        LambdaForm prev = lambdaForms[which];
+        if (prev != null) return prev;
         return lambdaForms[which] = form;
     }
 

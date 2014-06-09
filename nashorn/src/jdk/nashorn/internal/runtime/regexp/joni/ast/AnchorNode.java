@@ -26,7 +26,7 @@ public final class AnchorNode extends Node implements AnchorType {
     public Node target;
     public int charLength;
 
-    public AnchorNode(int type) {
+    public AnchorNode(final int type) {
         this.type = type;
         charLength = -1;
     }
@@ -37,7 +37,7 @@ public final class AnchorNode extends Node implements AnchorType {
     }
 
     @Override
-    protected void setChild(Node newChild) {
+    protected void setChild(final Node newChild) {
         target = newChild;
     }
 
@@ -46,7 +46,7 @@ public final class AnchorNode extends Node implements AnchorType {
         return target;
     }
 
-    public void setTarget(Node tgt) {
+    public void setTarget(final Node tgt) {
         target = tgt;
         tgt.parent = this;
     }
@@ -57,15 +57,15 @@ public final class AnchorNode extends Node implements AnchorType {
     }
 
     @Override
-    public String toString(int level) {
-        StringBuilder value = new StringBuilder();
+    public String toString(final int level) {
+        final StringBuilder value = new StringBuilder();
         value.append("\n  type: " + typeToString());
         value.append("\n  target: " + pad(target, level + 1));
         return value.toString();
     }
 
     public String typeToString() {
-        StringBuilder type = new StringBuilder();
+        final StringBuilder type = new StringBuilder();
         if (isType(BEGIN_BUF)) type.append("BEGIN_BUF ");
         if (isType(BEGIN_LINE)) type.append("BEGIN_LINE ");
         if (isType(BEGIN_POSITION)) type.append("BEGIN_POSITION ");
@@ -85,7 +85,7 @@ public final class AnchorNode extends Node implements AnchorType {
         return type.toString();
     }
 
-    private boolean isType(int type) {
+    private boolean isType(final int type) {
         return (this.type & type) != 0;
     }
 

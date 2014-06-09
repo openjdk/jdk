@@ -106,7 +106,7 @@ import jdk.internal.dynalink.support.TypeUtilities;
  * @author Attila Szegedi
  */
 class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicLinker {
-    BeanLinker(Class<?> clazz) {
+    BeanLinker(final Class<?> clazz) {
         super(clazz, Guards.getClassGuard(clazz), Guards.getInstanceOfGuard(clazz));
         if(clazz.isArray()) {
             // Some languages won't have a notion of manipulating collections. Exposing "length" on arrays as an
@@ -119,7 +119,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     @Override
-    public boolean canLinkType(Class<?> type) {
+    public boolean canLinkType(final Class<?> type) {
         return type == clazz;
     }
 
@@ -129,8 +129,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     @Override
-    protected GuardedInvocationComponent getGuardedInvocationComponent(CallSiteDescriptor callSiteDescriptor,
-            LinkerServices linkerServices, List<String> operations) throws Exception {
+    protected GuardedInvocationComponent getGuardedInvocationComponent(final CallSiteDescriptor callSiteDescriptor,
+            final LinkerServices linkerServices, final List<String> operations) throws Exception {
         final GuardedInvocationComponent superGic = super.getGuardedInvocationComponent(callSiteDescriptor,
                 linkerServices, operations);
         if(superGic != null) {
@@ -166,7 +166,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static MethodHandle MAP_GUARD = Guards.getInstanceOfGuard(Map.class);
 
     private GuardedInvocationComponent getElementGetter(final CallSiteDescriptor callSiteDescriptor,
-            final LinkerServices linkerServices, List<String> operations) throws Exception {
+            final LinkerServices linkerServices, final List<String> operations) throws Exception {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
         final GuardedInvocationComponent nextComponent = getGuardedInvocationComponent(callSiteDescriptor,
@@ -237,8 +237,9 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         } else {
             checkGuard = convertArgToInt(RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
         }
-        return nextComponent.compose(MethodHandles.guardWithTest(binder.bindTest(checkGuard),
-                binder.bind(invocation), nextComponent.getGuardedInvocation().getInvocation()), gi.getGuard(),
+        final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
+                nextComponent.getGuardedInvocation().getInvocation());
+        return nextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
     }
 
@@ -247,7 +248,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
                 CallSiteDescriptor.NAME_OPERAND);
     }
 
-    private static Object convertKeyToInteger(String fixedKey, LinkerServices linkerServices) throws Exception {
+    private static Object convertKeyToInteger(final String fixedKey, final LinkerServices linkerServices) throws Exception {
         try {
             if(linkerServices.canConvert(String.class, Number.class)) {
                 try {
@@ -267,18 +268,18 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
                     return Integer.valueOf(intIndex);
                 } catch(Exception|Error e) {
                     throw e;
-                } catch(Throwable t) {
+                } catch(final Throwable t) {
                     throw new RuntimeException(t);
                 }
             }
             return Integer.valueOf(fixedKey);
-        } catch(NumberFormatException e) {
+        } catch(final NumberFormatException e) {
             // key is not a number
             return null;
         }
     }
 
-    private static MethodHandle convertArgToInt(MethodHandle mh, LinkerServices ls, CallSiteDescriptor desc) {
+    private static MethodHandle convertArgToInt(final MethodHandle mh, final LinkerServices ls, final CallSiteDescriptor desc) {
         final Class<?> sourceType = desc.getMethodType().parameterType(1);
         if(TypeUtilities.isMethodInvocationConvertible(sourceType, Number.class)) {
             return mh;
@@ -301,21 +302,21 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         private final MethodType methodType;
         private final Object fixedKey;
 
-        Binder(LinkerServices linkerServices, MethodType methodType, Object fixedKey) {
+        Binder(final LinkerServices linkerServices, final MethodType methodType, final Object fixedKey) {
             this.linkerServices = linkerServices;
             this.methodType = fixedKey == null ? methodType : methodType.insertParameterTypes(1, fixedKey.getClass());
             this.fixedKey = fixedKey;
         }
 
-        /*private*/ MethodHandle bind(MethodHandle handle) {
-            return bindToFixedKey(linkerServices.asType(handle, methodType));
+        /*private*/ MethodHandle bind(final MethodHandle handle) {
+            return bindToFixedKey(linkerServices.asTypeLosslessReturn(handle, methodType));
         }
 
-        /*private*/ MethodHandle bindTest(MethodHandle handle) {
+        /*private*/ MethodHandle bindTest(final MethodHandle handle) {
             return bindToFixedKey(Guards.asType(handle, methodType));
         }
 
-        private MethodHandle bindToFixedKey(MethodHandle handle) {
+        private MethodHandle bindToFixedKey(final MethodHandle handle) {
             return fixedKey == null ? handle : MethodHandles.insertArguments(handle, 1, fixedKey);
         }
     }
@@ -325,12 +326,12 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static MethodHandle CONTAINS_MAP = Lookup.PUBLIC.findVirtual(Map.class, "containsKey",
             MethodType.methodType(boolean.class, Object.class));
 
-    private static MethodHandle findRangeCheck(Class<?> collectionType) {
+    private static MethodHandle findRangeCheck(final Class<?> collectionType) {
         return Lookup.findOwnStatic(MethodHandles.lookup(), "rangeCheck", boolean.class, collectionType, Object.class);
     }
 
     @SuppressWarnings("unused")
-    private static final boolean rangeCheck(Object array, Object index) {
+    private static final boolean rangeCheck(final Object array, final Object index) {
         if(!(index instanceof Number)) {
             return false;
         }
@@ -347,7 +348,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     }
 
     @SuppressWarnings("unused")
-    private static final boolean rangeCheck(List<?> list, Object index) {
+    private static final boolean rangeCheck(final List<?> list, final Object index) {
         if(!(index instanceof Number)) {
             return false;
         }
@@ -369,8 +370,8 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
     private static MethodHandle PUT_MAP_ELEMENT = Lookup.PUBLIC.findVirtual(Map.class, "put",
             MethodType.methodType(Object.class, Object.class, Object.class));
 
-    private GuardedInvocationComponent getElementSetter(CallSiteDescriptor callSiteDescriptor,
-            LinkerServices linkerServices, List<String> operations) throws Exception {
+    private GuardedInvocationComponent getElementSetter(final CallSiteDescriptor callSiteDescriptor,
+            final LinkerServices linkerServices, final List<String> operations) throws Exception {
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
 
@@ -440,8 +441,9 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
         final MethodHandle checkGuard = convertArgToInt(invocation == SET_LIST_ELEMENT ? RANGE_CHECK_LIST :
             RANGE_CHECK_ARRAY, linkerServices, callSiteDescriptor);
-        return nextComponent.compose(MethodHandles.guardWithTest(binder.bindTest(checkGuard),
-                binder.bind(invocation), nextComponent.getGuardedInvocation().getInvocation()), gi.getGuard(),
+        final MethodPair matchedInvocations = matchReturnTypes(binder.bind(invocation),
+                nextComponent.getGuardedInvocation().getInvocation());
+        return nextComponent.compose(matchedInvocations.guardWithTest(binder.bindTest(checkGuard)), gi.getGuard(),
                 gic.getValidatorClass(), gic.getValidationType());
     }
 
@@ -456,7 +458,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
 
     private static MethodHandle COLLECTION_GUARD = Guards.getInstanceOfGuard(Collection.class);
 
-    private GuardedInvocationComponent getLengthGetter(CallSiteDescriptor callSiteDescriptor) {
+    private GuardedInvocationComponent getLengthGetter(final CallSiteDescriptor callSiteDescriptor) {
         assertParameterCount(callSiteDescriptor, 1);
         final MethodType callSiteType = callSiteDescriptor.getMethodType();
         final Class<?> declaredType = callSiteType.parameterType(0);
@@ -486,7 +488,7 @@ class BeanLinker extends AbstractJavaLinker implements TypeBasedGuardingDynamicL
         return null;
     }
 
-    private static void assertParameterCount(CallSiteDescriptor descriptor, int paramCount) {
+    private static void assertParameterCount(final CallSiteDescriptor descriptor, final int paramCount) {
         if(descriptor.getMethodType().parameterCount() != paramCount) {
             throw new BootstrapMethodError(descriptor.getName() + " must have exactly " + paramCount + " parameters.");
         }

@@ -25,15 +25,20 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+import jdk.nashorn.internal.codegen.types.Type;
 
 /**
  * Implementation of {@link ArrayData} as soon as a double has been
  * written to the array
  */
-final class NumberArrayData extends ArrayData {
+final class NumberArrayData extends ContinuousArrayData {
     /**
      * The wrapped array
      */
@@ -105,24 +110,17 @@ final class NumberArrayData extends ArrayData {
 
     @Override
     public ArrayData ensure(final long safeIndex) {
-        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= array.length) {
+        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
             return new SparseArrayData(this, safeIndex + 1);
         }
-
-        int newLength = array.length;
-
-        while (newLength <= safeIndex) {
-            newLength = ArrayData.nextSize(newLength);
+        final int alen = array.length;
+        if (safeIndex >= alen) {
+            final int newLength = ArrayData.nextSize((int)safeIndex);
+            array = Arrays.copyOf(array, newLength); //todo fill with nan or never accessed?
         }
-
-        if (array.length <= safeIndex) {
-            array = Arrays.copyOf(array, newLength);
-            Arrays.fill(array, (int) length(), newLength, Double.NaN);
-        }
-
         setLength(safeIndex + 1);
-
         return this;
+
     }
 
     @Override
@@ -165,6 +163,44 @@ final class NumberArrayData extends ArrayData {
     }
 
     @Override
+    public Type getOptimisticType() {
+        return Type.NUMBER;
+    }
+
+    private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), NumberArrayData.class, "getElem", double.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), NumberArrayData.class, "setElem", void.class, int.class, double.class).methodHandle();
+
+    @SuppressWarnings("unused")
+    private double getElem(final int index) {
+        if (has(index)) {
+            return array[index];
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private void setElem(final int index, final double elem) {
+        if (hasRoomFor(index)) {
+            array[index] = elem;
+            return;
+        }
+        throw new ClassCastException();
+    }
+
+    @Override
+    public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+        if (returnType == int.class || returnType == long.class) {
+            return null;
+        }
+        return getContinuousElementGetter(HAS_GET_ELEM, returnType, programPoint);
+    }
+
+    @Override
+    public MethodHandle getElementSetter(final Class<?> elementType) {
+        return elementType.isPrimitive() ? getContinuousElementSetter(MH.asType(SET_ELEM, SET_ELEM.type().changeParameterType(2, elementType)), elementType) : null;
+    }
+
+    @Override
     public int getInt(final int index) {
         return (int)array[index];
     }
@@ -176,6 +212,11 @@ final class NumberArrayData extends ArrayData {
 
     @Override
     public double getDouble(final int index) {
+        return array[index];
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         return array[index];
     }
 
@@ -214,9 +255,20 @@ final class NumberArrayData extends ArrayData {
 
     @Override
     public ArrayData slice(final long from, final long to) {
-        final long start     = from < 0 ? (from + length()) : from;
+        final long start     = from < 0 ? from + length() : from;
         final long newLength = to - start;
         return new NumberArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
+    }
+
+    @Override
+    public final ArrayData push(final boolean strict, final double item) {
+        final long      length = length();
+        final ArrayData newData = ensure(length);
+        if (newData == this) {
+            array[(int)length] = item;
+            return this;
+        }
+        return newData.set((int)length, item, strict);
     }
 
     @Override
@@ -226,7 +278,7 @@ final class NumberArrayData extends ArrayData {
         if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
             throw new UnsupportedOperationException();
         }
-        final ArrayData returnValue = (removed == 0) ?
+        final ArrayData returnValue = removed == 0 ?
                 EMPTY_ARRAY : new NumberArrayData(Arrays.copyOfRange(array, start, start + removed), removed);
 
         if (newLength != oldLength) {

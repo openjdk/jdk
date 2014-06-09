@@ -28,9 +28,11 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EVAL;
 import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
+import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
 
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.ListIterator;
 import jdk.nashorn.internal.ir.BaseNode;
@@ -40,6 +42,7 @@ import jdk.nashorn.internal.ir.BlockLexicalContext;
 import jdk.nashorn.internal.ir.BlockStatement;
 import jdk.nashorn.internal.ir.BreakNode;
 import jdk.nashorn.internal.ir.CallNode;
+import jdk.nashorn.internal.ir.CaseNode;
 import jdk.nashorn.internal.ir.CatchNode;
 import jdk.nashorn.internal.ir.ContinueNode;
 import jdk.nashorn.internal.ir.EmptyNode;
@@ -56,6 +59,7 @@ import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.ReturnNode;
+import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
@@ -69,9 +73,13 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.CodeInstaller;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * Lower to more primitive operations. After lowering, an AST still has no symbols
@@ -82,10 +90,10 @@ import jdk.nashorn.internal.runtime.Source;
  * harder and context dependent to do any code copying after symbols have been
  * finalized.
  */
+@Logger(name="lower")
+final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Loggable {
 
-final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
-
-    private static final DebugLogger LOG = new DebugLogger("lower");
+    private final DebugLogger log;
 
     // needed only to get unique eval id
     private final CodeInstaller<?> installer;
@@ -93,7 +101,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     /**
      * Constructor.
      */
-    Lower(final CodeInstaller<?> installer) {
+    Lower(final Compiler compiler) {
         super(new BlockLexicalContext() {
 
             @Override
@@ -136,16 +144,19 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                 return block.setIsTerminal(this, false);
             }
         });
-        this.installer = installer;
+
+        this.installer = compiler.getCodeInstaller();
+        this.log       = initLogger(compiler.getContext());
     }
 
     @Override
-    public boolean enterBlock(final Block block) {
-        final FunctionNode   function = lc.getCurrentFunction();
-        if (lc.isFunctionBody() && function.isProgram() && !function.hasDeclaredFunctions()) {
-            new ExpressionStatement(function.getLineNumber(), block.getToken(), block.getFinish(), LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED)).accept(this);
-        }
-        return true;
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Context context) {
+        return context.getLogger(this.getClass());
     }
 
     @Override
@@ -222,7 +233,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     }
 
     @Override
-    public Node leaveBlockStatement(BlockStatement blockStatement) {
+    public Node leaveBlockStatement(final BlockStatement blockStatement) {
         return addStatement(blockStatement);
     }
 
@@ -230,28 +241,40 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
     public Node leaveForNode(final ForNode forNode) {
         ForNode newForNode = forNode;
 
-        final Node  test = forNode.getTest();
-        if (!forNode.isForIn() && conservativeAlwaysTrue(test)) {
+        final Expression test = forNode.getTest();
+        if (!forNode.isForIn() && isAlwaysTrue(test)) {
             newForNode = forNode.setTest(lc, null);
         }
 
-        return addStatement(checkEscape(newForNode));
-    }
-
-    @Override
-    public boolean enterFunctionNode(final FunctionNode functionNode) {
-        return !functionNode.isLazy();
+        newForNode = checkEscape(newForNode);
+        if(newForNode.isForIn()) {
+            // Wrap it in a block so its internally created iterator is restricted in scope
+            addStatementEnclosedInBlock(newForNode);
+        } else {
+            addStatement(newForNode);
+        }
+        return newForNode;
     }
 
     @Override
     public Node leaveFunctionNode(final FunctionNode functionNode) {
-        LOG.info("END FunctionNode: ", functionNode.getName());
+        log.info("END FunctionNode: ", functionNode.getName());
         return functionNode.setState(lc, CompilationState.LOWERED);
     }
 
     @Override
     public Node leaveIfNode(final IfNode ifNode) {
         return addStatement(ifNode);
+    }
+
+    @Override
+    public Node leaveIN(final BinaryNode binaryNode) {
+        return new RuntimeNode(binaryNode);
+    }
+
+    @Override
+    public Node leaveINSTANCEOF(final BinaryNode binaryNode) {
+        return new RuntimeNode(binaryNode);
     }
 
     @Override
@@ -265,16 +288,35 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return returnNode;
     }
 
+    @Override
+    public Node leaveCaseNode(final CaseNode caseNode) {
+        // Try to represent the case test as an integer
+        final Node test = caseNode.getTest();
+        if (test instanceof LiteralNode) {
+            final LiteralNode<?> lit = (LiteralNode<?>)test;
+            if (lit.isNumeric() && !(lit.getValue() instanceof Integer)) {
+                if (JSType.isRepresentableAsInt(lit.getNumber())) {
+                    return caseNode.setTest((Expression)LiteralNode.newInstance(lit, lit.getInt32()).accept(this));
+                }
+            }
+        }
+        return caseNode;
+    }
 
     @Override
     public Node leaveSwitchNode(final SwitchNode switchNode) {
-        return addStatement(switchNode);
+        if(!switchNode.isInteger()) {
+            // Wrap it in a block so its internally created tag is restricted in scope
+            addStatementEnclosedInBlock(switchNode);
+        } else {
+            addStatement(switchNode);
+        }
+        return switchNode;
     }
 
     @Override
     public Node leaveThrowNode(final ThrowNode throwNode) {
-        addStatement(throwNode); //ThrowNodes are always terminal, marked as such in constructor
-        return throwNode;
+        return addStatement(throwNode); //ThrowNodes are always terminal, marked as such in constructor
     }
 
     private static Node ensureUniqueNamesIn(final Node node) {
@@ -308,12 +350,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         final long token      = tryNode.getToken();
         final int  finish     = tryNode.getFinish();
 
-        final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName("catch_all"));
+        final IdentNode exception = new IdentNode(token, finish, lc.getCurrentFunction().uniqueName(CompilerConstants.EXCEPTION_PREFIX.symbolName()));
 
-        final Block catchBody = new Block(token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), ThrowNode.IS_SYNTHETIC_RETHROW));
+        final Block catchBody = new Block(token, finish, new ThrowNode(lineNumber, token, finish, new IdentNode(exception), true));
         assert catchBody.isTerminal(); //ends with throw, so terminal
 
-        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody, CatchNode.IS_SYNTHETIC_RETHROW);
+        final CatchNode catchAllNode  = new CatchNode(lineNumber, token, finish, new IdentNode(exception), null, catchBody, true);
         final Block     catchAllBlock = new Block(token, finish, catchAllNode);
 
         //catchallblock -> catchallnode (catchnode) -> exception -> throw
@@ -339,6 +381,8 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      */
     private Node spliceFinally(final TryNode tryNode, final List<ThrowNode> rethrows, final Block finallyBody) {
         assert tryNode.getFinallyBody() == null;
+
+        final LexicalContext lowerLc = lc;
 
         final TryNode newTryNode = (TryNode)tryNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             final List<Node> insideTry = new ArrayList<>();
@@ -369,12 +413,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
             @Override
             public Node leaveBreakNode(final BreakNode breakNode) {
-                return copy(breakNode, (Node)Lower.this.lc.getBreakable(breakNode.getLabel()));
+                return copy(breakNode, (Node)Lower.this.lc.getBreakable(breakNode.getLabelName()));
             }
 
             @Override
             public Node leaveContinueNode(final ContinueNode continueNode) {
-                return copy(continueNode, Lower.this.lc.getContinueTo(continueNode.getLabel()));
+                return copy(continueNode, Lower.this.lc.getContinueTo(continueNode.getLabelName()));
             }
 
             @Override
@@ -388,6 +432,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
                     //still in the try block, store it in a result value and return it afterwards
                     resultNode = new IdentNode(Lower.this.compilerConstant(RETURN));
                     newStatements.add(new ExpressionStatement(returnNode.getLineNumber(), returnNode.getToken(), returnNode.getFinish(), new BinaryNode(Token.recast(returnNode.getToken(), TokenType.ASSIGN), resultNode, expr)));
+                    lowerLc.setFlag(lowerLc.getCurrentFunction(), FunctionNode.USES_RETURN_SYMBOL);
                 } else {
                     resultNode = null;
                 }
@@ -425,7 +470,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         final Block finallyBody = tryNode.getFinallyBody();
 
         if (finallyBody == null) {
-            return addStatement(tryNode);
+            return addStatement(ensureUnconditionalCatch(tryNode));
         }
 
         /*
@@ -468,7 +513,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         if (tryNode.getCatchBlocks().isEmpty()) {
             newTryNode = tryNode.setFinallyBody(null);
         } else {
-            Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), tryNode.setFinallyBody(null));
+            final Block outerBody = new Block(tryNode.getToken(), tryNode.getFinish(), ensureUnconditionalCatch(tryNode.setFinallyBody(null)));
             newTryNode = tryNode.setBody(outerBody).setCatchBlocks(null);
         }
 
@@ -479,6 +524,18 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
          * the finally block in front of any statement that is outside the try
          */
         return spliceFinally(newTryNode, rethrows, finallyBody);
+    }
+
+    private TryNode ensureUnconditionalCatch(final TryNode tryNode) {
+        final List<CatchNode> catches = tryNode.getCatches();
+        if(catches == null || catches.isEmpty() || catches.get(catches.size() - 1).getExceptionCondition() == null) {
+            return tryNode;
+        }
+        // If the last catch block is conditional, add an unconditional rethrow block
+        final List<Block> newCatchBlocks = new ArrayList<>(tryNode.getCatchBlocks());
+
+        newCatchBlocks.add(catchAllBlock(tryNode));
+        return tryNode.setCatchBlocks(newCatchBlocks);
     }
 
     @Override
@@ -492,12 +549,12 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
 
     @Override
     public Node leaveWhileNode(final WhileNode whileNode) {
-        final Node test  = whileNode.getTest();
+        final Expression test = whileNode.getTest();
         final Block body = whileNode.getBody();
 
-        if (conservativeAlwaysTrue(test)) {
+        if (isAlwaysTrue(test)) {
             //turn it into a for node without a test.
-            final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), null, null, body, null, ForNode.IS_FOR).accept(this);
+            final ForNode forNode = (ForNode)new ForNode(whileNode.getLineNumber(), whileNode.getToken(), whileNode.getFinish(), body, ForNode.IS_FOR).accept(this);
             lc.replace(whileNode, forNode);
             return forNode;
         }
@@ -584,10 +641,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return callNode;
     }
 
-    private static boolean conservativeAlwaysTrue(final Node node) {
-        return node == null || ((node instanceof LiteralNode) && Boolean.TRUE.equals(((LiteralNode<?>)node).getValue()));
-    }
-
     /**
      * Helper that given a loop body makes sure that it is not terminal if it
      * has a continue that leads to the loop header or to outer loops' loop
@@ -610,7 +663,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
             @Override
             public Node leaveContinueNode(final ContinueNode node) {
                 // all inner loops have been popped.
-                if (lex.contains(lex.getContinueTo(node.getLabel()))) {
+                if (lex.contains(lex.getContinueTo(node.getLabelName()))) {
                     escapes.add(node);
                 }
                 return node;
@@ -620,10 +673,11 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return !escapes.isEmpty();
     }
 
-    private LoopNode checkEscape(final LoopNode loopNode) {
+    @SuppressWarnings("unchecked")
+    private <T extends LoopNode> T checkEscape(final T loopNode) {
         final boolean escapes = controlFlowEscapes(lc, loopNode.getBody());
         if (escapes) {
-            return loopNode.
+            return (T)loopNode.
                 setBody(lc, loopNode.getBody().setIsTerminal(lc, false)).
                 setControlFlowEscapes(lc, escapes);
         }
@@ -636,6 +690,14 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         return statement;
     }
 
+    private void addStatementEnclosedInBlock(final Statement stmt) {
+        BlockStatement b = BlockStatement.createReplacement(stmt, Collections.<Statement>singletonList(stmt));
+        if(stmt.isTerminal()) {
+            b = b.setBlock(b.getBlock().setIsTerminal(null, true));
+        }
+        addStatement(b);
+    }
+
     /**
      * An internal expression has a symbol that is tagged internal. Check if
      * this is such a node
@@ -644,7 +706,10 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      * @return true if internal, false otherwise
      */
     private static boolean isInternalExpression(final Expression expression) {
-        final Symbol symbol = expression.getSymbol();
+        if (!(expression instanceof IdentNode)) {
+            return false;
+        }
+        final Symbol symbol = ((IdentNode)expression).getSymbol();
         return symbol != null && symbol.isInternal();
     }
 
@@ -656,8 +721,7 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
      * @return true if an assignment to eval result, false otherwise
      */
     private static boolean isEvalResultAssignment(final Node expression) {
-        Node e = expression;
-        assert e.tokenType() != TokenType.DISCARD; //there are no discards this early anymore
+        final Node e = expression;
         if (e instanceof BinaryNode) {
             final Node lhs = ((BinaryNode)e).lhs();
             if (lhs instanceof IdentNode) {
@@ -666,5 +730,4 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> {
         }
         return false;
     }
-
 }

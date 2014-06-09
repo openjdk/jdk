@@ -24,7 +24,7 @@ public abstract class MatcherFactory {
 
     static final MatcherFactory DEFAULT = new MatcherFactory() {
         @Override
-        public Matcher create(Regex regex, char[] chars, int p, int end) {
+        public Matcher create(final Regex regex, final char[] chars, final int p, final int end) {
             return new ByteCodeMachine(regex, chars, p, end);
         }
     };

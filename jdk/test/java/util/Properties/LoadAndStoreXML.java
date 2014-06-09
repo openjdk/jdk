@@ -32,6 +32,7 @@ import java.io.ByteArrayOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.nio.charset.Charset;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -47,6 +48,7 @@ import java.util.Properties;
 import java.util.PropertyPermission;
 
 public class LoadAndStoreXML {
+    static final String bomChar = "\uFEFF";
 
     /**
      * Simple policy implementation that grants a set of permissions to
@@ -125,13 +127,14 @@ public class LoadAndStoreXML {
      * Sanity test that properties saved with Properties#storeToXML can be
      * read with Properties#loadFromXML.
      */
-    static void testLoadAndStore(String encoding) throws IOException {
+    static void testLoadAndStore(String encoding, boolean appendBOM) throws IOException {
         System.out.println("testLoadAndStore, encoding=" + encoding);
 
         Properties props = new Properties();
+        props.put("k0", "\u6C34");
         props.put("k1", "foo");
         props.put("k2", "bar");
-        props.put("k3", "\\u0020\\u0391\\u0392\\u0393\\u0394\\u0395\\u0396\\u0397");
+        props.put("k3", "\u0020\u0391\u0392\u0393\u0394\u0395\u0396\u0397");
         props.put("k4", "\u7532\u9aa8\u6587");
         props.put("k5", "<java.home>/lib/jaxp.properties");
 
@@ -141,7 +144,17 @@ public class LoadAndStoreXML {
             throw new RuntimeException("OutputStream closed by storeToXML");
 
         Properties p = new Properties();
-        TestInputStream in = new TestInputStream(out.toByteArray());
+        TestInputStream in;
+        if (appendBOM) {
+            byte[] byteOrderMark = bomChar.getBytes(Charset.forName(encoding));
+            byte[] outArray = out.toByteArray();
+            byte[] inputArray = new byte[byteOrderMark.length + outArray.length];
+            System.arraycopy(byteOrderMark, 0, inputArray, 0, byteOrderMark.length);
+            System.arraycopy(outArray, 0, inputArray, byteOrderMark.length, outArray.length);
+            in = new TestInputStream(inputArray);
+        } else {
+            in = new TestInputStream(out.toByteArray());
+        }
         p.loadFromXML(in);
         if (in.isOpen())
             throw new RuntimeException("InputStream not closed by loadFromXML");
@@ -231,8 +244,12 @@ public class LoadAndStoreXML {
 
     public static void main(String[] args) throws IOException {
 
-        testLoadAndStore("UTF-8");
-        testLoadAndStore("UTF-16");
+        testLoadAndStore("UTF-8", false);
+        testLoadAndStore("UTF-16", false);
+        testLoadAndStore("UTF-16BE", false);
+        testLoadAndStore("UTF-16LE", false);
+        testLoadAndStore("UTF-16BE", true);
+        testLoadAndStore("UTF-16LE", true);
         testLoadWithoutEncoding();
         testLoadWithBadEncoding();
         testStoreWithBadEncoding();
@@ -250,7 +267,7 @@ public class LoadAndStoreXML {
         Policy.setPolicy(p);
         System.setSecurityManager(new SecurityManager());
         try {
-            testLoadAndStore("UTF-8");
+            testLoadAndStore("UTF-8", false);
         } finally {
             // turn off security manager and restore policy
             System.setSecurityManager(null);

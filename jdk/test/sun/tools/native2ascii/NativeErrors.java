@@ -73,7 +73,14 @@ public class NativeErrors {
             throw new Error("Output file cannot be made read only: " + path2);
         }
         f2.deleteOnExit();
-        checkResult(executeCmd(path1, path2), "err.cannot.write");
+        if ( f2.canWrite() ) {
+            String msg = "Output file is still writable. " +
+                    "Probably because test is run as root. Read-only test skipped.";
+            System.out.println(msg);
+        } else {
+            // Test write to a read-only file.
+            checkResult(executeCmd(path1, path2), "err.cannot.write");
+        }
     }
 
     private static String executeCmd(String... toolArgs) throws Throwable {

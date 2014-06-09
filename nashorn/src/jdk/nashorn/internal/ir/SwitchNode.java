@@ -66,11 +66,12 @@ public final class SwitchNode extends BreakableStatement {
         this.defaultCaseIndex = defaultCase == null ? -1 : cases.indexOf(defaultCase);
     }
 
-    private SwitchNode(final SwitchNode switchNode, final Expression expression, final List<CaseNode> cases, final int defaultCase) {
-        super(switchNode);
+    private SwitchNode(final SwitchNode switchNode, final Expression expression, final List<CaseNode> cases,
+            final int defaultCaseIndex, final LocalVariableConversion conversion) {
+        super(switchNode, conversion);
         this.expression       = expression;
         this.cases            = cases;
-        this.defaultCaseIndex = defaultCase;
+        this.defaultCaseIndex = defaultCaseIndex;
         this.tag              = switchNode.getTag(); //TODO are symbols inhereted as references?
     }
 
@@ -78,9 +79,9 @@ public final class SwitchNode extends BreakableStatement {
     public Node ensureUniqueLabels(final LexicalContext lc) {
         final List<CaseNode> newCases = new ArrayList<>();
         for (final CaseNode caseNode : cases) {
-            newCases.add(new CaseNode(caseNode, caseNode.getTest(), caseNode.getBody()));
+            newCases.add(new CaseNode(caseNode, caseNode.getTest(), caseNode.getBody(), caseNode.getLocalVariableConversion()));
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, newCases, defaultCaseIndex));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, newCases, defaultCaseIndex, conversion));
     }
 
     @Override
@@ -110,9 +111,9 @@ public final class SwitchNode extends BreakableStatement {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("switch (");
-        expression.toString(sb);
+        expression.toString(sb, printType);
         sb.append(')');
     }
 
@@ -138,7 +139,7 @@ public final class SwitchNode extends BreakableStatement {
      * by NodeVisitors who perform operations on every case node
      * @param lc    lexical context
      * @param cases list of cases
-     * @return new switcy node or same if no state was changed
+     * @return new switch node or same if no state was changed
      */
     public SwitchNode setCases(final LexicalContext lc, final List<CaseNode> cases) {
         return setCases(lc, cases, defaultCaseIndex);
@@ -148,7 +149,7 @@ public final class SwitchNode extends BreakableStatement {
         if (this.cases == cases) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion));
     }
 
     /**
@@ -180,7 +181,7 @@ public final class SwitchNode extends BreakableStatement {
         if (this.expression == expression) {
             return this;
         }
-        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex));
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion));
     }
 
     /**
@@ -200,5 +201,27 @@ public final class SwitchNode extends BreakableStatement {
     public void setTag(final Symbol tag) {
         this.tag = tag;
     }
-}
 
+    /**
+     * Returns true if all cases of this switch statement are 32-bit signed integer constants.
+     * @return true if all cases of this switch statement are 32-bit signed integer constants.
+     */
+    public boolean isInteger() {
+        for (final CaseNode caseNode : cases) {
+            final Expression test = caseNode.getTest();
+            if (test != null && !isIntegerLiteral(test)) {
+                return false;
+            }
+        }
+        return true;
+    }
+
+    @Override
+    JoinPredecessor setLocalVariableConversionChanged(final LexicalContext lc, final LocalVariableConversion conversion) {
+        return Node.replaceInLexicalContext(lc, this, new SwitchNode(this, expression, cases, defaultCaseIndex, conversion));
+    }
+
+    private static boolean isIntegerLiteral(final Expression expr) {
+        return expr instanceof LiteralNode && ((LiteralNode<?>)expr).getValue() instanceof Integer;
+    }
+}

@@ -117,7 +117,7 @@ public class DefaultBootstrapper {
      * @param type the method signature at the call site
      * @return a new {@link MonomorphicCallSite} linked with the default dynamic linker.
      */
-    public static CallSite bootstrap(MethodHandles.Lookup caller, String name, MethodType type) {
+    public static CallSite bootstrap(final MethodHandles.Lookup caller, final String name, final MethodType type) {
         return bootstrapInternal(caller, name, type);
     }
 
@@ -133,11 +133,11 @@ public class DefaultBootstrapper {
      * @param type the method signature at the call site
      * @return a new {@link MonomorphicCallSite} linked with the default dynamic linker.
      */
-    public static CallSite publicBootstrap(MethodHandles.Lookup caller, String name, MethodType type) {
+    public static CallSite publicBootstrap(final MethodHandles.Lookup caller, final String name, final MethodType type) {
         return bootstrapInternal(MethodHandles.publicLookup(), name, type);
     }
 
-    private static CallSite bootstrapInternal(MethodHandles.Lookup caller, String name, MethodType type) {
+    private static CallSite bootstrapInternal(final MethodHandles.Lookup caller, final String name, final MethodType type) {
         return dynamicLinker.link(new MonomorphicCallSite(CallSiteDescriptorFactory.create(caller, name, type)));
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -70,8 +70,7 @@ public class Customized {
         check(! task.isDone());
         check(! task.isCancelled());
         THROWS(TimeoutException.class,
-               new Fun(){void f() throws Throwable {
-                       task.get(0L, TimeUnit.SECONDS); }});
+               () -> task.get(0L, TimeUnit.SECONDS));
     }
 
     static <V> void checkDone(final FutureTask<V> task) {
@@ -86,20 +85,16 @@ public class Customized {
         check(task.isDone());
         check(task.isCancelled());
         THROWS(CancellationException.class,
-           new Fun(){void f() throws Throwable {
-               task.get(0L, TimeUnit.SECONDS); }},
-           new Fun(){void f() throws Throwable {
-               task.get(); }});
+               () -> task.get(0L, TimeUnit.SECONDS),
+               () -> task.get());
     }
 
     static <V> void checkThrew(final FutureTask<V> task) {
         check(task.isDone());
         check(! task.isCancelled());
         THROWS(ExecutionException.class,
-           new Fun(){void f() throws Throwable {
-               task.get(0L, TimeUnit.SECONDS); }},
-           new Fun(){void f() throws Throwable {
-               task.get(); }});
+               () -> task.get(0L, TimeUnit.SECONDS),
+               () -> task.get());
     }
 
     static <V> void cancel(FutureTask<V> task, boolean mayInterruptIfRunning) {
@@ -203,7 +198,7 @@ public class Customized {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private abstract static class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

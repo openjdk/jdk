@@ -85,7 +85,7 @@ class InvokerBytecodeGenerator {
     private InvokerBytecodeGenerator(LambdaForm lambdaForm, int localsMapSize,
                                      String className, String invokerName, MethodType invokerType) {
         if (invokerName.contains(".")) {
-            int p = invokerName.indexOf(".");
+            int p = invokerName.indexOf('.');
             className = invokerName.substring(0, p);
             invokerName = invokerName.substring(p+1);
         }
