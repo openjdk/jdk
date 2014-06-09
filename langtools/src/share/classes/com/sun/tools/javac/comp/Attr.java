@@ -1074,18 +1074,10 @@ public class Attr extends JCTree.Visitor {
                 return annotate.paramCreator(index);
             }
         }
-        case CASE:
-        case BLOCK:
-        case FORLOOP:
-        case FOREACHLOOP:
-        case LABELLED:
-            // These are all cases where we can end up with a
-            // local variable.
-            return annotate.localVarCreator(tree.pos);
         default:
-            // Be strict and throw an error if we see
-            // something we don't expect.
-            throw new AssertionError("Unexpected enclosing tree for variable definition: " + env.tree.getTag());
+            // The default case is to treat any declaration as a local
+            // variable.
+            return annotate.localVarCreator(tree.pos);
         }
     }
 
