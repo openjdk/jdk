@@ -34,7 +34,7 @@
 load(__DIR__ + "JDK-8010946-privileged.js")
 
 try {
-    // This should fail, even though the code itself resides in the 
+    // This should fail, even though the code itself resides in the
     // privileged script, as we're invoking it without going through
     // doPrivileged()
     print("Attempting unprivileged execution...")

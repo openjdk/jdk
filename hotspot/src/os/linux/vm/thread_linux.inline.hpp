@@ -29,24 +29,8 @@
 #error "This file should only be included from thread.inline.hpp"
 #endif
 
-#include "runtime/prefetch.hpp"
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#ifdef TARGET_OS_ARCH_linux_x86
-# include "prefetch_linux_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_sparc
-# include "prefetch_linux_sparc.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_zero
-# include "prefetch_linux_zero.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_arm
-# include "prefetch_linux_arm.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_linux_ppc
-# include "prefetch_linux_ppc.inline.hpp"
-#endif
 
 // Contains inlined functions for class Thread and ThreadLocalStorage
 

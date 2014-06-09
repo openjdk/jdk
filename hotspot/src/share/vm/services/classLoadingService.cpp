@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -136,7 +136,7 @@ void ClassLoadingService::notify_class_unloaded(InstanceKlass* k) {
 
   if (TraceClassUnloading) {
     ResourceMark rm;
-    tty->print_cr("[Unloading class %s " INTPTR_FORMAT "]", k->external_name(), k);
+    tty->print_cr("[Unloading class %s " INTPTR_FORMAT "]", k->external_name(), p2i(k));
   }
 }
 

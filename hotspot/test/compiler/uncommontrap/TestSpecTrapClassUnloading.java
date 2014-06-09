@@ -25,7 +25,7 @@
  * @test
  * @bug 8031752
  * @summary speculative traps need to be cleaned up at GC
- * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+UseTypeSpeculation -XX:TypeProfileLevel=222 -XX:CompileCommand=exclude,java.lang.reflect.Method::invoke -XX:CompileCommand=exclude,sun.reflect.DelegatingMethodAccessorImpl::invoke -Xmx1M TestSpecTrapClassUnloading
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -XX:+UseTypeSpeculation -XX:TypeProfileLevel=222 -XX:CompileCommand=exclude,java.lang.reflect.Method::invoke -XX:CompileCommand=exclude,sun.reflect.DelegatingMethodAccessorImpl::invoke -Xmx512M TestSpecTrapClassUnloading
  *
  */
 
@@ -45,7 +45,7 @@ public class TestSpecTrapClassUnloading {
         MemoryChunk other;
         long[] array;
         MemoryChunk(MemoryChunk other) {
-            other = other;
+            this.other = other;
             array = new long[1024 * 1024 * 1024];
         }
     }

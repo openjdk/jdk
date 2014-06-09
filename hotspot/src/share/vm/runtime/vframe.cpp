@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,8 @@
 #include "runtime/vframe.hpp"
 #include "runtime/vframeArray.hpp"
 #include "runtime/vframe_hp.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 vframe::vframe(const frame* fr, const RegisterMap* reg_map, JavaThread* thread)
 : _reg_map(reg_map), _thread(thread) {
@@ -471,7 +473,7 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
-         (JDK_Version::is_gte_jdk14x_version() && UseNewReflection &&
+         (JDK_Version::is_gte_jdk14x_version() &&
           (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
            method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
     next();

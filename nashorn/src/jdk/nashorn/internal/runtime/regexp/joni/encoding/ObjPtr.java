@@ -24,7 +24,7 @@ public final class ObjPtr<T> {
         this(null);
     }
 
-    public ObjPtr(T p) {
+    public ObjPtr(final T p) {
         this.p = p;
     }
 

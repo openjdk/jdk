@@ -104,7 +104,7 @@ public class Lookup {
      *
      * @param lookup the {@link java.lang.invoke.MethodHandles.Lookup} it delegates to.
      */
-    public Lookup(MethodHandles.Lookup lookup) {
+    public Lookup(final MethodHandles.Lookup lookup) {
         this.lookup = lookup;
     }
 
@@ -120,7 +120,7 @@ public class Lookup {
      * @param m the method to unreflect
      * @return the unreflected method handle.
      */
-    public MethodHandle unreflect(Method m) {
+    public MethodHandle unreflect(final Method m) {
         return unreflect(lookup, m);
     }
 
@@ -132,10 +132,10 @@ public class Lookup {
      * @param m the method to unreflect
      * @return the unreflected method handle.
      */
-    public static MethodHandle unreflect(MethodHandles.Lookup lookup, Method m) {
+    public static MethodHandle unreflect(final MethodHandles.Lookup lookup, final Method m) {
         try {
             return lookup.unreflect(m);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect method " + m);
             ee.initCause(e);
             throw ee;
@@ -149,10 +149,10 @@ public class Lookup {
      * @param f the field for which a getter is unreflected
      * @return the unreflected field getter handle.
      */
-    public MethodHandle unreflectGetter(Field f) {
+    public MethodHandle unreflectGetter(final Field f) {
         try {
             return lookup.unreflectGetter(f);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect getter for field " + f);
             ee.initCause(e);
             throw ee;
@@ -171,15 +171,15 @@ public class Lookup {
      * @throws IllegalAccessError if the field is inaccessible.
      * @throws NoSuchFieldError if the field does not exist.
      */
-    public MethodHandle findGetter(Class<?>refc, String name, Class<?> type) {
+    public MethodHandle findGetter(final Class<?>refc, final String name, final Class<?> type) {
         try {
             return lookup.findGetter(refc, name, type);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to access getter for field " + refc.getName() +
                     "." + name + " of type " + type.getName());
             ee.initCause(e);
             throw ee;
-        } catch(NoSuchFieldException e) {
+        } catch(final NoSuchFieldException e) {
             final NoSuchFieldError ee = new NoSuchFieldError("Failed to find getter for field " + refc.getName() +
                     "." + name + " of type " + type.getName());
             ee.initCause(e);
@@ -194,10 +194,10 @@ public class Lookup {
      * @param f the field for which a setter is unreflected
      * @return the unreflected field setter handle.
      */
-    public MethodHandle unreflectSetter(Field f) {
+    public MethodHandle unreflectSetter(final Field f) {
         try {
             return lookup.unreflectSetter(f);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect setter for field " + f);
             ee.initCause(e);
             throw ee;
@@ -211,7 +211,7 @@ public class Lookup {
      * @param c the constructor to unreflect
      * @return the unreflected constructor handle.
      */
-    public MethodHandle unreflectConstructor(Constructor<?> c) {
+    public MethodHandle unreflectConstructor(final Constructor<?> c) {
         return unreflectConstructor(lookup, c);
     }
 
@@ -223,10 +223,10 @@ public class Lookup {
      * @param c the constructor to unreflect
      * @return the unreflected constructor handle.
      */
-    public static MethodHandle unreflectConstructor(MethodHandles.Lookup lookup, Constructor<?> c) {
+    public static MethodHandle unreflectConstructor(final MethodHandles.Lookup lookup, final Constructor<?> c) {
         try {
             return lookup.unreflectConstructor(c);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to unreflect constructor " + c);
             ee.initCause(e);
             throw ee;
@@ -244,15 +244,15 @@ public class Lookup {
      * @throws IllegalAccessError if the method is inaccessible.
      * @throws NoSuchMethodError if the method does not exist.
      */
-    public MethodHandle findSpecial(Class<?> declaringClass, String name, MethodType type) {
+    public MethodHandle findSpecial(final Class<?> declaringClass, final String name, final MethodType type) {
         try {
             return lookup.findSpecial(declaringClass, name, type, declaringClass);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to access special method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
             throw ee;
-        } catch(NoSuchMethodException e) {
+        } catch(final NoSuchMethodException e) {
             final NoSuchMethodError ee = new NoSuchMethodError("Failed to find special method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
@@ -260,7 +260,7 @@ public class Lookup {
         }
     }
 
-    private static String methodDescription(Class<?> declaringClass, String name, MethodType type) {
+    private static String methodDescription(final Class<?> declaringClass, final String name, final MethodType type) {
         return declaringClass.getName() + "#" + name + type;
     }
 
@@ -275,15 +275,15 @@ public class Lookup {
      * @throws IllegalAccessError if the method is inaccessible.
      * @throws NoSuchMethodError if the method does not exist.
      */
-    public MethodHandle findStatic(Class<?> declaringClass, String name, MethodType type) {
+    public MethodHandle findStatic(final Class<?> declaringClass, final String name, final MethodType type) {
         try {
             return lookup.findStatic(declaringClass, name, type);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to access static method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
             throw ee;
-        } catch(NoSuchMethodException e) {
+        } catch(final NoSuchMethodException e) {
             final NoSuchMethodError ee = new NoSuchMethodError("Failed to find static method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
@@ -302,15 +302,15 @@ public class Lookup {
      * @throws IllegalAccessError if the method is inaccessible.
      * @throws NoSuchMethodError if the method does not exist.
      */
-    public MethodHandle findVirtual(Class<?> declaringClass, String name, MethodType type) {
+    public MethodHandle findVirtual(final Class<?> declaringClass, final String name, final MethodType type) {
         try {
             return lookup.findVirtual(declaringClass, name, type);
-        } catch(IllegalAccessException e) {
+        } catch(final IllegalAccessException e) {
             final IllegalAccessError ee = new IllegalAccessError("Failed to access virtual method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
             throw ee;
-        } catch(NoSuchMethodException e) {
+        } catch(final NoSuchMethodException e) {
             final NoSuchMethodError ee = new NoSuchMethodError("Failed to find virtual method " + methodDescription(
                     declaringClass, name, type));
             ee.initCause(e);
@@ -327,7 +327,7 @@ public class Lookup {
      * @param ptypes the parameter types of the method
      * @return the method handle for the method
      */
-    public static MethodHandle findOwnSpecial(MethodHandles.Lookup lookup, String name, Class<?> rtype, Class<?>... ptypes) {
+    public static MethodHandle findOwnSpecial(final MethodHandles.Lookup lookup, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Lookup(lookup).findOwnSpecial(name, rtype, ptypes);
     }
 
@@ -341,7 +341,7 @@ public class Lookup {
      * @param ptypes the parameter types of the method
      * @return the method handle for the method
      */
-    public MethodHandle findOwnSpecial(String name, Class<?> rtype, Class<?>... ptypes) {
+    public MethodHandle findOwnSpecial(final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return findSpecial(lookup.lookupClass(), name, MethodType.methodType(rtype, ptypes));
     }
 
@@ -355,7 +355,7 @@ public class Lookup {
      * @param ptypes the parameter types of the method
      * @return the method handle for the method
      */
-    public static MethodHandle findOwnStatic(MethodHandles.Lookup lookup, String name, Class<?> rtype, Class<?>... ptypes) {
+    public static MethodHandle findOwnStatic(final MethodHandles.Lookup lookup, final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return new Lookup(lookup).findOwnStatic(name, rtype, ptypes);
     }
 
@@ -368,7 +368,7 @@ public class Lookup {
      * @param ptypes the parameter types of the method
      * @return the method handle for the method
      */
-    public MethodHandle findOwnStatic(String name, Class<?> rtype, Class<?>... ptypes) {
+    public MethodHandle findOwnStatic(final String name, final Class<?> rtype, final Class<?>... ptypes) {
         return findStatic(lookup.lookupClass(), name, MethodType.methodType(rtype, ptypes));
     }
 }

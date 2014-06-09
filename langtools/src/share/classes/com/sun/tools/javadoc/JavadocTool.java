@@ -33,12 +33,15 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+
 import javax.tools.JavaFileManager.Location;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 
+import com.sun.tools.javac.code.ClassFinder;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.comp.Enter;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -66,8 +69,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     DocEnv docenv;
 
     final Messager messager;
-    final JavadocClassReader javadocReader;
-    final JavadocEnter javadocEnter;
+    final ClassFinder javadocFinder;
+    final Enter javadocEnter;
     final Set<JavaFileObject> uniquefiles;
 
     /**
@@ -77,8 +80,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     protected JavadocTool(Context context) {
         super(context);
         messager = Messager.instance0(context);
-        javadocReader = JavadocClassReader.instance0(context);
-        javadocEnter = JavadocEnter.instance0(context);
+        javadocFinder = JavadocClassFinder.instance(context);
+        javadocEnter = JavadocEnter.instance(context);
         uniquefiles = new HashSet<>();
     }
 
@@ -95,8 +98,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
     public static JavadocTool make0(Context context) {
         Messager messager = null;
         try {
-            // force the use of Javadoc's class reader
-            JavadocClassReader.preRegister(context);
+            // force the use of Javadoc's class finder
+            JavadocClassFinder.preRegister(context);
 
             // force the use of Javadoc's own enter phase
             JavadocEnter.preRegister(context);
@@ -137,7 +140,8 @@ public class JavadocTool extends com.sun.tools.javac.main.JavaCompiler {
         docenv.setEncoding(encoding);
         docenv.docClasses = docClasses;
         docenv.legacyDoclet = legacyDoclet;
-        javadocReader.sourceCompleter = docClasses ? null : thisCompleter;
+
+        javadocFinder.sourceCompleter = docClasses ? null : sourceCompleter;
 
         ListBuffer<String> names = new ListBuffer<>();
         ListBuffer<JCCompilationUnit> classTrees = new ListBuffer<>();

@@ -344,8 +344,10 @@ public class Infer {
     }
 
     private boolean commonSuperWithDiffParameterization(Type t, Type s) {
-        Pair<Type, Type> supers = getParameterizedSupers(t, s);
-        return (supers != null && !types.isSameType(supers.fst, supers.snd));
+        for (Pair<Type, Type> supers : getParameterizedSupers(t, s)) {
+            if (!types.isSameType(supers.fst, supers.snd)) return true;
+        }
+        return false;
     }
 
     private Type generateReferenceToTargetConstraint(JCTree tree, UndetVar from,
@@ -604,30 +606,38 @@ public class Infer {
     /** max number of incorporation rounds */
         static final int MAX_INCORPORATION_STEPS = 100;
 
-    /* If for two types t and s there is a least upper bound that is a
-     * parameterized type G, then there exists a supertype of 't' of the form
-     * G<T1, ..., Tn> and a supertype of 's' of the form G<S1, ..., Sn>
-     * which will be returned by this method. If no such supertypes exists then
-     * null is returned.
+    /* If for two types t and s there is a least upper bound that contains
+     * parameterized types G1, G2 ... Gn, then there exists supertypes of 't' of the form
+     * G1<T1, ..., Tn>, G2<T1, ..., Tn>, ... Gn<T1, ..., Tn> and supertypes of 's' of the form
+     * G1<S1, ..., Sn>, G2<S1, ..., Sn>, ... Gn<S1, ..., Sn> which will be returned by this method.
+     * If no such common supertypes exists then an empty list is returned.
      *
      * As an example for the following input:
      *
      * t = java.util.ArrayList<java.lang.String>
      * s = java.util.List<T>
      *
-     * we get this ouput:
+     * we get this ouput (singleton list):
      *
-     * Pair[java.util.List<java.lang.String>,java.util.List<T>]
+     * [Pair[java.util.List<java.lang.String>,java.util.List<T>]]
      */
-    private Pair<Type, Type> getParameterizedSupers(Type t, Type s) {
+    private List<Pair<Type, Type>> getParameterizedSupers(Type t, Type s) {
         Type lubResult = types.lub(t, s);
-        if (lubResult == syms.errType || lubResult == syms.botType ||
-                !lubResult.isParameterized()) {
-            return null;
+        if (lubResult == syms.errType || lubResult == syms.botType) {
+            return List.nil();
         }
-        Type asSuperOfT = types.asSuper(t, lubResult.tsym);
-        Type asSuperOfS = types.asSuper(s, lubResult.tsym);
-        return new Pair<>(asSuperOfT, asSuperOfS);
+        List<Type> supertypesToCheck = lubResult.isCompound() ?
+                ((IntersectionClassType)lubResult).getComponents() :
+                List.of(lubResult);
+        ListBuffer<Pair<Type, Type>> commonSupertypes = new ListBuffer<>();
+        for (Type sup : supertypesToCheck) {
+            if (sup.isParameterized()) {
+                Type asSuperOfT = types.asSuper(t, sup.tsym);
+                Type asSuperOfS = types.asSuper(s, sup.tsym);
+                commonSupertypes.add(new Pair<>(asSuperOfT, asSuperOfS));
+            }
+        }
+        return commonSupertypes.toList();
     }
 
     /**
@@ -813,16 +823,17 @@ public class Infer {
                         Type b1 = boundList.head;
                         Type b2 = tmpTail.head;
                         if (b1 != b2) {
-                            Pair<Type, Type> commonSupers = infer.getParameterizedSupers(b1, b2);
-                            if (commonSupers != null) {
+                            for (Pair<Type, Type> commonSupers : infer.getParameterizedSupers(b1, b2)) {
                                 List<Type> allParamsSuperBound1 = commonSupers.fst.allparams();
                                 List<Type> allParamsSuperBound2 = commonSupers.snd.allparams();
                                 while (allParamsSuperBound1.nonEmpty() && allParamsSuperBound2.nonEmpty()) {
                                     //traverse the list of all params comparing them
                                     if (!allParamsSuperBound1.head.hasTag(WILDCARD) &&
                                         !allParamsSuperBound2.head.hasTag(WILDCARD)) {
-                                        isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
-                                            inferenceContext.asUndetVar(allParamsSuperBound2.head), infer);
+                                        if (!isSameType(inferenceContext.asUndetVar(allParamsSuperBound1.head),
+                                            inferenceContext.asUndetVar(allParamsSuperBound2.head), infer)) {
+                                            infer.reportBoundError(uv, BoundErrorKind.BAD_UPPER);
+                                        }
                                     }
                                     allParamsSuperBound1 = allParamsSuperBound1.tail;
                                     allParamsSuperBound2 = allParamsSuperBound2.tail;

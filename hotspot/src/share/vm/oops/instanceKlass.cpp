@@ -77,6 +77,8 @@
 #include "c1/c1_Compiler.hpp"
 #endif
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 #ifdef DTRACE_ENABLED
 
 
@@ -1271,6 +1273,12 @@ bool InstanceKlass::find_field_from_offset(int offset, bool is_static, fieldDesc
 
 
 void InstanceKlass::methods_do(void f(Method* method)) {
+  // Methods aren't stable until they are loaded.  This can be read outside
+  // a lock through the ClassLoaderData for profiling
+  if (!is_loaded()) {
+    return;
+  }
+
   int len = methods()->length();
   for (int index = 0; index < len; index++) {
     Method* m = methods()->at(index);
@@ -2857,7 +2865,7 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"instance size:     %d", size_helper());                        st->cr();
   st->print(BULLET"klass size:        %d", size());                               st->cr();
   st->print(BULLET"access:            "); access_flags().print_on(st);            st->cr();
-  st->print(BULLET"state:             "); st->print_cr(state_names[_init_state]);
+  st->print(BULLET"state:             "); st->print_cr("%s", state_names[_init_state]);
   st->print(BULLET"name:              "); name()->print_value_on(st);             st->cr();
   st->print(BULLET"super:             "); super()->print_value_on_maybe_null(st); st->cr();
   st->print(BULLET"sub:               ");

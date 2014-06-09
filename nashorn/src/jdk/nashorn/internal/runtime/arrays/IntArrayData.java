@@ -25,7 +25,12 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -33,7 +38,7 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Implementation of {@link ArrayData} as soon as an int has been
  * written to the array. This is the default data for new arrays
  */
-final class IntArrayData extends ArrayData {
+final class IntArrayData extends ContinuousArrayData {
     /**
      * The wrapped array
      */
@@ -59,6 +64,36 @@ final class IntArrayData extends ArrayData {
         this.array = array;
     }
 
+    private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), IntArrayData.class, "getElem", int.class, int.class).methodHandle();
+    private static final MethodHandle SET_ELEM     = specialCall(MethodHandles.lookup(), IntArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
+
+    @SuppressWarnings("unused")
+    private int getElem(final int index) {
+        if (has(index)) {
+            return array[index];
+        }
+        throw new ClassCastException();
+    }
+
+    @SuppressWarnings("unused")
+    private void setElem(final int index, final int elem) {
+        if (hasRoomFor(index)) {
+            array[index] = elem;
+            return;
+        }
+        throw new ClassCastException();
+    }
+
+    @Override
+    public MethodHandle getElementGetter(final Class<?> returnType, final int programPoint) {
+        return getContinuousElementGetter(HAS_GET_ELEM, returnType, programPoint);
+    }
+
+    @Override
+    public MethodHandle getElementSetter(final Class<?> elementType) {
+        return elementType == int.class ? getContinuousElementSetter(SET_ELEM, elementType) : null;
+    }
+
     @Override
     public ArrayData copy() {
         return new IntArrayData(array.clone(), (int) length());
@@ -71,7 +106,7 @@ final class IntArrayData extends ArrayData {
 
     @Override
     public Object asArrayOfType(final Class<?> componentType) {
-        if(componentType == int.class) {
+        if (componentType == int.class) {
             return array.length == length() ? array.clone() : Arrays.copyOf(array, (int) length());
         }
         return super.asArrayOfType(componentType);
@@ -144,22 +179,15 @@ final class IntArrayData extends ArrayData {
 
     @Override
     public ArrayData ensure(final long safeIndex) {
-        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH && safeIndex >= array.length) {
+        if (safeIndex >= SparseArrayData.MAX_DENSE_LENGTH) {
             return new SparseArrayData(this, safeIndex + 1);
         }
-
-        int newLength = array.length;
-
-        while (newLength <= safeIndex) {
-            newLength = ArrayData.nextSize(newLength);
-        }
-
-        if (array.length <= safeIndex) {
+        final int alen = array.length;
+        if (safeIndex >= alen) {
+            final int newLength = ArrayData.nextSize((int)safeIndex);
             array = Arrays.copyOf(array, newLength);
         }
-
         setLength(safeIndex + 1);
-
         return this;
     }
 
@@ -172,8 +200,8 @@ final class IntArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final Object value, final boolean strict) {
-        if (value instanceof Integer) {
-            return set(index, ((Number)value).intValue(), strict);
+        if (JSType.isRepresentableAsInt(value)) {
+            return set(index, JSType.toInt32(value), strict);
         } else if (value == ScriptRuntime.UNDEFINED) {
             return new UndefinedArrayFilter(this).set(index, value, strict);
         }
@@ -192,9 +220,8 @@ final class IntArrayData extends ArrayData {
 
     @Override
     public ArrayData set(final int index, final long value, final boolean strict) {
-        final int intValue = (int)value;
-        if (intValue == value) {
-            array[index] = intValue;
+        if (JSType.isRepresentableAsInt(value)) {
+            array[index] = JSType.toInt32(value);
             setLength(Math.max(index + 1, length()));
             return this;
         }
@@ -214,7 +241,17 @@ final class IntArrayData extends ArrayData {
     }
 
     @Override
+    public Type getOptimisticType() {
+        return Type.INT;
+    }
+
+    @Override
     public int getInt(final int index) {
+        return array[index];
+    }
+
+    @Override
+    public int getIntOptimistic(final int index, final int programPoint) {
         return array[index];
     }
 
@@ -224,7 +261,17 @@ final class IntArrayData extends ArrayData {
     }
 
     @Override
+    public long getLongOptimistic(final int index, final int programPoint) {
+        return array[index];
+    }
+
+    @Override
     public double getDouble(final int index) {
+        return array[index];
+    }
+
+    @Override
+    public double getDoubleOptimistic(final int index, final int programPoint) {
         return array[index];
     }
 
@@ -264,10 +311,21 @@ final class IntArrayData extends ArrayData {
 
     @Override
     public ArrayData slice(final long from, final long to) {
-        final long start     = from < 0 ? (from + length()) : from;
+        final long start     = from < 0 ? from + length() : from;
         final long newLength = to - start;
 
         return new IntArrayData(Arrays.copyOfRange(array, (int)from, (int)to), (int)newLength);
+    }
+
+    @Override
+    public final ArrayData push(final boolean strict, final int item) {
+        final long      length = length();
+        final ArrayData newData = ensure(length);
+        if (newData == this) {
+            array[(int)length] = item;
+            return this;
+        }
+        return newData.set((int)length, item, strict);
     }
 
     @Override
@@ -277,7 +335,7 @@ final class IntArrayData extends ArrayData {
         if (newLength > SparseArrayData.MAX_DENSE_LENGTH && newLength > array.length) {
             throw new UnsupportedOperationException();
         }
-        final ArrayData returnValue = (removed == 0) ?
+        final ArrayData returnValue = removed == 0 ?
                 EMPTY_ARRAY : new IntArrayData(Arrays.copyOfRange(array, start, start + removed), removed);
 
         if (newLength != oldLength) {

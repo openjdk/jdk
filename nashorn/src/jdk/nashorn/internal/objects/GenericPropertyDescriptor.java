@@ -176,6 +176,11 @@ public final class GenericPropertyDescriptor extends ScriptObject implements Pro
     }
 
     @Override
+    public String toString() {
+        return '[' + getClass().getSimpleName() + " {configurable=" + configurable + " enumerable=" + enumerable + "}]";
+    }
+
+    @Override
     public int hashCode() {
         int hash = 7;
         hash = 97 * hash + Objects.hashCode(this.configurable);

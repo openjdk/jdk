@@ -43,7 +43,7 @@ final class NoTypeArrayData extends ArrayData {
 
     @Override
     public Object[] asObjectArray() {
-        return new Object[0];
+        return ScriptRuntime.EMPTY_ARRAY;
     }
 
     @Override

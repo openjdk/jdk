@@ -368,7 +368,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             String host = epoint.getHostString();
             // IPv6 litteral?
             if (epoint.getAddress() instanceof Inet6Address &&
-                (!host.startsWith("[")) && (host.indexOf(":") >= 0)) {
+                (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
                 host = "[" + host + "]";
             }
             try {
@@ -688,7 +688,7 @@ class SocksSocketImpl extends PlainSocketImpl implements SocksConsts {
             String host = saddr.getHostString();
             // IPv6 litteral?
             if (saddr.getAddress() instanceof Inet6Address &&
-                (!host.startsWith("[")) && (host.indexOf(":") >= 0)) {
+                (!host.startsWith("[")) && (host.indexOf(':') >= 0)) {
                 host = "[" + host + "]";
             }
             try {

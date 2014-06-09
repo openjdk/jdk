@@ -512,7 +512,7 @@ class ConstantPool {
     }
     static String qualifiedStringValue(String s1, String s234) {
         // Qualification by dot must decompose uniquely.  Second string might already be qualified.
-        assert(s1.indexOf(".") < 0);
+        assert(s1.indexOf('.') < 0);
         return s1+"."+s234;
     }
 

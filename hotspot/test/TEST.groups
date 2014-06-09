@@ -66,7 +66,6 @@ needs_jdk = \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
   runtime/6819213/TestBootNativeLibraryPath.java \
-  runtime/6925573/SortMethodsTest.java \
   runtime/7158988/FieldMonitor.java \
   runtime/7194254/Test7194254.java \
   runtime/Metaspace/FragmentMetaspace.java \
@@ -84,6 +83,7 @@ needs_jdk = \
   runtime/RedefineObject/TestRedefineObject.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
+  serviceability/jvmti/8036666/GetObjectLockCount.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
   serviceability/dcmd/DynLibDcmdTest.java
 
@@ -135,9 +135,12 @@ needs_compact3 = \
   gc/parallelScavenge/TestDynShrinkHeap.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
+  serviceability/jvmti/GetObjectSizeOverflow.java \
+  serviceability/jvmti/TestRedefineWithUnresolvedClass.java \
   compiler/tiered/NonTieredLevelsTest.java \
   compiler/tiered/TieredLevelsTest.java \
-  compiler/intrinsics/bmi/verifycode
+  compiler/intrinsics/bmi/verifycode \
+  runtime/whitebox/WBStackSize.java
 
 # Compact 2 adds full VM tests
 compact2 = \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ public class ConfigChanges {
                     check(((ThreadPoolExecutor) es).isTerminating()
                           || es.isTerminated());
                 THROWS(RejectedExecutionException.class,
-                       new Fun() {void f() {es.execute(nop);}});
+                       () -> es.execute(nop));
             }
         } catch (Throwable t) { unexpected(t); }
     }
@@ -241,7 +241,7 @@ public class ConfigChanges {
         try {realMain(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    private abstract static class Fun {abstract void f() throws Throwable;}
+    interface Fun {void f() throws Throwable;}
     static void THROWS(Class<? extends Throwable> k, Fun... fs) {
         for (Fun f : fs)
             try { f.f(); fail("Expected " + k.getName() + " not thrown"); }

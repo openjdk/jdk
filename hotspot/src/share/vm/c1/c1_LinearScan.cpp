@@ -2382,16 +2382,6 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
   int arg_count = frame_map()->oop_map_arg_count();
   OopMap* map = new OopMap(frame_size, arg_count);
 
-  // Check if this is a patch site.
-  bool is_patch_info = false;
-  if (op->code() == lir_move) {
-    assert(!is_call_site, "move must not be a call site");
-    assert(op->as_Op1() != NULL, "move must be LIR_Op1");
-    LIR_Op1* move = (LIR_Op1*)op;
-
-    is_patch_info = move->patch_code() != lir_patch_none;
-  }
-
   // Iterate through active intervals
   for (Interval* interval = iw->active_first(fixedKind); interval != Interval::end(); interval = interval->next()) {
     int assigned_reg = interval->assigned_reg();
@@ -2406,7 +2396,7 @@ OopMap* LinearScan::compute_oop_map(IntervalWalker* iw, LIR_Op* op, CodeEmitInfo
     // moves, any intervals which end at this instruction are included
     // in the oop map since we may safepoint while doing the patch
     // before we've consumed the inputs.
-    if (is_patch_info || op->id() < interval->current_to()) {
+    if (op->is_patching() || op->id() < interval->current_to()) {
 
       // caller-save registers must not be included into oop-maps at calls
       assert(!is_call_site || assigned_reg >= nof_regs || !is_caller_save(assigned_reg), "interval is in a caller-save register at a call -> register will be overwritten");

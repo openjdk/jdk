@@ -31,12 +31,6 @@
 
 #include "runtime/thread.hpp"
 #include "runtime/threadLocalStorage.hpp"
-#ifdef TARGET_OS_ARCH_bsd_x86
-# include "prefetch_bsd_x86.inline.hpp"
-#endif
-#ifdef TARGET_OS_ARCH_bsd_zero
-# include "prefetch_bsd_zero.inline.hpp"
-#endif
 
 // Contains inlined functions for class Thread and ThreadLocalStorage
 

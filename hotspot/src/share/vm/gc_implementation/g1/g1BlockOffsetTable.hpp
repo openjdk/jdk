@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -80,7 +80,7 @@ public:
   virtual void set_bottom(HeapWord* new_bottom) {
     assert(new_bottom <= _end,
            err_msg("new_bottom (" PTR_FORMAT ") > _end (" PTR_FORMAT ")",
-                   new_bottom, _end));
+                   p2i(new_bottom), p2i(_end)));
     _bottom = new_bottom;
     resize(pointer_delta(_end, _bottom));
   }

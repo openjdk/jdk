@@ -28,22 +28,21 @@ package jdk.nashorn.internal.codegen;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 
 import java.util.List;
-import jdk.nashorn.internal.ir.Symbol;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ScriptObject;
 
 /**
  * Base class for object creation code generation.
+ * @param <T> value type
  */
-public abstract class ObjectCreator {
+public abstract class ObjectCreator<T> {
 
-    /** List of keys to initiate in this ObjectCreator */
-    protected final List<String>  keys;
-
-    /** List of symbols to initiate in this ObjectCreator */
-    protected final List<Symbol>  symbols;
+    /** List of keys & symbols to initiate in this ObjectCreator */
+    final List<MapTuple<T>> tuples;
 
     /** Code generator */
-    protected final CodeGenerator codegen;
+    final CodeGenerator codegen;
 
     /** Property map */
     protected PropertyMap   propertyMap;
@@ -55,15 +54,13 @@ public abstract class ObjectCreator {
      * Constructor
      *
      * @param codegen      the code generator
-     * @param keys         the keys
-     * @param symbols      the symbols corresponding to keys, same index
+     * @param tuples       key,symbol,value (optional) tuples
      * @param isScope      is this object scope
      * @param hasArguments does the created object have an "arguments" property
      */
-    protected ObjectCreator(final CodeGenerator codegen, final List<String> keys, final List<Symbol> symbols, final boolean isScope, final boolean hasArguments) {
+    ObjectCreator(final CodeGenerator codegen, final List<MapTuple<T>> tuples, final boolean isScope, final boolean hasArguments) {
         this.codegen       = codegen;
-        this.keys          = keys;
-        this.symbols       = symbols;
+        this.tuples        = tuples;
         this.isScope       = isScope;
         this.hasArguments  = hasArguments;
     }
@@ -85,8 +82,8 @@ public abstract class ObjectCreator {
      * @param clazz type of MapCreator
      * @return map creator instantiated by type
      */
-    protected MapCreator newMapCreator(final Class<?> clazz) {
-        return new MapCreator(clazz, keys, symbols);
+    protected MapCreator<?> newMapCreator(final Class<? extends ScriptObject> clazz) {
+        return new MapCreator<>(clazz, tuples);
     }
 
     /**
@@ -107,6 +104,10 @@ public abstract class ObjectCreator {
         return method;
     }
 
+    PropertyMap getMap() {
+        return propertyMap;
+    }
+
     /**
      * Is this a scope object
      * @return true if scope
@@ -122,4 +123,27 @@ public abstract class ObjectCreator {
     protected boolean hasArguments() {
         return hasArguments;
     }
+
+    /**
+     * Technique for loading an initial value. Defined by anonymous subclasses in code gen.
+     *
+     * @param value Value to load.
+     * @param type the type of the value to load
+     */
+    protected abstract void loadValue(T value, Type type);
+
+    MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple, final boolean pack) {
+        loadValue(tuple.value, tuple.type);
+        if (pack && tuple.isPrimitive()) {
+            method.pack();
+        } else {
+            method.convert(Type.OBJECT);
+        }
+        return method;
+    }
+
+    MethodEmitter loadTuple(final MethodEmitter method, final MapTuple<T> tuple) {
+        return loadTuple(method, tuple, true);
+    }
+
 }

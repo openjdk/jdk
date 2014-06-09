@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/classLoader.hpp"
-#include "classfile/symbolTable.hpp"
+#include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
@@ -97,6 +97,7 @@
 #include "opto/runtime.hpp"
 #endif
 
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 GrowableArray<Method*>* collected_profiled_methods;
 
@@ -119,7 +120,8 @@ void collect_profiled_methods(Method* m) {
 }
 
 void print_method_profiling_data() {
-  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData)) {
+  if (ProfileInterpreter COMPILER1_PRESENT(|| C1UpdateMethodData) &&
+     (PrintMethodData || CompilerOracle::should_print_methods())) {
     ResourceMark rm;
     HandleMark hm;
     collected_profiled_methods = new GrowableArray<Method*>(1024);
@@ -366,7 +368,7 @@ void print_statistics() {
       BaselineTTYOutputer outputer(tty);
       MemTracker::print_memory_usage(outputer, K, false);
     } else {
-      tty->print_cr(MemTracker::reason());
+      tty->print_cr("%s", MemTracker::reason());
     }
   }
 }
@@ -407,7 +409,7 @@ void print_statistics() {
       BaselineTTYOutputer outputer(tty);
       MemTracker::print_memory_usage(outputer, K, false);
     } else {
-      tty->print_cr(MemTracker::reason());
+      tty->print_cr("%s", MemTracker::reason());
     }
   }
 }

@@ -391,7 +391,7 @@ void LateInlineCallGenerator::do_late_inline() {
   }
 
   // Setup default node notes to be picked up by the inlining
-  Node_Notes* old_nn = C->default_node_notes();
+  Node_Notes* old_nn = C->node_notes_at(call->_idx);
   if (old_nn != NULL) {
     Node_Notes* entry_nn = old_nn->clone(C);
     entry_nn->set_jvms(jvms);

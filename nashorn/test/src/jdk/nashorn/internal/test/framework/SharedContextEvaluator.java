@@ -74,21 +74,21 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
         }
 
         @Override
-        public void write(byte[] b) throws IOException {
+        public void write(final byte[] b) throws IOException {
             underlying.write(b);
         }
 
         @Override
-        public void write(byte[] b, int off, int len) throws IOException {
+        public void write(final byte[] b, final int off, final int len) throws IOException {
             underlying.write(b, off, len);
         }
 
         @Override
-        public void write(int b) throws IOException {
+        public void write(final int b) throws IOException {
             underlying.write(b);
         }
 
-        void setDelegatee(OutputStream stream) {
+        void setDelegatee(final OutputStream stream) {
             this.underlying = stream;
         }
     }
@@ -100,11 +100,11 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
     public SharedContextEvaluator(final String[] args) {
         this.ctxOut = new DelegatingOutputStream(System.out);
         this.ctxErr = new DelegatingOutputStream(System.err);
-        PrintWriter wout = new PrintWriter(ctxOut, true);
-        PrintWriter werr = new PrintWriter(ctxErr, true);
-        Options options = new Options("nashorn", werr);
+        final PrintWriter wout = new PrintWriter(ctxOut, true);
+        final PrintWriter werr = new PrintWriter(ctxErr, true);
+        final Options options = new Options("nashorn", werr);
         options.process(args);
-        ErrorManager errors = new ErrorManager(werr);
+        final ErrorManager errors = new ErrorManager(werr);
         this.context = new Context(options, errors, wout, werr, Thread.currentThread().getContextClassLoader());
     }
 
@@ -125,7 +125,7 @@ public final class SharedContextEvaluator implements ScriptEvaluator {
                     continue;
                 }
                 final File file = new File(fileName);
-                ScriptFunction script = context.compileScript(sourceFor(fileName, file.toURI().toURL()), global);
+                final ScriptFunction script = context.compileScript(sourceFor(fileName, file.toURI().toURL()), global);
 
                 if (script == null || errors.getNumberOfErrors() != 0) {
                     return COMPILATION_ERROR;

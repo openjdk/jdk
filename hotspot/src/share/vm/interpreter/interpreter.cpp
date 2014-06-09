@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,7 +72,7 @@ void InterpreterCodelet::print_on(outputStream* st) const {
   if (description() != NULL) st->print("%s  ", description());
   if (bytecode()    >= 0   ) st->print("%d %s  ", bytecode(), Bytecodes::name(bytecode()));
   st->print_cr("[" INTPTR_FORMAT ", " INTPTR_FORMAT "]  %d bytes",
-                code_begin(), code_end(), code_size());
+                p2i(code_begin()), p2i(code_end()), code_size());
 
   if (PrintInterpreter) {
     st->cr();

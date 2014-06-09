@@ -25,10 +25,17 @@
 
 package jdk.nashorn.internal.codegen;
 
+import java.util.Collections;
+import java.util.LinkedHashSet;
+import java.util.Set;
+import java.util.TreeSet;
+import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
+
 /**
  * Used to track split class compilation.
  */
-public class CompileUnit implements Comparable<CompileUnit> {
+public final class CompileUnit implements Comparable<CompileUnit> {
     /** Current class name */
     private final String className;
 
@@ -39,14 +46,44 @@ public class CompileUnit implements Comparable<CompileUnit> {
 
     private Class<?> clazz;
 
-    CompileUnit(final String className, final ClassEmitter classEmitter) {
-        this(className, classEmitter, 0L);
+    private Set<FunctionInitializer> functionInitializers = new LinkedHashSet<>();
+
+    private static class FunctionInitializer {
+        final RecompilableScriptFunctionData data;
+        final FunctionNode functionNode;
+
+        FunctionInitializer(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
+            this.data = data;
+            this.functionNode = functionNode;
+        }
+
+        void initializeCode() {
+            data.initializeCode(functionNode);
+        }
+
+        @Override
+        public int hashCode() {
+            return data.hashCode() + 31 * functionNode.hashCode();
+        }
+
+        @Override
+        public boolean equals(final Object obj) {
+            if (obj == null || obj.getClass() != FunctionInitializer.class) {
+                return false;
+            }
+            final FunctionInitializer other = (FunctionInitializer)obj;
+            return data == other.data && functionNode == other.functionNode;
+        }
     }
 
     CompileUnit(final String className, final ClassEmitter classEmitter, final long initialWeight) {
         this.className    = className;
-        this.classEmitter = classEmitter;
         this.weight       = initialWeight;
+        this.classEmitter = classEmitter;
+    }
+
+    static Set<CompileUnit> createCompileUnitSet() {
+        return new TreeSet<>();
     }
 
     /**
@@ -69,6 +106,29 @@ public class CompileUnit implements Comparable<CompileUnit> {
         // Revisit this - refactor to avoid null-ed out non-final fields
         // null out emitter
         this.classEmitter = null;
+    }
+
+    void addFunctionInitializer(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
+        functionInitializers.add(new FunctionInitializer(data, functionNode));
+    }
+
+    /**
+     * Returns true if this compile unit is responsible for initializing the specified function data with specified
+     * function node.
+     * @param data the function data to check
+     * @param functionNode the function node to check
+     * @return true if this unit is responsible for initializing the function data with the function node, otherwise
+     * false
+     */
+    public boolean isInitializing(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
+        return functionInitializers.contains(new FunctionInitializer(data, functionNode));
+    }
+
+    void initializeFunctionsCode() {
+        for(final FunctionInitializer init : functionInitializers) {
+            init.initializeCode();
+        }
+        functionInitializers = Collections.emptySet();
     }
 
     /**
@@ -112,13 +172,17 @@ public class CompileUnit implements Comparable<CompileUnit> {
         return className;
     }
 
-    @Override
-    public String toString() {
-        return "[classname=" + className + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+    private static String shortName(final String name) {
+        return name.lastIndexOf('/') == -1 ? name : name.substring(name.lastIndexOf('/') + 1);
     }
 
     @Override
-    public int compareTo(CompileUnit o) {
+    public String toString() {
+        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+    }
+
+    @Override
+    public int compareTo(final CompileUnit o) {
         return className.compareTo(o.className);
     }
 }

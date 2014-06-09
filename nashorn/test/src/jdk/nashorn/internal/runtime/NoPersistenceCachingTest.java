@@ -24,13 +24,12 @@
  */
 package jdk.nashorn.internal.runtime;
 
+import static org.testng.Assert.fail;
+
 import java.io.ByteArrayOutputStream;
 import java.io.PrintStream;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
-import static org.testng.Assert.fail;
-import org.testng.annotations.Test;
-
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -39,6 +38,7 @@ import javax.script.SimpleScriptContext;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.annotations.AfterTest;
 import org.testng.annotations.BeforeTest;
+import org.testng.annotations.Test;
 
 /**
  * @test
@@ -59,8 +59,8 @@ public class NoPersistenceCachingTest {
       prevStderr = System.err;
       System.setErr(new PrintStream(stderr));
       NashornScriptEngineFactory nashornFactory = null;
-      ScriptEngineManager sm = new ScriptEngineManager();
-      for (ScriptEngineFactory fac : sm.getEngineFactories()) {
+      final ScriptEngineManager sm = new ScriptEngineManager();
+      for (final ScriptEngineFactory fac : sm.getEngineFactories()) {
          if (fac instanceof NashornScriptEngineFactory) {
             nashornFactory = (NashornScriptEngineFactory) fac;
             break;
@@ -69,7 +69,10 @@ public class NoPersistenceCachingTest {
       if (nashornFactory == null) {
          fail("Cannot find nashorn factory!");
       }
-      String[] options = new String[]{"--log=compiler:finest"};
+      // fine is enough for cache hits, finest produces way too much information
+      // TODO this should be ported to use the RuntimeEvents instead of screen scraping
+      // logs, as obviously this is very brittle
+      final String[] options = new String[]{"--log=compiler:fine"};
       engine = nashornFactory.getScriptEngine(options);
       context1 = engine.getContext();
       context2 = new SimpleScriptContext();
@@ -83,18 +86,18 @@ public class NoPersistenceCachingTest {
       System.setErr(prevStderr);
    }
 
-   public void runTest(int numberOfContext, String expectedOutputPattern,
-                       int expectedPatternOccurrence) {
+   public void runTest(final int numberOfContext, final String expectedOutputPattern,
+                       final int expectedPatternOccurrence) {
 
       try {
          switch (numberOfContext) {
          case 2:
-            String scriptTwoContexts = "print('HelloTwoContexts')";
+            final String scriptTwoContexts = "print('HelloTwoContexts')";
             engine.eval(scriptTwoContexts, context1);
             engine.eval(scriptTwoContexts, context2);
             break;
          case 3:
-            String scriptThreeContexts = "print('HelloThreeContexts')";
+            final String scriptThreeContexts = "print('HelloThreeContexts')";
             engine.eval(scriptThreeContexts, context1);
             engine.eval(scriptThreeContexts, context2);
             engine.eval(scriptThreeContexts, context3);
@@ -104,8 +107,8 @@ public class NoPersistenceCachingTest {
          se.printStackTrace();
          fail(se.getMessage());
       }
-      Pattern deoptimizing = Pattern.compile(expectedOutputPattern);
-      Matcher matcher = deoptimizing.matcher(stderr.toString());
+      final Pattern deoptimizing = Pattern.compile(expectedOutputPattern);
+      final Matcher matcher = deoptimizing.matcher(stderr.toString());
       int matches = 0;
       while (matcher.find()) {
          matches++;

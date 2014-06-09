@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -3981,7 +3981,7 @@ bool InitializeNode::stores_are_sane(PhaseTransform* phase) {
     intptr_t st_off = get_store_offset(st, phase);
     if (st_off < 0)  continue;  // ignore dead garbage
     if (last_off > st_off) {
-      tty->print_cr("*** bad store offset at %d: %d > %d", i, last_off, st_off);
+      tty->print_cr("*** bad store offset at %d: " INTX_FORMAT " > " INTX_FORMAT, i, last_off, st_off);
       this->dump(2);
       assert(false, "ascending store offsets");
       return false;

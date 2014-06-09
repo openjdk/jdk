@@ -211,9 +211,9 @@ bool Verifier::is_eligible_for_verification(instanceKlassHandle klass, bool shou
     // reflection implementation, not just those associated with
     // sun/reflect/SerializationConstructorAccessor.
     // NOTE: this is called too early in the bootstrapping process to be
-    // guarded by Universe::is_gte_jdk14x_version()/UseNewReflection.
+    // guarded by Universe::is_gte_jdk14x_version().
     // Also for lambda generated code, gte jdk8
-    (!is_reflect || VerifyReflectionBytecodes));
+    (!is_reflect));
 }
 
 Symbol* Verifier::inference_verify(
@@ -364,7 +364,7 @@ void TypeOrigin::print_on(outputStream* str) const {
 
 void ErrorContext::details(outputStream* ss, const Method* method) const {
   if (is_valid()) {
-    ss->print_cr("");
+    ss->cr();
     ss->print_cr("Exception Details:");
     location_details(ss, method);
     reason_details(ss);
@@ -379,7 +379,7 @@ void ErrorContext::reason_details(outputStream* ss) const {
   streamIndentor si(ss);
   ss->indent().print_cr("Reason:");
   streamIndentor si2(ss);
-  ss->indent().print("");
+  ss->indent().print("%s", "");
   switch (_fault) {
     case INVALID_BYTECODE:
       ss->print("Error exists in the bytecode");
@@ -432,7 +432,7 @@ void ErrorContext::reason_details(outputStream* ss) const {
       ShouldNotReachHere();
       ss->print_cr("Unknown");
   }
-  ss->print_cr("");
+  ss->cr();
 }
 
 void ErrorContext::location_details(outputStream* ss, const Method* method) const {
@@ -507,7 +507,7 @@ void ErrorContext::stackmap_details(outputStream* ss, const Method* method) cons
     for (u2 i = 0; i < sm_table->number_of_entries(); ++i) {
       ss->indent();
       sm_frame->print_on(ss, current_offset);
-      ss->print_cr("");
+      ss->cr();
       current_offset += sm_frame->offset_delta();
       sm_frame = sm_frame->next();
     }
@@ -579,7 +579,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
     tty->print_cr("Verifying method %s", m->name_and_sig_as_C_string());
   }
 
-  const char* bad_type_msg = "Bad type on operand stack in %s";
+// For clang, the only good constant format string is a literal constant format string.
+#define bad_type_msg "Bad type on operand stack in %s"
 
   int32_t max_stack = m->verifier_max_stack();
   int32_t max_locals = m->max_locals();
@@ -1676,6 +1677,8 @@ void ClassVerifier::verify_method(methodHandle m, TRAPS) {
   }
 }
 
+#undef bad_type_message
+
 char* ClassVerifier::generate_code_data(methodHandle m, u4 code_length, TRAPS) {
   char* code_data = NEW_RESOURCE_ARRAY(char, code_length);
   memset(code_data, 0, sizeof(char) * code_length);
@@ -2033,7 +2036,7 @@ void ClassVerifier::verify_switch(
     while ((bcp + padding_offset) < aligned_bcp) {
       if(*(bcp + padding_offset) != 0) {
         verify_error(ErrorContext::bad_code(bci),
-                     "Nonzero padding byte in lookswitch or tableswitch");
+                     "Nonzero padding byte in lookupswitch or tableswitch");
         return;
       }
       padding_offset++;
@@ -2363,8 +2366,8 @@ void ClassVerifier::verify_invoke_instructions(
   if (opcode == Bytecodes::_invokedynamic) {
     if (_klass->major_version() < Verifier::INVOKEDYNAMIC_MAJOR_VERSION) {
       class_format_error(
-        "invokedynamic instructions not supported by this class file version",
-        _klass->external_name());
+        "invokedynamic instructions not supported by this class file version (%d), class %s",
+        _klass->major_version(), _klass->external_name());
       return;
     }
   } else {

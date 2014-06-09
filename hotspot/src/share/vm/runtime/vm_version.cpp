@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ void Abstract_VM_Version::initialize() {
   set_version_field(&_vm_minor_version, JDK_MINOR_VERSION, "bad minor version");
   set_version_field(&_vm_micro_version, JDK_MICRO_VERSION, "bad micro version");
   int offset = (JDK_BUILD_NUMBER != NULL && JDK_BUILD_NUMBER[0] == 'b') ? 1 : 0;
-  set_version_field(&_vm_build_number, JDK_BUILD_NUMBER + offset,
+  set_version_field(&_vm_build_number, &JDK_BUILD_NUMBER[offset],
                     "bad build number");
 
   _initialized = true;

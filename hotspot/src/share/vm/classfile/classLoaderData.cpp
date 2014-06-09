@@ -274,6 +274,8 @@ void ClassLoaderData::add_class(Klass* k) {
   MutexLockerEx ml(metaspace_lock(),  Mutex::_no_safepoint_check_flag);
   Klass* old_value = _klasses;
   k->set_next_link(old_value);
+  // Make sure linked class is stable, since the class list is walked without a lock
+  OrderAccess::storestore();
   // link the new item into the list
   _klasses = k;
 
@@ -281,10 +283,10 @@ void ClassLoaderData::add_class(Klass* k) {
     ResourceMark rm;
     tty->print_cr("[TraceClassLoaderData] Adding k: " PTR_FORMAT " %s to CLD: "
                   PTR_FORMAT " loader: " PTR_FORMAT " %s",
-                  k,
+                  p2i(k),
                   k->external_name(),
-                  k->class_loader_data(),
-                  (void *)k->class_loader(),
+                  p2i(k->class_loader_data()),
+                  p2i((void *)k->class_loader()),
                   loader_name());
   }
 }
@@ -319,11 +321,11 @@ void ClassLoaderData::unload() {
 
   if (TraceClassLoaderData) {
     ResourceMark rm;
-    tty->print("[ClassLoaderData: unload loader data "PTR_FORMAT, this);
-    tty->print(" for instance "PTR_FORMAT" of %s", (void *)class_loader(),
+    tty->print("[ClassLoaderData: unload loader data " INTPTR_FORMAT, p2i(this));
+    tty->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)class_loader()),
                loader_name());
     if (is_anonymous()) {
-      tty->print(" for anonymous class  "PTR_FORMAT " ", _klasses);
+      tty->print(" for anonymous class  " INTPTR_FORMAT " ", p2i(_klasses));
     }
     tty->print_cr("]");
   }
@@ -485,14 +487,14 @@ const char* ClassLoaderData::loader_name() {
 void ClassLoaderData::dump(outputStream * const out) {
   ResourceMark rm;
   out->print("ClassLoaderData CLD: "PTR_FORMAT", loader: "PTR_FORMAT", loader_klass: "PTR_FORMAT" %s {",
-      this, (void *)class_loader(),
-      class_loader() != NULL ? class_loader()->klass() : NULL, loader_name());
+      p2i(this), p2i((void *)class_loader()),
+      p2i(class_loader() != NULL ? class_loader()->klass() : NULL), loader_name());
   if (claimed()) out->print(" claimed ");
   if (is_unloading()) out->print(" unloading ");
-  out->print(" handles " INTPTR_FORMAT, handles());
+  out->print(" handles " INTPTR_FORMAT, p2i(handles()));
   out->cr();
   if (metaspace_or_null() != NULL) {
-    out->print_cr("metaspace: " PTR_FORMAT, metaspace_or_null());
+    out->print_cr("metaspace: " INTPTR_FORMAT, p2i(metaspace_or_null()));
     metaspace_or_null()->dump(out);
   } else {
     out->print_cr("metaspace: NULL");
@@ -549,6 +551,8 @@ ClassLoaderData* ClassLoaderDataGraph::_head = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_unloading = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
+bool ClassLoaderDataGraph::_should_purge = false;
+
 // Add a new class loader data node to the list.  Assign the newly created
 // ClassLoaderData into the java/lang/ClassLoader object as a hidden field
 ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRAPS) {
@@ -586,8 +590,8 @@ ClassLoaderData* ClassLoaderDataGraph::add(Handle loader, bool is_anonymous, TRA
       if (TraceClassLoaderData) {
         ResourceMark rm;
         tty->print("[ClassLoaderData: ");
-        tty->print("create class loader data "PTR_FORMAT, cld);
-        tty->print(" for instance "PTR_FORMAT" of %s", (void *)cld->class_loader(),
+        tty->print("create class loader data " INTPTR_FORMAT, p2i(cld));
+        tty->print(" for instance " INTPTR_FORMAT " of %s", p2i((void *)cld->class_loader()),
                    cld->loader_name());
         tty->print_cr("]");
       }
@@ -675,32 +679,6 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   return array;
 }
 
-// For profiling and hsfind() only.  Otherwise, this is unsafe (and slow).  This
-// is done lock free to avoid lock inversion problems.  It is safe because
-// new ClassLoaderData are added to the end of the CLDG, and only removed at
-// safepoint.  The _unloading list can be deallocated concurrently with CMS so
-// this doesn't look in metaspace for classes that have been unloaded.
-bool ClassLoaderDataGraph::contains(const void* x) {
-  if (DumpSharedSpaces) {
-    // There are only two metaspaces to worry about.
-    ClassLoaderData* ncld = ClassLoaderData::the_null_class_loader_data();
-    return (ncld->ro_metaspace()->contains(x) || ncld->rw_metaspace()->contains(x));
-  }
-
-  if (UseSharedSpaces && MetaspaceShared::is_in_shared_space(x)) {
-    return true;
-  }
-
-  for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
-    if (cld->metaspace_or_null() != NULL && cld->metaspace_or_null()->contains(x)) {
-      return true;
-    }
-  }
-
-  // Do not check unloading list because deallocation can be concurrent.
-  return false;
-}
-
 #ifndef PRODUCT
 bool ClassLoaderDataGraph::contains_loader_data(ClassLoaderData* loader_data) {
   for (ClassLoaderData* data = _head; data != NULL; data = data->next()) {
@@ -759,6 +737,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
 }
 
 void ClassLoaderDataGraph::purge() {
+  assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
   ClassLoaderData* list = _unloading;
   _unloading = NULL;
   ClassLoaderData* next = list;
@@ -847,7 +826,7 @@ void ClassLoaderData::print_value_on(outputStream* out) const {
   if (class_loader() == NULL) {
     out->print("NULL class_loader");
   } else {
-    out->print("class loader "PTR_FORMAT, this);
+    out->print("class loader " INTPTR_FORMAT, p2i(this));
     class_loader()->print_value_on(out);
   }
 }

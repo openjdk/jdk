@@ -261,6 +261,10 @@ com/sun/jdi/JdbMethodExitTest.sh                                generic-all
 # 8041934
 com/sun/jdi/RepStep.java                                        generic-all
 
+# 8044419
+com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
+
+
 ############################################################################
 
 # jdk_util

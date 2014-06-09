@@ -1271,7 +1271,7 @@ public class PolicyFile extends java.security.Policy {
         Boolean imp = AccessController.doPrivileged
             (new PrivilegedAction<Boolean>() {
             public Boolean run() {
-                return new Boolean(entry.getCodeSource().implies(cs));
+                return entry.getCodeSource().implies(cs);
             }
         });
         if (!imp.booleanValue()) {
@@ -1856,7 +1856,7 @@ public class PolicyFile extends java.security.Policy {
             int colonIndex;
             String prefix = value;
             String suffix;
-            if ((colonIndex = value.indexOf(":")) != -1) {
+            if ((colonIndex = value.indexOf(':')) != -1) {
                 prefix = value.substring(0, colonIndex);
             }
 

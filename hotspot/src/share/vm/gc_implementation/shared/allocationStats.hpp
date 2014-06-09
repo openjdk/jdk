@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -107,7 +107,7 @@ class AllocationStats VALUE_OBJ_CLASS_SPEC {
       assert(demand >= 0,
              err_msg("Demand (" SSIZE_FORMAT ") should be non-negative for "
                      PTR_FORMAT " (size=" SIZE_FORMAT ")",
-                     demand, this, count));
+                     demand, p2i(this), count));
       // Defensive: adjust for imprecision in event counting
       if (demand < 0) {
         demand = 0;

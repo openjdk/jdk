@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -74,6 +75,9 @@ import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
  */
 @ScriptClass("Object")
 public final class NativeObject {
+    public static final MethodHandle GET__PROTO__ = findOwnMH("get__proto__", ScriptObject.class, Object.class);
+    public static final MethodHandle SET__PROTO__ = findOwnMH("set__proto__", Object.class, Object.class, Object.class);
+
     private static final Object TO_STRING = new Object();
 
     private static InvokeByName getTO_STRING() {
@@ -84,6 +88,33 @@ public final class NativeObject {
                         return new InvokeByName("toString", ScriptObject.class);
                     }
                 });
+    }
+
+    @SuppressWarnings("unused")
+    private static ScriptObject get__proto__(final Object self) {
+        // See ES6 draft spec: B.2.2.1.1 get Object.prototype.__proto__
+        // Step 1 Let O be the result of calling ToObject passing the this.
+        final ScriptObject sobj = Global.checkObject(Global.toObject(self));
+        return sobj.getProto();
+    }
+
+    @SuppressWarnings("unused")
+    private static Object set__proto__(final Object self, final Object proto) {
+        // See ES6 draft spec: B.2.2.1.2 set Object.prototype.__proto__
+        // Step 1
+        Global.checkObjectCoercible(self);
+        // Step 4
+        if (! (self instanceof ScriptObject)) {
+            return UNDEFINED;
+        }
+
+        final ScriptObject sobj = (ScriptObject)self;
+        // __proto__ assignment ignores non-nulls and non-objects
+        // step 3: If Type(proto) is neither Object nor Null, then return undefined.
+        if (proto == null || proto instanceof ScriptObject) {
+            sobj.setPrototypeOf(proto);
+        }
+        return UNDEFINED;
     }
 
     private static final MethodType MIRROR_GETTER_TYPE = MethodType.methodType(Object.class, ScriptObjectMirror.class);
@@ -160,7 +191,7 @@ public final class NativeObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object setPrototypeOf(final Object self, final Object obj, final Object proto) {
         if (obj instanceof ScriptObject) {
-            ((ScriptObject)obj).setProtoCheck(proto);
+            ((ScriptObject)obj).setPrototypeOf(proto);
             return obj;
         } else if (obj instanceof ScriptObjectMirror) {
             ((ScriptObjectMirror)obj).setProto(proto);
@@ -249,8 +280,7 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static ScriptObject defineProperty(final Object self, final Object obj, final Object prop, final Object attr) {
-        Global.checkObject(obj);
-        final ScriptObject sobj = (ScriptObject)obj;
+        final ScriptObject sobj = Global.checkObject(obj);
         sobj.defineOwnProperty(JSType.toString(prop), attr, true);
         return sobj;
     }
@@ -265,9 +295,7 @@ public final class NativeObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static ScriptObject defineProperties(final Object self, final Object obj, final Object props) {
-        Global.checkObject(obj);
-
-        final ScriptObject sobj     = (ScriptObject)obj;
+        final ScriptObject sobj     = Global.checkObject(obj);
         final Object       propsObj = Global.toObject(props);
 
         if (propsObj instanceof ScriptObject) {
@@ -421,18 +449,17 @@ public final class NativeObject {
      */
     @Constructor
     public static Object construct(final boolean newObj, final Object self, final Object value) {
-        final JSType type = JSType.of(value);
+        final JSType type = JSType.ofNoFunction(value);
 
         // Object(null), Object(undefined), Object() are same as "new Object()"
 
-        if (newObj || (type == JSType.NULL || type == JSType.UNDEFINED)) {
+        if (newObj || type == JSType.NULL || type == JSType.UNDEFINED) {
             switch (type) {
             case BOOLEAN:
             case NUMBER:
             case STRING:
                 return Global.toObject(value);
             case OBJECT:
-            case FUNCTION:
                 return value;
             case NULL:
             case UNDEFINED:
@@ -513,7 +540,7 @@ public final class NativeObject {
         final Object key = JSType.toPrimitive(v, String.class);
         final Object obj = Global.toObject(self);
 
-        return (obj instanceof ScriptObject) && ((ScriptObject)obj).hasOwnProperty(key);
+        return obj instanceof ScriptObject && ((ScriptObject)obj).hasOwnProperty(key);
     }
 
     /**
@@ -627,25 +654,29 @@ public final class NativeObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object bindProperties(final Object self, final Object target, final Object source) {
         // target object has to be a ScriptObject
-        Global.checkObject(target);
+        final ScriptObject targetObj = Global.checkObject(target);
         // check null or undefined source object
         Global.checkObjectCoercible(source);
 
-        final ScriptObject targetObj = (ScriptObject)target;
-
         if (source instanceof ScriptObject) {
-            final ScriptObject sourceObj = (ScriptObject)source;
-            final Property[] properties = sourceObj.getMap().getProperties();
+            final ScriptObject sourceObj  = (ScriptObject)source;
+
+            final PropertyMap  sourceMap  = sourceObj.getMap();
+            final Property[]   properties = sourceMap.getProperties();
+            //replace the map and blow up everything to objects to work with dual fields :-(
 
             // filter non-enumerable properties
             final ArrayList<Property> propList = new ArrayList<>();
-            for (Property prop : properties) {
+            for (final Property prop : properties) {
                 if (prop.isEnumerable()) {
+                    final Object value = sourceObj.get(prop.getKey());
+                    prop.setCurrentType(Object.class);
+                    prop.setValue(sourceObj, sourceObj, value, false);
                     propList.add(prop);
                 }
             }
 
-            if (! propList.isEmpty()) {
+            if (!propList.isEmpty()) {
                 targetObj.addBoundProperties(sourceObj, propList.toArray(new Property[propList.size()]));
             }
         } else if (source instanceof ScriptObjectMirror) {
@@ -663,7 +694,7 @@ public final class NativeObject {
                 final String name = keys[idx];
                 final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, MIRROR_GETTER_TYPE);
                 final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, MIRROR_SETTER_TYPE);
-                props[idx] = (AccessorProperty.create(name, 0, getter, setter));
+                props[idx] = AccessorProperty.create(name, 0, getter, setter);
             }
 
             targetObj.addBoundProperties(source, props);
@@ -739,7 +770,7 @@ public final class NativeObject {
         targetObj.addBoundProperties(source, properties.toArray(new AccessorProperty[properties.size()]));
     }
 
-    private static MethodHandle getBoundBeanMethodGetter(Object source, MethodHandle methodGetter) {
+    private static MethodHandle getBoundBeanMethodGetter(final Object source, final MethodHandle methodGetter) {
         try {
             // NOTE: we're relying on the fact that "dyn:getMethod:..." return value is constant for any given method
             // name and object linked with BeansLinker. (Actually, an even stronger assumption is true: return value is
@@ -748,7 +779,7 @@ public final class NativeObject {
                     Bootstrap.bindDynamicMethod(methodGetter.invoke(source), source)), 0, Object.class);
         } catch(RuntimeException|Error e) {
             throw e;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
     }
@@ -761,10 +792,10 @@ public final class NativeObject {
             assert passesGuard(source, inv.getGuard());
         } catch(RuntimeException|Error e) {
             throw e;
-        } catch(Throwable t) {
+        } catch(final Throwable t) {
             throw new RuntimeException(t);
         }
-        assert inv.getSwitchPoint() == null; // Linkers in Dynalink's beans package don't use switchpoints.
+        assert inv.getSwitchPoints() == null; // Linkers in Dynalink's beans package don't use switchpoints.
         // We discard the guard, as all method handles will be bound to a specific object.
         return inv.getInvocation();
     }
@@ -773,8 +804,12 @@ public final class NativeObject {
         return guard == null || (boolean)guard.invoke(obj);
     }
 
-    private static LinkRequest createLinkRequest(String operation, MethodType methodType, Object source) {
+    private static LinkRequest createLinkRequest(final String operation, final MethodType methodType, final Object source) {
         return new LinkRequestImpl(CallSiteDescriptorFactory.create(MethodHandles.publicLookup(), operation,
-                methodType), false, source);
+                methodType), null, 0, false, source);
+    }
+
+    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(MethodHandles.lookup(), NativeObject.class, name, MH.type(rtype, types));
     }
 }

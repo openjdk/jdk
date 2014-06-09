@@ -329,7 +329,7 @@ public class DescriptorSupport
                 inFld = false;
             } else if (inFld && inDesc) {
                 // want kw=value, eg, name="myname" value="myvalue"
-                int eq_separator = tok.indexOf("=");
+                int eq_separator = tok.indexOf('=');
                 if (eq_separator > 0) {
                     String kwPart = tok.substring(0,eq_separator);
                     String valPart = tok.substring(eq_separator+1);
@@ -458,7 +458,7 @@ public class DescriptorSupport
             if ((fields[i] == null) || (fields[i].equals(""))) {
                 continue;
             }
-            int eq_separator = fields[i].indexOf("=");
+            int eq_separator = fields[i].indexOf('=');
             if (eq_separator < 0) {
                 // illegal if no = or is first character
                 if (MODELMBEAN_LOGGER.isLoggable(Level.FINEST)) {

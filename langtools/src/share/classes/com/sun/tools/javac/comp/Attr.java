@@ -1176,7 +1176,7 @@ public class Attr extends JCTree.Visitor {
             //the Formal Parameter of a for-each loop is not in the scope when
             //attributing the for-each expression; we mimick this by attributing
             //the for-each expression first (against original scope).
-            Type exprType = types.upperBound(attribExpr(tree.expr, loopEnv));
+            Type exprType = types.cvarUpperBound(attribExpr(tree.expr, loopEnv));
             attribStat(tree.var, loopEnv);
             chk.checkNonVoid(tree.pos(), exprType);
             Type elemtype = types.elemtype(exprType); // perhaps expr is an array?
@@ -1193,7 +1193,7 @@ public class Attr extends JCTree.Visitor {
                     List<Type> iterableParams = base.allparams();
                     elemtype = iterableParams.isEmpty()
                         ? syms.objectType
-                        : types.upperBound(iterableParams.head);
+                        : types.wildUpperBound(iterableParams.head);
                 }
             }
             chk.checkType(tree.expr.pos(), elemtype, tree.var.sym.type);
@@ -2060,7 +2060,7 @@ public class Attr extends JCTree.Visitor {
                 tree.constructor = constructor.baseSymbol();
 
                 final TypeSymbol csym = clazztype.tsym;
-                ResultInfo diamondResult = new ResultInfo(MTH, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
+                ResultInfo diamondResult = new ResultInfo(pkind, newMethodTemplate(resultInfo.pt, argtypes, typeargtypes), new Check.NestedCheckContext(resultInfo.checkContext) {
                     @Override
                     public void report(DiagnosticPosition _unused, JCDiagnostic details) {
                         enclosingContext.report(tree.clazz,
@@ -4678,16 +4678,30 @@ public class Attr extends JCTree.Visitor {
         private void initTypeIfNeeded(JCTree that) {
             if (that.type == null) {
                 if (that.hasTag(METHODDEF)) {
-                    that.type = dummyMethodType();
+                    that.type = dummyMethodType((JCMethodDecl)that);
                 } else {
                     that.type = syms.unknownType;
                 }
             }
         }
 
+        /* Construct a dummy method type. If we have a method declaration,
+         * and the declared return type is void, then use that return type
+         * instead of UNKNOWN to avoid spurious error messages in lambda
+         * bodies (see:JDK-8041704).
+         */
+        private Type dummyMethodType(JCMethodDecl md) {
+            Type restype = syms.unknownType;
+            if (md != null && md.restype.hasTag(TYPEIDENT)) {
+                JCPrimitiveTypeTree prim = (JCPrimitiveTypeTree)md.restype;
+                if (prim.typetag == VOID)
+                    restype = syms.voidType;
+            }
+            return new MethodType(List.<Type>nil(), restype,
+                                  List.<Type>nil(), syms.methodClass);
+        }
         private Type dummyMethodType() {
-            return new MethodType(List.<Type>nil(), syms.unknownType,
-                            List.<Type>nil(), syms.methodClass);
+            return dummyMethodType(null);
         }
 
         @Override

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "memory/allocation.hpp"
+
+PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 SurvRateGroup::SurvRateGroup(G1CollectorPolicy* g1p,
                              const char* name,
@@ -202,7 +204,7 @@ SurvRateGroup::print_surv_rate_summary() {
   if (length == 0)
     return;
 
-  gclog_or_tty->print_cr("");
+  gclog_or_tty->cr();
   gclog_or_tty->print_cr("%s Rate Summary (for up to age " SIZE_FORMAT ")", _name, length-1);
   gclog_or_tty->print_cr("      age range     survival rate (avg)      samples (avg)");
   gclog_or_tty->print_cr("  ---------------------------------------------------------");

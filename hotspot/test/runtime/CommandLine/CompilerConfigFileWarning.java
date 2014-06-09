@@ -33,17 +33,28 @@ import com.oracle.java.testlibrary.*;
 
 public class CompilerConfigFileWarning {
     public static void main(String[] args) throws Exception {
-        if (Platform.isDebugBuild()) {
-            System.out.println("Skip on debug builds since we'll always read the file there");
-            return;
-        }
+        ProcessBuilder pb;
+        OutputAnalyzer output;
+        PrintWriter pw;
 
-        PrintWriter pw = new PrintWriter(".hotspot_compiler");
-        pw.println("aa");
+        pw = new PrintWriter("hs_comp.txt");
+        pw.println("aaa, aaa");
         pw.close();
 
-        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-version");
-        OutputAnalyzer output = new OutputAnalyzer(pb.start());
-        output.shouldContain("warning: .hotspot_compiler file is present but has been ignored.  Run with -XX:CompileCommandFile=.hotspot_compiler to load the file.");
+        pb = ProcessTools.createJavaProcessBuilder("-XX:CompileCommandFile=hs_comp.txt", "-version");
+        output = new OutputAnalyzer(pb.start());
+        output.shouldContain("CompilerOracle: unrecognized line");
+        output.shouldContain("aaa  aaa");
+
+        // Skip on debug builds since we'll always read the file there
+        if (!Platform.isDebugBuild()) {
+            pw = new PrintWriter(".hotspot_compiler");
+            pw.println("aa");
+            pw.close();
+
+            pb = ProcessTools.createJavaProcessBuilder("-version");
+            output = new OutputAnalyzer(pb.start());
+            output.shouldContain("warning: .hotspot_compiler file is present but has been ignored.  Run with -XX:CompileCommandFile=.hotspot_compiler to load the file.");
+        }
     }
 }
