@@ -137,7 +137,7 @@ public class NameCodec {
      * @param name the symbolic name to mangle
      * @return the mangled form of the symbolic name.
      */
-    public static String encode(String name) {
+    public static String encode(final String name) {
         final int l = name.length();
         if(l == 0) {
             return EMPTY_NAME;
@@ -176,7 +176,7 @@ public class NameCodec {
      * @param name the symbolic name to demangle
      * @return the demangled form of the symbolic name.
      */
-    public static String decode(String name) {
+    public static String decode(final String name) {
         if(name.charAt(0) != ESCAPE_CHAR) {
             return name;
         }
@@ -184,11 +184,11 @@ public class NameCodec {
         if(l == 2 && name.charAt(1) == EMPTY_CHAR) {
             return "";
         }
-        StringBuilder b = new StringBuilder(name.length());
+        final StringBuilder b = new StringBuilder(name.length());
         int lastEscape = -2;
         int lastBackslash = -1;
         for(;;) {
-            int nextBackslash = name.indexOf(ESCAPE_CHAR, lastBackslash + 1);
+            final int nextBackslash = name.indexOf(ESCAPE_CHAR, lastBackslash + 1);
             if(nextBackslash == -1 || nextBackslash == l - 1) {
                 break;
             }
@@ -211,7 +211,7 @@ public class NameCodec {
         return b.toString();
     }
 
-    private static void addEncoding(char from, char to) {
+    private static void addEncoding(final char from, final char to) {
         ENCODING[from - MIN_ENCODING] = to;
         DECODING[to - MIN_DECODING] = from;
     }

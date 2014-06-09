@@ -140,7 +140,6 @@ import jdk.internal.dynalink.support.RuntimeContextLinkRequestImpl;
  * @author Attila Szegedi
  */
 public class DynamicLinker {
-
     private static final String CLASS_NAME = DynamicLinker.class.getName();
     private static final String RELINK_METHOD_NAME = "relink";
 
@@ -148,6 +147,7 @@ public class DynamicLinker {
     private static final String INITIAL_LINK_METHOD_NAME = "linkCallSite";
 
     private final LinkerServices linkerServices;
+    private final GuardedInvocationFilter prelinkFilter;
     private final int runtimeContextArgCount;
     private final boolean syncOnRelink;
     private final int unstableRelinkThreshold;
@@ -156,18 +156,20 @@ public class DynamicLinker {
      * Creates a new dynamic linker.
      *
      * @param linkerServices the linkerServices used by the linker, created by the factory.
+     * @param prelinkFilter see {@link DynamicLinkerFactory#setPrelinkFilter(GuardedInvocationFilter)}
      * @param runtimeContextArgCount see {@link DynamicLinkerFactory#setRuntimeContextArgCount(int)}
      */
-    DynamicLinker(LinkerServices linkerServices, int runtimeContextArgCount, boolean syncOnRelink,
-            int unstableRelinkThreshold) {
+    DynamicLinker(final LinkerServices linkerServices, final GuardedInvocationFilter prelinkFilter, final int runtimeContextArgCount,
+            final boolean syncOnRelink, final int unstableRelinkThreshold) {
         if(runtimeContextArgCount < 0) {
             throw new IllegalArgumentException("runtimeContextArgCount < 0");
         }
         if(unstableRelinkThreshold < 0) {
             throw new IllegalArgumentException("unstableRelinkThreshold < 0");
         }
-        this.runtimeContextArgCount = runtimeContextArgCount;
         this.linkerServices = linkerServices;
+        this.prelinkFilter = prelinkFilter;
+        this.runtimeContextArgCount = runtimeContextArgCount;
         this.syncOnRelink = syncOnRelink;
         this.unstableRelinkThreshold = unstableRelinkThreshold;
     }
@@ -199,7 +201,7 @@ public class DynamicLinker {
     private static final MethodHandle RELINK = Lookup.findOwnSpecial(MethodHandles.lookup(), RELINK_METHOD_NAME,
             MethodHandle.class, RelinkableCallSite.class, int.class, Object[].class);
 
-    private MethodHandle createRelinkAndInvokeMethod(final RelinkableCallSite callSite, int relinkCount) {
+    private MethodHandle createRelinkAndInvokeMethod(final RelinkableCallSite callSite, final int relinkCount) {
         // Make a bound MH of invoke() for this linker and call site
         final MethodHandle boundRelinker = MethodHandles.insertArguments(RELINK, 0, this, callSite, Integer.valueOf(
                 relinkCount));
@@ -219,16 +221,15 @@ public class DynamicLinker {
      * @throws Exception rethrows any exception thrown by the linkers
      */
     @SuppressWarnings("unused")
-    private MethodHandle relink(RelinkableCallSite callSite, int relinkCount, Object... arguments) throws Exception {
+    private MethodHandle relink(final RelinkableCallSite callSite, final int relinkCount, final Object... arguments) throws Exception {
         final CallSiteDescriptor callSiteDescriptor = callSite.getDescriptor();
         final boolean unstableDetectionEnabled = unstableRelinkThreshold > 0;
         final boolean callSiteUnstable = unstableDetectionEnabled && relinkCount >= unstableRelinkThreshold;
         final LinkRequest linkRequest =
-                runtimeContextArgCount == 0 ? new LinkRequestImpl(callSiteDescriptor, callSiteUnstable, arguments)
-                        : new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSiteUnstable, arguments,
-                                runtimeContextArgCount);
+                runtimeContextArgCount == 0 ?
+                        new LinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments) :
+                        new RuntimeContextLinkRequestImpl(callSiteDescriptor, callSite, relinkCount, callSiteUnstable, arguments, runtimeContextArgCount);
 
-        // Find a suitable method handle with a guard
         GuardedInvocation guardedInvocation = linkerServices.getGuardedInvocation(linkRequest);
 
         // None found - throw an exception
@@ -247,6 +248,11 @@ public class DynamicLinker {
                 guardedInvocation = guardedInvocation.dropArguments(1, prefix);
             }
         }
+
+        // Make sure we filter the invocation before linking it into the call site. This is typically used to match the
+        // return type of the invocation to the call site.
+        guardedInvocation = prelinkFilter.filter(guardedInvocation, linkRequest, linkerServices);
+        guardedInvocation.getClass(); // null pointer check
 
         int newRelinkCount = relinkCount;
         // Note that the short-circuited "&&" evaluation below ensures we'll increment the relinkCount until

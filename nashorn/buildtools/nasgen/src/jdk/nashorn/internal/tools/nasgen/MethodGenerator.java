@@ -413,7 +413,8 @@ public class MethodGenerator extends MethodVisitor {
         super.visitMethodInsn(INVOKEVIRTUAL,
                     "java/io/PrintStream",
                     "println",
-                    "(Ljava/lang/String;)V", false);
+                    "(Ljava/lang/String;)V",
+                    false);
     }
 
     // print the object on the top of the stack
@@ -426,6 +427,7 @@ public class MethodGenerator extends MethodVisitor {
         super.visitMethodInsn(INVOKEVIRTUAL,
                     "java/io/PrintStream",
                     "println",
-                    "(Ljava/lang/Object;)V", false);
+                    "(Ljava/lang/Object;)V",
+                    false);
     }
 }

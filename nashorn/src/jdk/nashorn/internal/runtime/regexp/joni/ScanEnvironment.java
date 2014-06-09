@@ -44,7 +44,7 @@ public final class ScanEnvironment {
     public Node memNodes[];
 
 
-    public ScanEnvironment(Regex regex, Syntax syntax) {
+    public ScanEnvironment(final Regex regex, final Syntax syntax) {
         this.reg = regex;
         option = regex.options;
         caseFoldFlag = regex.caseFoldFlag;
@@ -65,7 +65,7 @@ public final class ScanEnvironment {
         if (numMem++ == 0) {
             memNodes = new Node[SCANENV_MEMNODES_SIZE];
         } else if (numMem >= memNodes.length) {
-            Node[]tmp = new Node[memNodes.length << 1];
+            final Node[]tmp = new Node[memNodes.length << 1];
             System.arraycopy(memNodes, 0, tmp, 0, memNodes.length);
             memNodes = tmp;
         }
@@ -73,7 +73,7 @@ public final class ScanEnvironment {
         return numMem;
     }
 
-    public void setMemNode(int num, Node node) {
+    public void setMemNode(final int num, final Node node) {
         if (numMem >= num) {
             memNodes[num] = node;
         } else {
@@ -81,7 +81,7 @@ public final class ScanEnvironment {
         }
     }
 
-    public int convertBackslashValue(int c) {
+    public int convertBackslashValue(final int c) {
         if (syntax.opEscControlChars()) {
             switch (c) {
             case 'n': return '\n';
@@ -101,7 +101,7 @@ public final class ScanEnvironment {
         return c;
     }
 
-    void ccEscWarn(String s) {
+    void ccEscWarn(final String s) {
         if (Config.USE_WARN) {
             if (syntax.warnCCOpNotEscaped() && syntax.backSlashEscapeInCC()) {
                 reg.warnings.warn("character class has '" + s + "' without escape");

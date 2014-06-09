@@ -25,7 +25,7 @@
  * @test
  * @bug 8031321
  * @summary Verify processing of UseCountTrailingZerosInstruction option
- *          on CPU without TZCNT instuction (BMI1 feature) support.
+ *          on CPU without TZCNT instruction (BMI1 feature) support.
  * @library /testlibrary /testlibrary/whitebox
  * @build TestUseCountTrailingZerosInstructionOnUnsupportedCPU
  *        BMIUnsupportedCPUTest
@@ -40,7 +40,8 @@ import com.oracle.java.testlibrary.*;
 import com.oracle.java.testlibrary.cli.*;
 
 public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
-     extends BMIUnsupportedCPUTest {
+        extends BMIUnsupportedCPUTest {
+    private static final String ENABLE_BMI = "-XX:+UseBMI1Instructions";
 
     public TestUseCountTrailingZerosInstructionOnUnsupportedCPU() {
         super("UseCountTrailingZerosInstruction", TZCNT_WARNING, "bmi1");
@@ -51,16 +52,24 @@ public class TestUseCountTrailingZerosInstructionOnUnsupportedCPU
 
         super.unsupportedX86CPUTestCases();
 
-        // verify that option will not be turned on during
-        // UseBMI1Instuctions processing
-        CommandLineOptionTest.
-            verifyOptionValue("UseCountTrailingZerosInstruction", "false",
-                              "-XX:+UseBMI1Instructions");
+        /*
+          Verify that option will not be turned on during UseBMI1Instructions
+          processing. VM will be launched with following options:
+          -XX:+UseBMI1Instructions -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                TestUseCountTrailingZerosInstructionOnUnsupportedCPU.
+                        ENABLE_BMI);
 
-        CommandLineOptionTest.
-            verifyOptionValue("UseCountTrailingZerosInstruction", "false",
-                              "-XX:+UseCountTrailingZerosInstruction",
-                              "-XX:+UseBMI1Instructions");
+        /*
+          VM will be launched with following options:
+          -XX:+UseCountTrailingZerosInstruction -XX:+UseBMI1Instructions
+          -version
+        */
+        CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "false",
+                CommandLineOptionTest.prepareBooleanFlag(optionName, true),
+                TestUseCountTrailingZerosInstructionOnUnsupportedCPU.
+                        ENABLE_BMI);
     }
 
     public static void main(String args[]) throws Throwable {

@@ -25,10 +25,13 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
+import java.util.function.Function;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -38,7 +41,7 @@ import jdk.nashorn.internal.parser.TokenType;
  * IR representation for a runtime call.
  */
 @Immutable
-public class RuntimeNode extends Expression {
+public class RuntimeNode extends Expression implements Optimistic {
 
     /**
      * Request enum used for meta-information about the runtime request
@@ -77,7 +80,11 @@ public class RuntimeNode extends Expression {
         /** !== operator with at least one object */
         NE_STRICT(TokenType.NE_STRICT, Type.BOOLEAN, 2, true),
         /** != operator with at least one object */
-        NE(TokenType.NE, Type.BOOLEAN, 2, true);
+        NE(TokenType.NE, Type.BOOLEAN, 2, true),
+        /** is undefined */
+        IS_UNDEFINED(TokenType.EQ_STRICT, Type.BOOLEAN, 2),
+        /** is not undefined */
+        IS_NOT_UNDEFINED(TokenType.NE_STRICT, Type.BOOLEAN, 2);
 
         /** token type */
         private final TokenType tokenType;
@@ -163,9 +170,14 @@ public class RuntimeNode extends Expression {
          * @param node the node
          * @return request type
          */
-        public static Request requestFor(final Node node) {
-            assert node.isComparison();
+        public static Request requestFor(final Expression node) {
             switch (node.tokenType()) {
+            case TYPEOF:
+                return Request.TYPEOF;
+            case IN:
+                return Request.IN;
+            case INSTANCEOF:
+                return Request.INSTANCEOF;
             case EQ_STRICT:
                 return Request.EQ_STRICT;
             case NE_STRICT:
@@ -189,6 +201,17 @@ public class RuntimeNode extends Expression {
         }
 
         /**
+         * Is this an undefined check?
+         *
+         * @param request request
+         *
+         * @return true if undefined check
+         */
+        public static boolean isUndefinedCheck(final Request request) {
+            return request == IS_UNDEFINED || request == IS_NOT_UNDEFINED;
+        }
+
+        /**
          * Is this an EQ or EQ_STRICT?
          *
          * @param request a request
@@ -208,6 +231,17 @@ public class RuntimeNode extends Expression {
          */
         public static boolean isNE(final Request request) {
             return request == NE || request == NE_STRICT;
+        }
+
+        /**
+         * Is this strict?
+         *
+         * @param request a request
+         *
+         * @return true if script
+         */
+        public static boolean isStrict(final Request request) {
+            return request == EQ_STRICT || request == NE_STRICT;
         }
 
         /**
@@ -285,6 +319,8 @@ public class RuntimeNode extends Expression {
             case LT:
             case GE:
             case GT:
+            case IS_UNDEFINED:
+            case IS_NOT_UNDEFINED:
                 return true;
             default:
                 return false;
@@ -301,6 +337,8 @@ public class RuntimeNode extends Expression {
     /** is final - i.e. may not be removed again, lower in the code pipeline */
     private final boolean isFinal;
 
+    private final int programPoint;
+
     /**
      * Constructor
      *
@@ -315,14 +353,16 @@ public class RuntimeNode extends Expression {
         this.request      = request;
         this.args         = args;
         this.isFinal      = false;
+        this.programPoint = INVALID_PROGRAM_POINT;
     }
 
-    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final boolean isFinal, final List<Expression> args) {
+    private RuntimeNode(final RuntimeNode runtimeNode, final Request request, final boolean isFinal, final List<Expression> args, final int programPoint) {
         super(runtimeNode);
 
         this.request      = request;
         this.args         = args;
         this.isFinal      = isFinal;
+        this.programPoint = programPoint;
     }
 
     /**
@@ -361,6 +401,7 @@ public class RuntimeNode extends Expression {
         this.request      = request;
         this.args         = args;
         this.isFinal      = false;
+        this.programPoint = parent instanceof Optimistic ? ((Optimistic)parent).getProgramPoint() : INVALID_PROGRAM_POINT;
     }
 
     /**
@@ -370,18 +411,30 @@ public class RuntimeNode extends Expression {
      * @param request the request
      */
     public RuntimeNode(final UnaryNode parent, final Request request) {
-        this(parent, request, parent.rhs());
+        this(parent, request, parent.getExpression());
     }
 
     /**
-     * Constructor
+     * Constructor used to replace a binary node with a runtime request.
      *
      * @param parent  parent node from which to inherit source, token, finish and arguments
-     * @param request the request
      */
-    public RuntimeNode(final BinaryNode parent, final Request request) {
-        this(parent, request, parent.lhs(), parent.rhs());
+    public RuntimeNode(final BinaryNode parent) {
+        this(parent, Request.requestFor(parent), parent.lhs(), parent.rhs());
     }
+
+    /**
+     * Reset the request for this runtime node
+     * @param request request
+     * @return new runtime node or same if same request
+     */
+    public RuntimeNode setRequest(final Request request) {
+       if (this.request == request) {
+           return this;
+       }
+       return new RuntimeNode(this, request, isFinal, args, programPoint);
+   }
+
 
     /**
      * Is this node final - i.e. it can never be replaced with other nodes again
@@ -400,14 +453,14 @@ public class RuntimeNode extends Expression {
         if (this.isFinal == isFinal) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args);
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
     }
 
     /**
      * Return type for the ReferenceNode
      */
     @Override
-    public Type getType() {
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
         return request.getReturnType();
     }
 
@@ -425,7 +478,7 @@ public class RuntimeNode extends Expression {
     }
 
     @Override
-    public void toString(final StringBuilder sb) {
+    public void toString(final StringBuilder sb, final boolean printType) {
         sb.append("ScriptRuntime.");
         sb.append(request);
         sb.append('(');
@@ -439,7 +492,7 @@ public class RuntimeNode extends Expression {
                 first = false;
             }
 
-            arg.toString(sb);
+            arg.toString(sb, printType);
         }
 
         sb.append(')');
@@ -453,11 +506,16 @@ public class RuntimeNode extends Expression {
         return Collections.unmodifiableList(args);
     }
 
-    private RuntimeNode setArgs(final List<Expression> args) {
+    /**
+     * Set the arguments of this runtime node
+     * @param args new arguments
+     * @return new runtime node, or identical if no change
+     */
+    public RuntimeNode setArgs(final List<Expression> args) {
         if (this.args == args) {
             return this;
         }
-        return new RuntimeNode(this, request, isFinal, args);
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
     }
 
     /**
@@ -482,5 +540,40 @@ public class RuntimeNode extends Expression {
             }
         }
         return true;
+    }
+
+//TODO these are blank for now:
+
+    @Override
+    public int getProgramPoint() {
+        return programPoint;
+    }
+
+    @Override
+    public RuntimeNode setProgramPoint(final int programPoint) {
+        if(this.programPoint == programPoint) {
+            return this;
+        }
+        return new RuntimeNode(this, request, isFinal, args, programPoint);
+    }
+
+    @Override
+    public boolean canBeOptimistic() {
+        return false;
+    }
+
+    @Override
+    public Type getMostOptimisticType() {
+        return getType();
+    }
+
+    @Override
+    public Type getMostPessimisticType() {
+        return getType();
+    }
+
+    @Override
+    public RuntimeNode setType(final Type type) {
+        return this;
     }
 }

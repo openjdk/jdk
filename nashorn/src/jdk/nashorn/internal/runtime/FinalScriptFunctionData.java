@@ -25,9 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.lookup.Lookup.MH;
-
 import java.lang.invoke.MethodHandle;
+import java.lang.invoke.MethodType;
 
 /**
  * This is a subclass that represents a script function that may not be regenerated.
@@ -45,6 +44,7 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
      */
     FinalScriptFunctionData(final String name, final int arity, final CompiledFunctions functions, final int flags) {
         super(name, arity, flags);
+        assert !functions.needsCallee();
         code.addAll(functions);
     }
 
@@ -58,7 +58,7 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
      * @param flags {@link ScriptFunctionData} flags
      */
     FinalScriptFunctionData(final String name, final MethodHandle mh, final MethodHandle[] specs, final int flags) {
-        super(name, arity(mh), flags);
+        super(name, methodHandleArity(mh), flags);
 
         addInvoker(mh);
         if (specs != null) {
@@ -68,22 +68,40 @@ final class FinalScriptFunctionData extends ScriptFunctionData {
         }
     }
 
+    @Override
+    boolean isRecompilable() {
+        return false;
+    }
+
+    @Override
+    boolean needsCallee() {
+        return code.needsCallee();
+    }
+
+    @Override
+    MethodType getGenericType() {
+        // We need to ask the code for its generic type. We can't just rely on this function data's arity, as it's not
+        // actually correct for lots of built-ins. E.g. ECMAScript 5.1 section 15.5.3.2 prescribes that
+        // Script.fromCharCode([char0[, char1[, ...]]]) has a declared arity of 1 even though it's a variable arity
+        // method.
+        return code.getFinalGenericType();
+    }
+
     private void addInvoker(final MethodHandle mh) {
+        assert !needsCallee(mh);
         if (isConstructor(mh)) {
             // only nasgen constructors: (boolean, self, args) are subject to binding a boolean newObj. isConstructor
             // is too conservative a check. However, isConstructor(mh) always implies isConstructor param
             assert isConstructor();
-            final MethodHandle invoker = MH.insertArguments(mh, 0, false);
-            final MethodHandle constructor = composeConstructor(MH.insertArguments(mh, 0, true));
-            code.add(new CompiledFunction(mh.type(), invoker, constructor));
+            code.add(CompiledFunction.createBuiltInConstructor(mh));
         } else {
-            code.add(new CompiledFunction(mh.type(), mh));
+            code.add(new CompiledFunction(mh));
         }
     }
 
-    private static int arity(final MethodHandle mh) {
+    private static int methodHandleArity(final MethodHandle mh) {
         if (isVarArg(mh)) {
-            return -1;
+            return MAX_ARITY;
         }
 
         //drop self, callee and boolean constructor flag to get real arity

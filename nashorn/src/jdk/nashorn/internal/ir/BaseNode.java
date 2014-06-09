@@ -25,6 +25,10 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+
+import java.util.function.Function;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 
 /**
@@ -34,12 +38,18 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
  * @see IndexNode
  */
 @Immutable
-public abstract class BaseNode extends Expression implements FunctionCall {
+public abstract class BaseNode extends Expression implements FunctionCall, Optimistic {
 
     /** Base Node. */
     protected final Expression base;
 
     private final boolean isFunction;
+
+    /** Callsite type for this node, if overridden optimistically or conservatively depending on coercion */
+    protected final Type type;
+
+    /** Program point id */
+    protected final int programPoint;
 
     /**
      * Constructor
@@ -51,8 +61,10 @@ public abstract class BaseNode extends Expression implements FunctionCall {
      */
     public BaseNode(final long token, final int finish, final Expression base, final boolean isFunction) {
         super(token, base.getStart(), finish);
-        this.base            = base;
-        this.isFunction      = isFunction;
+        this.base           = base;
+        this.isFunction     = isFunction;
+        this.type = null;
+        this.programPoint   = INVALID_PROGRAM_POINT;
     }
 
     /**
@@ -60,11 +72,15 @@ public abstract class BaseNode extends Expression implements FunctionCall {
      * @param baseNode node to inherit from
      * @param base base
      * @param isFunction is this a function
+     * @param callSiteType  the callsite type for this base node, either optimistic or conservative
+     * @param programPoint  program point id
      */
-    protected BaseNode(final BaseNode baseNode, final Expression base, final boolean isFunction) {
+    protected BaseNode(final BaseNode baseNode, final Expression base, final boolean isFunction, final Type callSiteType, final int programPoint) {
         super(baseNode);
-        this.base            = base;
-        this.isFunction      = isFunction;
+        this.base           = base;
+        this.isFunction     = isFunction;
+        this.type = callSiteType;
+        this.programPoint   = programPoint;
     }
 
     /**
@@ -78,6 +94,31 @@ public abstract class BaseNode extends Expression implements FunctionCall {
     @Override
     public boolean isFunction() {
         return isFunction;
+    }
+
+    @Override
+    public Type getType(final Function<Symbol, Type> localVariableTypes) {
+        return type == null ? getMostPessimisticType() : type;
+    }
+
+    @Override
+    public int getProgramPoint() {
+        return programPoint;
+    }
+
+    @Override
+    public Type getMostOptimisticType() {
+        return Type.INT;
+    }
+
+    @Override
+    public Type getMostPessimisticType() {
+        return Type.OBJECT;
+    }
+
+    @Override
+    public boolean canBeOptimistic() {
+        return true;
     }
 
     /**

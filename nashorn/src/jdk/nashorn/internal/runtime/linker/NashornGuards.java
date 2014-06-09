@@ -31,6 +31,7 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.ref.WeakReference;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 import jdk.nashorn.internal.objects.Global;
@@ -38,56 +39,80 @@ import jdk.nashorn.internal.runtime.Property;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.options.Options;
 
 /**
  * Constructor of method handles used to guard call sites.
  */
 public final class NashornGuards {
-    private static final MethodHandle IS_SCRIPTOBJECT   = findOwnMH("isScriptObject", boolean.class, Object.class);
-    private static final MethodHandle IS_NOT_JSOBJECT   = findOwnMH("isNotJSObject", boolean.class, Object.class);
-    private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
-    private static final MethodHandle IS_MAP            = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
+    private static final MethodHandle IS_MAP              = findOwnMH("isMap", boolean.class, ScriptObject.class, PropertyMap.class);
+    private static final MethodHandle IS_MAP_SCRIPTOBJECT = findOwnMH("isMap", boolean.class, Object.class, PropertyMap.class);
+    private static final MethodHandle IS_INSTANCEOF_2     = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
+    private static final MethodHandle IS_SCRIPTOBJECT     = findOwnMH("isScriptObject", boolean.class, Object.class);
+    private static final MethodHandle IS_NOT_JSOBJECT     = findOwnMH("isNotJSObject", boolean.class, Object.class);
     private static final MethodHandle SAME_OBJECT       = findOwnMH("sameObject", boolean.class, Object.class, WeakReference.class);
-    private static final MethodHandle IS_INSTANCEOF_2   = findOwnMH("isInstanceOf2", boolean.class, Object.class, Class.class, Class.class);
+    //TODO - maybe put this back in ScriptFunction instead of the ClassCastException.class relinkage
+    //private static final MethodHandle IS_SCRIPTFUNCTION = findOwnMH("isScriptFunction", boolean.class, Object.class);
+
+    private static final boolean CCE_ONLY = Options.getBooleanProperty("nashorn.cce");
 
     // don't create me!
     private NashornGuards() {
     }
 
     /**
-     * Get the guard that checks if an item is a {@code ScriptObject}
-     * @return method handle for guard
+     * Given a callsite descriptor and a link request, determine whether we should use an instanceof
+     * check explicitly for the guard if needed, or if we should link it with a try/catch ClassCastException
+     * combinator as its relink criteria - i.e. relink when CCE is thrown.
+     *
+     * @param desc     callsite descriptor
+     * @param request  link request
+     * @return true of explicit instanceof check is needed
+     */
+    public static boolean explicitInstanceOfCheck(final CallSiteDescriptor desc, final LinkRequest request) {
+        //THIS is currently true, as the inliner encounters several problems with sun.misc.ValueConversions.castReference
+        //otherwise. We should only use the exception based relink where we have no choice, and the result is faster code,
+        //for example in the NativeArray, TypedArray, ContinuousArray getters. For the standard callsite, it appears that
+        //we lose performance rather than gain it, due to JVM issues. :-(
+        return !CCE_ONLY;
+    }
+
+    /**
+     * Returns a guard that does an instanceof ScriptObject check on the receiver
+     * @return guard
      */
     public static MethodHandle getScriptObjectGuard() {
         return IS_SCRIPTOBJECT;
     }
 
-    /**
-     * Get the guard that checks if an item is not a {@code JSObject}
-     * @return method handle for guard
-     */
-    public static MethodHandle getNotJSObjectGuard() {
-        return IS_NOT_JSOBJECT;
-    }
+   /**
+    * Get the guard that checks if an item is not a {@code JSObject}
+    * @return method handle for guard
+    */
+   public static MethodHandle getNotJSObjectGuard() {
+       return IS_NOT_JSOBJECT;
+   }
 
     /**
-     * Get the guard that checks if an item is a {@code ScriptFunction}
-     * @return method handle for guard
+     * Returns a guard that does an instanceof ScriptObject check on the receiver
+     * @param explicitInstanceOfCheck - if false, then this is a nop, because it's all the guard does
+     * @return guard
      */
-    public static MethodHandle getScriptFunctionGuard() {
-        return IS_SCRIPTFUNCTION;
+    public static MethodHandle getScriptObjectGuard(final boolean explicitInstanceOfCheck) {
+        return explicitInstanceOfCheck ? IS_SCRIPTOBJECT : null;
     }
 
     /**
      * Get the guard that checks if a {@link PropertyMap} is equal to
      * a known map, using reference comparison
      *
+     * @param explicitInstanceOfCheck true if we should do an explicit script object instanceof check instead of just casting
      * @param map The map to check against. This will be bound to the guard method handle
      *
      * @return method handle for guard
      */
-    public static MethodHandle getMapGuard(final PropertyMap map) {
-        return MH.insertArguments(IS_MAP, 1, map);
+    public static MethodHandle getMapGuard(final PropertyMap map, final boolean explicitInstanceOfCheck) {
+        return MH.insertArguments(explicitInstanceOfCheck ? IS_MAP_SCRIPTOBJECT : IS_MAP, 1, map);
     }
 
     /**
@@ -109,23 +134,24 @@ public final class NashornGuards {
      * @param sobj the first object in the prototype chain
      * @param property the property
      * @param desc the callsite descriptor
+     * @param explicitInstanceOfCheck true if we should do an explicit script object instanceof check instead of just casting
      * @return method handle for guard
      */
-    public static MethodHandle getGuard(final ScriptObject sobj, final Property property, final CallSiteDescriptor desc) {
+    public static MethodHandle getGuard(final ScriptObject sobj, final Property property, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck) {
         if (!needsGuard(property, desc)) {
             return null;
         }
         if (NashornCallSiteDescriptor.isScope(desc)) {
-            if (property != null && property.isBound()) {
+            if (property != null && property.isBound() && !property.canChangeType()) {
                 // This is a declared top level variables in main script or eval, use identity guard.
                 return getIdentityGuard(sobj);
             }
             if (!(sobj instanceof Global) && (property == null || property.isConfigurable())) {
                 // Undeclared variables in nested evals need stronger guards
-                return combineGuards(getIdentityGuard(sobj), getMapGuard(sobj.getMap()));
+                return combineGuards(getIdentityGuard(sobj), getMapGuard(sobj.getMap(), explicitInstanceOfCheck));
             }
         }
-        return getMapGuard(sobj.getMap());
+        return getMapGuard(sobj.getMap(), explicitInstanceOfCheck);
     }
 
 
@@ -158,7 +184,13 @@ public final class NashornGuards {
      * @return true if both guard1 and guard2 returned true
      */
     public static MethodHandle combineGuards(final MethodHandle guard1, final MethodHandle guard2) {
-        return MH.guardWithTest(guard1, guard2, MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class));
+        if (guard1 == null) {
+            return guard2;
+        } else if (guard2 == null) {
+            return guard1;
+        } else {
+            return MH.guardWithTest(guard1, guard2, MH.dropArguments(MH.constant(boolean.class, false), 0, Object.class));
+        }
     }
 
     @SuppressWarnings("unused")
@@ -167,19 +199,25 @@ public final class NashornGuards {
     }
 
     @SuppressWarnings("unused")
-    private static boolean isNotJSObject(final Object self) {
-        return !(self instanceof JSObject);
+    private static boolean isScriptObject(final Class<? extends ScriptObject> clazz, final Object self) {
+        return clazz.isInstance(self);
     }
 
     @SuppressWarnings("unused")
-    private static boolean isScriptFunction(final Object self) {
-        return self instanceof ScriptFunction;
+    private static boolean isMap(final ScriptObject self, final PropertyMap map) {
+        return self.getMap() == map;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean isNotJSObject(final Object self) {
+        return !(self instanceof JSObject);
     }
 
     @SuppressWarnings("unused")
     private static boolean isMap(final Object self, final PropertyMap map) {
         return self instanceof ScriptObject && ((ScriptObject)self).getMap() == map;
     }
+
 
     @SuppressWarnings("unused")
     private static boolean sameObject(final Object self, final WeakReference<ScriptObject> ref) {
@@ -191,8 +229,12 @@ public final class NashornGuards {
         return class1.isInstance(self) || class2.isInstance(self);
     }
 
+    @SuppressWarnings("unused")
+    private static boolean isScriptFunction(final Object self) {
+        return self instanceof ScriptFunction;
+    }
+
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), NashornGuards.class, name, MH.type(rtype, types));
     }
-
 }

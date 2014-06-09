@@ -41,6 +41,7 @@ import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
+import jdk.nashorn.internal.ir.JoinPredecessorExpression;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
@@ -687,6 +688,27 @@ public abstract class NodeVisitor<T extends LexicalContext> {
     public Node leaveUnaryNode(final UnaryNode unaryNode) {
         return leaveDefault(unaryNode);
     }
+
+    /**
+     * Callback for entering a {@link JoinPredecessorExpression}.
+     *
+     * @param  expr the join predecessor expression
+     * @return true if traversal should continue and node children be traversed, false otherwise
+     */
+    public boolean enterJoinPredecessorExpression(final JoinPredecessorExpression expr) {
+        return enterDefault(expr);
+    }
+
+    /**
+     * Callback for leaving a {@link JoinPredecessorExpression}.
+     *
+     * @param  expr the join predecessor expression
+     * @return processed node, which will replace the original one, or the original node
+     */
+    public Node leaveJoinPredecessorExpression(final JoinPredecessorExpression expr) {
+        return leaveDefault(expr);
+    }
+
 
     /**
      * Callback for entering a VarNode

@@ -25,9 +25,9 @@
 
 package jdk.nashorn.internal.runtime.arrays;
 
-import jdk.nashorn.internal.objects.Global;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
+import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.PropertyDescriptor;
 
 /**

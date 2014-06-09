@@ -34,7 +34,7 @@ final class OptMapInfo {
         for (int i=0; i<map.length; i++) map[i] = 0;
     }
 
-    void copy(OptMapInfo other) {
+    void copy(final OptMapInfo other) {
         mmd.copy(other.mmd);
         anchor.copy(other.anchor);
         value = other.value;
@@ -42,19 +42,19 @@ final class OptMapInfo {
         System.arraycopy(other.map, 0, map, 0, other.map.length);
     }
 
-    void addChar(int c) {
-        int c_ = c & 0xff;
+    void addChar(final int c) {
+        final int c_ = c & 0xff;
         if (map[c_] == 0) {
             map[c_] = 1;
             value += positionValue(c_);
         }
     }
 
-    void addCharAmb(char[] chars, int p, int end, int caseFoldFlag) {
+    void addCharAmb(final char[] chars, final int p, final int end, int caseFoldFlag) {
         addChar(chars[p]);
 
         caseFoldFlag &= ~Config.INTERNAL_ENC_CASE_FOLD_MULTI_CHAR;
-        char[]items = EncodingHelper.caseFoldCodesByString(caseFoldFlag, chars[p]);
+        final char[]items = EncodingHelper.caseFoldCodesByString(caseFoldFlag, chars[p]);
 
         for (int i=0; i<items.length; i++) {
             addChar(items[i]);
@@ -63,21 +63,21 @@ final class OptMapInfo {
 
     // select_opt_map_info
     private static final int z = 1<<15; /* 32768: something big value */
-    void select(OptMapInfo alt) {
+    void select(final OptMapInfo alt) {
         if (alt.value == 0) return;
         if (value == 0) {
             copy(alt);
             return;
         }
 
-        int v1 = z / value;
-        int v2 = z /alt.value;
+        final int v1 = z / value;
+        final int v2 = z /alt.value;
 
         if (mmd.compareDistanceValue(alt.mmd, v1, v2) > 0) copy(alt);
     }
 
     // alt_merge_opt_map_info
-    void altMerge(OptMapInfo other) {
+    void altMerge(final OptMapInfo other) {
         /* if (! is_equal_mml(&to->mmd, &add->mmd)) return ; */
         if (value == 0) return;
         if (other.value == 0 || mmd.max < other.mmd.max) {
@@ -109,7 +109,7 @@ final class OptMapInfo {
      };
 
     // map_position_value
-    static int positionValue(int i) {
+    static int positionValue(final int i) {
         if (i < ByteValTable.length) {
             return ByteValTable[i];
         } else {

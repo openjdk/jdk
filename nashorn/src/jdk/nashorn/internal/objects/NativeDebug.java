@@ -28,16 +28,19 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.io.PrintWriter;
+import java.util.LinkedList;
 import java.util.Objects;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyListeners;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 /**
@@ -93,21 +96,6 @@ public final class NativeDebug extends ScriptObject {
     }
 
     /**
-     * Nashorn extension: get spill vector from {@link ScriptObject}
-     *
-     * @param self self reference
-     * @param obj script object
-     * @return the spill vector for the given ScriptObject
-     */
-    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
-    public static Object spill(final Object self, final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ((ScriptObject)obj).spill;
-        }
-        return UNDEFINED;
-    }
-
-    /**
      * Check object identity comparison regardless of type
      *
      * @param self self reference
@@ -118,6 +106,31 @@ public final class NativeDebug extends ScriptObject {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static boolean identical(final Object self, final Object obj1, final Object obj2) {
         return obj1 == obj2;
+    }
+
+    /**
+     * Returns true if if the two objects are both property maps, and they have identical properties in the same order,
+     * but allows the properties to differ in their types.
+     * @param self self
+     * @param m1 first property map
+     * @param m2 second property map
+     * @return true if they have identical properties in same order, with possibly different types.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object equalWithoutType(final Object self, final Object m1, final Object m2) {
+        return ((PropertyMap)m1).equalsWithoutType((PropertyMap)m2);
+    }
+
+    /**
+     * Returns a diagnostic string representing the difference of two property maps.
+     * @param self self
+     * @param m1 first property map
+     * @param m2 second property map
+     * @return a diagnostic string representing the difference of two property maps.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object diffPropertyMaps(final Object self, final Object m1, final Object m2) {
+        return PropertyMap.diff((PropertyMap)m1, (PropertyMap)m2);
     }
 
     /**
@@ -196,7 +209,6 @@ public final class NativeDebug extends ScriptObject {
      * @param self self reference
      * @return undefined
      */
-    @SuppressWarnings("resource")
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static Object dumpCounters(final Object self) {
         final PrintWriter out = Context.getCurrentErr();
@@ -222,5 +234,134 @@ public final class NativeDebug extends ScriptObject {
         LinkerCallSite.getMissCounts(out);
 
         return UNDEFINED;
+    }
+
+    /*
+     * Framework for logging runtime events
+     */
+
+    private static final String EVENT_QUEUE          = "__eventQueue__";
+    private static final String EVENT_QUEUE_CAPACITY = "__eventQueueCapacity__";
+
+    /**
+     * Get the capacity of the event queue
+     * @param self self reference
+     * @return capacity of event queue as an integer
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getEventQueueCapacity(final Object self) {
+        final ScriptObject sobj = (ScriptObject)self;
+        Integer cap;
+        if (sobj.has(EVENT_QUEUE_CAPACITY)) {
+            cap = JSType.toInt32(sobj.get(EVENT_QUEUE_CAPACITY));
+        } else {
+            setEventQueueCapacity(self, cap = RuntimeEvent.RUNTIME_EVENT_QUEUE_SIZE);
+        }
+        return cap;
+    }
+
+    /**
+     * Set the event queue capacity
+     * @param self
+     * @param newCapacity
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static void setEventQueueCapacity(final Object self, final Object newCapacity) {
+        ((ScriptObject)self).set(EVENT_QUEUE_CAPACITY, newCapacity, true);
+    }
+
+    /**
+     * Add a runtime event to the runtime event queue. The queue has a fixed
+     * size {@link RuntimeEvent#RUNTIME_EVENT_QUEUE_SIZE} and the oldest
+     * entry will be thrown out of the queue is about to overflow
+     * @param self self reference
+     * @param event event to add
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static void addRuntimeEvent(final Object self, final Object event) {
+        final LinkedList<RuntimeEvent<?>> q = getEventQueue(self);
+        final int cap = (Integer)getEventQueueCapacity(self);
+        while (q.size() >= cap) {
+            q.removeFirst();
+        }
+        q.addLast(getEvent(event));
+    }
+
+    /**
+     * Expands the event queue capacity, or truncates if capacity is lower than
+     * current capacity. Then only the newest entries are kept
+     * @param self self reference
+     * @param newCapacity new capacity
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static void expandEventQueueCapacity(final Object self, final Object newCapacity) {
+        final LinkedList<RuntimeEvent<?>> q = getEventQueue(self);
+        final int nc = JSType.toInt32(newCapacity);
+        while (q.size() > nc) {
+            q.removeFirst();
+        }
+        setEventQueueCapacity(self, nc);
+    }
+
+    /**
+     * Clear the runtime event queue
+     * @param self self reference
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static void clearRuntimeEvents(final Object self) {
+        final LinkedList<RuntimeEvent<?>> q = getEventQueue(self);
+        q.clear();
+    }
+
+    /**
+     * Remove a specific runtime event from the event queue
+     * @param self self reference
+     * @param event event to remove
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static void removeRuntimeEvent(final Object self, final Object event) {
+        final LinkedList<RuntimeEvent<?>> q  = getEventQueue(self);
+        final RuntimeEvent<?>             re = getEvent(event);
+        if (!q.remove(re)) {
+            throw new IllegalStateException("runtime event " + re + " was not in event queue");
+        }
+    }
+
+    /**
+     * Return all runtime events in the queue as an array
+     * @param self self reference
+     * @return array of events
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getRuntimeEvents(final Object self) {
+        final LinkedList<RuntimeEvent<?>> q = getEventQueue(self);
+        return q.toArray(new RuntimeEvent<?>[q.size()]);
+    }
+
+    /**
+     * Return the last runtime event in the queue
+     * @param self self reference
+     * @return the freshest event, null if queue is empty
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object getLastRuntimeEvent(final Object self) {
+        final LinkedList<RuntimeEvent<?>> q = getEventQueue(self);
+        return q.isEmpty() ? null : q.getLast();
+    }
+
+    @SuppressWarnings("unchecked")
+    private static LinkedList<RuntimeEvent<?>> getEventQueue(final Object self) {
+        final ScriptObject sobj = (ScriptObject)self;
+        LinkedList<RuntimeEvent<?>> q;
+        if (sobj.has(EVENT_QUEUE)) {
+            q = (LinkedList<RuntimeEvent<?>>)((ScriptObject)self).get(EVENT_QUEUE);
+        } else {
+            ((ScriptObject)self).set(EVENT_QUEUE, q = new LinkedList<>(), true);
+        }
+        return q;
+    }
+
+    private static RuntimeEvent<?> getEvent(final Object event) {
+        return (RuntimeEvent<?>)event;
     }
 }

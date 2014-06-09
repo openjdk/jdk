@@ -25,7 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.JSType.digit;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.lang.invoke.MethodHandle;
@@ -38,7 +37,13 @@ import java.util.Locale;
 public final class GlobalFunctions {
 
     /** Methodhandle to implementation of ECMA 15.1.2.2, parseInt */
-    public static final MethodHandle PARSEINT = findOwnMH("parseInt",   double.class, Object.class, Object.class, Object.class);
+    public static final MethodHandle PARSEINT = findOwnMH("parseInt", double.class, Object.class, Object.class, Object.class);
+
+    /** Methodhandle (specialized) to implementation of ECMA 15.1.2.2, parseInt */
+    public static final MethodHandle PARSEINT_OI = findOwnMH("parseInt", double.class, Object.class, Object.class, int.class);
+
+    /** Methodhandle (specialized) to implementation of ECMA 15.1.2.2, parseInt */
+    public static final MethodHandle PARSEINT_O = findOwnMH("parseInt", double.class, Object.class, Object.class);
 
     /** Methodhandle to implementation of ECMA 15.1.2.3, parseFloat */
     public static final MethodHandle PARSEFLOAT = findOwnMH("parseFloat", double.class, Object.class, Object.class);
@@ -78,19 +83,44 @@ public final class GlobalFunctions {
     /**
      * ECMA 15.1.2.2 parseInt implementation
      *
-     * TODO: specialize
+     * @param self   self reference
+     * @param string string to parse
+     * @param rad    radix
+     *
+     * @return numeric type representing string contents as an int
+     */
+    public static double parseInt(final Object self, final Object string, final Object rad) {
+        return parseIntInternal(JSType.trimLeft(JSType.toString(string)), JSType.toInt32(rad));
+    }
+
+    /**
+     * ECMA 15.1.2.2 parseInt implementation specialized for int radix
      *
      * @param self   self reference
      * @param string string to parse
      * @param rad    radix
      *
-     * @return numeric type representing string contents as an int (TODO: specialize for int case)
+     * @return numeric type representing string contents as an int
      */
-    //TODO specialize
-    public static double parseInt(final Object self, final Object string, final Object rad) {
-        final String str    = JSType.trimLeft(JSType.toString(string));
-        final int    length = str.length();
-        int          radix  = JSType.toInt32(rad);
+    public static double parseInt(final Object self, final Object string, final int rad) {
+        return parseIntInternal(JSType.trimLeft(JSType.toString(string)), rad);
+    }
+
+    /**
+     * ECMA 15.1.2.2 parseInt implementation specialized for no radix argument
+     *
+     * @param self   self reference
+     * @param string string to parse
+     *
+     * @return numeric type representing string contents as an int
+     */
+    public static double parseInt(final Object self, final Object string) {
+        return parseIntInternal(JSType.trimLeft(JSType.toString(string)), 0);
+    }
+
+    private static double parseIntInternal(final String str, final int rad) {
+        final int length = str.length();
+        int radix = rad;
 
         // empty string is not valid
         if (length == 0) {
@@ -142,7 +172,7 @@ public final class GlobalFunctions {
         // we should see atleast one valid digit
         boolean entered = false;
         while (idx < length) {
-            digit = digit(str.charAt(idx++), radix, true);
+            digit = fastDigit(str.charAt(idx++), radix);
             if (digit < 0) {
                 break;
             }
@@ -456,8 +486,21 @@ loop:
         return ScriptRuntime.UNDEFINED;
     }
 
+    private static int fastDigit(final int ch, final int radix) {
+        int n = -1;
+        if (ch >= '0' && ch <= '9') {
+            n = ch - '0';
+        } else if (radix > 10) {
+            if (ch >= 'a' && ch <= 'z') {
+                n = ch - 'a' + 10;
+            } else if (ch >= 'A' && ch <= 'Z') {
+                n = ch - 'A' + 10;
+            }
+        }
+        return n < radix ? n : -1;
+    }
+
     private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
         return MH.findStatic(MethodHandles.lookup(), GlobalFunctions.class, name, MH.type(rtype, types));
     }
-
 }

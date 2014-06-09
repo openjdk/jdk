@@ -37,12 +37,10 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_3;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_4;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_5;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_M1;
-import static jdk.internal.org.objectweb.asm.Opcodes.IDIV;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IMUL;
 import static jdk.internal.org.objectweb.asm.Opcodes.INEG;
 import static jdk.internal.org.objectweb.asm.Opcodes.IOR;
-import static jdk.internal.org.objectweb.asm.Opcodes.IREM;
 import static jdk.internal.org.objectweb.asm.Opcodes.IRETURN;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISHL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ISHR;
@@ -52,10 +50,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.IUSHR;
 import static jdk.internal.org.objectweb.asm.Opcodes.IXOR;
 import static jdk.internal.org.objectweb.asm.Opcodes.SIPUSH;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.JSType.UNDEFINED_INT;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.nashorn.internal.codegen.CompilerConstants;
-import jdk.nashorn.internal.codegen.ObjectClassGenerator;
 
 /**
  * Type class: INT
@@ -80,42 +79,47 @@ class IntType extends BitwiseType {
     }
 
     @Override
+    public char getBytecodeStackType() {
+        return 'I';
+    }
+
+    @Override
     public Type ldc(final MethodVisitor method, final Object c) {
         assert c instanceof Integer;
 
         final int value = ((Integer) c).intValue();
 
         switch (value) {
-            case -1:
-                method.visitInsn(ICONST_M1);
-                break;
-            case 0:
-                method.visitInsn(ICONST_0);
-                break;
-            case 1:
-                method.visitInsn(ICONST_1);
-                break;
-            case 2:
-                method.visitInsn(ICONST_2);
-                break;
-            case 3:
-                method.visitInsn(ICONST_3);
-                break;
-            case 4:
-                method.visitInsn(ICONST_4);
-                break;
-            case 5:
-                method.visitInsn(ICONST_5);
-                break;
-            default:
-                if (value == (byte) value) {
-                    method.visitIntInsn(BIPUSH, value);
-                } else if (value == (short) value) {
-                    method.visitIntInsn(SIPUSH, value);
-                } else {
-                    method.visitLdcInsn(c);
-                }
-                break;
+        case -1:
+            method.visitInsn(ICONST_M1);
+            break;
+        case 0:
+            method.visitInsn(ICONST_0);
+            break;
+        case 1:
+            method.visitInsn(ICONST_1);
+            break;
+        case 2:
+            method.visitInsn(ICONST_2);
+            break;
+        case 3:
+            method.visitInsn(ICONST_3);
+            break;
+        case 4:
+            method.visitInsn(ICONST_4);
+            break;
+        case 5:
+            method.visitInsn(ICONST_5);
+            break;
+        default:
+            if (value == (byte) value) {
+                method.visitIntInsn(BIPUSH, value);
+            } else if (value == (short) value) {
+                method.visitIntInsn(SIPUSH, value);
+            } else {
+                method.visitLdcInsn(c);
+            }
+            break;
         }
 
         return Type.INT;
@@ -134,19 +138,23 @@ class IntType extends BitwiseType {
         } else if (to.isBoolean()) {
             //nop
         } else if (to.isString()) {
-            invokeStatic(method, TO_STRING);
+            invokestatic(method, TO_STRING);
         } else if (to.isObject()) {
-            invokeStatic(method, VALUE_OF);
+            invokestatic(method, VALUE_OF);
         } else {
-            assert false : "Illegal conversion " + this + " -> " + to;
+            throw new UnsupportedOperationException("Illegal conversion " + this + " -> " + to);
         }
 
         return to;
     }
 
     @Override
-    public Type add(final MethodVisitor method) {
-        method.visitInsn(IADD);
+    public Type add(final MethodVisitor method, final int programPoint) {
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(IADD);
+        } else {
+            method.visitInvokeDynamicInsn("iadd", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
@@ -200,32 +208,50 @@ class IntType extends BitwiseType {
     }
 
     @Override
-    public Type sub(final MethodVisitor method) {
-        method.visitInsn(ISUB);
+    public Type sub(final MethodVisitor method, final int programPoint) {
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(ISUB);
+        } else {
+            method.visitInvokeDynamicInsn("isub", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
     @Override
-    public Type mul(final MethodVisitor method) {
-        method.visitInsn(IMUL);
+    public Type mul(final MethodVisitor method, final int programPoint) {
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(IMUL);
+        } else {
+            method.visitInvokeDynamicInsn("imul", "(II)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
     @Override
-    public Type div(final MethodVisitor method) {
-        method.visitInsn(IDIV);
+    public Type div(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer division in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
+        method.visitInvokeDynamicInsn("idiv", "(II)I", MATHBOOTSTRAP, programPoint);
         return INT;
     }
 
     @Override
-    public Type rem(final MethodVisitor method) {
-        method.visitInsn(IREM);
+    public Type rem(final MethodVisitor method, final int programPoint) {
+        // Never perform non-optimistic integer remainder in JavaScript.
+        assert programPoint != INVALID_PROGRAM_POINT;
+
+        method.visitInvokeDynamicInsn("irem", "(II)I", MATHBOOTSTRAP, programPoint);
         return INT;
     }
 
     @Override
-    public Type neg(final MethodVisitor method) {
-        method.visitInsn(INEG);
+    public Type neg(final MethodVisitor method, final int programPoint) {
+        if(programPoint == INVALID_PROGRAM_POINT) {
+            method.visitInsn(INEG);
+        } else {
+            method.visitInvokeDynamicInsn("ineg", "(I)I", MATHBOOTSTRAP, programPoint);
+        }
         return INT;
     }
 
@@ -236,19 +262,24 @@ class IntType extends BitwiseType {
 
     @Override
     public Type loadUndefined(final MethodVisitor method) {
-        method.visitLdcInsn(ObjectClassGenerator.UNDEFINED_INT);
+        method.visitLdcInsn(UNDEFINED_INT);
+        return INT;
+    }
+
+    @Override
+    public Type loadForcedInitializer(final MethodVisitor method) {
+        method.visitInsn(ICONST_0);
         return INT;
     }
 
     @Override
     public Type cmp(final MethodVisitor method, final boolean isCmpG) {
-        assert false : "unsupported operation";
-        return null;
+        throw new UnsupportedOperationException("cmp" + (isCmpG ? 'g' : 'l'));
     }
 
     @Override
     public Type cmp(final MethodVisitor method) {
-        assert false : "unsupported operation";
-        return null;
+        throw new UnsupportedOperationException("cmp");
     }
+
 }

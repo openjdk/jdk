@@ -109,16 +109,16 @@ public class CompositeGuardingDynamicLinker implements GuardingDynamicLinker, Se
      *
      * @param linkers a list of component linkers.
      */
-    public CompositeGuardingDynamicLinker(Iterable<? extends GuardingDynamicLinker> linkers) {
+    public CompositeGuardingDynamicLinker(final Iterable<? extends GuardingDynamicLinker> linkers) {
         final List<GuardingDynamicLinker> l = new LinkedList<>();
-        for(GuardingDynamicLinker linker: linkers) {
+        for(final GuardingDynamicLinker linker: linkers) {
             l.add(linker);
         }
         this.linkers = l.toArray(new GuardingDynamicLinker[l.size()]);
     }
 
     @Override
-    public GuardedInvocation getGuardedInvocation(LinkRequest linkRequest, final LinkerServices linkerServices)
+    public GuardedInvocation getGuardedInvocation(final LinkRequest linkRequest, final LinkerServices linkerServices)
             throws Exception {
         for(final GuardingDynamicLinker linker: linkers) {
             final GuardedInvocation invocation = linker.getGuardedInvocation(linkRequest, linkerServices);

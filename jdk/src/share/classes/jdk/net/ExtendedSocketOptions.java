@@ -32,7 +32,7 @@ import java.net.SocketOption;
  * {@link java.net.StandardSocketOptions}. These options may be platform
  * specific.
  *
- * @since 1.9
+ * @since 1.8
  */
 @jdk.Exported
 public final class ExtendedSocketOptions {

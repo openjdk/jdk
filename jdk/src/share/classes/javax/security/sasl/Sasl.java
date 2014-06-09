@@ -600,7 +600,7 @@ public class Sasl {
                     // implementation of an algorithm. We are only interested
                     // in entries which lead to the implementation
                     // classes.
-                    if (currentKey.indexOf(" ") < 0) {
+                    if (currentKey.indexOf(' ') < 0) {
                         String className = providers[i].getProperty(currentKey);
                         if (!classes.contains(className)) {
                             classes.add(className);

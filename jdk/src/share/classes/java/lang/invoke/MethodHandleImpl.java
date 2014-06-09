@@ -692,8 +692,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         lform = new LambdaForm("guardWithCatch", lambdaType.parameterCount(), names);
 
-        basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
-        return lform;
+        return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWC, lform);
     }
 
     static

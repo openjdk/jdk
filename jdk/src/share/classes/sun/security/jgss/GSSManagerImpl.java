@@ -50,8 +50,8 @@ public class GSSManagerImpl extends GSSManager {
                             if (osname.startsWith("SunOS") ||
                                 osname.contains("OS X") ||
                                 osname.startsWith("Linux")) {
-                                return new Boolean(System.getProperty
-                                    (USE_NATIVE_PROP));
+                                return Boolean.valueOf(System.getProperty
+                                        (USE_NATIVE_PROP));
                             }
                             return Boolean.FALSE;
                     }

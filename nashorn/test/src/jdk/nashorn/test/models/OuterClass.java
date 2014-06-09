@@ -28,7 +28,7 @@ package jdk.nashorn.test.models;
 public class OuterClass {
     private final String value;
 
-    public OuterClass(String value) {
+    public OuterClass(final String value) {
         this.value = value;
     }
 
@@ -39,7 +39,7 @@ public class OuterClass {
 
         private final String value;
 
-        public InnerStaticClass(String value) {
+        public InnerStaticClass(final String value) {
             this.value = value;
         }
 
@@ -52,7 +52,7 @@ public class OuterClass {
     public class InnerNonStaticClass {
         private final String value;
 
-        public InnerNonStaticClass(String value) {
+        public InnerNonStaticClass(final String value) {
             this.value = value;
         }
 

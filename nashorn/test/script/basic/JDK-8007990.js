@@ -22,15 +22,15 @@
  */
 
 /**
- * JDK-8007990: Access methods declared on public interfaces implemented by 
+ * JDK-8007990: Access methods declared on public interfaces implemented by
  * non-public classes
  *
  * @test
  * @run
  */
 
-var p = new Packages.java.io.File("test/script/basic/JDK-8007990.js"); 
-var path = p.toPath(); 
-var basicView = Packages.java.nio.file.Files.getFileAttributeView(path, Packages.java.nio.file.attribute.BasicFileAttributeView.class); 
+var p = new Packages.java.io.File("test/script/basic/JDK-8007990.js");
+var path = p.toPath();
+var basicView = Packages.java.nio.file.Files.getFileAttributeView(path, Packages.java.nio.file.attribute.BasicFileAttributeView.class);
 // We just want to confirm we can access the readAttributes() function
 print(basicView.readAttributes().directory);

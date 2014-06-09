@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ public class T6410643 extends ToolTester {
                      Iterable<String> classes,
                      Iterable<? extends JavaFileObject> compilationUnits) {
         try {
-            task = tool.getTask(null, null, null, null, null, singleton((JavaFileObject)null));
+            task = tool.getTask(null, null, null, options, classes, compilationUnits);
             throw new AssertionError("Error expected");
         } catch (NullPointerException e) {
             System.err.println("Expected error occurred: " + e);

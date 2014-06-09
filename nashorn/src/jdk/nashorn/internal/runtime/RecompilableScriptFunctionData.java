@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,23 +27,34 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
+import java.io.IOException;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.LinkedList;
+import java.util.Collections;
+import java.util.HashSet;
 import java.util.Map;
+import java.util.Set;
 import jdk.internal.dynalink.support.NameCodec;
+import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
+import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
+import jdk.nashorn.internal.ir.LexicalContext;
+import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.objects.Global;
+import jdk.nashorn.internal.parser.Parser;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
+import jdk.nashorn.internal.runtime.options.Options;
 import jdk.nashorn.internal.scripts.JS;
 
 /**
@@ -52,16 +63,29 @@ import jdk.nashorn.internal.scripts.JS;
  * The common denominator is that it can get new invokers during its lifespan,
  * unlike {@code FinalScriptFunctionData}
  */
-public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Serializable {
+@Logger(name="recompile")
+public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Loggable {
+    /** Is lazy compilation enabled? TODO: this should be the default */
+    public static final boolean LAZY_COMPILATION = Options.getBooleanProperty("nashorn.lazy");
 
-    /** FunctionNode with the code for this ScriptFunction */
-    private transient FunctionNode functionNode;
+    /** Prefix used for all recompiled script classes */
+    public static final String RECOMPILATION_PREFIX = "Recompilation$";
 
-    /** Source from which FunctionNode was parsed. */
-    private transient Source source;
+    /** Unique function node id for this function node */
+    private final int functionNodeId;
+
+    private final String functionName;
+
+    // TODO: try to eliminate the need for this somehow, either by allowing Source to change its name, allowing a
+    // function to internally replace its Source with one of a different name, or storing this additional field in the
+    // Source object.
+    private final String sourceURL;
 
     /** The line number where this function begins. */
     private final int lineNumber;
+
+    /** Source from which FunctionNode was parsed. */
+    private transient Source source;
 
     /** Allows us to retrieve the method handle for this function once the code is compiled */
     private MethodLocator methodLocator;
@@ -81,49 +105,130 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** lazily generated allocator */
     private transient MethodHandle allocator;
 
+    private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
+
+    /** Id to parent function if one exists */
+    private RecompilableScriptFunctionData parent;
+
+    private final boolean isDeclared;
+    private final boolean isAnonymous;
+    private final boolean needsCallee;
+
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
-    /**
-     * Used for specialization based on runtime arguments. Whenever we specialize on
-     * callsite parameter types at runtime, we need to use a parameter type guard to
-     * ensure that the specialized version of the script function continues to be
-     * applicable for a particular callsite.
-     */
-    private static final MethodHandle PARAM_TYPE_GUARD = findOwnMH("paramTypeGuard", boolean.class, Type[].class,  Object[].class);
+    private transient DebugLogger log;
 
-    /**
-     * It is usually a good gamble whever we detect a runtime callsite with a double
-     * (or java.lang.Number instance) to specialize the parameter to an integer, if the
-     * parameter in question can be represented as one. The double typically only exists
-     * because the compiler doesn't know any better than "a number type" and conservatively
-     * picks doubles when it can't prove that an integer addition wouldn't overflow.
-     */
-    private static final MethodHandle ENSURE_INT = findOwnMH("ensureInt", int.class, Object.class);
+    private final Map<String, Integer> externalScopeDepths;
+
+    private final Set<String> internalSymbols;
+
+    private static final int GET_SET_PREFIX_LENGTH = "*et ".length();
 
     private static final long serialVersionUID = 4914839316174633726L;
 
     /**
      * Constructor - public as scripts use it
      *
-     * @param functionNode       functionNode that represents this function code
-     * @param installer          installer for code regeneration versions of this function
-     * @param allocatorClassName name of our allocator class, will be looked up dynamically if used as a constructor
-     * @param allocatorMap       allocator map to seed instances with, when constructing
+     * @param functionNode        functionNode that represents this function code
+     * @param installer           installer for code regeneration versions of this function
+     * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
+     * @param allocatorMap        allocator map to seed instances with, when constructing
+     * @param nestedFunctions     nested function map
+     * @param sourceURL           source URL
+     * @param externalScopeDepths external scope depths
+     * @param internalSymbols     internal symbols to method, defined in its scope
      */
-    public RecompilableScriptFunctionData(final FunctionNode functionNode, final CodeInstaller<ScriptEnvironment> installer, final String allocatorClassName, final PropertyMap allocatorMap) {
+    public RecompilableScriptFunctionData(
+        final FunctionNode functionNode,
+        final CodeInstaller<ScriptEnvironment> installer,
+        final String allocatorClassName,
+        final PropertyMap allocatorMap,
+        final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
+        final String sourceURL,
+        final Map<String, Integer> externalScopeDepths,
+        final Set<String> internalSymbols) {
+
         super(functionName(functionNode),
-              functionNode.getParameters().size(),
+              Math.min(functionNode.getParameters().size(), MAX_ARITY),
               getFlags(functionNode));
-        this.functionNode       = functionNode;
-        this.source             = functionNode.getSource();
-        this.lineNumber         = functionNode.getLineNumber();
-        this.token              = tokenFor(functionNode);
-        this.installer          = installer;
-        this.allocatorClassName = allocatorClassName;
-        this.allocatorMap       = allocatorMap;
-        if (!functionNode.isLazy()) {
-            methodLocator = new MethodLocator(functionNode);
+
+        this.functionName        = functionNode.getName();
+        this.lineNumber          = functionNode.getLineNumber();
+        this.isDeclared          = functionNode.isDeclared();
+        this.needsCallee         = functionNode.needsCallee();
+        this.isAnonymous         = functionNode.isAnonymous();
+        this.functionNodeId      = functionNode.getId();
+        this.source              = functionNode.getSource();
+        this.token               = tokenFor(functionNode);
+        this.installer           = installer;
+        this.sourceURL           = sourceURL;
+        this.allocatorClassName  = allocatorClassName;
+        this.allocatorMap        = allocatorMap;
+        this.nestedFunctions     = nestedFunctions;
+        this.externalScopeDepths = externalScopeDepths;
+        this.internalSymbols     = new HashSet<>(internalSymbols);
+
+        for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
+            assert nfn.getParent() == null;
+            nfn.setParent(this);
         }
+
+        createLogger();
+    }
+
+    @Override
+    public DebugLogger getLogger() {
+        return log;
+    }
+
+    @Override
+    public DebugLogger initLogger(final Context ctxt) {
+        return ctxt.getLogger(this.getClass());
+    }
+
+    /**
+     * Check if a symbol is internally defined in a function. For example
+     * if "undefined" is internally defined in the outermost program function,
+     * it has not been reassigned or overridden and can be optimized
+     *
+     * @param symbolName symbol name
+     * @return true if symbol is internal to this ScriptFunction
+     */
+
+    public boolean hasInternalSymbol(final String symbolName) {
+        return internalSymbols.contains(symbolName);
+    }
+
+    /**
+     * Return the external symbol table
+     * @param symbolName symbol name
+     * @return the external symbol table with proto depths
+     */
+    public int getExternalSymbolDepth(final String symbolName) {
+        final Map<String, Integer> map = externalScopeDepths;
+        if (map == null) {
+            return -1;
+        }
+        final Integer depth = map.get(symbolName);
+        if (depth == null) {
+            return -1;
+        }
+        return depth;
+    }
+
+    /**
+     * Get the parent of this RecompilableScriptFunctionData. If we are
+     * a nested function, we have a parent. Note that "null" return value
+     * can also mean that we have a parent but it is unknown, so this can
+     * only be used for conservative assumptions.
+     * @return parent data, or null if non exists and also null IF UNKNOWN.
+     */
+    public RecompilableScriptFunctionData getParent() {
+       return parent;
+    }
+
+    void setParent(final RecompilableScriptFunctionData parent) {
+        this.parent = parent;
     }
 
     @Override
@@ -144,32 +249,52 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     public String toString() {
+        return super.toString() + '@' + functionNodeId;
+    }
+
+    @Override
+    public String toStringVerbose() {
         final StringBuilder sb = new StringBuilder();
 
+        sb.append("fnId=").append(functionNodeId).append(' ');
+
         if (source != null) {
-            sb.append(source.getName()).append(':').append(lineNumber).append(' ');
+            sb.append(source.getName())
+                .append(':')
+                .append(lineNumber)
+                .append(' ');
         }
 
         return sb.toString() + super.toString();
     }
 
+    @Override
+    public String getFunctionName() {
+        return functionName;
+    }
+
+    @Override
+    public boolean inDynamicContext() {
+        return (flags & IN_DYNAMIC_CONTEXT) != 0;
+    }
+
     private static String functionName(final FunctionNode fn) {
         if (fn.isAnonymous()) {
             return "";
-        } else {
-            final FunctionNode.Kind kind = fn.getKind();
-            if (kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
-                final String name = NameCodec.decode(fn.getIdent().getName());
-                return name.substring(4); // 4 is "get " or "set "
-            } else {
-                return fn.getIdent().getName();
-            }
         }
+        final FunctionNode.Kind kind = fn.getKind();
+        if (kind == FunctionNode.Kind.GETTER || kind == FunctionNode.Kind.SETTER) {
+            final String name = NameCodec.decode(fn.getIdent().getName());
+            return name.substring(GET_SET_PREFIX_LENGTH);
+        }
+        return fn.getIdent().getName();
     }
 
     private static long tokenFor(final FunctionNode fn) {
-        final int  position   = Token.descPosition(fn.getFirstToken());
-        final int  length     = Token.descPosition(fn.getLastToken()) - position + Token.descLength(fn.getLastToken());
+        final int  position  = Token.descPosition(fn.getFirstToken());
+        final long lastToken = fn.getLastToken();
+        // EOL uses length field to store the line number
+        final int  length    = Token.descPosition(lastToken) - position + (Token.descType(lastToken) == TokenType.EOL ? 0 : Token.descLength(lastToken));
 
         return Token.toDesc(TokenType.FUNCTION, position, length);
     }
@@ -185,7 +310,18 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (functionNode.usesThis() || functionNode.hasEval()) {
             flags |= USES_THIS;
         }
+        if (functionNode.isVarArg()) {
+            flags |= IS_VARIABLE_ARITY;
+        }
+        if (functionNode.inDynamicContext()) {
+            flags |= IN_DYNAMIC_CONTEXT;
+        }
         return flags;
+    }
+
+    @Override
+    PropertyMap getAllocatorMap() {
+        return allocatorMap;
     }
 
     @Override
@@ -206,265 +342,330 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
     }
 
-    @Override
-    PropertyMap getAllocatorMap() {
-        return allocatorMap;
-    }
+    FunctionNode reparse() {
+        final boolean isProgram = functionNodeId == FunctionNode.FIRST_FUNCTION_ID;
+        // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
+        final int descPosition = Token.descPosition(token);
+        final Context context = Context.getContextTrusted();
+        final Parser parser = new Parser(
+            context.getEnv(),
+            source,
+            new Context.ThrowErrorManager(),
+            isStrict(),
+            functionNodeId - (isProgram ? 0 : 1),
+            lineNumber - 1,
+            context.getLogger(Parser.class)); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
 
-
-    @Override
-    protected void ensureCompiled() {
-        if (functionNode != null && functionNode.isLazy()) {
-            Compiler.LOG.info("Trampoline hit: need to do lazy compilation of '", functionNode.getName(), "'");
-            final Compiler compiler = new Compiler(installer);
-            functionNode = compiler.compile(functionNode);
-            assert !functionNode.isLazy();
-            compiler.install(functionNode);
-            methodLocator = new MethodLocator(functionNode);
-            flags = getFlags(functionNode);
+        if (isAnonymous) {
+            parser.setFunctionName(functionName);
         }
 
-        if (functionNode != null) {
-            methodLocator.setClass(functionNode.getCompileUnit().getCode());
-        }
+        final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition, Token.descLength(token), true);
+        // Parser generates a program AST even if we're recompiling a single function, so when we are only recompiling a
+        // single function, extract it from the program.
+        return (isProgram ? program : extractFunctionFromScript(program)).setName(null, functionName).setSourceURL(null,  sourceURL);
     }
 
-    @Override
-    protected synchronized void ensureCodeGenerated() {
-        if (!code.isEmpty()) {
-            return; // nothing to do, we have code, at least some.
+    TypeMap typeMap(final MethodType fnCallSiteType) {
+        if (fnCallSiteType == null) {
+            return null;
         }
 
-        ensureCompiled();
-
-        /*
-         * We can't get to this program point unless we have bytecode, either from
-         * eager compilation or from running a lazy compile on the lines above
-         */
-
-        assert functionNode == null || functionNode.hasState(CompilationState.EMITTED) :
-                    functionNode.getName() + " " + functionNode.getState() + " " + Debug.id(functionNode);
-
-        // code exists - look it up and add it into the automatically sorted invoker list
-        addCode(functionNode);
-
-        if (functionNode != null && !functionNode.canSpecialize()) {
-            // allow GC to claim IR stuff that is not needed anymore
-            functionNode = null;
-            installer = null;
+        if (CompiledFunction.isVarArgsType(fnCallSiteType)) {
+            return null;
         }
+
+        return new TypeMap(functionNodeId, explicitParams(fnCallSiteType), needsCallee());
     }
 
-    private MethodHandle addCode(final FunctionNode fn) {
-        return addCode(fn, null, null, null);
+    private static ScriptObject newLocals(final ScriptObject runtimeScope) {
+        final ScriptObject locals = Global.newEmptyInstance();
+        locals.setProto(runtimeScope);
+        return locals;
     }
 
-    private MethodHandle addCode(final FunctionNode fn, final MethodType runtimeType, final MethodHandle guard, final MethodHandle fallback) {
-        assert methodLocator != null;
-        MethodHandle target = methodLocator.getMethodHandle();
-        final MethodType targetType = methodLocator.getMethodType();
+    private Compiler getCompiler(final FunctionNode fn, final MethodType actualCallSiteType, final ScriptObject runtimeScope) {
+        return getCompiler(fn, actualCallSiteType, newLocals(runtimeScope), null, null);
+    }
 
-        /*
-         * For any integer argument. a double that is representable as an integer is OK.
-         * otherwise the guard would have failed. in that case introduce a filter that
-         * casts the double to an integer, which we know will preserve all precision.
-         */
-        for (int i = 0; i < targetType.parameterCount(); i++) {
-            if (targetType.parameterType(i) == int.class) {
-                //representable as int
-                target = MH.filterArguments(target, i, ENSURE_INT);
+    Compiler getCompiler(final FunctionNode functionNode, final MethodType actualCallSiteType, final ScriptObject runtimeScope, final Map<Integer, Type> ipp, final int[] cep) {
+        final Context context = Context.getContextTrusted();
+        return new Compiler(
+                context,
+                context.getEnv(),
+                installer,
+                functionNode.getSource(),  // source
+                functionNode.getSourceURL(),
+                isStrict() | functionNode.isStrict(), // is strict
+                true,       // is on demand
+                this,       // compiledFunction, i.e. this RecompilableScriptFunctionData
+                typeMap(actualCallSiteType), // type map
+                ipp, // invalidated program points
+                cep, // continuation entry points
+                runtimeScope); // runtime scope
+    }
+
+    private FunctionNode compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope) {
+        // We're creating an empty script object for holding local variables. AssignSymbols will populate it with
+        // explicit Undefined values for undefined local variables (see AssignSymbols#defineSymbol() and
+        // CompilationEnvironment#declareLocalSymbol()).
+
+        if (log.isEnabled()) {
+            log.info("Type specialization of '", functionName, "' signature: ", actualCallSiteType);
+        }
+
+        final FunctionNode fn = reparse();
+        return getCompiler(fn, actualCallSiteType, runtimeScope).compile(fn, CompilationPhases.COMPILE_ALL);
+    }
+
+    private MethodType explicitParams(final MethodType callSiteType) {
+        if (CompiledFunction.isVarArgsType(callSiteType)) {
+            return null;
+        }
+
+        final MethodType noCalleeThisType = callSiteType.dropParameterTypes(0, 2); // (callee, this) is always in call site type
+        final int callSiteParamCount = noCalleeThisType.parameterCount();
+
+        // Widen parameters of reference types to Object as we currently don't care for specialization among reference
+        // types. E.g. call site saying (ScriptFunction, Object, String) should still link to (ScriptFunction, Object, Object)
+        final Class<?>[] paramTypes = noCalleeThisType.parameterArray();
+        boolean changed = false;
+        for (int i = 0; i < paramTypes.length; ++i) {
+            final Class<?> paramType = paramTypes[i];
+            if (!(paramType.isPrimitive() || paramType == Object.class)) {
+                paramTypes[i] = Object.class;
+                changed = true;
             }
         }
+        final MethodType generalized = changed ? MethodType.methodType(noCalleeThisType.returnType(), paramTypes) : noCalleeThisType;
 
-        MethodHandle mh = target;
-        if (guard != null) {
-            mh = MH.guardWithTest(MH.asCollector(guard, Object[].class, target.type().parameterCount()), MH.asType(target, fallback.type()), fallback);
+        if (callSiteParamCount < getArity()) {
+            return generalized.appendParameterTypes(Collections.<Class<?>>nCopies(getArity() - callSiteParamCount, Object.class));
         }
-
-        final CompiledFunction cf = new CompiledFunction(runtimeType == null ? targetType : runtimeType, mh);
-        code.add(cf);
-
-        return cf.getInvoker();
+        return generalized;
     }
 
-    private static Type runtimeType(final Object arg) {
-        if (arg == null) {
-            return Type.OBJECT;
-        }
-
-        final Class<?> clazz = arg.getClass();
-        assert !clazz.isPrimitive() : "always boxed";
-        if (clazz == Double.class) {
-            return JSType.isRepresentableAsInt((double)arg) ? Type.INT : Type.NUMBER;
-        } else if (clazz == Integer.class) {
-            return Type.INT;
-        } else if (clazz == Long.class) {
-            return Type.LONG;
-        } else if (clazz == String.class) {
-            return Type.STRING;
-        }
-        return Type.OBJECT;
-    }
-
-    private static boolean canCoerce(final Object arg, final Type type) {
-        Type argType = runtimeType(arg);
-        if (Type.widest(argType, type) == type || arg == ScriptRuntime.UNDEFINED) {
-            return true;
-        }
-        System.err.println(arg + " does not fit in "+ argType + " " + type + " " + arg.getClass());
-        new Throwable().printStackTrace();
-        return false;
-    }
-
-    @SuppressWarnings("unused")
-    private static boolean paramTypeGuard(final Type[] paramTypes, final Object... args) {
-        final int length = args.length;
-        assert args.length >= paramTypes.length;
-
-        //i==start, skip the this, callee params etc
-        int start = args.length - paramTypes.length;
-        for (int i = start; i < args.length; i++) {
-            final Object arg = args[i];
-            if (!canCoerce(arg, paramTypes[i - start])) {
+    private FunctionNode extractFunctionFromScript(final FunctionNode script) {
+        final Set<FunctionNode> fns = new HashSet<>();
+        script.getBody().accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+            @Override
+            public boolean enterFunctionNode(final FunctionNode fn) {
+                fns.add(fn);
                 return false;
             }
+        });
+        assert fns.size() == 1 : "got back more than one method in recompilation";
+        final FunctionNode f = fns.iterator().next();
+        assert f.getId() == functionNodeId;
+        if (!isDeclared && f.isDeclared()) {
+            return f.clearFlag(null, FunctionNode.IS_DECLARED);
         }
-        return true;
+        return f;
     }
 
-    @SuppressWarnings("unused")
-    private static int ensureInt(final Object arg) {
-        if (arg instanceof Number) {
-            return ((Number)arg).intValue();
-        } else if (arg instanceof Undefined) {
-            return 0;
-        }
-        throw new AssertionError(arg);
+    MethodHandle lookup(final FunctionNode fn) {
+        final MethodType type = new FunctionSignature(fn).getMethodType();
+        log.info("Looking up ", DebugLogger.quote(fn.getName()), " type=", type);
+        return lookupWithExplicitType(fn, new FunctionSignature(fn).getMethodType());
+    }
+
+    MethodHandle lookupWithExplicitType(final FunctionNode fn, final MethodType targetType) {
+        return lookupCodeMethod(fn.getCompileUnit(), targetType);
+    }
+
+    private MethodHandle lookupCodeMethod(final CompileUnit compileUnit, final MethodType targetType) {
+        return MH.findStatic(LOOKUP, compileUnit.getCode(), functionName, targetType);
     }
 
     /**
-     * Given the runtime callsite args, compute a method type that is equivalent to what
-     * was passed - this is typically a lot more specific that what the compiler has been
-     * able to deduce
-     * @param callSiteType callsite type for the compiled callsite target
-     * @param args runtime arguments to the compiled callsite target
-     * @return adjusted method type, narrowed as to conform to runtime callsite type instead
+     * Initializes this function data with the eagerly generated version of the code. This method can only be invoked
+     * by the compiler internals in Nashorn and is public for implementation reasons only. Attempting to invoke it
+     * externally will result in an exception.
+     * @param functionNode the functionNode belonging to this data
      */
-    private static MethodType runtimeType(final MethodType callSiteType, final Object[] args) {
-        if (args == null) {
-            //for example bound, or otherwise runtime arguments to callsite unavailable, then
-            //do not change the type
-            return callSiteType;
+    public void initializeCode(final FunctionNode functionNode) {
+        // Since the method is public, we double-check that we aren't invoked with an inappropriate compile unit.
+        if(!(code.isEmpty() && functionNode.getCompileUnit().isInitializing(this, functionNode))) {
+            throw new IllegalStateException(functionNode.getName() + " id=" + functionNode.getId());
         }
-        final Class<?>[] paramTypes = new Class<?>[callSiteType.parameterCount()];
-        final int        start      = args.length - callSiteType.parameterCount();
-        for (int i = start; i < args.length; i++) {
-            paramTypes[i - start] = runtimeType(args[i]).getTypeClass();
-        }
-        return MH.type(callSiteType.returnType(), paramTypes);
+        addCode(functionNode);
+        methodLocator = new MethodLocator(functionNode);
     }
 
-    private static ArrayList<Type> runtimeType(final MethodType mt) {
-        final ArrayList<Type> type = new ArrayList<>();
-        for (int i = 0; i < mt.parameterCount(); i++) {
-            type.add(Type.typeFor(mt.parameterType(i)));
+    private CompiledFunction addCode(final MethodHandle target, final int fnFlags) {
+        final CompiledFunction cfn = new CompiledFunction(target, this, fnFlags);
+        code.add(cfn);
+        return cfn;
+    }
+
+    private CompiledFunction addCode(final FunctionNode fn) {
+        return addCode(lookup(fn), fn.getFlags());
+    }
+
+    /**
+     * Add code with specific call site type. It will adapt the type of the looked up method handle to fit the call site
+     * type. This is necessary because even if we request a specialization that takes an "int" parameter, we might end
+     * up getting one that takes a "double" etc. because of internal function logic causes widening (e.g. assignment of
+     * a wider value to the parameter variable). However, we use the method handle type for matching subsequent lookups
+     * for the same specialization, so we must adapt the handle to the expected type.
+     * @param fn the function
+     * @param callSiteType the call site type
+     * @return the compiled function object, with its type matching that of the call site type.
+     */
+    private CompiledFunction addCode(final FunctionNode fn, final MethodType callSiteType) {
+        if (fn.isVarArg()) {
+            return addCode(fn);
         }
-        return type;
+
+        final MethodHandle handle = lookup(fn);
+        final MethodType fromType = handle.type();
+        MethodType toType = needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1);
+        toType = toType.changeReturnType(fromType.returnType());
+
+        final int toCount = toType.parameterCount();
+        final int fromCount = fromType.parameterCount();
+        final int minCount = Math.min(fromCount, toCount);
+        for(int i = 0; i < minCount; ++i) {
+            final Class<?> fromParam = fromType.parameterType(i);
+            final Class<?>   toParam =   toType.parameterType(i);
+            // If method has an Object parameter, but call site had String, preserve it as Object. No need to narrow it
+            // artificially. Note that this is related to how CompiledFunction.matchesCallSite() works, specifically
+            // the fact that various reference types compare to equal (see "fnType.isEquivalentTo(csType)" there).
+            if (fromParam != toParam && !fromParam.isPrimitive() && !toParam.isPrimitive()) {
+                assert fromParam.isAssignableFrom(toParam);
+                toType = toType.changeParameterType(i, fromParam);
+            }
+        }
+        if (fromCount > toCount) {
+            toType = toType.appendParameterTypes(fromType.parameterList().subList(toCount, fromCount));
+        } else if (fromCount < toCount) {
+            toType = toType.dropParameterTypes(fromCount, toCount);
+        }
+
+        return addCode(lookup(fn).asType(toType), fn.getFlags());
+    }
+
+
+    @Override
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
+        synchronized (code) {
+            CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
+            if (existingBest == null) {
+                if(code.isEmpty() && methodLocator != null) {
+                    // This is a deserialized object, reconnect from method handle
+                    existingBest = addCode(methodLocator.getMethodHandle(), methodLocator.getFunctionFlags());
+                } else {
+                    existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
+                }
+            }
+
+            assert existingBest != null;
+            //we are calling a vararg method with real args
+            boolean applyToCall = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
+
+            //if the best one is an apply to call, it has to match the callsite exactly
+            //or we need to regenerate
+            if (existingBest.isApplyToCall()) {
+                final CompiledFunction best = code.lookupExactApplyToCall(callSiteType);
+                if (best != null) {
+                    return best;
+                }
+                applyToCall = true;
+            }
+
+            if (applyToCall) {
+                final FunctionNode fn = compileTypeSpecialization(callSiteType, runtimeScope);
+                if (fn.hasOptimisticApplyToCall()) { //did the specialization work
+                    existingBest = addCode(fn, callSiteType);
+                }
+            }
+
+            return existingBest;
+        }
     }
 
     @Override
-    synchronized MethodHandle getBestInvoker(final MethodType callSiteType, final Object[] args) {
-        final MethodType runtimeType = runtimeType(callSiteType, args);
-        assert runtimeType.parameterCount() == callSiteType.parameterCount();
-
-        final MethodHandle mh = super.getBestInvoker(runtimeType, args);
-
-        /*
-         * Not all functions can be specialized, for example, if we deemed memory
-         * footprint too large to store a parse snapshot, or if it is meaningless
-         * to do so, such as e.g. for runScript
-         */
-        if (functionNode == null || !functionNode.canSpecialize()) {
-            return mh;
-        }
-
-        /*
-         * Check if best invoker is equally specific or more specific than runtime
-         * type. In that case, we don't need further specialization, but can use
-         * whatever we have already. We know that it will match callSiteType, or it
-         * would not have been returned from getBestInvoker
-         */
-        if (!code.isLessSpecificThan(runtimeType)) {
-            return mh;
-        }
-
-        int i;
-        final FunctionNode snapshot = functionNode.getSnapshot();
-        assert snapshot != null;
-
-        /*
-         * Create a list of the arg types that the compiler knows about
-         * typically, the runtime args are a lot more specific, and we should aggressively
-         * try to use those whenever possible
-         * We WILL try to make an aggressive guess as possible, and add guards if needed.
-         * For example, if the compiler can deduce that we have a number type, but the runtime
-         * passes and int, we might still want to keep it an int, and the gamble to
-         * check that whatever is passed is int representable usually pays off
-         * If the compiler only knows that a parameter is an "Object", it is still worth
-         * it to try to specialize it by looking at the runtime arg.
-         */
-        final LinkedList<Type> compileTimeArgs = new LinkedList<>();
-        for (i = callSiteType.parameterCount() - 1; i >= 0 && compileTimeArgs.size() < snapshot.getParameters().size(); i--) {
-            compileTimeArgs.addFirst(Type.typeFor(callSiteType.parameterType(i)));
-        }
-
-        /*
-         * The classes known at compile time are a safe to generate as primitives without parameter guards
-         * But the classes known at runtime (if more specific than compile time types) are safe to generate as primitives
-         * IFF there are parameter guards
-         */
-        MethodHandle guard = null;
-        final ArrayList<Type> runtimeParamTypes = runtimeType(runtimeType);
-        while (runtimeParamTypes.size() > functionNode.getParameters().size()) {
-            runtimeParamTypes.remove(0);
-        }
-        for (i = 0; i < compileTimeArgs.size(); i++) {
-            final Type rparam = Type.typeFor(runtimeType.parameterType(i));
-            final Type cparam = compileTimeArgs.get(i);
-
-            if (cparam.isObject() && !rparam.isObject()) {
-                //check that the runtime object is still coercible to the runtime type, because compiler can't prove it's always primitive
-                if (guard == null) {
-                    guard = MH.insertArguments(PARAM_TYPE_GUARD, 0, (Object)runtimeParamTypes.toArray(new Type[runtimeParamTypes.size()]));
-                }
-            }
-        }
-
-        Compiler.LOG.info("Callsite specialized ", name, " runtimeType=", runtimeType, " parameters=", snapshot.getParameters(), " args=", Arrays.asList(args));
-
-        assert snapshot != functionNode;
-
-        final Compiler compiler = new Compiler(installer);
-
-        final FunctionNode compiledSnapshot = compiler.compile(
-            snapshot.setHints(
-                null,
-                new Compiler.Hints(runtimeParamTypes.toArray(new Type[runtimeParamTypes.size()]))));
-
-        /*
-         * No matter how narrow your types were, they can never be narrower than Attr during recompile made them. I.e. you
-         * can put an int into the function here, if you see it as a runtime type, but if the function uses a multiplication
-         * on it, it will still need to be a double. At least until we have overflow checks. Similarly, if an int is
-         * passed but it is used as a string, it makes no sense to make the parameter narrower than Object. At least until
-         * the "different types for one symbol in difference places" work is done
-         */
-        compiler.install(compiledSnapshot);
-
-        return addCode(compiledSnapshot, runtimeType, guard, mh);
+    boolean isRecompilable() {
+        return true;
     }
 
-    private static MethodHandle findOwnMH(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findStatic(MethodHandles.lookup(), RecompilableScriptFunctionData.class, name, MH.type(rtype, types));
+    @Override
+    public boolean needsCallee() {
+        return needsCallee;
+    }
+
+    @Override
+    MethodType getGenericType() {
+        // 2 is for (callee, this)
+        if (isVariableArity()) {
+            return MethodType.genericMethodType(2, true);
+        }
+        return MethodType.genericMethodType(2 + getArity());
+    }
+
+    /**
+     * Return a script function data based on a function id, either this function if
+     * the id matches or a nested function based on functionId. This goes down into
+     * nested functions until all leaves are exhausted.
+     *
+     * @param functionId function id
+     * @return script function data or null if invalid id
+     */
+    public RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
+        if (functionId == functionNodeId) {
+            return this;
+        }
+        RecompilableScriptFunctionData data;
+
+        data = nestedFunctions == null ? null : nestedFunctions.get(functionId);
+        if (data != null) {
+            return data;
+        }
+        for (final RecompilableScriptFunctionData ndata : nestedFunctions.values()) {
+            data = ndata.getScriptFunctionData(functionId);
+            if (data != null) {
+                return data;
+            }
+        }
+        return null;
+    }
+
+    /**
+     * Get the uppermost parent, the program, for this data
+     * @return program
+     */
+    public RecompilableScriptFunctionData getProgram() {
+        RecompilableScriptFunctionData program = this;
+        while (true) {
+            final RecompilableScriptFunctionData p = program.getParent();
+            if (p == null) {
+                return program;
+            }
+            program = p;
+        }
+    }
+
+    /**
+     * Check whether a certain name is a global symbol, i.e. only exists as defined
+     * in outermost scope and not shadowed by being parameter or assignment in inner
+     * scopes
+     *
+     * @param functionNode function node to check
+     * @param symbolName symbol name
+     * @return true if global symbol
+     */
+    public boolean isGlobalSymbol(final FunctionNode functionNode, final String symbolName) {
+        RecompilableScriptFunctionData data = getScriptFunctionData(functionNode.getId());
+        assert data != null;
+
+        do {
+            if (data.hasInternalSymbol(symbolName)) {
+                return false;
+            }
+            data = data.getParent();
+        } while(data != null);
+
+        return true;
     }
 
     /**
@@ -475,6 +676,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         private final String className;
         private final String methodName;
         private final MethodType methodType;
+        private final int functionFlags;
 
         private static final long serialVersionUID = -5420835725902966692L;
 
@@ -482,6 +684,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             this.className  = functionNode.getCompileUnit().getUnitClassName();
             this.methodName = functionNode.getName();
             this.methodType = new FunctionSignature(functionNode).getMethodType();
+            this.functionFlags = functionNode.getFlags();
 
             assert className != null;
             assert methodName != null;
@@ -498,14 +701,21 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             return className;
         }
 
-        MethodType getMethodType() {
-            return methodType;
-        }
-
         MethodHandle getMethodHandle() {
             return MH.findStatic(LOOKUP, clazz, methodName, methodType);
         }
+
+        int getFunctionFlags() {
+            return functionFlags;
+        }
     }
 
-}
+    private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
+        in.defaultReadObject();
+        createLogger();
+    }
 
+    private void createLogger() {
+        log = initLogger(Context.getContextTrusted());
+    }
+}

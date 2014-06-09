@@ -6831,7 +6831,7 @@ public class CachedRowSetImpl extends BaseRowSet implements RowSet, RowSetIntern
             // table name else isolate table name.
 
             indexFrom = command.toLowerCase().indexOf("from");
-            indexComma = command.indexOf(",", indexFrom);
+            indexComma = command.indexOf(',', indexFrom);
 
             if(indexComma == -1) {
                 // implies only one table

@@ -42,7 +42,7 @@ import jdk.nashorn.internal.ir.Node;
 import jdk.nashorn.internal.ir.SplitNode;
 import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
-import jdk.nashorn.internal.runtime.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.options.Options;
 
 /**
@@ -64,7 +64,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     /** Weight threshold for when to start a split. */
     public static final long SPLIT_THRESHOLD = Options.getIntProperty("nashorn.compiler.splitter.threshold", 32 * 1024);
 
-    private static final DebugLogger LOG = Compiler.LOG;
+    private final DebugLogger log;
 
     /**
      * Constructor.
@@ -78,30 +78,27 @@ final class Splitter extends NodeVisitor<LexicalContext> {
         this.compiler             = compiler;
         this.outermost            = functionNode;
         this.outermostCompileUnit = outermostCompileUnit;
+        this.log                  = compiler.getLogger();
     }
 
     /**
-     * Execute the split
+     * Execute the split.
+     * @param fn the function to split
+     * @param top whether this is the topmost compiled function (it's either a program, or we're doing a recompilation).
      */
-    FunctionNode split(final FunctionNode fn) {
+    FunctionNode split(final FunctionNode fn, final boolean top) {
         FunctionNode functionNode = fn;
 
-        if (functionNode.isLazy()) {
-            LOG.finest("Postponing split of '", functionNode.getName(), "' as it's lazy");
-            return functionNode;
-        }
-
-        LOG.finest("Initiating split of '", functionNode.getName(), "'");
+        log.finest("Initiating split of '", functionNode.getName(), "'");
 
         long weight = WeighNodes.weigh(functionNode);
-        final boolean top = fn.isProgram(); //compiler.getFunctionNode() == outermost;
 
         // We know that our LexicalContext is empty outside the call to functionNode.accept(this) below,
         // so we can pass null to all methods expecting a LexicalContext parameter.
         assert lc.isEmpty() : "LexicalContext not empty";
 
         if (weight >= SPLIT_THRESHOLD) {
-            LOG.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
+            log.finest("Splitting '", functionNode.getName(), "' as its weight ", weight, " exceeds split threshold ", SPLIT_THRESHOLD);
             functionNode = (FunctionNode)functionNode.accept(this);
 
             if (functionNode.isSplit()) {
@@ -138,7 +135,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
 
             @Override
             public Node leaveFunctionNode(final FunctionNode nestedFunction) {
-                FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction);
+                final FunctionNode split = new Splitter(compiler, nestedFunction, outermostCompileUnit).split(nestedFunction, false);
                 lc.replace(nestedFunction, split);
                 return split;
             }
@@ -319,10 +316,7 @@ final class Splitter extends NodeVisitor<LexicalContext> {
     @Override
     public boolean enterFunctionNode(final FunctionNode node) {
         //only go into the function node for this splitter. any subfunctions are rejected
-        if (node == outermost && !node.isLazy()) {
-            return true;
-        }
-        return false;
+        return node == outermost;
     }
 }
 

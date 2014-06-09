@@ -26,16 +26,21 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
+import static jdk.nashorn.internal.codegen.ObjectClassGenerator.OBJECT_FIELDS_ONLY;
+import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.Deque;
 import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.nashorn.api.scripting.JSObject;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.parser.Lexer;
 import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
@@ -72,58 +77,181 @@ public enum JSType {
     /** Max value for an uint32 in JavaScript */
     public static final long MAX_UINT = 0xFFFF_FFFFL;
 
-    private static final MethodHandles.Lookup myLookup = MethodHandles.lookup();
+    private static final MethodHandles.Lookup JSTYPE_LOOKUP = MethodHandles.lookup();
 
     /** JavaScript compliant conversion function from Object to boolean */
-    public static final Call TO_BOOLEAN = staticCall(myLookup, JSType.class, "toBoolean", boolean.class, Object.class);
+    public static final Call TO_BOOLEAN = staticCall(JSTYPE_LOOKUP, JSType.class, "toBoolean", boolean.class, Object.class);
 
     /** JavaScript compliant conversion function from number to boolean */
-    public static final Call TO_BOOLEAN_D = staticCall(myLookup, JSType.class, "toBoolean", boolean.class, double.class);
+    public static final Call TO_BOOLEAN_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toBoolean", boolean.class, double.class);
 
     /** JavaScript compliant conversion function from Object to integer */
-    public static final Call TO_INTEGER = staticCall(myLookup, JSType.class, "toInteger", int.class, Object.class);
+    public static final Call TO_INTEGER = staticCall(JSTYPE_LOOKUP, JSType.class, "toInteger", int.class, Object.class);
 
     /** JavaScript compliant conversion function from Object to long */
-    public static final Call TO_LONG = staticCall(myLookup, JSType.class, "toLong", long.class, Object.class);
+    public static final Call TO_LONG = staticCall(JSTYPE_LOOKUP, JSType.class, "toLong", long.class, Object.class);
+
+    /** JavaScript compliant conversion function from double to long */
+    public static final Call TO_LONG_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toLong", long.class, double.class);
 
     /** JavaScript compliant conversion function from Object to number */
-    public static final Call TO_NUMBER = staticCall(myLookup, JSType.class, "toNumber", double.class, Object.class);
+    public static final Call TO_NUMBER = staticCall(JSTYPE_LOOKUP, JSType.class, "toNumber", double.class, Object.class);
+
+    /** JavaScript compliant conversion function from Object to number with type check */
+    public static final Call TO_NUMBER_OPTIMISTIC = staticCall(JSTYPE_LOOKUP, JSType.class, "toNumberOptimistic", double.class, Object.class, int.class);
 
     /** JavaScript compliant conversion function from Object to String */
-    public static final Call TO_STRING = staticCall(myLookup, JSType.class, "toString", String.class, Object.class);
+    public static final Call TO_STRING = staticCall(JSTYPE_LOOKUP, JSType.class, "toString", String.class, Object.class);
 
     /** JavaScript compliant conversion function from Object to int32 */
-    public static final Call TO_INT32 = staticCall(myLookup, JSType.class, "toInt32", int.class, Object.class);
+    public static final Call TO_INT32 = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32", int.class, Object.class);
+
+    /** JavaScript compliant conversion function from Object to int32 */
+    public static final Call TO_INT32_L = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32", int.class, long.class);
+
+    /** JavaScript compliant conversion function from Object to int32 with type check */
+    public static final Call TO_INT32_OPTIMISTIC = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32Optimistic", int.class, Object.class, int.class);
 
     /** JavaScript compliant conversion function from double to int32 */
-    public static final Call TO_INT32_D = staticCall(myLookup, JSType.class, "toInt32", int.class, double.class);
+    public static final Call TO_INT32_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toInt32", int.class, double.class);
 
     /** JavaScript compliant conversion function from Object to uint32 */
-    public static final Call TO_UINT32 = staticCall(myLookup, JSType.class, "toUint32", long.class, Object.class);
+    public static final Call TO_UINT32 = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, Object.class);
+
+    /** JavaScript compliant conversion function from Object to long with type check */
+    public static final Call TO_LONG_OPTIMISTIC = staticCall(JSTYPE_LOOKUP, JSType.class, "toLongOptimistic", long.class, Object.class, int.class);
 
     /** JavaScript compliant conversion function from number to uint32 */
-    public static final Call TO_UINT32_D = staticCall(myLookup, JSType.class, "toUint32", long.class, double.class);
-
-    /** JavaScript compliant conversion function from Object to int64 */
-    public static final Call TO_INT64 = staticCall(myLookup, JSType.class, "toInt64", long.class, Object.class);
-
-    /** JavaScript compliant conversion function from number to int64 */
-    public static final Call TO_INT64_D = staticCall(myLookup, JSType.class, "toInt64", long.class, double.class);
+    public static final Call TO_UINT32_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toUint32", long.class, double.class);
 
     /** JavaScript compliant conversion function from number to String */
-    public static final Call TO_STRING_D = staticCall(myLookup, JSType.class, "toString", String.class, double.class);
+    public static final Call TO_STRING_D = staticCall(JSTYPE_LOOKUP, JSType.class, "toString", String.class, double.class);
 
     /** Combined call to toPrimitive followed by toString. */
-    public static final Call TO_PRIMITIVE_TO_STRING = staticCall(myLookup, JSType.class, "toPrimitiveToString", String.class,  Object.class);
+    public static final Call TO_PRIMITIVE_TO_STRING = staticCall(JSTYPE_LOOKUP, JSType.class, "toPrimitiveToString", String.class, Object.class);
+
+    /** Throw an unwarranted optimism exception */
+    public static final Call THROW_UNWARRANTED = staticCall(JSTYPE_LOOKUP, JSType.class, "throwUnwarrantedOptimismException", Object.class, Object.class, int.class);
+
+    /** Add exact wrapper for potentially overflowing integer operations */
+    public static final Call ADD_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "addExact", int.class, int.class, int.class, int.class);
+
+    /** Sub exact wrapper for potentially overflowing integer operations */
+    public static final Call SUB_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "subExact", int.class, int.class, int.class, int.class);
+
+    /** Multiply exact wrapper for potentially overflowing integer operations */
+    public static final Call MUL_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "mulExact", int.class, int.class, int.class, int.class);
+
+    /** Div exact wrapper for potentially integer division that turns into float point */
+    public static final Call DIV_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", int.class, int.class, int.class, int.class);
+
+    /** Mod exact wrapper for potentially integer remainders that turns into float point */
+    public static final Call REM_EXACT       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", int.class, int.class, int.class, int.class);
+
+    /** Decrement exact wrapper for potentially overflowing integer operations */
+    public static final Call DECREMENT_EXACT = staticCall(JSTYPE_LOOKUP, JSType.class, "decrementExact",   int.class, int.class, int.class);
+
+    /** Increment exact wrapper for potentially overflowing integer operations */
+    public static final Call INCREMENT_EXACT = staticCall(JSTYPE_LOOKUP, JSType.class, "incrementExact",   int.class, int.class, int.class);
+
+    /** Negate exact exact wrapper for potentially overflowing integer operations */
+    public static final Call NEGATE_EXACT         = staticCall(JSTYPE_LOOKUP, JSType.class, "negateExact", int.class, int.class, int.class);
+
+    /** Add exact wrapper for potentially overflowing long operations */
+    public static final Call ADD_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "addExact", long.class, long.class, long.class, int.class);
+
+    /** Sub exact wrapper for potentially overflowing long operations */
+    public static final Call SUB_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "subExact", long.class, long.class, long.class, int.class);
+
+    /** Multiply exact wrapper for potentially overflowing long operations */
+    public static final Call MUL_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "mulExact", long.class, long.class, long.class, int.class);
+
+    /** Div exact wrapper for potentially integer division that turns into float point */
+    public static final Call DIV_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "divExact", long.class, long.class, long.class, int.class);
+
+    /** Mod exact wrapper for potentially integer remainders that turns into float point */
+    public static final Call REM_EXACT_LONG       = staticCall(JSTYPE_LOOKUP, JSType.class, "remExact", long.class, long.class, long.class, int.class);
+
+    /** Decrement exact wrapper for potentially overflowing long operations */
+    public static final Call DECREMENT_EXACT_LONG = staticCall(JSTYPE_LOOKUP, JSType.class, "decrementExact",  long.class, long.class, int.class);
+
+    /** Increment exact wrapper for potentially overflowing long operations */
+    public static final Call INCREMENT_EXACT_LONG = staticCall(JSTYPE_LOOKUP, JSType.class, "incrementExact",  long.class, long.class, int.class);
+
+    /** Negate exact exact wrapper for potentially overflowing long operations */
+    public static final Call NEGATE_EXACT_LONG    = staticCall(JSTYPE_LOOKUP, JSType.class, "negateExact",     long.class, long.class, int.class);
 
     /** Method handle to convert a JS Object to a Java array. */
-    public static final Call TO_JAVA_ARRAY = staticCall(myLookup, JSType.class, "toJavaArray", Object.class, Object.class, Class.class);
+    public static final Call TO_JAVA_ARRAY = staticCall(JSTYPE_LOOKUP, JSType.class, "toJavaArray", Object.class, Object.class, Class.class);
 
     /** Method handle to convert a JS Object to a Java List. */
-    public static final Call TO_JAVA_LIST = staticCall(myLookup, JSType.class, "toJavaList", List.class, Object.class);
+    public static final Call TO_JAVA_LIST = staticCall(JSTYPE_LOOKUP, JSType.class, "toJavaList", List.class, Object.class);
 
     /** Method handle to convert a JS Object to a Java deque. */
-   public static final Call TO_JAVA_DEQUE = staticCall(myLookup, JSType.class, "toJavaDeque", Deque.class, Object.class);
+    public static final Call TO_JAVA_DEQUE = staticCall(JSTYPE_LOOKUP, JSType.class, "toJavaDeque", Deque.class, Object.class);
+
+    /** Method handle for void returns. */
+    public static final Call VOID_RETURN = staticCall(JSTYPE_LOOKUP, JSType.class, "voidReturn", void.class);
+
+
+    /**
+     * The list of available accessor types in width order. This order is used for type guesses narrow{@literal ->} wide
+     *  in the dual--fields world
+     */
+    private static final List<Type> ACCESSOR_TYPES = Collections.unmodifiableList(
+            Arrays.asList(
+                Type.INT,
+                Type.LONG,
+                Type.NUMBER,
+                Type.OBJECT));
+
+    /** table index for undefined type - hard coded so it can be used in switches at compile time */
+    public static final int TYPE_UNDEFINED_INDEX = -1;
+    /** table index for integer type - hard coded so it can be used in switches at compile time */
+    public static final int TYPE_INT_INDEX    = 0; //getAccessorTypeIndex(int.class);
+    /** table index for long type - hard coded so it can be used in switches at compile time */
+    public static final int TYPE_LONG_INDEX   = 1; //getAccessorTypeIndex(long.class);
+    /** table index for double type - hard coded so it can be used in switches at compile time */
+    public static final int TYPE_DOUBLE_INDEX = 2; //getAccessorTypeIndex(double.class);
+    /** table index for object type - hard coded so it can be used in switches at compile time */
+    public static final int TYPE_OBJECT_INDEX = 3; //getAccessorTypeIndex(Object.class);
+
+    /** object conversion quickies with JS semantics - used for return value and parameter filter */
+    public static final MethodHandle[] CONVERT_OBJECT = {
+        JSType.TO_INT32.methodHandle(),
+        JSType.TO_UINT32.methodHandle(),
+        JSType.TO_NUMBER.methodHandle(),
+        null
+    };
+
+    /**
+     * object conversion quickies with JS semantics - used for return value and parameter filter, optimistic
+     * throws exception upon incompatible type (asking for a narrower one than the storage)
+     */
+    public static final MethodHandle[] CONVERT_OBJECT_OPTIMISTIC = {
+        JSType.TO_INT32_OPTIMISTIC.methodHandle(),
+        JSType.TO_LONG_OPTIMISTIC.methodHandle(),
+        JSType.TO_NUMBER_OPTIMISTIC.methodHandle(),
+        null
+    };
+
+    /** The value of Undefined cast to an int32 */
+    public static final int    UNDEFINED_INT    = 0;
+    /** The value of Undefined cast to a long */
+    public static final long   UNDEFINED_LONG   = 0L;
+    /** The value of Undefined cast to a double */
+    public static final double UNDEFINED_DOUBLE = Double.NaN;
+
+    /**
+     * Method handles for getters that return undefined coerced
+     * to the appropriate type
+     */
+    public static final MethodHandle[] GET_UNDEFINED = new MethodHandle[] {
+        MH.constant(int.class, UNDEFINED_INT),
+        MH.constant(long.class, UNDEFINED_LONG),
+        MH.constant(double.class, UNDEFINED_DOUBLE),
+        MH.constant(Object.class, Undefined.getUndefined()),
+    };
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -159,7 +287,7 @@ public enum JSType {
         }
 
         if (obj instanceof ScriptObject) {
-            return (obj instanceof ScriptFunction) ? JSType.FUNCTION : JSType.OBJECT;
+            return obj instanceof ScriptFunction ? JSType.FUNCTION : JSType.OBJECT;
         }
 
         if (obj instanceof Boolean) {
@@ -182,6 +310,52 @@ public enum JSType {
     }
 
     /**
+     * Similar to {@link #of(Object)}, but does not distinguish between {@link #FUNCTION} and {@link #OBJECT}, returning
+     * {@link #OBJECT} in both cases. The distinction is costly, and the EQ and STRICT_EQ predicates don't care about it
+     * so we maintain this version for their use.
+     *
+     * @param obj an object
+     *
+     * @return the JSType for the object; returns {@link #OBJECT} instead of {@link #FUNCTION} for functions.
+     */
+    public static JSType ofNoFunction(final Object obj) {
+        // Order of these statements is tuned for performance (see JDK-8024476)
+        if (obj == null) {
+            return JSType.NULL;
+        }
+
+        if (obj instanceof ScriptObject) {
+            return JSType.OBJECT;
+        }
+
+        if (obj instanceof Boolean) {
+            return JSType.BOOLEAN;
+        }
+
+        if (obj instanceof String || obj instanceof ConsString) {
+            return JSType.STRING;
+        }
+
+        if (obj instanceof Number) {
+            return JSType.NUMBER;
+        }
+
+        if (obj == ScriptRuntime.UNDEFINED) {
+            return JSType.UNDEFINED;
+        }
+
+        return JSType.OBJECT;
+    }
+
+    /**
+     * Void return method handle glue
+     */
+    public static void voidReturn() {
+        //empty
+        //TODO: fix up SetMethodCreator better so we don't need this stupid thing
+    }
+
+    /**
      * Returns true if double number can be represented as an int
      *
      * @param number a long to inspect
@@ -193,7 +367,8 @@ public enum JSType {
     }
 
     /**
-     * Returns true if double number can be represented as an int
+     * Returns true if double number can be represented as an int. Note that it returns true for negative zero. If you
+     * need to exclude negative zero, combine this check with {@link #isNegativeZero(double)}.
      *
      * @param number a double to inspect
      *
@@ -204,7 +379,22 @@ public enum JSType {
     }
 
     /**
-     * Returns true if double number can be represented as a long
+     * Returns true if Object can be represented as an int
+     *
+     * @param obj an object to inspect
+     *
+     * @return true for int representable objects
+     */
+    public static boolean isRepresentableAsInt(final Object obj) {
+        if (obj instanceof Number) {
+            return isRepresentableAsInt(((Number)obj).doubleValue());
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if double number can be represented as a long. Note that it returns true for negative zero. If you
+     * need to exclude negative zero, combine this check with {@link #isNegativeZero(double)}.
      *
      * @param number a double to inspect
      * @return true for long representable doubles
@@ -214,13 +404,36 @@ public enum JSType {
     }
 
     /**
+     * Returns true if Object can be represented as a long
+     *
+     * @param obj an object to inspect
+     *
+     * @return true for long representable objects
+     */
+    public static boolean isRepresentableAsLong(final Object obj) {
+        if (obj instanceof Number) {
+            return isRepresentableAsLong(((Number)obj).doubleValue());
+        }
+        return false;
+    }
+
+    /**
+     * Returns true if the number is the negative zero ({@code -0.0d}).
+     * @param number the number to test
+     * @return true if it is the negative zero, false otherwise.
+     */
+    public static boolean isNegativeZero(final double number) {
+        return number == 0.0d && Double.doubleToRawLongBits(number) == 0x8000000000000000L;
+    }
+
+    /**
      * Check whether an object is primitive
      *
      * @param obj an object
      *
      * @return true if object is primitive (includes null and undefined)
      */
-   public static boolean isPrimitive(final Object obj) {
+    public static boolean isPrimitive(final Object obj) {
         return obj == null ||
                obj == ScriptRuntime.UNDEFINED ||
                obj instanceof Boolean ||
@@ -270,7 +483,7 @@ public enum JSType {
      *
      * @return the string form of the primitive form of the object
      */
-    public static String toPrimitiveToString(Object obj) {
+    public static String toPrimitiveToString(final Object obj) {
         return toString(toPrimitive(obj));
     }
 
@@ -494,6 +707,35 @@ public enum JSType {
     }
 
     /**
+     * Optimistic number conversion - throws UnwarrantedOptimismException if Object
+     *
+     * @param obj           object to convert
+     * @param programPoint  program point
+     * @return double
+     */
+    public static double toNumberOptimistic(final Object obj, final int programPoint) {
+        if (obj != null) {
+            final Class<?> clz = obj.getClass();
+            if (clz == Double.class || clz == Integer.class || clz == Long.class) {
+                return ((Number)obj).doubleValue();
+            }
+        }
+        throw new UnwarrantedOptimismException(obj, programPoint);
+    }
+
+    /**
+     * Object to number conversion that delegates to either {@link #toNumber(Object)} or to
+     * {@link #toNumberOptimistic(Object, int)} depending on whether the program point is valid or not.
+     * @param obj the object to convert
+     * @param programPoint the program point; can be invalid.
+     * @return the value converted to a number
+     * @throws UnwarrantedOptimismException if the value can't be represented as a number and the program point is valid.
+     */
+    public static double toNumberMaybeOptimistic(final Object obj, final int programPoint) {
+        return UnwarrantedOptimismException.isValid(programPoint) ? toNumberOptimistic(obj, programPoint) : toNumber(obj);
+    }
+
+    /**
      * Digit representation for a character
      *
      * @param ch     a character
@@ -612,7 +854,7 @@ public enum JSType {
     }
 
     /**
-     * JavaScript compliant Object to long conversion. See ECMA 9.4 ToInteger
+     * Converts an Object to long.
      *
      * <p>Note that this returns {@link java.lang.Long#MAX_VALUE} or {@link java.lang.Long#MIN_VALUE}
      * for double values that exceed the long range, including positive and negative Infinity. It is the
@@ -622,7 +864,46 @@ public enum JSType {
      * @return a long
      */
     public static long toLong(final Object obj) {
-        return (long)toNumber(obj);
+        return obj instanceof Long ? ((Long)obj).longValue() : toLong(toNumber(obj));
+    }
+
+    /**
+     * Converts a double to long.
+     *
+     * @param num the double to convert
+     * @return the converted long value
+     */
+    public static long toLong(final double num) {
+        return (long)num;
+    }
+
+    /**
+     * Optimistic long conversion - throws UnwarrantedOptimismException if double or Object
+     *
+     * @param obj           object to convert
+     * @param programPoint  program point
+     * @return long
+     */
+    public static long toLongOptimistic(final Object obj, final int programPoint) {
+        if (obj != null) {
+            final Class<?> clz = obj.getClass();
+            if (clz == Long.class || clz == Integer.class) {
+                return ((Number)obj).longValue();
+            }
+        }
+        throw new UnwarrantedOptimismException(obj, programPoint);
+    }
+
+    /**
+     * Object to int conversion that delegates to either {@link #toLong(Object)} or to
+     * {@link #toLongOptimistic(Object, int)} depending on whether the program point is valid or not.
+     * @param obj the object to convert
+     * @param programPoint the program point; can be invalid.
+     * @return the value converted to long
+     * @throws UnwarrantedOptimismException if the value can't be represented as long and the program point is valid.
+     */
+    public static long toLongMaybeOptimistic(final Object obj, final int programPoint) {
+        return UnwarrantedOptimismException.isValid(programPoint) ? toLongOptimistic(obj, programPoint) : toLong(obj);
     }
 
     /**
@@ -637,14 +918,48 @@ public enum JSType {
     }
 
     /**
+     * Optimistic int conversion - throws UnwarrantedOptimismException if double, long or Object
+     *
+     * @param obj           object to convert
+     * @param programPoint  program point
+     * @return double
+     */
+    public static int toInt32Optimistic(final Object obj, final int programPoint) {
+        if (obj != null) {
+            final Class<?> clz = obj.getClass();
+            if (clz == Integer.class) {
+                return ((Integer)obj).intValue();
+            }
+        }
+        throw new UnwarrantedOptimismException(obj, programPoint);
+    }
+
+    /**
+     * Object to int conversion that delegates to either {@link #toInt32(Object)} or to
+     * {@link #toInt32Optimistic(Object, int)} depending on whether the program point is valid or not.
+     * @param obj the object to convert
+     * @param programPoint the program point; can be invalid.
+     * @return the value converted to int
+     * @throws UnwarrantedOptimismException if the value can't be represented as int and the program point is valid.
+     */
+    public static int toInt32MaybeOptimistic(final Object obj, final int programPoint) {
+        return UnwarrantedOptimismException.isValid(programPoint) ? toInt32Optimistic(obj, programPoint) : toInt32(obj);
+    }
+
+    // Minimum and maximum range between which every long value can be precisely represented as a double.
+    private static final long MAX_PRECISE_DOUBLE = 1L << 53;
+    private static final long MIN_PRECISE_DOUBLE = -MAX_PRECISE_DOUBLE;
+
+    /**
      * JavaScript compliant long to int32 conversion
      *
      * @param num a long
      * @return an int32
      */
     public static int toInt32(final long num) {
-        return (int)num;
+        return (int)(num >= MIN_PRECISE_DOUBLE && num <= MAX_PRECISE_DOUBLE ? num : (long)(num % INT32_LIMIT));
     }
+
 
     /**
      * JavaScript compliant number to int32 conversion
@@ -654,29 +969,6 @@ public enum JSType {
      */
     public static int toInt32(final double num) {
         return (int)doubleToInt32(num);
-    }
-
-    /**
-     * JavaScript compliant Object to int64 conversion
-     *
-     * @param obj an object
-     * @return an int64
-     */
-    public static long toInt64(final Object obj) {
-        return toInt64(toNumber(obj));
-    }
-
-    /**
-     * JavaScript compliant number to int64 conversion
-     *
-     * @param num a number
-     * @return an int64
-     */
-    public static long toInt64(final double num) {
-        if (Double.isInfinite(num)) {
-            return 0L;
-        }
-        return (long)num;
     }
 
     /**
@@ -727,7 +1019,7 @@ public enum JSType {
      * @return a uint16
      */
     public static int toUint16(final long num) {
-        return ((int)num) & 0xffff;
+        return (int)num & 0xffff;
     }
 
     /**
@@ -737,7 +1029,7 @@ public enum JSType {
      * @return a uint16
      */
     public static int toUint16(final double num) {
-        return ((int)doubleToInt32(num)) & 0xffff;
+        return (int)doubleToInt32(num) & 0xffff;
     }
 
     private static long doubleToInt32(final double num) {
@@ -751,7 +1043,7 @@ public enum JSType {
             return 0;
         }
         // This is rather slow and could probably be sped up using bit-fiddling.
-        final double d = (num >= 0) ? Math.floor(num) : Math.ceil(num);
+        final double d = num >= 0 ? Math.floor(num) : Math.ceil(num);
         return (long)(d % INT32_LIMIT);
     }
 
@@ -1014,6 +1306,404 @@ public enum JSType {
         return str.substring(start);
     }
 
+    /**
+     * Throw an unwarranted optimism exception for a program point
+     * @param value         real return value
+     * @param programPoint  program point
+     * @return
+     */
+    @SuppressWarnings("unused")
+    private static Object throwUnwarrantedOptimismException(final Object value, final int programPoint) {
+        throw new UnwarrantedOptimismException(value, programPoint);
+    }
+
+    /**
+     * Wrapper for addExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int addExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.addExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((long)x + (long)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for addExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long addExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.addExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((double)x + (double)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for subExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int subExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.subtractExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((long)x - (long)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for subExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long subExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.subtractExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((double)x - (double)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for mulExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int mulExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.multiplyExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((long)x * (long)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for mulExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long mulExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.multiplyExact(x, y);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((double)x * (double)y, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for divExact. Throws UnwarrantedOptimismException if the result of the division can't be represented as
+     * int.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the result of the division can't be represented as int.
+     */
+    public static int divExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        final int res;
+        try {
+            res = x / y;
+        } catch (final ArithmeticException e) {
+            assert y == 0; // Only div by zero anticipated
+            throw new UnwarrantedOptimismException(x > 0 ? Double.POSITIVE_INFINITY : x < 0 ? Double.NEGATIVE_INFINITY : Double.NaN, programPoint);
+        }
+        final int rem = x % y;
+        if (rem == 0) {
+            return res;
+        }
+        // go directly to double here, as anything with non zero remainder is a floating point number in JavaScript
+        throw new UnwarrantedOptimismException((double)x / (double)y, programPoint);
+    }
+
+    /**
+     * Wrapper for modExact. Throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     */
+    public static int remExact(final int x, final int y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return x % y;
+        } catch (final ArithmeticException e) {
+            assert y == 0; // Only mod by zero anticipated
+            throw new UnwarrantedOptimismException(Double.NaN, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for divExact. Throws UnwarrantedOptimismException if the result of the division can't be represented as
+     * long.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the result of the division can't be represented as long.
+     */
+    public static long divExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        final long res;
+        try {
+            res = x / y;
+        } catch (final ArithmeticException e) {
+            assert y == 0L; // Only div by zero anticipated
+            throw new UnwarrantedOptimismException(x > 0L ? Double.POSITIVE_INFINITY : x < 0L ? Double.NEGATIVE_INFINITY : Double.NaN, programPoint);
+        }
+        final long rem = x % y;
+        if (rem == 0L) {
+            return res;
+        }
+        throw new UnwarrantedOptimismException((double)x / (double)y, programPoint);
+    }
+
+    /**
+     * Wrapper for modExact. Throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     *
+     * @param x first term
+     * @param y second term
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if the modulo can't be represented as int.
+     */
+    public static long remExact(final long x, final long y, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return x % y;
+        } catch (final ArithmeticException e) {
+            assert y == 0L; // Only mod by zero anticipated
+            throw new UnwarrantedOptimismException(Double.NaN, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for decrementExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x number to negate
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int decrementExact(final int x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.decrementExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((long)x - 1, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for decrementExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x number to negate
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long decrementExact(final long x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.decrementExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((double)x - 1L, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for incrementExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x the number to increment
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int incrementExact(final int x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.incrementExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((long)x + 1, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for incrementExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x the number to increment
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long incrementExact(final long x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            return Math.incrementExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException((double)x + 1L, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for negateExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x the number to negate
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static int negateExact(final int x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            if (x == 0) {
+                throw new UnwarrantedOptimismException(-0.0, programPoint);
+            }
+            return Math.negateExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException(-(long)x, programPoint);
+        }
+    }
+
+    /**
+     * Wrapper for negateExact
+     *
+     * Catches ArithmeticException and rethrows as UnwarrantedOptimismException
+     * containing the result and the program point of the failure
+     *
+     * @param x the number to negate
+     * @param programPoint program point id
+     * @return the result
+     * @throws UnwarrantedOptimismException if overflow occurs
+     */
+    public static long negateExact(final long x, final int programPoint) throws UnwarrantedOptimismException {
+        try {
+            if (x == 0L) {
+                throw new UnwarrantedOptimismException(-0.0, programPoint);
+            }
+            return Math.negateExact(x);
+        } catch (final ArithmeticException e) {
+            throw new UnwarrantedOptimismException(-(double)x, programPoint);
+        }
+    }
+
+    /**
+     * Given a type of an accessor, return its index in [0..getNumberOfAccessorTypes())
+     *
+     * @param type the type
+     *
+     * @return the accessor index, or -1 if no accessor of this type exists
+     */
+    public static int getAccessorTypeIndex(final Type type) {
+        return getAccessorTypeIndex(type.getTypeClass());
+    }
+
+    /**
+     * Given a class of an accessor, return its index in [0..getNumberOfAccessorTypes())
+     *
+     * Note that this is hardcoded with respect to the dynamic contents of the accessor
+     * types array for speed. Hotspot got stuck with this as 5% of the runtime in
+     * a benchmark when it looped over values and increased an index counter. :-(
+     *
+     * @param type the type
+     *
+     * @return the accessor index, or -1 if no accessor of this type exists
+     */
+    public static int getAccessorTypeIndex(final Class<?> type) {
+        if (type == null) {
+            return TYPE_UNDEFINED_INDEX;
+        } else if (type == int.class) {
+            return TYPE_INT_INDEX;
+        } else if (type == long.class) {
+            return TYPE_LONG_INDEX;
+        } else if (type == double.class) {
+            return TYPE_DOUBLE_INDEX;
+        } else if (!type.isPrimitive()) {
+            return TYPE_OBJECT_INDEX;
+        }
+        return -1;
+    }
+
+    /**
+     * Return the accessor type based on its index in [0..getNumberOfAccessorTypes())
+     * Indexes are ordered narrower{@literal ->}wider / optimistic{@literal ->}pessimistic. Invalidations always
+     * go to a type of higher index
+     *
+     * @param index accessor type index
+     *
+     * @return a type corresponding to the index.
+     */
+
+    public static Type getAccessorType(final int index) {
+        return ACCESSOR_TYPES.get(index);
+    }
+
+    /**
+     * Return the number of accessor types available.
+     *
+     * @return number of accessor types in system
+     */
+    public static int getNumberOfAccessorTypes() {
+        return ACCESSOR_TYPES.size();
+    }
+
     private static double parseRadix(final char chars[], final int start, final int length, final int radix) {
         int pos = 0;
 
@@ -1074,4 +1764,48 @@ public enum JSType {
             throw new RuntimeException(t);
         }
     }
+
+    /**
+     * Create a method handle constant of the correct primitive type
+     * for a constant object
+     * @param o object
+     * @return constant function that returns object
+     */
+    public static MethodHandle unboxConstant(final Object o) {
+        if (o != null) {
+            if (o.getClass() == Integer.class) {
+                return MH.constant(int.class, ((Integer)o).intValue());
+            } else if (o.getClass() == Long.class) {
+                return MH.constant(long.class, ((Long)o).longValue());
+            } else if (o.getClass() == Double.class) {
+                return MH.constant(double.class, ((Double)o).doubleValue());
+            }
+        }
+        return MH.constant(Object.class, o);
+    }
+
+    /**
+     * Get the unboxed (primitive) type for an object
+     * @param o object
+     * @return primive type or Object.class if not primitive
+     */
+    public static Class<?> unboxedFieldType(final Object o) {
+        if (OBJECT_FIELDS_ONLY) {
+            return Object.class;
+        }
+
+        if (o == null) {
+            return Object.class;
+        } else if (o.getClass() == Integer.class) {
+            return int.class;
+        } else if (o.getClass() == Long.class) {
+            return long.class;
+        } else if (o.getClass() == Double.class) {
+            return double.class;
+        } else {
+            return Object.class;
+        }
+    }
+
+
 }
