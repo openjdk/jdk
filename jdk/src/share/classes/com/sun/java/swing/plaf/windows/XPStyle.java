@@ -52,7 +52,6 @@ import javax.swing.text.JTextComponent;
 
 import sun.awt.image.SunWritableRaster;
 import sun.awt.windows.ThemeReader;
-import sun.awt.windows.WToolkit;
 import sun.security.action.GetPropertyAction;
 import sun.swing.CachedPainter;
 
@@ -100,7 +99,7 @@ class XPStyle {
         if (themeActive == null) {
             Toolkit toolkit = Toolkit.getDefaultToolkit();
             themeActive =
-                (Boolean)toolkit.getDesktopProperty(WToolkit.XPSTYLE_THEME_ACTIVE);
+                (Boolean)toolkit.getDesktopProperty("win.xpstyle.themeActive");
             if (themeActive == null) {
                 themeActive = Boolean.FALSE;
             }
