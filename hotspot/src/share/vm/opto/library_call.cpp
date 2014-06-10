@@ -4579,7 +4579,10 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // It's an instance, and it passed the slow-path tests.
       PreserveJVMState pjvms(this);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size);
+      // Need to deoptimize on exception from allocation since Object.clone intrinsic
+      // is reexecuted if deoptimization occurs and there could be problems when merging
+      // exception state between multiple Object.clone versions (reexecute=true vs reexecute=false).
+      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size, /*deoptimize_on_exception=*/true);
 
       copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
 
