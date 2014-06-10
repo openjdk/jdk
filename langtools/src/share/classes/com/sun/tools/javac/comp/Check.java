@@ -1818,6 +1818,11 @@ public class Check {
                                             Type t1,
                                             Type t2,
                                             Type site) {
+        if ((site.tsym.flags() & COMPOUND) != 0) {
+            // special case for intersections: need to eliminate wildcards in supertypes
+            t1 = types.capture(t1);
+            t2 = types.capture(t2);
+        }
         return firstIncompatibility(pos, t1, t2, site) == null;
     }
 
