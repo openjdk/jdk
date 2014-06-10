@@ -432,6 +432,7 @@ void GraphKit::combine_exception_states(SafePointNode* ex_map, SafePointNode* ph
       }
     }
   }
+  phi_map->merge_replaced_nodes_with(ex_map);
 }
 
 //--------------------------use_exception_state--------------------------------
@@ -645,7 +646,6 @@ PreserveJVMState::PreserveJVMState(GraphKit* kit, bool clone_map) {
   _map    = kit->map();   // preserve the map
   _sp     = kit->sp();
   kit->set_map(clone_map ? kit->clone_map() : NULL);
-  Compile::current()->inc_preserve_jvm_state();
 #ifdef ASSERT
   _bci    = kit->bci();
   Parse* parser = kit->is_Parse();
@@ -663,7 +663,6 @@ PreserveJVMState::~PreserveJVMState() {
 #endif
   kit->set_map(_map);
   kit->set_sp(_sp);
-  Compile::current()->dec_preserve_jvm_state();
 }
 
 
@@ -1403,60 +1402,17 @@ void GraphKit::replace_in_map(Node* old, Node* neww) {
   // on the map.  This includes locals, stack, and monitors
   // of the current (innermost) JVM state.
 
-  if (!ReplaceInParentMaps) {
+  // don't let inconsistent types from profiling escape this
+  // method
+
+  const Type* told = _gvn.type(old);
+  const Type* tnew = _gvn.type(neww);
+
+  if (!tnew->higher_equal(told)) {
     return;
   }
 
-  // PreserveJVMState doesn't do a deep copy so we can't modify
-  // parents
-  if (Compile::current()->has_preserve_jvm_state()) {
-    return;
-  }
-
-  Parse* parser = is_Parse();
-  bool progress = true;
-  Node* ctrl = map()->in(0);
-  // Follow the chain of parsers and see whether the update can be
-  // done in the map of callers. We can do the replace for a caller if
-  // the current control post dominates the control of a caller.
-  while (parser != NULL && parser->caller() != NULL && progress) {
-    progress = false;
-    Node* parent_map = parser->caller()->map();
-    assert(parser->exits().map()->jvms()->depth() == parser->caller()->depth(), "map mismatch");
-
-    Node* parent_ctrl = parent_map->in(0);
-
-    while (parent_ctrl->is_Region()) {
-      Node* n = parent_ctrl->as_Region()->is_copy();
-      if (n == NULL) {
-        break;
-      }
-      parent_ctrl = n;
-    }
-
-    for (;;) {
-      if (ctrl == parent_ctrl) {
-        // update the map of the exits which is the one that will be
-        // used when compilation resume after inlining
-        parser->exits().map()->replace_edge(old, neww);
-        progress = true;
-        break;
-      }
-      if (ctrl->is_Proj() && ctrl->as_Proj()->is_uncommon_trap_if_pattern(Deoptimization::Reason_none)) {
-        ctrl = ctrl->in(0)->in(0);
-      } else if (ctrl->is_Region()) {
-        Node* n = ctrl->as_Region()->is_copy();
-        if (n == NULL) {
-          break;
-        }
-        ctrl = n;
-      } else {
-        break;
-      }
-    }
-
-    parser = parser->parent_parser();
-  }
+  map()->record_replaced_node(old, neww);
 }
 
 
@@ -1864,11 +1820,15 @@ void GraphKit::set_predefined_output_for_runtime_call(Node* call,
 
 
 // Replace the call with the current state of the kit.
-void GraphKit::replace_call(CallNode* call, Node* result) {
+void GraphKit::replace_call(CallNode* call, Node* result, bool do_replaced_nodes) {
   JVMState* ejvms = NULL;
   if (has_exceptions()) {
     ejvms = transfer_exceptions_into_jvms();
   }
+
+  ReplacedNodes replaced_nodes = map()->replaced_nodes();
+  ReplacedNodes replaced_nodes_exception;
+  Node* ex_ctl = top();
 
   SafePointNode* final_state = stop();
 
@@ -1886,6 +1846,10 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
     C->gvn_replace_by(callprojs.fallthrough_catchproj, final_ctl);
   }
   if (callprojs.fallthrough_memproj != NULL) {
+    if (final_mem->is_MergeMem()) {
+      // Parser's exits MergeMem was not transformed but may be optimized
+      final_mem = _gvn.transform(final_mem);
+    }
     C->gvn_replace_by(callprojs.fallthrough_memproj,   final_mem);
   }
   if (callprojs.fallthrough_ioproj != NULL) {
@@ -1917,10 +1881,13 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
 
     // Load my combined exception state into the kit, with all phis transformed:
     SafePointNode* ex_map = ekit.combine_and_pop_all_exception_states();
+    replaced_nodes_exception = ex_map->replaced_nodes();
 
     Node* ex_oop = ekit.use_exception_state(ex_map);
+
     if (callprojs.catchall_catchproj != NULL) {
       C->gvn_replace_by(callprojs.catchall_catchproj, ekit.control());
+      ex_ctl = ekit.control();
     }
     if (callprojs.catchall_memproj != NULL) {
       C->gvn_replace_by(callprojs.catchall_memproj,   ekit.reset_memory());
@@ -1952,6 +1919,13 @@ void GraphKit::replace_call(CallNode* call, Node* result) {
     while (wl.size()  > 0) {
       _gvn.transform(wl.pop());
     }
+  }
+
+  if (callprojs.fallthrough_catchproj != NULL && !final_ctl->is_top() && do_replaced_nodes) {
+    replaced_nodes.apply(C, final_ctl);
+  }
+  if (!ex_ctl->is_top() && do_replaced_nodes) {
+    replaced_nodes_exception.apply(C, ex_ctl);
   }
 }
 
