@@ -135,6 +135,7 @@ public class Attr extends JCTree.Visitor {
         allowTypeAnnos = source.allowTypeAnnotations();
         allowLambda = source.allowLambda();
         allowDefaultMethods = source.allowDefaultMethods();
+        allowStaticInterfaceMethods = source.allowStaticInterfaceMethods();
         sourceName = source.name;
         relax = (options.isSet("-retrofit") ||
                  options.isSet("-relax"));
@@ -191,6 +192,10 @@ public class Attr extends JCTree.Visitor {
     /** Switch: support default methods ?
      */
     boolean allowDefaultMethods;
+
+    /** Switch: static interface methods enabled?
+     */
+    boolean allowStaticInterfaceMethods;
 
     /** Switch: allow references to surrounding object from anonymous
      * objects during constructor call?
@@ -3517,6 +3522,10 @@ public class Attr extends JCTree.Visitor {
                     rs.accessBase(rs.new StaticError(sym),
                               tree.pos(), site, sym.name, true);
                 }
+            }
+            if (!allowStaticInterfaceMethods && sitesym.isInterface() &&
+                    sym.isStatic() && sym.kind == MTH) {
+                log.error(tree.pos(), "static.intf.method.invoke.not.supported.in.source", sourceName);
             }
         } else if (sym.kind != ERR && (sym.flags() & STATIC) != 0 && sym.name != names._class) {
             // If the qualified item is not a type and the selected item is static, report
