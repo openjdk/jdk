@@ -2464,23 +2464,24 @@ void GraphKit::merge_memory(Node* new_mem, Node* region, int new_path) {
     Node* new_slice = mms.memory2();
     if (old_slice != new_slice) {
       PhiNode* phi;
-      if (new_slice->is_Phi() && new_slice->as_Phi()->region() == region) {
-        phi = new_slice->as_Phi();
-        #ifdef ASSERT
-        if (old_slice->is_Phi() && old_slice->as_Phi()->region() == region)
-          old_slice = old_slice->in(new_path);
-        // Caller is responsible for ensuring that any pre-existing
-        // phis are already aware of old memory.
-        int old_path = (new_path > 1) ? 1 : 2;  // choose old_path != new_path
-        assert(phi->in(old_path) == old_slice, "pre-existing phis OK");
-        #endif
-        mms.set_memory(phi);
+      if (old_slice->is_Phi() && old_slice->as_Phi()->region() == region) {
+        if (mms.is_empty()) {
+          // clone base memory Phi's inputs for this memory slice
+          assert(old_slice == mms.base_memory(), "sanity");
+          phi = PhiNode::make(region, NULL, Type::MEMORY, mms.adr_type(C));
+          _gvn.set_type(phi, Type::MEMORY);
+          for (uint i = 1; i < phi->req(); i++) {
+            phi->init_req(i, old_slice->in(i));
+          }
+        } else {
+          phi = old_slice->as_Phi(); // Phi was generated already
+        }
       } else {
         phi = PhiNode::make(region, old_slice, Type::MEMORY, mms.adr_type(C));
         _gvn.set_type(phi, Type::MEMORY);
-        phi->set_req(new_path, new_slice);
-        mms.set_memory(_gvn.transform(phi));  // assume it is complete
       }
+      phi->set_req(new_path, new_slice);
+      mms.set_memory(phi);
     }
   }
 }
