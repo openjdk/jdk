@@ -31,8 +31,6 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
-class Parse;
-
 //---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
@@ -114,7 +112,7 @@ class CallGenerator : public ResourceObj {
   //
   // If the result is NULL, it means that this CallGenerator was unable
   // to handle the given call, and another CallGenerator should be consulted.
-  virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) = 0;
+  virtual JVMState* generate(JVMState* jvms) = 0;
 
   // How to generate a call site that is inlined:
   static CallGenerator* for_inline(ciMethod* m, float expected_uses = -1);

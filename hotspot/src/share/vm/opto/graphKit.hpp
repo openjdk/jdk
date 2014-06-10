@@ -690,7 +690,7 @@ class GraphKit : public Phase {
   // Replace the call with the current state of the kit.  Requires
   // that the call was generated with separate io_projs so that
   // exceptional control flow can be handled properly.
-  void replace_call(CallNode* call, Node* result);
+  void replace_call(CallNode* call, Node* result, bool do_replaced_nodes = false);
 
   // helper functions for statistics
   void increment_counter(address counter_addr);   // increment a debug counter
