@@ -59,7 +59,7 @@ import sun.awt.AWTAccessor;
  * @author      Sami Shaio
  * @see         java.awt.event.ItemEvent
  * @see         java.awt.event.ItemListener
- * @since       JDK1.0
+ * @since       1.0
  */
 public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Accessible {
 
@@ -102,7 +102,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
-     * @since   JDK1.1
+     * @since   1.1
      */
     public CheckboxMenuItem() throws HeadlessException {
         this("", false);
@@ -132,7 +132,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see java.awt.GraphicsEnvironment#isHeadless
-     * @since      JDK1.1
+     * @since      1.1
      */
     public CheckboxMenuItem(String label, boolean state)
         throws HeadlessException {
@@ -231,7 +231,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @see           #setState
      * @see           java.awt.event.ItemEvent
      * @see           java.awt.event.ItemListener
-     * @since         JDK1.1
+     * @since         1.1
      */
     public synchronized void addItemListener(ItemListener l) {
         if (l == null) {
@@ -253,7 +253,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @see           #getItemListeners
      * @see           java.awt.event.ItemEvent
      * @see           java.awt.event.ItemListener
-     * @since         JDK1.1
+     * @since         1.1
      */
     public synchronized void removeItemListener(ItemListener l) {
         if (l == null) {
@@ -350,7 +350,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @param        e the event
      * @see          java.awt.event.ItemEvent
      * @see          #processItemEvent
-     * @since        JDK1.1
+     * @since        1.1
      */
     protected void processEvent(AWTEvent e) {
         if (e instanceof ItemEvent) {
@@ -381,7 +381,7 @@ public class CheckboxMenuItem extends MenuItem implements ItemSelectable, Access
      * @see         java.awt.event.ItemListener
      * @see         #addItemListener
      * @see         java.awt.MenuItem#enableEvents
-     * @since       JDK1.1
+     * @since       1.1
      */
     protected void processItemEvent(ItemEvent e) {
         ItemListener listener = itemListener;

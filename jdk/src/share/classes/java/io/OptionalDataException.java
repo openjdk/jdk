@@ -43,7 +43,7 @@ package java.io;
  * </ul>
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public class OptionalDataException extends ObjectStreamException {
 

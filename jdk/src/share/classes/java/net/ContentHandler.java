@@ -79,7 +79,7 @@ import java.io.IOException;
  * @see     java.net.URLConnection
  * @see     java.net.URLConnection#getContent()
  * @see     java.net.URLConnection#setContentHandlerFactory(java.net.ContentHandlerFactory)
- * @since   JDK1.0
+ * @since   1.0
  */
 abstract public class ContentHandler {
     /**

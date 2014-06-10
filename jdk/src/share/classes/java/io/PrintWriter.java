@@ -50,7 +50,7 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  * @author      Frank Yellin
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class PrintWriter extends Writer {

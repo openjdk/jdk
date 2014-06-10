@@ -114,7 +114,7 @@ import sun.reflect.misc.ReflectUtil;
  *
  * @author  unascribed
  * @see     java.lang.ClassLoader#defineClass(byte[], int, int)
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class Class<T> implements java.io.Serializable,
                               GenericDeclaration,
@@ -469,7 +469,7 @@ public final class Class<T> implements java.io.Serializable,
      * @param   obj the object to check
      * @return  true if {@code obj} is an instance of this class
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     public native boolean isInstance(Object obj);
 
@@ -496,7 +496,7 @@ public final class Class<T> implements java.io.Serializable,
      * type {@code cls} can be assigned to objects of this class
      * @exception NullPointerException if the specified Class parameter is
      *            null.
-     * @since JDK1.1
+     * @since 1.1
      */
     public native boolean isAssignableFrom(Class<?> cls);
 
@@ -516,7 +516,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return  {@code true} if this object represents an array class;
      *          {@code false} otherwise.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public native boolean isArray();
 
@@ -547,7 +547,7 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.Float#TYPE
      * @see     java.lang.Double#TYPE
      * @see     java.lang.Void#TYPE
-     * @since JDK1.1
+     * @since 1.1
      */
     public native boolean isPrimitive();
 
@@ -909,7 +909,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return the {@code Class} representing the component type of this
      * class if this class is an array
      * @see     java.lang.reflect.Array
-     * @since JDK1.1
+     * @since 1.1
      */
     public native Class<?> getComponentType();
 
@@ -939,7 +939,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @return the {@code int} representing the modifiers for this class
      * @see     java.lang.reflect.Modifier
-     * @since JDK1.1
+     * @since 1.1
      */
     public native int getModifiers();
 
@@ -950,7 +950,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return  the signers of this class, or null if there are no signers.  In
      *          particular, this method returns null if this object represents
      *          a primitive type or void.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public native Object[] getSigners();
 
@@ -1215,7 +1215,7 @@ public final class Class<T> implements java.io.Serializable,
      *         loader for the declaring class and invocation of {@link
      *         SecurityManager#checkPackageAccess s.checkPackageAccess()}
      *         denies access to the package of the declaring class
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Class<?> getDeclaringClass() throws SecurityException {
@@ -1470,7 +1470,7 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Class<?>[] getClasses() {
@@ -1533,7 +1533,7 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
-     * @since JDK1.1
+     * @since 1.1
      * @jls 8.2 Class Members
      * @jls 8.3 Field Declarations
      */
@@ -1593,7 +1593,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Method[] getMethods() throws SecurityException {
@@ -1629,7 +1629,7 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Constructor<?>[] getConstructors() throws SecurityException {
@@ -1676,7 +1676,7 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
-     * @since JDK1.1
+     * @since 1.1
      * @jls 8.2 Class Members
      * @jls 8.3 Field Declarations
      */
@@ -1761,7 +1761,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Method getMethod(String name, Class<?>... parameterTypes)
@@ -1802,7 +1802,7 @@ public final class Class<T> implements java.io.Serializable,
      *         s.checkPackageAccess()} denies access to the package
      *         of this class.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Constructor<T> getConstructor(Class<?>... parameterTypes)
@@ -1845,7 +1845,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *         </ul>
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Class<?>[] getDeclaredClasses() throws SecurityException {
@@ -1892,7 +1892,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
-     * @since JDK1.1
+     * @since 1.1
      * @jls 8.2 Class Members
      * @jls 8.3 Field Declarations
      */
@@ -1953,7 +1953,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Method[] getDeclaredMethods() throws SecurityException {
@@ -1998,7 +1998,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Constructor<?>[] getDeclaredConstructors() throws SecurityException {
@@ -2043,7 +2043,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
-     * @since JDK1.1
+     * @since 1.1
      * @jls 8.2 Class Members
      * @jls 8.3 Field Declarations
      */
@@ -2105,7 +2105,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      * @jls 8.2 Class Members
      * @jls 8.4 Method Declarations
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Method getDeclaredMethod(String name, Class<?>... parameterTypes)
@@ -2155,7 +2155,7 @@ public final class Class<T> implements java.io.Serializable,
      *
      *          </ul>
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @CallerSensitive
     public Constructor<T> getDeclaredConstructor(Class<?>... parameterTypes)
@@ -2197,7 +2197,7 @@ public final class Class<T> implements java.io.Serializable,
      * @return      A {@link java.io.InputStream} object or {@code null} if
      *              no resource with this name is found
      * @throws  NullPointerException If {@code name} is {@code null}
-     * @since  JDK1.1
+     * @since  1.1
      */
      public InputStream getResourceAsStream(String name) {
         name = resolveName(name);
@@ -2241,7 +2241,7 @@ public final class Class<T> implements java.io.Serializable,
      * @param  name name of the desired resource
      * @return      A  {@link java.net.URL} object or {@code null} if no
      *              resource with this name is found
-     * @since  JDK1.1
+     * @since  1.1
      */
     public java.net.URL getResource(String name) {
         name = resolveName(name);

@@ -33,7 +33,7 @@ package java.util;
  * that is logically deemed to be the object upon which the Event in question
  * initially occurred upon.
  *
- * @since JDK1.1
+ * @since 1.1
  */
 
 public class EventObject implements java.io.Serializable {

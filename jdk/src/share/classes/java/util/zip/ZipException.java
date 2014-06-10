@@ -32,7 +32,7 @@ import java.io.IOException;
  *
  * @author  unascribed
  * @see     java.io.IOException
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public

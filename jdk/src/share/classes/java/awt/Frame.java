@@ -130,7 +130,7 @@ import javax.accessibility.*;
  * @author      Sami Shaio
  * @see WindowEvent
  * @see Window#addWindowListener
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Frame extends Window implements MenuContainer {
 

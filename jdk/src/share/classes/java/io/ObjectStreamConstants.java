@@ -29,7 +29,7 @@ package java.io;
  * Constants written into the Object Serialization Stream.
  *
  * @author  unascribed
- * @since JDK 1.1
+ * @since 1.1
  */
 public interface ObjectStreamConstants {
 

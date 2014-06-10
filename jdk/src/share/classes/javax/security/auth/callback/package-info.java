@@ -30,6 +30,6 @@
  * or passwords, for example) or to display information
  * (error and warning messages, for example).
  *
- * @since JDK1.4
+ * @since 1.4
  */
 package javax.security.auth.callback;
