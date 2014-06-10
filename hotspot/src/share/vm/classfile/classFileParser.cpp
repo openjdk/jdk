@@ -2984,9 +2984,12 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
       } else if (tag == vmSymbols::tag_enclosing_method()) {
         if (parsed_enclosingmethod_attribute) {
           classfile_parse_error("Multiple EnclosingMethod attributes in class file %s", CHECK);
-        }   else {
+        } else {
           parsed_enclosingmethod_attribute = true;
         }
+        guarantee_property(attribute_length == 4,
+          "Wrong EnclosingMethod attribute length %u in class file %s",
+          attribute_length, CHECK);
         cfs->guarantee_more(4, CHECK);  // class_index, method_index
         enclosing_method_class_index  = cfs->get_u2_fast();
         enclosing_method_method_index = cfs->get_u2_fast();
