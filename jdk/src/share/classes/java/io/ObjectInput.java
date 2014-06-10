@@ -34,7 +34,7 @@ package java.io;
  * @see java.io.InputStream
  * @see java.io.ObjectOutputStream
  * @see java.io.ObjectInputStream
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface ObjectInput extends DataInput, AutoCloseable {
     /**

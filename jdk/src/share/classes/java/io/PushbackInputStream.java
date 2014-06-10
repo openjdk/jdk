@@ -46,13 +46,13 @@ package java.io;
  *
  * @author  David Connelly
  * @author  Jonathan Payne
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class PushbackInputStream extends FilterInputStream {
     /**
      * The pushback buffer.
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected byte[] buf;
 
@@ -62,7 +62,7 @@ class PushbackInputStream extends FilterInputStream {
      * <code>buf.length</code>; when the buffer is full, <code>pos</code> is
      * equal to zero.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected int pos;
 
@@ -86,7 +86,7 @@ class PushbackInputStream extends FilterInputStream {
      * @param  in    the input stream from which bytes will be read.
      * @param  size  the size of the pushback buffer.
      * @exception IllegalArgumentException if {@code size <= 0}
-     * @since  JDK1.1
+     * @since  1.1
      */
     public PushbackInputStream(InputStream in, int size) {
         super(in);
@@ -224,7 +224,7 @@ class PushbackInputStream extends FilterInputStream {
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
      *            invoking its {@link #close()} method.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void unread(byte[] b, int off, int len) throws IOException {
         ensureOpen();
@@ -246,7 +246,7 @@ class PushbackInputStream extends FilterInputStream {
      *            buffer for the specified number of bytes,
      *            or this input stream has been closed by
      *            invoking its {@link #close()} method.
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void unread(byte[] b) throws IOException {
         unread(b, 0, b.length);

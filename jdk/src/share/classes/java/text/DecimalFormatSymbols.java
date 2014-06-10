@@ -679,7 +679,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * default serialization will work properly if this object is streamed out again.
      * Initializes the currency from the intlCurrencySymbol field.
      *
-     * @since JDK 1.1.6
+     * @since  1.1.6
      */
     private void readObject(ObjectInputStream stream)
             throws IOException, ClassNotFoundException {
@@ -802,7 +802,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
     /**
      * The decimal separator used when formatting currency values.
      * @serial
-     * @since JDK 1.1.6
+     * @since  1.1.6
      * @see #getMonetaryDecimalSeparator
      */
     private  char    monetarySeparator; // Field new in JDK 1.1.6
@@ -816,7 +816,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * The intent is that this will be added to the API in the future.
      *
      * @serial
-     * @since JDK 1.1.6
+     * @since  1.1.6
      */
     private  char    exponential;       // Field new in JDK 1.1.6
 
@@ -872,7 +872,7 @@ public class DecimalFormatSymbols implements Cloneable, Serializable {
      * is always written.
      *
      * @serial
-     * @since JDK 1.1.6
+     * @since  1.1.6
      */
     private int serialVersionOnStream = currentSerialVersion;
 }

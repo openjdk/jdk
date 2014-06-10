@@ -37,7 +37,7 @@ package java.net;
  *
  * @author  Pavani Diwanji
  * @author  Benjamin Renaud
- * @since   JDK1.0
+ * @since   1.0
  */
 public final
 class DatagramPacket {
@@ -276,7 +276,7 @@ class DatagramPacket {
      * Sets the IP address of the machine to which this datagram
      * is being sent.
      * @param iaddr the {@code InetAddress}
-     * @since   JDK1.1
+     * @since   1.1
      * @see #getAddress()
      */
     public synchronized void setAddress(InetAddress iaddr) {
@@ -287,7 +287,7 @@ class DatagramPacket {
      * Sets the port number on the remote host to which this datagram
      * is being sent.
      * @param iport the port number
-     * @since   JDK1.1
+     * @since   1.1
      * @see #getPort()
      */
     public synchronized void setPort(int iport) {
@@ -342,7 +342,7 @@ class DatagramPacket {
      * @see #getLength
      * @see #getData
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized void setData(byte[] buf) {
         if (buf == null) {
@@ -370,7 +370,7 @@ class DatagramPacket {
      * @see #getLength
      * @see #setData
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized void setLength(int length) {
         if ((length + offset) > buf.length || length < 0 ||
