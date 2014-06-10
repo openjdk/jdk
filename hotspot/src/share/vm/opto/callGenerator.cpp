@@ -732,7 +732,15 @@ JVMState* PredictedCallGenerator::generate(JVMState* jvms) {
   Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);
   iophi->set_req(2, slow_map->i_o());
   kit.set_i_o(gvn.transform(iophi));
+  // Merge memory
   kit.merge_memory(slow_map->merged_memory(), region, 2);
+  // Transform new memory Phis.
+  for (MergeMemStream mms(kit.merged_memory()); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    if (phi->is_Phi() && phi->in(0) == region) {
+      mms.set_memory(gvn.transform(phi));
+    }
+  }
   uint tos = kit.jvms()->stkoff() + kit.sp();
   uint limit = slow_map->req();
   for (uint i = TypeFunc::Parms; i < limit; i++) {
@@ -890,15 +898,15 @@ CallGenerator* CallGenerator::for_method_handle_inline(JVMState* jvms, ciMethod*
 }
 
 
-//------------------------PredictedIntrinsicGenerator------------------------------
-// Internal class which handles all predicted Intrinsic calls.
-class PredictedIntrinsicGenerator : public CallGenerator {
+//------------------------PredicatedIntrinsicGenerator------------------------------
+// Internal class which handles all predicated Intrinsic calls.
+class PredicatedIntrinsicGenerator : public CallGenerator {
   CallGenerator* _intrinsic;
   CallGenerator* _cg;
 
 public:
-  PredictedIntrinsicGenerator(CallGenerator* intrinsic,
-                              CallGenerator* cg)
+  PredicatedIntrinsicGenerator(CallGenerator* intrinsic,
+                               CallGenerator* cg)
     : CallGenerator(cg->method())
   {
     _intrinsic = intrinsic;
@@ -913,104 +921,182 @@ public:
 };
 
 
-CallGenerator* CallGenerator::for_predicted_intrinsic(CallGenerator* intrinsic,
-                                                      CallGenerator* cg) {
-  return new PredictedIntrinsicGenerator(intrinsic, cg);
+CallGenerator* CallGenerator::for_predicated_intrinsic(CallGenerator* intrinsic,
+                                                       CallGenerator* cg) {
+  return new PredicatedIntrinsicGenerator(intrinsic, cg);
 }
 
 
-JVMState* PredictedIntrinsicGenerator::generate(JVMState* jvms) {
+JVMState* PredicatedIntrinsicGenerator::generate(JVMState* jvms) {
+  // The code we want to generate here is:
+  //    if (receiver == NULL)
+  //        uncommon_Trap
+  //    if (predicate(0))
+  //        do_intrinsic(0)
+  //    else
+  //    if (predicate(1))
+  //        do_intrinsic(1)
+  //    ...
+  //    else
+  //        do_java_comp
+
   GraphKit kit(jvms);
   PhaseGVN& gvn = kit.gvn();
 
   CompileLog* log = kit.C->log();
   if (log != NULL) {
-    log->elem("predicted_intrinsic bci='%d' method='%d'",
+    log->elem("predicated_intrinsic bci='%d' method='%d'",
               jvms->bci(), log->identify(method()));
   }
 
-  Node* slow_ctl = _intrinsic->generate_predicate(kit.sync_jvms());
-  if (kit.failing())
-    return NULL;  // might happen because of NodeCountInliningCutoff
-
-  kit.C->print_inlining_update(this);
-  SafePointNode* slow_map = NULL;
-  JVMState* slow_jvms;
-  if (slow_ctl != NULL) {
-    PreserveJVMState pjvms(&kit);
-    kit.set_control(slow_ctl);
-    if (!kit.stopped()) {
-      slow_jvms = _cg->generate(kit.sync_jvms());
-      if (kit.failing())
-        return NULL;  // might happen because of NodeCountInliningCutoff
-      assert(slow_jvms != NULL, "must be");
-      kit.add_exception_states_from(slow_jvms);
-      kit.set_map(slow_jvms->map());
-      if (!kit.stopped())
-        slow_map = kit.stop();
-    }
-  }
-
-  if (kit.stopped()) {
-    // Predicate is always false.
-    kit.set_jvms(slow_jvms);
-    return kit.transfer_exceptions_into_jvms();
-  }
-
-  // Generate intrinsic code:
-  JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
-  if (new_jvms == NULL) {
-    // Intrinsic failed, so use slow code or make a direct call.
-    if (slow_map == NULL) {
-      CallGenerator* cg = CallGenerator::for_direct_call(method());
-      new_jvms = cg->generate(kit.sync_jvms());
-    } else {
-      kit.set_jvms(slow_jvms);
+  if (!method()->is_static()) {
+    // We need an explicit receiver null_check before checking its type in predicate.
+    // We share a map with the caller, so his JVMS gets adjusted.
+    Node* receiver = kit.null_check_receiver_before_call(method());
+    if (kit.stopped()) {
       return kit.transfer_exceptions_into_jvms();
     }
   }
-  kit.add_exception_states_from(new_jvms);
-  kit.set_jvms(new_jvms);
 
-  // Need to merge slow and fast?
-  if (slow_map == NULL) {
-    // The fast path is the only path remaining.
+  int n_predicates = _intrinsic->predicates_count();
+  assert(n_predicates > 0, "sanity");
+
+  JVMState** result_jvms = NEW_RESOURCE_ARRAY(JVMState*, (n_predicates+1));
+
+  // Region for normal compilation code if intrinsic failed.
+  Node* slow_region = new RegionNode(1);
+
+  int results = 0;
+  for (int predicate = 0; (predicate < n_predicates) && !kit.stopped(); predicate++) {
+#ifdef ASSERT
+    JVMState* old_jvms = kit.jvms();
+    SafePointNode* old_map = kit.map();
+    Node* old_io  = old_map->i_o();
+    Node* old_mem = old_map->memory();
+    Node* old_exc = old_map->next_exception();
+#endif
+    Node* else_ctrl = _intrinsic->generate_predicate(kit.sync_jvms(), predicate);
+#ifdef ASSERT
+    // Assert(no_new_memory && no_new_io && no_new_exceptions) after generate_predicate.
+    assert(old_jvms == kit.jvms(), "generate_predicate should not change jvm state");
+    SafePointNode* new_map = kit.map();
+    assert(old_io  == new_map->i_o(), "generate_predicate should not change i_o");
+    assert(old_mem == new_map->memory(), "generate_predicate should not change memory");
+    assert(old_exc == new_map->next_exception(), "generate_predicate should not add exceptions");
+#endif
+    if (!kit.stopped()) {
+      PreserveJVMState pjvms(&kit);
+      // Generate intrinsic code:
+      JVMState* new_jvms = _intrinsic->generate(kit.sync_jvms());
+      if (new_jvms == NULL) {
+        // Intrinsic failed, use normal compilation path for this predicate.
+        slow_region->add_req(kit.control());
+      } else {
+        kit.add_exception_states_from(new_jvms);
+        kit.set_jvms(new_jvms);
+        if (!kit.stopped()) {
+          result_jvms[results++] = kit.jvms();
+        }
+      }
+    }
+    if (else_ctrl == NULL) {
+      else_ctrl = kit.C->top();
+    }
+    kit.set_control(else_ctrl);
+  }
+  if (!kit.stopped()) {
+    // Final 'else' after predicates.
+    slow_region->add_req(kit.control());
+  }
+  if (slow_region->req() > 1) {
+    PreserveJVMState pjvms(&kit);
+    // Generate normal compilation code:
+    kit.set_control(gvn.transform(slow_region));
+    JVMState* new_jvms = _cg->generate(kit.sync_jvms());
+    if (kit.failing())
+      return NULL;  // might happen because of NodeCountInliningCutoff
+    assert(new_jvms != NULL, "must be");
+    kit.add_exception_states_from(new_jvms);
+    kit.set_jvms(new_jvms);
+    if (!kit.stopped()) {
+      result_jvms[results++] = kit.jvms();
+    }
+  }
+
+  if (results == 0) {
+    // All paths ended in uncommon traps.
+    (void) kit.stop();
     return kit.transfer_exceptions_into_jvms();
   }
 
-  if (kit.stopped()) {
-    // Intrinsic method threw an exception, so it's just the slow path after all.
-    kit.set_jvms(slow_jvms);
+  if (results == 1) { // Only one path
+    kit.set_jvms(result_jvms[0]);
     return kit.transfer_exceptions_into_jvms();
   }
 
-  // Finish the diamond.
+  // Merge all paths.
   kit.C->set_has_split_ifs(true); // Has chance for split-if optimization
-  RegionNode* region = new RegionNode(3);
-  region->init_req(1, kit.control());
-  region->init_req(2, slow_map->control());
-  kit.set_control(gvn.transform(region));
+  RegionNode* region = new RegionNode(results + 1);
   Node* iophi = PhiNode::make(region, kit.i_o(), Type::ABIO);
-  iophi->set_req(2, slow_map->i_o());
+  for (int i = 0; i < results; i++) {
+    JVMState* jvms = result_jvms[i];
+    int path = i + 1;
+    SafePointNode* map = jvms->map();
+    region->init_req(path, map->control());
+    iophi->set_req(path, map->i_o());
+    if (i == 0) {
+      kit.set_jvms(jvms);
+    } else {
+      kit.merge_memory(map->merged_memory(), region, path);
+    }
+  }
+  kit.set_control(gvn.transform(region));
   kit.set_i_o(gvn.transform(iophi));
-  kit.merge_memory(slow_map->merged_memory(), region, 2);
+  // Transform new memory Phis.
+  for (MergeMemStream mms(kit.merged_memory()); mms.next_non_empty();) {
+    Node* phi = mms.memory();
+    if (phi->is_Phi() && phi->in(0) == region) {
+      mms.set_memory(gvn.transform(phi));
+    }
+  }
+
+  // Merge debug info.
+  Node** ins = NEW_RESOURCE_ARRAY(Node*, results);
   uint tos = kit.jvms()->stkoff() + kit.sp();
-  uint limit = slow_map->req();
+  Node* map = kit.map();
+  uint limit = map->req();
   for (uint i = TypeFunc::Parms; i < limit; i++) {
     // Skip unused stack slots; fast forward to monoff();
     if (i == tos) {
       i = kit.jvms()->monoff();
       if( i >= limit ) break;
     }
-    Node* m = kit.map()->in(i);
-    Node* n = slow_map->in(i);
-    if (m != n) {
-      const Type* t = gvn.type(m)->meet_speculative(gvn.type(n));
-      Node* phi = PhiNode::make(region, m, t);
-      phi->set_req(2, n);
-      kit.map()->set_req(i, gvn.transform(phi));
+    Node* n = map->in(i);
+    ins[0] = n;
+    const Type* t = gvn.type(n);
+    bool needs_phi = false;
+    for (int j = 1; j < results; j++) {
+      JVMState* jvms = result_jvms[j];
+      Node* jmap = jvms->map();
+      Node* m = NULL;
+      if (jmap->req() > i) {
+        m = jmap->in(i);
+        if (m != n) {
+          needs_phi = true;
+          t = t->meet_speculative(gvn.type(m));
+        }
+      }
+      ins[j] = m;
+    }
+    if (needs_phi) {
+      Node* phi = PhiNode::make(region, n, t);
+      for (int j = 1; j < results; j++) {
+        phi->set_req(j + 1, ins[j]);
+      }
+      map->set_req(i, gvn.transform(phi));
     }
   }
+
   return kit.transfer_exceptions_into_jvms();
 }
 
