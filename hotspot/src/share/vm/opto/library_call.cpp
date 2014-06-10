@@ -52,25 +52,28 @@ class LibraryIntrinsic : public InlineCallGenerator {
  public:
  private:
   bool             _is_virtual;
-  bool             _is_predicted;
   bool             _does_virtual_dispatch;
+  int8_t           _predicates_count;  // Intrinsic is predicated by several conditions
+  int8_t           _last_predicate; // Last generated predicate
   vmIntrinsics::ID _intrinsic_id;
 
  public:
-  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, bool does_virtual_dispatch, vmIntrinsics::ID id)
+  LibraryIntrinsic(ciMethod* m, bool is_virtual, int predicates_count, bool does_virtual_dispatch, vmIntrinsics::ID id)
     : InlineCallGenerator(m),
       _is_virtual(is_virtual),
-      _is_predicted(is_predicted),
       _does_virtual_dispatch(does_virtual_dispatch),
+      _predicates_count((int8_t)predicates_count),
+      _last_predicate((int8_t)-1),
       _intrinsic_id(id)
   {
   }
   virtual bool is_intrinsic() const { return true; }
   virtual bool is_virtual()   const { return _is_virtual; }
-  virtual bool is_predicted()   const { return _is_predicted; }
+  virtual bool is_predicated() const { return _predicates_count > 0; }
+  virtual int  predicates_count() const { return _predicates_count; }
   virtual bool does_virtual_dispatch()   const { return _does_virtual_dispatch; }
   virtual JVMState* generate(JVMState* jvms);
-  virtual Node* generate_predicate(JVMState* jvms);
+  virtual Node* generate_predicate(JVMState* jvms, int predicate);
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
 };
 
@@ -113,8 +116,8 @@ class LibraryCallKit : public GraphKit {
   vmIntrinsics::ID  intrinsic_id() const { return _intrinsic->intrinsic_id(); }
   ciMethod*         callee()    const    { return _intrinsic->method(); }
 
-  bool try_to_inline();
-  Node* try_to_predicate();
+  bool  try_to_inline(int predicate);
+  Node* try_to_predicate(int predicate);
 
   void push_result() {
     // Push the result onto the stack.
@@ -373,7 +376,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     }
   }
 
-  bool is_predicted = false;
+  int predicates = 0;
   bool does_virtual_dispatch = false;
 
   switch (id) {
@@ -513,7 +516,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     if (!UseAESIntrinsics) return NULL;
     // these two require the predicated logic
-    is_predicted = true;
+    predicates = 1;
     break;
 
   case vmIntrinsics::_updateCRC32:
@@ -582,7 +585,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!InlineUnsafeOps)  return NULL;
   }
 
-  return new LibraryIntrinsic(m, is_virtual, is_predicted, does_virtual_dispatch, (vmIntrinsics::ID) id);
+  return new LibraryIntrinsic(m, is_virtual, predicates, does_virtual_dispatch, (vmIntrinsics::ID) id);
 }
 
 //----------------------register_library_intrinsics-----------------------
@@ -606,7 +609,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   const int bci    = kit.bci();
 
   // Try to inline the intrinsic.
-  if (kit.try_to_inline()) {
+  if (kit.try_to_inline(_last_predicate)) {
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
@@ -641,12 +644,13 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   return NULL;
 }
 
-Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
+Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   LibraryCallKit kit(jvms, this);
   Compile* C = kit.C;
   int nodes = C->unique();
+  _last_predicate = predicate;
 #ifndef PRODUCT
-  assert(is_predicted(), "sanity");
+  assert(is_predicated() && predicate < predicates_count(), "sanity");
   if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     char buf[1000];
     const char* str = vmIntrinsics::short_name_as_C_string(intrinsic_id(), buf, sizeof(buf));
@@ -656,10 +660,10 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   ciMethod* callee = kit.callee();
   const int bci    = kit.bci();
 
-  Node* slow_ctl = kit.try_to_predicate();
+  Node* slow_ctl = kit.try_to_predicate(predicate);
   if (!kit.failing()) {
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual, predicate)" : "(intrinsic, predicate)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -688,7 +692,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   return NULL;
 }
 
-bool LibraryCallKit::try_to_inline() {
+bool LibraryCallKit::try_to_inline(int predicate) {
   // Handle symbolic names for otherwise undistinguished boolean switches:
   const bool is_store       = true;
   const bool is_native_ptr  = true;
@@ -905,7 +909,7 @@ bool LibraryCallKit::try_to_inline() {
   }
 }
 
-Node* LibraryCallKit::try_to_predicate() {
+Node* LibraryCallKit::try_to_predicate(int predicate) {
   if (!jvms()->has_method()) {
     // Root JVMState has a null method.
     assert(map()->memory()->Opcode() == Op_Parm, "");
@@ -5868,7 +5872,12 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   BasicType bt = field->layout_type();
 
   // Build the resultant type of the load
-  const Type *type = TypeOopPtr::make_from_klass(field_klass->as_klass());
+  const Type *type;
+  if (bt == T_OBJECT) {
+    type = TypeOopPtr::make_from_klass(field_klass->as_klass());
+  } else {
+    type = Type::get_const_basic_type(bt);
+  }
 
   // Build the load.
   Node* loadedField = make_load(NULL, adr, type, bt, adr_type, MemNode::unordered, is_vol);
@@ -5998,7 +6007,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   assert(tinst != NULL, "CBC obj is null");
   assert(tinst->klass()->is_loaded(), "CBC obj is not loaded");
   ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
-  if (!klass_AESCrypt->is_loaded()) return false;
+  assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -6073,11 +6082,8 @@ Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescryp
 //    note cipher==plain is more conservative than the original java code but that's OK
 //
 Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting) {
-  // First, check receiver for NULL since it is virtual method.
+  // The receiver was checked for NULL already.
   Node* objCBC = argument(0);
-  objCBC = null_check(objCBC);
-
-  if (stopped()) return NULL; // Always NULL
 
   // Load embeddedCipher field of CipherBlockChaining object.
   Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
