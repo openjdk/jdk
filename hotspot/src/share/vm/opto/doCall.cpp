@@ -119,12 +119,12 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
     if (cg != NULL) {
-      if (cg->is_predicted()) {
+      if (cg->is_predicated()) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
               vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
         if (inline_cg != NULL) {
-          cg = CallGenerator::for_predicted_intrinsic(cg, inline_cg);
+          cg = CallGenerator::for_predicated_intrinsic(cg, inline_cg);
         }
       }
 
