@@ -1448,6 +1448,7 @@ void JavaThread::initialize() {
   _thread_stat = new ThreadStatistics();
   _blocked_on_compilation = false;
   _jni_active_critical = 0;
+  _pending_jni_exception_check_fn = NULL;
   _do_not_unlock_if_synchronized = false;
   _cached_monitor_info = NULL;
   _parker = Parker::Allocate(this) ;
