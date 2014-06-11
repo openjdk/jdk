@@ -352,7 +352,7 @@ public abstract class Entity {
         }
 
         /**each 'external' parsed entity may have xml/text declaration containing version information
-         * @return String version of the enity, for an internal entity version would be null
+         * @return String version of the entity, for an internal entity version would be null
          */
         public String getEntityVersion(){
             return version ;
