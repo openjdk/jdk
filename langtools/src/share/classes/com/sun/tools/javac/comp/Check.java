@@ -1041,7 +1041,9 @@ public class Check {
 
         switch (sym.kind) {
         case VAR:
-            if (sym.owner.kind != TYP)
+            if (TreeInfo.isReceiverParam(tree))
+                mask = ReceiverParamFlags;
+            else if (sym.owner.kind != TYP)
                 mask = LocalVarFlags;
             else if ((sym.owner.flags_field & INTERFACE) != 0)
                 mask = implicit = InterfaceVarFlags;

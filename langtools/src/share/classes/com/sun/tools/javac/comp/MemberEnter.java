@@ -720,22 +720,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
                 } else {
                     attr.attribType(tree.vartype, localEnv);
-                    if (tree.nameexpr != null) {
-                        attr.attribExpr(tree.nameexpr, localEnv);
-                        MethodSymbol m = localEnv.enclMethod.sym;
-                        if (m.isConstructor()) {
-                            Type outertype = m.owner.owner.type;
-                            if (outertype.hasTag(TypeTag.CLASS)) {
-                                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
-                                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
-                            } else {
-                                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
-                            }
-                        } else {
-                            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
-                            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
-                        }
-                    }
+                    if (TreeInfo.isReceiverParam(tree))
+                        checkReceiver(tree, localEnv);
                 }
             } finally {
                 deferredLintHandler.setPos(prevLintPos);
@@ -769,7 +755,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 chk.checkTransparentVar(tree.pos(), v, enclScope);
                 enclScope.enter(v);
             }
-            if (tree.name.equals(names._this)) {
+            if (TreeInfo.isReceiverParam(tree)) {
                 // If we are dealing with a receiver parameter, then
                 // we only allow base type annotations to be type
                 // annotations.  Receivers are not allowed to have
@@ -790,6 +776,26 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void checkType(JCTree tree, Type type, String diag) {
         if (!tree.type.isErroneous() && !types.isSameType(tree.type, type)) {
             log.error(tree, diag, type, tree.type);
+        }
+    }
+    void checkReceiver(JCVariableDecl tree, Env<AttrContext> localEnv) {
+        attr.attribExpr(tree.nameexpr, localEnv);
+        MethodSymbol m = localEnv.enclMethod.sym;
+        if (m.isConstructor()) {
+            Type outertype = m.owner.owner.type;
+            if (outertype.hasTag(TypeTag.METHOD)) {
+                // we have a local inner class
+                outertype = m.owner.owner.owner.type;
+            }
+            if (outertype.hasTag(TypeTag.CLASS)) {
+                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
+                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
+            } else {
+                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
+            }
+        } else {
+            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
+            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
         }
     }
 

@@ -54,14 +54,6 @@ class WithValue {
   <T extends Runnable> void accept(@B("m") WithValue this, T r) throws Exception { }
 }
 
-class WithFinal {
-  void plain(final @B("m") WithFinal this) { }
-  <T> void generic(final @B("m") WithFinal this) { }
-  void withException(final @B("m") WithFinal this) throws Exception { }
-  String nonVoid(final @B("m") WithFinal this) { return null; }
-  <T extends Runnable> void accept(final @B("m") WithFinal this, T r) throws Exception { }
-}
-
 class WithBody {
   Object f;
 
