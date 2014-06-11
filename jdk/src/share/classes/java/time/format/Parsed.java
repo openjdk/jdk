@@ -568,18 +568,20 @@ final class Parsed implements TemporalAccessor {
         for (Iterator<Entry<TemporalField, Long>> it = fieldValues.entrySet().iterator(); it.hasNext(); ) {
             Entry<TemporalField, Long> entry = it.next();
             TemporalField field = entry.getKey();
-            long val1;
-            try {
-                val1 = target.getLong(field);
-            } catch (RuntimeException ex) {
-                continue;
+            if (target.isSupported(field)) {
+                long val1;
+                try {
+                    val1 = target.getLong(field);
+                } catch (RuntimeException ex) {
+                    continue;
+                }
+                long val2 = entry.getValue();
+                if (val1 != val2) {
+                    throw new DateTimeException("Conflict found: Field " + field + " " + val1 +
+                            " differs from " + field + " " + val2 + " derived from " + target);
+                }
+                it.remove();
             }
-            long val2 = entry.getValue();
-            if (val1 != val2) {
-                throw new DateTimeException("Conflict found: Field " + field + " " + val1 +
-                        " differs from " + field + " " + val2 + " derived from " + target);
-            }
-            it.remove();
         }
     }
 
