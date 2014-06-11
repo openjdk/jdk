@@ -45,10 +45,6 @@ public final class ThemeReader {
         return false;
     }
 
-    public static boolean isXPStyleEnabled() {
-        return false;
-    }
-
     public static void paintBackground(int[] buffer, String widget,
            int part, int state, int x, int y, int w, int h, int stride) {
     }

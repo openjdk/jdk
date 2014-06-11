@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,7 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
 
     public void paint(Graphics g, JComponent c) {
         Dimension s = c.getSize();
-        XPStyle xp = XPStyle.getXP();
-        if (xp != null && WindowsMenuItemUI.isVistaPainting()) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
             int x = 1;
             Component parent = c.getParent();
             if (parent instanceof JComponent) {
@@ -68,7 +67,7 @@ public class WindowsPopupMenuSeparatorUI extends BasicPopupMenuSeparatorUI {
                     x += WindowsPopupMenuUI.getGutterWidth();
                 }
             }
-            Skin skin = xp.getSkin(c, Part.MP_POPUPSEPARATOR);
+            Skin skin = XPStyle.getXP().getSkin(c, Part.MP_POPUPSEPARATOR);
             int skinHeight = skin.getHeight();
             int y = (s.height - skinHeight) / 2;
             skin.paintSkin(g, x, y, s.width - x - 1, skinHeight, State.NORMAL);

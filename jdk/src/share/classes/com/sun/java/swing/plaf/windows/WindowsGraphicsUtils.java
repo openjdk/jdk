@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -125,9 +125,6 @@ public class WindowsGraphicsUtils {
     static void paintXPText(AbstractButton b, Part part, State state,
             Graphics g, int x, int y, String text, int mnemIndex) {
         XPStyle xp = XPStyle.getXP();
-        if (xp == null) {
-            return;
-        }
         Color textColor = b.getForeground();
 
         if (textColor instanceof UIResource) {

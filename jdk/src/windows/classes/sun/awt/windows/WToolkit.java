@@ -72,9 +72,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     private static final PlatformLogger log = PlatformLogger.getLogger("sun.awt.windows.WToolkit");
 
-    // Desktop property which specifies whether XP visual styles are in effect
-    public static final String XPSTYLE_THEME_ACTIVE = "win.xpstyle.themeActive";
-
     static GraphicsConfiguration config;
 
     // System clipboard.
@@ -897,7 +894,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
     private synchronized void lazilyInitWProps() {
         if (wprops == null) {
             wprops = new WDesktopProperties(this);
-            updateProperties(wprops.getProperties());
+            updateProperties();
         }
     }
 
@@ -932,27 +929,21 @@ public final class WToolkit extends SunToolkit implements Runnable {
      * Windows doesn't always send WM_SETTINGCHANGE when it should.
      */
     private void windowsSettingChange() {
-        // JDK-8039383: Have to update the value of XPSTYLE_THEME_ACTIVE property
-        // as soon as possible to prevent NPE and other errors because theme data
-        // has become unavailable.
-        final Map<String, Object> props = getWProps();
-        updateXPStyleEnabled(props.get(XPSTYLE_THEME_ACTIVE));
-
         EventQueue.invokeLater(new Runnable() {
             @Override
             public void run() {
-                updateProperties(props);
+                updateProperties();
             }
         });
     }
 
-    private synchronized void updateProperties(final Map<String, Object> props) {
-        if (null == props) {
+    private synchronized void updateProperties() {
+        if (null == wprops) {
+            // wprops has not been initialized, so we have nothing to update
             return;
         }
 
-        updateXPStyleEnabled(props.get(XPSTYLE_THEME_ACTIVE));
-
+        Map<String, Object> props = wprops.getProperties();
         for (String propName : props.keySet()) {
             Object val = props.get(propName);
             if (log.isLoggable(PlatformLogger.Level.FINER)) {
@@ -960,14 +951,6 @@ public final class WToolkit extends SunToolkit implements Runnable {
             }
             setDesktopProperty(propName, val);
         }
-    }
-
-    private synchronized Map<String, Object> getWProps() {
-        return (wprops != null) ? wprops.getProperties() : null;
-    }
-
-    private void updateXPStyleEnabled(final Object dskProp) {
-        ThemeReader.xpStyleEnabled = Boolean.TRUE.equals(dskProp);
     }
 
     @Override
