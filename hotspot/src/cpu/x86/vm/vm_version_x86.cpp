@@ -590,6 +590,17 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseAESIntrinsics, false);
   }
 
+  if (UseSHA) {
+    warning("SHA instructions are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA, false);
+  }
+  if (UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics) {
+    warning("SHA intrinsics are not available on this CPU");
+    FLAG_SET_DEFAULT(UseSHA1Intrinsics, false);
+    FLAG_SET_DEFAULT(UseSHA256Intrinsics, false);
+    FLAG_SET_DEFAULT(UseSHA512Intrinsics, false);
+  }
+
   // Adjust RTM (Restricted Transactional Memory) flags
   if (!supports_rtm() && UseRTMLocking) {
     // Can't continue because UseRTMLocking affects UseBiasedLocking flag

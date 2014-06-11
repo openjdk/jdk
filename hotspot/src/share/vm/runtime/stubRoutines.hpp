@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,6 +207,13 @@ class StubRoutines: AllStatic {
   static address _cipherBlockChaining_encryptAESCrypt;
   static address _cipherBlockChaining_decryptAESCrypt;
 
+  static address _sha1_implCompress;
+  static address _sha1_implCompressMB;
+  static address _sha256_implCompress;
+  static address _sha256_implCompressMB;
+  static address _sha512_implCompress;
+  static address _sha512_implCompressMB;
+
   static address _updateBytesCRC32;
   static address _crc_table_adr;
 
@@ -355,6 +362,13 @@ class StubRoutines: AllStatic {
   static address aescrypt_decryptBlock()                { return _aescrypt_decryptBlock; }
   static address cipherBlockChaining_encryptAESCrypt()  { return _cipherBlockChaining_encryptAESCrypt; }
   static address cipherBlockChaining_decryptAESCrypt()  { return _cipherBlockChaining_decryptAESCrypt; }
+
+  static address sha1_implCompress()     { return _sha1_implCompress; }
+  static address sha1_implCompressMB()   { return _sha1_implCompressMB; }
+  static address sha256_implCompress()   { return _sha256_implCompress; }
+  static address sha256_implCompressMB() { return _sha256_implCompressMB; }
+  static address sha512_implCompress()   { return _sha512_implCompress; }
+  static address sha512_implCompressMB() { return _sha512_implCompressMB; }
 
   static address updateBytesCRC32()    { return _updateBytesCRC32; }
   static address crc_table_addr()      { return _crc_table_adr; }
