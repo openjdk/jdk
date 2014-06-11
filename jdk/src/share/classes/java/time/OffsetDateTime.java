@@ -357,10 +357,11 @@ public final class OffsetDateTime
         }
         try {
             ZoneOffset offset = ZoneOffset.from(temporal);
-            try {
-                LocalDateTime ldt = LocalDateTime.from(temporal);
-                return OffsetDateTime.of(ldt, offset);
-            } catch (DateTimeException ignore) {
+            LocalDate date = temporal.query(TemporalQueries.localDate());
+            LocalTime time = temporal.query(TemporalQueries.localTime());
+            if (date != null && time != null) {
+                return OffsetDateTime.of(date, time, offset);
+            } else {
                 Instant instant = Instant.from(temporal);
                 return OffsetDateTime.ofInstant(instant, offset);
             }
