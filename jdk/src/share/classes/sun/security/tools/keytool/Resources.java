@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,8 @@ public class Resources extends java.util.ListResourceBundle {
                  "Key and Certificate Management Tool"},
         {"Commands.", "Commands:"},
         {"Use.keytool.command.name.help.for.usage.of.command.name",
-                "Use \"keytool -command_name -help\" for usage of command_name"},
+                "Use \"keytool -command_name -help\" for usage of command_name.\n" +
+                "Use the -conf <url> option to specify a pre-configured options file."},
         // keytool: help: commands
         {"Generates.a.certificate.request",
                 "Generates a certificate request"}, //-certreq
