@@ -217,3 +217,111 @@ compact1_minimal = \
  -:needs_compact3 \
  -:needs_jre \
  -:needs_jdk
+
+# All tests that explicitly set the G1 GC
+#
+needs_g1gc = \
+  compiler/regalloc/C1ObjectSpillInLogicOp.java \
+  gc/8000311/Test8000311.java \
+  gc/TestG1ZeroPGCTJcmdThreadPrint.java \
+  gc/TestSystemGC.java \
+  gc/arguments/TestAlignmentToUseLargePages.java \
+  gc/arguments/TestG1HeapRegionSize.java \
+  gc/arguments/TestG1HeapSizeFlags.java \
+  gc/arguments/TestMaxHeapSizeTools.java \
+  gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/g1/ \
+  gc/metaspace/G1AddMetaspaceDependency.java \
+  gc/metaspace/TestMetaspacePerfCounters.java \
+  gc/startup_warnings/TestG1.java 
+
+# All tests that explicitly set the serial GC
+#
+needs_serialgc = \
+  gc/TestSystemGC.java \
+  gc/arguments/TestAlignmentToUseLargePages.java \
+  gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestSerialHeapSizeFlags.java \
+  gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/defnew/HeapChangeLogging.java \
+  gc/metaspace/TestMetaspacePerfCounters.java \
+  gc/metaspace/TestPerfCountersAndMemoryPools.java \
+  gc/startup_warnings/TestSerialGC.java 
+
+# All tests that explicitly set the parallel GC
+#
+needs_parallelgc = \
+  gc/TestSystemGC.java \
+  gc/arguments/TestAlignmentToUseLargePages.java \
+  gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestMinInitialErgonomics.java \
+  gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/metaspace/TestMetaspacePerfCounters.java \
+  gc/parallelScavenge/ \
+  gc/startup_warnings/TestParallelGC.java \
+  gc/startup_warnings/TestParallelScavengeSerialOld.java
+
+# All tests that explicitly set the CMS GC
+#
+needs_cmsgc = \
+  gc/6581734/Test6581734.java \
+  gc/TestSystemGC.java \
+  gc/arguments/TestAlignmentToUseLargePages.java \
+  gc/arguments/TestCMSHeapSizeFlags.java \
+  gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/concurrentMarkSweep/ \
+  gc/startup_warnings/TestCMS.java \
+  gc/startup_warnings/TestCMSIncrementalMode.java \
+  gc/startup_warnings/TestCMSNoIncrementalMode.java \
+  gc/startup_warnings/TestDefNewCMS.java \
+  gc/startup_warnings/TestParNewCMS.java
+
+# All tests that explicitly set some GC
+#
+needs_gc = \
+  :needs_g1gc \
+  :needs_serialgc \
+  :needs_parallelgc \
+  :needs_cmsgc
+
+# All tests that do not set any GC explicitly
+#
+not_needs_gc = \
+  :jdk \
+ -:needs_gc
+
+# All tests that could be executed with the G1 GC without VM flags conflict
+#
+applicable_g1gc = \
+  :jdk \
+ -:needs_serialgc \
+ -:needs_parallelgc \
+ -:needs_cmsgc
+
+# All tests that could be executed with the serial GC without VM flags conflict
+#
+applicable_serialgc = \
+  :jdk \
+ -:needs_g1gc \
+ -:needs_parallelgc \
+ -:needs_cmsgc
+
+# All tests that could be executed with the parallel GC without VM flags conflict
+#
+applicable_parallelgc = \
+  :jdk \
+ -:needs_g1gc \
+ -:needs_serialgc \
+ -:needs_cmsgc
+
+# All tests that could be executed with the CMS GC without VM flags conflict
+#
+applicable_cmsgc = \
+  :jdk \
+ -:needs_g1gc \
+ -:needs_serialgc \
+ -:needs_parallelgc
+
+
