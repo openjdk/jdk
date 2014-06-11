@@ -589,7 +589,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
                                          AttributeSet a) throws IOException {
         int n = a.getAttributeCount();
         out.writeInt(n);
-        Enumeration keys = a.getAttributeNames();
+        Enumeration<?> keys = a.getAttributeNames();
         while (keys.hasMoreElements()) {
             Object key = keys.nextElement();
             if (key instanceof Serializable) {
@@ -771,7 +771,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         public SmallAttributeSet(AttributeSet attrs) {
             int n = attrs.getAttributeCount();
             Object[] tbl = new Object[2 * n];
-            Enumeration names = attrs.getAttributeNames();
+            Enumeration<?> names = attrs.getAttributeNames();
             int i = 0;
             while (names.hasMoreElements()) {
                 tbl[i] = names.nextElement();
@@ -971,7 +971,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         public boolean containsAttributes(AttributeSet attrs) {
             boolean result = true;
 
-            Enumeration names = attrs.getAttributeNames();
+            Enumeration<?> names = attrs.getAttributeNames();
             while (result && names.hasMoreElements()) {
                 Object name = names.nextElement();
                 result = attrs.getAttribute(name).equals(getAttribute(name));
@@ -1051,7 +1051,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
             } else {
                 keys.removeAllElements();
                 data.removeAllElements();
-                Enumeration names = a.getAttributeNames();
+                Enumeration<?> names = a.getAttributeNames();
                 while (names.hasMoreElements()) {
                     Object name = names.nextElement();
                     addAttribute(name, a.getAttribute(name));
@@ -1117,7 +1117,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
                     addAttribute(tbl[i], tbl[i+1]);
                 }
             } else {
-                Enumeration names = attr.getAttributeNames();
+                Enumeration<?> names = attr.getAttributeNames();
                 while (names.hasMoreElements()) {
                     Object name = names.nextElement();
                     addAttribute(name, attr.getAttribute(name));
@@ -1142,7 +1142,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
         /**
          * Removes the set of keys from the set.
          */
-        public void removeAttributes(Enumeration names) {
+        public void removeAttributes(Enumeration<?> names) {
             while (names.hasMoreElements()) {
                 Object name = names.nextElement();
                 removeAttribute(name);
@@ -1153,7 +1153,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
          * Removes the set of matching attributes from the set.
          */
         public void removeAttributes(AttributeSet attr) {
-            Enumeration names = attr.getAttributeNames();
+            Enumeration<?> names = attr.getAttributeNames();
             while (names.hasMoreElements()) {
                 Object name = names.nextElement();
                 Object value = attr.getAttribute(name);

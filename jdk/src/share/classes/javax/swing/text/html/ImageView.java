@@ -691,10 +691,11 @@ public class ImageView extends View {
         URL src = getImageURL();
         Image newImage = null;
         if (src != null) {
-            Dictionary cache = (Dictionary)getDocument().
-                                    getProperty(IMAGE_CACHE_PROPERTY);
+            @SuppressWarnings("unchecked")
+            Dictionary<URL, Image> cache = (Dictionary)getDocument().
+                getProperty(IMAGE_CACHE_PROPERTY);
             if (cache != null) {
-                newImage = (Image)cache.get(src);
+                newImage = cache.get(src);
             }
             else {
                 newImage = Toolkit.getDefaultToolkit().createImage(src);

@@ -370,6 +370,7 @@ class DTD implements DTDConstants {
     private static Hashtable<String, DTD> getDtdHash() {
         AppContext appContext = AppContext.getAppContext();
 
+        @SuppressWarnings("unchecked")
         Hashtable<String, DTD> result = (Hashtable<String, DTD>) appContext.get(DTD_HASH_KEY);
 
         if (result == null) {

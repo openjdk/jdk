@@ -590,7 +590,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     protected Parser getParser() {
         if (defaultParser == null) {
             try {
-                Class c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
+                Class<?> c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
                 defaultParser = (Parser) c.newInstance();
             } catch (Throwable e) {
             }
@@ -1874,7 +1874,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Returns the object in an AttributeSet matching a key
      */
     static private Object getAttrValue(AttributeSet attr, HTML.Attribute key) {
-        Enumeration names = attr.getAttributeNames();
+        Enumeration<?> names = attr.getAttributeNames();
         while (names.hasMoreElements()) {
             Object nextKey = names.nextElement();
             Object nextVal = attr.getAttribute(nextKey);
