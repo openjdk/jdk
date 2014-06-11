@@ -156,8 +156,8 @@ public class WindowsMenuBarUI extends BasicMenuBarUI
 
     @Override
     public void paint(Graphics g, JComponent c) {
-        XPStyle xp = XPStyle.getXP();
-        if (xp != null && WindowsMenuItemUI.isVistaPainting()) {
+        if (WindowsMenuItemUI.isVistaPainting()) {
+            XPStyle xp = XPStyle.getXP();
             Skin skin;
             skin = xp.getSkin(c, Part.MP_BARBACKGROUND);
             int width = c.getWidth();

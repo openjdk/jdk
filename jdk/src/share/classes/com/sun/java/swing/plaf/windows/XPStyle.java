@@ -115,7 +115,7 @@ class XPStyle {
                 }
             }
         }
-        return ThemeReader.isXPStyleEnabled() ? xp : null;
+        return xp;
     }
 
     static boolean isVista() {
@@ -180,10 +180,9 @@ class XPStyle {
      * should probably be cached there instead of here.
      */
     Dimension getDimension(Component c, Part part, State state, Prop prop) {
-        Dimension d = ThemeReader.getPosition(part.getControlName(c), part.getValue(),
-                                              State.getValue(part, state),
-                                              prop.getValue());
-        return (d != null) ? d : new Dimension();
+        return ThemeReader.getPosition(part.getControlName(c), part.getValue(),
+                                       State.getValue(part, state),
+                                       prop.getValue());
     }
 
     /** Get a named <code>Point</code> (e.g. a location or an offset) value
@@ -200,7 +199,11 @@ class XPStyle {
         Dimension d = ThemeReader.getPosition(part.getControlName(c), part.getValue(),
                                               State.getValue(part, state),
                                               prop.getValue());
-        return (d != null) ? new Point(d.width, d.height) : new Point();
+        if (d != null) {
+            return new Point(d.width, d.height);
+        } else {
+            return null;
+        }
     }
 
     /** Get a named <code>Insets</code> value from the current style
@@ -214,10 +217,9 @@ class XPStyle {
      * The return value is already cached in those places.
      */
     Insets getMargin(Component c, Part part, State state, Prop prop) {
-        Insets insets = ThemeReader.getThemeMargins(part.getControlName(c), part.getValue(),
-                                                    State.getValue(part, state),
-                                                    prop.getValue());
-        return (insets != null) ? insets : new Insets(0, 0, 0, 0);
+        return ThemeReader.getThemeMargins(part.getControlName(c), part.getValue(),
+                                           State.getValue(part, state),
+                                           prop.getValue());
     }
 
 
@@ -507,17 +509,16 @@ class XPStyle {
             int boundingWidth = 100;
             int boundingHeight = 100;
 
-            Insets insets = ThemeReader.getThemeBackgroundContentMargins(
+            return ThemeReader.getThemeBackgroundContentMargins(
                 part.getControlName(null), part.getValue(),
                 0, boundingWidth, boundingHeight);
-            return (insets != null) ? insets : new Insets(0, 0, 0, 0);
         }
 
         private int getWidth(State state) {
             if (size == null) {
                 size = getPartSize(part, state);
             }
-            return (size != null) ? size.width : 0;
+            return size.width;
         }
 
         int getWidth() {
@@ -528,7 +529,7 @@ class XPStyle {
             if (size == null) {
                 size = getPartSize(part, state);
             }
-            return (size != null) ? size.height : 0;
+            return size.height;
         }
 
         int getHeight() {
@@ -585,9 +586,6 @@ class XPStyle {
          * @param state which state to paint
          */
         void paintSkin(Graphics g, int dx, int dy, int dw, int dh, State state) {
-            if (XPStyle.getXP() == null) {
-                return;
-            }
             if (ThemeReader.isGetThemeTransitionDurationDefined()
                   && component instanceof JComponent
                   && SwingUtilities.getAncestorOfClass(CellRendererPane.class,
@@ -613,9 +611,6 @@ class XPStyle {
          * @param state which state to paint
          */
         void paintSkinRaw(Graphics g, int dx, int dy, int dw, int dh, State state) {
-            if (XPStyle.getXP() == null) {
-                return;
-            }
             skinPainter.paint(null, g, dx, dy, dw, dh, this, state);
         }
 
@@ -635,7 +630,7 @@ class XPStyle {
         void paintSkin(Graphics g, int dx, int dy, int dw, int dh, State state,
                 boolean borderFill) {
             if(borderFill && "borderfill".equals(getTypeEnumName(component, part,
-                    state, Prop.BGTYPE)) && XPStyle.getXP() == null) {
+                    state, Prop.BGTYPE))) {
                 return;
             }
             skinPainter.paint(null, g, dx, dy, dw, dh, this, state);
@@ -689,7 +684,7 @@ class XPStyle {
 
         public GlyphButton(Component parent, Part part) {
             XPStyle xp = getXP();
-            skin = xp != null ? xp.getSkin(parent, part) : null;
+            skin = xp.getSkin(parent, part);
             setBorder(null);
             setContentAreaFilled(false);
             setMinimumSize(new Dimension(5, 5));
@@ -714,16 +709,13 @@ class XPStyle {
         }
 
         public void paintComponent(Graphics g) {
-            if (XPStyle.getXP() == null || skin == null) {
-                return;
-            }
             Dimension d = getSize();
             skin.paintSkin(g, 0, 0, d.width, d.height, getState());
         }
 
         public void setPart(Component parent, Part part) {
             XPStyle xp = getXP();
-            skin = xp != null ? xp.getSkin(parent, part) : null;
+            skin = xp.getSkin(parent, part);
             revalidate();
             repaint();
         }

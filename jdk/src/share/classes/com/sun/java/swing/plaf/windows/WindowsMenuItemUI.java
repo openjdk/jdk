@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -109,8 +109,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
     static void paintBackground(WindowsMenuItemUIAccessor menuItemUI,
             Graphics g, JMenuItem menuItem, Color bgColor) {
         assert isVistaPainting();
-        XPStyle xp = XPStyle.getXP();
-        if (xp != null && isVistaPainting()) {
+        if (isVistaPainting()) {
             int menuWidth = menuItem.getWidth();
             int menuHeight = menuItem.getHeight();
             if (menuItem.isOpaque()) {
@@ -119,6 +118,7 @@ public class WindowsMenuItemUI extends BasicMenuItemUI {
                 g.fillRect(0,0, menuWidth, menuHeight);
                 g.setColor(oldColor);
             }
+            XPStyle xp = XPStyle.getXP();
             Part part = menuItemUI.getPart(menuItem);
             Skin skin = xp.getSkin(menuItem, part);
             skin.paintSkin(g, 0 , 0,
