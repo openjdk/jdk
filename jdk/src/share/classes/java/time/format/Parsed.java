@@ -66,6 +66,7 @@ import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.CLOCK_HOUR_OF_DAY;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MICRO_OF_DAY;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_DAY;
@@ -74,14 +75,17 @@ import static java.time.temporal.ChronoField.MINUTE_OF_DAY;
 import static java.time.temporal.ChronoField.MINUTE_OF_HOUR;
 import static java.time.temporal.ChronoField.NANO_OF_DAY;
 import static java.time.temporal.ChronoField.NANO_OF_SECOND;
+import static java.time.temporal.ChronoField.OFFSET_SECONDS;
 import static java.time.temporal.ChronoField.SECOND_OF_DAY;
 import static java.time.temporal.ChronoField.SECOND_OF_MINUTE;
 
 import java.time.DateTimeException;
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
 import java.time.chrono.ChronoZonedDateTime;
@@ -241,12 +245,15 @@ final class Parsed implements TemporalAccessor {
         resolveTimeLenient();
         crossCheck();
         resolvePeriod();
+        resolveFractional();
+        resolveInstant();
         return this;
     }
 
     //-----------------------------------------------------------------------
     private void resolveFields() {
         // resolve ChronoField
+        resolveInstantFields();
         resolveDateFields();
         resolveTimeFields();
 
@@ -300,6 +307,7 @@ final class Parsed implements TemporalAccessor {
             }
             // if something changed then have to redo ChronoField resolve
             if (changedCount > 0) {
+                resolveInstantFields();
                 resolveDateFields();
                 resolveTimeFields();
             }
@@ -313,6 +321,29 @@ final class Parsed implements TemporalAccessor {
                     " differs from " + changeField + " " + changeValue +
                     " while resolving  " + targetField);
         }
+    }
+
+    //-----------------------------------------------------------------------
+    private void resolveInstantFields() {
+        // resolve parsed instant seconds to date and time if zone available
+        if (fieldValues.containsKey(INSTANT_SECONDS)) {
+            if (zone != null) {
+                resolveInstantFields0(zone);
+            } else {
+                Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
+                if (offsetSecs != null) {
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+                    resolveInstantFields0(offset);
+                }
+            }
+        }
+    }
+
+    private void resolveInstantFields0(ZoneId selectedZone) {
+        Instant instant = Instant.ofEpochSecond(fieldValues.remove(INSTANT_SECONDS));
+        ChronoZonedDateTime<?> zdt = chrono.zonedDateTime(instant, selectedZone);
+        updateCheckConflict(zdt.toLocalDate());
+        updateCheckConflict(INSTANT_SECONDS, SECOND_OF_DAY, (long) zdt.toLocalTime().toSecondOfDay());
     }
 
     //-----------------------------------------------------------------------
@@ -530,6 +561,42 @@ final class Parsed implements TemporalAccessor {
         if (date != null && time != null && excessDays.isZero() == false) {
             date = date.plus(excessDays);
             excessDays = Period.ZERO;
+        }
+    }
+
+    private void resolveFractional() {
+        // ensure fractional seconds available as ChronoField requires
+        // resolveTimeLenient() will have merged MICRO_OF_SECOND/MILLI_OF_SECOND to NANO_OF_SECOND
+        if (time == null &&
+                (fieldValues.containsKey(INSTANT_SECONDS) ||
+                    fieldValues.containsKey(SECOND_OF_DAY) ||
+                    fieldValues.containsKey(SECOND_OF_MINUTE))) {
+            if (fieldValues.containsKey(NANO_OF_SECOND)) {
+                long nos = fieldValues.get(NANO_OF_SECOND);
+                fieldValues.put(MICRO_OF_SECOND, nos / 1000);
+                fieldValues.put(MILLI_OF_SECOND, nos / 1000000);
+            } else {
+                fieldValues.put(NANO_OF_SECOND, 0L);
+                fieldValues.put(MICRO_OF_SECOND, 0L);
+                fieldValues.put(MILLI_OF_SECOND, 0L);
+            }
+        }
+    }
+
+    private void resolveInstant() {
+        // add instant seconds if we have date, time and zone
+        if (date != null && time != null) {
+            if (zone != null) {
+                long instant = date.atTime(time).atZone(zone).getLong(ChronoField.INSTANT_SECONDS);
+                fieldValues.put(INSTANT_SECONDS, instant);
+            } else {
+                Long offsetSecs = fieldValues.get(OFFSET_SECONDS);
+                if (offsetSecs != null) {
+                    ZoneOffset offset = ZoneOffset.ofTotalSeconds(offsetSecs.intValue());
+                    long instant = date.atTime(time).atZone(offset).getLong(ChronoField.INSTANT_SECONDS);
+                    fieldValues.put(INSTANT_SECONDS, instant);
+                }
+            }
         }
     }
 

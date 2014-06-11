@@ -375,7 +375,7 @@ public final class Instant
             return Instant.ofEpochSecond(instantSecs, nanoOfSecond);
         } catch (DateTimeException ex) {
             throw new DateTimeException("Unable to obtain Instant from TemporalAccessor: " +
-                    temporal + " of type " + temporal.getClass().getName());
+                    temporal + " of type " + temporal.getClass().getName(), ex);
         }
     }
 
