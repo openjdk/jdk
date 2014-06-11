@@ -1218,7 +1218,7 @@ public class XMLDTDValidator
                     // references appear in the document.
                     // REVISIT: this can be combined to a single check in
                     // startEntity if we add one more argument in
-                    // startEnity, inAttrValue
+                    // startEntity, inAttrValue
                     String nonNormalizedValue = attributes.getNonNormalizedValue(i);
                     if (nonNormalizedValue != null) {
                         String entityName = getExternalEntityRefInAttrValue(nonNormalizedValue);
