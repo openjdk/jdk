@@ -2187,6 +2187,10 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
+  if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
+    FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
+  }
+
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
   status = status && verify_percentage(GCTimeLimit, "GCTimeLimit");
   if (GCTimeLimit == 100) {
