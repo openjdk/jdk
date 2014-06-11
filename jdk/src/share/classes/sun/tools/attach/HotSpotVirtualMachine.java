@@ -33,7 +33,7 @@ import com.sun.tools.attach.spi.AttachProvider;
 import java.io.InputStream;
 import java.io.IOException;
 import java.util.Properties;
-import java.util.Map;
+import java.util.stream.Collectors;
 
 /*
  * The HotSpot implementation of com.sun.tools.attach.VirtualMachine.
@@ -159,6 +159,50 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             if (in != null) in.close();
         }
         return props;
+    }
+
+    private static final String MANAGMENT_PREFIX = "com.sun.management.";
+
+    private static boolean checkedKeyName(Object key) {
+        if (!(key instanceof String)) {
+            throw new IllegalArgumentException("Invalid option (not a String): "+key);
+        }
+        if (!((String)key).startsWith(MANAGMENT_PREFIX)) {
+            throw new IllegalArgumentException("Invalid option: "+key);
+        }
+        return true;
+    }
+
+    private static String stripKeyName(Object key) {
+        return ((String)key).substring(MANAGMENT_PREFIX.length());
+    }
+
+    @Override
+    public void startManagementAgent(Properties agentProperties) throws IOException {
+        if (agentProperties == null) {
+            throw new NullPointerException("agentProperties cannot be null");
+        }
+        // Convert the arguments into arguments suitable for the Diagnostic Command:
+        // "ManagementAgent.start jmxremote.port=5555 jmxremote.authenticate=false"
+        String args = agentProperties.entrySet().stream()
+            .filter(entry -> checkedKeyName(entry.getKey()))
+            .map(entry -> stripKeyName(entry.getKey()) + "=" + escape(entry.getValue()))
+            .collect(Collectors.joining(" "));
+        executeJCmd("ManagementAgent.start " + args);
+    }
+
+    private String escape(Object arg) {
+        String value = arg.toString();
+        if (value.contains(" ")) {
+            return "'" + value + "'";
+        }
+        return value;
+    }
+
+    @Override
+    public String startLocalManagementAgent() throws IOException {
+        executeJCmd("ManagementAgent.start_local");
+        return getAgentProperties().getProperty("com.sun.management.jmxremote.localConnectorAddress");
     }
 
     // --- HotSpot specific methods ---
