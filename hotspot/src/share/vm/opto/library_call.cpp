@@ -316,6 +316,14 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
+  bool inline_sha_implCompress(vmIntrinsics::ID id);
+  bool inline_digestBase_implCompressMB(int predicate);
+  bool inline_sha_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass_SHA,
+                                 bool long_state, address stubAddr, const char *stubName,
+                                 Node* src_start, Node* ofs, Node* limit);
+  Node* get_state_from_sha_object(Node *sha_object);
+  Node* get_state_from_sha5_object(Node *sha_object);
+  Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray();
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
@@ -517,6 +525,23 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!UseAESIntrinsics) return NULL;
     // these two require the predicated logic
     predicates = 1;
+    break;
+
+  case vmIntrinsics::_sha_implCompress:
+    if (!UseSHA1Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_sha2_implCompress:
+    if (!UseSHA256Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_sha5_implCompress:
+    if (!UseSHA512Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_digestBase_implCompressMB:
+    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return NULL;
+    predicates = 3;
     break;
 
   case vmIntrinsics::_updateCRC32:
@@ -886,6 +911,14 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt(intrinsic_id());
 
+  case vmIntrinsics::_sha_implCompress:
+  case vmIntrinsics::_sha2_implCompress:
+  case vmIntrinsics::_sha5_implCompress:
+    return inline_sha_implCompress(intrinsic_id());
+
+  case vmIntrinsics::_digestBase_implCompressMB:
+    return inline_digestBase_implCompressMB(predicate);
+
   case vmIntrinsics::_encodeISOArray:
     return inline_encodeISOArray();
 
@@ -923,6 +956,8 @@ Node* LibraryCallKit::try_to_predicate(int predicate) {
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(true);
+  case vmIntrinsics::_digestBase_implCompressMB:
+    return inline_digestBase_implCompressMB_predicate(predicate);
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -6129,4 +6164,259 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
 
   record_for_igvn(region);
   return _gvn.transform(region);
+}
+
+//------------------------------inline_sha_implCompress-----------------------
+//
+// Calculate SHA (i.e., SHA-1) for single-block byte[] array.
+// void com.sun.security.provider.SHA.implCompress(byte[] buf, int ofs)
+//
+// Calculate SHA2 (i.e., SHA-244 or SHA-256) for single-block byte[] array.
+// void com.sun.security.provider.SHA2.implCompress(byte[] buf, int ofs)
+//
+// Calculate SHA5 (i.e., SHA-384 or SHA-512) for single-block byte[] array.
+// void com.sun.security.provider.SHA5.implCompress(byte[] buf, int ofs)
+//
+bool LibraryCallKit::inline_sha_implCompress(vmIntrinsics::ID id) {
+  assert(callee()->signature()->size() == 2, "sha_implCompress has 2 parameters");
+
+  Node* sha_obj = argument(0);
+  Node* src     = argument(1); // type oop
+  Node* ofs     = argument(2); // type int
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+  // 'src_start' points to src array + offset
+  Node* src_start = array_element_address(src, ofs, src_elem);
+  Node* state = NULL;
+  address stubAddr;
+  const char *stubName;
+
+  switch(id) {
+  case vmIntrinsics::_sha_implCompress:
+    assert(UseSHA1Intrinsics, "need SHA1 instruction support");
+    state = get_state_from_sha_object(sha_obj);
+    stubAddr = StubRoutines::sha1_implCompress();
+    stubName = "sha1_implCompress";
+    break;
+  case vmIntrinsics::_sha2_implCompress:
+    assert(UseSHA256Intrinsics, "need SHA256 instruction support");
+    state = get_state_from_sha_object(sha_obj);
+    stubAddr = StubRoutines::sha256_implCompress();
+    stubName = "sha256_implCompress";
+    break;
+  case vmIntrinsics::_sha5_implCompress:
+    assert(UseSHA512Intrinsics, "need SHA512 instruction support");
+    state = get_state_from_sha5_object(sha_obj);
+    stubAddr = StubRoutines::sha512_implCompress();
+    stubName = "sha512_implCompress";
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    return false;
+  }
+  if (state == NULL) return false;
+
+  // Call the stub.
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::sha_implCompress_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, state);
+
+  return true;
+}
+
+//------------------------------inline_digestBase_implCompressMB-----------------------
+//
+// Calculate SHA/SHA2/SHA5 for multi-block byte[] array.
+// int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+//
+bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
+  assert(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
+         "need SHA1/SHA256/SHA512 instruction support");
+  assert((uint)predicate < 3, "sanity");
+  assert(callee()->signature()->size() == 3, "digestBase_implCompressMB has 3 parameters");
+
+  Node* digestBase_obj = argument(0); // The receiver was checked for NULL already.
+  Node* src            = argument(1); // byte[] array
+  Node* ofs            = argument(2); // type int
+  Node* limit          = argument(3); // type int
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+  // 'src_start' points to src array + offset
+  Node* src_start = array_element_address(src, ofs, src_elem);
+
+  const char* klass_SHA_name = NULL;
+  const char* stub_name = NULL;
+  address     stub_addr = NULL;
+  bool        long_state = false;
+
+  switch (predicate) {
+  case 0:
+    if (UseSHA1Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA";
+      stub_name = "sha1_implCompressMB";
+      stub_addr = StubRoutines::sha1_implCompressMB();
+    }
+    break;
+  case 1:
+    if (UseSHA256Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA2";
+      stub_name = "sha256_implCompressMB";
+      stub_addr = StubRoutines::sha256_implCompressMB();
+    }
+    break;
+  case 2:
+    if (UseSHA512Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA5";
+      stub_name = "sha512_implCompressMB";
+      stub_addr = StubRoutines::sha512_implCompressMB();
+      long_state = true;
+    }
+    break;
+  default:
+    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+  }
+  if (klass_SHA_name != NULL) {
+    // get DigestBase klass to lookup for SHA klass
+    const TypeInstPtr* tinst = _gvn.type(digestBase_obj)->isa_instptr();
+    assert(tinst != NULL, "digestBase_obj is not instance???");
+    assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+
+    ciKlass* klass_SHA = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_SHA_name));
+    assert(klass_SHA->is_loaded(), "predicate checks that this class is loaded");
+    ciInstanceKlass* instklass_SHA = klass_SHA->as_instance_klass();
+    return inline_sha_implCompressMB(digestBase_obj, instklass_SHA, long_state, stub_addr, stub_name, src_start, ofs, limit);
+  }
+  return false;
+}
+//------------------------------inline_sha_implCompressMB-----------------------
+bool LibraryCallKit::inline_sha_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_SHA,
+                                               bool long_state, address stubAddr, const char *stubName,
+                                               Node* src_start, Node* ofs, Node* limit) {
+  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_SHA);
+  const TypeOopPtr* xtype = aklass->as_instance_type();
+  Node* sha_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
+  sha_obj = _gvn.transform(sha_obj);
+
+  Node* state;
+  if (long_state) {
+    state = get_state_from_sha5_object(sha_obj);
+  } else {
+    state = get_state_from_sha_object(sha_obj);
+  }
+  if (state == NULL) return false;
+
+  // Call the stub.
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                 OptoRuntime::digestBase_implCompressMB_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, state, ofs, limit);
+  // return ofs (int)
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+
+  return true;
+}
+
+//------------------------------get_state_from_sha_object-----------------------
+Node * LibraryCallKit::get_state_from_sha_object(Node *sha_object) {
+  Node* sha_state = load_field_from_object(sha_object, "state", "[I", /*is_exact*/ false);
+  assert (sha_state != NULL, "wrong version of sun.security.provider.SHA/SHA2");
+  if (sha_state == NULL) return (Node *) NULL;
+
+  // now have the array, need to get the start address of the state array
+  Node* state = array_element_address(sha_state, intcon(0), T_INT);
+  return state;
+}
+
+//------------------------------get_state_from_sha5_object-----------------------
+Node * LibraryCallKit::get_state_from_sha5_object(Node *sha_object) {
+  Node* sha_state = load_field_from_object(sha_object, "state", "[J", /*is_exact*/ false);
+  assert (sha_state != NULL, "wrong version of sun.security.provider.SHA5");
+  if (sha_state == NULL) return (Node *) NULL;
+
+  // now have the array, need to get the start address of the state array
+  Node* state = array_element_address(sha_state, intcon(0), T_LONG);
+  return state;
+}
+
+//----------------------------inline_digestBase_implCompressMB_predicate----------------------------
+// Return node representing slow path of predicate check.
+// the pseudo code we want to emulate with this predicate is:
+//    if (digestBaseObj instanceof SHA/SHA2/SHA5) do_intrinsic, else do_javapath
+//
+Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) {
+  assert(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
+         "need SHA1/SHA256/SHA512 instruction support");
+  assert((uint)predicate < 3, "sanity");
+
+  // The receiver was checked for NULL already.
+  Node* digestBaseObj = argument(0);
+
+  // get DigestBase klass for instanceOf check
+  const TypeInstPtr* tinst = _gvn.type(digestBaseObj)->isa_instptr();
+  assert(tinst != NULL, "digestBaseObj is null");
+  assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+
+  const char* klass_SHA_name = NULL;
+  switch (predicate) {
+  case 0:
+    if (UseSHA1Intrinsics) {
+      // we want to do an instanceof comparison against the SHA class
+      klass_SHA_name = "sun/security/provider/SHA";
+    }
+    break;
+  case 1:
+    if (UseSHA256Intrinsics) {
+      // we want to do an instanceof comparison against the SHA2 class
+      klass_SHA_name = "sun/security/provider/SHA2";
+    }
+    break;
+  case 2:
+    if (UseSHA512Intrinsics) {
+      // we want to do an instanceof comparison against the SHA5 class
+      klass_SHA_name = "sun/security/provider/SHA5";
+    }
+    break;
+  default:
+    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+  }
+
+  ciKlass* klass_SHA = NULL;
+  if (klass_SHA_name != NULL) {
+    klass_SHA = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_SHA_name));
+  }
+  if ((klass_SHA == NULL) || !klass_SHA->is_loaded()) {
+    // if none of SHA/SHA2/SHA5 is loaded, we never take the intrinsic fast path
+    Node* ctrl = control();
+    set_control(top()); // no intrinsic path
+    return ctrl;
+  }
+  ciInstanceKlass* instklass_SHA = klass_SHA->as_instance_klass();
+
+  Node* instofSHA = gen_instanceof(digestBaseObj, makecon(TypeKlassPtr::make(instklass_SHA)));
+  Node* cmp_instof = _gvn.transform(new CmpINode(instofSHA, intcon(1)));
+  Node* bool_instof = _gvn.transform(new BoolNode(cmp_instof, BoolTest::ne));
+  Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
+
+  return instof_false;  // even if it is NULL
 }
