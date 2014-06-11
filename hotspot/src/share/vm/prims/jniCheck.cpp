@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/guardedMemory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -321,6 +322,74 @@ check_is_obj_array(JavaThread* thr, jarray jArray) {
   if (!aOop->is_objArray()) {
     ReportJNIFatalError(thr, fatal_object_array_expected);
   }
+}
+
+/*
+ * Copy and wrap array elements for bounds checking.
+ * Remember the original elements (GuardedMemory::get_tag())
+ */
+static void* check_jni_wrap_copy_array(JavaThread* thr, jarray array,
+    void* orig_elements) {
+  void* result;
+  IN_VM(
+    oop a = JNIHandles::resolve_non_null(array);
+    size_t len = arrayOop(a)->length() <<
+        TypeArrayKlass::cast(a->klass())->log2_element_size();
+    result = GuardedMemory::wrap_copy(orig_elements, len, orig_elements);
+  )
+  return result;
+}
+
+static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
+    void* obj, void* carray, size_t* rsz) {
+  if (carray == NULL) {
+    tty->print_cr("%s: elements vector NULL" PTR_FORMAT, fn_name, p2i(obj));
+    NativeReportJNIFatalError(thr, "Elements vector NULL");
+  }
+  GuardedMemory guarded(carray);
+  void* orig_result = guarded.get_tag();
+  if (!guarded.verify_guards()) {
+    tty->print_cr("ReleasePrimitiveArrayCritical: release array failed bounds "
+        "check, incorrect pointer returned ? array: " PTR_FORMAT " carray: "
+        PTR_FORMAT, p2i(obj), p2i(carray));
+    guarded.print_on(tty);
+    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
+        "failed bounds check");
+  }
+  if (orig_result == NULL) {
+    tty->print_cr("ReleasePrimitiveArrayCritical: unrecognized elements. array: "
+        PTR_FORMAT " carray: " PTR_FORMAT, p2i(obj), p2i(carray));
+    guarded.print_on(tty);
+    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
+        "unrecognized elements");
+  }
+  if (rsz != NULL) {
+    *rsz = guarded.get_user_size();
+  }
+  return orig_result;
+}
+
+static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
+    void* obj, void* carray, jint mode) {
+  size_t sz;
+  void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz);
+  switch (mode) {
+  case 0:
+    memcpy(orig_result, carray, sz);
+    GuardedMemory::free_copy(carray);
+    break;
+  case JNI_COMMIT:
+    memcpy(orig_result, carray, sz);
+    break;
+  case JNI_ABORT:
+    GuardedMemory::free_copy(carray);
+    break;
+  default:
+    tty->print_cr("%s: Unrecognized mode %i releasing array "
+        PTR_FORMAT " elements " PTR_FORMAT, fn_name, mode, p2i(obj), p2i(carray));
+    NativeReportJNIFatalError(thr, "Unrecognized array release mode");
+  }
+  return orig_result;
 }
 
 oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
@@ -1314,7 +1383,7 @@ JNI_ENTRY_CHECKED(jsize,
 JNI_END
 
 // Arbitrary (but well-known) tag
-const jint STRING_TAG = 0x47114711;
+const void* STRING_TAG = (void*)0x47114711;
 
 JNI_ENTRY_CHECKED(const jchar *,
   checked_jni_GetStringChars(JNIEnv *env,
@@ -1324,21 +1393,22 @@ JNI_ENTRY_CHECKED(const jchar *,
     IN_VM(
       checkString(thr, str);
     )
-    jchar* newResult = NULL;
+    jchar* new_result = NULL;
     const jchar *result = UNCHECKED()->GetStringChars(env,str,isCopy);
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
     if (result != NULL) {
       size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for NULL termination
-      jint* tagLocation = (jint*) AllocateHeap(len * sizeof(jchar) + sizeof(jint), mtInternal);
-      *tagLocation = STRING_TAG;
-      newResult = (jchar*) (tagLocation + 1);
-      memcpy(newResult, result, len * sizeof(jchar));
+      len *= sizeof(jchar);
+      new_result = (jchar*) GuardedMemory::wrap_copy(result, len, STRING_TAG);
+      if (new_result == NULL) {
+        vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringChars");
+      }
       // Avoiding call to UNCHECKED()->ReleaseStringChars() since that will fire unexpected dtrace probes
       // Note that the dtrace arguments for the allocated memory will not match up with this solution.
       FreeHeap((char*)result);
     }
     functionExit(env);
-    return newResult;
+    return new_result;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1354,11 +1424,23 @@ JNI_ENTRY_CHECKED(void,
        UNCHECKED()->ReleaseStringChars(env,str,chars);
     }
     else {
-       jint* tagLocation = ((jint*) chars) - 1;
-       if (*tagLocation != STRING_TAG) {
-          NativeReportJNIFatalError(thr, "ReleaseStringChars called on something not allocated by GetStringChars");
-       }
-       UNCHECKED()->ReleaseStringChars(env,str,(const jchar*)tagLocation);
+      GuardedMemory guarded((void*)chars);
+      if (guarded.verify_guards()) {
+        tty->print_cr("ReleaseStringChars: release chars failed bounds check. "
+            "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
+        guarded.print_on(tty);
+        NativeReportJNIFatalError(thr, "ReleaseStringChars: "
+            "release chars failed bounds check.");
+      }
+      if (guarded.get_tag() != STRING_TAG) {
+        tty->print_cr("ReleaseStringChars: called on something not allocated "
+            "by GetStringChars. string: " PTR_FORMAT " chars: " PTR_FORMAT,
+            p2i(str), p2i(chars));
+        NativeReportJNIFatalError(thr, "ReleaseStringChars called on something "
+            "not allocated by GetStringChars");
+      }
+       UNCHECKED()->ReleaseStringChars(env, str,
+           (const jchar*) guarded.release_for_freeing());
     }
     functionExit(env);
 JNI_END
@@ -1385,7 +1467,7 @@ JNI_ENTRY_CHECKED(jsize,
 JNI_END
 
 // Arbitrary (but well-known) tag - different than GetStringChars
-const jint STRING_UTF_TAG = 0x48124812;
+const void* STRING_UTF_TAG = (void*) 0x48124812;
 
 JNI_ENTRY_CHECKED(const char *,
   checked_jni_GetStringUTFChars(JNIEnv *env,
@@ -1395,21 +1477,21 @@ JNI_ENTRY_CHECKED(const char *,
     IN_VM(
       checkString(thr, str);
     )
-    char* newResult = NULL;
+    char* new_result = NULL;
     const char *result = UNCHECKED()->GetStringUTFChars(env,str,isCopy);
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
     if (result != NULL) {
       size_t len = strlen(result) + 1; // + 1 for NULL termination
-      jint* tagLocation = (jint*) AllocateHeap(len + sizeof(jint), mtInternal);
-      *tagLocation = STRING_UTF_TAG;
-      newResult = (char*) (tagLocation + 1);
-      strcpy(newResult, result);
+      new_result = (char*) GuardedMemory::wrap_copy(result, len, STRING_UTF_TAG);
+      if (new_result == NULL) {
+        vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringUTFChars");
+      }
       // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
       // Note that the dtrace arguments for the allocated memory will not match up with this solution.
       FreeHeap((char*)result, mtInternal);
     }
     functionExit(env);
-    return newResult;
+    return new_result;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1425,11 +1507,23 @@ JNI_ENTRY_CHECKED(void,
        UNCHECKED()->ReleaseStringUTFChars(env,str,chars);
     }
     else {
-       jint* tagLocation = ((jint*) chars) - 1;
-       if (*tagLocation != STRING_UTF_TAG) {
-          NativeReportJNIFatalError(thr, "ReleaseStringUTFChars called on something not allocated by GetStringUTFChars");
-       }
-       UNCHECKED()->ReleaseStringUTFChars(env,str,(const char*)tagLocation);
+      GuardedMemory guarded((void*)chars);
+      if (guarded.verify_guards()) {
+        tty->print_cr("ReleaseStringUTFChars: release chars failed bounds check. "
+            "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
+        guarded.print_on(tty);
+        NativeReportJNIFatalError(thr, "ReleaseStringUTFChars: "
+            "release chars failed bounds check.");
+      }
+      if (guarded.get_tag() != STRING_UTF_TAG) {
+        tty->print_cr("ReleaseStringUTFChars: called on something not "
+            "allocated by GetStringUTFChars. string: " PTR_FORMAT " chars: "
+            PTR_FORMAT, p2i(str), p2i(chars));
+        NativeReportJNIFatalError(thr, "ReleaseStringUTFChars "
+            "called on something not allocated by GetStringUTFChars");
+      }
+      UNCHECKED()->ReleaseStringUTFChars(env, str,
+          (const char*) guarded.release_for_freeing());
     }
     functionExit(env);
 JNI_END
@@ -1514,6 +1608,9 @@ JNI_ENTRY_CHECKED(ElementType *,  \
     ElementType *result = UNCHECKED()->Get##Result##ArrayElements(env, \
                                                                   array, \
                                                                   isCopy); \
+    if (result != NULL) { \
+      result = (ElementType *) check_jni_wrap_copy_array(thr, array, result); \
+    } \
     functionExit(env); \
     return result; \
 JNI_END
@@ -1538,12 +1635,10 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
       ASSERT_OOPS_ALLOWED; \
       typeArrayOop a = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-      /* cannot check validity of copy, unless every request is logged by
-       * checking code.  Implementation of this check is deferred until a
-       * subsequent release.
-       */ \
     ) \
-    UNCHECKED()->Release##Result##ArrayElements(env,array,elems,mode); \
+    ElementType* orig_result = (ElementType *) check_wrapped_array_release( \
+        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode); \
+    UNCHECKED()->Release##Result##ArrayElements(env, array, orig_result, mode); \
     functionExit(env); \
 JNI_END
 
@@ -1694,6 +1789,9 @@ JNI_ENTRY_CHECKED(void *,
       check_is_primitive_array(thr, array);
     )
     void *result = UNCHECKED()->GetPrimitiveArrayCritical(env, array, isCopy);
+    if (result != NULL) {
+      result = check_jni_wrap_copy_array(thr, array, result);
+    }
     functionExit(env);
     return result;
 JNI_END
@@ -1707,10 +1805,9 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       check_is_primitive_array(thr, array);
     )
-    /* The Hotspot JNI code does not use the parameters, so just check the
-     * array parameter as a minor sanity check
-     */
-    UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, carray, mode);
+    // Check the element array...
+    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical", array, carray, mode);
+    UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, orig_result, mode);
     functionExit(env);
 JNI_END
 
