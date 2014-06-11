@@ -336,7 +336,7 @@ bool PSScavenge::invoke_no_policy() {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(false /* not full GC */,gc_cause);
 
-    if (TraceGen0Time) accumulated_time()->start();
+    if (TraceYoungGenTime) accumulated_time()->start();
 
     // Let the size policy know we're starting
     size_policy->minor_collection_begin();
@@ -660,7 +660,7 @@ bool PSScavenge::invoke_no_policy() {
       CardTableExtension::verify_all_young_refs_imprecise();
     }
 
-    if (TraceGen0Time) accumulated_time()->stop();
+    if (TraceYoungGenTime) accumulated_time()->stop();
 
     if (PrintGC) {
       if (PrintGCDetails) {
