@@ -746,20 +746,22 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
     @Override
     public void setOpaque(boolean isOpaque) {
         CWrapper.NSWindow.setOpaque(getNSWindowPtr(), isOpaque);
-        boolean isTextured = (peer == null)? false : peer.isTextured();
-        if (!isOpaque && !isTextured) {
-            long clearColor = CWrapper.NSColor.clearColor();
-            CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), clearColor);
+        boolean isTextured = (peer == null) ? false : peer.isTextured();
+        if (!isTextured) {
+            if (!isOpaque) {
+                CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), 0);
+            } else if (peer != null) {
+                Color color = peer.getBackground();
+                if (color != null) {
+                    int rgb = color.getRGB();
+                    CWrapper.NSWindow.setBackgroundColor(getNSWindowPtr(), rgb);
+                }
+            }
         }
 
         //This is a temporary workaround. Looks like after 7124236 will be fixed
         //the correct place for invalidateShadow() is CGLayer.drawInCGLContext.
-        SwingUtilities.invokeLater(new Runnable() {
-            @Override
-            public void run() {
-                invalidateShadow();
-            }
-        });
+        SwingUtilities.invokeLater(this::invalidateShadow);
     }
 
     @Override
