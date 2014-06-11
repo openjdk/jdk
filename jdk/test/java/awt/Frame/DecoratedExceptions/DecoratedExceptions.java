@@ -20,10 +20,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-/*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
- * ORACLE PROPRIETARY/CONFIDENTIAL. Use is subject to license terms.
- */
 
 import java.awt.*;
 
