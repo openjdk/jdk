@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -285,6 +285,8 @@ public abstract class Path2D implements Shape, Cloneable {
                 int grow = size;
                 if (grow > EXPAND_MAX) {
                     grow = EXPAND_MAX;
+                } else if (grow == 0) {
+                    grow = 1;
                 }
                 pointTypes = Arrays.copyOf(pointTypes, size+grow);
             }
@@ -1121,6 +1123,8 @@ public abstract class Path2D implements Shape, Cloneable {
                 int grow = size;
                 if (grow > EXPAND_MAX) {
                     grow = EXPAND_MAX;
+                } else if (grow == 0) {
+                    grow = 1;
                 }
                 pointTypes = Arrays.copyOf(pointTypes, size+grow);
             }
