@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,11 @@
 
 import java.io.*;
 import java.util.*;
+
 import javax.tools.*;
+
 import com.sun.source.util.*;
+import com.sun.source.util.TaskEvent.Kind;
 import com.sun.tools.javac.api.*;
 
 
@@ -59,16 +62,13 @@ public class T6395974 {
         task.setTaskListener(tl);
 
         task.call();
-
-        if (tl.event != null)
-            throw new AssertionError("Unexpected TaskListener event: " + tl.event);
     }
 
     static class MyTaskListener implements TaskListener {
         public void started(TaskEvent e) {
-            System.err.println("Started: " + e);
-            if (event == null)
-                event = e;
+            if (e.getKind() != Kind.COMPILATION) {
+                throw new AssertionError("Unexpected TaskListener event: " + e);
+            }
         }
         public void finished(TaskEvent e) {
         }

@@ -40,51 +40,75 @@ import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.TypeAnnotation;
 import com.sun.tools.classfile.TypeAnnotation.TargetType;
 
+import static java.lang.String.format;
+
 public class Driver {
 
     private static final PrintStream out = System.err;
+
+    private final Object testObject;
+
+    public Driver(Class<?> clazz) throws IllegalAccessException, InstantiationException {
+        testObject = clazz.newInstance();
+    }
 
     public static void main(String[] args) throws Exception {
         if (args.length == 0 || args.length > 1)
             throw new IllegalArgumentException("Usage: java Driver <test-name>");
         String name = args[0];
-        Class<?> clazz = Class.forName(name);
-        new Driver().runDriver(clazz.newInstance());
+        new Driver(Class.forName(name)).runDriver();
     }
 
-    String[][] extraParamsCombinations = new String[][] {
+    private final String[][] extraParamsCombinations = new String[][] {
         new String[] { },
         new String[] { "-g" },
     };
 
-    protected void runDriver(Object object) throws Exception {
+    private final String[] retentionPolicies = {RetentionPolicy.CLASS.toString(), RetentionPolicy.RUNTIME.toString()};
+
+    protected void runDriver() {
         int passed = 0, failed = 0;
-        Class<?> clazz = object.getClass();
+        Class<?> clazz = testObject.getClass();
         out.println("Tests for " + clazz.getName());
 
         // Find methods
         for (Method method : clazz.getMethods()) {
-            Map<String, TypeAnnotation.Position> expected = expectedOf(method);
-            if (expected == null)
-                continue;
-            if (method.getReturnType() != String.class)
-                throw new IllegalArgumentException("Test method needs to return a string: " + method);
-            String testClass = testClassOf(method);
+            try {
+                Map<String, TypeAnnotation.Position> expected = expectedOf(method);
+                if (expected == null)
+                    continue;
+                if (method.getReturnType() != String.class)
+                    throw new IllegalArgumentException("Test method needs to return a string: " + method);
 
-            for (String[] extraParams : extraParamsCombinations) {
-                try {
-                    String compact = (String)method.invoke(object);
-                    String fullFile = wrap(compact);
-                    ClassFile cf = compileAndReturn(fullFile, testClass, extraParams);
-                    List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cf);
-                    ReferenceInfoUtil.compare(expected, actual, cf);
-                    out.println("PASSED:  " + method.getName());
-                    ++passed;
-                } catch (Throwable e) {
-                    out.println("FAILED:  " + method.getName());
-                    out.println("    " + e.toString());
-                    ++failed;
+                String compact = (String) method.invoke(testObject);
+                for (String retentionPolicy : retentionPolicies) {
+                    String testClassName = getTestClassName(method, retentionPolicy);
+                    String testClass = testClassOf(method, testClassName);
+                    String fullFile = wrap(compact, new HashMap<String, String>() {{
+                        put("%RETENTION_POLICY%", retentionPolicy);
+                        put("%TEST_CLASS_NAME%", testClassName);
+                    }});
+                    for (String[] extraParams : extraParamsCombinations) {
+                        try {
+                            ClassFile cf = compileAndReturn(fullFile, testClass, extraParams);
+                            List<TypeAnnotation> actual = ReferenceInfoUtil.extendedAnnotationsOf(cf);
+                            ReferenceInfoUtil.compare(expected, actual, cf);
+                            out.format("PASSED:  %s %s%n", testClassName, Arrays.toString(extraParams));
+                            ++passed;
+                        } catch (Throwable e) {
+                            out.format("FAILED:  %s %s%n", testClassName, Arrays.toString(extraParams));
+                            out.println(fullFile);
+                            out.println("    " + e.toString());
+                            e.printStackTrace(out);
+                            ++failed;
+                        }
+                    }
                 }
+            } catch (IllegalAccessException | InvocationTargetException e) {
+                out.println("FAILED:  " + method.getName());
+                out.println("    " + e.toString());
+                e.printStackTrace(out);
+                ++failed;
             }
         }
 
@@ -106,7 +130,7 @@ public class Driver {
             return null;
 
         Map<String, TypeAnnotation.Position> result =
-            new HashMap<String, TypeAnnotation.Position>();
+            new HashMap<>();
 
         if (ta != null)
             result.putAll(expectedOf(ta));
@@ -149,33 +173,42 @@ public class Driver {
     }
 
     private List<Integer> wrapIntArray(int[] ints) {
-        List<Integer> list = new ArrayList<Integer>(ints.length);
+        List<Integer> list = new ArrayList<>(ints.length);
         for (int i : ints)
             list.add(i);
         return list;
     }
 
-    private String testClassOf(Method m) {
+    private String getTestClassName(Method m, String retentionPolicy) {
+        return format("%s_%s_%s", testObject.getClass().getSimpleName(),
+                m.getName(), retentionPolicy);
+    }
+
+    private String testClassOf(Method m, String testClassName) {
         TestClass tc = m.getAnnotation(TestClass.class);
         if (tc != null) {
-            return tc.value();
+            return tc.value().replace("%TEST_CLASS_NAME%", testClassName);
         } else {
-            return "Test";
+            return testClassName;
         }
     }
 
     private ClassFile compileAndReturn(String fullFile, String testClass, String... extraParams) throws Exception {
-        File source = writeTestFile(fullFile);
-        File clazzFile = compileTestFile(source, testClass);
+        File source = writeTestFile(fullFile, testClass);
+        File clazzFile = compileTestFile(source, testClass, extraParams);
         return ClassFile.read(clazzFile);
     }
 
-    protected File writeTestFile(String fullFile) throws IOException {
-        File f = new File("Test.java");
-        PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)));
-        out.println(fullFile);
-        out.close();
-        return f;
+    protected File writeTestFile(String fullFile, String testClass) throws IOException {
+        File f = new File(getClassDir(), format("%s.java", testClass));
+        try (PrintWriter out = new PrintWriter(new BufferedWriter(new FileWriter(f)))) {
+            out.println(fullFile);
+            return f;
+        }
+    }
+
+    private String getClassDir() {
+        return System.getProperty("test.classes", Driver.class.getResource(".").getPath());
     }
 
     protected File compileTestFile(File f, String testClass, String... extraParams) {
@@ -185,20 +218,15 @@ public class Driver {
         int rc = com.sun.tools.javac.Main.compile(options.toArray(new String[options.size()]));
         if (rc != 0)
             throw new Error("compilation failed. rc=" + rc);
-        String path;
-        if (f.getParent() != null) {
-            path = f.getParent();
-        } else {
-            path = "";
-        }
-
-        return new File(path + testClass + ".class");
+        String path = f.getParent() != null ? f.getParent() : "";
+        return new File(path, format("%s.class", testClass));
     }
 
-    private String wrap(String compact) {
+    private String wrap(String compact, Map<String, String> replacements) {
         StringBuilder sb = new StringBuilder();
 
         // Automatically import java.util
+        sb.append("\nimport java.io.*;");
         sb.append("\nimport java.util.*;");
         sb.append("\nimport java.lang.annotation.*;");
 
@@ -208,7 +236,7 @@ public class Driver {
                             && !compact.contains("interface")
                             && !compact.contains("enum");
         if (isSnippet)
-            sb.append("class Test {\n");
+            sb.append("class %TEST_CLASS_NAME% {\n");
 
         sb.append(compact);
         sb.append("\n");
@@ -224,41 +252,102 @@ public class Driver {
         }
 
         // create A ... F annotation declarations
-        sb.append("\n@interface A {}");
-        sb.append("\n@interface B {}");
-        sb.append("\n@interface C {}");
-        sb.append("\n@interface D {}");
-        sb.append("\n@interface E {}");
-        sb.append("\n@interface F {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface A {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface B {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface C {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface D {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface E {}");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface F {}");
 
         // create TA ... TF proper type annotations
         sb.append("\n");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TA {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TB {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TC {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TD {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TE {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TF {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TG {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TH {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TI {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TJ {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TK {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TL {}");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface TM {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                " @Retention(RetentionPolicy.%RETENTION_POLICY%)  @interface TA {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TB {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TC {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TD {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TE {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TF {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TG {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TH {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TI {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TJ {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TK {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TL {}");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface TM {}");
 
-        // create RTA, RTAs, RTB, RTBs for repeating type annotations
+        // create RT?, RT?s for repeating type annotations
         sb.append("\n");
-        sb.append("\n@Repeatable(RTAs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTA {}");
-        sb.append("\n@Repeatable(RTBs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTB {}");
+        sb.append("\n@Repeatable(RTAs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTA {}");
+        sb.append("\n@Repeatable(RTBs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTB {}");
+        sb.append("\n@Repeatable(RTCs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTC {}");
+        sb.append("\n@Repeatable(RTDs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTD {}");
+        sb.append("\n@Repeatable(RTEs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTE {}");
+        sb.append("\n@Repeatable(RTFs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTF {}");
+        sb.append("\n@Repeatable(RTGs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTG {}");
+        sb.append("\n@Repeatable(RTHs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTH {}");
+        sb.append("\n@Repeatable(RTIs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTI {}");
+        sb.append("\n@Repeatable(RTJs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTJ {}");
+        sb.append("\n@Repeatable(RTKs.class) @Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTK {}");
 
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTAs { RTA[] value(); }");
-        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER}) @interface RTBs { RTB[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTAs { RTA[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTBs { RTB[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTCs { RTC[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTDs { RTD[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTEs { RTE[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTFs { RTF[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTGs { RTG[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTHs { RTH[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTIs { RTI[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTJs { RTJ[] value(); }");
+        sb.append("\n@Target({ElementType.TYPE_USE, ElementType.TYPE_PARAMETER})" +
+                "@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface RTKs { RTK[] value(); }");
 
-        sb.append("\n@Target(value={ElementType.TYPE,ElementType.FIELD,ElementType.METHOD,ElementType.PARAMETER,ElementType.CONSTRUCTOR,ElementType.LOCAL_VARIABLE})");
-        sb.append("\n@interface Decl {}");
+        sb.append("\n@Target(value={ElementType.TYPE,ElementType.FIELD,ElementType.METHOD," +
+                "ElementType.PARAMETER,ElementType.CONSTRUCTOR,ElementType.LOCAL_VARIABLE})");
+        sb.append("\n@Retention(RetentionPolicy.%RETENTION_POLICY%) @interface Decl {}");
 
-        return sb.toString();
+        return replaceAll(sb.toString(), replacements);
+    }
+
+    private String replaceAll(String src, Map<String, String> replacements) {
+        for (Map.Entry<String, String> entry : replacements.entrySet()) {
+            src = src.replace(entry.getKey(), entry.getValue());
+        }
+        return src;
     }
 
     public static final int NOT_SET = -888;
@@ -267,6 +356,7 @@ public class Driver {
 
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
+@Repeatable(TADescriptions.class)
 @interface TADescription {
     String annotation();
 
@@ -296,5 +386,5 @@ public class Driver {
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 @interface TestClass {
-    String value() default "Test";
+    String value();
 }

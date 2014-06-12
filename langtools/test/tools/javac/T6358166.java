@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,12 +57,8 @@ public class T6358166 extends AbstractProcessor {
 
     static void test(JavacFileManager fm, JavaFileObject f, String... args) throws Throwable {
         Context context = new Context();
-        fm.setContext(context);
 
-        Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
-        compilerMain.setOptions(Options.instance(context));
-        compilerMain.filenames = new LinkedHashSet<File>();
-        compilerMain.processArgs(args);
+        Main compilerMain = initCompilerMain(context, fm, args);
 
         JavaCompiler c = JavaCompiler.instance(context);
 
@@ -74,6 +70,19 @@ public class T6358166 extends AbstractProcessor {
         long msec = c.elapsed_msec;
         if (msec < 0 || msec > 5 * 60 * 1000) // allow test 5 mins to execute, should be more than enough!
             throw new AssertionError("elapsed time is suspect: " + msec);
+    }
+
+    static Main initCompilerMain(Context context, JavacFileManager fm, String... args) {
+        fm.setContext(context);
+        context.put(JavaFileManager.class, fm);
+
+        Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
+        compilerMain.setOptions(Options.instance(context));
+        compilerMain.filenames = new LinkedHashSet<File>();
+        compilerMain.deferredFileManagerOptions = new LinkedHashMap<>();
+        compilerMain.processArgs(args);
+        fm.handleOptions(compilerMain.deferredFileManagerOptions);
+        return compilerMain;
     }
 
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {

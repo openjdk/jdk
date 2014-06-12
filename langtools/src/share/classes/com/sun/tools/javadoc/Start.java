@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,18 +32,23 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.Map;
 
 import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 
 import com.sun.javadoc.*;
+import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.CommandLine;
+import com.sun.tools.javac.main.Option;
+import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Options;
+
 import static com.sun.tools.javac.code.Flags.*;
 
 /**
@@ -71,7 +76,7 @@ public class Start extends ToolOption.Helper {
     private static final String standardDocletClassName =
         "com.sun.tools.doclets.standard.Standard";
 
-    private long defaultFilter = PUBLIC | PROTECTED;
+    private final long defaultFilter = PUBLIC | PROTECTED;
 
     private final Messager messager;
 
@@ -324,6 +329,15 @@ public class Start extends ToolOption.Helper {
                 javaNames.append(arg);
             }
         }
+
+        if (fileManager == null) {
+            JavacFileManager.preRegister(context);
+            fileManager = context.get(JavaFileManager.class);
+        }
+        if (fileManager instanceof BaseFileManager) {
+            ((BaseFileManager) fileManager).handleOptions(fileManagerOpts);
+        }
+
         compOpts.notifyListeners();
 
         if (javaNames.isEmpty() && subPackages.isEmpty() && isEmpty(fileObjects)) {
