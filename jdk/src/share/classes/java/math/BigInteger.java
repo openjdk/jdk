@@ -117,7 +117,7 @@ import sun.misc.FloatConsts;
  * @author  Michael McCloskey
  * @author  Alan Eliasen
  * @author  Timothy Buktu
- * @since JDK1.1
+ * @since 1.1
  */
 
 public class BigInteger extends Number implements Comparable<BigInteger> {

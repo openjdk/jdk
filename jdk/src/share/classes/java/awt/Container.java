@@ -85,7 +85,7 @@ import sun.security.action.GetBooleanAction;
  * @see       #add(java.awt.Component, int)
  * @see       #getComponent(int)
  * @see       LayoutManager
- * @since     JDK1.0
+ * @since     1.0
  */
 public class Container extends Component {
 
@@ -302,7 +302,7 @@ public class Container extends Component {
      *
      * @return    the number of components in this panel.
      * @see       #getComponent
-     * @since     JDK1.1
+     * @since     1.1
      * @see Component#getTreeLock()
      */
     public int getComponentCount() {
@@ -384,7 +384,7 @@ public class Container extends Component {
      * @return    the insets of this container.
      * @see       Insets
      * @see       LayoutManager
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Insets getInsets() {
         return insets();
@@ -975,7 +975,7 @@ public class Container extends Component {
      * @see #validate
      * @see javax.swing.JComponent#revalidate()
      * @see       LayoutManager
-     * @since     JDK1.1
+     * @since     1.1
      */
     public void add(Component comp, Object constraints) {
         addImpl(comp, constraints, -1);
@@ -1078,7 +1078,7 @@ public class Container extends Component {
      * @see #invalidate
      * @see       LayoutManager
      * @see       LayoutManager2
-     * @since     JDK1.1
+     * @since     1.1
      */
     protected void addImpl(Component comp, Object constraints, int index) {
         synchronized (getTreeLock()) {
@@ -1202,7 +1202,7 @@ public class Container extends Component {
      * @see #invalidate
      * @see #validate
      * @see #getComponentCount
-     * @since JDK1.1
+     * @since 1.1
      */
     public void remove(int index) {
         synchronized (getTreeLock()) {
@@ -1501,7 +1501,7 @@ public class Container extends Component {
      * @see LayoutManager#layoutContainer
      * @see #setLayout
      * @see #validate
-     * @since JDK1.1
+     * @since 1.1
      */
     public void doLayout() {
         layout();
@@ -1749,7 +1749,7 @@ public class Container extends Component {
      * @param f The font to become this container's font.
      * @see Component#getFont
      * @see #invalidate
-     * @since JDK1.0
+     * @since 1.0
      */
     public void setFont(Font f) {
         boolean shouldinvalidate = false;
@@ -1834,7 +1834,7 @@ public class Container extends Component {
      * @see       #getLayout
      * @see       LayoutManager#minimumLayoutSize(Container)
      * @see       Component#getMinimumSize
-     * @since     JDK1.1
+     * @since     1.1
      */
     public Dimension getMinimumSize() {
         return minimumSize();
@@ -2539,7 +2539,7 @@ public class Container extends Component {
      * point is within the bounds of the container the container itself
      * is returned; otherwise the top-most child is returned.
      * @see Component#contains
-     * @since JDK1.1
+     * @since 1.1
      */
     public Component getComponentAt(int x, int y) {
         return locate(x, y);
@@ -2585,7 +2585,7 @@ public class Container extends Component {
      *                 or <code>null</code> if the component does
      *                 not contain the point.
      * @see        Component#contains
-     * @since      JDK1.1
+     * @since      1.1
      */
     public Component getComponentAt(Point p) {
         return getComponentAt(p.x, p.y);
@@ -2837,7 +2837,7 @@ public class Container extends Component {
      * @param c the component
      * @return     <code>true</code> if it is an ancestor;
      *             <code>false</code> otherwise.
-     * @since      JDK1.1
+     * @since      1.1
      */
     public boolean isAncestorOf(Component c) {
         Container p;
@@ -3012,7 +3012,7 @@ public class Container extends Component {
      * @param    indent   the number of spaces to indent
      * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintStream, int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public void list(PrintStream out, int indent) {
         super.list(out, indent);
@@ -3039,7 +3039,7 @@ public class Container extends Component {
      * @param    indent   the number of spaces to indent
      * @throws   NullPointerException if {@code out} is {@code null}
      * @see      Component#list(java.io.PrintWriter, int)
-     * @since    JDK1.1
+     * @since    1.1
      */
     public void list(PrintWriter out, int indent) {
         super.list(out, indent);

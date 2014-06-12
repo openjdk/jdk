@@ -39,7 +39,7 @@ package java.io;
  * methods as well as provide additional methods and fields.
  *
  * @author  Jonathan Payne
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class FilterOutputStream extends OutputStream {

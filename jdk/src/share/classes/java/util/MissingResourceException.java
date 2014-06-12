@@ -45,7 +45,7 @@ package java.util;
  * @see java.lang.Exception
  * @see ResourceBundle
  * @author      Mark Davis
- * @since       JDK1.1
+ * @since       1.1
  */
 public
 class MissingResourceException extends RuntimeException {

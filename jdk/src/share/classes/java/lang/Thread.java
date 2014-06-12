@@ -135,7 +135,7 @@ import sun.security.util.SecurityConstants;
  * @see     Runtime#exit(int)
  * @see     #run()
  * @see     #stop()
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class Thread implements Runnable {

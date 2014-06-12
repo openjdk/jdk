@@ -63,7 +63,7 @@ import java.util.Collections;
  * @author  Pavani Diwanji
  * @see     java.net.DatagramPacket
  * @see     java.nio.channels.DatagramChannel
- * @since JDK1.0
+ * @since 1.0
  */
 public
 class DatagramSocket implements java.io.Closeable {
@@ -275,7 +275,7 @@ class DatagramSocket implements java.io.Closeable {
      *             {@code checkListen} method doesn't allow the operation.
      *
      * @see SecurityManager#checkListen
-     * @since   JDK1.1
+     * @since   1.1
      */
     public DatagramSocket(int port, InetAddress laddr) throws SocketException {
         this(new InetSocketAddress(laddr, port));
@@ -852,7 +852,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @param timeout the specified timeout in milliseconds.
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
-     * @since   JDK1.1
+     * @since   1.1
      * @see #getSoTimeout()
      */
     public synchronized void setSoTimeout(int timeout) throws SocketException {
@@ -867,7 +867,7 @@ class DatagramSocket implements java.io.Closeable {
      *
      * @return the setting for SO_TIMEOUT
      * @throws SocketException if there is an error in the underlying protocol, such as an UDP error.
-     * @since   JDK1.1
+     * @since   1.1
      * @see #setSoTimeout(int)
      */
     public synchronized int getSoTimeout() throws SocketException {

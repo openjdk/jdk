@@ -82,7 +82,7 @@ import java.util.function.UnaryOperator;
  * @author  Jonathan Payne
  * @see Collection
  * @see LinkedList
- * @since   JDK1.0
+ * @since   1.0
  */
 public class Vector<E>
     extends AbstractList<E>

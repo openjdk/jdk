@@ -32,7 +32,7 @@ package java.awt;
  * @author Doug Stein
  * @author Bill Spitzak (orignial NeWS &amp; OLIT implementation)
  * @see java.awt.GridBagLayout
- * @since JDK1.0
+ * @since 1.0
  */
 public class GridBagConstraints implements Cloneable, java.io.Serializable {
 

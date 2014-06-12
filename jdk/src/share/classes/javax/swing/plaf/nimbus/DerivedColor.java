@@ -106,7 +106,7 @@ class DerivedColor extends Color {
      * @see #getRed
      * @see #getGreen
      * @see #getBlue
-     * @since JDK1.0
+     * @since 1.0
      */
     @Override public int getRGB() {
         return argbValue;

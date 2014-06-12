@@ -30,7 +30,7 @@ package java.net;
  * between a file name and a MIME type string.
  *
  * @author  Steven B. Byrne
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface FileNameMap {
 

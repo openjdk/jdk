@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,28 @@
 
 package sun.security.tools;
 
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 
+import java.io.StreamTokenizer;
+import java.io.StringReader;
 import java.net.URL;
 
 import java.security.KeyStore;
 
 import java.text.Collator;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import java.util.Locale;
+import java.util.Properties;
+
+import sun.security.util.PropertyExpander;
 
 /**
  * <p> This class provides several utilities to <code>KeyStore</code>.
@@ -149,6 +158,85 @@ public class KeyStoreUtil {
             System.err.println(rb.getString("Unknown.password.type.") +
                     modifier);
             return null;
+        }
+    }
+
+    /**
+     * Parses a option line likes
+     *    -genkaypair -dname "CN=Me"
+     * and add the results into a list
+     * @param list the list to fill into
+     * @param s the line
+     */
+    private static void parseArgsLine(List<String> list, String s)
+            throws IOException, PropertyExpander.ExpandException {
+        StreamTokenizer st = new StreamTokenizer(new StringReader(s));
+
+        st.resetSyntax();
+        st.whitespaceChars(0x00, 0x20);
+        st.wordChars(0x21, 0xFF);
+        // Everything is a word char except for quotation and apostrophe
+        st.quoteChar('"');
+        st.quoteChar('\'');
+
+        while (true) {
+            if (st.nextToken() == StreamTokenizer.TT_EOF) {
+                break;
+            }
+            list.add(PropertyExpander.expand(st.sval));
+        }
+    }
+
+    /**
+     * Prepends matched options from a pre-configured options file.
+     * @param tool the name of the tool, can be "keytool" or "jarsigner"
+     * @param file the pre-configured options file
+     * @param c1 the name of the command, with the "-" prefix,
+     *        must not be null
+     * @param c2 the alternative command name, with the "-" prefix,
+     *        null if none. For example, "genkey" is alt name for
+     *        "genkeypair". A command can only have one alt name now.
+     * @param args existing arguments
+     * @return arguments combined
+     * @throws IOException if there is a file I/O or format error
+     * @throws PropertyExpander.ExpandException
+     *         if there is a property expansion error
+     */
+    public static String[] expandArgs(String tool, String file,
+                    String c1, String c2, String[] args)
+            throws IOException, PropertyExpander.ExpandException {
+
+        List<String> result = new ArrayList<>();
+        Properties p = new Properties();
+        p.load(new FileInputStream(file));
+
+        String s = p.getProperty(tool + ".all");
+        if (s != null) {
+            parseArgsLine(result, s);
+        }
+
+        // Cannot provide both -genkey and -genkeypair
+        String s1 = p.getProperty(tool + "." + c1.substring(1));
+        String s2 = null;
+        if (c2 != null) {
+            s2 = p.getProperty(tool + "." + c2.substring(1));
+        }
+        if (s1 != null && s2 != null) {
+            throw new IOException("Cannot have both " + c1 + " and "
+                    + c2 + " as pre-configured options");
+        }
+        if (s1 == null) {
+            s1 = s2;
+        }
+        if (s1 != null) {
+            parseArgsLine(result, s1);
+        }
+
+        if (result.isEmpty()) {
+            return args;
+        } else {
+            result.addAll(Arrays.asList(args));
+            return result.toArray(new String[result.size()]);
         }
     }
 }
