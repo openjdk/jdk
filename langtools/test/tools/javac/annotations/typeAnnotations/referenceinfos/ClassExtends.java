@@ -25,72 +25,110 @@ import static com.sun.tools.classfile.TypeAnnotation.TargetType.*;
 
 /*
  * @test
+ * @bug 8042451
  * @summary Test population of reference info for class extends clauses
  * @compile -g Driver.java ReferenceInfoUtil.java ClassExtends.java
  * @run main Driver ClassExtends
  */
 public class ClassExtends {
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1),
-        @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
-    })
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String regularClass() {
-        return "class Test extends @TA Object implements Cloneable, @TB Runnable {"
+        return "class %TEST_CLASS_NAME% extends @TA Object implements Cloneable, @TB Runnable {"
                + "  public void run() { } }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1,
-                genericLocation = { 3, 0 }),
-        @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
-                genericLocation  = { 3, 1 })
-    })
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1)
+    public String regularClassRepeatableAnnotation() {
+        return "class %TEST_CLASS_NAME% extends @RTA @RTA Object implements Cloneable, @RTB @RTB Runnable {"
+                + "  public void run() { } }";
+    }
+
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1,
+            genericLocation = { 3, 0 })
+    @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
+            genericLocation  = { 3, 1 })
     public String regularClassExtendsParametrized() {
-        return "class Test extends HashMap<@TA String, String> implements Cloneable, Map<String, @TB String>{ } ";
+        return "class %TEST_CLASS_NAME% extends HashMap<@TA String, String> implements Cloneable, Map<String, @TB String>{ } ";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1),
-        @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
-    })
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1,
+            genericLocation = { 3, 0 })
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
+            genericLocation  = { 3, 1 })
+    public String regularClassExtendsParametrizedRepeatableAnnotation() {
+        return "class %TEST_CLASS_NAME% extends HashMap<@RTA @RTA String, String> implements Cloneable, Map<String, @RTB @RTB String>{ } ";
+    }
+
+    @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String abstractClass() {
-        return "abstract class Test extends @TA Date implements Cloneable, @TB Runnable {"
+        return "abstract class %TEST_CLASS_NAME% extends @TA Date implements Cloneable, @TB Runnable {"
                + "  public void run() { } }";
     }
 
-    @TADescriptions({
-        @TADescription(annotation = "TA", type = CLASS_EXTENDS, typeIndex = -1,
-                genericLocation = { 3, 0 }),
-        @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
-                genericLocation  = { 3, 1 })
-    })
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1)
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1)
+    public String abstractClassRepeatableAnnotation() {
+        return "abstract class %TEST_CLASS_NAME% extends @RTA @RTA Date implements Cloneable, @RTB @RTB Runnable {"
+                + "  public void run() { } }";
+    }
+
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = -1,
+            genericLocation = { 3, 0 })
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
+            genericLocation  = { 3, 1 })
     public String abstractClassExtendsParametrized() {
-        return "abstract class Test extends HashMap<@TA String, String> implements Cloneable, Map<String, @TB String>{ } ";
+        return "abstract class %TEST_CLASS_NAME% extends HashMap<@RTA @RTA String, String> implements Cloneable, Map<String, @RTB @RTB String>{ } ";
     }
 
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String regularInterface() {
-        return "interface Test extends Cloneable, @TB Runnable { }";
+        return "interface %TEST_CLASS_NAME% extends Cloneable, @TB Runnable { }";
+    }
+
+    @TADescription(annotation = "RTAs", type = CLASS_EXTENDS, typeIndex = 1)
+    public String regularInterfaceRepetableAnnotation() {
+        return "interface %TEST_CLASS_NAME% extends Cloneable, @RTA @RTA Runnable { }";
     }
 
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
             genericLocation  = { 3, 1 })
     public String regularInterfaceExtendsParametrized() {
-        return "interface Test extends Cloneable, Map<String, @TB String>{ } ";
+        return "interface %TEST_CLASS_NAME% extends Cloneable, Map<String, @TB String>{ } ";
+    }
+
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
+            genericLocation  = { 3, 1 })
+    public String regularInterfaceExtendsParametrizedRepeatableAnnotation() {
+        return "interface %TEST_CLASS_NAME% extends Cloneable, Map<String, @RTB @RTB String>{ } ";
     }
 
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1)
     public String regularEnum() {
-        return "enum Test implements Cloneable, @TB Runnable { TEST; public void run() { } }";
+        return "enum %TEST_CLASS_NAME% implements Cloneable, @TB Runnable { TEST; public void run() { } }";
+    }
+
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1)
+    public String regularEnumRepeatableAnnotation() {
+        return "enum %TEST_CLASS_NAME% implements Cloneable, @RTB @RTB Runnable { TEST; public void run() { } }";
     }
 
     @TADescription(annotation = "TB", type = CLASS_EXTENDS, typeIndex = 1,
             genericLocation  = { 3, 0 })
     public String regularEnumExtendsParametrized() {
         return
-            "enum Test implements Cloneable, Comparator<@TB String> { TEST;  "
+            "enum %TEST_CLASS_NAME% implements Cloneable, Comparator<@TB String> { TEST;  "
             + "public int compare(String a, String b) { return 0; }}";
     }
 
+    @TADescription(annotation = "RTBs", type = CLASS_EXTENDS, typeIndex = 1,
+            genericLocation  = { 3, 0 })
+    public String regularEnumExtendsParametrizedRepeatableAnnotation() {
+        return
+                "enum %TEST_CLASS_NAME% implements Cloneable, Comparator<@RTB @RTB String> { TEST;  "
+                        + "public int compare(String a, String b) { return 0; }}";
+    }
 }

@@ -33,8 +33,9 @@ import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.Iterator;
+import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
+import java.util.Map;
 import java.util.Set;
 
 import javax.annotation.processing.Processor;
@@ -56,6 +57,7 @@ import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
 import com.sun.tools.javac.util.ServiceLoader;
+
 import static com.sun.tools.javac.main.Option.*;
 
 /** This class provides a command line interface to the javac compiler.
@@ -121,6 +123,13 @@ public class Main {
         }
 
         @Override
+        public boolean handleFileManagerOption(Option option, String value) {
+            options.put(option.getText(), value);
+            deferredFileManagerOptions.put(option, value);
+            return true;
+        }
+
+        @Override
         public void remove(String name) {
             options.remove(name);
         }
@@ -172,11 +181,13 @@ public class Main {
 
     /** The list of source files to process
      */
-    public Set<File> filenames = null; // XXX sb protected
+    public Set<File> filenames = null; // XXX should be protected or private
 
     /** List of class files names passed on the command line
      */
-    public ListBuffer<String> classnames = null; // XXX sb protected
+    protected ListBuffer<String> classnames = null;
+
+    public Map<Option, String> deferredFileManagerOptions; // XXX should be protected or private
 
     /** Report a usage error.
      */
@@ -395,6 +406,7 @@ public class Main {
 
         filenames = new LinkedHashSet<>();
         classnames = new ListBuffer<>();
+        deferredFileManagerOptions = new LinkedHashMap<>();
         JavaCompiler comp = null;
         /*
          * TODO: Logic below about what is an acceptable command line
@@ -445,6 +457,11 @@ public class Main {
                         && System.getProperty("nonBatchMode") == null);
             if (batchMode)
                 CacheFSInfo.preRegister(context);
+
+            fileManager = context.get(JavaFileManager.class);
+            if (fileManager instanceof BaseFileManager) {
+                ((BaseFileManager) fileManager).handleOptions(deferredFileManagerOptions);
+            }
 
             // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate
             // invoke any available plugins
@@ -510,8 +527,6 @@ public class Main {
                 // Stdout reassigned - ask compiler to close it when it is done
                 comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));
             }
-
-            fileManager = context.get(JavaFileManager.class);
 
             if (!files.isEmpty()) {
                 // add filenames to fileObjects
