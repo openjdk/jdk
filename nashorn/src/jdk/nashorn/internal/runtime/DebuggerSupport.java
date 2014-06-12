@@ -25,14 +25,21 @@
 
 package jdk.nashorn.internal.runtime;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
+import java.lang.invoke.MethodHandle;
+import java.lang.reflect.Field;
+import java.net.URL;
 import java.util.HashSet;
 import java.util.Set;
+import jdk.nashorn.internal.scripts.JS;
 
 /**
  * This class provides support for external debuggers.  Its primary purpose is
  * is to simplify the debugger tasks and provide better performance.
+ * Even though the methods are not public, there are still part of the
+ * external debugger interface.
  */
 final class DebuggerSupport {
     /**
@@ -49,6 +56,11 @@ final class DebuggerSupport {
         @SuppressWarnings("unused")
         final
         DebuggerValueDesc forceLoad = new DebuggerValueDesc(null, false, null, null);
+
+        // Hook to force the loading of the SourceInfo class
+        @SuppressWarnings("unused")
+        final
+        SourceInfo srcInfo = new SourceInfo(null, 0, null, null);
     }
 
     /** This class is used to send a bulk description of a value. */
@@ -73,6 +85,54 @@ final class DebuggerSupport {
         }
     }
 
+    static class SourceInfo {
+        final String name;
+        final URL    url;
+        final int    hash;
+        final char[] content;
+
+        SourceInfo(final String name, final int hash, final URL url, final char[] content) {
+            this.name    = name;
+            this.hash    = hash;
+            this.url     = url;
+            this.content = content;
+        }
+    }
+
+    /**
+     * Hook that is called just before invoking method handle
+     * from ScriptFunctionData via invoke, constructor method calls.
+     *
+     * @param mh script class method about to be invoked.
+     */
+    static void notifyInvoke(final MethodHandle mh) {
+        // Do nothing here. This is placeholder method on which a
+        // debugger can place a breakpoint so that it can access the
+        // (script class) method handle that is about to be invoked.
+        // See ScriptFunctionData.invoke and ScriptFunctionData.construct.
+    }
+
+    /**
+     * Return the script source info for the given script class.
+     *
+     * @param clazz compiled script class
+     * @return SourceInfo
+     */
+    static SourceInfo getSourceInfo(final Class<?> clazz) {
+        if (JS.class.isAssignableFrom(clazz)) {
+            try {
+                final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                sourceField.setAccessible(true);
+                final Source src = (Source) sourceField.get(null);
+                return src.getSourceInfo();
+            } catch (final IllegalAccessException | NoSuchFieldException ignored) {
+                return null;
+            }
+        }
+
+        return null;
+    }
+
     /**
      * Return the current context global.
      * @return context global.
@@ -87,7 +147,7 @@ final class DebuggerSupport {
      * @param self            Receiver to use.
      * @param string          String to evaluate.
      * @param returnException true if exceptions are to be returned.
-     * @return Result of eval as string, or, an exception or null depending on returnException.
+     * @return Result of eval, or, an exception or null depending on returnException.
      */
     static Object eval(final ScriptObject scope, final Object self, final String string, final boolean returnException) {
         final ScriptObject global = Context.getGlobal();
@@ -238,7 +298,7 @@ final class DebuggerSupport {
      * @param value Arbitrary value to be displayed by the debugger.
      * @return A string representation of the value or an array of DebuggerValueDesc.
      */
-    private static String valueAsString(final Object value) {
+    static String valueAsString(final Object value) {
         final JSType type = JSType.of(value);
 
         switch (type) {
