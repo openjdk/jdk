@@ -379,7 +379,7 @@ public abstract class ValidatorHandler implements ContentHandler {
      * <ul>
      *   <li>
      *     <code>true</code>: the implementation will limit XML processing to conform to implementation limits.
-     *     Examples include enity expansion limits and XML Schema constructs that would consume large amounts of resources.
+     *     Examples include entity expansion limits and XML Schema constructs that would consume large amounts of resources.
      *     If XML processing is limited for security reasons, it will be reported via a call to the registered
      *    {@link ErrorHandler#fatalError(SAXParseException exception)}.
      *     See {@link #setErrorHandler(ErrorHandler errorHandler)}.

@@ -32,7 +32,7 @@ public class DTMConfigurationException extends DTMException {
 
     /**
      * Create a new <code>DTMConfigurationException</code> with no
-     * detail mesage.
+     * detail message.
      */
     public DTMConfigurationException() {
         super("Configuration Error");

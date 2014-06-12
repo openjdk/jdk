@@ -45,7 +45,7 @@ public class FactoryConfigurationError extends Error {
 
     /**
      * Create a new <code>FactoryConfigurationError</code> with no
-     * detail mesage.
+     * detail message.
      */
 
     public FactoryConfigurationError() {
