@@ -2455,6 +2455,8 @@ bool Arguments::check_vm_args_consistency() {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
   }
 
+  status &= check_vm_args_consistency_ext();
+
   return status;
 }
 
