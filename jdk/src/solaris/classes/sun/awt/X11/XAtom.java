@@ -52,7 +52,7 @@ package sun.awt.X11;
  * XAtom xa = new XAtom(display,XAtom.XA_CUT_BUFFER0);<p>
  * String selection = xa.getProperty(root_window);<p></code>
  * @author  Bino George
- * @since       JDK1.5
+ * @since       1.5
  */
 
 import sun.misc.Unsafe;

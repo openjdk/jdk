@@ -5875,7 +5875,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @see     Character#isLetter(char)
      * @see     Character#isLetterOrDigit(char)
      * @see     Character#isUnicodeIdentifierStart(char)
-     * @since   1.02
+     * @since   1.0.2
      * @deprecated Replaced by isJavaIdentifierStart(char).
      */
     @Deprecated
@@ -5911,7 +5911,7 @@ class Character implements java.io.Serializable, Comparable<Character> {
      * @see     Character#isLetterOrDigit(char)
      * @see     Character#isUnicodeIdentifierPart(char)
      * @see     Character#isIdentifierIgnorable(char)
-     * @since   1.02
+     * @since   1.0.2
      * @deprecated Replaced by isJavaIdentifierPart(char).
      */
     @Deprecated

@@ -166,6 +166,6 @@
  * All calculations should check for numeric overflow and throw either an {@link java.lang.ArithmeticException}
  * or a {@link java.time.DateTimeException}.
  * </p>
- * @since JDK1.8
+ * @since 1.8
  */
 package java.time.chrono;

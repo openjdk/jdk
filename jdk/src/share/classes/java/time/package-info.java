@@ -282,6 +282,6 @@
  *
  * </pre>
  *
- * @since JDK1.8
+ * @since 1.8
  */
 package java.time;

@@ -37,7 +37,7 @@ package java.io;
  *
  * @author  Arthur van Hoff
  * @see     java.io.DataOutputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class DataInputStream extends FilterInputStream implements DataInput {

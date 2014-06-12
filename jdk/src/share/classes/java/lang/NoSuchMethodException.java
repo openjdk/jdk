@@ -29,7 +29,7 @@ package java.lang;
  * Thrown when a particular method cannot be found.
  *
  * @author     unascribed
- * @since      JDK1.0
+ * @since      1.0
  */
 public
 class NoSuchMethodException extends ReflectiveOperationException {

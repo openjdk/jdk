@@ -120,7 +120,7 @@ final class WPathGraphics extends PathGraphics {
      * a copy of this <code>Graphics</code> object.
      * @return     a new graphics context that is a copy of
      *                       this graphics context.
-     * @since      JDK1.0
+     * @since      1.0
      */
     @Override
     public Graphics create() {
@@ -253,7 +253,7 @@ final class WPathGraphics extends PathGraphics {
      * @param       y        the <i>y</i> coordinate.
      * @see         java.awt.Graphics#drawBytes
      * @see         java.awt.Graphics#drawChars
-     * @since       JDK1.0
+     * @since       1.0
      */
     @Override
     public void drawString(String str, int x, int y) {

@@ -1215,7 +1215,7 @@ public class RequiredModelMBean
                         ReflectUtil.checkPackageAccess(className);
                         final ClassLoader targetClassLoader =
                             rmmbClass.getClassLoader();
-                        Class clz = Class.forName(className, false,
+                        Class<?> clz = Class.forName(className, false,
                                                     targetClassLoader);
                         if (!rmmbClass.isAssignableFrom(clz))
                             return null;
@@ -1673,12 +1673,12 @@ public class RequiredModelMBean
                             // inequality may come from type subclassing
                             boolean subtype;
                             try {
-                                final Class respClass = response.getClass();
+                                final Class<?> respClass = response.getClass();
                                 final Exception[] caughException = new Exception[1];
 
                                 AccessControlContext stack = AccessController.getContext();
 
-                                Class c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+                                Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
 
                                     @Override
                                     public Class<?> run() {
@@ -2855,7 +2855,7 @@ public class RequiredModelMBean
         AccessControlContext stack = AccessController.getContext();
         final ClassNotFoundException[] caughtException = new ClassNotFoundException[1];
 
-        Class c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
+        Class<?> c = javaSecurityAccess.doIntersectionPrivilege(new PrivilegedAction<Class<?>>() {
 
             @Override
             public Class<?> run() {

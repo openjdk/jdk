@@ -99,7 +99,7 @@ import java.text.AttributedCharacterIterator;
  * @see     java.awt.Graphics#setPaintMode()
  * @see     java.awt.Graphics#setXORMode(java.awt.Color)
  * @see     java.awt.Graphics#setFont(java.awt.Font)
- * @since       JDK1.0
+ * @since       1.0
  */
 public abstract class Graphics {
 
@@ -283,7 +283,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract Rectangle getClipBounds();
 
@@ -321,7 +321,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(Shape)
      * @see         java.awt.Graphics#getClip
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract void setClip(int x, int y, int width, int height);
 
@@ -339,7 +339,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract Shape getClip();
 
@@ -357,7 +357,7 @@ public abstract class Graphics {
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract void setClip(Shape clip);
 
@@ -694,7 +694,7 @@ public abstract class Graphics {
      * @param       yPoints an array of <i>y</i> points
      * @param       nPoints the total number of points
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract void drawPolyline(int xPoints[], int yPoints[],
                                       int nPoints);
@@ -1058,7 +1058,7 @@ public abstract class Graphics {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,
@@ -1119,7 +1119,7 @@ public abstract class Graphics {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public abstract boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,
