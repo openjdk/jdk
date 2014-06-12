@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -112,9 +112,7 @@ public:
 
   // Assignment
   oop& operator=(const oop& o)                            { _o = o.obj(); return *this; }
-#ifndef SOLARIS
   volatile oop& operator=(const oop& o) volatile          { _o = o.obj(); return *this; }
-#endif
   volatile oop& operator=(const volatile oop& o) volatile { _o = o.obj(); return *this; }
 
   // Explict user conversions
@@ -123,11 +121,10 @@ public:
   operator void* () const volatile    { return (void *)obj(); }
 #endif
   operator HeapWord* () const         { return (HeapWord*)obj(); }
-  operator oopDesc* () const          { return obj(); }
+  operator oopDesc* () const volatile { return obj(); }
   operator intptr_t* () const         { return (intptr_t*)obj(); }
   operator PromotedObject* () const   { return (PromotedObject*)obj(); }
   operator markOop () const           { return markOop(obj()); }
-
   operator address   () const         { return (address)obj(); }
 
   // from javaCalls.cpp
@@ -161,11 +158,10 @@ public:
             oop::operator=(o);                                             \
             return *this;                                                  \
        }                                                                   \
-       NOT_SOLARIS(                                                        \
        volatile type##Oop& operator=(const type##Oop& o) volatile {        \
             (void)const_cast<oop&>(oop::operator=(o));                     \
             return *this;                                                  \
-       })                                                                  \
+       }                                                                   \
        volatile type##Oop& operator=(const volatile type##Oop& o) volatile {\
             (void)const_cast<oop&>(oop::operator=(o));                     \
             return *this;                                                  \
