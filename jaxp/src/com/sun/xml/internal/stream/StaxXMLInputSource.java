@@ -34,7 +34,7 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
  * @author  Neeraj
  *
  * This class wraps XMLInputSource and is also capable of telling wether application
- * returned XMLStreamReader or not when XMLResolver.resolveEnity
+ * returned XMLStreamReader or not when XMLResolver.resolveEntity
  * was called.
  */
 public class StaxXMLInputSource {
