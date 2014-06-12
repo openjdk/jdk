@@ -754,6 +754,11 @@ class InstanceKlass: public Klass {
   bool implements_interface(Klass* k) const;
   bool is_same_or_direct_interface(Klass* k) const;
 
+#ifdef ASSERT
+  // check whether this class or one of its superclasses was redefined
+  bool has_redefined_this_or_super() const;
+#endif
+
   // Access to the implementor of an interface.
   Klass* implementor() const
   {
@@ -811,8 +816,8 @@ class InstanceKlass: public Klass {
 
   // Casting from Klass*
   static InstanceKlass* cast(Klass* k) {
-    assert(k->is_klass(), "must be");
-    assert(k->oop_is_instance(), "cast to InstanceKlass");
+    assert(k == NULL || k->is_klass(), "must be");
+    assert(k == NULL || k->oop_is_instance(), "cast to InstanceKlass");
     return (InstanceKlass*) k;
   }
 

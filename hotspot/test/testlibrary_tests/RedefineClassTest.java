@@ -23,27 +23,32 @@
 
 /*
  * @test
- * @bug 8042885
- * @summary Make sure there is no error using hexadecimal format in vm options
- * @author Yumin Qi
  * @library /testlibrary
+ * @summary Proof of concept test for RedefineClassHelper
+ * @build RedefineClassHelper
+ * @run main RedefineClassHelper
+ * @run main/othervm -javaagent:redefineagent.jar RedefineClassTest
  */
 
-import java.io.File;
+import static com.oracle.java.testlibrary.Asserts.*;
 import com.oracle.java.testlibrary.*;
 
-public class TestHexArguments {
-    public static void main(String args[]) throws Exception {
-      String[] javaArgs = {"-XX:SharedBaseAddress=0x1D000000", "-version"};
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs);
+/*
+ * Proof of concept test for the test utility class RedefineClassHelper
+ */
+public class RedefineClassTest {
 
-      OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.shouldNotContain("Could not create the Java Virtual Machine");
-      output.shouldHaveExitValue(0);
+    public static String newClass = "class RedefineClassTest$A { public int Method() { return 2; } }";
+    public static void main(String[] args) throws Exception {
+        A a = new A();
+        assertTrue(a.Method() == 1);
+        RedefineClassHelper.redefineClass(A.class, newClass);
+        assertTrue(a.Method() == 2);
+    }
 
-      String[] javaArgs1 = {"-XX:SharedBaseAddress=1D000000", "-version"};
-      pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("Could not create the Java Virtual Machine");
-  }
+    static class A {
+        public int Method() {
+            return 1;
+        }
+    }
 }

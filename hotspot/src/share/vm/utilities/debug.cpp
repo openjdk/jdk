@@ -263,13 +263,11 @@ void report_untested(const char* file, int line, const char* message) {
 
 void report_out_of_shared_space(SharedSpaceType shared_space) {
   static const char* name[] = {
-    "native memory for metadata",
     "shared read only space",
     "shared read write space",
     "shared miscellaneous data space"
   };
   static const char* flag[] = {
-    "Metaspace",
     "SharedReadOnlySize",
     "SharedReadWriteSize",
     "SharedMiscDataSize"
