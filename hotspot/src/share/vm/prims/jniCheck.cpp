@@ -1493,7 +1493,7 @@ JNI_ENTRY_CHECKED(void,
     }
     else {
       GuardedMemory guarded((void*)chars);
-      if (guarded.verify_guards()) {
+      if (!guarded.verify_guards()) {
         tty->print_cr("ReleaseStringChars: release chars failed bounds check. "
             "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
         guarded.print_on(tty);
@@ -1576,7 +1576,7 @@ JNI_ENTRY_CHECKED(void,
     }
     else {
       GuardedMemory guarded((void*)chars);
-      if (guarded.verify_guards()) {
+      if (!guarded.verify_guards()) {
         tty->print_cr("ReleaseStringUTFChars: release chars failed bounds check. "
             "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
         guarded.print_on(tty);
