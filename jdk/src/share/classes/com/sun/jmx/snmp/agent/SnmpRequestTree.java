@@ -535,7 +535,7 @@ final class SnmpRequestTree {
 
                 // Save old vectors
                 SnmpOid[]     olde = entryoids;
-                Vector[]      oldl = entrylists;
+                Vector<SnmpVarBind>[]      oldl = entrylists;
                 boolean[]     oldn = isentrynew;
                 SnmpVarBind[] oldr = rowstatus;
 
