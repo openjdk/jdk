@@ -28,7 +28,7 @@
  * @build IsMethodCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main ClassFileInstaller com.oracle.java.testlibrary.Platform
- * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* IsMethodCompilableTest
+ * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:PerMethodRecompilationCutoff=3 -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* IsMethodCompilableTest
  * @summary testing of WB::isMethodCompilable()
  * @author igor.ignatyev@oracle.com
  */

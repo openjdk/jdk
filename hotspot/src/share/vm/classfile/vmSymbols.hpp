@@ -790,6 +790,26 @@
    do_name(     decrypt_name,                                      "decrypt")                                           \
    do_signature(byteArray_int_int_byteArray_int_signature,         "([BII[BI)I")                                        \
                                                                                                                         \
+  /* support for sun.security.provider.SHA */                                                                           \
+  do_class(sun_security_provider_sha,                              "sun/security/provider/SHA")                         \
+  do_intrinsic(_sha_implCompress, sun_security_provider_sha, implCompress_name, implCompress_signature, F_R)            \
+   do_name(     implCompress_name,                                 "implCompress")                                      \
+   do_signature(implCompress_signature,                            "([BI)V")                                            \
+                                                                                                                        \
+  /* support for sun.security.provider.SHA2 */                                                                          \
+  do_class(sun_security_provider_sha2,                             "sun/security/provider/SHA2")                        \
+  do_intrinsic(_sha2_implCompress, sun_security_provider_sha2, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
+  /* support for sun.security.provider.SHA5 */                                                                          \
+  do_class(sun_security_provider_sha5,                             "sun/security/provider/SHA5")                        \
+  do_intrinsic(_sha5_implCompress, sun_security_provider_sha5, implCompress_name, implCompress_signature, F_R)          \
+                                                                                                                        \
+  /* support for sun.security.provider.DigestBase */                                                                    \
+  do_class(sun_security_provider_digestbase,                       "sun/security/provider/DigestBase")                  \
+  do_intrinsic(_digestBase_implCompressMB, sun_security_provider_digestbase, implCompressMB_name, implCompressMB_signature, F_R)   \
+   do_name(     implCompressMB_name,                               "implCompressMultiBlock")                            \
+   do_signature(implCompressMB_signature,                          "([BII)I")                                           \
+                                                                                                                        \
   /* support for java.util.zip */                                                                                       \
   do_class(java_util_zip_CRC32,           "java/util/zip/CRC32")                                                        \
   do_intrinsic(_updateCRC32,               java_util_zip_CRC32,   update_name, int2_int_signature,               F_SN)  \
