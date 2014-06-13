@@ -38,7 +38,8 @@ JARSIGNER="$TESTJAVA/bin/jarsigner ${TESTTOOLVMOPTS}"
 
 rm $KS 2> /dev/null
 
-export PASS=changeit
+PASS=changeit
+export PASS
 
 # keytool
 
