@@ -392,6 +392,11 @@ void Compile::remove_useless_nodes(Unique_Node_List &useful) {
   uint next = 0;
   while (next < useful.size()) {
     Node *n = useful.at(next++);
+    if (n->is_SafePoint()) {
+      // We're done with a parsing phase. Replaced nodes are not valid
+      // beyond that point.
+      n->as_SafePoint()->delete_replaced_nodes();
+    }
     // Use raw traversal of out edges since this code removes out edges
     int max = n->outcnt();
     for (int j = 0; j < max; ++j) {
@@ -673,7 +678,6 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _print_inlining_stream(NULL),
                   _print_inlining_idx(0),
                   _print_inlining_output(NULL),
-                  _preserve_jvm_state(0),
                   _interpreter_frame_size(0) {
   C = this;
 
@@ -783,7 +787,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       return;
     }
     JVMState* jvms = build_start_state(start(), tf());
-    if ((jvms = cg->generate(jvms, NULL)) == NULL) {
+    if ((jvms = cg->generate(jvms)) == NULL) {
       record_method_not_compilable("method parse failed");
       return;
     }
@@ -980,7 +984,6 @@ Compile::Compile( ciEnv* ci_env,
     _print_inlining_stream(NULL),
     _print_inlining_idx(0),
     _print_inlining_output(NULL),
-    _preserve_jvm_state(0),
     _allowed_reasons(0),
     _interpreter_frame_size(0) {
   C = this;
@@ -1914,6 +1917,8 @@ void Compile::inline_boxing_calls(PhaseIterGVN& igvn) {
     for_igvn()->clear();
     gvn->replace_with(&igvn);
 
+    _late_inlines_pos = _late_inlines.length();
+
     while (_boxing_late_inlines.length() > 0) {
       CallGenerator* cg = _boxing_late_inlines.pop();
       cg->do_late_inline();
@@ -1977,8 +1982,8 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
       if (low_live_nodes < (uint)LiveNodeCountInliningCutoff * 8 / 10) {
         // PhaseIdealLoop is expensive so we only try it once we are
-        // out of loop and we only try it again if the previous helped
-        // got the number of nodes down significantly
+        // out of live nodes and we only try it again if the previous
+        // helped got the number of nodes down significantly
         PhaseIdealLoop ideal_loop( igvn, false, true );
         if (failing())  return;
         low_live_nodes = live_nodes();
@@ -2071,6 +2076,10 @@ void Compile::Optimize() {
     NOT_PRODUCT( TracePhase t2("incrementalInline", &_t_incrInline, TimeCompiler); )
     // Inline valueOf() methods now.
     inline_boxing_calls(igvn);
+
+    if (AlwaysIncrementalInline) {
+      inline_incrementally(igvn);
+    }
 
     print_method(PHASE_INCREMENTAL_BOXING_INLINE, 2);
 

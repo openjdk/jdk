@@ -1090,6 +1090,7 @@ const Type *SafePointNode::Value( PhaseTransform *phase ) const {
 #ifndef PRODUCT
 void SafePointNode::dump_spec(outputStream *st) const {
   st->print(" SafePoint ");
+  _replaced_nodes.dump(st);
 }
 #endif
 

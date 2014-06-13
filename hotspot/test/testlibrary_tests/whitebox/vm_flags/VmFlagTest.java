@@ -55,9 +55,7 @@ public final class VmFlagTest<T> {
     }
 
     private T getValue() {
-        T t = get.apply(flagName);
-        System.out.println("T = " + t);
-        return t;
+        return get.apply(flagName);
     }
 
     protected static <T> void runTest(String existentFlag, T[] tests,
