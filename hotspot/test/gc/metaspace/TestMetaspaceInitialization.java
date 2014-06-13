@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,29 +21,28 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8042885
- * @summary Make sure there is no error using hexadecimal format in vm options
- * @author Yumin Qi
+import java.util.ArrayList;
+
+/* @test TestMetaspaceInitialization
+ * @bug 8042933
+ * @summary Tests to initialize metaspace with a very low MetaspaceSize
  * @library /testlibrary
+ * @run main/othervm -XX:MetaspaceSize=2m TestMetaspaceInitialization
  */
+public class TestMetaspaceInitialization {
+    private class Internal {
+        public int x;
+        public Internal(int x) {
+            this.x = x;
+        }
+    }
 
-import java.io.File;
-import com.oracle.java.testlibrary.*;
+    private void test() {
+        ArrayList<Internal> l = new ArrayList<>();
+        l.add(new Internal(17));
+    }
 
-public class TestHexArguments {
-    public static void main(String args[]) throws Exception {
-      String[] javaArgs = {"-XX:SharedBaseAddress=0x1D000000", "-version"};
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs);
-
-      OutputAnalyzer output = new OutputAnalyzer(pb.start());
-      output.shouldNotContain("Could not create the Java Virtual Machine");
-      output.shouldHaveExitValue(0);
-
-      String[] javaArgs1 = {"-XX:SharedBaseAddress=1D000000", "-version"};
-      pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
-      output = new OutputAnalyzer(pb.start());
-      output.shouldContain("Could not create the Java Virtual Machine");
-  }
+    public static void main(String[] args) {
+        new TestMetaspaceInitialization().test();
+    }
 }

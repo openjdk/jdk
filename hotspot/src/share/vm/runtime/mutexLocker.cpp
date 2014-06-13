@@ -280,10 +280,10 @@ void mutex_init() {
 
 #ifdef INCLUDE_TRACE
   def(JfrMsg_lock                  , Monitor, leaf,        true);
-  def(JfrBuffer_lock               , Mutex,   nonleaf+1,   true);
-  def(JfrThreadGroups_lock         , Mutex,   nonleaf+1,   true);
-  def(JfrStream_lock               , Mutex,   nonleaf+2,   true);
-  def(JfrStacktrace_lock           , Mutex,   special,     true );
+  def(JfrBuffer_lock               , Mutex,   leaf,        true);
+  def(JfrThreadGroups_lock         , Mutex,   leaf,        true);
+  def(JfrStream_lock               , Mutex,   nonleaf,     true);
+  def(JfrStacktrace_lock           , Mutex,   special,     true);
 #endif
 
 }
