@@ -119,12 +119,12 @@ CallGenerator* Compile::call_generator(ciMethod* callee, int vtable_index, bool 
   if (allow_inline && allow_intrinsics) {
     CallGenerator* cg = find_intrinsic(callee, call_does_dispatch);
     if (cg != NULL) {
-      if (cg->is_predicted()) {
+      if (cg->is_predicated()) {
         // Code without intrinsic but, hopefully, inlined.
         CallGenerator* inline_cg = this->call_generator(callee,
               vtable_index, call_does_dispatch, jvms, allow_inline, prof_factor, speculative_receiver_type, false);
         if (inline_cg != NULL) {
-          cg = CallGenerator::for_predicted_intrinsic(cg, inline_cg);
+          cg = CallGenerator::for_predicated_intrinsic(cg, inline_cg);
         }
       }
 
@@ -525,7 +525,7 @@ void Parse::do_call() {
   // because exceptions don't return to the call site.)
   profile_call(receiver);
 
-  JVMState* new_jvms = cg->generate(jvms, this);
+  JVMState* new_jvms = cg->generate(jvms);
   if (new_jvms == NULL) {
     // When inlining attempt fails (e.g., too many arguments),
     // it may contaminate the current compile state, making it
@@ -539,7 +539,7 @@ void Parse::do_call() {
     // intrinsic was expecting to optimize. Should always be possible to
     // get a normal java call that may inline in that case
     cg = C->call_generator(cg->method(), vtable_index, call_does_dispatch, jvms, try_inline, prof_factor(), speculative_receiver_type, /* allow_intrinsics= */ false);
-    new_jvms = cg->generate(jvms, this);
+    new_jvms = cg->generate(jvms);
     if (new_jvms == NULL) {
       guarantee(failing(), "call failed to generate:  calls should work");
       return;

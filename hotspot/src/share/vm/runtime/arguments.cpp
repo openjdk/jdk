@@ -3838,10 +3838,6 @@ jint Arguments::apply_ergo() {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
   }
-  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
-    // Doing the replace in parent maps helps speculation
-    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
-  }
 #endif
 
   if (PrintAssembly && FLAG_IS_DEFAULT(DebugNonSafepoints)) {
