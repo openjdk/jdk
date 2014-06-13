@@ -809,7 +809,7 @@ void G1CollectorPolicy::record_full_collection_end() {
   double full_gc_time_sec = end_sec - _full_collection_start_sec;
   double full_gc_time_ms = full_gc_time_sec * 1000.0;
 
-  _trace_gen1_time_data.record_full_collection(full_gc_time_ms);
+  _trace_old_gen_time_data.record_full_collection(full_gc_time_ms);
 
   update_recent_gc_times(end_sec, full_gc_time_ms);
 
@@ -851,7 +851,7 @@ void G1CollectorPolicy::record_collection_pause_start(double start_time_sec) {
                  _g1->used(), _g1->recalculate_used()));
 
   double s_w_t_ms = (start_time_sec - _stop_world_start) * 1000.0;
-  _trace_gen0_time_data.record_start_collection(s_w_t_ms);
+  _trace_young_gen_time_data.record_start_collection(s_w_t_ms);
   _stop_world_start = 0.0;
 
   record_heap_size_info_at_start(false /* full */);
@@ -906,7 +906,7 @@ void G1CollectorPolicy::record_concurrent_mark_cleanup_completed() {
 void G1CollectorPolicy::record_concurrent_pause() {
   if (_stop_world_start > 0.0) {
     double yield_ms = (os::elapsedTime() - _stop_world_start) * 1000.0;
-    _trace_gen0_time_data.record_yield_time(yield_ms);
+    _trace_young_gen_time_data.record_yield_time(yield_ms);
   }
 }
 
@@ -993,7 +993,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
   evacuation_info.set_bytes_copied(_bytes_copied_during_gc);
 
   if (update_stats) {
-    _trace_gen0_time_data.record_end_collection(pause_time_ms, phase_times());
+    _trace_young_gen_time_data.record_end_collection(pause_time_ms, phase_times());
     // this is where we update the allocation rate of the application
     double app_time_ms =
       (phase_times()->cur_collection_start_sec() * 1000.0 - _prev_collection_pause_end_ms);
@@ -1415,8 +1415,8 @@ size_t G1CollectorPolicy::expansion_amount() {
 }
 
 void G1CollectorPolicy::print_tracing_info() const {
-  _trace_gen0_time_data.print();
-  _trace_gen1_time_data.print();
+  _trace_young_gen_time_data.print();
+  _trace_old_gen_time_data.print();
 }
 
 void G1CollectorPolicy::print_yg_surv_rate_info() const {
@@ -1973,9 +1973,9 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   _last_gc_was_young = gcs_are_young() ? true : false;
 
   if (_last_gc_was_young) {
-    _trace_gen0_time_data.increment_young_collection_count();
+    _trace_young_gen_time_data.increment_young_collection_count();
   } else {
-    _trace_gen0_time_data.increment_mixed_collection_count();
+    _trace_young_gen_time_data.increment_mixed_collection_count();
   }
 
   // The young list is laid with the survivor regions from the previous
@@ -2156,20 +2156,20 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   evacuation_info.set_collectionset_regions(cset_region_length());
 }
 
-void TraceGen0TimeData::record_start_collection(double time_to_stop_the_world_ms) {
-  if(TraceGen0Time) {
+void TraceYoungGenTimeData::record_start_collection(double time_to_stop_the_world_ms) {
+  if(TraceYoungGenTime) {
     _all_stop_world_times_ms.add(time_to_stop_the_world_ms);
   }
 }
 
-void TraceGen0TimeData::record_yield_time(double yield_time_ms) {
-  if(TraceGen0Time) {
+void TraceYoungGenTimeData::record_yield_time(double yield_time_ms) {
+  if(TraceYoungGenTime) {
     _all_yield_times_ms.add(yield_time_ms);
   }
 }
 
-void TraceGen0TimeData::record_end_collection(double pause_time_ms, G1GCPhaseTimes* phase_times) {
-  if(TraceGen0Time) {
+void TraceYoungGenTimeData::record_end_collection(double pause_time_ms, G1GCPhaseTimes* phase_times) {
+  if(TraceYoungGenTime) {
     _total.add(pause_time_ms);
     _other.add(pause_time_ms - phase_times->accounted_time_ms());
     _root_region_scan_wait.add(phase_times->root_region_scan_wait_time_ms());
@@ -2194,34 +2194,34 @@ void TraceGen0TimeData::record_end_collection(double pause_time_ms, G1GCPhaseTim
   }
 }
 
-void TraceGen0TimeData::increment_young_collection_count() {
-  if(TraceGen0Time) {
+void TraceYoungGenTimeData::increment_young_collection_count() {
+  if(TraceYoungGenTime) {
     ++_young_pause_num;
   }
 }
 
-void TraceGen0TimeData::increment_mixed_collection_count() {
-  if(TraceGen0Time) {
+void TraceYoungGenTimeData::increment_mixed_collection_count() {
+  if(TraceYoungGenTime) {
     ++_mixed_pause_num;
   }
 }
 
-void TraceGen0TimeData::print_summary(const char* str,
-                                      const NumberSeq* seq) const {
+void TraceYoungGenTimeData::print_summary(const char* str,
+                                          const NumberSeq* seq) const {
   double sum = seq->sum();
   gclog_or_tty->print_cr("%-27s = %8.2lf s (avg = %8.2lf ms)",
                 str, sum / 1000.0, seq->avg());
 }
 
-void TraceGen0TimeData::print_summary_sd(const char* str,
-                                         const NumberSeq* seq) const {
+void TraceYoungGenTimeData::print_summary_sd(const char* str,
+                                             const NumberSeq* seq) const {
   print_summary(str, seq);
   gclog_or_tty->print_cr("%+45s = %5d, std dev = %8.2lf ms, max = %8.2lf ms)",
                 "(num", seq->num(), seq->sd(), seq->maximum());
 }
 
-void TraceGen0TimeData::print() const {
-  if (!TraceGen0Time) {
+void TraceYoungGenTimeData::print() const {
+  if (!TraceYoungGenTime) {
     return;
   }
 
@@ -2258,14 +2258,14 @@ void TraceGen0TimeData::print() const {
   print_summary_sd("   Yields", &_all_yield_times_ms);
 }
 
-void TraceGen1TimeData::record_full_collection(double full_gc_time_ms) {
-  if (TraceGen1Time) {
+void TraceOldGenTimeData::record_full_collection(double full_gc_time_ms) {
+  if (TraceOldGenTime) {
     _all_full_gc_times.add(full_gc_time_ms);
   }
 }
 
-void TraceGen1TimeData::print() const {
-  if (!TraceGen1Time) {
+void TraceOldGenTimeData::print() const {
+  if (!TraceOldGenTime) {
     return;
   }
 

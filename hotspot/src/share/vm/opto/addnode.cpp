@@ -254,47 +254,46 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const Type *t_sub1 = phase->type( in1->in(1) );
     const Type *t_2    = phase->type( in2        );
     if( t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP )
-      return new (phase->C) SubINode(phase->makecon( add_ring( t_sub1, t_2 ) ),
-                              in1->in(2) );
+      return new SubINode(phase->makecon( add_ring( t_sub1, t_2 ) ), in1->in(2) );
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if( op2 == Op_SubI ) {
       // Check for dead cycle: d = (a-b)+(c-d)
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddINode::Ideal" );
-      Node *sub  = new (phase->C) SubINode(NULL, NULL);
-      sub->init_req(1, phase->transform(new (phase->C) AddINode(in1->in(1), in2->in(1) ) ));
-      sub->init_req(2, phase->transform(new (phase->C) AddINode(in1->in(2), in2->in(2) ) ));
+      Node *sub  = new SubINode(NULL, NULL);
+      sub->init_req(1, phase->transform(new AddINode(in1->in(1), in2->in(1) ) ));
+      sub->init_req(2, phase->transform(new AddINode(in1->in(2), in2->in(2) ) ));
       return sub;
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if( op2 == Op_AddI && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddINode::Ideal");
-      return new (phase->C) AddINode(in1->in(1), in2->in(2));
+      return new AddINode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c+b)" into "(a+c)"
     if( op2 == Op_AddI && in1->in(2) == in2->in(2) ) {
       assert(in1->in(1) != this && in2->in(1) != this,"dead loop in AddINode::Ideal");
-      return new (phase->C) AddINode(in1->in(1), in2->in(1));
+      return new AddINode(in1->in(1), in2->in(1));
     }
     // Convert "(a-b)+(b-c)" into "(a-c)"
     if( op2 == Op_SubI && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddINode::Ideal");
-      return new (phase->C) SubINode(in1->in(1), in2->in(2));
+      return new SubINode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c-a)" into "(c-b)"
     if( op2 == Op_SubI && in1->in(1) == in2->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddINode::Ideal");
-      return new (phase->C) SubINode(in2->in(1), in1->in(2));
+      return new SubINode(in2->in(1), in1->in(2));
     }
   }
 
   // Convert "x+(0-y)" into "(x-y)"
   if( op2 == Op_SubI && phase->type(in2->in(1)) == TypeInt::ZERO )
-    return new (phase->C) SubINode(in1, in2->in(2) );
+    return new SubINode(in1, in2->in(2) );
 
   // Convert "(0-y)+x" into "(x-y)"
   if( op1 == Op_SubI && phase->type(in1->in(1)) == TypeInt::ZERO )
-    return new (phase->C) SubINode( in2, in1->in(2) );
+    return new SubINode( in2, in1->in(2) );
 
   // Convert (x>>>z)+y into (x+(y<<z))>>>z for small constant z and y.
   // Helps with array allocation math constant folding
@@ -315,8 +314,8 @@ Node *AddINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     if( z < 5 && -5 < y && y < 0 ) {
       const Type *t_in11 = phase->type(in1->in(1));
       if( t_in11 != Type::TOP && (t_in11->is_int()->_lo >= -(y << z)) ) {
-        Node *a = phase->transform( new (phase->C) AddINode( in1->in(1), phase->intcon(y<<z) ) );
-        return new (phase->C) URShiftINode( a, in1->in(2) );
+        Node *a = phase->transform( new AddINode( in1->in(1), phase->intcon(y<<z) ) );
+        return new URShiftINode( a, in1->in(2) );
       }
     }
   }
@@ -387,47 +386,46 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     const Type *t_sub1 = phase->type( in1->in(1) );
     const Type *t_2    = phase->type( in2        );
     if( t_sub1->singleton() && t_2->singleton() && t_sub1 != Type::TOP && t_2 != Type::TOP )
-      return new (phase->C) SubLNode(phase->makecon( add_ring( t_sub1, t_2 ) ),
-                              in1->in(2) );
+      return new SubLNode(phase->makecon( add_ring( t_sub1, t_2 ) ), in1->in(2) );
     // Convert "(a-b)+(c-d)" into "(a+c)-(b+d)"
     if( op2 == Op_SubL ) {
       // Check for dead cycle: d = (a-b)+(c-d)
       assert( in1->in(2) != this && in2->in(2) != this,
               "dead loop in AddLNode::Ideal" );
-      Node *sub  = new (phase->C) SubLNode(NULL, NULL);
-      sub->init_req(1, phase->transform(new (phase->C) AddLNode(in1->in(1), in2->in(1) ) ));
-      sub->init_req(2, phase->transform(new (phase->C) AddLNode(in1->in(2), in2->in(2) ) ));
+      Node *sub  = new SubLNode(NULL, NULL);
+      sub->init_req(1, phase->transform(new AddLNode(in1->in(1), in2->in(1) ) ));
+      sub->init_req(2, phase->transform(new AddLNode(in1->in(2), in2->in(2) ) ));
       return sub;
     }
     // Convert "(a-b)+(b+c)" into "(a+c)"
     if( op2 == Op_AddL && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddLNode::Ideal");
-      return new (phase->C) AddLNode(in1->in(1), in2->in(2));
+      return new AddLNode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c+b)" into "(a+c)"
     if( op2 == Op_AddL && in1->in(2) == in2->in(2) ) {
       assert(in1->in(1) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
-      return new (phase->C) AddLNode(in1->in(1), in2->in(1));
+      return new AddLNode(in1->in(1), in2->in(1));
     }
     // Convert "(a-b)+(b-c)" into "(a-c)"
     if( op2 == Op_SubL && in1->in(2) == in2->in(1) ) {
       assert(in1->in(1) != this && in2->in(2) != this,"dead loop in AddLNode::Ideal");
-      return new (phase->C) SubLNode(in1->in(1), in2->in(2));
+      return new SubLNode(in1->in(1), in2->in(2));
     }
     // Convert "(a-b)+(c-a)" into "(c-b)"
     if( op2 == Op_SubL && in1->in(1) == in1->in(2) ) {
       assert(in1->in(2) != this && in2->in(1) != this,"dead loop in AddLNode::Ideal");
-      return new (phase->C) SubLNode(in2->in(1), in1->in(2));
+      return new SubLNode(in2->in(1), in1->in(2));
     }
   }
 
   // Convert "x+(0-y)" into "(x-y)"
   if( op2 == Op_SubL && phase->type(in2->in(1)) == TypeLong::ZERO )
-    return new (phase->C) SubLNode( in1, in2->in(2) );
+    return new SubLNode( in1, in2->in(2) );
 
   // Convert "(0-y)+x" into "(x-y)"
   if( op1 == Op_SubL && phase->type(in1->in(1)) == TypeInt::ZERO )
-    return new (phase->C) SubLNode( in2, in1->in(2) );
+    return new SubLNode( in2, in1->in(2) );
 
   // Convert "X+X+X+X+X...+X+Y" into "k*X+Y" or really convert "X+(X+Y)"
   // into "(X<<1)+Y" and let shift-folding happen.
@@ -435,8 +433,8 @@ Node *AddLNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       in2->in(1) == in1 &&
       op1 != Op_ConL &&
       0 ) {
-    Node *shift = phase->transform(new (phase->C) LShiftLNode(in1,phase->intcon(1)));
-    return new (phase->C) AddLNode(shift,in2->in(2));
+    Node *shift = phase->transform(new LShiftLNode(in1,phase->intcon(1)));
+    return new AddLNode(shift,in2->in(2));
   }
 
   return AddNode::Ideal(phase, can_reshape);
@@ -596,7 +594,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         offset  = phase->MakeConX(t2->get_con() + t12->get_con());
       } else {
         // Else move the constant to the right.  ((A+con)+B) into ((A+B)+con)
-        address = phase->transform(new (phase->C) AddPNode(in(Base),addp->in(Address),in(Offset)));
+        address = phase->transform(new AddPNode(in(Base),addp->in(Address),in(Offset)));
         offset  = addp->in(Offset);
       }
       PhaseIterGVN *igvn = phase->is_IterGVN();
@@ -616,7 +614,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     // If this is a NULL+long form (from unsafe accesses), switch to a rawptr.
     if (phase->type(in(Address)) == TypePtr::NULL_PTR) {
       Node* offset = in(Offset);
-      return new (phase->C) CastX2PNode(offset);
+      return new CastX2PNode(offset);
     }
   }
 
@@ -628,7 +626,7 @@ Node *AddPNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   if( add->Opcode() == Op_AddX && add->in(1) != add ) {
     const Type *t22 = phase->type( add->in(2) );
     if( t22->singleton() && (t22 != Type::TOP) ) {  // Right input is an add of a constant?
-      set_req(Address, phase->transform(new (phase->C) AddPNode(in(Base),in(Address),add->in(1))));
+      set_req(Address, phase->transform(new AddPNode(in(Base),in(Address),add->in(1))));
       set_req(Offset, add->in(2));
       PhaseIterGVN *igvn = phase->is_IterGVN();
       if (add->outcnt() == 0 && igvn) {
@@ -858,7 +856,7 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // to force a right-spline graph for the rest of MinINode::Ideal().
   if( l->Opcode() == Op_MinI ) {
     assert( l != l->in(1), "dead loop in MinINode::Ideal" );
-    r = phase->transform(new (phase->C) MinINode(l->in(2),r));
+    r = phase->transform(new MinINode(l->in(2),r));
     l = l->in(1);
     set_req(1, l);
     set_req(2, r);
@@ -906,18 +904,18 @@ Node *MinINode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
 
     if( x->_idx > y->_idx )
-      return new (phase->C) MinINode(r->in(1),phase->transform(new (phase->C) MinINode(l,r->in(2))));
+      return new MinINode(r->in(1),phase->transform(new MinINode(l,r->in(2))));
 
     // See if covers: MIN2(x+c0,MIN2(y+c1,z))
     if( !phase->eqv(x,y) ) return NULL;
     // If (y == x) transform MIN2(x+c0, MIN2(x+c1,z)) into
     // MIN2(x+c0 or x+c1 which less, z).
-    return new (phase->C) MinINode(phase->transform(new (phase->C) AddINode(x,phase->intcon(MIN2(x_off,y_off)))),r->in(2));
+    return new MinINode(phase->transform(new AddINode(x,phase->intcon(MIN2(x_off,y_off)))),r->in(2));
   } else {
     // See if covers: MIN2(x+c0,y+c1)
     if( !phase->eqv(x,y) ) return NULL;
     // If (y == x) transform MIN2(x+c0,x+c1) into x+c0 or x+c1 which less.
-    return new (phase->C) AddINode(x,phase->intcon(MIN2(x_off,y_off)));
+    return new AddINode(x,phase->intcon(MIN2(x_off,y_off)));
   }
 
 }
