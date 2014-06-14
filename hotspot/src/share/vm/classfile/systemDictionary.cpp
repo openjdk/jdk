@@ -1754,8 +1754,6 @@ void SystemDictionary::methods_do(void f(Method*)) {
 // Lazily load klasses
 
 void SystemDictionary::load_abstract_ownable_synchronizer_klass(TRAPS) {
-  assert(JDK_Version::is_gte_jdk16x_version(), "Must be JDK 1.6 or later");
-
   // if multiple threads calling this function, only one thread will load
   // the class.  The other threads will find the loaded version once the
   // class is loaded.

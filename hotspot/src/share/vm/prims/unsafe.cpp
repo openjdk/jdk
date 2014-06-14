@@ -185,64 +185,7 @@ jint Unsafe_invocation_key_to_method_slot(jint key) {
 
 // Get/SetObject must be special-cased, since it works with handles.
 
-// The xxx140 variants for backward compatibility do not allow a full-width offset.
-UNSAFE_ENTRY(jobject, Unsafe_GetObject140(JNIEnv *env, jobject unsafe, jobject obj, jint offset))
-  UnsafeWrapper("Unsafe_GetObject");
-  if (obj == NULL)  THROW_0(vmSymbols::java_lang_NullPointerException());
-  GET_OOP_FIELD(obj, offset, v)
-  jobject ret = JNIHandles::make_local(env, v);
-#if INCLUDE_ALL_GCS
-  // We could be accessing the referent field in a reference
-  // object. If G1 is enabled then we need to register a non-null
-  // referent with the SATB barrier.
-  if (UseG1GC) {
-    bool needs_barrier = false;
-
-    if (ret != NULL) {
-      if (offset == java_lang_ref_Reference::referent_offset) {
-        oop o = JNIHandles::resolve_non_null(obj);
-        Klass* k = o->klass();
-        if (InstanceKlass::cast(k)->reference_type() != REF_NONE) {
-          assert(InstanceKlass::cast(k)->is_subclass_of(SystemDictionary::Reference_klass()), "sanity");
-          needs_barrier = true;
-        }
-      }
-    }
-
-    if (needs_barrier) {
-      oop referent = JNIHandles::resolve(ret);
-      G1SATBCardTableModRefBS::enqueue(referent);
-    }
-  }
-#endif // INCLUDE_ALL_GCS
-  return ret;
-UNSAFE_END
-
-UNSAFE_ENTRY(void, Unsafe_SetObject140(JNIEnv *env, jobject unsafe, jobject obj, jint offset, jobject x_h))
-  UnsafeWrapper("Unsafe_SetObject");
-  if (obj == NULL)  THROW(vmSymbols::java_lang_NullPointerException());
-  oop x = JNIHandles::resolve(x_h);
-  //SET_FIELD(obj, offset, oop, x);
-  oop p = JNIHandles::resolve(obj);
-  if (UseCompressedOops) {
-    if (x != NULL) {
-      // If there is a heap base pointer, we are obliged to emit a store barrier.
-      oop_store((narrowOop*)index_oop_from_field_offset_long(p, offset), x);
-    } else {
-      narrowOop n = oopDesc::encode_heap_oop_not_null(x);
-      *(narrowOop*)index_oop_from_field_offset_long(p, offset) = n;
-    }
-  } else {
-    if (x != NULL) {
-      // If there is a heap base pointer, we are obliged to emit a store barrier.
-      oop_store((oop*)index_oop_from_field_offset_long(p, offset), x);
-    } else {
-      *(oop*)index_oop_from_field_offset_long(p, offset) = x;
-    }
-  }
-UNSAFE_END
-
-// The normal variants allow a null base pointer with an arbitrary address.
+// These functions allow a null base pointer with an arbitrary address.
 // But if the base pointer is non-null, the offset should make some sense.
 // That is, it should be in the range [0, MAX_OBJECT_SIZE].
 UNSAFE_ENTRY(jobject, Unsafe_GetObject(JNIEnv *env, jobject unsafe, jobject obj, jlong offset))
@@ -1350,9 +1293,6 @@ UNSAFE_END
 
 // These are the methods for 1.4.0
 static JNINativeMethod methods_140[] = {
-    {CC"getObject",        CC"("OBJ"I)"OBJ"",   FN_PTR(Unsafe_GetObject140)},
-    {CC"putObject",        CC"("OBJ"I"OBJ")V",  FN_PTR(Unsafe_SetObject140)},
-
     DECLARE_GETSETOOP_140(Boolean, Z),
     DECLARE_GETSETOOP_140(Byte, B),
     DECLARE_GETSETOOP_140(Short, S),

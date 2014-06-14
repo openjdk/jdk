@@ -697,6 +697,7 @@ class SpaceManager : public CHeapObj<mtClass> {
   size_t allocated_blocks_words() const { return _allocated_blocks_words; }
   size_t allocated_blocks_bytes() const { return _allocated_blocks_words * BytesPerWord; }
   size_t allocated_chunks_words() const { return _allocated_chunks_words; }
+  size_t allocated_chunks_bytes() const { return _allocated_chunks_words * BytesPerWord; }
   size_t allocated_chunks_count() const { return _allocated_chunks_count; }
 
   bool is_humongous(size_t word_size) { return word_size > medium_chunk_size(); }
@@ -3363,6 +3364,16 @@ size_t Metaspace::used_bytes_slow(MetadataType mdtype) const {
 
 size_t Metaspace::capacity_bytes_slow(MetadataType mdtype) const {
   return capacity_words_slow(mdtype) * BytesPerWord;
+}
+
+size_t Metaspace::allocated_blocks_bytes() const {
+  return vsm()->allocated_blocks_bytes() +
+      (using_class_space() ? class_vsm()->allocated_blocks_bytes() : 0);
+}
+
+size_t Metaspace::allocated_chunks_bytes() const {
+  return vsm()->allocated_chunks_bytes() +
+      (using_class_space() ? class_vsm()->allocated_chunks_bytes() : 0);
 }
 
 void Metaspace::deallocate(MetaWord* ptr, size_t word_size, bool is_class) {

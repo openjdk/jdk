@@ -2984,9 +2984,12 @@ void ClassFileParser::parse_classfile_attributes(ClassFileParser::ClassAnnotatio
       } else if (tag == vmSymbols::tag_enclosing_method()) {
         if (parsed_enclosingmethod_attribute) {
           classfile_parse_error("Multiple EnclosingMethod attributes in class file %s", CHECK);
-        }   else {
+        } else {
           parsed_enclosingmethod_attribute = true;
         }
+        guarantee_property(attribute_length == 4,
+          "Wrong EnclosingMethod attribute length %u in class file %s",
+          attribute_length, CHECK);
         cfs->guarantee_more(4, CHECK);  // class_index, method_index
         enclosing_method_class_index  = cfs->get_u2_fast();
         enclosing_method_method_index = cfs->get_u2_fast();
@@ -4664,9 +4667,7 @@ bool ClassFileParser::has_illegal_visibility(jint flags) {
 }
 
 bool ClassFileParser::is_supported_version(u2 major, u2 minor) {
-  u2 max_version =
-    JDK_Version::is_gte_jdk17x_version() ? JAVA_MAX_SUPPORTED_VERSION :
-    (JDK_Version::is_gte_jdk16x_version() ? JAVA_6_VERSION : JAVA_1_5_VERSION);
+  u2 max_version = JAVA_MAX_SUPPORTED_VERSION;
   return (major >= JAVA_MIN_SUPPORTED_VERSION) &&
          (major <= max_version) &&
          ((major != max_version) ||
