@@ -624,6 +624,12 @@ void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* kl
   }
 }
 
+void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
+  for (ClassLoaderData* cld = _head; cl != NULL && cld != NULL; cld = cld->next()) {
+    cl->do_cld(cld);
+  }
+}
+
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     cld->classes_do(klass_closure);

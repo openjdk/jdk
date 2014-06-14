@@ -1448,6 +1448,7 @@ void JavaThread::initialize() {
   _thread_stat = new ThreadStatistics();
   _blocked_on_compilation = false;
   _jni_active_critical = 0;
+  _pending_jni_exception_check_fn = NULL;
   _do_not_unlock_if_synchronized = false;
   _cached_monitor_info = NULL;
   _parker = Parker::Allocate(this) ;
@@ -1738,55 +1739,26 @@ void JavaThread::exit(bool destroy_vm, ExitType exit_type) {
 
     CLEAR_PENDING_EXCEPTION;
   }
-  // FIXIT: The is_null check is only so it works better on JDK1.2 VM's. This
-  // has to be fixed by a runtime query method
-  if (!destroy_vm || JDK_Version::is_jdk12x_version()) {
-    // JSR-166: change call from from ThreadGroup.uncaughtException to
-    // java.lang.Thread.dispatchUncaughtException
+  if (!destroy_vm) {
     if (uncaught_exception.not_null()) {
-      Handle group(this, java_lang_Thread::threadGroup(threadObj()));
-      {
-        EXCEPTION_MARK;
-        // Check if the method Thread.dispatchUncaughtException() exists. If so
-        // call it.  Otherwise we have an older library without the JSR-166 changes,
-        // so call ThreadGroup.uncaughtException()
-        KlassHandle recvrKlass(THREAD, threadObj->klass());
-        CallInfo callinfo;
-        KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
-        LinkResolver::resolve_virtual_call(callinfo, threadObj, recvrKlass, thread_klass,
-                                           vmSymbols::dispatchUncaughtException_name(),
-                                           vmSymbols::throwable_void_signature(),
-                                           KlassHandle(), false, false, THREAD);
+      EXCEPTION_MARK;
+      // Call method Thread.dispatchUncaughtException().
+      KlassHandle thread_klass(THREAD, SystemDictionary::Thread_klass());
+      JavaValue result(T_VOID);
+      JavaCalls::call_virtual(&result,
+                              threadObj, thread_klass,
+                              vmSymbols::dispatchUncaughtException_name(),
+                              vmSymbols::throwable_void_signature(),
+                              uncaught_exception,
+                              THREAD);
+      if (HAS_PENDING_EXCEPTION) {
+        ResourceMark rm(this);
+        jio_fprintf(defaultStream::error_stream(),
+              "\nException: %s thrown from the UncaughtExceptionHandler"
+              " in thread \"%s\"\n",
+              pending_exception()->klass()->external_name(),
+              get_thread_name());
         CLEAR_PENDING_EXCEPTION;
-        methodHandle method = callinfo.selected_method();
-        if (method.not_null()) {
-          JavaValue result(T_VOID);
-          JavaCalls::call_virtual(&result,
-                                  threadObj, thread_klass,
-                                  vmSymbols::dispatchUncaughtException_name(),
-                                  vmSymbols::throwable_void_signature(),
-                                  uncaught_exception,
-                                  THREAD);
-        } else {
-          KlassHandle thread_group(THREAD, SystemDictionary::ThreadGroup_klass());
-          JavaValue result(T_VOID);
-          JavaCalls::call_virtual(&result,
-                                  group, thread_group,
-                                  vmSymbols::uncaughtException_name(),
-                                  vmSymbols::thread_throwable_void_signature(),
-                                  threadObj,           // Arg 1
-                                  uncaught_exception,  // Arg 2
-                                  THREAD);
-        }
-        if (HAS_PENDING_EXCEPTION) {
-          ResourceMark rm(this);
-          jio_fprintf(defaultStream::error_stream(),
-                "\nException: %s thrown from the UncaughtExceptionHandler"
-                " in thread \"%s\"\n",
-                pending_exception()->klass()->external_name(),
-                get_thread_name());
-          CLEAR_PENDING_EXCEPTION;
-        }
       }
     }
 
@@ -2848,7 +2820,7 @@ void JavaThread::print_on(outputStream *st) const {
   Thread::print_on(st);
   // print guess for valid stack memory region (assume 4K pages); helps lock debugging
   st->print_cr("[" INTPTR_FORMAT "]", (intptr_t)last_Java_sp() & ~right_n_bits(12));
-  if (thread_oop != NULL && JDK_Version::is_gte_jdk15x_version()) {
+  if (thread_oop != NULL) {
     st->print_cr("   java.lang.Thread.State: %s", java_lang_Thread::thread_status_name(thread_oop));
   }
 #ifndef PRODUCT
@@ -3948,15 +3920,8 @@ bool Threads::destroy_vm() {
   }
   os::wait_for_keypress_at_exit();
 
-  if (JDK_Version::is_jdk12x_version()) {
-    // We are the last thread running, so check if finalizers should be run.
-    // For 1.3 or later this is done in thread->invoke_shutdown_hooks()
-    HandleMark rm(thread);
-    Universe::run_finalizers_on_exit();
-  } else {
-    // run Java level shutdown hooks
-    thread->invoke_shutdown_hooks();
-  }
+  // run Java level shutdown hooks
+  thread->invoke_shutdown_hooks();
 
   before_exit(thread);
 
