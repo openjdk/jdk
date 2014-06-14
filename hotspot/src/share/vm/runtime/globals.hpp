@@ -599,6 +599,9 @@ class CommandLineFlags {
   product(bool, UseAES, false,                                              \
           "Control whether AES instructions can be used on x86/x64")        \
                                                                             \
+  product(bool, UseSHA, false,                                              \
+          "Control whether SHA instructions can be used on SPARC")          \
+                                                                            \
   product(uintx, LargePageSizeInBytes, 0,                                   \
           "Large page size (0 to let VM choose the page size)")             \
                                                                             \
@@ -704,6 +707,15 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseAESIntrinsics, false,                                    \
           "Use intrinsics for AES versions of crypto")                      \
+                                                                            \
+  product(bool, UseSHA1Intrinsics, false,                                   \
+          "Use intrinsics for SHA-1 crypto hash function")                  \
+                                                                            \
+  product(bool, UseSHA256Intrinsics, false,                                 \
+          "Use intrinsics for SHA-224 and SHA-256 crypto hash functions")   \
+                                                                            \
+  product(bool, UseSHA512Intrinsics, false,                                 \
+          "Use intrinsics for SHA-384 and SHA-512 crypto hash functions")   \
                                                                             \
   product(bool, UseCRC32Intrinsics, false,                                  \
           "use intrinsics for java.util.zip.CRC32")                         \

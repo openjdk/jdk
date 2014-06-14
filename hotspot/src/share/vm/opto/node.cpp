@@ -514,6 +514,9 @@ Node *Node::clone() const {
   if (n->is_Call()) {
     n->as_Call()->clone_jvms(C);
   }
+  if (n->is_SafePoint()) {
+    n->as_SafePoint()->clone_replaced_nodes();
+  }
   return n;                     // Return the clone
 }
 
@@ -608,6 +611,9 @@ void Node::destruct() {
   }
   if (is_expensive()) {
     compile->remove_expensive_node(this);
+  }
+  if (is_SafePoint()) {
+    as_SafePoint()->delete_replaced_nodes();
   }
 #ifdef ASSERT
   // We will not actually delete the storage, but we'll make the node unusable.
