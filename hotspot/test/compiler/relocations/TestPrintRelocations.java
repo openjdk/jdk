@@ -21,31 +21,18 @@
  * questions.
  */
 
-/*
- * @test UintxTest
- * @bug 8028756
- * @library /testlibrary /testlibrary/whitebox
- * @build UintxTest
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI UintxTest
- * @summary testing of WB::set/getUintxVMFlag()
- * @author igor.ignatyev@oracle.com
+/**
+ * @test
+ * @bug 8044538
+ * @summary assert hit while printing relocations for jump table entries
+ * @run main/othervm -XX:+IgnoreUnrecognizedVMOptions -Xcomp -XX:+PrintRelocations TestPrintRelocations
  */
-import com.oracle.java.testlibrary.Platform;
 
-public class UintxTest {
-    private static final String FLAG_NAME = "VerifyGCStartAt";
-    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
-        (1L << 32L) - 1L, 1L << 32L};
-    private static final Long[] EXPECTED_64 = TESTS;
-    private static final Long[] EXPECTED_32 = {0L, 100L,
-        (long) Integer.MAX_VALUE, (1L << 32L) - 1L, 0L};
+/**
+ * The test compiles all methods (-Xcomp) and prints their relocation
+ * entries (-XX:+PrintRelocations) to make sure the printing works.
+ */
+public class TestPrintRelocations {
 
-    public static void main(String[] args) throws Exception {
-        VmFlagTest.runTest(FLAG_NAME, TESTS,
-            Platform.is64bit() ? EXPECTED_64 : EXPECTED_32,
-            VmFlagTest.WHITE_BOX::setUintxVMFlag,
-            VmFlagTest.WHITE_BOX::getUintxVMFlag);
-    }
+   static public void main(String[] args) { }
 }
-

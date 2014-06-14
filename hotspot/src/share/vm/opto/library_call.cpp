@@ -52,25 +52,28 @@ class LibraryIntrinsic : public InlineCallGenerator {
  public:
  private:
   bool             _is_virtual;
-  bool             _is_predicted;
   bool             _does_virtual_dispatch;
+  int8_t           _predicates_count;  // Intrinsic is predicated by several conditions
+  int8_t           _last_predicate; // Last generated predicate
   vmIntrinsics::ID _intrinsic_id;
 
  public:
-  LibraryIntrinsic(ciMethod* m, bool is_virtual, bool is_predicted, bool does_virtual_dispatch, vmIntrinsics::ID id)
+  LibraryIntrinsic(ciMethod* m, bool is_virtual, int predicates_count, bool does_virtual_dispatch, vmIntrinsics::ID id)
     : InlineCallGenerator(m),
       _is_virtual(is_virtual),
-      _is_predicted(is_predicted),
       _does_virtual_dispatch(does_virtual_dispatch),
+      _predicates_count((int8_t)predicates_count),
+      _last_predicate((int8_t)-1),
       _intrinsic_id(id)
   {
   }
   virtual bool is_intrinsic() const { return true; }
   virtual bool is_virtual()   const { return _is_virtual; }
-  virtual bool is_predicted()   const { return _is_predicted; }
+  virtual bool is_predicated() const { return _predicates_count > 0; }
+  virtual int  predicates_count() const { return _predicates_count; }
   virtual bool does_virtual_dispatch()   const { return _does_virtual_dispatch; }
-  virtual JVMState* generate(JVMState* jvms, Parse* parent_parser);
-  virtual Node* generate_predicate(JVMState* jvms);
+  virtual JVMState* generate(JVMState* jvms);
+  virtual Node* generate_predicate(JVMState* jvms, int predicate);
   vmIntrinsics::ID intrinsic_id() const { return _intrinsic_id; }
 };
 
@@ -113,8 +116,8 @@ class LibraryCallKit : public GraphKit {
   vmIntrinsics::ID  intrinsic_id() const { return _intrinsic->intrinsic_id(); }
   ciMethod*         callee()    const    { return _intrinsic->method(); }
 
-  bool try_to_inline();
-  Node* try_to_predicate();
+  bool  try_to_inline(int predicate);
+  Node* try_to_predicate(int predicate);
 
   void push_result() {
     // Push the result onto the stack.
@@ -313,6 +316,14 @@ class LibraryCallKit : public GraphKit {
   Node* inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting);
   Node* get_key_start_from_aescrypt_object(Node* aescrypt_object);
   Node* get_original_key_start_from_aescrypt_object(Node* aescrypt_object);
+  bool inline_sha_implCompress(vmIntrinsics::ID id);
+  bool inline_digestBase_implCompressMB(int predicate);
+  bool inline_sha_implCompressMB(Node* digestBaseObj, ciInstanceKlass* instklass_SHA,
+                                 bool long_state, address stubAddr, const char *stubName,
+                                 Node* src_start, Node* ofs, Node* limit);
+  Node* get_state_from_sha_object(Node *sha_object);
+  Node* get_state_from_sha5_object(Node *sha_object);
+  Node* inline_digestBase_implCompressMB_predicate(int predicate);
   bool inline_encodeISOArray();
   bool inline_updateCRC32();
   bool inline_updateBytesCRC32();
@@ -373,7 +384,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     }
   }
 
-  bool is_predicted = false;
+  int predicates = 0;
   bool does_virtual_dispatch = false;
 
   switch (id) {
@@ -513,7 +524,24 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     if (!UseAESIntrinsics) return NULL;
     // these two require the predicated logic
-    is_predicted = true;
+    predicates = 1;
+    break;
+
+  case vmIntrinsics::_sha_implCompress:
+    if (!UseSHA1Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_sha2_implCompress:
+    if (!UseSHA256Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_sha5_implCompress:
+    if (!UseSHA512Intrinsics) return NULL;
+    break;
+
+  case vmIntrinsics::_digestBase_implCompressMB:
+    if (!(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics)) return NULL;
+    predicates = 3;
     break;
 
   case vmIntrinsics::_updateCRC32:
@@ -582,7 +610,7 @@ CallGenerator* Compile::make_vm_intrinsic(ciMethod* m, bool is_virtual) {
     if (!InlineUnsafeOps)  return NULL;
   }
 
-  return new LibraryIntrinsic(m, is_virtual, is_predicted, does_virtual_dispatch, (vmIntrinsics::ID) id);
+  return new LibraryIntrinsic(m, is_virtual, predicates, does_virtual_dispatch, (vmIntrinsics::ID) id);
 }
 
 //----------------------register_library_intrinsics-----------------------
@@ -591,7 +619,7 @@ void Compile::register_library_intrinsics() {
   // Nothing to do here.
 }
 
-JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
+JVMState* LibraryIntrinsic::generate(JVMState* jvms) {
   LibraryCallKit kit(jvms, this);
   Compile* C = kit.C;
   int nodes = C->unique();
@@ -606,7 +634,7 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
   const int bci    = kit.bci();
 
   // Try to inline the intrinsic.
-  if (kit.try_to_inline()) {
+  if (kit.try_to_inline(_last_predicate)) {
     if (C->print_intrinsics() || C->print_inlining()) {
       C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
     }
@@ -641,12 +669,13 @@ JVMState* LibraryIntrinsic::generate(JVMState* jvms, Parse* parent_parser) {
   return NULL;
 }
 
-Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
+Node* LibraryIntrinsic::generate_predicate(JVMState* jvms, int predicate) {
   LibraryCallKit kit(jvms, this);
   Compile* C = kit.C;
   int nodes = C->unique();
+  _last_predicate = predicate;
 #ifndef PRODUCT
-  assert(is_predicted(), "sanity");
+  assert(is_predicated() && predicate < predicates_count(), "sanity");
   if ((C->print_intrinsics() || C->print_inlining()) && Verbose) {
     char buf[1000];
     const char* str = vmIntrinsics::short_name_as_C_string(intrinsic_id(), buf, sizeof(buf));
@@ -656,10 +685,10 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   ciMethod* callee = kit.callee();
   const int bci    = kit.bci();
 
-  Node* slow_ctl = kit.try_to_predicate();
+  Node* slow_ctl = kit.try_to_predicate(predicate);
   if (!kit.failing()) {
     if (C->print_intrinsics() || C->print_inlining()) {
-      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual)" : "(intrinsic)");
+      C->print_inlining(callee, jvms->depth() - 1, bci, is_virtual() ? "(intrinsic, virtual, predicate)" : "(intrinsic, predicate)");
     }
     C->gather_intrinsic_statistics(intrinsic_id(), is_virtual(), Compile::_intrinsic_worked);
     if (C->log()) {
@@ -688,7 +717,7 @@ Node* LibraryIntrinsic::generate_predicate(JVMState* jvms) {
   return NULL;
 }
 
-bool LibraryCallKit::try_to_inline() {
+bool LibraryCallKit::try_to_inline(int predicate) {
   // Handle symbolic names for otherwise undistinguished boolean switches:
   const bool is_store       = true;
   const bool is_native_ptr  = true;
@@ -882,6 +911,14 @@ bool LibraryCallKit::try_to_inline() {
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt(intrinsic_id());
 
+  case vmIntrinsics::_sha_implCompress:
+  case vmIntrinsics::_sha2_implCompress:
+  case vmIntrinsics::_sha5_implCompress:
+    return inline_sha_implCompress(intrinsic_id());
+
+  case vmIntrinsics::_digestBase_implCompressMB:
+    return inline_digestBase_implCompressMB(predicate);
+
   case vmIntrinsics::_encodeISOArray:
     return inline_encodeISOArray();
 
@@ -905,7 +942,7 @@ bool LibraryCallKit::try_to_inline() {
   }
 }
 
-Node* LibraryCallKit::try_to_predicate() {
+Node* LibraryCallKit::try_to_predicate(int predicate) {
   if (!jvms()->has_method()) {
     // Root JVMState has a null method.
     assert(map()->memory()->Opcode() == Op_Parm, "");
@@ -919,6 +956,8 @@ Node* LibraryCallKit::try_to_predicate() {
     return inline_cipherBlockChaining_AESCrypt_predicate(false);
   case vmIntrinsics::_cipherBlockChaining_decryptAESCrypt:
     return inline_cipherBlockChaining_AESCrypt_predicate(true);
+  case vmIntrinsics::_digestBase_implCompressMB:
+    return inline_digestBase_implCompressMB_predicate(predicate);
 
   default:
     // If you get here, it may be that someone has added a new intrinsic
@@ -4579,7 +4618,10 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
       // It's an instance, and it passed the slow-path tests.
       PreserveJVMState pjvms(this);
       Node* obj_size  = NULL;
-      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size);
+      // Need to deoptimize on exception from allocation since Object.clone intrinsic
+      // is reexecuted if deoptimization occurs and there could be problems when merging
+      // exception state between multiple Object.clone versions (reexecute=true vs reexecute=false).
+      Node* alloc_obj = new_instance(obj_klass, NULL, &obj_size, /*deoptimize_on_exception=*/true);
 
       copy_to_clone(obj, alloc_obj, obj_size, false, !use_ReduceInitialCardMarks());
 
@@ -5865,7 +5907,12 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
   BasicType bt = field->layout_type();
 
   // Build the resultant type of the load
-  const Type *type = TypeOopPtr::make_from_klass(field_klass->as_klass());
+  const Type *type;
+  if (bt == T_OBJECT) {
+    type = TypeOopPtr::make_from_klass(field_klass->as_klass());
+  } else {
+    type = Type::get_const_basic_type(bt);
+  }
 
   // Build the load.
   Node* loadedField = make_load(NULL, adr, type, bt, adr_type, MemNode::unordered, is_vol);
@@ -5995,7 +6042,7 @@ bool LibraryCallKit::inline_cipherBlockChaining_AESCrypt(vmIntrinsics::ID id) {
   assert(tinst != NULL, "CBC obj is null");
   assert(tinst->klass()->is_loaded(), "CBC obj is not loaded");
   ciKlass* klass_AESCrypt = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make("com/sun/crypto/provider/AESCrypt"));
-  if (!klass_AESCrypt->is_loaded()) return false;
+  assert(klass_AESCrypt->is_loaded(), "predicate checks that this class is loaded");
 
   ciInstanceKlass* instklass_AESCrypt = klass_AESCrypt->as_instance_klass();
   const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_AESCrypt);
@@ -6070,11 +6117,8 @@ Node * LibraryCallKit::get_original_key_start_from_aescrypt_object(Node *aescryp
 //    note cipher==plain is more conservative than the original java code but that's OK
 //
 Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypting) {
-  // First, check receiver for NULL since it is virtual method.
+  // The receiver was checked for NULL already.
   Node* objCBC = argument(0);
-  objCBC = null_check(objCBC);
-
-  if (stopped()) return NULL; // Always NULL
 
   // Load embeddedCipher field of CipherBlockChaining object.
   Node* embeddedCipherObj = load_field_from_object(objCBC, "embeddedCipher", "Lcom/sun/crypto/provider/SymmetricCipher;", /*is_exact*/ false);
@@ -6120,4 +6164,259 @@ Node* LibraryCallKit::inline_cipherBlockChaining_AESCrypt_predicate(bool decrypt
 
   record_for_igvn(region);
   return _gvn.transform(region);
+}
+
+//------------------------------inline_sha_implCompress-----------------------
+//
+// Calculate SHA (i.e., SHA-1) for single-block byte[] array.
+// void com.sun.security.provider.SHA.implCompress(byte[] buf, int ofs)
+//
+// Calculate SHA2 (i.e., SHA-244 or SHA-256) for single-block byte[] array.
+// void com.sun.security.provider.SHA2.implCompress(byte[] buf, int ofs)
+//
+// Calculate SHA5 (i.e., SHA-384 or SHA-512) for single-block byte[] array.
+// void com.sun.security.provider.SHA5.implCompress(byte[] buf, int ofs)
+//
+bool LibraryCallKit::inline_sha_implCompress(vmIntrinsics::ID id) {
+  assert(callee()->signature()->size() == 2, "sha_implCompress has 2 parameters");
+
+  Node* sha_obj = argument(0);
+  Node* src     = argument(1); // type oop
+  Node* ofs     = argument(2); // type int
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+  // 'src_start' points to src array + offset
+  Node* src_start = array_element_address(src, ofs, src_elem);
+  Node* state = NULL;
+  address stubAddr;
+  const char *stubName;
+
+  switch(id) {
+  case vmIntrinsics::_sha_implCompress:
+    assert(UseSHA1Intrinsics, "need SHA1 instruction support");
+    state = get_state_from_sha_object(sha_obj);
+    stubAddr = StubRoutines::sha1_implCompress();
+    stubName = "sha1_implCompress";
+    break;
+  case vmIntrinsics::_sha2_implCompress:
+    assert(UseSHA256Intrinsics, "need SHA256 instruction support");
+    state = get_state_from_sha_object(sha_obj);
+    stubAddr = StubRoutines::sha256_implCompress();
+    stubName = "sha256_implCompress";
+    break;
+  case vmIntrinsics::_sha5_implCompress:
+    assert(UseSHA512Intrinsics, "need SHA512 instruction support");
+    state = get_state_from_sha5_object(sha_obj);
+    stubAddr = StubRoutines::sha512_implCompress();
+    stubName = "sha512_implCompress";
+    break;
+  default:
+    fatal_unexpected_iid(id);
+    return false;
+  }
+  if (state == NULL) return false;
+
+  // Call the stub.
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP, OptoRuntime::sha_implCompress_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, state);
+
+  return true;
+}
+
+//------------------------------inline_digestBase_implCompressMB-----------------------
+//
+// Calculate SHA/SHA2/SHA5 for multi-block byte[] array.
+// int com.sun.security.provider.DigestBase.implCompressMultiBlock(byte[] b, int ofs, int limit)
+//
+bool LibraryCallKit::inline_digestBase_implCompressMB(int predicate) {
+  assert(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
+         "need SHA1/SHA256/SHA512 instruction support");
+  assert((uint)predicate < 3, "sanity");
+  assert(callee()->signature()->size() == 3, "digestBase_implCompressMB has 3 parameters");
+
+  Node* digestBase_obj = argument(0); // The receiver was checked for NULL already.
+  Node* src            = argument(1); // byte[] array
+  Node* ofs            = argument(2); // type int
+  Node* limit          = argument(3); // type int
+
+  const Type* src_type = src->Value(&_gvn);
+  const TypeAryPtr* top_src = src_type->isa_aryptr();
+  if (top_src  == NULL || top_src->klass()  == NULL) {
+    // failed array check
+    return false;
+  }
+  // Figure out the size and type of the elements we will be copying.
+  BasicType src_elem = src_type->isa_aryptr()->klass()->as_array_klass()->element_type()->basic_type();
+  if (src_elem != T_BYTE) {
+    return false;
+  }
+  // 'src_start' points to src array + offset
+  Node* src_start = array_element_address(src, ofs, src_elem);
+
+  const char* klass_SHA_name = NULL;
+  const char* stub_name = NULL;
+  address     stub_addr = NULL;
+  bool        long_state = false;
+
+  switch (predicate) {
+  case 0:
+    if (UseSHA1Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA";
+      stub_name = "sha1_implCompressMB";
+      stub_addr = StubRoutines::sha1_implCompressMB();
+    }
+    break;
+  case 1:
+    if (UseSHA256Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA2";
+      stub_name = "sha256_implCompressMB";
+      stub_addr = StubRoutines::sha256_implCompressMB();
+    }
+    break;
+  case 2:
+    if (UseSHA512Intrinsics) {
+      klass_SHA_name = "sun/security/provider/SHA5";
+      stub_name = "sha512_implCompressMB";
+      stub_addr = StubRoutines::sha512_implCompressMB();
+      long_state = true;
+    }
+    break;
+  default:
+    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+  }
+  if (klass_SHA_name != NULL) {
+    // get DigestBase klass to lookup for SHA klass
+    const TypeInstPtr* tinst = _gvn.type(digestBase_obj)->isa_instptr();
+    assert(tinst != NULL, "digestBase_obj is not instance???");
+    assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+
+    ciKlass* klass_SHA = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_SHA_name));
+    assert(klass_SHA->is_loaded(), "predicate checks that this class is loaded");
+    ciInstanceKlass* instklass_SHA = klass_SHA->as_instance_klass();
+    return inline_sha_implCompressMB(digestBase_obj, instklass_SHA, long_state, stub_addr, stub_name, src_start, ofs, limit);
+  }
+  return false;
+}
+//------------------------------inline_sha_implCompressMB-----------------------
+bool LibraryCallKit::inline_sha_implCompressMB(Node* digestBase_obj, ciInstanceKlass* instklass_SHA,
+                                               bool long_state, address stubAddr, const char *stubName,
+                                               Node* src_start, Node* ofs, Node* limit) {
+  const TypeKlassPtr* aklass = TypeKlassPtr::make(instklass_SHA);
+  const TypeOopPtr* xtype = aklass->as_instance_type();
+  Node* sha_obj = new CheckCastPPNode(control(), digestBase_obj, xtype);
+  sha_obj = _gvn.transform(sha_obj);
+
+  Node* state;
+  if (long_state) {
+    state = get_state_from_sha5_object(sha_obj);
+  } else {
+    state = get_state_from_sha_object(sha_obj);
+  }
+  if (state == NULL) return false;
+
+  // Call the stub.
+  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
+                                 OptoRuntime::digestBase_implCompressMB_Type(),
+                                 stubAddr, stubName, TypePtr::BOTTOM,
+                                 src_start, state, ofs, limit);
+  // return ofs (int)
+  Node* result = _gvn.transform(new ProjNode(call, TypeFunc::Parms));
+  set_result(result);
+
+  return true;
+}
+
+//------------------------------get_state_from_sha_object-----------------------
+Node * LibraryCallKit::get_state_from_sha_object(Node *sha_object) {
+  Node* sha_state = load_field_from_object(sha_object, "state", "[I", /*is_exact*/ false);
+  assert (sha_state != NULL, "wrong version of sun.security.provider.SHA/SHA2");
+  if (sha_state == NULL) return (Node *) NULL;
+
+  // now have the array, need to get the start address of the state array
+  Node* state = array_element_address(sha_state, intcon(0), T_INT);
+  return state;
+}
+
+//------------------------------get_state_from_sha5_object-----------------------
+Node * LibraryCallKit::get_state_from_sha5_object(Node *sha_object) {
+  Node* sha_state = load_field_from_object(sha_object, "state", "[J", /*is_exact*/ false);
+  assert (sha_state != NULL, "wrong version of sun.security.provider.SHA5");
+  if (sha_state == NULL) return (Node *) NULL;
+
+  // now have the array, need to get the start address of the state array
+  Node* state = array_element_address(sha_state, intcon(0), T_LONG);
+  return state;
+}
+
+//----------------------------inline_digestBase_implCompressMB_predicate----------------------------
+// Return node representing slow path of predicate check.
+// the pseudo code we want to emulate with this predicate is:
+//    if (digestBaseObj instanceof SHA/SHA2/SHA5) do_intrinsic, else do_javapath
+//
+Node* LibraryCallKit::inline_digestBase_implCompressMB_predicate(int predicate) {
+  assert(UseSHA1Intrinsics || UseSHA256Intrinsics || UseSHA512Intrinsics,
+         "need SHA1/SHA256/SHA512 instruction support");
+  assert((uint)predicate < 3, "sanity");
+
+  // The receiver was checked for NULL already.
+  Node* digestBaseObj = argument(0);
+
+  // get DigestBase klass for instanceOf check
+  const TypeInstPtr* tinst = _gvn.type(digestBaseObj)->isa_instptr();
+  assert(tinst != NULL, "digestBaseObj is null");
+  assert(tinst->klass()->is_loaded(), "DigestBase is not loaded");
+
+  const char* klass_SHA_name = NULL;
+  switch (predicate) {
+  case 0:
+    if (UseSHA1Intrinsics) {
+      // we want to do an instanceof comparison against the SHA class
+      klass_SHA_name = "sun/security/provider/SHA";
+    }
+    break;
+  case 1:
+    if (UseSHA256Intrinsics) {
+      // we want to do an instanceof comparison against the SHA2 class
+      klass_SHA_name = "sun/security/provider/SHA2";
+    }
+    break;
+  case 2:
+    if (UseSHA512Intrinsics) {
+      // we want to do an instanceof comparison against the SHA5 class
+      klass_SHA_name = "sun/security/provider/SHA5";
+    }
+    break;
+  default:
+    fatal(err_msg_res("unknown SHA intrinsic predicate: %d", predicate));
+  }
+
+  ciKlass* klass_SHA = NULL;
+  if (klass_SHA_name != NULL) {
+    klass_SHA = tinst->klass()->as_instance_klass()->find_klass(ciSymbol::make(klass_SHA_name));
+  }
+  if ((klass_SHA == NULL) || !klass_SHA->is_loaded()) {
+    // if none of SHA/SHA2/SHA5 is loaded, we never take the intrinsic fast path
+    Node* ctrl = control();
+    set_control(top()); // no intrinsic path
+    return ctrl;
+  }
+  ciInstanceKlass* instklass_SHA = klass_SHA->as_instance_klass();
+
+  Node* instofSHA = gen_instanceof(digestBaseObj, makecon(TypeKlassPtr::make(instklass_SHA)));
+  Node* cmp_instof = _gvn.transform(new CmpINode(instofSHA, intcon(1)));
+  Node* bool_instof = _gvn.transform(new BoolNode(cmp_instof, BoolTest::ne));
+  Node* instof_false = generate_guard(bool_instof, NULL, PROB_MIN);
+
+  return instof_false;  // even if it is NULL
 }
