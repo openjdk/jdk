@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -261,7 +261,7 @@ public class AnnotationTypeWriterImpl extends SubWriterHolderWriter
         Content hr = new HtmlTree(HtmlTag.HR);
         annotationInfoTree.addContent(hr);
         Tag[] deprs = annotationType.tags("deprecated");
-        if (Util.isDeprecated(annotationType)) {
+        if (utils.isDeprecated(annotationType)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
             Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (deprs.length > 0) {

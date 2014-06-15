@@ -50,7 +50,7 @@ import com.sun.tools.javac.util.StringUtils;
  * @author Atul M Dambalkar
  * @author Jamie Ho
  */
-public class Util {
+public class Utils {
     /**
      * Return array of class members whose documentation is to be generated.
      * If the member is deprecated do not include such a member in the
@@ -60,7 +60,7 @@ public class Util {
      * @return ProgramElementDoc[] Array of eligible members for whom
      *                             documentation is getting generated.
      */
-    public static ProgramElementDoc[] excludeDeprecatedMembers(
+    public ProgramElementDoc[] excludeDeprecatedMembers(
         ProgramElementDoc[] members) {
         return
             toProgramElementDocArray(excludeDeprecatedMembersAsList(members));
@@ -75,7 +75,7 @@ public class Util {
      * @return List       List of eligible members for whom
      *                    documentation is getting generated.
      */
-    public static List<ProgramElementDoc> excludeDeprecatedMembersAsList(
+    public List<ProgramElementDoc> excludeDeprecatedMembersAsList(
         ProgramElementDoc[] members) {
         List<ProgramElementDoc> list = new ArrayList<>();
         for (ProgramElementDoc member : members) {
@@ -90,7 +90,7 @@ public class Util {
     /**
      * Return the list of ProgramElementDoc objects as Array.
      */
-    public static ProgramElementDoc[] toProgramElementDocArray(List<ProgramElementDoc> list) {
+    public ProgramElementDoc[] toProgramElementDocArray(List<ProgramElementDoc> list) {
         ProgramElementDoc[] pgmarr = new ProgramElementDoc[list.size()];
         for (int i = 0; i < list.size(); i++) {
             pgmarr[i] = list.get(i);
@@ -104,7 +104,7 @@ public class Util {
      * @param  members Array of members to look into.
      * @return boolean True if non-public member found, false otherwise.
      */
-    public static boolean nonPublicMemberFound(ProgramElementDoc[] members) {
+    public boolean nonPublicMemberFound(ProgramElementDoc[] members) {
         for (ProgramElementDoc member : members) {
             if (!member.isPublic()) {
                 return true;
@@ -120,7 +120,7 @@ public class Util {
      * @param  method    Method to be searched.
      * @return MethodDoc Method found, null otherwise.
      */
-    public static MethodDoc findMethod(ClassDoc cd, MethodDoc method) {
+    public MethodDoc findMethod(ClassDoc cd, MethodDoc method) {
         MethodDoc[] methods = cd.methods();
         for (MethodDoc m : methods) {
             if (executableMembersEqual(method, m)) {
@@ -136,7 +136,7 @@ public class Util {
      * @param member2 the second method to compare.
      * @return true if member1 overrides/hides or is overriden/hidden by member2.
      */
-    public static boolean executableMembersEqual(ExecutableMemberDoc member1,
+    public boolean executableMembersEqual(ExecutableMemberDoc member1,
             ExecutableMemberDoc member2) {
         if (! (member1 instanceof MethodDoc && member2 instanceof MethodDoc))
             return false;
@@ -175,11 +175,11 @@ public class Util {
      * <cite>The Java&trade; Language Specification</cite>,
      * all the outer classes and static inner classes are core classes.
      */
-    public static boolean isCoreClass(ClassDoc cd) {
+    public boolean isCoreClass(ClassDoc cd) {
         return cd.containingClass() == null || cd.isStatic();
     }
 
-    public static boolean matches(ProgramElementDoc doc1,
+    public boolean matches(ProgramElementDoc doc1,
             ProgramElementDoc doc2) {
         if (doc1 instanceof ExecutableMemberDoc &&
             doc2 instanceof ExecutableMemberDoc) {
@@ -204,11 +204,11 @@ public class Util {
      * @param dir The original directory name to copy from.
      * @param overwrite Overwrite files if true.
      */
-    public static void copyDocFiles(Configuration configuration, PackageDoc pd) {
+    public void copyDocFiles(Configuration configuration, PackageDoc pd) {
         copyDocFiles(configuration, DocPath.forPackage(pd).resolve(DocPaths.DOC_FILES));
     }
 
-    public static void copyDocFiles(Configuration configuration, DocPath dir) {
+    public void copyDocFiles(Configuration configuration, DocPath dir) {
         try {
             boolean first = true;
             for (DocFile f : DocFile.list(configuration, StandardLocation.SOURCE_PATH, dir)) {
@@ -272,7 +272,7 @@ public class Util {
      * @param  sort if true, return list of interfaces sorted alphabetically.
      * @return List of all the required interfaces.
      */
-    public static List<Type> getAllInterfaces(Type type,
+    public List<Type> getAllInterfaces(Type type,
             Configuration configuration, boolean sort) {
         Map<ClassDoc,Type> results = sort ?
                 new TreeMap<ClassDoc,Type>() :
@@ -316,7 +316,7 @@ public class Util {
         return resultsList;
     }
 
-    private static Type[] interfaceTypesOf(Type type) {
+    private Type[] interfaceTypesOf(Type type) {
         if (type instanceof AnnotatedType)
             type = ((AnnotatedType)type).underlyingType();
         return type instanceof ClassDoc ?
@@ -324,11 +324,11 @@ public class Util {
                 ((ParameterizedType)type).interfaceTypes();
     }
 
-    public static List<Type> getAllInterfaces(Type type, Configuration configuration) {
+    public List<Type> getAllInterfaces(Type type, Configuration configuration) {
         return getAllInterfaces(type, configuration, true);
     }
 
-    private static void findAllInterfaceTypes(Map<ClassDoc,Type> results, ClassDoc c, boolean raw,
+    private void findAllInterfaceTypes(Map<ClassDoc,Type> results, ClassDoc c, boolean raw,
             Configuration configuration) {
         Type superType = c.superclassType();
         if (superType == null)
@@ -338,7 +338,7 @@ public class Util {
                 raw, configuration);
     }
 
-    private static void findAllInterfaceTypes(Map<ClassDoc,Type> results, ParameterizedType p,
+    private void findAllInterfaceTypes(Map<ClassDoc,Type> results, ParameterizedType p,
             Configuration configuration) {
         Type superType = p.superclassType();
         if (superType == null)
@@ -348,7 +348,7 @@ public class Util {
                 false, configuration);
     }
 
-    private static void addAllInterfaceTypes(Map<ClassDoc,Type> results, Type type,
+    private void addAllInterfaceTypes(Map<ClassDoc,Type> results, Type type,
             Type[] interfaceTypes, boolean raw,
             Configuration configuration) {
         for (Type interfaceType : interfaceTypes) {
@@ -380,7 +380,7 @@ public class Util {
     /**
      * Enclose in quotes, used for paths and filenames that contains spaces
      */
-    public static String quote(String filepath) {
+    public String quote(String filepath) {
         return ("\"" + filepath + "\"");
     }
 
@@ -389,7 +389,7 @@ public class Util {
      * @param packageDoc the package to check.
      * @return the name of the given package.
      */
-    public static String getPackageName(PackageDoc packageDoc) {
+    public String getPackageName(PackageDoc packageDoc) {
         return packageDoc == null || packageDoc.name().length() == 0 ?
             DocletConstants.DEFAULT_PACKAGE_NAME : packageDoc.name();
     }
@@ -399,7 +399,7 @@ public class Util {
      * @param packageDoc the package to check.
      * @return the file name of the given package.
      */
-    public static String getPackageFileHeadName(PackageDoc packageDoc) {
+    public String getPackageFileHeadName(PackageDoc packageDoc) {
         return packageDoc == null || packageDoc.name().length() == 0 ?
             DocletConstants.DEFAULT_PACKAGE_FILE_NAME : packageDoc.name();
     }
@@ -410,7 +410,7 @@ public class Util {
      * @param oldStr the string to replace.
      * @param newStr the string to insert in place of the old string.
      */
-    public static String replaceText(String originalStr, String oldStr,
+    public String replaceText(String originalStr, String oldStr,
             String newStr) {
         if (oldStr == null || newStr == null || oldStr.equals(newStr)) {
             return originalStr;
@@ -426,7 +426,7 @@ public class Util {
      *
      * @return true return true if it should be documented and false otherwise.
      */
-    public static boolean isDocumentedAnnotation(AnnotationTypeDoc annotationDoc) {
+    public boolean isDocumentedAnnotation(AnnotationTypeDoc annotationDoc) {
         for (AnnotationDesc anno : annotationDoc.annotations()) {
             if (anno.annotationType().qualifiedName().equals(
                     Documented.class.getName())) {
@@ -436,7 +436,7 @@ public class Util {
         return false;
     }
 
-    private static boolean isDeclarationTarget(AnnotationDesc targetAnno) {
+    private boolean isDeclarationTarget(AnnotationDesc targetAnno) {
         // The error recovery steps here are analogous to TypeAnnotations
         ElementValuePair[] elems = targetAnno.elementValues();
         if (elems == null
@@ -451,7 +451,7 @@ public class Util {
                 return true; // error recovery
 
             FieldDoc eValue = (FieldDoc) value;
-            if (Util.isJava5DeclarationElementType(eValue)) {
+            if (isJava5DeclarationElementType(eValue)) {
                 return true;
             }
         }
@@ -468,7 +468,7 @@ public class Util {
      * @param elemType  the targeted elemType
      * @return true if annotationDoc is a declaration annotation
      */
-    public static boolean isDeclarationAnnotation(AnnotationTypeDoc annotationDoc,
+    public boolean isDeclarationAnnotation(AnnotationTypeDoc annotationDoc,
             boolean isJava5DeclarationLocation) {
         if (!isJava5DeclarationLocation)
             return false;
@@ -499,7 +499,7 @@ public class Util {
      * @return true if this class is linkable and false if we can't link to the
      * desired class.
      */
-    public static boolean isLinkable(ClassDoc classDoc,
+    public boolean isLinkable(ClassDoc classDoc,
             Configuration configuration) {
         return
             ((classDoc.isIncluded() && configuration.isGeneratedDoc(classDoc))) ||
@@ -515,7 +515,7 @@ public class Util {
      * @return the closest visible super class.  Return null if it cannot
      *         be found (i.e. classDoc is java.lang.Object).
      */
-    public static Type getFirstVisibleSuperClass(ClassDoc classDoc,
+    public Type getFirstVisibleSuperClass(ClassDoc classDoc,
             Configuration configuration) {
         if (classDoc == null) {
             return null;
@@ -544,7 +544,7 @@ public class Util {
      * @return the closest visible super class.  Return null if it cannot
      *         be found (i.e. classDoc is java.lang.Object).
      */
-    public static ClassDoc getFirstVisibleSuperClassCD(ClassDoc classDoc,
+    public ClassDoc getFirstVisibleSuperClassCD(ClassDoc classDoc,
             Configuration configuration) {
         if (classDoc == null) {
             return null;
@@ -569,7 +569,7 @@ public class Util {
      *                      If false, the first letter of the name is capitalized.
      * @return
      */
-    public static String getTypeName(Configuration config,
+    public String getTypeName(Configuration config,
         ClassDoc cd, boolean lowerCaseOnly) {
         String typeName = "";
         if (cd.isOrdinaryClass()) {
@@ -597,7 +597,7 @@ public class Util {
      * @param text the text for which the tabs should be expanded
      * @return the text with all tabs expanded
      */
-    public static String replaceTabs(Configuration configuration, String text) {
+    public String replaceTabs(Configuration configuration, String text) {
         if (!text.contains("\t"))
             return text;
 
@@ -628,7 +628,7 @@ public class Util {
         return result.toString();
     }
 
-    public static String normalizeNewlines(String text) {
+    public String normalizeNewlines(String text) {
         StringBuilder sb = new StringBuilder();
         final int textLength = text.length();
         final String NL = DocletConstants.NL;
@@ -658,7 +658,7 @@ public class Util {
      * The documentation for values() and valueOf() in Enums are set by the
      * doclet.
      */
-    public static void setEnumDocumentation(Configuration configuration,
+    public void setEnumDocumentation(Configuration configuration,
             ClassDoc classDoc) {
         for (MethodDoc currentMethod : classDoc.methods()) {
             if (currentMethod.name().equals("values") &&
@@ -695,7 +695,7 @@ public class Util {
      * @param doc the Doc to check.
      * @return true if the given Doc is deprecated.
      */
-    public static boolean isDeprecated(Doc doc) {
+    public boolean isDeprecated(Doc doc) {
         if (doc.tags("deprecated").length > 0) {
             return true;
         }
@@ -719,7 +719,7 @@ public class Util {
      * @param name name of the getter or setter method.
      * @return the name of the property of the given setter of getter.
      */
-    public static String propertyNameFromMethodName(Configuration configuration, String name) {
+    public String propertyNameFromMethodName(Configuration configuration, String name) {
         String propertyName = null;
         if (name.startsWith("get") || name.startsWith("set")) {
             propertyName = name.substring(3);
@@ -742,7 +742,7 @@ public class Util {
      * @param javafx set to true if in JavaFX mode.
      * @return list of filtered classes.
      */
-    public static ClassDoc[] filterOutPrivateClasses(final ClassDoc[] classes,
+    public ClassDoc[] filterOutPrivateClasses(final ClassDoc[] classes,
                                                      boolean javafx) {
         if (!javafx) {
             return classes;
@@ -772,7 +772,7 @@ public class Util {
      * @return true, iff the given ElementType is one of the constants defined in Java 5
      * @since 1.8
      */
-    public static boolean isJava5DeclarationElementType(FieldDoc elt) {
+    public boolean isJava5DeclarationElementType(FieldDoc elt) {
         return elt.name().contentEquals(ElementType.ANNOTATION_TYPE.name()) ||
                 elt.name().contentEquals(ElementType.CONSTRUCTOR.name()) ||
                 elt.name().contentEquals(ElementType.FIELD.name()) ||
@@ -823,8 +823,8 @@ public class Util {
      *  4. finally, if equal, compare the FQNs of the entities
      * @return a comparator for index file use
      */
-    public static Comparator<Doc> makeComparatorForIndexUse() {
-        return new Util.DocComparator<Doc>() {
+    public Comparator<Doc> makeComparatorForIndexUse() {
+        return new Utils.DocComparator<Doc>() {
             /**
              * Compare two given Doc entities, first sort on names, then on the kinds,
              * then on the parameters only if the type is an instance of ExecutableMemberDocs,
@@ -870,8 +870,8 @@ public class Util {
      * 4. finally the Doc kinds ie. package, class, interface etc.
      * @return a comparator to sort classes and members for class use
      */
-    public static Comparator<Doc> makeComparatorForClassUse() {
-        return new Util.DocComparator<Doc>() {
+    public Comparator<Doc> makeComparatorForClassUse() {
+        return new Utils.DocComparator<Doc>() {
             /**
              * Compares two given Doc entities, first sort on name, and if
              * applicable on the fully qualified name, and if applicable

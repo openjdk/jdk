@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -138,7 +138,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
      */
     public void addDeprecationInfo(Content div) {
         Tag[] deprs = packageDoc.tags("deprecated");
-        if (Util.isDeprecated(packageDoc)) {
+        if (utils.isDeprecated(packageDoc)) {
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);
             Content deprPhrase = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
@@ -175,7 +175,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
             table.addContent(getSummaryTableHeader(tableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             for (int i = 0; i < classes.length; i++) {
-                if (!Util.isCoreClass(classes[i]) ||
+                if (!utils.isCoreClass(classes[i]) ||
                     !configuration.isGeneratedDoc(classes[i])) {
                     continue;
                 }
@@ -189,7 +189,7 @@ public class PackageWriterImpl extends HtmlDocletWriter
                     tr.addStyle(HtmlStyle.rowColor);
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
                 tdClassDescription.addStyle(HtmlStyle.colLast);
-                if (Util.isDeprecated(classes[i])) {
+                if (utils.isDeprecated(classes[i])) {
                     tdClassDescription.addContent(deprecatedLabel);
                     if (classes[i].tags("deprecated").length > 0) {
                         addSummaryDeprecatedComment(classes[i],

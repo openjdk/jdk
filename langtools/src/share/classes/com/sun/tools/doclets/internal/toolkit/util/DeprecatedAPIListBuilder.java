@@ -61,7 +61,8 @@ public class DeprecatedAPIListBuilder {
      * List of deprecated type Lists.
      */
     private List<List<Doc>> deprecatedLists;
-
+    private final Configuration configuration;
+    private final Utils utils;
 
     /**
      * Constructor.
@@ -69,11 +70,13 @@ public class DeprecatedAPIListBuilder {
      * @param configuration the current configuration of the doclet
      */
     public DeprecatedAPIListBuilder(Configuration configuration) {
+        this.configuration = configuration;
+        this.utils = configuration.utils;
         deprecatedLists = new ArrayList<>();
         for (int i = 0; i < NUM_TYPES; i++) {
             deprecatedLists.add(i, new ArrayList<Doc>());
         }
-        buildDeprecatedAPIInfo(configuration);
+        buildDeprecatedAPIInfo();
     }
 
     /**
@@ -83,15 +86,15 @@ public class DeprecatedAPIListBuilder {
      *
      * @param configuration the current configuration of the doclet.
      */
-    private void buildDeprecatedAPIInfo(Configuration configuration) {
+    private void buildDeprecatedAPIInfo() {
         Set<PackageDoc> packages = configuration.packages;
         for (PackageDoc pkg : packages) {
-            if (Util.isDeprecated(pkg)) {
+            if (utils.isDeprecated(pkg)) {
                 getList(PACKAGE).add(pkg);
             }
         }
         for (ClassDoc cd : configuration.root.classes()) {
-            if (Util.isDeprecated(cd)) {
+            if (utils.isDeprecated(cd)) {
                 if (cd.isOrdinaryClass()) {
                     getList(CLASS).add(cd);
                 } else if (cd.isInterface()) {
@@ -128,7 +131,7 @@ public class DeprecatedAPIListBuilder {
      */
     private void composeDeprecatedList(List<Doc> list, MemberDoc[] members) {
         for (MemberDoc member : members) {
-            if (Util.isDeprecated(member)) {
+            if (utils.isDeprecated(member)) {
                 list.add(member);
             }
         }

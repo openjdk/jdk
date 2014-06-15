@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,15 +43,17 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
  */
 public class ImplementedMethods {
 
-    private Map<MethodDoc,Type> interfaces = new HashMap<>();
-    private List<MethodDoc> methlist = new ArrayList<>();
-    private Configuration configuration;
+    private final Map<MethodDoc,Type> interfaces = new HashMap<>();
+    private final List<MethodDoc> methlist = new ArrayList<>();
+    private final Configuration configuration;
+    private final Utils utils;
     private final ClassDoc classdoc;
     private final MethodDoc method;
 
     public ImplementedMethods(MethodDoc method, Configuration configuration) {
         this.method = method;
         this.configuration = configuration;
+        this.utils = configuration.utils;
         classdoc = method.containingClass();
     }
 
@@ -88,9 +90,9 @@ public class ImplementedMethods {
      * from the array passed.
      */
     private void buildImplementedMethodList(boolean sort) {
-        List<Type> intfacs = Util.getAllInterfaces(classdoc, configuration, sort);
+        List<Type> intfacs = utils.getAllInterfaces(classdoc, configuration, sort);
         for (Type interfaceType : intfacs) {
-            MethodDoc found = Util.findMethod(interfaceType.asClassDoc(), method);
+            MethodDoc found = utils.findMethod(interfaceType.asClassDoc(), method);
             if (found != null) {
                 removeOverriddenMethod(found);
                 if (!overridingMethodFound(found)) {
