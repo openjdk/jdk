@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -116,10 +116,10 @@ public class ThrowsTaglet extends BaseExecutableMemberTaglet
             Set<Tag> declaredExceptionTags = new LinkedHashSet<>();
             for (Type declaredExceptionType : declaredExceptionTypes) {
                 DocFinder.Output inheritedDoc =
-                        DocFinder.search(new DocFinder.Input((MethodDoc) holder, this,
+                        DocFinder.search(writer.configuration(), new DocFinder.Input((MethodDoc) holder, this,
                                                              declaredExceptionType.typeName()));
                 if (inheritedDoc.tagList.size() == 0) {
-                    inheritedDoc = DocFinder.search(new DocFinder.Input(
+                    inheritedDoc = DocFinder.search(writer.configuration(), new DocFinder.Input(
                             (MethodDoc) holder, this,
                             declaredExceptionType.qualifiedTypeName()));
                 }

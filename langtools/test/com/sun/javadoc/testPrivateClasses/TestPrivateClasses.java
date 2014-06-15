@@ -91,6 +91,19 @@ public class TestPrivateClasses extends JavadocTester {
                 "PrivateParent",
                 "PrivateInterface");
 
+        checkOutput("pkg/PublicChild.html", false,
+                // Should not document comments from private inherited interfaces
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\">" +
+                "<a href=\"../pkg/PublicChild.html#methodInterface-int-\">" +
+                "methodInterface</a></span>(int&nbsp;p1)</code>\n" +
+                "<div class=\"block\">Comment from interface.</div>\n</td>",
+                // and similarly one more
+                "<td class=\"colLast\"><code><span class=\"memberNameLink\">" +
+                "<a href=\"../pkg/PublicChild.html#methodInterface2-int-\">" +
+                "methodInterface2</a></span>(int&nbsp;p1)</code>\n" +
+                "<div class=\"block\">Comment from interface.</div>\n</td>"
+        );
+
         checkOutput("pkg/PublicInterface.html", true,
                 // Field inheritance from non-public superinterface.
                 "<a href=\"../pkg/PublicInterface.html#fieldInheritedFromInterface\">"
@@ -111,7 +124,7 @@ public class TestPrivateClasses extends JavadocTester {
                 "PrivateInterface",
                 "All Superinterfaces");
 
-        checkOutput("pkg2/C.html", true,
+        checkOutput("pkg2/C.html", false,
                 //Generic interface method test.
                 "This comment should get copied to the implementing class");
 

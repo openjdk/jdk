@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.util.List;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
-import com.sun.tools.doclets.formats.html.markup.RawHtml;
-import com.sun.tools.doclets.formats.html.markup.StringContent;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.links.*;
@@ -174,21 +172,22 @@ public class LinkFactoryImpl extends LinkFactory {
      */
     private String getClassToolTip(ClassDoc classDoc, boolean isTypeLink) {
         Configuration configuration = m_writer.configuration;
+        Utils utils = configuration.utils;
         if (isTypeLink) {
             return configuration.getText("doclet.Href_Type_Param_Title",
                 classDoc.name());
         } else if (classDoc.isInterface()){
             return configuration.getText("doclet.Href_Interface_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                utils.getPackageName(classDoc.containingPackage()));
         } else if (classDoc.isAnnotationType()) {
             return configuration.getText("doclet.Href_Annotation_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                utils.getPackageName(classDoc.containingPackage()));
         } else if (classDoc.isEnum()) {
             return configuration.getText("doclet.Href_Enum_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                utils.getPackageName(classDoc.containingPackage()));
         } else {
             return configuration.getText("doclet.Href_Class_Title",
-                Util.getPackageName(classDoc.containingPackage()));
+                utils.getPackageName(classDoc.containingPackage()));
         }
     }
 

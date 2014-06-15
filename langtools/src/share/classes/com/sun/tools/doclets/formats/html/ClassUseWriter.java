@@ -165,13 +165,13 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             // the class-use page if the class is marked as deprecated but the containing
             // package is not since it could still be linked from that package-use page.
             if (!(configuration.nodeprecated &&
-                  Util.isDeprecated(aClass.containingPackage())))
+                  configuration.utils.isDeprecated(aClass.containingPackage())))
                 ClassUseWriter.generate(configuration, mapper, aClass);
         }
         for (PackageDoc pkg : configuration.packages) {
             // If -nodeprecated option is set and the package is marked
             // as deprecated, do not generate the package-use page.
-            if (!(configuration.nodeprecated && Util.isDeprecated(pkg)))
+            if (!(configuration.nodeprecated && configuration.utils.isDeprecated(pkg)))
                 PackageUseWriter.generate(configuration, mapper, pkg);
         }
     }
@@ -180,7 +180,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         Map<String,List<ProgramElementDoc>> map = new HashMap<>();
         List<? extends ProgramElementDoc> list= classMap.get(classdoc.qualifiedName());
         if (list != null) {
-            Collections.sort(list, Util.makeComparatorForClassUse());
+            Collections.sort(list, utils.makeComparatorForClassUse());
             for (ProgramElementDoc doc : list) {
                 PackageDoc pkg = doc.containingPackage();
                 pkgSet.add(pkg);
@@ -337,7 +337,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
             Content link = getResource("doclet.ClassUse_Uses.of.0.in.1",
                                        getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                                                                 classdoc)),
-                                       getPackageLink(pkg, Util.getPackageName(pkg)));
+                                       getPackageLink(pkg, utils.getPackageName(pkg)));
             Content heading = HtmlTree.HEADING(HtmlConstants.SUMMARY_HEADING, link);
             li.addContent(heading);
             addClassUse(pkg, li);
@@ -355,7 +355,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink(pkg.name(), new StringContent(Util.getPackageName(pkg))));
+                getHyperLink(pkg.name(), new StringContent(utils.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);
@@ -372,7 +372,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
     protected void addClassUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content classLink = getLink(new LinkInfoImpl(configuration,
             LinkInfoImpl.Kind.CLASS_USE_HEADER, classdoc));
-        Content pkgLink = getPackageLink(pkg, Util.getPackageName(pkg));
+        Content pkgLink = getPackageLink(pkg, utils.getPackageName(pkg));
         classSubWriter.addUseInfo(pkgToClassAnnotations.get(pkg.name()),
                 configuration.getResource("doclet.ClassUse_Annotation", classLink,
                 pkgLink), classUseTableSummary, contentTree);
