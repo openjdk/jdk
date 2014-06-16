@@ -110,34 +110,34 @@ public class CK_RSA_PKCS_OAEP_PARAMS {
      * @return the string representation of CK_RSA_PKCS_OAEP_PARAMS
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("hashAlg: ");
-        buffer.append(hashAlg);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("hashAlg: ");
+        sb.append(hashAlg);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("mgf: ");
-        buffer.append(mgf);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("mgf: ");
+        sb.append(mgf);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("source: ");
-        buffer.append(source);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("source: ");
+        sb.append(source);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pSourceData: ");
-        buffer.append(pSourceData.toString());
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pSourceData: ");
+        sb.append(pSourceData.toString());
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pSourceDataLen: ");
-        buffer.append(Functions.toHexString(pSourceData));
+        sb.append(Constants.INDENT);
+        sb.append("pSourceDataLen: ");
+        sb.append(Functions.toHexString(pSourceData));
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 
 }

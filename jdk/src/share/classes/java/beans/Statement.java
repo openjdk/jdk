@@ -340,7 +340,7 @@ public class Statement {
         if (arguments == null) {
             arguments = emptyArray;
         }
-        StringBuffer result = new StringBuffer(instanceName(target) + "." + methodName + "(");
+        StringBuilder result = new StringBuilder(instanceName(target) + "." + methodName + "(");
         int n = arguments.length;
         for(int i = 0; i < n; i++) {
             result.append(instanceName(arguments[i]));

@@ -139,7 +139,7 @@ public abstract class RefAddr implements java.io.Serializable {
       * @return The non-null string representation of this address.
       */
     public String toString(){
-        StringBuffer str = new StringBuffer("Type: " + addrType + "\n");
+        StringBuilder str = new StringBuilder("Type: " + addrType + "\n");
 
         str.append("Content: " + getContent() + "\n");
         return (str.toString());

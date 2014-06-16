@@ -137,7 +137,7 @@ public class TicketFlags extends KerberosFlags {
      * Returns the string representative of ticket flags.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         boolean[] flags = toBooleanArray();
         for (int i = 0; i < flags.length; i++) {
             if (flags[i] == true) {

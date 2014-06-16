@@ -73,7 +73,7 @@ public class SnmpOpaque extends SnmpString {
      * @return The <CODE>String</CODE> representation of the value.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer() ;
+        StringBuilder result = new StringBuilder() ;
         for (int i = 0 ; i < value.length ; i++) {
             byte b = value[i] ;
             int n = (b >= 0) ? b : b + 256 ;

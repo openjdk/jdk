@@ -900,7 +900,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
         if (times == 1) {
             return s;
         }
-        StringBuffer sb = new StringBuffer((s.length() + 1)*times - 1);
+        StringBuilder sb = new StringBuilder((s.length() + 1)*times - 1);
         sb.append(s);
         for (int i = 1; i < times; i++) {
             sb.append(" ");

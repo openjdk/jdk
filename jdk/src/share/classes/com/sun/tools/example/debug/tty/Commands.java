@@ -164,30 +164,30 @@ class Commands {
     }
 
     String typedName(Method method) {
-        StringBuffer buf = new StringBuffer();
-        buf.append(method.name());
-        buf.append("(");
+        StringBuilder sb = new StringBuilder();
+        sb.append(method.name());
+        sb.append("(");
 
         List<String> args = method.argumentTypeNames();
         int lastParam = args.size() - 1;
         // output param types except for the last
         for (int ii = 0; ii < lastParam; ii++) {
-            buf.append(args.get(ii));
-            buf.append(", ");
+            sb.append(args.get(ii));
+            sb.append(", ");
         }
         if (lastParam >= 0) {
             // output the last param
             String lastStr = args.get(lastParam);
             if (method.isVarArgs()) {
                 // lastParam is an array.  Replace the [] with ...
-                buf.append(lastStr.substring(0, lastStr.length() - 2));
-                buf.append("...");
+                sb.append(lastStr.substring(0, lastStr.length() - 2));
+                sb.append("...");
             } else {
-                buf.append(lastStr);
+                sb.append(lastStr);
             }
         }
-        buf.append(")");
-        return buf.toString();
+        sb.append(")");
+        return sb.toString();
     }
 
     void commandConnectors(VirtualMachineManager vmm) {
@@ -226,7 +226,7 @@ class Commands {
     }
 
     void commandClasses() {
-        StringBuffer classList = new StringBuffer();
+        StringBuilder classList = new StringBuilder();
         for (ReferenceType refType : Env.vm().allClasses()) {
             classList.append(refType.name());
             classList.append("\n");
@@ -309,7 +309,7 @@ class Commands {
         String idClass = t.nextToken();
         ReferenceType cls = Env.getReferenceTypeFromToken(idClass);
         if (cls != null) {
-            StringBuffer methodsList = new StringBuffer();
+            StringBuilder methodsList = new StringBuilder();
             for (Method method : cls.allMethods()) {
                 methodsList.append(method.declaringType().name());
                 methodsList.append(" ");
@@ -333,7 +333,7 @@ class Commands {
         if (cls != null) {
             List<Field> fields = cls.allFields();
             List<Field> visible = cls.visibleFields();
-            StringBuffer fieldsList = new StringBuffer();
+            StringBuilder fieldsList = new StringBuilder();
             for (Field field : fields) {
                 String s;
                 if (!visible.contains(field)) {
@@ -391,11 +391,11 @@ class Commands {
              * very long thread names, at the possible cost of lines
              * being wrapped by the display device.
              */
-            StringBuffer idBuffer = new StringBuffer(Env.description(thr));
+            StringBuilder idBuffer = new StringBuilder(Env.description(thr));
             for (int i = idBuffer.length(); i < maxIdLength; i++) {
                 idBuffer.append(" ");
             }
-            StringBuffer nameBuffer = new StringBuffer(thr.name());
+            StringBuilder nameBuffer = new StringBuilder(thr.name());
             for (int i = nameBuffer.length(); i < maxNameLength; i++) {
                 nameBuffer.append(" ");
             }
@@ -1606,16 +1606,16 @@ class Commands {
     private void dump(ObjectReference obj, ReferenceType refType,
                       ReferenceType refTypeBase) {
         for (Field field : refType.fields()) {
-            StringBuffer o = new StringBuffer();
-            o.append("    ");
+            StringBuilder sb = new StringBuilder();
+            sb.append("    ");
             if (!refType.equals(refTypeBase)) {
-                o.append(refType.name());
-                o.append(".");
+                sb.append(refType.name());
+                sb.append(".");
             }
-            o.append(field.name());
-            o.append(MessageOutput.format("colon space"));
-            o.append(obj.getValue(field));
-            MessageOutput.printDirectln(o.toString()); // Special case: use printDirectln()
+            sb.append(field.name());
+            sb.append(MessageOutput.format("colon space"));
+            sb.append(obj.getValue(field));
+            MessageOutput.printDirectln(sb.toString()); // Special case: use printDirectln()
         }
         if (refType instanceof ClassType) {
             ClassType sup = ((ClassType)refType).superclass();
@@ -1954,7 +1954,7 @@ class Commands {
             }
         }
 
-        StringBuffer line = new StringBuffer(80);
+        StringBuilder line = new StringBuilder(80);
         line.append("0000: ");
         for (int i = 0; i < bytecodes.length; i++) {
             if ((i > 0) && (i % 16 == 0)) {

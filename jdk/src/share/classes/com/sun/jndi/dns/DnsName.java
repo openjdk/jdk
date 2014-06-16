@@ -415,7 +415,7 @@ public final class DnsName implements Name {
      */
     private void parse(String name) throws InvalidNameException {
 
-        StringBuffer label = new StringBuffer();        // label being parsed
+        StringBuilder label = new StringBuilder();      // label being parsed
 
         for (int i = 0; i < name.length(); i++) {
             char c = name.charAt(i);
@@ -564,15 +564,15 @@ public final class DnsName implements Name {
      * into account.  See compareLabels().
      */
     private static String keyForLabel(String label) {
-        StringBuffer buf = new StringBuffer(label.length());
+        StringBuilder sb = new StringBuilder(label.length());
         for (int i = 0; i < label.length(); i++) {
             char c = label.charAt(i);
             if (c >= 'A' && c <= 'Z') {
                 c += 'a' - 'A';                         // to lower case
             }
-            buf.append(c);
+            sb.append(c);
         }
-        return buf.toString();
+        return sb.toString();
     }
 
 
