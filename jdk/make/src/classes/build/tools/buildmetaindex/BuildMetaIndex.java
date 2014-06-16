@@ -53,7 +53,6 @@ sun/
 com/sun/net/
 javax/
 com/sun/security/
-# management-agent.jar
 ! rt.jar
 org/w3c/
 com/sun/image/
