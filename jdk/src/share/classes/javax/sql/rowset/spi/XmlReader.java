@@ -46,6 +46,8 @@ import javax.sql.rowset.*;
  * rowset's <code>xmlReader</code> field. When the <code>WebRowSet</code>
  * object's <code>readXml</code> method is invoked, it in turn invokes
  * its XML reader's <code>readXML</code> method.
+ *
+ * @since 1.5
  */
 public interface XmlReader extends RowSetReader {
 
