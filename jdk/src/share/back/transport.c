@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "util.h"
+#include "utf_util.h"
 #include "transport.h"
 #include "debugLoop.h"
 #include "sys.h"
@@ -65,8 +66,7 @@ printLastError(jdwpTransportEnv *t, jdwpTransportError err)
         len = (int)strlen(msg);
         maxlen = len+len/2+2; /* Should allow for plenty of room */
         utf8msg = (jbyte*)jvmtiAllocate(maxlen+1);
-        (void)(gdata->npt->utf8FromPlatform)(gdata->npt->utf,
-            msg, len, utf8msg, maxlen);
+        (void)utf8FromPlatform(msg, len, utf8msg, maxlen);
         utf8msg[maxlen] = 0;
     }
     if (rv == JDWPTRANSPORT_ERROR_NONE) {
@@ -110,8 +110,7 @@ loadTransportLibrary(const char *libdir, const char *name)
         int  len;
 
         len = (int)strlen(libdir);
-        (void)(gdata->npt->utf8ToPlatform)(gdata->npt->utf,
-            (jbyte*)libdir, len, buf, (int)sizeof(buf));
+        (void)utf8ToPlatform((jbyte*)libdir, len, buf, (int)sizeof(buf));
         plibdir = buf;
     }
 
@@ -392,8 +391,7 @@ launch(char *command, char *name, char *address)
     /* Convert commandLine from UTF-8 to platform encoding */
     len = (int)strlen(commandLine);
     buf = jvmtiAllocate(len*3+3);
-    (void)(gdata->npt->utf8ToPlatform)(gdata->npt->utf,
-        (jbyte*)commandLine, len, buf, len*3+3);
+    (void)utf8ToPlatform((jbyte*)commandLine, len, buf, len*3+3);
 
     /* Exec commandLine */
     rc = dbgsysExec(buf);
