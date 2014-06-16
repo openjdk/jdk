@@ -132,7 +132,6 @@ PROFILE_3_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)prefs$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)sctp$(SHARED_LIBRARY_SUFFIX) \
     jvm.hprof.txt \
-    management-agent.jar \
     management/jmxremote.access \
     management/jmxremote.password.template \
     management/management.properties \
@@ -140,8 +139,7 @@ PROFILE_3_JRE_LIB_FILES := \
 
 PROFILE_3_JRE_OTHER_FILES :=
 
-PROFILE_3_JRE_JAR_FILES := \
-    management-agent.jar
+PROFILE_3_JRE_JAR_FILES :=
 
 
 FULL_JRE_BIN_FILES := \
