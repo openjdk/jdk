@@ -58,7 +58,7 @@ class N2AFilter extends FilterWriter {
                 out.write('u');
                 String hex =
                     Integer.toHexString(buf[i]);
-                StringBuffer hex4 = new StringBuffer(hex);
+                StringBuilder hex4 = new StringBuilder(hex);
                 hex4.reverse();
                 int length = 4 - hex4.length();
                 for (int j = 0; j < length; j++) {

@@ -195,7 +195,7 @@ abstract class CramMD5Base {
         digest = md5.digest();
 
         // Get character representation of digest
-        StringBuffer digestString = new StringBuffer();
+        StringBuilder digestString = new StringBuilder();
 
         for (i = 0; i < digest.length; i++) {
             if ((digest[i] & 0x000000ff) < 0x10) {

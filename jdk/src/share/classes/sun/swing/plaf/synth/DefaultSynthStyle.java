@@ -673,33 +673,33 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
 
 
     public String toString() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buf.append(super.toString()).append(',');
+        sb.append(super.toString()).append(',');
 
-        buf.append("data=").append(data).append(',');
+        sb.append("data=").append(data).append(',');
 
-        buf.append("font=").append(font).append(',');
+        sb.append("font=").append(font).append(',');
 
-        buf.append("insets=").append(insets).append(',');
+        sb.append("insets=").append(insets).append(',');
 
-        buf.append("synthGraphics=").append(synthGraphics).append(',');
+        sb.append("synthGraphics=").append(synthGraphics).append(',');
 
-        buf.append("painter=").append(painter).append(',');
+        sb.append("painter=").append(painter).append(',');
 
         StateInfo[] states = getStateInfo();
         if (states != null) {
-            buf.append("states[");
+            sb.append("states[");
             for (StateInfo state : states) {
-                buf.append(state.toString()).append(',');
+                sb.append(state.toString()).append(',');
             }
-            buf.append(']').append(',');
+            sb.append(']').append(',');
         }
 
         // remove last newline
-        buf.deleteCharAt(buf.length() - 1);
+        sb.deleteCharAt(sb.length() - 1);
 
-        return buf.toString();
+        return sb.toString();
     }
 
 
@@ -909,19 +909,19 @@ public class DefaultSynthStyle extends SynthStyle implements Cloneable {
         }
 
         public String toString() {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
-            buf.append(super.toString()).append(',');
+            sb.append(super.toString()).append(',');
 
-            buf.append("state=").append(Integer.toString(state)).append(',');
+            sb.append("state=").append(Integer.toString(state)).append(',');
 
-            buf.append("font=").append(font).append(',');
+            sb.append("font=").append(font).append(',');
 
             if (colors != null) {
-                buf.append("colors=").append(Arrays.asList(colors)).
+                sb.append("colors=").append(Arrays.asList(colors)).
                     append(',');
             }
-            return buf.toString();
+            return sb.toString();
         }
     }
 }

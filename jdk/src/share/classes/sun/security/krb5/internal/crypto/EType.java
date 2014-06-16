@@ -269,7 +269,7 @@ public abstract class EType {
         }
         int len = list.size();
         if (len <= 0) {
-            StringBuffer keystr = new StringBuffer();
+            StringBuilder keystr = new StringBuilder();
             for (int i = 0; i < keys.length; i++) {
                 keystr.append(toString(keys[i].getEType()));
                 keystr.append(" ");

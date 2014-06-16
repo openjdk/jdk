@@ -99,7 +99,7 @@ class PrintStreamProbe extends ProbeSkeleton {
     }
 
     public void uncheckedTrigger(Object[] args) {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(provider.getName());
         sb.append(".");
         sb.append(name);
