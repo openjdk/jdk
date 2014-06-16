@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMPGPData.java 1203846 2011-11-18 21:18:17Z mullan $
@@ -184,7 +184,7 @@ public final class DOMPGPData extends DOMStructure implements PGPData {
         return (keyPacket == null ? null : keyPacket.clone());
     }
 
-    public List getExternalElements() {
+    public List<XMLStructure> getExternalElements() {
         return externalElements;
     }
 
