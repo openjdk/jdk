@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,115 +23,23 @@
  * questions.
  */
 
-/* Misc functions for conversion of Unicode and UTF-8 and platform encoding */
-
-#include <stdio.h>
-#include <stddef.h>
 #include <stdlib.h>
-#include <stdarg.h>
-#include <string.h>
 #include <ctype.h>
 
 #include "jni.h"
 
-#include "utf.h"
+#include "utf_util.h"
 
-/*
- * Error handler
- */
-void
-utfError(char *file, int line, char *message)
-{
+
+/* Error and assert macros */
+#define UTF_ERROR(m) utfError(__FILE__, __LINE__,  m)
+#define UTF_ASSERT(x) ( (x)==0 ? UTF_ERROR("ASSERT ERROR " #x) : (void)0 )
+
+// Platform independed part
+
+static void utfError(char *file, int line, char *message) {
     (void)fprintf(stderr, "UTF ERROR [\"%s\":%d]: %s\n", file, line, message);
     abort();
-}
-
-/*
- * Convert UTF-8 to UTF-16
- *    Returns length or -1 if output overflows.
- */
-int JNICALL
-utf8ToUtf16(struct UtfInst *ui, jbyte *utf8, int len, unsigned short *output, int outputMaxLen)
-{
-    int outputLen;
-    int i;
-
-    UTF_ASSERT(utf8);
-    UTF_ASSERT(len>=0);
-    UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen>0);
-
-    i = 0;
-    outputLen = 0;
-    while ( i<len ) {
-        unsigned code, x, y, z;
-
-        if ( outputLen >= outputMaxLen ) {
-            return -1;
-        }
-        x = (unsigned char)utf8[i++];
-        code = x;
-        if ( (x & 0xE0)==0xE0 ) {
-            y = (unsigned char)utf8[i++];
-            z = (unsigned char)utf8[i++];
-            code = ((x & 0xF)<<12) + ((y & 0x3F)<<6) + (z & 0x3F);
-        } else if ( (x & 0xC0)==0xC0 ) {
-            y = (unsigned char)utf8[i++];
-            code = ((x & 0x1F)<<6) + (y & 0x3F);
-        }
-        output[outputLen++] = code;
-    }
-    return outputLen;
-}
-
-/*
- * Convert UTF-16 to UTF-8 Modified
- *    Returns length or -1 if output overflows.
- */
-int JNICALL
-utf16ToUtf8m(struct UtfInst *ui, unsigned short *utf16, int len, jbyte *output, int outputMaxLen)
-{
-    int i;
-    int outputLen;
-
-    UTF_ASSERT(utf16);
-    UTF_ASSERT(len>=0);
-    UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen>0);
-
-    outputLen = 0;
-    for (i = 0; i < len; i++) {
-        unsigned code;
-
-        code = utf16[i];
-        if ( code >= 0x0001 && code <= 0x007F ) {
-            if ( outputLen + 1 >= outputMaxLen ) {
-                return -1;
-            }
-            output[outputLen++] = code;
-        } else if ( code == 0 || ( code >= 0x0080 && code <= 0x07FF ) ) {
-            if ( outputLen + 2 >= outputMaxLen ) {
-                return -1;
-            }
-            output[outputLen++] = ((code>>6) & 0x1F) | 0xC0;
-            output[outputLen++] = (code & 0x3F) | 0x80;
-        } else if ( code >= 0x0800 && code <= 0xFFFF ) {
-            if ( outputLen + 3 >= outputMaxLen ) {
-                return -1;
-            }
-            output[outputLen++] = ((code>>12) & 0x0F) | 0xE0;
-            output[outputLen++] = ((code>>6) & 0x3F) | 0x80;
-            output[outputLen++] = (code & 0x3F) | 0x80;
-        }
-    }
-    output[outputLen] = 0;
-    return outputLen;
-}
-
-int JNICALL
-utf16ToUtf8s(struct UtfInst *ui, unsigned short *utf16, int len, jbyte *output, int outputMaxLen)
-{
-    return -1; /* FIXUP */
 }
 
 /* Determine length of this Standard UTF-8 in Modified UTF-8.
@@ -141,56 +49,54 @@ utf16ToUtf8s(struct UtfInst *ui, unsigned short *utf16, int len, jbyte *output, 
  *    Note: Accepts Modified UTF-8 also, no verification on the
  *          correctness of Standard UTF-8 is done. e,g, 0xC080 input is ok.
  */
-int JNICALL
-utf8sToUtf8mLength(struct UtfInst *ui, jbyte *string, int length)
-{
-    int newLength;
-    int i;
+int JNICALL utf8sToUtf8mLength(jbyte *string, int length) {
+  int newLength;
+  int i;
 
-    newLength = 0;
-    for ( i = 0 ; i < length ; i++ ) {
-        unsigned byte;
+  newLength = 0;
+  for ( i = 0 ; i < length ; i++ ) {
+    unsigned byte;
 
-        byte = (unsigned char)string[i];
-        if ( (byte & 0x80) == 0 ) { /* 1byte encoding */
-            newLength++;
-            if ( byte == 0 ) {
-                newLength++; /* We gain one byte in length on NULL bytes */
-            }
-        } else if ( (byte & 0xE0) == 0xC0 ) { /* 2byte encoding */
-            /* Check encoding of following bytes */
-            if ( (i+1) >= length || (string[i+1] & 0xC0) != 0x80 ) {
-                break; /* Error condition */
-            }
-            i++; /* Skip next byte */
-            newLength += 2;
-        } else if ( (byte & 0xF0) == 0xE0 ) { /* 3byte encoding */
-            /* Check encoding of following bytes */
-            if ( (i+2) >= length || (string[i+1] & 0xC0) != 0x80
-                                 || (string[i+2] & 0xC0) != 0x80 ) {
-                break; /* Error condition */
-            }
-            i += 2; /* Skip next two bytes */
-            newLength += 3;
-        } else if ( (byte & 0xF8) == 0xF0 ) { /* 4byte encoding */
-            /* Check encoding of following bytes */
-            if ( (i+3) >= length || (string[i+1] & 0xC0) != 0x80
-                                 || (string[i+2] & 0xC0) != 0x80
-                                 || (string[i+3] & 0xC0) != 0x80 ) {
-                break; /* Error condition */
-            }
-            i += 3; /* Skip next 3 bytes */
-            newLength += 6; /* 4byte encoding turns into 2 3byte ones */
-        } else {
-            break; /* Error condition */
+    byte = (unsigned char)string[i];
+    if ( (byte & 0x80) == 0 ) { /* 1byte encoding */
+      newLength++;
+      if ( byte == 0 ) {
+        newLength++; /* We gain one byte in length on NULL bytes */
+      }
+    } else if ( (byte & 0xE0) == 0xC0 ) { /* 2byte encoding */
+      /* Check encoding of following bytes */
+      if ( (i+1) >= length || (string[i+1] & 0xC0) != 0x80 ) {
+        break; /* Error condition */
+      }
+      i++; /* Skip next byte */
+      newLength += 2;
+    } else if ( (byte & 0xF0) == 0xE0 ) { /* 3byte encoding */
+      /* Check encoding of following bytes */
+      if ( (i+2) >= length || (string[i+1] & 0xC0) != 0x80
+        || (string[i+2] & 0xC0) != 0x80 ) {
+        break; /* Error condition */
         }
+        i += 2; /* Skip next two bytes */
+        newLength += 3;
+    } else if ( (byte & 0xF8) == 0xF0 ) { /* 4byte encoding */
+      /* Check encoding of following bytes */
+      if ( (i+3) >= length || (string[i+1] & 0xC0) != 0x80
+        || (string[i+2] & 0xC0) != 0x80
+        || (string[i+3] & 0xC0) != 0x80 ) {
+        break; /* Error condition */
+        }
+        i += 3; /* Skip next 3 bytes */
+        newLength += 6; /* 4byte encoding turns into 2 3byte ones */
+    } else {
+      break; /* Error condition */
     }
-    if ( i != length ) {
-        /* Error in finding new length, return old length so no conversion */
-        /* FIXUP: ERROR_MESSAGE? */
-        return length;
-    }
-    return newLength;
+  }
+  if ( i != length ) {
+    /* Error in finding new length, return old length so no conversion */
+    /* FIXUP: ERROR_MESSAGE? */
+    return length;
+  }
+  return newLength;
 }
 
 /* Convert Standard UTF-8 to Modified UTF-8.
@@ -199,9 +105,7 @@ utf8sToUtf8mLength(struct UtfInst *ui, jbyte *string, int length)
  *    Note: Accepts Modified UTF-8 also, no verification on the
  *          correctness of Standard UTF-8 is done. e,g, 0xC080 input is ok.
  */
-void JNICALL
-utf8sToUtf8m(struct UtfInst *ui, jbyte *string, int length, jbyte *newString, int newLength)
-{
+void JNICALL utf8sToUtf8m(jbyte *string, int length, jbyte *newString, int newLength) {
     int i;
     int j;
 
@@ -263,9 +167,7 @@ utf8sToUtf8m(struct UtfInst *ui, jbyte *string, int length, jbyte *newString, in
  *   Note: No validation is made that this is indeed Modified UTF-8 coming in.
  *
  */
-int JNICALL
-utf8mToUtf8sLength(struct UtfInst *ui, jbyte *string, int length)
-{
+int JNICALL utf8mToUtf8sLength(jbyte *string, int length) {
     int newLength;
     int i;
 
@@ -330,9 +232,7 @@ utf8mToUtf8sLength(struct UtfInst *ui, jbyte *string, int length)
  *   Note: No validation is made that this is indeed Modified UTF-8 coming in.
  *
  */
-void JNICALL
-utf8mToUtf8s(struct UtfInst *ui, jbyte *string, int length, jbyte *newString, int newLength)
-{
+void JNICALL utf8mToUtf8s(jbyte *string, int length, jbyte *newString, int newLength) {
     int i;
     int j;
 
@@ -394,107 +294,247 @@ utf8mToUtf8s(struct UtfInst *ui, jbyte *string, int length, jbyte *newString, in
     newString[j] = 0;
 }
 
-/* ================================================================= */
+#ifdef _WIN32
+// Microsoft Windows specific part
 
-#ifdef COMPILE_WITH_UTF_TEST  /* Test program */
+#include <windows.h>
 
-/*
- * Convert any byte array into a printable string.
- *    Returns length or -1 if output overflows.
- */
-static int
-bytesToPrintable(struct UtfInst *ui, char *bytes, int len, char *output, int outputMaxLen)
-{
-    int outputLen;
-    int i;
+static UINT getCodepage() {
+    LANGID langID;
+    LCID localeID;
+    TCHAR strCodePage[7];       // ANSI code page id
 
-    UTF_ASSERT(bytes);
-    UTF_ASSERT(len>=0);
-    UTF_ASSERT(output);
-    UTF_ASSERT(outputMaxLen>=0);
+    static UINT intCodePage = -1;
 
-    outputLen = 0;
-    for ( i=0; i<len ; i++ ) {
-        unsigned byte;
-
-        byte = bytes[i];
-        if ( byte <= 0x7f && isprint(byte) && !iscntrl(byte) ) {
-            if ( outputLen + 1 >= outputMaxLen ) {
-                return -1;
-            }
-            output[outputLen++] = (char)byte;
-        } else {
-            if ( outputLen + 4 >= outputMaxLen ) {
-                return -1;
-            }
-            (void)sprintf(output+outputLen,"\\x%02x",byte);
-            outputLen += 4;
+    if (intCodePage == -1) {
+        // Firts call, get codepage from the os
+        langID = LANGIDFROMLCID(GetUserDefaultLCID());
+        localeID = MAKELCID(langID, SORT_DEFAULT);
+        if (GetLocaleInfo(localeID, LOCALE_IDEFAULTANSICODEPAGE,
+                         strCodePage, sizeof(strCodePage)/sizeof(TCHAR)) > 0 ) {
+            intCodePage = atoi(strCodePage);
+        }
+        else {
+            intCodePage = GetACP();
         }
     }
-    output[outputLen] = 0;
-    return outputLen;
+
+    return intCodePage;
 }
 
-static void
-test(void)
-{
-    static char *strings[] = {
-                "characters",
-                "abcdefghijklmnopqrstuvwxyz",
-                "0123456789",
-                "!@#$%^&*()_+=-{}[]:;",
-                NULL };
-    int i;
-    struct UtfInst *ui;
+/*
+ * Get wide string  (assumes len>0)
+ */
+static WCHAR* getWideString(UINT codePage, char* str, int len, int *pwlen) {
+    int wlen;
+    WCHAR* wstr;
 
-    ui = utfInitialize(NULL);
+    /* Convert the string to WIDE string */
+    wlen = MultiByteToWideChar(codePage, 0, str, len, NULL, 0);
+    *pwlen = wlen;
+    if (wlen <= 0) {
+        UTF_ERROR(("Can't get WIDE string length"));
+        return NULL;
+    }
+    wstr = (WCHAR*)malloc(wlen * sizeof(WCHAR));
+    if (wstr == NULL) {
+        UTF_ERROR(("Can't malloc() any space"));
+        return NULL;
+    }
+    if (MultiByteToWideChar(codePage, 0, str, len, wstr, wlen) == 0) {
+        UTF_ERROR(("Can't get WIDE string"));
+        return NULL;
+    }
+    return wstr;
+}
 
-    i = 0;
-    while ( strings[i] != NULL ) {
-        char *str;
-        #define MAX 1024
-        char buf0[MAX];
-        char buf1[MAX];
-        char buf2[MAX];
-        unsigned short buf3[MAX];
-        int len1;
-        int len2;
-        int len3;
+/*
+ * Convert UTF-8 to a platform string
+ */
+int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputMaxLen) {
+    int wlen;
+    int plen;
+    WCHAR* wstr;
+    UINT codepage;
 
-        str = strings[i];
+    UTF_ASSERT(utf8);
+    UTF_ASSERT(output);
+    UTF_ASSERT(outputMaxLen > len);
 
-        (void)bytesToPrintable(ui, str, (int)strlen(str), buf0, 1024);
-
-        len1 = utf8FromPlatform(ui, str, (int)strlen(str), (jbyte*)buf1, 1024);
-
-        UTF_ASSERT(len1==(int)strlen(str));
-
-        len3 = utf8ToUtf16(ui, (jbyte*)buf1, len1, (jchar*)buf3, 1024);
-
-        UTF_ASSERT(len3==len1);
-
-        len1 = utf16ToUtf8m(ui, (jchar*)buf3, len3, (jbyte*)buf1, 1024);
-
-        UTF_ASSERT(len1==len3);
-        UTF_ASSERT(strcmp(str, buf1) == 0);
-
-        len2 = utf8ToPlatform(ui, (jbyte*)buf1, len1, buf2, 1024);
-
-        UTF_ASSERT(len2==len1);
-        UTF_ASSERT(strcmp(str, buf2) == 0);
-
-        i++;
+    /* Zero length is ok, but we don't need to do much */
+    if ( len == 0 ) {
+        output[0] = 0;
+        return 0;
     }
 
-    utfTerminate(ui, NULL);
+    /* Get WIDE string version (assumes len>0) */
+    wstr = getWideString(CP_UTF8, (char*)utf8, len, &wlen);
+    if ( wstr == NULL ) {
+        // Can't allocate WIDE string
+        goto just_copy_bytes;
+    }
 
+    /* Convert WIDE string to MultiByte string */
+    codepage = getCodepage();
+    plen = WideCharToMultiByte(codepage, 0, wstr, wlen,
+                               output, outputMaxLen, NULL, NULL);
+    free(wstr);
+    if (plen <= 0) {
+        // Can't convert WIDE string to multi-byte
+        goto just_copy_bytes;
+    }
+    output[plen] = '\0';
+    return plen;
+
+just_copy_bytes:
+    (void)memcpy(output, utf8, len);
+    output[len] = 0;
+    return len;
 }
 
-int
-main(int argc, char **argv)
-{
-    test();
-    return 0;
+/*
+ * Convert Platform Encoding to UTF-8.
+ */
+int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputMaxLen) {
+    int wlen;
+    int plen;
+    WCHAR* wstr;
+    UINT codepage;
+
+    UTF_ASSERT(str);
+    UTF_ASSERT(output);
+    UTF_ASSERT(outputMaxLen > len);
+
+    /* Zero length is ok, but we don't need to do much */
+    if ( len == 0 ) {
+        output[0] = 0;
+        return 0;
+    }
+
+    /* Get WIDE string version (assumes len>0) */
+    codepage = getCodepage();
+    wstr = getWideString(codepage, str, len, &wlen);
+    if ( wstr == NULL ) {
+        goto just_copy_bytes;
+    }
+
+    /* Convert WIDE string to UTF-8 string */
+    plen = WideCharToMultiByte(CP_UTF8, 0, wstr, wlen,
+                               (char*)output, outputMaxLen, NULL, NULL);
+    free(wstr);
+    if (plen <= 0) {
+        UTF_ERROR(("Can't convert WIDE string to multi-byte"));
+        goto just_copy_bytes;
+    }
+    output[plen] = '\0';
+    return plen;
+
+just_copy_bytes:
+    (void)memcpy(output, str, len);
+    output[len] = 0;
+    return len;
+}
+
+
+#else
+// *NIX specific part
+
+#include <iconv.h>
+#include <locale.h>
+#include <langinfo.h>
+#include <string.h>
+
+typedef enum {TO_UTF8, FROM_UTF8} conv_direction;
+
+/*
+ * Do iconv() conversion.
+ *    Returns length or -1 if output overflows.
+ */
+static int iconvConvert(conv_direction drn, char *bytes, size_t len, char *output, size_t outputMaxLen) {
+
+    static char *codeset = 0;
+    iconv_t func;
+    size_t bytes_converted;
+    size_t inLeft, outLeft;
+    char *inbuf, *outbuf;
+
+    UTF_ASSERT(bytes);
+    UTF_ASSERT(output);
+    UTF_ASSERT(outputMaxLen > len);
+
+    /* Zero length is ok, but we don't need to do much */
+    if ( len == 0 ) {
+        output[0] = 0;
+        return 0;
+    }
+
+    if (codeset == NULL && codeset != (char *) -1) {
+        // locale is not initialized, do it now
+        if (setlocale(LC_ALL, "") != NULL) {
+            // nl_langinfo returns ANSI_X3.4-1968 by default
+            codeset = (char*)nl_langinfo(CODESET);
+        }
+
+        if (codeset == NULL) {
+           // Not able to intialize process locale from platform one.
+           codeset = (char *) -1;
+        }
+    }
+
+    if (codeset == (char *) -1) {
+      // There was an error during initialization, so just bail out
+      goto just_copy_bytes;
+    }
+
+    func = (drn == TO_UTF8) ? iconv_open(codeset, "UTF-8") : iconv_open("UTF-8", codeset);
+    if (func == (iconv_t) -1) {
+        // Requested charset combination is not supported, conversion couldn't be done.
+        // make sure we will not try it again
+        codeset = (char *) -1;
+        goto just_copy_bytes;
+    }
+
+    // perform conversion
+    inbuf = bytes;
+    outbuf = output;
+    inLeft = len;
+    outLeft = outputMaxLen;
+
+    bytes_converted = iconv(func, (void*)&inbuf, &inLeft, &outbuf, &outLeft);
+    if (bytes_converted == (size_t) -1 || bytes_converted == 0 || inLeft != 0) {
+        // Input string is invalid, not able to convert entire string
+        // or some other iconv error happens.
+        iconv_close(func);
+        goto just_copy_bytes;
+    }
+
+    iconv_close(func);
+    // Overwrite bytes_converted with value of actually stored bytes
+    bytes_converted = outputMaxLen-outLeft;
+    output[bytes_converted] = 0;
+    return bytes_converted;
+
+
+just_copy_bytes:
+    (void)memcpy(output, bytes, len);
+    output[len] = 0;
+    return len;
+ }
+
+/*
+ * Convert UTF-8 to Platform Encoding.
+ *    Returns length or -1 if output overflows.
+ */
+int JNICALL utf8ToPlatform(jbyte *utf8, int len, char *output, int outputMaxLen) {
+    return iconvConvert(FROM_UTF8, (char*)utf8, len, output, outputMaxLen);
+}
+
+/*
+ * Convert Platform Encoding to UTF-8.
+ *    Returns length or -1 if output overflows.
+ */
+int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputMaxLen) {
+    return iconvConvert(TO_UTF8, str, len, (char*) output, outputMaxLen);
 }
 
 #endif

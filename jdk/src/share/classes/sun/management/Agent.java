@@ -401,7 +401,7 @@ public class Agent {
             if (home == null) {
                 throw new Error("Can't find java.home ??");
             }
-            StringBuffer defaultFileName = new StringBuffer(home);
+            StringBuilder defaultFileName = new StringBuilder(home);
             defaultFileName.append(File.separator).append("lib");
             defaultFileName.append(File.separator).append("management");
             defaultFileName.append(File.separator).append("management.properties");
@@ -495,7 +495,7 @@ public class Agent {
         if (params == null || params.length == 0) {
             error(key);
         } else {
-            StringBuffer message = new StringBuffer(params[0]);
+            StringBuilder message = new StringBuilder(params[0]);
             for (int i = 1; i < params.length; i++) {
                 message.append(" " + params[i]);
             }

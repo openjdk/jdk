@@ -172,7 +172,7 @@ final class PCSC extends PlatformPCSC {
     private final static char[] hexDigits = "0123456789abcdef".toCharArray();
 
     public static String toString(byte[] b) {
-        StringBuffer sb = new StringBuffer(b.length * 3);
+        StringBuilder sb = new StringBuilder(b.length * 3);
         for (int i = 0; i < b.length; i++) {
             int k = b[i] & 0xff;
             if (i != 0) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,12 +23,18 @@
  * questions.
  */
 
-#ifndef  _UTF_MD_H
-#define _UTF_MD_H
+#ifndef _utf_util_h_
+#define _utf_util_h_
 
-struct UtfInst {
-    void *iconvToPlatform;
-    void *iconvFromPlatform;
-};
+#include "jni.h"
+
+
+int JNICALL utf8sToUtf8mLength(jbyte *string, int length);
+void JNICALL utf8sToUtf8m(jbyte *string, int length, jbyte *newString, int newLength);
+int JNICALL utf8mToUtf8sLength(jbyte *string, int length);
+void JNICALL utf8mToUtf8s(jbyte *string, int length, jbyte *newString, int newLength);
+
+int JNICALL utf8ToPlatform(jbyte *utf8, int len, char* output, int outputMaxLen);
+int JNICALL utf8FromPlatform(char *str, int len, jbyte *output, int outputMaxLen);
 
 #endif

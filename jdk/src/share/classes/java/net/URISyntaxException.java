@@ -121,7 +121,7 @@ public class URISyntaxException
      * @return  A string describing the parse error
      */
     public String getMessage() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append(getReason());
         if (index > -1) {
             sb.append(" at index ");

@@ -596,21 +596,21 @@ public class ResourceRecord {
         // If bestBase != -1, compress zeros in [bestBase, bestBase+bestLen)
         boolean compress = (bestBase != -1);
 
-        StringBuffer buf = new StringBuffer(40);
+        StringBuilder sb = new StringBuilder(40);
         if (bestBase == 0) {
-            buf.append(':');
+            sb.append(':');
         }
         for (int i = 0; i < 8; i++) {
             if (!compress || (i < bestBase) || (i >= bestBase + bestLen)) {
-                buf.append(Integer.toHexString(addr6[i]));
+                sb.append(Integer.toHexString(addr6[i]));
                 if (i < 7) {
-                    buf.append(':');
+                    sb.append(':');
                 }
             } else if (compress && (i == bestBase)) {  // first compressed zero
-                buf.append(':');
+                sb.append(':');
             }
         }
 
-        return buf.toString();
+        return sb.toString();
     }
 }

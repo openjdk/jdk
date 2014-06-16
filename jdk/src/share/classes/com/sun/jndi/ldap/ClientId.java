@@ -210,7 +210,7 @@ class ClientId {
         if (ctls == null) {
             return "";
         }
-        StringBuffer str = new StringBuffer();
+        StringBuilder str = new StringBuilder();
         for (int i = 0; i < ctls.length; i++) {
             str.append(ctls[i].getID());
             str.append(' ');

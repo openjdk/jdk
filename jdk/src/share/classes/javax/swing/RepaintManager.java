@@ -975,7 +975,7 @@ public class RepaintManager
      * @return a String representation of this object
      */
     public synchronized String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if(dirtyComponents != null)
             sb.append("" + dirtyComponents);
         return sb.toString();

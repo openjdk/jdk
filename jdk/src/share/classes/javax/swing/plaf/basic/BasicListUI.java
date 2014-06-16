@@ -2855,23 +2855,23 @@ public class BasicListUI extends ListUI
                     return null;
                 }
 
-                StringBuffer plainBuf = new StringBuffer();
-                StringBuffer htmlBuf = new StringBuffer();
+                StringBuilder plainStr = new StringBuilder();
+                StringBuilder htmlStr = new StringBuilder();
 
-                htmlBuf.append("<html>\n<body>\n<ul>\n");
+                htmlStr.append("<html>\n<body>\n<ul>\n");
 
                 for (int i = 0; i < values.length; i++) {
                     Object obj = values[i];
                     String val = ((obj == null) ? "" : obj.toString());
-                    plainBuf.append(val + "\n");
-                    htmlBuf.append("  <li>" + val + "\n");
+                    plainStr.append(val + "\n");
+                    htmlStr.append("  <li>" + val + "\n");
                 }
 
                 // remove the last newline
-                plainBuf.deleteCharAt(plainBuf.length() - 1);
-                htmlBuf.append("</ul>\n</body>\n</html>");
+                plainStr.deleteCharAt(plainStr.length() - 1);
+                htmlStr.append("</ul>\n</body>\n</html>");
 
-                return new BasicTransferable(plainBuf.toString(), htmlBuf.toString());
+                return new BasicTransferable(plainStr.toString(), htmlStr.toString());
             }
 
             return null;
