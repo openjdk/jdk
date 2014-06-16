@@ -1282,7 +1282,7 @@ public class Introspector {
      * Creates a key for a method in a method cache.
      */
     private static String makeQualifiedMethodName(String name, String[] params) {
-        StringBuffer sb = new StringBuffer(name);
+        StringBuilder sb = new StringBuilder(name);
         sb.append('=');
         for (int i = 0; i < params.length; i++) {
             sb.append(':');

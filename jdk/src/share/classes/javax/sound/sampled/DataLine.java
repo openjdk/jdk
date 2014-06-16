@@ -471,23 +471,23 @@ public interface DataLine extends Line {
          */
         public String toString() {
 
-            StringBuffer buf = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
 
             if ( (formats.length == 1) && (formats[0] != null) ) {
-                buf.append(" supporting format " + formats[0]);
+                sb.append(" supporting format " + formats[0]);
             } else if (getFormats().length > 1) {
-                buf.append(" supporting " + getFormats().length + " audio formats");
+                sb.append(" supporting " + getFormats().length + " audio formats");
             }
 
             if ( (minBufferSize != AudioSystem.NOT_SPECIFIED) && (maxBufferSize != AudioSystem.NOT_SPECIFIED) ) {
-                buf.append(", and buffers of " + minBufferSize + " to " + maxBufferSize + " bytes");
+                sb.append(", and buffers of " + minBufferSize + " to " + maxBufferSize + " bytes");
             } else if ( (minBufferSize != AudioSystem.NOT_SPECIFIED) && (minBufferSize > 0) ) {
-                buf.append(", and buffers of at least " + minBufferSize + " bytes");
+                sb.append(", and buffers of at least " + minBufferSize + " bytes");
             } else if (maxBufferSize != AudioSystem.NOT_SPECIFIED) {
-                buf.append(", and buffers of up to " + minBufferSize + " bytes");
+                sb.append(", and buffers of up to " + minBufferSize + " bytes");
             }
 
-            return new String(super.toString() + buf);
+            return new String(super.toString() + sb);
         }
     } // class Info
 

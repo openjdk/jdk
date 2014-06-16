@@ -281,52 +281,52 @@ public class MimeEntry implements Cloneable {
     }
 
     public synchronized String toProperty() {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         String separator = "; ";
         boolean needSeparator = false;
 
         int action = getAction();
         if (action != MimeEntry.UNKNOWN) {
-            buf.append("action=" + actionKeywords[action]);
+            sb.append("action=" + actionKeywords[action]);
             needSeparator = true;
         }
 
         String command = getLaunchString();
         if (command != null && command.length() > 0) {
             if (needSeparator) {
-                buf.append(separator);
+                sb.append(separator);
             }
-            buf.append("application=" + command);
+            sb.append("application=" + command);
             needSeparator = true;
         }
 
         if (getImageFileName() != null) {
             if (needSeparator) {
-                buf.append(separator);
+                sb.append(separator);
             }
-            buf.append("icon=" + getImageFileName());
+            sb.append("icon=" + getImageFileName());
             needSeparator = true;
         }
 
         String extensions = getExtensionsAsList();
         if (extensions.length() > 0) {
             if (needSeparator) {
-                buf.append(separator);
+                sb.append(separator);
             }
-            buf.append("file_extensions=" + extensions);
+            sb.append("file_extensions=" + extensions);
             needSeparator = true;
         }
 
         String description = getDescription();
         if (description != null && !description.equals(getType())) {
             if (needSeparator) {
-                buf.append(separator);
+                sb.append(separator);
             }
-            buf.append("description=" + description);
+            sb.append("description=" + description);
         }
 
-        return buf.toString();
+        return sb.toString();
     }
 
     public String toString() {

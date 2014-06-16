@@ -428,17 +428,17 @@ public class Decoration {
 
 
         public String toString() {
-            StringBuffer buf = new StringBuffer();
-            buf.append(super.toString());
-            buf.append("[");
-            if (fgPaint != null) buf.append("fgPaint: " + fgPaint);
-            if (bgPaint != null) buf.append(" bgPaint: " + bgPaint);
-            if (swapColors) buf.append(" swapColors: true");
-            if (strikethrough) buf.append(" strikethrough: true");
-            if (stdUnderline != null) buf.append(" stdUnderline: " + stdUnderline);
-            if (imUnderline != null) buf.append(" imUnderline: " + imUnderline);
-            buf.append("]");
-            return buf.toString();
+            StringBuilder sb = new StringBuilder();
+            sb.append(super.toString());
+            sb.append("[");
+            if (fgPaint != null) sb.append("fgPaint: " + fgPaint);
+            if (bgPaint != null) sb.append(" bgPaint: " + bgPaint);
+            if (swapColors) sb.append(" swapColors: true");
+            if (strikethrough) sb.append(" strikethrough: true");
+            if (stdUnderline != null) sb.append(" stdUnderline: " + stdUnderline);
+            if (imUnderline != null) sb.append(" imUnderline: " + imUnderline);
+            sb.append("]");
+            return sb.toString();
         }
     }
 }

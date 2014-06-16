@@ -67,7 +67,7 @@ public class PropertyExpander {
         // no special characters
         if (p == -1) return value;
 
-        StringBuffer sb = new StringBuffer(value.length());
+        StringBuilder sb = new StringBuilder(value.length());
         int max = value.length();
         int i = 0;  // index of last character we copied
 

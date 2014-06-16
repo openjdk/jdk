@@ -57,6 +57,7 @@ import javax.sql.rowset.*;
  * SerialStruct is to be used by more than one thread then access to the
  * SerialStruct should be controlled by appropriate synchronization.
  *
+ * @since 1.5
  */
 public class SerialStruct implements Struct, Serializable, Cloneable {
 

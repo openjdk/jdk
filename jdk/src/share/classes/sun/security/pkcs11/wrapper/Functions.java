@@ -109,14 +109,14 @@ public class Functions {
      */
     public static String toFullHexString(long value) {
         long currentValue = value;
-        StringBuffer stringBuffer = new StringBuffer(16);
+        StringBuilder sb = new StringBuilder(16);
         for(int j = 0; j < 16; j++) {
             int currentDigit = (int) currentValue & 0xf;
-            stringBuffer.append(HEX_DIGITS[currentDigit]);
+            sb.append(HEX_DIGITS[currentDigit]);
             currentValue >>>= 4;
         }
 
-        return stringBuffer.reverse().toString();
+        return sb.reverse().toString();
     }
 
     /**
@@ -128,14 +128,14 @@ public class Functions {
      */
     public static String toFullHexString(int value) {
         int currentValue = value;
-        StringBuffer stringBuffer = new StringBuffer(8);
+        StringBuilder sb = new StringBuilder(8);
         for(int i = 0; i < 8; i++) {
             int currentDigit = currentValue & 0xf;
-            stringBuffer.append(HEX_DIGITS[currentDigit]);
+            sb.append(HEX_DIGITS[currentDigit]);
             currentValue >>>= 4;
         }
 
-        return stringBuffer.reverse().toString();
+        return sb.reverse().toString();
     }
 
     /**
@@ -161,20 +161,20 @@ public class Functions {
             return null;
         }
 
-        StringBuffer buffer = new StringBuffer(2 * value.length);
+        StringBuilder sb = new StringBuilder(2 * value.length);
         int          single;
 
         for (int i = 0; i < value.length; i++) {
             single = value[i] & 0xFF;
 
             if (single < 0x10) {
-                buffer.append('0');
+                sb.append('0');
             }
 
-            buffer.append(Integer.toString(single, 16));
+            sb.append(Integer.toString(single, 16));
         }
 
-        return buffer.toString();
+        return sb.toString();
     }
 
     /**

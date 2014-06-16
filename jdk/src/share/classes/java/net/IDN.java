@@ -111,7 +111,7 @@ public final class IDN {
     public static String toASCII(String input, int flag)
     {
         int p = 0, q = 0;
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
 
         if (isRootLabel(input)) {
             return ".";
@@ -172,7 +172,7 @@ public final class IDN {
      */
     public static String toUnicode(String input, int flag) {
         int p = 0, q = 0;
-        StringBuffer out = new StringBuffer();
+        StringBuilder out = new StringBuilder();
 
         if (isRootLabel(input)) {
             return ".";

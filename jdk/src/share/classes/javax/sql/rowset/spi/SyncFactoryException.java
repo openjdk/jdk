@@ -35,6 +35,7 @@ import java.sql.SQLException;
  * @author Jonathan Bruce
  * @see javax.sql.rowset.spi.SyncFactory
  * @see javax.sql.rowset.spi.SyncFactoryException
+ * @since 1.5
  */
 public class SyncFactoryException extends java.sql.SQLException {
 
