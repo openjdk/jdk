@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection
  *  @run compile -g ConstantPoolInfo.java
- *  @run main ConstantPoolInfo
+ *  @run driver ConstantPoolInfo
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

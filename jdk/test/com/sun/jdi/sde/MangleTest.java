@@ -10,7 +10,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile MangleTest.java
  *  @run compile -g onion/pickle/Mangle.java
- *  @run main MangleTest
+ *  @run driver MangleTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

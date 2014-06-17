@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g BacktraceFieldTest.java
- *  @run main BacktraceFieldTest
+ *  @run driver BacktraceFieldTest
  */
 
 /*
