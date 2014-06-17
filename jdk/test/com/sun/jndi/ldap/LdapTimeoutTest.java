@@ -27,6 +27,8 @@
  * @summary Timeout tests for ldap
  */
 
+import com.sun.jndi.ldap.Connection;
+
 import java.net.Socket;
 import java.net.ServerSocket;
 import java.net.SocketTimeoutException;
@@ -38,7 +40,9 @@ import java.util.concurrent.Callable;
 import java.util.concurrent.Executors;
 import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
-import java.util.concurrent.TimeUnit;
+
+import static java.util.concurrent.TimeUnit.MILLISECONDS;
+import static java.util.concurrent.TimeUnit.NANOSECONDS;
 
 public class LdapTimeoutTest {
     private static final ScheduledExecutorService pool =
@@ -85,7 +89,7 @@ public class LdapTimeoutTest {
     void ldapReadTimeoutTest(Hashtable env, boolean ssl) {
         InitialContext ctx = null;
         if (ssl) env.put(Context.SECURITY_PROTOCOL, "ssl");
-        ScheduledFuture killer = killSwitch(5000);
+        ScheduledFuture killer = killSwitch(5_000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -113,7 +117,7 @@ public class LdapTimeoutTest {
 
     void simpleAuthConnectTest(Hashtable env) {
         InitialContext ctx = null;
-        ScheduledFuture killer = killSwitch(5000);
+        ScheduledFuture killer = killSwitch(5_000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -123,7 +127,7 @@ public class LdapTimeoutTest {
         } catch (NamingException e) {
             long end = System.nanoTime();
             if (e.getCause() instanceof SocketTimeoutException) {
-                if (TimeUnit.NANOSECONDS.toMillis(end - start) < 2900) {
+                if (NANOSECONDS.toMillis(end - start) < 2_900) {
                     pass();
                 } else {
                     System.err.println("Fail: Waited too long");
@@ -142,7 +146,7 @@ public class LdapTimeoutTest {
 
     void deadServerNoTimeout(Hashtable env) {
         InitialContext ctx = null;
-        ScheduledFuture killer = killSwitch(30000);
+        ScheduledFuture killer = killSwitch(30_000);
         long start = System.nanoTime();
         try {
             ctx = new InitialDirContext(env);
@@ -154,9 +158,13 @@ public class LdapTimeoutTest {
             fail();
         } catch (NamingException e) {
             long end = System.nanoTime();
-            if (TimeUnit.NANOSECONDS.toMillis(end - start) < 14000) {
-                System.err.println("fail: timeout should be at least 15 seconds, actual time: "
-                                   + TimeUnit.NANOSECONDS.toMillis(end - start));
+            long elapsed = NANOSECONDS.toMillis(end - start);
+            if (elapsed < Connection.DEFAULT_READ_TIMEOUT_MILLIS) {
+                System.err.printf(
+                        "fail: timeout should be at least %s ms, actual time is %s ms",
+                        Connection.DEFAULT_READ_TIMEOUT_MILLIS,
+                        elapsed);
+                e.printStackTrace();
                 fail();
             } else {
                 pass();
@@ -184,7 +192,7 @@ public class LdapTimeoutTest {
                 System.exit(0);
                 return null;
             }
-        }, ms, TimeUnit.MILLISECONDS);
+        }, ms, MILLISECONDS);
     }
 
     static class Server extends Thread {
