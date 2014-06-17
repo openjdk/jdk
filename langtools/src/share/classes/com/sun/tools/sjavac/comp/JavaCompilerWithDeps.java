@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,8 +29,6 @@ import java.util.StringTokenizer;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
-import com.sun.tools.sjavac.server.CompilerThread;
-import java.io.File;
 
 /** Subclass to Resolve that overrides collect.
  *
@@ -44,16 +42,16 @@ public class JavaCompilerWithDeps extends JavaCompiler {
     /** The dependency database
      */
     protected Dependencies deps;
-    protected CompilerThread compilerThread;
+    protected JavacServiceImpl javacService;
 
-    public JavaCompilerWithDeps(Context context, CompilerThread t) {
+    public JavaCompilerWithDeps(Context context, JavacServiceImpl jsi) {
         super(context);
         deps = Dependencies.instance(context);
-        compilerThread = t;
+        javacService = jsi;
         needRootClasses = true;
     }
 
-    public static void preRegister(Context context, final CompilerThread t) {
+    public static void preRegister(Context context, final JavacServiceImpl t) {
         context.put(compilerKey, new Context.Factory<JavaCompiler>() {
             public JavaCompiler make(Context c) {
                 JavaCompiler instance = new JavaCompilerWithDeps(c, t);
@@ -99,7 +97,7 @@ public class JavaCompilerWithDeps extends JavaCompiler {
 
             // Now check if the truncated uri ends with the path. (It does not == failure!)
             if (path.length() > 0 && !path.equals("/unnamed package/") && !pp.endsWith(path)) {
-                compilerThread.logError("Error: The source file "+sym.sourcefile.getName()+
+                javacService.logError("Error: The source file "+sym.sourcefile.getName()+
                                         " is located in the wrong package directory, because it contains the class "+
                                         sym.getQualifiedName());
             }
