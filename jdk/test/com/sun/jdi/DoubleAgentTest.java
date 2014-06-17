@@ -26,14 +26,13 @@
  * @summary Check that a double agent request fails
  *
  * @build VMConnection DoubleAgentTest Exit0
- * @run main DoubleAgentTest
+ * @run driver DoubleAgentTest
  *
  */
 import java.io.InputStream;
 import java.io.IOException;
 import java.io.File;
 import java.net.ServerSocket;
-import java.net.Socket;
 
 public class DoubleAgentTest {
 

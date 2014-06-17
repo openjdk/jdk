@@ -31,7 +31,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g HelloWorld.java
  *  @run build VMDeathLastTest
- *  @run main VMDeathLastTest
+ *  @run driver VMDeathLastTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

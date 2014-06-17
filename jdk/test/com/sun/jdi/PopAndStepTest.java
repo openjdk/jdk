@@ -10,7 +10,7 @@
  *  @library ..
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g PopAndStepTest.java
- *  @run main PopAndStepTest
+ *  @run driver PopAndStepTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -31,7 +31,7 @@
  *  @library ..
  *  @run build  TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g DeleteAllBkptsTest.java
- *  @run main DeleteAllBkptsTest
+ *  @run driver DeleteAllBkptsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
