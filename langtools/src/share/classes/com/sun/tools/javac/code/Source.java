@@ -237,6 +237,9 @@ public enum Source {
     public boolean allowFunctionalInterfaceMostSpecific() {
         return compareTo(JDK1_8) >= 0;
     }
+    public boolean allowPostApplicabilityVarargsAccessCheck() {
+        return compareTo(JDK1_8) >= 0;
+    }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {
         case JDK1_2:
