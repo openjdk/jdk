@@ -26,6 +26,8 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -67,17 +69,32 @@ public class Util {
     }
 
     public static String extractStringOption(String opName, String s) {
+        return extractStringOption(opName, s, null);
+    }
+
+    public static String extractStringOption(String opName, String s, String deflt) {
         int p = s.indexOf(opName+"=");
-        if (p == -1) return null;
+        if (p == -1) return deflt;
         p+=opName.length()+1;
         int pe = s.indexOf(',', p);
         if (pe == -1) pe = s.length();
         return s.substring(p, pe);
     }
 
+    public static boolean extractBooleanOption(String opName, String s, boolean deflt) {
+       String str = extractStringOption(opName, s);
+        return "true".equals(str) ? true
+             : "false".equals(str) ? false
+             : deflt;
+    }
+
     public static int extractIntOption(String opName, String s) {
+        return extractIntOption(opName, s, 0);
+    }
+
+    public static int extractIntOption(String opName, String s, int deflt) {
         int p = s.indexOf(opName+"=");
-        if (p == -1) return 0;
+        if (p == -1) return deflt;
         p+=opName.length()+1;
         int pe = s.indexOf(',', p);
         if (pe == -1) pe = s.length();

@@ -55,6 +55,7 @@ import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.sjavac.comp.AttrWithDeps;
 import com.sun.tools.sjavac.comp.Dependencies;
 import com.sun.tools.sjavac.comp.JavaCompilerWithDeps;
+import com.sun.tools.sjavac.comp.JavacServiceImpl;
 import com.sun.tools.sjavac.comp.ResolveWithDeps;
 import com.sun.tools.sjavac.comp.SmartFileManager;
 
@@ -71,6 +72,7 @@ import com.sun.tools.sjavac.comp.SmartFileManager;
 public class CompilerThread implements Runnable {
     private JavacServer javacServer;
     private CompilerPool compilerPool;
+    private JavacServiceImpl javacServiceImpl;
     private List<Future<?>> subTasks;
 
     // Communicating over this socket.
@@ -85,9 +87,10 @@ public class CompilerThread implements Runnable {
     // If true, then this thread is serving a request.
     private boolean inUse = false;
 
-    CompilerThread(CompilerPool cp) {
+    CompilerThread(CompilerPool cp, JavacServiceImpl javacServiceImpl) {
         compilerPool = cp;
         javacServer = cp.getJavacServer();
+        this.javacServiceImpl = javacServiceImpl;
     }
 
     /**
@@ -131,7 +134,7 @@ public class CompilerThread implements Runnable {
         context = new Context();
         ResolveWithDeps.preRegister(context);
         AttrWithDeps.preRegister(context);
-        JavaCompilerWithDeps.preRegister(context, this);
+        JavaCompilerWithDeps.preRegister(context, javacServiceImpl);
         subTasks = new ArrayList<>();
     }
 
