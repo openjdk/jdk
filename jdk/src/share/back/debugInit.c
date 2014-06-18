@@ -1287,22 +1287,26 @@ debugInit_exit(jvmtiError error, const char *msg)
     if ( error != JVMTI_ERROR_NONE ) {
         exit_code = 1;
         if ( docoredump ) {
+            LOG_MISC(("Dumping core as requested by command line"));
             finish_logging(exit_code);
             abort();
         }
     }
+
     if ( msg==NULL ) {
         msg = "";
     }
 
     LOG_MISC(("Exiting with error %s(%d): %s", jvmtiErrorText(error), error, msg));
 
-    gdata->vmDead = JNI_TRUE;
+    if (gdata != NULL) {
+        gdata->vmDead = JNI_TRUE;
 
-    /* Let's try and cleanup the JVMTI, if we even have one */
-    if ( gdata->jvmti != NULL ) {
-        /* Dispose of jvmti (gdata->jvmti becomes NULL) */
-        disposeEnvironment(gdata->jvmti);
+        /* Let's try and cleanup the JVMTI, if we even have one */
+        if ( gdata->jvmti != NULL ) {
+            /* Dispose of jvmti (gdata->jvmti becomes NULL) */
+            disposeEnvironment(gdata->jvmti);
+        }
     }
 
     /* Finish up logging. We reach here if JDWP is doing the exiting. */
