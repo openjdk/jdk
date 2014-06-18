@@ -155,7 +155,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * @exception IOException on any I/O error
      */
     protected void writeAttributes(AttributeSet attr) throws IOException {
-        Enumeration attributeNames = attr.getAttributeNames();
+        Enumeration<?> attributeNames = attr.getAttributeNames();
         while (attributeNames.hasMoreElements()) {
             Object name = attributeNames.nextElement();
             if ((name instanceof StyleConstants.ParagraphConstants) ||
@@ -255,7 +255,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
          *  stylenames.
          */
         DefaultStyledDocument styledDoc =  ((DefaultStyledDocument)getDocument());
-        Enumeration styleNames = styledDoc.getStyleNames();
+        Enumeration<?> styleNames = styledDoc.getStyleNames();
 
         while (styleNames.hasMoreElements()) {
             Style s = styledDoc.getStyle((String)styleNames.nextElement());

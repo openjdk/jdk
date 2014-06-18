@@ -1370,7 +1370,7 @@ public class CSS implements Serializable {
 
     private void translateEmbeddedAttributes(AttributeSet htmlAttrSet,
                                              MutableAttributeSet cssAttrSet) {
-        Enumeration keys = htmlAttrSet.getAttributeNames();
+        Enumeration<?> keys = htmlAttrSet.getAttributeNames();
         if (htmlAttrSet.getAttribute(StyleConstants.NameAttribute) ==
             HTML.Tag.HR) {
             // HR needs special handling due to us treating it as a leaf.
@@ -1393,7 +1393,7 @@ public class CSS implements Serializable {
     private void translateAttributes(HTML.Tag tag,
                                             AttributeSet htmlAttrSet,
                                             MutableAttributeSet cssAttrSet) {
-        Enumeration names = htmlAttrSet.getAttributeNames();
+        Enumeration<?> names = htmlAttrSet.getAttributeNames();
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
 
@@ -3342,7 +3342,7 @@ public class CSS implements Serializable {
         s.defaultWriteObject();
 
         // Determine what values in valueConvertor need to be written out.
-        Enumeration keys = valueConvertor.keys();
+        Enumeration<?> keys = valueConvertor.keys();
         s.writeInt(valueConvertor.size());
         if (keys != null) {
             while (keys.hasMoreElements()) {

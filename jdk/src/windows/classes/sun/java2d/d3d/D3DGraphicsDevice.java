@@ -41,7 +41,6 @@ import sun.awt.Win32GraphicsDevice;
 import sun.awt.windows.WWindowPeer;
 import sun.java2d.pipe.hw.ContextCapabilities;
 import sun.java2d.windows.WindowsFlags;
-import static sun.java2d.pipe.BufferedOpCodes.*;
 import static sun.java2d.d3d.D3DContext.D3DContextCaps.*;
 import sun.java2d.d3d.D3DContext.D3DContextCaps;
 
@@ -383,9 +382,9 @@ public class D3DGraphicsDevice extends Win32GraphicsDevice {
     }
 
     private static native void enumDisplayModesNative(int screen,
-                                                      ArrayList modes);
+                                                      ArrayList<DisplayMode> modes);
     @Override
-    protected void enumDisplayModes(final int screen, final ArrayList modes) {
+    protected void enumDisplayModes(final int screen, final ArrayList<DisplayMode> modes) {
         D3DRenderQueue rq = D3DRenderQueue.getInstance();
         rq.lock();
         try {

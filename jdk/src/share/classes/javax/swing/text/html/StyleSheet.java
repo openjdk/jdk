@@ -192,6 +192,7 @@ public class StyleSheet extends StyleContext {
 
         try {
             // Build an array of all the parent elements.
+            @SuppressWarnings("unchecked")
             Vector<Element> searchContext = sb.getVector();
 
             for (Element p = e; p != null; p = p.getParentElement()) {
@@ -693,7 +694,7 @@ public class StyleSheet extends StyleContext {
     private AttributeSet removeHTMLTags(AttributeSet old, AttributeSet attr) {
         if (!(attr instanceof LargeConversionSet) &&
             !(attr instanceof SmallConversionSet)) {
-            Enumeration names = attr.getAttributeNames();
+            Enumeration<?> names = attr.getAttributeNames();
 
             while (names.hasMoreElements()) {
                 Object key = names.nextElement();
@@ -726,14 +727,14 @@ public class StyleSheet extends StyleContext {
         // in most cases, there are no StyleConstants attributes
         // so we iterate the collection of keys to avoid creating
         // a new set.
-        Enumeration names = a.getAttributeNames();
+        Enumeration<?> names = a.getAttributeNames();
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
             if (name instanceof StyleConstants) {
                 // we really need to do a conversion, iterate again
                 // building a new set.
                 MutableAttributeSet converted = new LargeConversionSet();
-                Enumeration keys = a.getAttributeNames();
+                Enumeration<?> keys = a.getAttributeNames();
                 while (keys.hasMoreElements()) {
                     Object key = keys.nextElement();
                     Object cssValue = null;
@@ -1078,6 +1079,7 @@ public class StyleSheet extends StyleContext {
     String[] getSimpleSelectors(String selector) {
         selector = cleanSelectorString(selector);
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
+        @SuppressWarnings("unchecked")
         Vector<String> selectors = sb.getVector();
         int lastIndex = 0;
         int length = selector.length();
@@ -1256,7 +1258,7 @@ public class StyleSheet extends StyleContext {
      * create the resolved style, if necessary.
      */
     private synchronized Style getResolvedStyle(String selector,
-                                                Vector elements,
+                                                Vector<Element> elements,
                                                 HTML.Tag t) {
         Style retStyle = resolvedStyles.get(selector);
         if (retStyle == null) {
@@ -1368,7 +1370,9 @@ public class StyleSheet extends StyleContext {
                                       String[] tags,
                                       String[] ids, String[] classes) {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
+        @SuppressWarnings("unchecked")
         Vector<SelectorMapping> tempVector = sb.getVector();
+        @SuppressWarnings("unchecked")
         Hashtable<SelectorMapping, SelectorMapping> tempHashtable = sb.getHashtable();
         // Determine all the Styles that are appropriate, placing them
         // in tempVector
@@ -1452,7 +1456,7 @@ public class StyleSheet extends StyleContext {
      * @param t         the Tag to use for
      *                  the first Element in <code>elements</code>
      */
-    private Style createResolvedStyle(String selector, Vector elements,
+    private Style createResolvedStyle(String selector, Vector<Element> elements,
                                       HTML.Tag t) {
         int numElements = elements.size();
         // Build three arrays, one for tags, one for class's, and one for
@@ -1461,7 +1465,7 @@ public class StyleSheet extends StyleContext {
         String ids[] = new String[numElements];
         String classes[] = new String[numElements];
         for (int counter = 0; counter < numElements; counter++) {
-            Element e = (Element)elements.elementAt(counter);
+            Element e = elements.elementAt(counter);
             AttributeSet attr = e.getAttributes();
             if (counter == 0 && e.isLeaf()) {
                 // For leafs, we use the second tier attributes.
@@ -1513,6 +1517,7 @@ public class StyleSheet extends StyleContext {
     private Style createResolvedStyle(String selector) {
         SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
         // Will contain the tags, ids, and classes, in that order.
+        @SuppressWarnings("unchecked")
         Vector<String> elements = sb.getVector();
         try {
             boolean done;
@@ -1678,6 +1683,7 @@ public class StyleSheet extends StyleContext {
      * releaseSearchBuffer to get a SearchBuffer, and release it when
      * done.
      */
+    @SuppressWarnings("rawtypes")
     private static class SearchBuffer {
         /** A stack containing instances of SearchBuffer. Used in getting
          * rules. */
@@ -2630,6 +2636,7 @@ public class StyleSheet extends StyleContext {
             // implementation.
             Document doc = v.getDocument();
             SearchBuffer sb = SearchBuffer.obtainSearchBuffer();
+            @SuppressWarnings("unchecked")
             Vector<AttributeSet> muxList = sb.getVector();
             try {
                 if (doc instanceof HTMLDocument) {
@@ -2642,7 +2649,7 @@ public class StyleSheet extends StyleContext {
                         muxList.addElement(htmlAttr);
                     }
                     if (elem.isLeaf()) {
-                        Enumeration keys = a.getAttributeNames();
+                        Enumeration<?> keys = a.getAttributeNames();
                         while (keys.hasMoreElements()) {
                             Object key = keys.nextElement();
                             if (key instanceof HTML.Tag) {
