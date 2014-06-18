@@ -140,6 +140,7 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
      * Returns whether the application has invoked
      * <code>disableSwingFocusManager()</code>.
      *
+     * @return {@code true} if focus manager is enabled.
      * @see #disableSwingFocusManager
      * @deprecated As of 1.4, replaced by
      *   <code>KeyboardFocusManager.getDefaultFocusTraversalPolicy()</code>
