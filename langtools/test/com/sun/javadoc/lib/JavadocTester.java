@@ -451,8 +451,12 @@ public abstract class JavadocTester {
         for (String s : strings) {
             int currentIndex = fileString.indexOf(s);
             checking(s + " at index " + currentIndex);
-            if (currentIndex >= prevIndex) {
-                passed(s + "is in the correct order");
+            if (currentIndex == -1) {
+                failed(s + " not found.");
+                continue;
+            }
+            if (currentIndex > prevIndex) {
+                passed(s + " is in the correct order");
             } else {
                 failed(s + " is in the wrong order.");
             }
