@@ -65,8 +65,6 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
     ALSA_NOT_NEEDED=yes
     PULSE_NOT_NEEDED=yes
     X11_NOT_NEEDED=yes
-    # If the java runtime framework is disabled, then we need X11.
-    # This will be adjusted below.
     AC_MSG_RESULT([alsa pulse x11])
   fi
 
@@ -82,20 +80,6 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
 
   if test "x$SUPPORT_HEADFUL" = xno; then
     X11_NOT_NEEDED=yes
-  fi
-
-  ###############################################################################
-  #
-  # Check for MacOSX support for OpenJDK.
-  #
-
-  BASIC_DEPRECATED_ARG_ENABLE(macosx-runtime-support, macosx_runtime_support)
-
-  AC_MSG_CHECKING([for Mac OS X Java Framework])
-  if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    AC_MSG_RESULT([/System/Library/Frameworks/JavaVM.framework])
-  else
-    AC_MSG_RESULT([no])
   fi
 ])
 
