@@ -47,7 +47,7 @@ NodeHash::NodeHash(uint est_max_size) :
   _total_insert_probes(0), _total_inserts(0),
   _insert_probes(0), _grows(0) {
   // _sentinel must be in the current node space
-  _sentinel = new (Compile::current()) ProjNode(NULL, TypeFunc::Control);
+  _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
 }
 
@@ -62,7 +62,7 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   _total_insert_probes(0), _total_inserts(0),
   _insert_probes(0), _grows(0) {
   // _sentinel must be in the current node space
-  _sentinel = new (Compile::current()) ProjNode(NULL, TypeFunc::Control);
+  _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
 }
 
@@ -1309,7 +1309,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   }
 
   // Smash all inputs to 'old', isolating him completely
-  Node *temp = new (C) Node(1);
+  Node *temp = new Node(1);
   temp->init_req(0,nn);     // Add a use to nn to prevent him from dying
   remove_dead_node( old );
   temp->del_req(0);         // Yank bogus edge

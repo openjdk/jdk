@@ -123,24 +123,24 @@ int Runtime1::_throw_incompatible_class_change_error_count = 0;
 int Runtime1::_throw_array_store_exception_count = 0;
 int Runtime1::_throw_count = 0;
 
-static int _byte_arraycopy_cnt = 0;
-static int _short_arraycopy_cnt = 0;
-static int _int_arraycopy_cnt = 0;
-static int _long_arraycopy_cnt = 0;
-static int _oop_arraycopy_cnt = 0;
+static int _byte_arraycopy_stub_cnt = 0;
+static int _short_arraycopy_stub_cnt = 0;
+static int _int_arraycopy_stub_cnt = 0;
+static int _long_arraycopy_stub_cnt = 0;
+static int _oop_arraycopy_stub_cnt = 0;
 
 address Runtime1::arraycopy_count_address(BasicType type) {
   switch (type) {
   case T_BOOLEAN:
-  case T_BYTE:   return (address)&_byte_arraycopy_cnt;
+  case T_BYTE:   return (address)&_byte_arraycopy_stub_cnt;
   case T_CHAR:
-  case T_SHORT:  return (address)&_short_arraycopy_cnt;
+  case T_SHORT:  return (address)&_short_arraycopy_stub_cnt;
   case T_FLOAT:
-  case T_INT:    return (address)&_int_arraycopy_cnt;
+  case T_INT:    return (address)&_int_arraycopy_stub_cnt;
   case T_DOUBLE:
-  case T_LONG:   return (address)&_long_arraycopy_cnt;
+  case T_LONG:   return (address)&_long_arraycopy_stub_cnt;
   case T_ARRAY:
-  case T_OBJECT: return (address)&_oop_arraycopy_cnt;
+  case T_OBJECT: return (address)&_oop_arraycopy_stub_cnt;
   default:
     ShouldNotReachHere();
     return NULL;
@@ -1479,13 +1479,13 @@ void Runtime1::print_statistics() {
   tty->print_cr(" _ic_miss_cnt:                    %d", SharedRuntime::_ic_miss_ctr);
   tty->print_cr(" _generic_arraycopy_cnt:          %d", _generic_arraycopy_cnt);
   tty->print_cr(" _generic_arraycopystub_cnt:      %d", _generic_arraycopystub_cnt);
-  tty->print_cr(" _byte_arraycopy_cnt:             %d", _byte_arraycopy_cnt);
-  tty->print_cr(" _short_arraycopy_cnt:            %d", _short_arraycopy_cnt);
-  tty->print_cr(" _int_arraycopy_cnt:              %d", _int_arraycopy_cnt);
-  tty->print_cr(" _long_arraycopy_cnt:             %d", _long_arraycopy_cnt);
+  tty->print_cr(" _byte_arraycopy_cnt:             %d", _byte_arraycopy_stub_cnt);
+  tty->print_cr(" _short_arraycopy_cnt:            %d", _short_arraycopy_stub_cnt);
+  tty->print_cr(" _int_arraycopy_cnt:              %d", _int_arraycopy_stub_cnt);
+  tty->print_cr(" _long_arraycopy_cnt:             %d", _long_arraycopy_stub_cnt);
   tty->print_cr(" _primitive_arraycopy_cnt:        %d", _primitive_arraycopy_cnt);
   tty->print_cr(" _oop_arraycopy_cnt (C):          %d", Runtime1::_oop_arraycopy_cnt);
-  tty->print_cr(" _oop_arraycopy_cnt (stub):       %d", _oop_arraycopy_cnt);
+  tty->print_cr(" _oop_arraycopy_cnt (stub):       %d", _oop_arraycopy_stub_cnt);
   tty->print_cr(" _arraycopy_slowcase_cnt:         %d", _arraycopy_slowcase_cnt);
   tty->print_cr(" _arraycopy_checkcast_cnt:        %d", _arraycopy_checkcast_cnt);
   tty->print_cr(" _arraycopy_checkcast_attempt_cnt:%d", _arraycopy_checkcast_attempt_cnt);
