@@ -347,7 +347,7 @@ implements EntityReference {
      * @see DocumentTypeImpl
      * @see EntityImpl
      */
-    // The Xerces parser invokes callbacks for startEnityReference
+    // The Xerces parser invokes callbacks for startEntityReference
     // the parsed value of the entity EACH TIME, so it is actually
     // easier to create the nodes through the callbacks rather than
     // clone the Entity.

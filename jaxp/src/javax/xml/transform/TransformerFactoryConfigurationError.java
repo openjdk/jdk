@@ -42,7 +42,7 @@ public class TransformerFactoryConfigurationError extends Error {
 
     /**
      * Create a new <code>TransformerFactoryConfigurationError</code> with no
-     * detail mesage.
+     * detail message.
      */
     public TransformerFactoryConfigurationError() {
 
