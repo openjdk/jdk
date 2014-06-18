@@ -47,7 +47,7 @@ import java.lang.annotation.Native;
  * @author  Arthur van Hoff
  * @author  Josh Bloch
  * @author  Joseph D. Darcy
- * @since JDK1.0
+ * @since 1.0
  */
 public final class Integer extends Number implements Comparable<Integer> {
     /**
@@ -66,7 +66,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      * The {@code Class} instance representing the primitive type
      * {@code int}.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     @SuppressWarnings("unchecked")
     public static final Class<Integer>  TYPE = (Class<Integer>) Class.getPrimitiveClass("int");
@@ -227,7 +227,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *          represented by the argument in hexadecimal (base&nbsp;16).
      * @see #parseUnsignedInt(String, int)
      * @see #toUnsignedString(int, int)
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public static String toHexString(int i) {
         return toUnsignedString0(i, 4);
@@ -265,7 +265,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *          represented by the argument in octal (base&nbsp;8).
      * @see #parseUnsignedInt(String, int)
      * @see #toUnsignedString(int, int)
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public static String toOctalString(int i) {
         return toUnsignedString0(i, 3);
@@ -297,7 +297,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *          represented by the argument in binary (base&nbsp;2).
      * @see #parseUnsignedInt(String, int)
      * @see #toUnsignedString(int, int)
-     * @since   JDK1.0.2
+     * @since   1.0.2
      */
     public static String toBinaryString(int i) {
         return toUnsignedString0(i, 1);

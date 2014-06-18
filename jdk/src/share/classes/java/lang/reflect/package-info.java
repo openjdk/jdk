@@ -44,6 +44,6 @@
  * members of a target object (based on its runtime class) or the
  * members declared by a given class.
  *
- * @since JDK1.1
+ * @since 1.1
  */
 package java.lang.reflect;

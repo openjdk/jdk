@@ -439,7 +439,7 @@ public class ComponentView extends View  {
          * @param b If <code>true</code>, shows this component;
          * otherwise, hides this component.
          * @see #isVisible
-         * @since JDK1.1
+         * @since 1.1
          */
         public void setVisible(boolean b) {
             super.setVisible(b);

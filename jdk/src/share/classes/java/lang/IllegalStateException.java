@@ -32,7 +32,7 @@ package java.lang;
  * operation.
  *
  * @author  Jonni Kanerva
- * @since   JDK1.1
+ * @since   1.1
  */
 public
 class IllegalStateException extends RuntimeException {

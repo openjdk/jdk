@@ -32,7 +32,7 @@ package java.io;
  *
  * @author  unascribed
  * @see     java.io.DataInputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class DataOutputStream extends FilterOutputStream implements DataOutput {

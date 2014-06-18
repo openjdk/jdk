@@ -94,7 +94,7 @@ import java.text.CharacterIterator;
  *
  * @author      Jim Graham
  * @see         java.awt.Font
- * @since       JDK1.0
+ * @since       1.0
  */
 public abstract class FontMetrics implements java.io.Serializable {
 
@@ -625,7 +625,6 @@ public abstract class FontMetrics implements java.io.Serializable {
      * object's values as a <code>String</code>.
      * @return    a <code>String</code> representation of this
      * <code>FontMetrics</code> object.
-     * @since     JDK1.0.
      */
     public String toString() {
         return getClass().getName() +

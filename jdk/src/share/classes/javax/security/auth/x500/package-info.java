@@ -44,6 +44,6 @@
  *     Directory Information Models</a></li>
  * </ul>
  *
- * @since JDK1.4
+ * @since 1.4
  */
 package javax.security.auth.x500;

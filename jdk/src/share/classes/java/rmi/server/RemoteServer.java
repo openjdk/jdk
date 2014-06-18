@@ -37,7 +37,7 @@ import sun.rmi.runtime.Log;
  * concretely by its subclass(es).
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  */
 public abstract class RemoteServer extends RemoteObject
 {
@@ -46,7 +46,7 @@ public abstract class RemoteServer extends RemoteObject
 
     /**
      * Constructs a <code>RemoteServer</code>.
-     * @since JDK1.1
+     * @since 1.1
      */
     protected RemoteServer() {
         super();
@@ -56,7 +56,7 @@ public abstract class RemoteServer extends RemoteObject
      * Constructs a <code>RemoteServer</code> with the given reference type.
      *
      * @param ref the remote reference
-     * @since JDK1.1
+     * @since 1.1
      */
     protected RemoteServer(RemoteRef ref) {
         super(ref);
@@ -71,7 +71,7 @@ public abstract class RemoteServer extends RemoteObject
      * @throws  ServerNotActiveException if no remote method invocation
      * is being processed in the current thread
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public static String getClientHost() throws ServerNotActiveException {
         return sun.rmi.transport.tcp.TCPTransport.getClientHost();
@@ -91,7 +91,7 @@ public abstract class RemoteServer extends RemoteObject
      *          the invocation of its <code>checkPermission</code> method
      *          fails
      * @see #getLog
-     * @since JDK1.1
+     * @since 1.1
      */
     public static void setLog(java.io.OutputStream out)
     {
@@ -103,7 +103,7 @@ public abstract class RemoteServer extends RemoteObject
      * Returns stream for the RMI call log.
      * @return the call log
      * @see #setLog
-     * @since JDK1.1
+     * @since 1.1
      */
     public static java.io.PrintStream getLog()
     {

@@ -41,7 +41,7 @@ public class AWTError extends Error {
      * Constructs an instance of <code>AWTError</code> with the specified
      * detail message.
      * @param   msg   the detail message.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public AWTError(String msg) {
         super(msg);

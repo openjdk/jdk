@@ -63,8 +63,8 @@ public class Parser {
 
     private static final String START = OPTION;
 
-    private static final Set scaleKeyWords = Scale.keySet();
-    private static final Set alignKeyWords = Alignment.keySet();
+    private static final Set<String> scaleKeyWords = Scale.keySet();
+    private static final Set<String> alignKeyWords = Alignment.keySet();
     private static String[] otherKeyWords = {
         OPTION, COLUMN, DATA, HEADER, WIDTH, FORMAT, ALIGN, SCALE
     };
@@ -141,7 +141,7 @@ public class Parser {
      * token is assumed to be of type TT_WORD, and the set is assumed
      * to contain String objects.
      */
-    private Token matchOne(Set keyWords) throws ParserException, IOException {
+    private Token matchOne(Set<String> keyWords) throws ParserException, IOException {
         if ((lookahead.ttype == StreamTokenizer.TT_WORD)
                 && keyWords.contains(lookahead.sval)) {
             Token t = lookahead;

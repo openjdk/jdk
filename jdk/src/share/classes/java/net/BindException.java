@@ -30,7 +30,7 @@ package java.net;
  * socket to a local address and port.  Typically, the port is
  * in use, or the requested local address could not be assigned.
  *
- * @since   JDK1.1
+ * @since   1.1
  */
 
 public class BindException extends SocketException {
