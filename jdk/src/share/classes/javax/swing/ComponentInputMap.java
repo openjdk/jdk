@@ -78,7 +78,9 @@ public class ComponentInputMap extends InputMap {
     }
 
     /**
-     * Returns the component the <code>InputMap</code> was created for.
+     * Returns the component the {@code InputMap} was created for.
+     *
+     * @return the component the {@code InputMap} was created for.
      */
     public JComponent getComponent() {
         return component;

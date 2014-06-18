@@ -149,6 +149,12 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * @see #setVisibleAmount
      * @see #setMinimum
      * @see #setMaximum
+     *
+     * @param orientation an orientation of the {@code JScrollBar}
+     * @param value an int giving the current value
+     * @param extent an int giving the amount by which the value can "jump"
+     * @param min an int giving the minimum value
+     * @param max an int giving the maximum value
      */
     public JScrollBar(int orientation, int value, int extent, int min, int max)
     {
@@ -172,6 +178,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * value = 0
      * extent = 10
      * </pre>
+     *
+     * @param orientation an orientation of the {@code JScrollBar}
      */
     public JScrollBar(int orientation) {
         this(orientation, 0, 10, 0, 100);
@@ -213,6 +221,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Returns the delegate that implements the look and feel for
      * this component.
      *
+     * @return the scroll bar's current UI.
      * @see JComponent#setUI
      */
     public ScrollBarUI getUI() {
@@ -258,6 +267,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Set the scrollbar's orientation to either VERTICAL or
      * HORIZONTAL.
      *
+     * @param orientation an orientation of the {@code JScrollBar}
      * @exception IllegalArgumentException if orientation is not one of VERTICAL, HORIZONTAL
      * @see #getOrientation
      * @beaninfo
@@ -293,6 +303,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Returns data model that handles the scrollbar's four
      * fundamental properties: minimum, maximum, value, extent.
      *
+     * @return the data model
+     *
      * @see #setModel
      */
     public BoundedRangeModel getModel() {
@@ -304,6 +316,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * Sets the model that handles the scrollbar's four
      * fundamental properties: minimum, maximum, value, extent.
      *
+     * @param newModel a new model
      * @see #getModel
      * @beaninfo
      *       bound: true
@@ -583,6 +596,8 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * scrollbar model will not generate ChangeEvents while
      * valueIsAdjusting is true.
      *
+     * @param b {@code true} if the upcoming changes to the value property are part of a series
+     *
      * @see #getValueIsAdjusting
      * @see BoundedRangeModel#setValueIsAdjusting
      * @beaninfo
@@ -610,6 +625,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
      * minimum &le; value &le; value+extent &le; maximum
      * </pre>
      *
+     * @param newValue an int giving the current value
+     * @param newExtent an int giving the amount by which the value can "jump"
+     * @param newMin an int giving the minimum value
+     * @param newMax an int giving the maximum value
      *
      * @see BoundedRangeModel#setRangeProperties
      * @see #setValue
@@ -680,6 +699,10 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
 
     /**
      * Notify listeners that the scrollbar's model has changed.
+     *
+     * @param id an integer indicating the type of event.
+     * @param type an integer indicating the adjustment type.
+     * @param value the current value of the adjustment
      *
      * @see #addAdjustmentListener
      * @see EventListenerList
