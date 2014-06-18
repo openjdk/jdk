@@ -26,7 +26,10 @@
 package sun.misc;
 
 import java.security.AccessControlContext;
+import java.security.AccessController;
 import java.security.ProtectionDomain;
+import java.security.PrivilegedAction;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * A thread that has no permissions, is not a member of any user-defined
@@ -36,22 +39,35 @@ import java.security.ProtectionDomain;
  */
 public final class InnocuousThread extends Thread {
     private static final Unsafe UNSAFE;
-    private static final ThreadGroup THREADGROUP;
+    private static final ThreadGroup INNOCUOUSTHREADGROUP;
     private static final AccessControlContext ACC;
     private static final long THREADLOCALS;
     private static final long INHERITABLETHREADLOCALS;
     private static final long INHERITEDACCESSCONTROLCONTEXT;
 
+    private static final AtomicInteger threadNumber = new AtomicInteger(1);
+
     public InnocuousThread(Runnable target) {
-        super(THREADGROUP, target, "anInnocuousThread");
+        this(INNOCUOUSTHREADGROUP, target,
+             "InnocuousThread-" + threadNumber.getAndIncrement());
+    }
+
+    public InnocuousThread(Runnable target, String name) {
+        this(INNOCUOUSTHREADGROUP, target, name);
+    }
+
+    private InnocuousThread(ThreadGroup group, Runnable target, String name) {
+        super(group, target, name);
         UNSAFE.putOrderedObject(this, INHERITEDACCESSCONTROLCONTEXT, ACC);
         eraseThreadLocals();
     }
 
+    // always report system class loader, or null
+    private ClassLoader contextClassLoader = ClassLoader.getSystemClassLoader();
+
     @Override
     public ClassLoader getContextClassLoader() {
-        // always report system class loader
-        return ClassLoader.getSystemClassLoader();
+        return contextClassLoader;
     }
 
     @Override
@@ -61,7 +77,10 @@ public final class InnocuousThread extends Thread {
 
     @Override
     public void setContextClassLoader(ClassLoader cl) {
-        throw new SecurityException("setContextClassLoader");
+        if (cl == null)
+            contextClassLoader = null;
+        else
+            throw new SecurityException("setContextClassLoader");
     }
 
     // ensure run method is run only once
@@ -113,7 +132,10 @@ public final class InnocuousThread extends Thread {
                     break;
                 group = parent;
             }
-            THREADGROUP = new ThreadGroup(group, "InnocuousThreadGroup");
+            final ThreadGroup root = group;
+            INNOCUOUSTHREADGROUP = AccessController.doPrivileged(
+                (PrivilegedAction<ThreadGroup>) () ->
+                    { return new ThreadGroup(root, "InnocuousThreadGroup"); });
         } catch (Exception e) {
             throw new Error(e);
         }
