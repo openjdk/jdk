@@ -94,6 +94,7 @@ import javax.accessibility.*;
  * @author David Kloba
  * @author James Gosling
  * @author Scott Violet
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JDialog extends Dialog implements WindowConstants,

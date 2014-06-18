@@ -36,6 +36,7 @@ package javax.swing;
  * @param <E> the type of the elements of this model
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 public interface ComboBoxModel<E> extends ListModel<E> {
 

@@ -60,6 +60,7 @@ import sun.swing.SwingUtilities2.RepaintListener;
  * appropriate <code>addDirtyRegion</code> method.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 public class RepaintManager
 {

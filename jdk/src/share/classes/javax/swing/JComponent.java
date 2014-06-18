@@ -179,6 +179,7 @@ import sun.swing.UIClientPropertyKey;
  *
  * @author Hans Muller
  * @author Arnaud Weber
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class JComponent extends Container implements Serializable,
