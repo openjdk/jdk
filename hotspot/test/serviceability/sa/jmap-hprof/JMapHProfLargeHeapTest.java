@@ -44,7 +44,7 @@ import com.oracle.java.testlibrary.ProcessTools;
  * @key regression
  * @summary Regression test for hprof export issue due to large heaps (>2G)
  * @library /testlibrary
- * @compile JMapHProfLargeHeapProc.java
+ * @build com.oracle.java.testlibrary.* JMapHProfLargeHeapProc
  * @run main JMapHProfLargeHeapTest
  */
 
