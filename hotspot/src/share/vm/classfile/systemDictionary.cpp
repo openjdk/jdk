@@ -997,7 +997,6 @@ Klass* SystemDictionary::parse_stream(Symbol* class_name,
 
 
   if (host_klass.not_null() && k.not_null()) {
-    k->set_host_klass(host_klass());
     // If it's anonymous, initialize it now, since nobody else will.
 
     {
