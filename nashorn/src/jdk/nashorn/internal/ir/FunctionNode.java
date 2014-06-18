@@ -99,7 +99,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         BYTECODE_GENERATED,
         /** method has been installed */
         BYTECODE_INSTALLED
-    };
+    }
 
     /** Source of entity. */
     private final Source source;
@@ -388,10 +388,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * static source name getter
+     * Static source name getter
+     *
      * @param source
      * @param sourceURL
-     * @return
+     * @return source name
      */
     public static String getSourceName(final Source source, final String sourceURL) {
         return sourceURL != null ? sourceURL : source.getName();
