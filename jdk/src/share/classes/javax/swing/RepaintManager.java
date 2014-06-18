@@ -331,6 +331,7 @@ public class RepaintManager
      * for the event dispatching thread that will validate the components
      * first isValidateRoot() ancestor.
      *
+     * @param invalidComponent a component
      * @see JComponent#isValidateRoot
      * @see #removeInvalidComponent
      */
@@ -374,6 +375,7 @@ public class RepaintManager
     /**
      * Remove a component from the list of invalid components.
      *
+     * @param component a component
      * @see #addInvalidComponent
      */
     public synchronized void removeInvalidComponent(JComponent component) {
@@ -610,9 +612,13 @@ public class RepaintManager
         return false;
     }
 
-    /** Return the current dirty region for a component.
-     *  Return an empty rectangle if the component is not
-     *  dirty.
+    /**
+     * Return the current dirty region for a component.
+     * Return an empty rectangle if the component is not
+     * dirty.
+     *
+     * @param aComponent a component
+     * @return the region
      */
     public Rectangle getDirtyRegion(JComponent aComponent) {
         RepaintManager delegate = getDelegate(aComponent);
@@ -632,6 +638,8 @@ public class RepaintManager
     /**
      * Mark a component completely dirty. <b>aComponent</b> will be
      * completely painted during the next paintDirtyRegions() call.
+     *
+     * @param aComponent a component
      */
     public void markCompletelyDirty(JComponent aComponent) {
         RepaintManager delegate = getDelegate(aComponent);
@@ -645,6 +653,8 @@ public class RepaintManager
     /**
      * Mark a component completely clean. <b>aComponent</b> will not
      * get painted during the next paintDirtyRegions() call.
+     *
+     * @param aComponent a component
      */
     public void markCompletelyClean(JComponent aComponent) {
         RepaintManager delegate = getDelegate(aComponent);
@@ -662,6 +672,10 @@ public class RepaintManager
      * painted during the next paintDirtyRegions(). If computing dirty regions is
      * expensive for your component, use this method and avoid computing dirty region
      * if it return true.
+     *
+     * @param aComponent a component
+     * @return {@code true} if <b>aComponent</b> will be completely
+     *         painted during the next paintDirtyRegions().
      */
     public boolean isCompletelyDirty(JComponent aComponent) {
         RepaintManager delegate = getDelegate(aComponent);
@@ -982,13 +996,19 @@ public class RepaintManager
     }
 
 
-   /**
+    /**
      * Return the offscreen buffer that should be used as a double buffer with
      * the component <code>c</code>.
      * By default there is a double buffer per RepaintManager.
      * The buffer might be smaller than <code>(proposedWidth,proposedHeight)</code>
      * This happens when the maximum double buffer size as been set for the receiving
      * repaint manager.
+     *
+     * @param c the component
+     * @param proposedWidth the width of the buffer
+     * @param proposedHeight the height of the buffer
+     *
+     * @return the image
      */
     public Image getOffscreenBuffer(Component c,int proposedWidth,int proposedHeight) {
         RepaintManager delegate = getDelegate(c);
@@ -998,18 +1018,23 @@ public class RepaintManager
         return _getOffscreenBuffer(c, proposedWidth, proposedHeight);
     }
 
-  /**
-   * Return a volatile offscreen buffer that should be used as a
-   * double buffer with the specified component <code>c</code>.
-   * The image returned will be an instance of VolatileImage, or null
-   * if a VolatileImage object could not be instantiated.
-   * This buffer might be smaller than <code>(proposedWidth,proposedHeight)</code>.
-   * This happens when the maximum double buffer size has been set for this
-   * repaint manager.
-   *
-   * @see java.awt.image.VolatileImage
-   * @since 1.4
-   */
+    /**
+     * Return a volatile offscreen buffer that should be used as a
+     * double buffer with the specified component <code>c</code>.
+     * The image returned will be an instance of VolatileImage, or null
+     * if a VolatileImage object could not be instantiated.
+     * This buffer might be smaller than <code>(proposedWidth,proposedHeight)</code>.
+     * This happens when the maximum double buffer size has been set for this
+     * repaint manager.
+     *
+     * @param c the component
+     * @param proposedWidth the width of the buffer
+     * @param proposedHeight the height of the buffer
+     *
+     * @return the volatile image
+     * @see java.awt.image.VolatileImage
+     * @since 1.4
+     */
     public Image getVolatileOffscreenBuffer(Component c,
                                             int proposedWidth,int proposedHeight) {
         RepaintManager delegate = getDelegate(c);
@@ -1104,7 +1129,11 @@ public class RepaintManager
     }
 
 
-    /** Set the maximum double buffer size. **/
+    /**
+     * Set the maximum double buffer size.
+     *
+     * @param d the dimension
+     */
     public void setDoubleBufferMaximumSize(Dimension d) {
         doubleBufferMaxSize = d;
         if (doubleBufferMaxSize == null) {
