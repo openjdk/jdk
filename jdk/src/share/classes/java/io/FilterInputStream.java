@@ -40,7 +40,7 @@ package java.io;
  * and fields.
  *
  * @author  Jonathan Payne
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class FilterInputStream extends InputStream {

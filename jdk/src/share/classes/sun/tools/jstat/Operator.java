@@ -105,7 +105,7 @@ public abstract class Operator {
      * @param   s  an string to match against Operator objects.
      * @return     The Operator object matching the given string.
      */
-    protected static Set keySet() {
+    protected static Set<?> keySet() {
         return map.keySet();
     }
 }

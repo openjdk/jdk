@@ -38,7 +38,7 @@ package java.lang;
  * {@code boolean}.
  *
  * @author  Arthur van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class Boolean implements java.io.Serializable,
                                       Comparable<Boolean>
@@ -58,7 +58,7 @@ public final class Boolean implements java.io.Serializable,
     /**
      * The Class object representing the primitive type boolean.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     @SuppressWarnings("unchecked")
     public static final Class<Boolean> TYPE = (Class<Boolean>) Class.getPrimitiveClass("boolean");

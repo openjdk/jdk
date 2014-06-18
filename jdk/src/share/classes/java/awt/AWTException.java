@@ -43,7 +43,7 @@ public class AWTException extends Exception {
      * instance of <code>String</code> that describes this particular
      * exception.
      * @param   msg     the detail message
-     * @since   JDK1.0
+     * @since   1.0
      */
     public AWTException(String msg) {
         super(msg);

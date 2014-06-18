@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,8 @@ public class Resources extends java.util.ListResourceBundle {
                 "  [-providerArg <arg>]] ... master class file and constructor argument"},
         {".strict.treat.warnings.as.errors",
                 "[-strict]                   treat warnings as errors"},
+        {".conf.url.specify.a.pre.configured.options.file",
+                "[-conf <url>]               specify a pre-configured options file"},
         {"Option.lacks.argument", "Option lacks argument"},
         {"Please.type.jarsigner.help.for.usage", "Please type jarsigner -help for usage"},
         {"Please.specify.jarfile.name", "Please specify jarfile name"},

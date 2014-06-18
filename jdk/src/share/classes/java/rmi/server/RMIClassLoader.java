@@ -105,7 +105,7 @@ import java.util.ServiceLoader;
  * @author      Peter Jones
  * @author      Laird Dornin
  * @see         RMIClassLoaderSpi
- * @since       JDK1.1
+ * @since       1.1
  */
 public class RMIClassLoader {
 

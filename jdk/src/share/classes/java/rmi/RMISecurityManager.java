@@ -52,7 +52,7 @@ import java.security.*;
  *
  * @author  Roger Riggs
  * @author  Peter Jones
- * @since JDK1.1
+ * @since 1.1
  * @deprecated Use {@link SecurityManager} instead.
  */
 @Deprecated
@@ -60,7 +60,7 @@ public class RMISecurityManager extends SecurityManager {
 
     /**
      * Constructs a new {@code RMISecurityManager}.
-     * @since JDK1.1
+     * @since 1.1
      */
     public RMISecurityManager() {
     }

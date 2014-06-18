@@ -40,7 +40,7 @@ package java.rmi;
  * executing on the Java 2 platform v1.2 or later versions.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement
  */
 @Deprecated
@@ -56,7 +56,7 @@ public class ServerRuntimeException extends RemoteException {
      * @param s the detail message
      * @param ex the nested exception
      * @deprecated no replacement
-     * @since JDK1.1
+     * @since 1.1
      */
     @Deprecated
     public ServerRuntimeException(String s, Exception ex) {

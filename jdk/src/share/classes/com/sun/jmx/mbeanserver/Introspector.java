@@ -562,7 +562,7 @@ public class Introspector {
                 }
                 if (readMethod != null) {
                     ReflectUtil.checkPackageAccess(readMethod.getDeclaringClass());
-                    return MethodUtil.invoke(readMethod, complex, new Class[0]);
+                    return MethodUtil.invoke(readMethod, complex, new Class<?>[0]);
                 }
 
                 throw new AttributeNotFoundException(

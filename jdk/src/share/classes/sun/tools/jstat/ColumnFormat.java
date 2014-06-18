@@ -143,8 +143,8 @@ public class ColumnFormat extends OptionFormat {
                 + ";format=" + format + ";width=" + width
                 + ";scale=" + scale.toString() + ";align=" + align.toString());
 
-        for (Iterator i = children.iterator();  i.hasNext(); /* empty */) {
-            OptionFormat of = (OptionFormat)i.next();
+        for (Iterator<OptionFormat> i = children.iterator();  i.hasNext(); /* empty */) {
+            OptionFormat of = i.next();
             of.printFormat(indentLevel+1);
         }
 

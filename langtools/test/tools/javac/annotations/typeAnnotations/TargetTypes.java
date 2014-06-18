@@ -35,9 +35,41 @@ import java.io.*;
  * @compile TargetTypes.java
  */
 
-@Target({TYPE_USE, TYPE_PARAMETER, TYPE})
-@Retention(RetentionPolicy.RUNTIME)
-@interface A {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface A {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface B {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface C {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface D {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface E {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface F {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface G {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface H {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface I {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface J {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface K {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface L {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface M {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface N {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface O {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface P {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface Q {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface R {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface S {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface U {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface V {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface W {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface X {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface Y {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface Z {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AA {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AB {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AC {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AD {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AE {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AF {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AG {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AH {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AI {}
+@Target({TYPE_USE, TYPE_PARAMETER, TYPE}) @Retention(RetentionPolicy.RUNTIME) @interface AJ {}
 
 /** wildcard bound */
 class T0x1C {
@@ -46,75 +78,75 @@ class T0x1C {
 
 /** wildcard bound generic/array */
 class T0x1D<T> {
-    void m0x1D(List<? extends @A List<int[]>> lst) {}
+    void m0x1D(List<? extends @B List<int[]>> lst) {}
 }
 
 /** typecast */
 class T0x00 {
     void m0x00(Long l1) {
-        Object l2 = (@A Long) l1;
+        Object l2 = (@C Long) l1;
     }
 }
 
 /** typecast generic/array */
 class T0x01<T> {
     void m0x01(List<T> list) {
-        List<T> l = (List<@A T>) list;
+        List<T> l = (List<@D T>) list;
     }
 }
 
 /** instanceof */
 class T0x02 {
     boolean m0x02(String s) {
-        return (s instanceof @A String);
+        return (s instanceof @E String);
     }
 }
 
 /** object creation (new) */
 class T0x04 {
     void m0x04() {
-        new @A ArrayList<String>();
+        new @F ArrayList<String>();
     }
 }
 
 /** local variable */
 class T0x08 {
     void m0x08() {
-      @A String s = null;
+      @G String s = null;
     }
 }
 
 /** method parameter generic/array */
 class T0x0D {
-    void m0x0D(HashMap<@A Object, List<@A List<@A Class>>> s1) {}
+    void m0x0D(HashMap<@H Object, List<@I List<@J Class>>> s1) {}
 }
 
 /** method receiver */
 class T0x06 {
-    void m0x06(@A T0x06 this) {}
+    void m0x06(@K T0x06 this) {}
 }
 
 /** method return type generic/array */
 class T0x0B {
-    Class<@A Object> m0x0B() { return null; }
+    Class<@L Object> m0x0B() { return null; }
 }
 
 /** field generic/array */
 class T0x0F {
-    HashMap<@A Object, @A Object> c1;
+    HashMap<@M Object, @N Object> c1;
 }
 
 /** method type parameter */
 class T0x20<T, U> {
-    <@A T, @A U> void m0x20() {}
+    <@O T, @P U> void m0x20() {}
 }
 
 /** class type parameter */
-class T0x22<@A T, @A U> {
+class T0x22<@Q T, @R U> {
 }
 
 /** class type parameter bound */
-class T0x10<T extends @A Object> {
+class T0x10<T extends @S Object> {
 }
 
 /** method type parameter bound */
@@ -123,43 +155,43 @@ class T0x12<T> {
 }
 
 /** class type parameter bound generic/array */
-class T0x11<T extends List<@A T>> {
+class T0x11<T extends List<@U T>> {
 }
 
 
 /** method type parameter bound generic/array */
 class T0x13 {
-    static <T extends Comparable<@A T>> T m0x13() {
+    static <T extends Comparable<@V T>> T m0x13() {
         return null;
     }
 }
 
 /** class extends/implements generic/array */
-class T0x15<T> extends ArrayList<@A T> {
+class T0x15<T> extends ArrayList<@W T> {
 }
 
 /** type test (instanceof) generic/array */
 class T0x03<T> {
     void m0x03(T typeObj, Object obj) {
-        boolean ok = obj instanceof String @A [];
+        boolean ok = obj instanceof String @X [];
     }
 }
 
 /** object creation (new) generic/array */
 class T0x05<T> {
     void m0x05() {
-        new ArrayList<@A T>();
+        new ArrayList<@Y T>();
     }
 }
 
 /** local variable generic/array */
 class T0x09<T> {
     void g() {
-        List<@A String> l = null;
+        List<@Z String> l = null;
     }
 
     void a() {
-        String @A [] as = null;
+        String @AA [] as = null;
     }
 }
 
@@ -168,14 +200,14 @@ class T0x19 {
     <T> T0x19() {}
 
     void g() {
-       new <List<@A String>> T0x19();
+       new <List<@AB String>> T0x19();
     }
 }
 
 /** type argument in method call generic/array */
 class T0x1B<T> {
     void m0x1B() {
-        Collections.<T @A []>emptyList();
+        Collections.<T @AC []>emptyList();
     }
 }
 
@@ -184,7 +216,7 @@ class T0x18<T> {
     <T> T0x18() {}
 
     void m() {
-        new <@A Integer> T0x18();
+        new <@AD Integer> T0x18();
     }
 }
 
@@ -192,15 +224,15 @@ class T0x18<T> {
 class T0x1A<T,U> {
     public static <T, U> T m() { return null; }
     static void m0x1A() {
-        T0x1A.<@A Integer, @A Short>m();
+        T0x1A.<@AE Integer, @AF Short>m();
     }
 }
 
 /** class extends/implements */
-class T0x14 extends @A Object implements @A Serializable, @A Cloneable {
+class T0x14 extends @AG Object implements @AH Serializable, @AI Cloneable {
 }
 
 /** exception type in throws */
 class T0x16 {
-    void m0x16() throws @A Exception {}
+    void m0x16() throws @AJ Exception {}
 }
