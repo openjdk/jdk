@@ -357,7 +357,7 @@ public class AppletClassLoader extends URLClassLoader {
      * @param  name the resource name
      * @return an input stream for reading the resource, or <code>null</code>
      *         if the resource could not be found
-     * @since  JDK1.1
+     * @since  1.1
      */
     public InputStream getResourceAsStream(String name)
     {
@@ -417,7 +417,7 @@ public class AppletClassLoader extends URLClassLoader {
      * @param  name the resource name
      * @return an input stream for reading the resource, or <code>null</code>
      *         if the resource could not be found
-     * @since  JDK1.1
+     * @since  1.1
      */
     public InputStream getResourceAsStreamFromJar(String name) {
 

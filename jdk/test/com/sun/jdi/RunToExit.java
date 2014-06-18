@@ -26,7 +26,7 @@
  * @summary Test that with server=y, when VM runs to System.exit() no error happens
  *
  * @build VMConnection RunToExit Exit0
- * @run main/othervm RunToExit
+ * @run driver RunToExit
  */
 import java.io.InputStream;
 import java.io.IOException;

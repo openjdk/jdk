@@ -253,7 +253,7 @@ public class AclImpl extends OwnerImpl implements Acl {
      * ACL.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Enumeration<AclEntry> entries = entries();
         while (entries.hasMoreElements()) {
             AclEntry entry = entries.nextElement();

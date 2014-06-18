@@ -32,7 +32,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FinalLocalsTest.java
- *  @run main FinalLocalsTest
+ *  @run driver FinalLocalsTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

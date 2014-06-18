@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,9 @@ public abstract class OptionHelper {
     /** Remove any prior value for an option. */
     public abstract void remove(String name);
 
+    /** Handle a file manager option. */
+    public abstract boolean handleFileManagerOption(Option option, String value);
+
     /** Get access to the Log for the compilation. */
     public abstract Log getLog();
 
@@ -95,6 +98,11 @@ public abstract class OptionHelper {
 
         @Override
         public void remove(String name) {
+            throw new IllegalArgumentException();
+        }
+
+        @Override
+        public boolean handleFileManagerOption(Option option, String value) {
             throw new IllegalArgumentException();
         }
 

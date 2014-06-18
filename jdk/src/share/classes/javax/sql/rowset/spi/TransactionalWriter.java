@@ -44,6 +44,8 @@ import java.sql.Savepoint;
  * the <code>CachedRowSet</code> constant <code>COMMIT_ON_ACCEPT_CHANGES</code>
  * to <code>false</code> and use the <code>commit</code> and <code>rollback</code>
  * methods defined in this interface to manage transaction boundaries.
+ *
+ * @since 1.5
  */
 public interface TransactionalWriter extends RowSetWriter {
 

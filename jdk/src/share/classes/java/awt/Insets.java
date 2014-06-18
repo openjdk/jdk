@@ -35,7 +35,7 @@ package java.awt;
  * @author      Sami Shaio
  * @see         java.awt.LayoutManager
  * @see         java.awt.Container
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Insets implements Cloneable, java.io.Serializable {
 
@@ -130,7 +130,7 @@ public class Insets implements Cloneable, java.io.Serializable {
      * <code>bottom</code>, and <code>right</code> are all equal.
      * @return      <code>true</code> if the two insets are equal;
      *                          otherwise <code>false</code>.
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean equals(Object obj) {
         if (obj instanceof Insets) {

@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FieldWatchpoints.java
- *  @run main/othervm FieldWatchpoints
+ *  @run driver FieldWatchpoints
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -839,7 +839,7 @@ class ConstantPool {
         return parts;
     }
 
-    /** @since JDK 7, JSR 292 */
+    /** @since 1.7, JSR 292 */
     public static
     class MethodHandleEntry extends Entry {
         final int refKind;
@@ -889,7 +889,7 @@ class ConstantPool {
         }
     }
 
-    /** @since JDK 7, JSR 292 */
+    /** @since 1.7, JSR 292 */
     public static
     class MethodTypeEntry extends Entry {
         final SignatureEntry typeRef;
@@ -924,7 +924,7 @@ class ConstantPool {
         }
     }
 
-    /** @since JDK 7, JSR 292 */
+    /** @since 1.7, JSR 292 */
     public static
     class InvokeDynamicEntry extends Entry {
         final BootstrapMethodEntry bssRef;
@@ -977,7 +977,7 @@ class ConstantPool {
         }
     }
 
-    /** @since JDK 7, JSR 292 */
+    /** @since 1.7, JSR 292 */
     public static
     class BootstrapMethodEntry extends Entry {
         final MethodHandleEntry bsmRef;
@@ -1026,7 +1026,7 @@ class ConstantPool {
         }
         static
         String stringValueOf(MethodHandleEntry bsmRef, Entry[] argRefs) {
-            StringBuffer sb = new StringBuffer(bsmRef.stringValue());
+            StringBuilder sb = new StringBuilder(bsmRef.stringValue());
             // Arguments are formatted as "<foo;bar;baz>" instead of "[foo,bar,baz]".
             // This ensures there will be no confusion if "[,]" appear inside of names.
             char nextSep = '<';

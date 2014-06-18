@@ -257,7 +257,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public String toString(int units, String unitsName) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(getX (units));
         result.append('x');
         result.append(getY (units));
@@ -312,7 +312,7 @@ public abstract class Size2DSyntax implements Serializable, Cloneable {
      * The values are reported in the internal units of micrometers.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(x);
         result.append('x');
         result.append(y);

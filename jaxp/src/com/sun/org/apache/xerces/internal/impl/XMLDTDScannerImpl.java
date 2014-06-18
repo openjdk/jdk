@@ -585,7 +585,7 @@ implements XMLDTDScanner, XMLComponent, XMLEntityHandler {
         boolean reportEntity = fReportEntity;
         if (name.startsWith("%")) {
             reportEntity = peekReportEntity();
-            // check well-formedness of the enity
+            // check well-formedness of the entity
             int startMarkUpDepth = popPEStack();
             // throw fatalError if this entity was incomplete and
             // was a freestanding decl

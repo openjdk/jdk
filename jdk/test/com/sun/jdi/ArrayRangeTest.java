@@ -32,7 +32,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ArrayRangeTest.java
- *  @run main ArrayRangeTest
+ *  @run driver ArrayRangeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -29,7 +29,7 @@ package java.rmi;
  * is made to bind an object in the registry to a name that already
  * has an associated binding.
  *
- * @since   JDK1.1
+ * @since   1.1
  * @author  Ann Wollrath
  * @author  Roger Riggs
  * @see     java.rmi.Naming#bind(String, java.rmi.Remote)
@@ -43,7 +43,7 @@ public class AlreadyBoundException extends java.lang.Exception {
     /**
      * Constructs an <code>AlreadyBoundException</code> with no
      * specified detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public AlreadyBoundException() {
         super();
@@ -54,7 +54,7 @@ public class AlreadyBoundException extends java.lang.Exception {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public AlreadyBoundException(String s) {
         super(s);

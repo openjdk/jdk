@@ -245,11 +245,11 @@ public class RepeatingTypeAnnotations extends Tester {
                    "        @A @A @A String ls = (@B @B @B String) o;",
                    "    }");
             verify("RuntimeInvisibleTypeAnnotations",
-                   "0: #34(#35=[@#36(),@#36(),@#36()]): CAST, offset=4, type_index=0",
-                   "1: #37(#35=[@#38(),@#38(),@#38()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "0: #34(#35=[@#36(),@#36(),@#36()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #37(#35=[@#38(),@#38(),@#38()]): CAST, offset=4, type_index=0",
                    "RuntimeInvisibleTypeAnnotations",
-                   "0: #37(#35=[@#38(),@#38(),@#38()]): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "1: #38(): METHOD_FORMAL_PARAMETER, param_index=1");
+                   "0: #36(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "1: #34(#35=[@#36(),@#36(),@#36()]): METHOD_FORMAL_PARAMETER, param_index=0");
         }
     }
 
@@ -261,15 +261,15 @@ public class RepeatingTypeAnnotations extends Tester {
                    "        @A @A @B String ls = (@B @A @B String) o;",
                    "    }");
             verify("RuntimeInvisibleTypeAnnotations",
-                   "0: #34(#35=[@#36(),@#36()]): CAST, offset=4, type_index=0",
-                   "1: #37(): CAST, offset=4, type_index=0",
-                   "2: #38(#35=[@#37(),@#37()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
-                   "3: #36(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "0: #34(#35=[@#36(),@#36()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #37(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "2: #38(#35=[@#37(),@#37()]): CAST, offset=4, type_index=0",
+                   "3: #36(): CAST, offset=4, type_index=0",
                    "RuntimeInvisibleTypeAnnotations",
-                   "0: #38(#35=[@#37(),@#37()]): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "1: #36(): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "2: #37(): METHOD_FORMAL_PARAMETER, param_index=1",
-                   "3: #36(): METHOD_FORMAL_PARAMETER, param_index=1");
+                   "0: #36(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "1: #37(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "2: #34(#35=[@#36(),@#36()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "3: #37(): METHOD_FORMAL_PARAMETER, param_index=0");
         }
     }
 
@@ -282,14 +282,14 @@ public class RepeatingTypeAnnotations extends Tester {
                    "    }");
             verify("RuntimeVisibleTypeAnnotations",
                    "RuntimeInvisibleTypeAnnotations",
-                   "0: #34(): CAST, offset=4, type_index=0",
-                   "1: #35(#36=[@#34(),@#34()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
-                   "0: #38(#36=[@#39(),@#39()]): CAST, offset=4, type_index=0",
-                   "1: #39(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
-                   "0: #35(#36=[@#34(),@#34()]): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "0: #39(): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "1: #39(): METHOD_FORMAL_PARAMETER, param_index=1",
-                   "2: #40(): METHOD_FORMAL_PARAMETER, param_index=1");
+                   "0: #34(#35=[@#36(),@#36()]): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #36(): CAST, offset=4, type_index=0",
+                   "0: #38(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #39(#35=[@#38(),@#38()]): CAST, offset=4, type_index=0",
+                   "0: #34(#35=[@#36(),@#36()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "0: #38(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "1: #40(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "2: #38(): METHOD_FORMAL_PARAMETER, param_index=0");
         }
     }
 
@@ -301,13 +301,13 @@ public class RepeatingTypeAnnotations extends Tester {
                    "        @A @B @C String ls = (@C @A @B String) o;",
                    "    }");
             verify("RuntimeVisibleTypeAnnotations",
-                   "0: #34(): CAST, offset=4, type_index=0",
-                   "1: #34(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "0: #34(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #34(): CAST, offset=4, type_index=0",
                    "RuntimeInvisibleTypeAnnotations",
-                   "0: #36(): CAST, offset=4, type_index=0",
-                   "1: #37(): CAST, offset=4, type_index=0",
-                   "2: #36(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
-                   "3: #37(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "0: #36(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "1: #37(): LOCAL_VARIABLE, {start_pc=10, length=1, index=5}",
+                   "2: #36(): CAST, offset=4, type_index=0",
+                   "3: #37(): CAST, offset=4, type_index=0",
                    "0: #34(): METHOD_FORMAL_PARAMETER, param_index=0",
                    "1: #34(): METHOD_FORMAL_PARAMETER, param_index=1",
                    "0: #36(): METHOD_FORMAL_PARAMETER, param_index=0",
@@ -325,13 +325,14 @@ public class RepeatingTypeAnnotations extends Tester {
                    "        return (@A @A @A String) o;",
                    "    }");
             verify("RuntimeInvisibleTypeAnnotations",
-                   "0: #36(#37=[@#38(),@#38(),@#38()]): CAST, offset=0, type_index=0",
-                   "1: #39(#37=[@#40(),@#40(),@#40()]): CAST, offset=6, type_index=0",
-                   "2: #39(#37=[@#40(),@#40(),@#40()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "0: #36(#37=[@#38(),@#38(),@#38()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "1: #39(#37=[@#40(),@#40(),@#40()]): CAST, offset=0, type_index=0",
+                   "2: #36(#37=[@#38(),@#38(),@#38()]): CAST, offset=6, type_index=0",
                     "RuntimeInvisibleTypeAnnotations",
-                   "0: #39(#37=[@#40(),@#40(),@#40()]): METHOD_RETURN",
-                   "1: #39(#37=[@#40(),@#40(),@#40()]): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "2: #40(): METHOD_FORMAL_PARAMETER, param_index=1");
+                   "0: #38(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "1: #36(#37=[@#38(),@#38(),@#38()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "2: #36(#37=[@#38(),@#38(),@#38()]): METHOD_RETURN"
+                   );
         }
     }
 
@@ -345,19 +346,19 @@ public class RepeatingTypeAnnotations extends Tester {
                    "    }");
            verify(
                     "RuntimeInvisibleTypeAnnotations:",
-                    "0: #36(#37=[@#38(),@#38()]): CAST, offset=0, type_index=0",
-                    "1: #39(): CAST, offset=0, type_index=0",
-                  "2: #39(): CAST, offset=6, type_index=0",
-                  "3: #36(#37=[@#38(),@#38()]): CAST, offset=6, type_index=0",
-                  "4: #40(#37=[@#39(),@#39()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
-                  "5: #38(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                  "0: #36(#37=[@#38(),@#38()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                  "1: #39(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                  "2: #40(#37=[@#39(),@#39()]): CAST, offset=0, type_index=0",
+                  "3: #38(): CAST, offset=0, type_index=0",
+                  "4: #38(): CAST, offset=6, type_index=0",
+                  "5: #40(#37=[@#39(),@#39()]): CAST, offset=6, type_index=0",
                     "RuntimeInvisibleTypeAnnotations:",
-                  "0: #39(): METHOD_RETURN",
-                  "1: #36(#37=[@#38(),@#38()]): METHOD_RETURN",
-                  "2: #40(#37=[@#39(),@#39()]): METHOD_FORMAL_PARAMETER, param_index=0",
-                  "3: #38(): METHOD_FORMAL_PARAMETER, param_index=0",
-                  "4: #39(): METHOD_FORMAL_PARAMETER, param_index=1",
-                    "5: #38(): METHOD_FORMAL_PARAMETER, param_index=1"
+                  "0: #38(): METHOD_FORMAL_PARAMETER, param_index=1",
+                  "1: #39(): METHOD_FORMAL_PARAMETER, param_index=1",
+                  "2: #36(#37=[@#38(),@#38()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                  "3: #39(): METHOD_FORMAL_PARAMETER, param_index=0",
+                  "4: #38(): METHOD_RETURN",
+                  "5: #40(#37=[@#39(),@#39()]): METHOD_RETURN"
                  );
         }
     }
@@ -372,21 +373,21 @@ public class RepeatingTypeAnnotations extends Tester {
                    "    }");
             verify(
                     "RuntimeVisibleTypeAnnotations:",
-                    "0: #36(): CAST, offset=0, type_index=0",
-                   "1: #36(): CAST, offset=6, type_index=0",
-                   "2: #37(#38=[@#36(),@#36()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "0: #36(#37=[@#38(),@#38()]): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "1: #38(): CAST, offset=0, type_index=0",
+                   "2: #38(): CAST, offset=6, type_index=0",
                     "RuntimeInvisibleTypeAnnotations:",
-                    "0: #40(#38=[@#41(),@#41()]): CAST, offset=0, type_index=0",
-                   "1: #42(#38=[@#43(),@#43()]): CAST, offset=6, type_index=0",
-                   "2: #41(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "0: #40(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "1: #41(#37=[@#40(),@#40()]): CAST, offset=0, type_index=0",
+                   "2: #42(#37=[@#43(),@#43()]): CAST, offset=6, type_index=0",
                     "RuntimeVisibleTypeAnnotations:",
-                   "0: #36(): METHOD_RETURN",
-                   "1: #37(#38=[@#36(),@#36()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "0: #36(#37=[@#38(),@#38()]): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "1: #38(): METHOD_RETURN",
                     "RuntimeInvisibleTypeAnnotations:",
-                   "0: #40(#38=[@#41(),@#41()]): METHOD_RETURN",
-                   "1: #41(): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "2: #41(): METHOD_FORMAL_PARAMETER, param_index=1",
-                    "3: #43(): METHOD_FORMAL_PARAMETER, param_index=1"
+                   "0: #40(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "1: #43(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "2: #40(): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "3: #41(#37=[@#40(),@#40()]): METHOD_RETURN"
                     );
         }
     }
@@ -401,26 +402,26 @@ public class RepeatingTypeAnnotations extends Tester {
                    "    }");
             verify(
                     "RuntimeVisibleTypeAnnotations:",
-                    "0: #36(): CAST, offset=0, type_index=0",
-                   "1: #36(): CAST, offset=6, type_index=0",
-                   "2: #36(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "0: #36(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "1: #36(): CAST, offset=0, type_index=0",
+                   "2: #36(): CAST, offset=6, type_index=0",
                     "RuntimeInvisibleTypeAnnotations:",
-                    "0: #38(): CAST, offset=0, type_index=0",
-                    "1: #39(): CAST, offset=0, type_index=0",
-                   "2: #39(): CAST, offset=6, type_index=0",
-                   "3: #38(): CAST, offset=6, type_index=0",
-                   "4: #38(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
-                   "5: #39(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "0: #38(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "1: #39(): LOCAL_VARIABLE, {start_pc=6, length=5, index=5}",
+                   "2: #38(): CAST, offset=0, type_index=0",
+                   "3: #39(): CAST, offset=0, type_index=0",
+                   "4: #39(): CAST, offset=6, type_index=0",
+                   "5: #38(): CAST, offset=6, type_index=0",
                     "RuntimeVisibleTypeAnnotations:",
-                   "0: #36(): METHOD_RETURN",
-                   "1: #36(): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "2: #36(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "0: #36(): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "1: #36(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "2: #36(): METHOD_RETURN",
                     "RuntimeInvisibleTypeAnnotations:",
-                   "0: #38(): METHOD_RETURN",
-                   "1: #39(): METHOD_RETURN",
-                   "2: #38(): METHOD_FORMAL_PARAMETER, param_index=0",
-                   "3: #39(): METHOD_FORMAL_PARAMETER, param_index=0",
-                    "4: #38(): METHOD_FORMAL_PARAMETER, param_index=1"
+                   "0: #38(): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "1: #39(): METHOD_FORMAL_PARAMETER, param_index=0",
+                   "2: #38(): METHOD_FORMAL_PARAMETER, param_index=1",
+                   "3: #38(): METHOD_RETURN",
+                   "4: #39(): METHOD_RETURN"
                   );
         }
     }

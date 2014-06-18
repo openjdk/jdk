@@ -636,11 +636,11 @@ public class KerberosTicket implements Destroyable, Refreshable,
     public String toString() {
         if (destroyed)
             throw new IllegalStateException("This ticket is no longer valid");
-        StringBuffer caddrBuf = new StringBuffer();
+        StringBuilder caddrString = new StringBuilder();
         if (clientAddresses != null) {
             for (int i = 0; i < clientAddresses.length; i++) {
-                caddrBuf.append("clientAddresses[" + i + "] = " +
-                                 clientAddresses[i].toString());
+                caddrString.append("clientAddresses[" + i + "] = " +
+                        clientAddresses[i].toString());
             }
         }
         return ("Ticket (hex) = " + "\n" +
@@ -660,7 +660,7 @@ public class KerberosTicket implements Destroyable, Refreshable,
                 "End Time = " + endTime.toString() + "\n" +
                 "Renew Till = " + String.valueOf(renewTill) + "\n" +
                 "Client Addresses " +
-                (clientAddresses == null ? " Null " : caddrBuf.toString() +
+                (clientAddresses == null ? " Null " : caddrString.toString() +
                 "\n"));
     }
 

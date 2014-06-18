@@ -32,7 +32,7 @@ package java.lang;
  *
  *
  * @author  Frank Yellin
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class LinkageError extends Error {

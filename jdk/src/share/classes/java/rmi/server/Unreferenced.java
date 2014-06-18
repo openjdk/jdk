@@ -32,14 +32,14 @@ package java.rmi.server;
  *
  * @author  Ann Wollrath
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface Unreferenced {
     /**
      * Called by the RMI runtime sometime after the runtime determines that
      * the reference list, the list of clients referencing the remote object,
      * becomes empty.
-     * @since JDK1.1
+     * @since 1.1
      */
     public void unreferenced();
 }

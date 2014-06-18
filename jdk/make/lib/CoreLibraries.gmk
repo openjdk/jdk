@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -306,7 +306,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBPREFS, \
     LDFLAGS_SUFFIX_solaris := -ljvm -ljava -lc, \
     LDFLAGS_SUFFIX_aix := -ljvm -ljava, \
     LDFLAGS_SUFFIX_windows := advapi32.lib jvm.lib $(WIN_JAVA_LIB), \
-    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation, \
+    LDFLAGS_SUFFIX_macosx := -ljvm -framework CoreFoundation -framework Foundation, \
     VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
     RC_FLAGS := $(RC_FLAGS) \
         -D "JDK_FNAME=prefs.dll" \
@@ -526,30 +526,3 @@ else ifeq ($(OPENJDK_TARGET_OS), aix)
   BUILD_LIBRARIES += $(JDK_OUTPUTDIR)/objs/libjli_static.a
 
 endif
-
-##########################################################################################
-
-$(eval $(call SetupNativeCompilation,BUILD_LIBNPT, \
-    LIBRARY := npt, \
-    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-    SRC := $(JDK_TOPDIR)/src/share/npt $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt, \
-    LANG := C, \
-    OPTIMIZATION := LOW, \
-    CFLAGS := $(CFLAGS_JDKLIB) \
-        -I$(JDK_TOPDIR)/src/share/npt \
-        -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/npt, \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libnpt/mapfile-vers, \
-    LDFLAGS := $(LDFLAGS_JDKLIB) \
-        $(call SET_SHARED_LIBRARY_ORIGIN), \
-    LDFLAGS_macosx := -liconv, \
-    LDFLAGS_SUFFIX_windows := -export:nptInitialize -export:nptTerminate, \
-    LDFLAGS_SUFFIX_solaris := -lc, \
-    VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/windows/resource/version.rc, \
-    RC_FLAGS := $(RC_FLAGS) \
-        -D "JDK_FNAME=npt.dll" \
-        -D "JDK_INTERNAL_NAME=npt" \
-        -D "JDK_FTYPE=0x2L", \
-    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libnpt, \
-    DEBUG_SYMBOLS := true))
-
-BUILD_LIBRARIES += $(BUILD_LIBNPT)

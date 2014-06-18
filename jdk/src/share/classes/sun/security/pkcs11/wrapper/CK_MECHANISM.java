@@ -143,24 +143,24 @@ public class CK_MECHANISM {
      * @return the string representation of CK_MECHANISM
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("mechanism: ");
-        buffer.append(mechanism);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("mechanism: ");
+        sb.append(mechanism);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pParameter: ");
-        buffer.append(pParameter.toString());
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pParameter: ");
+        sb.append(pParameter.toString());
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("ulParameterLen: ??");
+        sb.append(Constants.INDENT);
+        sb.append("ulParameterLen: ??");
         //buffer.append(pParameter.length);
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 
 }

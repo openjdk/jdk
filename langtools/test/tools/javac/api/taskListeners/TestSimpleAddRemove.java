@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -287,10 +287,16 @@ public class TestSimpleAddRemove {
                         found = "{}";
                         break;
                     case REMOVE_IN_PROCESSOR:
-                        found = "{PARSE=1:1, ENTER=2:2, ANNOTATION_PROCESSING=1:0, ANNOTATION_PROCESSING_ROUND=2:1}";
+                        if (ck == CompileKind.CALL)
+                            found = "{PARSE=1:1, ENTER=2:2, ANNOTATION_PROCESSING=1:0, ANNOTATION_PROCESSING_ROUND=2:1, COMPILATION=1:0}";
+                        else
+                            found = "{PARSE=1:1, ENTER=2:2, ANNOTATION_PROCESSING=1:0, ANNOTATION_PROCESSING_ROUND=2:1}";
                         break;
                     case REMOVE_IN_LISTENER:
-                        found = "{PARSE=1:1, ENTER=3:3, ANALYZE=1:1, GENERATE=1:0, ANNOTATION_PROCESSING=1:1, ANNOTATION_PROCESSING_ROUND=2:2}";
+                        if (ck == CompileKind.CALL)
+                            found = "{PARSE=1:1, ENTER=3:3, ANALYZE=1:1, GENERATE=1:0, ANNOTATION_PROCESSING=1:1, ANNOTATION_PROCESSING_ROUND=2:2, COMPILATION=1:0}";
+                        else
+                            found = "{PARSE=1:1, ENTER=3:3, ANALYZE=1:1, GENERATE=1:0, ANNOTATION_PROCESSING=1:1, ANNOTATION_PROCESSING_ROUND=2:2}";
                         break;
                     default:
                         throw new IllegalStateException();
@@ -302,7 +308,10 @@ public class TestSimpleAddRemove {
                 switch (rk) {
                     // Remove will fail (too early), so events to end will be recorded
                     case REMOVE_IN_TASK:
-                        found = "{ENTER=2:2, ANALYZE=1:1, GENERATE=1:1, ANNOTATION_PROCESSING=0:1, ANNOTATION_PROCESSING_ROUND=1:2}";
+                        if (ck == CompileKind.CALL)
+                            found = "{ENTER=2:2, ANALYZE=1:1, GENERATE=1:1, ANNOTATION_PROCESSING=0:1, ANNOTATION_PROCESSING_ROUND=1:2, COMPILATION=0:1}";
+                        else
+                            found = "{ENTER=2:2, ANALYZE=1:1, GENERATE=1:1, ANNOTATION_PROCESSING=0:1, ANNOTATION_PROCESSING_ROUND=1:2}";
                         break;
                     case REMOVE_IN_PROCESSOR:
                         found = "{ENTER=1:1, ANNOTATION_PROCESSING_ROUND=1:1}";
@@ -321,7 +330,10 @@ public class TestSimpleAddRemove {
                     // Remove will fail (too early, so events to end will be recorded
                     case REMOVE_IN_TASK:
                     case REMOVE_IN_PROCESSOR:
-                        found = "{ANALYZE=0:1, GENERATE=1:1}";
+                        if (ck == CompileKind.CALL)
+                            found = "{ANALYZE=0:1, GENERATE=1:1, COMPILATION=0:1}";
+                        else
+                            found = "{ANALYZE=0:1, GENERATE=1:1}";
                         break;
                     // Remove will succeed during "GENERATE.finished" event
                     case REMOVE_IN_LISTENER:

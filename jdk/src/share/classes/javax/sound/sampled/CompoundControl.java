@@ -74,18 +74,18 @@ public abstract class CompoundControl extends Control {
     @Override
     public String toString() {
 
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < controls.length; i++) {
             if (i != 0) {
-                buf.append(", ");
+                sb.append(", ");
                 if ((i + 1) == controls.length) {
-                    buf.append("and ");
+                    sb.append("and ");
                 }
             }
-            buf.append(controls[i].getType());
+            sb.append(controls[i].getType());
         }
 
-        return new String(getType() + " Control containing " + buf + " Controls.");
+        return new String(getType() + " Control containing " + sb + " Controls.");
     }
 
     /**

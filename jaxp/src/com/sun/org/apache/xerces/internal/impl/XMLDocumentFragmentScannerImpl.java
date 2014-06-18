@@ -2728,7 +2728,7 @@ public class XMLDocumentFragmentScannerImpl
                     //if the last section was character data
                     if(fLastSectionWasCharacterData){
 
-                        //if we dont encounter any CDATA or ENITY REFERENCE and current state is also not SCANNER_STATE_CHARACTER_DATA
+                        //if we dont encounter any CDATA or ENTITY REFERENCE and current state is also not SCANNER_STATE_CHARACTER_DATA
                         //return the last scanned charactrer data.
                         if((fScannerState != SCANNER_STATE_CDATA) && (fScannerState != SCANNER_STATE_REFERENCE)
                         && (fScannerState != SCANNER_STATE_CHARACTER_DATA)){

@@ -40,7 +40,7 @@ package java.io;
  *
  * @author     Arthur van Hoff
  * @see        java.io.LineNumberReader
- * @since      JDK1.0
+ * @since      1.0
  * @deprecated This class incorrectly assumes that bytes adequately represent
  *             characters.  As of JDK&nbsp;1.1, the preferred way to operate on
  *             character streams is via the new character-stream classes, which

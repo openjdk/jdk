@@ -35,7 +35,7 @@ package java.net;
  * @author  Arthur van Hoff
  * @see     java.net.URL
  * @see     java.net.URLStreamHandler
- * @since   JDK1.0
+ * @since   1.0
  */
 public interface URLStreamHandlerFactory {
     /**

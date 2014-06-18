@@ -232,15 +232,15 @@ class Formatter {
     }
 
     static String justify(String str, int size) {
-        StringBuffer buf = new StringBuffer();
-        buf.append("<TT>");
+        StringBuilder sb = new StringBuilder();
+        sb.append("<TT>");
         int n = size - str.length();
         for (int i = 0; i < n; i++) {
-            buf.append("&nbsp;");
+            sb.append("&nbsp;");
         }
-        buf.append(str);
-        buf.append("</TT>");
-        return buf.toString();
+        sb.append(str);
+        sb.append("</TT>");
+        return sb.toString();
     }
 
     static String newRow(String label, String value) {

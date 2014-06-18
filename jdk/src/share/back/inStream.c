@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,6 +24,7 @@
  */
 
 #include "util.h"
+#include "utf_util.h"
 #include "stream.h"
 #include "inStream.h"
 #include "transport.h"
@@ -379,15 +380,12 @@ inStream_readString(PacketInputStream *stream)
         string[length] = '\0';
 
         /* This is Standard UTF-8, convert to Modified UTF-8 if necessary */
-        new_length = (gdata->npt->utf8sToUtf8mLength)
-                             (gdata->npt->utf, (jbyte*)string, length);
+        new_length = utf8sToUtf8mLength((jbyte*)string, length);
         if ( new_length != length ) {
             char *new_string;
 
             new_string = jvmtiAllocate(new_length+1);
-            (gdata->npt->utf8sToUtf8m)
-                             (gdata->npt->utf, (jbyte*)string, length,
-                              (jbyte*)new_string, new_length);
+            utf8sToUtf8m((jbyte*)string, length, (jbyte*)new_string, new_length);
             jvmtiDeallocate(string);
             return new_string;
         }

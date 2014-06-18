@@ -266,12 +266,12 @@ final class ServerNameExtension extends HelloExtension {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (SNIServerName sniName : sniMap.values()) {
-            buffer.append("[" + sniName + "]");
+            sb.append("[" + sniName + "]");
         }
 
-        return "Extension " + type + ", server_name: " + buffer;
+        return "Extension " + type + ", server_name: " + sb;
     }
 
     private static class UnknownServerName extends SNIServerName {

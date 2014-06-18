@@ -77,7 +77,7 @@ import sun.security.action.GetPropertyAction;
  * character @ is encoded as one byte 40 (hex).
  *
  * @author  Herb Jellinek
- * @since   JDK1.0
+ * @since   1.0
  */
 public class URLEncoder {
     static BitSet dontNeedEncoding;
@@ -201,7 +201,7 @@ public class URLEncoder {
         throws UnsupportedEncodingException {
 
         boolean needToChange = false;
-        StringBuffer out = new StringBuffer(s.length());
+        StringBuilder out = new StringBuilder(s.length());
         Charset charset;
         CharArrayWriter charArrayWriter = new CharArrayWriter();
 

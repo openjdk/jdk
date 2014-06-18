@@ -44,7 +44,7 @@ import sun.misc.DoubleConsts;
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
- * @since JDK1.0
+ * @since 1.0
  */
 public final class Float extends Number implements Comparable<Float> {
     /**
@@ -131,7 +131,7 @@ public final class Float extends Number implements Comparable<Float> {
      * The {@code Class} instance representing the primitive type
      * {@code float}.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @SuppressWarnings("unchecked")
     public static final Class<Float> TYPE = (Class<Float>) Class.getPrimitiveClass("float");
@@ -587,7 +587,7 @@ public final class Float extends Number implements Comparable<Float> {
      * @return  the {@code float} value represented by this object
      *          converted to type {@code short}
      * @jls 5.1.3 Narrowing Primitive Conversions
-     * @since JDK1.1
+     * @since 1.1
      */
     public short shortValue() {
         return (short)value;

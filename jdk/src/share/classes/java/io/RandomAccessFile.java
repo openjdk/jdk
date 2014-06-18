@@ -53,7 +53,7 @@ import sun.nio.ch.FileChannelImpl;
  * {@code IOException} may be thrown if the stream has been closed.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {
@@ -890,7 +890,7 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      */
 
     public final String readLine() throws IOException {
-        StringBuffer input = new StringBuffer();
+        StringBuilder input = new StringBuilder();
         int c = -1;
         boolean eol = false;
 
