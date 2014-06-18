@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,12 @@ public
 class SJavac {
 
     public static void main(String... args) throws Exception {
-        SJavac s = new SJavac();
-        s.test();
+        try {
+            SJavac s = new SJavac();
+            s.test();
+        } finally {
+            System.out.println("\ntest complete\n");
+        }
     }
 
     FileSystem defaultfs = FileSystems.getDefault();
@@ -412,7 +416,7 @@ class SJavac {
     }
 
     void incrementalCompileTestFullyQualifiedRef() throws Exception {
-        System.out.println("Verify that \"alfa.omega.A a;\" does create a proper dependency.");
+        System.out.println("\nVerify that \"alfa.omega.A a;\" does create a proper dependency.");
         System.out.println("----------------------------------------------------------------");
 
         populate(gensrc,
@@ -517,8 +521,7 @@ class SJavac {
         if (rc == 0) throw new Exception("Expected error during compile! Did not fail!");
     }
 
-    Map<String,Long> collectState(Path dir) throws IOException
-    {
+    Map<String,Long> collectState(Path dir) throws IOException {
         final Map<String,Long> files = new HashMap<>();
         Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                  @Override
