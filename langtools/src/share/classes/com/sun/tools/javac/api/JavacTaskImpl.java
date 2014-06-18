@@ -161,6 +161,15 @@ public class JavacTaskImpl extends BasicJavacTask {
             compilerMain.log = Log.instance(context);
             compilerMain.setOptions(Options.instance(context));
             compilerMain.filenames = new LinkedHashSet<>();
+            compilerMain.deferredFileManagerOptions = new LinkedHashMap<>();
+            // The following line is conceptually wrong. It should not refer to args
+            // which may include inappropriate file manager options.
+            // (Ideally, args should not even be passed into JavacTaskImpl at all.)
+            // The "no filenames in args" check should have been handled by the use of
+            // the GrumpyHelper in JavacTool.getTask, but processArgs also has some
+            // additional checking, which should be factored out and called separately.
+            // If we fix this, then filenames and deferredFileManagerOptions in Main
+            // can revert to being protected or private, not public.
             Collection<File> filenames = compilerMain.processArgs(CommandLine.parse(args), classNames);
             if (filenames != null && !filenames.isEmpty())
                 throw new IllegalArgumentException("Malformed arguments " + toString(filenames, " "));

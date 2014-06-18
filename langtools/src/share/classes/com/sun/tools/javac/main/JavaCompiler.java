@@ -394,6 +394,7 @@ public class JavaCompiler {
         processPcks   = options.isSet("process.packages");
         werror        = options.isSet(WERROR);
 
+        // Should this be with other option checking, in Main
         if (source.compareTo(Source.DEFAULT) < 0) {
             if (options.isUnset(XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option)) {
                 if (fileManager instanceof BaseFileManager) {
@@ -403,6 +404,7 @@ public class JavaCompiler {
             }
         }
 
+        // Should this be with other option checking, in Main
         checkForObsoleteOptions(target);
 
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
@@ -434,6 +436,7 @@ public class JavaCompiler {
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
     }
 
+    // Should this be with other option checking, in Main
     private void checkForObsoleteOptions(Target target) {
         // Unless lint checking on options is disabled, check for
         // obsolete source and target options.
@@ -829,6 +832,10 @@ public class JavaCompiler {
                         List<String> classnames,
                         Iterable<? extends Processor> processors)
     {
+        if (!taskListener.isEmpty()) {
+            taskListener.started(new TaskEvent(TaskEvent.Kind.COMPILATION));
+        }
+
         if (processors != null && processors.iterator().hasNext())
             explicitAnnotationProcessingRequested = true;
         // as a JavaCompiler can only be used once, throw an exception if
@@ -901,6 +908,9 @@ public class JavaCompiler {
             if (!log.hasDiagnosticListener()) {
                 printCount("error", errorCount());
                 printCount("warn", warningCount());
+            }
+            if (!taskListener.isEmpty()) {
+                taskListener.finished(new TaskEvent(TaskEvent.Kind.COMPILATION));
             }
             close();
             if (procEnvImpl != null)
