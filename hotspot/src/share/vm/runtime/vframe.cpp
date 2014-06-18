@@ -199,6 +199,7 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         continue;
       }
       if (monitor->owner() != NULL) {
+        // the monitor is associated with an object, i.e., it is locked
 
         // First, assume we have the monitor locked. If we haven't found an
         // owned monitor before and this is the first frame, then we need to
@@ -209,7 +210,11 @@ void javaVFrame::print_lock_info_on(outputStream* st, int frame_count) {
         if (!found_first_monitor && frame_count == 0) {
           markOop mark = monitor->owner()->mark();
           if (mark->has_monitor() &&
-              mark->monitor() == thread()->current_pending_monitor()) {
+              ( // we have marked ourself as pending on this monitor
+                mark->monitor() == thread()->current_pending_monitor() ||
+                // we are not the owner of this monitor
+                !mark->monitor()->is_entered(thread())
+              )) {
             lock_state = "waiting to lock";
           }
         }
