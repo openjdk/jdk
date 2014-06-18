@@ -4070,6 +4070,11 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     this_klass->set_major_version(major_version);
     this_klass->set_has_default_methods(has_default_methods);
 
+    if (!host_klass.is_null()) {
+      assert (this_klass->is_anonymous(), "should be the same");
+      this_klass->set_host_klass(host_klass());
+    }
+
     // Set up Method*::intrinsic_id as soon as we know the names of methods.
     // (We used to do this lazily, but now we query it in Rewriter,
     // which is eagerly done for every method, so we might as well do it now,
