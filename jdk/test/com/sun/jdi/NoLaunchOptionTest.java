@@ -29,7 +29,7 @@
  *
  *  @run compile -g NoLaunchOptionTest.java
  *  @build VMConnection
- *  @run main/othervm NoLaunchOptionTest
+ *  @run driver NoLaunchOptionTest
  */
 
 import java.net.ServerSocket;

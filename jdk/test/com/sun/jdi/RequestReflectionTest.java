@@ -28,7 +28,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g RequestReflectionTest.java
- *  @run main RequestReflectionTest
+ *  @run driver RequestReflectionTest
  *
  *  @summary RequestReflectionTest checks to see that reflective
  *  accessors on EventRequests return what they are given.

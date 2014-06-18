@@ -97,6 +97,7 @@ import java.sql.*;
  * applications that use both column identification conventions.
  *
  * @author Jonathan Bruce, Amit Handa
+ * @since 1.5
  *
  */
 

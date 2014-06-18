@@ -238,7 +238,7 @@ public class ManifestEntryVerifier {
 
     static String toHex(byte[] data) {
 
-        StringBuffer sb = new StringBuffer(data.length*2);
+        StringBuilder sb = new StringBuilder(data.length*2);
 
         for (int i=0; i<data.length; i++) {
             sb.append(hexc[(data[i] >>4) & 0x0f]);

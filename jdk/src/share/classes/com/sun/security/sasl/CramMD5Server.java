@@ -117,15 +117,15 @@ final class CramMD5Server extends CramMD5Base implements SaslServer {
                 long rand = random.nextLong();
                 long timestamp = System.currentTimeMillis();
 
-                StringBuffer buf = new StringBuffer();
-                buf.append('<');
-                buf.append(rand);
-                buf.append('.');
-                buf.append(timestamp);
-                buf.append('@');
-                buf.append(fqdn);
-                buf.append('>');
-                String challengeStr = buf.toString();
+                StringBuilder sb = new StringBuilder();
+                sb.append('<');
+                sb.append(rand);
+                sb.append('.');
+                sb.append(timestamp);
+                sb.append('@');
+                sb.append(fqdn);
+                sb.append('>');
+                String challengeStr = sb.toString();
 
                 logger.log(Level.FINE,
                     "CRAMSRV01:Generated challenge: {0}", challengeStr);

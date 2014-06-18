@@ -54,6 +54,7 @@ import sun.reflect.misc.ReflectUtil;
  * SerialJavaObject should be controlled by appropriate synchronization.
  *
  * @author Jonathan Bruce
+ * @since 1.5
  */
 public class SerialJavaObject implements Serializable, Cloneable {
 

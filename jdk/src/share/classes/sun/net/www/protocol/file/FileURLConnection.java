@@ -191,7 +191,7 @@ public class FileURLConnection extends URLConnection {
             if (isDirectory) {
                 FileNameMap map = java.net.URLConnection.getFileNameMap();
 
-                StringBuffer buf = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
 
                 if (files == null) {
                     throw new FileNotFoundException(filename);
@@ -201,11 +201,11 @@ public class FileURLConnection extends URLConnection {
 
                 for (int i = 0 ; i < files.size() ; i++) {
                     String fileName = files.get(i);
-                    buf.append(fileName);
-                    buf.append("\n");
+                    sb.append(fileName);
+                    sb.append("\n");
                 }
                 // Put it into a (default) locale-specific byte-stream.
-                is = new ByteArrayInputStream(buf.toString().getBytes());
+                is = new ByteArrayInputStream(sb.toString().getBytes());
             } else {
                 throw new FileNotFoundException(filename);
             }

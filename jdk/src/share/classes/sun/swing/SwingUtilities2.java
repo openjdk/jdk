@@ -1431,7 +1431,7 @@ public class SwingUtilities2 {
     }
 
     public static String displayPropertiesToCSS(Font font, Color fg) {
-        StringBuffer rule = new StringBuffer("body {");
+        StringBuilder rule = new StringBuilder("body {");
         if (font != null) {
             rule.append(" font-family: ");
             rule.append(font.getFamily());

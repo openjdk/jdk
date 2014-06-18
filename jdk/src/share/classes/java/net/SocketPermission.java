@@ -733,7 +733,7 @@ public final class SocketPermission extends Permission
         InetAddress auth;
 
         try {
-            StringBuffer sb = new StringBuffer(39);
+            StringBuilder sb = new StringBuilder(39);
 
             for (int i = 15; i >= 0; i--) {
                 sb.append(Integer.toHexString(((addr[i]) & 0x0f)));

@@ -257,7 +257,7 @@ public abstract class MonitoredHost {
                      throws MonitorException {
         String hostname = hostId.getHost();
         String scheme = hostId.getScheme();
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
         assert hostname != null;
 
