@@ -49,7 +49,7 @@ import javax.accessibility.*;
  * style="float:center; margin: 7px 10px;">
  *
  * @author      Sami Shaio
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Label extends Component implements Accessible {
 
@@ -73,7 +73,6 @@ public class Label extends Component implements Accessible {
 
     /**
      * Indicates that the label should be right justified.
-     * @since   JDK1.0t.
      */
     public static final int RIGHT       = 2;
 

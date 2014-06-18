@@ -31,7 +31,7 @@ package java.security.spec;
  *
  * @see AlgorithmParameterSpec
  *
- * @since 8
+ * @since 1.8
  */
 public final class DSAGenParameterSpec implements AlgorithmParameterSpec {
 

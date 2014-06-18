@@ -30,7 +30,7 @@ package java.rmi;
  * to the remote host for a remote method call.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  */
 public class ConnectException extends RemoteException {
 
@@ -42,7 +42,7 @@ public class ConnectException extends RemoteException {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public ConnectException(String s) {
         super(s);
@@ -54,7 +54,7 @@ public class ConnectException extends RemoteException {
      *
      * @param s the detail message
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public ConnectException(String s, Exception ex) {
         super(s, ex);

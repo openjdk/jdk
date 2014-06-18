@@ -29,7 +29,7 @@ package java.lang;
  * Signals that the class doesn't have a field of a specified name.
  *
  * @author  unascribed
- * @since   JDK1.1
+ * @since   1.1
  */
 public class NoSuchFieldException extends ReflectiveOperationException {
     private static final long serialVersionUID = -6143714805279938260L;

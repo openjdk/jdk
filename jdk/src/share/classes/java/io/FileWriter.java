@@ -46,7 +46,7 @@ package java.io;
  * @see FileOutputStream
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class FileWriter extends OutputStreamWriter {

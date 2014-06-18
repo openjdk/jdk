@@ -45,7 +45,7 @@ import javax.accessibility.*;
  *
  * @author      Arthur van Hoff
  * @author      Chris Warth
- * @since       JDK1.0
+ * @since       1.0
  */
 public class Applet extends Panel {
 
@@ -375,7 +375,7 @@ public class Applet extends Panel {
      *
      * @return  the locale of the applet; if no locale has
      *          been set, the default locale is returned.
-     * @since   JDK1.1
+     * @since   1.1
      */
     public Locale getLocale() {
       Locale locale = super.getLocale();

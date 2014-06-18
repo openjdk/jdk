@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -139,6 +139,13 @@ public class SecretKeysBasic extends PKCS11Test {
     }
 
     private static void doTest() throws Exception {
+        // Make sure both NSS libraries are the same version.
+        if (isNSS(provider) &&
+                (getLibsoftokn3Version() != getLibnss3Version())) {
+            System.out.println("libsoftokn3 and libnss3 versions do not match.  Aborting test...");
+            return;
+        }
+
         if (ks == null) {
             ks = KeyStore.getInstance(KS_TYPE, provider);
             ks.load(null, tokenPwd);

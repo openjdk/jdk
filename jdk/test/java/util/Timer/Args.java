@@ -29,96 +29,137 @@
 
 import java.util.*;
 import java.util.concurrent.*;
+import static java.util.concurrent.TimeUnit.*;
 
 public class Args {
+    static final long DELAY_MS = 30 * 1000L;
+
     void schedule(final Timer t, final TimerTask task, final Date d) {
         t.schedule(task, d);
-        THROWS(IllegalStateException.class,
-               new F(){void f(){ t.schedule(task, d); }});
+        assertThrows
+            (IllegalStateException.class,
+             () -> t.schedule(task, d));
     }
 
-    void schedule(final Timer t, final TimerTask task, final Date d, final long period) {
+    void schedule(final Timer t, final TimerTask task, final Date d, final
+long period) {
         t.schedule(task, d, period);
-        THROWS(IllegalStateException.class,
-               new F(){void f(){ t.schedule(task, d, period); }});
+        assertThrows
+            (IllegalStateException.class,
+             () -> t.schedule(task, d, period));
     }
 
-    void scheduleAtFixedRate(final Timer t, final TimerTask task, final Date d, final long period) {
+    void scheduleAtFixedRate(final Timer t, final TimerTask task, final
+Date d, final long period) {
         t.scheduleAtFixedRate(task, d, period);
-        THROWS(IllegalStateException.class,
-               new F(){void f(){ t.scheduleAtFixedRate(task, d, period); }});
+        assertThrows
+            (IllegalStateException.class,
+             () -> t.scheduleAtFixedRate(task, d, period));
     }
 
     TimerTask counter(final CountDownLatch latch) {
         return new TimerTask() { public void run() {
-            check(latch.getCount() > 0);
+            if (latch.getCount() == 0)
+                fail(String.format("Latch counted down too many times: " +
+latch));
             latch.countDown();
         }};
     }
 
+    TimerTask nop() {
+        return new TimerTask() { public void run() { }};
+    }
+
     void test(String[] args) throws Throwable {
         final Timer t = new Timer();
+        try {
+            test(t);
+        } finally {
+            // Ensure this test doesn't interfere with subsequent
+            // tests even in case of failure.
+            t.cancel();
+        }
+
+        // Attempts to schedule tasks on a cancelled Timer result in ISE.
+
+        final Date past = new Date(System.currentTimeMillis() - DELAY_MS);
+        final Date future = new Date(System.currentTimeMillis() + DELAY_MS);
+        assertThrows
+            (IllegalStateException.class,
+             () -> t.schedule(nop(), 42),
+             () -> t.schedule(nop(), 42),
+             () -> t.schedule(nop(), past),
+             () -> t.schedule(nop(), 42, 42),
+             () -> t.schedule(nop(), past, 42),
+             () -> t.scheduleAtFixedRate(nop(), 42, 42),
+             () -> t.scheduleAtFixedRate(nop(), past, 42),
+             () -> t.scheduleAtFixedRate(nop(), future, 42));
+    }
+
+    void test(Timer t) throws Throwable {
         final TimerTask x = new TimerTask() { public void run() {}};
-        THROWS(IllegalArgumentException.class,
-               new F(){void f(){ t.schedule(x, -42); }},
-               new F(){void f(){ t.schedule(x, new Date(-42)); }},
+        assertThrows
+            (IllegalArgumentException.class,
+             () -> t.schedule(x, -42),
+             () -> t.schedule(x, new Date(-42)),
 
-               new F(){void f(){ t.schedule(x, Long.MAX_VALUE); }},
-               new F(){void f(){ t.schedule(x, -42, 42); }},
-               new F(){void f(){ t.schedule(x, new Date(-42), 42); }},
-               new F(){void f(){ t.schedule(x, Long.MAX_VALUE, 42); }},
-               new F(){void f(){ t.schedule(x, 42, 0); }},
-               new F(){void f(){ t.schedule(x, new Date(42), 0); }},
-               new F(){void f(){ t.schedule(x, 42, -42); }},
-               new F(){void f(){ t.schedule(x, new Date(42), -42); }},
+             () -> t.schedule(x, Long.MAX_VALUE),
+             () -> t.schedule(x, -42, 42),
+             () -> t.schedule(x, new Date(-42), 42),
+             () -> t.schedule(x, Long.MAX_VALUE, 42),
+             () -> t.schedule(x, 42, 0),
+             () -> t.schedule(x, new Date(42), 0),
+             () -> t.schedule(x, 42, -42),
+             () -> t.schedule(x, new Date(42), -42),
 
-               new F(){void f(){ t.scheduleAtFixedRate(x, -42, 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, new Date(-42), 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, Long.MAX_VALUE, 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, 42, 0); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, new Date(42), 0); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, 42, -42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, new Date(42), -42); }}
-               );
+             () -> t.scheduleAtFixedRate(x, -42, 42),
+             () -> t.scheduleAtFixedRate(x, new Date(-42), 42),
+             () -> t.scheduleAtFixedRate(x, Long.MAX_VALUE, 42),
+             () -> t.scheduleAtFixedRate(x, 42, 0),
+             () -> t.scheduleAtFixedRate(x, new Date(42), 0),
+             () -> t.scheduleAtFixedRate(x, 42, -42),
+             () -> t.scheduleAtFixedRate(x, new Date(42), -42));
 
-        THROWS(NullPointerException.class,
-               new F(){void f(){ t.schedule(null, 42); }},
-               new F(){void f(){ t.schedule(x, (Date)null); }},
+        assertThrows
+            (NullPointerException.class,
+             () -> t.schedule(null, 42),
+             () -> t.schedule(x, (Date)null),
 
-               new F(){void f(){ t.schedule(null, 42, 42); }},
-               new F(){void f(){ t.schedule(x, (Date)null, 42); }},
+             () -> t.schedule(null, 42, 42),
+             () -> t.schedule(x, (Date)null, 42),
 
-               new F(){void f(){ t.scheduleAtFixedRate(null, 42, 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, (Date)null, 42); }}
-               );
+             () -> t.scheduleAtFixedRate(null, 42, 42),
+             () -> t.scheduleAtFixedRate(x, (Date)null, 42));
 
-        final CountDownLatch y1 = new CountDownLatch(1);
-        final CountDownLatch y2 = new CountDownLatch(1);
-        final CountDownLatch y3 = new CountDownLatch(11);
+        // Create local classes for clearer diagnostics in case of failure
+        class OneShotLatch extends CountDownLatch {
+            OneShotLatch() { super(1); }
+        }
+        class FixedDelayLatch extends CountDownLatch {
+            FixedDelayLatch() { super(1); }
+        }
+        class FixedRateLatch extends CountDownLatch {
+            FixedRateLatch() { super(11); }
+        }
+        final CountDownLatch y1 = new OneShotLatch();
+        final CountDownLatch y2 = new FixedDelayLatch();
+        final CountDownLatch y3 = new FixedRateLatch();
+
         final long start = System.currentTimeMillis();
-        final Date past = new Date(start - 10500);
+        final Date past = new Date(start - (10 * DELAY_MS + DELAY_MS / 2));
 
         schedule(           t, counter(y1), past);
-        schedule(           t, counter(y2), past, 1000);
-        scheduleAtFixedRate(t, counter(y3), past, 1000);
-        y3.await();
-        y1.await();
-        y2.await();
+        schedule(           t, counter(y2), past, DELAY_MS);
+        scheduleAtFixedRate(t, counter(y3), past, DELAY_MS);
+
+        check(y1.await(DELAY_MS / 4, MILLISECONDS));
+        check(y2.await(DELAY_MS / 4, MILLISECONDS));
+        check(y3.await(DELAY_MS / 4, MILLISECONDS));
 
         final long elapsed = System.currentTimeMillis() - start;
-        System.out.printf("elapsed=%d%n", elapsed);
-        check(elapsed < 500);
-
-        t.cancel();
-
-        THROWS(IllegalStateException.class,
-               new F(){void f(){ t.schedule(x, 42); }},
-               new F(){void f(){ t.schedule(x, past); }},
-               new F(){void f(){ t.schedule(x, 42, 42); }},
-               new F(){void f(){ t.schedule(x, past, 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, 42, 42); }},
-               new F(){void f(){ t.scheduleAtFixedRate(x, past, 42); }});
-
+        if (elapsed >= DELAY_MS / 2)
+            fail(String.format("Test took too long: elapsed=%d%n",
+elapsed));
     }
 
     //--------------------- Infrastructure ---------------------------
@@ -137,11 +178,12 @@ public class Args {
         try {test(args);} catch (Throwable t) {unexpected(t);}
         System.out.printf("%nPassed = %d, failed = %d%n%n", passed, failed);
         if (failed > 0) throw new AssertionError("Some tests failed");}
-    abstract class F {abstract void f() throws Throwable;}
-    void THROWS(Class<? extends Throwable> k, F... fs) {
+    interface F { void f() throws Throwable; }
+    void assertThrows(Class<? extends Throwable> k, F... fs) {
         for (F f : fs)
             try {f.f(); fail("Expected " + k.getName() + " not thrown");}
             catch (Throwable t) {
                 if (k.isAssignableFrom(t.getClass())) pass();
                 else unexpected(t);}}
 }
+

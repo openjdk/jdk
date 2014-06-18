@@ -56,7 +56,7 @@ import sun.nio.cs.StreamDecoder;
  * @see java.nio.charset.Charset
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class InputStreamReader extends Reader {

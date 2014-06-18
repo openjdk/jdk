@@ -44,7 +44,7 @@ package java.util;
  * @see     java.lang.Object#equals(java.lang.Object)
  * @see     java.lang.Object#hashCode()
  * @see     java.util.Hashtable
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract
 class Dictionary<K,V> {

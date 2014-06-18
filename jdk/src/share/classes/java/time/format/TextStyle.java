@@ -82,6 +82,8 @@ import java.util.Calendar;
  *
  * @implSpec
  * This is immutable and thread-safe enum.
+ *
+ * @since 1.8
  */
 public enum TextStyle {
     // ordered from large to small

@@ -241,7 +241,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public Rectangle getClipBounds() {
         return g.getClipBounds();
@@ -282,7 +282,7 @@ public class ProxyGraphics extends Graphics {
      * @param       height the height of the new clip rectangle.
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setClip(int x, int y, int width, int height) {
         g.setClip(x, y, width, height);
@@ -302,7 +302,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
      * @see         java.awt.Graphics#setClip(Shape)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public Shape getClip() {
         return g.getClip();
@@ -322,7 +322,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Graphics#getClip()
      * @see         java.awt.Graphics#clipRect
      * @see         java.awt.Graphics#setClip(int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void setClip(Shape clip) {
         g.setClip(clip);
@@ -647,7 +647,7 @@ public class ProxyGraphics extends Graphics {
      * @param       yPoints an array of <i>y</i> points
      * @param       nPoints the total number of points
      * @see         java.awt.Graphics#drawPolygon(int[], int[], int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public void drawPolyline(int xPoints[], int yPoints[],
                                       int nPoints) {
@@ -988,7 +988,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,
@@ -1051,7 +1051,7 @@ public class ProxyGraphics extends Graphics {
      * @see         java.awt.Image
      * @see         java.awt.image.ImageObserver
      * @see         java.awt.image.ImageObserver#imageUpdate(java.awt.Image, int, int, int, int, int)
-     * @since       JDK1.1
+     * @since       1.1
      */
     public boolean drawImage(Image img,
                                       int dx1, int dy1, int dx2, int dy2,

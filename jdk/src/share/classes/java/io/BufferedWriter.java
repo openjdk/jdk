@@ -60,7 +60,7 @@ package java.io;
  * @see java.nio.file.Files#newBufferedWriter
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class BufferedWriter extends Writer {
