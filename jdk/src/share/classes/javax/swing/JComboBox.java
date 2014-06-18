@@ -77,6 +77,7 @@ import javax.accessibility.*;
  *
  * @author Arnaud Weber
  * @author Mark Davidson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JComboBox<E> extends JComponent

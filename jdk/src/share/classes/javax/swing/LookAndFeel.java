@@ -147,6 +147,7 @@ import java.util.StringTokenizer;
  *
  * @author Tom Ball
  * @author Hans Muller
+ * @since 1.2
  */
 public abstract class LookAndFeel
 {

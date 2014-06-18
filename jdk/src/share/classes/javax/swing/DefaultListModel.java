@@ -51,6 +51,7 @@ import javax.swing.event.*;
  * @param <E> the type of the elements of this model
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultListModel<E> extends AbstractListModel<E>

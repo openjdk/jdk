@@ -141,6 +141,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * @author Rob Davis
  * @author Ray Ryan
  * @author Scott Violet
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JTree extends JComponent implements Scrollable, Accessible
