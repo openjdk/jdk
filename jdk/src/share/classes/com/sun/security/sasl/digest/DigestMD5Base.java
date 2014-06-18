@@ -387,7 +387,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected byte[] binaryToHex(byte[] digest) throws
     UnsupportedEncodingException {
 
-        StringBuffer digestString = new StringBuffer();
+        StringBuilder digestString = new StringBuilder();
 
         for (int i = 0; i < digest.length; i ++) {
             if ((digest[i] & 0x000000ff) < 0x10) {
@@ -598,7 +598,7 @@ abstract class DigestMD5Base extends AbstractSaslImpl {
     protected static String nonceCountToHex(int count) {
 
         String str = Integer.toHexString(count);
-        StringBuffer pad = new StringBuffer();
+        StringBuilder pad = new StringBuilder();
 
         if (str.length() < 8) {
             for (int i = 0; i < 8-str.length(); i ++) {

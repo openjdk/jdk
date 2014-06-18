@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g NewInstanceTest.java
- *  @run main NewInstanceTest
+ *  @run driver NewInstanceTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

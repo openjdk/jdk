@@ -10,7 +10,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE HelloWorld
  *  @run compile TemperatureTableTest.java
  *  @run compile -g TemperatureTableServlet.java
- *  @run main TemperatureTableTest
+ *  @run driver TemperatureTableTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMKeyValue.java 1333415 2012-05-03 12:03:51Z coheigea $
@@ -364,15 +364,16 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
         }
 
         void getMethods() throws ClassNotFoundException, NoSuchMethodException {
-            Class c  = Class.forName("sun.security.ec.ECParameters");
-            Class[] params = new Class[] { ECPoint.class, EllipticCurve.class };
+            Class<?> c  = Class.forName("sun.security.ec.ECParameters");
+            Class<?>[] params = new Class<?>[] { ECPoint.class,
+                                                 EllipticCurve.class };
             encodePoint = c.getMethod("encodePoint", params);
-            params = new Class[] { ECParameterSpec.class };
+            params = new Class<?>[] { ECParameterSpec.class };
             getCurveName = c.getMethod("getCurveName", params);
-            params = new Class[] { byte[].class, EllipticCurve.class };
+            params = new Class<?>[] { byte[].class, EllipticCurve.class };
             decodePoint = c.getMethod("decodePoint", params);
             c  = Class.forName("sun.security.ec.NamedCurve");
-            params = new Class[] { String.class };
+            params = new Class<?>[] { String.class };
             getECParameterSpec = c.getMethod("getECParameterSpec", params);
         }
 

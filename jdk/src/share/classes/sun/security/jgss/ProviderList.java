@@ -536,12 +536,12 @@ public final class ProviderList {
 
         // For debugging
         public String toString() {
-            StringBuffer buf = new StringBuffer("<");
-            buf.append(p.getName());
-            buf.append(", ");
-            buf.append(oid);
-            buf.append(">");
-            return buf.toString();
+            StringBuilder sb = new StringBuilder("<");
+            sb.append(p.getName());
+            sb.append(", ");
+            sb.append(oid);
+            sb.append(">");
+            return sb.toString();
         }
     }
 }

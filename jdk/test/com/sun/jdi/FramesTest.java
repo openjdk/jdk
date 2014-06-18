@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FramesTest.java
- *  @run main FramesTest
+ *  @run driver FramesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

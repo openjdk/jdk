@@ -83,30 +83,30 @@ public class Misc {
 
     public static String encodeHtml(String str) {
         final int len = str.length();
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; i < len; i++) {
             char ch = str.charAt(i);
             if (ch == '<') {
-                buf.append("&lt;");
+                sb.append("&lt;");
             } else if (ch == '>') {
-                buf.append("&gt;");
+                sb.append("&gt;");
             } else if (ch == '"') {
-                buf.append("&quot;");
+                sb.append("&quot;");
             } else if (ch == '\'') {
-                buf.append("&#039;");
+                sb.append("&#039;");
             } else if (ch == '&') {
-                buf.append("&amp;");
+                sb.append("&amp;");
             } else if (ch < ' ') {
-                buf.append("&#" + Integer.toString(ch) + ";");
+                sb.append("&#" + Integer.toString(ch) + ";");
             } else {
                 int c = (ch & 0xFFFF);
                 if (c > 127) {
-                    buf.append("&#" + Integer.toString(c) + ";");
+                    sb.append("&#" + Integer.toString(c) + ";");
                 } else {
-                    buf.append(ch);
+                    sb.append(ch);
                 }
             }
         }
-        return buf.toString();
+        return sb.toString();
     }
 }

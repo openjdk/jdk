@@ -201,7 +201,7 @@ public class URLEncoder {
         throws UnsupportedEncodingException {
 
         boolean needToChange = false;
-        StringBuffer out = new StringBuffer(s.length());
+        StringBuilder out = new StringBuilder(s.length());
         Charset charset;
         CharArrayWriter charArrayWriter = new CharArrayWriter();
 

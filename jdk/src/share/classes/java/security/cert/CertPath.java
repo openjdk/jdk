@@ -220,7 +220,7 @@ public abstract class CertPath implements Serializable {
      * @return a string representation of this certification path
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         Iterator<? extends Certificate> stringIterator =
                                         getCertificates().iterator();
 

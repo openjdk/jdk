@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g AccessSpecifierTest.java
- *  @run main AccessSpecifierTest
+ *  @run driver AccessSpecifierTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

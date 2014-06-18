@@ -1811,7 +1811,7 @@ public class X509CertSelector implements CertSelector {
      *         {@code CertSelector}
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("X509CertSelector: [\n");
         if (x509Cert != null) {
             sb.append("  Certificate: " + x509Cert.toString() + "\n");

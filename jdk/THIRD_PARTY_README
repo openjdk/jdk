@@ -1471,7 +1471,7 @@ source code repository. It is licensed under Mozilla Public License (MPL),
 version 2.0.
 
 The NSS libraries are supplied in executable form, built from unmodified
-NSS source code labeled with the "NSS_3.13.1_RTM" release tag.
+NSS source code labeled with the "NSS_3_16_RTM" HG tag.
 
 The NSS source code is available in the OpenJDK source code repository at:
     jdk/test/sun/security/pkcs11/nss/src
