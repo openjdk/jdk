@@ -47,7 +47,7 @@ import sun.net.www.ParseUtil;
  *
  * @author  James Gosling
  * @see     java.net.URL#URL(java.lang.String, java.lang.String, int, java.lang.String)
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class URLStreamHandler {
     /**
@@ -486,7 +486,7 @@ public abstract class URLStreamHandler {
         if (u.getRef() != null)
             len += 1 + u.getRef().length();
 
-        StringBuffer result = new StringBuffer(len);
+        StringBuilder result = new StringBuilder(len);
         result.append(u.getProtocol());
         result.append(":");
         if (u.getAuthority() != null && u.getAuthority().length() > 0) {

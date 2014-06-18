@@ -28,7 +28,7 @@ package javax.xml.transform;
 /**
  * <p>To provide customized error handling, implement this interface and
  * use the <code>setErrorListener</code> method to register an instance of the
- * implmentation with the {@link javax.xml.transform.Transformer}.  The
+ * implementation with the {@link javax.xml.transform.Transformer}.  The
  * <code>Transformer</code> then reports all errors and warnings through this
  * interface.</p>
  *

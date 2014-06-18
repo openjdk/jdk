@@ -121,20 +121,20 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
     }
 
     private String fileNameString(File[] files) {
-        StringBuffer buf = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         for (int i = 0; files != null && i < files.length; i++) {
             if (i > 0) {
-                buf.append(" ");
+                sb.append(" ");
             }
             if (files.length > 1) {
-                buf.append("\"");
+                sb.append("\"");
             }
-            buf.append(fileNameString(files[i]));
+            sb.append(fileNameString(files[i]));
             if (files.length > 1) {
-                buf.append("\"");
+                sb.append("\"");
             }
         }
-        return buf.toString();
+        return sb.toString();
     }
 
     public MotifFileChooserUI(JFileChooser filechooser) {

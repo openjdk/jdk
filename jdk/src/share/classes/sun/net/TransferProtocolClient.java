@@ -53,7 +53,7 @@ public class TransferProtocolClient extends NetworkClient {
      * number. Returns -1 on failure.
      */
     public int readServerResponse() throws IOException {
-        StringBuffer    replyBuf = new StringBuffer(32);
+        StringBuilder   replyBuf = new StringBuilder(32);
         int             c;
         int             continuingCode = -1;
         int             code;

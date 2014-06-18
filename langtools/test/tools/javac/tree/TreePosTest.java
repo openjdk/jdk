@@ -367,7 +367,9 @@ public class TreePosTest {
                     // and because of inconsistent nesting of left and right of
                     // array declarations:
                     //    e.g.    int[][] a = new int[2][];
+                    if (!(encl.tag == REFERENCE && self.tag == ANNOTATED_TYPE)) {
                     check("encl.start <= start", encl, self, encl.start <= self.start);
+                    }
                     check("start <= pos", encl, self, self.start <= self.pos);
                     if (!( (self.tag == TYPEARRAY ||
                             isAnnotatedArray(self.tree))
@@ -377,6 +379,8 @@ public class TreePosTest {
                                 isAnnotatedArray(encl.tree))
                            ||
                             encl.tag == ANNOTATED_TYPE && self.tag == SELECT
+                           ||
+                            encl.tag == REFERENCE && self.tag == ANNOTATED_TYPE
                          )) {
                         check("encl.pos <= start || end <= encl.pos",
                                 encl, self, encl.pos <= self.start || self.end <= encl.pos);

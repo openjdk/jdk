@@ -32,7 +32,7 @@ package java.io;
  * system for each byte written.
  *
  * @author  Arthur van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class BufferedOutputStream extends FilterOutputStream {

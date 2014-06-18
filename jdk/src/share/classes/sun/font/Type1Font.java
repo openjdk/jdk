@@ -529,7 +529,7 @@ public class Type1Font extends FileFont {
     }
 
     private String expandName(String s, boolean tryExpandAbbreviations) {
-        StringBuffer res = new StringBuffer(s.length() + 10);
+        StringBuilder res = new StringBuilder(s.length() + 10);
         int start=0, end;
 
         while(start < s.length()) {

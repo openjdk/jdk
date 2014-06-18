@@ -96,9 +96,10 @@ public class TestAnonClassNames {
         List<String> names = new ArrayList<String>();
         for(Class<?> clazz : classes) {
             String name = clazz.getName();
-            System.out.format("%s is %s%n",
-                              clazz.getName(),
-                              clazz.getAnnotation(Nesting.class).value());
+            Nesting annotation = clazz.getAnnotation(Nesting.class);
+            NestingKind expected = annotation == null ?
+                NestingKind.ANONYMOUS : annotation.value();
+            System.out.format("%s is %s%n", name, expected);
             testClassName(name);
             names.add(name);
         }
@@ -186,7 +187,11 @@ class ClassNameProber extends JavacTestingAbstractProcessor {
                                   typeElt.getKind().toString(),
                                   nestingKind.toString());
 
-                if (typeElt.getAnnotation(Nesting.class).value() != nestingKind) {
+                Nesting annotation = typeElt.getAnnotation(Nesting.class);
+                NestingKind expected = annotation == null ?
+                    NestingKind.ANONYMOUS : annotation.value();
+
+                if (expected != nestingKind) {
                     throw new RuntimeException("Mismatch of expected and reported nesting kind.");
                 }
             }

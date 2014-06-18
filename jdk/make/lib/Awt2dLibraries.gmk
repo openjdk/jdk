@@ -319,7 +319,6 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBAWT_FILES += awt_LoadLibrary.c
-  LIBAWT_CFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks
 endif
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
@@ -484,7 +483,6 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBAWT, \
     LDFLAGS_SUFFIX_macosx := -lmlib_image -ljvm $(LIBM) \
         -framework Cocoa \
         -framework OpenGL \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
         -framework JavaNativeFoundation \
         -framework JavaRuntimeSupport \
         -framework ApplicationServices \
@@ -1146,12 +1144,6 @@ ifeq ($(BUILD_HEADLESS), true)
         -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/native/sun/jdga \
         $(foreach dir, $(LIBAWT_HEADLESS_DIRS), -I$(dir))
 
-    ifeq ($(OPENJDK_TARGET_OS), macosx)
-      LIBAWT_HEADLESS_CFLAGS += \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks
-    endif
-
     LIBAWT_HEADLESS_FILES := \
         awt_Font.c \
         HeadlessToolkit.c \
@@ -1252,8 +1244,7 @@ ifndef BUILD_HEADLESS_ONLY
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
     LIBSPLASHSCREEN_CFLAGS := -I$(JDK_TOPDIR)/src/macosx/native/sun/awt/splashscreen \
-        $(LIBSPLASHSCREEN_CFLAGS) \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks
+        $(LIBSPLASHSCREEN_CFLAGS)
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
     LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp
 
@@ -1283,7 +1274,6 @@ ifndef BUILD_HEADLESS_ONLY
         -framework ApplicationServices \
         -framework Foundation \
         -framework Cocoa \
-        -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
         -framework JavaNativeFoundation
   else ifeq ($(OPENJDK_TARGET_OS), windows)
     LIBSPLASHSCREEN_LDFLAGS_SUFFIX += kernel32.lib user32.lib gdi32.lib delayimp.lib -DELAYLOAD:user32.dll
@@ -1468,9 +1458,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -I$(JDK_TOPDIR)/src/share/native/sun/awt/image/cvutils \
           -I$(JDK_TOPDIR)/src/share/native/sun/java2d/loops \
           -I$(JDK_TOPDIR)/src/share/native/sun/java2d/pipe \
-          -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
-          -F/System/Library/Frameworks/ApplicationServices.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/share/native/sun/awt/debug, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN), \
       LDFLAGS_SUFFIX_macosx := -lawt -lmlib_image -losxapp -ljvm $(LIBM) \
@@ -1481,7 +1469,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Cocoa \
           -framework Security \
           -framework ExceptionHandling \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -framework OpenGL \
@@ -1514,8 +1501,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       CFLAGS := $(CFLAGS_JDKLIB) \
           -I$(JDK_TOPDIR)/src/macosx/native/com/apple/laf \
           -I$(JDK_TOPDIR)/src/macosx/native/sun/osxapp \
-          -I$(JDK_TOPDIR)/src/macosx/native/sun/awt \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks, \
+          -I$(JDK_TOPDIR)/src/macosx/native/sun/awt, \
       LDFLAGS := $(LDFLAGS_JDKLIB) \
           $(call SET_SHARED_LIBRARY_ORIGIN) \
           -Xlinker -rpath -Xlinker @loader_path, \
@@ -1523,7 +1509,6 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
           -framework Cocoa \
           -framework Carbon \
           -framework ApplicationServices \
-          -F/System/Library/Frameworks/JavaVM.framework/Frameworks \
           -framework JavaNativeFoundation \
           -framework JavaRuntimeSupport \
           -ljava -ljvm, \

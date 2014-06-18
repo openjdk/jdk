@@ -35,14 +35,14 @@ import com.oracle.java.testlibrary.*;
 public class TestHexArguments {
     public static void main(String args[]) throws Exception {
       String[] javaArgs = {"-XX:SharedBaseAddress=0x1D000000", "-version"};
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(true, javaArgs);
+      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(javaArgs);
 
       OutputAnalyzer output = new OutputAnalyzer(pb.start());
       output.shouldNotContain("Could not create the Java Virtual Machine");
       output.shouldHaveExitValue(0);
 
       String[] javaArgs1 = {"-XX:SharedBaseAddress=1D000000", "-version"};
-      pb = ProcessTools.createJavaProcessBuilder(true, javaArgs1);
+      pb = ProcessTools.createJavaProcessBuilder(javaArgs1);
       output = new OutputAnalyzer(pb.start());
       output.shouldContain("Could not create the Java Virtual Machine");
   }

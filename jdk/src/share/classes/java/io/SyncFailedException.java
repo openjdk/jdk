@@ -31,7 +31,7 @@ package java.io;
  * @author  Ken Arnold
  * @see     java.io.FileDescriptor#sync
  * @see     java.io.IOException
- * @since   JDK1.1
+ * @since   1.1
  */
 public class SyncFailedException extends IOException {
     private static final long serialVersionUID = -2353342684412443330L;

@@ -1014,6 +1014,9 @@ public final class Context {
     }
 
     private static ScriptFunction getProgramFunction(final Class<?> script, final ScriptObject scope) {
+        if (script == null) {
+            return null;
+        }
         return invokeCreateProgramFunctionHandle(getCreateProgramFunctionHandle(script), scope);
     }
 

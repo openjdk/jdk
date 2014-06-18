@@ -139,10 +139,10 @@ class NativeGSSContext implements GSSContextSpi {
         if (sm != null) {
             String targetStr = targetName.getKrbName();
             String tgsStr = Krb5Util.getTGSName(targetName);
-            StringBuffer buf = new StringBuffer("\"");
-            buf.append(targetStr).append("\" \"");
-            buf.append(tgsStr).append('\"');
-            String krbPrincPair = buf.toString();
+            StringBuilder sb = new StringBuilder("\"");
+            sb.append(targetStr).append("\" \"");
+            sb.append(tgsStr).append('\"');
+            String krbPrincPair = sb.toString();
             SunNativeProvider.debug("Checking DelegationPermission (" +
                                     krbPrincPair + ")");
             DelegationPermission perm =

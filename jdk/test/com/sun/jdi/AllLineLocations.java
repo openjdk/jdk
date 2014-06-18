@@ -32,7 +32,7 @@
  *  @run compile -g RefTypes.java
  *  @run build AllLineLocations
  *
- *  @run main AllLineLocations RefTypes
+ *  @run driver AllLineLocations RefTypes
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

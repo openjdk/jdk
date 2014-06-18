@@ -43,7 +43,7 @@ import sun.misc.DoubleConsts;
  * @author  Lee Boynton
  * @author  Arthur van Hoff
  * @author  Joseph D. Darcy
- * @since JDK1.0
+ * @since 1.0
  */
 public final class Double extends Number implements Comparable<Double> {
     /**
@@ -132,7 +132,7 @@ public final class Double extends Number implements Comparable<Double> {
      * The {@code Class} instance representing the primitive type
      * {@code double}.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     @SuppressWarnings("unchecked")
     public static final Class<Double>   TYPE = (Class<Double>) Class.getPrimitiveClass("double");
@@ -650,7 +650,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  the {@code double} value represented by this object
      *          converted to type {@code byte}
      * @jls 5.1.3 Narrowing Primitive Conversions
-     * @since JDK1.1
+     * @since 1.1
      */
     public byte byteValue() {
         return (byte)value;
@@ -663,7 +663,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  the {@code double} value represented by this object
      *          converted to type {@code short}
      * @jls 5.1.3 Narrowing Primitive Conversions
-     * @since JDK1.1
+     * @since 1.1
      */
     public short shortValue() {
         return (short)value;
@@ -700,7 +700,7 @@ public final class Double extends Number implements Comparable<Double> {
      * @return  the {@code double} value represented by this object
      *          converted to type {@code float}
      * @jls 5.1.3 Narrowing Primitive Conversions
-     * @since JDK1.0
+     * @since 1.0
      */
     public float floatValue() {
         return (float)value;

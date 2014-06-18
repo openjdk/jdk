@@ -45,7 +45,7 @@ import sun.awt.datatransfer.SunClipboard;
  * @author Danila Sinopalnikov
  * @author Alexander Gerasimov
  *
- * @since JDK1.1
+ * @since 1.1
  */
 final class WClipboard extends SunClipboard {
 

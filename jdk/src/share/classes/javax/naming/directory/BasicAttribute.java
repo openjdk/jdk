@@ -211,7 +211,7 @@ public class BasicAttribute implements Attribute {
       * @return The non-null string representation of this attribute.
       */
     public String toString() {
-        StringBuffer answer = new StringBuffer(attrID + ": ");
+        StringBuilder answer = new StringBuilder(attrID + ": ");
         if (values.size() == 0) {
             answer.append("No values");
         } else {

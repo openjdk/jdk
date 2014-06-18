@@ -118,13 +118,13 @@ public class LineBreakpointSpec extends BreakpointSpec {
 
     @Override
     public String toString() {
-        StringBuffer buffer = new StringBuffer("breakpoint ");
-        buffer.append(refSpec.toString());
-        buffer.append(':');
-        buffer.append(lineNumber);
-        buffer.append(" (");
-        buffer.append(getStatusString());
-        buffer.append(')');
-        return buffer.toString();
+        StringBuilder sb = new StringBuilder("breakpoint ");
+        sb.append(refSpec.toString());
+        sb.append(':');
+        sb.append(lineNumber);
+        sb.append(" (");
+        sb.append(getStatusString());
+        sb.append(')');
+        return sb.toString();
     }
 }

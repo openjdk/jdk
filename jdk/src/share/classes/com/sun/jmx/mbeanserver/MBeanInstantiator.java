@@ -757,7 +757,7 @@ public class MBeanInstantiator {
         }
     }
 
-    private static void ensureClassAccess(Class clazz)
+    private static void ensureClassAccess(Class<?> clazz)
             throws IllegalAccessException
     {
         int mod = clazz.getModifiers();

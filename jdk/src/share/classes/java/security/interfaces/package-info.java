@@ -69,6 +69,6 @@
  *       </b></a></li>
  * </ul>
  *
- * @since JDK1.1
+ * @since 1.1
  */
 package java.security.interfaces;

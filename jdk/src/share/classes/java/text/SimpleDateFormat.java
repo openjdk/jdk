@@ -441,7 +441,7 @@ public class SimpleDateFormat extends DateFormat {
      * and the highest allowable <code>serialVersionOnStream</code>
      * is written.
      * @serial
-     * @since JDK1.1.4
+     * @since 1.1.4
      */
     private int serialVersionOnStream = currentSerialVersion;
 
@@ -506,7 +506,7 @@ public class SimpleDateFormat extends DateFormat {
      * <code>defaultCenturyStart</code>, which may be any date.  May
      * not be null.
      * @serial
-     * @since JDK1.1.4
+     * @since 1.1.4
      */
     private Date defaultCenturyStart;
 

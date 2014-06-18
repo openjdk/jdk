@@ -39,7 +39,7 @@ package java.lang;
  * as the aforementioned "legacy method."
  *
  * @author  Frank Yellin
- * @since   JDK1.1
+ * @since   1.1
  */
 public class ExceptionInInitializerError extends LinkageError {
     /**

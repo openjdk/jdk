@@ -29,7 +29,7 @@ import com.oracle.java.testlibrary.*;
  * @test
  * @bug 8027230
  * @library /testlibrary
- * @build GetObjectSizeOverflowAgent
+ * @build ClassFileInstaller com.oracle.java.testlibrary.* GetObjectSizeOverflowAgent
  * @run main ClassFileInstaller GetObjectSizeOverflowAgent
  * @run main GetObjectSizeOverflow
  */

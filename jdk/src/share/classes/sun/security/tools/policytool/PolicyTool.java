@@ -975,16 +975,16 @@ class PolicyEntry {
         String result = "";
         if ((grantEntry.principals != null) &&
             (!grantEntry.principals.isEmpty())) {
-            StringBuffer buffer = new StringBuffer(200);
+            StringBuilder sb = new StringBuilder(200);
             ListIterator<PolicyParser.PrincipalEntry> list =
                                 grantEntry.principals.listIterator();
             while (list.hasNext()) {
                 PolicyParser.PrincipalEntry pppe = list.next();
-                buffer.append(" Principal " + pppe.getDisplayClass() + " " +
+                sb.append(" Principal " + pppe.getDisplayClass() + " " +
                     pppe.getDisplayName(true));
-                if (list.hasNext()) buffer.append(", ");
+                if (list.hasNext()) sb.append(", ");
             }
-            result = buffer.toString();
+            result = sb.toString();
         }
         return result;
     }
