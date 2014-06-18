@@ -1456,7 +1456,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
           cnt = ConNode::make(C, TypeInt::make(mask));
           _igvn.register_new_node_with_optimizer(cnt);
-          cnt = new (C) AndINode(opd, cnt);
+          cnt = new AndINode(opd, cnt);
           _igvn.register_new_node_with_optimizer(cnt);
           _phase->set_ctrl(cnt, _phase->get_ctrl(opd));
         }
@@ -2067,42 +2067,42 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   if (align_to_ref_p.invar() != NULL) {
     // incorporate any extra invariant piece producing (offset +/- invar) >>> log2(elt)
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* aref     = new (_phase->C) URShiftINode(align_to_ref_p.invar(), log2_elt);
+    Node* aref     = new URShiftINode(align_to_ref_p.invar(), log2_elt);
     _igvn.register_new_node_with_optimizer(aref);
     _phase->set_ctrl(aref, pre_ctrl);
     if (align_to_ref_p.negate_invar()) {
-      e = new (_phase->C) SubINode(e, aref);
+      e = new SubINode(e, aref);
     } else {
-      e = new (_phase->C) AddINode(e, aref);
+      e = new AddINode(e, aref);
     }
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
   if (vw > ObjectAlignmentInBytes) {
     // incorporate base e +/- base && Mask >>> log2(elt)
-    Node* xbase = new(_phase->C) CastP2XNode(NULL, align_to_ref_p.base());
+    Node* xbase = new CastP2XNode(NULL, align_to_ref_p.base());
     _igvn.register_new_node_with_optimizer(xbase);
 #ifdef _LP64
-    xbase  = new (_phase->C) ConvL2INode(xbase);
+    xbase  = new ConvL2INode(xbase);
     _igvn.register_new_node_with_optimizer(xbase);
 #endif
     Node* mask = _igvn.intcon(vw-1);
-    Node* masked_xbase  = new (_phase->C) AndINode(xbase, mask);
+    Node* masked_xbase  = new AndINode(xbase, mask);
     _igvn.register_new_node_with_optimizer(masked_xbase);
     Node* log2_elt = _igvn.intcon(exact_log2(elt_size));
-    Node* bref     = new (_phase->C) URShiftINode(masked_xbase, log2_elt);
+    Node* bref     = new URShiftINode(masked_xbase, log2_elt);
     _igvn.register_new_node_with_optimizer(bref);
     _phase->set_ctrl(bref, pre_ctrl);
-    e = new (_phase->C) AddINode(e, bref);
+    e = new AddINode(e, bref);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
 
   // compute e +/- lim0
   if (scale < 0) {
-    e = new (_phase->C) SubINode(e, lim0);
+    e = new SubINode(e, lim0);
   } else {
-    e = new (_phase->C) AddINode(e, lim0);
+    e = new AddINode(e, lim0);
   }
   _igvn.register_new_node_with_optimizer(e);
   _phase->set_ctrl(e, pre_ctrl);
@@ -2110,13 +2110,13 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   if (stride * scale > 0) {
     // compute V - (e +/- lim0)
     Node* va  = _igvn.intcon(v_align);
-    e = new (_phase->C) SubINode(va, e);
+    e = new SubINode(va, e);
     _igvn.register_new_node_with_optimizer(e);
     _phase->set_ctrl(e, pre_ctrl);
   }
   // compute N = (exp) % V
   Node* va_msk = _igvn.intcon(v_align - 1);
-  Node* N = new (_phase->C) AndINode(e, va_msk);
+  Node* N = new AndINode(e, va_msk);
   _igvn.register_new_node_with_optimizer(N);
   _phase->set_ctrl(N, pre_ctrl);
 
@@ -2124,15 +2124,15 @@ void SuperWord::align_initial_loop_index(MemNode* align_to_ref) {
   //     lim = lim0 + N
   Node* lim;
   if (stride < 0) {
-    lim = new (_phase->C) SubINode(lim0, N);
+    lim = new SubINode(lim0, N);
   } else {
-    lim = new (_phase->C) AddINode(lim0, N);
+    lim = new AddINode(lim0, N);
   }
   _igvn.register_new_node_with_optimizer(lim);
   _phase->set_ctrl(lim, pre_ctrl);
   Node* constrained =
-    (stride > 0) ? (Node*) new (_phase->C) MinINode(lim, orig_limit)
-                 : (Node*) new (_phase->C) MaxINode(lim, orig_limit);
+    (stride > 0) ? (Node*) new MinINode(lim, orig_limit)
+                 : (Node*) new MaxINode(lim, orig_limit);
   _igvn.register_new_node_with_optimizer(constrained);
   _phase->set_ctrl(constrained, pre_ctrl);
   _igvn.hash_delete(pre_opaq);

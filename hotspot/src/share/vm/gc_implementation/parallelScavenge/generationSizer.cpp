@@ -32,8 +32,8 @@ void GenerationSizer::trace_gen_sizes(const char* const str) {
                   SIZE_FORMAT "," SIZE_FORMAT " "
                   SIZE_FORMAT,
                   str,
-                  _min_gen1_size / K, _max_gen1_size / K,
-                  _min_gen0_size / K, _max_gen0_size / K,
+                  _min_old_size / K, _max_old_size / K,
+                  _min_young_size / K, _max_young_size / K,
                   _max_heap_byte_size / K);
   }
 }

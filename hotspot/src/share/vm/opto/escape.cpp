@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -939,7 +939,13 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_encryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "aescrypt_decryptBlock") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_encryptAESCrypt") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_decryptAESCrypt") == 0)
+                  strcmp(call->as_CallLeaf()->_name, "cipherBlockChaining_decryptAESCrypt") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha1_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha1_implCompressMB") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha256_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha256_implCompressMB") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha512_implCompress") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0)
                   ))) {
             call->dump();
             fatal(err_msg_res("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name));
