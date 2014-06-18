@@ -647,6 +647,7 @@ public class JDialog extends Dialog implements WindowConstants,
         enableEvents(AWTEvent.KEY_EVENT_MASK | AWTEvent.WINDOW_EVENT_MASK);
         setLocale( JComponent.getDefaultLocale() );
         setRootPane(createRootPane());
+        setBackground(UIManager.getColor("control"));
         setRootPaneCheckingEnabled(true);
         if (JDialog.isDefaultLookAndFeelDecorated()) {
             boolean supportsWindowDecorations =
