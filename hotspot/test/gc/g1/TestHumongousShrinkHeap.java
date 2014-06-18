@@ -22,6 +22,7 @@
  */
 
 /**
+ * @ignore 8041506, 8041946, 8042051
  * @test TestHumongousShrinkHeap
  * @bug 8036025
  * @summary Verify that heap shrinks after GC in the presence of fragmentation due to humongous objects

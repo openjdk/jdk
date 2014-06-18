@@ -39,7 +39,7 @@ package java.lang;
  * @author  Nakul Saraiya
  * @author  Joseph D. Darcy
  * @see     java.lang.Number
- * @since   JDK1.1
+ * @since   1.1
  */
 public final class Byte extends Number implements Comparable<Byte> {
 

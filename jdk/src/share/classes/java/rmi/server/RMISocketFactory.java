@@ -85,7 +85,7 @@ import java.net.*;
  *
  * @author  Ann Wollrath
  * @author  Peter Jones
- * @since   JDK1.1
+ * @since   1.1
  */
 public abstract class RMISocketFactory
         implements RMIClientSocketFactory, RMIServerSocketFactory
@@ -100,7 +100,7 @@ public abstract class RMISocketFactory
 
     /**
      * Constructs an <code>RMISocketFactory</code>.
-     * @since JDK1.1
+     * @since 1.1
      */
     public RMISocketFactory() {
         super();
@@ -112,7 +112,7 @@ public abstract class RMISocketFactory
      * @param  port   the port number
      * @return a socket connected to the specified host and port.
      * @exception IOException if an I/O error occurs during socket creation
-     * @since JDK1.1
+     * @since 1.1
      */
     public abstract Socket createSocket(String host, int port)
         throws IOException;
@@ -124,7 +124,7 @@ public abstract class RMISocketFactory
      * @return the server socket on the specified port
      * @exception IOException if an I/O error occurs during server socket
      * creation
-     * @since JDK1.1
+     * @since 1.1
      */
     public abstract ServerSocket createServerSocket(int port)
         throws IOException;
@@ -142,7 +142,7 @@ public abstract class RMISocketFactory
      *             <code>checkSetFactory</code> method doesn't allow the operation.
      * @see #getSocketFactory
      * @see java.lang.SecurityManager#checkSetFactory()
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized static void setSocketFactory(RMISocketFactory fac)
         throws IOException
@@ -163,7 +163,7 @@ public abstract class RMISocketFactory
      * set.
      * @return the socket factory
      * @see #setSocketFactory(RMISocketFactory)
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized static RMISocketFactory getSocketFactory()
     {
@@ -176,7 +176,7 @@ public abstract class RMISocketFactory
      * by the RMI runtime when <code>getSocketFactory</code>
      * returns <code>null</code>.
      * @return the default RMI socket factory
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized static RMISocketFactory getDefaultSocketFactory() {
         if (defaultSocketFactory == null) {
@@ -203,7 +203,7 @@ public abstract class RMISocketFactory
      *          operation.
      * @see #getFailureHandler
      * @see java.rmi.server.RMIFailureHandler#failure(Exception)
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized static void setFailureHandler(RMIFailureHandler fh)
     {
@@ -219,7 +219,7 @@ public abstract class RMISocketFactory
      * <code>setFailureHandler</code> method.
      * @return the failure handler
      * @see #setFailureHandler(RMIFailureHandler)
-     * @since JDK1.1
+     * @since 1.1
      */
     public synchronized static RMIFailureHandler getFailureHandler()
     {

@@ -164,7 +164,7 @@ import sun.awt.image.MultiResolutionToolkitImage;
  * } </pre></blockquote><hr>
  *
  * @author      Jim Graham
- * @since       JDK1.0
+ * @since       1.0
  */
 public class MediaTracker implements java.io.Serializable {
 
@@ -724,7 +724,7 @@ public class MediaTracker implements java.io.Serializable {
      * @param   image     the image to be removed
      * @see     java.awt.MediaTracker#removeImage(java.awt.Image, int)
      * @see     java.awt.MediaTracker#removeImage(java.awt.Image, int, int, int)
-     * @since   JDK1.1
+     * @since   1.1
      */
     public synchronized void removeImage(Image image) {
         removeImageImpl(image);
@@ -763,7 +763,7 @@ public class MediaTracker implements java.io.Serializable {
      * @param      id the tracking ID from which to remove the image
      * @see        java.awt.MediaTracker#removeImage(java.awt.Image)
      * @see        java.awt.MediaTracker#removeImage(java.awt.Image, int, int, int)
-     * @since      JDK1.1
+     * @since      1.1
      */
     public synchronized void removeImage(Image image, int id) {
         removeImageImpl(image, id);
@@ -803,7 +803,7 @@ public class MediaTracker implements java.io.Serializable {
      * @param   height the height to remove (-1 for unscaled)
      * @see     java.awt.MediaTracker#removeImage(java.awt.Image)
      * @see     java.awt.MediaTracker#removeImage(java.awt.Image, int)
-     * @since   JDK1.1
+     * @since   1.1
      */
     public synchronized void removeImage(Image image, int id,
                                          int width, int height) {

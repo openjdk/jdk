@@ -58,7 +58,7 @@ import java.net.*;
  * @see     java.io.FileDescriptor
  * @see     java.net.Socket
  * @see     attached README.txt
- * @since   JDK1.2
+ * @since   1.2
  */
 
 public class Poller {

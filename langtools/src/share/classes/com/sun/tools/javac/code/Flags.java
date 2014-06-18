@@ -296,7 +296,8 @@ public class Flags {
         ModifierFlags               = ((long)StandardFlags & ~INTERFACE) | DEFAULT,
         InterfaceMethodMask         = ABSTRACT | STATIC | PUBLIC | STRICTFP | DEFAULT,
         AnnotationTypeElementMask   = ABSTRACT | PUBLIC,
-        LocalVarFlags               = FINAL | PARAMETER;
+        LocalVarFlags               = FINAL | PARAMETER,
+        ReceiverParamFlags          = PARAMETER;
 
 
     public static Set<Modifier> asModifierSet(long flags) {

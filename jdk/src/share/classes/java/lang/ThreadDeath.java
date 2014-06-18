@@ -43,7 +43,7 @@ package java.lang;
  * "normal occurrence", because many applications catch all
  * occurrences of {@code Exception} and then discard the exception.
  *
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public class ThreadDeath extends Error {

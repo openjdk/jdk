@@ -35,8 +35,9 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 
-import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.TypeAnnotationPosition.*;
 import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
@@ -75,7 +76,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final TreeMaker make;
     private final Todo todo;
     private final Annotate annotate;
-    private final TypeAnnotations typeAnnotations;
     private final Types types;
     private final JCDiagnostic.Factory diags;
     private final Source source;
@@ -101,7 +101,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         make = TreeMaker.instance(context);
         todo = Todo.instance(context);
         annotate = Annotate.instance(context);
-        typeAnnotations = TypeAnnotations.instance(context);
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         source = Source.instance(context);
@@ -130,6 +129,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  unnecessarily deep recursion.
      */
     boolean completionEnabled = true;
+
+    /** The creator that will be used for any varDef's we visit.  This
+     * is used to create the position for any type annotations (or
+     * annotations that potentially are type annotations) that we
+     * encounter.
+     */
+    Annotate.PositionCreator creator;
 
     /* ---------- Processing import clauses ----------------
      */
@@ -348,6 +354,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     /** Construct method type from method signature.
+     *  @param msym        The MethodSymbol for the method.
      *  @param typarams    The method's type parameters.
      *  @param params      The method's value parameters.
      *  @param res             The method's result type,
@@ -356,33 +363,89 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *                 null if none given; TODO: or already set here?
      *  @param thrown      The method's thrown exceptions.
      *  @param env             The method's (local) environment.
+     *  @param declAnnos   The annotations on the method declaration,
+     *                     some of which may be type annotations on
+     *                     the return type.
+     *  @param deferPos    The deferred diagnostic position for error
+     *                     reporting.
      */
-    Type signature(MethodSymbol msym,
-                   List<JCTypeParameter> typarams,
-                   List<JCVariableDecl> params,
-                   JCTree res,
-                   JCVariableDecl recvparam,
-                   List<JCExpression> thrown,
-                   Env<AttrContext> env) {
+    Type signature(final MethodSymbol msym,
+                   final List<JCTypeParameter> typarams,
+                   final List<JCVariableDecl> params,
+                   final JCTree res,
+                   final JCVariableDecl recvparam,
+                   final List<JCExpression> thrown,
+                   final Env<AttrContext> env,
+                   final List<JCAnnotation> declAnnos,
+                   final DiagnosticPosition deferPos) {
+        int i;
 
         // Enter and attribute type parameters.
         List<Type> tvars = enter.classEnter(typarams, env);
         attr.attribTypeVariables(typarams, env);
 
-        // Enter and attribute value parameters.
+        // Handle type annotations on type parameters.
+        i = 0;
+        for (List<JCTypeParameter> l = typarams; l.nonEmpty();
+             l = l.tail, i++) {
+            final JCTypeParameter param = l.head;
+            annotate.annotateTypeLater(param, env, msym, deferPos,
+                                       annotate.methodTypeParamCreator(i));
+            // ...and bounds on type parameters.
+            int j = 0;
+            for (List<JCExpression> bounds = param.bounds;
+                 bounds.nonEmpty(); bounds = bounds.tail, j++) {
+                annotate.annotateTypeLater(bounds.head, env, msym, deferPos,
+                                           annotate.methodTypeParamBoundCreator(param, i, j));
+            }
+        }
+
+        // Enter and attribute value parameters.  Type annotations get
+        // METHOD_FORMAL_PARAMETER positions.
         ListBuffer<Type> argbuf = new ListBuffer<>();
-        for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail) {
-            memberEnter(l.head, env);
+        i = 0;
+        for (List<JCVariableDecl> l = params; l.nonEmpty(); l = l.tail, i++) {
+            // The types will get annotated by visitVarDef
+            memberEnter(l.head, env, annotate.paramCreator(i));
             argbuf.append(l.head.vartype.type);
         }
 
         // Attribute result type, if one is given.
-        Type restype = res == null ? syms.voidType : attr.attribType(res, env);
+        Type restype;
+
+        if (res != null) {
+            // If we have any declaration annotations, they might
+            // be/also be type annotations on the return type.  We
+            // pass them in, so they get classified and then attached
+            // to the method, or the return type, or both.
+            restype = attr.attribType(res, env);
+            annotate.annotateTypeLater(res, declAnnos, env, msym, deferPos,
+                                       annotate.returnCreator);
+        } else {
+            // For constructors, we don't actually have a type, so we
+            // can't have a type path (except for INNER_TYPE), and we
+            // don't have annotations on arrays, type arguments, and
+            // the like.
+
+            // The only type path we have is if we are in an inner type.
+            List<TypePathEntry> typepath = Annotate.makeInners(msym.owner.type);
+            TypeAnnotationPosition tapos =
+                TypeAnnotationPosition.methodReturn(typepath, env.getLambda(), -1);
+
+            // We don't have to walk down a type.  We just have to do
+            // repeating annotation handling, then classify and attach
+            // the annotations.
+            annotate.annotateWithClassifyLater(declAnnos, env, msym,
+                                               deferPos, tapos);
+            restype = syms.voidType;
+        }
+
 
         // Attribute receiver type, if one is given.
         Type recvtype;
         if (recvparam!=null) {
-            memberEnter(recvparam, env);
+            // The type will get annotated by visitVarDef
+            memberEnter(recvparam, env, annotate.receiverCreator);
             recvtype = recvparam.vartype.type;
         } else {
             recvtype = null;
@@ -390,8 +453,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         // Attribute thrown exceptions.
         ListBuffer<Type> thrownbuf = new ListBuffer<>();
-        for (List<JCExpression> l = thrown; l.nonEmpty(); l = l.tail) {
+        i = 0;
+        for (List<JCExpression> l = thrown; l.nonEmpty(); l = l.tail, i++) {
             Type exc = attr.attribType(l.head, env);
+            // Annotate each exception type.
+            annotate.annotateTypeLater(l.head, env, msym, deferPos,
+                                       annotate.throwCreator(i));
             if (!exc.hasTag(TYPEVAR)) {
                 exc = chk.checkClassType(l.head.pos(), exc);
             } else if (exc.tsym.owner == msym) {
@@ -420,33 +487,49 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Enter field and method definitions and process import
      *  clauses, catching any completion failure exceptions.
      */
-    protected void memberEnter(JCTree tree, Env<AttrContext> env) {
+    protected void memberEnter(JCTree tree, Env<AttrContext> env,
+                               Annotate.PositionCreator creator) {
         Env<AttrContext> prevEnv = this.env;
+        Annotate.PositionCreator prevCreator = this.creator;
         try {
             this.env = env;
+            this.creator = creator;
             tree.accept(this);
         }  catch (CompletionFailure ex) {
             chk.completionError(tree.pos(), ex);
         } finally {
+            this.creator = prevCreator;
             this.env = prevEnv;
         }
     }
 
+
+    protected void memberEnter(JCTree tree, Env<AttrContext> env) {
+        memberEnter(tree, env, annotate.noCreator);
+    }
+
     /** Enter members from a list of trees.
      */
-    void memberEnter(List<? extends JCTree> trees, Env<AttrContext> env) {
+    void memberEnter(List<? extends JCTree> trees,
+                     Env<AttrContext> env,
+                     Annotate.PositionCreator creator) {
         for (List<? extends JCTree> l = trees; l.nonEmpty(); l = l.tail)
-            memberEnter(l.head, env);
+            memberEnter(l.head, env, creator);
+    }
+
+    void memberEnter(List<? extends JCTree> trees,
+                     Env<AttrContext> env) {
+        memberEnter(trees, env, annotate.noCreator);
     }
 
     /** Enter members for a class.
      */
-    void finishClass(JCClassDecl tree, Env<AttrContext> env) {
+    void finishClass(final JCClassDecl tree, final Env<AttrContext> env) {
         if ((tree.mods.flags & Flags.ENUM) != 0 &&
             (types.supertype(tree.sym.type).tsym.flags() & Flags.ENUM) == 0) {
             addEnumMembers(tree, env);
         }
-        memberEnter(tree.defs, env);
+        memberEnter(tree.defs, env, annotate.fieldCreator);
     }
 
     /** Add the implicit members for an enum type
@@ -521,7 +604,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             }
         }
         // process package annotations
-        annotate.annotateLater(tree.annotations, env, env.toplevel.packge, null);
+        annotate.annotateLater(tree.annotations, env, env.toplevel.packge);
     }
 
     // process the non-static imports and the static imports of types.
@@ -567,15 +650,13 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         Env<AttrContext> localEnv = methodEnv(tree, env);
 
-        annotate.enterStart();
-        try {
             DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
             try {
                 // Compute the method type
                 m.type = signature(m, tree.typarams, tree.params,
                                    tree.restype, tree.recvparam,
-                                   tree.thrown,
-                                   localEnv);
+                               tree.thrown, localEnv,
+                               tree.mods.annotations, tree.pos());
             } finally {
                 deferredLintHandler.setPos(prevLintPos);
             }
@@ -602,16 +683,9 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             enclScope.enter(m);
             }
 
-            annotate.annotateLater(tree.mods.annotations, localEnv, m, tree.pos());
-            // Visit the signature of the method. Note that
-            // TypeAnnotate doesn't descend into the body.
-            annotate.annotateTypeLater(tree, localEnv, m, tree.pos());
-
             if (tree.defaultValue != null)
-                annotateDefaultValueLater(tree.defaultValue, localEnv, m);
-        } finally {
-            annotate.enterDone();
-        }
+            annotateDefaultValueLater(tree.defaultValue, localEnv,
+                                      m, annotate.noCreator);
     }
 
     /** Create a fresh environment for method bodies.
@@ -646,22 +720,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     attr.attribIdentAsEnumType(localEnv, (JCIdent)tree.vartype);
                 } else {
                     attr.attribType(tree.vartype, localEnv);
-                    if (tree.nameexpr != null) {
-                        attr.attribExpr(tree.nameexpr, localEnv);
-                        MethodSymbol m = localEnv.enclMethod.sym;
-                        if (m.isConstructor()) {
-                            Type outertype = m.owner.owner.type;
-                            if (outertype.hasTag(TypeTag.CLASS)) {
-                                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
-                                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
-                            } else {
-                                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
-                            }
-                        } else {
-                            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
-                            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
-                        }
-                    }
+                    if (TreeInfo.isReceiverParam(tree))
+                        checkReceiver(tree, localEnv);
                 }
             } finally {
                 deferredLintHandler.setPos(prevLintPos);
@@ -695,8 +755,18 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 chk.checkTransparentVar(tree.pos(), v, enclScope);
                 enclScope.enter(v);
             }
-            annotate.annotateLater(tree.mods.annotations, localEnv, v, tree.pos());
-            annotate.annotateTypeLater(tree.vartype, env, v, tree.pos());
+            if (TreeInfo.isReceiverParam(tree)) {
+                // If we are dealing with a receiver parameter, then
+                // we only allow base type annotations to be type
+                // annotations.  Receivers are not allowed to have
+                // declaration annotations.
+                annotate.annotateStrictTypeLater(tree.vartype, tree.mods.annotations,
+                                                 localEnv, v, tree.pos(), creator);
+            } else {
+                // Otherwise, we annotate the type.
+                annotate.annotateTypeLater(tree.vartype, tree.mods.annotations,
+                                           localEnv, v, tree.pos(), creator);
+            }
             v.pos = tree.pos;
         } finally {
             annotate.enterDone();
@@ -706,6 +776,26 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     void checkType(JCTree tree, Type type, String diag) {
         if (!tree.type.isErroneous() && !types.isSameType(tree.type, type)) {
             log.error(tree, diag, type, tree.type);
+        }
+    }
+    void checkReceiver(JCVariableDecl tree, Env<AttrContext> localEnv) {
+        attr.attribExpr(tree.nameexpr, localEnv);
+        MethodSymbol m = localEnv.enclMethod.sym;
+        if (m.isConstructor()) {
+            Type outertype = m.owner.owner.type;
+            if (outertype.hasTag(TypeTag.METHOD)) {
+                // we have a local inner class
+                outertype = m.owner.owner.owner.type;
+            }
+            if (outertype.hasTag(TypeTag.CLASS)) {
+                checkType(tree.vartype, outertype, "incorrect.constructor.receiver.type");
+                checkType(tree.nameexpr, outertype, "incorrect.constructor.receiver.name");
+            } else {
+                log.error(tree, "receiver.parameter.not.applicable.constructor.toplevel.class");
+            }
+        } else {
+            checkType(tree.vartype, m.owner.type, "incorrect.receiver.type");
+            checkType(tree.nameexpr, m.owner.type, "incorrect.receiver.name");
         }
     }
 
@@ -849,7 +939,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     /** Queue processing of an attribute default value. */
     void annotateDefaultValueLater(final JCExpression defaultValue,
                                    final Env<AttrContext> localEnv,
-                                   final MethodSymbol m) {
+                                   final MethodSymbol m,
+                                   final Annotate.PositionCreator creator) {
         annotate.normal(new Annotate.Worker() {
                 @Override
                 public String toString() {
@@ -936,22 +1027,44 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             // create an environment for evaluating the base clauses
             Env<AttrContext> baseEnv = baseEnv(tree, env);
 
-            if (tree.extending != null)
-                annotate.annotateTypeLater(tree.extending, baseEnv, sym, tree.pos());
-            for (JCExpression impl : tree.implementing)
-                annotate.annotateTypeLater(impl, baseEnv, sym, tree.pos());
-            annotate.flush();
+            // Annotations.
+            // In general, we cannot fully process annotations yet,  but we
+            // can attribute the annotation types and then check to see if the
+            // @Deprecated annotation is present.
+            attr.attribAnnotationTypes(tree.mods.annotations, baseEnv);
+            if (hasDeprecatedAnnotation(tree.mods.annotations))
+                c.flags_field |= DEPRECATED;
+
+            // Don't attach declaration annotations to anonymous
+            // classes, they get handled specially below.
+            if (!sym.isAnonymous()) {
+                annotate.annotateLater(tree.mods.annotations, baseEnv,
+                                       c, tree.pos());
+            }
 
             // Determine supertype.
-            Type supertype =
-                (tree.extending != null)
-                ? attr.attribBase(tree.extending, baseEnv, true, false, true)
-                : ((tree.mods.flags & Flags.ENUM) != 0)
+            Type supertype;
+
+            if (tree.extending != null) {
+                supertype = attr.attribBase(tree.extending, baseEnv,
+                                            true, false, true);
+                if (sym.isAnonymous()) {
+                    annotate.annotateAnonClassDefLater(tree.extending,
+                                                       tree.mods.annotations,
+                                                       baseEnv, sym, tree.pos(),
+                                                       annotate.extendsCreator);
+                } else {
+                    annotate.annotateTypeLater(tree.extending, baseEnv, sym,
+                                               tree.pos(), annotate.extendsCreator);
+                }
+            } else {
+                supertype = ((tree.mods.flags & Flags.ENUM) != 0)
                 ? attr.attribBase(enumBase(tree.pos, c), baseEnv,
                                   true, false, false)
                 : (c.fullname == names.java_lang_Object)
                 ? Type.noType
                 : syms.objectType;
+            }
             ct.supertype_field = modelMissingTypes(supertype, tree.extending, false);
 
             // Determine interfaces.
@@ -959,18 +1072,33 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ListBuffer<Type> all_interfaces = null; // lazy init
             Set<Type> interfaceSet = new HashSet<>();
             List<JCExpression> interfaceTrees = tree.implementing;
+            int i = 0;
             for (JCExpression iface : interfaceTrees) {
-                Type i = attr.attribBase(iface, baseEnv, false, true, true);
-                if (i.hasTag(CLASS)) {
-                    interfaces.append(i);
-                    if (all_interfaces != null) all_interfaces.append(i);
-                    chk.checkNotRepeated(iface.pos(), types.erasure(i), interfaceSet);
+                Type it = attr.attribBase(iface, baseEnv, false, true, true);
+                if (it.hasTag(CLASS)) {
+                    interfaces.append(it);
+                    if (all_interfaces != null) all_interfaces.append(it);
+                    chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
                 } else {
                     if (all_interfaces == null)
                         all_interfaces = new ListBuffer<Type>().appendList(interfaces);
-                    all_interfaces.append(modelMissingTypes(i, iface, true));
+                    all_interfaces.append(modelMissingTypes(it, iface, true));
+
                 }
+                if (sym.isAnonymous()) {
+                    // Note: if an anonymous class ever has more than
+                    // one supertype for some reason, this will
+                    // incorrectly attach tree.mods.annotations to ALL
+                    // supertypes, not just the first.
+                    annotate.annotateAnonClassDefLater(iface, tree.mods.annotations,
+                                                       baseEnv, sym, tree.pos(),
+                                                       annotate.implementsCreator(i++));
+                } else {
+                    annotate.annotateTypeLater(iface, baseEnv, sym, tree.pos(),
+                                               annotate.implementsCreator(i++));
             }
+            }
+
             if ((c.flags_field & ANNOTATION) != 0) {
                 ct.interfaces_field = List.of(syms.annotationType);
                 ct.all_interfaces_field = ct.interfaces_field;
@@ -993,22 +1121,28 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 }
             }
 
-            // Annotations.
-            // In general, we cannot fully process annotations yet,  but we
-            // can attribute the annotation types and then check to see if the
-            // @Deprecated annotation is present.
-            attr.attribAnnotationTypes(tree.mods.annotations, baseEnv);
-            if (hasDeprecatedAnnotation(tree.mods.annotations))
-                c.flags_field |= DEPRECATED;
-            annotate.annotateLater(tree.mods.annotations, baseEnv, c, tree.pos());
             // class type parameters use baseEnv but everything uses env
 
             chk.checkNonCyclicDecl(tree);
 
             attr.attribTypeVariables(tree.typarams, baseEnv);
             // Do this here, where we have the symbol.
-            for (JCTypeParameter tp : tree.typarams)
-                annotate.annotateTypeLater(tp, baseEnv, sym, tree.pos());
+            int j = 0;
+            for (List<JCTypeParameter> l = tree.typarams; l.nonEmpty();
+                 l = l.tail, j++) {
+                final JCTypeParameter typaram = l.head;
+                annotate.annotateTypeLater(typaram, baseEnv, sym, tree.pos(),
+                                           annotate.typeParamCreator(j));
+
+                int k = 0;
+                for(List<JCExpression> b = typaram.bounds; b.nonEmpty();
+                    b = b.tail, k++) {
+                    final JCExpression bound = b.head;
+                    annotate.annotateTypeLater(bound, baseEnv, sym, tree.pos(),
+                                               annotate.typeParamBoundCreator(typaram, j, k));
+                }
+
+            }
 
             // Add default constructor if needed.
             if ((c.flags() & INTERFACE) == 0 &&
@@ -1088,10 +1222,6 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 while (halfcompleted.nonEmpty()) {
                     Env<AttrContext> toFinish = halfcompleted.next();
                     finish(toFinish);
-                    if (allowTypeAnnos) {
-                        typeAnnotations.organizeTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
-                        typeAnnotations.validateTypeAnnotationsSignatures(toFinish, (JCClassDecl)toFinish.tree);
-                    }
                 }
             } finally {
                 isFirst = true;

@@ -65,7 +65,7 @@ import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
  * the interaction between a windowing systems DnD system and Java.
  * </p>
  *
- * @since JDK1.3.1
+ * @since 1.3.1
  *
  */
 

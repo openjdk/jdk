@@ -97,7 +97,7 @@ import java.lang.*;
  *
  * @author  unascribed
  * @see     java.io.StreamTokenizer
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class StringTokenizer implements Enumeration<Object> {

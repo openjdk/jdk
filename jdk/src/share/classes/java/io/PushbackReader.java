@@ -31,7 +31,7 @@ package java.io;
  * stream.
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public class PushbackReader extends FilterReader {

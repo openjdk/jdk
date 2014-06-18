@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.javac.util;
 
 import java.io.ByteArrayOutputStream;
-import java.io.Closeable;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStreamWriter;
@@ -47,6 +46,8 @@ import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+
+import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.JavaFileObject.Kind;
 
@@ -64,7 +65,7 @@ import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
  * There are no references here to file-system specific objects such as
  * java.io.File or java.nio.file.Path.
  */
-public abstract class BaseFileManager {
+public abstract class BaseFileManager implements JavaFileManager {
     protected BaseFileManager(Charset charset) {
         this.charset = charset;
         byteBufferCache = new ByteBufferCache();
@@ -73,12 +74,13 @@ public abstract class BaseFileManager {
 
     /**
      * Set the context for JavacPathFileManager.
+     * @param context the context containing items to be associated with the file manager
      */
     public void setContext(Context context) {
         log = Log.instance(context);
         options = Options.instance(context);
         classLoaderClass = options.get("procloader");
-        locations.update(log, options, Lint.instance(context), FSInfo.instance(context));
+        locations.update(log, Lint.instance(context), FSInfo.instance(context));
     }
 
     protected Locations createLocations() {
@@ -123,14 +125,19 @@ public abstract class BaseFileManager {
                 Class<?>[] constrArgTypes = { URL[].class, ClassLoader.class };
                 Constructor<? extends ClassLoader> constr = loader.getConstructor(constrArgTypes);
                 return constr.newInstance(urls, thisClassLoader);
-            } catch (Throwable t) {
+            } catch (ReflectiveOperationException t) {
                 // ignore errors loading user-provided class loader, fall through
             }
         }
         return new URLClassLoader(urls, thisClassLoader);
     }
 
+    public boolean isDefaultBootClassPath() {
+        return locations.isDefaultBootClassPath();
+    }
+
     // <editor-fold defaultstate="collapsed" desc="Option handling">
+    @Override
     public boolean handleOption(String current, Iterator<String> remaining) {
         OptionHelper helper = new GrumpyHelper(log) {
             @Override
@@ -147,7 +154,13 @@ public abstract class BaseFileManager {
             public void remove(String name) {
                 options.remove(name);
             }
+
+            @Override
+            public boolean handleFileManagerOption(Option option, String value) {
+                return handleOption(option, value);
+            }
         };
+
         for (Option o: javacFileManagerOptions) {
             if (o.matches(current))  {
                 if (o.hasArg()) {
@@ -159,7 +172,7 @@ public abstract class BaseFileManager {
                     if (!o.process(helper, current))
                         return true;
                 }
-                // operand missing, or process returned false
+                // operand missing, or process returned true
                 throw new IllegalArgumentException(current);
             }
         }
@@ -170,6 +183,7 @@ public abstract class BaseFileManager {
         private static final Set<Option> javacFileManagerOptions =
             Option.getJavacFileManagerOptions();
 
+    @Override
     public int isSupportedOption(String option) {
         for (Option o : javacFileManagerOptions) {
             if (o.matches(option))
@@ -178,7 +192,27 @@ public abstract class BaseFileManager {
         return -1;
     }
 
-    public abstract boolean isDefaultBootClassPath();
+    /**
+     * Common back end for OptionHelper handleFileManagerOption.
+     * @param option the option whose value to be set
+     * @param value the value for the option
+     * @return true if successful, and false otherwise
+     */
+    public boolean handleOption(Option option, String value) {
+        return locations.handleOption(option, value);
+    }
+
+    /**
+     * Call handleOption for collection of options and corresponding values.
+     * @param map a collection of options and corresponding values
+     * @return true if all the calls are successful
+     */
+    public boolean handleOptions(Map<Option, String> map) {
+        boolean ok = true;
+        for (Map.Entry<Option, String> e: map.entrySet())
+            ok = ok & handleOption(e.getKey(), e.getValue());
+        return ok;
+    }
 
     // </editor-fold>
 
@@ -205,10 +239,7 @@ public abstract class BaseFileManager {
         CharsetDecoder decoder;
         try {
             decoder = getDecoder(encodingName, ignoreEncodingErrors);
-        } catch (IllegalCharsetNameException e) {
-            log.error("unsupported.encoding", encodingName);
-            return (CharBuffer)CharBuffer.allocate(1).flip();
-        } catch (UnsupportedCharsetException e) {
+        } catch (IllegalCharsetNameException | UnsupportedCharsetException e) {
             log.error("unsupported.encoding", encodingName);
             return (CharBuffer)CharBuffer.allocate(1).flip();
         }
@@ -286,6 +317,9 @@ public abstract class BaseFileManager {
     // <editor-fold defaultstate="collapsed" desc="ByteBuffers">
     /**
      * Make a byte buffer from an input stream.
+     * @param in the stream
+     * @return a byte buffer containing the contents of the stream
+     * @throws IOException if an error occurred while reading the stream
      */
     public ByteBuffer makeByteBuffer(InputStream in)
         throws IOException {

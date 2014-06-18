@@ -308,7 +308,7 @@ import sun.util.spi.CalendarProvider;
  * @see          TimeZone
  * @see          java.text.DateFormat
  * @author Mark Davis, David Goldsmith, Chen-Lieh Huang, Alan Liu
- * @since JDK1.1
+ * @since 1.1
  */
 public abstract class Calendar implements Serializable, Cloneable, Comparable<Calendar> {
 
@@ -994,7 +994,7 @@ public abstract class Calendar implements Serializable, Cloneable, Comparable<Ca
      * and the highest allowable <code>serialVersionOnStream</code>
      * is written.
      * @serial
-     * @since JDK1.1.6
+     * @since 1.1.6
      */
     private int             serialVersionOnStream = currentSerialVersion;
 

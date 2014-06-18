@@ -54,6 +54,6 @@
  * string or a boolean value. A boolean value can be one of "true", "false",
  * "yes", or "no", case-insensitive.<p>
  *
- * @since JDK1.4
+ * @since 1.4
  */
 package javax.security.auth.kerberos;

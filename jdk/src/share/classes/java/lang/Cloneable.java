@@ -48,7 +48,7 @@ package java.lang;
  * @author  unascribed
  * @see     java.lang.CloneNotSupportedException
  * @see     java.lang.Object#clone()
- * @since   JDK1.0
+ * @since   1.0
  */
 public interface Cloneable {
 }

@@ -60,7 +60,7 @@ import java.util.stream.StreamSupport;
  * @author  Arthur van Hoff
  * @author  Michael McCloskey
  * @author  Martin Buchholz
- * @since   JDK1.0
+ * @since   1.0
  */
 public class BitSet implements Cloneable, java.io.Serializable {
     /*
@@ -437,7 +437,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * @param  bitIndex a bit index
      * @throws IndexOutOfBoundsException if the specified index is negative
-     * @since  JDK1.0
+     * @since  1.0
      */
     public void set(int bitIndex) {
         if (bitIndex < 0)
@@ -533,7 +533,7 @@ public class BitSet implements Cloneable, java.io.Serializable {
      *
      * @param  bitIndex the index of the bit to be cleared
      * @throws IndexOutOfBoundsException if the specified index is negative
-     * @since  JDK1.0
+     * @since  1.0
      */
     public void clear(int bitIndex) {
         if (bitIndex < 0)

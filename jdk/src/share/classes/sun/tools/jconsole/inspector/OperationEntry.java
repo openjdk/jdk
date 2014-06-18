@@ -32,7 +32,6 @@ import javax.management.*;
 @SuppressWarnings("serial")
 public class OperationEntry extends JPanel {
     private MBeanOperationInfo operation;
-    private JComboBox sigs;
     private XTextField inputs[];
 
     public OperationEntry (MBeanOperationInfo operation,

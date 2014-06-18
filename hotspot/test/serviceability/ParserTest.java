@@ -22,10 +22,10 @@
  */
 
 /*
- * @test ParserTest
+ * @test
  * @summary Test that the diagnostic command arguemnt parser works
  * @library /testlibrary /testlibrary/whitebox
- * @build ParserTest
+ * @build ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.parser.*
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI ParserTest
  */

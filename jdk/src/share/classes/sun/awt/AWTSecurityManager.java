@@ -56,7 +56,7 @@ public class AWTSecurityManager extends SecurityManager {
       * @return  the AppContext corresponding to the current context.
       * @see     sun.awt.AppContext
       * @see     java.lang.SecurityManager
-      * @since   JDK1.2.1
+      * @since   1.2.1
       */
     public AppContext getAppContext() {
         return null; // Default implementation returns null
