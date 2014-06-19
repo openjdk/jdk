@@ -412,8 +412,15 @@ public class JavacParser implements Parser {
                 case ELSE:
                 case FINALLY:
                 case CATCH:
+                case THIS:
+                case SUPER:
+                case NEW:
                     if (stopAtStatement)
                         return;
+                    break;
+                case ASSERT:
+                    if (stopAtStatement && allowAsserts)
+                        return ;
                     break;
             }
             nextToken();
@@ -2374,8 +2381,8 @@ public class JavacParser implements Parser {
                 ListBuffer<JCStatement> stats =
                         variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
+                storeEnd(stats.last(), S.prevToken().endPos);
                 return stats.toList();
             }
         }
@@ -2412,13 +2419,14 @@ public class JavacParser implements Parser {
                 ListBuffer<JCStatement> stats =
                         variableDeclarators(mods, t, new ListBuffer<JCStatement>());
                 // A "LocalVariableDeclarationStatement" subsumes the terminating semicolon
-                storeEnd(stats.last(), token.endPos);
                 accept(SEMI);
+                storeEnd(stats.last(), S.prevToken().endPos);
                 return stats.toList();
             } else {
                 // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
-                JCExpressionStatement expr = to(F.at(pos).Exec(checkExprStat(t)));
+                t = checkExprStat(t);
                 accept(SEMI);
+                JCExpressionStatement expr = toP(F.at(pos).Exec(t));
                 return List.<JCStatement>of(expr);
             }
         }
@@ -2497,8 +2505,8 @@ public class JavacParser implements Parser {
             JCStatement body = parseStatementAsBlock();
             accept(WHILE);
             JCExpression cond = parExpression();
-            JCDoWhileLoop t = to(F.at(pos).DoLoop(body, cond));
             accept(SEMI);
+            JCDoWhileLoop t = toP(F.at(pos).DoLoop(body, cond));
             return t;
         }
         case TRY: {
@@ -2546,29 +2554,29 @@ public class JavacParser implements Parser {
         case RETURN: {
             nextToken();
             JCExpression result = token.kind == SEMI ? null : parseExpression();
-            JCReturn t = to(F.at(pos).Return(result));
             accept(SEMI);
+            JCReturn t = toP(F.at(pos).Return(result));
             return t;
         }
         case THROW: {
             nextToken();
             JCExpression exc = parseExpression();
-            JCThrow t = to(F.at(pos).Throw(exc));
             accept(SEMI);
+            JCThrow t = toP(F.at(pos).Throw(exc));
             return t;
         }
         case BREAK: {
             nextToken();
             Name label = LAX_IDENTIFIER.accepts(token.kind) ? ident() : null;
-            JCBreak t = to(F.at(pos).Break(label));
             accept(SEMI);
+            JCBreak t = toP(F.at(pos).Break(label));
             return t;
         }
         case CONTINUE: {
             nextToken();
             Name label = LAX_IDENTIFIER.accepts(token.kind) ? ident() : null;
-            JCContinue t =  to(F.at(pos).Continue(label));
             accept(SEMI);
+            JCContinue t =  toP(F.at(pos).Continue(label));
             return t;
         }
         case SEMI:
@@ -2593,8 +2601,8 @@ public class JavacParser implements Parser {
                     nextToken();
                     message = parseExpression();
                 }
-                JCAssert t = to(F.at(pos).Assert(assertion, message));
                 accept(SEMI);
+                JCAssert t = toP(F.at(pos).Assert(assertion, message));
                 return t;
             }
             /* else fall through to default case */
@@ -2609,8 +2617,9 @@ public class JavacParser implements Parser {
                 return F.at(pos).Labelled(prevToken.name(), stat);
             } else {
                 // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
-                JCExpressionStatement stat = to(F.at(pos).Exec(checkExprStat(expr)));
+                expr = checkExprStat(expr);
                 accept(SEMI);
+                JCExpressionStatement stat = toP(F.at(pos).Exec(expr));
                 return stat;
             }
         }
@@ -3513,8 +3522,8 @@ public class JavacParser implements Parser {
                         List<JCTree> defs =
                             variableDeclaratorsRest(pos, mods, type, name, isInterface, dc,
                                                     new ListBuffer<JCTree>()).toList();
-                        storeEnd(defs.last(), token.endPos);
                         accept(SEMI);
+                        storeEnd(defs.last(), S.prevToken().endPos);
                         return defs;
                     } else {
                         pos = token.pos;
