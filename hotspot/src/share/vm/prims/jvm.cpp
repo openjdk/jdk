@@ -3923,50 +3923,6 @@ JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
 }
 
 
-// Support for Serialization
-
-typedef jfloat  (JNICALL *IntBitsToFloatFn  )(JNIEnv* env, jclass cb, jint    value);
-typedef jdouble (JNICALL *LongBitsToDoubleFn)(JNIEnv* env, jclass cb, jlong   value);
-typedef jint    (JNICALL *FloatToIntBitsFn  )(JNIEnv* env, jclass cb, jfloat  value);
-typedef jlong   (JNICALL *DoubleToLongBitsFn)(JNIEnv* env, jclass cb, jdouble value);
-
-static IntBitsToFloatFn   int_bits_to_float_fn   = NULL;
-static LongBitsToDoubleFn long_bits_to_double_fn = NULL;
-static FloatToIntBitsFn   float_to_int_bits_fn   = NULL;
-static DoubleToLongBitsFn double_to_long_bits_fn = NULL;
-
-
-void initialize_converter_functions() {
-  if (JDK_Version::is_gte_jdk14x_version()) {
-    // These functions only exist for compatibility with 1.3.1 and earlier
-    return;
-  }
-
-  // called from universe_post_init()
-  assert(
-    int_bits_to_float_fn   == NULL &&
-    long_bits_to_double_fn == NULL &&
-    float_to_int_bits_fn   == NULL &&
-    double_to_long_bits_fn == NULL ,
-    "initialization done twice"
-  );
-  // initialize
-  int_bits_to_float_fn   = CAST_TO_FN_PTR(IntBitsToFloatFn  , NativeLookup::base_library_lookup("java/lang/Float" , "intBitsToFloat"  , "(I)F"));
-  long_bits_to_double_fn = CAST_TO_FN_PTR(LongBitsToDoubleFn, NativeLookup::base_library_lookup("java/lang/Double", "longBitsToDouble", "(J)D"));
-  float_to_int_bits_fn   = CAST_TO_FN_PTR(FloatToIntBitsFn  , NativeLookup::base_library_lookup("java/lang/Float" , "floatToIntBits"  , "(F)I"));
-  double_to_long_bits_fn = CAST_TO_FN_PTR(DoubleToLongBitsFn, NativeLookup::base_library_lookup("java/lang/Double", "doubleToLongBits", "(D)J"));
-  // verify
-  assert(
-    int_bits_to_float_fn   != NULL &&
-    long_bits_to_double_fn != NULL &&
-    float_to_int_bits_fn   != NULL &&
-    double_to_long_bits_fn != NULL ,
-    "initialization failed"
-  );
-}
-
-
-
 // Shared JNI/JVM entry points //////////////////////////////////////////////////////////////
 
 jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS) {

@@ -3858,6 +3858,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif
+#include "memory/guardedMemory.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_VM_STRUCTS
@@ -3901,6 +3902,7 @@ void execute_internal_vm_tests() {
     run_unit_test(arrayOopDesc::test_max_array_length());
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
+    run_unit_test(GuardedMemory::test_guarded_memory());
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());

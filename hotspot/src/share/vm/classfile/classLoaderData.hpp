@@ -77,6 +77,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
   static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  static void cld_do(CLDClosure* cl);
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
