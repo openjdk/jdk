@@ -123,7 +123,7 @@ void G1MarkSweep::allocate_stacks() {
 void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                     bool clear_all_softrefs) {
   // Recursively traverse all live objects and mark them
-  GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime tm("phase 1", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace(" 1");
 
   SharedHeap* sh = SharedHeap::heap();
@@ -146,7 +146,8 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
                                       &GenMarkSweep::keep_alive,
                                       &GenMarkSweep::follow_stack_closure,
                                       NULL,
-                                      gc_timer());
+                                      gc_timer(),
+                                      gc_tracer()->gc_id());
   gc_tracer()->report_gc_reference_stats(stats);
 
 
@@ -260,7 +261,7 @@ void G1MarkSweep::mark_sweep_phase2() {
 
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace("2");
 
   // find the first region
@@ -297,7 +298,7 @@ void G1MarkSweep::mark_sweep_phase3() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
   // Adjust the pointers to reflect the new locations
-  GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime tm("phase 3", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace("3");
 
   SharedHeap* sh = SharedHeap::heap();
@@ -358,7 +359,7 @@ void G1MarkSweep::mark_sweep_phase4() {
   // to use a higher index (saved from phase2) when verifying perm_gen.
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer());
+  GCTraceTime tm("phase 4", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace("4");
 
   G1SpaceCompactClosure blk;

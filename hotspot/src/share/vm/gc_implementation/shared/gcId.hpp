@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,30 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
 
-#include "gc_implementation/shared/gcTrace.hpp"
-#include "prims/jni_md.h"
-#include "utilities/ticks.hpp"
+#include "memory/allocation.hpp"
 
-class GCTimer;
+class GCId VALUE_OBJ_CLASS_SPEC {
+ private:
+  uint _id;
+  GCId(uint id) : _id(id) {}
+  GCId() { } // Unused
 
-class GCTraceTime {
-  const char* _title;
-  bool _doit;
-  bool _print_cr;
-  GCTimer* _timer;
-  Ticks _start_counter;
+  static uint _next_id;
+  static const uint UNDEFINED = (uint)-1;
 
  public:
-  GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* timer, GCId gc_id);
-  ~GCTraceTime();
+  uint id() const {
+    assert(_id != UNDEFINED, "Using undefined GC ID");
+    return _id;
+  }
+  bool is_undefined() const;
+
+  static const GCId create();
+  static const GCId peek();
+  static const GCId undefined();
 };
 
-#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
