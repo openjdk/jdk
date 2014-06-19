@@ -29,8 +29,7 @@
  */
 
 // commented out makeFuncAndCall calls are still result in crash
-// Tests commented with //** fail only within test framework.
-// Pass fine with standalone "jjs" mode.
+// Tests commented with //** fail only when assertions are turned on
 
 function makeFuncAndCall(code) {
     Function(code)();
@@ -52,19 +51,19 @@ makeFuncAndCall("L: { while(0) break L; return; }");
 makeFuncExpectError("L: {while(0) break L; return [](); }", TypeError);
 // makeFuncAndCall("do with({}) break ; while(0);");
 makeFuncAndCall("while(0) with({}) continue ;");
-//** makeFuncAndCall("eval([]);");
-//** makeFuncAndCall("try{} finally{[]}");
+makeFuncAndCall("eval([]);");
+makeFuncAndCall("try{} finally{[]}");
 makeFuncAndCall("try { } catch(x if 1) { try { } catch(x2) { } }");
 makeFuncAndCall("try { } catch(x if 1) { try { return; } catch(x2) { { } } }");
 makeFuncAndCall("Error() * (false)[-0]--");
 makeFuncAndCall("try { var x = 1, x = null; } finally { }");
 makeFuncAndCall("try { var x = {}, x = []; } catch(x3) { }");
-//** makeFuncAndCall("[delete this]");
+makeFuncAndCall("[delete this]");
 // makeFuncAndCall("if(eval('', eval('', function() {}))) { }");
 // makeFuncAndCall("if(eval('', eval('', function() {}))) { }");
 // makeFuncAndCall("eval(\"[,,];\", [11,12,13,14].some)");
 // makeFuncAndCall("eval(\"1.2e3\", ({})[ /x/ ])");
-// makeFuncAndCall("eval(\"x4\", x3);");
+makeFuncExpectError("eval(\"x4\", x3);", ReferenceError);
 makeFuncAndCall("with({5.0000000000000000000000: String()}){(false); }");
 makeFuncAndCall("try { var x = undefined, x = 5.0000000000000000000000; } catch(x) { x = undefined; }");
 makeFuncAndCall("(function (x){ x %= this}(false))");
@@ -73,3 +72,4 @@ makeFuncAndCall("(false % !this) && 0");
 makeFuncAndCall("with({8: 'fafafa'.replace()}){ }");
 makeFuncAndCall("(function (x) '' )(true)");
 makeFuncExpectError("new eval(function(){})", TypeError);
+//** makeFuncAndCall('eval("23", ({})[/x/])');

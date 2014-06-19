@@ -173,7 +173,6 @@ final class WeighNodes extends NodeOperatorVisitor<LexicalContext> {
         if (functionNode == topFunction) {
             // the function being weighted; descend into its statements
             return true;
-//            functionNode.visitStatements(this);
         }
         // just a reference to inner function from outer function
         weight += FUNC_EXPR_WEIGHT;

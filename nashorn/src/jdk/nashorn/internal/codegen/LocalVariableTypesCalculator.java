@@ -39,6 +39,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
@@ -63,7 +64,6 @@ import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
@@ -1207,10 +1207,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
             @Override
             public Node leaveLiteralNode(final LiteralNode<?> literalNode) {
-                if(literalNode instanceof ArrayLiteralNode) {
-                    ((ArrayLiteralNode)literalNode).analyze();
-                }
-                return literalNode;
+                //for e.g. ArrayLiteralNodes the initial types may have been narrowed due to the
+                //introduction of optimistic behavior - hence ensure that all literal nodes are
+                //reinitialized
+                return literalNode.initialize(lc);
             }
 
             @Override

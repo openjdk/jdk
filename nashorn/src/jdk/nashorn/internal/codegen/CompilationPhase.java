@@ -173,7 +173,18 @@ enum CompilationPhase {
         @Override
         FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
             final CompileUnit  outermostCompileUnit = compiler.addCompileUnit(0L);
-            final FunctionNode newFunctionNode      = new Splitter(compiler, fn, outermostCompileUnit).split(fn, true);
+
+            FunctionNode newFunctionNode;
+
+            //ensure elementTypes, postsets and presets exist for splitter and arraynodes
+            newFunctionNode = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
+                @Override
+                public LiteralNode<?> leaveLiteralNode(final LiteralNode<?> literalNode) {
+                    return literalNode.initialize(lc);
+                }
+            });
+
+            newFunctionNode = new Splitter(compiler, newFunctionNode, outermostCompileUnit).split(newFunctionNode, true);
 
             assert newFunctionNode.getCompileUnit() == outermostCompileUnit : "fn=" + fn.getName() + ", fn.compileUnit (" + newFunctionNode.getCompileUnit() + ") != " + outermostCompileUnit;
             assert newFunctionNode.isStrict() == compiler.isStrict() : "functionNode.isStrict() != compiler.isStrict() for " + quote(newFunctionNode.getName());
@@ -374,7 +385,7 @@ enum CompilationPhase {
                             assert newUnit != null;
                             newArrayUnits.add(new ArrayUnit(newUnit, au.getLo(), au.getHi()));
                         }
-                        aln.setUnits(newArrayUnits);
+                        return aln.setUnits(lc, newArrayUnits);
                     }
                     return node;
                 }
