@@ -3135,10 +3135,19 @@ public class Attr extends JCTree.Visitor {
             if (checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
                     pt != Type.recoveryType) {
                 //check that functional interface class is well-formed
-                ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
-                        names.empty, List.of(fExpr.targets.head), ABSTRACT);
-                if (csym != null) {
-                    chk.checkImplementations(env.tree, csym, csym);
+                try {
+                    /* Types.makeFunctionalInterfaceClass() may throw an exception
+                     * when it's executed post-inference. See the listener code
+                     * above.
+                     */
+                    ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
+                            names.empty, List.of(fExpr.targets.head), ABSTRACT);
+                    if (csym != null) {
+                        chk.checkImplementations(env.tree, csym, csym);
+                    }
+                } catch (Types.FunctionDescriptorLookupError ex) {
+                    JCDiagnostic cause = ex.getDiagnostic();
+                    resultInfo.checkContext.report(env.tree, cause);
                 }
             }
         }
