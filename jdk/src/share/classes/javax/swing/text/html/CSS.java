@@ -175,144 +175,285 @@ public class CSS implements Serializable {
         private boolean inherited;
 
 
+        /**
+         * CSS attribute "background".
+         */
         public static final Attribute BACKGROUND =
             new Attribute("background", null, false);
 
+        /**
+         * CSS attribute "background-attachment".
+         */
         public static final Attribute BACKGROUND_ATTACHMENT =
             new Attribute("background-attachment", "scroll", false);
 
+        /**
+         * CSS attribute "background-color".
+         */
         public static final Attribute BACKGROUND_COLOR =
             new Attribute("background-color", "transparent", false);
 
+        /**
+         * CSS attribute "background-image".
+         */
         public static final Attribute BACKGROUND_IMAGE =
             new Attribute("background-image", "none", false);
 
+        /**
+         * CSS attribute "background-position".
+         */
         public static final Attribute BACKGROUND_POSITION =
             new Attribute("background-position", null, false);
 
+        /**
+         * CSS attribute "background-repeat".
+         */
         public static final Attribute BACKGROUND_REPEAT =
             new Attribute("background-repeat", "repeat", false);
 
+        /**
+         * CSS attribute "border".
+         */
         public static final Attribute BORDER =
             new Attribute("border", null, false);
 
+        /**
+         * CSS attribute "border-bottom".
+         */
         public static final Attribute BORDER_BOTTOM =
             new Attribute("border-bottom", null, false);
 
+        /**
+         * CSS attribute "border-bottom-color".
+         */
         public static final Attribute BORDER_BOTTOM_COLOR =
             new Attribute("border-bottom-color", null, false);
 
+        /**
+         * CSS attribute "border-bottom-style".
+         */
         public static final Attribute BORDER_BOTTOM_STYLE =
             new Attribute("border-bottom-style", "none", false);
 
+        /**
+         * CSS attribute "border-bottom-width".
+         */
         public static final Attribute BORDER_BOTTOM_WIDTH =
             new Attribute("border-bottom-width", "medium", false);
 
+        /**
+         * CSS attribute "border-color".
+         */
         public static final Attribute BORDER_COLOR =
             new Attribute("border-color", null, false);
 
+        /**
+         * CSS attribute "border-left".
+         */
         public static final Attribute BORDER_LEFT =
             new Attribute("border-left", null, false);
 
+        /**
+         * CSS attribute "margin-right".
+         */
         public static final Attribute BORDER_LEFT_COLOR =
             new Attribute("border-left-color", null, false);
 
+        /**
+         * CSS attribute "border-left-style".
+         */
         public static final Attribute BORDER_LEFT_STYLE =
             new Attribute("border-left-style", "none", false);
 
+        /**
+         * CSS attribute "border-left-width".
+         */
         public static final Attribute BORDER_LEFT_WIDTH =
             new Attribute("border-left-width", "medium", false);
 
+        /**
+         * CSS attribute "border-right".
+         */
         public static final Attribute BORDER_RIGHT =
             new Attribute("border-right", null, false);
 
+        /**
+         * CSS attribute "border-right-color".
+         */
         public static final Attribute BORDER_RIGHT_COLOR =
             new Attribute("border-right-color", null, false);
 
+        /**
+         * CSS attribute "border-right-style".
+         */
         public static final Attribute BORDER_RIGHT_STYLE =
             new Attribute("border-right-style", "none", false);
 
+        /**
+         * CSS attribute "border-right-width".
+         */
         public static final Attribute BORDER_RIGHT_WIDTH =
             new Attribute("border-right-width", "medium", false);
 
+        /**
+         * CSS attribute "border-style".
+         */
         public static final Attribute BORDER_STYLE =
             new Attribute("border-style", "none", false);
 
+        /**
+         * CSS attribute "border-top".
+         */
         public static final Attribute BORDER_TOP =
             new Attribute("border-top", null, false);
 
+        /**
+         * CSS attribute "border-top-color".
+         */
         public static final Attribute BORDER_TOP_COLOR =
             new Attribute("border-top-color", null, false);
 
+        /**
+         * CSS attribute "border-top-style".
+         */
         public static final Attribute BORDER_TOP_STYLE =
             new Attribute("border-top-style", "none", false);
 
+        /**
+         * CSS attribute "border-top-width".
+         */
         public static final Attribute BORDER_TOP_WIDTH =
             new Attribute("border-top-width", "medium", false);
 
+        /**
+         * CSS attribute "border-width".
+         */
         public static final Attribute BORDER_WIDTH =
             new Attribute("border-width", "medium", false);
 
+        /**
+         * CSS attribute "clear".
+         */
         public static final Attribute CLEAR =
             new Attribute("clear", "none", false);
 
+        /**
+         * CSS attribute "color".
+         */
         public static final Attribute COLOR =
             new Attribute("color", "black", true);
 
+        /**
+         * CSS attribute "display".
+         */
         public static final Attribute DISPLAY =
             new Attribute("display", "block", false);
 
+        /**
+         * CSS attribute "float".
+         */
         public static final Attribute FLOAT =
             new Attribute("float", "none", false);
 
+        /**
+         * CSS attribute "font".
+         */
         public static final Attribute FONT =
             new Attribute("font", null, true);
 
+        /**
+         * CSS attribute "font-family".
+         */
         public static final Attribute FONT_FAMILY =
             new Attribute("font-family", null, true);
 
+        /**
+         * CSS attribute "font-size".
+         */
         public static final Attribute FONT_SIZE =
             new Attribute("font-size", "medium", true);
 
+        /**
+         * CSS attribute "font-style".
+         */
         public static final Attribute FONT_STYLE =
             new Attribute("font-style", "normal", true);
 
+        /**
+         * CSS attribute "font-variant".
+         */
         public static final Attribute FONT_VARIANT =
             new Attribute("font-variant", "normal", true);
 
+        /**
+         * CSS attribute "font-weight".
+         */
         public static final Attribute FONT_WEIGHT =
             new Attribute("font-weight", "normal", true);
 
+        /**
+         * CSS attribute "height".
+         */
         public static final Attribute HEIGHT =
             new Attribute("height", "auto", false);
 
+        /**
+         * CSS attribute "letter-spacing".
+         */
         public static final Attribute LETTER_SPACING =
             new Attribute("letter-spacing", "normal", true);
 
+        /**
+         * CSS attribute "line-height".
+         */
         public static final Attribute LINE_HEIGHT =
             new Attribute("line-height", "normal", true);
 
+        /**
+         * CSS attribute "list-style".
+         */
         public static final Attribute LIST_STYLE =
             new Attribute("list-style", null, true);
 
+        /**
+         * CSS attribute "list-style-image".
+         */
         public static final Attribute LIST_STYLE_IMAGE =
             new Attribute("list-style-image", "none", true);
 
+        /**
+         * CSS attribute "list-style-position".
+         */
         public static final Attribute LIST_STYLE_POSITION =
             new Attribute("list-style-position", "outside", true);
 
+        /**
+         * CSS attribute "list-style-type".
+         */
         public static final Attribute LIST_STYLE_TYPE =
             new Attribute("list-style-type", "disc", true);
 
+        /**
+         * CSS attribute "margin".
+         */
         public static final Attribute MARGIN =
             new Attribute("margin", null, false);
 
+        /**
+         * CSS attribute "margin-bottom".
+         */
         public static final Attribute MARGIN_BOTTOM =
             new Attribute("margin-bottom", "0", false);
 
+        /**
+         * CSS attribute "margin-left".
+         */
         public static final Attribute MARGIN_LEFT =
             new Attribute("margin-left", "0", false);
 
+        /**
+         * CSS attribute "margin-right".
+         */
         public static final Attribute MARGIN_RIGHT =
             new Attribute("margin-right", "0", false);
 
@@ -338,45 +479,87 @@ public class CSS implements Serializable {
                           Integer.toString(Integer.MIN_VALUE), false);
 
 
+        /**
+         * CSS attribute "margin-top".
+         */
         public static final Attribute MARGIN_TOP =
             new Attribute("margin-top", "0", false);
 
+        /**
+         * CSS attribute "padding".
+         */
         public static final Attribute PADDING =
             new Attribute("padding", null, false);
 
+        /**
+         * CSS attribute "padding-bottom".
+         */
         public static final Attribute PADDING_BOTTOM =
             new Attribute("padding-bottom", "0", false);
 
+        /**
+         * CSS attribute "padding-left".
+         */
         public static final Attribute PADDING_LEFT =
             new Attribute("padding-left", "0", false);
 
+        /**
+         * CSS attribute "padding-right".
+         */
         public static final Attribute PADDING_RIGHT =
             new Attribute("padding-right", "0", false);
 
+        /**
+         * CSS attribute "padding-top".
+         */
         public static final Attribute PADDING_TOP =
             new Attribute("padding-top", "0", false);
 
+        /**
+         * CSS attribute "text-align".
+         */
         public static final Attribute TEXT_ALIGN =
             new Attribute("text-align", null, true);
 
+        /**
+         * CSS attribute "text-decoration".
+         */
         public static final Attribute TEXT_DECORATION =
             new Attribute("text-decoration", "none", true);
 
+        /**
+         * CSS attribute "text-indent".
+         */
         public static final Attribute TEXT_INDENT =
             new Attribute("text-indent", "0", true);
 
+        /**
+         * CSS attribute "text-transform".
+         */
         public static final Attribute TEXT_TRANSFORM =
             new Attribute("text-transform", "none", true);
 
+        /**
+         * CSS attribute "vertical-align".
+         */
         public static final Attribute VERTICAL_ALIGN =
             new Attribute("vertical-align", "baseline", false);
 
+        /**
+         * CSS attribute "word-spacing".
+         */
         public static final Attribute WORD_SPACING =
             new Attribute("word-spacing", "normal", true);
 
+        /**
+         * CSS attribute "white-space".
+         */
         public static final Attribute WHITE_SPACE =
             new Attribute("white-space", "normal", true);
 
+        /**
+         * CSS attribute "width".
+         */
         public static final Attribute WIDTH =
             new Attribute("width", "auto", false);
 
@@ -480,6 +663,9 @@ public class CSS implements Serializable {
         };
     }
 
+    /**
+     * Constructs a CSS object.
+     */
     public CSS() {
         baseFontSize = baseFontSizeIndex + 1;
         // setup the css conversion table
