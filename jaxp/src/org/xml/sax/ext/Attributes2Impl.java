@@ -56,7 +56,7 @@ import org.xml.sax.helpers.AttributesImpl;
  * its <em>declared</em> flag to match.
  * </p>
  *
- * @since SAX 2.0 (extensions 1.1 alpha)
+ * @since 1.5, SAX 2.0 (extensions 1.1 alpha)
  * @author David Brownell
  */
 public class Attributes2Impl extends AttributesImpl implements Attributes2

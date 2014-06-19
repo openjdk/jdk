@@ -61,7 +61,7 @@ import org.xml.sax.Parser;
  * @deprecated This class works with the deprecated
  *             {@link org.xml.sax.Parser Parser}
  *             interface.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @version 2.0.1 (sax2r2)
  */
