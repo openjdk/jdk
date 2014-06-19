@@ -127,7 +127,7 @@ bool CMBitMap::allocate(ReservedSpace heap_rs) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of concurrent marking bit map?");
-  _bm.set_map((uintptr_t*)_virtual_space.low());
+  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
   _bm.set_size(_bmWordSize >> _shifter);
