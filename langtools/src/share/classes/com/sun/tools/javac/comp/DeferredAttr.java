@@ -953,7 +953,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
         LambdaReturnScanner() {
             super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
-                    FORLOOP, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
+                    FORLOOP, IF, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
         }
     }
 
