@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -63,26 +63,18 @@ CXX_FLAGS=$(CXX_FLAGS) /Zi
 # Based on BUILDARCH we add some flags and select the default compiler name
 !if "$(BUILDARCH)" == "ia64"
 MACHINE=IA64
-DEFAULT_COMPILER_NAME=VS2003
 CXX_FLAGS=$(CXX_FLAGS) /D "CC_INTERP" /D "_LP64" /D "IA64"
 !endif
 
 !if "$(BUILDARCH)" == "amd64"
 MACHINE=AMD64
-DEFAULT_COMPILER_NAME=VS2005
 CXX_FLAGS=$(CXX_FLAGS) /D "_LP64" /D "AMD64"
 LP64=1
 !endif
 
 !if "$(BUILDARCH)" == "i486"
 MACHINE=I386
-DEFAULT_COMPILER_NAME=VS2003
 CXX_FLAGS=$(CXX_FLAGS) /D "IA32"
-!endif
-
-# Sanity check, this is the default if not amd64, ia64, or i486
-!ifndef DEFAULT_COMPILER_NAME
-CXX=ARCH_ERROR
 !endif
 
 CXX_FLAGS=$(CXX_FLAGS) /D "WIN32" /D "_WINDOWS"
@@ -112,6 +104,7 @@ CXX_FLAGS=$(CXX_FLAGS) /D TARGET_COMPILER_visCPP
 #      1500 is for VS2008
 #      1600 is for VS2010
 #      1700 is for VS2012
+#      1800 is for VS2013
 #    Do not confuse this MSC_VER with the predefined macro _MSC_VER that the
 #    compiler provides, when MSC_VER==1399, _MSC_VER will be 1400.
 #    Normally they are the same, but a pre-release of the VS2005 compilers
@@ -119,35 +112,6 @@ CXX_FLAGS=$(CXX_FLAGS) /D TARGET_COMPILER_visCPP
 #    closer to VS2003 in terms of option spellings, so we use 1399 for that
 #    1400 version that really isn't 1400.
 #    See the file get_msc_ver.sh for more info.
-!if "x$(MSC_VER)" == "x"
-COMPILER_NAME=$(DEFAULT_COMPILER_NAME)
-!else
-!if "$(MSC_VER)" == "1200"
-COMPILER_NAME=VC6
-!endif
-!if "$(MSC_VER)" == "1300"
-COMPILER_NAME=VS2003
-!endif
-!if "$(MSC_VER)" == "1310"
-COMPILER_NAME=VS2003
-!endif
-!if "$(MSC_VER)" == "1399"
-# Compiler might say 1400, but if it's 14.00.30701, it isn't really VS2005
-COMPILER_NAME=VS2003
-!endif
-!if "$(MSC_VER)" == "1400"
-COMPILER_NAME=VS2005
-!endif
-!if "$(MSC_VER)" == "1500"
-COMPILER_NAME=VS2008
-!endif
-!if "$(MSC_VER)" == "1600"
-COMPILER_NAME=VS2010
-!endif
-!if "$(MSC_VER)" == "1700"
-COMPILER_NAME=VS2012
-!endif
-!endif
 
 # By default, we do not want to use the debug version of the msvcrt.dll file
 #   but if MFC_DEBUG is defined in the environment it will be used.
@@ -165,60 +129,6 @@ MS_RUNTIME_OPTION = $(MS_RUNTIME_OPTION) $(STATIC_CPPLIB_OPTION)
 !endif
 CXX_FLAGS=$(CXX_FLAGS) $(MS_RUNTIME_OPTION)
 
-# How /GX option is spelled
-GX_OPTION = /GX
-
-# Optimization settings for various versions of the compilers and types of
-#    builds. Three basic sets of settings: product, fastdebug, and debug.
-#    These get added into CXX_FLAGS as needed by other makefiles.
-!if "$(COMPILER_NAME)" == "VC6"
-PRODUCT_OPT_OPTION   = /Ox /Os /Gy /GF
-FASTDEBUG_OPT_OPTION = /Ox /Os /Gy /GF
-DEBUG_OPT_OPTION     = /Od
-!endif
-
-!if "$(COMPILER_NAME)" == "VS2003"
-PRODUCT_OPT_OPTION   = /O2 /Oy-
-FASTDEBUG_OPT_OPTION = /O2 /Oy-
-DEBUG_OPT_OPTION     = /Od
-SAFESEH_FLAG = /SAFESEH
-!endif
-
-!if "$(COMPILER_NAME)" == "VS2005"
-PRODUCT_OPT_OPTION   = /O2 /Oy-
-FASTDEBUG_OPT_OPTION = /O2 /Oy-
-DEBUG_OPT_OPTION     = /Od
-GX_OPTION = /EHsc
-# This VS2005 compiler has /GS as a default and requires bufferoverflowU.lib 
-#    on the link command line, otherwise we get missing __security_check_cookie
-#    externals at link time. Even with /GS-, you need bufferoverflowU.lib.
-#    NOTE: Currently we decided to not use /GS-
-BUFFEROVERFLOWLIB = bufferoverflowU.lib
-LD_FLAGS = /manifest $(LD_FLAGS) $(BUFFEROVERFLOWLIB)
-# Manifest Tool - used in VS2005 and later to adjust manifests stored
-# as resources inside build artifacts.
-!if "x$(MT)" == "x"
-MT=mt.exe
-!endif
-SAFESEH_FLAG = /SAFESEH
-!endif
-
-!if "$(COMPILER_NAME)" == "VS2008"
-PRODUCT_OPT_OPTION   = /O2 /Oy-
-FASTDEBUG_OPT_OPTION = /O2 /Oy-
-DEBUG_OPT_OPTION     = /Od
-GX_OPTION = /EHsc
-LD_FLAGS = /manifest $(LD_FLAGS)
-MP_FLAG = /MP
-# Manifest Tool - used in VS2005 and later to adjust manifests stored
-# as resources inside build artifacts.
-!if "x$(MT)" == "x"
-MT=mt.exe
-!endif
-SAFESEH_FLAG = /SAFESEH
-!endif
-
-!if "$(COMPILER_NAME)" == "VS2010"
 PRODUCT_OPT_OPTION   = /O2 /Oy-
 FASTDEBUG_OPT_OPTION = /O2 /Oy-
 DEBUG_OPT_OPTION     = /Od
@@ -232,26 +142,6 @@ MT=mt.exe
 !endif
 !if "$(BUILDARCH)" == "i486"
 LD_FLAGS = /SAFESEH $(LD_FLAGS)
-!endif
-!endif
-
-!if "$(COMPILER_NAME)" == "VS2012"
-PRODUCT_OPT_OPTION   = /O2 /Oy-
-FASTDEBUG_OPT_OPTION = /O2 /Oy-
-DEBUG_OPT_OPTION     = /Od
-GX_OPTION = /EHsc
-LD_FLAGS = /manifest $(LD_FLAGS)
-MP_FLAG = /MP
-# Manifest Tool - used in VS2005 and later to adjust manifests stored
-# as resources inside build artifacts.
-!if "x$(MT)" == "x"
-MT=mt.exe
-!endif
-SAFESEH_FLAG = /SAFESEH
-!endif
-
-!if "$(BUILDARCH)" == "i486"
-LD_FLAGS = $(SAFESEH_FLAG) $(LD_FLAGS)
 !endif
 
 CXX_FLAGS = $(CXX_FLAGS) $(MP_FLAG)
