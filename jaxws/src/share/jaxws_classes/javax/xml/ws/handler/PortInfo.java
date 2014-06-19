@@ -35,7 +35,7 @@ import javax.xml.namespace.QName;
  *  This interface is never implemented by an application,
  *  only by a JAX-WS implementation.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface PortInfo {
 

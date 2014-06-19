@@ -65,7 +65,7 @@ import javax.xml.ws.soap.MTOM;
  * @see MTOM
  * @see RespectBinding
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 @Target(ElementType.ANNOTATION_TYPE)
 @Retention(RetentionPolicy.RUNTIME)

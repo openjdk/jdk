@@ -34,7 +34,7 @@ import javax.xml.bind.DatatypeConverter;
  * This {@link XmlAdapter} binds <tt>byte[]</tt> to the hexBinary representation in XML.
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 public final class HexBinaryAdapter extends XmlAdapter<String,byte[]> {
     public byte[] unmarshal(String s) {

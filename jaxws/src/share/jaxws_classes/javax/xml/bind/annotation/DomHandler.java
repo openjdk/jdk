@@ -49,7 +49,7 @@ import javax.xml.transform.Source;
  * be called from applications.
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 public interface DomHandler<ElementT,ResultT extends Result> {
     /**

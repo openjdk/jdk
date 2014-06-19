@@ -379,7 +379,7 @@ import java.lang.annotation.Target;
  * @see XmlAttribute
  * @see XmlValue
  * @see XmlSchema
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 
 @Retention(RUNTIME) @Target({TYPE})

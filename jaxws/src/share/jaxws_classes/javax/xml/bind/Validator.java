@@ -154,7 +154,7 @@ package javax.xml.bind;
  * @see ValidationEventHandler
  * @see ValidationEvent
  * @see javax.xml.bind.util.ValidationEventCollector
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  * @deprecated since JAXB 2.0
  */
 public interface Validator {

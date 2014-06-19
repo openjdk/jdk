@@ -127,7 +127,7 @@ public abstract class CommandMap {
      * @param mimeType  the MIME type
      * @param ds        a DataSource for the data
      * @return the CommandInfo classes that represent the command Beans.
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public CommandInfo[] getPreferredCommands(String mimeType, DataSource ds) {
         return getPreferredCommands(mimeType);
@@ -155,7 +155,7 @@ public abstract class CommandMap {
      * @param mimeType  the MIME type
      * @param ds        a DataSource for the data
      * @return the CommandInfo objects representing all the commands.
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public CommandInfo[] getAllCommands(String mimeType, DataSource ds) {
         return getAllCommands(mimeType);
@@ -183,7 +183,7 @@ public abstract class CommandMap {
      * @param cmdName   the command name
      * @param ds        a DataSource for the data
      * @return the CommandInfo corresponding to the command.
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public CommandInfo getCommand(String mimeType, String cmdName,
                                 DataSource ds) {
@@ -215,7 +215,7 @@ public abstract class CommandMap {
      * @param mimeType  the MIME type
      * @param ds        a DataSource for the data
      * @return          the DataContentHandler for the MIME type
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public DataContentHandler createDataContentHandler(String mimeType,
                                 DataSource ds) {
@@ -228,7 +228,7 @@ public abstract class CommandMap {
      * null is returned.
      *
      * @return          array of MIME types as strings, or null if not supported
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public String[] getMimeTypes() {
         return null;

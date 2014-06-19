@@ -49,7 +49,7 @@ import javax.xml.datatype.DatatypeConfigurationException;
  * This class is responsible for whitespace normalization.
  *
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li></ul>
- * @since JAXB2.1
+ * @since JAXB 2.1
  */
 final class DatatypeConverterImpl implements DatatypeConverterInterface {
 

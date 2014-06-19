@@ -34,7 +34,7 @@ package javax.xml.bind;
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li><li>Joe Fialli, Sun Microsystems, Inc.</li></ul>
  * @see Validator
  * @see ValidationEventHandler
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public interface ValidationEvent {
 

@@ -43,6 +43,7 @@ import org.w3c.dom.Element;
  * <code>javax.xml.soap.Detail</code> objects as well as
  * <code>java.xml.soap.Name</code> objects.
  *
+ * @since 1.6
  */
 public abstract class SOAPFactory {
 
@@ -77,7 +78,7 @@ public abstract class SOAPFactory {
      * @exception SOAPException if there is an error in creating the
      *            <code>SOAPElement</code> object
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPElement createElement(Element domElement) throws SOAPException {
         throw new UnsupportedOperationException("createElement(org.w3c.dom.Element) must be overridden by all subclasses of SOAPFactory.");
@@ -120,7 +121,7 @@ public abstract class SOAPFactory {
      * @exception SOAPException if there is an error in creating the
      *            <code>SOAPElement</code> object
      * @see SOAPFactory#createElement(Name)
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public  SOAPElement createElement(QName qname) throws SOAPException {
         throw new UnsupportedOperationException("createElement(QName) must be overridden by all subclasses of SOAPFactory.");
@@ -188,7 +189,7 @@ public abstract class SOAPFactory {
      *@param faultCode the FaultCode for the fault
      *@return a <code>SOAPFault</code> object
      *@throws SOAPException if there is a SOAP error
-     *@since SAAJ 1.3
+     *@since 1.6, SAAJ 1.3
      */
     public abstract SOAPFault createFault(String reasonText, QName faultCode) throws SOAPException;
 
@@ -196,7 +197,7 @@ public abstract class SOAPFactory {
      *Creates a new default <code>SOAPFault</code> object
      *@return a <code>SOAPFault</code> object
      *@throws SOAPException if there is a SOAP error
-     *@since SAAJ 1.3
+     *@since 1.6, SAAJ 1.3
      */
     public abstract SOAPFault createFault() throws SOAPException;
 
@@ -290,7 +291,7 @@ public abstract class SOAPFactory {
      * @exception SOAPException if there was an error creating the
      *            specified <code>SOAPFactory</code>
      * @see SAAJMetaFactory
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public static SOAPFactory newInstance(String protocol)
         throws SOAPException {
