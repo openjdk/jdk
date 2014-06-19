@@ -2888,6 +2888,9 @@ public class HTMLDocument extends DefaultStyledDocument {
 
         }
 
+        /**
+         * Action assigned by default to handle the Isindex task of the reader.
+         */
         public class IsindexAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
@@ -3128,7 +3131,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             }
         }
 
-
+        /**
+         * Action assigned by default to handle the Pre block task of the reader.
+         */
         public class PreAction extends BlockAction {
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
