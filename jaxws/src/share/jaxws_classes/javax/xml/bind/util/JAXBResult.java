@@ -71,6 +71,7 @@ import javax.xml.transform.sax.SAXResult;
  *
  * @author
  *      Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
+ * @since 1.6
  */
 public class JAXBResult extends SAXResult {
 

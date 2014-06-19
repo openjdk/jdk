@@ -86,7 +86,7 @@ import static java.lang.annotation.ElementType.PACKAGE;
  * <p><b> Example: </b> See example in {@link XmlAdapter}
  *
  * @author <ul><li>Sekhar Vajjhala, Sun Microsystems Inc.</li> <li> Kohsuke Kawaguchi, Sun Microsystems Inc.</li></ul>
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  * @see XmlAdapter
  */
 
