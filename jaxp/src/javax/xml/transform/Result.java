@@ -30,6 +30,7 @@ package javax.xml.transform;
  * needed to build a transformation result tree.</p>
  *
  * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 public interface Result {
 
