@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,25 +22,21 @@
  *
  */
 
-#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
-#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
+#include "precompiled.hpp"
+#include "gc_implementation/shared/gcId.hpp"
+#include "runtime/safepoint.hpp"
 
-#include "gc_implementation/shared/gcTrace.hpp"
-#include "prims/jni_md.h"
-#include "utilities/ticks.hpp"
+uint GCId::_next_id = 0;
 
-class GCTimer;
-
-class GCTraceTime {
-  const char* _title;
-  bool _doit;
-  bool _print_cr;
-  GCTimer* _timer;
-  Ticks _start_counter;
-
- public:
-  GCTraceTime(const char* title, bool doit, bool print_cr, GCTimer* timer, GCId gc_id);
-  ~GCTraceTime();
-};
-
-#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCTRACETIME_HPP
+const GCId GCId::create() {
+  return GCId(_next_id++);
+}
+const GCId GCId::peek() {
+  return GCId(_next_id);
+}
+const GCId GCId::undefined() {
+  return GCId(UNDEFINED);
+}
+bool GCId::is_undefined() const {
+  return _id == UNDEFINED;
+}
