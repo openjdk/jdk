@@ -29,9 +29,9 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g MethodEntryExitEvents.java
- *  @run main MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
- *  @run main MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
- *  @run main MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
+ *  @run driver MethodEntryExitEvents SUSPEND_EVENT_THREAD MethodEntryExitEventsDebugee
+ *  @run driver MethodEntryExitEvents SUSPEND_NONE MethodEntryExitEventsDebugee
+ *  @run driver MethodEntryExitEvents SUSPEND_ALL MethodEntryExitEventsDebugee
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

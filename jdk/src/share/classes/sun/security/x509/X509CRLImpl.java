@@ -536,7 +536,7 @@ public class X509CRLImpl extends X509CRL implements DerEncoder {
      * @return value of this CRL in a printable form.
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("X.509 CRL v" + (version+1) + "\n");
         if (sigAlgId != null)
             sb.append("Signature Algorithm: " + sigAlgId.toString() +

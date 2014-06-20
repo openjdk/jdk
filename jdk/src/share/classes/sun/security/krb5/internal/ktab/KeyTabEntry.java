@@ -73,7 +73,7 @@ public class KeyTabEntry implements KeyTabConstants {
     }
 
     public String getKeyString() {
-        StringBuffer sb = new StringBuffer("0x");
+        StringBuilder sb = new StringBuilder("0x");
         for (int i = 0; i < keyblock.length; i++) {
             sb.append(String.format("%02x", keyblock[i]&0xff));
         }

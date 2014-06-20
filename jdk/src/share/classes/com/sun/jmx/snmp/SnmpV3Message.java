@@ -478,7 +478,7 @@ public class SnmpV3Message extends SnmpMsg {
      * @return The string containing the dump.
      */
     public String printMessage() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("msgId : " + msgId + "\n");
         sb.append("msgMaxSize : " + msgMaxSize + "\n");
         sb.append("msgFlags : " + msgFlags + "\n");

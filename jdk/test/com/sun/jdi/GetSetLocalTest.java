@@ -7,7 +7,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g GetSetLocalTest.java
- *  @run main GetSetLocalTest
+ *  @run driver GetSetLocalTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

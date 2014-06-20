@@ -947,6 +947,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * <p>
      * This is a JavaBeans bound property.
      *
+     * @param iconTextGap the space between icon and text if these properties are set.
      * @since 1.4
      * @see #getIconTextGap
      * @beaninfo
@@ -1337,6 +1338,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
      * that of the <code>Action</code>.
      *
      * @param a the button's action
+     * @return the {@code PropertyChangeListener}
      * @since 1.3
      * @see Action
      * @see #setAction
@@ -2070,12 +2072,20 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         }
     }
 
-
+    /**
+     * Returns {@code ActionListener} that is added to model.
+     *
+     * @return the {@code ActionListener}
+     */
     protected ActionListener createActionListener() {
         return getHandler();
     }
 
-
+    /**
+     * Returns {@code ItemListener} that is added to model.
+     *
+     * @return the {@code ItemListener}
+     */
     protected ItemListener createItemListener() {
         return getHandler();
     }
@@ -2148,7 +2158,7 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         return listenerList.getListeners(ItemListener.class);
     }
 
-   /**
+    /**
      * Returns an array (length 1) containing the label or
      * <code>null</code> if the button is not selected.
      *
@@ -2164,6 +2174,12 @@ public abstract class AbstractButton extends JComponent implements ItemSelectabl
         return selectedObjects;
     }
 
+    /**
+     * Initialization of the {@code AbstractButton}.
+     *
+     * @param text  the text of the button
+     * @param icon  the Icon image to display on the button
+     */
     protected void init(String text, Icon icon) {
         if(text != null) {
             setText(text);

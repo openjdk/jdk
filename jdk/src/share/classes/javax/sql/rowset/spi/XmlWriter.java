@@ -44,6 +44,8 @@ import javax.sql.rowset.*;
  * Writing a <code>WebRowSet</code> object includes printing the
  * rowset's data, metadata, and properties, all with the
  * appropriate XML tags.
+ *
+ * @since 1.5
  */
 public interface XmlWriter extends RowSetWriter {
 

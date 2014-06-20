@@ -1277,7 +1277,7 @@ public class Region {
     }
 
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("Region[[");
         sb.append(lox);
         sb.append(", ");

@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g SimulResumerTest.java
- *  @run main/othervm SimulResumerTest
+ *  @run driver SimulResumerTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
