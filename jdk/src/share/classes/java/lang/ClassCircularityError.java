@@ -30,7 +30,7 @@ package java.lang;
  * superclass hierarchy of a class being loaded.
  *
  * @author     unascribed
- * @since      JDK1.0
+ * @since      1.0
  */
 public class ClassCircularityError extends LinkageError {
     private static final long serialVersionUID = 1054362542914539689L;

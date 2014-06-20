@@ -22,38 +22,14 @@
  questions.
 -->
 <project basedir=".." name="nashorn-IDE">
-    <property file="nbproject/nbjdk.properties"/>
-    <property location="${netbeans.user}/build.properties" name="user.properties.file"/>
-    <property file="${user.properties.file}"/>
-    <import file="jdk.xml"/>
-    <import file="${basedir}/build-init.xml"/>
-    <!-- TODO: edit the following target according to your needs -->
-    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#runsingle) -->
-    <target depends="-jdk-init, init" name="debug-selected-file-in-src">
-        <fail unless="debug.class">Must set property 'debug.class'</fail>
-        <ant antfile="build.xml" inheritall="false" target="jar"/>
+    <target name="debug-selected-file-in-src">
+        <fail unless="test.class">Must set property 'debug.class'</fail>
         <nbjpdastart addressproperty="jpda.address" name="nashorn" transport="dt_socket">
             <classpath path="${run.test.classpath}"/>
         </nbjpdastart>
-        <java classname="${debug.class}" fork="false">
-            <classpath path="${run.test.classpath}"/>
-            <jvmarg line="${boot.class.path}"/>
-            <jvmarg value="-Xdebug"/>
-            <jvmarg value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
-            <jvmarg line="${run.test.jvmargs}"/>
-            <arg value="${debug.class}"/>
-        </java>
-    </target>
-    <!-- TODO: edit the following target according to your needs -->
-    <!-- (more info: http://www.netbeans.org/kb/articles/freeform-config.html#runsingle) -->
-    <target depends="-jdk-init, init" name="run-selected-file-in-src">
-        <fail unless="run.class">Must set property 'run.class'</fail>
-        <ant antfile="build.xml" inheritall="false" target="jar"/>
-        <java classname="${run.class}" failonerror="true" fork="false">
-            <classpath path="${run.test.classpath}"/>
-            <jvmarg line="${boot.class.path}"/>
-            <jvmarg line="${run.test.jvmargs}"/>
-            <arg value="${run.class}"/>
-        </java>
+        <ant antfile="build.xml" inheritall="false" target="test">
+            <property name="test.class" value="${test.class}"/>
+            <property name="debug.test.jvmargs" value="-Xrunjdwp:transport=dt_socket,address=${jpda.address}"/>
+        </ant>
     </target>
 </project>

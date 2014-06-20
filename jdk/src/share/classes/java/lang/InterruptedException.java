@@ -44,7 +44,7 @@ package java.lang;
  * @see     java.lang.Thread#sleep(long)
  * @see     java.lang.Thread#interrupt()
  * @see     java.lang.Thread#interrupted()
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class InterruptedException extends Exception {

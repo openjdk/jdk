@@ -83,7 +83,7 @@ public class QName implements Serializable {
      *
      * <p>To workaround this issue, serialVersionUID is set with either
      * a default value or a compatibility value.  To use the
-     * compatiblity value, set the system property:</p>
+     * compatibility value, set the system property:</p>
      *
      * <code>com.sun.xml.namespace.QName.useCompatibleSerialVersionUID=1.0</code>
      *

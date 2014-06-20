@@ -1,2 +1,2 @@
-T7034495.java:40:17: compiler.err.types.incompatible.diff.ret: T7034495.B<?>, T7034495.A<?>, foo()
+T7034495.java:40:17: compiler.err.types.incompatible.diff.ret: T7034495.B<compiler.misc.type.captureof: 1, ?>, T7034495.A<compiler.misc.type.captureof: 2, ?>, foo()
 1 error

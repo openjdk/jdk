@@ -31,7 +31,7 @@ package java.net;
  * host cannot be reached because of an intervening firewall, or
  * if an intermediate router is down.
  *
- * @since   JDK1.1
+ * @since   1.1
  */
 public class NoRouteToHostException extends SocketException {
     private static final long serialVersionUID = -1897550894873493790L;

@@ -39,7 +39,7 @@ package java.rmi;
  * "at most once" call semantics.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  */
 public class MarshalException extends RemoteException {
 
@@ -51,7 +51,7 @@ public class MarshalException extends RemoteException {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public MarshalException(String s) {
         super(s);
@@ -63,7 +63,7 @@ public class MarshalException extends RemoteException {
      *
      * @param s the detail message
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public MarshalException(String s, Exception ex) {
         super(s, ex);

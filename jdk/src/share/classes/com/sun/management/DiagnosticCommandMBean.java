@@ -212,7 +212,7 @@ import javax.management.DynamicMBean;
  * {@linkplain javax.management.Notification#getUserData() userData} that
  * is the new {@code MBeanInfo}.
  *
- * @since 8
+ * @since 1.8
  */
 public interface DiagnosticCommandMBean extends DynamicMBean
 {
