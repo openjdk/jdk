@@ -432,7 +432,9 @@ enum CompilationPhase {
             compiler.getLogger().fine("Starting bytecode generation for ", quote(fn.getName()), " - restOf=", phases.isRestOfCompilation());
             final CodeGenerator codegen = new CodeGenerator(compiler, phases.isRestOfCompilation() ? compiler.getContinuationEntryPoints() : null);
             try {
-                newFunctionNode = (FunctionNode)newFunctionNode.accept(codegen);
+                // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
+                // in the lazy + optimistic world. See CodeGenerator.skipFunction().
+                newFunctionNode = ((FunctionNode)newFunctionNode.accept(codegen)).setState(null, BYTECODE_GENERATED);
                 codegen.generateScopeCalls();
             } catch (final VerifyError e) {
                 if (senv._verify_code || senv._print_code) {

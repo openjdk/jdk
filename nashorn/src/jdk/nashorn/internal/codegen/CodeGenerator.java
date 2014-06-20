@@ -145,6 +145,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.RewriteException;
 import jdk.nashorn.internal.runtime.Scope;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -1821,19 +1822,40 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.storeCompilerConstant(ARGUMENTS);
     }
 
-    /**
-     * Should this code generator skip generating code for inner functions? If lazy compilation is on, or we're
-     * doing an on-demand ("just-in-time") compilation, then we aren't generating code for inner functions.
-     */
-    private boolean compileOutermostOnly() {
-        return compiler.isOnDemandCompilation() || compiler.getScriptEnvironment()._lazy_compilation;
+    private boolean skipFunction(final FunctionNode functionNode) {
+        final ScriptEnvironment env = compiler.getScriptEnvironment();
+        final boolean lazy = env._lazy_compilation;
+        final boolean onDemand = compiler.isOnDemandCompilation();
+
+        // If this is on-demand or lazy compilation, don't compile a nested (not topmost) function.
+        if((onDemand || lazy) && lc.getOutermostFunction() != functionNode) {
+            return true;
+        }
+
+        // If lazy compiling with optimistic types, don't compile the program eagerly either. It will soon be
+        // invalidated anyway. In presence of a class cache, this further means that an obsoleted program version
+        // lingers around. Also, currently loading previously persisted optimistic types information only works if
+        // we're on-demand compiling a function, so with this strategy the :program method can also have the warmup
+        // benefit of using previously persisted types.
+        // NOTE that this means the first compiled class will effectively just have a :createProgramFunction method, and
+        // the RecompilableScriptFunctionData (RSFD) object in its constants array. It won't even have the :program
+        // method. This is by design. It does mean that we're wasting one compiler execution (and we could minimize this
+        // by just running it up to scope depth calculation, which creates the RSFDs and then this limited codegen).
+        // We could emit an initial separate compile unit with the initial version of :program in it to better utilize
+        // the compilation pipeline, but that would need more invasive changes, as currently the assumption that
+        // :program is emitted into the first compilation unit of the function lives in many places.
+        if(!onDemand && lazy && env._optimistic_types && functionNode.isProgram()) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         final int fnId = functionNode.getId();
 
-        if (compileOutermostOnly() && lc.getOutermostFunction() != functionNode) {
+        if (skipFunction(functionNode)) {
             // In case we are not generating code for the function, we must create or retrieve the function object and
             // load it on the stack here.
             newFunctionObject(functionNode, false);

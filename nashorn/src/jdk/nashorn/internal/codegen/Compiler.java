@@ -45,11 +45,12 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.logging.Level;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -121,6 +122,15 @@ public final class Compiler implements Loggable {
      * that using whatever was at program point 17 as an int failed.
      */
     private final Map<Integer, Type> invalidatedProgramPoints;
+    /**
+     * The snapshot of invalidatedProgramPoints before the compilation. Used to compare it to invalidatedProgramPoints,
+     * and if the two are equal, not write the type information to a file.
+     */
+    private final Map<Integer, Type> invalidatedProgramPointsOnEntry;
+    /**
+     * Descriptor of the location where we write the type information after compilation.
+     */
+    private final Object typeInformationFile;
 
     /**
      * Compile unit name of first compile unit - this prefix will be used for all
@@ -317,7 +327,7 @@ public final class Compiler implements Loggable {
             final Source source,
             final String sourceURL,
             final boolean isStrict) {
-        this(context, env, installer, source, sourceURL, isStrict, false, null, null, null, null, null);
+        this(context, env, installer, source, sourceURL, isStrict, false, null, null, null, null, null, null);
     }
 
     /**
@@ -333,6 +343,7 @@ public final class Compiler implements Loggable {
      * @param compiledFunction         compiled function, if any
      * @param types                    parameter and return value type information, if any is known
      * @param invalidatedProgramPoints invalidated program points for recompilation
+     * @param typeInformationFile      descriptor of the location where type information is persisted
      * @param continuationEntryPoints  continuation entry points for restof method
      * @param runtimeScope             runtime scope for recompilation type lookup in {@code TypeEvaluator}
      */
@@ -347,6 +358,7 @@ public final class Compiler implements Loggable {
             final RecompilableScriptFunctionData compiledFunction,
             final TypeMap types,
             final Map<Integer, Type> invalidatedProgramPoints,
+            final Object typeInformationFile,
             final int[] continuationEntryPoints,
             final ScriptObject runtimeScope) {
         this.context                  = context;
@@ -363,11 +375,13 @@ public final class Compiler implements Loggable {
         this.compiledFunction         = compiledFunction;
         this.types                    = types;
         this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new HashMap<Integer, Type>() : invalidatedProgramPoints;
+        this.typeInformationFile      = typeInformationFile;
         this.continuationEntryPoints  = continuationEntryPoints == null ? null: continuationEntryPoints.clone();
         this.typeEvaluator            = new TypeEvaluator(this, runtimeScope);
         this.firstCompileUnitName     = firstCompileUnitName();
         this.strict                   = isStrict;
 
+        this.invalidatedProgramPointsOnEntry = typeInformationFile == null ? null : new HashMap<>(this.invalidatedProgramPoints);
         this.optimistic = env._optimistic_types;
     }
 
@@ -457,6 +471,16 @@ public final class Compiler implements Loggable {
         invalidatedProgramPoints.put(programPoint, type);
     }
 
+
+    /**
+     * Returns a copy of this compiler's current mapping of invalidated optimistic program points to their types. The
+     * copy is not live with regard to changes in state in this compiler instance, and is mutable.
+     * @return a copy of this compiler's current mapping of invalidated optimistic program points to their types.
+     */
+    public Map<Integer, Type> getInvalidatedProgramPoints() {
+        return invalidatedProgramPoints == null ? null : new TreeMap<>(invalidatedProgramPoints);
+    }
+
     TypeMap getTypeMap() {
         return types;
     }
@@ -511,6 +535,10 @@ public final class Compiler implements Loggable {
             }
 
             time += (env.isTimingEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L);
+        }
+
+        if(typeInformationFile != null && !phases.isRestOfCompilation() && !Objects.equals(invalidatedProgramPoints, invalidatedProgramPointsOnEntry)) {
+            OptimisticTypesPersistence.store(typeInformationFile, invalidatedProgramPoints);
         }
 
         log.unindent();
