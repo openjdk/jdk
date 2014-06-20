@@ -301,48 +301,48 @@ class Solaris {
 
 class PlatformEvent : public CHeapObj<mtInternal> {
   private:
-    double CachePad [4] ;   // increase odds that _mutex is sole occupant of cache line
-    volatile int _Event ;
-    int _nParked ;
-    int _pipev [2] ;
-    mutex_t _mutex  [1] ;
-    cond_t  _cond   [1] ;
-    double PostPad  [2] ;
+    double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
+    volatile int _Event;
+    int _nParked;
+    int _pipev[2];
+    mutex_t _mutex[1];
+    cond_t  _cond[1];
+    double PostPad[2];
 
   protected:
     // Defining a protected ctor effectively gives us an abstract base class.
     // That is, a PlatformEvent can never be instantiated "naked" but only
     // as a part of a ParkEvent (recall that ParkEvent extends PlatformEvent).
     // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee (0, "invariant") ; }
+    ~PlatformEvent() { guarantee(0, "invariant"); }
     PlatformEvent() {
       int status;
       status = os::Solaris::cond_init(_cond);
       assert_status(status == 0, status, "cond_init");
       status = os::Solaris::mutex_init(_mutex);
       assert_status(status == 0, status, "mutex_init");
-      _Event   = 0 ;
-      _nParked = 0 ;
-      _pipev[0] = _pipev[1] = -1 ;
+      _Event   = 0;
+      _nParked = 0;
+      _pipev[0] = _pipev[1] = -1;
     }
 
   public:
     // Exercise caution using reset() and fired() -- they may require MEMBARs
-    void reset() { _Event = 0 ; }
+    void reset() { _Event = 0; }
     int  fired() { return _Event; }
-    void park () ;
-    int  park (jlong millis) ;
-    int  TryPark () ;
-    void unpark () ;
-} ;
+    void park();
+    int  park(jlong millis);
+    int  TryPark();
+    void unpark();
+};
 
 class PlatformParker : public CHeapObj<mtInternal> {
   protected:
-    mutex_t _mutex [1] ;
-    cond_t  _cond  [1] ;
+    mutex_t _mutex[1];
+    cond_t  _cond[1];
 
   public:       // TODO-FIXME: make dtor private
-    ~PlatformParker() { guarantee (0, "invariant") ; }
+    ~PlatformParker() { guarantee(0, "invariant"); }
 
   public:
     PlatformParker() {
@@ -352,6 +352,6 @@ class PlatformParker : public CHeapObj<mtInternal> {
       status = os::Solaris::mutex_init(_mutex);
       assert_status(status == 0, status, "mutex_init");
     }
-} ;
+};
 
 #endif // OS_SOLARIS_VM_OS_SOLARIS_HPP
