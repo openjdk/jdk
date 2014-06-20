@@ -173,43 +173,43 @@ class IdealKit: public StackObj {
   void goto_(Node* lab, bool bind = false);
   void declarations_done();
 
-  Node* IfTrue(IfNode* iff)  { return transform(new (C) IfTrueNode(iff)); }
-  Node* IfFalse(IfNode* iff) { return transform(new (C) IfFalseNode(iff)); }
+  Node* IfTrue(IfNode* iff)  { return transform(new IfTrueNode(iff)); }
+  Node* IfFalse(IfNode* iff) { return transform(new IfFalseNode(iff)); }
 
   // Data
   Node* ConI(jint k) { return (Node*)gvn().intcon(k); }
   Node* makecon(const Type *t)  const { return _gvn.makecon(t); }
 
-  Node* AddI(Node* l, Node* r) { return transform(new (C) AddINode(l, r)); }
-  Node* SubI(Node* l, Node* r) { return transform(new (C) SubINode(l, r)); }
-  Node* AndI(Node* l, Node* r) { return transform(new (C) AndINode(l, r)); }
-  Node* MaxI(Node* l, Node* r) { return transform(new (C) MaxINode(l, r)); }
-  Node* LShiftI(Node* l, Node* r) { return transform(new (C) LShiftINode(l, r)); }
-  Node* CmpI(Node* l, Node* r) { return transform(new (C) CmpINode(l, r)); }
-  Node* Bool(Node* cmp, BoolTest::mask relop) { return transform(new (C) BoolNode(cmp, relop)); }
+  Node* AddI(Node* l, Node* r) { return transform(new AddINode(l, r)); }
+  Node* SubI(Node* l, Node* r) { return transform(new SubINode(l, r)); }
+  Node* AndI(Node* l, Node* r) { return transform(new AndINode(l, r)); }
+  Node* MaxI(Node* l, Node* r) { return transform(new MaxINode(l, r)); }
+  Node* LShiftI(Node* l, Node* r) { return transform(new LShiftINode(l, r)); }
+  Node* CmpI(Node* l, Node* r) { return transform(new CmpINode(l, r)); }
+  Node* Bool(Node* cmp, BoolTest::mask relop) { return transform(new BoolNode(cmp, relop)); }
   void  increment(IdealVariable& v, Node* j)  { set(v, AddI(value(v), j)); }
   void  decrement(IdealVariable& v, Node* j)  { set(v, SubI(value(v), j)); }
 
-  Node* CmpL(Node* l, Node* r) { return transform(new (C) CmpLNode(l, r)); }
+  Node* CmpL(Node* l, Node* r) { return transform(new CmpLNode(l, r)); }
 
   // TLS
-  Node* thread()  {  return gvn().transform(new (C) ThreadLocalNode()); }
+  Node* thread()  {  return gvn().transform(new ThreadLocalNode()); }
 
   // Pointers
 
   // Raw address should be transformed regardless 'delay_transform' flag
   // to produce canonical form CastX2P(offset).
-  Node* AddP(Node *base, Node *ptr, Node *off) { return _gvn.transform(new (C) AddPNode(base, ptr, off)); }
+  Node* AddP(Node *base, Node *ptr, Node *off) { return _gvn.transform(new AddPNode(base, ptr, off)); }
 
-  Node* CmpP(Node* l, Node* r) { return transform(new (C) CmpPNode(l, r)); }
+  Node* CmpP(Node* l, Node* r) { return transform(new CmpPNode(l, r)); }
 #ifdef _LP64
-  Node* XorX(Node* l, Node* r) { return transform(new (C) XorLNode(l, r)); }
+  Node* XorX(Node* l, Node* r) { return transform(new XorLNode(l, r)); }
 #else // _LP64
-  Node* XorX(Node* l, Node* r) { return transform(new (C) XorINode(l, r)); }
+  Node* XorX(Node* l, Node* r) { return transform(new XorINode(l, r)); }
 #endif // _LP64
-  Node* URShiftX(Node* l, Node* r) { return transform(new (C) URShiftXNode(l, r)); }
+  Node* URShiftX(Node* l, Node* r) { return transform(new URShiftXNode(l, r)); }
   Node* ConX(jint k) { return (Node*)gvn().MakeConX(k); }
-  Node* CastPX(Node* ctl, Node* p) { return transform(new (C) CastP2XNode(ctl, p)); }
+  Node* CastPX(Node* ctl, Node* p) { return transform(new CastP2XNode(ctl, p)); }
 
   // Memory operations
 

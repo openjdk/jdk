@@ -62,6 +62,10 @@ class Deoptimization : AllStatic {
     Reason_speculate_class_check, // saw unexpected object class from type speculation
     Reason_speculate_null_check,  // saw unexpected null from type speculation
     Reason_rtm_state_change,      // rtm state change detected
+    Reason_unstable_if,           // a branch predicted always false was taken
+
+    // Reason_tenured is counted separately, add normal counted Reasons above.
+    // Related to MethodData::_trap_hist_limit where Reason_tenured isn't included
     Reason_tenured,               // age of the code has reached the limit
     Reason_LIMIT,
     // Note:  Keep this enum in sync. with _trap_reason_name.
@@ -319,6 +323,8 @@ class Deoptimization : AllStatic {
       return Reason_class_check;
     else if (reason == Reason_speculate_null_check)
       return Reason_null_check;
+    else if (reason == Reason_unstable_if)
+      return Reason_intrinsic;
     else
       return Reason_none;
   }
