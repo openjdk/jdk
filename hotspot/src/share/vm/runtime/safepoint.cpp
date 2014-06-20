@@ -744,79 +744,11 @@ void SafepointSynchronize::block(JavaThread *thread) {
 // ------------------------------------------------------------------------------------------------------
 // Exception handlers
 
-#ifndef PRODUCT
-
-#ifdef SPARC
-
-#ifdef _LP64
-#define PTR_PAD ""
-#else
-#define PTR_PAD "        "
-#endif
-
-static void print_ptrs(intptr_t oldptr, intptr_t newptr, bool wasoop) {
-  bool is_oop = newptr ? (cast_to_oop(newptr))->is_oop() : false;
-  tty->print_cr(PTR_FORMAT PTR_PAD " %s %c " PTR_FORMAT PTR_PAD " %s %s",
-                oldptr, wasoop?"oop":"   ", oldptr == newptr ? ' ' : '!',
-                newptr, is_oop?"oop":"   ", (wasoop && !is_oop) ? "STALE" : ((wasoop==false&&is_oop==false&&oldptr !=newptr)?"STOMP":"     "));
-}
-
-static void print_longs(jlong oldptr, jlong newptr, bool wasoop) {
-  bool is_oop = newptr ? (cast_to_oop(newptr))->is_oop() : false;
-  tty->print_cr(PTR64_FORMAT " %s %c " PTR64_FORMAT " %s %s",
-                oldptr, wasoop?"oop":"   ", oldptr == newptr ? ' ' : '!',
-                newptr, is_oop?"oop":"   ", (wasoop && !is_oop) ? "STALE" : ((wasoop==false&&is_oop==false&&oldptr !=newptr)?"STOMP":"     "));
-}
-
-static void print_me(intptr_t *new_sp, intptr_t *old_sp, bool *was_oops) {
-#ifdef _LP64
-  tty->print_cr("--------+------address-----+------before-----------+-------after----------+");
-  const int incr = 1;           // Increment to skip a long, in units of intptr_t
-#else
-  tty->print_cr("--------+--address-+------before-----------+-------after----------+");
-  const int incr = 2;           // Increment to skip a long, in units of intptr_t
-#endif
-  tty->print_cr("---SP---|");
-  for( int i=0; i<16; i++ ) {
-    tty->print("blob %c%d |"PTR_FORMAT" ","LO"[i>>3],i&7,new_sp); print_ptrs(*old_sp++,*new_sp++,*was_oops++); }
-  tty->print_cr("--------|");
-  for( int i1=0; i1<frame::memory_parameter_word_sp_offset-16; i1++ ) {
-    tty->print("argv pad|"PTR_FORMAT" ",new_sp); print_ptrs(*old_sp++,*new_sp++,*was_oops++); }
-  tty->print("     pad|"PTR_FORMAT" ",new_sp); print_ptrs(*old_sp++,*new_sp++,*was_oops++);
-  tty->print_cr("--------|");
-  tty->print(" G1     |"PTR_FORMAT" ",new_sp); print_longs(*(jlong*)old_sp,*(jlong*)new_sp,was_oops[incr-1]); old_sp += incr; new_sp += incr; was_oops += incr;
-  tty->print(" G3     |"PTR_FORMAT" ",new_sp); print_longs(*(jlong*)old_sp,*(jlong*)new_sp,was_oops[incr-1]); old_sp += incr; new_sp += incr; was_oops += incr;
-  tty->print(" G4     |"PTR_FORMAT" ",new_sp); print_longs(*(jlong*)old_sp,*(jlong*)new_sp,was_oops[incr-1]); old_sp += incr; new_sp += incr; was_oops += incr;
-  tty->print(" G5     |"PTR_FORMAT" ",new_sp); print_longs(*(jlong*)old_sp,*(jlong*)new_sp,was_oops[incr-1]); old_sp += incr; new_sp += incr; was_oops += incr;
-  tty->print_cr(" FSR    |"PTR_FORMAT" "PTR64_FORMAT"       "PTR64_FORMAT,new_sp,*(jlong*)old_sp,*(jlong*)new_sp);
-  old_sp += incr; new_sp += incr; was_oops += incr;
-  // Skip the floats
-  tty->print_cr("--Float-|"PTR_FORMAT,new_sp);
-  tty->print_cr("---FP---|");
-  old_sp += incr*32;  new_sp += incr*32;  was_oops += incr*32;
-  for( int i2=0; i2<16; i2++ ) {
-    tty->print("call %c%d |"PTR_FORMAT" ","LI"[i2>>3],i2&7,new_sp); print_ptrs(*old_sp++,*new_sp++,*was_oops++); }
-  tty->cr();
-}
-#endif  // SPARC
-#endif  // PRODUCT
-
 
 void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   assert(thread->is_Java_thread(), "polling reference encountered by VM thread");
   assert(thread->thread_state() == _thread_in_Java, "should come from Java code");
   assert(SafepointSynchronize::is_synchronizing(), "polling encountered outside safepoint synchronization");
-
-  // Uncomment this to get some serious before/after printing of the
-  // Sparc safepoint-blob frame structure.
-  /*
-  intptr_t* sp = thread->last_Java_sp();
-  intptr_t stack_copy[150];
-  for( int i=0; i<150; i++ ) stack_copy[i] = sp[i];
-  bool was_oops[150];
-  for( int i=0; i<150; i++ )
-    was_oops[i] = stack_copy[i] ? ((oop)stack_copy[i])->is_oop() : false;
-  */
 
   if (ShowSafepointMsgs) {
     tty->print("handle_polling_page_exception: ");
@@ -829,7 +761,6 @@ void SafepointSynchronize::handle_polling_page_exception(JavaThread *thread) {
   ThreadSafepointState* state = thread->safepoint_state();
 
   state->handle_polling_page_exception();
-  // print_me(sp,stack_copy,was_oops);
 }
 
 
