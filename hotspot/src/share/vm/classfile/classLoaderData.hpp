@@ -187,8 +187,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   JNIHandleBlock* handles() const;
   void set_handles(JNIHandleBlock* handles);
 
-  Mutex* metaspace_lock() const { return _metaspace_lock; }
-
   // GC interface.
   void clear_claimed()          { _claimed = 0; }
   bool claimed() const          { return _claimed == 1; }
@@ -215,6 +213,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* the_null_class_loader_data() {
     return _the_null_class_loader_data;
   }
+
+  Mutex* metaspace_lock() const { return _metaspace_lock; }
 
   bool is_anonymous() const { return _is_anonymous; }
 

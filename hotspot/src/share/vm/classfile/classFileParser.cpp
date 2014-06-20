@@ -510,7 +510,7 @@ constantPoolHandle ClassFileParser::parse_constant_pool(TRAPS) {
     jbyte tag = cp->tag_at(index).value();
     switch (tag) {
       case JVM_CONSTANT_UnresolvedClass: {
-        Symbol*  class_name = cp->unresolved_klass_at(index);
+        Symbol*  class_name = cp->klass_name_at(index);
         // check the name, even if _cp_patches will overwrite it
         verify_legal_class_name(class_name, CHECK_(nullHandle));
         break;
@@ -3161,7 +3161,7 @@ instanceKlassHandle ClassFileParser::parse_super_class(int super_class_index,
       if (_need_verify)
         is_array = super_klass->oop_is_array();
     } else if (_need_verify) {
-      is_array = (_cp->unresolved_klass_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
+      is_array = (_cp->klass_name_at(super_class_index)->byte_at(0) == JVM_SIGNATURE_ARRAY);
     }
     if (_need_verify) {
       guarantee_property(!is_array,
@@ -3855,7 +3855,7 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     "Invalid this class index %u in constant pool in class file %s",
     this_class_index, CHECK_(nullHandle));
 
-  Symbol*  class_name  = cp->unresolved_klass_at(this_class_index);
+  Symbol*  class_name  = cp->klass_name_at(this_class_index);
   assert(class_name != NULL, "class_name can't be null");
 
   // It's important to set parsed_name *before* resolving the super class.
@@ -4139,8 +4139,8 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
     }
 
     // Allocate mirror and initialize static fields
-    java_lang_Class::create_mirror(this_klass, protection_domain, CHECK_(nullHandle));
-
+    java_lang_Class::create_mirror(this_klass, class_loader, protection_domain,
+                                   CHECK_(nullHandle));
 
     // Generate any default methods - default methods are interface methods
     // that have a default implementation.  This is new with Lambda project.
