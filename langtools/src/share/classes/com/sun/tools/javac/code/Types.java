@@ -2968,6 +2968,12 @@ public class Types {
         }
 
         @Override
+        public Type visitUndetVar(UndetVar t, Void ignored) {
+            //do nothing - we should not replace inside undet variables
+            return t;
+        }
+
+        @Override
         public Type visitClassType(ClassType t, Void ignored) {
             if (!t.isCompound()) {
                 List<Type> typarams = t.getTypeArguments();
