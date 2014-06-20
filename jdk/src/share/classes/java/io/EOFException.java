@@ -36,7 +36,7 @@ package java.io;
  * @author  Frank Yellin
  * @see     java.io.DataInputStream
  * @see     java.io.IOException
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class EOFException extends IOException {

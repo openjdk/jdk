@@ -33,7 +33,7 @@ package java.io;
  * @author  unascribed
  * @see     ObjectInputStream
  * @see     ObjectInputStream#registerValidation(java.io.ObjectInputValidation, int)
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface ObjectInputValidation {
     /**

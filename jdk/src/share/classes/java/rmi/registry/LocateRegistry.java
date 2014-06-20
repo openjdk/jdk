@@ -51,7 +51,7 @@ import sun.rmi.transport.tcp.TCPEndpoint;
  *
  * @author  Ann Wollrath
  * @author  Peter Jones
- * @since   JDK1.1
+ * @since   1.1
  * @see     java.rmi.registry.Registry
  */
 public final class LocateRegistry {
@@ -67,7 +67,7 @@ public final class LocateRegistry {
      *
      * @return reference (a stub) to the remote object registry
      * @exception RemoteException if the reference could not be created
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Registry getRegistry()
         throws RemoteException
@@ -82,7 +82,7 @@ public final class LocateRegistry {
      * @param port port on which the registry accepts requests
      * @return reference (a stub) to the remote object registry
      * @exception RemoteException if the reference could not be created
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Registry getRegistry(int port)
         throws RemoteException
@@ -98,7 +98,7 @@ public final class LocateRegistry {
      * @param host host for the remote registry
      * @return reference (a stub) to the remote object registry
      * @exception RemoteException if the reference could not be created
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Registry getRegistry(String host)
         throws RemoteException
@@ -115,7 +115,7 @@ public final class LocateRegistry {
      * @param port port on which the registry accepts requests
      * @return reference (a stub) to the remote object registry
      * @exception RemoteException if the reference could not be created
-     * @since JDK1.1
+     * @since 1.1
      */
     public static Registry getRegistry(String host, int port)
         throws RemoteException
@@ -197,7 +197,7 @@ public final class LocateRegistry {
      * @param port the port on which the registry accepts requests
      * @return the registry
      * @exception RemoteException if the registry could not be exported
-     * @since JDK1.1
+     * @since 1.1
      **/
     public static Registry createRegistry(int port) throws RemoteException {
         return new RegistryImpl(port);

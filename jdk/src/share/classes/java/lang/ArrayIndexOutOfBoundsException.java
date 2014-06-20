@@ -31,7 +31,7 @@ package java.lang;
  * equal to the size of the array.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class ArrayIndexOutOfBoundsException extends IndexOutOfBoundsException {

@@ -76,16 +76,10 @@ import java.io.IOException;
  *      // attach to target VM
  *      VirtualMachine vm = VirtualMachine.attach("2177");
  *
- *      // get system properties in target VM
- *      Properties props = vm.getSystemProperties();
- *
- *      // construct path to management agent
- *      String home = props.getProperty("java.home");
- *      String agent = home + File.separator + "lib" + File.separator
- *          + "management-agent.jar";
- *
- *      // load agent into target VM
- *      vm.loadAgent(agent, "com.sun.management.jmxremote.port=5000");
+ *      // start management agent
+ *      Properties props = new Properties();
+ *      props.put("com.sun.management.jmxremote.port", "5000");
+ *      vm.startManagementAgent(props);
  *
  *      // detach
  *      vm.detach();
@@ -93,9 +87,9 @@ import java.io.IOException;
  * </pre>
  *
  * <p> In this example we attach to a Java virtual machine that is identified by
- * the process identifier <code>2177</code>. The system properties from the target
- * VM are then used to construct the path to a <i>management agent</i> which is then
- * loaded into the target VM. Once loaded the client detaches from the target VM. </p>
+ * the process identifier <code>2177</code>. Then the JMX management agent is
+ * started in the target process using the supplied arguments. Finally, the
+ * client detaches from the target VM. </p>
  *
  * <p> A VirtualMachine is safe for use by multiple concurrent threads. </p>
  *
@@ -609,6 +603,68 @@ public abstract class VirtualMachine {
      *               operation failed in the target VM.
      */
     public abstract Properties getAgentProperties() throws IOException;
+
+    /**
+     * Starts the JMX management agent in the target virtual machine.
+     *
+     * <p> The configuration properties are the same as those specified on
+     * the command line when starting the JMX management agent. In the same
+     * way as on the command line, you need to specify at least the
+     * {@code com.sun.management.jmxremote.port} property.
+     *
+     * <p> See the online documentation for <a
+     * href="../../../../../../../../technotes/guides/management/agent.html">
+     * Monitoring and Management Using JMX Technology</a> for further details.
+     *
+     * @param   agentProperties
+     *          A Properties object containing the configuration properties
+     *          for the agent.
+     *
+     * @throws  AttachOperationFailedException
+     *          If the target virtual machine is unable to complete the
+     *          attach operation. A more specific error message will be
+     *          given by {@link AttachOperationFailedException#getMessage()}.
+     *
+     * @throws  IOException
+     *          If an I/O error occurs, a communication error for example,
+     *          that cannot be identified as an error to indicate that the
+     *          operation failed in the target VM.
+     *
+     * @throws  IllegalArgumentException
+     *          If keys or values in agentProperties are invalid.
+     *
+     * @throws  NullPointerException
+     *          If agentProperties is null.
+     *
+     * @since   1.9
+     */
+    public abstract void startManagementAgent(Properties agentProperties) throws IOException;
+
+    /**
+     * Starts the local JMX management agent in the target virtual machine.
+     *
+     * <p> See the online documentation for <a
+     * href="../../../../../../../../technotes/guides/management/agent.html">
+     * Monitoring and Management Using JMX Technology</a> for further details.
+     *
+     * @return  The String representation of the local connector's service address.
+     *          The value can be parsed by the
+     *          {@link javax.management.remote.JMXServiceURL#JMXServiceURL(String)}
+     *          constructor.
+     *
+     * @throws  AttachOperationFailedException
+     *          If the target virtual machine is unable to complete the
+     *          attach operation. A more specific error message will be
+     *          given by {@link AttachOperationFailedException#getMessage()}.
+     *
+     * @throws  IOException
+     *          If an I/O error occurs, a communication error for example,
+     *          that cannot be identified as an error to indicate that the
+     *          operation failed in the target VM.
+     *
+     * @since   1.9
+     */
+    public abstract String startLocalManagementAgent() throws IOException;
 
     /**
      * Returns a hash-code value for this VirtualMachine. The hash

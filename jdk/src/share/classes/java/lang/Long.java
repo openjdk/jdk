@@ -49,7 +49,7 @@ import java.math.*;
  * @author  Arthur van Hoff
  * @author  Josh Bloch
  * @author  Joseph D. Darcy
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class Long extends Number implements Comparable<Long> {
     /**
@@ -68,7 +68,7 @@ public final class Long extends Number implements Comparable<Long> {
      * The {@code Class} instance representing the primitive type
      * {@code long}.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     @SuppressWarnings("unchecked")
     public static final Class<Long>     TYPE = (Class<Long>) Class.getPrimitiveClass("long");
@@ -266,7 +266,7 @@ public final class Long extends Number implements Comparable<Long> {
      *          (base&nbsp;16).
      * @see #parseUnsignedLong(String, int)
      * @see #toUnsignedString(long, int)
-     * @since   JDK 1.0.2
+     * @since   1.0.2
      */
     public static String toHexString(long i) {
         return toUnsignedString0(i, 4);
@@ -305,7 +305,7 @@ public final class Long extends Number implements Comparable<Long> {
      *          value represented by the argument in octal (base&nbsp;8).
      * @see #parseUnsignedLong(String, int)
      * @see #toUnsignedString(long, int)
-     * @since   JDK 1.0.2
+     * @since   1.0.2
      */
     public static String toOctalString(long i) {
         return toUnsignedString0(i, 3);
@@ -338,7 +338,7 @@ public final class Long extends Number implements Comparable<Long> {
      *          value represented by the argument in binary (base&nbsp;2).
      * @see #parseUnsignedLong(String, int)
      * @see #toUnsignedString(long, int)
-     * @since   JDK 1.0.2
+     * @since   1.0.2
      */
     public static String toBinaryString(long i) {
         return toUnsignedString0(i, 1);

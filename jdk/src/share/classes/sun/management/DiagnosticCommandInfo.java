@@ -31,7 +31,7 @@ import java.util.List;
  * Diagnostic command information. It contains the description of a
  * diagnostic command.
  *
- * @since 8
+ * @since 1.8
  */
 
 class DiagnosticCommandInfo {

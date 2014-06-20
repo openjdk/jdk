@@ -40,7 +40,7 @@ import sun.reflect.Reflection;
  *
  * @author  unascribed
  * @see     java.lang.Runtime#getRuntime()
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public class Runtime {
@@ -299,7 +299,7 @@ public class Runtime {
      * @see     java.lang.Runtime#exit(int)
      * @see     java.lang.Runtime#gc()
      * @see     java.lang.SecurityManager#checkExit(int)
-     * @since   JDK1.1
+     * @since   1.1
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {

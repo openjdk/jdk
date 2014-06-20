@@ -47,7 +47,7 @@ import sun.net.www.ParseUtil;
  *
  * @author  James Gosling
  * @see     java.net.URL#URL(java.lang.String, java.lang.String, int, java.lang.String)
- * @since   JDK1.0
+ * @since   1.0
  */
 public abstract class URLStreamHandler {
     /**
