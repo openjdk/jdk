@@ -419,7 +419,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
     Node *tmp2 = block->get_node(block->end_idx()+2);
     block->map_node(tmp2, block->end_idx()+1);
     block->map_node(tmp1, block->end_idx()+2);
-    Node *tmp = new (C) Node(C->top()); // Use not NULL input
+    Node *tmp = new Node(C->top()); // Use not NULL input
     tmp1->replace_by(tmp);
     tmp2->replace_by(tmp1);
     tmp->replace_by(tmp2);
@@ -430,7 +430,7 @@ void PhaseCFG::implicit_null_check(Block* block, Node *proj, Node *val, int allo
   // Since schedule-local needs precise def-use info, we need to correct
   // it as well.
   Node *old_tst = proj->in(0);
-  MachNode *nul_chk = new (C) MachNullCheckNode(old_tst->in(0),best,bidx);
+  MachNode *nul_chk = new MachNullCheckNode(old_tst->in(0),best,bidx);
   block->map_node(nul_chk, block->end_idx());
   map_node_to_block(nul_chk, block);
   // Redirect users of old_test to nul_chk
@@ -671,7 +671,7 @@ uint PhaseCFG::sched_call(Block* block, uint node_cnt, Node_List& worklist, Grow
   // Set all registers killed and not already defined by the call.
   uint r_cnt = mcall->tf()->range()->cnt();
   int op = mcall->ideal_Opcode();
-  MachProjNode *proj = new (C) MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
+  MachProjNode *proj = new MachProjNode( mcall, r_cnt+1, RegMask::Empty, MachProjNode::fat_proj );
   map_node_to_block(proj, block);
   block->insert_node(proj, node_cnt++);
 
@@ -900,7 +900,7 @@ bool PhaseCFG::schedule_local(Block* block, GrowableArray<int>& ready_cnt, Vecto
       regs.Insert(_matcher.c_frame_pointer());
       regs.OR(n->out_RegMask());
 
-      MachProjNode *proj = new (C) MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
+      MachProjNode *proj = new MachProjNode( n, 1, RegMask::Empty, MachProjNode::fat_proj );
       map_node_to_block(proj, block);
       block->insert_node(proj, phi_cnt++);
 

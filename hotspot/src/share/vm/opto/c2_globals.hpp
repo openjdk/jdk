@@ -650,9 +650,6 @@
   product(bool, UseMathExactIntrinsics, true,                               \
           "Enables intrinsification of various java.lang.Math functions")   \
                                                                             \
-  experimental(bool, ReplaceInParentMaps, false,                            \
-          "Propagate type improvements in callers of inlinee if possible")  \
-                                                                            \
   product(bool, UseTypeSpeculation, true,                                   \
           "Speculatively propagate types from profiles")                    \
                                                                             \

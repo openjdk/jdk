@@ -227,24 +227,24 @@ Node* IdealLoopTree::reassociate_add_sub(Node* n1, PhaseIdealLoop *phase) {
   if (neg_inv1) {
     Node *zero = phase->_igvn.intcon(0);
     phase->set_ctrl(zero, phase->C->root());
-    n_inv1 = new (phase->C) SubINode(zero, inv1);
+    n_inv1 = new SubINode(zero, inv1);
     phase->register_new_node(n_inv1, inv1_c);
   } else {
     n_inv1 = inv1;
   }
   Node* inv;
   if (neg_inv2) {
-    inv = new (phase->C) SubINode(n_inv1, inv2);
+    inv = new SubINode(n_inv1, inv2);
   } else {
-    inv = new (phase->C) AddINode(n_inv1, inv2);
+    inv = new AddINode(n_inv1, inv2);
   }
   phase->register_new_node(inv, phase->get_early_ctrl(inv));
 
   Node* addx;
   if (neg_x) {
-    addx = new (phase->C) SubINode(inv, x);
+    addx = new SubINode(inv, x);
   } else {
-    addx = new (phase->C) AddINode(x, inv);
+    addx = new AddINode(x, inv);
   }
   phase->register_new_node(addx, phase->get_ctrl(x));
   phase->_igvn.replace_node(n1, addx);
@@ -953,7 +953,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   post_end->_prob = PROB_FAIR;
 
   // Build the main-loop normal exit.
-  IfFalseNode *new_main_exit = new (C) IfFalseNode(main_end);
+  IfFalseNode *new_main_exit = new IfFalseNode(main_end);
   _igvn.register_new_node_with_optimizer( new_main_exit );
   set_idom(new_main_exit, main_end, dd_main_exit );
   set_loop(new_main_exit, loop->_parent);
@@ -963,15 +963,15 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // (the main-loop trip-counter exit value) because we will be changing
   // the exit value (via unrolling) so we cannot constant-fold away the zero
   // trip guard until all unrolling is done.
-  Node *zer_opaq = new (C) Opaque1Node(C, incr);
-  Node *zer_cmp  = new (C) CmpINode( zer_opaq, limit );
-  Node *zer_bol  = new (C) BoolNode( zer_cmp, b_test );
+  Node *zer_opaq = new Opaque1Node(C, incr);
+  Node *zer_cmp  = new CmpINode( zer_opaq, limit );
+  Node *zer_bol  = new BoolNode( zer_cmp, b_test );
   register_new_node( zer_opaq, new_main_exit );
   register_new_node( zer_cmp , new_main_exit );
   register_new_node( zer_bol , new_main_exit );
 
   // Build the IfNode
-  IfNode *zer_iff = new (C) IfNode( new_main_exit, zer_bol, PROB_FAIR, COUNT_UNKNOWN );
+  IfNode *zer_iff = new IfNode( new_main_exit, zer_bol, PROB_FAIR, COUNT_UNKNOWN );
   _igvn.register_new_node_with_optimizer( zer_iff );
   set_idom(zer_iff, new_main_exit, dd_main_exit);
   set_loop(zer_iff, loop->_parent);
@@ -981,7 +981,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   set_idom(main_exit, zer_iff, dd_main_exit);
   set_idom(main_exit->unique_out(), zer_iff, dd_main_exit);
   // Make the true-path, must enter the post loop
-  Node *zer_taken = new (C) IfTrueNode( zer_iff );
+  Node *zer_taken = new IfTrueNode( zer_iff );
   _igvn.register_new_node_with_optimizer( zer_taken );
   set_idom(zer_taken, zer_iff, dd_main_exit);
   set_loop(zer_taken, loop->_parent);
@@ -1029,7 +1029,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // Find the pre-loop normal exit.
   Node* pre_exit = pre_end->proj_out(false);
   assert( pre_exit->Opcode() == Op_IfFalse, "" );
-  IfFalseNode *new_pre_exit = new (C) IfFalseNode(pre_end);
+  IfFalseNode *new_pre_exit = new IfFalseNode(pre_end);
   _igvn.register_new_node_with_optimizer( new_pre_exit );
   set_idom(new_pre_exit, pre_end, dd_main_head);
   set_loop(new_pre_exit, loop->_parent);
@@ -1038,15 +1038,15 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // pre-loop, the main-loop may not execute at all.  Later in life this
   // zero-trip guard will become the minimum-trip guard when we unroll
   // the main-loop.
-  Node *min_opaq = new (C) Opaque1Node(C, limit);
-  Node *min_cmp  = new (C) CmpINode( pre_incr, min_opaq );
-  Node *min_bol  = new (C) BoolNode( min_cmp, b_test );
+  Node *min_opaq = new Opaque1Node(C, limit);
+  Node *min_cmp  = new CmpINode( pre_incr, min_opaq );
+  Node *min_bol  = new BoolNode( min_cmp, b_test );
   register_new_node( min_opaq, new_pre_exit );
   register_new_node( min_cmp , new_pre_exit );
   register_new_node( min_bol , new_pre_exit );
 
   // Build the IfNode (assume the main-loop is executed always).
-  IfNode *min_iff = new (C) IfNode( new_pre_exit, min_bol, PROB_ALWAYS, COUNT_UNKNOWN );
+  IfNode *min_iff = new IfNode( new_pre_exit, min_bol, PROB_ALWAYS, COUNT_UNKNOWN );
   _igvn.register_new_node_with_optimizer( min_iff );
   set_idom(min_iff, new_pre_exit, dd_main_head);
   set_loop(min_iff, loop->_parent);
@@ -1057,7 +1057,7 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   set_idom(pre_exit, min_iff, dd_main_head);
   set_idom(pre_exit->unique_out(), min_iff, dd_main_head);
   // Make the true-path, must enter the main loop
-  Node *min_taken = new (C) IfTrueNode( min_iff );
+  Node *min_taken = new IfTrueNode( min_iff );
   _igvn.register_new_node_with_optimizer( min_taken );
   set_idom(min_taken, min_iff, dd_main_head);
   set_loop(min_taken, loop->_parent);
@@ -1087,11 +1087,11 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
   // RCE and alignment may change this later.
   Node *cmp_end = pre_end->cmp_node();
   assert( cmp_end->in(2) == limit, "" );
-  Node *pre_limit = new (C) AddINode( init, stride );
+  Node *pre_limit = new AddINode( init, stride );
 
   // Save the original loop limit in this Opaque1 node for
   // use by range check elimination.
-  Node *pre_opaq  = new (C) Opaque1Node(C, pre_limit, limit);
+  Node *pre_opaq  = new Opaque1Node(C, pre_limit, limit);
 
   register_new_node( pre_limit, pre_head->in(0) );
   register_new_node( pre_opaq , pre_head->in(0) );
@@ -1116,19 +1116,19 @@ void PhaseIdealLoop::insert_pre_post_loops( IdealLoopTree *loop, Node_List &old_
     BoolTest::mask new_test = (main_end->stride_con() > 0) ? BoolTest::lt : BoolTest::gt;
     // Modify pre loop end condition
     Node* pre_bol = pre_end->in(CountedLoopEndNode::TestValue)->as_Bool();
-    BoolNode* new_bol0 = new (C) BoolNode(pre_bol->in(1), new_test);
+    BoolNode* new_bol0 = new BoolNode(pre_bol->in(1), new_test);
     register_new_node( new_bol0, pre_head->in(0) );
     _igvn.hash_delete(pre_end);
     pre_end->set_req(CountedLoopEndNode::TestValue, new_bol0);
     // Modify main loop guard condition
     assert(min_iff->in(CountedLoopEndNode::TestValue) == min_bol, "guard okay");
-    BoolNode* new_bol1 = new (C) BoolNode(min_bol->in(1), new_test);
+    BoolNode* new_bol1 = new BoolNode(min_bol->in(1), new_test);
     register_new_node( new_bol1, new_pre_exit );
     _igvn.hash_delete(min_iff);
     min_iff->set_req(CountedLoopEndNode::TestValue, new_bol1);
     // Modify main loop end condition
     BoolNode* main_bol = main_end->in(CountedLoopEndNode::TestValue)->as_Bool();
-    BoolNode* new_bol2 = new (C) BoolNode(main_bol->in(1), new_test);
+    BoolNode* new_bol2 = new BoolNode(main_bol->in(1), new_test);
     register_new_node( new_bol2, main_end->in(CountedLoopEndNode::TestControl) );
     _igvn.hash_delete(main_end);
     main_end->set_req(CountedLoopEndNode::TestValue, new_bol2);
@@ -1279,13 +1279,13 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
           // zero trip guard limit will be different from loop limit.
           assert(has_ctrl(opaq), "should have it");
           Node* opaq_ctrl = get_ctrl(opaq);
-          limit = new (C) Opaque2Node( C, limit );
+          limit = new Opaque2Node( C, limit );
           register_new_node( limit, opaq_ctrl );
         }
         if (stride_con > 0 && ((limit_type->_lo - stride_con) < limit_type->_lo) ||
                    stride_con < 0 && ((limit_type->_hi - stride_con) > limit_type->_hi)) {
           // No underflow.
-          new_limit = new (C) SubINode(limit, stride);
+          new_limit = new SubINode(limit, stride);
         } else {
           // (limit - stride) may underflow.
           // Clamp the adjustment value with MININT or MAXINT:
@@ -1315,18 +1315,18 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
             old_limit = bol->in(1)->in(1);
             // Adjust previous adjusted limit.
             adj_limit = limit->in(CMoveNode::IfFalse);
-            adj_limit = new (C) SubINode(adj_limit, stride);
+            adj_limit = new SubINode(adj_limit, stride);
           } else {
             old_limit = limit;
-            adj_limit = new (C) SubINode(limit, stride);
+            adj_limit = new SubINode(limit, stride);
           }
           assert(old_limit != NULL && adj_limit != NULL, "");
           register_new_node( adj_limit, ctrl ); // adjust amount
-          Node* adj_cmp = new (C) CmpINode(old_limit, adj_limit);
+          Node* adj_cmp = new CmpINode(old_limit, adj_limit);
           register_new_node( adj_cmp, ctrl );
-          Node* adj_bool = new (C) BoolNode(adj_cmp, bt);
+          Node* adj_bool = new BoolNode(adj_cmp, bt);
           register_new_node( adj_bool, ctrl );
-          new_limit = new (C) CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
+          new_limit = new CMoveINode(adj_bool, adj_limit, adj_max, TypeInt::INT);
         }
         register_new_node(new_limit, ctrl);
       }
@@ -1388,24 +1388,24 @@ void PhaseIdealLoop::do_unroll( IdealLoopTree *loop, Node_List &old_new, bool ad
     // CountedLoop this is exact (stride divides limit-init exactly).
     // We are going to double the loop body, so we want to knock off any
     // odd iteration: (trip_cnt & ~1).  Then back compute a new limit.
-    Node *span = new (C) SubINode( limit, init );
+    Node *span = new SubINode( limit, init );
     register_new_node( span, ctrl );
-    Node *trip = new (C) DivINode( 0, span, stride );
+    Node *trip = new DivINode( 0, span, stride );
     register_new_node( trip, ctrl );
     Node *mtwo = _igvn.intcon(-2);
     set_ctrl(mtwo, C->root());
-    Node *rond = new (C) AndINode( trip, mtwo );
+    Node *rond = new AndINode( trip, mtwo );
     register_new_node( rond, ctrl );
-    Node *spn2 = new (C) MulINode( rond, stride );
+    Node *spn2 = new MulINode( rond, stride );
     register_new_node( spn2, ctrl );
-    new_limit = new (C) AddINode( spn2, init );
+    new_limit = new AddINode( spn2, init );
     register_new_node( new_limit, ctrl );
 
     // Hammer in the new limit
     Node *ctrl2 = loop_end->in(0);
-    Node *cmp2 = new (C) CmpINode( loop_head->incr(), new_limit );
+    Node *cmp2 = new CmpINode( loop_head->incr(), new_limit );
     register_new_node( cmp2, ctrl2 );
-    Node *bol2 = new (C) BoolNode( cmp2, loop_end->test_trip() );
+    Node *bol2 = new BoolNode( cmp2, loop_end->test_trip() );
     register_new_node( bol2, ctrl2 );
     _igvn.hash_delete(loop_end);
     loop_end->set_req(CountedLoopEndNode::TestValue, bol2);
@@ -1511,15 +1511,15 @@ bool IdealLoopTree::dominates_backedge(Node* ctrl) {
 // Helper function for add_constraint().
 Node* PhaseIdealLoop::adjust_limit(int stride_con, Node * scale, Node *offset, Node *rc_limit, Node *loop_limit, Node *pre_ctrl) {
   // Compute "I :: (limit-offset)/scale"
-  Node *con = new (C) SubINode(rc_limit, offset);
+  Node *con = new SubINode(rc_limit, offset);
   register_new_node(con, pre_ctrl);
-  Node *X = new (C) DivINode(0, con, scale);
+  Node *X = new DivINode(0, con, scale);
   register_new_node(X, pre_ctrl);
 
   // Adjust loop limit
   loop_limit = (stride_con > 0)
-               ? (Node*)(new (C) MinINode(loop_limit, X))
-               : (Node*)(new (C) MaxINode(loop_limit, X));
+               ? (Node*)(new MinINode(loop_limit, X))
+               : (Node*)(new MaxINode(loop_limit, X));
   register_new_node(loop_limit, pre_ctrl);
   return loop_limit;
 }
@@ -1580,9 +1580,9 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
       // to avoid problem with scale == -1 (min_int/(-1) == min_int).
       Node* shift = _igvn.intcon(31);
       set_ctrl(shift, C->root());
-      Node* sign = new (C) RShiftINode(offset, shift);
+      Node* sign = new RShiftINode(offset, shift);
       register_new_node(sign, pre_ctrl);
-      offset = new (C) AndINode(offset, sign);
+      offset = new AndINode(offset, sign);
       register_new_node(offset, pre_ctrl);
     } else {
       assert(low_limit->get_int() == 0, "wrong low limit for range check");
@@ -1615,7 +1615,7 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
     Node *one  = _igvn.intcon(1);
     set_ctrl(one, C->root());
 
-    Node *plus_one = new (C) AddINode(offset, one);
+    Node *plus_one = new AddINode(offset, one);
     register_new_node( plus_one, pre_ctrl );
     // Pass (-stride) to indicate pre_loop_cond = NOT(main_loop_cond);
     *pre_limit = adjust_limit((-stride_con), scale, plus_one, upper_limit, *pre_limit, pre_ctrl);
@@ -1633,9 +1633,9 @@ void PhaseIdealLoop::add_constraint( int stride_con, int scale_con, Node *offset
       // to avoid problem with scale == -1 (min_int/(-1) == min_int).
       Node* shift = _igvn.intcon(31);
       set_ctrl(shift, C->root());
-      Node* sign = new (C) RShiftINode(plus_one, shift);
+      Node* sign = new RShiftINode(plus_one, shift);
       register_new_node(sign, pre_ctrl);
-      plus_one = new (C) AndINode(plus_one, sign);
+      plus_one = new AndINode(plus_one, sign);
       register_new_node(plus_one, pre_ctrl);
     } else {
       assert(low_limit->get_int() == 0, "wrong low limit for range check");
@@ -1718,7 +1718,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
                                    p_offset != NULL ? &offset2 : NULL, depth+1)) {
         if (p_offset != NULL) {
           Node *ctrl_off2 = get_ctrl(offset2);
-          Node* offset = new (C) AddINode(offset2, exp->in(2));
+          Node* offset = new AddINode(offset2, exp->in(2));
           register_new_node(offset, ctrl_off2);
           *p_offset = offset;
         }
@@ -1731,7 +1731,7 @@ bool PhaseIdealLoop::is_scaled_iv_plus_offset(Node* exp, Node* iv, int* p_scale,
         Node *zero = _igvn.intcon(0);
         set_ctrl(zero, C->root());
         Node *ctrl_off = get_ctrl(exp->in(2));
-        Node* offset = new (C) SubINode(zero, exp->in(2));
+        Node* offset = new SubINode(zero, exp->in(2));
         register_new_node(offset, ctrl_off);
         *p_offset = offset;
       }
@@ -1934,15 +1934,15 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
         case BoolTest::ge:
           // Convert (I*scale+offset) >= Limit to (I*(-scale)+(-offset)) <= -Limit
           scale_con = -scale_con;
-          offset = new (C) SubINode( zero, offset );
+          offset = new SubINode( zero, offset );
           register_new_node( offset, pre_ctrl );
-          limit  = new (C) SubINode( zero, limit  );
+          limit  = new SubINode( zero, limit  );
           register_new_node( limit, pre_ctrl );
           // Fall into LE case
         case BoolTest::le:
           if (b_test._test != BoolTest::gt) {
             // Convert X <= Y to X < Y+1
-            limit = new (C) AddINode( limit, one );
+            limit = new AddINode( limit, one );
             register_new_node( limit, pre_ctrl );
           }
           // Fall into LT case
@@ -1993,8 +1993,8 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
 
   // Update loop limits
   if (conditional_rc) {
-    pre_limit = (stride_con > 0) ? (Node*)new (C) MinINode(pre_limit, orig_limit)
-                                 : (Node*)new (C) MaxINode(pre_limit, orig_limit);
+    pre_limit = (stride_con > 0) ? (Node*)new MinINode(pre_limit, orig_limit)
+                                 : (Node*)new MaxINode(pre_limit, orig_limit);
     register_new_node(pre_limit, pre_ctrl);
   }
   _igvn.hash_delete(pre_opaq);
@@ -2009,16 +2009,16 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
     Node *ctrl = get_ctrl(main_limit);
     Node *stride = cl->stride();
     Node *init = cl->init_trip();
-    Node *span = new (C) SubINode(main_limit,init);
+    Node *span = new SubINode(main_limit,init);
     register_new_node(span,ctrl);
     Node *rndup = _igvn.intcon(stride_con + ((stride_con>0)?-1:1));
-    Node *add = new (C) AddINode(span,rndup);
+    Node *add = new AddINode(span,rndup);
     register_new_node(add,ctrl);
-    Node *div = new (C) DivINode(0,add,stride);
+    Node *div = new DivINode(0,add,stride);
     register_new_node(div,ctrl);
-    Node *mul = new (C) MulINode(div,stride);
+    Node *mul = new MulINode(div,stride);
     register_new_node(mul,ctrl);
-    Node *newlim = new (C) AddINode(mul,init);
+    Node *newlim = new AddINode(mul,init);
     register_new_node(newlim,ctrl);
     main_limit = newlim;
   }
@@ -2189,7 +2189,7 @@ bool IdealLoopTree::policy_do_remove_empty_loop( PhaseIdealLoop *phase ) {
   }
   // Note: the final value after increment should not overflow since
   // counted loop has limit check predicate.
-  Node *final = new (phase->C) SubINode( exact_limit, cl->stride() );
+  Node *final = new SubINode( exact_limit, cl->stride() );
   phase->register_new_node(final,cl->in(LoopNode::EntryControl));
   phase->_igvn.replace_node(phi,final);
   phase->C->set_major_progress();
@@ -2676,20 +2676,20 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   // Build an expression for the beginning of the copy region
   Node* index = head->init_trip();
 #ifdef _LP64
-  index = new (C) ConvI2LNode(index);
+  index = new ConvI2LNode(index);
   _igvn.register_new_node_with_optimizer(index);
 #endif
   if (shift != NULL) {
     // byte arrays don't require a shift but others do.
-    index = new (C) LShiftXNode(index, shift->in(2));
+    index = new LShiftXNode(index, shift->in(2));
     _igvn.register_new_node_with_optimizer(index);
   }
-  index = new (C) AddPNode(base, base, index);
+  index = new AddPNode(base, base, index);
   _igvn.register_new_node_with_optimizer(index);
-  Node* from = new (C) AddPNode(base, index, offset);
+  Node* from = new AddPNode(base, index, offset);
   _igvn.register_new_node_with_optimizer(from);
   // Compute the number of elements to copy
-  Node* len = new (C) SubINode(head->limit(), head->init_trip());
+  Node* len = new SubINode(head->limit(), head->init_trip());
   _igvn.register_new_node_with_optimizer(len);
 
   BasicType t = store->as_Mem()->memory_type();
@@ -2706,17 +2706,17 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
 
   // Convert float/double to int/long for fill routines
   if (t == T_FLOAT) {
-    store_value = new (C) MoveF2INode(store_value);
+    store_value = new MoveF2INode(store_value);
     _igvn.register_new_node_with_optimizer(store_value);
   } else if (t == T_DOUBLE) {
-    store_value = new (C) MoveD2LNode(store_value);
+    store_value = new MoveD2LNode(store_value);
     _igvn.register_new_node_with_optimizer(store_value);
   }
 
   if (CCallingConventionRequiresIntsAsLongs &&
       // See StubRoutines::select_fill_function for types. FLOAT has been converted to INT.
       (t == T_FLOAT || t == T_INT ||  is_subword_type(t))) {
-    store_value = new (C) ConvI2LNode(store_value);
+    store_value = new ConvI2LNode(store_value);
     _igvn.register_new_node_with_optimizer(store_value);
   }
 
@@ -2724,8 +2724,8 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   Node* result_ctrl;
   Node* result_mem;
   const TypeFunc* call_type = OptoRuntime::array_fill_Type();
-  CallLeafNode *call = new (C) CallLeafNoFPNode(call_type, fill,
-                                                fill_name, TypeAryPtr::get_array_body_type(t));
+  CallLeafNode *call = new CallLeafNoFPNode(call_type, fill,
+                                            fill_name, TypeAryPtr::get_array_body_type(t));
   uint cnt = 0;
   call->init_req(TypeFunc::Parms + cnt++, from);
   call->init_req(TypeFunc::Parms + cnt++, store_value);
@@ -2733,7 +2733,7 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
     call->init_req(TypeFunc::Parms + cnt++, C->top());
   }
 #ifdef _LP64
-  len = new (C) ConvI2LNode(len);
+  len = new ConvI2LNode(len);
   _igvn.register_new_node_with_optimizer(len);
 #endif
   call->init_req(TypeFunc::Parms + cnt++, len);
@@ -2746,9 +2746,9 @@ bool PhaseIdealLoop::intrinsify_fill(IdealLoopTree* lpt) {
   call->init_req(TypeFunc::ReturnAdr, C->start()->proj_out(TypeFunc::ReturnAdr));
   call->init_req(TypeFunc::FramePtr,  C->start()->proj_out(TypeFunc::FramePtr));
   _igvn.register_new_node_with_optimizer(call);
-  result_ctrl = new (C) ProjNode(call,TypeFunc::Control);
+  result_ctrl = new ProjNode(call,TypeFunc::Control);
   _igvn.register_new_node_with_optimizer(result_ctrl);
-  result_mem = new (C) ProjNode(call,TypeFunc::Memory);
+  result_mem = new ProjNode(call,TypeFunc::Memory);
   _igvn.register_new_node_with_optimizer(result_mem);
 
 /* Disable following optimization until proper fix (add missing checks).
