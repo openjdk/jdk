@@ -118,6 +118,7 @@ public class JRadioButton extends JToggleButton implements Accessible {
      * Creates a radiobutton where properties are taken from the
      * Action supplied.
      *
+     * @param a an {@code Action}
      * @since 1.3
      */
     public JRadioButton(Action a) {
@@ -175,6 +176,8 @@ public class JRadioButton extends JToggleButton implements Accessible {
      *
      * @param text  the string displayed on the radio button
      * @param icon  the image that the button should display
+     * @param selected if {@code true}, the button is initially selected
+     *                 otherwise, the button is initially unselected
      */
     public JRadioButton (String text, Icon icon, boolean selected) {
         super(text, icon, selected);

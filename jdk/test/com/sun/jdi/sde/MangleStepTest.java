@@ -10,11 +10,11 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter InstallSDE
  *  @run compile MangleStepTest.java
  *  @run compile -g  onion/pickle/Mangle.java
- *  @run main/othervm MangleStepTest unset
- *  @run main/othervm MangleStepTest Java
- *  @run main/othervm MangleStepTest XYZ
- *  @run main/othervm MangleStepTest Rats
- *  @run main/othervm MangleStepTest bogus
+ *  @run driver MangleStepTest unset
+ *  @run driver MangleStepTest Java
+ *  @run driver MangleStepTest XYZ
+ *  @run driver MangleStepTest Rats
+ *  @run driver MangleStepTest bogus
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
@@ -82,7 +82,6 @@ public class MangleStepTest extends TestScaffold {
         }
         BreakpointEvent bpe = resumeTo(targetName, "main",
                                        "([Ljava/lang/String;)V");
-        waitForInput();
 
         ThreadReference thread = bpe.thread();
 

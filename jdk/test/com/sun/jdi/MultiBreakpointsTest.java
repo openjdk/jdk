@@ -31,7 +31,7 @@
  *
  *  @build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g MultiBreakpointsTest.java
- *  @run main MultiBreakpointsTest
+ *  @run driver MultiBreakpointsTest
  */
 
 /*

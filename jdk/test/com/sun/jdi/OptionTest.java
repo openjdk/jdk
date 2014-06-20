@@ -30,7 +30,7 @@
  *  @run compile -g OptionTest.java
  *  @run compile -g HelloWorld.java
  *  @run compile -g VMConnection.java
- *  @run main/othervm OptionTest
+ *  @run driver OptionTest
  */
 
 import java.net.ServerSocket;

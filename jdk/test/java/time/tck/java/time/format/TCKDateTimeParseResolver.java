@@ -76,6 +76,7 @@ import static java.time.temporal.ChronoField.EPOCH_DAY;
 import static java.time.temporal.ChronoField.ERA;
 import static java.time.temporal.ChronoField.HOUR_OF_AMPM;
 import static java.time.temporal.ChronoField.HOUR_OF_DAY;
+import static java.time.temporal.ChronoField.INSTANT_SECONDS;
 import static java.time.temporal.ChronoField.MICRO_OF_DAY;
 import static java.time.temporal.ChronoField.MICRO_OF_SECOND;
 import static java.time.temporal.ChronoField.MILLI_OF_DAY;
@@ -93,11 +94,13 @@ import static java.time.temporal.ChronoField.YEAR_OF_ERA;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.fail;
 
+import java.time.Instant;
 import java.time.LocalDate;
 import java.time.LocalDateTime;
 import java.time.LocalTime;
 import java.time.Period;
 import java.time.ZoneId;
+import java.time.ZoneOffset;
 import java.time.ZonedDateTime;
 import java.time.chrono.ChronoLocalDate;
 import java.time.chrono.ChronoLocalDateTime;
@@ -1158,5 +1161,103 @@ public class TCKDateTimeParseResolver {
             return resolvedValue;
         }
     };
+
+    //-------------------------------------------------------------------------
+    // SPEC: ChronoField.INSTANT_SECONDS
+    @Test
+    public void test_parse_fromField_InstantSeconds() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(INSTANT_SECONDS).toFormatter();
+        TemporalAccessor acc = fmt.parse("86402");
+        Instant expected = Instant.ofEpochSecond(86402);
+        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+        assertEquals(Instant.from(acc), expected);
+    }
+
+    @Test
+    public void test_parse_fromField_InstantSeconds_NanoOfSecond() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(INSTANT_SECONDS).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
+        TemporalAccessor acc = fmt.parse("86402.123456789");
+        Instant expected = Instant.ofEpochSecond(86402, 123456789);
+        assertEquals(acc.isSupported(INSTANT_SECONDS), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(INSTANT_SECONDS), 86402L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+        assertEquals(Instant.from(acc), expected);
+    }
+
+    // SPEC: ChronoField.SECOND_OF_DAY
+    @Test
+    public void test_parse_fromField_SecondOfDay() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(SECOND_OF_DAY).toFormatter();
+        TemporalAccessor acc = fmt.parse("864");
+        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+    }
+
+    @Test
+    public void test_parse_fromField_SecondOfDay_NanoOfSecond() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(SECOND_OF_DAY).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
+        TemporalAccessor acc = fmt.parse("864.123456789");
+        assertEquals(acc.isSupported(SECOND_OF_DAY), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(SECOND_OF_DAY), 864L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+    }
+
+    // SPEC: ChronoField.SECOND_OF_MINUTE
+    @Test
+    public void test_parse_fromField_SecondOfMinute() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(SECOND_OF_MINUTE).toFormatter();
+        TemporalAccessor acc = fmt.parse("32");
+        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 0L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 0L);
+    }
+
+    @Test
+    public void test_parse_fromField_SecondOfMinute_NanoOfSecond() {
+        DateTimeFormatter fmt = new DateTimeFormatterBuilder()
+            .appendValue(SECOND_OF_MINUTE).appendLiteral('.').appendValue(NANO_OF_SECOND).toFormatter();
+        TemporalAccessor acc = fmt.parse("32.123456789");
+        assertEquals(acc.isSupported(SECOND_OF_MINUTE), true);
+        assertEquals(acc.isSupported(NANO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MICRO_OF_SECOND), true);
+        assertEquals(acc.isSupported(MILLI_OF_SECOND), true);
+        assertEquals(acc.getLong(SECOND_OF_MINUTE), 32L);
+        assertEquals(acc.getLong(NANO_OF_SECOND), 123456789L);
+        assertEquals(acc.getLong(MICRO_OF_SECOND), 123456L);
+        assertEquals(acc.getLong(MILLI_OF_SECOND), 123L);
+    }
 
 }

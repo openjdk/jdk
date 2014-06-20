@@ -55,7 +55,7 @@ public class MessageUtils {
     }
 
     public static String subst(String patt, String args[]) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         int len = patt.length();
         for (int i = 0; i >= 0 && i < len; i++) {
             char ch = patt.charAt(i);

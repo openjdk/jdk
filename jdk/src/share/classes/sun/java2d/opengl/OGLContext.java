@@ -201,29 +201,29 @@ public class OGLContext extends BufferedContext {
 
         @Override
         public String toString() {
-            StringBuffer buf = new StringBuffer(super.toString());
+            StringBuilder sb = new StringBuilder(super.toString());
             if ((caps & CAPS_EXT_FBOBJECT) != 0) {
-                buf.append("CAPS_EXT_FBOBJECT|");
+                sb.append("CAPS_EXT_FBOBJECT|");
             }
             if ((caps & CAPS_STORED_ALPHA) != 0) {
-                buf.append("CAPS_STORED_ALPHA|");
+                sb.append("CAPS_STORED_ALPHA|");
             }
             if ((caps & CAPS_DOUBLEBUFFERED) != 0) {
-                buf.append("CAPS_DOUBLEBUFFERED|");
+                sb.append("CAPS_DOUBLEBUFFERED|");
             }
             if ((caps & CAPS_EXT_LCD_SHADER) != 0) {
-                buf.append("CAPS_EXT_LCD_SHADER|");
+                sb.append("CAPS_EXT_LCD_SHADER|");
             }
             if ((caps & CAPS_EXT_BIOP_SHADER) != 0) {
-                buf.append("CAPS_BIOP_SHADER|");
+                sb.append("CAPS_BIOP_SHADER|");
             }
             if ((caps & CAPS_EXT_GRAD_SHADER) != 0) {
-                buf.append("CAPS_EXT_GRAD_SHADER|");
+                sb.append("CAPS_EXT_GRAD_SHADER|");
             }
             if ((caps & CAPS_EXT_TEXRECT) != 0) {
-                buf.append("CAPS_EXT_TEXRECT|");
+                sb.append("CAPS_EXT_TEXRECT|");
             }
-            return buf.toString();
+            return sb.toString();
         }
     }
 }

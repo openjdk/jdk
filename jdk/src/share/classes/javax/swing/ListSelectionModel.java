@@ -134,18 +134,25 @@ public interface ListSelectionModel
 
     /**
      * Returns the first selected index or -1 if the selection is empty.
+     *
+     * @return the first selected index or -1 if the selection is empty.
      */
     int getMinSelectionIndex();
 
 
     /**
      * Returns the last selected index or -1 if the selection is empty.
+     *
+     * @return the last selected index or -1 if the selection is empty.
      */
     int getMaxSelectionIndex();
 
 
     /**
      * Returns true if the specified index is selected.
+     *
+     * @param index an index
+     * @return {@code true} if the specified index is selected
      */
     boolean isSelectedIndex(int index);
 
@@ -158,6 +165,7 @@ public interface ListSelectionModel
      * indices specially, e.g. Windows95 displays the lead index with a
      * dotted yellow outline.
      *
+     * @return the anchor selection index
      * @see #getLeadSelectionIndex
      * @see #setSelectionInterval
      * @see #addSelectionInterval
@@ -168,6 +176,7 @@ public interface ListSelectionModel
     /**
      * Set the anchor selection index.
      *
+     * @param index the anchor selection index
      * @see #getAnchorSelectionIndex
      */
     void setAnchorSelectionIndex(int index);
@@ -177,6 +186,7 @@ public interface ListSelectionModel
      * Return the second index argument from the most recent call to
      * setSelectionInterval(), addSelectionInterval() or removeSelectionInterval().
      *
+     * @return the lead selection index.
      * @see #getAnchorSelectionIndex
      * @see #setSelectionInterval
      * @see #addSelectionInterval
@@ -186,6 +196,7 @@ public interface ListSelectionModel
     /**
      * Set the lead selection index.
      *
+     * @param index the lead selection index
      * @see #getLeadSelectionIndex
      */
     void setLeadSelectionIndex(int index);
@@ -200,20 +211,30 @@ public interface ListSelectionModel
 
     /**
      * Returns true if no indices are selected.
+     *
+     * @return {@code true} if no indices are selected.
      */
     boolean isSelectionEmpty();
 
     /**
-     * Insert length indices beginning before/after index.  This is typically
+     * Insert {@code length} indices beginning before/after {@code index}. This is typically
      * called to sync the selection model with a corresponding change
      * in the data model.
+     *
+     * @param index the beginning of the interval
+     * @param length the length of the interval
+     * @param before if {@code true}, interval inserts before the {@code index},
+     *               otherwise, interval inserts after the {@code index}
      */
     void insertIndexInterval(int index, int length, boolean before);
 
     /**
-     * Remove the indices in the interval index0,index1 (inclusive) from
+     * Remove the indices in the interval {@code index0,index1} (inclusive) from
      * the selection model.  This is typically called to sync the selection
      * model width a corresponding change in the data model.
+     *
+     * @param index0 the beginning of the interval
+     * @param index1 the end of the interval
      */
     void removeIndexInterval(int index0, int index1);
 
@@ -272,6 +293,7 @@ public interface ListSelectionModel
      *   In this mode, there's no restriction on what can be selected.
      * </ul>
      *
+     * @param selectionMode the selection mode
      * @see #getSelectionMode
      * @throws IllegalArgumentException if the selection mode isn't
      *         one of those allowed

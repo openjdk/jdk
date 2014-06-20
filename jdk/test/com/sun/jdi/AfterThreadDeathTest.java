@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g AfterThreadDeathTest.java
- *  @run main AfterThreadDeathTest
+ *  @run driver AfterThreadDeathTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

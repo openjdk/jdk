@@ -217,6 +217,7 @@ import javax.sql.rowset.*;
  *       This method creates a copy that can be persisted to the data source.
  * </UL>
  *
+ * @since 1.5
  */
 
 public interface JoinRowSet extends WebRowSet {

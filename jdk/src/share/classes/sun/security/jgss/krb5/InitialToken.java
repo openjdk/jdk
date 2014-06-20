@@ -164,15 +164,15 @@ abstract class InitialToken extends Krb5Token {
                     serviceTicket.getServer();
                 // Cannot use '\"' instead of "\"" in constructor because
                 // it is interpreted as suggested length!
-                StringBuffer buf = new StringBuffer("\"");
-                buf.append(delegateTo.getName()).append('\"');
+                StringBuilder sb = new StringBuilder("\"");
+                sb.append(delegateTo.getName()).append('\"');
                 String realm = delegateTo.getRealmAsString();
-                buf.append(" \"krbtgt/").append(realm).append('@');
-                buf.append(realm).append('\"');
+                sb.append(" \"krbtgt/").append(realm).append('@');
+                sb.append(realm).append('\"');
                 SecurityManager sm = System.getSecurityManager();
                 if (sm != null) {
                     DelegationPermission perm =
-                        new DelegationPermission(buf.toString());
+                        new DelegationPermission(sb.toString());
                     sm.checkPermission(perm);
                 }
 

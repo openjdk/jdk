@@ -665,6 +665,7 @@ public class JProgressBar extends JComponent implements SwingConstants, Accessib
      * to the {@code ChangeListener}s that have been added directly to the
      * progress bar.
      *
+     * @return the instance of a custom {@code ChangeListener} implementation.
      * @see #changeListener
      * @see #fireStateChanged
      * @see javax.swing.event.ChangeListener

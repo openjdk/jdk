@@ -670,6 +670,7 @@ public class GroupLayout implements LayoutManager2 {
      * @param resizable whether the group is resizable
      * @param anchorBaselineToTop whether the baseline is anchored to
      *        the top or bottom of the group
+     * @return the {@code ParallelGroup}
      * @see #createBaselineGroup
      * @see ParallelGroup
      */

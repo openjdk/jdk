@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g Java_gTest.java
- *  @run main Java_gTest
+ *  @run driver Java_gTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

@@ -29,7 +29,7 @@
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g HelloWorld.java
  *  @run build VMDeathRequestTest
- *  @run main VMDeathRequestTest
+ *  @run driver VMDeathRequestTest
  *
  * @summary VMDeathRequestTest checks to see that
  * VMDisconnectedException is never thrown before VMDisconnectEvent.

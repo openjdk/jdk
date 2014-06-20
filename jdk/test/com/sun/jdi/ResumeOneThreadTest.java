@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ResumeOneThreadTest.java
- *  @run main ResumeOneThreadTest
+ *  @run driver ResumeOneThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
