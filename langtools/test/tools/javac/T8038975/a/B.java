@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,7 @@
  * questions.
  */
 
-package p1;
-
-@SuppressWarnings("unchecked")
-public class B extends A {
-    public void foo1(A... args) { }
-    public void foo2(A... args) { }
-    public void foo2(Object... args) { }
-    public <X extends A> void foo3(X... args) { }
-    public <X extends A> void foo4(X... args) { }
-    public void foo4(Object... args) { }
+package a;
+public class B {
+    protected abstract class Inner implements Iterable<A> { }
 }

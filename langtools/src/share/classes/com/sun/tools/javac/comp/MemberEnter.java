@@ -82,6 +82,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Target target;
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
+    private final TypeEnvs typeEnvs;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -107,6 +108,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         target = Target.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
+        typeEnvs = TypeEnvs.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
     }
 
@@ -1000,7 +1002,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         ClassSymbol c = (ClassSymbol)sym;
         ClassType ct = (ClassType)c.type;
-        Env<AttrContext> env = enter.typeEnvs.get(c);
+        Env<AttrContext> env = typeEnvs.get(c);
         JCClassDecl tree = (JCClassDecl)env.tree;
         boolean wasFirst = isFirst;
         isFirst = false;
