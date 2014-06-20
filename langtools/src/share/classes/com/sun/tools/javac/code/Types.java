@@ -2315,7 +2315,7 @@ public class Types {
             public Type visitType(Type t, Void ignored) {
                 // A note on wildcards: there is no good way to
                 // determine a supertype for a super bounded wildcard.
-                return null;
+                return Type.noType;
             }
 
             @Override
@@ -2482,7 +2482,7 @@ public class Types {
             return false;
         return
             t.isRaw() ||
-            supertype(t) != null && isDerivedRaw(supertype(t)) ||
+            supertype(t) != Type.noType && isDerivedRaw(supertype(t)) ||
             isDerivedRaw(interfaces(t));
     }
 
