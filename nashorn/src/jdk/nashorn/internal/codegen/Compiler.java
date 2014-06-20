@@ -47,7 +47,9 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -421,7 +423,14 @@ public final class Compiler implements Loggable {
 
     @Override
     public DebugLogger initLogger(final Context ctxt) {
-        return ctxt.getLogger(this.getClass());
+        return ctxt.getLogger(this.getClass(), new Consumer<DebugLogger>() {
+            @Override
+            public void accept(final DebugLogger newLogger) {
+                if (!Compiler.this.getScriptEnvironment()._lazy_compilation) {
+                    newLogger.warning("WARNING: Running with lazy compilation switched off. This is not a default setting.");
+                }
+            }
+        });
     }
 
     ScriptEnvironment getScriptEnvironment() {
