@@ -639,8 +639,11 @@ void CompileQueue::free_all() {
   while (next != NULL) {
     CompileTask* current = next;
     next = current->next();
-    // Wake up thread that blocks on the compile task.
-    current->lock()->notify();
+    {
+      // Wake up thread that blocks on the compile task.
+      MutexLocker ct_lock(current->lock());
+      current->lock()->notify();
+    }
     // Put the task back on the freelist.
     CompileTask::free(current);
   }
