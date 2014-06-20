@@ -527,7 +527,7 @@ DOMAPI_WINDOWTITLE := Common DOM API
 DOMAPI_HEADER := <strong>Common DOM API</strong>
 DOMAPI_BOTTOM := $(call CommonTrademarkBottom,$(DOMAPI_FIRST_COPYRIGHT_YEAR))
 DOMAPI_GROUPNAME := Packages
-DOMAPI_REGEXP := com.sun.java.browser.dom:org.w3c.dom*
+DOMAPI_REGEXP := org.w3c.dom*
 # DOMAPI_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files
