@@ -625,6 +625,7 @@ int LIR_Assembler::safepoint_poll(LIR_Opr tmp, CodeEmitInfo* info) {
     __ lea(rscratch1, polling_page);
     offset = __ offset();
     add_debug_info_for_branch(info);
+    __ relocate(relocInfo::poll_type);
     __ testl(rax, Address(rscratch1, 0));
   } else {
     add_debug_info_for_branch(info);

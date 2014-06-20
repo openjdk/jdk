@@ -139,14 +139,13 @@ class Ticks;
   do_klass(reflect_Constructor_klass,                   java_lang_reflect_Constructor,             Pre                 ) \
                                                                                                                          \
   /* NOTE: needed too early in bootstrapping process to have checks based on JDK version */                              \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
   do_klass(reflect_MagicAccessorImpl_klass,             sun_reflect_MagicAccessorImpl,             Opt                 ) \
-  do_klass(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Opt_Only_JDK14NewRef) \
-  do_klass(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Opt_Only_JDK14NewRef) \
+  do_klass(reflect_MethodAccessorImpl_klass,            sun_reflect_MethodAccessorImpl,            Pre                 ) \
+  do_klass(reflect_ConstructorAccessorImpl_klass,       sun_reflect_ConstructorAccessorImpl,       Pre                 ) \
   do_klass(reflect_DelegatingClassLoader_klass,         sun_reflect_DelegatingClassLoader,         Opt                 ) \
-  do_klass(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt_Only_JDK15      ) \
-  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt_Only_JDK15      ) \
+  do_klass(reflect_ConstantPool_klass,                  sun_reflect_ConstantPool,                  Opt                 ) \
+  do_klass(reflect_UnsafeStaticFieldAccessorImpl_klass, sun_reflect_UnsafeStaticFieldAccessorImpl, Opt                 ) \
   do_klass(reflect_CallerSensitive_klass,               sun_reflect_CallerSensitive,               Opt                 ) \
                                                                                                                          \
   /* support for dynamic typing; it's OK if these are NULL in earlier JDKs */                                            \
@@ -169,7 +168,6 @@ class Ticks;
                                                                                                                          \
   /* It's NULL in non-1.4 JDKs. */                                                                                       \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
-  /* Universe::is_gte_jdk14x_version() is not set up by this point. */                                                   \
   /* It's okay if this turns out to be NULL in non-1.4 JDKs. */                                                          \
   do_klass(nio_Buffer_klass,                            java_nio_Buffer,                           Opt                 ) \
                                                                                                                          \
@@ -209,10 +207,8 @@ class SystemDictionary : AllStatic {
     // Options after this point will use resolve_or_null instead.
 
     Opt,                        // preload tried; NULL if not present
-    Opt_Only_JDK14NewRef,       // preload tried; use only with NewReflection
-    Opt_Only_JDK15,             // preload tried; use only with JDK1.5+
     OPTION_LIMIT,
-    CEIL_LG_OPTION_LIMIT = 4    // OPTION_LIMIT <= (1<<CEIL_LG_OPTION_LIMIT)
+    CEIL_LG_OPTION_LIMIT = 2    // OPTION_LIMIT <= (1<<CEIL_LG_OPTION_LIMIT)
   };
 
 
@@ -385,15 +381,6 @@ public:
 
   static Klass* check_klass_Pre(       Klass* k) { return check_klass(k); }
   static Klass* check_klass_Opt(       Klass* k) { return k; }
-  static Klass* check_klass_Opt_Only_JDK15(Klass* k) {
-    assert(JDK_Version::is_gte_jdk15x_version(), "JDK 1.5 only");
-    return k;
-  }
-  static Klass* check_klass_Opt_Only_JDK14NewRef(Klass* k) {
-    assert(JDK_Version::is_gte_jdk14x_version(), "JDK 1.4 only");
-    // despite the optional loading, if you use this it must be present:
-    return check_klass(k);
-  }
 
   static bool initialize_wk_klass(WKID id, int init_opt, TRAPS);
   static void initialize_wk_klasses_until(WKID limit_id, WKID &start_id, TRAPS);

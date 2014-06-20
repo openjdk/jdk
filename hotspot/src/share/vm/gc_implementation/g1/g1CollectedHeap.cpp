@@ -433,14 +433,6 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
   return hr;
 }
 
-void G1CollectedHeap::stop_conc_gc_threads() {
-  _cg1r->stop();
-  _cmThread->stop();
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::stop();
-  }
-}
-
 #ifdef ASSERT
 // A region is added to the collection set as it is retired
 // so an address p can point to a region which will be in the
@@ -2174,20 +2166,14 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
-#if 0
-  // Stopping concurrent worker threads is currently disabled until
-  // some bugs in concurrent mark has been resolve. Without fixing
-  // those bugs first we risk haning during VM exit when trying to
-  // stop these threads.
-
-  // Abort any ongoing concurrent root region scanning and stop all
-  // concurrent threads. We do this to make sure these threads do
-  // not continue to execute and access resources (e.g. gclog_or_tty)
+  // Stop all concurrent threads. We do this to make sure these threads
+  // do not continue to execute and access resources (e.g. gclog_or_tty)
   // that are destroyed during shutdown.
-  _cm->root_regions()->abort();
-  _cm->root_regions()->wait_until_scan_finished();
-  stop_conc_gc_threads();
-#endif
+  _cg1r->stop();
+  _cmThread->stop();
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::stop();
+  }
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
