@@ -1423,6 +1423,17 @@ size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
   return (size_t)Atomic::add_ptr(-(intptr_t)v, &_capacity_until_GC);
 }
 
+void MetaspaceGC::initialize() {
+  // Set the high-water mark to MaxMetapaceSize during VM initializaton since
+  // we can't do a GC during initialization.
+  _capacity_until_GC = MaxMetaspaceSize;
+}
+
+void MetaspaceGC::post_initialize() {
+  // Reset the high-water mark once the VM initialization is done.
+  _capacity_until_GC = MAX2(MetaspaceAux::committed_bytes(), MetaspaceSize);
+}
+
 bool MetaspaceGC::can_expand(size_t word_size, bool is_class) {
   // Check if the compressed class space is full.
   if (is_class && Metaspace::using_class_space()) {
@@ -1443,21 +1454,13 @@ bool MetaspaceGC::can_expand(size_t word_size, bool is_class) {
 
 size_t MetaspaceGC::allowed_expansion() {
   size_t committed_bytes = MetaspaceAux::committed_bytes();
-
-  size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
-
-  // Always grant expansion if we are initiating the JVM,
-  // or if the GC_locker is preventing GCs.
-  if (!is_init_completed() || GC_locker::is_active_and_needs_gc()) {
-    return left_until_max / BytesPerWord;
-  }
-
   size_t capacity_until_gc = capacity_until_GC();
 
-  if (capacity_until_gc <= committed_bytes) {
-    return 0;
-  }
+  assert(capacity_until_gc >= committed_bytes,
+        err_msg("capacity_until_gc: " SIZE_FORMAT " < committed_bytes: " SIZE_FORMAT,
+                capacity_until_gc, committed_bytes));
 
+  size_t left_until_max  = MaxMetaspaceSize - committed_bytes;
   size_t left_until_GC = capacity_until_gc - committed_bytes;
   size_t left_to_commit = MIN2(left_until_GC, left_until_max);
 
@@ -1469,7 +1472,15 @@ void MetaspaceGC::compute_new_size() {
   uint current_shrink_factor = _shrink_factor;
   _shrink_factor = 0;
 
-  const size_t used_after_gc = MetaspaceAux::capacity_bytes();
+  // Using committed_bytes() for used_after_gc is an overestimation, since the
+  // chunk free lists are included in committed_bytes() and the memory in an
+  // un-fragmented chunk free list is available for future allocations.
+  // However, if the chunk free lists becomes fragmented, then the memory may
+  // not be available for future allocations and the memory is therefore "in use".
+  // Including the chunk free lists in the definition of "in use" is therefore
+  // necessary. Not including the chunk free lists can cause capacity_until_GC to
+  // shrink below committed_bytes() and this has caused serious bugs in the past.
+  const size_t used_after_gc = MetaspaceAux::committed_bytes();
   const size_t capacity_until_GC = MetaspaceGC::capacity_until_GC();
 
   const double minimum_free_percentage = MinMetaspaceFreeRatio / 100.0;
@@ -3094,6 +3105,8 @@ void Metaspace::ergo_initialize() {
 }
 
 void Metaspace::global_initialize() {
+  MetaspaceGC::initialize();
+
   // Initialize the alignment for shared spaces.
   int max_alignment = os::vm_allocation_granularity();
   size_t cds_total = 0;
@@ -3201,8 +3214,11 @@ void Metaspace::global_initialize() {
     }
   }
 
-  MetaspaceGC::initialize();
   _tracer = new MetaspaceTracer();
+}
+
+void Metaspace::post_initialize() {
+  MetaspaceGC::post_initialize();
 }
 
 Metachunk* Metaspace::get_initialization_chunk(MetadataType mdtype,

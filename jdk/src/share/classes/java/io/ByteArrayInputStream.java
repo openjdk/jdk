@@ -38,7 +38,7 @@ package java.io;
  *
  * @author  Arthur van Hoff
  * @see     java.io.StringBufferInputStream
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class ByteArrayInputStream extends InputStream {
@@ -73,7 +73,7 @@ class ByteArrayInputStream extends InputStream {
      * If no mark has been set, then the value of mark is the offset
      * passed to the constructor (or 0 if the offset was not supplied).
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     protected int mark = 0;
 
@@ -237,7 +237,7 @@ class ByteArrayInputStream extends InputStream {
      * <code>markSupported</code> method of <code>ByteArrayInputStream</code>
      * always returns <code>true</code>.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public boolean markSupported() {
         return true;
@@ -256,7 +256,7 @@ class ByteArrayInputStream extends InputStream {
      * <p> Note: The <code>readAheadLimit</code> for this class
      *  has no meaning.
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public void mark(int readAheadLimit) {
         mark = pos;

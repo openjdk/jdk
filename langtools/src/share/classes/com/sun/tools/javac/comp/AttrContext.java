@@ -58,6 +58,11 @@ public class AttrContext {
      */
     boolean isSerializable = false;
 
+    /**
+     * Are we doing speculative attribution?
+     */
+    boolean isSpeculative = false;
+
     /** Are arguments to current function applications boxed into an array for varargs?
      */
     Resolve.MethodResolutionPhase pendingResolutionPhase = null;
@@ -94,6 +99,7 @@ public class AttrContext {
         info.returnResult = returnResult;
         info.defaultSuperCallSite = defaultSuperCallSite;
         info.isSerializable = isSerializable;
+        info.isSpeculative = isSpeculative;
         return info;
     }
 

@@ -307,7 +307,7 @@ abstract class BaseSSLSocketImpl extends SSLSocket {
      * Gets the local address to which the socket is bound.
      *
      * @return the local address to which the socket is bound.
-     * @since   JDK1.1
+     * @since   1.1
      */
     @Override
     public final InetAddress getLocalAddress() {

@@ -768,25 +768,13 @@ public class ClassWriter extends ClassFile {
         ListBuffer<Attribute.TypeCompound> invisibles = new ListBuffer<>();
 
         for (Attribute.TypeCompound tc : typeAnnos) {
-            if (tc.hasUnknownPosition()) {
-                boolean fixed = tc.tryFixPosition();
-
-                // Could we fix it?
-                if (!fixed) {
-                    // This happens for nested types like @A Outer. @B Inner.
-                    // For method parameters we get the annotation twice! Once with
-                    // a valid position, once unknown.
-                    // TODO: find a cleaner solution.
-                    PrintWriter pw = log.getWriter(Log.WriterKind.ERROR);
-                    pw.println("ClassWriter: Position UNKNOWN in type annotation: " + tc);
+            Assert.checkNonNull(tc.position);
+            if (tc.position.type.isLocal() != inCode) {
                     continue;
                 }
+            if (!tc.position.emitToClassfile()) {
+                continue;
             }
-
-            if (tc.position.type.isLocal() != inCode)
-                continue;
-            if (!tc.position.emitToClassfile())
-                continue;
             switch (types.getRetention(tc)) {
             case SOURCE: break;
             case CLASS: invisibles.append(tc); break;
@@ -967,8 +955,6 @@ public class ClassWriter extends ClassFile {
         case METHOD_RETURN:
         case FIELD:
             break;
-        case UNKNOWN:
-            throw new AssertionError("jvm.ClassWriter: UNKNOWN target type should never occur!");
         default:
             throw new AssertionError("jvm.ClassWriter: Unknown target type for position: " + p);
         }

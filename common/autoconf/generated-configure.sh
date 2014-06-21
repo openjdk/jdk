@@ -874,6 +874,8 @@ PKGHANDLER
 OUTPUT_ROOT
 CONF_NAME
 SPEC
+SDKROOT
+XCODEBUILD
 BUILD_VARIANT_RELEASE
 DEBUG_CLASSFILES
 FASTDEBUG
@@ -1040,6 +1042,7 @@ with_sysroot
 with_tools_dir
 with_toolchain_path
 with_extra_path
+with_sdk_name
 with_conf_name
 with_builddeps_conf
 with_builddeps_server
@@ -1074,7 +1077,6 @@ with_extra_cxxflags
 with_extra_ldflags
 enable_debug_symbols
 enable_zip_debug_info
-enable_macosx_runtime_support
 with_x
 with_cups
 with_cups_include
@@ -1085,6 +1087,7 @@ enable_freetype_bundling
 with_alsa
 with_alsa_include
 with_alsa_lib
+with_libjpeg
 with_giflib
 with_lcms
 with_libpng
@@ -1841,9 +1844,6 @@ Optional Features:
   --disable-debug-symbols disable generation of debug symbols [enabled]
   --disable-zip-debug-info
                           disable zipping of debug-info files [enabled]
-  --enable-macosx-runtime-support
-                          Deprecated. Option is kept for backwards
-                          compatibility and is ignored
   --disable-freetype-bundling
                           disable bundling of the freetype library with the
                           build result [enabled on Windows or when using
@@ -1872,12 +1872,13 @@ Optional Packages:
                           optimized (HotSpot build only)) [release]
   --with-devkit           use this devkit for compilers, tools and resources
   --with-sys-root         alias for --with-sysroot for backwards compatability
-  --with-sysroot          use this directory as sysroot)
+  --with-sysroot          use this directory as sysroot
   --with-tools-dir        alias for --with-toolchain-path for backwards
                           compatibility
   --with-toolchain-path   prepend these directories when searching for
                           toolchain binaries (compilers etc)
   --with-extra-path       prepend these directories to the default path
+  --with-sdk-name         use the platform SDK of the given name. [macosx]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
   --with-builddeps-conf   use this configuration file for the builddeps
@@ -1942,6 +1943,8 @@ Optional Packages:
                           headers under PATH/include)
   --with-alsa-include     specify directory for the alsa include files
   --with-alsa-lib         specify directory for the alsa library
+  --with-libjpeg          use libjpeg from build system or OpenJDK source
+                          (system, bundled) [bundled]
   --with-giflib           use giflib from build system or OpenJDK source
                           (system, bundled) [bundled]
   --with-lcms             use lcms2 from build system or OpenJDK source
@@ -4308,7 +4311,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1402614845
+DATE_WHEN_GENERATED=1403110135
 
 ###############################################################################
 #
@@ -14967,6 +14970,122 @@ if test "${with_extra_path+set}" = set; then :
 
 fi
 
+
+  if test "x$OPENJDK_BUILD_OS" = "xmacosx"; then
+    # detect if Xcode is installed by running xcodebuild -version
+    # if no Xcode installed, xcodebuild exits with 1
+    # if Xcode is installed, even if xcode-select is misconfigured, then it exits with 0
+    if /usr/bin/xcodebuild -version >/dev/null 2>&1; then
+      # We need to use xcodebuild in the toolchain dir provided by the user, this will
+      # fall back on the stub binary in /usr/bin/xcodebuild
+      # Extract the first word of "xcodebuild", so it can be a program name with args.
+set dummy xcodebuild; ac_word=$2
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking for $ac_word" >&5
+$as_echo_n "checking for $ac_word... " >&6; }
+if ${ac_cv_path_XCODEBUILD+:} false; then :
+  $as_echo_n "(cached) " >&6
+else
+  case $XCODEBUILD in
+  [\\/]* | ?:[\\/]*)
+  ac_cv_path_XCODEBUILD="$XCODEBUILD" # Let the user override the test with a path.
+  ;;
+  *)
+  as_save_IFS=$IFS; IFS=$PATH_SEPARATOR
+for as_dir in $TOOLCHAIN_PATH
+do
+  IFS=$as_save_IFS
+  test -z "$as_dir" && as_dir=.
+    for ac_exec_ext in '' $ac_executable_extensions; do
+  if as_fn_executable_p "$as_dir/$ac_word$ac_exec_ext"; then
+    ac_cv_path_XCODEBUILD="$as_dir/$ac_word$ac_exec_ext"
+    $as_echo "$as_me:${as_lineno-$LINENO}: found $as_dir/$ac_word$ac_exec_ext" >&5
+    break 2
+  fi
+done
+  done
+IFS=$as_save_IFS
+
+  test -z "$ac_cv_path_XCODEBUILD" && ac_cv_path_XCODEBUILD="/usr/bin/xcodebuild"
+  ;;
+esac
+fi
+XCODEBUILD=$ac_cv_path_XCODEBUILD
+if test -n "$XCODEBUILD"; then
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: $XCODEBUILD" >&5
+$as_echo "$XCODEBUILD" >&6; }
+else
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+fi
+
+
+    else
+      # this should result in SYSROOT being empty, unless --with-sysroot is provided
+      # when only the command line tools are installed there are no SDKs, so headers
+      # are copied into the system frameworks
+      XCODEBUILD=
+
+    fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for sdk name" >&5
+$as_echo_n "checking for sdk name... " >&6; }
+
+# Check whether --with-sdk-name was given.
+if test "${with_sdk_name+set}" = set; then :
+  withval=$with_sdk_name; SDKNAME=$with_sdk_name
+
+fi
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $SDKNAME" >&5
+$as_echo "$SDKNAME" >&6; }
+
+    # if toolchain path is specified then don't rely on system headers, they may not compile
+    HAVE_SYSTEM_FRAMEWORK_HEADERS=0
+    test -z "$TOOLCHAIN_PATH" && \
+      HAVE_SYSTEM_FRAMEWORK_HEADERS=`test ! -f /System/Library/Frameworks/Foundation.framework/Headers/Foundation.h; echo $?`
+
+    if test -z "$SYSROOT"; then
+      if test -n "$XCODEBUILD"; then
+        # if we don't have system headers, use default SDK name (last resort)
+        if test -z "$SDKNAME" -a $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0; then
+          SDKNAME=${SDKNAME:-macosx}
+        fi
+
+        if test -n "$SDKNAME"; then
+          # Call xcodebuild to determine SYSROOT
+          SYSROOT=`"$XCODEBUILD" -sdk $SDKNAME -version | grep '^Path: ' | sed 's/Path: //'`
+        fi
+      else
+        if test $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0; then
+          as_fn_error $? "No xcodebuild tool and no system framework headers found, use --with-sysroot or --with-sdk-name to provide a path to a valid SDK" "$LINENO" 5
+        fi
+      fi
+    else
+      # warn user if --with-sdk-name was also set
+      if test -n "$with_sdk_name"; then
+        { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Both SYSROOT and --with-sdk-name are set, only SYSROOT will be used" >&5
+$as_echo "$as_me: WARNING: Both SYSROOT and --with-sdk-name are set, only SYSROOT will be used" >&2;}
+      fi
+    fi
+
+    if test $HAVE_SYSTEM_FRAMEWORK_HEADERS -eq 0 -a -z "$SYSROOT"; then
+      # If no system framework headers, then SYSROOT must be set, or we won't build
+      as_fn_error $? "Unable to determine SYSROOT and no headers found in /System/Library/Frameworks. Check Xcode configuration, --with-sysroot or --with-sdk-name arguments." "$LINENO" 5
+    fi
+
+    # Perform a basic sanity test
+    if test ! -f "$SYSROOT/System/Library/Frameworks/Foundation.framework/Headers/Foundation.h"; then
+      if test -z "$SYSROOT"; then
+        as_fn_error $? "Unable to find required framework headers, provide a path to an SDK via --with-sysroot or --with-sdk-name and be sure Xcode is installed properly" "$LINENO" 5
+      else
+        as_fn_error $? "Invalid SDK or SYSROOT path, dependent framework headers not found" "$LINENO" 5
+      fi
+    fi
+
+    # set SDKROOT too, Xcode tools will pick it up
+    SDKROOT=$SYSROOT
+
+  fi
 
   # Prepend the extra path to the global path
 
@@ -26596,21 +26715,28 @@ fi
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On Mac OS X, default toolchain to clang after Xcode 5
-    XCODE_VERSION_OUTPUT=`xcodebuild -version 2>&1 | $HEAD -n 1`
-    $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-    if test $? -ne 0; then
-      as_fn_error $? "Failed to determine Xcode version." "$LINENO" 5
-    fi
-    XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-        $SED -e 's/^Xcode \([1-9][0-9.]*\)/\1/' | \
-        $CUT -f 1 -d .`
-    { $as_echo "$as_me:${as_lineno-$LINENO}: Xcode major version: $XCODE_MAJOR_VERSION" >&5
+    if test -n "$XCODEBUILD"; then
+      # On Mac OS X, default toolchain to clang after Xcode 5
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
+      if test $? -ne 0; then
+        as_fn_error $? "Failed to determine Xcode version." "$LINENO" 5
+      fi
+      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
+          $SED -e 's/^Xcode \([1-9][0-9.]*\)/\1/' | \
+          $CUT -f 1 -d .`
+      { $as_echo "$as_me:${as_lineno-$LINENO}: Xcode major version: $XCODE_MAJOR_VERSION" >&5
 $as_echo "$as_me: Xcode major version: $XCODE_MAJOR_VERSION" >&6;}
-    if test $XCODE_MAJOR_VERSION -ge 5; then
-        DEFAULT_TOOLCHAIN="clang"
+      if test $XCODE_MAJOR_VERSION -ge 5; then
+          DEFAULT_TOOLCHAIN="clang"
+      else
+          DEFAULT_TOOLCHAIN="gcc"
+      fi
     else
-        DEFAULT_TOOLCHAIN="gcc"
+      # If Xcode is not installed, but the command line tools are
+      # then we can't run xcodebuild. On these systems we should
+      # default to clang
+      DEFAULT_TOOLCHAIN="clang"
     fi
   else
     # First toolchain type in the list is the default
@@ -41076,6 +41202,10 @@ $as_echo "$tool_specified" >&6; }
             -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
       fi
+    elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      # Apple only wants -isysroot <path>, but we also need -iframework<path>/System/Library/Frameworks
+      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
+      SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
       SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
@@ -41088,6 +41218,14 @@ $as_echo "$tool_specified" >&6; }
     LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
     LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
   fi
+
+  # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+  # set this here so it doesn't have to be peppered throughout the forest
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+  fi
+
 
 
 
@@ -42135,23 +42273,18 @@ fi
 
   # Additional macosx handling
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      # FIXME: This needs to be exported in spec.gmk due to closed legacy code.
-      # FIXME: clean this up, and/or move it elsewhere.
-
-      # Setting these parameters makes it an error to link to macosx APIs that are
-      # newer than the given OS version and makes the linked binaries compatible
-      # even if built on a newer version of the OS.
-      # The expected format is X.Y.Z
-      MACOSX_VERSION_MIN=10.7.0
+    # Setting these parameters makes it an error to link to macosx APIs that are
+    # newer than the given OS version and makes the linked binaries compatible
+    # even if built on a newer version of the OS.
+    # The expected format is X.Y.Z
+    MACOSX_VERSION_MIN=10.7.0
 
 
-      # The macro takes the version with no dots, ex: 1070
-      # Let the flags variables get resolved in make for easier override on make
-      # command line.
-      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-      LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-    fi
+    # The macro takes the version with no dots, ex: 1070
+    # Let the flags variables get resolved in make for easier override on make
+    # command line.
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
   fi
 
   # Setup some hard coded includes
@@ -42654,8 +42787,6 @@ $as_echo_n "checking what is not needed on MacOSX?... " >&6; }
     ALSA_NOT_NEEDED=yes
     PULSE_NOT_NEEDED=yes
     X11_NOT_NEEDED=yes
-    # If the java runtime framework is disabled, then we need X11.
-    # This will be adjusted below.
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: alsa pulse x11" >&5
 $as_echo "alsa pulse x11" >&6; }
   fi
@@ -42674,33 +42805,6 @@ $as_echo "alsa" >&6; }
 
   if test "x$SUPPORT_HEADFUL" = xno; then
     X11_NOT_NEEDED=yes
-  fi
-
-  ###############################################################################
-  #
-  # Check for MacOSX support for OpenJDK.
-  #
-
-
-  # Check whether --enable-macosx-runtime-support was given.
-if test "${enable_macosx_runtime_support+set}" = set; then :
-  enableval=$enable_macosx_runtime_support;
-fi
-
-  if test "x$enable_macosx_runtime_support" != x; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&5
-$as_echo "$as_me: WARNING: Option --enable-macosx-runtime-support is deprecated and will be ignored." >&2;}
-  fi
-
-
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for Mac OS X Java Framework" >&5
-$as_echo_n "checking for Mac OS X Java Framework... " >&6; }
-  if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: /System/Library/Frameworks/JavaVM.framework" >&5
-$as_echo "/System/Library/Frameworks/JavaVM.framework" >&6; }
-  else
-    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
-$as_echo "no" >&6; }
   fi
 
 
@@ -47573,10 +47677,43 @@ done
   # Check for the jpeg library
   #
 
-  USE_EXTERNAL_LIBJPEG=true
-  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for main in -ljpeg" >&5
-$as_echo_n "checking for main in -ljpeg... " >&6; }
-if ${ac_cv_lib_jpeg_main+:} false; then :
+
+# Check whether --with-libjpeg was given.
+if test "${with_libjpeg+set}" = set; then :
+  withval=$with_libjpeg;
+fi
+
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking for which libjpeg to use" >&5
+$as_echo_n "checking for which libjpeg to use... " >&6; }
+
+  # default is bundled
+  DEFAULT_LIBJPEG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBJPEG
+  #
+  if test "x${with_libjpeg}" = "x"; then
+    with_libjpeg=${DEFAULT_LIBJPEG}
+  fi
+
+  { $as_echo "$as_me:${as_lineno-$LINENO}: result: ${with_libjpeg}" >&5
+$as_echo "${with_libjpeg}" >&6; }
+
+  if test "x${with_libjpeg}" = "xbundled"; then
+    USE_EXTERNAL_LIBJPEG=false
+  elif test "x${with_libjpeg}" = "xsystem"; then
+    ac_fn_cxx_check_header_mongrel "$LINENO" "jpeglib.h" "ac_cv_header_jpeglib_h" "$ac_includes_default"
+if test "x$ac_cv_header_jpeglib_h" = xyes; then :
+
+else
+   as_fn_error $? "--with-libjpeg=system specified, but jpeglib.h not found!" "$LINENO" 5
+fi
+
+
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for jpeg_CreateDecompress in -ljpeg" >&5
+$as_echo_n "checking for jpeg_CreateDecompress in -ljpeg... " >&6; }
+if ${ac_cv_lib_jpeg_jpeg_CreateDecompress+:} false; then :
   $as_echo_n "(cached) " >&6
 else
   ac_check_lib_save_LIBS=$LIBS
@@ -47584,27 +47721,33 @@ LIBS="-ljpeg  $LIBS"
 cat confdefs.h - <<_ACEOF >conftest.$ac_ext
 /* end confdefs.h.  */
 
-
+/* Override any GCC internal prototype to avoid an error.
+   Use char because int might match the return type of a GCC
+   builtin and then its argument prototype would still apply.  */
+#ifdef __cplusplus
+extern "C"
+#endif
+char jpeg_CreateDecompress ();
 int
 main ()
 {
-return main ();
+return jpeg_CreateDecompress ();
   ;
   return 0;
 }
 _ACEOF
 if ac_fn_cxx_try_link "$LINENO"; then :
-  ac_cv_lib_jpeg_main=yes
+  ac_cv_lib_jpeg_jpeg_CreateDecompress=yes
 else
-  ac_cv_lib_jpeg_main=no
+  ac_cv_lib_jpeg_jpeg_CreateDecompress=no
 fi
 rm -f core conftest.err conftest.$ac_objext \
     conftest$ac_exeext conftest.$ac_ext
 LIBS=$ac_check_lib_save_LIBS
 fi
-{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_main" >&5
-$as_echo "$ac_cv_lib_jpeg_main" >&6; }
-if test "x$ac_cv_lib_jpeg_main" = xyes; then :
+{ $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_cv_lib_jpeg_jpeg_CreateDecompress" >&5
+$as_echo "$ac_cv_lib_jpeg_jpeg_CreateDecompress" >&6; }
+if test "x$ac_cv_lib_jpeg_jpeg_CreateDecompress" = xyes; then :
   cat >>confdefs.h <<_ACEOF
 #define HAVE_LIBJPEG 1
 _ACEOF
@@ -47612,11 +47755,14 @@ _ACEOF
   LIBS="-ljpeg $LIBS"
 
 else
-   USE_EXTERNAL_LIBJPEG=false
-      { $as_echo "$as_me:${as_lineno-$LINENO}: Will use jpeg decoder bundled with the OpenJDK source" >&5
-$as_echo "$as_me: Will use jpeg decoder bundled with the OpenJDK source" >&6;}
-
+   as_fn_error $? "--with-libjpeg=system specified, but no libjpeg found" "$LINENO" 5
 fi
+
+
+    USE_EXTERNAL_LIBJPEG=true
+  else
+    as_fn_error $? "Invalid use of --with-libjpeg: ${with_libjpeg}, use 'system' or 'bundled'" "$LINENO" 5
+  fi
 
 
 

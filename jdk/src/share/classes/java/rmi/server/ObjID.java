@@ -65,7 +65,7 @@ import java.util.concurrent.atomic.AtomicLong;
  *
  * @author      Ann Wollrath
  * @author      Peter Jones
- * @since       JDK1.1
+ * @since       1.1
  */
 public final class ObjID implements Serializable {
 

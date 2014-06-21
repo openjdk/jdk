@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,7 +55,7 @@ public class T6430209 {
         // run annotation processor b6341534 so we can check diagnostics
         // -proc:only -processor b6341534 -cp . ./src/*.java
         String testSrc = System.getProperty("test.src", ".");
-        String testClasses = System.getProperty("test.classes") + System.getProperty("path.separator") + "../../lib";
+        String testClassPath = System.getProperty("test.class.path");
         JavacTool tool = JavacTool.create();
         MyDiagListener dl = new MyDiagListener();
         StandardJavaFileManager fm = tool.getStandardFileManager(dl, null, null);
@@ -64,7 +64,7 @@ public class T6430209 {
             new File(testSrc, "test0.java"), new File(testSrc, "test1.java")));
         Iterable<String> opts = Arrays.asList("-proc:only",
                                               "-processor", "b6341534",
-                                              "-processorpath", testClasses);
+                                              "-processorpath", testClassPath);
         StringWriter out = new StringWriter();
         JavacTask task = tool.getTask(out, fm, dl, opts, null, files);
         task.call();

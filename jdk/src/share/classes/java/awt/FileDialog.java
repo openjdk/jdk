@@ -44,7 +44,7 @@ import sun.awt.AWTAccessor;
  *
  * @author      Sami Shaio
  * @author      Arthur van Hoff
- * @since       JDK1.0
+ * @since       1.0
  */
 public class FileDialog extends Dialog {
 
@@ -176,7 +176,7 @@ public class FileDialog extends Dialog {
      * <code>FileDialog(parent, "", LOAD)</code>.
      *
      * @param parent the owner of the dialog
-     * @since JDK1.1
+     * @since 1.1
      */
     public FileDialog(Frame parent) {
         this(parent, "", LOAD);
@@ -353,7 +353,7 @@ public class FileDialog extends Dialog {
      * @see        java.awt.FileDialog#getMode
      * @exception  IllegalArgumentException if an illegal file
      *                 dialog mode is supplied
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void setMode(int mode) {
         switch (mode) {

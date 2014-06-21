@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -178,7 +178,7 @@ public class Main {
 
     public void run(String args[]) {
         try {
-            parseArgs(args);
+            args = parseArgs(args);
 
             // Try to load and install the specified providers
             if (providers != null) {
@@ -282,11 +282,39 @@ public class Main {
     /*
      * Parse command line arguments.
      */
-    void parseArgs(String args[]) {
+    String[] parseArgs(String args[]) throws Exception {
         /* parse flags */
         int n = 0;
 
         if (args.length == 0) fullusage();
+
+        String confFile = null;
+        String command = "-sign";
+        for (n=0; n < args.length; n++) {
+            if (collator.compare(args[n], "-verify") == 0) {
+                command = "-verify";
+            } else if (collator.compare(args[n], "-conf") == 0) {
+                if (n == args.length - 1) {
+                    usageNoArg();
+                }
+                confFile = args[++n];
+            }
+        }
+
+        if (confFile != null) {
+            args = KeyStoreUtil.expandArgs(
+                    "jarsigner", confFile, command, null, args);
+        }
+
+        debug = Arrays.stream(args).anyMatch(
+                x -> collator.compare(x, "-debug") == 0);
+
+        if (debug) {
+            // No need to localize debug output
+            System.out.println("Command line args: " +
+                    Arrays.toString(args));
+        }
+
         for (n=0; n < args.length; n++) {
 
             String flags = args[n];
@@ -307,6 +335,8 @@ public class Main {
                     alias = flags;
                     ckaliases.add(alias);
                 }
+            } else if (collator.compare(flags, "-conf") == 0) {
+                if (++n == args.length) usageNoArg();
             } else if (collator.compare(flags, "-keystore") == 0) {
                 if (++n == args.length) usageNoArg();
                 keystore = args[n];
@@ -347,7 +377,7 @@ public class Main {
                 if (++n == args.length) usageNoArg();
                 tSADigestAlg = args[n];
             } else if (collator.compare(flags, "-debug") ==0) {
-                debug = true;
+                // Already processed
             } else if (collator.compare(flags, "-keypass") ==0) {
                 if (++n == args.length) usageNoArg();
                 keypass = getPass(modifier, args[n]);
@@ -466,6 +496,7 @@ public class Main {
                 usage();
             }
         }
+        return args;
     }
 
     static char[] getPass(String modifier, String arg) {
@@ -567,6 +598,9 @@ public class Main {
         System.out.println();
         System.out.println(rb.getString
                 (".strict.treat.warnings.as.errors"));
+        System.out.println();
+        System.out.println(rb.getString
+                (".conf.url.specify.a.pre.configured.options.file"));
         System.out.println();
 
         System.exit(0);

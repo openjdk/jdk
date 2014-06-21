@@ -33,7 +33,7 @@ import java.rmi.*;
  * remote method invocation to a remote object.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @see     java.rmi.server.RemoteStub
  */
 public interface RemoteRef extends java.io.Externalizable {
@@ -84,7 +84,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * interpret them. The remote reference may need the operation to
      * encode in the call.
      *
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated 1.2 style stubs no longer use this method. Instead of
      * using a sequence of method calls on the stub's the remote reference
      * (<code>newCall</code>, <code>invoke</code>, and <code>done</code>), a
@@ -114,7 +114,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * take care of cleaning up the connection before raising the
      * "user" or remote exception.
      *
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated 1.2 style stubs no longer use this method. Instead of
      * using a sequence of method calls to the remote reference
      * (<code>newCall</code>, <code>invoke</code>, and <code>done</code>), a
@@ -135,7 +135,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * Done should only be called if the invoke returns successfully
      * (non-exceptionally) to the stub.
      *
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated 1.2 style stubs no longer use this method. Instead of
      * using a sequence of method calls to the remote reference
      * (<code>newCall</code>, <code>invoke</code>, and <code>done</code>), a
@@ -157,7 +157,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * @param out the output stream to which the reference will be serialized
      * @return the class name (without package qualification) of the reference
      * type
-     * @since JDK1.1
+     * @since 1.1
      */
     String getRefClass(java.io.ObjectOutput out);
 
@@ -168,7 +168,7 @@ public interface RemoteRef extends java.io.Externalizable {
      *
      * @return remote object hashcode
      * @see             java.util.Hashtable
-     * @since JDK1.1
+     * @since 1.1
      */
     int remoteHashCode();
 
@@ -180,7 +180,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * @param   obj     the Object to compare with
      * @return  true if these Objects are equal; false otherwise.
      * @see             java.util.Hashtable
-     * @since JDK1.1
+     * @since 1.1
      */
     boolean remoteEquals(RemoteRef obj);
 
@@ -188,7 +188,7 @@ public interface RemoteRef extends java.io.Externalizable {
      * Returns a String that represents the reference of this remote
      * object.
      * @return string representing remote object reference
-     * @since JDK1.1
+     * @since 1.1
      */
     String remoteToString();
 
