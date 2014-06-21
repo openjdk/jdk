@@ -77,13 +77,13 @@ public class OptionFormat {
 
     public void apply(Closure c) throws MonitorException {
 
-      for (Iterator i = children.iterator(); i.hasNext(); /* empty */) {
-          OptionFormat o = (OptionFormat)i.next();
+      for (Iterator<OptionFormat> i = children.iterator(); i.hasNext(); /* empty */) {
+          OptionFormat o = i.next();
           c.visit(o, i.hasNext());
       }
 
-      for (Iterator i = children.iterator(); i.hasNext(); /* empty */) {
-          OptionFormat o = (OptionFormat)i.next();
+      for (Iterator <OptionFormat>i = children.iterator(); i.hasNext(); /* empty */) {
+          OptionFormat o = i.next();
           o.apply(c);
       }
     }

@@ -36,7 +36,7 @@ public class DatatypeConfigurationException extends Exception {
 
     /**
      * <p>Create a new <code>DatatypeConfigurationException</code> with
-     * no specified detail mesage and cause.</p>
+     * no specified detail message and cause.</p>
      */
 
     public DatatypeConfigurationException() {

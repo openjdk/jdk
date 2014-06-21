@@ -1041,7 +1041,9 @@ public class Check {
 
         switch (sym.kind) {
         case VAR:
-            if (sym.owner.kind != TYP)
+            if (TreeInfo.isReceiverParam(tree))
+                mask = ReceiverParamFlags;
+            else if (sym.owner.kind != TYP)
                 mask = LocalVarFlags;
             else if ((sym.owner.flags_field & INTERFACE) != 0)
                 mask = implicit = InterfaceVarFlags;
@@ -1818,6 +1820,11 @@ public class Check {
                                             Type t1,
                                             Type t2,
                                             Type site) {
+        if ((site.tsym.flags() & COMPOUND) != 0) {
+            // special case for intersections: need to eliminate wildcards in supertypes
+            t1 = types.capture(t1);
+            t2 = types.capture(t2);
+        }
         return firstIncompatibility(pos, t1, t2, site) == null;
     }
 

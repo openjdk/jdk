@@ -29,7 +29,7 @@ package java.rmi.server;
  * An obsolete subclass of {@link ExportException}.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated This class is obsolete. Use {@link ExportException} instead.
  */
 @Deprecated
@@ -43,7 +43,7 @@ public class SocketSecurityException extends ExportException {
      * detail message.
      *
      * @param s the detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public SocketSecurityException(String s) {
         super(s);
@@ -55,7 +55,7 @@ public class SocketSecurityException extends ExportException {
      *
      * @param s the detail message.
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public SocketSecurityException(String s, Exception ex) {
         super(s, ex);

@@ -116,8 +116,8 @@ public class Jstat {
             Collections.sort(logged, arguments.comparator());
             List<Monitor> constants = new ArrayList<Monitor>();
 
-            for (Iterator i = logged.iterator(); i.hasNext(); /* empty */) {
-                Monitor m = (Monitor)i.next();
+            for (Iterator<Monitor> i = logged.iterator(); i.hasNext(); /* empty */) {
+                Monitor m = i.next();
                 if (!(m.isSupported() || arguments.showUnsupported())) {
                     i.remove();
                     continue;

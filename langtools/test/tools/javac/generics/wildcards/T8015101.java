@@ -22,15 +22,23 @@
  */
 
 /*
- * @test TestStringDeduplicationMemoryUsage
- * @summary Test string deduplication memory usage
- * @bug 8029075
- * @key gc
- * @library /testlibrary
+ * @test
+ * @bug 8015101
+ * @summary Mishandling of wildcards in intersection member method check
+ * @compile T8015101.java
  */
+class T8015101 {
 
-public class TestStringDeduplicationMemoryUsage {
-    public static void main(String[] args) throws Exception {
-        TestStringDeduplicationTools.testMemoryUsage();
-    }
-}
+     public static class Bug<X extends Child<?, ?> & Runnable> {
+     }
+
+     interface Parent<C> {
+         public C get();
+     }
+
+     interface Child<C, S extends C> extends Parent<C> {
+         @Override
+         public S get();
+     }
+
+ }

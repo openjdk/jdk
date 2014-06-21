@@ -325,7 +325,7 @@ import sun.util.calendar.ZoneInfo;
  *
  * @see          TimeZone
  * @author David Goldsmith, Mark Davis, Chen-Lieh Huang, Alan Liu
- * @since JDK1.1
+ * @since 1.1
  */
 public class GregorianCalendar extends Calendar {
     /*

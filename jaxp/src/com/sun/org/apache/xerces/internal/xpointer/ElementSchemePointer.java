@@ -559,11 +559,13 @@ final class ElementSchemePointer implements XPointerPart {
          * @param token The token string
          */
         private void addToken(String tokenStr) {
-            if (!fTokenNames.containsValue(tokenStr)) {
-                Integer tokenInt = new Integer(fTokenNames.size());
+            String str = fTokenNames.get(tokenStr);
+            Integer tokenInt = str == null ? null : Integer.parseInt(str);
+            if (tokenInt == null) {
+                tokenInt = new Integer(fTokenNames.size());
                 fTokenNames.put(tokenInt, tokenStr);
-                addToken(tokenInt.intValue());
             }
+            addToken(tokenInt.intValue());
         }
 
         /**

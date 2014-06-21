@@ -4505,7 +4505,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIndex the first column is 1, the second is 2, ...
      * @return a SQLXML object that maps an SQL XML value
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public SQLXML getSQLXML(int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4531,7 +4531,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @return the column value if the value is a SQL <code>NULL</code> the
      *     value returned is <code>null</code>
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public RowId getRowId(int columnIndex) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4546,7 +4546,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @return the column value if the value is a SQL <code>NULL</code> the
      *     value returned is <code>null</code>
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public RowId getRowId(String columnName) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4562,7 +4562,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIndex the first column is 1, the second 2, ...
      * @param x the column value
      * @throws SQLException if a database access occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateRowId(int columnIndex, RowId x) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4578,7 +4578,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnName the name of the column
      * @param x the column value
      * @throws SQLException if a database access occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateRowId(String columnName, RowId x) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4588,7 +4588,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * Retrieves the holdability of this ResultSet object
      * @return  either ResultSet.HOLD_CURSORS_OVER_COMMIT or ResultSet.CLOSE_CURSORS_AT_COMMIT
      * @throws SQLException if a database error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public int getHoldability() throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4599,7 +4599,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * method close has been called on it, or if it is automatically closed.
      * @return true if this ResultSet object is closed; false if it is still open
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public boolean isClosed() throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4611,7 +4611,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIndex the first column is 1, the second 2, ...
      * @param nString the value for the column to be updated
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateNString(int columnIndex, String nString) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4623,7 +4623,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnName name of the Column
      * @param nString the value for the column to be updated
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateNString(String columnName, String nString) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4636,7 +4636,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnIndex the first column is 1, the second 2, ...
      * @param nClob the value for the column to be updated
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateNClob(int columnIndex, NClob nClob) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4648,7 +4648,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @param columnName name of the column
      * @param nClob the value for the column to be updated
      * @throws SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public void updateNClob(String columnName, NClob nClob) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4663,7 +4663,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @return a <code>NClob</code> object representing the SQL
      *         <code>NCLOB</code> value in the specified column
      * @exception SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public NClob getNClob(int i) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());
@@ -4679,7 +4679,7 @@ public class JdbcRowSetImpl extends BaseRowSet implements JdbcRowSet, Joinable {
      * @return a <code>NClob</code> object representing the SQL <code>NCLOB</code>
      * value in the specified column
      * @exception SQLException if a database access error occurs
-     * @since 6.0
+     * @since 1.6
      */
     public NClob getNClob(String colName) throws SQLException {
         throw new SQLFeatureNotSupportedException(resBundle.handleGetObject("jdbcrowsetimpl.featnotsupp").toString());

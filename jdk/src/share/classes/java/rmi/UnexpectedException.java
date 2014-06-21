@@ -32,7 +32,7 @@ package java.rmi;
  * <code>throws</code> clause of the method in the remote interface.
  *
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  */
 public class UnexpectedException extends RemoteException {
 
@@ -44,7 +44,7 @@ public class UnexpectedException extends RemoteException {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public UnexpectedException(String s) {
         super(s);
@@ -56,7 +56,7 @@ public class UnexpectedException extends RemoteException {
      *
      * @param s the detail message
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public UnexpectedException(String s, Exception ex) {
         super(s, ex);

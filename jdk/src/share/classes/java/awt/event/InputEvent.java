@@ -162,7 +162,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @see getButtonDownMasks
      * There are twenty buttons fit into 4byte space.
      * one more bit is reserved for FIRST_HIGH_BIT.
-     * @since 7.0
+     * @since 1.7
      */
     private static final int [] BUTTON_DOWN_MASK = new int [] { BUTTON1_DOWN_MASK,
                                                                BUTTON2_DOWN_MASK,
@@ -187,7 +187,7 @@ public abstract class InputEvent extends ComponentEvent {
 
     /**
      * A method to access an array of extended modifiers for additional buttons.
-     * @since 7.0
+     * @since 1.7
      */
     private static int [] getButtonDownMasks(){
         return Arrays.copyOf(BUTTON_DOWN_MASK, BUTTON_DOWN_MASK.length);
@@ -237,7 +237,7 @@ public abstract class InputEvent extends ComponentEvent {
      * @return a mask for an existing mouse button.
      * @throws IllegalArgumentException if {@code button} is less than zero or greater than the number
      *         of button masks reserved for buttons
-     * @since 7.0
+     * @since 1.7
      * @see java.awt.MouseInfo#getNumberOfButtons()
      * @see Toolkit#areExtraMouseButtonsEnabled()
      * @see MouseEvent#getModifiers()

@@ -36,8 +36,8 @@ public class ClassfileTestHelper {
 
     //Makes debugging much easier. Set to 'false' for less output.
     public Boolean verbose = true;
-    void println(String msg) { if (verbose) System.out.println(msg); }
-    void print(String msg) { if (verbose) System.out.print(msg); }
+    void println(String msg) { if (verbose) System.err.println(msg); }
+    void print(String msg) { if (verbose) System.err.print(msg); }
 
     File writeTestFile(String fname, String source) throws IOException {
       File f = new File(fname);

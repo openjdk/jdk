@@ -597,7 +597,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see #getRed
      * @see #getGreen
      * @see #getBlue
-     * @since JDK1.0
+     * @since 1.0
      */
     public int getRGB() {
         return value;
@@ -621,7 +621,7 @@ public class Color implements Paint, java.io.Serializable {
      *                 a brighter version of this <code>Color</code>
      *                 with the same {@code alpha} value.
      * @see        java.awt.Color#darker
-     * @since      JDK1.0
+     * @since      1.0
      */
     public Color brighter() {
         int r = getRed();
@@ -664,7 +664,7 @@ public class Color implements Paint, java.io.Serializable {
      *                    a darker version of this <code>Color</code>
      *                    with the same {@code alpha} value.
      * @see        java.awt.Color#brighter
-     * @since      JDK1.0
+     * @since      1.0
      */
     public Color darker() {
         return new Color(Math.max((int)(getRed()  *FACTOR), 0),
@@ -676,7 +676,7 @@ public class Color implements Paint, java.io.Serializable {
     /**
      * Computes the hash code for this <code>Color</code>.
      * @return     a hash code value for this object.
-     * @since      JDK1.0
+     * @since      1.0
      */
     public int hashCode() {
         return value;
@@ -693,7 +693,7 @@ public class Color implements Paint, java.io.Serializable {
      *                          <code>Color</code>
      * @return      <code>true</code> if the objects are the same;
      *                             <code>false</code> otherwise.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public boolean equals(Object obj) {
         return obj instanceof Color && ((Color)obj).getRGB() == this.getRGB();
@@ -723,7 +723,7 @@ public class Color implements Paint, java.io.Serializable {
      * @exception  NumberFormatException  if the specified string cannot
      *                      be interpreted as a decimal,
      *                      octal, or hexadecimal integer.
-     * @since      JDK1.1
+     * @since      1.1
      */
     public static Color decode(String nm) throws NumberFormatException {
         Integer intval = Integer.decode(nm);
@@ -747,7 +747,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
      * @see      java.awt.Color#Color(int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public static Color getColor(String nm) {
         return getColor(nm, null);
@@ -771,7 +771,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
      * @see      java.awt.Color#Color(int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public static Color getColor(String nm, Color v) {
         Integer intval = Integer.getInteger(nm);
@@ -801,7 +801,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see      java.lang.System#getProperty(java.lang.String)
      * @see      java.lang.Integer#getInteger(java.lang.String)
      * @see      java.awt.Color#Color(int)
-     * @since    JDK1.0
+     * @since    1.0
      */
     public static Color getColor(String nm, int v) {
         Integer intval = Integer.getInteger(nm);
@@ -834,7 +834,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see       java.awt.Color#getRGB()
      * @see       java.awt.Color#Color(int)
      * @see       java.awt.image.ColorModel#getRGBdefault()
-     * @since     JDK1.0
+     * @since     1.0
      */
     public static int HSBtoRGB(float hue, float saturation, float brightness) {
         int r = 0, g = 0, b = 0;
@@ -902,7 +902,7 @@ public class Color implements Paint, java.io.Serializable {
      * @see       java.awt.Color#getRGB()
      * @see       java.awt.Color#Color(int)
      * @see       java.awt.image.ColorModel#getRGBdefault()
-     * @since     JDK1.0
+     * @since     1.0
      */
     public static float[] RGBtoHSB(int r, int g, int b, float[] hsbvals) {
         float hue, saturation, brightness;
@@ -957,7 +957,7 @@ public class Color implements Paint, java.io.Serializable {
      * @param  b   the brightness of the color
      * @return  a <code>Color</code> object with the specified hue,
      *                                 saturation, and brightness.
-     * @since   JDK1.0
+     * @since   1.0
      */
     public static Color getHSBColor(float h, float s, float b) {
         return new Color(HSBtoRGB(h, s, b));

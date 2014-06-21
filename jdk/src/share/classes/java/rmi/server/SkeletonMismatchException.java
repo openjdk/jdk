@@ -36,7 +36,7 @@ import java.rmi.RemoteException;
  * the stub compiler (<code>rmic</code>).
  *
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement.  Skeletons are no longer required for remote
  * method calls in the Java 2 platform v1.2 and greater.
  */
@@ -51,7 +51,7 @@ public class SkeletonMismatchException extends RemoteException {
      * a specified detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated

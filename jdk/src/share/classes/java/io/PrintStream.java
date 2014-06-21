@@ -51,7 +51,7 @@ import java.nio.charset.UnsupportedCharsetException;
  *
  * @author     Frank Yellin
  * @author     Mark Reinhold
- * @since      JDK1.0
+ * @since      1.0
  */
 
 public class PrintStream extends FilterOutputStream
@@ -404,7 +404,7 @@ public class PrintStream extends FilterOutputStream
      * #checkError()} to return <tt>true</tt> until {@link
      * #clearError()} is invoked.
      *
-     * @since JDK1.1
+     * @since 1.1
      */
     protected void setError() {
         trouble = true;
