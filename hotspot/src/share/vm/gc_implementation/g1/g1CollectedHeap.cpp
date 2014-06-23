@@ -6995,7 +6995,7 @@ public:
       return;
     }
 
-    if (ScavengeRootsInCode && nm->detect_scavenge_root_oops()) {
+    if (ScavengeRootsInCode) {
       _g1h->register_nmethod(nm);
     }
   }
