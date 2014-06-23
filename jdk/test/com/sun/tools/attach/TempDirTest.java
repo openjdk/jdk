@@ -39,12 +39,21 @@ import jdk.testlibrary.ProcessThread;
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
  * @library /lib/testlibrary
  * @run build jdk.testlibrary.* Application Shutdown RunnerUtil
- * @run main TempDirTest
+ * @run main/timeout=200 TempDirTest
+ */
+
+/*
+ * This test runs with an extra long timeout since it takes a really long time with -Xcomp
+ * when starting many processes.
  */
 
 public class TempDirTest {
 
+    private static long startTime;
+
     public static void main(String args[]) throws Throwable {
+
+        startTime = System.currentTimeMillis();
 
         Path clientTmpDir = Files.createTempDirectory("TempDirTest-client");
         clientTmpDir.toFile().deleteOnExit();
@@ -76,6 +85,9 @@ public class TempDirTest {
         System.out.print(" target: " + (targetTmpDir == null ? "no" : "yes"));
         System.out.println(" ###");
 
+        long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+        System.out.println("Started after " + elapsedTime + "s");
+
         final String pidFile = "TempDirTest.Application.pid-" + counter++;
         ProcessThread processThread = null;
         RunnerUtil.ProcessInfo info = null;
@@ -95,6 +107,10 @@ public class TempDirTest {
             // Make sure the Application process is stopped.
             RunnerUtil.stopApplication(info.shutdownPort, processThread);
         }
+
+        elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+        System.out.println("Completed after " + elapsedTime + "s");
+
     }
 
     /**
