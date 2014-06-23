@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,6 +65,8 @@ public class MultiTextUI extends TextUI {
      * Returns the list of UIs associated with this multiplexing UI.  This
      * allows processing of the UIs by an application aware of multiplexing
      * UIs on components.
+     *
+     * @return an array of the UI delegates
      */
     public ComponentUI[] getUIs() {
         return MultiLookAndFeel.uisToArray(uis);
@@ -248,6 +250,9 @@ public class MultiTextUI extends TextUI {
      * Returns a multiplexing UI instance if any of the auxiliary
      * <code>LookAndFeel</code>s supports this UI.  Otherwise, just returns the
      * UI object obtained from the default <code>LookAndFeel</code>.
+     *
+     * @param  a the component to create the UI for
+     * @return the UI delegate created
      */
     public static ComponentUI createUI(JComponent a) {
         ComponentUI mui = new MultiTextUI();

@@ -156,7 +156,7 @@ public class StyleSheet extends StyleContext {
     // . When one of the AttributeSets is mutated by way of a
     //   StyleConstants key, all the associated CSS keys are removed. This is
     //   done so that the two representations don't get out of sync. For
-    //   example, if the developer adds StyleConsants.BOLD, FALSE to an
+    //   example, if the developer adds StyleConstants.BOLD, FALSE to an
     //   AttributeSet that contains HTML.Tag.B, the HTML.Tag.B entry will
     //   be removed.
 
@@ -271,6 +271,9 @@ public class StyleSheet extends StyleContext {
      * with a selector "table p" and a new rule was added with a selector
      * of "p" the returned Style would include the new attributes from
      * the rule "p".
+     *
+     * @param selector a space separated String of the element names.
+     * @return the rule that best matches the selector.
      */
     public Style getRule(String selector) {
         selector = cleanSelectorString(selector);
@@ -285,6 +288,8 @@ public class StyleSheet extends StyleContext {
      * Adds a set of rules to the sheet.  The rules are expected to
      * be in valid CSS format.  Typically this would be called as
      * a result of parsing a &lt;style&gt; tag.
+     *
+     * @param rule a set of rules
      */
     public void addRule(String rule) {
         if (rule != null) {
@@ -316,6 +321,9 @@ public class StyleSheet extends StyleContext {
      * Translates a CSS declaration to an AttributeSet that represents
      * the CSS declaration.  Typically this would be called as a
      * result of encountering an HTML style attribute.
+     *
+     * @param decl a CSS declaration
+     * @return a set of attributes that represents the CSS declaration.
      */
     public AttributeSet getDeclaration(String decl) {
         if (decl == null) {
@@ -335,6 +343,7 @@ public class StyleSheet extends StyleContext {
      *  location of the stream and may be null.  All relative
      *  URLs specified in the stream will be based upon this
      *  parameter.
+     * @throws java.io.IOException if I/O error occured.
      */
     public void loadRules(Reader in, URL ref) throws IOException {
         CssParser parser = new CssParser();
@@ -345,6 +354,9 @@ public class StyleSheet extends StyleContext {
      * Fetches a set of attributes to use in the view for
      * displaying.  This is basically a set of attributes that
      * can be used for View.getAttributes.
+     *
+     * @param v a view
+     * @return the of attributes
      */
     public AttributeSet getViewAttributes(View v) {
         return new ViewAttributeSet(v);
@@ -389,6 +401,7 @@ public class StyleSheet extends StyleContext {
      * any previously added style sheets. An added StyleSheet will never
      * override the rules of the receiving style sheet.
      *
+     * @param ss a StyleSheet
      * @since 1.3
      */
     public void addStyleSheet(StyleSheet ss) {
@@ -411,6 +424,7 @@ public class StyleSheet extends StyleContext {
     /**
      * Removes the StyleSheet <code>ss</code> from those of the receiver.
      *
+     * @param ss a StyleSheet
      * @since 1.3
      */
     public void removeStyleSheet(StyleSheet ss) {
@@ -436,6 +450,7 @@ public class StyleSheet extends StyleContext {
      * Returns an array of the linked StyleSheets. Will return null
      * if there are no linked StyleSheets.
      *
+     * @return an array of StyleSheets.
      * @since 1.3
      */
     public StyleSheet[] getStyleSheets() {
@@ -459,6 +474,7 @@ public class StyleSheet extends StyleContext {
      * to become part of the receiver, create a new StyleSheet and use
      * addStyleSheet to link it in.
      *
+     * @param url an url
      * @since 1.3
      */
     public void importStyleSheet(URL url) {
@@ -481,6 +497,7 @@ public class StyleSheet extends StyleContext {
      * Sets the base. All import statements that are relative, will be
      * relative to <code>base</code>.
      *
+     * @param base a base.
      * @since 1.3
      */
     public void setBase(URL base) {
@@ -490,6 +507,7 @@ public class StyleSheet extends StyleContext {
     /**
      * Returns the base.
      *
+     * @return the base.
      * @since 1.3
      */
     public URL getBase() {
@@ -499,6 +517,9 @@ public class StyleSheet extends StyleContext {
     /**
      * Adds a CSS attribute to the given set.
      *
+     * @param attr a set of attributes
+     * @param key a CSS property
+     * @param value an HTML attribute value
      * @since 1.3
      */
     public void addCSSAttribute(MutableAttributeSet attr, CSS.Attribute key,
@@ -509,6 +530,11 @@ public class StyleSheet extends StyleContext {
     /**
      * Adds a CSS attribute to the given set.
      *
+     * @param attr a set of attributes
+     * @param key a CSS property
+     * @param value an HTML attribute value
+     * @return {@code true} if an HTML attribute {@code value} can be converted
+     *         to a CSS attribute, false otherwise.
      * @since 1.3
      */
     public boolean addCSSAttributeFromHTML(MutableAttributeSet attr,
@@ -528,6 +554,7 @@ public class StyleSheet extends StyleContext {
      * set of CSS attributes.
      *
      * @param htmlAttrSet AttributeSet containing the HTML attributes.
+     * @return the set of CSS attributes.
      */
     public AttributeSet translateHTMLToCSS(AttributeSet htmlAttrSet) {
         AttributeSet cssAttrSet = css.translateHTMLToCSS(htmlAttrSet);
@@ -918,6 +945,9 @@ public class StyleSheet extends StyleContext {
     /**
      * Fetches the box formatter to use for the given set
      * of CSS attributes.
+     *
+     * @param a a set of CSS attributes
+     * @return the box formatter.
      */
     public BoxPainter getBoxPainter(AttributeSet a) {
         return new BoxPainter(a, css, this);
@@ -926,6 +956,9 @@ public class StyleSheet extends StyleContext {
     /**
      * Fetches the list formatter to use for the given set
      * of CSS attributes.
+     *
+     * @param a a set of CSS attributes
+     * @return the list formatter.
      */
     public ListPainter getListPainter(AttributeSet a) {
         return new ListPainter(a, this);
@@ -933,6 +966,8 @@ public class StyleSheet extends StyleContext {
 
     /**
      * Sets the base font size, with valid values between 1 and 7.
+     *
+     * @param sz a font size.
      */
     public void setBaseFontSize(int sz) {
         css.setBaseFontSize(sz);
@@ -942,17 +977,29 @@ public class StyleSheet extends StyleContext {
      * Sets the base font size from the passed in String. The string
      * can either identify a specific font size, with legal values between
      * 1 and 7, or identify a relative font size such as +1 or -2.
+     *
+     * @param size a font size.
      */
     public void setBaseFontSize(String size) {
         css.setBaseFontSize(size);
     }
 
+    /**
+     *
+     * Returns the index of HTML/CSS size model.
+     *
+     * @param pt a size of point
+     * @return the index of HTML/CSS size model.
+     */
     public static int getIndexOfSize(float pt) {
         return CSS.getIndexOfSize(pt, sizeMapDefault);
     }
 
     /**
      * Returns the point size, given a size index.
+     *
+     * @param index a size index
+     * @return the point size value.
      */
     public float getPointSize(int index) {
         return css.getPointSize(index, this);
@@ -961,6 +1008,9 @@ public class StyleSheet extends StyleContext {
     /**
      *  Given a string such as "+2", "-2", or "2",
      *  returns a point size value.
+     *
+     * @param size a CSS string describing font size
+     * @return the point size value.
      */
     public float getPointSize(String size) {
         return css.getPointSize(size, this);
@@ -971,6 +1021,9 @@ public class StyleSheet extends StyleContext {
      * Note: This will only convert the HTML3.2 color strings
      *       or a string of length 7;
      *       otherwise, it will return null.
+     *
+     * @param string color string such as "RED" or "#NNNNNN"
+     * @return the color
      */
     public Color stringToColor(String string) {
         return CSS.stringToColor(string);
@@ -1822,6 +1875,7 @@ public class StyleSheet extends StyleContext {
          * @param v the view making the request.  This is
          *  used to get the AttributeSet, and may be used to
          *  resolve percentage arguments.
+         * @return the inset needed for the margin, border and padding.
          * @exception IllegalArgumentException for an invalid direction
          */
         public float getInset(int side, View v) {

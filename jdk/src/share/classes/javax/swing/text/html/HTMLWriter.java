@@ -361,8 +361,10 @@ public class HTMLWriter extends AbstractWriter {
      * Writes out a start tag for the element.
      * Ignores all synthesized elements.
      *
-     * @param elem   an Element
-     * @exception IOException on any I/O error
+     * @param elem an Element
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if pos represents an invalid
+     *            location within the document.
      */
     protected void startTag(Element elem) throws IOException, BadLocationException {
 
@@ -669,9 +671,12 @@ public class HTMLWriter extends AbstractWriter {
 
 
     /**
-     * Returns true if the element is a
+     * Returns {@code true} if the element is a
      * synthesized element.  Currently we are only testing
      * for the p-implied tag.
+     *
+     * @param elem an element
+     * @return {@code true} if the element is a synthesized element.
      */
     protected boolean synthesizedElement(Element elem) {
         if (matchNameAttribute(elem.getAttributes(), HTML.Tag.IMPLIED)) {
@@ -684,6 +689,10 @@ public class HTMLWriter extends AbstractWriter {
     /**
      * Returns true if the StyleConstants.NameAttribute is
      * equal to the tag that is passed in as a parameter.
+     *
+     * @param attr a set of attributes
+     * @param tag an HTML tag
+     * @return {@code true} if the StyleConstants.NameAttribute is equal to the tag that is passed in as a parameter.
      */
     protected boolean matchNameAttribute(AttributeSet attr, HTML.Tag tag) {
         Object o = attr.getAttribute(StyleConstants.NameAttribute);
@@ -702,6 +711,7 @@ public class HTMLWriter extends AbstractWriter {
      * so that when appropriate the corresponding end tags can be
      * written out.
      *
+     * @param attr a set of attributes
      * @exception IOException on any I/O error
      */
     protected void writeEmbeddedTags(AttributeSet attr) throws IOException {
@@ -756,6 +766,7 @@ public class HTMLWriter extends AbstractWriter {
      * then the tag is removed from the vector and a corresponding
      * end tag is written out.
      *
+     * @param attr a set of attributes
      * @exception IOException on any I/O error
      */
     protected void closeOutUnwantedEmbeddedTags(AttributeSet attr) throws IOException {
