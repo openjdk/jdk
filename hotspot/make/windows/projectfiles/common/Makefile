@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -120,7 +120,6 @@ ReleaseOptions = -define HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) -def
 ProjectCreatorIDEOptions = $(ProjectCreatorIDEOptions) $(ReleaseOptions)
 
 $(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
-	@if "$(MSC_VER)"=="1500" echo Make sure you have VS2008 SP1 or later, or you may see 'expanded command line too long'
 	@$(RUN_JAVA) -Djava.class.path="$(HOTSPOTBUILDSPACE)/classes" ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -50,9 +50,9 @@ SOURCES  = symtab.c     \
 	ps_core.c
 OBJS    = $(SOURCES:.c=.o)
 OBJSPLUS = MacosxDebuggerLocal.o sadis.o $(OBJS)
-EXTINCLUDE = -I/System/Library/Frameworks/JavaVM.framework/Headers -I.
+EXTINCLUDE = -I.
 EXTCFLAGS = -m64 -D__APPLE__ -framework JavaNativeFoundation
-FOUNDATIONFLAGS = -framework Foundation -F/System/Library/Frameworks/JavaVM.framework/Frameworks -framework JavaNativeFoundation -framework Security -framework CoreFoundation
+FOUNDATIONFLAGS = -framework Foundation -framework JavaNativeFoundation -framework Security -framework CoreFoundation
 LIBSA = $(ARCH)/libsaproc.dylib
 endif   # Darwin
 

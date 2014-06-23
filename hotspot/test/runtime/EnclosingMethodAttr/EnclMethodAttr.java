@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,19 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+/*
+ * @test
+ * @bug 8044738
+ * @library /testlibrary
+ * @summary Check attribute_length of EnclosingMethod attribute
+ * @run main EnclMethodAttr
+ */
 
+import java.io.File;
+import com.oracle.java.testlibrary.*;
 
-void Bytecodes::pd_initialize() {
-  // No i486 specific initialization
+public class EnclMethodAttr {
+
+    static final String testsrc = System.getProperty("test.src");
+
+    public static void main(String args[]) throws Throwable {
+        System.out.println("Regression test for bug 8044738");
+        ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
+            "-jar", testsrc + File.separator + "enclMethodAttr.jar");
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+        output.shouldContain("java.lang.ClassFormatError: Wrong EnclosingMethod");
+    }
 }
 
-
-Bytecodes::Code Bytecodes::pd_base_code_for(Code code) {
-  // No i486 specific bytecodes
-  return code;
-}
