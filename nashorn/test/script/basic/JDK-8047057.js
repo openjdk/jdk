@@ -67,7 +67,7 @@ makeFuncExpectError("eval(\"x4\", x3);", ReferenceError);
 makeFuncAndCall("with({5.0000000000000000000000: String()}){(false); }");
 makeFuncAndCall("try { var x = undefined, x = 5.0000000000000000000000; } catch(x) { x = undefined; }");
 makeFuncAndCall("(function (x){ x %= this}(false))");
-// makeFuncAndCall("eval.apply.apply(function(){ eval('') })");
+makeFuncAndCall("eval.apply.apply(function(){ eval('') })");
 makeFuncAndCall("(false % !this) && 0");
 makeFuncAndCall("with({8: 'fafafa'.replace()}){ }");
 makeFuncAndCall("(function (x) '' )(true)");
