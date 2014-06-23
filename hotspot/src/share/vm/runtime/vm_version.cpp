@@ -160,8 +160,7 @@ const char* Abstract_VM_Version::vm_vendor() {
 #ifdef VENDOR
   return XSTR(VENDOR);
 #else
-  return JDK_Version::is_gte_jdk17x_version() ?
-    "Oracle Corporation" : "Sun Microsystems Inc.";
+  return "Oracle Corporation";
 #endif
 }
 
@@ -222,20 +221,12 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if   _MSC_VER == 1100
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 5.0"
-      #elif _MSC_VER == 1200
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 6.0"
-      #elif _MSC_VER == 1310
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 7.1 (VS2003)"
-      #elif _MSC_VER == 1400
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 8.0 (VS2005)"
-      #elif _MSC_VER == 1500
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 9.0 (VS2008)"
-      #elif _MSC_VER == 1600
+      #if _MSC_VER == 1600
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 10.0 (VS2010)"
       #elif _MSC_VER == 1700
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 11.0 (VS2012)"
+      #elif _MSC_VER == 1800
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

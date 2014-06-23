@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,9 +22,9 @@
  *
  */
 
-#ifndef CPU_PPC_VM_BYTECODES_PPC_HPP
-#define CPU_PPC_VM_BYTECODES_PPC_HPP
+#include "precompiled.hpp"
+#include "runtime/arguments.hpp"
 
-// No ppc64 specific bytecodes
-
-#endif // CPU_PPC_VM_BYTECODES_PPC_HPP
+bool Arguments::check_vm_args_consistency_ext() {
+  return true;
+}
