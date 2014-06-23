@@ -47,6 +47,7 @@ public class ReadFromNoaccessArea {
           "-XX:+WhiteBoxAPI",
           "-XX:+UseCompressedOops",
           "-XX:HeapBaseMinAddress=33G",
+          "-Xmx32m",
           DummyClassWithMainTryingToReadFromNoaccessArea.class.getName());
 
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
