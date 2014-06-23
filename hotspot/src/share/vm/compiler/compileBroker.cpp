@@ -589,11 +589,10 @@ void CompileTask::log_task_done(CompileLog* log) {
 
 
 /**
- * Add a CompileTask to a CompileQueue
+ * Add a CompileTask to a CompileQueue.
  */
 void CompileQueue::add(CompileTask* task) {
   assert(lock()->owned_by_self(), "must own lock");
-  assert(!CompileBroker::is_compilation_disabled_forever(), "Do not add task if compilation is turned off forever");
 
   task->set_next(NULL);
   task->set_prev(NULL);
