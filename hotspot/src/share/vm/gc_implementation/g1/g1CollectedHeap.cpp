@@ -62,6 +62,7 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -1298,7 +1299,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {
-      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL);
+      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL, gc_tracer->gc_id());
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
@@ -3858,8 +3859,7 @@ void G1CollectedHeap::log_gc_header() {
     return;
   }
 
-  gclog_or_tty->date_stamp(PrintGCDateStamps);
-  gclog_or_tty->stamp(PrintGCTimeStamps);
+  gclog_or_tty->gclog_stamp(_gc_tracer_stw->gc_id());
 
   GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
     .append(g1_policy()->gcs_are_young() ? "(young)" : "(mixed)")
@@ -5743,7 +5743,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
                                               &keep_alive,
                                               &drain_queue,
                                               NULL,
-                                              _gc_timer_stw);
+                                              _gc_timer_stw,
+                                              _gc_tracer_stw->gc_id());
   } else {
     // Parallel reference processing
     assert(rp->num_q() == no_of_gc_workers, "sanity");
@@ -5754,7 +5755,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
                                               &keep_alive,
                                               &drain_queue,
                                               &par_task_executor,
-                                              _gc_timer_stw);
+                                              _gc_timer_stw,
+                                              _gc_tracer_stw->gc_id());
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
@@ -6993,7 +6995,7 @@ public:
       return;
     }
 
-    if (ScavengeRootsInCode && nm->detect_scavenge_root_oops()) {
+    if (ScavengeRootsInCode) {
       _g1h->register_nmethod(nm);
     }
   }

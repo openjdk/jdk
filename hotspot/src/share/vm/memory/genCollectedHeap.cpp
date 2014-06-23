@@ -28,6 +28,7 @@
 #include "classfile/vmSymbols.hpp"
 #include "code/icBuffer.hpp"
 #include "gc_implementation/shared/collectorCounters.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -384,7 +385,9 @@ void GenCollectedHeap::do_collection(bool  full,
     const char* gc_cause_prefix = complete ? "Full GC" : "GC";
     gclog_or_tty->date_stamp(PrintGC && PrintGCDateStamps);
     TraceCPUTime tcpu(PrintGCDetails, true, gclog_or_tty);
-    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL);
+    // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
+    // so we can assume here that the next GC id is what we want.
+    GCTraceTime t(GCCauseString(gc_cause_prefix, gc_cause()), PrintGCDetails, false, NULL, GCId::peek());
 
     gc_prologue(complete);
     increment_total_collections(complete);
@@ -417,7 +420,9 @@ void GenCollectedHeap::do_collection(bool  full,
         }
         // Timer for individual generations. Last argument is false: no CR
         // FIXME: We should try to start the timing earlier to cover more of the GC pause
-        GCTraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, NULL);
+        // The PrintGCDetails logging starts before we have incremented the GC id. We will do that later
+        // so we can assume here that the next GC id is what we want.
+        GCTraceTime t1(_gens[i]->short_name(), PrintGCDetails, false, NULL, GCId::peek());
         TraceCollectorStats tcs(_gens[i]->counters());
         TraceMemoryManagerStats tmms(_gens[i]->kind(),gc_cause());
 

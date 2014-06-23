@@ -31,6 +31,7 @@
 #include "memory/allocation.inline.hpp"
 #include "prims/jni.h"
 #include "prims/jvm.h"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/prefetch.inline.hpp"

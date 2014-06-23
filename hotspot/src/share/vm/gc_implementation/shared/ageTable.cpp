@@ -28,6 +28,7 @@
 #include "memory/collectorPolicy.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/sharedHeap.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/copy.hpp"
 
 /* Copyright (c) 1992-2009 Oracle and/or its affiliates, and Stanford University.

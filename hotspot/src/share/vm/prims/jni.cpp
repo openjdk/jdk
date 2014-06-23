@@ -59,6 +59,7 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/fprofiler.hpp"
