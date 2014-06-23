@@ -702,7 +702,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             // If this is a declared variable or a function parameter, delete always fails (except for globals).
             final String name = ident.getName();
             final Symbol symbol = ident.getSymbol();
-            final boolean failDelete = strictMode || symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel());
+            final boolean failDelete = strictMode || (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel())));
 
             if (failDelete && symbol.isThis()) {
                 return LiteralNode.newInstance(unaryNode, true).accept(this);

@@ -583,7 +583,11 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             }
         }
         setCompilerConstantAsObject(functionNode, CompilerConstants.THIS);
-        if(functionNode.needsParentScope()) {
+
+        // NOTE: coarse-grained. If we wanted to solve it completely precisely,
+        // we'd also need to push/pop its type when handling WithNode (so that
+        // it can go back to undefined after a 'with' block.
+        if(functionNode.hasScopeBlock() || functionNode.needsParentScope()) {
             setCompilerConstantAsObject(functionNode, CompilerConstants.SCOPE);
         }
         if(functionNode.needsCallee()) {
