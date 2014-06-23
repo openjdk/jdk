@@ -249,36 +249,30 @@ public class Attr extends JCTree.Visitor {
      */
     Type check(final JCTree tree, final Type found, final int ownkind, final ResultInfo resultInfo) {
         InferenceContext inferenceContext = resultInfo.checkContext.inferenceContext();
-        Type owntype = found;
-        if (!owntype.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
-            if (allowPoly && inferenceContext.free(found)) {
-                if ((ownkind & ~resultInfo.pkind) == 0) {
-                    owntype = resultInfo.check(tree, inferenceContext.asUndetVar(owntype));
-                } else {
-                    log.error(tree.pos(), "unexpected.type",
-                            kindNames(resultInfo.pkind),
-                            kindName(ownkind));
-                    owntype = types.createErrorType(owntype);
-                }
+        Type owntype;
+        if (!found.hasTag(ERROR) && !resultInfo.pt.hasTag(METHOD) && !resultInfo.pt.hasTag(FORALL)) {
+            if ((ownkind & ~resultInfo.pkind) != 0) {
+                log.error(tree.pos(), "unexpected.type",
+                        kindNames(resultInfo.pkind),
+                        kindName(ownkind));
+                owntype = types.createErrorType(found);
+            } else if (allowPoly && inferenceContext.free(found)) {
+                //delay the check if there are inference variables in the found type
+                //this means we are dealing with a partially inferred poly expression
+                owntype = resultInfo.pt;
                 inferenceContext.addFreeTypeListener(List.of(found, resultInfo.pt), new FreeTypeListener() {
                     @Override
                     public void typesInferred(InferenceContext inferenceContext) {
                         ResultInfo pendingResult =
-                                    resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
+                                resultInfo.dup(inferenceContext.asInstType(resultInfo.pt));
                         check(tree, inferenceContext.asInstType(found), ownkind, pendingResult);
                     }
                 });
-                return tree.type = resultInfo.pt;
             } else {
-                if ((ownkind & ~resultInfo.pkind) == 0) {
-                    owntype = resultInfo.check(tree, owntype);
-                } else {
-                    log.error(tree.pos(), "unexpected.type",
-                            kindNames(resultInfo.pkind),
-                            kindName(ownkind));
-                    owntype = types.createErrorType(owntype);
-                }
+                owntype = resultInfo.check(tree, found);
             }
+        } else {
+            owntype = found;
         }
         tree.type = owntype;
         return owntype;
@@ -2472,6 +2466,7 @@ public class Attr extends JCTree.Visitor {
                     currentTarget = infer.instantiateFunctionalInterface(that,
                             currentTarget, explicitParamTypes, resultInfo.checkContext);
                 }
+                currentTarget = types.removeWildcards(currentTarget);
                 lambdaType = types.findDescriptorType(currentTarget);
             } else {
                 currentTarget = Type.recoveryType;
@@ -2894,7 +2889,7 @@ public class Attr extends JCTree.Visitor {
                     resultInfo.checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
                     isSerializable(currentTarget);
             if (currentTarget != Type.recoveryType) {
-                currentTarget = targetChecker.visit(currentTarget, that);
+                currentTarget = types.removeWildcards(targetChecker.visit(currentTarget, that));
                 desc = types.findDescriptorType(currentTarget);
             } else {
                 currentTarget = Type.recoveryType;
@@ -3135,10 +3130,19 @@ public class Attr extends JCTree.Visitor {
             if (checkContext.deferredAttrContext().mode == DeferredAttr.AttrMode.CHECK &&
                     pt != Type.recoveryType) {
                 //check that functional interface class is well-formed
-                ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
-                        names.empty, List.of(fExpr.targets.head), ABSTRACT);
-                if (csym != null) {
-                    chk.checkImplementations(env.tree, csym, csym);
+                try {
+                    /* Types.makeFunctionalInterfaceClass() may throw an exception
+                     * when it's executed post-inference. See the listener code
+                     * above.
+                     */
+                    ClassSymbol csym = types.makeFunctionalInterfaceClass(env,
+                            names.empty, List.of(fExpr.targets.head), ABSTRACT);
+                    if (csym != null) {
+                        chk.checkImplementations(env.tree, csym, csym);
+                    }
+                } catch (Types.FunctionDescriptorLookupError ex) {
+                    JCDiagnostic cause = ex.getDiagnostic();
+                    resultInfo.checkContext.report(env.tree, cause);
                 }
             }
         }

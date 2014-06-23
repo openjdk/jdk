@@ -1992,7 +1992,11 @@ public class LambdaToMethod extends TreeTranslator {
                 // If instance access isn't needed, make it static.
                 // Interface instance methods must be default methods.
                 // Lambda methods are private synthetic.
+                // Inherit ACC_STRICT from the enclosing method, or, for clinit,
+                // from the class.
                 translatedSym.flags_field = SYNTHETIC | LAMBDA_METHOD |
+                        owner.flags_field & STRICTFP |
+                        owner.owner.flags_field & STRICTFP |
                         PRIVATE |
                         (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 

@@ -38,15 +38,17 @@ public class Test extends Doclet {
     }
 
     void run() throws Exception {
-        test("<html><body>ABC      XYZ</body></html>");
-        test("<html><body>ABC      XYZ</BODY></html>");
-        test("<html><BODY>ABC      XYZ</body></html>");
-        test("<html><BODY>ABC      XYZ</BODY></html>");
-        test("<html><BoDy>ABC      XYZ</bOdY></html>");
-        test("<html>      ABC      XYZ</bOdY></html>", "Body tag missing from HTML");
-        test("<html><body>ABC      XYZ       </html>", "Close body tag missing from HTML");
-        test("<html>      ABC      XYZ       </html>", "Body tag missing from HTML");
-        test("<html><body>ABC" + bigText(8192, 40) + "XYZ</body></html>");
+        String docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+                         + "\"http://www.w3.org/TR/html4/loose.dtd\">";
+        test(docType+"<html><body>ABC      XYZ</body></html>");
+        test(docType+"<html><body>ABC      XYZ</BODY></html>");
+        test(docType+"<html><BODY>ABC      XYZ</body></html>");
+        test(docType+"<html><BODY>ABC      XYZ</BODY></html>");
+        test(docType+"<html><BoDy>ABC      XYZ</bOdY></html>");
+        test(docType+"<html>      ABC      XYZ</bOdY></html>", "Body tag missing from HTML");
+        test(docType+"<html><body>ABC      XYZ       </html>", "Close body tag missing from HTML");
+        test(docType+"<html>      ABC      XYZ       </html>", "Body tag missing from HTML");
+        test(docType+"<html><body>ABC" + bigText(8192, 40) + "XYZ</body></html>");
 
         if (errors > 0)
             throw new Exception(errors + " errors occurred");
