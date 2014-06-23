@@ -3526,11 +3526,6 @@ os::YieldResult os::NakedYield() {
 
 void os::yield() {  os::NakedYield(); }
 
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  Sleep(1);
-}
-
 // Win32 only gives you access to seven real priorities at a time,
 // so we compress Java's ten down to seven.  It would be better
 // if we dynamically adjusted relative priorities.

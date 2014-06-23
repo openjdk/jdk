@@ -3336,13 +3336,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     directBufferSupportInitializeEnded = 1;
   } else {
     while (!directBufferSupportInitializeEnded && !directBufferSupportInitializeFailed) {
-      // Set state as yield_all can call os:sleep. On Solaris, yield_all calls
-      // os::sleep which requires the VM state transition. On other platforms, it
-      // is not necessary. The following call to change the VM state is purposely
-      // put inside the loop to avoid potential deadlock when multiple threads
-      // try to call this method. See 6791815 for more details.
-      ThreadInVMfromNative tivn(thread);
-      os::yield_all();
+      os::yield();
     }
   }
 
