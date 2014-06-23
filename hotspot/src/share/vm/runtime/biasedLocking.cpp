@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "oops/klass.inline.hpp"
 #include "oops/markOop.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/basicLock.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/task.hpp"

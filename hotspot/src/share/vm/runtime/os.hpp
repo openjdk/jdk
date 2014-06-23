@@ -26,7 +26,6 @@
 #define SHARE_VM_RUNTIME_OS_HPP
 
 #include "jvmtifiles/jvmti.h"
-#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/top.hpp"

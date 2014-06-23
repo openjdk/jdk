@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 

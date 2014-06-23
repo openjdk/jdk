@@ -84,6 +84,7 @@
 
 #include "memory/allocation.hpp"
 #include "oops/oop.hpp"
+#include "runtime/atomic.hpp"
 
 class OopClosure;
 class BoolObjectClosure;
@@ -174,16 +175,12 @@ public:
 
   // Atomically claims the next available queue for exclusive access by
   // the current thread. Returns the queue number of the claimed queue.
-  size_t claim_queue() {
-    return (size_t)Atomic::add_ptr(1, &_next_queue) - 1;
-  }
+  size_t claim_queue();
 
   // Atomically claims the next available table partition for exclusive
   // access by the current thread. Returns the table bucket number where
   // the claimed partition starts.
-  size_t claim_table_partition(size_t partition_size) {
-    return (size_t)Atomic::add_ptr(partition_size, &_next_bucket) - partition_size;
-  }
+  size_t claim_table_partition(size_t partition_size);
 
   // Applies and returns the result from the is_alive closure, or
   // returns true if no such closure was provided.

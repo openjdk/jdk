@@ -26,6 +26,7 @@
 #define SHARE_VM_OOPS_COMPILEDICHOLDEROOP_HPP
 
 #include "oops/oop.hpp"
+#include "utilities/macros.hpp"
 
 // A CompiledICHolder* is a helper object for the inline cache implementation.
 // It holds an intermediate value (method+klass pair) used when converting from
@@ -50,20 +51,8 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
 
  public:
   // Constructor
-  CompiledICHolder(Method* method, Klass* klass)
-      : _holder_method(method), _holder_klass(klass) {
-#ifdef ASSERT
-    Atomic::inc(&_live_count);
-    Atomic::inc(&_live_not_claimed_count);
-#endif
-  }
-
-  ~CompiledICHolder() {
-#ifdef ASSERT
-    assert(_live_count > 0, "underflow");
-    Atomic::dec(&_live_count);
-#endif
-  }
+  CompiledICHolder(Method* method, Klass* klass);
+  ~CompiledICHolder() NOT_DEBUG_RETURN;
 
   static int live_count() { return _live_count; }
   static int live_not_claimed_count() { return _live_not_claimed_count; }
@@ -91,11 +80,7 @@ class CompiledICHolder : public CHeapObj<mtCompiler> {
 
   const char* internal_name() const { return "{compiledICHolder}"; }
 
-  void claim() {
-#ifdef ASSERT
-    Atomic::dec(&_live_not_claimed_count);
-#endif
-  }
+  void claim() NOT_DEBUG_RETURN;
 };
 
 #endif // SHARE_VM_OOPS_COMPILEDICHOLDEROOP_HPP

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,30 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.inline.hpp"
-#include "services/memPtr.hpp"
-#include "services/memTracker.hpp"
+#ifndef SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
+#define SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
 
-volatile jint SequenceGenerator::_seq_number = 1;
-volatile unsigned long SequenceGenerator::_generation = 1;
-NOT_PRODUCT(jint SequenceGenerator::_max_seq_number = 1;)
+#include "memory/allocation.hpp"
 
-jint SequenceGenerator::next() {
-  jint seq = Atomic::add(1, &_seq_number);
-  if (seq < 0) {
-    MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
-  } else {
-    NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
+class GCId VALUE_OBJ_CLASS_SPEC {
+ private:
+  uint _id;
+  GCId(uint id) : _id(id) {}
+  GCId() { } // Unused
+
+  static uint _next_id;
+  static const uint UNDEFINED = (uint)-1;
+
+ public:
+  uint id() const {
+    assert(_id != UNDEFINED, "Using undefined GC ID");
+    return _id;
   }
-  return seq;
-}
+  bool is_undefined() const;
 
+  static const GCId create();
+  static const GCId peek();
+  static const GCId undefined();
+};
+
+#endif // SHARE_VM_GC_IMPLEMENTATION_SHARED_GCID_HPP
