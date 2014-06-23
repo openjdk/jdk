@@ -59,7 +59,7 @@ class AppletViewerPanel extends AppletPanel {
     /**
      * The attributes of the applet.
      */
-    Hashtable atts;
+    Hashtable<String, String> atts;
 
     /*
      * JDK 1.1 serialVersionUID
@@ -69,7 +69,7 @@ class AppletViewerPanel extends AppletPanel {
     /**
      * Construct an applet viewer and start the applet.
      */
-    AppletViewerPanel(URL documentURL, Hashtable atts) {
+    AppletViewerPanel(URL documentURL, Hashtable<String, String> atts) {
         this.documentURL = documentURL;
         this.atts = atts;
 
@@ -105,7 +105,7 @@ class AppletViewerPanel extends AppletPanel {
      * Get an applet parameter.
      */
     public String getParameter(String name) {
-        return (String)atts.get(name.toLowerCase());
+        return atts.get(name.toLowerCase());
     }
 
     /**
