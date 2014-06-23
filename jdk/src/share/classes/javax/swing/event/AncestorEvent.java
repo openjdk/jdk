@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ public class AncestorEvent extends AWTEvent {
 
     /**
      * Returns the ancestor that the event actually occurred on.
+     *
+     * @return the {@code Container} object specifying the ancestor component
      */
     public Container getAncestor() {
         return ancestor;
@@ -90,6 +92,8 @@ public class AncestorEvent extends AWTEvent {
      * Returns the parent of the ancestor the event actually occurred on.
      * This is most interesting in an ANCESTOR_REMOVED event, as
      * the ancestor may no longer be in the component hierarchy.
+     *
+     * @return the {@code Container} object specifying the ancestor's parent
      */
     public Container getAncestorParent() {
         return ancestorParent;
@@ -97,6 +101,8 @@ public class AncestorEvent extends AWTEvent {
 
     /**
      * Returns the component that the listener was added to.
+     *
+     * @return the {@code JComponent} on which the event occurred
      */
     public JComponent getComponent() {
         return (JComponent)getSource();
