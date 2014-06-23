@@ -264,8 +264,8 @@ void SafepointSynchronize::begin() {
       //
       // Further complicating matters is that yield() does not work as naively expected
       // on many platforms -- yield() does not guarantee that any other ready threads
-      // will run.   As such we revert yield_all() after some number of iterations.
-      // Yield_all() is implemented as a short unconditional sleep on some platforms.
+      // will run.   As such we revert to naked_short_sleep() after some number of iterations.
+      // nakes_short_sleep() is implemented as a short unconditional sleep.
       // Typical operating systems round a "short" sleep period up to 10 msecs, so sleeping
       // can actually increase the time it takes the VM thread to detect that a system-wide
       // stop-the-world safepoint has been reached.  In a pathological scenario such as that
@@ -322,9 +322,7 @@ void SafepointSynchronize::begin() {
       if (steps < DeferThrSuspendLoopCount) {
         os::NakedYield() ;
       } else {
-        os::yield_all() ;
-        // Alternately, the VM thread could transiently depress its scheduling priority or
-        // transiently increase the priority of the tardy mutator(s).
+        os::naked_short_sleep(1);
       }
 
       iterations ++ ;
