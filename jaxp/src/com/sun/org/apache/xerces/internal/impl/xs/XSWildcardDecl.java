@@ -38,7 +38,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  * @author Sandy Gao, IBM
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
- * @version $Id: XSWildcardDecl.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSWildcardDecl implements XSWildcard {
 
