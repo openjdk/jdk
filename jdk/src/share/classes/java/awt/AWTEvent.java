@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -388,6 +388,8 @@ public abstract class AWTEvent extends EventObject {
 
     /**
      * Returns the event type.
+     *
+     * @return the event's type id
      */
     public int getID() {
         return id;
@@ -446,6 +448,9 @@ public abstract class AWTEvent extends EventObject {
 
     /**
      * Returns whether this event has been consumed.
+     *
+     * @return {@code true} if this event has been consumed;
+     *          otherwise {@code false}
      */
     protected boolean isConsumed() {
         return consumed;
