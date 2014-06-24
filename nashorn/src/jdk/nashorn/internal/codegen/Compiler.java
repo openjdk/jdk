@@ -45,7 +45,6 @@ import java.util.LinkedHashMap;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Map;
-import java.util.Objects;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -122,11 +121,7 @@ public final class Compiler implements Loggable {
      * that using whatever was at program point 17 as an int failed.
      */
     private final Map<Integer, Type> invalidatedProgramPoints;
-    /**
-     * The snapshot of invalidatedProgramPoints before the compilation. Used to compare it to invalidatedProgramPoints,
-     * and if the two are equal, not write the type information to a file.
-     */
-    private final Map<Integer, Type> invalidatedProgramPointsOnEntry;
+
     /**
      * Descriptor of the location where we write the type information after compilation.
      */
@@ -381,7 +376,6 @@ public final class Compiler implements Loggable {
         this.firstCompileUnitName     = firstCompileUnitName();
         this.strict                   = isStrict;
 
-        this.invalidatedProgramPointsOnEntry = typeInformationFile == null ? null : new HashMap<>(this.invalidatedProgramPoints);
         this.optimistic = env._optimistic_types;
     }
 
@@ -537,7 +531,7 @@ public final class Compiler implements Loggable {
             time += (env.isTimingEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L);
         }
 
-        if(typeInformationFile != null && !phases.isRestOfCompilation() && !Objects.equals(invalidatedProgramPoints, invalidatedProgramPointsOnEntry)) {
+        if(typeInformationFile != null && !phases.isRestOfCompilation()) {
             OptimisticTypesPersistence.store(typeInformationFile, invalidatedProgramPoints);
         }
 
