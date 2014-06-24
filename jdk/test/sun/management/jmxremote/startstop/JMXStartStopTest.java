@@ -290,11 +290,14 @@ public class JMXStartStopTest {
     public static void main(String args[]) throws Exception {
         for (Method m : JMXStartStopTest.class.getDeclaredMethods()) {
             if (m.getName().startsWith("test_")) {
+                long t1 = System.currentTimeMillis();
                 try {
                     m.invoke(null);
-                    System.out.println("=== PASSED\n");
+                    System.out.println("=== PASSED");
                 } catch (Throwable e) {
                     failures.add(new Failure(e, m.getName() + " failed"));
+                } finally {
+                    System.out.println("(took " + (System.currentTimeMillis() - t1) + "ms)\n");
                 }
             }
         }
