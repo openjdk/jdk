@@ -136,11 +136,7 @@ public final class OptimisticTypesPersistence {
                         }
                         dout.flush();
                     } catch(final Exception e) {
-                        final long now = System.currentTimeMillis();
-                        if(now - lastReportedError > ERROR_REPORT_THRESHOLD) {
-                            getLogger().warning("Failed to write " + file, e);
-                            lastReportedError = now;
-                        }
+                        reportError("write", file, e);
                     }
                 }
                 return null;
@@ -190,15 +186,19 @@ public final class OptimisticTypesPersistence {
                         }
                     }
                 } catch (final Exception e) {
-                    final long now = System.currentTimeMillis();
-                    if(now - lastReportedError > ERROR_REPORT_THRESHOLD) {
-                        getLogger().warning("Failed to read " + file, e);
-                        lastReportedError = now;
-                    }
+                    reportError("read", file, e);
                     return null;
                 }
             }
         });
+    }
+
+    private static void reportError(final String msg, final File file, final Exception e) {
+        final long now = System.currentTimeMillis();
+        if(now - lastReportedError > ERROR_REPORT_THRESHOLD) {
+            getLogger().warning(String.format("Failed to %s %s", msg, file), e);
+            lastReportedError = now;
+        }
     }
 
     private static File createCacheDir() {
