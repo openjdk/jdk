@@ -127,6 +127,7 @@ public class Check {
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
+        allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -180,6 +181,10 @@ public class Check {
     /** Switch: should unrelated return types trigger a method clash?
      */
     boolean allowStrictMethodClashCheck;
+
+    /** Switch: can the @SafeVarargs annotation be applied to private methods?
+     */
+    boolean allowPrivateSafeVarargs;
 
     /** Switch: -complexinference option set?
      */
@@ -816,8 +821,10 @@ public class Check {
             if (varargElemType != null) {
                 log.error(tree,
                         "varargs.invalid.trustme.anno",
-                        syms.trustMeType.tsym,
-                        diags.fragment("varargs.trustme.on.virtual.varargs", m));
+                          syms.trustMeType.tsym,
+                          allowPrivateSafeVarargs ?
+                          diags.fragment("varargs.trustme.on.virtual.varargs", m) :
+                          diags.fragment("varargs.trustme.on.virtual.varargs.final.only", m));
             } else {
                 log.error(tree,
                             "varargs.invalid.trustme.anno",
@@ -840,7 +847,8 @@ public class Check {
         private boolean isTrustMeAllowedOnMethod(Symbol s) {
             return (s.flags() & VARARGS) != 0 &&
                 (s.isConstructor() ||
-                    (s.flags() & (STATIC | FINAL)) != 0);
+                    (s.flags() & (STATIC | FINAL |
+                                  (allowPrivateSafeVarargs ? PRIVATE : 0) )) != 0);
         }
 
     Type checkMethod(final Type mtype,
