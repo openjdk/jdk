@@ -211,6 +211,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      *  by reflection in class installation */
     private final Compiler compiler;
 
+    /** Is the current code submitted by 'eval' call? */
+    private final boolean evalCode;
+
     /** Call site flags given to the code generator to be used for all generated call sites */
     private final int callSiteFlags;
 
@@ -265,6 +268,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     CodeGenerator(final Compiler compiler, final int[] continuationEntryPoints) {
         super(new CodeGeneratorLexicalContext());
         this.compiler                = compiler;
+        this.evalCode                = compiler.getSource().isEvalCode();
         this.continuationEntryPoints = continuationEntryPoints;
         this.callSiteFlags           = compiler.getScriptEnvironment()._callsite_flags;
         this.log                     = initLogger(compiler.getContext());
@@ -288,6 +292,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      */
     int getCallSiteFlags() {
         return lc.getCurrentFunction().isStrict() ? callSiteFlags | CALLSITE_STRICT : callSiteFlags;
+    }
+
+    /**
+     * Are we generating code for 'eval' code?
+     * @return true if currently compiled code is 'eval' code.
+     */
+    boolean isEvalCode() {
+        return evalCode;
     }
 
     /**

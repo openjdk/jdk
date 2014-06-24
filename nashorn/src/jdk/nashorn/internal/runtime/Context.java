@@ -560,12 +560,29 @@ public final class Context {
      * @param callThis     "this" to be passed to the evaluated code
      * @param location     location of the eval call
      * @param strict       is this {@code eval} call from a strict mode code?
+     * @return the return value of the {@code eval}
+     */
+    public Object eval(final ScriptObject initialScope, final String string,
+            final Object callThis, final Object location, final boolean strict) {
+        return eval(initialScope, string, callThis, location, strict, false);
+    }
+
+    /**
+     * Entry point for {@code eval}
+     *
+     * @param initialScope The scope of this eval call
+     * @param string       Evaluated code as a String
+     * @param callThis     "this" to be passed to the evaluated code
+     * @param location     location of the eval call
+     * @param strict       is this {@code eval} call from a strict mode code?
+     * @param evalCall     is this called from "eval" builtin?
      *
      * @return the return value of the {@code eval}
      */
-    public Object eval(final ScriptObject initialScope, final String string, final Object callThis, final Object location, final boolean strict) {
+    public Object eval(final ScriptObject initialScope, final String string,
+            final Object callThis, final Object location, final boolean strict, final boolean evalCall) {
         final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
-        final Source  source     = sourceFor(file, string);
+        final Source  source     = sourceFor(file, string, evalCall);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final Global  global = Context.getGlobal();
         ScriptObject scope = initialScope;
