@@ -265,19 +265,11 @@ class os: AllStatic {
   // Return the default page size.
   static int    vm_page_size();
 
-  // Return the page size to use for a region of memory.  The min_pages argument
-  // is a hint intended to limit fragmentation; it says the returned page size
-  // should be <= region_max_size / min_pages.  Because min_pages is a hint,
-  // this routine may return a size larger than region_max_size / min_pages.
-  //
-  // The current implementation ignores min_pages if a larger page size is an
-  // exact multiple of both region_min_size and region_max_size.  This allows
-  // larger pages to be used when doing so would not cause fragmentation; in
-  // particular, a single page can be used when region_min_size ==
-  // region_max_size == a supported page size.
-  static size_t page_size_for_region(size_t region_min_size,
-                                     size_t region_max_size,
-                                     uint min_pages);
+  // Returns the page size to use for a region of memory.
+  // region_size / min_pages will always be greater than or equal to the
+  // returned value.
+  static size_t page_size_for_region(size_t region_size, size_t min_pages);
+
   // Return the largest page size that can be used
   static size_t max_page_size() {
     // The _page_sizes array is sorted in descending order.
