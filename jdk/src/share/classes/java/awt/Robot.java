@@ -498,6 +498,8 @@ public class Robot {
 
     /**
      * Returns the number of milliseconds this Robot sleeps after generating an event.
+     *
+     * @return the delay duration in milliseconds
      */
     public synchronized int getAutoDelay() {
         return autoDelay;
@@ -505,7 +507,10 @@ public class Robot {
 
     /**
      * Sets the number of milliseconds this Robot sleeps after generating an event.
-     * @throws  IllegalArgumentException If <code>ms</code> is not between 0 and 60,000 milliseconds inclusive
+     *
+     * @param  ms the delay duration in milliseconds
+     * @throws IllegalArgumentException If {@code ms}
+     *         is not between 0 and 60,000 milliseconds inclusive
      */
     public synchronized void setAutoDelay(int ms) {
         checkDelayArgument(ms);
@@ -523,9 +528,11 @@ public class Robot {
      * Sleeps for the specified time.
      * To catch any <code>InterruptedException</code>s that occur,
      * <code>Thread.sleep()</code> may be used instead.
-     * @param   ms      time to sleep in milliseconds
-     * @throws  IllegalArgumentException if <code>ms</code> is not between 0 and 60,000 milliseconds inclusive
-     * @see     java.lang.Thread#sleep
+     *
+     * @param  ms time to sleep in milliseconds
+     * @throws IllegalArgumentException if {@code ms}
+     *         is not between 0 and 60,000 milliseconds inclusive
+     * @see java.lang.Thread#sleep
      */
     public synchronized void delay(int ms) {
         checkDelayArgument(ms);
