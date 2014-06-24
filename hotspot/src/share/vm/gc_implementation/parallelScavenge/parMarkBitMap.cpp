@@ -56,7 +56,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
 
   const size_t words = bits / BitsPerWord;
   const size_t raw_bytes = words * sizeof(idx_t);
-  const size_t page_sz = os::page_size_for_region(raw_bytes, raw_bytes, 10);
+  const size_t page_sz = os::page_size_for_region(raw_bytes, 10);
   const size_t granularity = os::vm_allocation_granularity();
   _reserved_byte_size = align_size_up(raw_bytes, MAX2(page_sz, granularity));
 
