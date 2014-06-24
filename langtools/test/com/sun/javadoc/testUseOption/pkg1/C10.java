@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,34 +23,19 @@
 
 package pkg1;
 
-import java.util.List;
-
 /**
- * Test 3 passes.
+ * An implementor
+ *
  */
-
-public class C1 {
-
-    /**
-     * Field in C1.
-     */
-    public UsedClass fieldInC1;
+public class C10 extends UsedClass implements UsedInterface, UsedInterfaceA {
 
     /**
-     * Method in C1.
+     * Nothing
      */
-    public UsedClass methodInC1(UsedClass p) {
-        return p;
-    }
+    public void doNothing() {}
 
-    public List<UsedClass> methodInC1ReturningType() {
-        return null;
-    }
-
-    /*
-     * this must not appear anywhere.
+    /**
+     * Me too
      */
-    UsedClass methodInC1Protected(List<UsedClass> p){
-        return p;
-    }
+    public void doNothingA() {}
 }
