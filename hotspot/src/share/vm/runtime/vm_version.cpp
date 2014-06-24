@@ -72,14 +72,16 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 #ifndef JRE_RELEASE_VERSION
   #error JRE_RELEASE_VERSION must be defined
 #endif
-#ifndef HOTSPOT_BUILD_TARGET
-  #error HOTSPOT_BUILD_TARGET must be defined
-#endif
 
-#ifdef PRODUCT
-  #define VM_RELEASE HOTSPOT_RELEASE_VERSION
-#else
+// NOTE: Builds within Visual Studio do not define the build target in
+//       HOTSPOT_RELEASE_VERSION, so it must be done here
+#if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
+  #ifndef HOTSPOT_BUILD_TARGET
+    #error HOTSPOT_BUILD_TARGET must be defined
+  #endif
   #define VM_RELEASE HOTSPOT_RELEASE_VERSION "-" HOTSPOT_BUILD_TARGET
+#else
+  #define VM_RELEASE HOTSPOT_RELEASE_VERSION
 #endif
 
 // HOTSPOT_RELEASE_VERSION follows the JDK release version naming convention
