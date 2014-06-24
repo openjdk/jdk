@@ -51,7 +51,7 @@ import sun.awt.util.ThreadGroupUtils;
  * @since 1.4
  */
 
-public class Win32ShellFolderManager2 extends ShellFolderManager {
+final class Win32ShellFolderManager2 extends ShellFolderManager {
 
     static {
         // Load library here
