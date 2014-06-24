@@ -32,7 +32,6 @@ package javax.xml.parsers;
  * or instantiated.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @version $Revision: 1.7 $, $Date: 2010-11-01 04:36:09 $
  * @since 1.4
  */
 

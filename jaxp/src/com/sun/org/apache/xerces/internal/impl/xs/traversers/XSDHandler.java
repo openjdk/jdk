@@ -131,7 +131,6 @@ import org.xml.sax.helpers.XMLReaderFactory;
  * @author Neil Graham, IBM
  * @author Pavani Mukthipudi, Sun Microsystems
  *
- * @version $Id: XSDHandler.java,v 1.9 2010-11-01 04:40:02 joehw Exp $
  */
 public class XSDHandler {
 

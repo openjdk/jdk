@@ -29,7 +29,6 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLGrammarPool;
  * which contains no schema components.</p>
  *
  * @author Michael Glavassevich, IBM
- * @version $Id: EmptyXMLSchema.java,v 1.6 2010-11-01 04:40:08 joehw Exp $
  */
 final class EmptyXMLSchema extends AbstractXMLSchema implements XMLGrammarPool {
 

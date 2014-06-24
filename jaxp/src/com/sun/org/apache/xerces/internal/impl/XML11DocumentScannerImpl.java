@@ -96,7 +96,6 @@ import com.sun.org.apache.xerces.internal.xni.XNIException;
  * @author Arnaud  Le Hors, IBM
  * @author Eric Ye, IBM
  *
- * @version $Id: XML11DocumentScannerImpl.java,v 1.5 2010/08/04 20:59:09 joehw Exp $
  */
 public class XML11DocumentScannerImpl
     extends XMLDocumentScannerImpl {
