@@ -3031,9 +3031,11 @@ public class Collections {
         final Collection<E> c;
         final Class<E> type;
 
-        void typeCheck(Object o) {
+        @SuppressWarnings("unchecked")
+        E typeCheck(Object o) {
             if (o != null && !type.isInstance(o))
                 throw new ClassCastException(badElementMsg(o));
+            return (E) o;
         }
 
         private String badElementMsg(Object o) {
@@ -3042,10 +3044,8 @@ public class Collections {
         }
 
         CheckedCollection(Collection<E> c, Class<E> type) {
-            if (c==null || type == null)
-                throw new NullPointerException();
-            this.c = c;
-            this.type = type;
+            this.c = Objects.requireNonNull(c, "c");
+            this.type = Objects.requireNonNull(type, "type");
         }
 
         public int size()                 { return c.size(); }
@@ -3091,7 +3091,7 @@ public class Collections {
 
         @SuppressWarnings("unchecked")
         Collection<E> checkedCopyOf(Collection<? extends E> coll) {
-            Object[] a = null;
+            Object[] a;
             try {
                 E[] z = zeroLengthElementArray();
                 a = coll.toArray(z);
@@ -3487,10 +3487,19 @@ public class Collections {
             return new CheckedList<>(list.subList(fromIndex, toIndex), type);
         }
 
+        /**
+         * {@inheritDoc}
+         *
+         * @throws ClassCastException if the class of an element returned by the
+         *         operator prevents it from being added to this collection. The
+         *         exception may be thrown after some elements of the list have
+         *         already been replaced.
+         */
         @Override
         public void replaceAll(UnaryOperator<E> operator) {
-            list.replaceAll(operator);
+            list.replaceAll(e -> typeCheck(operator.apply(e)));
         }
+
         @Override
         public void sort(Comparator<? super E> c) {
             list.sort(c);
