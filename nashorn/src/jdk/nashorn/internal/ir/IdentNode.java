@@ -280,6 +280,17 @@ public final class IdentNode extends Expression implements PropertyKey, Function
         return new IdentNode(this, name, type, flags | FUNCTION, programPoint, conversion);
     }
 
+    /**
+     * Mark this node as not being the callee operand of a {@link CallNode}.
+     * @return an ident node identical to this one in all aspects except with its function flag unset.
+     */
+    public IdentNode setIsNotFunction() {
+        if (! isFunction()) {
+            return this;
+        }
+        return new IdentNode(this, name, type, flags & ~FUNCTION, programPoint, conversion);
+    }
+
     @Override
     public int getProgramPoint() {
         return programPoint;
