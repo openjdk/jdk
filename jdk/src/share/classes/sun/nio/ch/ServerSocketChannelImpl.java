@@ -133,6 +133,14 @@ class ServerSocketChannelImpl
         synchronized (stateLock) {
             if (!isOpen())
                 throw new ClosedChannelException();
+
+            if (name == StandardSocketOptions.IP_TOS) {
+                ProtocolFamily family = Net.isIPv6Available() ?
+                    StandardProtocolFamily.INET6 : StandardProtocolFamily.INET;
+                Net.setSocketOption(fd, family, name, value);
+                return this;
+            }
+
             if (name == StandardSocketOptions.SO_REUSEADDR &&
                     Net.useExclusiveBind())
             {
@@ -177,6 +185,7 @@ class ServerSocketChannelImpl
             HashSet<SocketOption<?>> set = new HashSet<SocketOption<?>>(2);
             set.add(StandardSocketOptions.SO_RCVBUF);
             set.add(StandardSocketOptions.SO_REUSEADDR);
+            set.add(StandardSocketOptions.IP_TOS);
             return Collections.unmodifiableSet(set);
         }
     }
