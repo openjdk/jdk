@@ -502,7 +502,7 @@ enum CompilationPhase {
             Class<?> rootClass = null;
             long length = 0L;
 
-            final CodeInstaller<?> codeInstaller = compiler.getCodeInstaller();
+            final CodeInstaller<ScriptEnvironment> codeInstaller = compiler.getCodeInstaller();
 
             final Map<String, byte[]> bytecode = compiler.getBytecode();
 
@@ -527,12 +527,10 @@ enum CompilationPhase {
             final Object[] constants = compiler.getConstantData().toArray();
             codeInstaller.initialize(installedClasses.values(), compiler.getSource(), constants);
 
-            // index recompilable script function datas in the constant pool
-            final Map<RecompilableScriptFunctionData, RecompilableScriptFunctionData> rfns = new IdentityHashMap<>();
+            // initialize transient fields on recompilable script function data
             for (final Object constant: constants) {
                 if (constant instanceof RecompilableScriptFunctionData) {
-                    final RecompilableScriptFunctionData rfn = (RecompilableScriptFunctionData)constant;
-                    rfns.put(rfn, rfn);
+                    ((RecompilableScriptFunctionData)constant).initTransients(compiler.getSource(), codeInstaller);
                 }
             }
 
