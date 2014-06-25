@@ -1290,13 +1290,26 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     int argsCount;
                     @Override
                     void loadStack() {
-                        loadExpressionAsObject(ident); // Type.OBJECT as foo() makes no sense if foo == 3
-                        method.dup();
+                        /**
+                         * We want to load 'eval' to check if it is indeed global builtin eval.
+                         * If this eval call is inside a 'with' statement, dyn:getMethod|getProp|getElem
+                         * would be generated if ident is a "isFunction". But, that would result in a
+                         * bound function from WithObject. We don't want that as bound function as that
+                         * won't be detected as builtin eval. So, we make ident as "not a function" which
+                         * results in "dyn:getProp|getElem|getMethod" being generated and so WithObject
+                         * would return unbounded eval function.
+                         *
+                         * Example:
+                         *
+                         *  var global = this;
+                         *  function func() {
+                         *      with({ eval: global.eval) { eval("var x = 10;") }
+                         *  }
+                         */
+                        loadExpressionAsObject(ident.setIsNotFunction()); // Type.OBJECT as foo() makes no sense if foo == 3
                         globalIsEval();
                         method.ifeq(is_not_eval);
 
-                        // We don't need ScriptFunction object for 'eval'
-                        method.pop();
                         // Load up self (scope).
                         method.loadCompilerConstant(SCOPE);
                         final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
@@ -1316,6 +1329,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         method._goto(invoke_direct_eval);
 
                         method.label(is_not_eval);
+                        // load this time but with dyn:getMethod|getProp|getElem
+                        loadExpressionAsObject(ident); // Type.OBJECT as foo() makes no sense if foo == 3
                         // This is some scope 'eval' or global eval replaced by user
                         // but not the built-in ECMAScript 'eval' function call
                         method.loadNull();
