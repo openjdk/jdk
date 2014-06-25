@@ -38,7 +38,9 @@ import java.util.Set;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import java.util.function.IntUnaryOperator;
 
 import javax.management.*;
 import javax.management.remote.*;
@@ -588,11 +590,11 @@ public class JMXStartStopTest {
 
             testConnect(pa.getPort1(), pa.getPort2());
 
-            final boolean[] checks = new boolean[3];
+            final AtomicInteger checks = new AtomicInteger();
             jcmd(
                 line -> {
                     if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                        checks[0] = true;
+                        checks.getAndUpdate((op) -> op | 1);
                     }
                 },
                 CMD_START,
@@ -603,7 +605,7 @@ public class JMXStartStopTest {
             jcmd(
                 line -> {
                     if (line.contains("java.lang.RuntimeException: Invalid agent state")) {
-                        checks[1] = true;
+                        checks.getAndUpdate((op) -> op | 2);
                     }
                 },
                 CMD_START,
@@ -614,12 +616,14 @@ public class JMXStartStopTest {
             jcmd(CMD_STOP);
             jcmd(CMD_STOP);
 
+            int busyPort;
             try (ServerSocket ss = new ServerSocket(0))
             {
+                busyPort = ss.getLocalPort();
                 jcmd(
                     line -> {
-                        if (line.contains("Port already in use: " + ss.getLocalPort())) {
-                            checks[2] = true;
+                        if (line.contains("Port already in use: " + busyPort)) {
+                            checks.getAndUpdate((op) -> op | 4);
                         }
                     },
                     CMD_START,
@@ -627,19 +631,18 @@ public class JMXStartStopTest {
                     "jmxremote.rmi.port=" + pa.getPort2(),
                     "jmxremote.authenticate=false",
                     "jmxremote.ssl=false");
-
-                if (!checks[0]) {
-                    throw new Exception("Starting agent on port " + pa.getPort1() + " should " +
-                                        "report an invalid agent state");
-                }
-                if (!checks[1]) {
-                    throw new Exception("Starting agent on poprt " + pa.getPort2() + " should " +
-                                        "report an invalid agent state");
-                }
-                if (!checks[2]) {
-                    throw new Exception("Starting agent on port " + ss.getLocalPort() + " should " +
-                                        "report port in use");
-                }
+            }
+            if ((checks.get() & 1) == 0) {
+                throw new Exception("Starting agent on port " + pa.getPort1() + " should " +
+                                    "report an invalid agent state");
+            }
+            if ((checks.get() & 2) == 0) {
+                throw new Exception("Starting agent on poprt " + pa.getPort2() + " should " +
+                                    "report an invalid agent state");
+            }
+            if ((checks.get() & 4) == 0) {
+                throw new Exception("Starting agent on port " + busyPort + " should " +
+                                    "report port in use");
             }
         } finally {
             s.stop();
