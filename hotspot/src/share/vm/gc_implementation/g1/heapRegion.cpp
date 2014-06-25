@@ -49,7 +49,7 @@ HeapRegionDCTOC::HeapRegionDCTOC(G1CollectedHeap* g1,
                                  HeapRegion* hr, ExtendedOopClosure* cl,
                                  CardTableModRefBS::PrecisionStyle precision,
                                  FilterKind fk) :
-  ContiguousSpaceDCTOC(hr, cl, precision, NULL),
+  DirtyCardToOopClosure(hr, cl, precision, NULL),
   _hr(hr), _fk(fk), _g1(g1) { }
 
 FilterOutOfRegionClosure::FilterOutOfRegionClosure(HeapRegion* r,
@@ -78,19 +78,18 @@ HeapWord* walk_mem_region_loop(ClosureType* cl, G1CollectedHeap* g1h,
   return cur;
 }
 
-void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
-                                              HeapWord* bottom,
-                                              HeapWord* top,
-                                              ExtendedOopClosure* cl) {
+void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
+                                      HeapWord* bottom,
+                                      HeapWord* top) {
   G1CollectedHeap* g1h = _g1;
   int oop_size;
   ExtendedOopClosure* cl2 = NULL;
 
-  FilterIntoCSClosure intoCSFilt(this, g1h, cl);
-  FilterOutOfRegionClosure outOfRegionFilt(_hr, cl);
+  FilterIntoCSClosure intoCSFilt(this, g1h, _cl);
+  FilterOutOfRegionClosure outOfRegionFilt(_hr, _cl);
 
   switch (_fk) {
-  case NoFilterKind:          cl2 = cl; break;
+  case NoFilterKind:          cl2 = _cl; break;
   case IntoCSFilterKind:      cl2 = &intoCSFilt; break;
   case OutOfRegionFilterKind: cl2 = &outOfRegionFilt; break;
   default:                    ShouldNotReachHere();
@@ -112,17 +111,17 @@ void HeapRegionDCTOC::walk_mem_region_with_cl(MemRegion mr,
     // We replicate the loop below for several kinds of possible filters.
     switch (_fk) {
     case NoFilterKind:
-      bottom = walk_mem_region_loop(cl, g1h, _hr, bottom, top);
+      bottom = walk_mem_region_loop(_cl, g1h, _hr, bottom, top);
       break;
 
     case IntoCSFilterKind: {
-      FilterIntoCSClosure filt(this, g1h, cl);
+      FilterIntoCSClosure filt(this, g1h, _cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }
 
     case OutOfRegionFilterKind: {
-      FilterOutOfRegionClosure filt(_hr, cl);
+      FilterOutOfRegionClosure filt(_hr, _cl);
       bottom = walk_mem_region_loop(&filt, g1h, _hr, bottom, top);
       break;
     }

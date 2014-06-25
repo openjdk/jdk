@@ -71,7 +71,7 @@ class nmethod;
 // in the concurrent marker used by G1 to filter remembered
 // sets.
 
-class HeapRegionDCTOC : public ContiguousSpaceDCTOC {
+class HeapRegionDCTOC : public DirtyCardToOopClosure {
 public:
   // Specification of possible DirtyCardToOopClosure filtering.
   enum FilterKind {
@@ -85,39 +85,13 @@ protected:
   FilterKind _fk;
   G1CollectedHeap* _g1;
 
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               ExtendedOopClosure* cl);
-
-  // We don't specialize this for FilteringClosure; filtering is handled by
-  // the "FilterKind" mechanism.  But we provide this to avoid a compiler
-  // warning.
-  void walk_mem_region_with_cl(MemRegion mr,
-                               HeapWord* bottom, HeapWord* top,
-                               FilteringClosure* cl) {
-    HeapRegionDCTOC::walk_mem_region_with_cl(mr, bottom, top,
-                                             (ExtendedOopClosure*)cl);
-  }
-
-  // Get the actual top of the area on which the closure will
-  // operate, given where the top is assumed to be (the end of the
-  // memory region passed to do_MemRegion) and where the object
-  // at the top is assumed to start. For example, an object may
-  // start at the top but actually extend past the assumed top,
-  // in which case the top becomes the end of the object.
-  HeapWord* get_actual_top(HeapWord* top, HeapWord* top_obj) {
-    return ContiguousSpaceDCTOC::get_actual_top(top, top_obj);
-  }
-
   // Walk the given memory region from bottom to (actual) top
   // looking for objects and applying the oop closure (_cl) to
   // them. The base implementation of this treats the area as
   // blocks, where a block may or may not be an object. Sub-
   // classes should override this to provide more accurate
   // or possibly more efficient walking.
-  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top) {
-    Filtering_DCTOC::walk_mem_region(mr, bottom, top);
-  }
+  void walk_mem_region(MemRegion mr, HeapWord* bottom, HeapWord* top);
 
 public:
   HeapRegionDCTOC(G1CollectedHeap* g1,
