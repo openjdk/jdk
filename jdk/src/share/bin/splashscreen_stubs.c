@@ -37,6 +37,9 @@ typedef void (*SplashInit_t)(void);
 typedef void (*SplashClose_t)(void);
 typedef void (*SplashSetFileJarName_t)(const char* fileName,
                                        const char* jarName);
+typedef void (*SplashSetScaleFactor_t)(float scaleFactor);
+typedef char* (*SplashGetScaledImageName_t)(const char* fileName,
+                        const char* jarName, float* scaleFactor);
 
 /*
  * This macro invokes a function from the shared lib.
@@ -58,11 +61,11 @@ typedef void (*SplashSetFileJarName_t)(const char* fileName,
 #define INVOKEV(name) _INVOKE(name, ,;)
 
 int     DoSplashLoadMemory(void* pdata, int size) {
-    INVOKE(SplashLoadMemory,0)(pdata, size);
+    INVOKE(SplashLoadMemory, NULL)(pdata, size);
 }
 
 int     DoSplashLoadFile(const char* filename) {
-    INVOKE(SplashLoadFile,0)(filename);
+    INVOKE(SplashLoadFile, NULL)(filename);
 }
 
 void    DoSplashInit(void) {
@@ -75,4 +78,13 @@ void    DoSplashClose(void) {
 
 void    DoSplashSetFileJarName(const char* fileName, const char* jarName) {
     INVOKEV(SplashSetFileJarName)(fileName, jarName);
+}
+
+void    DoSplashSetScaleFactor(float scaleFactor) {
+    INVOKEV(SplashSetScaleFactor)(scaleFactor);
+}
+
+char*    DoSplashGetScaledImageName(const char* fileName, const char* jarName,
+                                    float* scaleFactor) {
+    INVOKE(SplashGetScaledImageName, NULL)(fileName, jarName, scaleFactor);
 }
