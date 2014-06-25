@@ -25,7 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
 
-#include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1BlockOffsetTable.hpp"
 #include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
 #include "gc_implementation/g1/survRateGroup.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
