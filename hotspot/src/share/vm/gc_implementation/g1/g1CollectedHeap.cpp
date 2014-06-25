@@ -5340,17 +5340,14 @@ public:
 class G1CopyingKeepAliveClosure: public OopClosure {
   G1CollectedHeap*         _g1h;
   OopClosure*              _copy_non_heap_obj_cl;
-  OopsInHeapRegionClosure* _copy_metadata_obj_cl;
   G1ParScanThreadState*    _par_scan_state;
 
 public:
   G1CopyingKeepAliveClosure(G1CollectedHeap* g1h,
                             OopClosure* non_heap_obj_cl,
-                            OopsInHeapRegionClosure* metadata_obj_cl,
                             G1ParScanThreadState* pss):
     _g1h(g1h),
     _copy_non_heap_obj_cl(non_heap_obj_cl),
-    _copy_metadata_obj_cl(metadata_obj_cl),
     _par_scan_state(pss)
   {}
 
@@ -5383,7 +5380,7 @@ public:
         _par_scan_state->push_on_queue(p);
       } else {
         assert(!Metaspace::contains((const void*)p),
-               err_msg("Otherwise need to call _copy_metadata_obj_cl->do_oop(p) "
+               err_msg("Unexpectedly found a pointer from metadata: "
                               PTR_FORMAT, p));
           _copy_non_heap_obj_cl->do_oop(p);
         }
@@ -5478,22 +5475,18 @@ public:
     pss.set_evac_failure_closure(&evac_failure_cl);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
 
     G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(_g1h, &pss, NULL);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-    OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
     if (_g1h->g1_policy()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
-      copy_metadata_cl = &copy_mark_metadata_cl;
     }
 
     // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, copy_metadata_cl, &pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, &pss);
 
     // Complete GC closure
     G1ParEvacuateFollowersClosure drain_queue(_g1h, &pss, _task_queues, _terminator);
@@ -5588,18 +5581,14 @@ public:
 
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
 
     G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(_g1h, &pss, NULL);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-    OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
     if (_g1h->g1_policy()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
-      copy_metadata_cl = &copy_mark_metadata_cl;
     }
 
     // Is alive closure
@@ -5607,7 +5596,7 @@ public:
 
     // Copying keep alive closure. Applied to referent objects that need
     // to be copied.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, copy_metadata_cl, &pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, &pss);
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
@@ -5713,22 +5702,18 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   assert(pss.refs()->is_empty(), "pre-condition");
 
   G1ParScanExtRootClosure        only_copy_non_heap_cl(this, &pss, NULL);
-  G1ParScanMetadataClosure       only_copy_metadata_cl(this, &pss, NULL);
 
   G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, &pss, NULL);
-  G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(this, &pss, NULL);
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-  OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
   if (_g1h->g1_policy()->during_initial_mark_pause()) {
     // We also need to mark copied objects.
     copy_non_heap_cl = &copy_mark_non_heap_cl;
-    copy_metadata_cl = &copy_mark_metadata_cl;
   }
 
   // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, copy_metadata_cl, &pss);
+  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, &pss);
 
   // Serial Complete GC closure
   G1STWDrainQueueClosure drain_queue(this, &pss);
