@@ -444,15 +444,11 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            if (env._lazy_compilation || env._optimistic_types) {
-                getErr().println("Can not use persistent class caching with lazy compilation or optimistic compilation.");
-            } else {
-                try {
-                    final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
-                    codeStore = new CodeStore(cacheDir);
-                } catch (final IOException e) {
-                    throw new RuntimeException("Error initializing code cache", e);
-                }
+            try {
+                final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
+                codeStore = new CodeStore(cacheDir);
+            } catch (final IOException e) {
+                throw new RuntimeException("Error initializing code cache", e);
             }
         }
 
@@ -1179,7 +1175,7 @@ public final class Context {
 
         for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
-                ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
+                ((RecompilableScriptFunctionData) constant).initTransients(source, installer);
             }
         }
 

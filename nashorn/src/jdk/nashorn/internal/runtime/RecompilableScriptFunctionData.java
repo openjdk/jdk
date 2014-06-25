@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 
 import java.io.IOException;
-import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -56,7 +55,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-import jdk.nashorn.internal.scripts.JS;
 
 /**
  * This is a subclass that represents a script function that may be regenerated,
@@ -84,9 +82,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     /** Source from which FunctionNode was parsed. */
     private transient Source source;
-
-    /** Allows us to retrieve the method handle for this function once the code is compiled */
-    private MethodLocator methodLocator;
 
     /** Token of this function within the source. */
     private final long token;
@@ -239,15 +234,18 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     /**
-     * Setter for code and source
+     * Initialize transient fields on deserialized instances
      *
-     * @param code   map of code, class name to class
      * @param source source
+     * @param installer code installer
      */
-    public void setCodeAndSource(final Map<String, Class<?>> code, final Source source) {
-        this.source = source;
-        if (methodLocator != null) {
-            methodLocator.setClass(code.get(methodLocator.getClassName()));
+    public void initTransients(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
+        if (this.source == null && this.installer == null) {
+            this.source = source;
+            this.installer = installer;
+        } else if (this.source != source || this.installer != installer) {
+            // Existing values must be same as those passed as parameters
+            throw new IllegalArgumentException();
         }
     }
 
@@ -529,7 +527,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             throw new IllegalStateException(functionNode.getName() + " id=" + functionNode.getId());
         }
         addCode(functionNode);
-        methodLocator = new MethodLocator(functionNode);
     }
 
     private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints, final int fnFlags) {
@@ -592,12 +589,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         synchronized (code) {
             CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
             if (existingBest == null) {
-                if(code.isEmpty() && methodLocator != null) {
-                    // This is a deserialized object, reconnect from method handle
-                    existingBest = addCode(methodLocator.getMethodHandle(), null, methodLocator.getFunctionFlags());
-                } else {
-                    existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
-                }
+                existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
             }
 
             assert existingBest != null;
@@ -707,48 +699,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         } while(data != null);
 
         return true;
-    }
-
-    /**
-     * Helper class that allows us to retrieve the method handle for this function once it has been generated.
-     */
-    private static class MethodLocator implements Serializable {
-        private transient Class<?> clazz;
-        private final String className;
-        private final String methodName;
-        private final MethodType methodType;
-        private final int functionFlags;
-
-        private static final long serialVersionUID = -5420835725902966692L;
-
-        MethodLocator(final FunctionNode functionNode) {
-            this.className  = functionNode.getCompileUnit().getUnitClassName();
-            this.methodName = functionNode.getName();
-            this.methodType = new FunctionSignature(functionNode).getMethodType();
-            this.functionFlags = functionNode.getFlags();
-
-            assert className != null;
-            assert methodName != null;
-        }
-
-        void setClass(final Class<?> clazz) {
-            if (!JS.class.isAssignableFrom(clazz)) {
-                throw new IllegalArgumentException();
-            }
-            this.clazz = clazz;
-        }
-
-        String getClassName() {
-            return className;
-        }
-
-        MethodHandle getMethodHandle() {
-            return MH.findStatic(LOOKUP, clazz, methodName, methodType);
-        }
-
-        int getFunctionFlags() {
-            return functionFlags;
-        }
     }
 
     private void readObject(final java.io.ObjectInputStream in) throws IOException, ClassNotFoundException {
