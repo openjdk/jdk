@@ -86,7 +86,7 @@ public abstract class Trees {
             argType = Class.forName(argType.getName(), false, cl);
             Method m = c.getMethod("instance", argType);
             return (Trees) m.invoke(null, arg);
-        } catch (Throwable e) {
+        } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
     }
