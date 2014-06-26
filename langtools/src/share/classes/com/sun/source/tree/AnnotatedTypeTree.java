@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for an annotated type
+ * A tree node for an annotated type.
  *
  * For example:
  * <pre>
@@ -43,6 +43,15 @@ import java.util.List;
  */
 @jdk.Exported
 public interface AnnotatedTypeTree extends ExpressionTree {
+    /**
+     * Returns the annotations associated with this type expression.
+     * @return the annotations
+     */
     List<? extends AnnotationTree> getAnnotations();
+
+    /**
+     * Returns the underlying type with which the annotations are associated.
+     * @return the underlying type
+     */
     ExpressionTree getUnderlyingType();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,10 +35,36 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface AttributeTree extends DocTree {
+    /**
+     * The kind of an attribute value.
+     */
     @jdk.Exported
-    enum ValueKind { EMPTY, UNQUOTED, SINGLE, DOUBLE }
+    enum ValueKind {
+        /** The attribute value is empty. */
+        EMPTY,
+        /** The attribute value is not enclosed in quotes. */
+        UNQUOTED,
+        /** The attribute value is enclosed in single quotation marks. */
+        SINGLE,
+        /** The attribute value is enclosed in double quotation marks. */
+        DOUBLE
+    }
 
+    /**
+     * Returns the name of the attribute.
+     * @return the name of the attribute
+     */
     Name getName();
+
+    /**
+     * Returns the kind of the attribute.
+     * @return the kind of the attribute.
+     */
     ValueKind getValueKind();
+
+    /**
+     * Returns the value of the attribute, or {@code null} if the kind is EMPTY.
+     * @return the value of the attribute.
+     */
     List<? extends DocTree> getValue();
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,21 +39,53 @@ import javax.tools.JavaFileObject;
  */
 @jdk.Exported
 public interface CompilationUnitTree extends Tree {
+    /**
+     * Returns the annotations listed on any package declaration
+     * at the head of this compilation unit, or {@code null} if there
+     * is no package declaration.
+     * @return the package annotations
+     */
     List<? extends AnnotationTree> getPackageAnnotations();
+
+    /**
+     * Returns the name contained in any package declaration
+     * at the head of this compilation unit, or {@code null} if there
+     * is no package declaration.
+     * @return the package name
+     */
     ExpressionTree getPackageName();
 
     /**
-     * Return the PackageTree associated with this compilation unit.
+     * Returns the package tree associated with this compilation unit,
+     * or {@code null} if there is no package declaration.
+     * @return the package tree
      * @since 1.9
      */
     PackageTree getPackage();
+
+    /**
+     * Returns the import declarations appearing in this compilation unit.
+     * @return the import declarations
+     */
     List<? extends ImportTree> getImports();
+
+    /**
+     * Returns the type declarations appearing in this compilation unit.
+     * The list may also include empty statements resulting from
+     * extraneous semicolons.
+     * @return the type declarations
+     */
     List<? extends Tree> getTypeDecls();
+
+    /**
+     * Returns the file object containing the source for this compilation unit.
+     * @return the file object
+     */
     JavaFileObject getSourceFile();
 
     /**
-     * Gets the line map for this compilation unit, if available.
-     * Returns null if the line map is not available.
+     * Returns the line map for this compilation unit, if available.
+     * Returns {@code null} if the line map is not available.
      * @return the line map for this compilation unit
      */
     LineMap getLineMap();
