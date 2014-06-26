@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,30 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import sun.misc.Unsafe;
-import java.lang.reflect.Field;
+package sun.jvm.hotspot.runtime;
 
-@SuppressWarnings("sunapi")
-public class Test8001071 {
-    public static Unsafe unsafe;
+//These definitions should be kept in sync with the definitions in the HotSpot code.
 
-    static {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            unsafe = (Unsafe) f.get(null);
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
+public enum Flags {
+  // value origin
+  DEFAULT ("Default"),
+  COMMAND_LINE ("Command line"),
+  ENVIRON_VAR ("Environment variable"),
+  CONFIG_FILE ("Config file"),
+  MANAGEMENT ("Management"),
+  ERGONOMIC ("Ergonomic"),
+  ATTACH_ON_DEMAND ("Attach on demand"),
+  INTERNAL ("Internal");
 
-    public static void main(String args[]) {
-        unsafe.getObject(new Test8001071(), Short.MAX_VALUE);
-    }
+  private final String value;
 
+  Flags(String val) {
+    this.value = val;
+  }
+  public String value() {
+    return value;
+  }
 }

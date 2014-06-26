@@ -2813,13 +2813,6 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  // Threads on Linux are all with same priority. The Solaris style
-  // os::yield_all() with nanosleep(1ms) is not necessary.
-  sched_yield();
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
 
@@ -3076,7 +3069,7 @@ static bool do_suspend(OSThread* osthread) {
 
   for (int n = 0; !osthread->sr.is_suspended(); n++) {
     for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::yield_all();
+      os::yield();
     }
 
     // timeout, try to cancel the request
@@ -3110,7 +3103,7 @@ static void do_resume(OSThread* osthread) {
     if (sr_notify(osthread) == 0) {
       for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
         for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::yield_all();
+          os::yield();
         }
       }
     } else {
