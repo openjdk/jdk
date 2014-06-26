@@ -59,7 +59,7 @@ package p1;
  * Sub-test 7 Expect: <A HREF="../../docs1/p2/package-summary.html#package_description">../../docs1/p2/package-summary.html#package_description</A>
  * <p>
  *
- * <!-- ----------------------------------------------------- -->
+ * <!-- =================================================================== -->
  *
  * Allow docRoot to work without a trailing slash for those who had to change their comments
  * to work with the 1.4.0 bug:
