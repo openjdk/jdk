@@ -1176,10 +1176,7 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
          (!is_virtual && invoke_code == Bytecodes::_invokedynamic) ||
          ( is_virtual && invoke_code != Bytecodes::_invokestatic ), "inconsistent bytecode");
 
-  // We do not patch the call site if the caller nmethod has been made non-entrant.
-  if (!caller_nm->is_in_use()) {
-    return callee_method;
-  }
+  assert(caller_nm->is_alive(), "It should be alive");
 
 #ifndef PRODUCT
   // tracing/debugging/statistics
@@ -1249,13 +1246,11 @@ methodHandle SharedRuntime::resolve_sub_helper(JavaThread *thread,
 
     // Now that we are ready to patch if the Method* was redefined then
     // don't update call site and let the caller retry.
-    // Don't update call site if caller nmethod has been made non-entrant
-    // as it is a waste of time.
     // Don't update call site if callee nmethod was unloaded or deoptimized.
     // Don't update call site if callee nmethod was replaced by an other nmethod
     // which may happen when multiply alive nmethod (tiered compilation)
     // will be supported.
-    if (!callee_method->is_old() && caller_nm->is_in_use() &&
+    if (!callee_method->is_old() &&
         (callee_nm == NULL || callee_nm->is_in_use() && (callee_method->code() == callee_nm))) {
 #ifdef ASSERT
       // We must not try to patch to jump to an already unloaded method.
@@ -1454,14 +1449,12 @@ methodHandle SharedRuntime::handle_ic_miss_helper(JavaThread *thread, TRAPS) {
   // out of scope.
   JvmtiDynamicCodeEventCollector event_collector;
 
-  // Update inline cache to megamorphic. Skip update if caller has been
-  // made non-entrant or we are called from interpreted.
+  // Update inline cache to megamorphic. Skip update if we are called from interpreted.
   { MutexLocker ml_patch (CompiledIC_lock);
     RegisterMap reg_map(thread, false);
     frame caller_frame = thread->last_frame().sender(&reg_map);
     CodeBlob* cb = caller_frame.cb();
-    if (cb->is_nmethod() && ((nmethod*)cb)->is_in_use()) {
-      // Not a non-entrant nmethod, so find inline_cache
+    if (cb->is_nmethod()) {
       CompiledIC* inline_cache = CompiledIC_before(((nmethod*)cb), caller_frame.pc());
       bool should_be_mono = false;
       if (inline_cache->is_optimized()) {
@@ -1604,19 +1597,13 @@ methodHandle SharedRuntime::reresolve_call_site(JavaThread *thread, TRAPS) {
       // resolve is only done once.
 
       MutexLocker ml(CompiledIC_lock);
-      //
-      // We do not patch the call site if the nmethod has been made non-entrant
-      // as it is a waste of time
-      //
-      if (caller_nm->is_in_use()) {
-        if (is_static_call) {
-          CompiledStaticCall* ssc= compiledStaticCall_at(call_addr);
-          ssc->set_to_clean();
-        } else {
-          // compiled, dispatched call (which used to call an interpreted method)
-          CompiledIC* inline_cache = CompiledIC_at(caller_nm, call_addr);
-          inline_cache->set_to_clean();
-        }
+      if (is_static_call) {
+        CompiledStaticCall* ssc= compiledStaticCall_at(call_addr);
+        ssc->set_to_clean();
+      } else {
+        // compiled, dispatched call (which used to call an interpreted method)
+        CompiledIC* inline_cache = CompiledIC_at(caller_nm, call_addr);
+        inline_cache->set_to_clean();
       }
     }
 
