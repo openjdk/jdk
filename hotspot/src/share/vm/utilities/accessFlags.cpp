@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,22 +26,6 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "utilities/accessFlags.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
-
 
 void AccessFlags::atomic_set_bits(jint bits) {
   // Atomically update the flags with the bits given

@@ -27,25 +27,11 @@
 #include "gc_implementation/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/os.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/top.hpp"
 #include "utilities/xmlstream.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 
 extern "C" void jio_print(const char* s); // Declarationtion of jvm method
 

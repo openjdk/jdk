@@ -36,6 +36,7 @@
 #include "memory/filemap.hpp"
 #include "mutex_linux.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "os_linux.inline.hpp"
 #include "os_share_linux.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"

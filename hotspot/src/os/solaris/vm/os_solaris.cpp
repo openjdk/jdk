@@ -37,6 +37,7 @@
 #include "mutex_solaris.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_solaris.hpp"
+#include "os_solaris.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"

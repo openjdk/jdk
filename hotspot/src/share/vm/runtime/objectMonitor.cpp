@@ -43,18 +43,6 @@
 #include "utilities/dtrace.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/preserveException.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 
 #if defined(__GNUC__) && !defined(IA64) && !defined(PPC64)
   // Need to inhibit inlining for older versions of GCC to avoid build-time failures
