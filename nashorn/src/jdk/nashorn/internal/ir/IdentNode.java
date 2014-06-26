@@ -110,7 +110,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      * @return a temporary identifier for the symbol.
      */
     public static IdentNode createInternalIdentifier(final Symbol symbol) {
-        return (IdentNode)new IdentNode(Token.toDesc(TokenType.IDENT, 0, 0), 0, symbol.getName()).setSymbol(symbol);
+        return new IdentNode(Token.toDesc(TokenType.IDENT, 0, 0), 0, symbol.getName()).setSymbol(symbol);
     }
 
     @Override
@@ -180,7 +180,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      * @param symbol the symbol
      * @return new node
      */
-    public Expression setSymbol(final Symbol symbol) {
+    public IdentNode setSymbol(final Symbol symbol) {
         if (this.symbol == symbol) {
             return this;
         }

@@ -25,10 +25,12 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysFalse;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -39,7 +41,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Function;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.BaseNode;
@@ -72,6 +73,7 @@ import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
@@ -356,6 +358,8 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     private boolean reachable = true;
     // Return type of the function
     private Type returnType = Type.UNKNOWN;
+    // Synthetic return node that we must insert at the end of the function if it's end is reachable.
+    private ReturnNode syntheticReturn;
 
     // Topmost current split node (if any)
     private SplitNode topSplit;
@@ -845,6 +849,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterThrowNode(final ThrowNode throwNode) {
+        if(!reachable) {
+            return false;
+        }
+
         throwNode.getExpression().accept(this);
         jumpToCatchBlock(throwNode);
         doesNotContinueSequentially();
@@ -1031,6 +1039,15 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     @Override
     public Node leaveBlock(final Block block) {
         if(lc.isFunctionBody()) {
+            if(reachable) {
+                // reachable==true means we can reach the end of the function without an explicit return statement. We
+                // need to insert a synthetic one then. This logic used to be in Lower.leaveBlock(), but Lower's
+                // reachability analysis (through Terminal.isTerminal() flags) is not precise enough so
+                // Lower$BlockLexicalContext.afterSetStatements will sometimes think the control flow terminates even
+                // when it didn't. Example: function() { switch((z)) { default: {break; } throw x; } }.
+                createSyntheticReturn(block);
+                assert !reachable;
+            }
             // We must calculate the return type here (and not in leaveFunctionNode) as it can affect the liveness of
             // the :return symbol and thus affect conversion type liveness calculations for it.
             calculateReturnType();
@@ -1089,6 +1106,23 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             retSymbol.setNeedsSlot(true);
         }
     }
+
+    private void createSyntheticReturn(final Block body) {
+        final FunctionNode functionNode = lc.getCurrentFunction();
+        final long token = functionNode.getToken();
+        final int finish = functionNode.getFinish();
+        final List<Statement> statements = body.getStatements();
+        final int lineNumber = statements.isEmpty() ? functionNode.getLineNumber() : statements.get(statements.size() - 1).getLineNumber();
+        final IdentNode returnExpr;
+        if(functionNode.isProgram()) {
+            returnExpr = new IdentNode(token, finish, RETURN.symbolName()).setSymbol(getCompilerConstantSymbol(functionNode, RETURN));
+        } else {
+            returnExpr = null;
+        }
+        syntheticReturn = new ReturnNode(lineNumber, token, finish, returnExpr);
+        syntheticReturn.accept(this);
+    }
+
     /**
      * Leave a breakable node. If there's a join point associated with its break label (meaning there was at least one
      * break statement to the end of the node), insert the join point into the flow.
@@ -1175,6 +1209,16 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     return (Node)setLocalVariableConversion(original, (JoinPredecessor)node);
                 }
                 return node;
+            }
+
+            @Override
+            public Node leaveBlock(final Block block) {
+                if(inOuterFunction && syntheticReturn != null && lc.isFunctionBody()) {
+                    final ArrayList<Statement> stmts = new ArrayList<>(block.getStatements());
+                    stmts.add((ReturnNode)syntheticReturn.accept(this));
+                    return block.setStatements(lc, stmts);
+                }
+                return super.leaveBlock(block);
             }
 
             @Override
