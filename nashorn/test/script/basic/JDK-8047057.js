@@ -45,8 +45,8 @@ function makeFuncExpectError(code, ErrorType) {
     }
 }
 
-// makeFuncAndCall("switch(0) { default: {break;} return }");
-// makeFuncAndCall("L: { { break L; } return; }");
+makeFuncAndCall("switch(0) { default: {break;} return }");
+makeFuncAndCall("L: { { break L; } return; }");
 makeFuncAndCall("L: { while(0) break L; return; }");
 makeFuncExpectError("L: {while(0) break L; return [](); }", TypeError);
 // makeFuncAndCall("do with({}) break ; while(0);");
