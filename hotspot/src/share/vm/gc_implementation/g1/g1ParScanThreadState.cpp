@@ -69,6 +69,11 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
   _start = os::elapsedTime();
 }
 
+G1ParScanThreadState::~G1ParScanThreadState() {
+  retire_alloc_buffers();
+  FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
+}
+
 void
 G1ParScanThreadState::print_termination_stats_hdr(outputStream* const st)
 {
@@ -139,14 +144,14 @@ void G1ParScanThreadState::trim_queue() {
   StarTask ref;
   do {
     // Drain the overflow stack first, so other threads can steal.
-    while (refs()->pop_overflow(ref)) {
-      deal_with_reference(ref);
+    while (_refs->pop_overflow(ref)) {
+      dispatch_reference(ref);
     }
 
-    while (refs()->pop_local(ref)) {
-      deal_with_reference(ref);
+    while (_refs->pop_local(ref)) {
+      dispatch_reference(ref);
     }
-  } while (!refs()->is_empty());
+  } while (!_refs->is_empty());
 }
 
 oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
@@ -248,4 +253,57 @@ oop G1ParScanThreadState::copy_to_survivor_space(oop const old) {
     obj = forward_ptr;
   }
   return obj;
+}
+
+HeapWord* G1ParScanThreadState::allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
+  HeapWord* obj = NULL;
+  size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
+  if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
+    G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
+    add_to_alloc_buffer_waste(alloc_buf->words_remaining());
+    alloc_buf->retire(false /* end_of_gc */, false /* retain */);
+
+    HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
+    if (buf == NULL) {
+      return NULL; // Let caller handle allocation failure.
+    }
+    // Otherwise.
+    alloc_buf->set_word_size(gclab_word_size);
+    alloc_buf->set_buf(buf);
+
+    obj = alloc_buf->allocate(word_sz);
+    assert(obj != NULL, "buffer was definitely big enough...");
+  } else {
+    obj = _g1h->par_allocate_during_gc(purpose, word_sz);
+  }
+  return obj;
+}
+
+void G1ParScanThreadState::undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz) {
+  if (alloc_buffer(purpose)->contains(obj)) {
+    assert(alloc_buffer(purpose)->contains(obj + word_sz - 1),
+           "should contain whole object");
+    alloc_buffer(purpose)->undo_allocation(obj, word_sz);
+  } else {
+    CollectedHeap::fill_with_object(obj, word_sz);
+    add_to_undo_waste(word_sz);
+  }
+}
+
+HeapWord* G1ParScanThreadState::allocate(GCAllocPurpose purpose, size_t word_sz) {
+  HeapWord* obj = alloc_buffer(purpose)->allocate(word_sz);
+  if (obj != NULL) {
+    return obj;
+  }
+  return allocate_slow(purpose, word_sz);
+}
+
+void G1ParScanThreadState::retire_alloc_buffers() {
+  for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
+    size_t waste = _alloc_buffers[ap]->words_remaining();
+    add_to_alloc_buffer_waste(waste);
+    _alloc_buffers[ap]->flush_stats_and_retire(_g1h->stats_for_purpose((GCAllocPurpose)ap),
+                                               true /* end_of_gc */,
+                                               false /* retain */);
+  }
 }

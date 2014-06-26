@@ -4669,24 +4669,10 @@ bool G1ParEvacuateFollowersClosure::offer_termination() {
 }
 
 void G1ParEvacuateFollowersClosure::do_void() {
-  StarTask stolen_task;
   G1ParScanThreadState* const pss = par_scan_state();
   pss->trim_queue();
-
   do {
-    while (queues()->steal(pss->queue_num(), pss->hash_seed(), stolen_task)) {
-      assert(pss->verify_task(stolen_task), "sanity");
-      if (stolen_task.is_narrow()) {
-        pss->deal_with_reference((narrowOop*) stolen_task);
-      } else {
-        pss->deal_with_reference((oop*) stolen_task);
-      }
-
-      // We've just processed a reference and we might have made
-      // available new entries on the queues. So we have to make sure
-      // we drain the queues as necessary.
-      pss->trim_queue();
-    }
+    pss->steal_and_trim_queue(queues());
   } while (!offer_termination());
 }
 
@@ -4732,8 +4718,7 @@ protected:
   }
 
 public:
-  G1ParTask(G1CollectedHeap* g1h,
-            RefToScanQueueSet *task_queues)
+  G1ParTask(G1CollectedHeap* g1h, RefToScanQueueSet *task_queues)
     : AbstractGangTask("G1 collection"),
       _g1h(g1h),
       _queues(task_queues),
@@ -4831,7 +4816,7 @@ public:
         pss.print_termination_stats(worker_id);
       }
 
-      assert(pss.refs()->is_empty(), "should be empty");
+      assert(pss.queue_is_empty(), "should be empty");
 
       // Close the inner scope so that the ResourceMark and HandleMark
       // destructors are executed here and are included as part of the
@@ -5355,8 +5340,7 @@ public:
 
     pss.set_evac_failure_closure(&evac_failure_cl);
 
-    assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
-
+    assert(pss.queue_is_empty(), "both queue and overflow should be empty");
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
 
@@ -5410,7 +5394,7 @@ public:
     G1ParEvacuateFollowersClosure drain_queue(_g1h, &pss, _queues, &_terminator);
     drain_queue.do_void();
     // Allocation buffers were retired at the end of G1ParEvacuateFollowersClosure
-    assert(pss.refs()->is_empty(), "should be");
+    assert(pss.queue_is_empty(), "should be");
   }
 };
 
@@ -5477,7 +5461,7 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
 
   pss.set_evac_failure_closure(&evac_failure_cl);
 
-  assert(pss.refs()->is_empty(), "pre-condition");
+  assert(pss.queue_is_empty(), "pre-condition");
 
   G1ParScanExtRootClosure        only_copy_non_heap_cl(this, &pss, NULL);
 
@@ -5525,7 +5509,7 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   _gc_tracer_stw->report_gc_reference_stats(stats);
 
   // We have completed copying any necessary live referent objects.
-  assert(pss.refs()->is_empty(), "both queue and overflow should be empty");
+  assert(pss.queue_is_empty(), "both queue and overflow should be empty");
 
   double ref_proc_time = os::elapsedTime() - ref_proc_start;
   g1_policy()->phase_times()->record_ref_proc_time(ref_proc_time * 1000.0);

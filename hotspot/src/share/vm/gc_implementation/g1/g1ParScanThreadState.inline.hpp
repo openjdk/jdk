@@ -43,6 +43,30 @@ template <class T> void G1ParScanThreadState::update_rs(HeapRegion* from, T* p, 
   }
 }
 
+template <class T> void G1ParScanThreadState::do_oop_evac(T* p, HeapRegion* from) {
+  assert(!oopDesc::is_null(oopDesc::load_decode_heap_oop(p)),
+         "Reference should not be NULL here as such are never pushed to the task queue.");
+  oop obj = oopDesc::load_decode_heap_oop_not_null(p);
+
+  // Although we never intentionally push references outside of the collection
+  // set, due to (benign) races in the claim mechanism during RSet scanning more
+  // than one thread might claim the same card. So the same card may be
+  // processed multiple times. So redo this check.
+  if (_g1h->in_cset_fast_test(obj)) {
+    oop forwardee;
+    if (obj->is_forwarded()) {
+      forwardee = obj->forwardee();
+    } else {
+      forwardee = copy_to_survivor_space(obj);
+    }
+    assert(forwardee != NULL, "forwardee should not be NULL");
+    oopDesc::encode_store_heap_oop(p, forwardee);
+  }
+
+  assert(obj != NULL, "Must be");
+  update_rs(from, p, queue_num());
+}
+
 inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
   assert(has_partial_array_mask(p), "invariant");
   oop from_obj = clear_partial_array_mask(p);
@@ -104,12 +128,25 @@ template <class T> inline void G1ParScanThreadState::deal_with_reference(T* ref_
   }
 }
 
-inline void G1ParScanThreadState::deal_with_reference(StarTask ref) {
+inline void G1ParScanThreadState::dispatch_reference(StarTask ref) {
   assert(verify_task(ref), "sanity");
   if (ref.is_narrow()) {
     deal_with_reference((narrowOop*)ref);
   } else {
     deal_with_reference((oop*)ref);
+  }
+}
+
+void G1ParScanThreadState::steal_and_trim_queue(RefToScanQueueSet *task_queues) {
+  StarTask stolen_task;
+  while (task_queues->steal(queue_num(), hash_seed(), stolen_task)) {
+    assert(verify_task(stolen_task), "sanity");
+    dispatch_reference(stolen_task);
+
+    // We've just processed a reference and we might have made
+    // available new entries on the queues. So we have to make sure
+    // we drain the queues as necessary.
+    trim_queue();
   }
 }
 

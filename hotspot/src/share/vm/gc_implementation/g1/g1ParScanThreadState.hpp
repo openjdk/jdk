@@ -39,7 +39,7 @@ class HeapRegion;
 class outputStream;
 
 class G1ParScanThreadState : public StackObj {
-protected:
+ private:
   G1CollectedHeap* _g1h;
   RefToScanQueue*  _refs;
   DirtyCardQueue   _dcq;
@@ -98,14 +98,10 @@ protected:
     }
   }
 
-public:
+ public:
   G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp);
-  ~G1ParScanThreadState() {
-    retire_alloc_buffers();
-    FREE_C_HEAP_ARRAY(size_t, _surviving_young_words_base, mtGC);
-  }
+  ~G1ParScanThreadState();
 
-  RefToScanQueue*   refs()            { return _refs;             }
   ageTable*         age_table()       { return &_age_table;       }
 
   G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
@@ -116,6 +112,8 @@ public:
   size_t undo_waste() const                      { return _undo_waste; }
 
 #ifdef ASSERT
+  bool queue_is_empty() const { return _refs->is_empty(); }
+
   bool verify_ref(narrowOop* ref) const;
   bool verify_ref(oop* ref) const;
   bool verify_task(StarTask ref) const;
@@ -123,56 +121,24 @@ public:
 
   template <class T> void push_on_queue(T* ref) {
     assert(verify_ref(ref), "sanity");
-    refs()->push(ref);
+    _refs->push(ref);
   }
 
   template <class T> inline void update_rs(HeapRegion* from, T* p, int tid);
 
-  HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz) {
-    HeapWord* obj = NULL;
-    size_t gclab_word_size = _g1h->desired_plab_sz(purpose);
-    if (word_sz * 100 < gclab_word_size * ParallelGCBufferWastePct) {
-      G1ParGCAllocBuffer* alloc_buf = alloc_buffer(purpose);
-      add_to_alloc_buffer_waste(alloc_buf->words_remaining());
-      alloc_buf->retire(false /* end_of_gc */, false /* retain */);
+ private:
 
-      HeapWord* buf = _g1h->par_allocate_during_gc(purpose, gclab_word_size);
-      if (buf == NULL) return NULL; // Let caller handle allocation failure.
-      // Otherwise.
-      alloc_buf->set_word_size(gclab_word_size);
-      alloc_buf->set_buf(buf);
+  inline HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz);
+  inline HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz);
+  inline void undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz);
 
-      obj = alloc_buf->allocate(word_sz);
-      assert(obj != NULL, "buffer was definitely big enough...");
-    } else {
-      obj = _g1h->par_allocate_during_gc(purpose, word_sz);
-    }
-    return obj;
-  }
-
-  HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz) {
-    HeapWord* obj = alloc_buffer(purpose)->allocate(word_sz);
-    if (obj != NULL) return obj;
-    return allocate_slow(purpose, word_sz);
-  }
-
-  void undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz) {
-    if (alloc_buffer(purpose)->contains(obj)) {
-      assert(alloc_buffer(purpose)->contains(obj + word_sz - 1),
-             "should contain whole object");
-      alloc_buffer(purpose)->undo_allocation(obj, word_sz);
-    } else {
-      CollectedHeap::fill_with_object(obj, word_sz);
-      add_to_undo_waste(word_sz);
-    }
-  }
+ public:
 
   void set_evac_failure_closure(OopsInHeapRegionClosure* evac_failure_cl) {
     _evac_failure_cl = evac_failure_cl;
   }
-  OopsInHeapRegionClosure* evac_failure_closure() {
-    return _evac_failure_cl;
-  }
+
+  OopsInHeapRegionClosure* evac_failure_closure() { return _evac_failure_cl; }
 
   int* hash_seed() { return &_hash_seed; }
   uint queue_num() { return _queue_num; }
@@ -201,10 +167,8 @@ public:
     return os::elapsedTime() - _start;
   }
 
-  static void
-    print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
-  void
-    print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
+  static void print_termination_stats_hdr(outputStream* const st = gclog_or_tty);
+  void print_termination_stats(int i, outputStream* const st = gclog_or_tty) const;
 
   size_t* surviving_young_words() {
     // We add on to hide entry 0 which accumulates surviving words for
@@ -213,15 +177,7 @@ public:
   }
 
  private:
-  void retire_alloc_buffers() {
-    for (int ap = 0; ap < GCAllocPurposeCount; ++ap) {
-      size_t waste = _alloc_buffers[ap]->words_remaining();
-      add_to_alloc_buffer_waste(waste);
-      _alloc_buffers[ap]->flush_stats_and_retire(_g1h->stats_for_purpose((GCAllocPurpose)ap),
-                                                 true /* end_of_gc */,
-                                                 false /* retain */);
-    }
-  }
+  void retire_alloc_buffers();
 
   #define G1_PARTIAL_ARRAY_MASK 0x2
 
@@ -254,39 +210,18 @@ public:
   inline void do_oop_partial_array(oop* p);
 
   // This method is applied to the fields of the objects that have just been copied.
-  template <class T> void do_oop_evac(T* p, HeapRegion* from) {
-    assert(!oopDesc::is_null(oopDesc::load_decode_heap_oop(p)),
-           "Reference should not be NULL here as such are never pushed to the task queue.");
-    oop obj = oopDesc::load_decode_heap_oop_not_null(p);
-
-    // Although we never intentionally push references outside of the collection
-    // set, due to (benign) races in the claim mechanism during RSet scanning more
-    // than one thread might claim the same card. So the same card may be
-    // processed multiple times. So redo this check.
-    if (_g1h->in_cset_fast_test(obj)) {
-      oop forwardee;
-      if (obj->is_forwarded()) {
-        forwardee = obj->forwardee();
-      } else {
-        forwardee = copy_to_survivor_space(obj);
-      }
-      assert(forwardee != NULL, "forwardee should not be NULL");
-      oopDesc::encode_store_heap_oop(p, forwardee);
-    }
-
-    assert(obj != NULL, "Must be");
-    update_rs(from, p, queue_num());
-  }
-public:
-
-  oop copy_to_survivor_space(oop const obj);
+  template <class T> inline void do_oop_evac(T* p, HeapRegion* from);
 
   template <class T> inline void deal_with_reference(T* ref_to_scan);
 
-  inline void deal_with_reference(StarTask ref);
+  inline void dispatch_reference(StarTask ref);
+ public:
 
-public:
+  oop copy_to_survivor_space(oop const obj);
+
   void trim_queue();
+
+  inline void steal_and_trim_queue(RefToScanQueueSet *task_queues);
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1PARSCANTHREADSTATE_HPP
