@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,20 @@
 
 package com.sun.tools.sjavac.comp;
 
-import com.sun.tools.javac.util.ListBuffer;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URI;
-import java.util.Set;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
-import java.util.HashMap;
+import java.util.Set;
+
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
+
+import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.ListBuffer;
 
 /**
  * Intercepts reads and writes to the file system to gather
@@ -74,6 +78,15 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
 
     public void setLog(PrintWriter pw) {
         stdout = pw;
+    }
+
+    /**
+     * Set whether or not to use ct.sym as an alternate to rt.jar.
+     */
+    public void setSymbolFileEnabled(boolean b) {
+        if (!(fileManager instanceof JavacFileManager))
+            throw new IllegalStateException();
+        ((JavacFileManager) fileManager).setSymbolFileEnabled(b);
     }
 
     public Map<String,Set<URI>> getPackageArtifacts() {
