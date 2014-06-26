@@ -40,6 +40,7 @@ import sun.awt.PeerEvent;
 import sun.awt.util.IdentityArrayList;
 import sun.awt.util.IdentityLinkedList;
 import java.security.AccessControlException;
+import java.util.function.BooleanSupplier;
 
 /**
  * A Dialog is a top-level window with a title and a border
@@ -1044,13 +1045,6 @@ public class Dialog extends Window {
                 predictedFocusOwner = getMostRecentFocusOwner();
                 if (conditionalShow(predictedFocusOwner, time)) {
                     modalFilter = ModalEventFilter.createFilterForDialog(this);
-                    final Conditional cond = new Conditional() {
-                        @Override
-                        public boolean evaluate() {
-                            return windowClosingException == null;
-                        }
-                    };
-
                     // if this dialog is toolkit-modal, the filter should be added
                     // to all EDTs (for all AppContexts)
                     if (modalityType == ModalityType.TOOLKIT_MODAL) {
@@ -1063,10 +1057,7 @@ public class Dialog extends Window {
                             EventQueue eventQueue = (EventQueue)appContext.get(AppContext.EVENT_QUEUE_KEY);
                             // it may occur that EDT for appContext hasn't been started yet, so
                             // we post an empty invocation event to trigger EDT initialization
-                            Runnable createEDT = new Runnable() {
-                                public void run() {};
-                            };
-                            eventQueue.postEvent(new InvocationEvent(this, createEDT));
+                            eventQueue.postEvent(new InvocationEvent(this, () -> {}));
                             EventDispatchThread edt = eventQueue.getDispatchThread();
                             edt.addEventFilter(modalFilter);
                         }
@@ -1075,12 +1066,8 @@ public class Dialog extends Window {
                     modalityPushed();
                     try {
                         final EventQueue eventQueue = AccessController.doPrivileged(
-                            new PrivilegedAction<EventQueue>() {
-                                public EventQueue run() {
-                                    return Toolkit.getDefaultToolkit().getSystemEventQueue();
-                                }
-                        });
-                        secondaryLoop = eventQueue.createSecondaryLoop(cond, modalFilter, 0);
+                                (PrivilegedAction<EventQueue>) Toolkit.getDefaultToolkit()::getSystemEventQueue);
+                        secondaryLoop = eventQueue.createSecondaryLoop(() -> true, modalFilter, 0);
                         if (!secondaryLoop.enter()) {
                             secondaryLoop = null;
                         }
@@ -1101,11 +1088,6 @@ public class Dialog extends Window {
                             EventDispatchThread edt = eventQueue.getDispatchThread();
                             edt.removeEventFilter(modalFilter);
                         }
-                    }
-
-                    if (windowClosingException != null) {
-                        windowClosingException.fillInStackTrace();
-                        throw windowClosingException;
                     }
                 }
             } finally {
@@ -1131,16 +1113,6 @@ public class Dialog extends Window {
         if (tk instanceof SunToolkit) {
             SunToolkit stk = (SunToolkit)tk;
             stk.notifyModalityPopped(this);
-        }
-    }
-
-    void interruptBlocking() {
-        if (isModal()) {
-            disposeImpl();
-        } else if (windowClosingException != null) {
-            windowClosingException.fillInStackTrace();
-            windowClosingException.printStackTrace();
-            windowClosingException = null;
         }
     }
 
