@@ -30,10 +30,6 @@
 #include "oops/oop.pcgc.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
-#ifdef _MSC_VER // the use of 'this' below gets a warning, make it go away
-#pragma warning( disable:4355 ) // 'this' : used in base member initializer list
-#endif // _MSC_VER
-
 G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num, ReferenceProcessor* rp)
   : _g1h(g1h),
     _refs(g1h->task_queue(queue_num)),
@@ -44,9 +40,10 @@ G1ParScanThreadState::G1ParScanThreadState(G1CollectedHeap* g1h, uint queue_num,
     _term_attempts(0),
     _surviving_alloc_buffer(g1h->desired_plab_sz(GCAllocForSurvived)),
     _tenured_alloc_buffer(g1h->desired_plab_sz(GCAllocForTenured)),
-    _age_table(false), _scanner(g1h, this, rp),
+    _age_table(false), _scanner(g1h, rp),
     _strong_roots_time(0), _term_time(0),
     _alloc_buffer_waste(0), _undo_waste(0) {
+  _scanner.set_par_scan_thread_state(this);
   // we allocate G1YoungSurvRateNumRegions plus one entries, since
   // we "sacrifice" entry 0 to keep track of surviving bytes for
   // non-young regions (where the age is -1)
