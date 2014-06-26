@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/oopFactory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/instanceClassLoaderKlass.hpp"
@@ -43,12 +44,6 @@
 #include "gc_implementation/parallelScavenge/psScavenge.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
 #endif // INCLUDE_ALL_GCS
-
-#define if_do_metadata_checked(closure, nv_suffix)                    \
-  /* Make sure the non-virtual and the virtual versions match. */     \
-  assert(closure->do_metadata##nv_suffix() == closure->do_metadata(), \
-      "Inconsistency in do_metadata");                                \
-  if (closure->do_metadata##nv_suffix())
 
 // Macro to define InstanceClassLoaderKlass::oop_oop_iterate for virtual/nonvirtual for
 // all closures.  Macros calling macros above for each oop size.

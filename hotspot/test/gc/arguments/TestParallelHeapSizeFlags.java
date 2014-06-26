@@ -22,7 +22,6 @@
 */
 
 /*
- * @ignore 8027915
  * @test TestParallelHeapSizeFlags
  * @key gc
  * @bug 8006088
