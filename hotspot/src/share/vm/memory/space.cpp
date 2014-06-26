@@ -685,14 +685,8 @@ size_t ContiguousSpace::block_size(const HeapWord* p) const {
 // This version requires locking.
 inline HeapWord* ContiguousSpace::allocate_impl(size_t size,
                                                 HeapWord* const end_value) {
-  // In G1 there are places where a GC worker can allocates into a
-  // region using this serial allocation code without being prone to a
-  // race with other GC workers (we ensure that no other GC worker can
-  // access the same region at the same time). So the assert below is
-  // too strong in the case of G1.
   assert(Heap_lock->owned_by_self() ||
-         (SafepointSynchronize::is_at_safepoint() &&
-                               (Thread::current()->is_VM_thread() || UseG1GC)),
+         (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()),
          "not locked");
   HeapWord* obj = top();
   if (pointer_delta(end_value, obj) >= size) {

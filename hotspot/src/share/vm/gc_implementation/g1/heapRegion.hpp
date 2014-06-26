@@ -46,8 +46,6 @@
 // The solution is to remove this method from the definition
 // of a Space.
 
-class CompactibleSpace;
-class ContiguousSpace;
 class HeapRegionRemSet;
 class HeapRegionRemSetIterator;
 class HeapRegion;
@@ -125,9 +123,9 @@ public:
 // the regions anyway) and at the end of a Full GC. The current scheme
 // that uses sequential unsigned ints will fail only if we have 4b
 // evacuation pauses between two cleanups, which is _highly_ unlikely.
-
-class G1OffsetTableContigSpace: public ContiguousSpace {
+class G1OffsetTableContigSpace: public CompactibleSpace {
   friend class VMStructs;
+  HeapWord* _top;
  protected:
   G1BlockOffsetArrayContigSpace _offsets;
   Mutex _par_alloc_lock;
@@ -143,6 +141,27 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
  public:
   G1OffsetTableContigSpace(G1BlockOffsetSharedArray* sharedOffsetArray,
                            MemRegion mr);
+
+  void set_top(HeapWord* value) { _top = value; }
+  HeapWord* top() const { return _top; }
+
+ protected:
+  HeapWord** top_addr() { return &_top; }
+  // Allocation helpers (return NULL if full).
+  inline HeapWord* allocate_impl(size_t word_size, HeapWord* end_value);
+  inline HeapWord* par_allocate_impl(size_t word_size, HeapWord* end_value);
+
+ public:
+  void reset_after_compaction() { set_top(compaction_top()); }
+
+  size_t used() const { return byte_size(bottom(), top()); }
+  size_t free() const { return byte_size(top(), end()); }
+  bool is_free_block(const HeapWord* p) const { return p >= top(); }
+
+  MemRegion used_region() const { return MemRegion(bottom(), top()); }
+
+  void object_iterate(ObjectClosure* blk);
+  void safe_object_iterate(ObjectClosure* blk);
 
   void set_bottom(HeapWord* value);
   void set_end(HeapWord* value);
@@ -167,6 +186,8 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
 
   HeapWord* block_start(const void* p);
   HeapWord* block_start_const(const void* p) const;
+
+  void prepare_for_compaction(CompactPoint* cp);
 
   // Add offset table update.
   virtual HeapWord* allocate(size_t word_size);
@@ -349,14 +370,15 @@ class HeapRegion: public G1OffsetTableContigSpace {
     ParMarkRootClaimValue      = 9
   };
 
-  inline HeapWord* par_allocate_no_bot_updates(size_t word_size) {
-    assert(is_young(), "we can only skip BOT updates on young regions");
-    return ContiguousSpace::par_allocate(word_size);
-  }
-  inline HeapWord* allocate_no_bot_updates(size_t word_size) {
-    assert(is_young(), "we can only skip BOT updates on young regions");
-    return ContiguousSpace::allocate(word_size);
-  }
+  // All allocated blocks are occupied by objects in a HeapRegion
+  bool block_is_obj(const HeapWord* p) const;
+
+  // Returns the object size for all valid block starts
+  // and the amount of unallocated words if called on top()
+  size_t block_size(const HeapWord* p) const;
+
+  inline HeapWord* par_allocate_no_bot_updates(size_t word_size);
+  inline HeapWord* allocate_no_bot_updates(size_t word_size);
 
   // If this region is a member of a HeapRegionSeq, the index in that
   // sequence, otherwise -1.
