@@ -374,7 +374,7 @@ HeapRegion::HeapRegion(uint hrs_index,
   // region.
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
-  set_saved_mark();
+  record_top_and_timestamp();
 
   assert(HeapRegionRemSet::num_par_rem_sets() > 0, "Invariant.");
 }
@@ -392,32 +392,6 @@ CompactibleSpace* HeapRegion::next_compaction_space() const {
     index += 1;
   }
   return NULL;
-}
-
-void HeapRegion::save_marks() {
-  set_saved_mark();
-}
-
-void HeapRegion::oops_in_mr_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  HeapWord* p = mr.start();
-  HeapWord* e = mr.end();
-  oop obj;
-  while (p < e) {
-    obj = oop(p);
-    p += obj->oop_iterate(cl);
-  }
-  assert(p == e, "bad memregion: doesn't end on obj boundary");
-}
-
-#define HeapRegion_OOP_SINCE_SAVE_MARKS_DEFN(OopClosureType, nv_suffix) \
-void HeapRegion::oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl) { \
-  ContiguousSpace::oop_since_save_marks_iterate##nv_suffix(cl);              \
-}
-SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(HeapRegion_OOP_SINCE_SAVE_MARKS_DEFN)
-
-
-void HeapRegion::oop_before_save_marks_iterate(ExtendedOopClosure* cl) {
-  oops_in_mr_iterate(MemRegion(bottom(), saved_mark_word()), cl);
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
@@ -1105,7 +1079,7 @@ HeapWord* G1OffsetTableContigSpace::saved_mark_word() const {
     return ContiguousSpace::saved_mark_word();
 }
 
-void G1OffsetTableContigSpace::set_saved_mark() {
+void G1OffsetTableContigSpace::record_top_and_timestamp() {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
   unsigned curr_gc_time_stamp = g1h->get_gc_time_stamp();
 
