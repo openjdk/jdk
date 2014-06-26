@@ -42,6 +42,7 @@
 #include "memory/filemap.hpp"
 #include "mutex_aix.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "os_aix.inline.hpp"
 #include "os_share_aix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
