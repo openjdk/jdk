@@ -27,9 +27,8 @@
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "code/codeCache.hpp"
-#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
-#include "gc_implementation/concurrentMarkSweep/cmsGCAdaptivePolicyCounters.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsOopClosures.inline.hpp"
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.inline.hpp"
@@ -319,26 +318,12 @@ void CMSCollector::ref_processor_init() {
   }
 }
 
-CMSAdaptiveSizePolicy* CMSCollector::size_policy() {
+AdaptiveSizePolicy* CMSCollector::size_policy() {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   assert(gch->kind() == CollectedHeap::GenCollectedHeap,
     "Wrong type of heap");
-  CMSAdaptiveSizePolicy* sp = (CMSAdaptiveSizePolicy*)
-    gch->gen_policy()->size_policy();
-  assert(sp->is_gc_cms_adaptive_size_policy(),
-    "Wrong type of size policy");
-  return sp;
+  return gch->gen_policy()->size_policy();
 }
-
-CMSGCAdaptivePolicyCounters* CMSCollector::gc_adaptive_policy_counters() {
-  CMSGCAdaptivePolicyCounters* results =
-    (CMSGCAdaptivePolicyCounters*) collector_policy()->counters();
-  assert(
-    results->kind() == GCPolicyCounters::CMSGCAdaptivePolicyCountersKind,
-    "Wrong gc policy counter kind");
-  return results;
-}
-
 
 void ConcurrentMarkSweepGeneration::initialize_performance_counters() {
 
@@ -2031,11 +2016,6 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
       "collections passed to foreground collector", _full_gcs_since_conc_gc);
   }
 
-  // Sample collection interval time and reset for collection pause.
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->msc_collection_begin();
-  }
-
   // Temporarily widen the span of the weak reference processing to
   // the entire heap.
   MemRegion new_span(GenCollectedHeap::heap()->reserved_region());
@@ -2110,11 +2090,6 @@ void CMSCollector::do_compaction_work(bool clear_all_soft_refs) {
   // Restart the "inter sweep timer" for the next epoch.
   _inter_sweep_timer.reset();
   _inter_sweep_timer.start();
-
-  // Sample collection pause time and reset for collection interval.
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->msc_collection_end(gch->gc_cause());
-  }
 
   gc_timer->register_gc_end();
 
@@ -2373,26 +2348,14 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
         }
         break;
       case Precleaning:
-        if (UseAdaptiveSizePolicy) {
-          size_policy()->concurrent_precleaning_begin();
-        }
         // marking from roots in markFromRoots has been completed
         preclean();
-        if (UseAdaptiveSizePolicy) {
-          size_policy()->concurrent_precleaning_end();
-        }
         assert(_collectorState == AbortablePreclean ||
                _collectorState == FinalMarking,
                "Collector state should have changed");
         break;
       case AbortablePreclean:
-        if (UseAdaptiveSizePolicy) {
-        size_policy()->concurrent_phases_resume();
-        }
         abortable_preclean();
-        if (UseAdaptiveSizePolicy) {
-          size_policy()->concurrent_precleaning_end();
-        }
         assert(_collectorState == FinalMarking, "Collector state should "
           "have changed");
         break;
@@ -2406,22 +2369,11 @@ void CMSCollector::collect_in_background(bool clear_all_soft_refs, GCCause::Caus
         assert(_foregroundGCShouldWait, "block post-condition");
         break;
       case Sweeping:
-        if (UseAdaptiveSizePolicy) {
-          size_policy()->concurrent_sweeping_begin();
-        }
         // final marking in checkpointRootsFinal has been completed
         sweep(true);
         assert(_collectorState == Resizing, "Collector state change "
           "to Resizing must be done under the free_list_lock");
         _full_gcs_since_conc_gc = 0;
-
-        // Stop the timers for adaptive size policy for the concurrent phases
-        if (UseAdaptiveSizePolicy) {
-          size_policy()->concurrent_sweeping_end();
-          size_policy()->concurrent_phases_end(gch->gc_cause(),
-                                             gch->prev_gen(_cmsGen)->capacity(),
-                                             _cmsGen->free());
-        }
 
       case Resizing: {
         // Sweeping has been completed...
@@ -2539,9 +2491,6 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Caus
   const GCId gc_id = _collectorState == InitialMarking ? GCId::peek() : _gc_tracer_cm->gc_id();
   NOT_PRODUCT(GCTraceTime t("CMS:MS (foreground) ", PrintGCDetails && Verbose,
     true, NULL, gc_id);)
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->ms_collection_begin();
-  }
   COMPILER2_PRESENT(DerivedPointerTableDeactivate dpt_deact);
 
   HandleMark hm;  // Discard invalid handles created during verification
@@ -2631,11 +2580,6 @@ void CMSCollector::collect_in_foreground(bool clear_all_soft_refs, GCCause::Caus
       gclog_or_tty->print_cr("  Thread " INTPTR_FORMAT " done - next CMS state %d",
         Thread::current(), _collectorState);
     }
-  }
-
-  if (UseAdaptiveSizePolicy) {
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    size_policy()->ms_collection_end(gch->gc_cause());
   }
 
   if (VerifyAfterGC &&
@@ -3687,9 +3631,6 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
 
   NOT_PRODUCT(GCTraceTime t("\ncheckpointRootsInitialWork",
     PrintGCDetails && Verbose, true, _gc_timer_cm, _gc_tracer_cm->gc_id());)
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->checkpoint_roots_initial_begin();
-  }
 
   // Reset all the PLAB chunk arrays if necessary.
   if (_survivor_plab_array != NULL && !CMSPLABRecordAlways) {
@@ -3769,9 +3710,6 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
   // Save the end of the used_region of the constituent generations
   // to be used to limit the extent of sweep in each generation.
   save_sweep_limits();
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->checkpoint_roots_initial_end(gch->gc_cause());
-  }
   verify_overflow_empty();
 }
 
@@ -3788,15 +3726,6 @@ bool CMSCollector::markFromRoots(bool asynch) {
 
   bool res;
   if (asynch) {
-
-    // Start the timers for adaptive size policy for the concurrent phases
-    // Do it here so that the foreground MS can use the concurrent
-    // timer since a foreground MS might has the sweep done concurrently
-    // or STW.
-    if (UseAdaptiveSizePolicy) {
-      size_policy()->concurrent_marking_begin();
-    }
-
     // Weak ref discovery note: We may be discovering weak
     // refs in this generation concurrent (but interleaved) with
     // weak ref discovery by a younger generation collector.
@@ -3814,22 +3743,12 @@ bool CMSCollector::markFromRoots(bool asynch) {
         gclog_or_tty->print_cr("bailing out to foreground collection");
       }
     }
-    if (UseAdaptiveSizePolicy) {
-      size_policy()->concurrent_marking_end();
-    }
   } else {
     assert(SafepointSynchronize::is_at_safepoint(),
            "inconsistent with asynch == false");
-    if (UseAdaptiveSizePolicy) {
-      size_policy()->ms_collection_marking_begin();
-    }
     // already have locks
     res = markFromRootsWork(asynch);
     _collectorState = FinalMarking;
-    if (UseAdaptiveSizePolicy) {
-      GenCollectedHeap* gch = GenCollectedHeap::heap();
-      size_policy()->ms_collection_marking_end(gch->gc_cause());
-    }
   }
   verify_overflow_empty();
   return res;
@@ -4705,8 +4624,7 @@ size_t CMSCollector::preclean_work(bool clean_refs, bool clean_survivor) {
 
   if (clean_survivor) {  // preclean the active survivor space(s)
     assert(_young_gen->kind() == Generation::DefNew ||
-           _young_gen->kind() == Generation::ParNew ||
-           _young_gen->kind() == Generation::ASParNew,
+           _young_gen->kind() == Generation::ParNew,
          "incorrect type for cast");
     DefNewGeneration* dng = (DefNewGeneration*)_young_gen;
     PushAndMarkClosure pam_cl(this, _span, ref_processor(),
@@ -5077,10 +4995,6 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
   assert(haveFreelistLocks(), "must have free list locks");
   assert_lock_strong(bitMapLock());
 
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->checkpoint_roots_final_begin();
-  }
-
   ResourceMark rm;
   HandleMark   hm;
 
@@ -5214,9 +5128,6 @@ void CMSCollector::checkpointRootsFinalWork(bool asynch,
       "Should be clear by end of the final marking");
   assert(_ct->klass_rem_set()->mod_union_is_clear(),
       "Should be clear by end of the final marking");
-  if (UseAdaptiveSizePolicy) {
-    size_policy()->checkpoint_roots_final_end(gch->gc_cause());
-  }
 }
 
 void CMSParInitialMarkTask::work(uint worker_id) {
@@ -6329,7 +6240,6 @@ void CMSCollector::sweep(bool asynch) {
 
   _inter_sweep_timer.stop();
   _inter_sweep_estimate.sample(_inter_sweep_timer.seconds());
-  size_policy()->avg_cms_free_at_sweep()->sample(_cmsGen->free());
 
   assert(!_intra_sweep_timer.is_active(), "Should not be active");
   _intra_sweep_timer.reset();
@@ -6454,17 +6364,6 @@ void ConcurrentMarkSweepGeneration::update_gc_stats(int current_level,
   }
 }
 
-CMSAdaptiveSizePolicy* ConcurrentMarkSweepGeneration::size_policy() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  assert(gch->kind() == CollectedHeap::GenCollectedHeap,
-    "Wrong type of heap");
-  CMSAdaptiveSizePolicy* sp = (CMSAdaptiveSizePolicy*)
-    gch->gen_policy()->size_policy();
-  assert(sp->is_gc_cms_adaptive_size_policy(),
-    "Wrong type of size policy");
-  return sp;
-}
-
 void ConcurrentMarkSweepGeneration::rotate_debug_collection_type() {
   if (PrintGCDetails && Verbose) {
     gclog_or_tty->print("Rotate from %d ", _debug_collection_type);
@@ -6540,9 +6439,6 @@ void CMSCollector::sweepWork(ConcurrentMarkSweepGeneration* gen,
 // Reset CMS data structures (for now just the marking bit map)
 // preparatory for the next cycle.
 void CMSCollector::reset(bool asynch) {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  CMSAdaptiveSizePolicy* sp = size_policy();
-  AdaptiveSizePolicyOutput(sp, gch->total_collections());
   if (asynch) {
     CMSTokenSyncWithLocks ts(true, bitMapLock());
 
@@ -6597,7 +6493,7 @@ void CMSCollector::reset(bool asynch) {
     // Because only the full (i.e., concurrent mode failure) collections
     // are being measured for gc overhead limits, clean the "near" flag
     // and count.
-    sp->reset_gc_overhead_limit_count();
+    size_policy()->reset_gc_overhead_limit_count();
     _collectorState = Idling;
   } else {
     // already have the lock
@@ -7064,7 +6960,6 @@ void MarkRefsIntoAndScanClosure::do_yield_work() {
   ConcurrentMarkSweepThread::desynchronize(true);
   ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -7225,7 +7120,6 @@ void ScanMarkedObjectsAgainCarefullyClosure::do_yield_work() {
   ConcurrentMarkSweepThread::desynchronize(true);
   ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -7298,7 +7192,6 @@ void SurvivorSpacePrecleanClosure::do_yield_work() {
   ConcurrentMarkSweepThread::desynchronize(true);
   ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -7457,7 +7350,6 @@ void MarkFromRootsClosure::do_yield_work() {
   ConcurrentMarkSweepThread::desynchronize(true);
   ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -8099,7 +7991,6 @@ void CMSPrecleanRefsYieldClosure::do_yield_work() {
   ConcurrentMarkSweepThread::acknowledge_yield_request();
 
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -8780,7 +8671,6 @@ void SweepClosure::do_yield_work(HeapWord* addr) {
   ConcurrentMarkSweepThread::desynchronize(true);
   ConcurrentMarkSweepThread::acknowledge_yield_request();
   _collector->stopTimer();
-  GCPauseTimer p(_collector->size_policy()->concurrent_timer_ptr());
   if (PrintCMSStatistics != 0) {
     _collector->incrementYields();
   }
@@ -9327,172 +9217,6 @@ bool CMSCollector::no_preserved_marks() const {
 }
 #endif
 
-CMSAdaptiveSizePolicy* ASConcurrentMarkSweepGeneration::cms_size_policy() const
-{
-  GenCollectedHeap* gch = (GenCollectedHeap*) GenCollectedHeap::heap();
-  CMSAdaptiveSizePolicy* size_policy =
-    (CMSAdaptiveSizePolicy*) gch->gen_policy()->size_policy();
-  assert(size_policy->is_gc_cms_adaptive_size_policy(),
-    "Wrong type for size policy");
-  return size_policy;
-}
-
-void ASConcurrentMarkSweepGeneration::resize(size_t cur_promo_size,
-                                           size_t desired_promo_size) {
-  if (cur_promo_size < desired_promo_size) {
-    size_t expand_bytes = desired_promo_size - cur_promo_size;
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr(" ASConcurrentMarkSweepGeneration::resize "
-        "Expanding tenured generation by " SIZE_FORMAT " (bytes)",
-        expand_bytes);
-    }
-    expand(expand_bytes,
-           MinHeapDeltaBytes,
-           CMSExpansionCause::_adaptive_size_policy);
-  } else if (desired_promo_size < cur_promo_size) {
-    size_t shrink_bytes = cur_promo_size - desired_promo_size;
-    if (PrintAdaptiveSizePolicy && Verbose) {
-      gclog_or_tty->print_cr(" ASConcurrentMarkSweepGeneration::resize "
-        "Shrinking tenured generation by " SIZE_FORMAT " (bytes)",
-        shrink_bytes);
-    }
-    shrink(shrink_bytes);
-  }
-}
-
-CMSGCAdaptivePolicyCounters* ASConcurrentMarkSweepGeneration::gc_adaptive_policy_counters() {
-  GenCollectedHeap* gch = GenCollectedHeap::heap();
-  CMSGCAdaptivePolicyCounters* counters =
-    (CMSGCAdaptivePolicyCounters*) gch->collector_policy()->counters();
-  assert(counters->kind() == GCPolicyCounters::CMSGCAdaptivePolicyCountersKind,
-    "Wrong kind of counters");
-  return counters;
-}
-
-
-void ASConcurrentMarkSweepGeneration::update_counters() {
-  if (UsePerfData) {
-    _space_counters->update_all();
-    _gen_counters->update_all();
-    CMSGCAdaptivePolicyCounters* counters = gc_adaptive_policy_counters();
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    CMSGCStats* gc_stats_l = (CMSGCStats*) gc_stats();
-    assert(gc_stats_l->kind() == GCStats::CMSGCStatsKind,
-      "Wrong gc statistics type");
-    counters->update_counters(gc_stats_l);
-  }
-}
-
-void ASConcurrentMarkSweepGeneration::update_counters(size_t used) {
-  if (UsePerfData) {
-    _space_counters->update_used(used);
-    _space_counters->update_capacity();
-    _gen_counters->update_all();
-
-    CMSGCAdaptivePolicyCounters* counters = gc_adaptive_policy_counters();
-    GenCollectedHeap* gch = GenCollectedHeap::heap();
-    CMSGCStats* gc_stats_l = (CMSGCStats*) gc_stats();
-    assert(gc_stats_l->kind() == GCStats::CMSGCStatsKind,
-      "Wrong gc statistics type");
-    counters->update_counters(gc_stats_l);
-  }
-}
-
-void ASConcurrentMarkSweepGeneration::shrink_by(size_t desired_bytes) {
-  assert_locked_or_safepoint(Heap_lock);
-  assert_lock_strong(freelistLock());
-  HeapWord* old_end = _cmsSpace->end();
-  HeapWord* unallocated_start = _cmsSpace->unallocated_block();
-  assert(old_end >= unallocated_start, "Miscalculation of unallocated_start");
-  FreeChunk* chunk_at_end = find_chunk_at_end();
-  if (chunk_at_end == NULL) {
-    // No room to shrink
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("No room to shrink: old_end  "
-        PTR_FORMAT "  unallocated_start  " PTR_FORMAT
-        " chunk_at_end  " PTR_FORMAT,
-        old_end, unallocated_start, chunk_at_end);
-    }
-    return;
-  } else {
-
-    // Find the chunk at the end of the space and determine
-    // how much it can be shrunk.
-    size_t shrinkable_size_in_bytes = chunk_at_end->size();
-    size_t aligned_shrinkable_size_in_bytes =
-      align_size_down(shrinkable_size_in_bytes, os::vm_page_size());
-    assert(unallocated_start <= (HeapWord*) chunk_at_end->end(),
-      "Inconsistent chunk at end of space");
-    size_t bytes = MIN2(desired_bytes, aligned_shrinkable_size_in_bytes);
-    size_t word_size_before = heap_word_size(_virtual_space.committed_size());
-
-    // Shrink the underlying space
-    _virtual_space.shrink_by(bytes);
-    if (PrintGCDetails && Verbose) {
-      gclog_or_tty->print_cr("ConcurrentMarkSweepGeneration::shrink_by:"
-        " desired_bytes " SIZE_FORMAT
-        " shrinkable_size_in_bytes " SIZE_FORMAT
-        " aligned_shrinkable_size_in_bytes " SIZE_FORMAT
-        "  bytes  " SIZE_FORMAT,
-        desired_bytes, shrinkable_size_in_bytes,
-        aligned_shrinkable_size_in_bytes, bytes);
-      gclog_or_tty->print_cr("          old_end  " SIZE_FORMAT
-        "  unallocated_start  " SIZE_FORMAT,
-        old_end, unallocated_start);
-    }
-
-    // If the space did shrink (shrinking is not guaranteed),
-    // shrink the chunk at the end by the appropriate amount.
-    if (((HeapWord*)_virtual_space.high()) < old_end) {
-      size_t new_word_size =
-        heap_word_size(_virtual_space.committed_size());
-
-      // Have to remove the chunk from the dictionary because it is changing
-      // size and might be someplace elsewhere in the dictionary.
-
-      // Get the chunk at end, shrink it, and put it
-      // back.
-      _cmsSpace->removeChunkFromDictionary(chunk_at_end);
-      size_t word_size_change = word_size_before - new_word_size;
-      size_t chunk_at_end_old_size = chunk_at_end->size();
-      assert(chunk_at_end_old_size >= word_size_change,
-        "Shrink is too large");
-      chunk_at_end->set_size(chunk_at_end_old_size -
-                          word_size_change);
-      _cmsSpace->freed((HeapWord*) chunk_at_end->end(),
-        word_size_change);
-
-      _cmsSpace->returnChunkToDictionary(chunk_at_end);
-
-      MemRegion mr(_cmsSpace->bottom(), new_word_size);
-      _bts->resize(new_word_size);  // resize the block offset shared array
-      Universe::heap()->barrier_set()->resize_covered_region(mr);
-      _cmsSpace->assert_locked();
-      _cmsSpace->set_end((HeapWord*)_virtual_space.high());
-
-      NOT_PRODUCT(_cmsSpace->dictionary()->verify());
-
-      // update the space and generation capacity counters
-      if (UsePerfData) {
-        _space_counters->update_capacity();
-        _gen_counters->update_all();
-      }
-
-      if (Verbose && PrintGCDetails) {
-        size_t new_mem_size = _virtual_space.committed_size();
-        size_t old_mem_size = new_mem_size + bytes;
-        gclog_or_tty->print_cr("Shrinking %s from " SIZE_FORMAT "K by " SIZE_FORMAT "K to " SIZE_FORMAT "K",
-                      name(), old_mem_size/K, bytes/K, new_mem_size/K);
-      }
-    }
-
-    assert(_cmsSpace->unallocated_block() <= _cmsSpace->end(),
-      "Inconsistency at end of space");
-    assert(chunk_at_end->end() == (uintptr_t*) _cmsSpace->end(),
-      "Shrinking is inconsistent");
-    return;
-  }
-}
 // Transfer some number of overflown objects to usual marking
 // stack. Return true if some objects were transferred.
 bool MarkRefsIntoAndScanClosure::take_from_overflow_list() {

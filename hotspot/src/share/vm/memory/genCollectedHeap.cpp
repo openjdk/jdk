@@ -202,13 +202,11 @@ void GenCollectedHeap::post_initialize() {
   guarantee(policy->is_generation_policy(), "Illegal policy type");
   DefNewGeneration* def_new_gen = (DefNewGeneration*) get_gen(0);
   assert(def_new_gen->kind() == Generation::DefNew ||
-         def_new_gen->kind() == Generation::ParNew ||
-         def_new_gen->kind() == Generation::ASParNew,
+         def_new_gen->kind() == Generation::ParNew,
          "Wrong generation kind");
 
   Generation* old_gen = get_gen(1);
   assert(old_gen->kind() == Generation::ConcurrentMarkSweep ||
-         old_gen->kind() == Generation::ASConcurrentMarkSweep ||
          old_gen->kind() == Generation::MarkSweepCompact,
     "Wrong generation kind");
 
@@ -573,9 +571,6 @@ void GenCollectedHeap::do_collection(bool  full,
     }
   }
 
-  AdaptiveSizePolicy* sp = gen_policy()->size_policy();
-  AdaptiveSizePolicyOutput(sp, total_collections());
-
   print_heap_after_gc();
 
 #ifdef TRACESPINNING
@@ -724,8 +719,7 @@ void GenCollectedHeap::collect_locked(GCCause::Cause cause, int max_level) {
 #if INCLUDE_ALL_GCS
 bool GenCollectedHeap::create_cms_collector() {
 
-  assert(((_gens[1]->kind() == Generation::ConcurrentMarkSweep) ||
-         (_gens[1]->kind() == Generation::ASConcurrentMarkSweep)),
+  assert(_gens[1]->kind() == Generation::ConcurrentMarkSweep,
          "Unexpected generation kinds");
   // Skip two header words in the block content verification
   NOT_PRODUCT(_skip_header_HeapWords = CMSCollector::skip_header_HeapWords();)
