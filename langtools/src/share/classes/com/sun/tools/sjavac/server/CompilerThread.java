@@ -44,15 +44,13 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.sjavac.comp.AttrWithDeps;
 import com.sun.tools.sjavac.comp.Dependencies;
@@ -320,6 +318,7 @@ public class CompilerThread implements Runnable {
 
                     // Do the compilation!
                     CompilationTask task = compiler.getTask(stderr, smartFileManager, null, the_options, null, compilationUnits, context);
+                    smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
                     rc = ((JavacTaskImpl) task).doCall();
 
                     while (numActiveSubTasks()>0) {
