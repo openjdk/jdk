@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,6 +42,15 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface BinaryTree extends ExpressionTree {
+    /**
+     * Returns the left (first) operand of the expression.
+     * @return the left operand
+     */
     ExpressionTree getLeftOperand();
+
+    /**
+     * Returns the right (second) operand of the expression.
+     * @return the right operand
+     */
     ExpressionTree getRightOperand();
 }
