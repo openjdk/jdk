@@ -69,7 +69,7 @@ import org.xml.sax.helpers.DefaultHandler;
  * given {@link org.xml.sax.HandlerBase} or the
  * {@link org.xml.sax.helpers.DefaultHandler} are called.<p>
  *
- * Implementors of this class which wrap an underlaying implementation
+ * Implementors of this class which wrap an underlying implementation
  * can consider using the {@link org.xml.sax.helpers.ParserAdapter}
  * class to initially adapt their SAX1 implementation to work under
  * this revised class.
@@ -79,7 +79,7 @@ import org.xml.sax.helpers.DefaultHandler;
 public abstract class SAXParser {
 
     /**
-     * <p>Protected constructor to prevent instaniation.
+     * <p>Protected constructor to prevent instantiation.
      * Use {@link javax.xml.parsers.SAXParserFactory#newSAXParser()}.</p>
      */
     protected SAXParser () {
@@ -393,10 +393,10 @@ public abstract class SAXParser {
     }
 
     /**
-     * Returns the SAX parser that is encapsultated by the
+     * Returns the SAX parser that is encapsulated by the
      * implementation of this class.
      *
-     * @return The SAX parser that is encapsultated by the
+     * @return The SAX parser that is encapsulated by the
      *         implementation of this class.
      *
      * @throws SAXException If any SAX errors occur during processing.

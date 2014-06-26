@@ -43,7 +43,7 @@ package java.util;
  *   Deque<Integer> stack = new ArrayDeque<Integer>();}</pre>
  *
  * @author  Jonathan Payne
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class Stack<E> extends Vector<E> {

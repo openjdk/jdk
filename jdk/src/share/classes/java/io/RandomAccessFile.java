@@ -53,7 +53,7 @@ import sun.nio.ch.FileChannelImpl;
  * {@code IOException} may be thrown if the stream has been closed.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public class RandomAccessFile implements DataOutput, DataInput, Closeable {

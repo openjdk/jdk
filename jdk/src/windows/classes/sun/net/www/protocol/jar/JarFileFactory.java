@@ -38,7 +38,7 @@ import sun.net.util.URLUtil;
  * and cache Jar files.
  *
  * @author Benjamin Renaud
- * @since JDK1.2
+ * @since 1.2
  */
 class JarFileFactory implements URLJarFile.URLJarFileCloseController {
 

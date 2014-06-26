@@ -1611,8 +1611,6 @@ public class ClassReader {
             return TypeAnnotationPosition.methodReturn(readTypePath());
         case FIELD:
             return TypeAnnotationPosition.field(readTypePath());
-        case UNKNOWN:
-            throw new AssertionError("jvm.ClassReader: UNKNOWN target type should never occur!");
         default:
             throw new AssertionError("jvm.ClassReader: Unknown target type for position: " + type);
         }

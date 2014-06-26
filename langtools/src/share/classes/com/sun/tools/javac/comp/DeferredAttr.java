@@ -25,6 +25,7 @@
 
 package com.sun.tools.javac.comp;
 
+import com.sun.source.tree.*;
 import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
@@ -76,6 +77,7 @@ public class DeferredAttr extends JCTree.Visitor {
     final Types types;
     final Flow flow;
     final Names names;
+    final Annotate annotate;
 
     public static DeferredAttr instance(Context context) {
         DeferredAttr instance = context.get(deferredAttrKey);
@@ -99,6 +101,7 @@ public class DeferredAttr extends JCTree.Visitor {
         flow = Flow.instance(context);
         names = Names.instance(context);
         stuckTree = make.Ident(names.empty).setType(Type.stuckType);
+        annotate = Annotate.instance(context);
         emptyDeferredAttrContext =
             new DeferredAttrContext(AttrMode.CHECK, null, MethodResolutionPhase.BOX, infer.emptyContext, null, null) {
                 @Override
@@ -133,7 +136,8 @@ public class DeferredAttr extends JCTree.Visitor {
         AttrMode mode;
         SpeculativeCache speculativeCache;
 
-        DeferredType(JCExpression tree, Env<AttrContext> env) {
+        DeferredType(JCExpression tree,
+                     Env<AttrContext> env) {
             super(null, noAnnotations);
             this.tree = tree;
             this.env = attr.copyEnv(env);
@@ -277,12 +281,18 @@ public class DeferredAttr extends JCTree.Visitor {
                     //Note: if a symbol is imported twice we might do two identical
                     //speculative rounds...
                     Assert.check(dt.mode == null || dt.mode == AttrMode.SPECULATIVE);
-                    JCTree speculativeTree = attribSpeculative(dt.tree, dt.env, resultInfo);
+                    JCTree speculativeTree = attribSpeculative(dt.tree, dt.env,
+                                                               resultInfo,
+                                                               annotate.noCreator);
                     dt.speculativeCache.put(speculativeTree, resultInfo);
                     return speculativeTree.type;
                 case CHECK:
                     Assert.check(dt.mode != null);
-                    return attr.attribTree(dt.tree, dt.env, resultInfo);
+                    final boolean oldSpeculative = dt.env.info.isSpeculative;
+                    dt.env.info.isSpeculative = false;
+                    Type out = attr.attribTree(dt.tree, dt.env, resultInfo);
+                    dt.env.info.isSpeculative = oldSpeculative;
+                    return out;
             }
             Assert.error();
             return null;
@@ -359,9 +369,13 @@ public class DeferredAttr extends JCTree.Visitor {
      * restored after type-checking. All diagnostics (but critical ones) are
      * disabled during speculative type-checking.
      */
-    JCTree attribSpeculative(JCTree tree, Env<AttrContext> env, ResultInfo resultInfo) {
+    JCTree attribSpeculative(JCTree tree,
+                             Env<AttrContext> env,
+                             ResultInfo resultInfo,
+                             Annotate.PositionCreator creator) {
         final JCTree newTree = new TreeCopier<>(make).copy(tree);
         Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
+        speculativeEnv.info.isSpeculative = true;
         speculativeEnv.info.scope.owner = env.info.scope.owner;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
@@ -385,6 +399,9 @@ public class DeferredAttr extends JCTree.Visitor {
         });
         try {
             attr.attribTree(newTree, speculativeEnv, resultInfo);
+            annotate.typeAnnotateExprLater(newTree, speculativeEnv,
+                                           speculativeEnv.info.scope.owner,
+                                           newTree.pos(), creator);
             unenterScanner.scan(newTree);
             return newTree;
         } finally {
@@ -741,8 +758,11 @@ public class DeferredAttr extends JCTree.Visitor {
                         checkContext.report(null, ex.getDiagnostic());
                     }
                     Env<AttrContext> localEnv = env.dup(tree);
-                    JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
-                            attr.memberReferenceQualifierResult(tree));
+                    JCExpression exprTree =
+                        (JCExpression)attribSpeculative(tree.getQualifierExpression(),
+                                                        localEnv,
+                                                        attr.memberReferenceQualifierResult(tree),
+                                                        annotate.methodRefCreator(tree.pos));
                     ListBuffer<Type> argtypes = new ListBuffer<>();
                     for (Type t : types.findDescriptorType(pt).getParameterTypes()) {
                         argtypes.append(Type.noType);
@@ -1164,8 +1184,11 @@ public class DeferredAttr extends JCTree.Visitor {
         public void visitReference(JCMemberReference tree) {
             //perform arity-based check
             Env<AttrContext> localEnv = env.dup(tree);
-            JCExpression exprTree = (JCExpression)attribSpeculative(tree.getQualifierExpression(), localEnv,
-                    attr.memberReferenceQualifierResult(tree));
+            JCExpression exprTree =
+                (JCExpression)attribSpeculative(tree.getQualifierExpression(),
+                                                localEnv,
+                                                attr.memberReferenceQualifierResult(tree),
+                                                annotate.methodRefCreator(tree.pos));
             JCMemberReference mref2 = new TreeCopier<Void>(make).copy(tree);
             mref2.expr = exprTree;
             Symbol res =
@@ -1309,7 +1332,7 @@ public class DeferredAttr extends JCTree.Visitor {
                         return null;
                     site = resolvedReturnType.type;
                 } else {
-                    site = attribSpeculative(rec, env, attr.unknownTypeExprInfo).type;
+                    site = attribSpeculative(rec, env, attr.unknownTypeExprInfo, annotate.noCreator).type;
                 }
             } else {
                 site = env.enclClass.sym.type;

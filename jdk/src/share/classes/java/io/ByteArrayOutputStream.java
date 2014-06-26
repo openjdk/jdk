@@ -39,7 +39,7 @@ import java.util.Arrays;
  * generating an <tt>IOException</tt>.
  *
  * @author  Arthur van Hoff
- * @since   JDK1.0
+ * @since   1.0
  */
 
 public class ByteArrayOutputStream extends OutputStream {
@@ -202,7 +202,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * required.
      *
      * @return String decoded from the buffer's contents.
-     * @since  JDK1.1
+     * @since  1.1
      */
     public synchronized String toString() {
         return new String(buf, 0, count);
@@ -224,7 +224,7 @@ public class ByteArrayOutputStream extends OutputStream {
      * @return     String decoded from the buffer's contents.
      * @exception  UnsupportedEncodingException
      *             If the named charset is not supported
-     * @since      JDK1.1
+     * @since      1.1
      */
     public synchronized String toString(String charsetName)
         throws UnsupportedEncodingException

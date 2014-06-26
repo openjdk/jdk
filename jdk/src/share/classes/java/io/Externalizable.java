@@ -61,7 +61,7 @@ import java.io.ObjectInput;
  * @see java.io.ObjectOutput
  * @see java.io.ObjectInput
  * @see java.io.Serializable
- * @since   JDK1.1
+ * @since   1.1
  */
 public interface Externalizable extends java.io.Serializable {
     /**

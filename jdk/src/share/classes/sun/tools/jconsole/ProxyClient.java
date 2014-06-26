@@ -954,7 +954,7 @@ public class ProxyClient implements JConsoleContext {
             final InvocationHandler ih = new SnapshotInvocationHandler(mbsc);
             return (SnapshotMBeanServerConnection) Proxy.newProxyInstance(
                     Snapshot.class.getClassLoader(),
-                    new Class[] {SnapshotMBeanServerConnection.class},
+                    new Class<?>[] {SnapshotMBeanServerConnection.class},
                     ih);
         }
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 package com.sun.tools.javadoc;
 
+import java.util.LinkedHashMap;
+import java.util.Map;
+import java.util.StringTokenizer;
+
 import com.sun.tools.javac.code.Flags;
+import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
-import java.util.StringTokenizer;
 
 
 /**
@@ -45,42 +49,42 @@ public enum ToolOption {
     BOOTCLASSPATH("-bootclasspath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.BOOTCLASSPATH, arg);
         }
     },
 
     CLASSPATH("-classpath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.CLASSPATH, arg);
         }
     },
 
     CP("-cp", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.CP, arg);
         }
     },
 
     EXTDIRS("-extdirs", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.EXTDIRS, arg);
         }
     },
 
     SOURCEPATH("-sourcepath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt(opt, arg);
+            helper.setFileManagerOpt(Option.SOURCEPATH, arg);
         }
     },
 
     SYSCLASSPATH("-sysclasspath", true) {
         @Override
         public void process(Helper helper, String arg) {
-            helper.setCompilerOpt("-bootclasspath", arg);
+            helper.setFileManagerOpt(Option.BOOTCLASSPATH, arg);
         }
     },
 
@@ -274,6 +278,9 @@ public enum ToolOption {
         /** Excluded packages, from -exclude. */
         final ListBuffer<String> excludedPackages = new ListBuffer<>();
 
+        // File manager options
+        final Map<Option, String> fileManagerOpts = new LinkedHashMap<>();
+
         /** javac options, set by various options. */
         Options compOpts; // = Options.instance(context)
 
@@ -306,7 +313,7 @@ public enum ToolOption {
 
         abstract void usageError(String msg, Object... args);
 
-        protected void addToList(ListBuffer<String> list, String str){
+        void addToList(ListBuffer<String> list, String str){
             StringTokenizer st = new StringTokenizer(str, ":");
             String current;
             while(st.hasMoreTokens()){
@@ -315,18 +322,22 @@ public enum ToolOption {
             }
         }
 
-        protected void setFilter(long filterBits) {
+        void setFilter(long filterBits) {
             if (showAccess != null) {
                 usageError("main.incompatible.access.flags");
             }
             showAccess = new ModifierFilter(filterBits);
         }
 
-        private void setCompilerOpt(String opt, String arg) {
+        void setCompilerOpt(String opt, String arg) {
             if (compOpts.get(opt) != null) {
                 usageError("main.option.already.seen", opt);
             }
             compOpts.put(opt, arg);
+        }
+
+        void setFileManagerOpt(Option opt, String arg) {
+            fileManagerOpts.put(opt, arg);
         }
     }
 }

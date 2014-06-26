@@ -37,7 +37,7 @@ import java.rmi.Remote;
  * implementation.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement.  Skeletons are no longer required for remote
  * method calls in the Java 2 platform v1.2 and greater.
  */
@@ -52,7 +52,7 @@ public interface Skeleton {
      * @param opnum operation number
      * @param hash stub/skeleton interface hash
      * @exception java.lang.Exception if a general exception occurs.
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated
@@ -62,7 +62,7 @@ public interface Skeleton {
     /**
      * Returns the operations supported by the skeleton.
      * @return operations supported by skeleton
-     * @since JDK1.1
+     * @since 1.1
      * @deprecated no replacement
      */
     @Deprecated

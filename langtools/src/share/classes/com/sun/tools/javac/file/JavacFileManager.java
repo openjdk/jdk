@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -156,11 +156,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
      */
     public void setSymbolFileEnabled(boolean b) {
         symbolFileEnabled = b;
-    }
-
-    @Override
-    public boolean isDefaultBootClassPath() {
-        return locations.isDefaultBootClassPath();
     }
 
     public JavaFileObject getFileForInput(String name) {
@@ -577,15 +572,6 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             } catch (IOException e) {
             }
         }
-    }
-
-    private String defaultEncodingName;
-    private String getDefaultEncodingName() {
-        if (defaultEncodingName == null) {
-            defaultEncodingName =
-                new OutputStreamWriter(new ByteArrayOutputStream()).getEncoding();
-        }
-        return defaultEncodingName;
     }
 
     public ClassLoader getClassLoader(Location location) {
