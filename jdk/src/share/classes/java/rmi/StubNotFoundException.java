@@ -33,7 +33,7 @@ package java.rmi;
  * <code>java.rmi.activation.Activatable.register</code> method.
  *
  * @author  Roger Riggs
- * @since   JDK1.1
+ * @since   1.1
  * @see     java.rmi.server.UnicastRemoteObject
  * @see     java.rmi.activation.Activatable
  */
@@ -47,7 +47,7 @@ public class StubNotFoundException extends RemoteException {
      * detail message.
      *
      * @param s the detail message
-     * @since JDK1.1
+     * @since 1.1
      */
     public StubNotFoundException(String s) {
         super(s);
@@ -59,7 +59,7 @@ public class StubNotFoundException extends RemoteException {
      *
      * @param s the detail message
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public StubNotFoundException(String s, Exception ex) {
         super(s, ex);

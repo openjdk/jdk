@@ -42,7 +42,7 @@ import jdk.internal.util.xml.impl.XMLStreamWriterImpl;
  * re-implemented using a subset of SAX
  *
  * @author Joe Wang
- * @since 8
+ * @since 1.8
  */
 public class PropertiesDefaultHandler extends DefaultHandler {
 

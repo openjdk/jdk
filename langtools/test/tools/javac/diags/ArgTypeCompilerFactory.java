@@ -105,13 +105,12 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
 
             Iterable<? extends JavaFileObject> fos = fm.getJavaFileObjectsFromFiles(files);
 
-            Context c = new Context();
-            ArgTypeMessages.preRegister(c);
-            ArgTypeJavaCompiler.preRegister(c);
+            Context c = initContext();
             JavacTaskImpl t = (JavacTaskImpl) tool.getTask(out, fm, null, opts, null, fos, c);
             return t.call();
         }
     }
+
 
     /**
      * Run the test using the standard simple entry point.
@@ -135,10 +134,8 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
                 args.add(f.getPath());
 
             Main main = new Main("javac", out);
-            Context c = new Context();
+            Context c = initContext();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            ArgTypeJavaCompiler.preRegister(c);
-            ArgTypeMessages.preRegister(c);
             Main.Result result = main.compile(args.toArray(new String[args.size()]), c);
 
             return result.isOK();
@@ -161,18 +158,25 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
             for (File f: files)
                 args.add(f.getPath());
 
-            Context c = new Context();
+            Context c = initContext();
             JavacFileManager.preRegister(c); // can't create it until Log has been set up
-            ArgTypeJavaCompiler.preRegister(c);
-            ArgTypeMessages.preRegister(c);
             Main m = new Main("javac", out);
             Main.Result result = m.compile(args.toArray(new String[args.size()]), c);
 
             return result.isOK();
         }
-
     }
 
+    private static Context initContext() {
+        Context context = new Context();
+        ArgTypeMessages.preRegister(context);
+        Options options = Options.instance(context);
+        options.addListener(() -> {
+            Log log = Log.instance(context);
+            log.setDiagnosticFormatter(new ArgTypeDiagnosticFormatter(options));
+        });
+        return context;
+    }
 
     // <editor-fold defaultstate="collapsed" desc="Custom Javac components">
 
@@ -224,29 +228,6 @@ class ArgTypeCompilerFactory implements Example.Compiler.Factory {
         @Override
         public boolean isRaw() {
             return true;
-        }
-    }
-
-    /**
-     * Trivial subtype of JavaCompiler to get access to the protected compilerKey field.
-     * The factory is used to ensure that the log is initialized with an instance of
-     * ArgTypeDiagnosticFormatter before we create the required JavaCompiler.
-     */
-    static class ArgTypeJavaCompiler extends JavaCompiler {
-        static void preRegister(Context context) {
-            context.put(compilerKey, new Context.Factory<JavaCompiler>() {
-                public JavaCompiler make(Context c) {
-                    Log log = Log.instance(c);
-                    Options options = Options.instance(c);
-                    log.setDiagnosticFormatter(new ArgTypeDiagnosticFormatter(options));
-                    return new JavaCompiler(c);
-                }
-            });
-        }
-
-        // not used
-        private ArgTypeJavaCompiler() {
-            super(null);
         }
     }
 

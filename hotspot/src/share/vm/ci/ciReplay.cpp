@@ -1,4 +1,4 @@
-/* Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+/* Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -686,7 +686,7 @@ class CompileReplay : public StackObj {
       switch (cp->tag_at(i).value()) {
         case JVM_CONSTANT_UnresolvedClass: {
           if (tag == JVM_CONSTANT_Class) {
-            tty->print_cr("Resolving klass %s at %d", cp->unresolved_klass_at(i)->as_utf8(), i);
+            tty->print_cr("Resolving klass %s at %d", cp->klass_name_at(i)->as_utf8(), i);
             Klass* k = cp->klass_at(i, CHECK);
           }
           break;

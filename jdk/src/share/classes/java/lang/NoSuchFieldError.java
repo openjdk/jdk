@@ -34,7 +34,7 @@ package java.lang;
  * incompatibly changed.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public
 class NoSuchFieldError extends IncompatibleClassChangeError {

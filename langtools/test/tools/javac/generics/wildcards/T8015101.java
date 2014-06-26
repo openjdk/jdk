@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,25 +21,24 @@
  * questions.
  */
 
-import sun.misc.Unsafe;
-import java.lang.reflect.Field;
+/*
+ * @test
+ * @bug 8015101
+ * @summary Mishandling of wildcards in intersection member method check
+ * @compile T8015101.java
+ */
+class T8015101 {
 
-@SuppressWarnings("sunapi")
-public class Test8001071 {
-    public static Unsafe unsafe;
+     public static class Bug<X extends Child<?, ?> & Runnable> {
+     }
 
-    static {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            unsafe = (Unsafe) f.get(null);
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
+     interface Parent<C> {
+         public C get();
+     }
 
-    public static void main(String args[]) {
-        unsafe.getObject(new Test8001071(), Short.MAX_VALUE);
-    }
+     interface Child<C, S extends C> extends Parent<C> {
+         @Override
+         public S get();
+     }
 
-}
+ }

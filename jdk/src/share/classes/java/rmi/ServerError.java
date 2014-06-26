@@ -35,7 +35,7 @@ package java.rmi;
  * <code>Error</code> that occurred as its cause.
  *
  * @author  Ann Wollrath
- * @since   JDK1.1
+ * @since   1.1
  */
 public class ServerError extends RemoteException {
 
@@ -48,7 +48,7 @@ public class ServerError extends RemoteException {
      *
      * @param s the detail message
      * @param err the nested error
-     * @since JDK1.1
+     * @since 1.1
      */
     public ServerError(String s, Error err) {
         super(s, err);

@@ -33,7 +33,7 @@ import java.rmi.RemoteException;
  * exported is not found.  Skeletons are no longer required, so this
  * exception is never thrown.
  *
- * @since   JDK1.1
+ * @since   1.1
  * @deprecated no replacement.  Skeletons are no longer required for remote
  * method calls in the Java 2 platform v1.2 and greater.
  */
@@ -48,7 +48,7 @@ public class SkeletonNotFoundException extends RemoteException {
      * detail message.
      *
      * @param s the detail message.
-     * @since JDK1.1
+     * @since 1.1
      */
     public SkeletonNotFoundException(String s) {
         super(s);
@@ -60,7 +60,7 @@ public class SkeletonNotFoundException extends RemoteException {
      *
      * @param s the detail message.
      * @param ex the nested exception
-     * @since JDK1.1
+     * @since 1.1
      */
     public SkeletonNotFoundException(String s, Exception ex) {
         super(s, ex);

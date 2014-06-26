@@ -37,7 +37,7 @@ package java.io;
  * @see     java.awt.FileDialog#setFilenameFilter(java.io.FilenameFilter)
  * @see     java.io.File
  * @see     java.io.File#list(java.io.FilenameFilter)
- * @since   JDK1.0
+ * @since   1.0
  */
 @FunctionalInterface
 public interface FilenameFilter {

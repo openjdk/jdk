@@ -44,7 +44,7 @@ package java.io;
  * @see Reader
  *
  * @author      Mark Reinhold
- * @since       JDK1.1
+ * @since       1.1
  */
 
 public abstract class Writer implements Appendable, Closeable, Flushable {

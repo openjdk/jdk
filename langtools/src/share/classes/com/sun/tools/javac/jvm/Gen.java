@@ -557,7 +557,6 @@ public class Gen extends JCTree.Visitor {
         ListBuffer<Attribute.TypeCompound> fieldTAs = new ListBuffer<>();
         ListBuffer<Attribute.TypeCompound> nonfieldTAs = new ListBuffer<>();
         for (TypeCompound ta : tas) {
-            Assert.check(ta.getPosition().type != TargetType.UNKNOWN);
             if (ta.getPosition().type == TargetType.FIELD) {
                 fieldTAs.add(ta);
             } else {
@@ -1931,10 +1930,7 @@ public class Gen extends JCTree.Visitor {
                 || code.meth.getKind() == javax.lang.model.element.ElementKind.STATIC_INIT;
 
         for (Attribute.TypeCompound ta : meth.getRawTypeAttributes()) {
-            if (ta.hasUnknownPosition())
-                ta.tryFixPosition();
-
-            if (ta.position.matchesPos(treePos))
+            if (ta.position != null && ta.position.matchesPos(treePos))
                 ta.position.updatePosOffset(code.cp);
         }
 
@@ -1942,10 +1938,7 @@ public class Gen extends JCTree.Visitor {
             return;
 
         for (Attribute.TypeCompound ta : meth.owner.getRawTypeAttributes()) {
-            if (ta.hasUnknownPosition())
-                ta.tryFixPosition();
-
-            if (ta.position.matchesPos(treePos))
+            if (ta.position != null && ta.position.matchesPos(treePos))
                 ta.position.updatePosOffset(code.cp);
         }
 
@@ -1955,10 +1948,7 @@ public class Gen extends JCTree.Visitor {
                 continue;
 
             for (Attribute.TypeCompound ta : s.getRawTypeAttributes()) {
-                if (ta.hasUnknownPosition())
-                    ta.tryFixPosition();
-
-                if (ta.position.matchesPos(treePos))
+                if (ta.position != null && ta.position.matchesPos(treePos))
                     ta.position.updatePosOffset(code.cp);
             }
         }
@@ -2330,8 +2320,8 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        setTypeAnnotationPositions(tree.pos);
         genExpr(tree.expr, tree.expr.type).load();
+        setTypeAnnotationPositions(tree.pos);
         code.emitop2(instanceof_, makeRef(tree.pos(), tree.clazz.type));
         result = items.makeStackItem(syms.booleanType);
     }

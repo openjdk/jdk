@@ -3186,11 +3186,6 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
 
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  os::sleep(Thread::current(), 1, false);
-}
-
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,
 // all of our threads will be assigned to real lwp's.  Using the thr_setprio

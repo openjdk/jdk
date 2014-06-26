@@ -54,7 +54,7 @@ import sun.reflect.annotation.AnnotationType;
  * method for quickly copying a portion of an array.
  *
  * @author  unascribed
- * @since   JDK1.0
+ * @since   1.0
  */
 public final class System {
 
@@ -144,7 +144,7 @@ public final class System {
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public static void setIn(InputStream in) {
         checkIO();
@@ -168,7 +168,7 @@ public final class System {
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public static void setOut(PrintStream out) {
         checkIO();
@@ -192,7 +192,7 @@ public final class System {
      * @see SecurityManager#checkPermission
      * @see java.lang.RuntimePermission
      *
-     * @since   JDK1.1
+     * @since   1.1
      */
     public static void setErr(PrintStream err) {
         checkIO();
@@ -502,7 +502,7 @@ public final class System {
      *
      * @param x object for which the hashCode is to be calculated
      * @return  the hashCode
-     * @since   JDK1.1
+     * @since   1.1
      */
     public static native int identityHashCode(Object x);
 
@@ -1032,7 +1032,7 @@ public final class System {
      * @see     java.lang.Runtime#exit(int)
      * @see     java.lang.Runtime#gc()
      * @see     java.lang.SecurityManager#checkExit(int)
-     * @since   JDK1.1
+     * @since   1.1
      */
     @Deprecated
     public static void runFinalizersOnExit(boolean value) {

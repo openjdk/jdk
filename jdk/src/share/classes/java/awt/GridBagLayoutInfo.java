@@ -62,7 +62,7 @@ public class GridBagLayoutInfo implements java.io.Serializable {
      * grid cells with it's own parameters.
      * @param width the columns
      * @param height the rows
-     * @since 6.0
+     * @since 1.6
      */
     GridBagLayoutInfo(int width, int height) {
         this.width = width;

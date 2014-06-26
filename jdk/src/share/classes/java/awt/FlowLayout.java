@@ -79,7 +79,7 @@ import java.io.IOException;
  *
  * @author      Arthur van Hoff
  * @author      Sami Shaio
- * @since       JDK1.0
+ * @since       1.0
  * @see ComponentOrientation
  */
 public class FlowLayout implements LayoutManager, java.io.Serializable {
@@ -246,7 +246,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      * or <code>FlowLayout.TRAILING</code>.
      * @return     the alignment value for this layout
      * @see        java.awt.FlowLayout#setAlignment
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getAlignment() {
         return newAlign;
@@ -264,7 +264,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      * </ul>
      * @param      align one of the alignment values shown above
      * @see        #getAlignment()
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void setAlignment(int align) {
         this.newAlign = align;
@@ -295,7 +295,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *             and between the components and the borders
      *             of the <code>Container</code>
      * @see        java.awt.FlowLayout#setHgap
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getHgap() {
         return hgap;
@@ -310,7 +310,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *             and between the components and the borders
      *             of the <code>Container</code>
      * @see        java.awt.FlowLayout#getHgap
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void setHgap(int hgap) {
         this.hgap = hgap;
@@ -325,7 +325,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *             and between the components and the borders
      *             of the <code>Container</code>
      * @see        java.awt.FlowLayout#setVgap
-     * @since      JDK1.1
+     * @since      1.1
      */
     public int getVgap() {
         return vgap;
@@ -339,7 +339,7 @@ public class FlowLayout implements LayoutManager, java.io.Serializable {
      *             and between the components and the borders
      *             of the <code>Container</code>
      * @see        java.awt.FlowLayout#getVgap
-     * @since      JDK1.1
+     * @since      1.1
      */
     public void setVgap(int vgap) {
         this.vgap = vgap;

@@ -28,6 +28,7 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
 import static org.testng.Assert.assertEquals;
 import static org.testng.Assert.assertTrue;
+import static org.testng.Assert.fail;
 
 import java.util.Map;
 import jdk.nashorn.internal.objects.Global;
@@ -55,6 +56,27 @@ public class ContextTest {
 
             code = "obj = { js: 'nashorn' }; obj.js";
             assertEquals(eval(cx, "<evalTest2>", code), "nashorn");
+        } finally {
+            Context.setGlobal(oldGlobal);
+        }
+    }
+
+    // Make sure trying to compile an invalid script returns null - see JDK-8046215.
+    @Test
+    public void compileErrorTest() {
+        final Options options = new Options("");
+        final ErrorManager errors = new ErrorManager();
+        final Context cx = new Context(options, errors, Thread.currentThread().getContextClassLoader());
+        final Global oldGlobal = Context.getGlobal();
+        Context.setGlobal(cx.createGlobal());
+        try {
+            final ScriptFunction script = cx.compileScript(sourceFor("<evalCompileErrorTest>", "*/"), Context.getGlobal());
+            if (script != null) {
+                fail("Invalid script compiled without errors");
+            }
+            if (errors.getNumberOfErrors() != 1) {
+                fail("Wrong number of errors: " + errors.getNumberOfErrors());
+            }
         } finally {
             Context.setGlobal(oldGlobal);
         }

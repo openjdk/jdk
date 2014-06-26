@@ -68,12 +68,9 @@ public class T6358168 extends AbstractProcessor {
 
     static void testNoAnnotationProcessing(JavacFileManager fm, JavaFileObject f) throws Throwable {
         Context context = new Context();
-        fm.setContext(context);
 
-        Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
-        compilerMain.setOptions(Options.instance(context));
-        compilerMain.filenames = new LinkedHashSet<File>();
-        compilerMain.processArgs(new String[] { "-d", "." });
+        String[] args = { "-d", "." };
+        Main compilerMain = initCompilerMain(context, fm, args);
 
         JavaCompiler compiler = JavaCompiler.instance(context);
         compiler.compile(List.of(f));
@@ -87,16 +84,14 @@ public class T6358168 extends AbstractProcessor {
 
     static void testAnnotationProcessing(JavacFileManager fm, JavaFileObject f) throws Throwable {
         Context context = new Context();
-        fm.setContext(context);
 
-        Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
-        compilerMain.setOptions(Options.instance(context));
-        compilerMain.filenames = new LinkedHashSet<File>();
-        compilerMain.processArgs(new String[] {
-                                     "-XprintRounds",
-                                     "-processorpath", testClasses,
-                                     "-processor", self,
-                                     "-d", "."});
+        String[] args = {
+                "-XprintRounds",
+                "-processorpath", testClasses,
+                "-processor", self,
+                "-d", "."
+        };
+        Main compilerMain = initCompilerMain(context, fm, args);
 
         JavaCompiler compiler = JavaCompiler.instance(context);
         compiler.compile(List.of(f));
@@ -106,6 +101,19 @@ public class T6358168 extends AbstractProcessor {
         } catch (AssertionError e) {
             System.err.println("Exception from compiler (expected): " + e);
         }
+    }
+
+    static Main initCompilerMain(Context context, JavacFileManager fm, String... args) {
+        fm.setContext(context);
+        context.put(JavaFileManager.class, fm);
+
+        Main compilerMain = new Main("javac", new PrintWriter(System.err, true));
+        compilerMain.setOptions(Options.instance(context));
+        compilerMain.filenames = new LinkedHashSet<File>();
+        compilerMain.deferredFileManagerOptions = new LinkedHashMap<>();
+        compilerMain.processArgs(args);
+        fm.handleOptions(compilerMain.deferredFileManagerOptions);
+        return compilerMain;
     }
 
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {

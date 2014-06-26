@@ -29,8 +29,12 @@
 # and generate JNI header file for native methods.
 
 include $(GAMMADIR)/make/solaris/makefiles/rules.make
+include $(GAMMADIR)/make/defs.make
 AGENT_DIR = $(GAMMADIR)/agent
 include $(GAMMADIR)/make/sa.files
+
+-include $(HS_ALT_MAKE)/solaris/makefiles/sa.make
+
 GENERATED = ../generated
 
 # tools.jar is needed by the JDI - SA binding
