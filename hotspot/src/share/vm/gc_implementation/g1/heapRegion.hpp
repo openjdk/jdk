@@ -148,7 +148,7 @@ class G1OffsetTableContigSpace: public ContiguousSpace {
   void set_end(HeapWord* value);
 
   virtual HeapWord* saved_mark_word() const;
-  virtual void set_saved_mark();
+  void record_top_and_timestamp();
   void reset_gc_time_stamp() { _gc_time_stamp = 0; }
   unsigned get_gc_time_stamp() { return _gc_time_stamp; }
 
@@ -201,10 +201,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
     StartsHumongous,
     ContinuesHumongous
   };
-
-  // Requires that the region "mr" be dense with objects, and begin and end
-  // with an object.
-  void oops_in_mr_iterate(MemRegion mr, ExtendedOopClosure* cl);
 
   // The remembered set for this region.
   // (Might want to make this "inline" later, to avoid some alloc failure
@@ -569,9 +565,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   HeapWord* orig_end() { return _orig_end; }
 
-  // Allows logical separation between objects allocated before and after.
-  void save_marks();
-
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);
   void par_clear();
@@ -579,10 +572,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Get the start of the unmarked area in this region.
   HeapWord* prev_top_at_mark_start() const { return _prev_top_at_mark_start; }
   HeapWord* next_top_at_mark_start() const { return _next_top_at_mark_start; }
-
-  // Apply "cl->do_oop" to (the addresses of) all reference fields in objects
-  // allocated in the current region before the last call to "save_mark".
-  void oop_before_save_marks_iterate(ExtendedOopClosure* cl);
 
   // Note the start or end of marking. This tells the heap region
   // that the collector is about to start or has finished (concurrently)
@@ -768,10 +757,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_predicted_bytes_to_copy(size_t bytes) {
     _predicted_bytes_to_copy = bytes;
   }
-
-#define HeapRegion_OOP_SINCE_SAVE_MARKS_DECL(OopClosureType, nv_suffix)  \
-  virtual void oop_since_save_marks_iterate##nv_suffix(OopClosureType* cl);
-  SPECIALIZED_SINCE_SAVE_MARKS_CLOSURES(HeapRegion_OOP_SINCE_SAVE_MARKS_DECL)
 
   virtual CompactibleSpace* next_compaction_space() const;
 
