@@ -47,6 +47,7 @@
 #include "oops/objArrayOop.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
@@ -955,7 +956,7 @@ void ParNewGeneration::collect(bool   full,
     size_policy->minor_collection_begin();
   }
 
-  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL);
+  GCTraceTime t1(GCCauseString("GC", gch->gc_cause()), PrintGC && !PrintGCDetails, true, NULL, gc_tracer.gc_id());
   // Capture heap used before collection (for printing).
   size_t gch_prev_used = gch->used();
 
@@ -1013,14 +1014,14 @@ void ParNewGeneration::collect(bool   full,
     ParNewRefProcTaskExecutor task_executor(*this, thread_state_set);
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, &task_executor,
-                                              _gc_timer);
+                                              _gc_timer, gc_tracer.gc_id());
   } else {
     thread_state_set.flush();
     gch->set_par_threads(0);  // 0 ==> non-parallel.
     gch->save_marks();
     stats = rp->process_discovered_references(&is_alive, &keep_alive,
                                               &evacuate_followers, NULL,
-                                              _gc_timer);
+                                              _gc_timer, gc_tracer.gc_id());
   }
   gc_tracer.report_gc_reference_stats(stats);
   if (!promotion_failed()) {

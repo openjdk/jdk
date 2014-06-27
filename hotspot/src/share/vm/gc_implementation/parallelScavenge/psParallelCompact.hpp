@@ -1004,6 +1004,10 @@ class PSParallelCompact : AllStatic {
   static bool   _dwl_initialized;
 #endif  // #ifdef ASSERT
 
+
+ public:
+  static ParallelOldTracer* gc_tracer() { return &_gc_tracer; }
+
  private:
 
   static void initialize_space_info();

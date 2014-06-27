@@ -30,7 +30,7 @@
 #include "compiler/compileBroker.hpp"
 #include "memory/resourceArea.hpp"
 #include "oops/method.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/orderAccess.inline.hpp"

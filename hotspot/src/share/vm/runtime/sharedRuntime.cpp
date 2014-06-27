@@ -42,6 +42,7 @@
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/methodHandles.hpp"
 #include "prims/nativeLookup.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/handles.inline.hpp"
