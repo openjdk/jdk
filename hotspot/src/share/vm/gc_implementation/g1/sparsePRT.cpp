@@ -29,6 +29,7 @@
 #include "memory/allocation.inline.hpp"
 #include "memory/cardTableModRefBS.hpp"
 #include "memory/space.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/mutexLocker.hpp"
 
 #define SPARSE_PRT_VERBOSE 0

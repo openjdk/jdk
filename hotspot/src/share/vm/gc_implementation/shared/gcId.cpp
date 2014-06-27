@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,21 +23,20 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/atomic.inline.hpp"
-#include "services/memPtr.hpp"
-#include "services/memTracker.hpp"
+#include "gc_implementation/shared/gcId.hpp"
+#include "runtime/safepoint.hpp"
 
-volatile jint SequenceGenerator::_seq_number = 1;
-volatile unsigned long SequenceGenerator::_generation = 1;
-NOT_PRODUCT(jint SequenceGenerator::_max_seq_number = 1;)
+uint GCId::_next_id = 0;
 
-jint SequenceGenerator::next() {
-  jint seq = Atomic::add(1, &_seq_number);
-  if (seq < 0) {
-    MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
-  } else {
-    NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
-  }
-  return seq;
+const GCId GCId::create() {
+  return GCId(_next_id++);
 }
-
+const GCId GCId::peek() {
+  return GCId(_next_id);
+}
+const GCId GCId::undefined() {
+  return GCId(UNDEFINED);
+}
+bool GCId::is_undefined() const {
+  return _id == UNDEFINED;
+}

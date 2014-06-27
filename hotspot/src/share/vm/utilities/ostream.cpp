@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "compiler/compileLog.hpp"
+#include "gc_implementation/shared/gcId.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "utilities/defaultStream.hpp"
@@ -238,6 +239,14 @@ void outputStream::date_stamp(bool guard,
   }
   print_raw(suffix);
   return;
+}
+
+void outputStream::gclog_stamp(const GCId& gc_id) {
+  date_stamp(PrintGCDateStamps);
+  stamp(PrintGCTimeStamps);
+  if (PrintGCID) {
+    print("#%u: ", gc_id.id());
+  }
 }
 
 outputStream& outputStream::indent() {

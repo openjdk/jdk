@@ -529,7 +529,7 @@ public:
   void set_exception_cache(ExceptionCache *ec)    { _exception_cache = ec; }
   address handler_for_exception_and_pc(Handle exception, address pc);
   void add_handler_for_exception_and_pc(Handle exception, address pc, address handler);
-  void remove_from_exception_cache(ExceptionCache* ec);
+  void clean_exception_cache(BoolObjectClosure* is_alive);
 
   // implicit exceptions support
   address continuation_for_implicit_exception(address pc);

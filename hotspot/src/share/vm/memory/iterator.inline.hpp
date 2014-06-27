@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,22 +22,26 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "runtime/atomic.inline.hpp"
-#include "services/memPtr.hpp"
-#include "services/memTracker.hpp"
+#ifndef SHARE_VM_MEMORY_ITERATOR_INLINE_HPP
+#define SHARE_VM_MEMORY_ITERATOR_INLINE_HPP
 
-volatile jint SequenceGenerator::_seq_number = 1;
-volatile unsigned long SequenceGenerator::_generation = 1;
-NOT_PRODUCT(jint SequenceGenerator::_max_seq_number = 1;)
+#include "classfile/classLoaderData.hpp"
+#include "memory/iterator.hpp"
+#include "oops/klass.hpp"
+#include "utilities/debug.hpp"
 
-jint SequenceGenerator::next() {
-  jint seq = Atomic::add(1, &_seq_number);
-  if (seq < 0) {
-    MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
-  } else {
-    NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
-  }
-  return seq;
+inline void MetadataAwareOopClosure::do_class_loader_data(ClassLoaderData* cld) {
+  assert(_klass_closure._oop_closure == this, "Must be");
+
+  bool claim = true;  // Must claim the class loader data before processing.
+  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
 }
 
+inline void MetadataAwareOopClosure::do_klass_nv(Klass* k) {
+  ClassLoaderData* cld = k->class_loader_data();
+  do_class_loader_data(cld);
+}
+
+inline void MetadataAwareOopClosure::do_klass(Klass* k)       { do_klass_nv(k); }
+
+#endif // SHARE_VM_MEMORY_ITERATOR_INLINE_HPP
