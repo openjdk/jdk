@@ -32,6 +32,7 @@ import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
+import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.peer.*;
@@ -691,6 +692,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
             Class<T> abstractRecognizerClass, DragSource ds, Component c,
             int srcActions, DragGestureListener dgl) {
@@ -743,7 +745,7 @@ public final class LWCToolkit extends LWToolkit {
      * @since 1.3
      */
     @Override
-    public Map mapInputMethodHighlight(InputMethodHighlight highlight) {
+    public Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight) {
         return CInputMethod.mapInputMethodHighlight(highlight);
     }
 
