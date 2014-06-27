@@ -193,7 +193,8 @@ public class Label extends Component implements Accessible {
      * Gets the current alignment of this label. Possible values are
      * <code>Label.LEFT</code>, <code>Label.RIGHT</code>, and
      * <code>Label.CENTER</code>.
-     * @see        java.awt.Label#setAlignment
+     * @return the alignment of this label
+     * @see java.awt.Label#setAlignment
      */
     public int getAlignment() {
         return alignment;
@@ -321,6 +322,9 @@ public class Label extends Component implements Accessible {
          */
         private static final long serialVersionUID = -3568967560160480438L;
 
+        /**
+         * Constructor for the accessible label.
+         */
         public AccessibleAWTLabel() {
             super();
         }

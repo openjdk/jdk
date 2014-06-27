@@ -435,7 +435,7 @@ uLong jar::get_dostime(int modtime) {
   struct tm* s = gmtime_r(&t, &sbuf);
   if (s == NULL) {
     fprintf(u->errstrm, "Error: gmtime failure, invalid input archive\n");
-    exit(2);
+    exit(-1);
   }
   modtime_cache = modtime;
   dostime_cache = dostime(s->tm_year + 1900, s->tm_mon + 1, s->tm_mday,

@@ -319,7 +319,7 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
-                                  jboolean mayNeedConversion, jint level, jint opt, jint arg)
+                                  jboolean mayNeedConversion, jint level, jint opt, jint arg, jboolean ipv6)
 {
     struct linger linger;
     char *parg;

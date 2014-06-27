@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -621,7 +621,9 @@ public final class AlphaComposite implements Composite {
 
     /**
      * Creates an <code>AlphaComposite</code> object with the specified rule.
+     *
      * @param rule the compositing rule
+     * @return the {@code AlphaComposite} object created
      * @throws IllegalArgumentException if <code>rule</code> is not one of
      *         the following:  {@link #CLEAR}, {@link #SRC}, {@link #DST},
      *         {@link #SRC_OVER}, {@link #DST_OVER}, {@link #SRC_IN},
@@ -664,10 +666,12 @@ public final class AlphaComposite implements Composite {
      * the constant alpha to multiply with the alpha of the source.
      * The source is multiplied with the specified alpha before being composited
      * with the destination.
+     *
      * @param rule the compositing rule
      * @param alpha the constant alpha to be multiplied with the alpha of
      * the source. <code>alpha</code> must be a floating point number in the
      * inclusive range [0.0,&nbsp;1.0].
+     * @return the {@code AlphaComposite} object created
      * @throws IllegalArgumentException if
      *         <code>alpha</code> is less than 0.0 or greater than 1.0, or if
      *         <code>rule</code> is not one of

@@ -114,7 +114,6 @@ public class CipherOutputStream extends FilterOutputStream {
      *
      * @param      b   the <code>byte</code>.
      * @exception  IOException  if an I/O error occurs.
-     * @since      JCE1.2
      */
     public void write(int b) throws IOException {
         ibuffer[0] = (byte) b;
@@ -138,7 +137,6 @@ public class CipherOutputStream extends FilterOutputStream {
      * @exception  NullPointerException if <code>b</code> is null.
      * @exception  IOException  if an I/O error occurs.
      * @see        javax.crypto.CipherOutputStream#write(byte[], int, int)
-     * @since JCE1.2
      */
     public void write(byte b[]) throws IOException {
         write(b, 0, b.length);
@@ -152,7 +150,6 @@ public class CipherOutputStream extends FilterOutputStream {
      * @param      off   the start offset in the data.
      * @param      len   the number of bytes to write.
      * @exception  IOException  if an I/O error occurs.
-     * @since      JCE1.2
      */
     public void write(byte b[], int off, int len) throws IOException {
         obuffer = cipher.update(b, off, len);
@@ -174,7 +171,6 @@ public class CipherOutputStream extends FilterOutputStream {
      * the cipher's block size, no bytes will be written out.
      *
      * @exception  IOException  if an I/O error occurs.
-     * @since      JCE1.2
      */
     public void flush() throws IOException {
         if (obuffer != null) {
@@ -198,7 +194,6 @@ public class CipherOutputStream extends FilterOutputStream {
      * stream.
      *
      * @exception  IOException  if an I/O error occurs.
-     * @since      JCE1.2
      */
     public void close() throws IOException {
         if (closed) {

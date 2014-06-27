@@ -110,7 +110,15 @@ public class AWTEventMulticaster implements
     TextListener, InputMethodListener, HierarchyListener,
     HierarchyBoundsListener, MouseWheelListener {
 
-    protected final EventListener a, b;
+    /**
+     * A variable in the event chain (listener-a)
+     */
+    protected final EventListener a;
+
+    /**
+     * A variable in the event chain (listener-b)
+     */
+    protected final EventListener b;
 
     /**
      * Creates an event multicaster instance which chains listener-a
@@ -537,6 +545,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a component-listener-a
      * @param b component-listener-b
+     * @return the resulting listener
      */
     public static ComponentListener add(ComponentListener a, ComponentListener b) {
         return (ComponentListener)addInternal(a, b);
@@ -547,6 +556,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a container-listener-a
      * @param b container-listener-b
+     * @return the resulting listener
      */
     public static ContainerListener add(ContainerListener a, ContainerListener b) {
         return (ContainerListener)addInternal(a, b);
@@ -557,6 +567,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a focus-listener-a
      * @param b focus-listener-b
+     * @return the resulting listener
      */
     public static FocusListener add(FocusListener a, FocusListener b) {
         return (FocusListener)addInternal(a, b);
@@ -567,6 +578,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a key-listener-a
      * @param b key-listener-b
+     * @return the resulting listener
      */
     public static KeyListener add(KeyListener a, KeyListener b) {
         return (KeyListener)addInternal(a, b);
@@ -577,6 +589,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a mouse-listener-a
      * @param b mouse-listener-b
+     * @return the resulting listener
      */
     public static MouseListener add(MouseListener a, MouseListener b) {
         return (MouseListener)addInternal(a, b);
@@ -587,6 +600,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a mouse-motion-listener-a
      * @param b mouse-motion-listener-b
+     * @return the resulting listener
      */
     public static MouseMotionListener add(MouseMotionListener a, MouseMotionListener b) {
         return (MouseMotionListener)addInternal(a, b);
@@ -597,6 +611,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a window-listener-a
      * @param b window-listener-b
+     * @return the resulting listener
      */
     public static WindowListener add(WindowListener a, WindowListener b) {
         return (WindowListener)addInternal(a, b);
@@ -607,6 +622,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param a window-state-listener-a
      * @param b window-state-listener-b
+     * @return the resulting listener
      * @since 1.4
      */
     @SuppressWarnings("overloads")
@@ -620,6 +636,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param a window-focus-listener-a
      * @param b window-focus-listener-b
+     * @return the resulting listener
      * @since 1.4
      */
     public static WindowFocusListener add(WindowFocusListener a,
@@ -632,6 +649,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a action-listener-a
      * @param b action-listener-b
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static ActionListener add(ActionListener a, ActionListener b) {
@@ -643,6 +661,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a item-listener-a
      * @param b item-listener-b
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static ItemListener add(ItemListener a, ItemListener b) {
@@ -654,11 +673,21 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a adjustment-listener-a
      * @param b adjustment-listener-b
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static AdjustmentListener add(AdjustmentListener a, AdjustmentListener b) {
         return (AdjustmentListener)addInternal(a, b);
     }
+
+    /**
+     * Adds text-listener-a with text-listener-b and
+     * returns the resulting multicast listener.
+     *
+     * @param  a text-listener-a
+     * @param  b text-listener-b
+     * @return the resulting listener
+     */
     @SuppressWarnings("overloads")
     public static TextListener add(TextListener a, TextListener b) {
         return (TextListener)addInternal(a, b);
@@ -669,6 +698,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a input-method-listener-a
      * @param b input-method-listener-b
+     * @return the resulting listener
      */
      public static InputMethodListener add(InputMethodListener a, InputMethodListener b) {
         return (InputMethodListener)addInternal(a, b);
@@ -679,6 +709,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a hierarchy-listener-a
      * @param b hierarchy-listener-b
+     * @return the resulting listener
      * @since 1.3
      */
     @SuppressWarnings("overloads")
@@ -691,6 +722,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a hierarchy-bounds-listener-a
      * @param b hierarchy-bounds-listener-b
+     * @return the resulting listener
      * @since 1.3
      */
      public static HierarchyBoundsListener add(HierarchyBoundsListener a, HierarchyBoundsListener b) {
@@ -702,6 +734,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param a mouse-wheel-listener-a
      * @param b mouse-wheel-listener-b
+     * @return the resulting listener
      * @since 1.4
      */
     @SuppressWarnings("overloads")
@@ -715,6 +748,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l component-listener-l
      * @param oldl the component-listener being removed
+     * @return the resulting listener
      */
     public static ComponentListener remove(ComponentListener l, ComponentListener oldl) {
         return (ComponentListener) removeInternal(l, oldl);
@@ -725,6 +759,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l container-listener-l
      * @param oldl the container-listener being removed
+     * @return the resulting listener
      */
     public static ContainerListener remove(ContainerListener l, ContainerListener oldl) {
         return (ContainerListener) removeInternal(l, oldl);
@@ -735,6 +770,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l focus-listener-l
      * @param oldl the focus-listener being removed
+     * @return the resulting listener
      */
     public static FocusListener remove(FocusListener l, FocusListener oldl) {
         return (FocusListener) removeInternal(l, oldl);
@@ -745,6 +781,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l key-listener-l
      * @param oldl the key-listener being removed
+     * @return the resulting listener
      */
     public static KeyListener remove(KeyListener l, KeyListener oldl) {
         return (KeyListener) removeInternal(l, oldl);
@@ -755,6 +792,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l mouse-listener-l
      * @param oldl the mouse-listener being removed
+     * @return the resulting listener
      */
     public static MouseListener remove(MouseListener l, MouseListener oldl) {
         return (MouseListener) removeInternal(l, oldl);
@@ -765,6 +803,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param l mouse-motion-listener-l
      * @param oldl the mouse-motion-listener being removed
+     * @return the resulting listener
      */
     public static MouseMotionListener remove(MouseMotionListener l, MouseMotionListener oldl) {
         return (MouseMotionListener) removeInternal(l, oldl);
@@ -775,6 +814,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l window-listener-l
      * @param oldl the window-listener being removed
+     * @return the resulting listener
      */
     public static WindowListener remove(WindowListener l, WindowListener oldl) {
         return (WindowListener) removeInternal(l, oldl);
@@ -785,6 +825,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param l window-state-listener-l
      * @param oldl the window-state-listener being removed
+     * @return the resulting listener
      * @since 1.4
      */
     @SuppressWarnings("overloads")
@@ -798,6 +839,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param l window-focus-listener-l
      * @param oldl the window-focus-listener being removed
+     * @return the resulting listener
      * @since 1.4
      */
     public static WindowFocusListener remove(WindowFocusListener l,
@@ -810,6 +852,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l action-listener-l
      * @param oldl the action-listener being removed
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static ActionListener remove(ActionListener l, ActionListener oldl) {
@@ -821,6 +864,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l item-listener-l
      * @param oldl the item-listener being removed
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static ItemListener remove(ItemListener l, ItemListener oldl) {
@@ -832,11 +876,21 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l adjustment-listener-l
      * @param oldl the adjustment-listener being removed
+     * @return the resulting listener
      */
     @SuppressWarnings("overloads")
     public static AdjustmentListener remove(AdjustmentListener l, AdjustmentListener oldl) {
         return (AdjustmentListener) removeInternal(l, oldl);
     }
+
+    /**
+     * Removes the old text-listener from text-listener-l and
+     * returns the resulting multicast listener.
+     *
+     * @param  l text-listener-l
+     * @param  oldl the text-listener being removed
+     * @return the resulting listener
+     */
     @SuppressWarnings("overloads")
     public static TextListener remove(TextListener l, TextListener oldl) {
         return (TextListener) removeInternal(l, oldl);
@@ -847,6 +901,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l input-method-listener-l
      * @param oldl the input-method-listener being removed
+     * @return the resulting listener
      */
     public static InputMethodListener remove(InputMethodListener l, InputMethodListener oldl) {
         return (InputMethodListener) removeInternal(l, oldl);
@@ -857,6 +912,7 @@ public class AWTEventMulticaster implements
      * returns the resulting multicast listener.
      * @param l hierarchy-listener-l
      * @param oldl the hierarchy-listener being removed
+     * @return the resulting listener
      * @since 1.3
      */
     @SuppressWarnings("overloads")
@@ -870,6 +926,7 @@ public class AWTEventMulticaster implements
      * listener.
      * @param l hierarchy-bounds-listener-l
      * @param oldl the hierarchy-bounds-listener being removed
+     * @return the resulting listener
      * @since 1.3
      */
     public static HierarchyBoundsListener remove(HierarchyBoundsListener l, HierarchyBoundsListener oldl) {
@@ -881,6 +938,7 @@ public class AWTEventMulticaster implements
      * and returns the resulting multicast listener.
      * @param l mouse-wheel-listener-l
      * @param oldl the mouse-wheel-listener being removed
+     * @return the resulting listener
      * @since 1.4
      */
     @SuppressWarnings("overloads")
@@ -898,6 +956,7 @@ public class AWTEventMulticaster implements
      * a new AWTEventMulticaster instance which chains a with b.
      * @param a event listener-a
      * @param b event listener-b
+     * @return the resulting listener
      */
     protected static EventListener addInternal(EventListener a, EventListener b) {
         if (a == null)  return b;
@@ -915,6 +974,7 @@ public class AWTEventMulticaster implements
      * Else, returns listener l.
      * @param l the listener being removed from
      * @param oldl the listener being removed
+     * @return the resulting listener
      */
     protected static EventListener removeInternal(EventListener l, EventListener oldl) {
         if (l == oldl || l == null) {
@@ -927,9 +987,14 @@ public class AWTEventMulticaster implements
     }
 
 
-    /* Serialization support.
-     */
-
+   /**
+    * Serialization support. Saves all Serializable listeners
+    * to a serialization stream.
+    *
+    * @param  s the stream to save to
+    * @param  k a prefix stream to put before each serializable listener
+    * @throws IOException if serialization fails
+    */
     protected void saveInternal(ObjectOutputStream s, String k) throws IOException {
         if (a instanceof AWTEventMulticaster) {
             ((AWTEventMulticaster)a).saveInternal(s, k);
@@ -948,6 +1013,14 @@ public class AWTEventMulticaster implements
         }
     }
 
+   /**
+    * Saves a Serializable listener chain to a serialization stream.
+    *
+    * @param  s the stream to save to
+    * @param  k a prefix stream to put before each serializable listener
+    * @param  l the listener chain to save
+    * @throws IOException if serialization fails
+    */
     protected static void save(ObjectOutputStream s, String k, EventListener l) throws IOException {
       if (l == null) {
           return;

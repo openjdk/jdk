@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,10 @@ public class CheckboxGroup implements java.io.Serializable {
     }
 
     /**
+     * Returns the current choice from this check box group
+     * or {@code null} if none of checkboxes are selected.
+     *
+     * @return the selected checkbox
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getSelectedCheckbox()</code>.
      */
@@ -120,6 +124,11 @@ public class CheckboxGroup implements java.io.Serializable {
     }
 
     /**
+     * Sets the currently selected check box in this group
+     * to be the specified check box and unsets all others.
+     *
+     * @param  box the {@code Checkbox} to set as the
+     *         current selection.
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setSelectedCheckbox(Checkbox)</code>.
      */

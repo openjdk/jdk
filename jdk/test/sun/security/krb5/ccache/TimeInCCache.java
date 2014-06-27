@@ -28,16 +28,14 @@
  */
 
 import java.io.ByteArrayInputStream;
-import java.lang.reflect.Field;
 import java.lang.reflect.Method;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 
 import sun.security.krb5.internal.ccache.CCacheInputStream;
 import sun.security.krb5.internal.ccache.Credentials;
 
 public class TimeInCCache {
-    // Attention: this field is also used by CorruptedCC.java test
+    // Attention: this field is also used by 2 other tests:
+    // CorruptedCC.java and EmptyRealmCC.java
     public static byte[] ccache;
 
     static {

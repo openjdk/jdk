@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -201,6 +201,11 @@ public class TableColumn extends Object implements Serializable {
      *  Cover method, using a default width of 75, a <code>null</code>
      *  renderer and a <code>null</code> editor.
      *  @see #TableColumn(int, int, TableCellRenderer, TableCellEditor)
+     *
+     *  @param modelIndex  the index of the column in the model
+     *  that supplies the data for this column in the table;
+     *  the model index remains the same even when columns
+     *  are reordered in the view
      */
     public TableColumn(int modelIndex) {
         this(modelIndex, 75, null, null);
@@ -210,6 +215,12 @@ public class TableColumn extends Object implements Serializable {
      *  Cover method, using a <code>null</code> renderer and a
      *  <code>null</code> editor.
      *  @see #TableColumn(int, int, TableCellRenderer, TableCellEditor)
+     *
+     *  @param modelIndex  the index of the column in the model
+     *  that supplies the data for this column in the table;
+     *  the model index remains the same even when columns
+     *  are reordered in the view
+     *  @param width  this column's preferred width and initial width
      */
     public TableColumn(int modelIndex, int width) {
         this(modelIndex, width, null, null);

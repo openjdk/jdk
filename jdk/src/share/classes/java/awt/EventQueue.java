@@ -222,6 +222,9 @@ public class EventQueue {
             });
     }
 
+    /**
+     * Initializes a new instance of {@code EventQueue}.
+     */
     public EventQueue() {
         for (int i = 0; i < NUM_PRIORITIES; i++) {
             queues[i] = new Queue();

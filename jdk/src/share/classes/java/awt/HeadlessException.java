@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,10 +38,24 @@ public class HeadlessException extends UnsupportedOperationException {
      * JDK 1.4 serialVersionUID
      */
     private static final long serialVersionUID = 167183644944358563L;
+
+    /**
+     * Constructs new {@code HeadlessException}
+     */
     public HeadlessException() {}
+
+    /**
+     * Create a new instance with the specified detailed error message.
+     *
+     * @param  msg the error message
+     */
     public HeadlessException(String msg) {
         super(msg);
     }
+
+    /**
+     * {@inheritDoc}
+     */
     public String getMessage() {
         String superMessage = super.getMessage();
         String headlessMessage = GraphicsEnvironment.getHeadlessMessage();

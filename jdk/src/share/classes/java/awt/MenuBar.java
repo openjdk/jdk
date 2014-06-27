@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -279,6 +279,9 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
     }
 
     /**
+     * Gets the number of menus on the menu bar.
+     *
+     * @return the number of menus on the menu bar.
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getMenuCount()</code>.
      */
@@ -338,10 +341,11 @@ public class MenuBar extends MenuComponent implements MenuContainer, Accessible 
      * or <code>null</code> if none of the menu items being managed
      * by this menu bar is associated with the specified menu
      * shortcut.
-     * @param        s the specified menu shortcut.
-     * @see          java.awt.MenuItem
-     * @see          java.awt.MenuShortcut
-     * @since        1.1
+     * @param  s the specified menu shortcut.
+     * @return the menu item for the specified shortcut.
+     * @see java.awt.MenuItem
+     * @see java.awt.MenuShortcut
+     * @since 1.1
      */
      public MenuItem getShortcutMenuItem(MenuShortcut s) {
         int nmenus = getMenuCount();

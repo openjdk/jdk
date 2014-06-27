@@ -422,7 +422,8 @@ public abstract class Toolkit {
      * and allows the Component and Container classes to be extended directly
      * to create windowless components that are defined entirely in java.
      *
-     * @param target The Component to be created.
+     * @param  target The Component to be created.
+     * @return the peer for the specified component
      */
     protected LightweightPeer createComponent(Component target) {
         if (lightweightMarker == null) {
@@ -1370,6 +1371,9 @@ public abstract class Toolkit {
      * {@link java.awt.event.KeyEvent#VK_SCROLL_LOCK VK_SCROLL_LOCK}, and
      * {@link java.awt.event.KeyEvent#VK_KANA_LOCK VK_KANA_LOCK}.
      *
+     * @param  keyCode the key code
+     * @return {@code true} if the given key is currently in its "on" state;
+     *          otherwise {@code false}
      * @exception java.lang.IllegalArgumentException if <code>keyCode</code>
      * is not one of the valid key codes
      * @exception java.lang.UnsupportedOperationException if the host system doesn't
@@ -1404,6 +1408,8 @@ public abstract class Toolkit {
      * involve event processing and therefore may not be immediately
      * observable through getLockingKeyState.
      *
+     * @param  keyCode the key code
+     * @param  on the state of the key
      * @exception java.lang.IllegalArgumentException if <code>keyCode</code>
      * is not one of the valid key codes
      * @exception java.lang.UnsupportedOperationException if the host system doesn't
@@ -1429,6 +1435,9 @@ public abstract class Toolkit {
     /**
      * Give native peers the ability to query the native container
      * given a native component (eg the direct parent may be lightweight).
+     *
+     * @param  c the component to fetch the container for
+     * @return the native container object for the component
      */
     protected static Container getNativeContainer(Component c) {
         return c.getNativeContainer();
@@ -1449,6 +1458,7 @@ public abstract class Toolkit {
      * @param     name a localized description of the cursor, for Java Accessibility use
      * @exception IndexOutOfBoundsException if the hotSpot values are outside
      *   the bounds of the cursor
+     * @return the cursor created
      * @exception HeadlessException if GraphicsEnvironment.isHeadless()
      * returns true
      * @see       java.awt.GraphicsEnvironment#isHeadless
@@ -1675,6 +1685,11 @@ public abstract class Toolkit {
     /**
      * Gets a property with the specified key and default.
      * This method returns defaultValue if the property is not found.
+     *
+     * @param  key the key
+     * @param  defaultValue the default value
+     * @return the value of the property or the default value
+     *         if the property was not found
      */
     public static String getProperty(String key, String defaultValue) {
         // first try platform specific bundle
@@ -1738,6 +1753,9 @@ public abstract class Toolkit {
      * Creates the peer for a DragSourceContext.
      * Always throws InvalidDndOperationException if
      * GraphicsEnvironment.isHeadless() returns true.
+     *
+     * @param  dge the {@code DragGestureEvent}
+     * @return the peer created
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public abstract DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException;
@@ -1775,6 +1793,9 @@ public abstract class Toolkit {
      * representation for an underlying platform dependent desktop setting.
      * For more information on desktop properties supported by the AWT see
      * <a href="doc-files/DesktopProperties.html">AWT Desktop Properties</a>.
+     *
+     * @param  propertyName the property name
+     * @return the value for the specified desktop property
      */
     public final synchronized Object getDesktopProperty(String propertyName) {
         // This is a workaround for headless toolkits.  It would be
@@ -1818,6 +1839,9 @@ public abstract class Toolkit {
     /**
      * Sets the named desktop property to the specified value and fires a
      * property change event to notify any listeners that the value has changed.
+     *
+     * @param  name the property name
+     * @param  newValue the new property value
      */
     protected final void setDesktopProperty(String name, Object newValue) {
         // This is a workaround for headless toolkits.  It would be

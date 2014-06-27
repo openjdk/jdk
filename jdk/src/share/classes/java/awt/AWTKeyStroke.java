@@ -802,6 +802,7 @@ public class AWTKeyStroke implements Serializable {
      * <code>AWTKeyStroke</code>) which is equal to this instance.
      *
      * @return a cached instance which is equal to this instance
+     * @throws java.io.ObjectStreamException if a serialization problem occurs
      */
     protected Object readResolve() throws java.io.ObjectStreamException {
         synchronized (AWTKeyStroke.class) {
