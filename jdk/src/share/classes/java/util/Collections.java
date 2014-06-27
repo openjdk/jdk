@@ -3077,10 +3077,7 @@ public class Collections {
                 public void remove()     {        it.remove(); }};
         }
 
-        public boolean add(E e) {
-            typeCheck(e);
-            return c.add(e);
-        }
+        public boolean add(E e)          { return c.add(typeCheck(e)); }
 
         private E[] zeroLengthElementArray; // Lazily initialized
 
@@ -3187,11 +3184,7 @@ public class Collections {
         public E peek()                 {return queue.peek();}
         public E poll()                 {return queue.poll();}
         public E remove()               {return queue.remove();}
-
-        public boolean offer(E e) {
-            typeCheck(e);
-            return add(e);
-        }
+        public boolean offer(E e)       {return queue.offer(typeCheck(e));}
     }
 
     /**
@@ -3440,13 +3433,11 @@ public class Collections {
         public int lastIndexOf(Object o) { return list.lastIndexOf(o); }
 
         public E set(int index, E element) {
-            typeCheck(element);
-            return list.set(index, element);
+            return list.set(index, typeCheck(element));
         }
 
         public void add(int index, E element) {
-            typeCheck(element);
-            list.add(index, element);
+            list.add(index, typeCheck(element));
         }
 
         public boolean addAll(int index, Collection<? extends E> c) {
@@ -3467,13 +3458,11 @@ public class Collections {
                 public void remove()         {        i.remove(); }
 
                 public void set(E e) {
-                    typeCheck(e);
-                    i.set(e);
+                    i.set(typeCheck(e));
                 }
 
                 public void add(E e) {
-                    typeCheck(e);
-                    i.add(e);
+                    i.add(typeCheck(e));
                 }
 
                 @Override
