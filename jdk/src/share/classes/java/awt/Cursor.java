@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -294,6 +294,7 @@ public class Cursor implements java.io.Serializable {
      * @return the system specific custom cursor named
      * @exception HeadlessException if
      * <code>GraphicsEnvironment.isHeadless</code> returns true
+     * @exception AWTException in case of erroneous retrieving of the cursor
      */
     static public Cursor getSystemCustomCursor(final String name)
         throws AWTException, HeadlessException {
@@ -378,6 +379,8 @@ public class Cursor implements java.io.Serializable {
 
     /**
      * Return the system default cursor.
+     *
+     * @return the default cursor
      */
     static public Cursor getDefaultCursor() {
         return getPredefinedCursor(Cursor.DEFAULT_CURSOR);
@@ -416,6 +419,8 @@ public class Cursor implements java.io.Serializable {
 
     /**
      * Returns the type for this cursor.
+     *
+     * @return the cursor type
      */
     public int getType() {
         return type;

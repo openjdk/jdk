@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -220,6 +220,7 @@ public abstract class MenuComponent implements java.io.Serializable {
     /**
      * @deprecated As of JDK version 1.1,
      * programs should not directly manipulate peers.
+     * @return the peer for this component
      */
     @Deprecated
     public MenuComponentPeer getPeer() {

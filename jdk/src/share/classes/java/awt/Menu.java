@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,7 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
 
     /**
       * Get the number of items in this menu.
-      * @return     the number of items in this menu.
+      * @return the number of items in this menu
       * @since      1.1
       */
     public int getItemCount() {
@@ -221,6 +221,9 @@ public class Menu extends MenuItem implements MenuContainer, Accessible {
     }
 
     /**
+     * Returns the number of items in this menu.
+     *
+     * @return the number of items in this menu
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getItemCount()</code>.
      */

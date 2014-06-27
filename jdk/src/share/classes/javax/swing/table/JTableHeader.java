@@ -336,6 +336,10 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      * Returns the index of the column that <code>point</code> lies in, or -1 if it
      * lies out of bounds.
      *
+     * @param point  if this <code>point</code> lies within a column, the index of
+     *               that column will be returned; otherwise it is out of bounds
+     *               and -1 is returned
+     *
      * @return  the index of the column that <code>point</code> lies in, or -1 if it
      *          lies out of bounds
      */
@@ -351,6 +355,8 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
      * Returns the rectangle containing the header tile at <code>column</code>.
      * When the <code>column</code> parameter is out of bounds this method uses the
      * same conventions as the <code>JTable</code> method <code>getCellRect</code>.
+     *
+     * @param column  index of the column
      *
      * @return  the rectangle containing the header tile at <code>column</code>
      * @see JTable#getCellRect
@@ -883,6 +889,10 @@ public class JTableHeader extends JComponent implements TableColumnModelListener
             /**
              *  Constructs an AccessiblJTableHeaaderEntry
              * @since 1.4
+             *
+             * @param c  the column index
+             * @param p  the parent <code>JTableHeader</code>
+             * @param t  the table <code>JTable</code>
              */
             public AccessibleJTableHeaderEntry(int c, JTableHeader p, JTable t) {
                 parent = p;

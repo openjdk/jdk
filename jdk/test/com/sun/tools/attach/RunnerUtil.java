@@ -139,12 +139,19 @@ public class RunnerUtil {
         String content = null;
 
         // Read file or wait for it to be created.
+        long startTime = System.currentTimeMillis();
+        long lastWarningTime = 0;
         while (true) {
             content = readFile(file);
             if (content != null && content.indexOf("done") >= 0) {
                 break;
             }
             Thread.sleep(100);
+            long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
+            if (elapsedTime > lastWarningTime) {
+                lastWarningTime = elapsedTime;
+                System.out.println("Waited " + elapsedTime + " seconds for file.");
+            }
         }
 
         ProcessInfo info = new ProcessInfo();

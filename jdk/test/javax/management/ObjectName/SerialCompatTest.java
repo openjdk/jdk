@@ -28,7 +28,7 @@
  * @author Eamonn McManus, Daniel Fuchs
  * @run clean SerialCompatTest
  * @run build SerialCompatTest
- * @run main/othervm SerialCompatTest
+ * @run main/othervm -Djdk.jmx.mbeans.allowNonPublic=true -Djmx.serial.form=1.0 SerialCompatTest
  */
 
 import java.io.*;
@@ -223,8 +223,6 @@ public class SerialCompatTest {
     }
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("jmx.serial.form", "1.0");
-
         /* Check that we really are in jmx.serial.form=1.0 mode.
         The property is frozen the first time the ObjectName class
         is referenced so checking that it is set to the correct

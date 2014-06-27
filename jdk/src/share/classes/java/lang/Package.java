@@ -107,6 +107,7 @@ import java.lang.annotation.Annotation;
  * loader to be found.
  *
  * @see ClassLoader#definePackage
+ * @since 1.2
  */
 public class Package implements java.lang.reflect.AnnotatedElement {
     /**

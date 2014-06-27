@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -264,6 +264,9 @@ public class MenuItem extends MenuComponent implements Accessible {
 
     /**
      * Checks whether this menu item is enabled.
+     *
+     * @return {@code true} if the item is enabled;
+     *         otherwise {@code false}
      * @see        java.awt.MenuItem#setEnabled
      * @since      1.0
      */
@@ -296,6 +299,10 @@ public class MenuItem extends MenuComponent implements Accessible {
     }
 
     /**
+     * Sets whether or not this menu item can be chosen.
+     *
+     * @param  b if {@code true}, enables this menu item;
+     *           otherwise disables
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setEnabled(boolean)</code>.
      */
@@ -494,8 +501,10 @@ public class MenuItem extends MenuComponent implements Accessible {
     /**
      * Gets the command name of the action event that is fired
      * by this menu item.
-     * @see         java.awt.MenuItem#setActionCommand
-     * @since       1.1
+     *
+     * @return the action command name
+     * @see java.awt.MenuItem#setActionCommand
+     * @since 1.1
      */
     public String getActionCommand() {
         return getActionCommandImpl();

@@ -36,7 +36,7 @@ import javax.management.ObjectName;
  * @author Jaroslav Bachorik
  * @run clean JMXProxyFallbackTest
  * @run build JMXProxyFallbackTest
- * @run main JMXProxyFallbackTest
+ * @run main/othervm -Djdk.jmx.mbeans.allowNonPublic=true JMXProxyFallbackTest
  */
 public class JMXProxyFallbackTest {
     private static interface PrivateMBean {
@@ -56,7 +56,6 @@ public class JMXProxyFallbackTest {
     private static int failures = 0;
 
     public static void main(String[] args) throws Exception {
-        System.setProperty("jdk.jmx.mbeans.allowNonPublic", "true");
         testPrivate(PrivateMBean.class);
         testPrivate(PrivateMXBean.class);
 

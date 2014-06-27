@@ -1859,18 +1859,17 @@ public abstract class ClassLoader {
         String name = NativeLibrary.findBuiltinLib(file.getName());
         boolean isBuiltin = (name != null);
         if (!isBuiltin) {
-            boolean exists = AccessController.doPrivileged(
-                new PrivilegedAction<Object>() {
-                    public Object run() {
-                        return file.exists() ? Boolean.TRUE : null;
-                    }})
-                != null;
-            if (!exists) {
-                return false;
-            }
-            try {
-                name = file.getCanonicalPath();
-            } catch (IOException e) {
+            name = AccessController.doPrivileged(
+                new PrivilegedAction<String>() {
+                    public String run() {
+                        try {
+                            return file.exists() ? file.getCanonicalPath() : null;
+                        } catch (IOException e) {
+                            return null;
+                        }
+                    }
+                });
+            if (name == null) {
                 return false;
             }
         }

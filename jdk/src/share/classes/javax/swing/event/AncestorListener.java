@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,6 +48,9 @@ public interface AncestorListener extends EventListener {
      * if the source has actually become visible.  For this to be true
      * all its parents must be visible and it must be in a hierarchy
      * rooted at a Window
+     *
+     * @param event an {@code AncestorEvent} signifying a change in an
+     *              ancestor-component's display-status
      */
     public void ancestorAdded(AncestorEvent event);
 
@@ -58,11 +61,17 @@ public interface AncestorListener extends EventListener {
      * if the source has actually become invisible.  For this to be true
      * at least one of its parents must by invisible or it is not in
      * a hierarchy rooted at a Window
+     *
+     * @param event an {@code AncestorEvent} signifying a change in an
+     *              ancestor-component's display-status
      */
     public void ancestorRemoved(AncestorEvent event);
 
     /**
      * Called when either the source or one of its ancestors is moved.
+     *
+     * @param event an {@code AncestorEvent} signifying a change in an
+     *              ancestor-component's display-status
      */
     public void ancestorMoved(AncestorEvent event);
 

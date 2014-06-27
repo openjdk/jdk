@@ -63,6 +63,7 @@ public class ListSelectionEvent extends EventObject
      * {@code lastIndex}. The selection of at least one index within the range will
      * have changed.
      *
+     * @param source the {@code Object} on which the event initially occurred
      * @param firstIndex the first index in the range, &lt;= lastIndex
      * @param lastIndex the last index in the range, &gt;= firstIndex
      * @param isAdjusting whether or not this is one in a series of

@@ -95,13 +95,15 @@ public class TableModelEvent extends java.util.EventObject
 //
 
     /**
-     *  All row data in the table has changed, listeners should discard any state
-     *  that was based on the rows and requery the <code>TableModel</code>
-     *  to get the new row count and all the appropriate values.
-     *  The <code>JTable</code> will repaint the entire visible region on
-     *  receiving this event, querying the model for the cell values that are visible.
-     *  The structure of the table ie, the column names, types and order
-     *  have not changed.
+     * All row data in the table has changed, listeners should discard any state
+     * that was based on the rows and requery the <code>TableModel</code>
+     * to get the new row count and all the appropriate values.
+     * The <code>JTable</code> will repaint the entire visible region on
+     * receiving this event, querying the model for the cell values that are visible.
+     * The structure of the table ie, the column names, types and order
+     * have not changed.
+     *
+     * @param source the {@code TableModel} affected by this event
      */
     public TableModelEvent(TableModel source) {
         // Use Integer.MAX_VALUE instead of getRowCount() in case rows were deleted.
@@ -109,21 +111,28 @@ public class TableModelEvent extends java.util.EventObject
     }
 
     /**
-     *  This row of data has been updated.
-     *  To denote the arrival of a completely new table with a different structure
-     *  use <code>HEADER_ROW</code> as the value for the <code>row</code>.
-     *  When the <code>JTable</code> receives this event and its
-     *  <code>autoCreateColumnsFromModel</code>
-     *  flag is set it discards any TableColumns that it had and reallocates
-     *  default ones in the order they appear in the model. This is the
-     *  same as calling <code>setModel(TableModel)</code> on the <code>JTable</code>.
+     * This row of data has been updated.
+     * To denote the arrival of a completely new table with a different structure
+     * use <code>HEADER_ROW</code> as the value for the <code>row</code>.
+     * When the <code>JTable</code> receives this event and its
+     * <code>autoCreateColumnsFromModel</code>
+     * flag is set it discards any TableColumns that it had and reallocates
+     * default ones in the order they appear in the model. This is the
+     * same as calling <code>setModel(TableModel)</code> on the <code>JTable</code>.
+     *
+     * @param source the {@code TableModel} affected by this event
+     * @param row the row which has been updated
      */
     public TableModelEvent(TableModel source, int row) {
         this(source, row, row, ALL_COLUMNS, UPDATE);
     }
 
     /**
-     *  The data in rows [<I>firstRow</I>, <I>lastRow</I>] have been updated.
+     * The data in rows [<I>firstRow</I>, <I>lastRow</I>] have been updated.
+     *
+     * @param source the {@code TableModel} affected by this event
+     * @param firstRow the first row affected by this event
+     * @param lastRow  the last row affected by this event
      */
     public TableModelEvent(TableModel source, int firstRow, int lastRow) {
         this(source, firstRow, lastRow, ALL_COLUMNS, UPDATE);
@@ -132,18 +141,32 @@ public class TableModelEvent extends java.util.EventObject
     /**
      *  The cells in column <I>column</I> in the range
      *  [<I>firstRow</I>, <I>lastRow</I>] have been updated.
+     *
+     * @param source the {@code TableModel} affected by this event
+     * @param firstRow the first row affected by this event
+     * @param lastRow  the last row affected by this event
+     * @param column the column index of cells changed; {@code ALL_COLUMNS}
+     *        signifies all cells in the specified range of rows are changed.
      */
     public TableModelEvent(TableModel source, int firstRow, int lastRow, int column) {
         this(source, firstRow, lastRow, column, UPDATE);
     }
 
     /**
-     *  The cells from (firstRow, column) to (lastRow, column) have been changed.
-     *  The <I>column</I> refers to the column index of the cell in the model's
-     *  co-ordinate system. When <I>column</I> is ALL_COLUMNS, all cells in the
-     *  specified range of rows are considered changed.
-     *  <p>
-     *  The <I>type</I> should be one of: INSERT, UPDATE and DELETE.
+     * The cells from (firstRow, column) to (lastRow, column) have been changed.
+     * The <I>column</I> refers to the column index of the cell in the model's
+     * co-ordinate system. When <I>column</I> is ALL_COLUMNS, all cells in the
+     * specified range of rows are considered changed.
+     * <p>
+     * The <I>type</I> should be one of: INSERT, UPDATE and DELETE.
+     *
+     * @param source the {@code TableModel} affected by this event
+     * @param firstRow the first row affected by this event
+     * @param lastRow  the last row affected by this event
+     * @param column the column index of cells changed; {@code ALL_COLUMNS}
+     *        signifies all cells in the specified range of rows are changed.
+     * @param type the type of change signified by this even, @code INSERT},
+     *        {@code DELETE } or {@code UPDATE}
      */
     public TableModelEvent(TableModel source, int firstRow, int lastRow, int column, int type) {
         super(source);
@@ -157,23 +180,36 @@ public class TableModelEvent extends java.util.EventObject
 // Querying Methods
 //
 
-   /** Returns the first row that changed.  HEADER_ROW means the meta data,
+    /**
+     * Returns the first row that changed.  HEADER_ROW means the meta data,
      * ie. names, types and order of the columns.
+     *
+     * @return an integer signifying the first row changed
      */
     public int getFirstRow() { return firstRow; };
 
-    /** Returns the last row that changed. */
+    /**
+     * Returns the last row that changed.
+     *
+     * @return an integer signifying the last row changed
+     */
     public int getLastRow() { return lastRow; };
 
     /**
      *  Returns the column for the event.  If the return
      *  value is ALL_COLUMNS; it means every column in the specified
      *  rows changed.
+     *
+     * @return an integer signifying which column is affected by this event
      */
     public int getColumn() { return column; };
 
     /**
      *  Returns the type of event - one of: INSERT, UPDATE and DELETE.
+     *
+     * @return the type of change to a table model, an {@code INSERT} or
+     *         {@code DELETE } of row(s) or column(s) or {@code UPDATE}
+     *         to data
      */
     public int getType() { return type; }
 }

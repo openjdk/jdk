@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,6 +78,9 @@ public class SynthSeparatorUI extends SeparatorUI
     /**
      * Installs default setting. This method is called when a
      * {@code LookAndFeel} is installed.
+     *
+     * @param c specifies the {@code JSeparator} for the installed
+     * {@code LookAndFeel}.
      */
     public void installDefaults(JSeparator c) {
         updateStyle(c);
@@ -109,6 +112,9 @@ public class SynthSeparatorUI extends SeparatorUI
     /**
      * Uninstalls default setting. This method is called when a
      * {@code LookAndFeel} is uninstalled.
+     *
+     * @param c specifies the {@code JSeparator} for the (un)installed
+     * {@code LookAndFeel}.
      */
     public void uninstallDefaults(JSeparator c) {
         SynthContext context = getContext(c, ENABLED);
@@ -121,6 +127,9 @@ public class SynthSeparatorUI extends SeparatorUI
     /**
      * Installs listeners. This method is called when a
      * {@code LookAndFeel} is installed.
+     *
+     * @param c specifies the {@code JSeparator} for the installed
+     * {@code LookAndFeel}.
      */
     public void installListeners(JSeparator c) {
         c.addPropertyChangeListener(this);
@@ -129,6 +138,9 @@ public class SynthSeparatorUI extends SeparatorUI
     /**
      * Uninstalls listeners. This method is called when a
      * {@code LookAndFeel} is uninstalled.
+     *
+     * @param c specifies the {@code JSeparator} for the (un)installed
+     * {@code LookAndFeel}.
      */
     public void uninstallListeners(JSeparator c) {
         c.removePropertyChangeListener(this);

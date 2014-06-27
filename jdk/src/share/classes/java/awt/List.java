@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -282,6 +282,9 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Returns the number of items in the list.
+     *
+     * @return the number of items in the list
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getItemCount()</code>.
      */
@@ -333,7 +336,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * @deprecated      replaced by <code>add(String)</code>.
+     * Adds the specified item to the end of the list.
+     *
+     * @param  item the item to be added
+     * @deprecated replaced by <code>add(String)</code>.
      */
     @Deprecated
     public void addItem(String item) {
@@ -358,7 +364,12 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * @deprecated      replaced by <code>add(String, int)</code>.
+     * Adds the specified item to the the list
+     * at the position indicated by the index.
+     *
+     * @param  item the item to be added
+     * @param  index the position at which to add the item
+     * @deprecated replaced by <code>add(String, int)</code>.
      */
     @Deprecated
     public synchronized void addItem(String item, int index) {
@@ -455,8 +466,11 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
-     * @deprecated     replaced by <code>remove(String)</code>
-     *                         and <code>remove(int)</code>.
+     * Removes the item at the specified position.
+     *
+     * @param  position the index of the item to delete
+     * @deprecated replaced by <code>remove(String)</code>
+     *             and <code>remove(int)</code>.
      */
     @Deprecated
     public void delItem(int position) {
@@ -646,6 +660,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Determines if the specified item in the list is selected.
+     *
+     * @param  index specifies the item to be checked
+     * @return {@code true} if the item is selected; otherwise {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by <code>isIndexSelected(int)</code>.
      */
@@ -672,6 +690,7 @@ public class List extends Component implements ItemSelectable, Accessible {
 
     /**
      * Determines whether this list allows multiple selections.
+     *
      * @return     <code>true</code> if this list allows multiple
      *                 selections; otherwise, <code>false</code>
      * @see        #setMultipleMode
@@ -682,6 +701,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Determines whether this list allows multiple selections.
+     *
+     * @return {@code true} if this list allows multiple
+     *         selections; otherwise {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by <code>isMultipleMode()</code>.
      */
@@ -709,6 +732,9 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Enables or disables multiple selection mode for this list.
+     *
+     * @param  b {@code true} to enable multiple mode, {@code false} otherwise
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setMultipleMode(boolean)</code>.
      */
@@ -760,6 +786,11 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Returns the preferred size of this component
+     * assuming it has the specified number of rows.
+     *
+     * @param  rows the number of rows
+     * @return the preferred dimensions for displaying this list
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getPreferredSize(int)</code>.
      */
@@ -810,6 +841,11 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Returns the minimum dimensions for the list
+     * with the specified number of rows.
+     *
+     * @param  rows the number of rows in the list
+     * @return the minimum dimensions for displaying this list
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getMinimumSize(int)</code>.
      */
@@ -1146,6 +1182,10 @@ public class List extends Component implements ItemSelectable, Accessible {
     }
 
     /**
+     * Deletes the list items in the specified index range.
+     *
+     * @param  start the beginning index of the range to delete
+     * @param  end the ending index of the range to delete
      * @deprecated As of JDK version 1.1,
      * Not for public use in the future.
      * This method is expected to be retained only as a package
@@ -1290,6 +1330,9 @@ public class List extends Component implements ItemSelectable, Accessible {
          */
         private static final long serialVersionUID = 7924617370136012829L;
 
+        /**
+         * Constructs new {@code AccessibleAWTList}
+         */
         public AccessibleAWTList() {
             super();
             List.this.addActionListener(this);
@@ -1491,6 +1534,13 @@ public class List extends Component implements ItemSelectable, Accessible {
             private List parent;
             private int  indexInParent;
 
+            /**
+             * Constructs new {@code AccessibleAWTListChild} with the given
+             * parent {@code List} and 0-based index of this object in the parent.
+             *
+             * @param  parent the parent {@code List}
+             * @param  indexInParent the index in the parent
+             */
             public AccessibleAWTListChild(List parent, int indexInParent)  {
                 this.parent = parent;
                 this.setAccessibleParent(parent);

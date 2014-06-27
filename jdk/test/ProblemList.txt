@@ -298,7 +298,4 @@ sun/tools/jstatd/TestJstatdServer.java                          generic-all
 # 8046355
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
-# 8046352
-com/sun/tools/attach/TempDirTest.java                           generic-all
-
 ############################################################################

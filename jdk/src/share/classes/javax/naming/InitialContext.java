@@ -125,7 +125,7 @@ import com.sun.naming.internal.ResourceManager;
  * @see Context
  * @see NamingManager#setInitialContextFactoryBuilder
  *      NamingManager.setInitialContextFactoryBuilder
- * @since JNDI 1.1 / Java 2 Platform, Standard Edition, v 1.3
+ * @since 1.3, JNDI 1.1
  */
 
 public class InitialContext implements Context {

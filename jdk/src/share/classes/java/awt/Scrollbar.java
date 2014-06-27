@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -656,6 +656,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     }
 
     /**
+     * Returns the visible amount of this scroll bar.
+     *
+     * @return the visible amount of this scroll bar
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getVisibleAmount()</code>.
      */
@@ -729,6 +732,10 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     }
 
     /**
+     * Sets the unit increment for this scroll bar.
+     *
+     * @param  v the increment value
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setUnitIncrement(int)</code>.
      */
@@ -768,6 +775,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     }
 
     /**
+     * Returns the unit increment for this scrollbar.
+     *
+     * @return the unit increment for this scrollbar
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getUnitIncrement()</code>.
      */
@@ -797,6 +807,9 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     }
 
     /**
+     * Sets the block increment for this scroll bar.
+     *
+     * @param  v the block increment
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setBlockIncrement()</code>.
      */
@@ -833,6 +846,10 @@ public class Scrollbar extends Component implements Adjustable, Accessible {
     }
 
     /**
+     * Returns the block increment of this scroll bar.
+     *
+     * @return the block increment of this scroll bar
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getBlockIncrement()</code>.
      */

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -126,6 +126,8 @@ public final class ComponentOrientation implements java.io.Serializable
      * Are lines horizontal?
      * This will return true for horizontal, left-to-right writing
      * systems such as Roman.
+     *
+     * @return {@code true} if this orientation has horizontal lines
      */
     public boolean isHorizontal() {
         return (orientation & HORIZ_BIT) != 0;
@@ -136,6 +138,8 @@ public final class ComponentOrientation implements java.io.Serializable
      * Vertical Lines:  Do lines run left-to-right?<br>
      * This will return true for horizontal, left-to-right writing
      * systems such as Roman.
+     *
+     * @return {@code true} if this orientation is left-to-right
      */
     public boolean isLeftToRight() {
         return (orientation & LTR_BIT) != 0;
@@ -143,7 +147,9 @@ public final class ComponentOrientation implements java.io.Serializable
 
     /**
      * Returns the orientation that is appropriate for the given locale.
+     *
      * @param locale the specified locale
+     * @return the orientation for the locale
      */
     public static ComponentOrientation getOrientation(Locale locale) {
         // A more flexible implementation would consult a ResourceBundle
@@ -171,6 +177,8 @@ public final class ComponentOrientation implements java.io.Serializable
      * <li>Return the default locale's orientation.
      * </ol>
      *
+     * @param  bdl the bundle to use
+     * @return the orientation
      * @deprecated As of J2SE 1.4, use {@link #getOrientation(java.util.Locale)}.
      */
     @Deprecated
