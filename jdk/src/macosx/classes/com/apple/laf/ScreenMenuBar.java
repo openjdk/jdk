@@ -273,6 +273,7 @@ public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenM
             try {
                 if (stolenFields == null) return m;
 
+                @SuppressWarnings("unchecked")
                 final Vector<Menu> menus = (Vector<Menu>)stolenFields[0].get(this);
                     menus.insertElementAt(m, index);
 
