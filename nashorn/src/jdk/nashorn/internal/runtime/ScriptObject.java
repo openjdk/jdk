@@ -691,6 +691,7 @@ public abstract class ScriptObject implements PropertyAccess {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
         doesNotHaveEnsureDelete(longIndex, getArray().length(), false);
+        setArray(getArray().ensure(longIndex));
         setArray(getArray().set(index, value, false));
     }
 
