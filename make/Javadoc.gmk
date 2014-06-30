@@ -118,7 +118,7 @@ DOCSDIR_URL = {@docroot}/$(GET2DOCSDIR)
 COPYRIGHT_URL = $(DOCSDIR_URL)/legal/cpyr.html
 
 # Url to bug filing site
-BUG_SUBMIT_URL = http://bugreport.sun.com/bugreport/
+BUG_SUBMIT_URL = http://bugreport.java.com/bugreport/
 
 # Common line for how to submit a bug or rfe
 BUG_SUBMIT_LINE = <a href="$(BUG_SUBMIT_URL)">Submit a bug or feature</a>
@@ -442,7 +442,7 @@ $(DOCLETAPI_INDEX_FILE): $(DOCLETAPI_OPTIONS_FILE) $(DOCLETAPI_PACKAGES_FILE) $(
 $(DOCLETAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-breakiterator) ; \
@@ -499,7 +499,7 @@ $(TAGLETAPI_INDEX_FILE): $(TAGLETAPI_OPTIONS_FILE) $(TAGLETAPI_PACKAGES_FILE) $(
 $(TAGLETAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionOnly,-nonavbar) ; \
@@ -1074,7 +1074,7 @@ $(TREEAPI_INDEX_HTML): $(TREEAPI_OPTIONS_FILE) $(TREEAPI_PACKAGES_FILE) $(COREAP
 $(TREEAPI_OPTIONS_FILE):
 	$(prep-target)
 	@($(call OptionOnly,$(COMMON_JAVADOCFLAGS)) ; \
-	  $(call OptionOnly,-Xdoclint:none) ; \
+	  $(call OptionOnly,-Xdoclint:all) ; \
 	  $(call OptionPair,-sourcepath,$(RELEASEDOCS_SOURCEPATH)) ; \
 	  $(call OptionPair,-encoding,ascii) ; \
 	  $(call OptionPair,-doctitle,$(TREEAPI_DOCTITLE)) ; \
