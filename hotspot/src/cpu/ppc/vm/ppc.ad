@@ -1329,7 +1329,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (!false /* TODO: PPC port C->is_frameless_method()*/) {
     st->print("save return pc\n\t");
-    st->print("push frame %d\n\t", -framesize);
+    st->print("push frame %ld\n\t", -framesize);
   }
 }
 #endif
