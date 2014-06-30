@@ -271,6 +271,14 @@ public class Check {
             log.warning(LintCategory.STATIC, pos, msg, args);
     }
 
+    /** Warn about division by integer constant zero.
+     *  @param pos        Position to be used for error reporting.
+     */
+    void warnDivZero(DiagnosticPosition pos) {
+        if (lint.isEnabled(LintCategory.DIVZERO))
+            log.warning(LintCategory.DIVZERO, pos, "div.zero");
+    }
+
     /**
      * Report any deferred diagnostics.
      */
@@ -3393,15 +3401,19 @@ public class Check {
      *  @param operator      The operator for the expression
      *  @param operand       The right hand operand for the expression
      */
-    void checkDivZero(DiagnosticPosition pos, Symbol operator, Type operand) {
+    void checkDivZero(final DiagnosticPosition pos, Symbol operator, Type operand) {
         if (operand.constValue() != null
-            && lint.isEnabled(LintCategory.DIVZERO)
             && operand.getTag().isSubRangeOf(LONG)
             && ((Number) (operand.constValue())).longValue() == 0) {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                log.warning(LintCategory.DIVZERO, pos, "div.zero");
+                deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                    @Override
+                    public void report() {
+                        warnDivZero(pos);
+                    }
+                });
             }
         }
     }
