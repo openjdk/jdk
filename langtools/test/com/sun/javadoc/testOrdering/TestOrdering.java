@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829
+ * @bug 8039410 8042601 8042829 8049393
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
@@ -66,6 +66,9 @@ public class TestOrdering extends JavadocTester {
                 "pkg1");
         checkExit(Exit.OK);
         checkClassUseOrdering("pkg1/class-use/UsedClass.html");
+        checkOrder("pkg1/class-use/UsedClass.html", expectedClassUseMethodOrdering);
+        checkOrder("pkg1/class-use/UsedClass.html", expectedClassUseWithTypeParams);
+        checkOrder("pkg1/class-use/UsedClass.html", expectedInnerClassContructors);
     }
 
     enum ListOrder { NONE, REVERSE, SHUFFLE };
@@ -273,10 +276,44 @@ public class TestOrdering extends JavadocTester {
         return in.replace("/", ".");
     }
 
+    final String expectedInnerClassContructors[] = {
+        "../../pkg1/A.html#A-pkg1.UsedClass-",
+        "../../pkg1/B.A.html#A-pkg1.UsedClass-",
+        "../../pkg1/B.html#B-pkg1.UsedClass-",
+        "../../pkg1/A.C.html#C-pkg1.UsedClass-java.lang.Object:A-",
+        "../../pkg1/A.C.html#C-pkg1.UsedClass-java.util.Collection-",
+        "../../pkg1/A.C.html#C-pkg1.UsedClass-java.util.List-"
+    };
+
+    final String expectedClassUseMethodOrdering[] = {
+        "../../pkg1/MethodOrder.html#m--",
+        "../../pkg1/MethodOrder.html#m-byte:A-",
+        "../../pkg1/MethodOrder.html#m-double-",
+        "../../pkg1/MethodOrder.html#m-double-double-",
+        "../../pkg1/MethodOrder.html#m-double-java.lang.Double-",
+        "../../pkg1/MethodOrder.html#m-int-",
+        "../../pkg1/MethodOrder.html#m-int-int-",
+        "../../pkg1/MethodOrder.html#m-int-java.lang.Integer-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Double-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Double-double-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Double-java.lang.Double-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Integer-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Integer-int-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Integer-java.lang.Integer-",
+        "../../pkg1/MethodOrder.html#m-java.lang.Object:A-",
+        "../../pkg1/MethodOrder.html#m-java.util.ArrayList-",
+        "../../pkg1/MethodOrder.html#m-java.util.Collection-",
+        "../../pkg1/MethodOrder.html#m-java.util.List-"
+    };
+    final String expectedClassUseWithTypeParams[] = {
+        "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-",
+        "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass-",
+        "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-pkg1.UsedClass:A-",
+        "../../pkg1/MethodOrder.html#tpm-pkg1.UsedClass-java.lang.String-"
+    };
     final String expectedMethodOrdering[] = {
         "Add.html#add--",
         "Add.html#add-double-",
-        "Add.html#add-java.lang.Double-",
         "Add.html#add-double-byte-",
         "Add.html#add-double-double-",
         "Add.html#add-double-java.lang.Double-",
@@ -284,6 +321,7 @@ public class TestOrdering extends JavadocTester {
         "Add.html#add-float-int-",
         "Add.html#add-int-",
         "Add.html#add-int-float-",
+        "Add.html#add-java.lang.Double-",
         "Add.html#add-java.lang.Integer-"
     };
     final String expectedEnumOrdering[] = {

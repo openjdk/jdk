@@ -20,9 +20,24 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package pkg1;
-/**
- * For class-use testing
- */
-public class UsedClass<T> {}
+public class B {
+
+    /**
+     * constructor
+     * @param a param
+     */
+    public B(UsedClass a) {}
+
+    /**
+     * Inner class
+     */
+    static public class A {
+
+        /**
+         * constructor
+         * @param b param
+         */
+        public A(UsedClass b){}
+    }
+}

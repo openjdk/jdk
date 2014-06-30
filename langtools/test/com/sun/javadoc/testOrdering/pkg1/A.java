@@ -20,9 +20,41 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package pkg1;
-/**
- * For class-use testing
- */
-public class UsedClass<T> {}
+import java.util.Collection;
+import java.util.List;
+public class A {
+
+    /**
+     * Constructor
+     * @param a class
+     */
+    public A(UsedClass a) {}
+
+    /**
+     * test inner classes
+     */
+    public static class C {
+
+        /**
+         * inner classes constructor
+         * @param u a param
+         * @param array a param
+         */
+        public C(UsedClass u, Object[] array){}
+
+        /**
+         * inner classes constructor
+         * @param u a param
+         * @param collection a param
+         */
+        public C(UsedClass u, Collection collection){}
+
+        /**
+         * inner classes constructor
+         * @param u a param
+         * @param list a param
+         */
+        public C(UsedClass u, List list){}
+    }
+}
