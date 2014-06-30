@@ -243,7 +243,8 @@ public class PopupFactory {
         case HEAVY_WEIGHT_POPUP:
             Popup popup = getHeavyWeightPopup(owner, contents, ownerX, ownerY);
             if ((AccessController.doPrivileged(OSInfo.getOSTypeAction()) ==
-                OSInfo.OSType.MACOSX) && (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
+                OSInfo.OSType.MACOSX) && (owner != null) &&
+                (EmbeddedFrame.getAppletIfAncestorOf(owner) != null)) {
                 ((HeavyWeightPopup)popup).setCacheEnabled(false);
             }
             return popup;
