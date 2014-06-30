@@ -56,6 +56,9 @@ public class MetalBorders {
     static Object NO_BUTTON_ROLLOVER =
         new StringUIClientPropertyKey("NoButtonRollover");
 
+    /**
+     * The class represents the 3D border.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class Flush3DBorder extends AbstractBorder implements UIResource{
         public void paintBorder(Component c, Graphics g, int x, int y,
@@ -73,9 +76,15 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JButton}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ButtonBorder extends AbstractBorder implements UIResource {
 
+        /**
+         * The border insets.
+         */
         protected static Insets borderInsets = new Insets( 3, 3, 3, 3 );
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
@@ -188,6 +197,9 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JInternalFrame}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InternalFrameBorder extends AbstractBorder implements UIResource {
         private static final int corner = 14;
@@ -470,6 +482,9 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of an option dialog.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class OptionDialogBorder extends AbstractBorder implements UIResource {
         int titleHeight = 0;
@@ -532,8 +547,15 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JMenuBar}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuBarBorder extends AbstractBorder implements UIResource {
+
+        /**
+         * The border insets.
+         */
         protected static Insets borderInsets = new Insets( 1, 0, 1, 0 );
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
@@ -569,8 +591,15 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JMenuItem}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class MenuItemBorder extends AbstractBorder implements UIResource {
+
+        /**
+         * The border insets.
+         */
         protected static Insets borderInsets = new Insets( 2, 2, 2, 2 );
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
@@ -617,8 +646,15 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JPopupMenu}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class PopupMenuBorder extends AbstractBorder implements UIResource {
+
+        /**
+         * The border insets.
+         */
         protected static Insets borderInsets = new Insets( 3, 1, 2, 1 );
 
         public void paintBorder( Component c, Graphics g, int x, int y, int w, int h ) {
@@ -642,6 +678,9 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a rollover {@code Button}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class RolloverButtonBorder extends ButtonBorder {
 
@@ -693,9 +732,15 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JToolBar}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ToolBarBorder extends AbstractBorder implements UIResource, SwingConstants
     {
+        /**
+         * The instance of {@code MetalBumps}.
+         */
         protected MetalBumps bumps = new MetalBumps( 10, 10,
                                       MetalLookAndFeel.getControlHighlight(),
                                       MetalLookAndFeel.getControlDarkShadow(),
@@ -779,7 +824,9 @@ public class MetalBorders {
     private static Border buttonBorder;
 
     /**
-     * Returns a border instance for a JButton
+     * Returns a border instance for a {@code JButton}.
+     *
+     * @return a border instance for a {@code JButton}
      * @since 1.3
      */
     public static Border getButtonBorder() {
@@ -794,7 +841,9 @@ public class MetalBorders {
     private static Border textBorder;
 
     /**
-     * Returns a border instance for a text component
+     * Returns a border instance for a text component.
+     *
+     * @return a border instance for a text component
      * @since 1.3
      */
     public static Border getTextBorder() {
@@ -809,7 +858,9 @@ public class MetalBorders {
     private static Border textFieldBorder;
 
     /**
-     * Returns a border instance for a JTextField
+     * Returns a border instance for a {@code JTextField}.
+     *
+     * @return a border instance for a {@code JTextField}
      * @since 1.3
      */
     public static Border getTextFieldBorder() {
@@ -821,6 +872,9 @@ public class MetalBorders {
         return textFieldBorder;
     }
 
+    /**
+     * The class represents the border of a {@code JTestField}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TextFieldBorder extends Flush3DBorder {
 
@@ -846,6 +900,9 @@ public class MetalBorders {
         }
     }
 
+    /**
+     * The class represents the border of a {@code JScrollPane}.
+     */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class ScrollPaneBorder extends AbstractBorder implements UIResource {
         public void paintBorder(Component c, Graphics g, int x, int y,
@@ -892,7 +949,9 @@ public class MetalBorders {
     private static Border toggleButtonBorder;
 
     /**
-     * Returns a border instance for a JToggleButton
+     * Returns a border instance for a {@code JToggleButton}.
+     *
+     * @return a border instance for a {@code JToggleButton}
      * @since 1.3
      */
     public static Border getToggleButtonBorder() {
@@ -942,6 +1001,10 @@ public class MetalBorders {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class TableHeaderBorder extends javax.swing.border.AbstractBorder {
+
+        /**
+         * The border insets.
+         */
         protected Insets editorBorderInsets = new Insets( 2, 2, 2, 0 );
 
         public void paintBorder(Component c, Graphics g, int x, int y, int w, int h) {
@@ -964,7 +1027,9 @@ public class MetalBorders {
     }
 
     /**
-     * Returns a border instance for a Desktop Icon
+     * Returns a border instance for a Desktop Icon.
+     *
+     * @return a border instance for a Desktop Icon
      * @since 1.3
      */
     public static Border getDesktopIconBorder() {
