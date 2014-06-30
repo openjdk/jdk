@@ -814,22 +814,21 @@ public class Util {
     }
 
     /**
-     * A comparator for index file presentations,
-     *  1. this sorts first on simple names
+     * A comparator for index file presentations, and are sorted as follows:
+     *  1. sort on simple names of entities
      *  2. if equal, then compare the DocKind ex: Package, Interface etc.
-     *  3a. if equal and if the type is of ExecutableMemberDoc(Constructor, Fields),
-     *      a case insensitive comparison of parameter types
-     *  3b. if equal, a case sensitive comparison of parameter types
+     *  3a. if equal and if the type is of ExecutableMemberDoc(Constructor, Methods),
+     *      a case insensitive comparison of parameter the type signatures
+     *  3b. if equal, case sensitive comparison of the type signatures
      *  4. finally, if equal, compare the FQNs of the entities
      * @return a comparator for index file use
      */
     public static Comparator<Doc> makeComparatorForIndexUse() {
         return new Util.DocComparator<Doc>() {
             /**
-             * Compare two given Doc entities, first sort on name, then on the kinds,
+             * Compare two given Doc entities, first sort on names, then on the kinds,
              * then on the parameters only if the type is an instance of ExecutableMemberDocs,
-             * the parameters are compared ignoring the case first, then a case sensitive comparison,
-             * and finally the fully qualified names.
+             * the parameters are compared and finally the fully qualified names.
              *
              * @param d1 - a Doc element.
              * @param d2 - a Doc element.
@@ -862,17 +861,19 @@ public class Util {
         };
     }
     /**
-     * Comparator for ClassUse presentations, and sorts as follows:
-     * 1. member names
-     * 2. then fully qualified member names
-     * 3. then parameter types if applicable
+     * Comparator for ClassUse presentations, and sorted as follows,
+     * 1. compares simple names of entities
+     * 2. if equal, the fully qualified names of the entities
+     * 3. if equal and if applicable, the string representation of parameter types
+     * 3a. first by using case insensitive comparison
+     * 3b. second by using a case sensitive comparison
      * 4. finally the Doc kinds ie. package, class, interface etc.
      * @return a comparator to sort classes and members for class use
      */
     public static Comparator<Doc> makeComparatorForClassUse() {
         return new Util.DocComparator<Doc>() {
             /**
-             * Compare two given Doc entities, first sort on name, and if
+             * Compares two given Doc entities, first sort on name, and if
              * applicable on the fully qualified name, and if applicable
              * on the parameter types, and finally the DocKind.
              * @param d1 - a Doc element.
@@ -952,23 +953,37 @@ public class Util {
             return getDocKind(d1).compareTo(getDocKind(d2));
         }
         /**
-         * Compares two parameter arrays by comparing each Type of the parameter in the array,
-         * and as many as possible, otherwise compare their lengths.
+         * Compares arrays of parameters as a string representation of their types.
+         *
          * @param ignoreCase specifies case sensitive or insensitive comparison.
          * @param params1 the first parameter array.
          * @param params2 the first parameter array.
-         * @return a negative integer, zero, or a positive integer as the first
-         *         argument is less than, equal to, or greater than the second.
+         * @return a negative integer, zero, or a positive integer as the first argument is less
+         * than, equal to, or greater than the second.
          */
-        protected int compareParameters(boolean ignoreCase, Parameter[] params1, Parameter[] params2) {
-            // try to compare as many as possible
-            for (int i = 0; i < params1.length && i < params2.length; i++) {
-                int result = compareStrings(ignoreCase, params1[i].typeName(), params2[i].typeName());
-                if (result != 0) {
-                    return result;
-                }
+        protected int compareParameters(boolean caseSensitive,
+                                        Parameter[] params1,
+                                        Parameter[] params2) {
+            String s1 = getParametersAsString(params1);
+            String s2 = getParametersAsString(params2);
+            return compareStrings(caseSensitive, s1, s2);
+        }
+        /*
+         * This method returns a string representation solely for comparison purposes.
+         */
+        protected String getParametersAsString(Parameter[] params) {
+            StringBuilder sb = new StringBuilder();
+            for (Parameter param : params) {
+                Type t = param.type();
+                // add parameter type to arrays, as TypeMirror does.
+                String tname = (t.asParameterizedType() != null && t.getElementType() != null)
+                        ? t.getElementType() + t.dimension()
+                        : t.toString();
+                // prefix P for primitive and R for reference types, thus items will
+                // be ordered naturally.
+                sb.append(t.isPrimitive() ? "P" : "R").append("-").append(tname).append("-");
             }
-            return Integer.compare(params1.length, params2.length);
+            return sb.toString();
         }
 
         /**
