@@ -2766,7 +2766,7 @@ public class Gen extends JCTree.Visitor {
 
             boolean trackVar(VarSymbol var) {
                 return (var.owner.kind == MTH &&
-                        (var.flags() & (PARAMETER | HASINIT)) == 0 &&
+                        (var.flags() & PARAMETER) == 0 &&
                         analyzer.trackable(var));
             }
 

@@ -38,6 +38,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.server.JavacService;
 
 /**
  * Compile properties transform a properties file into a Java source file.
@@ -63,7 +64,8 @@ public class CompileProperties implements Transformer
     public void setExtra(Options a) {
     }
 
-    public boolean transform(Map<String,Set<URI>> pkgSrcs,
+    public boolean transform(JavacService javacService,
+                             Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,
                              Map<String,Set<String>> oldPackageDependents,

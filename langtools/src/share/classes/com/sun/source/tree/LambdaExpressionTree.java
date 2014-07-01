@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,11 @@ import java.util.List;
 public interface LambdaExpressionTree extends ExpressionTree {
 
     /**
-     * Lambda expressions come in two forms: (i) expression lambdas, whose body
-     * is an expression, and (ii) statement lambdas, whose body is a block
+     * Lambda expressions come in two forms:
+     * <ul compact>
+     * <li> expression lambdas, whose body is an expression, and
+     * <li> statement lambdas, whose body is a block
+     * </ul>
      */
     @jdk.Exported
     public enum BodyKind {
@@ -52,7 +55,21 @@ public interface LambdaExpressionTree extends ExpressionTree {
         STATEMENT
     }
 
+    /**
+     * Returns the parameters of this lambda expression.
+     * @return the parameters
+     */
     List<? extends VariableTree> getParameters();
+
+    /**
+     * Returns the body of the lambda expression.
+     * @return the body
+     */
     Tree getBody();
+
+    /**
+     * Returns the kind of the body of the lambda expression.
+     * @return the kind of the body
+     */
     BodyKind getBodyKind();
 }

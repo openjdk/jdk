@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,21 @@ import java.util.List;
  */
 @jdk.Exported
 public interface ParamTree extends BlockTagTree {
+    /**
+     * Returns true if this is documenting a type parameter.
+     * @return true if this is documenting a type parameter
+     */
     boolean isTypeParameter();
+
+    /**
+     * Returns the name of the parameter.
+     * @return the name of the parameter
+     */
     IdentifierTree getName();
+
+    /**
+     * Returns the description of the parameter.
+     * @return the description
+     */
     List<? extends DocTree> getDescription();
 }

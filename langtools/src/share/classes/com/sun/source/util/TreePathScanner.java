@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,10 @@ import com.sun.source.tree.*;
 public class TreePathScanner<R, P> extends TreeScanner<R, P> {
 
     /**
-     * Scan a tree from a position identified by a TreePath.
+     * Scans a tree from a position identified by a TreePath.
+     * @param path the path identifying the node to be scanned
+     * @param p a parameter value passed to visit methods
+     * @return the result value from the visit method
      */
     public R scan(TreePath path, P p) {
         this.path = path;
@@ -54,8 +57,9 @@ public class TreePathScanner<R, P> extends TreeScanner<R, P> {
     }
 
     /**
-     * Scan a single node.
+     * Scans a single node.
      * The current path is updated for the duration of the scan.
+     * @return the result value from the visit method
      */
     @Override
     public R scan(Tree tree, P p) {
@@ -72,8 +76,9 @@ public class TreePathScanner<R, P> extends TreeScanner<R, P> {
     }
 
     /**
-     * Get the current path for the node, as built up by the currently
+     * Returns the current path for the node, as built up by the currently
      * active set of scan calls.
+     * @return the current path
      */
     public TreePath getCurrentPath() {
         return path;

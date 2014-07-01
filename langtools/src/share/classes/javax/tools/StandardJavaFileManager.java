@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -155,7 +155,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
     boolean isSameFile(FileObject a, FileObject b);
 
     /**
-     * Gets file objects representing the given files.
+     * Returns file objects representing the given files.
      *
      * @param files a list of files
      * @return a list of file objects
@@ -166,7 +166,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
         Iterable<? extends File> files);
 
     /**
-     * Gets file objects representing the given files.
+     * Returns file objects representing the given files.
      * Convenience method equivalent to:
      *
      * <pre>
@@ -183,7 +183,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
     Iterable<? extends JavaFileObject> getJavaFileObjects(File... files);
 
     /**
-     * Gets file objects representing the given file names.
+     * Returns file objects representing the given file names.
      *
      * @param names a list of file names
      * @return a list of file objects
@@ -194,7 +194,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
         Iterable<String> names);
 
     /**
-     * Gets file objects representing the given file names.
+     * Returns file objects representing the given file names.
      * Convenience method equivalent to:
      *
      * <pre>
@@ -227,7 +227,7 @@ public interface StandardJavaFileManager extends JavaFileManager {
         throws IOException;
 
     /**
-     * Gets the path associated with the given location.
+     * Returns the path associated with the given location.
      *
      * @param location a location
      * @return a list of files or {@code null} if this location has no

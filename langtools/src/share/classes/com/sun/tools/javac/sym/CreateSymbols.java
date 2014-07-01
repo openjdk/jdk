@@ -490,7 +490,6 @@ public class CreateSymbols extends AbstractProcessor {
             "org.xml.sax",
             "org.xml.sax.ext",
             "org.xml.sax.helpers",
-            "com.sun.java.browser.dom",
             "org.w3c.dom",
             "org.w3c.dom.bootstrap",
             "org.w3c.dom.ls",

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -57,7 +57,7 @@ public interface FileObject {
     URI toUri();
 
     /**
-     * Gets a user-friendly name for this file object.  The exact
+     * Returns a user-friendly name for this file object.  The exact
      * value returned is not specified but implementations should take
      * care to preserve names as given by the user.  For example, if
      * the user writes the filename {@code "BobsApp\Test.java"} on
@@ -71,7 +71,7 @@ public interface FileObject {
     String getName();
 
     /**
-     * Gets an InputStream for this file object.
+     * Returns an InputStream for this file object.
      *
      * @return an InputStream
      * @throws IllegalStateException if this file object was
@@ -83,7 +83,7 @@ public interface FileObject {
     InputStream openInputStream() throws IOException;
 
     /**
-     * Gets an OutputStream for this file object.
+     * Returns an OutputStream for this file object.
      *
      * @return an OutputStream
      * @throws IllegalStateException if this file object was
@@ -95,7 +95,7 @@ public interface FileObject {
     OutputStream openOutputStream() throws IOException;
 
     /**
-     * Gets a reader for this object.  The returned reader will
+     * Returns a reader for this object.  The returned reader will
      * replace bytes that cannot be decoded with the default
      * translation character.  In addition, the reader may report a
      * diagnostic unless {@code ignoreEncodingErrors} is true.
@@ -111,7 +111,7 @@ public interface FileObject {
     Reader openReader(boolean ignoreEncodingErrors) throws IOException;
 
     /**
-     * Gets the character content of this file object, if available.
+     * Returns the character content of this file object, if available.
      * Any byte that cannot be decoded will be replaced by the default
      * translation character.  In addition, a diagnostic may be
      * reported unless {@code ignoreEncodingErrors} is true.
@@ -127,7 +127,7 @@ public interface FileObject {
     CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException;
 
     /**
-     * Gets a Writer for this file object.
+     * Returns a Writer for this file object.
      *
      * @return a Writer
      * @throws IllegalStateException if this file object was
@@ -139,7 +139,7 @@ public interface FileObject {
     Writer openWriter() throws IOException;
 
     /**
-     * Gets the time this file object was last modified.  The time is
+     * Returns the time this file object was last modified.  The time is
      * measured in milliseconds since the epoch (00:00:00 GMT, January
      * 1, 1970).
      *

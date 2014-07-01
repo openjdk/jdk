@@ -320,7 +320,9 @@ public class LambdaToMethod extends TreeTranslator {
 
         ListBuffer<JCExpression> syntheticInits = new ListBuffer<>();
 
-        if (!sym.isStatic()) {
+        if (localContext.methodReferenceReceiver != null) {
+            syntheticInits.append(localContext.methodReferenceReceiver);
+        } else if (!sym.isStatic()) {
             syntheticInits.append(makeThis(
                     sym.owner.enclClass().asType(),
                     localContext.owner.enclClass()));
@@ -363,16 +365,9 @@ public class LambdaToMethod extends TreeTranslator {
 
         //first determine the method symbol to be used to generate the sam instance
         //this is either the method reference symbol, or the bridged reference symbol
-        Symbol refSym = localContext.needsBridge()
-                ? localContext.bridgeSym
-                : localContext.isSignaturePolymorphic()
+        Symbol refSym = localContext.isSignaturePolymorphic()
                 ? localContext.sigPolySym
                 : tree.sym;
-
-        //build the bridge method, if needed
-        if (localContext.needsBridge()) {
-            bridgeMemberReference(tree, localContext);
-        }
 
         //the qualifying expression is treated as a special captured arg
         JCExpression init;
@@ -743,54 +738,51 @@ public class LambdaToMethod extends TreeTranslator {
     // </editor-fold>
 
     /**
-     * Generate an adapter method "bridge" for a method reference which cannot
-     * be used directly.
+     * Converts a method reference which cannot be used directly into a lambda
      */
-    private class MemberReferenceBridger {
+    private class MemberReferenceToLambda {
 
         private final JCMemberReference tree;
         private final ReferenceTranslationContext localContext;
+        private final Symbol owner;
         private final ListBuffer<JCExpression> args = new ListBuffer<>();
         private final ListBuffer<JCVariableDecl> params = new ListBuffer<>();
 
-        MemberReferenceBridger(JCMemberReference tree, ReferenceTranslationContext localContext) {
+        private JCExpression receiverExpression = null;
+
+        MemberReferenceToLambda(JCMemberReference tree, ReferenceTranslationContext localContext, Symbol owner) {
             this.tree = tree;
             this.localContext = localContext;
+            this.owner = owner;
         }
 
-        /**
-         * Generate the bridge
-         */
-        JCMethodDecl bridge() {
+        JCLambda lambda() {
             int prevPos = make.pos;
             try {
                 make.at(tree);
                 Type samDesc = localContext.bridgedRefSig();
                 List<Type> samPTypes = samDesc.getParameterTypes();
 
-                //an extra argument is prepended to the signature of the bridge in case
-                //the member reference is an instance method reference (in which case
-                //the receiver expression is passed to the bridge itself).
-                Type recType = null;
+                // an extra argument is prepended in the case where the member
+                // reference is an unbound instance method reference (in which
+                // case the receiver expression in passed.
+                VarSymbol rcvr;
                 switch (tree.kind) {
-                    case IMPLICIT_INNER:
-                        recType = tree.sym.owner.type.getEnclosingType();
-                        break;
                     case BOUND:
-                        recType = tree.getQualifierExpression().type;
+                        rcvr = addParameter("rec$", tree.getQualifierExpression().type, false);
+                        receiverExpression = attr.makeNullCheck(tree.getQualifierExpression());
                         break;
                     case UNBOUND:
-                        recType = samPTypes.head;
+                        rcvr = addParameter("rec$", samPTypes.head, false);
                         samPTypes = samPTypes.tail;
+                        break;
+                    default:
+                        rcvr = null;
                         break;
                 }
 
-                //generate the parameter list for the bridged member reference - the
-                //bridge signature will match the signature of the target sam descriptor
-
-                VarSymbol rcvr = (recType == null)
-                        ? null
-                        : addParameter("rec$", recType, false);
+                // generate the parameter list for the coverted member reference.
+                // the signature will match the signature of the target sam descriptor
 
                 List<Type> refPTypes = tree.sym.type.getParameterTypes();
                 int refSize = refPTypes.size();
@@ -809,60 +801,46 @@ public class LambdaToMethod extends TreeTranslator {
                     addParameter("xva$" + i, tree.varargsElement, true);
                 }
 
-                //generate the bridge method declaration
-                JCMethodDecl bridgeDecl = make.MethodDef(make.Modifiers(localContext.bridgeSym.flags()),
-                        localContext.bridgeSym.name,
-                        make.QualIdent(samDesc.getReturnType().tsym),
-                        List.<JCTypeParameter>nil(),
-                        params.toList(),
-                        tree.sym.type.getThrownTypes() == null
-                        ? List.<JCExpression>nil()
-                        : make.Types(tree.sym.type.getThrownTypes()),
-                        null,
-                        null);
-                bridgeDecl.sym = (MethodSymbol) localContext.bridgeSym;
-                bridgeDecl.type = localContext.bridgeSym.type =
-                        types.createMethodTypeWithParameters(samDesc, TreeInfo.types(params.toList()));
-
-                //bridge method body generation - this can be either a method call or a
+                //body generation - this can be either a method call or a
                 //new instance creation expression, depending on the member reference kind
-                JCExpression bridgeExpr = (tree.getMode() == ReferenceMode.INVOKE)
-                        ? bridgeExpressionInvoke(makeReceiver(rcvr))
-                        : bridgeExpressionNew();
+                JCExpression expr = (tree.getMode() == ReferenceMode.INVOKE)
+                        ? expressionInvoke(rcvr)
+                        : expressionNew();
 
-                //the body is either a return expression containing a method call,
-                //or the method call itself, depending on whether the return type of
-                //the bridge is non-void/void.
-                bridgeDecl.body = makeLambdaExpressionBody(bridgeExpr, bridgeDecl);
-
-                return bridgeDecl;
+                JCLambda slam = make.Lambda(params.toList(), expr);
+                slam.targets = tree.targets;
+                slam.type = tree.type;
+                slam.pos = tree.pos;
+                return slam;
             } finally {
                 make.at(prevPos);
             }
         }
-        //where
-            private JCExpression makeReceiver(VarSymbol rcvr) {
-                if (rcvr == null) return null;
-                JCExpression rcvrExpr = make.Ident(rcvr);
-                Type rcvrType = tree.sym.enclClass().type;
-                if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
-                    rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
-                }
-                return rcvrExpr;
+
+        JCExpression getReceiverExpression() {
+            return receiverExpression;
+        }
+
+        private JCExpression makeReceiver(VarSymbol rcvr) {
+            if (rcvr == null) return null;
+            JCExpression rcvrExpr = make.Ident(rcvr);
+            Type rcvrType = tree.sym.enclClass().type;
+            if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
+                rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
             }
+            return rcvrExpr;
+        }
 
         /**
-         * determine the receiver of the bridged method call - the receiver can
-         * be either the synthetic receiver parameter or a type qualifier; the
-         * original qualifier expression is never used here, as it might refer
-         * to symbols not available in the static context of the bridge
+         * determine the receiver of the method call - the receiver can
+         * be a type qualifier, the synthetic receiver parameter or 'super'.
          */
-        private JCExpression bridgeExpressionInvoke(JCExpression rcvr) {
+        private JCExpression expressionInvoke(VarSymbol rcvr) {
             JCExpression qualifier =
                     tree.sym.isStatic() ?
                         make.Type(tree.sym.owner.type) :
                         (rcvr != null) ?
-                            rcvr :
+                            makeReceiver(rcvr) :
                             tree.getQualifierExpression();
 
             //create the qualifier expression
@@ -881,10 +859,9 @@ public class LambdaToMethod extends TreeTranslator {
         }
 
         /**
-         * the enclosing expression is either 'null' (no enclosing type) or set
-         * to the first bridge synthetic parameter
+         * Lambda body to use for a 'new'.
          */
-        private JCExpression bridgeExpressionNew() {
+        private JCExpression expressionNew() {
             if (tree.kind == ReferenceKind.ARRAY_CTOR) {
                 //create the array creation expression
                 JCNewArray newArr = make.NewArray(
@@ -894,15 +871,10 @@ public class LambdaToMethod extends TreeTranslator {
                 newArr.type = tree.getQualifierExpression().type;
                 return newArr;
             } else {
-                JCExpression encl = null;
-                switch (tree.kind) {
-                    case UNBOUND:
-                    case IMPLICIT_INNER:
-                        encl = make.Ident(params.first());
-                }
-
                 //create the instance creation expression
-                JCNewClass newClass = make.NewClass(encl,
+                //note that method reference syntax does not allow an explicit
+                //enclosing class (so the enclosing class is null)
+                JCNewClass newClass = make.NewClass(null,
                         List.<JCExpression>nil(),
                         make.Type(tree.getQualifierExpression().type),
                         convertArgs(tree.sym, args.toList(), tree.varargsElement),
@@ -916,22 +888,14 @@ public class LambdaToMethod extends TreeTranslator {
         }
 
         private VarSymbol addParameter(String name, Type p, boolean genArg) {
-            VarSymbol vsym = new VarSymbol(0, names.fromString(name), p, localContext.bridgeSym);
+            VarSymbol vsym = new VarSymbol(PARAMETER | SYNTHETIC, names.fromString(name), p, owner);
+            vsym.pos = tree.pos;
             params.append(make.VarDef(vsym, null));
             if (genArg) {
                 args.append(make.Ident(vsym));
             }
             return vsym;
         }
-    }
-
-    /**
-     * Bridges a member reference - this is needed when:
-     * * Var args in the referenced method need to be flattened away
-     * * super is used
-     */
-    private void bridgeMemberReference(JCMemberReference tree, ReferenceTranslationContext localContext) {
-        kInfo.addMethod(new MemberReferenceBridger(tree, localContext).bridge());
     }
 
     private MethodType typeToMethodType(Type mt) {
@@ -1252,9 +1216,25 @@ public class LambdaToMethod extends TreeTranslator {
 
         @Override
         public void visitLambda(JCLambda tree) {
+            analyzeLambda(tree, "lambda.stat");
+        }
+
+        private void analyzeLambda(JCLambda tree, JCExpression methodReferenceReceiver) {
+            // Translation of the receiver expression must occur first
+            JCExpression rcvr = translate(methodReferenceReceiver);
+            LambdaTranslationContext context = analyzeLambda(tree, "mref.stat.1");
+            if (rcvr != null) {
+                context.methodReferenceReceiver = rcvr;
+            }
+        }
+
+        private LambdaTranslationContext analyzeLambda(JCLambda tree, String statKey) {
             List<Frame> prevStack = frameStack;
             try {
-                LambdaTranslationContext context = (LambdaTranslationContext)makeLambdaContext(tree);
+                LambdaTranslationContext context = new LambdaTranslationContext(tree);
+                if (dumpLambdaToMethodStats) {
+                    log.note(tree, statKey, context.needsAltMetafactory(), context.translatedSym);
+                }
                 frameStack = frameStack.prepend(new Frame(tree));
                 for (JCVariableDecl param : tree.params) {
                     context.addSymbol(param.sym, PARAM);
@@ -1263,6 +1243,7 @@ public class LambdaToMethod extends TreeTranslator {
                 contextMap.put(tree, context);
                 super.visitLambda(tree);
                 context.complete();
+                return context;
             }
             finally {
                 frameStack = prevStack;
@@ -1351,47 +1332,24 @@ public class LambdaToMethod extends TreeTranslator {
          * information added in the LambdaToMethod pass will have the wrong
          * signature. Hooks between Lower and LambdaToMethod have been added to
          * handle normal "new" in this case. This visitor converts potentially
-         * effected method references into a lambda containing a normal "new" of
-         * the class.
+         * affected method references into a lambda containing a normal
+         * expression.
          *
          * @param tree
          */
         @Override
         public void visitReference(JCMemberReference tree) {
-            if (tree.getMode() == ReferenceMode.NEW
-                    && tree.kind != ReferenceKind.ARRAY_CTOR
-                    && tree.sym.owner.isLocal()) {
-                MethodSymbol consSym = (MethodSymbol) tree.sym;
-                List<Type> ptypes = ((MethodType) consSym.type).getParameterTypes();
-                Type classType = consSym.owner.type;
-
-                // Build lambda parameters
-                // partially cloned from TreeMaker.Params until 8014021 is fixed
-                Symbol owner = owner();
-                ListBuffer<JCVariableDecl> paramBuff = new ListBuffer<>();
-                int i = 0;
-                for (List<Type> l = ptypes; l.nonEmpty(); l = l.tail) {
-                    JCVariableDecl param = make.Param(make.paramName(i++), l.head, owner);
-                    param.sym.pos = tree.pos;
-                    paramBuff.append(param);
-                }
-                List<JCVariableDecl> params = paramBuff.toList();
-
-                // Make new-class call
-                JCNewClass nc = makeNewClass(classType, make.Idents(params));
-                nc.pos = tree.pos;
-
-                // Make lambda holding the new-class call
-                JCLambda slam = make.Lambda(params, nc);
-                slam.targets = tree.targets;
-                slam.type = tree.type;
-                slam.pos = tree.pos;
-
-                // Now it is a lambda, process as such
-                visitLambda(slam);
+            ReferenceTranslationContext rcontext = new ReferenceTranslationContext(tree);
+            contextMap.put(tree, rcontext);
+            if (rcontext.needsConversionToLambda()) {
+                 // Convert to a lambda, and process as such
+                MemberReferenceToLambda conv = new MemberReferenceToLambda(tree, rcontext, owner());
+                analyzeLambda(conv.lambda(), conv.getReceiverExpression());
             } else {
                 super.visitReference(tree);
-                contextMap.put(tree, makeReferenceContext(tree));
+                if (dumpLambdaToMethodStats) {
+                    log.note(tree, "mref.stat", rcontext.needsAltMetafactory(), null);
+                }
             }
         }
 
@@ -1646,14 +1604,6 @@ public class LambdaToMethod extends TreeTranslator {
             }
         }
 
-        private TranslationContext<JCLambda> makeLambdaContext(JCLambda tree) {
-            return new LambdaTranslationContext(tree);
-        }
-
-        private TranslationContext<JCMemberReference> makeReferenceContext(JCMemberReference tree) {
-            return new ReferenceTranslationContext(tree);
-        }
-
         private class Frame {
             final JCTree tree;
             List<Symbol> locals;
@@ -1773,6 +1723,13 @@ public class LambdaToMethod extends TreeTranslator {
              */
             final Set<Symbol> freeVarProcessedLocalClasses;
 
+            /**
+             * For method references converted to lambdas.  The method
+             * reference receiver expression. Must be treated like a captured
+             * variable.
+             */
+            JCExpression methodReferenceReceiver;
+
             LambdaTranslationContext(JCLambda tree) {
                 super(tree);
                 Frame frame = frameStack.head;
@@ -1792,9 +1749,6 @@ public class LambdaToMethod extends TreeTranslator {
                 // This symbol will be filled-in in complete
                 this.translatedSym = makePrivateSyntheticMethod(0, null, null, owner.enclClass());
 
-                if (dumpLambdaToMethodStats) {
-                    log.note(tree, "lambda.stat", needsAltMetafactory(), translatedSym);
-                }
                 translatedSymbols = new EnumMap<>(LambdaSymbolKind.class);
 
                 translatedSymbols.put(PARAM, new LinkedHashMap<Symbol, Symbol>());
@@ -1992,7 +1946,11 @@ public class LambdaToMethod extends TreeTranslator {
                 // If instance access isn't needed, make it static.
                 // Interface instance methods must be default methods.
                 // Lambda methods are private synthetic.
+                // Inherit ACC_STRICT from the enclosing method, or, for clinit,
+                // from the class.
                 translatedSym.flags_field = SYNTHETIC | LAMBDA_METHOD |
+                        owner.flags_field & STRICTFP |
+                        owner.owner.flags_field & STRICTFP |
                         PRIVATE |
                         (thisReferenced? (inInterface? DEFAULT : 0) : STATIC);
 
@@ -2006,6 +1964,13 @@ public class LambdaToMethod extends TreeTranslator {
                 // 2) enclosing locals captured by the lambda expression
                 for (Symbol thisSym : getSymbolMap(CAPTURED_VAR).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
+                }
+                if (methodReferenceReceiver != null) {
+                    params.append(make.VarDef(
+                            make.Modifiers(PARAMETER|FINAL),
+                            names.fromString("$rcvr$"),
+                            make.Type(methodReferenceReceiver.type),
+                            null));
                 }
                 for (Symbol thisSym : getSymbolMap(PARAM).values()) {
                     params.append(make.VarDef((VarSymbol) thisSym, null));
@@ -2034,100 +1999,31 @@ public class LambdaToMethod extends TreeTranslator {
          * and the used by the main translation routines in order to adjust method
          * references (i.e. in case a bridge is needed)
          */
-        private class ReferenceTranslationContext extends TranslationContext<JCMemberReference> {
+        private final class ReferenceTranslationContext extends TranslationContext<JCMemberReference> {
 
             final boolean isSuper;
-            final Symbol bridgeSym;
             final Symbol sigPolySym;
 
             ReferenceTranslationContext(JCMemberReference tree) {
                 super(tree);
                 this.isSuper = tree.hasKind(ReferenceKind.SUPER);
-                this.bridgeSym = needsBridge()
-                        ? makePrivateSyntheticMethod(isSuper ? 0 : STATIC,
-                                              referenceBridgeName(), null,
-                                              owner.enclClass())
-                        : null;
                 this.sigPolySym = isSignaturePolymorphic()
                         ? makePrivateSyntheticMethod(tree.sym.flags(),
                                               tree.sym.name,
                                               bridgedRefSig(),
                                               tree.sym.enclClass())
                         : null;
-                if (dumpLambdaToMethodStats) {
-                    String key = bridgeSym == null ?
-                            "mref.stat" : "mref.stat.1";
-                    log.note(tree, key, needsAltMetafactory(), bridgeSym);
-                }
             }
 
             /**
              * Get the opcode associated with this method reference
              */
             int referenceKind() {
-                return LambdaToMethod.this.referenceKind(needsBridge()
-                        ? bridgeSym
-                        : tree.sym);
+                return LambdaToMethod.this.referenceKind(tree.sym);
             }
 
             boolean needsVarArgsConversion() {
                 return tree.varargsElement != null;
-            }
-
-            /**
-             * Generate a disambiguating string to increase stability (important
-             * if serialized)
-             *
-             * @return String to differentiate synthetic lambda method names
-             */
-            private String referenceBridgeDisambiguation() {
-                StringBuilder buf = new StringBuilder();
-                // Append the enclosing method signature to differentiate
-                // overloaded enclosing methods.
-                if (owner.type != null) {
-                    buf.append(typeSig(owner.type));
-                    buf.append(":");
-                }
-
-                // Append qualifier type
-                buf.append(classSig(tree.sym.owner.type));
-
-                // Note static/instance
-                buf.append(tree.sym.isStatic()? " S " : " I ");
-
-                // Append referenced signature
-                buf.append(typeSig(tree.sym.erasure(types)));
-
-                return buf.toString();
-            }
-
-            /**
-             * Construct a unique stable name for the method reference bridge
-             *
-             * @return Name to use for the synthetic method name
-             */
-            private Name referenceBridgeName() {
-                StringBuilder buf = new StringBuilder();
-                // Append lambda ID, this is semantically significant
-                buf.append(names.lambda);
-                // Note that it is a method reference bridge
-                buf.append("MR$");
-                // Append the enclosing method name
-                buf.append(enclosingMethodName());
-                buf.append('$');
-                // Append the referenced method name
-                buf.append(syntheticMethodNameComponent(tree.sym.name));
-                buf.append('$');
-                // Append a hash of the disambiguating string : enclosing method
-                // signature, etc.
-                String disam = referenceBridgeDisambiguation();
-                buf.append(Integer.toHexString(disam.hashCode()));
-                buf.append('$');
-                // The above appended name components may not be unique, append
-                // a count based on the above name components.
-                buf.append(syntheticMethodNameCounts.getIndex(buf));
-                String result = buf.toString();
-                return names.fromString(result);
             }
 
             /**
@@ -2165,13 +2061,16 @@ public class LambdaToMethod extends TreeTranslator {
             }
 
             /**
-             * Does this reference needs a bridge (i.e. var args need to be
-             * expanded or "super" is used)
+             * Does this reference need to be converted to a lambda
+             * (i.e. var args need to be expanded or "super" is used)
              */
-            final boolean needsBridge() {
+            final boolean needsConversionToLambda() {
                 return isSuper || needsVarArgsConversion() || isArrayOp() ||
                         isPrivateInOtherClass() ||
-                        !receiverAccessible();
+                        !receiverAccessible() ||
+                        (tree.getMode() == ReferenceMode.NEW &&
+                          tree.kind != ReferenceKind.ARRAY_CTOR &&
+                          (tree.sym.owner.isLocal() || tree.sym.owner.isInner()));
             }
 
             Type generatedRefSig() {

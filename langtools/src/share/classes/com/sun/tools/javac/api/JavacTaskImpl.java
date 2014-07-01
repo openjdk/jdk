@@ -126,6 +126,9 @@ public class JavacTaskImpl extends BasicJavacTask {
             initContext();
             notYetEntered = new HashMap<>();
             compilerMain.setAPIMode(true);
+            compiler = JavaCompiler.instance(context);
+            compiler.keepComments = true;
+            compiler.genEndPos = true;
             result = compilerMain.compile(args, classNames, context, fileObjects, processors);
             cleanup();
             return result;
