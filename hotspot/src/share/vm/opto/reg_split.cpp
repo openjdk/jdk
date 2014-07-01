@@ -93,7 +93,7 @@ Node *PhaseChaitin::get_spillcopy_wide(MachSpillCopyNode::SpillType spill_type, 
       // Here we assume a trip through memory is required.
       w_i_mask = &C->FIRST_STACK_mask();
   }
-  return new (C) MachSpillCopyNode(spill_type, def, *w_i_mask, *w_o_mask );
+  return new MachSpillCopyNode(spill_type, def, *w_i_mask, *w_o_mask );
 }
 
 //------------------------------insert_proj------------------------------------
@@ -663,7 +663,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
           // create a new phi node and insert it into the block
           // type is taken from left over pointer to a predecessor
           assert(n3,"No non-NULL reaching DEF for a Phi");
-          phi = new (C) PhiNode(b->head(), n3->bottom_type());
+          phi = new PhiNode(b->head(), n3->bottom_type());
           // initialize the Reaches entry for this LRG
           Reachblock[slidx] = phi;
 
@@ -1075,7 +1075,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
                   // First Split-UP to move value into Register
                   uint def_ideal = def->ideal_reg();
                   const RegMask* tmp_rm = Matcher::idealreg2regmask[def_ideal];
-                  Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::MemToReg, def, dmask, *tmp_rm);
+                  Node *spill = new MachSpillCopyNode(MachSpillCopyNode::MemToReg, def, dmask, *tmp_rm);
                   insert_proj( b, insidx, spill, maxlrg );
                   // Then Split-DOWN as if previous Split was DEF
                   maxlrg = split_USE(MachSpillCopyNode::RegToMem, spill,b,n,inpidx,maxlrg,false,false, splits,slidx);
@@ -1229,7 +1229,7 @@ uint PhaseChaitin::Split(uint maxlrg, ResourceArea* split_arena) {
               if (C->check_node_count(NodeLimitFudgeFactor, out_of_nodes)) {  // Check when generating nodes
                 return 0;
               }
-              Node *spill = new (C) MachSpillCopyNode(MachSpillCopyNode::MemToReg, use,use_rm,def_rm);
+              Node *spill = new MachSpillCopyNode(MachSpillCopyNode::MemToReg, use,use_rm,def_rm);
               n->set_req(copyidx,spill);
               n->as_MachSpillCopy()->set_in_RegMask(def_rm);
               // Put the spill just before the copy

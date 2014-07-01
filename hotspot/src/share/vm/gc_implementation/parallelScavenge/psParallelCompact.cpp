@@ -2061,7 +2061,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     TraceCollectorStats tcs(counters());
     TraceMemoryManagerStats tms(true /* Full GC */,gc_cause);
 
-    if (TraceGen1Time) accumulated_time()->start();
+    if (TraceOldGenTime) accumulated_time()->start();
 
     // Let the size policy know we're starting
     size_policy->major_collection_begin();
@@ -2188,7 +2188,7 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     // Resize the metaspace capacity after a collection
     MetaspaceGC::compute_new_size();
 
-    if (TraceGen1Time) accumulated_time()->stop();
+    if (TraceOldGenTime) accumulated_time()->stop();
 
     if (PrintGC) {
       if (PrintGCDetails) {

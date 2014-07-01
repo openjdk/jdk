@@ -540,7 +540,7 @@ public final class DebugLogger {
 
     /**
      * Shorthand for outputting a log string as log level
-     * {@link java.util.logging.Level#FINE} on this logger
+     * {@link java.util.logging.Level#SEVERE} on this logger
      * @param objs object array to log - use this to perform lazy concatenation to avoid unconditional toString overhead
      */
     public void severe(final Object... objs) {

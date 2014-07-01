@@ -966,10 +966,11 @@ public class TransTypes extends TreeTranslator {
             translateClass((ClassSymbol)st.tsym);
         }
 
-        Env<AttrContext> myEnv = enter.typeEnvs.remove(c);
-        if (myEnv == null) {
+        Env<AttrContext> myEnv = enter.getEnv(c);
+        if (myEnv == null || (c.flags_field & TYPE_TRANSLATED) != 0) {
             return;
         }
+        c.flags_field |= TYPE_TRANSLATED;
 
         /*  The two assertions below are set for early detection of any attempt
          *  to translate a class that:
