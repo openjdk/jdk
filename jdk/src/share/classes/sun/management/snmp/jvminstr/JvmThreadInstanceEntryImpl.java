@@ -139,7 +139,7 @@ public class JvmThreadInstanceEntryImpl
                           "Unexpected exception: " + r);
                 log.debug("getJvmThreadInstState",r);
             }
-            Byte[] result = { new Byte(bitmap[0]), new Byte(bitmap[1]) };
+            Byte[] result = {bitmap[0], bitmap[1]};
             return result;
         }
     }

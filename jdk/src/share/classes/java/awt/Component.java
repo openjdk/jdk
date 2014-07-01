@@ -8640,7 +8640,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (changeSupport == null || oldValue == newValue) {
             return;
         }
-        firePropertyChange(propertyName, new Character(oldValue), new Character(newValue));
+        firePropertyChange(propertyName, Character.valueOf(oldValue), Character.valueOf(newValue));
     }
 
     /**

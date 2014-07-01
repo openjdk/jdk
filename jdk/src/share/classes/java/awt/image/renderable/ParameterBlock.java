@@ -337,7 +337,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(byte b) {
-        return add(new Byte(b));
+        return add(Byte.valueOf(b));
     }
 
     /**
@@ -348,7 +348,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(char c) {
-        return add(new Character(c));
+        return add(Character.valueOf(c));
     }
 
     /**
@@ -359,7 +359,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(short s) {
-        return add(new Short(s));
+        return add(Short.valueOf(s));
     }
 
     /**
@@ -441,7 +441,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(byte b, int index) {
-        return set(new Byte(b), index);
+        return set(Byte.valueOf(b), index);
     }
 
     /**
@@ -457,7 +457,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(char c, int index) {
-        return set(new Character(c), index);
+        return set(Character.valueOf(c), index);
     }
 
     /**
@@ -473,7 +473,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(short s, int index) {
-        return set(new Short(s), index);
+        return set(Short.valueOf(s), index);
     }
 
     /**
