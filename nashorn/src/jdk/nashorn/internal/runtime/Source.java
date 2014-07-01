@@ -142,29 +142,34 @@ public final class Source implements Loggable {
         long lastModified();
 
         char[] array();
+
+        boolean isEvalCode();
     }
 
     private static class RawData implements Data {
         private final char[] array;
+        private final boolean evalCode;
         private int hash;
 
-        private RawData(final char[] array) {
+        private RawData(final char[] array, final boolean evalCode) {
             this.array = Objects.requireNonNull(array);
+            this.evalCode = evalCode;
         }
 
-        private RawData(final String source) {
+        private RawData(final String source, final boolean evalCode) {
             this.array = Objects.requireNonNull(source).toCharArray();
+            this.evalCode = evalCode;
         }
 
         private RawData(final Reader reader) throws IOException {
-            this(readFully(reader));
+            this(readFully(reader), false);
         }
 
         @Override
         public int hashCode() {
             int h = hash;
             if (h == 0) {
-                h = hash = Arrays.hashCode(array);
+                h = hash = Arrays.hashCode(array) ^ (evalCode? 1 : 0);
             }
             return h;
         }
@@ -175,7 +180,8 @@ public final class Source implements Loggable {
                 return true;
             }
             if (obj instanceof RawData) {
-                return Arrays.equals(array, ((RawData)obj).array);
+                final RawData other = (RawData)obj;
+                return Arrays.equals(array, other.array) && evalCode == other.evalCode;
             }
             return false;
         }
@@ -206,6 +212,10 @@ public final class Source implements Loggable {
         }
 
 
+        @Override
+        public boolean isEvalCode() {
+            return evalCode;
+        }
     }
 
     private static class URLData implements Data {
@@ -287,10 +297,16 @@ public final class Source implements Loggable {
             return array;
         }
 
+        @Override
+        public boolean isEvalCode() {
+            return false;
+        }
+
         boolean isDeferred() {
             return array == null;
         }
 
+        @SuppressWarnings("try")
         protected void checkPermissionAndClose() throws IOException {
             try (InputStream in = url.openStream()) {
                 // empty
@@ -373,11 +389,23 @@ public final class Source implements Loggable {
      *
      * @param name    source name
      * @param content contents as char array
+     * @param isEval does this represent code from 'eval' call?
+     * @return source instance
+     */
+    public static Source sourceFor(final String name, final char[] content, final boolean isEval) {
+        return new Source(name, baseName(name), new RawData(content, isEval));
+    }
+
+    /**
+     * Returns a Source instance
+     *
+     * @param name    source name
+     * @param content contents as char array
      *
      * @return source instance
      */
     public static Source sourceFor(final String name, final char[] content) {
-        return new Source(name, baseName(name), new RawData(content));
+        return sourceFor(name, content, false);
     }
 
     /**
@@ -385,11 +413,22 @@ public final class Source implements Loggable {
      *
      * @param name    source name
      * @param content contents as string
+     * @param isEval does this represent code from 'eval' call?
+     * @return source instance
+     */
+    public static Source sourceFor(final String name, final String content, final boolean isEval) {
+        return new Source(name, baseName(name), new RawData(content, isEval));
+    }
+
+    /**
+     * Returns a Source instance
      *
+     * @param name    source name
+     * @param content contents as string
      * @return source instance
      */
     public static Source sourceFor(final String name, final String content) {
-        return new Source(name, baseName(name), new RawData(content));
+        return sourceFor(name, content, false);
     }
 
     /**
@@ -552,6 +591,15 @@ public final class Source implements Loggable {
      */
     public URL getURL() {
         return data.url();
+    }
+
+    /**
+     * Returns whether this source was submitted via 'eval' call or not.
+     *
+     * @return true if this source represents code submitted via 'eval'
+     */
+    public boolean isEvalCode() {
+        return data.isEvalCode();
     }
 
     /**
