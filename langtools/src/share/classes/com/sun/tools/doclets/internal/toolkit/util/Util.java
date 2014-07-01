@@ -812,21 +812,24 @@ public class Util {
         collator.setStrength(caseSensitive ? Collator.TERTIARY : Collator.SECONDARY);
         return collator.compare(s1, s2);
     }
+
     /**
-     * A comparator for index file uses,
+     * A comparator for index file presentations,
      *  1. this sorts first on simple names
-     *  2. if equal, case insensitive comparison of Parameter types
-     *  3. if equal, case sensitive comparison of Parameter types
-     *  4. if equal, compare the FQNs of the entities
-     *  5. if equal, then compare the DocKinds ex: Package, Interface etc.
+     *  2. if equal, then compare the DocKind ex: Package, Interface etc.
+     *  3a. if equal and if the type is of ExecutableMemberDoc(Constructor, Fields),
+     *      a case insensitive comparison of parameter types
+     *  3b. if equal, a case sensitive comparison of parameter types
+     *  4. finally, if equal, compare the FQNs of the entities
      * @return a comparator for index file use
      */
     public static Comparator<Doc> makeComparatorForIndexUse() {
         return new Util.DocComparator<Doc>() {
             /**
-             * compare two given Doc entities, first sort on name, if
-             * applicable on the method's parameter types, and finally on the
-             * fully qualified name of the entity.
+             * Compare two given Doc entities, first sort on name, then on the kinds,
+             * then on the parameters only if the type is an instance of ExecutableMemberDocs,
+             * the parameters are compared ignoring the case first, then a case sensitive comparison,
+             * and finally the fully qualified names.
              *
              * @param d1 - a Doc element.
              * @param d2 - a Doc element.
@@ -838,7 +841,11 @@ public class Util {
                 if (result != 0) {
                     return result;
                 }
-                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
+                result = compareDocKinds(d1, d2);
+                if (result != 0) {
+                    return result;
+                }
+                if (hasParameters(d1)) {
                     Parameter[] param1 = ((ExecutableMemberDoc) d1).parameters();
                     Parameter[] param2 = ((ExecutableMemberDoc) d2).parameters();
                     result = compareParameters(false, param1, param2);
@@ -846,31 +853,28 @@ public class Util {
                         return result;
                     }
                     result = compareParameters(true, param1, param2);
+                    if (result != 0) {
+                        return result;
+                    }
                 }
-                if (result != 0) {
-                    return result;
-                }
-                result = compareFullyQualifiedNames(d1, d2);
-                if (result != 0) {
-                    return result;
-                }
-                return compareDocKinds(d1, d2);
+                return compareFullyQualifiedNames(d1, d2);
             }
         };
     }
-
     /**
-     * Comparator for ClassUse representations, this sorts on member names,
-     * fully qualified member names and then the parameter types if applicable,
-     * and finally the Doc kinds ie. package, class, interface etc.
+     * Comparator for ClassUse presentations, and sorts as follows:
+     * 1. member names
+     * 2. then fully qualified member names
+     * 3. then parameter types if applicable
+     * 4. finally the Doc kinds ie. package, class, interface etc.
      * @return a comparator to sort classes and members for class use
      */
     public static Comparator<Doc> makeComparatorForClassUse() {
         return new Util.DocComparator<Doc>() {
             /**
-             * compare two given Doc entities, first sort on name, and if
-             * applicable on the fully qualified name, and finally if applicable
-             * on the parameter types.
+             * Compare two given Doc entities, first sort on name, and if
+             * applicable on the fully qualified name, and if applicable
+             * on the parameter types, and finally the DocKind.
              * @param d1 - a Doc element.
              * @param d2 - a Doc element.
              * @return a negative integer, zero, or a positive integer as the first
@@ -885,7 +889,7 @@ public class Util {
                 if (result != 0) {
                     return result;
                 }
-                if (d1 instanceof ExecutableMemberDoc && d2 instanceof ExecutableMemberDoc) {
+                if (hasParameters(d1) && hasParameters(d2)) {
                     Parameter[] param1 = ((ExecutableMemberDoc) d1).parameters();
                     Parameter[] param2 = ((ExecutableMemberDoc) d2).parameters();
                     result = compareParameters(false, param1, param2);
@@ -898,53 +902,54 @@ public class Util {
             }
         };
     }
-
-
     /**
      * A general purpose comparator to sort Doc entities, basically provides the building blocks
      * for creating specific comparators for an use-case.
      * @param <T> a Doc entity
      */
     static abstract class DocComparator<T extends Doc> implements Comparator<Doc> {
-        static enum DocKinds {
+        static enum DocKind {
            PACKAGE,
-           FIELD,
-           ENUM,
-           ANNOTATION,
-           INTERFACE,
            CLASS,
+           ENUM,
+           INTERFACE,
+           ANNOTATION,
+           FIELD,
            CONSTRUCTOR,
            METHOD
         };
-        private DocKinds getValue(Doc d) {
+        boolean hasParameters(Doc d) {
+            return d instanceof ExecutableMemberDoc;
+        }
+        DocKind getDocKind(Doc d) {
             if (d.isAnnotationType() || d.isAnnotationTypeElement()) {
-                return DocKinds.ANNOTATION;
+                return DocKind.ANNOTATION;
             } else if (d.isEnum() || d.isEnumConstant()) {
-                return DocKinds.ENUM;
+                return DocKind.ENUM;
             } else if (d.isField()) {
-                return DocKinds.FIELD;
+                return DocKind.FIELD;
             } else if (d.isInterface()) {
-                return DocKinds.INTERFACE;
+                return DocKind.INTERFACE;
             } else if (d.isClass()) {
-                return DocKinds.CLASS;
+                return DocKind.CLASS;
             } else if (d.isConstructor()) {
-                return DocKinds.CONSTRUCTOR;
+                return DocKind.CONSTRUCTOR;
             } else if (d.isMethod()) {
-                return DocKinds.METHOD;
+                return DocKind.METHOD;
             } else {
-                return DocKinds.PACKAGE;
+                return DocKind.PACKAGE;
             }
         }
         /**
          * Compares two Doc entities' kinds, and these are ordered as defined in
-         * the DocKinds enumeration.
+         * the DocKind enumeration.
          * @param d1 the first Doc object
          * @param d2 the second Doc object
          * @return a negative integer, zero, or a positive integer as the first
          *         argument is less than, equal to, or greater than the second.
          */
         protected int compareDocKinds(Doc d1, Doc d2) {
-            return getValue(d1).compareTo(getValue(d2));
+            return getDocKind(d1).compareTo(getDocKind(d2));
         }
         /**
          * Compares two parameter arrays by comparing each Type of the parameter in the array,

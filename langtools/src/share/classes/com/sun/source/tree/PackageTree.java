@@ -37,6 +37,15 @@ import java.util.List;
  */
 @jdk.Exported
 public interface PackageTree extends Tree {
+    /**
+     * Returns the annotations associated with this package declaration.
+     * @return the annotations
+     */
     List<? extends AnnotationTree> getAnnotations();
+
+    /**
+     * Returns the name of the package being declared.
+     * @return the name
+     */
     ExpressionTree getPackageName();
 }

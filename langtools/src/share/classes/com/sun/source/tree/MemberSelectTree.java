@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,15 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface MemberSelectTree extends ExpressionTree {
+    /**
+     * Returns the expression for which a member is to be selected.
+     * @return the expression.
+     */
     ExpressionTree getExpression();
+
+    /**
+     * Returns the name of the member to be selected.
+     * @return the member
+     */
     Name getIdentifier();
 }

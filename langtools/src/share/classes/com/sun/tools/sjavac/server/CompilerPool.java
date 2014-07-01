@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,8 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.Semaphore;
 import java.util.Stack;
 import java.util.concurrent.Future;
+
+import com.sun.tools.sjavac.comp.JavacServiceImpl;
 
 /** The compiler pool maintains compiler threads.
  *
@@ -147,7 +149,7 @@ public class CompilerPool {
     public CompilerThread grabCompilerThread() throws InterruptedException {
         available.acquire();
         if (compilers.empty()) {
-            return new CompilerThread(this);
+            return new CompilerThread(this, new JavacServiceImpl(javacServer));
         }
         return compilers.pop();
     }

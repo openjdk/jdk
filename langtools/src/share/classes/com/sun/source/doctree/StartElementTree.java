@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,22 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface StartElementTree extends DocTree {
+    /**
+     * Returns the name of the element.
+     * @return the name
+     */
     Name getName();
+
+    /**
+     * Returns any attributes defined by this element.
+     * @return the attributes
+     */
     List<? extends DocTree> getAttributes();
+
+    /**
+     * Returns true if this is a self-closing element,
+     * as indicated by a "/" before the closing "&gt;".
+     * @return true if this is a self-closing element
+     */
     boolean isSelfClosing();
 }

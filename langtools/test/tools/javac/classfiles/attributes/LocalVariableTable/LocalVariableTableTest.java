@@ -153,7 +153,6 @@ public class LocalVariableTableTest extends LocalVariableTestBase {
     @ExpectedLocals(name = "inTry", type = "D")
     @ExpectedLocals(name = "inSync", type = "F")
     @ExpectedLocals(name = "inDo", type = "B")
-    @ExpectedLocals(name = "inSwitch", type = "S")
     @ExpectedLocals(name = "inFor", type = "J")
     @ExpectedLocals(name = "s", type = "Ljava/util/stream/Stream;")
     public void deepScope() {
@@ -176,17 +175,6 @@ public class LocalVariableTableTest extends LocalVariableTestBase {
                     }
                 }
             }
-        }
-    }
-
-    @ExpectedLocals(name = "i", type = "I", scope = 0)
-    @ExpectedLocals(name = "i", type = "J", scope = 1)
-    public void reuseByLong() {
-        {
-            int i = 0;
-        }
-        {
-            long i = 1;
         }
     }
 
