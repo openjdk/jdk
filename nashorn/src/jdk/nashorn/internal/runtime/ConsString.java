@@ -57,6 +57,9 @@ public final class ConsString implements CharSequence {
         this.left = left;
         this.right = right;
         length = left.length() + right.length();
+        if (length < 0) {
+            throw new IllegalArgumentException("too big concatenated String");
+        }
     }
 
     @Override

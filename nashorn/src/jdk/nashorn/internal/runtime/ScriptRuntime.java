@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
+import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.syntaxError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
@@ -531,7 +532,11 @@ public final class ScriptRuntime {
 
         if (xPrim instanceof String || yPrim instanceof String
                 || xPrim instanceof ConsString || yPrim instanceof ConsString) {
-            return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
+            try {
+                return new ConsString(JSType.toCharSequence(xPrim), JSType.toCharSequence(yPrim));
+            } catch (final IllegalArgumentException iae) {
+                throw rangeError(iae, "concat.string.too.big");
+            }
         }
 
         return JSType.toNumber(xPrim) + JSType.toNumber(yPrim);
