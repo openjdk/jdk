@@ -43,7 +43,6 @@ import com.sun.org.apache.xerces.internal.util.SAXMessageFormatter;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @version $Id: SAXParserFactoryImpl.java,v 1.9 2010-11-01 04:40:06 joehw Exp $
  */
 public class SAXParserFactoryImpl extends SAXParserFactory {
 

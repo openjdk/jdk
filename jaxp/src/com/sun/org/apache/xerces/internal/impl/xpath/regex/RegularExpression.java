@@ -486,7 +486,6 @@ import com.sun.org.apache.xerces.internal.util.IntStack;
  * @xerces.internal
  *
  * @author TAMURA Kent &lt;kent@trl.ibm.co.jp&gt;
- * @version $Id: RegularExpression.java,v 1.9 2010/07/27 05:02:34 joehw Exp $
  */
 public class RegularExpression implements java.io.Serializable {
 

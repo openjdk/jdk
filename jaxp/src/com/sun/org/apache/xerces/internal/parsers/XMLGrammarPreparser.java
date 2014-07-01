@@ -49,7 +49,6 @@ import com.sun.org.apache.xerces.internal.utils.ObjectFactory;
  *
  * @author Neil Graham, IBM
  *
- * @version $Id: XMLGrammarPreparser.java,v 1.7 2010-11-01 04:40:10 joehw Exp $
  */
 public class XMLGrammarPreparser {
 

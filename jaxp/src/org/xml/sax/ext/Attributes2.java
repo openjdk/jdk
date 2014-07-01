@@ -57,7 +57,7 @@ import org.xml.sax.Attributes;
  * must have been declared.
  * </p>
  *
- * @since SAX 2.0 (extensions 1.1 alpha)
+ * @since 1.5, SAX 2.0 (extensions 1.1 alpha)
  * @author David Brownell
  */
 public interface Attributes2 extends Attributes

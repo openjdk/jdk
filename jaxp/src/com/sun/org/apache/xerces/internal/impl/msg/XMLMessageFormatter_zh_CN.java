@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
  * @xerces.internal
  *
  * @author Eric Ye, IBM
- * @version $Id: XMLMessageFormatter_zh_CN.java 3094 2012-03-21 05:50:01Z joehw $
  *
  */
 public class XMLMessageFormatter_zh_CN implements MessageFormatter {

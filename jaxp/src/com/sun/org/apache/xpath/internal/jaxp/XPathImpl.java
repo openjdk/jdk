@@ -54,7 +54,6 @@ import java.io.IOException;
  * of an XPath expression.
  *
  *
- * @version $Revision: 1.10 $
  * @author  Ramesh Mandava
  */
 public class XPathImpl implements javax.xml.xpath.XPath {
