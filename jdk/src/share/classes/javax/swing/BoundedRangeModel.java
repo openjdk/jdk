@@ -76,6 +76,7 @@ import javax.swing.event.*;
  *
  * @author Hans Muller
  * @see DefaultBoundedRangeModel
+ * @since 1.2
  */
 public interface BoundedRangeModel
 {

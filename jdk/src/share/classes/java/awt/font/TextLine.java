@@ -50,6 +50,7 @@ import java.util.Hashtable;
 import java.util.Map;
 import sun.font.AttributeValues;
 import sun.font.BidiUtils;
+import sun.font.CodePointIterator;
 import sun.font.CoreMetrics;
 import sun.font.Decoration;
 import sun.font.FontLineMetrics;
@@ -60,7 +61,6 @@ import sun.font.LayoutPathImpl.EmptyPath;
 import sun.font.LayoutPathImpl.SegmentPathBuilder;
 import sun.font.TextLabelFactory;
 import sun.font.TextLineComponent;
-import sun.text.CodePointIterator;
 
 import java.awt.geom.Line2D;
 

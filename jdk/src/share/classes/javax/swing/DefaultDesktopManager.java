@@ -46,6 +46,7 @@ import java.beans.PropertyVetoException;
   * @see JInternalFrame
   * @author David Kloba
   * @author Steve Wilson
+  * @since 1.2
   */
 @SuppressWarnings("serial") // No Interesting Non-Transient State
 public class DefaultDesktopManager implements DesktopManager, java.io.Serializable {

@@ -50,12 +50,27 @@ import javax.swing.plaf.basic.BasicTabbedPaneUI;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
 
+    /**
+     * The minimum width of a pane.
+     */
     protected int minTabWidth = 40;
     // Background color for unselected tabs that don't have an explicitly
     // set color.
     private Color unselectedBackground;
+
+    /**
+     * The color of tab's background.
+     */
     protected Color tabAreaBackground;
+
+    /**
+     * The color of the selected pane.
+     */
     protected Color selectColor;
+
+    /**
+     * The color of the highlight.
+     */
     protected Color selectHighlight;
     private boolean tabsOpaque = true;
 
@@ -65,6 +80,12 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     // Selected border color for ocean.
     private Color oceanSelectedBorderColor;
 
+    /**
+     * Constructs {@code MetalTabbedPaneUI}.
+     *
+     * @param x a component
+     * @return an instance of {@code MetalTabbedPaneUI}
+     */
     public static ComponentUI createUI( JComponent x ) {
         return new MetalTabbedPaneUI();
     }
@@ -116,6 +137,19 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     }
 
 
+    /**
+     * Paints the top tab border.
+     *
+     * @param tabIndex a tab index
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param btm bottom
+     * @param rght right
+     * @param isSelected a selection
+     */
     protected void paintTopTabBorder( int tabIndex, Graphics g,
                                       int x, int y, int w, int h,
                                       int btm, int rght,
@@ -286,6 +320,15 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         g.translate( -x, -y );
     }
 
+    /**
+     * Returns {@code true} if the gap should be filled.
+     *
+     * @param currentRun the current run
+     * @param tabIndex the tab index
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @return {@code true} if the gap should be filled
+     */
     protected boolean shouldFillGap( int currentRun, int tabIndex, int x, int y ) {
         boolean result = false;
 
@@ -322,6 +365,14 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         return result;
     }
 
+    /**
+     * Returns the color of the gap.
+     *
+     * @param currentRun the current run
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @return the color of the gap
+     */
     protected Color getColorForGap( int currentRun, int x, int y ) {
         final int shadowWidth = 4;
         int selectedIndex = tabPane.getSelectedIndex();
@@ -349,6 +400,19 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         return tabPane.getBackground();
     }
 
+    /**
+     * Paints the left tab border.
+     *
+     * @param tabIndex a tab index
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param btm bottom
+     * @param rght right
+     * @param isSelected a selection
+     */
     protected void paintLeftTabBorder( int tabIndex, Graphics g,
                                        int x, int y, int w, int h,
                                        int btm, int rght,
@@ -466,6 +530,19 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
     }
 
 
+    /**
+     * Paints the bottom tab border.
+     *
+     * @param tabIndex a tab index
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param btm bottom
+     * @param rght right
+     * @param isSelected a selection
+     */
     protected void paintBottomTabBorder( int tabIndex, Graphics g,
                                          int x, int y, int w, int h,
                                          int btm, int rght,
@@ -623,6 +700,19 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         g.translate( -x, -y );
     }
 
+    /**
+     * Paints the right tab border.
+     *
+     * @param tabIndex a tab index
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y an Y coordinate
+     * @param w a width
+     * @param h a height
+     * @param btm bottom
+     * @param rght right
+     * @param isSelected a selection
+     */
     protected void paintRightTabBorder( int tabIndex, Graphics g,
                                         int x, int y, int w, int h,
                                         int btm, int rght,
@@ -806,9 +896,8 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
 
         // Paint the background for the tab area
         if ( tabPane.isOpaque() ) {
-            Color bg = UIManager.getColor("TabbedPane.tabAreaBackground");
-            if (bg != null) {
-                g.setColor(bg);
+            if (!c.isBackgroundSet() && (tabAreaBackground != null)) {
+                g.setColor(tabAreaBackground);
             }
             else {
                 g.setColor( c.getBackground() );
@@ -843,6 +932,9 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         super.paint( g, c );
     }
 
+    /**
+     * Paints highlights below tab.
+     */
     protected void paintHighlightBelowTab( ) {
 
     }
@@ -1159,7 +1251,13 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
         return 0;
     }
 
-    // Don't rotate runs!
+    /**
+     * Returns {@code true} if tab runs should be rotated.
+     *
+     * @param tabPlacement a tab placement
+     * @param selectedRun a selected run
+     * @return {@code true} if tab runs should be rotated.
+     */
     protected boolean shouldRotateTabRuns( int tabPlacement, int selectedRun ) {
         return false;
     }
@@ -1201,6 +1299,9 @@ public class MetalTabbedPaneUI extends BasicTabbedPaneUI {
      */
     public class TabbedPaneLayout extends BasicTabbedPaneUI.TabbedPaneLayout {
 
+        /**
+         * Constructs {@code TabbedPaneLayout}.
+         */
         public TabbedPaneLayout() {
             MetalTabbedPaneUI.this.super();
         }

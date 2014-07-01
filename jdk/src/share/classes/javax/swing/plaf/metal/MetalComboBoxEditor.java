@@ -50,6 +50,9 @@ import javax.swing.plaf.basic.BasicComboBoxEditor;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalComboBoxEditor extends BasicComboBoxEditor {
 
+    /**
+     * Constructs a new instance of {@code MetalComboBoxEditor}.
+     */
     public MetalComboBoxEditor() {
         super();
         //editor.removeFocusListener(this);

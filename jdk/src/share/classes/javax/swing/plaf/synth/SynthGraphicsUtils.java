@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -137,6 +137,9 @@ public class SynthGraphicsUtils {
      * @param iconR Rectangle to place icon bounds in
      * @param textR Rectangle to place text in
      * @param iconTextGap gap between icon and text
+     *
+     * @return by reference, the location to
+     * place the icon and text.
      */
     public String layoutText(SynthContext ss, FontMetrics fm,
                          String text, Icon icon, int hAlign,
@@ -166,6 +169,8 @@ public class SynthGraphicsUtils {
      * @param font Font to use
      * @param metrics FontMetrics, may be ignored
      * @param text Text to get size of.
+     *
+     * @return the size of the passed in string.
      */
     public int computeStringWidth(SynthContext ss, Font font,
                                   FontMetrics metrics, String text) {
@@ -187,6 +192,8 @@ public class SynthGraphicsUtils {
      * @param iconTextGap gap between icon and text
      * @param mnemonicIndex Index into text to render the mnemonic at, -1
      *        indicates no mnemonic.
+     *
+     * @return the minimum size needed to properly render an icon and text.
      */
     public Dimension getMinimumSize(SynthContext ss, Font font, String text,
                       Icon icon, int hAlign, int vAlign, int hTextPosition,
@@ -218,6 +225,8 @@ public class SynthGraphicsUtils {
      * @param iconTextGap gap between icon and text
      * @param mnemonicIndex Index into text to render the mnemonic at, -1
      *        indicates no mnemonic.
+     *
+     * @return the maximum size needed to properly render an icon and text.
      */
     public Dimension getMaximumSize(SynthContext ss, Font font, String text,
                       Icon icon, int hAlign, int vAlign, int hTextPosition,
@@ -263,6 +272,8 @@ public class SynthGraphicsUtils {
      * @param iconTextGap gap between icon and text
      * @param mnemonicIndex Index into text to render the mnemonic at, -1
      *        indicates no mnemonic.
+     *
+     * @return the preferred size needed to properly render an icon and text.
      */
     public Dimension getPreferredSize(SynthContext ss, Font font, String text,
                       Icon icon, int hAlign, int vAlign, int hTextPosition,

@@ -36,6 +36,7 @@ import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.JSplitPane;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JSplitPane } component.
@@ -47,6 +48,8 @@ import javax.swing.SwingUtilities;
 @bug 6986109
 @summary Overlapping test for javax.swing.JSplitPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JSplitPaneOverlapping
  */
 public class JSplitPaneOverlapping extends OverlappingTestBase {
@@ -99,7 +102,7 @@ public class JSplitPaneOverlapping extends OverlappingTestBase {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Where is splitter?");
         }
         // run robot
         Robot robot = Util.createRobot();

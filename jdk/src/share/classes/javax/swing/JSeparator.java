@@ -70,6 +70,7 @@ import java.io.IOException;
  *
  * @author Georges Saab
  * @author Jeff Shapiro
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JSeparator extends JComponent implements SwingConstants, Accessible

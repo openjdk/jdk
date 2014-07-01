@@ -56,6 +56,12 @@ public class MetalLabelUI extends BasicLabelUI
 
     private static final Object METAL_LABEL_UI_KEY = new Object();
 
+    /**
+     * Returns an instance of {@code MetalLabelUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code MetalLabelUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         if (System.getSecurityManager() != null) {
             AppContext appContext = AppContext.getAppContext();

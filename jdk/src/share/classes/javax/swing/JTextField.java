@@ -160,6 +160,7 @@ import java.io.Serializable;
  * @see #setActionCommand
  * @see JPasswordField
  * @see #addActionListener
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTextField extends JTextComponent implements SwingConstants {

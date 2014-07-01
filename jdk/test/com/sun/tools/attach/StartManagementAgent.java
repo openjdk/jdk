@@ -40,7 +40,7 @@ import jdk.testlibrary.Utils;
  * @test
  * @summary Test for VirtualMachine.startManagementAgent and VirtualMachine.startLocalManagementAgent
  * @library /lib/testlibrary
- * @run build Application Shutdown
+ * @run build Application jdk.testlibrary.*
  * @run main StartManagementAgent
  */
 
@@ -51,20 +51,17 @@ import jdk.testlibrary.Utils;
  */
 public class StartManagementAgent {
     public static void main(String[] args) throws Throwable {
-        final String pidFile = "StartManagementAgent.Application.pid";
         ProcessThread processThread = null;
-        RunnerUtil.ProcessInfo info = null;
         try {
-            processThread = RunnerUtil.startApplication(pidFile);
-            info = RunnerUtil.readProcessInfo(pidFile);
-            runTests(info.pid);
+            processThread = RunnerUtil.startApplication();
+            runTests(processThread.getPid());
         } catch (Throwable t) {
             System.out.println("StartManagementAgent got unexpected exception: " + t);
             t.printStackTrace();
             throw t;
         } finally {
             // Make sure the Application process is stopped.
-            RunnerUtil.stopApplication(info.shutdownPort, processThread);
+            RunnerUtil.stopApplication(processThread);
         }
     }
 
@@ -104,7 +101,7 @@ public class StartManagementAgent {
 
     private static final int MAX_RETRIES = 10;
 
-    public static void runTests(int pid) throws Exception {
+    public static void runTests(long pid) throws Exception {
         VirtualMachine vm = VirtualMachine.attach(""+pid);
         try {
 

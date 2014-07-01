@@ -544,7 +544,7 @@ public class RequiredModelMBean
             }
 
             // convert seconds to milliseconds for time comparison
-            currencyPeriod = ((new Long(expTime)).longValue()) * 1000;
+            currencyPeriod = Long.parseLong(expTime) * 1000;
             if (currencyPeriod < 0) {
                 /* if currencyTimeLimit is -1 then value is never cached */
                 returnCachedValue = false;
@@ -580,7 +580,7 @@ public class RequiredModelMBean
                 if (tStamp == null)
                     tStamp = "0";
 
-                long lastTime = (new Long(tStamp)).longValue();
+                long lastTime = Long.parseLong(tStamp);
 
                 if (tracing) {
                     MODELMBEAN_LOGGER.logp(Level.FINER,

@@ -38,9 +38,9 @@ import java.text.AttributedCharacterIterator.Attribute;
 import java.util.Vector;
 import java.util.HashMap;
 import java.util.Map;
+import sun.font.CodePointIterator;
 import sun.font.Decoration;
 import sun.font.FontResolver;
-import sun.text.CodePointIterator;
 
 /**
  * This class stores Font, GraphicAttribute, and Decoration intervals
