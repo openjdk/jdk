@@ -25,15 +25,18 @@
 
 package com.sun.tools.sjavac;
 
+import java.io.File;
 import java.io.PrintStream;
 import java.net.URI;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.Random;
 import java.util.Set;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.JavacServer;
+import com.sun.tools.sjavac.server.CompilationResult;
+import com.sun.tools.sjavac.server.JavacService;
 import com.sun.tools.sjavac.server.SysInfo;
 
 /**
@@ -64,9 +67,10 @@ public class CompileJavaPackages implements Transformer {
         args = a;
     }
 
-    public boolean transform(Map<String,Set<URI>> pkgSrcs,
-                             Set<URI>             visibleSources,
-                             Map<URI,Set<String>> visibleClasses,
+    public boolean transform(final JavacService javacService,
+                             Map<String,Set<URI>> pkgSrcs,
+                             final Set<URI>             visibleSources,
+                             final Map<URI,Set<String>> visibleClasses,
                              Map<String,Set<String>> oldPackageDependents,
                              URI destRoot,
                              final Map<String,Set<URI>>    packageArtifacts,
@@ -75,24 +79,25 @@ public class CompileJavaPackages implements Transformer {
                              int debugLevel,
                              boolean incremental,
                              int numCores,
-                             PrintStream out,
-                             PrintStream err)
+                             final PrintStream out,
+                             final PrintStream err)
     {
         boolean rc = true;
         boolean concurrentCompiles = true;
 
         // Fetch the id.
-        String id = Util.extractStringOption("id", args.getServerConf());
-        if (id == null || id.equals("")) {
+        String idOpt = Util.extractStringOption("id", args.getServerConf());
+        if (idOpt == null || idOpt.equals("")) {
             // No explicit id set. Create a random id so that the requests can be
             // grouped properly in the server.
-            id = "id"+(((new Random()).nextLong())&Long.MAX_VALUE);
+            idOpt = "id"+(((new Random()).nextLong())&Long.MAX_VALUE);
         }
+        final String id = idOpt;
         // Only keep portfile and sjavac settings..
         String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), args.getServerConf());
 
         // Get maximum heap size from the server!
-        SysInfo sysinfo = JavacServer.connectGetSysInfo(psServerSettings, out, err);
+        SysInfo sysinfo = javacService.getSysInfo();
         if (sysinfo.numCores == -1) {
             Log.error("Could not query server for sysinfo!");
             return false;
@@ -201,12 +206,9 @@ public class CompileJavaPackages implements Transformer {
         }
 
         // The return values for each chunked compile.
-        final int[] rn = new int[numCompiles];
+        final CompilationResult[] rn = new CompilationResult[numCompiles];
         // The requets, might or might not run as a background thread.
         final Thread[] requests  = new Thread[numCompiles];
-
-        final Set<URI>             fvisible_sources = visibleSources;
-        final Map<URI,Set<String>> fvisible_classes = visibleClasses;
 
         long start = System.currentTimeMillis();
 
@@ -215,23 +217,20 @@ public class CompileJavaPackages implements Transformer {
             final CompileChunk cc = compileChunks[i];
 
             // Pass the num_cores and the id (appended with the chunk number) to the server.
-            final String cleanedServerSettings = psServerSettings+",poolsize="+numCores+",id="+id+"-"+ii;
-            final PrintStream fout = out;
-            final PrintStream ferr = err;
+            final String cleanedServerSettings = psServerSettings+",poolsize="+numCores+",id="+id+"-"+i;
 
-            requests[ii] = new Thread() {
+            requests[i] = new Thread() {
                 @Override
                 public void run() {
-                                        rn[ii] = JavacServer.useServer(cleanedServerSettings,
-                                                           args.prepJavacArgs(),
-                                                               cc.srcs,
-                                                           fvisible_sources,
-                                                           fvisible_classes,
-                                                           packageArtifacts,
-                                                           packageDependencies,
-                                                           packagePubapis,
-                                                           null,
-                                                           fout, ferr);
+                    rn[ii] = javacService.compile("n/a",
+                                                  id + "-" + ii,
+                                                  args.prepJavacArgs(),
+                                                  Collections.<File>emptyList(),
+                                                  cc.srcs,
+                                                  visibleSources);
+                    packageArtifacts.putAll(rn[ii].packageArtifacts);
+                    packageDependencies.putAll(rn[ii].packageDependencies);
+                    packagePubapis.putAll(rn[ii].packagePubapis);
                 }
             };
 
@@ -253,7 +252,7 @@ public class CompileJavaPackages implements Transformer {
                 else {
                     requests[ii].run();
                     // If there was an error, then stop early when running single threaded.
-                    if (rn[i] != 0) {
+                    if (rn[i].returnCode != 0) {
                         return false;
                     }
                 }
@@ -269,7 +268,7 @@ public class CompileJavaPackages implements Transformer {
         // Check the return values.
         for (int i=0; i<numCompiles; ++i) {
             if (compileChunks[i].srcs.size() > 0) {
-                if (rn[i] != 0) {
+                if (rn[i].returnCode != 0) {
                     rc = false;
                 }
             }

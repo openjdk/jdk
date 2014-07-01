@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for an "enhanced" 'for' loop statement.
+ * A tree node for an "enhanced" {@code for} loop statement.
  *
  * For example:
  * <pre>
@@ -42,7 +42,21 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface EnhancedForLoopTree extends StatementTree {
+    /**
+     * Returns the control variable for the loop.
+     * @return the control variable
+     */
     VariableTree getVariable();
+
+    /**
+     * Returns the expression yielding the values for the control variable.
+     * @return the expression
+     */
     ExpressionTree getExpression();
+
+    /**
+     * Returns the body of the loop.
+     * @return the body of the loop
+     */
     StatementTree getStatement();
 }

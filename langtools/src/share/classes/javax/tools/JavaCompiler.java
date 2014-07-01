@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -263,7 +263,7 @@ public interface JavaCompiler extends Tool, OptionChecker {
                             Iterable<? extends JavaFileObject> compilationUnits);
 
     /**
-     * Gets a new instance of the standard file manager implementation
+     * Returns a new instance of the standard file manager implementation
      * for this tool.  The file manager will use the given diagnostic
      * listener for producing any non-fatal diagnostics.  Fatal errors
      * will be signaled with the appropriate exceptions.

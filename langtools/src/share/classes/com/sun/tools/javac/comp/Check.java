@@ -127,6 +127,7 @@ public class Check {
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
+        allowPrivateSafeVarargs = source.allowPrivateSafeVarargs();
         complexInference = options.isSet("complexinference");
         warnOnSyntheticConflicts = options.isSet("warnOnSyntheticConflicts");
         suppressAbortOnBadClassFile = options.isSet("suppressAbortOnBadClassFile");
@@ -180,6 +181,10 @@ public class Check {
     /** Switch: should unrelated return types trigger a method clash?
      */
     boolean allowStrictMethodClashCheck;
+
+    /** Switch: can the @SafeVarargs annotation be applied to private methods?
+     */
+    boolean allowPrivateSafeVarargs;
 
     /** Switch: -complexinference option set?
      */
@@ -264,6 +269,14 @@ public class Check {
     public void warnStatic(DiagnosticPosition pos, String msg, Object... args) {
         if (lint.isEnabled(LintCategory.STATIC))
             log.warning(LintCategory.STATIC, pos, msg, args);
+    }
+
+    /** Warn about division by integer constant zero.
+     *  @param pos        Position to be used for error reporting.
+     */
+    void warnDivZero(DiagnosticPosition pos) {
+        if (lint.isEnabled(LintCategory.DIVZERO))
+            log.warning(LintCategory.DIVZERO, pos, "div.zero");
     }
 
     /**
@@ -534,8 +547,8 @@ public class Check {
 
     Type checkType(final DiagnosticPosition pos, final Type found, final Type req, final CheckContext checkContext) {
         final Infer.InferenceContext inferenceContext = checkContext.inferenceContext();
-        if (inferenceContext.free(req)) {
-            inferenceContext.addFreeTypeListener(List.of(req), new FreeTypeListener() {
+        if (inferenceContext.free(req) || inferenceContext.free(found)) {
+            inferenceContext.addFreeTypeListener(List.of(req, found), new FreeTypeListener() {
                 @Override
                 public void typesInferred(InferenceContext inferenceContext) {
                     checkType(pos, inferenceContext.asInstType(found), inferenceContext.asInstType(req), checkContext);
@@ -816,8 +829,10 @@ public class Check {
             if (varargElemType != null) {
                 log.error(tree,
                         "varargs.invalid.trustme.anno",
-                        syms.trustMeType.tsym,
-                        diags.fragment("varargs.trustme.on.virtual.varargs", m));
+                          syms.trustMeType.tsym,
+                          allowPrivateSafeVarargs ?
+                          diags.fragment("varargs.trustme.on.virtual.varargs", m) :
+                          diags.fragment("varargs.trustme.on.virtual.varargs.final.only", m));
             } else {
                 log.error(tree,
                             "varargs.invalid.trustme.anno",
@@ -840,7 +855,8 @@ public class Check {
         private boolean isTrustMeAllowedOnMethod(Symbol s) {
             return (s.flags() & VARARGS) != 0 &&
                 (s.isConstructor() ||
-                    (s.flags() & (STATIC | FINAL)) != 0);
+                    (s.flags() & (STATIC | FINAL |
+                                  (allowPrivateSafeVarargs ? PRIVATE : 0) )) != 0);
         }
 
     Type checkMethod(final Type mtype,
@@ -2684,7 +2700,7 @@ public class Check {
                 checkClassBounds(pos, seensofar, it);
             }
             Type st = types.supertype(type);
-            if (st != null) checkClassBounds(pos, seensofar, st);
+            if (st != Type.noType) checkClassBounds(pos, seensofar, st);
         }
 
     /** Enter interface into into set.
@@ -3385,15 +3401,19 @@ public class Check {
      *  @param operator      The operator for the expression
      *  @param operand       The right hand operand for the expression
      */
-    void checkDivZero(DiagnosticPosition pos, Symbol operator, Type operand) {
+    void checkDivZero(final DiagnosticPosition pos, Symbol operator, Type operand) {
         if (operand.constValue() != null
-            && lint.isEnabled(LintCategory.DIVZERO)
             && operand.getTag().isSubRangeOf(LONG)
             && ((Number) (operand.constValue())).longValue() == 0) {
             int opc = ((OperatorSymbol)operator).opcode;
             if (opc == ByteCodes.idiv || opc == ByteCodes.imod
                 || opc == ByteCodes.ldiv || opc == ByteCodes.lmod) {
-                log.warning(LintCategory.DIVZERO, pos, "div.zero");
+                deferredLintHandler.report(new DeferredLintHandler.LintLogger() {
+                    @Override
+                    public void report() {
+                        warnDivZero(pos);
+                    }
+                });
             }
         }
     }

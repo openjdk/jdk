@@ -138,7 +138,7 @@ public class WrongLNTForLambdaTest {
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "$deserializeLambda$", deserializeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
-                "Foo.class").toUri()), "lambda$MR$variablesInLambdas$notify$8bc4f5bd$1", lambdaBridgeExpectedLNT);
+                "Foo.class").toUri()), "lambda$variablesInLambdas$3", lambdaBridgeExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
                 "Foo.class").toUri()), "assignLambda", assignmentExpectedLNT);
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),

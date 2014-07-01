@@ -33,7 +33,7 @@ import java.util.Map;
  * <DL>
  * <DT>
  * <B>To Do:</B>
- * <DD><table cellpadding=2 cellspacing=0><tr><td bgcolor="yellow">Fix this!
+ * <DD><table summary="Summary" cellpadding=2 cellspacing=0><tr><td bgcolor="yellow">Fix this!
  * </td></tr></table></DD>
  * </DL>
  *
@@ -150,7 +150,7 @@ public class ToDoTaglet implements Taglet {
      */
     public String toString(Tag tag) {
         return "<DT><B>" + HEADER + "</B><DD>"
-               + "<table cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">"
+               + "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">"
                + tag.text()
                + "</td></tr></table></DD>\n";
     }
@@ -165,7 +165,7 @@ public class ToDoTaglet implements Taglet {
             return null;
         }
         String result = "\n<DT><B>" + HEADER + "</B><DD>";
-        result += "<table cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">";
+        result += "<table summary=\"Summary\" cellpadding=2 cellspacing=0><tr><td bgcolor=\"yellow\">";
         for (int i = 0; i < tags.length; i++) {
             if (i > 0) {
                 result += ", ";

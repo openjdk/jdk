@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,9 +54,10 @@ import com.sun.source.tree.Tree;
 @jdk.Exported
 public abstract class Trees {
     /**
-     * Gets a Trees object for a given CompilationTask.
+     * Returns a Trees object for a given CompilationTask.
      * @param task the compilation task for which to get the Trees object
      * @throws IllegalArgumentException if the task does not support the Trees API.
+     * @return the Trees object
      */
     public static Trees instance(CompilationTask task) {
         String taskClassName = task.getClass().getName();
@@ -67,9 +68,10 @@ public abstract class Trees {
     }
 
     /**
-     * Gets a Trees object for a given ProcessingEnvironment.
+     * Returns a Trees object for a given ProcessingEnvironment.
      * @param env the processing environment for which to get the Trees object
      * @throws IllegalArgumentException if the env does not support the Trees API.
+     * @return the Trees object
      */
     public static Trees instance(ProcessingEnvironment env) {
         if (!env.getClass().getName().equals("com.sun.tools.javac.processing.JavacProcessingEnvironment"))
@@ -84,95 +86,129 @@ public abstract class Trees {
             argType = Class.forName(argType.getName(), false, cl);
             Method m = c.getMethod("instance", argType);
             return (Trees) m.invoke(null, arg);
-        } catch (Throwable e) {
+        } catch (ReflectiveOperationException e) {
             throw new AssertionError(e);
         }
     }
 
     /**
-     * Gets a utility object for obtaining source positions.
+     * Returns a utility object for obtaining source positions.
+     * @return the utility object for obtaining source positions
      */
     public abstract SourcePositions getSourcePositions();
 
     /**
-     * Gets the Tree node for a given Element.
-     * Returns null if the node can not be found.
+     * Returns the Tree node for a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param element the element
+     * @return the tree node
      */
     public abstract Tree getTree(Element element);
 
     /**
-     * Gets the ClassTree node for a given TypeElement.
-     * Returns null if the node can not be found.
+     * Returns the ClassTree node for a given TypeElement.
+     * Returns {@code null} if the node can not be found.
+     * @param element the element
+     * @return the class tree node
      */
     public abstract ClassTree getTree(TypeElement element);
 
     /**
-     * Gets the MethodTree node for a given ExecutableElement.
-     * Returns null if the node can not be found.
+     * Returns the MethodTree node for a given ExecutableElement.
+     * Returns {@code null} if the node can not be found.
+     * @param method the executable element
+     * @return the method tree node
      */
     public abstract MethodTree getTree(ExecutableElement method);
 
     /**
-     * Gets the Tree node for an AnnotationMirror on a given Element.
-     * Returns null if the node can not be found.
+     * Returns the Tree node for an AnnotationMirror on a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param e the element
+     * @param a the annotation mirror
+     * @return the tree node
      */
     public abstract Tree getTree(Element e, AnnotationMirror a);
 
     /**
-     * Gets the Tree node for an AnnotationValue for an AnnotationMirror on a given Element.
-     * Returns null if the node can not be found.
+     * Returns the Tree node for an AnnotationValue for an AnnotationMirror on a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param e the element
+     * @param a the annotation mirror
+     * @param v the annotation value
+     * @return the tree node
      */
     public abstract Tree getTree(Element e, AnnotationMirror a, AnnotationValue v);
 
     /**
-     * Gets the path to tree node within the specified compilation unit.
+     * Returns the path to tree node within the specified compilation unit.
+     * @param unit the compilation unit
+     * @param node the tree node
+     * @return the tree path
      */
     public abstract TreePath getPath(CompilationUnitTree unit, Tree node);
 
     /**
-     * Gets the TreePath node for a given Element.
-     * Returns null if the node can not be found.
+     * Returns the TreePath node for a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param e the element
+     * @return the tree path
      */
     public abstract TreePath getPath(Element e);
 
     /**
-     * Gets the TreePath node for an AnnotationMirror on a given Element.
-     * Returns null if the node can not be found.
+     * Returns the TreePath node for an AnnotationMirror on a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param e the element
+     * @param a the annotation mirror
+     * @return the tree path
      */
     public abstract TreePath getPath(Element e, AnnotationMirror a);
 
     /**
-     * Gets the TreePath node for an AnnotationValue for an AnnotationMirror on a given Element.
-     * Returns null if the node can not be found.
+     * Returns the TreePath node for an AnnotationValue for an AnnotationMirror on a given Element.
+     * Returns {@code null} if the node can not be found.
+     * @param e the element
+     * @param a the annotation mirror
+     * @param v the annotation value
+     * @return the tree path
      */
     public abstract TreePath getPath(Element e, AnnotationMirror a, AnnotationValue v);
 
     /**
-     * Gets the Element for the Tree node identified by a given TreePath.
-     * Returns null if the element is not available.
+     * Returns the Element for the Tree node identified by a given TreePath.
+     * Returns {@code null} if the element is not available.
+     * @param path the tree path
+     * @return the element
      * @throws IllegalArgumentException is the TreePath does not identify
      * a Tree node that might have an associated Element.
      */
     public abstract Element getElement(TreePath path);
 
     /**
-     * Gets the TypeMirror for the Tree node identified by a given TreePath.
-     * Returns null if the TypeMirror is not available.
+     * Returns the TypeMirror for the Tree node identified by a given TreePath.
+     * Returns {@code null} if the TypeMirror is not available.
+     * @param path the tree path
+     * @return the type mirror
      * @throws IllegalArgumentException is the TreePath does not identify
      * a Tree node that might have an associated TypeMirror.
      */
     public abstract TypeMirror getTypeMirror(TreePath path);
 
     /**
-     * Gets the Scope for the Tree node identified by a given TreePath.
-     * Returns null if the Scope is not available.
+     * Returns the Scope for the Tree node identified by a given TreePath.
+     * Returns {@code null} if the Scope is not available.
+     * @param path the tree path
+     * @return the scope
      */
     public abstract Scope getScope(TreePath path);
 
     /**
-     * Gets the doc comment, if any, for the Tree node identified by a given TreePath.
-     * Returns null if no doc comment was found.
+     * Returns the doc comment, if any, for the Tree node identified by a given TreePath.
+     * Returns {@code null} if no doc comment was found.
      * @see DocTrees#getDocCommentTree(TreePath)
+     * @param path the tree path
+     * @return the doc comment
      */
     public abstract String getDocComment(TreePath path);
 
@@ -195,7 +231,7 @@ public abstract class Trees {
     public abstract boolean isAccessible(Scope scope, Element member, DeclaredType type);
 
     /**
-      * Gets the original type from the ErrorType object.
+      * Returns the original type from the ErrorType object.
       * @param errorType The errorType for which we want to get the original type.
       * @return javax.lang.model.type.TypeMirror corresponding to the original type, replaced by the ErrorType.
       */
@@ -215,7 +251,7 @@ public abstract class Trees {
             com.sun.source.tree.CompilationUnitTree root);
 
     /**
-     * Gets the lub of an exception parameter declared in a catch clause.
+     * Returns the lub of an exception parameter declared in a catch clause.
      * @param tree the tree for the catch clause
      * @return The lub of the exception parameter
      */
