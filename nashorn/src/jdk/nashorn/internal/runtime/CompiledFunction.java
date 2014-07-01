@@ -89,11 +89,12 @@ final class CompiledFunction {
         this.log = log;
     }
 
-    CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData, final int flags) {
+    CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData,
+            final Map<Integer, Type> invalidatedProgramPoints, final int flags) {
         this(invoker, null, functionData.getLogger());
         this.flags = flags;
         if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
-            optimismInfo = new OptimismInfo(functionData);
+            optimismInfo = new OptimismInfo(functionData, invalidatedProgramPoints);
         } else {
             optimismInfo = null;
         }
@@ -691,13 +692,14 @@ final class CompiledFunction {
     private static class OptimismInfo {
         // TODO: this is pointing to its owning ScriptFunctionData. Re-evaluate if that's okay.
         private final RecompilableScriptFunctionData data;
-        private final Map<Integer, Type> invalidatedProgramPoints = new TreeMap<>();
+        private final Map<Integer, Type> invalidatedProgramPoints;
         private SwitchPoint optimisticAssumptions;
         private final DebugLogger log;
 
-        OptimismInfo(final RecompilableScriptFunctionData data) {
+        OptimismInfo(final RecompilableScriptFunctionData data, final Map<Integer, Type> invalidatedProgramPoints) {
             this.data = data;
             this.log  = data.getLogger();
+            this.invalidatedProgramPoints = invalidatedProgramPoints == null ? new TreeMap<Integer, Type>() : invalidatedProgramPoints;
             newOptimisticAssumptions();
         }
 

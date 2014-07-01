@@ -75,7 +75,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -157,30 +156,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     @Override
     public DebugLogger initLogger(final Context context) {
         return context.getLogger(this.getClass());
-    }
-
-    @Override
-    public Node leaveBlock(final Block block) {
-        //now we have committed the entire statement list to the block, but we need to truncate
-        //whatever is after the last terminal. block append won't append past it
-
-
-        if (lc.isFunctionBody()) {
-            final FunctionNode currentFunction = lc.getCurrentFunction();
-            final boolean isProgram = currentFunction.isProgram();
-            final Statement last = lc.getLastStatement();
-            final ReturnNode returnNode = new ReturnNode(
-                last == null ? currentFunction.getLineNumber() : last.getLineNumber(), //TODO?
-                currentFunction.getToken(),
-                currentFunction.getFinish(),
-                isProgram ?
-                    compilerConstant(RETURN) :
-                    LiteralNode.newInstance(block, ScriptRuntime.UNDEFINED));
-
-            returnNode.accept(this);
-        }
-
-        return block;
     }
 
     @Override

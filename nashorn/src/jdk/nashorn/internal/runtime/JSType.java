@@ -130,6 +130,9 @@ public enum JSType {
     /** Combined call to toPrimitive followed by toString. */
     public static final Call TO_PRIMITIVE_TO_STRING = staticCall(JSTYPE_LOOKUP, JSType.class, "toPrimitiveToString", String.class, Object.class);
 
+    /** Combined call to toPrimitive followed by toCharSequence. */
+    public static final Call TO_PRIMITIVE_TO_CHARSEQUENCE = staticCall(JSTYPE_LOOKUP, JSType.class, "toPrimitiveToCharSequence", CharSequence.class, Object.class);
+
     /** Throw an unwarranted optimism exception */
     public static final Call THROW_UNWARRANTED = staticCall(JSTYPE_LOOKUP, JSType.class, "throwUnwarrantedOptimismException", Object.class, Object.class, int.class);
 
@@ -485,6 +488,16 @@ public enum JSType {
      */
     public static String toPrimitiveToString(final Object obj) {
         return toString(toPrimitive(obj));
+    }
+
+    /**
+     * Like {@link #toPrimitiveToString(Object)}, but avoids conversion of ConsString to String.
+     *
+     * @param obj  an object
+     * @return the CharSequence form of the primitive form of the object
+     */
+    public static CharSequence toPrimitiveToCharSequence(final Object obj) {
+        return toCharSequence(toPrimitive(obj));
     }
 
     /**
