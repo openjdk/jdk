@@ -866,90 +866,6 @@ public class TransTypes extends TreeTranslator {
         return types.erasure(t);
     }
 
-    private boolean boundsRestricted(ClassSymbol c) {
-        Type st = types.supertype(c.type);
-        if (st.isParameterized()) {
-            List<Type> actuals = st.allparams();
-            List<Type> formals = st.tsym.type.allparams();
-            while (!actuals.isEmpty() && !formals.isEmpty()) {
-                Type actual = actuals.head;
-                Type formal = formals.head;
-
-                if (!types.isSameType(types.erasure(actual),
-                        types.erasure(formal)))
-                    return true;
-
-                actuals = actuals.tail;
-                formals = formals.tail;
-            }
-        }
-        return false;
-    }
-
-    private List<JCTree> addOverrideBridgesIfNeeded(DiagnosticPosition pos,
-                                    final ClassSymbol c) {
-        ListBuffer<JCTree> buf = new ListBuffer<>();
-        if (c.isInterface() || !boundsRestricted(c))
-            return buf.toList();
-        Type t = types.supertype(c.type);
-            Scope s = t.tsym.members();
-            if (s.elems != null) {
-                for (Symbol sym : s.getElements(new NeedsOverridBridgeFilter(c))) {
-
-                    MethodSymbol m = (MethodSymbol)sym;
-                    MethodSymbol member = (MethodSymbol)m.asMemberOf(c.type, types);
-                    MethodSymbol impl = m.implementation(c, types, false);
-
-                    if ((impl == null || impl.owner != c) &&
-                            !types.isSameType(member.erasure(types), m.erasure(types))) {
-                        addOverrideBridges(pos, m, member, c, buf);
-                    }
-                }
-            }
-        return buf.toList();
-    }
-    // where
-        class NeedsOverridBridgeFilter implements Filter<Symbol> {
-
-            ClassSymbol c;
-
-            NeedsOverridBridgeFilter(ClassSymbol c) {
-                this.c = c;
-            }
-            public boolean accepts(Symbol s) {
-                return s.kind == MTH &&
-                            !s.isConstructor() &&
-                            s.isInheritedIn(c, types) &&
-                            (s.flags() & FINAL) == 0 &&
-                            (s.flags() & (SYNTHETIC | OVERRIDE_BRIDGE)) != SYNTHETIC;
-            }
-        }
-
-    private void addOverrideBridges(DiagnosticPosition pos,
-                                    MethodSymbol impl,
-                                    MethodSymbol member,
-                                    ClassSymbol c,
-                                    ListBuffer<JCTree> bridges) {
-        Type implErasure = impl.erasure(types);
-        long flags = (impl.flags() & AccessFlags) | SYNTHETIC | BRIDGE | OVERRIDE_BRIDGE;
-        member = new MethodSymbol(flags, member.name, member.type, c);
-        JCMethodDecl md = make.MethodDef(member, null);
-        JCExpression receiver = make.Super(types.supertype(c.type).tsym.erasure(types), c);
-        Type calltype = erasure(impl.type.getReturnType());
-        JCExpression call =
-            make.Apply(null,
-                       make.Select(receiver, impl).setType(calltype),
-                       translateArgs(make.Idents(md.params),
-                                     implErasure.getParameterTypes(), null))
-            .setType(calltype);
-        JCStatement stat = (member.getReturnType().hasTag(VOID))
-            ? make.Exec(call)
-            : make.Return(coerce(call, member.erasure(types).getReturnType()));
-        md.body = make.Block(0, List.of(stat));
-        c.members().enter(member);
-        bridges.append(md);
-    }
-
 /**************************************************************************
  * main method
  *************************************************************************/
@@ -1007,8 +923,6 @@ public class TransTypes extends TreeTranslator {
                 make.at(tree.pos);
                 if (addBridges) {
                     ListBuffer<JCTree> bridges = new ListBuffer<>();
-                    if (false) //see CR: 6996415
-                        bridges.appendList(addOverrideBridgesIfNeeded(tree, c));
                     if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
                         addBridges(tree.pos(), c, bridges);
                     }
