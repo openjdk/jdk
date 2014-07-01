@@ -33,7 +33,6 @@ import java.util.ArrayList;
 import sun.util.logging.PlatformLogger;
 
 import sun.awt.dnd.SunDragSourceContextPeer;
-import sun.awt.EventQueueDelegate;
 
 /**
  * EventDispatchThread is a package-private AWT class which takes
@@ -158,17 +157,11 @@ class EventDispatchThread extends Thread {
         boolean eventOK = false;
         try {
             EventQueue eq = null;
-            EventQueueDelegate.Delegate delegate = null;
             do {
                 // EventQueue may change during the dispatching
                 eq = getEventQueue();
-                delegate = EventQueueDelegate.getDelegate();
 
-                if (delegate != null && id == ANY_EVENT) {
-                    event = delegate.getNextEvent(eq);
-                } else {
-                    event = (id == ANY_EVENT) ? eq.getNextEvent() : eq.getNextEvent(id);
-                }
+                event = (id == ANY_EVENT) ? eq.getNextEvent() : eq.getNextEvent(id);
 
                 eventOK = true;
                 synchronized (eventFilters) {
@@ -194,14 +187,7 @@ class EventDispatchThread extends Thread {
                 eventLog.finest("Dispatching: " + event);
             }
 
-            Object handle = null;
-            if (delegate != null) {
-                handle = delegate.beforeDispatch(event);
-            }
             eq.dispatchEvent(event);
-            if (delegate != null) {
-                delegate.afterDispatch(event, handle);
-            }
         }
         catch (ThreadDeath death) {
             doDispatch = false;

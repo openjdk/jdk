@@ -35,6 +35,8 @@ import javax.swing.event.TableModelListener;
 @test
 @summary Simple Overlapping test for JTable
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JTableInGlassPaneOverlapping
  */
 public class JTableInGlassPaneOverlapping extends GlassPaneOverlappingTestBase {

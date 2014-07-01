@@ -395,7 +395,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * for "Print To File"
      */
     private boolean showFileChooser() {
-        Class dstCategory = Destination.class;
+        Class<Destination> dstCategory = Destination.class;
 
         Destination dst = (Destination)asCurrent.get(dstCategory);
         if (dst == null) {
@@ -463,7 +463,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
      */
     public static void initResource() {
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     try {
                         messageRB = ResourceBundle.getBundle(strBundle);
@@ -529,7 +529,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
     /**
      * Returns the mnemonic as a KeyEvent.VK constant from the resource.
      */
-    static Class _keyEventClazz = null;
+    static Class<?> _keyEventClazz = null;
     private static int getVKMnemonic(String key) {
         String s = String.valueOf(getMnemonic(key));
         if ( s == null || s.length() != 1) {
@@ -554,9 +554,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
      * Returns URL for image resource
      */
     private static URL getImageResource(final String key) {
-        URL url = (URL)java.security.AccessController.doPrivileged(
-                       new java.security.PrivilegedAction() {
-                public Object run() {
+        URL url = java.security.AccessController.doPrivileged(
+                       new java.security.PrivilegedAction<URL>() {
+                public URL run() {
                     URL url = ServiceDialog.class.getResource(
                                                   "resources/" + key);
                     return url;
@@ -710,7 +710,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         private FilePermission printToFilePermission;
         private JButton btnProperties;
         private JCheckBox cbPrintToFile;
-        private JComboBox cbName;
+        private JComboBox<String> cbName;
         private JLabel lblType, lblStatus, lblInfo;
         private ServiceUIFactory uiFactory;
         private boolean changedService = false;
@@ -731,7 +731,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             for (int i = 0; i < psnames.length; i++) {
                 psnames[i] = services[i].getName();
             }
-            cbName = new JComboBox(psnames);
+            cbName = new JComboBox<>(psnames);
             cbName.setSelectedIndex(defaultServiceIndex);
             cbName.addItemListener(this);
             cbName.addPopupMenuListener(this);
@@ -924,7 +924,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class dstCategory = Destination.class;
+            Class<Destination> dstCategory = Destination.class;
             boolean dstSupported = false;
             boolean dstSelected = false;
             boolean dstAllowed = filePermission ?
@@ -1123,7 +1123,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class prCategory = PageRanges.class;
+            Class<PageRanges> prCategory = PageRanges.class;
             prSupported = false;
 
             if (psCurrent.isAttributeCategorySupported(prCategory) ||
@@ -1240,9 +1240,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class cpCategory = Copies.class;
-            Class csCategory = CopiesSupported.class;
-            Class scCategory = SheetCollate.class;
+            Class<Copies> cpCategory = Copies.class;
+            Class<SheetCollate> scCategory = SheetCollate.class;
             boolean cpSupported = false;
             scSupported = false;
 
@@ -1525,7 +1524,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
             float bm = bmTmpObj.floatValue();
 
             /* adjust for orientation */
-            Class orCategory = OrientationRequested.class;
+            Class<OrientationRequested> orCategory = OrientationRequested.class;
             OrientationRequested or =
                 (OrientationRequested)asCurrent.get(orCategory);
 
@@ -1589,7 +1588,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         private MediaPrintableArea validateMargins(float lm, float rm,
                                                    float tm, float bm) {
 
-            Class mpaCategory = MediaPrintableArea.class;
+            Class<MediaPrintableArea> mpaCategory = MediaPrintableArea.class;
             MediaPrintableArea mpa;
             MediaPrintableArea mpaMax = null;
             MediaSize mediaSize = null;
@@ -1671,7 +1670,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                 return;
             }
 
-            Class mpaCategory = MediaPrintableArea.class;
+            Class<MediaPrintableArea> mpaCategory = MediaPrintableArea.class;
             MediaPrintableArea mpa =
                  (MediaPrintableArea)asCurrent.get(mpaCategory);
             MediaPrintableArea mpaMax = null;
@@ -1845,7 +1844,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
              * to the fields appropriate for the orientation.
              * Note: if orientation changes this method must be called.
              */
-            Class orCategory = OrientationRequested.class;
+            Class<OrientationRequested> orCategory = OrientationRequested.class;
             OrientationRequested or =
                 (OrientationRequested)asCurrent.get(orCategory);
 
@@ -1885,9 +1884,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
         private final String strTitle = getMsg("border.media");
         private JLabel lblSize, lblSource;
-        private JComboBox cbSize, cbSource;
-        private Vector sizes = new Vector();
-        private Vector sources = new Vector();
+        private JComboBox<Object> cbSize, cbSource;
+        private Vector<MediaSizeName> sizes = new Vector<>();
+        private Vector<MediaTray> sources = new Vector<>();
         private MarginsPanel pnlMargins = null;
 
         public MediaPanel() {
@@ -1899,8 +1898,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             setLayout(gridbag);
             setBorder(BorderFactory.createTitledBorder(strTitle));
 
-            cbSize = new JComboBox();
-            cbSource = new JComboBox();
+            cbSize = new JComboBox<>();
+            cbSource = new JComboBox<>();
 
             c.fill = GridBagConstraints.BOTH;
             c.insets = compInsets;
@@ -1950,17 +1949,17 @@ public class ServiceDialog extends JDialog implements ActionListener {
                             (cbSource.getSelectedIndex() >= 1))
                         {
                             int src = cbSource.getSelectedIndex() - 1;
-                            MediaTray mt = (MediaTray)sources.get(src);
+                            MediaTray mt = sources.get(src);
                             asCurrent.add(new SunAlternateMedia(mt));
                         }
-                        asCurrent.add((MediaSizeName)sizes.get(index));
+                        asCurrent.add(sizes.get(index));
                     }
                 } else if (source == cbSource) {
                     int index = cbSource.getSelectedIndex();
 
                     if ((index >= 1) && (index < (sources.size() + 1))) {
                        asCurrent.remove(SunAlternateMedia.class);
-                       MediaTray newTray = (MediaTray)sources.get(index - 1);
+                       MediaTray newTray = sources.get(index - 1);
                        Media m = (Media)asCurrent.get(Media.class);
                        if (m == null || m instanceof MediaTray) {
                            asCurrent.add(newTray);
@@ -1980,7 +1979,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
                         asCurrent.remove(SunAlternateMedia.class);
                         if (cbSize.getItemCount() > 0) {
                             int size = cbSize.getSelectedIndex();
-                            asCurrent.add((MediaSizeName)sizes.get(size));
+                            asCurrent.add(sizes.get(size));
                         }
                     }
                 }
@@ -1997,8 +1996,8 @@ public class ServiceDialog extends JDialog implements ActionListener {
             pnlMargins = pnl;
         }
         public void updateInfo() {
-            Class mdCategory = Media.class;
-            Class amCategory = SunAlternateMedia.class;
+            Class<Media> mdCategory = Media.class;
+            Class<SunAlternateMedia> amCategory = SunAlternateMedia.class;
             boolean mediaSupported = false;
 
             cbSize.removeItemListener(this);
@@ -2025,10 +2024,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
                         Media medium = media[i];
 
                         if (medium instanceof MediaSizeName) {
-                            sizes.add(medium);
+                            sizes.add((MediaSizeName)medium);
                             cbSize.addItem(getMediaName(medium.toString()));
                         } else if (medium instanceof MediaTray) {
-                            sources.add(medium);
+                            sources.add((MediaTray)medium);
                             cbSource.addItem(getMediaName(medium.toString()));
                         }
                     }
@@ -2095,12 +2094,12 @@ public class ServiceDialog extends JDialog implements ActionListener {
 
                 int selIndex = cbSize.getSelectedIndex();
                 if ((selIndex >= 0) && (selIndex < sizes.size())) {
-                  asCurrent.add((MediaSizeName)sizes.get(selIndex));
+                  asCurrent.add(sizes.get(selIndex));
                 }
 
                 selIndex = cbSource.getSelectedIndex();
                 if ((selIndex >= 1) && (selIndex < (sources.size()+1))) {
-                    MediaTray mt = (MediaTray)sources.get(selIndex-1);
+                    MediaTray mt = sources.get(selIndex-1);
                     if (medium instanceof MediaTray) {
                         asCurrent.add(mt);
                     } else {
@@ -2185,7 +2184,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class orCategory = OrientationRequested.class;
+            Class<OrientationRequested> orCategory = OrientationRequested.class;
             boolean pSupported = false;
             boolean lSupported = false;
             boolean rpSupported = false;
@@ -2363,7 +2362,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class chCategory = Chromaticity.class;
+            Class<Chromaticity> chCategory = Chromaticity.class;
             boolean monoSupported = false;
             boolean colorSupported = false;
 
@@ -2458,7 +2457,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class pqCategory = PrintQuality.class;
+            Class<PrintQuality> pqCategory = PrintQuality.class;
             boolean draftSupported = false;
             boolean normalSupported = false;
             boolean highSupported = false;
@@ -2568,7 +2567,7 @@ public class ServiceDialog extends JDialog implements ActionListener {
         }
 
         public void updateInfo() {
-            Class sdCategory = Sides.class;
+            Class<Sides> sdCategory = Sides.class;
             boolean osSupported = false;
             boolean tSupported = false;
             boolean dSupported = false;
@@ -2725,10 +2724,10 @@ public class ServiceDialog extends JDialog implements ActionListener {
         public void focusGained(FocusEvent e) {}
 
         public void updateInfo() {
-            Class jsCategory = JobSheets.class;
-            Class jpCategory = JobPriority.class;
-            Class jnCategory = JobName.class;
-            Class unCategory = RequestingUserName.class;
+            Class<JobSheets>          jsCategory = JobSheets.class;
+            Class<JobPriority>        jpCategory = JobPriority.class;
+            Class<JobName>            jnCategory = JobName.class;
+            Class<RequestingUserName> unCategory = RequestingUserName.class;
             boolean jsSupported = false;
             boolean jpSupported = false;
             boolean jnSupported = false;
@@ -2817,9 +2816,9 @@ public class ServiceDialog extends JDialog implements ActionListener {
         {
             super(new FlowLayout(FlowLayout.LEADING));
             final URL imgURL = getImageResource(img);
-            Icon icon = (Icon)java.security.AccessController.doPrivileged(
-                                 new java.security.PrivilegedAction() {
-                public Object run() {
+            Icon icon = java.security.AccessController.doPrivileged(
+                                 new java.security.PrivilegedAction<Icon>() {
+                public Icon run() {
                     Icon icon = new ImageIcon(imgURL);
                     return icon;
                 }

@@ -115,7 +115,7 @@ public class JvmCompilationImpl implements JvmCompilationMBean {
             t = getCompilationMXBean().getTotalCompilationTime();
         else
             t = 0;
-        return new Long(t);
+        return t;
     }
 
     /**

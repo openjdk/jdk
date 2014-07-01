@@ -155,7 +155,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * @exception IOException on any I/O error
      */
     protected void writeAttributes(AttributeSet attr) throws IOException {
-        Enumeration attributeNames = attr.getAttributeNames();
+        Enumeration<?> attributeNames = attr.getAttributeNames();
         while (attributeNames.hasMoreElements()) {
             Object name = attributeNames.nextElement();
             if ((name instanceof StyleConstants.ParagraphConstants) ||
@@ -195,6 +195,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * Writes out a start tag appropriately
      * indented.  Also increments the indent level.
      *
+     * @param tag a start tag
      * @exception IOException on any I/O error
      */
     protected void writeStartTag(String tag) throws IOException {
@@ -209,6 +210,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * Writes out an end tag appropriately
      * indented.  Also decrements the indent level.
      *
+     * @param endTag an end tag
      * @exception IOException on any I/O error
      */
     protected void writeEndTag(String endTag) throws IOException {
@@ -255,7 +257,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
          *  stylenames.
          */
         DefaultStyledDocument styledDoc =  ((DefaultStyledDocument)getDocument());
-        Enumeration styleNames = styledDoc.getStyleNames();
+        Enumeration<?> styleNames = styledDoc.getStyleNames();
 
         while (styleNames.hasMoreElements()) {
             Style s = styledDoc.getStyle((String)styleNames.nextElement());
@@ -284,7 +286,9 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * branch elements or leaf elements.  This method specially handles
      * leaf elements that are text.
      *
-     * @exception IOException on any I/O error
+     * @throws IOException on any I/O error
+     * @throws BadLocationException if we are in an invalid
+     *            location within the document.
      */
     protected void writeBody() throws IOException, BadLocationException {
         ElementIterator it = getElementIterator();
@@ -354,6 +358,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * &lt;p&gt; tag and sets its value to be the name of the
      * style.
      *
+     * @param elem an element
      * @exception IOException on any I/O error
      */
     protected void writeStartParagraph(Element elem) throws IOException {
@@ -371,6 +376,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * Responsible for writing out other non-text leaf
      * elements.
      *
+     * @param elem an element
      * @exception IOException on any I/O error
      */
     protected void writeLeaf(Element elem) throws IOException {
@@ -392,7 +398,8 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * In certain cases it could be a URL, in others it could
      * be read from a stream.
      *
-     * @param elem element of type StyleConstants.IconElementName
+     * @param elem an element of type StyleConstants.IconElementName
+     * @throws IOException if I/O error occured.
      */
     protected void writeImage(Element elem) throws IOException {
     }
@@ -402,6 +409,9 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * Responsible for handling Component Elements;
      * deliberately unimplemented.
      * How this method is implemented is a matter of policy.
+     *
+     * @param elem an element of type StyleConstants.ComponentElementName
+     * @throws IOException if I/O error occured.
      */
     protected void writeComponent(Element elem) throws IOException {
     }
@@ -410,6 +420,8 @@ public class MinimalHTMLWriter extends AbstractWriter {
     /**
      * Returns true if the element is a text element.
      *
+     * @param elem an element
+     * @return {@code true} if the element is a text element.
      */
     protected boolean isText(Element elem) {
         return (elem.getName() == AbstractDocument.ContentElementName);
@@ -420,6 +432,8 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * Writes out the attribute set
      * in an HTML-compliant manner.
      *
+     * @param elem an element
+     * @param needsIndenting indention will be added if {@code needsIndenting} is {@code true}
      * @exception IOException on any I/O error
      * @exception BadLocationException if pos represents an invalid
      *            location within the document.
@@ -442,6 +456,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * bold &lt;b&gt;, italic &lt;i&gt;, and &lt;u&gt; tags for the
      * text based on its attribute settings.
      *
+     * @param attr a set of attributes
      * @exception IOException on any I/O error
      */
 
@@ -553,6 +568,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * style attribute is set to contain the list of remaining
      * attributes just like inline styles.
      *
+     * @param attr a set of attributes
      * @exception IOException on any I/O error
      */
     protected void writeNonHTMLAttributes(AttributeSet attr) throws IOException {
@@ -608,6 +624,8 @@ public class MinimalHTMLWriter extends AbstractWriter {
 
     /**
      * Returns true if we are currently in a &lt;font&gt; tag.
+     *
+     * @return {@code true} if we are currently in a &lt;font&gt; tag.
      */
     protected boolean inFontTag() {
         return (fontAttributes != null);
@@ -636,6 +654,7 @@ public class MinimalHTMLWriter extends AbstractWriter {
      * any enclosing font tag before writing out a
      * new start tag.
      *
+     * @param style a font style
      * @exception IOException on any I/O error
      */
     protected void startFontTag(String style) throws IOException {

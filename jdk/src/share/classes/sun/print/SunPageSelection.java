@@ -25,6 +25,7 @@
 
 package sun.print;
 
+import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 /*
@@ -43,7 +44,7 @@ public final class SunPageSelection implements PrintRequestAttribute {
         pages = value;
     }
 
-    public final Class getCategory() {
+    public final Class<? extends Attribute> getCategory() {
         return SunPageSelection.class;
     }
 

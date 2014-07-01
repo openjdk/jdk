@@ -31,7 +31,6 @@ public class JMXStartStopDoSomething {
     }
 
     public static void main(String args[]) throws Exception {
-        System.out.println("pid:" + ProcessTools.getProcessId());
         System.out.println("main enter");
         System.out.flush();
         doSomething();

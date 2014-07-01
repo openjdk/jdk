@@ -62,6 +62,13 @@ int main(int argc, char **argv) {
     return unpacker::run(argc, argv);
 }
 
+// Dealing with big-endian arch
+#ifdef _BIG_ENDIAN
+#define SWAP_INT(a) (((a>>24)&0xff) | ((a<<8)&0xff0000) | ((a>>8)&0xff00) | ((a<<24)&0xff000000))
+#else
+#define SWAP_INT(a) (a)
+#endif
+
 // Single-threaded, implementation, not reentrant.
 // Includes a weak error check against MT access.
 #ifndef THREAD_SELF
@@ -385,6 +392,7 @@ int unpacker::run(int argc, char **argv) {
       u.start();
     }
   } else {
+    u.gzcrc = 0;
     u.start(peek, sizeof(peek));
   }
 
@@ -425,7 +433,23 @@ int unpacker::run(int argc, char **argv) {
     status = 1;
   }
 
-  if (u.infileptr != null) {
+  if (!u.aborting() && u.infileptr != null) {
+    if (u.gzcrc != 0) {
+      // Read the CRC information from the gzip container
+      fseek(u.infileptr, -8, SEEK_END);
+      uint filecrc;
+      fread(&filecrc, sizeof(filecrc), 1, u.infileptr);
+      if (u.gzcrc != SWAP_INT(filecrc)) { // CRC error
+        if (strcmp(destination_file, "-") != 0) {
+          // Output is not stdout, remove it, it's broken
+          if (u.jarout != null)
+            u.jarout->closeJarFile(false);
+          remove(destination_file);
+        }
+        // Print out the error and exit with return code != 0
+        u.abort("CRC error, invalid compressed data.");
+      }
+    }
     fclose(u.infileptr);
     u.infileptr = null;
   }

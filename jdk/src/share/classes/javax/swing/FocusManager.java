@@ -44,6 +44,7 @@ import java.awt.*;
  *
  * @author Arnaud Weber
  * @author David Mendenhall
+ * @since 1.2
  */
 public abstract class FocusManager extends DefaultKeyboardFocusManager {
 

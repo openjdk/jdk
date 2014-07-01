@@ -32,6 +32,8 @@ package java.beans;
  * class.
  * <p>
  * Currently all our state comes from the FeatureDescriptor base class.
+ *
+ * @since 1.1
  */
 
 public class ParameterDescriptor extends FeatureDescriptor {

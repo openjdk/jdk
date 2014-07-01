@@ -329,7 +329,7 @@ public class Util {
         try {
             dbb = (MappedByteBuffer)directByteBufferConstructor.newInstance(
               new Object[] { new Integer(size),
-                             new Long(addr),
+                             addr,
                              fd,
                              unmapper });
         } catch (InstantiationException |
@@ -374,7 +374,7 @@ public class Util {
         try {
             dbb = (MappedByteBuffer)directByteBufferRConstructor.newInstance(
               new Object[] { new Integer(size),
-                             new Long(addr),
+                             addr,
                              fd,
                              unmapper });
         } catch (InstantiationException |

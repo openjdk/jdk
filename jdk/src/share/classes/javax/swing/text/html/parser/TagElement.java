@@ -39,10 +39,21 @@ public class TagElement {
     HTML.Tag htmlTag;
     boolean insertedByErrorRecovery;
 
-    public TagElement ( Element elem ) {
+    /**
+     * Creates a generic HTML TagElement class with {@code fictional} equals to {@code false}.
+     *
+     * @param elem an element
+     */
+    public TagElement(Element elem) {
         this(elem, false);
     }
 
+    /**
+     * Creates a generic HTML TagElement class.
+     *
+     * @param elem an element
+     * @param fictional if {@code true} the tag is inserted by error recovery.
+     */
     public TagElement (Element elem, boolean fictional) {
         this.elem = elem;
         htmlTag = HTML.getTag(elem.getName());
@@ -52,22 +63,52 @@ public class TagElement {
         insertedByErrorRecovery = fictional;
     }
 
+    /**
+     * Returns {@code true} if this tag causes a
+     * line break to the flow of data, otherwise returns
+     * {@code false}.
+     *
+     * @return {@code true} if this tag causes a
+     *   line break to the flow of data, otherwise returns
+     *   {@code false}
+     */
     public boolean breaksFlow() {
         return htmlTag.breaksFlow();
     }
 
+    /**
+     * Returns {@code true} if this tag is pre-formatted.
+     *
+     * @return {@code true} if this tag is pre-formatted,
+     *   otherwise returns {@code false}
+     */
     public boolean isPreformatted() {
         return htmlTag.isPreformatted();
     }
 
+    /**
+     * Returns the element.
+     *
+     * @return the element
+     */
     public Element getElement() {
         return elem;
     }
 
+    /**
+     * Returns the tag constant corresponding to the name of the {@code element}
+     *
+     * @return the tag constant corresponding to the name of the {@code element}
+     */
     public HTML.Tag getHTMLTag() {
         return htmlTag;
     }
 
+    /**
+     * Returns {@code true} if the tag is fictional.
+     *
+     * @return {@code true} if the tag is fictional.
+     */
     public boolean fictional() {
         return insertedByErrorRecovery;
     }

@@ -70,7 +70,7 @@ public class JvmMemGCEntryImpl implements JvmMemGCEntryMBean {
      */
     // Don't bother to uses the request contextual cache for this.
     public Long getJvmMemGCTimeMs() throws SnmpStatusException {
-        return new Long(gcm.getCollectionTime());
+        return gcm.getCollectionTime();
     }
 
     /**
@@ -78,7 +78,7 @@ public class JvmMemGCEntryImpl implements JvmMemGCEntryMBean {
      */
     // Don't bother to uses the request contextual cache for this.
     public Long getJvmMemGCCount() throws SnmpStatusException {
-        return new Long(gcm.getCollectionCount());
+        return gcm.getCollectionCount();
     }
 
     /**

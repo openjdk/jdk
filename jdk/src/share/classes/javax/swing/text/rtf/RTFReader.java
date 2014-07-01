@@ -220,6 +220,7 @@ public void begingroup()
     Object oldSaveState = parserState.get("_savedState");
     if (oldSaveState != null)
         parserState.remove("_savedState");
+    @SuppressWarnings("unchecked")
     Dictionary<String, Object> saveState = (Dictionary<String, Object>)((Hashtable)parserState).clone();
     if (oldSaveState != null)
         saveState.put("_savedState", oldSaveState);
@@ -242,13 +243,14 @@ public void endgroup()
         skippingCharacters = 0;
     }
 
+    @SuppressWarnings("unchecked")
     Dictionary<Object, Object> restoredState = (Dictionary<Object, Object>)parserState.get("_savedState");
     Destination restoredDestination = (Destination)restoredState.get("dst");
     if (restoredDestination != rtfDestination) {
         rtfDestination.close(); /* allow the destination to clean up */
         rtfDestination = restoredDestination;
     }
-    Dictionary oldParserState = parserState;
+    Dictionary<Object, Object> oldParserState = parserState;
     parserState = restoredState;
     if (rtfDestination != null)
         rtfDestination.endgroup(oldParserState);
@@ -258,7 +260,8 @@ protected void setRTFDestination(Destination newDestination)
 {
     /* Check that setting the destination won't close the
        current destination (should never happen) */
-    Dictionary previousState = (Dictionary)parserState.get("_savedState");
+    @SuppressWarnings("unchecked")
+    Dictionary<Object, Object> previousState = (Dictionary)parserState.get("_savedState");
     if (previousState != null) {
         if (rtfDestination != previousState.get("dst")) {
             warning("Warning, RTF destination overridden, invalid RTF.");
@@ -277,7 +280,7 @@ protected void setRTFDestination(Destination newDestination)
 public void close()
     throws IOException
 {
-    Enumeration docProps = documentAttributes.getAttributeNames();
+    Enumeration<?> docProps = documentAttributes.getAttributeNames();
     while(docProps.hasMoreElements()) {
         Object propName = docProps.nextElement();
         target.putProperty(propName,
@@ -628,7 +631,7 @@ interface Destination {
     boolean handleKeyword(String keyword, int parameter);
 
     void begingroup();
-    void endgroup(Dictionary oldState);
+    void endgroup(Dictionary<Object, Object> oldState);
 
     void close();
 }
@@ -666,7 +669,7 @@ class DiscardingDestination implements Destination
            current group level as necessary */
     }
 
-    public void endgroup(Dictionary oldState)
+    public void endgroup(Dictionary<Object, Object> oldState)
     {
         /* Ignore groups */
     }
@@ -736,7 +739,7 @@ class FonttblDestination implements Destination
 
     /* Groups are irrelevant. */
     public void begingroup() {}
-    public void endgroup(Dictionary oldState) {}
+    public void endgroup(Dictionary<Object, Object> oldState) {}
 
     /* currently, the only thing we do when the font table ends is
        dump its contents to the debugging log. */
@@ -806,7 +809,7 @@ class ColortblDestination implements Destination
 
     /* Groups are irrelevant. */
     public void begingroup() {}
-    public void endgroup(Dictionary oldState) {}
+    public void endgroup(Dictionary<Object, Object> oldState) {}
 
     /* Shouldn't see any binary blobs ... */
     public void handleBinaryBlob(byte[] data) {}
@@ -1098,7 +1101,7 @@ abstract class AttributeTrackingDestination implements Destination
         parserState.put("sec", sectionAttributes);
     }
 
-    public void endgroup(Dictionary oldState)
+    public void endgroup(Dictionary<Object, Object> oldState)
     {
         characterAttributes = (MutableAttributeSet)parserState.get("chr");
         paragraphAttributes = (MutableAttributeSet)parserState.get("pgf");
@@ -1262,7 +1265,9 @@ abstract class AttributeTrackingDestination implements Destination
             Dictionary<Object, Object> tabs;
             Integer stopCount;
 
-            tabs = (Dictionary<Object, Object>)parserState.get("_tabs");
+            @SuppressWarnings("unchecked")
+            Dictionary<Object, Object>tmp = (Dictionary)parserState.get("_tabs");
+            tabs = tmp;
             if (tabs == null) {
                 tabs = new Hashtable<Object, Object>();
                 parserState.put("_tabs", tabs);
@@ -1420,7 +1425,8 @@ abstract class AttributeTrackingDestination implements Destination
 
         tabs = (TabStop[])parserState.get("_tabs_immutable");
         if (tabs == null) {
-            Dictionary workingTabs = (Dictionary)parserState.get("_tabs");
+            @SuppressWarnings("unchecked")
+            Dictionary<Object, Object> workingTabs = (Dictionary)parserState.get("_tabs");
             if (workingTabs != null) {
                 int count = ((Integer)workingTabs.get("stop count")).intValue();
                 tabs = new TabStop[count];

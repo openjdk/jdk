@@ -26,6 +26,7 @@ import java.awt.*;
 import java.awt.event.InputEvent;
 import javax.swing.*;
 import java.io.*;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for Panel and JPanel behavior during resizing.
@@ -36,6 +37,8 @@ import java.io.*;
 @bug 6786219
 @summary Issues when resizing the frame after mixing of heavy weight & light weight components
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @build FrameBorderCounter
 @run main MixingPanelsResizing
  */
@@ -365,7 +368,7 @@ class Sysout {
     public static void createDialogWithInstructions(String[] instructions) {
         dialog = new TestDialog(new Frame(), "Instructions");
         dialog.printInstructions(instructions);
-        dialog.setVisible(true);
+        //dialog.setVisible(true);
         println("Any messages for the tester will display here.");
     }
 
@@ -373,7 +376,7 @@ class Sysout {
         dialog = new TestDialog(new Frame(), "Instructions");
         String[] defInstr = {"Instructions will appear here. ", ""};
         dialog.printInstructions(defInstr);
-        dialog.setVisible(true);
+        //dialog.setVisible(true);
         println("Any messages for the tester will display here.");
     }
 
@@ -413,7 +416,7 @@ class TestDialog extends Dialog {
 
         pack();
 
-        setVisible(true);
+        //setVisible(true);
     }// TestDialog()
 
     //DO NOT call this directly, go through Sysout

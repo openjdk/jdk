@@ -142,6 +142,8 @@ public class HyperlinkEvent extends EventObject {
      * This may be useful if a URL can't be formed
      * from the description, in which case the associated
      * URL would be null.
+     *
+     * @return the description of this link as a {@code String}
      */
     public String getDescription() {
         return desc;

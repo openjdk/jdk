@@ -68,8 +68,7 @@ class SynthInternalFrameTitlePane extends BasicInternalFrameTitlePane
     }
 
     public SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                    SynthLookAndFeel.getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private Region getRegion(JComponent c) {

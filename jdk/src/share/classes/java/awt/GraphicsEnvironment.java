@@ -357,6 +357,8 @@ public abstract class GraphicsEnvironment {
      * <p>Notice that an application can supersede the registration
      * of an earlier created font with a new one.
      * </ul>
+     *
+     * @param  font the font to be registered
      * @return true if the <code>font</code> is successfully
      * registered in this <code>GraphicsEnvironment</code>.
      * @throws NullPointerException if <code>font</code> is null

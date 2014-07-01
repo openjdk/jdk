@@ -148,7 +148,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     /* let's try to support a few of these */
-    private static final Class[] serviceAttrCats = {
+    private static final Class<?>[] serviceAttrCats = {
         PrinterName.class,
         PrinterIsAcceptingJobs.class,
         QueuedJobCount.class,
@@ -157,7 +157,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     /*  it turns out to be inconvenient to store the other categories
      *  separately because many attributes are in multiple categories.
      */
-    private static final Class[] otherAttrCats = {
+    private static final Class<?>[] otherAttrCats = {
         Chromaticity.class,
         Copies.class,
         Destination.class,
@@ -278,7 +278,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     // and extra lines which have been added for remote printers.
     // 'protected' because this method is also used from UnixPrintServiceLookup.
     protected static String[] filterPrinterNamesAIX(String[] posPrinters) {
-        ArrayList printers = new ArrayList();
+        ArrayList<String> printers = new ArrayList<>();
         String [] splitPart;
 
         for(int i = 0; i < posPrinters.length; i++) {
@@ -295,7 +295,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
             }
         }
 
-        return (String[])printers.toArray(new String[printers.size()]);
+        return printers.toArray(new String[printers.size()]);
     }
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsAIX() {
@@ -533,6 +533,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends PrintServiceAttribute>
         T getAttribute(Class<T> category)
     {
@@ -617,9 +618,9 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         return false;
     }
 
-    public Class[] getSupportedAttributeCategories() {
+    public Class<?>[] getSupportedAttributeCategories() {
         int totalCats = otherAttrCats.length;
-        Class [] cats = new Class[totalCats];
+        Class<?>[] cats = new Class<?>[totalCats];
         System.arraycopy(otherAttrCats, 0, cats, 0, otherAttrCats.length);
         return cats;
     }
@@ -967,7 +968,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
                 return false;
             }
         }
-        Class category = attr.getCategory();
+        Class<? extends Attribute> category = attr.getCategory();
         if (!isAttributeCategorySupported(category)) {
             return false;
         }
@@ -1078,7 +1079,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
         return this.getClass().hashCode()+getName().hashCode();
     }
 
-    public boolean usesClass(Class c) {
+    public boolean usesClass(Class<?> c) {
         return (c == sun.print.PSPrinterJob.class);
     }
 

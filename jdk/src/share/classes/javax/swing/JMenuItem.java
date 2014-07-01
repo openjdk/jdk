@@ -86,6 +86,7 @@ import javax.accessibility.*;
  * @see JMenu
  * @see JCheckBoxMenuItem
  * @see JRadioButtonMenuItem
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JMenuItem extends AbstractButton implements Accessible,MenuElement  {

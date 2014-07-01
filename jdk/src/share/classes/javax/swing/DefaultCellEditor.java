@@ -49,6 +49,7 @@ import java.io.Serializable;
  *
  * @author Alan Chung
  * @author Philip Milne
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultCellEditor extends AbstractCellEditor

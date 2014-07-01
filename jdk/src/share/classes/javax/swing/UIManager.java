@@ -173,6 +173,7 @@ import sun.awt.AWTAccessor;
  *
  * @author Thomas Ball
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class UIManager implements Serializable

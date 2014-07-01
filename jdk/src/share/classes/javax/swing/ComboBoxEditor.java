@@ -31,6 +31,7 @@ import java.awt.event.*;
  * The editor component used for JComboBox components.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 public interface ComboBoxEditor {
 

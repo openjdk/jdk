@@ -717,7 +717,7 @@ class D3DTextureToSurfaceTransform extends TransformBlit {
 class D3DGeneralBlit extends Blit {
 
     private Blit performop;
-    private WeakReference srcTmp;
+    private WeakReference<SurfaceData> srcTmp;
 
     D3DGeneralBlit(SurfaceType dstType,
                    CompositeType compType,
@@ -739,7 +739,7 @@ class D3DGeneralBlit extends Blit {
         SurfaceData cachedSrc = null;
         if (srcTmp != null) {
             // use cached intermediate surface, if available
-            cachedSrc = (SurfaceData)srcTmp.get();
+            cachedSrc = srcTmp.get();
         }
 
         // convert source to IntArgbPre
@@ -752,7 +752,7 @@ class D3DGeneralBlit extends Blit {
 
         if (src != cachedSrc) {
             // cache the intermediate surface
-            srcTmp = new WeakReference(src);
+            srcTmp = new WeakReference<>(src);
         }
     }
 }

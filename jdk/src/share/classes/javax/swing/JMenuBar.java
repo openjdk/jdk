@@ -88,6 +88,7 @@ import javax.accessibility.*;
  * @see JMenu
  * @see JPopupMenu
  * @see JMenuItem
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JMenuBar extends JComponent implements Accessible,MenuElement
