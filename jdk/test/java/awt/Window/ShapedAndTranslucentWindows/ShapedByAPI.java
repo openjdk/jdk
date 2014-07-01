@@ -26,8 +26,21 @@ import java.awt.*;
 
 /*
  * @test
- * @summary Check if dynamically shaped window is moved and resized
- *          using API correctly
+ * @summary Check if dynamically shaped window is moved and resized by
+ *          API correctly.
+ *
+ * Test Description: Check if PERPIXEL_TRANSPARENT translucency type is
+ *      supported on the current platform. Proceed if it is supported. Create
+ *      a window and apply shape in componentResized listener. The shape should
+ *      match the window size. Drag and resize the window using API and verify
+ *      that shape is correctly applied both with pixels checking and clicks.
+ *      Make the window appear on top of a known background. Repeat this for
+ *      Window, Dialog, Frame.
+ * Expected Result: If PERPIXEL_TRANSPARENT translucency type is supported, the
+ *      window should appear with the expected shape. Clicks should come to visible
+ *      parts of shaped window only and to background for clipped parts.
+ *
+ * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary
  * @run main ShapedByAPI
@@ -44,8 +57,11 @@ public class ShapedByAPI extends Common {
     public ShapedByAPI(Class windowClass) throws Exception{
         super(windowClass);
     }
+
+    @Override
     public void applyShape(){ applyDynamicShape(); }
 
+    @Override
     public void doTest() throws Exception{
         super.doTest();
 

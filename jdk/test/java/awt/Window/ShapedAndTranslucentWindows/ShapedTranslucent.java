@@ -27,6 +27,20 @@ import java.awt.*;
  * @test
  * @summary Check if a translucent shaped window is dragged and
  *          resized correctly.
+ *
+ * Test Description: Check if TRANSLUCENT and PERPIXEL_TRANSPARENT translucency
+ *      types are supported on the current platform. Proceed if it is supported.
+ *      Create and apply opacity of 0.3 and apply shape in componentResized
+ *      listener. Drag and resize the window using AWT Robot and verify that
+ *      shape and translucency are correctly applied both with pixels checking
+ *      and clicks. Make the window appear on top of a known background. Repeat
+ *      this for Window, Dialog, Frame.
+ * Expected Result: If TRANSLUCENT and PERPIXEL_TRANSPARENT translucency types are
+ *      supported, the window should appear with the expected shape and translucency.
+ *      Clicks should come to visible parts of shaped window only and to background
+ *      for clipped parts.
+ *
+ * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
@@ -46,8 +60,10 @@ public class ShapedTranslucent extends Common {
         super(windowClass, 0.3f);
     }
 
+    @Override
     public void applyShape(){ applyDynamicShape(); }
 
+    @Override
     public void doTest() throws Exception{
         super.doTest();
 
