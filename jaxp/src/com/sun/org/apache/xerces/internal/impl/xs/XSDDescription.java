@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.xni.grammars.XMLSchemaDescription;
  * @author Neil Graham, IBM
  * @author Neeraj Bajaj, SUN Microsystems.
  *
- * @version $Id: XSDDescription.java,v 1.6 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSDDescription extends XMLResourceIdentifierImpl
                 implements XMLSchemaDescription {

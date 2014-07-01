@@ -83,7 +83,6 @@ import java.util.StringTokenizer;
  * @author K.Venugopal SUN Microsystems
  * @author Neeraj Bajaj SUN Microsystems
  * @author Sunitha Reddy SUN Microsystems
- * @version $Id: XMLEntityManager.java,v 1.17 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLEntityManager implements XMLComponent, XMLEntityResolver {
 

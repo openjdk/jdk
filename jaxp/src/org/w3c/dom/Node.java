@@ -299,7 +299,7 @@ public interface Node {
      * which is not used with any <code>Document</code> yet, this is
      * <code>null</code>.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Document getOwnerDocument();
 
@@ -335,7 +335,7 @@ public interface Node {
      *   support the insertion of a <code>DocumentType</code> or
      *   <code>Element</code> node.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public Node insertBefore(Node newChild,
                              Node refChild)
@@ -373,7 +373,7 @@ public interface Node {
      *   support the replacement of the <code>DocumentType</code> child or
      *   <code>Element</code> child.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public Node replaceChild(Node newChild,
                              Node oldChild)
@@ -393,7 +393,7 @@ public interface Node {
      *   support the removal of the <code>DocumentType</code> child or the
      *   <code>Element</code> child.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public Node removeChild(Node oldChild)
                             throws DOMException;
@@ -422,7 +422,7 @@ public interface Node {
      *   if the DOM implementation doesn't support the removal of the
      *   <code>DocumentType</code> child or <code>Element</code> child.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public Node appendChild(Node newChild)
                             throws DOMException;
@@ -491,7 +491,7 @@ public interface Node {
      * sufficient, since XPointers do not differentiate between
      * <code>Text</code> nodes and <code>CDATASection</code> nodes.
      *
-     * @since DOM Level 3
+     * @since 1.4, DOM Level 3
      */
     public void normalize();
 
@@ -503,7 +503,7 @@ public interface Node {
      * @return Returns <code>true</code> if the specified feature is
      *   supported on this node, <code>false</code> otherwise.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public boolean isSupported(String feature,
                                String version);
@@ -523,7 +523,7 @@ public interface Node {
      * attached to. If an attribute is not explicitly given a namespace, it
      * simply has no namespace.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getNamespaceURI();
 
@@ -547,7 +547,7 @@ public interface Node {
      * method, such as <code>createElement</code> from the
      * <code>Document</code> interface, this is always <code>null</code>.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getPrefix();
     /**
@@ -584,7 +584,7 @@ public interface Node {
      *   this node is "xmlns" [<a href='http://www.w3.org/TR/1999/REC-xml-names-19990114/'>XML Namespaces</a>]
      *   .
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public void setPrefix(String prefix)
                                throws DOMException;
@@ -596,7 +596,7 @@ public interface Node {
      * method, such as <code>Document.createElement()</code>, this is always
      * <code>null</code>.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getLocalName();
 
@@ -605,7 +605,7 @@ public interface Node {
      * @return Returns <code>true</code> if this node has any attributes,
      *   <code>false</code> otherwise.
      *
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public boolean hasAttributes();
 
@@ -619,7 +619,7 @@ public interface Node {
      * <code>documentURI</code> attribute from the <code>Document</code>
      * interface otherwise.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getBaseURI();
 
@@ -666,7 +666,7 @@ public interface Node {
      *   implementations that do not coordinate to return consistent
      *   implementation-specific results.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public short compareDocumentPosition(Node other)
                                          throws DOMException;
@@ -717,7 +717,7 @@ public interface Node {
      *   fit in a <code>DOMString</code> variable on the implementation
      *   platform.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getTextContent()
                                          throws DOMException;
@@ -765,7 +765,7 @@ public interface Node {
      * @exception DOMException
      *   NO_MODIFICATION_ALLOWED_ERR: Raised when the node is readonly.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setTextContent(String textContent)
                                          throws DOMException;
@@ -783,7 +783,7 @@ public interface Node {
      * @return Returns <code>true</code> if the nodes are the same,
      *   <code>false</code> otherwise.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean isSameNode(Node other);
 
@@ -798,7 +798,7 @@ public interface Node {
      *   associated to the namespace prefix, the returned namespace prefix
      *   is implementation dependent.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String lookupPrefix(String namespaceURI);
 
@@ -810,7 +810,7 @@ public interface Node {
      *   <code>namespaceURI</code> is the default namespace,
      *   <code>false</code> otherwise.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean isDefaultNamespace(String namespaceURI);
 
@@ -824,7 +824,7 @@ public interface Node {
      * @return Returns the associated namespace URI or <code>null</code> if
      *   none is found.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String lookupNamespaceURI(String prefix);
 
@@ -890,7 +890,7 @@ public interface Node {
      * @return Returns <code>true</code> if the nodes are equal,
      *   <code>false</code> otherwise.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean isEqualNode(Node arg);
 
@@ -915,7 +915,7 @@ public interface Node {
      *   with the primary core <code>Node</code> such as attributes,
      *   childNodes, etc.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Object getFeature(String feature,
                              String version);
@@ -932,7 +932,7 @@ public interface Node {
      * @return Returns the <code>DOMUserData</code> previously associated to
      *   the given key on this node, or <code>null</code> if there was none.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Object setUserData(String key,
                               Object data,
@@ -946,7 +946,7 @@ public interface Node {
      * @return Returns the <code>DOMUserData</code> associated to the given
      *   key on this node, or <code>null</code> if there was none.
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Object getUserData(String key);
 

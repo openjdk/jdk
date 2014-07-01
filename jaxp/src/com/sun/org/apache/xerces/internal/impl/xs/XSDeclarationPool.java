@@ -33,7 +33,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.xs.XSSimpleTypeDecl;
  * @xerces.internal
  *
  * @author Elena Litani, IBM
- * @version $Id: XSDeclarationPool.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public final class XSDeclarationPool {
     /** Chunk shift (8). */

@@ -52,7 +52,7 @@ package org.xml.sax;
  * <p>Since this exception is a subclass of {@link org.xml.sax.SAXException
  * SAXException}, it inherits the ability to wrap another exception.</p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @version 2.0.1 (sax2r2)
  * @see org.xml.sax.SAXException

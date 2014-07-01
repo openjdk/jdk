@@ -32,7 +32,6 @@ import com.sun.org.apache.xerces.internal.util.SymbolHash;
  *
  * @author Khaled Noaman, IBM
  *
- * @version $Id: ExtendedSchemaDVFactoryImpl.java,v 1.2 2010-10-26 23:01:03 joehw Exp $
  */
 public class ExtendedSchemaDVFactoryImpl extends BaseSchemaDVFactory {
 
