@@ -50,7 +50,7 @@ class LongExpression extends ConstantExpression {
      * Get the value
      */
     public Object getValue() {
-        return new Long(value);
+        return value;
     }
 
     /**
@@ -71,7 +71,7 @@ class LongExpression extends ConstantExpression {
      * Code
      */
     public void codeValue(Environment env, Context ctx, Assembler asm) {
-        asm.add(where, opc_ldc2_w, new Long(value));
+        asm.add(where, opc_ldc2_w, value);
     }
 
     /**

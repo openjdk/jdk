@@ -25,9 +25,11 @@
 
 package sun.jvmstat.monitor;
 
-import java.util.*;
-import java.net.*;
-import java.lang.reflect.*;
+import java.net.URISyntaxException;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 
 import sun.jvmstat.monitor.event.HostListener;
 
@@ -52,31 +54,6 @@ public abstract class MonitoredHost {
                 new HashMap<HostIdentifier, MonitoredHost>();
 
     /*
-     * The monitoring implementation override mechanism. The value of
-     * this property is used as the class name for the concrete MonitoredHost
-     * subclass that implements the monitoring APIs.  Setting this property
-     * will cause the remaining override mechanisms to be ignored. When
-     * this mechanism is used, the HostIdentifier scheme name, which
-     * indicates the communications protocol, is not used to locate a
-     * the protocol specific package. However, the HostIdentifier is
-     * still passed to the corresponding single arg constructor.
-     * This property is not expected to be set in normal circumstances.
-     */
-    private static final String IMPL_OVERRIDE_PROP_NAME =
-            "sun.jvmstat.monitor.MonitoredHost";
-
-    /*
-     * The monitoring package name override mechanism. The value
-     * the this property is used as base package name for the
-     * monitoring implementation package. This property is not
-     * expected to be set under normal circumstances.
-     */
-    private static final String IMPL_PKG_PROP_NAME =
-            "sun.jvmstat.monitor.package";
-    private static final String IMPL_PACKAGE =
-            System.getProperty(IMPL_PKG_PROP_NAME, "sun.jvmstat.perfdata");
-
-    /*
      * The default optimized local protocol override mechanism. The value
      * of this property is used to construct the default package name
      * for the default optimized local protocol as follows:
@@ -99,15 +76,6 @@ public abstract class MonitoredHost {
             "sun.jvmstat.monitor.remote";
     private static final String REMOTE_PROTOCOL =
             System.getProperty(REMOTE_PROTOCOL_PROP_NAME, "rmi");
-
-    /*
-     * The default class name of the MonitoredHost implementation subclass.
-     * There is no override mechanism for this variable, other than the
-     * IMPL_OVERRIDE_PROP_NAME override, which is larger in scope. A concrete
-     * instance of this class is expected to be found in:
-     *     <IMPL_PACKAGE>.monitor.protocol.<protocol>.<MONITORED_HOST_CLASS>
-     */
-    private static final String MONITORED_HOST_CLASS = "MonitoredHostProvider";
 
     /**
      * The HostIdentifier for this MonitoredHost instance.
@@ -165,6 +133,13 @@ public abstract class MonitoredHost {
         return getMonitoredHost(hostId);
     }
 
+
+    /*
+     * Load the MonitoredHostServices
+     */
+    private static ServiceLoader<MonitoredHostService> monitoredHostServiceLoader =
+        ServiceLoader.load(MonitoredHostService.class, MonitoredHostService.class.getClassLoader());
+
     /**
      * Factory method to construct a MonitoredHost instance to manage the
      * connection to the host indicated by <tt>hostId</tt>.
@@ -177,11 +152,6 @@ public abstract class MonitoredHost {
      */
     public static MonitoredHost getMonitoredHost(HostIdentifier hostId)
                   throws MonitorException {
-        /*
-         * determine the class name to load. If the system property is set,
-         * use the indicated class. otherwise, use the default class.
-         */
-        String classname = System.getProperty(IMPL_OVERRIDE_PROP_NAME);
         MonitoredHost mh = null;
 
         synchronized(monitoredHosts) {
@@ -197,50 +167,21 @@ public abstract class MonitoredHost {
 
         hostId = resolveHostId(hostId);
 
-        if (classname == null) {
-            // construct the class name
-            classname = IMPL_PACKAGE + ".monitor.protocol."
-                        + hostId.getScheme() + "." + MONITORED_HOST_CLASS;
+        for (MonitoredHostService mhs : monitoredHostServiceLoader) {
+            if (mhs.getScheme().equals(hostId.getScheme())) {
+                mh = mhs.getMonitoredHost(hostId);
+            }
         }
 
-        try {
-            // run the constructor taking a single String parameter.
-            Class<?> c = Class.forName(classname);
-
-            Constructor cons = c.getConstructor(
-                new Class[] { hostId.getClass() }
-            );
-
-            mh = (MonitoredHost)cons.newInstance(new Object[] { hostId } );
-
-            synchronized(monitoredHosts) {
-                monitoredHosts.put(mh.hostId, mh);
-            }
-            return mh;
-        } catch (ClassNotFoundException e) {
-            // from Class.forName();
-            throw new IllegalArgumentException("Could not find " + classname
-                                               + ": " + e.getMessage(), e);
-        } catch (NoSuchMethodException e) {
-            // from Class.getConstructor();
-            throw new IllegalArgumentException(
-                "Expected constructor missing in " + classname + ": "
-                + e.getMessage(), e);
-        } catch (IllegalAccessException e) {
-            // from Constructor.newInstance()
-            throw new IllegalArgumentException(
-                "Unexpected constructor access in " + classname + ": "
-                + e.getMessage(), e);
-        } catch (InstantiationException e) {
-            throw new IllegalArgumentException(classname + "is abstract: "
-                                               + e.getMessage(), e);
-        } catch (InvocationTargetException e) {
-            Throwable cause = e.getCause();
-            if (cause instanceof MonitorException) {
-                throw (MonitorException)cause;
-            }
-            throw new RuntimeException("Unexpected exception", e);
+        if (mh == null) {
+            throw new IllegalArgumentException("Could not find MonitoredHost for scheme: " + hostId.getScheme());
         }
+
+        synchronized(monitoredHosts) {
+            monitoredHosts.put(mh.hostId, mh);
+        }
+
+        return mh;
     }
 
     /**

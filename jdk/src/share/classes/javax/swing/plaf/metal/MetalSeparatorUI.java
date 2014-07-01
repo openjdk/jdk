@@ -53,6 +53,12 @@ import javax.swing.plaf.basic.BasicSeparatorUI;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalSeparatorUI extends BasicSeparatorUI
 {
+    /**
+     * Constructs a new {@code MetalSeparatorUI} instance.
+     *
+     * @param c a component
+     * @return a new {@code MetalSeparatorUI} instance.
+     */
     public static ComponentUI createUI( JComponent c )
     {
         return new MetalSeparatorUI();

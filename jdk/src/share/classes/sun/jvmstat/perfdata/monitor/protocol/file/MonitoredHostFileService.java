@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -21,25 +23,24 @@
  * questions.
  */
 
-/*
- *
- *
- * Utility used by the unit tests for the attach mechanism. Connects to a
- * given port which triggers the listener to shutdown.
- */
-import java.net.Socket;
-import java.net.InetSocketAddress;
-import java.io.IOException;
+package sun.jvmstat.perfdata.monitor.protocol.file;
 
-public class Shutdown {
-    public static void main(String args[]) throws IOException {
-        int port = Integer.parseInt(args[0]);
+import sun.jvmstat.monitor.HostIdentifier;
+import sun.jvmstat.monitor.MonitorException;
+import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitoredHostService;
 
-        System.out.println("Connecting to port " + port +
-            " to shutdown Application ...");
+public final class MonitoredHostFileService implements MonitoredHostService {
 
-        Socket s = new Socket();
-        s.connect( new InetSocketAddress(port) );
-        s.close();
+    @Override
+    public MonitoredHost getMonitoredHost(HostIdentifier hostId)
+            throws MonitorException {
+        return new MonitoredHostProvider(hostId);
     }
+
+    @Override
+    public String getScheme() {
+        return "file";
+    }
+
 }

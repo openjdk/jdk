@@ -25,10 +25,7 @@ import java.io.IOException;
 import java.io.File;
 import java.nio.file.Files;
 import java.util.Arrays;
-import java.util.regex.Pattern;
-import java.util.regex.Matcher;
 
-import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import jdk.testlibrary.Utils;
 import jdk.testlibrary.ProcessThread;
@@ -49,12 +46,12 @@ public class RunnerUtil {
      *
      * The Application will write its pid and shutdownPort in the given outFile.
      */
-    public static ProcessThread startApplication(String outFile, String... additionalOpts) throws Throwable {
+    public static ProcessThread startApplication(String... additionalOpts) throws Throwable {
         String classpath = System.getProperty("test.class.path", ".");
-        String[] myArgs = concat(additionalOpts, new String [] { "-Dattach.test=true", "-classpath", classpath, "Application", outFile });
+        String[] myArgs = concat(additionalOpts, new String [] { "-Dattach.test=true", "-classpath", classpath, "Application" });
         String[] args = Utils.addTestJavaOpts(myArgs);
         ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(args);
-        ProcessThread pt = new ProcessThread("runApplication", pb);
+        ProcessThread pt = new ProcessThread("runApplication", (line) -> line.equals(Application.READY_MSG), pb);
         pt.start();
         return pt;
     }
@@ -81,23 +78,16 @@ public class RunnerUtil {
      *
      * If the nice shutdown fails, then an Exception is thrown and the test should fail.
      *
-     * @param port The shut down port.
      * @param processThread The process to stop.
      */
-    public static void stopApplication(int port, ProcessThread processThread) throws Throwable {
+    public static void stopApplication(ProcessThread processThread) throws Throwable {
         if (processThread == null) {
             System.out.println("RunnerUtil.stopApplication ignored since proc is null");
             return;
         }
         try {
-            System.out.println("RunnerUtil.stopApplication waiting to for shutdown");
-            OutputAnalyzer output = ProcessTools.executeTestJvm(
-                    "-classpath",
-                    System.getProperty("test.class.path", "."),
-                    "Shutdown",
-                    Integer.toString(port));
-            // Verify that both the Shutdown command and the Application finished ok.
-            output.shouldHaveExitValue(0);
+            System.out.println("RunnerUtil.stopApplication waiting for shutdown");
+            processThread.sendMessage(Application.SHUTDOWN_MSG);
             processThread.joinAndThrow();
             processThread.getOutput().shouldHaveExitValue(0);
         } catch (Throwable t) {
@@ -120,59 +110,6 @@ public class RunnerUtil {
     }
 
     /**
-     * Read process info for the running Application.
-     * The Application writes its info to a file with this format:
-     * shutdownPort=42994
-     * pid=19597
-     * done
-     *
-     * The final "done" is used to make sure the complete file has been written
-     * before we try to read it.
-     * This function will wait until the file is available.
-     *
-     * @param filename Path to file to read.
-     * @return The ProcessInfo containing pid and shutdownPort.
-     */
-    public static ProcessInfo readProcessInfo(String filename) throws Throwable {
-        System.out.println("Reading port and pid from file: " + filename);
-        File file = new File(filename);
-        String content = null;
-
-        // Read file or wait for it to be created.
-        long startTime = System.currentTimeMillis();
-        long lastWarningTime = 0;
-        while (true) {
-            content = readFile(file);
-            if (content != null && content.indexOf("done") >= 0) {
-                break;
-            }
-            Thread.sleep(100);
-            long elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
-            if (elapsedTime > lastWarningTime) {
-                lastWarningTime = elapsedTime;
-                System.out.println("Waited " + elapsedTime + " seconds for file.");
-            }
-        }
-
-        ProcessInfo info = new ProcessInfo();
-        // search for a line with format: key=nnn
-        Pattern pattern = Pattern.compile("(\\w*)=([0-9]+)\\r?\\n");
-        Matcher matcher = pattern.matcher(content);
-        while (matcher.find()) {
-            String key = matcher.group(1);
-            int value  = Integer.parseInt(matcher.group(2));
-            if ("pid".equals(key)) {
-                info.pid = value;
-            } else if ("shutdownPort".equals(key)) {
-                info.shutdownPort = value;
-            }
-        }
-        System.out.println("processInfo.pid:" + info.pid);
-        System.out.println("processInfo.shutdownPort:" + info.shutdownPort);
-        return info;
-    }
-
-    /**
      * Read the content of a file.
      * @param file The file to read.
      * @return The file content or null if file does not exists.
@@ -190,13 +127,4 @@ public class RunnerUtil {
             throw e;
         }
     }
-
-    /**
-     * Helper class with info of the running Application.
-     */
-    public static class ProcessInfo {
-        public int pid = -1;
-        public int shutdownPort = -1;
-    }
-
 }

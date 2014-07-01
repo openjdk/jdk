@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -421,6 +421,13 @@ public abstract class AbstractRegionPainter implements Painter<JComponent> {
      * @param property The name of a bean style property or client property
      * @param defaultColor The color to return if no color was obtained from
      *        the component.
+     * @param saturationOffset additively modifies the HSB saturation component
+     * of the color returned (ignored if default color is returned).
+     * @param brightnessOffset additively modifies the HSB brightness component
+     * of the color returned (ignored if default color is returned).
+     * @param alphaOffset additively modifies the ARGB alpha component of the
+     * color returned (ignored if default color is returned).
+     *
      * @return The color that was obtained from the component or defaultColor
      */
     protected final Color getComponentColor(JComponent c, String property,

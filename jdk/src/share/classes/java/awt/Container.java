@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -310,6 +310,9 @@ public class Container extends Component {
     }
 
     /**
+     * Returns the number of components in this container.
+     *
+     * @return the number of components in this container
      * @deprecated As of JDK version 1.1,
      * replaced by getComponentCount().
      */
@@ -391,8 +394,11 @@ public class Container extends Component {
     }
 
     /**
+     * Returns the insets for this container.
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getInsets()</code>.
+     * @return the insets for this container
      */
     @Deprecated
     public Insets insets() {
@@ -438,6 +444,9 @@ public class Container extends Component {
      * displayed, the hierarchy must be validated thereafter in order to
      * display the added component.
      *
+     * @param  name the name of the component to be added
+     * @param  comp the component to be added
+     * @return the component added
      * @exception NullPointerException if {@code comp} is {@code null}
      * @see #add(Component, Object)
      * @see #invalidate
@@ -1471,8 +1480,10 @@ public class Container extends Component {
 
     /**
      * Gets the layout manager for this container.
+     *
      * @see #doLayout
      * @see #setLayout
+     * @return the current layout manager for this container
      */
     public LayoutManager getLayout() {
         return layoutMgr;
@@ -3842,6 +3853,10 @@ public class Container extends Component {
          */
         private volatile transient int propertyListenersCount = 0;
 
+        /**
+         * The handler to fire {@code PropertyChange}
+         * when children are added or removed
+         */
         protected ContainerListener accessibleContainerHandler = null;
 
         /**

@@ -108,16 +108,16 @@ public class ThreadInfoCompositeData extends LazyCompositeData {
         // CONTENTS OF THIS ARRAY MUST BE SYNCHRONIZED WITH
         // threadInfoItemNames!
         final Object[] threadInfoItemValues = {
-            new Long(threadInfo.getThreadId()),
+            threadInfo.getThreadId(),
             threadInfo.getThreadName(),
             threadInfo.getThreadState().name(),
-            new Long(threadInfo.getBlockedTime()),
-            new Long(threadInfo.getBlockedCount()),
-            new Long(threadInfo.getWaitedTime()),
-            new Long(threadInfo.getWaitedCount()),
+            threadInfo.getBlockedTime(),
+            threadInfo.getBlockedCount(),
+            threadInfo.getWaitedTime(),
+            threadInfo.getWaitedCount(),
             lockInfoData,
             threadInfo.getLockName(),
-            new Long(threadInfo.getLockOwnerId()),
+            threadInfo.getLockOwnerId(),
             threadInfo.getLockOwnerName(),
             stackTraceData,
                 threadInfo.isSuspended(),
