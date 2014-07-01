@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,7 +47,10 @@ public interface Tree {
      */
     @jdk.Exported
     public enum Kind {
-
+        /**
+         * Used for instances of {@link AnnotatedTypeTree}
+         * representing annotated types.
+         */
         ANNOTATED_TYPE(AnnotatedTypeTree.class),
 
         /**
@@ -613,6 +616,10 @@ public interface Tree {
             associatedInterface = intf;
         }
 
+        /**
+         * Returns the associated interface type that uses this kind.
+         * @return the associated interface
+         */
         public Class<? extends Tree> asInterface() {
             return associatedInterface;
         }
@@ -621,7 +628,7 @@ public interface Tree {
     }
 
     /**
-     * Gets the kind of this tree.
+     * Returns the kind of this tree.
      *
      * @return the kind of this tree.
      */
@@ -633,6 +640,9 @@ public interface Tree {
      *
      * @param <R> result type of this operation.
      * @param <D> type of additional data.
+     * @param visitor the visitor to be called
+     * @param data a value to be passed to the visitor
+     * @return the result returned from calling the visitor
      */
     <R,D> R accept(TreeVisitor<R,D> visitor, D data);
 }

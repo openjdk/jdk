@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,14 +92,14 @@ public interface Diagnostic<S> {
     public final static long NOPOS = -1;
 
     /**
-     * Gets the kind of this diagnostic, for example, error or
+     * Returns the kind of this diagnostic, for example, error or
      * warning.
      * @return the kind of this diagnostic
      */
     Kind getKind();
 
     /**
-     * Gets the source object associated with this diagnostic.
+     * Returns the source object associated with this diagnostic.
      *
      * @return the source object associated with this diagnostic.
      * {@code null} if no source object is associated with the
@@ -108,7 +108,7 @@ public interface Diagnostic<S> {
     S getSource();
 
     /**
-     * Gets a character offset from the beginning of the source object
+     * Returns a character offset from the beginning of the source object
      * associated with this diagnostic that indicates the location of
      * the problem.  In addition, the following must be true:
      *
@@ -122,7 +122,7 @@ public interface Diagnostic<S> {
     long getPosition();
 
     /**
-     * Gets the character offset from the beginning of the file
+     * Returns the character offset from the beginning of the file
      * associated with this diagnostic that indicates the start of the
      * problem.
      *
@@ -132,7 +132,7 @@ public interface Diagnostic<S> {
     long getStartPosition();
 
     /**
-     * Gets the character offset from the beginning of the file
+     * Returns the character offset from the beginning of the file
      * associated with this diagnostic that indicates the end of the
      * problem.
      *
@@ -142,7 +142,7 @@ public interface Diagnostic<S> {
     long getEndPosition();
 
     /**
-     * Gets the line number of the character offset returned by
+     * Returns the line number of the character offset returned by
      * {@linkplain #getPosition()}.
      *
      * @return a line number or {@link #NOPOS} if and only if {@link
@@ -151,7 +151,7 @@ public interface Diagnostic<S> {
     long getLineNumber();
 
     /**
-     * Gets the column number of the character offset returned by
+     * Returns the column number of the character offset returned by
      * {@linkplain #getPosition()}.
      *
      * @return a column number or {@link #NOPOS} if and only if {@link
@@ -160,7 +160,7 @@ public interface Diagnostic<S> {
     long getColumnNumber();
 
     /**
-     * Gets a diagnostic code indicating the type of diagnostic.  The
+     * Returns a diagnostic code indicating the type of diagnostic.  The
      * code is implementation-dependent and might be {@code null}.
      *
      * @return a diagnostic code
@@ -168,7 +168,7 @@ public interface Diagnostic<S> {
     String getCode();
 
     /**
-     * Gets a localized message for the given locale.  The actual
+     * Returns a localized message for the given locale.  The actual
      * message is implementation-dependent.  If the locale is {@code
      * null} use the default locale.
      *

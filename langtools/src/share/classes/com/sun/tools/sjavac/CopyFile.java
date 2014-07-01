@@ -32,6 +32,7 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.server.JavacService;
 
 /**
  * The copy file transform simply copies a matching file from -src to -d .
@@ -50,7 +51,8 @@ public class CopyFile implements Transformer {
     public void setExtra(Options a) {
     }
 
-    public boolean transform(Map<String,Set<URI>> pkgSrcs,
+    public boolean transform(JavacService javacService,
+                             Map<String,Set<URI>> pkgSrcs,
                              Set<URI> visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,
                              Map<String,Set<String>> oldPackageDependents,

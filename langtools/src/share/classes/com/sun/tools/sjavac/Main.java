@@ -33,7 +33,9 @@ import java.nio.file.Files;
 
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
+import com.sun.tools.sjavac.server.JavacService;
 import com.sun.tools.sjavac.server.JavacServer;
+import com.sun.tools.sjavac.server.JavacServiceClient;
 
 /**
  * The main class of the smart javac wrapper tool.
@@ -339,7 +341,12 @@ public class Main {
             do {
                 // Clean out artifacts in tainted packages.
                 javac_state.deleteClassArtifactsInTaintedPackages();
-                again = javac_state.performJavaCompilations(options, recently_compiled, rc);
+                // Create a JavacService to delegate the actual compilation to.
+                // Currently sjavac always connects to a server through a socket
+                // regardless if sjavac runs as a background service or not.
+                // This will most likely change in the future.
+                JavacService javacService = new JavacServiceClient(options.getServerConf());
+                again = javac_state.performJavaCompilations(javacService, options, recently_compiled, rc);
                 if (!rc[0]) break;
             } while (again);
             // Only update the state if the compile went well.

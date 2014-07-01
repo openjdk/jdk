@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,25 @@ import javax.lang.model.element.TypeElement;
 public interface Scope {
     /**
      * Returns the enclosing scope.
+     * @return the enclosing scope
      */
     public Scope getEnclosingScope();
 
     /**
-     * Returns the innermost type element containing the position of this scope
+     * Returns the innermost type element containing the position of this scope.
+     * @return the innermost enclosing type element
      */
     public TypeElement getEnclosingClass();
 
     /**
      * Returns the innermost executable element containing the position of this scope.
+     * @return the innermost enclosing method declaration
      */
     public ExecutableElement getEnclosingMethod();
 
     /**
      * Returns the elements directly contained in this scope.
+     * @return the elements contained in this scope
      */
     public Iterable<? extends Element> getLocalElements();
 }

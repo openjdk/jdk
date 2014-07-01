@@ -854,7 +854,7 @@ public class JavacTrees extends DocTrees {
     }
 
     /**
-     * Gets the original type from the ErrorType object.
+     * Returns the original type from the ErrorType object.
      * @param errorType The errorType for which we want to get the original type.
      * @returns TypeMirror corresponding to the original type, replaced by the ErrorType.
      *          noType (type.tag == NONE) is returned if there is no original type.

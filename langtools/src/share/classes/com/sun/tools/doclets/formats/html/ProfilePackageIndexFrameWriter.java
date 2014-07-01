@@ -104,7 +104,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
     }
 
     /**
-     * Gets each package name as a separate link.
+     * Returns each package name as a separate link.
      *
      * @param pd PackageDoc
      * @param profileName the name of the profile being documented

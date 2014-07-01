@@ -76,7 +76,7 @@ public class C2 implements Serializable {
      * Reads the object stream.
      *
      * @param s ObjectInputStream
-     * @throws <code>IOException</code>
+     * @throws IOException
      * @deprecated As of JDK version 1.5, replaced by
      * {@link C1#setUndecorated(boolean) setUndecorated(boolean)}.
      */
