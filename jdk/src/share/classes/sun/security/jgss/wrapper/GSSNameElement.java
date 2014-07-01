@@ -203,7 +203,7 @@ public class GSSNameElement implements GSSNameSpi {
     }
 
     public int hashCode() {
-        return new Long(pName).hashCode();
+        return Long.hashCode(pName);
     }
 
     public byte[] export() throws GSSException {

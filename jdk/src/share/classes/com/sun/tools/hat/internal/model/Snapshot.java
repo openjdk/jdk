@@ -583,7 +583,7 @@ public class Snapshot {
         if (identifierSize == 4) {
             return new Integer((int)id);
         } else {
-            return new Long(id);
+            return id;
         }
     }
 

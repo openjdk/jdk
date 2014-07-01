@@ -367,10 +367,10 @@ public class JPEGImageReader extends ImageReader {
             // Now we are at the first image if there are any, so add it
             // to the list
             if (hasNextImage()) {
-                imagePositions.add(new Long(iis.getStreamPosition()));
+                imagePositions.add(iis.getStreamPosition());
             }
         } else { // Not tables only, so add original pos to the list
-            imagePositions.add(new Long(savePos));
+            imagePositions.add(savePos);
             // And set current image since we've read it now
             currentImage = 0;
         }
@@ -498,7 +498,7 @@ public class JPEGImageReader extends ImageReader {
                 if (!hasNextImage()) {
                     throw new IndexOutOfBoundsException();
                 }
-                pos = new Long(iis.getStreamPosition());
+                pos = iis.getStreamPosition();
                 imagePositions.add(pos);
                 if (seekForwardOnly) {
                     iis.flushBefore(pos.longValue());

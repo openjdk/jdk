@@ -381,7 +381,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(long l) {
-        return add(new Long(l));
+        return add(Long.valueOf(l));
     }
 
     /**
@@ -505,7 +505,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(long l, int index) {
-        return set(new Long(l), index);
+        return set(Long.valueOf(l), index);
     }
 
     /**

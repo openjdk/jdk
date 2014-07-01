@@ -1311,7 +1311,7 @@ public class MLet extends java.net.URLClassLoader
         if (type.compareTo("java.lang.Short") == 0)
              return new Short(param);
         if (type.compareTo("java.lang.Long") == 0)
-             return new Long(param);
+             return Long.valueOf(param);
         if (type.compareTo("java.lang.Integer") == 0)
              return new Integer(param);
         if (type.compareTo("java.lang.Float") == 0)

@@ -42,7 +42,7 @@ public class PerfLongCounter extends AbstractCounter
     }
 
     public Object getValue() {
-        return new Long(lb.get(0));
+        return Long.valueOf(lb.get(0));
     }
 
     /**
