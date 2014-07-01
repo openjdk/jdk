@@ -23,11 +23,11 @@
 
 package jdk.testlibrary;
 
-import static jdk.testlibrary.Asserts.assertNotEquals;
-import static jdk.testlibrary.Asserts.assertTrue;
+import java.io.PrintWriter;
 
-import java.util.List;
 import java.util.concurrent.CountDownLatch;
+import java.util.concurrent.TimeUnit;
+import java.util.function.Predicate;
 
 /**
  * The helper class for starting and stopping {@link Process} in a separate thread.
@@ -54,6 +54,29 @@ public class ProcessThread extends TestThread {
         super(new ProcessRunnable(pb), threadName);
     }
 
+
+    /**
+     * Creates a new {@code ProcessThread} object.
+     *
+     * @param threadName The name of thread
+     * @param waitfor A predicate to determine whether the target process has been initialized
+     * @param cmd The string array of program and its arguments to pass to {@link ProcessBuilder}
+     */
+    public ProcessThread(String threadName, Predicate<String> waitfor, String... cmd) {
+        super(new ProcessRunnable(new ProcessBuilder(cmd), threadName, waitfor), threadName);
+    }
+
+    /**
+     * Creates a new {@code ProcessThread} object.
+     *
+     * @param threadName The name of thread.
+     * @param waitfor A predicate to determine whether the target process has been initialized
+     * @param pb The ProcessBuilder to execute.
+     */
+    public ProcessThread(String threadName, Predicate<String> waitfor, ProcessBuilder pb) {
+        super(new ProcessRunnable(pb, threadName, waitfor), threadName);
+    }
+
     /**
      * Stops {@link Process} started by {@code ProcessRunnable}.
      *
@@ -71,6 +94,18 @@ public class ProcessThread extends TestThread {
     }
 
     /**
+    * Returns the PID associated with this process thread
+    * @return The PID associated with this process thread
+    */
+    public long getPid() throws InterruptedException {
+        return ((ProcessRunnable)getRunnable()).getPid();
+    }
+
+    public void sendMessage(String message) throws InterruptedException {
+        ((ProcessRunnable)getRunnable()).sendMessage(message);
+    }
+
+    /**
      * {@link Runnable} interface for starting and stopping {@link Process}.
      */
     static class ProcessRunnable extends XRun {
@@ -79,6 +114,8 @@ public class ProcessThread extends TestThread {
         private final CountDownLatch latch;
         private volatile Process process;
         private volatile OutputAnalyzer output;
+        private final Predicate<String> waitfor;
+        private final String name;
 
         /**
          * Creates a new {@code ProcessRunnable} object.
@@ -86,9 +123,21 @@ public class ProcessThread extends TestThread {
          * @param pb The {@link ProcessBuilder} to run.
          */
         public ProcessRunnable(ProcessBuilder pb) {
-            super();
+            this(pb, "", null);
+        }
+
+        /**
+         * Creates a new {@code ProcessRunnable} object.
+         *
+         * @param pb The {@link ProcessBuilder} to run.
+         * @param name An optional process name; may be null
+         * @param waitfor A predicate to determine whether the target process has been initialized; may be null
+         */
+        public ProcessRunnable(ProcessBuilder pb, String name, Predicate<String> waitfor) {
             this.processBuilder = pb;
             this.latch = new CountDownLatch(1);
+            this.name = name;
+            this.waitfor = waitfor;
         }
 
         /**
@@ -99,7 +148,9 @@ public class ProcessThread extends TestThread {
          */
         @Override
         public void xrun() throws Throwable {
-            this.process = processBuilder.start();
+            this.process = ProcessTools.startProcess(
+                name, processBuilder, waitfor, -1, TimeUnit.SECONDS
+            );
             // Release when process is started
             latch.countDown();
 
@@ -137,6 +188,26 @@ public class ProcessThread extends TestThread {
          */
         public OutputAnalyzer getOutput() {
             return output;
+        }
+
+        /**
+         * Returns the PID associated with this process runnable
+         * @return The PID associated with this process runnable
+         */
+        public long getPid() throws InterruptedException {
+            return getProcess().getPid();
+        }
+
+        public void sendMessage(String message) throws InterruptedException {
+            try (PrintWriter pw = new PrintWriter(this.getProcess().getOutputStream())) {
+                pw.println(message);
+                pw.flush();
+            }
+        }
+
+        private Process getProcess() throws InterruptedException {
+            latch.await();
+            return process;
         }
     }
 

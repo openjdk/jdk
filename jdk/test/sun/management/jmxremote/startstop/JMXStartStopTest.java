@@ -134,13 +134,13 @@ public class JMXStartStopTest {
     }
 
 
-    private static void testConnectLocal(int pid)
+    private static void testConnectLocal(long pid)
     throws Exception {
 
         String jmxUrlStr = null;
 
         try {
-            jmxUrlStr = sun.management.ConnectorAddressLink.importFrom(pid);
+            jmxUrlStr = sun.management.ConnectorAddressLink.importFrom((int)pid);
             dbg_print("Local Service URL: " +jmxUrlStr);
             if ( jmxUrlStr == null ) {
                 throw new Exception("No Service URL. Local agent not started?");
@@ -318,7 +318,7 @@ public class JMXStartStopTest {
         private final ProcessBuilder pb;
         private final String name;
         private final AtomicBoolean started = new AtomicBoolean(false);
-        private volatile int pid = -1;
+        private volatile long pid = -1;
 
         public Something(ProcessBuilder pb, String name) {
             this.pb = pb;
@@ -331,15 +331,11 @@ public class JMXStartStopTest {
                     p = ProcessTools.startProcess(
                         "JMXStartStopDoSomething",
                         pb,
-                        (line) -> {
-                            if (line.toLowerCase().startsWith("pid:")) {
-                                pid = Integer.parseInt(line.split("\\:")[1]);
-                            }
-                            return line.equals("main enter");
-                        },
+                        (line) -> line.equals("main enter"),
                         5,
                         TimeUnit.SECONDS
                     );
+                    pid = p.getPid();
                 } catch (TimeoutException e) {
                     p.destroy();
                     p.waitFor();
@@ -348,7 +344,7 @@ public class JMXStartStopTest {
             }
         }
 
-        public int getPid() {
+        public long getPid() {
             return pid;
         }
 
