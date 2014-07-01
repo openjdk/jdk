@@ -201,7 +201,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
-        return userAccessorGetter(getAccessors((owner != null) ? owner : (ScriptObject)self), self);
+        return userAccessorGetter(getAccessors((owner != null) ? owner : self), self);
     }
 
     @Override
@@ -221,7 +221,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
-        userAccessorSetter(getAccessors((owner != null) ? owner : (ScriptObject)self), strict ? getKey() : null, self, value);
+        userAccessorSetter(getAccessors((owner != null) ? owner : self), strict ? getKey() : null, self, value);
     }
 
     @Override

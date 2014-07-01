@@ -306,6 +306,7 @@ public final class Source implements Loggable {
             return array == null;
         }
 
+        @SuppressWarnings("try")
         protected void checkPermissionAndClose() throws IOException {
             try (InputStream in = url.openStream()) {
                 // empty

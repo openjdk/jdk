@@ -443,7 +443,7 @@ public class NashornClassReader extends ClassReader {
     @Override
     protected Label readLabel(final int offset, final Label[] labels) {
         final Label label = super.readLabel(offset, labels);
-        label.info = (int)offset;
+        label.info = offset;
         return label;
     }
 
