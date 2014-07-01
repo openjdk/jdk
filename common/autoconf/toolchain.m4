@@ -98,20 +98,27 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On Mac OS X, default toolchain to clang after Xcode 5
-    XCODE_VERSION_OUTPUT=`xcodebuild -version 2>&1 | $HEAD -n 1`
-    $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-    if test $? -ne 0; then
-      AC_MSG_ERROR([Failed to determine Xcode version.])
-    fi
-    XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-        $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-        $CUT -f 1 -d .`
-    AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-    if test $XCODE_MAJOR_VERSION -ge 5; then
-        DEFAULT_TOOLCHAIN="clang"
+    if test -n "$XCODEBUILD"; then
+      # On Mac OS X, default toolchain to clang after Xcode 5
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_ERROR([Failed to determine Xcode version.])
+      fi
+      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
+          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
+          $CUT -f 1 -d .`
+      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
+      if test $XCODE_MAJOR_VERSION -ge 5; then
+          DEFAULT_TOOLCHAIN="clang"
+      else
+          DEFAULT_TOOLCHAIN="gcc"
+      fi
     else
-        DEFAULT_TOOLCHAIN="gcc"
+      # If Xcode is not installed, but the command line tools are
+      # then we can't run xcodebuild. On these systems we should
+      # default to clang
+      DEFAULT_TOOLCHAIN="clang"
     fi
   else
     # First toolchain type in the list is the default
