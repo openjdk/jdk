@@ -105,10 +105,10 @@ public class GcInfoCompositeData extends LazyCompositeData {
 
         try {
             baseGcInfoItemValues = new Object[] {
-                new Long(info.getId()),
-                new Long(info.getStartTime()),
-                new Long(info.getEndTime()),
-                new Long(info.getDuration()),
+                info.getId(),
+                info.getStartTime(),
+                info.getEndTime(),
+                info.getDuration(),
                 memoryUsageMapType.toOpenTypeData(info.getMemoryUsageBeforeGc()),
                 memoryUsageMapType.toOpenTypeData(info.getMemoryUsageAfterGc()),
             };

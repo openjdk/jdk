@@ -41,6 +41,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Consumer;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 
 import sun.management.VMManagement;
 
@@ -135,6 +137,7 @@ public final class ProcessTools {
                                        long timeout,
                                        TimeUnit unit)
     throws IOException, InterruptedException, TimeoutException {
+        System.out.println("["+name+"]:" + processBuilder.command().stream().collect(Collectors.joining(" ")));
         Process p = processBuilder.start();
         StreamPumper stdout = new StreamPumper(p.getInputStream());
         StreamPumper stderr = new StreamPumper(p.getErrorStream());

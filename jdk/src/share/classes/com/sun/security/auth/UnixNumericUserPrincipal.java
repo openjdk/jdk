@@ -87,7 +87,7 @@ public class UnixNumericUserPrincipal implements
      *                  represented as a long.
      */
     public UnixNumericUserPrincipal(long name) {
-        this.name = (new Long(name)).toString();
+        this.name = Long.toString(name);
     }
 
     /**
@@ -113,7 +113,7 @@ public class UnixNumericUserPrincipal implements
      *          <code>UnixNumericUserPrincipal</code> as a long.
      */
     public long longValue() {
-        return ((new Long(name)).longValue());
+        return Long.parseLong(name);
     }
 
     /**

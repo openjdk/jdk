@@ -54,6 +54,12 @@ import java.beans.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalComboBoxUI extends BasicComboBoxUI {
 
+    /**
+     * Constructs an instance of {@code MetalComboBoxUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code MetalComboBoxUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new MetalComboBoxUI();
     }
@@ -234,6 +240,7 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
      * override. All the functionality of this method is in the
      * MetalPropertyChangeListener.
      *
+     * @param e an instance of {@code PropertyChangeEvent}
      * @deprecated As of Java 2 platform v1.4.
      */
     @Deprecated
@@ -251,11 +258,23 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
         public void layoutContainer( Container parent ) {
             layoutComboBox( parent, this );
         }
+
+        /**
+         * Lays out the parent container.
+         *
+         * @param parent a container
+         */
         public void superLayout( Container parent ) {
             super.layoutContainer( parent );
         }
     }
 
+    /**
+     * Lays out the {@code JComboBox} in the {@code parent} container.
+     *
+     * @param parent a container
+     * @param manager an instance of {@code MetalComboBoxLayoutManager}
+     */
     // This is here because of a bug in the compiler.
     // When a protected-inner-class-savvy compiler comes out we
     // should move this into MetalComboBoxLayoutManager.
@@ -367,6 +386,11 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
     @Deprecated
     public class MetalComboPopup extends BasicComboPopup {
 
+        /**
+         * Constructs a new instance of {@code MetalComboPopup}.
+         *
+         * @param cBox an instance of {@code JComboBox}
+         */
         public MetalComboPopup( JComboBox cBox) {
             super( cBox );
         }
