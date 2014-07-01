@@ -59,13 +59,13 @@ class VMConnection {
         retVal += "-classpath " + testClasses;
 
         String vmOpts = System.getProperty("test.vm.opts");
-        System.out.println("vmOpts: "+vmOpts);
-        if (vmOpts != null) {
+        System.out.println("vmOpts: '" + vmOpts + "'");
+        if (vmOpts != null && !vmOpts.trim().isEmpty()) {
             retVal += " " + vmOpts;
         }
         String javaOpts = System.getProperty("test.java.opts");
-        System.out.println("javaOpts: "+javaOpts);
-        if (javaOpts != null) {
+        System.out.println("javaOpts: '" + javaOpts + "'");
+        if (javaOpts != null && !javaOpts.trim().isEmpty()) {
             retVal += " " + javaOpts;
         }
 

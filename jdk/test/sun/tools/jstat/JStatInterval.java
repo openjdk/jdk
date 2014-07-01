@@ -42,14 +42,12 @@ import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class JStatInterval {
-    private static final String PID = "PID";
     private static final String READY = "READY";
     private static final String ERROR = "!ERROR";
 
     public static class Application {
         public static void main(String[] args) {
             try {
-                System.out.println(PID + ":" + ProcessTools.getProcessId());
                 System.out.println(READY);
                 System.out.flush();
                 int exitCode = System.in.read();
@@ -69,15 +67,12 @@ public class JStatInterval {
             "-XX:+UsePerfData",
             Application.class.getName()
         );
-        AtomicInteger pid = new AtomicInteger(-1);
         AtomicBoolean error = new AtomicBoolean(false);
         Process app = ProcessTools.startProcess(
             "application",
             pb,
             line -> {
-                if (line.startsWith(PID)) {
-                    pid.set(Integer.parseInt(line.split("\\:")[1]));
-                } else if (line.equals(READY)) {
+                if (line.equals(READY)) {
                     return true;
                 } else if (line.equals(ERROR)) {
                     error.set(true);
@@ -92,7 +87,7 @@ public class JStatInterval {
             throw new Error("Unable to start the monitored application.");
         }
 
-        String pidStr = String.valueOf(pid.get());
+        String pidStr = String.valueOf(app.getPid());
         JDKToolLauncher l = JDKToolLauncher.createUsingTestJDK("jstat");
         l.addToolArg("-compiler");
         l.addToolArg(pidStr);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -161,6 +161,9 @@ public interface TableColumnModel
      * be considered to be a width from the start of the first column in the
      * model.  If the column index for a given X coordinate in 2D space is
      * required, <code>JTable.columnAtPoint</code> can be used instead.
+     *
+     * @param xPosition  width from the start of the first column in
+     * the model.
      *
      * @return  the index of the column; or -1 if no column is found
      * @see javax.swing.JTable#columnAtPoint

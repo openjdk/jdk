@@ -1102,8 +1102,7 @@ public class WindowsLookAndFeel extends BasicLookAndFeel
             "PasswordField.selectionBackground", SelectionBackgroundColor,
             "PasswordField.selectionForeground", SelectionTextColor,
             "PasswordField.caretForeground",WindowTextColor,
-            "PasswordField.echoChar", new XPValue(new Character((char)0x25CF),
-                                                  new Character('*')),
+            "PasswordField.echoChar", new XPValue((char)0x25CF, '*'),
 
             // *** ProgressBar
             "ProgressBar.font", ControlFont,
