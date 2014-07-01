@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,35 +23,26 @@
  * questions.
  */
 
-package sun.jvmstat.monitor.remote;
+package sun.jvmstat.monitor;
 
-import sun.jvmstat.monitor.*;
-
-/**
- * Interface to support asynchronous polling of the exported
- * instrumentation of a target Java Virtual Machine.
- *
- * @author Brian Doherty
- * @since 1.5
- */
-public interface BufferedMonitoredVm extends MonitoredVm {
+public interface MonitoredHostService {
 
     /**
-     * Interface to get the bytes associated with the instrumentation
-     * for the target Java Virtual Machine.
+     * Construct a MonitoredHost instance to manage the
+     * connection to the host indicated by <tt>hostId</tt>.
      *
-     * @return byte[] - a byte array containing the current bytes
-     *                  for the instrumentation exported by the
-     *                  target Java Virtual Machine.
+     * @param hostId the identifier for the target host.
+     * @return MonitoredHost - The MonitoredHost object needed to attach to
+     *                         the target host.
+     *
+     * @throws MonitorException Thrown if monitoring errors occur.
      */
-    byte[] getBytes();
+    public MonitoredHost getMonitoredHost(HostIdentifier hostId) throws MonitorException;
 
     /**
-     * Interface to get the the size of the instrumentation buffer
-     * for the target Java Virtual Machine.
+     * Get the scheme that this service supports.
      *
-     * @return int - the size of the instrumentation buffer for the
-     *               target Java Virtual Machine.
+     * @return scheme name
      */
-    int getCapacity();
+    public String getScheme();
 }

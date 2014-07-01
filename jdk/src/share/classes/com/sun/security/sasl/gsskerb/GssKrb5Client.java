@@ -241,7 +241,7 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
                         "KRB5CLNT05:Challenge [unwrapped]:", gssOutToken);
                 }
                 logger.log(Level.FINE, "KRB5CLNT06:Server protections: {0}",
-                    new Byte(gssOutToken[0]));
+                    gssOutToken[0]);
             }
 
             // Client selects preferred protection
@@ -293,7 +293,7 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
             "KRB5CLNT08:Selected protection: {0}; privacy: {1}; integrity: {2}",
-                    new Object[]{new Byte(selectedQop),
+                    new Object[]{selectedQop,
                                  Boolean.valueOf(privacy),
                                  Boolean.valueOf(integrity)});
             }

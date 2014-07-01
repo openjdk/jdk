@@ -60,7 +60,7 @@ public class MemoryNotifInfoCompositeData extends LazyCompositeData {
         final Object[] memoryNotifInfoItemValues = {
             memoryNotifInfo.getPoolName(),
             MemoryUsageCompositeData.toCompositeData(memoryNotifInfo.getUsage()),
-            new Long(memoryNotifInfo.getCount()),
+            memoryNotifInfo.getCount(),
         };
 
         try {

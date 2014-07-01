@@ -421,7 +421,7 @@ public final class LdapPoolManager {
                 try {
                     return Long.getLong(propName, defVal);
                 } catch (SecurityException e) {
-                    return new Long(defVal);
+                    return defVal;
                 }
             }
         });

@@ -1075,6 +1075,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @deprecated As of JDK version 1.1,
      * programs should not directly manipulate peers;
      * replaced by <code>boolean isDisplayable()</code>.
+     * @return the peer for this component
      */
     @Deprecated
     public ComponentPeer getPeer() {
@@ -1132,6 +1133,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Gets the <code>DropTarget</code> associated with this
      * <code>Component</code>.
+     *
+     * @return the drop target
      */
 
     public synchronized DropTarget getDropTarget() { return dropTarget; }
@@ -1498,6 +1501,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Enables or disables this component.
+     *
+     * @param  b {@code true} to enable this component;
+     *         otherwise {@code false}
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setEnabled(boolean)</code>.
      */
@@ -1656,6 +1664,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Makes this component visible or invisible.
+     *
+     * @param  b {@code true} to make this component visible;
+     *         otherwise {@code false}
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setVisible(boolean)</code>.
      */
@@ -2068,6 +2081,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
 
     /**
+     * Returns the location of this component's top left corner.
+     *
+     * @return the location of this component's top left corner
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getLocation()</code>.
      */
@@ -2102,6 +2118,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Moves this component to a new location.
+     *
+     * @param  x the <i>x</i>-coordinate of the new location's
+     *           top-left corner in the parent's coordinate space
+     * @param  y the <i>y</i>-coordinate of the new location's
+     *           top-left corner in the parent's coordinate space
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setLocation(int, int)</code>.
      */
@@ -2150,6 +2173,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Returns the size of this component in the form of a
+     * {@code Dimension} object.
+     *
+     * @return the {@code Dimension} object that indicates the
+     *         size of this component
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getSize()</code>.
      */
@@ -2177,6 +2205,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Resizes this component.
+     *
+     * @param  width the new width of the component
+     * @param  height the new height of the component
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setSize(int, int)</code>.
      */
@@ -2208,6 +2240,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Resizes this component so that it has width {@code d.width}
+     * and height {@code d.height}.
+     *
+     * @param  d the new size of this component
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setSize(Dimension)</code>.
      */
@@ -2231,6 +2267,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Returns the bounding rectangle of this component.
+     *
+     * @return the bounding rectangle for this component
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getBounds()</code>.
      */
@@ -2265,6 +2304,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Reshapes the bounding rectangle for this component.
+     *
+     * @param  x the <i>x</i> coordinate of the upper left corner of the rectangle
+     * @param  y the <i>y</i> coordinate of the upper left corner of the rectangle
+     * @param  width the width of the rectangle
+     * @param  height the height of the rectangle
+     *
      * @deprecated As of JDK version 1.1,
      * replaced by <code>setBounds(int, int, int, int)</code>.
      */
@@ -2631,6 +2677,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
 
     /**
+     * Returns the component's preferred size.
+     *
+     * @return the component's preferred size
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getPreferredSize()</code>.
      */
@@ -2701,6 +2750,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Returns the minimum size of this component.
+     *
+     * @return the minimum size of this component
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getMinimumSize()</code>.
      */
@@ -2781,6 +2833,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
+     *
+     * @return the horizontal alignment of this component
      */
     public float getAlignmentX() {
         return CENTER_ALIGNMENT;
@@ -2792,6 +2846,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * components.  The value should be a number between 0 and 1
      * where 0 represents alignment along the origin, 1 is aligned
      * the furthest away from the origin, 0.5 is centered, etc.
+     *
+     * @return the vertical alignment of this component
      */
     public float getAlignmentY() {
         return CENTER_ALIGNMENT;
@@ -3157,8 +3213,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * not have a cursor set, the cursor of its parent is returned.
      * If no cursor is set in the entire hierarchy,
      * <code>Cursor.DEFAULT_CURSOR</code> is returned.
+     *
+     * @return the cursor for this component
      * @see #setCursor
-     * @since      1.1
+     * @since 1.1
      */
     public Cursor getCursor() {
         return getCursor_NoClientCode();
@@ -3942,6 +4000,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * a lost state.
          */
         protected boolean validatedContents; // = false
+
         /**
          * Size of the back buffers.  (Note: these fields were added in 6.0
          * but kept package-private to avoid exposing them in the spec.
@@ -3949,7 +4008,15 @@ public abstract class Component implements ImageObserver, MenuContainer,
          * protected when they were introduced in 1.4, but now we just have
          * to live with that decision.)
          */
+
+         /**
+          * The width of the back buffers
+          */
         int width;
+
+        /**
+         * The height of the back buffers
+         */
         int height;
 
         /**
@@ -4304,6 +4371,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
 
         /**
          * Creates the back buffers
+         *
+         * @param numBuffers the number of buffers to create
          */
         protected void createBackBuffers(int numBuffers) {
             if (numBuffers == 0) {
@@ -4593,6 +4662,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * better performance is desired, or if page-flipping is used as the
      * buffer strategy.
      *
+     * @param ignoreRepaint {@code true} if the paint messages from the OS
+     *                      should be ignored; otherwise {@code false}
+     *
      * @since 1.4
      * @see #getIgnoreRepaint
      * @see Canvas#createBufferStrategy
@@ -4619,8 +4691,11 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Checks whether this component "contains" the specified point,
      * where <code>x</code> and <code>y</code> are defined to be
      * relative to the coordinate system of this component.
+     *
      * @param     x   the <i>x</i> coordinate of the point
      * @param     y   the <i>y</i> coordinate of the point
+     * @return {@code true} if the point is within the component;
+     *         otherwise {@code false}
      * @see       #getComponentAt(int, int)
      * @since     1.1
      */
@@ -4629,6 +4704,12 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Checks whether the point is inside of this component.
+     *
+     * @param  x the <i>x</i> coordinate of the point
+     * @param  y the <i>y</i> coordinate of the point
+     * @return {@code true} if the point is within the component;
+     *         otherwise {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by contains(int, int).
      */
@@ -4641,7 +4722,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Checks whether this component "contains" the specified point,
      * where the point's <i>x</i> and <i>y</i> coordinates are defined
      * to be relative to the coordinate system of this component.
+     *
      * @param     p     the point
+     * @return {@code true} if the point is within the component;
+     *         otherwise {@code false}
      * @throws    NullPointerException if {@code p} is {@code null}
      * @see       #getComponentAt(Point)
      * @since     1.1
@@ -4676,6 +4760,13 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * Returns the component occupying the position specified (this component,
+     * or immediate child component, or null if neither
+     * of the first two occupies the location).
+     *
+     * @param  x the <i>x</i> coordinate to search for components at
+     * @param  y the <i>y</i> coordinate to search for components at
+     * @return the component at the specified location or {@code null}
      * @deprecated As of JDK version 1.1,
      * replaced by getComponentAt(int, int).
      */
@@ -4687,15 +4778,17 @@ public abstract class Component implements ImageObserver, MenuContainer,
     /**
      * Returns the component or subcomponent that contains the
      * specified point.
-     * @param     p   the point
-     * @see       java.awt.Component#contains
-     * @since     1.1
+     * @param  p the point
+     * @return the component at the specified location or {@code null}
+     * @see java.awt.Component#contains
+     * @since 1.1
      */
     public Component getComponentAt(Point p) {
         return getComponentAt(p.x, p.y);
     }
 
     /**
+     * @param  e the event to deliver
      * @deprecated As of JDK version 1.1,
      * replaced by <code>dispatchEvent(AWTEvent e)</code>.
      */
@@ -6746,6 +6839,8 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @return {@code true} if the event was handled, {@code false} otherwise
      * @deprecated As of JDK version 1.1
      * replaced by processEvent(AWTEvent).
      */
@@ -6789,6 +6884,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseEvent(MouseEvent).
      */
@@ -6798,6 +6897,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseMotionEvent(MouseEvent).
      */
@@ -6807,6 +6910,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseEvent(MouseEvent).
      */
@@ -6816,6 +6923,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseMotionEvent(MouseEvent).
      */
@@ -6825,6 +6936,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseEvent(MouseEvent).
      */
@@ -6834,6 +6949,10 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  x the x coordinate
+     * @param  y the y coordinate
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processMouseEvent(MouseEvent).
      */
@@ -6843,6 +6962,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  key the key pressed
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processKeyEvent(KeyEvent).
      */
@@ -6852,6 +6974,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  key the key pressed
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processKeyEvent(KeyEvent).
      */
@@ -6861,6 +6986,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  what the object acted on
+     * @return {@code false}
      * @deprecated As of JDK version 1.1,
      * should register this component as ActionListener on component
      * which fires action events.
@@ -7070,6 +7198,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param  evt the event to handle
+     * @param  what the object focused
+     * @return  {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processFocusEvent(FocusEvent).
      */
@@ -7079,6 +7210,9 @@ public abstract class Component implements ImageObserver, MenuContainer,
     }
 
     /**
+     * @param evt  the event to handle
+     * @param what the object focused
+     * @return  {@code false}
      * @deprecated As of JDK version 1.1,
      * replaced by processFocusEvent(FocusEvent).
      */
@@ -8390,6 +8524,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * Returns an array of all the listeners which have been associated
      * with the named property.
      *
+     * @param  propertyName the property name
      * @return all of the <code>PropertyChangeListener</code>s associated with
      *         the named property; if no such listeners have been added or
      *         if <code>propertyName</code> is <code>null</code>, an empty
@@ -8400,8 +8535,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * @see #getPropertyChangeListeners
      * @since 1.4
      */
-    public PropertyChangeListener[] getPropertyChangeListeners(
-                                                                            String propertyName) {
+    public PropertyChangeListener[] getPropertyChangeListeners(String propertyName) {
         synchronized (getObjectLock()) {
             if (changeSupport == null) {
                 return new PropertyChangeListener[0];
@@ -8506,7 +8640,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
         if (changeSupport == null || oldValue == newValue) {
             return;
         }
-        firePropertyChange(propertyName, new Character(oldValue), new Character(newValue));
+        firePropertyChange(propertyName, Character.valueOf(oldValue), Character.valueOf(newValue));
     }
 
     /**
@@ -8879,6 +9013,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * This method changes layout-related information, and therefore,
      * invalidates the component hierarchy.
      *
+     * @param  o the orientation to be set
      *
      * @see ComponentOrientation
      * @see #invalidate
@@ -8906,6 +9041,7 @@ public abstract class Component implements ImageObserver, MenuContainer,
      * subclasses that wish to respect orientation should call this method to
      * get the component's orientation before performing layout or drawing.
      *
+     * @return the orientation to order the elements or text
      * @see ComponentOrientation
      *
      * @author Laura Werner, IBM
@@ -9063,7 +9199,16 @@ public abstract class Component implements ImageObserver, MenuContainer,
          */
         private volatile transient int propertyListenersCount = 0;
 
+        /**
+         * A component listener to track show/hide/resize events
+         * and convert them to PropertyChange events.
+         */
         protected ComponentListener accessibleAWTComponentHandler = null;
+
+        /**
+         * A listener to track focus events
+         * and convert them to PropertyChange events.
+         */
         protected FocusListener accessibleAWTFocusHandler = null;
 
         /**

@@ -379,7 +379,7 @@ public class SearchFilter implements AttrFilter {
         // used for substring comparisons (where proto has "*" wildcards
         private boolean substringMatch(String proto, String value) {
             // simple case 1: "*" means attribute presence is being tested
-            if(proto.equals(new Character(WILDCARD_TOKEN).toString())) {
+            if(proto.equals(Character.toString(WILDCARD_TOKEN))) {
                 if(debug) {System.out.println("simple presence assertion");}
                 return true;
             }

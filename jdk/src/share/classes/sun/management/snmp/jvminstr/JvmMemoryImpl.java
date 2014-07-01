@@ -222,7 +222,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
         }
     }
 
-    static final Long Long0 = new Long(0);
+    static final Long Long0 = 0L;
 
     /**
      * Getter for the "JvmMemoryNonHeapMaxSize" variable.
@@ -230,7 +230,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
     public Long getJvmMemoryNonHeapMaxSize()
         throws SnmpStatusException {
         final long val = getNonHeapMemoryUsage().getMax();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return Long0;
     }
 
@@ -239,7 +239,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryNonHeapCommitted() throws SnmpStatusException {
         final long val = getNonHeapMemoryUsage().getCommitted();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -248,7 +248,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryNonHeapUsed() throws SnmpStatusException {
         final long val = getNonHeapMemoryUsage().getUsed();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -257,7 +257,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryNonHeapInitSize() throws SnmpStatusException {
         final long val = getNonHeapMemoryUsage().getInit();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -266,7 +266,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryHeapMaxSize() throws SnmpStatusException {
         final long val = getHeapMemoryUsage().getMax();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -320,7 +320,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryHeapCommitted() throws SnmpStatusException {
         final long val = getHeapMemoryUsage().getCommitted();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -359,7 +359,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryHeapUsed() throws SnmpStatusException {
         final long val = getHeapMemoryUsage().getUsed();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -368,7 +368,7 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
      */
     public Long getJvmMemoryHeapInitSize() throws SnmpStatusException {
         final long val = getHeapMemoryUsage().getInit();
-        if (val > -1) return new Long(val);
+        if (val > -1) return val;
         else return Long0;
     }
 
@@ -380,11 +380,11 @@ public class JvmMemoryImpl implements JvmMemoryMBean {
         final long val = ManagementFactory.getMemoryMXBean().
             getObjectPendingFinalizationCount();
 
-        if (val > -1) return new Long((int)val);
+        if (val > -1) return Long.valueOf((int) val);
 
         // Should never happen... but stay safe all the same.
         //
-        else return new Long(0);
+        else return 0L;
     }
 
     static final MibLogger log = new MibLogger(JvmMemoryImpl.class);

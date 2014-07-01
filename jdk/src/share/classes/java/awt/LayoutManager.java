@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,7 +61,9 @@ public interface LayoutManager {
     /**
      * Calculates the preferred size dimensions for the specified
      * container, given the components it contains.
-     * @param parent the container to be laid out
+     *
+     * @param  parent the container to be laid out
+     * @return the preferred dimension for the container
      *
      * @see #minimumLayoutSize
      */
@@ -70,7 +72,10 @@ public interface LayoutManager {
     /**
      * Calculates the minimum size dimensions for the specified
      * container, given the components it contains.
-     * @param parent the component to be laid out
+     *
+     * @param  parent the component to be laid out
+     * @return the minimum dimension for the container
+     *
      * @see #preferredLayoutSize
      */
     Dimension minimumLayoutSize(Container parent);
