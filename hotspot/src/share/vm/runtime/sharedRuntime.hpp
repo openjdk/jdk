@@ -217,7 +217,7 @@ class SharedRuntime: AllStatic {
   static UncommonTrapBlob* uncommon_trap_blob()                  { return _uncommon_trap_blob; }
 #endif // COMPILER2
 
-  static address get_resolve_opt_virtual_call_stub(){
+  static address get_resolve_opt_virtual_call_stub() {
     assert(_resolve_opt_virtual_call_blob != NULL, "oops");
     return _resolve_opt_virtual_call_blob->entry_point();
   }
@@ -253,7 +253,7 @@ class SharedRuntime: AllStatic {
   // bytecode tracing is only used by the TraceBytecodes
   static intptr_t trace_bytecode(JavaThread* thread, intptr_t preserve_this_value, intptr_t tos, intptr_t tos2) PRODUCT_RETURN0;
 
-  static oop retrieve_receiver( Symbol* sig, frame caller );
+  static oop retrieve_receiver(Symbol* sig, frame caller);
 
   static void register_finalizer(JavaThread* thread, oopDesc* obj);
 
@@ -446,8 +446,8 @@ class SharedRuntime: AllStatic {
   static bool is_wide_vector(int size);
 
   // Save and restore a native result
-  static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots );
-  static void restore_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots );
+  static void    save_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
+  static void restore_native_result(MacroAssembler *_masm, BasicType ret_type, int frame_slots);
 
   // Generate a native wrapper for a given method.  The method takes arguments
   // in the Java compiled code convention, marshals them to the native
@@ -463,7 +463,7 @@ class SharedRuntime: AllStatic {
                                           int compile_id,
                                           BasicType* sig_bt,
                                           VMRegPair* regs,
-                                          BasicType ret_type );
+                                          BasicType ret_type);
 
   // Block before entering a JNI critical method
   static void block_for_jni_critical(JavaThread* thread);

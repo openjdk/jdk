@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,15 +76,10 @@ void FilteredFieldsMap::initialize() {
   int offset;
   offset = java_lang_Throwable::get_backtrace_offset();
   _filtered_fields->append(new FilteredField(SystemDictionary::Throwable_klass(), offset));
-  // The latest version of vm may be used with old jdk.
-  if (JDK_Version::is_gte_jdk16x_version()) {
-    // The following class fields do not exist in
-    // previous version of jdk.
-    offset = sun_reflect_ConstantPool::oop_offset();
-    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
-    offset = sun_reflect_UnsafeStaticFieldAccessorImpl::base_offset();
-    _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));
-  }
+  offset = sun_reflect_ConstantPool::oop_offset();
+  _filtered_fields->append(new FilteredField(SystemDictionary::reflect_ConstantPool_klass(), offset));
+  offset = sun_reflect_UnsafeStaticFieldAccessorImpl::base_offset();
+  _filtered_fields->append(new FilteredField(SystemDictionary::reflect_UnsafeStaticFieldAccessorImpl_klass(), offset));
 }
 
 int FilteredFieldStream::field_count() {

@@ -116,7 +116,7 @@ class Atomic : AllStatic {
     atomic_decl
 #else
 #define ATOMIC_SHORT_PAIR(atomic_decl, non_atomic_decl) \
-    atomic_decl ; \
+    atomic_decl; \
     non_atomic_decl
 #endif
 
