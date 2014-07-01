@@ -159,10 +159,24 @@ address CompiledIC::stub_address() const {
 //-----------------------------------------------------------------------------
 // High-level access to an inline cache. Guaranteed to be MT-safe.
 
+void CompiledIC::initialize_from_iter(RelocIterator* iter) {
+  assert(iter->addr() == _ic_call->instruction_address(), "must find ic_call");
+
+  if (iter->type() == relocInfo::virtual_call_type) {
+    virtual_call_Relocation* r = iter->virtual_call_reloc();
+    _is_optimized = false;
+    _value = nativeMovConstReg_at(r->cached_value());
+  } else {
+    assert(iter->type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
+    _is_optimized = true;
+    _value = NULL;
+  }
+}
+
 CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
   : _ic_call(call)
 {
-  address ic_call = call->instruction_address();
+  address ic_call = _ic_call->instruction_address();
 
   assert(ic_call != NULL, "ic_call address must be set");
   assert(nm != NULL, "must pass nmethod");
@@ -173,15 +187,21 @@ CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
   bool ret = iter.next();
   assert(ret == true, "relocInfo must exist at this address");
   assert(iter.addr() == ic_call, "must find ic_call");
-  if (iter.type() == relocInfo::virtual_call_type) {
-    virtual_call_Relocation* r = iter.virtual_call_reloc();
-    _is_optimized = false;
-    _value = nativeMovConstReg_at(r->cached_value());
-  } else {
-    assert(iter.type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
-    _is_optimized = true;
-    _value = NULL;
-  }
+
+  initialize_from_iter(&iter);
+}
+
+CompiledIC::CompiledIC(RelocIterator* iter)
+  : _ic_call(nativeCall_at(iter->addr()))
+{
+  address ic_call = _ic_call->instruction_address();
+
+  nmethod* nm = iter->code();
+  assert(ic_call != NULL, "ic_call address must be set");
+  assert(nm != NULL, "must pass nmethod");
+  assert(nm->contains(ic_call), "must be in nmethod");
+
+  initialize_from_iter(iter);
 }
 
 bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
