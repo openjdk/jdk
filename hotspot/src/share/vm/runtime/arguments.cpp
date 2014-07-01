@@ -222,10 +222,8 @@ void Arguments::init_version_specific_system_properties() {
   const char* spec_vendor = "Sun Microsystems Inc.";
   uint32_t spec_version = 0;
 
-  if (JDK_Version::is_gte_jdk17x_version()) {
-    spec_vendor = "Oracle Corporation";
-    spec_version = JDK_Version::current().major_version();
-  }
+  spec_vendor = "Oracle Corporation";
+  spec_version = JDK_Version::current().major_version();
   jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
 
   PropertyList_add(&_system_properties,
@@ -2455,6 +2453,8 @@ bool Arguments::check_vm_args_consistency() {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
   }
 
+  status &= check_vm_args_consistency_ext();
+
   return status;
 }
 
@@ -3697,14 +3697,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   if (PrintGCDetails) {
     // Turn on -verbose:gc options as well
     PrintGC = true;
-  }
-
-  if (!JDK_Version::is_gte_jdk18x_version()) {
-    // To avoid changing the log format for 7 updates this flag is only
-    // true by default in JDK8 and above.
-    if (FLAG_IS_DEFAULT(PrintGCCause)) {
-      FLAG_SET_DEFAULT(PrintGCCause, false);
-    }
   }
 
   // Set object alignment values.

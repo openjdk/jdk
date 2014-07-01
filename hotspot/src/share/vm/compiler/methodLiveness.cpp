@@ -475,7 +475,7 @@ MethodLivenessResult MethodLiveness::get_liveness_at(int entry_bci) {
     bci = 0;
   }
 
-  MethodLivenessResult answer((uintptr_t*)NULL,0);
+  MethodLivenessResult answer((BitMap::bm_word_t*)NULL,0);
 
   if (_block_count > 0) {
     if (TimeLivenessAnalysis) _time_total.start();
@@ -1000,7 +1000,7 @@ bool MethodLiveness::BasicBlock::merge_exception(BitMap other) {
 }
 
 MethodLivenessResult MethodLiveness::BasicBlock::get_liveness_at(ciMethod* method, int bci) {
-  MethodLivenessResult answer(NEW_RESOURCE_ARRAY(uintptr_t, _analyzer->bit_map_size_words()),
+  MethodLivenessResult answer(NEW_RESOURCE_ARRAY(BitMap::bm_word_t, _analyzer->bit_map_size_words()),
                 _analyzer->bit_map_size_bits());
   answer.set_is_valid();
 

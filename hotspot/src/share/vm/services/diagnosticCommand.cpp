@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoaderStats.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "runtime/javaCalls.hpp"
 #include "runtime/os.hpp"
@@ -58,6 +59,7 @@ void DCmdRegistrant::register_dcmds(){
 #endif // INCLUDE_SERVICES
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
