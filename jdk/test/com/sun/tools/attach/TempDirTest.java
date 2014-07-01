@@ -38,7 +38,7 @@ import jdk.testlibrary.ProcessThread;
  * @bug 8033104
  * @summary Test to make sure attach and jvmstat works correctly when java.io.tmpdir is set
  * @library /lib/testlibrary
- * @run build jdk.testlibrary.* Application Shutdown RunnerUtil
+ * @run build jdk.testlibrary.* Application RunnerUtil
  * @run main/timeout=200 TempDirTest
  */
 
@@ -90,22 +90,20 @@ public class TempDirTest {
 
         final String pidFile = "TempDirTest.Application.pid-" + counter++;
         ProcessThread processThread = null;
-        RunnerUtil.ProcessInfo info = null;
         try {
             String[] tmpDirArg = null;
             if (targetTmpDir != null) {
                 tmpDirArg = new String[] {"-Djava.io.tmpdir=" + targetTmpDir};
             }
-            processThread = RunnerUtil.startApplication(pidFile, tmpDirArg);
-            info = RunnerUtil.readProcessInfo(pidFile);
-            launchTests(info.pid, clientTmpDir);
+            processThread = RunnerUtil.startApplication(tmpDirArg);
+            launchTests(processThread.getPid(), clientTmpDir);
         } catch (Throwable t) {
             System.out.println("TempDirTest got unexpected exception: " + t);
             t.printStackTrace();
             throw t;
         } finally {
             // Make sure the Application process is stopped.
-            RunnerUtil.stopApplication(info.shutdownPort, processThread);
+            RunnerUtil.stopApplication(processThread);
         }
 
         elapsedTime = (System.currentTimeMillis() - startTime) / 1000;
@@ -119,7 +117,7 @@ public class TempDirTest {
      * is that we need to modify the class path and
      * the -Djava.io.tmpdir property.
      */
-    private static void launchTests(int pid, Path clientTmpDir) throws Throwable {
+    private static void launchTests(long pid, Path clientTmpDir) throws Throwable {
         final String sep = File.separator;
 
         // Need to add jdk/lib/tools.jar to classpath.
@@ -139,7 +137,7 @@ public class TempDirTest {
                     "-classpath",
                     classpath,
                     "TempDirTest$TestMain",
-                    Integer.toString(pid) });
+                    Long.toString(pid) });
         OutputAnalyzer output = ProcessTools.executeTestJvm(args);
         output.shouldHaveExitValue(0);
     }
