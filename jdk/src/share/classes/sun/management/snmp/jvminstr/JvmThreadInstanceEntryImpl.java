@@ -231,7 +231,7 @@ public class JvmThreadInstanceEntryImpl
             log.debug("getJvmThreadInstCpuTimeNs",
                       "Operation not supported: " + e);
         }
-        return new Long(l);
+        return l;
     }
 
     /**
@@ -248,14 +248,14 @@ public class JvmThreadInstanceEntryImpl
             //Monitoring is disabled
             if(l == -1) l = 0;
         }
-        return new Long(l);
+        return l;
     }
 
     /**
      * Getter for the "JvmThreadInstBlockCount" variable.
      */
     public Long getJvmThreadInstBlockCount() throws SnmpStatusException {
-        return new Long(info.getBlockedCount());
+        return info.getBlockedCount();
     }
 
     /**
@@ -272,14 +272,14 @@ public class JvmThreadInstanceEntryImpl
             //Monitoring is disabled
             if(l == -1) l = 0;
         }
-        return new Long(l);
+        return l;
     }
 
     /**
      * Getter for the "JvmThreadInstWaitCount" variable.
      */
     public Long getJvmThreadInstWaitCount() throws SnmpStatusException {
-        return new Long(info.getWaitedCount());
+        return info.getWaitedCount();
     }
 
     /**
@@ -294,7 +294,7 @@ public class JvmThreadInstanceEntryImpl
      * Getter for the "JvmThreadInstId" variable.
      */
     public Long getJvmThreadInstId() throws SnmpStatusException {
-        return new Long(info.getThreadId());
+        return info.getThreadId();
     }
 
     /**

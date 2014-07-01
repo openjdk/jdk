@@ -616,7 +616,7 @@ public class GIFImageReader extends ImageReader {
                     return index;
                 }
 
-                Long l1 = new Long(stream.getStreamPosition());
+                Long l1 = stream.getStreamPosition();
                 imageStartPosition.add(l1);
                 ++index;
             }
