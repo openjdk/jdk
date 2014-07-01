@@ -466,8 +466,11 @@ CodeEmitInfo* LIRGenerator::state_for(Instruction* x) {
 }
 
 
-void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitInfo* info) {
-  if (!obj->is_loaded() || PatchALot) {
+void LIRGenerator::klass2reg_with_patching(LIR_Opr r, ciMetadata* obj, CodeEmitInfo* info, bool need_resolve) {
+  /* C2 relies on constant pool entries being resolved (ciTypeFlow), so if TieredCompilation
+   * is active and the class hasn't yet been resolved we need to emit a patch that resolves
+   * the class. */
+  if ((TieredCompilation && need_resolve) || !obj->is_loaded() || PatchALot) {
     assert(info != NULL, "info must be set if class is not loaded");
     __ klass2reg_patch(NULL, r, info);
   } else {
@@ -660,9 +663,18 @@ void LIRGenerator::monitor_exit(LIR_Opr object, LIR_Opr lock, LIR_Opr new_hdr, L
   __ unlock_object(hdr, object, lock, scratch, slow_path);
 }
 
+#ifndef PRODUCT
+void LIRGenerator::print_if_not_loaded(const NewInstance* new_instance) {
+  if (PrintNotLoaded && !new_instance->klass()->is_loaded()) {
+    tty->print_cr("   ###class not loaded at new bci %d", new_instance->printable_bci());
+  } else if (PrintNotLoaded && (TieredCompilation && new_instance->is_unresolved())) {
+    tty->print_cr("   ###class not resolved at new bci %d", new_instance->printable_bci());
+  }
+}
+#endif
 
-void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
-  klass2reg_with_patching(klass_reg, klass, info);
+void LIRGenerator::new_instance(LIR_Opr dst, ciInstanceKlass* klass, bool is_unresolved, LIR_Opr scratch1, LIR_Opr scratch2, LIR_Opr scratch3, LIR_Opr scratch4, LIR_Opr klass_reg, CodeEmitInfo* info) {
+  klass2reg_with_patching(klass_reg, klass, info, is_unresolved);
   // If klass is not loaded we do not know if the klass has finalizers:
   if (UseFastNewInstance && klass->is_loaded()
       && !Klass::layout_helper_needs_slow_path(klass->layout_helper())) {

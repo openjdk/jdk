@@ -1236,6 +1236,16 @@ public final class Context {
      * @return debuglogger associated with that class
      */
     public DebugLogger getLogger(final Class<? extends Loggable> clazz) {
+        return getLogger(clazz, null);
+    }
+
+    /**
+     * Get a logger, given a loggable class
+     * @param clazz a Loggable class
+     * @param initHook an init hook - if this is the first time the logger is created in the context, run the init hook
+     * @return debuglogger associated with that class
+     */
+    public DebugLogger getLogger(final Class<? extends Loggable> clazz, final Consumer<DebugLogger> initHook) {
         final String name = getLoggerName(clazz);
         DebugLogger logger = loggers.get(name);
         if (logger == null) {
@@ -1244,6 +1254,9 @@ public final class Context {
             }
             final LoggerInfo info = env._loggers.get(name);
             logger = new DebugLogger(name, info.getLevel(), info.isQuiet());
+            if (initHook != null) {
+                initHook.accept(logger);
+            }
             loggers.put(name, logger);
         }
         return logger;

@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 #------------------------------------------------------------------------
@@ -40,7 +40,7 @@ Compiler = gcc
 CC_VER_MAJOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f1)
 CC_VER_MINOR := $(shell $(CC) -dumpversion | sed 's/egcs-//' | cut -d'.' -f2)
 
-# Check for the versions of C++ and C compilers ($CXX and $CC) used. 
+# Check for the versions of C++ and C compilers ($CXX and $CC) used.
 
 # Get the last thing on the line that looks like x.x+ (x is a digit).
 COMPILER_REV := \
@@ -98,7 +98,7 @@ ASFLAGS    += $(ARCHFLAG)
 
 ifeq ($(BUILDARCH), amd64)
 ASFLAGS += -march=k8  -march=amd64
-LFLAGS += -march=k8 
+LFLAGS += -march=k8
 endif
 
 
@@ -115,21 +115,44 @@ else
 endif
 
 
-# Compiler warnings are treated as errors 
-WARNINGS_ARE_ERRORS = -Werror 
+# Compiler warnings are treated as errors
+WARNINGS_ARE_ERRORS = -Werror
+
 # Enable these warnings. See 'info gcc' about details on these options
 WARNING_FLAGS = -Wpointer-arith -Wconversion -Wsign-compare -Wundef -Wformat=2
 CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)
-# Special cases 
-CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))  
 
-# The flags to use for an Optimized g++ build
-OPT_CFLAGS += -O3
+# Special cases
+CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
+
+# optimization control flags (Used by fastdebug and release variants)
+OPT_CFLAGS/NOOPT=-O0
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  OPT_CFLAGS/DEBUG=-Og
++else
+  # Allow no optimizations.
+  OPT_CFLAGS/DEBUG=-O0
+endif
+OPT_CFLAGS/SIZE=-Os
+OPT_CFLAGS/SPEED=-O3
+
+OPT_CFLAGS_DEFAULT ?= SPEED
 
 # Hotspot uses very unstrict aliasing turn this optimization off
-OPT_CFLAGS += -fno-strict-aliasing
+# This option is added to CFLAGS rather than OPT_CFLAGS
+# so that OPT_CFLAGS overrides get this option too.
+CFLAGS += -fno-strict-aliasing
 
-# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp 
+ifdef OPT_CFLAGS
+  ifneq ("$(origin OPT_CFLAGS)", "command line")
+    $(error " Use OPT_EXTRAS instead of OPT_CFLAGS to add extra flags to OPT_CFLAGS.")
+  endif
+endif
+
+OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
+
+# The gcc compiler segv's on ia64 when compiling bytecodeInterpreter.cpp
 # if we use expensive-optimizations
 # Note: all ia64 setting reflect the ones for linux
 # No actial testing was performed: there is no Solaris on ia64 presently
@@ -137,10 +160,20 @@ ifeq ($(BUILDARCH), ia64)
 OPT_CFLAGS/bytecodeInterpreter.o += -fno-expensive-optimizations
 endif
 
-OPT_CFLAGS/NOOPT=-O0
+# Work around some compiler bugs.
+ifeq ($(USE_CLANG), true)
+  ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 2), 1)
+    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
+  endif
+else
+  # 6835796. Problem in GCC 4.3.0 with mulnode.o optimized compilation.
+  ifeq ($(shell expr $(CC_VER_MAJOR) = 4 \& $(CC_VER_MINOR) = 3), 1)
+    OPT_CFLAGS/mulnode.o += $(OPT_CFLAGS/NOOPT)
+  endif
+endif
 
 # Flags for generating make dependency flags.
-ifneq ("${CC_VER_MAJOR}", "2")
+ifneq ($(CC_VER_MAJOR), 2)
 DEPFLAGS = -fpch-deps -MMD -MP -MF $(DEP_DIR)/$(@:%=%.d)
 endif
 
@@ -155,26 +188,37 @@ endif
 # statically link libstdc++.so, work with gcc but ignored by g++
 STATIC_STDCXX = -Wl,-Bstatic -lstdc++ -Wl,-Bdynamic
 
-# statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.
-ifneq ("${CC_VER_MAJOR}", "2")
-STATIC_LIBGCC += -static-libgcc
-endif
-
-ifeq ($(BUILDARCH), ia64)
-# Note: all ia64 setting reflect the ones for linux
-# No actial testing was performed: there is no Solaris on ia64 presently
-LFLAGS += -Wl,-relax
-endif
 
 ifdef USE_GNULD
-# Enable linker optimization
-LFLAGS += -Xlinker -O1
+  # statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.
+  ifneq ($(CC_VER_MAJOR), 2)
+    STATIC_LIBGCC += -static-libgcc
+  endif
 
-# Use $(MAPFLAG:FILENAME=real_file_name) to specify a map file.
-MAPFLAG = -Xlinker --version-script=FILENAME 
-else 
-MAPFLAG = -Xlinker -M -Xlinker FILENAME 
-endif 
+  # Enable linker optimization
+  LFLAGS += -Xlinker -O1
+
+  ifneq (, findstring(debug,$(BUILD_FLAVOR)))
+    # for relocations read-only
+    LFLAGS += -Xlinker -z -Xlinker relro
+
+    ifeq ($(BUILD_FLAVOR), debug)
+      # disable incremental relocations linking
+      LFLAGS += -Xlinker -z -Xlinker now
+    endif
+  endif
+
+  ifeq ($(BUILDARCH), ia64)
+    # Note: all ia64 setting reflect the ones for linux
+    # No actual testing was performed: there is no Solaris on ia64 presently
+    LFLAGS += -Wl,-relax
+  endif
+
+  # Use $(MAPFLAG:FILENAME=real_file_name) to specify a map file.
+  MAPFLAG = -Xlinker --version-script=FILENAME
+else
+  MAPFLAG = -Xlinker -M -Xlinker FILENAME
+endif
 
 # Use $(SONAMEFLAG:SONAME=soname) to specify the intrinsic name of a shared obj
 SONAMEFLAG = -Xlinker -soname=SONAME
@@ -185,15 +229,34 @@ SHARED_FLAG = -shared
 #------------------------------------------------------------------------
 # Debug flags
 
-# Use the stabs format for debugging information (this is the default 
-# on gcc-2.91). It's good enough, has all the information about line 
-# numbers and local variables, and libjvm.so is only about 16M. 
-# Change this back to "-g" if you want the most expressive format. 
-# (warning: that could easily inflate libjvm.so to 150M!) 
-# Note: The Itanium gcc compiler crashes when using -gstabs. 
-DEBUG_CFLAGS/ia64  = -g 
-DEBUG_CFLAGS/amd64 = -g 
-DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH)) 
-ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),) 
-DEBUG_CFLAGS += -gstabs 
-endif 
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  DEBUG_CFLAGS=-Og
+else
+  # Allow no optimizations.
+  DEBUG_CFLAGS=-O0
+endif
+
+
+# Use the stabs format for debugging information (this is the default
+# on gcc-2.91). It's good enough, has all the information about line
+# numbers and local variables, and libjvm.so is only about 16M.
+# Change this back to "-g" if you want the most expressive format.
+# (warning: that could easily inflate libjvm.so to 150M!)
+# Note: The Itanium gcc compiler crashes when using -gstabs.
+DEBUG_CFLAGS/ia64  = -g
+DEBUG_CFLAGS/amd64 = -g
+DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
+ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
+  DEBUG_CFLAGS += -gstabs
+endif
+
+# Enable bounds checking.
+# _FORTIFY_SOURCE appears in GCC 4.0+
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) )" "1"
+  # compile time size bounds checks
+  FASTDEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+
+  # and runtime size bounds checks and paranoid stack smashing checks.
+  DEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1
+endif

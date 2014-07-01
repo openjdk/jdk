@@ -116,15 +116,15 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
   AC_SUBST(RC_FLAGS)
 
   if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    # FIXME: likely bug, should be CCXXFLAGS_JDK? or one for C or CXX.
-    CCXXFLAGS="$CCXXFLAGS -nologo"
+    # silence copyright notice and other headers.
+    COMMON_CCXXFLAGS="$COMMON_CCXXFLAGS -nologo"
   fi
 
   if test "x$SYSROOT" != "x"; then
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       if test "x$OPENJDK_TARGET_OS" = xsolaris; then
         # Solaris Studio does not have a concept of sysroot. Instead we must
-        # make sure the default include and lib dirs are appended to each 
+        # make sure the default include and lib dirs are appended to each
         # compile and link command line.
         SYSROOT_CFLAGS="-I$SYSROOT/usr/include"
         SYSROOT_LDFLAGS="-L$SYSROOT/usr/lib$OPENJDK_TARGET_CPU_ISADIR \
@@ -302,6 +302,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
   # Debug symbols
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64" && test "x$DEBUG_LEVEL" = "xfastdebug"; then
+      # reduce from default "-g2" option to save space
       CFLAGS_DEBUG_SYMBOLS="-g1"
       CXXFLAGS_DEBUG_SYMBOLS="-g1"
     else
@@ -313,6 +314,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
     CXXFLAGS_DEBUG_SYMBOLS="-g"
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
     CFLAGS_DEBUG_SYMBOLS="-g -xs"
+    # FIXME: likely a bug, this disables debug symbols rather than enables them
     CXXFLAGS_DEBUG_SYMBOLS="-g0 -xs"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_DEBUG_SYMBOLS="-g"
@@ -320,6 +322,31 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
   fi
   AC_SUBST(CFLAGS_DEBUG_SYMBOLS)
   AC_SUBST(CXXFLAGS_DEBUG_SYMBOLS)
+
+  # bounds, memory and behavior checking options
+  if test "x$TOOLCHAIN_TYPE" = xgcc; then
+    case $DEBUG_LEVEL in
+    release )
+      # no adjustment
+      ;;
+    fastdebug )
+      # Add compile time bounds checks.
+      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
+      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
+      ;;
+    slowdebug )
+      # Add runtime bounds checks and symbol info.
+      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
+      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
+      if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
+        CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
+        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
+      fi
+      ;;
+    esac
+  fi
+  AC_SUBST(CFLAGS_DEBUG_OPTIONS)
+  AC_SUBST(CXXFLAGS_DEBUG_OPTIONS)
 
   # Optimization levels
   if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
@@ -330,10 +357,12 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       C_O_FLAG_HIGHEST="-xO4 -Wu,-O4~yz $CC_HIGHEST -xalias_level=basic -xregs=no%frameptr"
       C_O_FLAG_HI="-xO4 -Wu,-O4~yz -xregs=no%frameptr"
       C_O_FLAG_NORM="-xO2 -Wu,-O2~yz -xregs=no%frameptr"
+      C_O_FLAG_DEBUG="-xregs=no%frameptr"
       C_O_FLAG_NONE="-xregs=no%frameptr"
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption ube -O4~yz $CC_HIGHEST -xregs=no%frameptr"
       CXX_O_FLAG_HI="-xO4 -Qoption ube -O4~yz -xregs=no%frameptr"
       CXX_O_FLAG_NORM="-xO2 -Qoption ube -O2~yz -xregs=no%frameptr"
+      CXX_O_FLAG_DEBUG="-xregs=no%frameptr"
       CXX_O_FLAG_NONE="-xregs=no%frameptr"
       if test "x$OPENJDK_TARGET_CPU_BITS" = "x32"; then
         C_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST -xchip=pentium"
@@ -343,10 +372,12 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
       C_O_FLAG_HIGHEST="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0 $CC_HIGHEST -xalias_level=basic -xprefetch=auto,explicit -xchip=ultra"
       C_O_FLAG_HI="-xO4 -Wc,-Qrm-s -Wc,-Qiselect-T0"
       C_O_FLAG_NORM="-xO2 -Wc,-Qrm-s -Wc,-Qiselect-T0"
+      C_O_FLAG_DEBUG=""
       C_O_FLAG_NONE=""
       CXX_O_FLAG_HIGHEST="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0 $CC_HIGHEST -xprefetch=auto,explicit -xchip=ultra"
       CXX_O_FLAG_HI="-xO4 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
       CXX_O_FLAG_NORM="-xO2 -Qoption cg -Qrm-s -Qoption cg -Qiselect-T0"
+      C_O_FLAG_DEBUG=""
       CXX_O_FLAG_NONE=""
     fi
   else
@@ -359,13 +390,17 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
         C_O_FLAG_HIGHEST="-Os"
         C_O_FLAG_HI="-Os"
         C_O_FLAG_NORM="-Os"
-        C_O_FLAG_NONE=""
       else
         C_O_FLAG_HIGHEST="-O3"
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
-        C_O_FLAG_NONE="-O0"
       fi
+      if test "x$HAS_CFLAG_OPTIMIZE_DEBUG" = "xtrue"; then
+        C_O_FLAG_DEBUG="$CFLAG_OPTIMIZE_DEBUG_FLAG"
+      else
+        C_O_FLAG_DEBUG="-O0"
+      fi
+      C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
         # On MacOSX we optimize for size, something
@@ -373,37 +408,63 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
         C_O_FLAG_HIGHEST="-Os"
         C_O_FLAG_HI="-Os"
         C_O_FLAG_NORM="-Os"
-        C_O_FLAG_NONE=""
       else
         C_O_FLAG_HIGHEST="-O3"
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
-        C_O_FLAG_NONE="-O0"
       fi
+      C_O_FLAG_DEBUG="-O0"
+      C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xxlc; then
       C_O_FLAG_HIGHEST="-O3"
       C_O_FLAG_HI="-O3 -qstrict"
       C_O_FLAG_NORM="-O2"
-      C_O_FLAG_NONE=""
+      C_O_FLAG_DEBUG="-qnoopt"
+      C_O_FLAG_NONE="-qnoop"
     elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
       C_O_FLAG_HIGHEST="-O2"
       C_O_FLAG_HI="-O1"
       C_O_FLAG_NORM="-O1"
+      C_O_FLAG_DEBUG="-Od"
       C_O_FLAG_NONE="-Od"
     fi
     CXX_O_FLAG_HIGHEST="$C_O_FLAG_HIGHEST"
     CXX_O_FLAG_HI="$C_O_FLAG_HI"
     CXX_O_FLAG_NORM="$C_O_FLAG_NORM"
+    CXX_O_FLAG_DEBUG="$C_O_FLAG_DEBUG"
     CXX_O_FLAG_NONE="$C_O_FLAG_NONE"
   fi
+
+  # Adjust optimization flags according to debug level.
+  case $DEBUG_LEVEL in
+    release )
+      # no adjustment
+      ;;
+    fastdebug )
+      # Not quite so much optimization
+      C_O_FLAG_HI="$C_O_FLAG_NORM"
+      CXX_O_FLAG_HI="$CXX_O_FLAG_NORM"
+      ;;
+    slowdebug )
+      # Disable optimization
+      C_O_FLAG_HIGHEST="$C_O_FLAG_DEBUG"
+      C_O_FLAG_HI="$C_O_FLAG_DEBUG"
+      C_O_FLAG_NORM="$C_O_FLAG_DEBUG"
+      CXX_O_FLAG_HIGHEST="$CXX_O_FLAG_DEBUG"
+      CXX_O_FLAG_HI="$CXX_O_FLAG_DEBUG"
+      CXX_O_FLAG_NORM="$CXX_O_FLAG_DEBUG"
+      ;;
+  esac
 
   AC_SUBST(C_O_FLAG_HIGHEST)
   AC_SUBST(C_O_FLAG_HI)
   AC_SUBST(C_O_FLAG_NORM)
+  AC_SUBST(C_O_FLAG_DEBUG)
   AC_SUBST(C_O_FLAG_NONE)
   AC_SUBST(CXX_O_FLAG_HIGHEST)
   AC_SUBST(CXX_O_FLAG_HI)
   AC_SUBST(CXX_O_FLAG_NORM)
+  AC_SUBST(CXX_O_FLAG_DEBUG)
   AC_SUBST(CXX_O_FLAG_NONE)
 ])
 
@@ -461,11 +522,12 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
   # Later we will also have CFLAGS and LDFLAGS for the hotspot subrepo build.
   #
 
-  # Setup compiler/platform specific flags to CFLAGS_JDK,
-  # CXXFLAGS_JDK and CCXXFLAGS_JDK (common to C and CXX?)
+  # Setup compiler/platform specific flags into
+  #    CFLAGS_JDK    - C Compiler flags
+  #    CXXFLAGS_JDK  - C++ Compiler flags
+  #    COMMON_CCXXFLAGS_JDK - common to C and C++
   if test "x$TOOLCHAIN_TYPE" = xgcc; then
-    # these options are used for both C and C++ compiles
-    CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Wall -Wno-parentheses -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Wall -Wno-parentheses -Wextra -Wno-unused -Wno-unused-parameter -Wformat=2 \
         -pipe -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE"
     case $OPENJDK_TARGET_CPU_ARCH in
       arm )
@@ -477,31 +539,31 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
       * )
-        CCXXFLAGS_JDK="$CCXXFLAGS_JDK -fno-omit-frame-pointer"
+        COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -fno-omit-frame-pointer"
         CFLAGS_JDK="${CFLAGS_JDK} -fno-strict-aliasing"
         ;;
     esac
   elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-    CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -DTRACING -DMACRO_MEMSYS_OPS -DBREAKPTS"
     if test "x$OPENJDK_TARGET_CPU_ARCH" = xx86; then
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DcpuIntel -Di586 -D$OPENJDK_TARGET_CPU_LEGACY_LIB"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DcpuIntel -Di586 -D$OPENJDK_TARGET_CPU_LEGACY_LIB"
       CFLAGS_JDK="$CFLAGS_JDK -erroff=E_BAD_PRAGMA_PACK_VALUE"
     fi
-  
+
     CFLAGS_JDK="$CFLAGS_JDK -xc99=%none -xCC -errshort=tags -Xa -v -mt -W0,-noglobal"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -errtags=yes +w -mt -features=no%except -DCC_NOEX -norunpath -xnolib"
   elif test "x$TOOLCHAIN_TYPE" = xxlc; then
     CFLAGS_JDK="$CFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
     CXXFLAGS_JDK="$CXXFLAGS_JDK -D_GNU_SOURCE -D_REENTRANT -D_LARGEFILE64_SOURCE -DSTDC"
   elif test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
-    CCXXFLAGS_JDK="$CCXXFLAGS $CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS $COMMON_CCXXFLAGS_JDK -Zi -MD -Zc:wchar_t- -W3 -wd4800 \
     -D_STATIC_CPPLIB -D_DISABLE_DEPRECATE_STATIC_CPPLIB -DWIN32_LEAN_AND_MEAN \
     -D_CRT_SECURE_NO_DEPRECATE -D_CRT_NONSTDC_NO_DEPRECATE \
     -DWIN32 -DIAL"
     if test "x$OPENJDK_TARGET_CPU" = xx86_64; then
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_AMD64_ -Damd64"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_AMD64_ -Damd64"
     else
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_X86_ -Dx86"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_X86_ -Dx86"
     fi
   fi
 
@@ -509,28 +571,20 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
 
   # Adjust flags according to debug level.
   case $DEBUG_LEVEL in
-    fastdebug )
-      CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
-      CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
-      C_O_FLAG_HI="$C_O_FLAG_NORM"
-      C_O_FLAG_NORM="$C_O_FLAG_NORM"
-      CXX_O_FLAG_HI="$CXX_O_FLAG_NORM"
-      CXX_O_FLAG_NORM="$CXX_O_FLAG_NORM"
+    fastdebug | slowdebug )
+      CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS $CFLAGS_DEBUG_OPTIONS"
+      CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS $CXXFLAGS_DEBUG_OPTIONS"
       JAVAC_FLAGS="$JAVAC_FLAGS -g"
       ;;
-    slowdebug )
-      CFLAGS_JDK="$CFLAGS_JDK $CFLAGS_DEBUG_SYMBOLS"
-      CXXFLAGS_JDK="$CXXFLAGS_JDK $CXXFLAGS_DEBUG_SYMBOLS"
-      C_O_FLAG_HI="$C_O_FLAG_NONE"
-      C_O_FLAG_NORM="$C_O_FLAG_NONE"
-      CXX_O_FLAG_HI="$CXX_O_FLAG_NONE"
-      CXX_O_FLAG_NORM="$CXX_O_FLAG_NONE"
-      JAVAC_FLAGS="$JAVAC_FLAGS -g"
+    release )
+      ;;
+    * )
+      AC_MSG_ERROR([Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL])
       ;;
   esac
 
   # Setup LP64
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK $ADD_LP64"
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK $ADD_LP64"
 
   # Set some common defines. These works for all compilers, but assume
   # -D is universally accepted.
@@ -543,49 +597,49 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     #   Note: -Dmacro         is the same as    #define macro 1
     #         -Dmacro=        is the same as    #define macro
     if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN="
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_LITTLE_ENDIAN="
     else
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_LITTLE_ENDIAN"
     fi
   else
     # Same goes for _BIG_ENDIAN. Do we really need to set *ENDIAN on Solaris if they
     # are defined in the system?
     if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN="
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_BIG_ENDIAN="
     else
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_BIG_ENDIAN"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_BIG_ENDIAN"
     fi
   fi
-  
+
   # Setup target OS define. Use OS target name but in upper case.
   OPENJDK_TARGET_OS_UPPERCASE=`$ECHO $OPENJDK_TARGET_OS | $TR 'abcdefghijklmnopqrstuvwxyz' 'ABCDEFGHIJKLMNOPQRSTUVWXYZ'`
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D$OPENJDK_TARGET_OS_UPPERCASE"
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D$OPENJDK_TARGET_OS_UPPERCASE"
 
   # Setup target CPU
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
-  
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DARCH='\"$OPENJDK_TARGET_CPU_LEGACY\"' -D$OPENJDK_TARGET_CPU_LEGACY"
+
   # Setup debug/release defines
   if test "x$DEBUG_LEVEL" = xrelease; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DNDEBUG"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DNDEBUG"
     if test "x$OPENJDK_TARGET_OS" = xsolaris; then
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DTRIMMED"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DTRIMMED"
     fi
   else
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DDEBUG"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DDEBUG"
   fi
 
   # Setup release name
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DRELEASE='\"\$(RELEASE)\"'"
 
 
   # Set some additional per-OS defines.
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE -D_DARWIN_UNLIMITED_SELECT"
   elif test "x$OPENJDK_TARGET_OS" = xaix; then
     # FIXME: PPC64 should not be here.
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DPPC64"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DPPC64"
   elif test "x$OPENJDK_TARGET_OS" = xbsd; then
-    CCXXFLAGS_JDK="$CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -D_ALLBSD_SOURCE"
   fi
 
   # Additional macosx handling
@@ -595,22 +649,22 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       # FIXME: clean this up, and/or move it elsewhere.
 
       # Setting these parameters makes it an error to link to macosx APIs that are
-      # newer than the given OS version and makes the linked binaries compatible 
+      # newer than the given OS version and makes the linked binaries compatible
       # even if built on a newer version of the OS.
       # The expected format is X.Y.Z
       MACOSX_VERSION_MIN=10.7.0
       AC_SUBST(MACOSX_VERSION_MIN)
-    
+
       # The macro takes the version with no dots, ex: 1070
       # Let the flags variables get resolved in make for easier override on make
       # command line.
-      CCXXFLAGS_JDK="$CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
       LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
     fi
   fi
 
   # Setup some hard coded includes
-  CCXXFLAGS_JDK="$CCXXFLAGS_JDK \
+  COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
       -I${JDK_OUTPUTDIR}/include \
       -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
       -I${JDK_TOPDIR}/src/share/javavm/export \
@@ -619,12 +673,12 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
       -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
 
   # The shared libraries are compiled using the picflag.
-  CFLAGS_JDKLIB="$CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
-  CXXFLAGS_JDKLIB="$CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA "
+  CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
+  CXXFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK $PICFLAG $CXXFLAGS_JDKLIB_EXTRA "
 
   # Executable flags
-  CFLAGS_JDKEXE="$CCXXFLAGS_JDK $CFLAGS_JDK"
-  CXXFLAGS_JDKEXE="$CCXXFLAGS_JDK $CXXFLAGS_JDK"
+  CFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK"
+  CXXFLAGS_JDKEXE="$COMMON_CCXXFLAGS_JDK $CXXFLAGS_JDK"
 
   AC_SUBST(CFLAGS_JDKLIB)
   AC_SUBST(CFLAGS_JDKEXE)
@@ -633,6 +687,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
 
   # Setup LDFLAGS et al.
   #
+
   # Now this is odd. The JDK native libraries have to link against libjvm.so
   # On 32-bit machines there is normally two distinct libjvm.so:s, client and server.
   # Which should we link to? Are we lucky enough that the binary api to the libjvm.so library
@@ -648,39 +703,93 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     fi
     # TODO: make -debug optional "--disable-full-debug-symbols"
     LDFLAGS_JDK="$LDFLAGS_JDK -debug"
-    LDFLAGS_JDKLIB="${LDFLAGS_JDK} -dll -libpath:${JDK_OUTPUTDIR}/lib"
-    LDFLAGS_JDKLIB_SUFFIX=""
+  elif test "x$TOOLCHAIN_TYPE" = xgcc; then
+    # If this is a --hash-style=gnu system, use --hash-style=both, why?
+    # We have previously set HAS_GNU_HASH if this is the case
+    if test -n "$HAS_GNU_HASH"; then
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both"
+    fi
+    if test "x$OPENJDK_TARGET_OS" = xlinux; then
+      # And since we now know that the linker is gnu, then add -z defs, to forbid
+      # undefined symbols in object files.
+      LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs"
+      case $DEBUG_LEVEL in
+        release )
+          # tell linker to optimize libraries.
+          # Should this be supplied to the OSS linker as well?
+          LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -O1"
+          ;;
+        slowdebug )
+          if test "x$HAS_LINKER_NOW" = "xtrue"; then
+            # do relocations at load
+            LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_NOW_FLAG"
+            LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_NOW_FLAG"
+          fi
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            # mark relocations read only
+            LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_RELRO_FLAG"
+            LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+          fi
+          ;;
+        fastdebug )
+          if test "x$HAS_LINKER_RELRO" = "xtrue"; then
+            # mark relocations read only
+            LDFLAGS_JDK="$LDFLAGS_JDK $LINKER_RELRO_FLAG"
+            LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK $LINKER_RELRO_FLAG"
+          fi
+          ;;
+        * )
+          AC_MSG_ERROR([Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL])
+          ;;
+        esac
+    fi
+  elif test "x$TOOLCHAIN_TYPE" = xsolstudio; then
+    LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
+    LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
+  fi
+
+  if test "x$TOOLCHAIN_TYPE" = xgcc || test "x$TOOLCHAIN_TYPE" = xclang; then
+    # If undefined behaviour detection is enabled then we need to tell linker.
+    case $DEBUG_LEVEL in
+      release | fastdebug )
+        ;;
+      slowdebug )
+        AC_MSG_WARN([$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR])
+        if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
+          # enable undefined behaviour checking
+          LDFLAGS_JDK="$LDFLAGS_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/[ ]*\([^ ]\+\)/ -Xlinker \1/g"`"
+          LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK `$ECHO -n $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG | sed -e "s/[ ]*\([^ ]\+\)/ -Xlinker \1/g"`"
+        fi
+        ;;
+      * )
+        AC_MSG_ERROR([Unrecognized \$DEBUG_LEVEL: $DEBUG_LEVEL])
+        ;;
+    esac
+  fi
+
+  # Customize LDFLAGS for executables
+
+  LDFLAGS_JDKEXE="${LDFLAGS_JDK}"
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
     if test "x$OPENJDK_TARGET_CPU_BITS" = "x64"; then
       LDFLAGS_STACK_SIZE=1048576
     else
       LDFLAGS_STACK_SIZE=327680
     fi
-    LDFLAGS_JDKEXE="${LDFLAGS_JDK} /STACK:$LDFLAGS_STACK_SIZE"
+    LDFLAGS_JDKEXE="${LDFLAGS_JDKEXE} /STACK:$LDFLAGS_STACK_SIZE"
+  elif test "x$OPENJDK_TARGET_OS" = xlinux; then
+    LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
+  fi
+
+  # Customize LDFLAGS for libs
+  LDFLAGS_JDKLIB="${LDFLAGS_JDK}"
+
+  if test "x$TOOLCHAIN_TYPE" = xmicrosoft; then
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB} -dll -libpath:${JDK_OUTPUTDIR}/lib"
+    LDFLAGS_JDKLIB_SUFFIX=""
   else
-    if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      # If this is a --hash-style=gnu system, use --hash-style=both, why?
-      # We have previously set HAS_GNU_HASH if this is the case
-      if test -n "$HAS_GNU_HASH"; then
-        LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker --hash-style=both "
-      fi
-      if test "x$OPENJDK_TARGET_OS" = xlinux; then
-        # And since we now know that the linker is gnu, then add -z defs, to forbid
-        # undefined symbols in object files.
-        LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -z -Xlinker defs"
-        if test "x$DEBUG_LEVEL" = "xrelease"; then
-          # When building release libraries, tell the linker optimize them.
-          # Should this be supplied to the OSS linker as well?
-          LDFLAGS_JDK="${LDFLAGS_JDK} -Xlinker -O1"
-        fi
-      fi
-    fi
-
-    if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
-      LDFLAGS_JDK="$LDFLAGS_JDK -z defs -xildoff -ztext"
-      LDFLAGS_CXX_JDK="$LDFLAGS_CXX_JDK -norunpath -xnolib"
-    fi
-
-    LDFLAGS_JDKLIB="${LDFLAGS_JDK} $SHARED_LIBRARY_FLAGS \
+    LDFLAGS_JDKLIB="${LDFLAGS_JDKLIB}  ${SHARED_LIBRARY_FLAGS} \
         -L${JDK_OUTPUTDIR}/lib${OPENJDK_TARGET_CPU_LIBDIR}"
 
     # On some platforms (mac) the linker warns about non existing -L dirs.
@@ -701,19 +810,14 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
     if test "x$TOOLCHAIN_TYPE" = xsolstudio; then
       LDFLAGS_JDKLIB_SUFFIX="$LDFLAGS_JDKLIB_SUFFIX -lc"
     fi
-
-    LDFLAGS_JDKEXE="${LDFLAGS_JDK}"
-    if test "x$OPENJDK_TARGET_OS" = xlinux; then
-      LDFLAGS_JDKEXE="$LDFLAGS_JDKEXE -Xlinker --allow-shlib-undefined"
-    fi
   fi
+
   AC_SUBST(LDFLAGS_JDKLIB)
   AC_SUBST(LDFLAGS_JDKEXE)
   AC_SUBST(LDFLAGS_JDKLIB_SUFFIX)
   AC_SUBST(LDFLAGS_JDKEXE_SUFFIX)
   AC_SUBST(LDFLAGS_CXX_JDK)
 ])
-
 
 # FLAGS_COMPILER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
 #                                   [RUN-IF-FALSE])
@@ -727,7 +831,7 @@ AC_DEFUN([FLAGS_COMPILER_CHECK_ARGUMENTS],
   saved_cflags="$CFLAGS"
   CFLAGS="$CFLAGS $1"
   AC_LANG_PUSH([C])
-  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [], 
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],
       [supports=no])
   AC_LANG_POP([C])
   CFLAGS="$saved_cflags"
@@ -735,10 +839,35 @@ AC_DEFUN([FLAGS_COMPILER_CHECK_ARGUMENTS],
   saved_cxxflags="$CXXFLAGS"
   CXXFLAGS="$CXXFLAG $1"
   AC_LANG_PUSH([C++])
-  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [], 
+  AC_COMPILE_IFELSE([AC_LANG_SOURCE([[int i;]])], [],
       [supports=no])
   AC_LANG_POP([C++])
   CXXFLAGS="$saved_cxxflags"
+
+  AC_MSG_RESULT([$supports])
+  if test "x$supports" = "xyes" ; then
+    m4_ifval([$2], [$2], [:])
+  else
+    m4_ifval([$3], [$3], [:])
+  fi
+])
+
+# FLAGS_LINKER_CHECK_ARGUMENTS([ARGUMENT], [RUN-IF-TRUE],
+#                                    [RUN-IF-FALSE])
+# ------------------------------------------------------------
+# Check that the linker support an argument
+AC_DEFUN([FLAGS_LINKER_CHECK_ARGUMENTS],
+[
+  AC_MSG_CHECKING([if linker supports "$1"])
+  supports=yes
+
+  saved_ldflags="$LDFLAGS"
+  LDFLAGS="$LDFLAGS $1"
+  AC_LANG_PUSH([C])
+  AC_LINK_IFELSE([AC_LANG_PROGRAM([[]],[[]])],
+      [], [supports=no])
+  AC_LANG_POP([C])
+  LDFLAGS="$saved_ldflags"
 
   AC_MSG_RESULT([$supports])
   if test "x$supports" = "xyes" ; then
