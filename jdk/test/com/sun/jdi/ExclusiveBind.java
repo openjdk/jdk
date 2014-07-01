@@ -68,7 +68,9 @@ public class ExclusiveBind {
     private static ProcessBuilder prepareLauncher(String address, boolean suspend, String class_name) throws Exception {
         List<String> args = new ArrayList<>();
         for(String dbgOption : VMConnection.getDebuggeeVMOptions().split(" ")) {
-            args.add(dbgOption);
+            if (!dbgOption.trim().isEmpty()) {
+                args.add(dbgOption);
+            }
         }
         String lib = "-agentlib:jdwp=transport=dt_socket,server=y,suspend=";
         if (suspend) {
