@@ -40,7 +40,6 @@ import java.util.concurrent.TimeoutException;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.IntUnaryOperator;
 
 import javax.management.*;
 import javax.management.remote.*;
@@ -54,7 +53,7 @@ import jdk.testlibrary.JDKToolLauncher;
  * @bug 7110104
  * @library /lib/testlibrary
  * @build jdk.testlibrary.* JMXStartStopTest JMXStartStopDoSomething
- * @run main/othervm JMXStartStopTest
+ * @run main/othervm/timeout=600 JMXStartStopTest
  * @summary Makes sure that enabling/disabling the management agent through
  *          JCMD achieves the desired results
  */
