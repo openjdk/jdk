@@ -30,24 +30,6 @@
 #import "AWT_debug.h"
 
 
-/*
- * Class:     sun_awt_CGraphicsEnvironment
- * Method:    initCocoa
- * Signature: ()V
- */
-JNIEXPORT void JNICALL
-Java_sun_awt_CGraphicsEnvironment_initCocoa
-(JNIEnv *env, jclass self)
-{
-JNF_COCOA_ENTER(env);
-
-    // Inform Cocoa that we're multi-threaded.
-    // Creating a short-lived NSThread is the recommended way of doing so.
-    [NSThread detachNewThreadSelector:@selector(self) toTarget:[NSObject class] withObject:nil];
-
-JNF_COCOA_EXIT(env);
-}
-
 #define MAX_DISPLAYS 64
 
 /*

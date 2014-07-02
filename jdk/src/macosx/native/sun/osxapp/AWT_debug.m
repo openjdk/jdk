@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,23 +23,12 @@
  * questions.
  */
 
-#ifndef macosx_port_awt_debug_h
-#define macosx_port_awt_debug_h
+#import "AWT_debug.h"
 
-#import <Cocoa/Cocoa.h>
-
-bool ShouldPrintVerboseDebugging();
-
-#define kInternalError "java/lang/InternalError"
-
-#define AWT_DEBUG_LOG(str) \
-    NSLog(@"\tCocoa AWT: %@ %@", str, [NSThread callStackSymbols])
-
-#define AWT_STARTUP_LOG(str) \
-    if (ShouldPrintVerboseDebugging()) AWT_DEBUG_LOG((str))
-
-#define AWT_DEBUG_BUG_REPORT_MESSAGE \
-    NSLog(@"\tPlease file a bug report at http://bugreport.java.com/bugreport \
-with this message and a reproducible test case.")
-
-#endif
+bool ShouldPrintVerboseDebugging() {
+    static int debug = -1;
+    if (debug == -1) {
+        debug = (int)(getenv("JAVA_AWT_VERBOSE") != NULL);
+    }
+    return (bool)debug;
+}
