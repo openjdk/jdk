@@ -492,7 +492,12 @@ AwtComponent::CreateHWnd(JNIEnv *env, LPCWSTR title,
      * member is referred in the GetClassName method of AwtLabel class.
      * So m_peerObject member must be set here.
      */
-    m_peerObject = env->NewGlobalRef(peer);
+    if (m_peerObject == NULL) {
+        m_peerObject = env->NewGlobalRef(peer);
+    } else {
+        assert(env->IsSameObject(m_peerObject, peer));
+    }
+
     RegisterClass();
 
     jobject target = env->GetObjectField(peer, AwtObject::targetID);
