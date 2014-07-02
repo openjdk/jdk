@@ -160,6 +160,14 @@ class StaticClassLinker implements TypeBasedGuardingDynamicLinker {
             }
             return null;
         }
+
+        DynamicMethod getConstructorMethod(final String signature) {
+            return constructor.getMethodForExactParamTypes(signature);
+        }
+    }
+
+    static Object getConstructorMethod(final Class<?> clazz, final String signature) {
+        return linkers.get(clazz).getConstructorMethod(signature);
     }
 
     static Collection<String> getReadableStaticPropertyNames(final Class<?> clazz) {
