@@ -55,6 +55,9 @@ jint* gButtonDownMasks;
 // we expect an embedder (e.g. SWT) to start it some time later.
 static BOOL forceEmbeddedMode = NO;
 
+// Indicates if awt toolkit is embedded into another UI toolkit
+static BOOL isEmbedded = NO;
+
 // This is the data necessary to have JNI_OnLoad wait for AppKit to start.
 static BOOL sAppKitStarted = NO;
 static pthread_mutex_t sAppKitStarted_mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -325,8 +328,7 @@ static void AWT_NSUncaughtExceptionHandler(NSException *exception) {
     //  and -[NSApplication isRunning] returns YES, AWT is embedded inside another
     //  AppKit Application.
     NSApplication *app = [NSApplicationAWT sharedApplication];
-    BOOL isEmbedded = ![NSApp isKindOfClass:[NSApplicationAWT class]];
-    [ThreadUtilities setAWTEmbedded:isEmbedded];
+    isEmbedded = ![NSApp isKindOfClass:[NSApplicationAWT class]];
 
     if (!isEmbedded) {
         // Install run loop observers and set the AppKit Java thread name
@@ -721,5 +723,16 @@ JNIEXPORT jint JNICALL JNI_OnLoad(JavaVM *vm, void *reserved) {
     }
 
     return JNI_VERSION_1_4;
+}
+
+/*
+ * Class:     sun_lwawt_macosx_LWCToolkit
+ * Method:    isEmbedded
+ * Signature: ()Z
+ */
+JNIEXPORT jboolean JNICALL
+Java_sun_lwawt_macosx_LWCToolkit_isEmbedded
+(JNIEnv *env, jclass klass) {
+    return isEmbedded ? JNI_TRUE : JNI_FALSE;
 }
 
