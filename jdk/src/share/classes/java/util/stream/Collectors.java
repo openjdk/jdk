@@ -729,7 +729,7 @@ public final class Collectors {
      * person in each city:
      * <pre>{@code
      *     Comparator<Person> byHeight = Comparator.comparing(Person::getHeight);
-     *     Map<City, Person> tallestByCity
+     *     Map<City, Optional<Person>> tallestByCity
      *         = people.stream().collect(groupingBy(Person::getCity, reducing(BinaryOperator.maxBy(byHeight))));
      * }</pre>
      *
@@ -784,7 +784,7 @@ public final class Collectors {
      *     Comparator<String> byLength = Comparator.comparing(String::length);
      *     Map<City, String> longestLastNameByCity
      *         = people.stream().collect(groupingBy(Person::getCity,
-     *                                              reducing(Person::getLastName, BinaryOperator.maxBy(byLength))));
+     *                                              reducing("", Person::getLastName, BinaryOperator.maxBy(byLength))));
      * }</pre>
      *
      * @param <T> the type of the input elements
