@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 4770745 6234507 6303183
+ * @bug 4770745 6234507 6303183 8048990
  * @summary test a variety of zip file entries
  * @author Martin Buchholz
  */
@@ -137,8 +137,11 @@ public class Assortment {
             return fdata;
         }
 
-        void verify(ZipFile f) throws Exception {
-            ZipEntry e = f.getEntry(name);
+        void verify(ZipFile f, ZipEntry e) throws Exception {
+            verify(e, getData(f, e));
+        }
+
+        void verify(ZipEntry e, byte[] eData) throws Exception {
             byte[] data  = (this.data == null) ? new byte[]{} : this.data;
             byte[] extra = (this.extra != null && this.extra.length == 0) ?
                 null : this.extra;
@@ -148,21 +151,23 @@ public class Assortment {
                    && (e.getComment() == null))
                   || comment.equals(e.getComment()));
             check(equalsExtraData(extra, e.getExtra()));
-            check(Arrays.equals(data, getData(f, e)));
+            check(Arrays.equals(data, eData));
             check(e.getSize() == data.length);
             check((method == ZipEntry.DEFLATED) ||
                   (e.getCompressedSize() == data.length));
         }
 
-        void verify(JarInputStream jis) throws Exception {
-            // JarInputStream "automatically" reads the manifest
-            if (name.equals("meta-iNf/ManIfEst.Mf"))
-                return;
-            ZipEntry e = jis.getNextEntry();
+        void verify(ZipFile f) throws Exception {
+            ZipEntry e = f.getEntry(name);
+            verify(e, getData(f, e));
+        }
+
+        void verifyZipInputStream(ZipInputStream s) throws Exception {
+            ZipEntry e = s.getNextEntry();
 
             byte[] data = (this.data == null) ? new byte[]{} : this.data;
             byte[] otherData = new byte[data.length];
-            jis.read(otherData);
+            s.read(otherData);
             check(Arrays.equals(data, otherData));
 
             byte[] extra = (this.extra != null && this.extra.length == 0) ?
@@ -173,7 +178,14 @@ public class Assortment {
             check(e.getSize() == -1 || e.getSize() == data.length);
             check((method == ZipEntry.DEFLATED) ||
                   (e.getCompressedSize() == data.length));
+        }
 
+        void verifyJarInputStream(JarInputStream s) throws Exception {
+            // JarInputStream "automatically" reads the manifest
+            if (name.equals("meta-iNf/ManIfEst.Mf"))
+                return;
+
+            verifyZipInputStream(s);
         }
     }
 
@@ -225,7 +237,7 @@ public class Assortment {
                               "Can manifests have comments??"));
 
         // The emptiest possible entry
-        entries.add(new Entry("", ZipEntry.STORED,   null, null, ""));
+        entries.add(new Entry("", ZipEntry.STORED, null, null, ""));
 
         for (String name : names)
             for (int method : methods)
@@ -246,30 +258,66 @@ public class Assortment {
         }
 
         //----------------------------------------------------------------
-        // Verify zip file contents using JarFile class
+        // Verify zip file contents using ZipFile.getEntry()
         //----------------------------------------------------------------
-        JarFile f = new JarFile(zipName);
+        try (ZipFile f = new ZipFile(zipName)) {
+            for (Entry e : entries)
+                e.verify(f);
+        }
 
-        check(f.getManifest() != null);
+        //----------------------------------------------------------------
+        // Verify zip file contents using JarFile.getEntry()
+        //----------------------------------------------------------------
+        try (JarFile f = new JarFile(zipName)) {
+            check(f.getManifest() != null);
+            for (Entry e : entries)
+                e.verify(f);
+        }
 
-        for (Entry e : entries)
-            e.verify(f);
+        //----------------------------------------------------------------
+        // Verify zip file contents using ZipFile.entries()
+        //----------------------------------------------------------------
+        try (ZipFile f = new ZipFile(zipName)) {
+            Enumeration<? extends ZipEntry> en = f.entries();
+            for (Entry e : entries)
+                e.verify(f, en.nextElement());
 
-        f.close();
+            check(!en.hasMoreElements());
+        }
+
+        //----------------------------------------------------------------
+        // Verify zip file contents using JarFile.entries()
+        //----------------------------------------------------------------
+        try (JarFile f = new JarFile(zipName)) {
+            Enumeration<? extends ZipEntry> en = f.entries();
+            for (Entry e : entries)
+                e.verify(f, en.nextElement());
+
+            check(!en.hasMoreElements());
+        }
+
+        //----------------------------------------------------------------
+        // Verify zip file contents using ZipInputStream class
+        //----------------------------------------------------------------
+        try (FileInputStream fis = new FileInputStream(zipName);
+             ZipInputStream s = new ZipInputStream(fis)) {
+
+            for (Entry e : entries)
+                e.verifyZipInputStream(s);
+        }
 
         //----------------------------------------------------------------
         // Verify zip file contents using JarInputStream class
         //----------------------------------------------------------------
-        JarInputStream jis = new JarInputStream(
-            new FileInputStream(zipName));
+        try (FileInputStream fis = new FileInputStream(zipName);
+             JarInputStream s = new JarInputStream(fis)) {
 
-        // JarInputStream "automatically" reads the manifest
-        check(jis.getManifest() != null);
+            // JarInputStream "automatically" reads the manifest
+            check(s.getManifest() != null);
 
-        for (Entry e : entries)
-            e.verify(jis);
-
-        jis.close();
+            for (Entry e : entries)
+                e.verifyJarInputStream(s);
+        }
 
 //      String cmd = "unzip -t " + zipName.getPath() + " >/dev/tty";
 //      new ProcessBuilder(new String[]{"/bin/sh", "-c", cmd}).start().waitFor();
