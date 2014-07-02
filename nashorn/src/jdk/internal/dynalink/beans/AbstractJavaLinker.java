@@ -290,7 +290,7 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
             return new CallerSensitiveDynamicMethod(m);
         }
         final Member member = (Member)m;
-        return new SimpleDynamicMethod(unreflectSafely(m), member.getDeclaringClass(), member.getName());
+        return new SimpleDynamicMethod(unreflectSafely(m), member.getDeclaringClass(), member.getName(), m instanceof Constructor);
     }
 
     /**
