@@ -32,12 +32,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/defaultStream.hpp"
 #include "vm_version_ppc.hpp"
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
 
 # include <sys/sysinfo.h>
 

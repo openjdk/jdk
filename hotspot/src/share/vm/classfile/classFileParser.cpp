@@ -4590,8 +4590,9 @@ void ClassFileParser::check_final_method_override(instanceKlassHandle this_klass
             Exceptions::fthrow(
               THREAD_AND_LOCATION,
               vmSymbols::java_lang_VerifyError(),
-              "class %s overrides final method %s.%s",
+              "class %s overrides final method %s.%s%s",
               this_klass->external_name(),
+              super_m->method_holder()->external_name(),
               name->as_C_string(),
               signature->as_C_string()
             );

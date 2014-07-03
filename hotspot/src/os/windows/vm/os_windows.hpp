@@ -29,6 +29,11 @@
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
+// File conventions
+static const char* file_separator() { return "\\"; }
+static const char* line_separator() { return "\r\n"; }
+static const char* path_separator() { return ";"; }
+
 class win32 {
   friend class os;
 

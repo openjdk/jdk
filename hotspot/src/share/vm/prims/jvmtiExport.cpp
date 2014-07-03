@@ -47,6 +47,7 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/objectMonitor.hpp"
 #include "runtime/objectMonitor.inline.hpp"
+#include "runtime/os.inline.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vframe.hpp"
 #include "services/attachListener.hpp"

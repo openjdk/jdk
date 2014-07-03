@@ -186,7 +186,7 @@ class interpretedVFrame: public javaVFrame {
  private:
   static const int bcp_offset;
   intptr_t* locals_addr_at(int offset) const;
-
+  StackValueCollection* stack_data(bool expressions) const;
   // returns where the parameters starts relative to the frame pointer
   int start_of_parameters() const;
 
