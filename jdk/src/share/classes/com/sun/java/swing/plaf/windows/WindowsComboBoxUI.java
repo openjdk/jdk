@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,7 +60,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     private static final MouseListener rolloverListener =
         new MouseAdapter() {
             private void handleRollover(MouseEvent e, boolean isRollover) {
-                JComboBox comboBox = getComboBox(e);
+                JComboBox<?> comboBox = getComboBox(e);
                 WindowsComboBoxUI comboBoxUI = getWindowsComboBoxUI(e);
                 if (comboBox == null || comboBoxUI == null) {
                     return;
@@ -88,9 +88,9 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                 handleRollover(e, false);
             }
 
-            private JComboBox getComboBox(MouseEvent event) {
+            private JComboBox<?> getComboBox(MouseEvent event) {
                 Object source = event.getSource();
-                JComboBox rv = null;
+                JComboBox<?> rv = null;
                 if (source instanceof JComboBox) {
                     rv = (JComboBox) source;
                 } else if (source instanceof XPComboBoxButton) {
@@ -101,7 +101,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             }
 
             private WindowsComboBoxUI getWindowsComboBoxUI(MouseEvent event) {
-                JComboBox comboBox = getComboBox(event);
+                JComboBox<?> comboBox = getComboBox(event);
                 WindowsComboBoxUI rv = null;
                 if (comboBox != null
                     && comboBox.getUI() instanceof WindowsComboBoxUI) {
@@ -122,7 +122,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
                     && (source = e.getSource()) instanceof JComboBox
                     && ((JComboBox) source).getUI() instanceof
                       WindowsComboBoxUI) {
-                    JComboBox comboBox = (JComboBox) source;
+                    JComboBox<?> comboBox = (JComboBox) source;
                     WindowsComboBoxUI comboBoxUI = (WindowsComboBoxUI) comboBox.getUI();
                     if (comboBoxUI.arrowButton instanceof XPComboBoxButton) {
                         ((XPComboBoxButton) comboBoxUI.arrowButton).setPart(
@@ -273,7 +273,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
             // color for currentValue is the same as for any other item
 
             // mostly copied from javax.swing.plaf.basic.BasicComboBoxUI.paintCurrentValue
-            ListCellRenderer renderer = comboBox.getRenderer();
+            ListCellRenderer<Object> renderer = comboBox.getRenderer();
             Component c;
             if ( hasFocus && !isPopupVisible(comboBox) ) {
                 c = renderer.getListCellRendererComponent(
@@ -384,7 +384,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
      * @since 1.6
      */
     @Override
-    protected ListCellRenderer createRenderer() {
+    protected ListCellRenderer<Object> createRenderer() {
         XPStyle xp = XPStyle.getXP();
         if (xp != null && xp.isSkinDefined(comboBox, Part.CP_READONLY)) {
             return new WindowsComboBoxRenderer();
@@ -463,7 +463,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class WindowsComboPopup extends BasicComboPopup {
 
-        public WindowsComboPopup( JComboBox cBox ) {
+        public WindowsComboPopup( JComboBox<Object> cBox ) {
             super( cBox );
         }
 
@@ -523,7 +523,7 @@ public class WindowsComboBoxUI extends BasicComboBoxUI {
          */
         @Override
         public Component getListCellRendererComponent(
-                                                 JList list,
+                                                 JList<?> list,
                                                  Object value,
                                                  int index,
                                                  boolean isSelected,

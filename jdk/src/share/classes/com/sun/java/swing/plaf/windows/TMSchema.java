@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -446,7 +446,7 @@ class TMSchema {
                 initStates();
             }
 
-            Enum[] states = stateMap.get(part);
+            Enum<?>[] states = stateMap.get(part);
             if (states != null) {
                 for (int i = 0; i < states.length; i++) {
                     if (state == states[i]) {
@@ -504,10 +504,10 @@ class TMSchema {
 
         TRANSITIONDURATIONS(Integer.class, 6000);
 
-        private final Class type;
+        private final Class<?> type;
         private final int value;
 
-        private Prop(Class type, int value) {
+        private Prop(Class<?> type, int value) {
             this.type     = type;
             this.value    = value;
         }

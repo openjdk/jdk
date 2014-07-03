@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,15 +50,20 @@ class NimbusIcon extends SynthIcon {
         this.key = key;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Painter<JComponent> paintFilter(@SuppressWarnings("rawtypes") Painter painter) {
+        return (Painter<JComponent>) painter;
+    }
+
     @Override
     public void paintIcon(SynthContext context, Graphics g, int x, int y,
                           int w, int h) {
-        Painter painter = null;
+        Painter<JComponent> painter = null;
         if (context != null) {
-            painter = (Painter)context.getStyle().get(context, key);
+            painter = paintFilter((Painter)context.getStyle().get(context, key));
         }
         if (painter == null){
-            painter = (Painter) UIManager.get(prefix + "[Enabled]." + key);
+            painter = paintFilter((Painter)UIManager.get(prefix + "[Enabled]." + key));
         }
 
         if (painter != null && context != null) {
@@ -140,7 +145,8 @@ class NimbusIcon extends SynthIcon {
      */
     @Override
     public void paintIcon(Component c, Graphics g, int x, int y) {
-        Painter painter = (Painter)UIManager.get(prefix + "[Enabled]." + key);
+        Painter<JComponent> painter =
+            paintFilter((Painter)UIManager.get(prefix + "[Enabled]." + key));
         if (painter != null){
             JComponent jc = (c instanceof JComponent) ? (JComponent)c : null;
             Graphics2D gfx = (Graphics2D)g;

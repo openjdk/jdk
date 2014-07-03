@@ -97,7 +97,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class MotifComboPopup extends BasicComboPopup {
 
-        public MotifComboPopup( JComboBox comboBox ) {
+        public MotifComboPopup( JComboBox<Object> comboBox ) {
             super( comboBox );
         }
 
@@ -177,7 +177,7 @@ public class MotifComboBoxUI extends BasicComboBoxUI implements Serializable {
     }
 
     public void paintCurrentValue(Graphics g,Rectangle bounds,boolean hasFocus) {
-        ListCellRenderer renderer = comboBox.getRenderer();
+        ListCellRenderer<Object> renderer = comboBox.getRenderer();
         Component c;
         Dimension d;
         c = renderer.getListCellRendererComponent(listBox, comboBox.getSelectedItem(), -1, false, false);
