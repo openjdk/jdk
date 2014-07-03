@@ -84,7 +84,7 @@ class ObjectSynchronizer : AllStatic {
   static void reenter            (Handle obj, intptr_t recursion, TRAPS);
 
   // thread-specific and global objectMonitor free list accessors
-//  static void verifyInUse (Thread * Self) ; too slow for general assert/debug
+  static void verifyInUse(Thread * Self);
   static ObjectMonitor * omAlloc(Thread * Self);
   static void omRelease(Thread * Self, ObjectMonitor * m, bool FromPerThreadAlloc);
   static void omFlush(Thread * Self);
@@ -114,10 +114,10 @@ class ObjectSynchronizer : AllStatic {
   // An adaptive profile-based deflation policy could be used if needed
   static void deflate_idle_monitors();
   static int walk_monitor_list(ObjectMonitor** listheadp,
-                               ObjectMonitor** FreeHeadp,
-                               ObjectMonitor** FreeTailp);
-  static bool deflate_monitor(ObjectMonitor* mid, oop obj, ObjectMonitor** FreeHeadp,
-                              ObjectMonitor** FreeTailp);
+                               ObjectMonitor** freeHeadp,
+                               ObjectMonitor** freeTailp);
+  static bool deflate_monitor(ObjectMonitor* mid, oop obj, ObjectMonitor** freeHeadp,
+                              ObjectMonitor** freeTailp);
   static void oops_do(OopClosure* f);
 
   // debugging
@@ -130,7 +130,10 @@ class ObjectSynchronizer : AllStatic {
   enum { _BLOCKSIZE = 128 };
   static ObjectMonitor* gBlockList;
   static ObjectMonitor * volatile gFreeList;
-  static ObjectMonitor * volatile gOmInUseList; // for moribund thread, so monitors they inflated still get scanned
+  // global monitor in use list, for moribund threads,
+  // monitors they inflated need to be scanned for deflation
+  static ObjectMonitor * volatile gOmInUseList;
+  // count of entries in gOmInUseList
   static int gOmInUseCount;
 
 };
