@@ -66,6 +66,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* _unloading;
   // CMS support.
   static ClassLoaderData* _saved_head;
+  static ClassLoaderData* _saved_unloading;
   static bool _should_purge;
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
