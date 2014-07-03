@@ -402,13 +402,14 @@ public class PopupFactory {
          * <code>Window</code> to a <code>List</code> of
          * <code>HeavyWeightPopup</code>s.
          */
+        @SuppressWarnings("unchecked")
         private static Map<Window, List<HeavyWeightPopup>> getHeavyWeightPopupCache() {
             synchronized (HeavyWeightPopup.class) {
                 Map<Window, List<HeavyWeightPopup>> cache = (Map<Window, List<HeavyWeightPopup>>)SwingUtilities.appContextGet(
                                   heavyWeightPopupCacheKey);
 
                 if (cache == null) {
-                    cache = new HashMap<Window, List<HeavyWeightPopup>>(2);
+                    cache = new HashMap<>(2);
                     SwingUtilities.appContextPut(heavyWeightPopupCacheKey,
                                                  cache);
                 }
@@ -699,11 +700,12 @@ public class PopupFactory {
         /**
          * Returns the cache to use for heavy weight popups.
          */
+        @SuppressWarnings("unchecked")
         private static List<LightWeightPopup> getLightWeightPopupCache() {
             List<LightWeightPopup> cache = (List<LightWeightPopup>)SwingUtilities.appContextGet(
                                    lightWeightPopupCacheKey);
             if (cache == null) {
-                cache = new ArrayList<LightWeightPopup>();
+                cache = new ArrayList<>();
                 SwingUtilities.appContextPut(lightWeightPopupCacheKey, cache);
             }
             return cache;
@@ -855,12 +857,13 @@ public class PopupFactory {
         /**
          * Returns the cache to use for medium weight popups.
          */
+        @SuppressWarnings("unchecked")
         private static List<MediumWeightPopup> getMediumWeightPopupCache() {
             List<MediumWeightPopup> cache = (List<MediumWeightPopup>)SwingUtilities.appContextGet(
                                     mediumWeightPopupCacheKey);
 
             if (cache == null) {
-                cache = new ArrayList<MediumWeightPopup>();
+                cache = new ArrayList<>();
                 SwingUtilities.appContextPut(mediumWeightPopupCacheKey, cache);
             }
             return cache;

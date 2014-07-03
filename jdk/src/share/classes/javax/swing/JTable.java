@@ -354,19 +354,23 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     /** Identifies the row of the cell being edited. */
     transient protected int             editingRow;
 
-    /**
+   /**
      * A table of objects that display the contents of a cell,
      * indexed by class as declared in <code>getColumnClass</code>
      * in the <code>TableModel</code> interface.
      */
-    transient protected Hashtable defaultRenderersByColumnClass;
+    transient protected Hashtable<Object, Object> defaultRenderersByColumnClass;
+    // Logicaly, the above is a Hashtable<Class<?>, TableCellRenderer>.
+    // It is declared otherwise to accomodate using UIDefaults.
 
     /**
      * A table of objects that display and edit the contents of a cell,
      * indexed by class as declared in <code>getColumnClass</code>
      * in the <code>TableModel</code> interface.
      */
-    transient protected Hashtable defaultEditorsByColumnClass;
+    transient protected Hashtable<Object, Object> defaultEditorsByColumnClass;
+    // Logicaly, the above is a Hashtable<Class<?>, TableCellEditor>.
+    // It is declared otherwise to accomodate using UIDefaults.
 
     /** The foreground color of selected cells. */
     protected Color selectionForeground;
@@ -665,7 +669,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @param rowData           the data for the new table
      * @param columnNames       names of each column
      */
-    public JTable(Vector rowData, Vector columnNames) {
+    public JTable(Vector<Vector<Object>> rowData, Vector<Object> columnNames) {
         this(new DefaultTableModel(rowData, columnNames));
     }
 
@@ -1336,7 +1340,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
                 return (TableCellRenderer)renderer;
             }
             else {
-                Class c = columnClass.getSuperclass();
+                Class<?> c = columnClass.getSuperclass();
                 if (c == null && columnClass != Object.class) {
                     c = Object.class;
                 }
@@ -2617,7 +2621,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.6
      */
     public int convertRowIndexToView(int modelRowIndex) {
-        RowSorter sorter = getRowSorter();
+        RowSorter<?> sorter = getRowSorter();
         if (sorter != null) {
             return sorter.convertRowIndexToView(modelRowIndex);
         }
@@ -2639,7 +2643,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @since 1.6
      */
     public int convertRowIndexToModel(int viewRowIndex) {
-        RowSorter sorter = getRowSorter();
+        RowSorter<?> sorter = getRowSorter();
         if (sorter != null) {
             return sorter.convertRowIndexToModel(viewRowIndex);
         }
@@ -2657,7 +2661,7 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      * @see #getColumnCount
      */
     public int getRowCount() {
-        RowSorter sorter = getRowSorter();
+        RowSorter<?> sorter = getRowSorter();
         if (sorter != null) {
             return sorter.getViewRowCount();
         }
@@ -3625,13 +3629,13 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
         }
 
         // Update the UIs of all the default renderers.
-        Enumeration defaultRenderers = defaultRenderersByColumnClass.elements();
+        Enumeration<?> defaultRenderers = defaultRenderersByColumnClass.elements();
         while (defaultRenderers.hasMoreElements()) {
             SwingUtilities.updateRendererOrEditorUI(defaultRenderers.nextElement());
         }
 
         // Update the UIs of all the default editors.
-        Enumeration defaultEditors = defaultEditorsByColumnClass.elements();
+        Enumeration<?> defaultEditors = defaultEditorsByColumnClass.elements();
         while (defaultEditors.hasMoreElements()) {
             SwingUtilities.updateRendererOrEditorUI(defaultEditors.nextElement());
         }
@@ -5445,8 +5449,8 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
      */
     static class GenericEditor extends DefaultCellEditor {
 
-        Class[] argTypes = new Class[]{String.class};
-        java.lang.reflect.Constructor constructor;
+        Class<?>[] argTypes = new Class<?>[]{String.class};
+        java.lang.reflect.Constructor<?> constructor;
         Object value;
 
         public GenericEditor() {

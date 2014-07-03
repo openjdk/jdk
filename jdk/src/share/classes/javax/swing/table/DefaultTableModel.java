@@ -70,10 +70,10 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * The <code>Vector</code> of <code>Vectors</code> of
      * <code>Object</code> values.
      */
-    protected Vector    dataVector;
+    protected Vector<Vector<Object>>    dataVector;
 
     /** The <code>Vector</code> of column identifiers. */
-    protected Vector    columnIdentifiers;
+    protected Vector<Object>    columnIdentifiers;
 
 //
 // Constructors
@@ -87,8 +87,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
         this(0, 0);
     }
 
-    private static Vector newVector(int size) {
-        Vector v = new Vector(size);
+    private static <E> Vector<E> newVector(int size) {
+        Vector<E> v = new Vector<>(size);
         v.setSize(size);
         return v;
     }
@@ -121,7 +121,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #setDataVector
      * @see #setValueAt
      */
-    public DefaultTableModel(Vector columnNames, int rowCount) {
+    public DefaultTableModel(Vector<Object> columnNames, int rowCount) {
         setDataVector(newVector(rowCount), columnNames);
     }
 
@@ -156,7 +156,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #getDataVector
      * @see #setDataVector
      */
-    public DefaultTableModel(Vector data, Vector columnNames) {
+    public DefaultTableModel(Vector<Vector<Object>> data, Vector<Object> columnNames) {
         setDataVector(data, columnNames);
     }
 
@@ -191,12 +191,12 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @see #newRowsAdded
      * @see #setDataVector
      */
-    public Vector getDataVector() {
+    public Vector<Vector<Object>> getDataVector() {
         return dataVector;
     }
 
-    private static Vector nonNullVector(Vector v) {
-        return (v != null) ? v : new Vector();
+    private static <E> Vector<E> nonNullVector(Vector<E> v) {
+        return (v != null) ? v : new Vector<>();
     }
 
     /**
@@ -219,7 +219,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   columnIdentifiers     the names of the columns
      * @see #getDataVector
      */
-    public void setDataVector(Vector dataVector, Vector columnIdentifiers) {
+    public void setDataVector(Vector<Vector<Object>> dataVector,
+                              Vector<Object> columnIdentifiers) {
         this.dataVector = nonNullVector(dataVector);
         this.columnIdentifiers = nonNullVector(columnIdentifiers);
         justifyRows(0, getRowCount());
@@ -264,7 +265,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
 
         for (int i = from; i < to; i++) {
             if (dataVector.elementAt(i) == null) {
-                dataVector.setElementAt(new Vector(), i);
+                dataVector.setElementAt(new Vector<>(), i);
             }
             ((Vector)dataVector.elementAt(i)).setSize(getColumnCount());
         }
@@ -349,7 +350,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      * @param   rowData          optional data of the row being added
      */
-    public void addRow(Vector rowData) {
+    public void addRow(Vector<Object> rowData) {
         insertRow(getRowCount(), rowData);
     }
 
@@ -373,7 +374,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   rowData         optional data of the row being added
      * @exception  ArrayIndexOutOfBoundsException  if the row was invalid
      */
-    public void insertRow(int row, Vector rowData) {
+    public void insertRow(int row, Vector<Object> rowData) {
         dataVector.insertElementAt(rowData, row);
         justifyRows(row, row+1);
         fireTableRowsInserted(row, row);
@@ -396,13 +397,13 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
         return (j == 0) ? i : gcd(j, i%j);
     }
 
-    private static void rotate(Vector v, int a, int b, int shift) {
+    private static <E> void rotate(Vector<E> v, int a, int b, int shift) {
         int size = b - a;
         int r = size - shift;
         int g = gcd(size, r);
         for(int i = 0; i < g; i++) {
             int to = i;
-            Object tmp = v.elementAt(a + to);
+            E tmp = v.elementAt(a + to);
             for(int from = (to + r) % size; from != i; from = (to + r) % size) {
                 v.setElementAt(v.elementAt(a + from), a + to);
                 to = from;
@@ -483,7 +484,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *                          to zero columns
      * @see #setNumRows
      */
-    public void setColumnIdentifiers(Vector columnIdentifiers) {
+    public void setColumnIdentifiers(Vector<Object> columnIdentifiers) {
         setDataVector(dataVector, columnIdentifiers);
     }
 
@@ -533,7 +534,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   columnName the identifier of the column being added
      */
     public void addColumn(Object columnName) {
-        addColumn(columnName, (Vector)null);
+        addColumn(columnName, (Vector<Object>)null);
     }
 
     /**
@@ -549,7 +550,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @param   columnName the identifier of the column being added
      * @param   columnData       optional data of the column being added
      */
-    public void addColumn(Object columnName, Vector columnData) {
+    public void addColumn(Object columnName, Vector<Object> columnData) {
         columnIdentifiers.addElement(columnName);
         if (columnData != null) {
             int columnSize = columnData.size();
@@ -559,7 +560,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
             justifyRows(0, getRowCount());
             int newColumn = getColumnCount() - 1;
             for(int i = 0; i < columnSize; i++) {
-                  Vector row = (Vector)dataVector.elementAt(i);
+                  Vector<Object> row = dataVector.elementAt(i);
                   row.setElementAt(columnData.elementAt(i), newColumn);
             }
         }
@@ -651,7 +652,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *               column was given
      */
     public Object getValueAt(int row, int column) {
-        Vector rowVector = (Vector)dataVector.elementAt(row);
+        Vector<Object> rowVector = dataVector.elementAt(row);
         return rowVector.elementAt(column);
     }
 
@@ -667,7 +668,7 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *               column was given
      */
     public void setValueAt(Object aValue, int row, int column) {
-        Vector rowVector = (Vector)dataVector.elementAt(row);
+        Vector<Object> rowVector = dataVector.elementAt(row);
         rowVector.setElementAt(aValue, column);
         fireTableCellUpdated(row, column);
     }
@@ -682,11 +683,11 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @return  the new vector; if <code>anArray</code> is <code>null</code>,
      *                          returns <code>null</code>
      */
-    protected static Vector convertToVector(Object[] anArray) {
+    protected static Vector<Object> convertToVector(Object[] anArray) {
         if (anArray == null) {
             return null;
         }
-        Vector<Object> v = new Vector<Object>(anArray.length);
+        Vector<Object> v = new Vector<>(anArray.length);
         for (Object o : anArray) {
             v.addElement(o);
         }
@@ -699,11 +700,11 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      * @return the new vector of vectors; if <code>anArray</code> is
      *                          <code>null</code>, returns <code>null</code>
      */
-    protected static Vector convertToVector(Object[][] anArray) {
+    protected static Vector<Vector<Object>> convertToVector(Object[][] anArray) {
         if (anArray == null) {
             return null;
         }
-        Vector<Vector> v = new Vector<Vector>(anArray.length);
+        Vector<Vector<Object>> v = new Vector<>(anArray.length);
         for (Object[] o : anArray) {
             v.addElement(convertToVector(o));
         }
