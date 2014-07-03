@@ -246,7 +246,7 @@ public final class UserAccessorProperty extends SpillProperty {
                             MH.filterReturnValue(
                                     getter,
                                     MH.insertArguments(
-                                            CONVERT_OBJECT_OPTIMISTIC[getAccessorTypeIndex(type)],
+                                            CONVERT_OBJECT_OPTIMISTIC.get(getAccessorTypeIndex(type)),
                                             1,
                                             programPoint)),
                                     getter.type().changeReturnType(type));
