@@ -22,25 +22,25 @@
  */
 
 /**
- * JDK-8043232: Index selection of overloaded java new constructors
+ * JDK-8049242: Explicit constructor overload selection should work with StaticClass as well
  *
  * @test
  * @run
  */
 
 // call explicit constructor
-print(new (java.awt["Color(int,int,int)"])(255,0,255));
+print(new (Java.type("java.awt.Color")["(int,int,int)"])(255,0,255));
 // print the constructor itself
-print(java.awt["Color(int,int,int)"]);
+print(Java.type("java.awt.Color")["(int,int,int)"]);
 
 // store constructor to call later
-var Color = java.awt["Color(int,int,int)"];
+var Color = Java.type("java.awt.Color")["(int,int,int)"];
 // call stored constructor
 print(new Color(33, 233, 2))
 
 // check if default constructor works
-var obj = new (java.lang["Object()"])();
-if (obj.class != java.lang.Object.class) {
+var obj = new (Java.type("java.lang.Object")["()"])();
+if (obj.class != Java.type("java.lang.Object").class) {
     fail("obj is a java.lang.Object");
 }
 
@@ -57,35 +57,21 @@ function checkIt(func) {
     }
 }
 
-// constructor of a non-existent class
-checkIt(function() new (java.lang["NonExistent(String)"])());  
- 
-// non-existent constructor of an existing class
-checkIt(function() new (java.lang["Object(String)"])());
-
 // garbage signature string
-checkIt(function() new (java.lang["Object()xxxxx"])());
-checkIt(function() new (java.lang["Object("])());
-checkIt(function() new (java.lang["Object)"])());
-
-var System = Java.type("java.lang.System");
-// try to do 'new' on static method
-checkIt(function() new (System.getProperty)("java.version"));
-
-// try to do 'new' on an instance method
-var println = System.out.println;
-checkIt(function() new println("hello"));
+checkIt(function() new (Java.type("java.lang.Object")["()xxxxx"])());
+checkIt(function() new (Java.type("java.lang.Object")["("])());
+checkIt(function() new (Java.type("java.lang.Object")[")"])());
 
 // call constructor as normal method (without 'new')
 checkIt(function() Color());
 
 // try constructor on interface
-checkIt(function() new java.lang["Runnable()"]);
-checkIt(function() new java.lang["Runnable(int)"]);
+checkIt(function() new (Java.type("java.lang.Runnable"))["()"]);
+checkIt(function() new (Java.type("java.lang.Runnable"))["(int)"]);
 
 // try constructor on abstrace class
 try {
-    new java.io["InputStream()"];
+    new (Java.type("java.io.InputStream"))["()"];
     throw new Error("should have thrown exception!");
 } catch (e) {
     print(e);
