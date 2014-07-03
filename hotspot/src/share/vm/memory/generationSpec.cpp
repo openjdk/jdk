@@ -32,7 +32,6 @@
 #include "runtime/java.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/parNew/asParNewGeneration.hpp"
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepGeneration.hpp"
 #include "gc_implementation/parNew/parNewGeneration.hpp"
 #endif // INCLUDE_ALL_GCS
@@ -50,12 +49,6 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
     case Generation::ParNew:
       return new ParNewGeneration(rs, init_size(), level);
 
-    case Generation::ASParNew:
-      return new ASParNewGeneration(rs,
-                                    init_size(),
-                                    init_size() /* min size */,
-                                    level);
-
     case Generation::ConcurrentMarkSweep: {
       assert(UseConcMarkSweepGC, "UseConcMarkSweepGC should be set");
       CardTableRS* ctrs = remset->as_CardTableRS();
@@ -68,26 +61,6 @@ Generation* GenerationSpec::init(ReservedSpace rs, int level,
 
       ConcurrentMarkSweepGeneration* g = NULL;
       g = new ConcurrentMarkSweepGeneration(rs,
-                 init_size(), level, ctrs, UseCMSAdaptiveFreeLists,
-                 (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
-
-      g->initialize_performance_counters();
-
-      return g;
-    }
-
-    case Generation::ASConcurrentMarkSweep: {
-      assert(UseConcMarkSweepGC, "UseConcMarkSweepGC should be set");
-      CardTableRS* ctrs = remset->as_CardTableRS();
-      if (ctrs == NULL) {
-        vm_exit_during_initialization("Rem set incompatibility.");
-      }
-      // Otherwise
-      // The constructor creates the CMSCollector if needed,
-      // else registers with an existing CMSCollector
-
-      ASConcurrentMarkSweepGeneration* g = NULL;
-      g = new ASConcurrentMarkSweepGeneration(rs,
                  init_size(), level, ctrs, UseCMSAdaptiveFreeLists,
                  (FreeBlockDictionary<FreeChunk>::DictionaryChoice)CMSDictionaryChoice);
 

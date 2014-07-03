@@ -51,8 +51,13 @@ protected:
   G1ParScanThreadState* _par_scan_state;
   uint _worker_id;
 public:
+  // Initializes the instance, leaving _par_scan_state uninitialized. Must be done
+  // later using the set_par_scan_thread_state() method.
+  G1ParClosureSuper(G1CollectedHeap* g1);
   G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state);
   bool apply_to_weak_ref_discovered_field() { return true; }
+
+  void set_par_scan_thread_state(G1ParScanThreadState* par_scan_state);
 };
 
 class G1ParPushHeapRSClosure : public G1ParClosureSuper {
@@ -68,9 +73,8 @@ public:
 
 class G1ParScanClosure : public G1ParClosureSuper {
 public:
-  G1ParScanClosure(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state, ReferenceProcessor* rp) :
-    G1ParClosureSuper(g1, par_scan_state)
-  {
+  G1ParScanClosure(G1CollectedHeap* g1, ReferenceProcessor* rp) :
+    G1ParClosureSuper(g1) {
     assert(_ref_processor == NULL, "sanity");
     _ref_processor = rp;
   }

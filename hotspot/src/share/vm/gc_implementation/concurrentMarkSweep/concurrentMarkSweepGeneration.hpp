@@ -52,7 +52,7 @@
 // Concurrent mode failures are currently handled by
 // means of a sliding mark-compact.
 
-class CMSAdaptiveSizePolicy;
+class AdaptiveSizePolicy;
 class CMSConcMarkingTask;
 class CMSGCAdaptivePolicyCounters;
 class CMSTracer;
@@ -1009,8 +1009,7 @@ class CMSCollector: public CHeapObj<mtGC> {
   void icms_wait();          // Called at yield points.
 
   // Adaptive size policy
-  CMSAdaptiveSizePolicy* size_policy();
-  CMSGCAdaptivePolicyCounters* gc_adaptive_policy_counters();
+  AdaptiveSizePolicy* size_policy();
 
   static void print_on_error(outputStream* st);
 
@@ -1149,9 +1148,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   Mutex* freelistLock() const;
 
   virtual Generation::Name kind() { return Generation::ConcurrentMarkSweep; }
-
-  // Adaptive size policy
-  CMSAdaptiveSizePolicy* size_policy();
 
   void set_did_compact(bool v) { _did_compact = v; }
 
@@ -1344,37 +1340,6 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
 
   CollectionTypes debug_collection_type() { return _debug_collection_type; }
   void rotate_debug_collection_type();
-};
-
-class ASConcurrentMarkSweepGeneration : public ConcurrentMarkSweepGeneration {
-
-  // Return the size policy from the heap's collector
-  // policy casted to CMSAdaptiveSizePolicy*.
-  CMSAdaptiveSizePolicy* cms_size_policy() const;
-
-  // Resize the generation based on the adaptive size
-  // policy.
-  void resize(size_t cur_promo, size_t desired_promo);
-
-  // Return the GC counters from the collector policy
-  CMSGCAdaptivePolicyCounters* gc_adaptive_policy_counters();
-
-  virtual void shrink_by(size_t bytes);
-
- public:
-  ASConcurrentMarkSweepGeneration(ReservedSpace rs, size_t initial_byte_size,
-                                  int level, CardTableRS* ct,
-                                  bool use_adaptive_freelists,
-                                  FreeBlockDictionary<FreeChunk>::DictionaryChoice
-                                    dictionaryChoice) :
-    ConcurrentMarkSweepGeneration(rs, initial_byte_size, level, ct,
-      use_adaptive_freelists, dictionaryChoice) {}
-
-  virtual const char* short_name() const { return "ASCMS"; }
-  virtual Generation::Name kind() { return Generation::ASConcurrentMarkSweep; }
-
-  virtual void update_counters();
-  virtual void update_counters(size_t used);
 };
 
 //

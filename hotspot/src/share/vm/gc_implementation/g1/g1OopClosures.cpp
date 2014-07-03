@@ -25,7 +25,28 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
+#include "gc_implementation/g1/g1ParScanThreadState.hpp"
 
 G1ParCopyHelper::G1ParCopyHelper(G1CollectedHeap* g1,  G1ParScanThreadState* par_scan_state) :
   G1ParClosureSuper(g1, par_scan_state), _scanned_klass(NULL),
   _cm(_g1->concurrent_mark()) {}
+
+G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1) :
+  _g1(g1), _par_scan_state(NULL), _worker_id(UINT_MAX) { }
+
+G1ParClosureSuper::G1ParClosureSuper(G1CollectedHeap* g1, G1ParScanThreadState* par_scan_state) :
+  _g1(g1), _par_scan_state(NULL),
+  _worker_id(UINT_MAX) {
+  set_par_scan_thread_state(par_scan_state);
+}
+
+void G1ParClosureSuper::set_par_scan_thread_state(G1ParScanThreadState* par_scan_state) {
+  assert(_par_scan_state == NULL, "_par_scan_state must only be set once");
+  assert(par_scan_state != NULL, "Must set par_scan_state to non-NULL.");
+
+  _par_scan_state = par_scan_state;
+  _worker_id = par_scan_state->queue_num();
+
+  assert(_worker_id < MAX2((uint)ParallelGCThreads, 1u),
+         err_msg("The given worker id %u must be less than the number of threads %u", _worker_id, MAX2((uint)ParallelGCThreads, 1u)));
+}

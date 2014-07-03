@@ -26,7 +26,8 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
 
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "memory/space.hpp"
 
 inline HeapWord* G1BlockOffsetTable::block_start(const void* addr) {

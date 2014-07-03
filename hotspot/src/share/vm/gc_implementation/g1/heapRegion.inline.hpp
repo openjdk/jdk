@@ -26,9 +26,48 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_INLINE_HPP
 
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
+#include "memory/space.hpp"
+#include "runtime/atomic.inline.hpp"
+
+// This version requires locking.
+inline HeapWord* G1OffsetTableContigSpace::allocate_impl(size_t size,
+                                                HeapWord* const end_value) {
+  HeapWord* obj = top();
+  if (pointer_delta(end_value, obj) >= size) {
+    HeapWord* new_top = obj + size;
+    set_top(new_top);
+    assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+    return obj;
+  } else {
+    return NULL;
+  }
+}
+
+// This version is lock-free.
+inline HeapWord* G1OffsetTableContigSpace::par_allocate_impl(size_t size,
+                                                    HeapWord* const end_value) {
+  do {
+    HeapWord* obj = top();
+    if (pointer_delta(end_value, obj) >= size) {
+      HeapWord* new_top = obj + size;
+      HeapWord* result = (HeapWord*)Atomic::cmpxchg_ptr(new_top, top_addr(), obj);
+      // result can be one of two:
+      //  the old top value: the exchange succeeded
+      //  otherwise: the new value of the top is returned.
+      if (result == obj) {
+        assert(is_aligned(obj) && is_aligned(new_top), "checking alignment");
+        return obj;
+      }
+    } else {
+      return NULL;
+    }
+  } while (true);
+}
 
 inline HeapWord* G1OffsetTableContigSpace::allocate(size_t size) {
-  HeapWord* res = ContiguousSpace::allocate(size);
+  HeapWord* res = allocate_impl(size, end());
   if (res != NULL) {
     _offsets.alloc_block(res, size);
   }
@@ -40,12 +79,7 @@ inline HeapWord* G1OffsetTableContigSpace::allocate(size_t size) {
 // this is used for larger LAB allocations only.
 inline HeapWord* G1OffsetTableContigSpace::par_allocate(size_t size) {
   MutexLocker x(&_par_alloc_lock);
-  // Given that we take the lock no need to use par_allocate() here.
-  HeapWord* res = ContiguousSpace::allocate(size);
-  if (res != NULL) {
-    _offsets.alloc_block(res, size);
-  }
-  return res;
+  return allocate(size);
 }
 
 inline HeapWord* G1OffsetTableContigSpace::block_start(const void* p) {
@@ -55,6 +89,32 @@ inline HeapWord* G1OffsetTableContigSpace::block_start(const void* p) {
 inline HeapWord*
 G1OffsetTableContigSpace::block_start_const(const void* p) const {
   return _offsets.block_start_const(p);
+}
+
+inline bool
+HeapRegion::block_is_obj(const HeapWord* p) const {
+  return p < top();
+}
+
+inline size_t
+HeapRegion::block_size(const HeapWord *addr) const {
+  const HeapWord* current_top = top();
+  if (addr < current_top) {
+    return oop(addr)->size();
+  } else {
+    assert(addr == current_top, "just checking");
+    return pointer_delta(end(), addr);
+  }
+}
+
+inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t word_size) {
+  assert(is_young(), "we can only skip BOT updates on young regions");
+  return par_allocate_impl(word_size, end());
+}
+
+inline HeapWord* HeapRegion::allocate_no_bot_updates(size_t word_size) {
+  assert(is_young(), "we can only skip BOT updates on young regions");
+  return allocate_impl(word_size, end());
 }
 
 inline void HeapRegion::note_start_of_marking() {
