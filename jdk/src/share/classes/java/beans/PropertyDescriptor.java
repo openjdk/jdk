@@ -22,12 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.beans;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
+import java.util.Map.Entry;
+
+import com.sun.beans.introspect.PropertyInfo;
 
 /**
  * A PropertyDescriptor describes one property that a Java Bean
@@ -140,25 +142,47 @@ public class PropertyDescriptor extends FeatureDescriptor {
     }
 
     /**
-     * Creates <code>PropertyDescriptor</code> for the specified bean
-     * with the specified name and methods to read/write the property value.
+     * Creates {@code PropertyDescriptor} from the specified property info.
      *
-     * @param bean   the type of the target bean
-     * @param base   the base name of the property (the rest of the method name)
-     * @param read   the method used for reading the property value
-     * @param write  the method used for writing the property value
-     * @exception IntrospectionException if an exception occurs during introspection
+     * @param entry  the pair of values,
+     *               where the {@code key} is the base name of the property (the rest of the method name)
+     *               and the {@code value} is the automatically generated property info
+     * @param bound  the flag indicating whether it is possible to treat this property as a bound property
      *
-     * @since 1.7
+     * @since 1.9
      */
-    PropertyDescriptor(Class<?> bean, String base, Method read, Method write) throws IntrospectionException {
-        if (bean == null) {
-            throw new IntrospectionException("Target Bean class is null");
-        }
-        setClass0(bean);
+    PropertyDescriptor(Entry<String,PropertyInfo> entry, boolean bound) {
+        String base = entry.getKey();
+        PropertyInfo info = entry.getValue();
         setName(Introspector.decapitalize(base));
-        setReadMethod(read);
-        setWriteMethod(write);
+        setReadMethod0(info.getReadMethod());
+        setWriteMethod0(info.getWriteMethod());
+        setPropertyType(info.getPropertyType());
+        setConstrained(info.isConstrained());
+        setBound(bound && info.is(PropertyInfo.Name.bound));
+        if (info.is(PropertyInfo.Name.expert)) {
+            setValue(PropertyInfo.Name.expert.name(), Boolean.TRUE); // compatibility
+            setExpert(true);
+        }
+        if (info.is(PropertyInfo.Name.hidden)) {
+            setValue(PropertyInfo.Name.hidden.name(), Boolean.TRUE); // compatibility
+            setHidden(true);
+        }
+        if (info.is(PropertyInfo.Name.preferred)) {
+            setPreferred(true);
+        }
+        Object visual = info.get(PropertyInfo.Name.visualUpdate);
+        if (visual != null) {
+            setValue(PropertyInfo.Name.visualUpdate.name(), visual);
+        }
+        Object description = info.get(PropertyInfo.Name.description);
+        if (description != null) {
+            setShortDescription(description.toString());
+        }
+        Object values = info.get(PropertyInfo.Name.enumerationValues);
+        if (values != null) {
+            setValue(PropertyInfo.Name.enumerationValues.name(), values);
+        }
         this.baseName = base;
     }
 
@@ -249,13 +273,17 @@ public class PropertyDescriptor extends FeatureDescriptor {
      */
     public synchronized void setReadMethod(Method readMethod)
                                 throws IntrospectionException {
+        // The property type is determined by the read method.
+        setPropertyType(findPropertyType(readMethod, this.writeMethodRef.get()));
+        setReadMethod0(readMethod);
+    }
+
+    private void setReadMethod0(Method readMethod) {
         this.readMethodRef.set(readMethod);
         if (readMethod == null) {
             readMethodName = null;
             return;
         }
-        // The property type is determined by the read method.
-        setPropertyType(findPropertyType(readMethod, this.writeMethodRef.get()));
         setClass0(readMethod.getDeclaringClass());
 
         readMethodName = readMethod.getName();
@@ -320,13 +348,17 @@ public class PropertyDescriptor extends FeatureDescriptor {
      */
     public synchronized void setWriteMethod(Method writeMethod)
                                 throws IntrospectionException {
+        // Set the property type - which validates the method
+        setPropertyType(findPropertyType(getReadMethod(), writeMethod));
+        setWriteMethod0(writeMethod);
+    }
+
+    private void setWriteMethod0(Method writeMethod) {
         this.writeMethodRef.set(writeMethod);
         if (writeMethod == null) {
             writeMethodName = null;
             return;
         }
-        // Set the property type - which validates the method
-        setPropertyType(findPropertyType(getReadMethod(), writeMethod));
         setClass0(writeMethod.getDeclaringClass());
 
         writeMethodName = writeMethod.getName();
