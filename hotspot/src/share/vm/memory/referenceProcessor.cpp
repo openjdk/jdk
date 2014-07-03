@@ -190,7 +190,8 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   OopClosure*                  keep_alive,
   VoidClosure*                 complete_gc,
   AbstractRefProcTaskExecutor* task_executor,
-  GCTimer*                     gc_timer) {
+  GCTimer*                     gc_timer,
+  GCId                         gc_id) {
   NOT_PRODUCT(verify_ok_to_handle_reflists());
 
   assert(!enqueuing_is_done(), "If here enqueuing should not be complete");
@@ -212,7 +213,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // Soft references
   size_t soft_count = 0;
   {
-    GCTraceTime tt("SoftReference", trace_time, false, gc_timer);
+    GCTraceTime tt("SoftReference", trace_time, false, gc_timer, gc_id);
     soft_count =
       process_discovered_reflist(_discoveredSoftRefs, _current_soft_ref_policy, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
@@ -223,7 +224,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // Weak references
   size_t weak_count = 0;
   {
-    GCTraceTime tt("WeakReference", trace_time, false, gc_timer);
+    GCTraceTime tt("WeakReference", trace_time, false, gc_timer, gc_id);
     weak_count =
       process_discovered_reflist(_discoveredWeakRefs, NULL, true,
                                  is_alive, keep_alive, complete_gc, task_executor);
@@ -232,7 +233,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // Final references
   size_t final_count = 0;
   {
-    GCTraceTime tt("FinalReference", trace_time, false, gc_timer);
+    GCTraceTime tt("FinalReference", trace_time, false, gc_timer, gc_id);
     final_count =
       process_discovered_reflist(_discoveredFinalRefs, NULL, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
@@ -241,7 +242,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // Phantom references
   size_t phantom_count = 0;
   {
-    GCTraceTime tt("PhantomReference", trace_time, false, gc_timer);
+    GCTraceTime tt("PhantomReference", trace_time, false, gc_timer, gc_id);
     phantom_count =
       process_discovered_reflist(_discoveredPhantomRefs, NULL, false,
                                  is_alive, keep_alive, complete_gc, task_executor);
@@ -253,7 +254,7 @@ ReferenceProcessorStats ReferenceProcessor::process_discovered_references(
   // thus use JNI weak references to circumvent the phantom references and
   // resurrect a "post-mortem" object.
   {
-    GCTraceTime tt("JNI Weak Reference", trace_time, false, gc_timer);
+    GCTraceTime tt("JNI Weak Reference", trace_time, false, gc_timer, gc_id);
     if (task_executor != NULL) {
       task_executor->set_single_threaded_mode();
     }
@@ -1251,14 +1252,15 @@ void ReferenceProcessor::preclean_discovered_references(
   OopClosure* keep_alive,
   VoidClosure* complete_gc,
   YieldClosure* yield,
-  GCTimer* gc_timer) {
+  GCTimer* gc_timer,
+  GCId     gc_id) {
 
   NOT_PRODUCT(verify_ok_to_handle_reflists());
 
   // Soft references
   {
     GCTraceTime tt("Preclean SoftReferences", PrintGCDetails && PrintReferenceGC,
-              false, gc_timer);
+              false, gc_timer, gc_id);
     for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
@@ -1271,7 +1273,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Weak references
   {
     GCTraceTime tt("Preclean WeakReferences", PrintGCDetails && PrintReferenceGC,
-              false, gc_timer);
+              false, gc_timer, gc_id);
     for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
@@ -1284,7 +1286,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Final references
   {
     GCTraceTime tt("Preclean FinalReferences", PrintGCDetails && PrintReferenceGC,
-              false, gc_timer);
+              false, gc_timer, gc_id);
     for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;
@@ -1297,7 +1299,7 @@ void ReferenceProcessor::preclean_discovered_references(
   // Phantom references
   {
     GCTraceTime tt("Preclean PhantomReferences", PrintGCDetails && PrintReferenceGC,
-              false, gc_timer);
+              false, gc_timer, gc_id);
     for (uint i = 0; i < _max_num_q; i++) {
       if (yield->should_return()) {
         return;

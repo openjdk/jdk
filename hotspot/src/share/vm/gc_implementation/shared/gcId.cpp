@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-import sun.misc.Unsafe;
-import java.lang.reflect.Field;
+#include "precompiled.hpp"
+#include "gc_implementation/shared/gcId.hpp"
+#include "runtime/safepoint.hpp"
 
-@SuppressWarnings("sunapi")
-public class Test8001071 {
-    public static Unsafe unsafe;
+uint GCId::_next_id = 0;
 
-    static {
-        try {
-            Field f = Unsafe.class.getDeclaredField("theUnsafe");
-            f.setAccessible(true);
-            unsafe = (Unsafe) f.get(null);
-        } catch ( Exception e ) {
-            e.printStackTrace();
-        }
-    }
-
-    public static void main(String args[]) {
-        unsafe.getObject(new Test8001071(), Short.MAX_VALUE);
-    }
-
+const GCId GCId::create() {
+  return GCId(_next_id++);
+}
+const GCId GCId::peek() {
+  return GCId(_next_id);
+}
+const GCId GCId::undefined() {
+  return GCId(UNDEFINED);
+}
+bool GCId::is_undefined() const {
+  return _id == UNDEFINED;
 }
