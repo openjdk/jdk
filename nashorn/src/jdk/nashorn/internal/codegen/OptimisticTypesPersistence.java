@@ -78,7 +78,7 @@ public final class OptimisticTypesPersistence {
         }
         final StringBuilder b = new StringBuilder(48);
         // Base64-encode the digest of the source, and append the function id.
-        b.append(Base64.getUrlEncoder().encodeToString(source.getDigest())).append('-').append(functionId);
+        b.append(source.getDigest()).append('-').append(functionId);
         // Finally, if this is a parameter-type specialized version of the function, add the parameter types to the file
         // name.
         if(paramTypes != null && paramTypes.length > 0) {
@@ -286,7 +286,7 @@ public final class OptimisticTypesPersistence {
                 for(;;) {
                     final int l = in.read(buf);
                     if(l == -1) {
-                        return Base64.getUrlEncoder().encodeToString(digest.digest());
+                        return Base64.getUrlEncoder().withoutPadding().encodeToString(digest.digest());
                     }
                     digest.update(buf, 0, l);
                 }
