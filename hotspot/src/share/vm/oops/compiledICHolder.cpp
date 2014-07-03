@@ -27,10 +27,26 @@
 #include "oops/klass.hpp"
 #include "oops/method.hpp"
 #include "oops/oop.inline2.hpp"
+#include "runtime/atomic.inline.hpp"
 
 volatile int CompiledICHolder::_live_count;
 volatile int CompiledICHolder::_live_not_claimed_count;
 
+
+CompiledICHolder::CompiledICHolder(Method* method, Klass* klass)
+  : _holder_method(method), _holder_klass(klass) {
+#ifdef ASSERT
+  Atomic::inc(&_live_count);
+  Atomic::inc(&_live_not_claimed_count);
+#endif // ASSERT
+}
+
+#ifdef ASSERT
+CompiledICHolder::~CompiledICHolder() {
+  assert(_live_count > 0, "underflow");
+  Atomic::dec(&_live_count);
+}
+#endif // ASSERT
 
 // Printing
 
@@ -51,3 +67,11 @@ void CompiledICHolder::verify_on(outputStream* st) {
   guarantee(holder_method()->is_method(), "should be method");
   guarantee(holder_klass()->is_klass(),   "should be klass");
 }
+
+#ifdef ASSERT
+
+void CompiledICHolder::claim() {
+  Atomic::dec(&_live_not_claimed_count);
+}
+
+#endif // ASSERT

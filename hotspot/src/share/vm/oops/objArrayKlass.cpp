@@ -29,6 +29,7 @@
 #include "gc_implementation/shared/markSweep.inline.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/genOopClosures.inline.hpp"
+#include "memory/iterator.inline.hpp"
 #include "memory/metadataFactory.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.inline.hpp"
@@ -475,12 +476,6 @@ void ObjArrayKlass::oop_follow_contents(ParCompactionManager* cm,
   }
 }
 #endif // INCLUDE_ALL_GCS
-
-#define if_do_metadata_checked(closure, nv_suffix)                    \
-  /* Make sure the non-virtual and the virtual versions match. */     \
-  assert(closure->do_metadata##nv_suffix() == closure->do_metadata(), \
-      "Inconsistency in do_metadata");                                \
-  if (closure->do_metadata##nv_suffix())
 
 #define ObjArrayKlass_OOP_OOP_ITERATE_DEFN(OopClosureType, nv_suffix)           \
                                                                                 \

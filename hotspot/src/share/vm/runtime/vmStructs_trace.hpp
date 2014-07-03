@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,14 +22,14 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "interpreter/bytecodes.hpp"
+#ifndef SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP
+#define SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP
+
+#define VM_INT_CONSTANTS_TRACE(a)
+
+#define VM_STRUCTS_TRACE(a, b)
+
+#define VM_TYPES_TRACE(a, b)
 
 
-void Bytecodes::pd_initialize() {
-  // (nothing)
-}
-
-Bytecodes::Code Bytecodes::pd_base_code_for(Code code) {
-  return code;
-}
+#endif // SHARE_VM_RUNTIME_VMSTRUCTS_TRACE_HPP

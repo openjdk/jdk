@@ -38,6 +38,22 @@ checkAndBuildSA::
 
 GENERATED = ../generated
 
+HS_COMMON_SRC_REL = src
+
+!if "$(OPENJDK)" != "true"
+HS_ALT_SRC_REL=src/closed
+HS_ALT_SRC = $(WorkSpace)/$(HS_ALT_SRC_REL)
+!ifndef HS_ALT_MAKE
+HS_ALT_MAKE=$(WorkSpace)/make/closed
+!endif
+!endif
+
+HS_COMMON_SRC = $(WorkSpace)/$(HS_COMMON_SRC_REL)
+
+!ifdef HS_ALT_MAKE
+!include $(HS_ALT_MAKE)/windows/makefiles/sa.make
+!endif
+
 # tools.jar is needed by the JDI - SA binding
 SA_CLASSPATH = $(BOOT_JAVA_HOME)/lib/tools.jar
 

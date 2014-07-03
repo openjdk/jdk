@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1ErgoVerbose.hpp"
 #include "memory/space.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 
 // Even though we don't use the GC efficiency in our heuristics as
 // much as we used to, we still order according to GC efficiency. This
