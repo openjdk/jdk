@@ -133,7 +133,9 @@ class ArrayTable implements Cloneable {
                 if ((size==ARRAY_BOUNDARY) && isArray()) {
                     grow();
                 }
-                ((Hashtable<Object,Object>)table).put(key, value);
+                @SuppressWarnings("unchecked")
+                Hashtable<Object,Object> tmp = (Hashtable<Object,Object>)table;
+                tmp.put(key, value);
             }
         }
     }

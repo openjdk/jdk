@@ -495,7 +495,7 @@ public class SpringLayout implements LayoutManager2 {
             };
         }
 
-        private boolean defined(List history, String s1, String s2) {
+        private boolean defined(List<?> history, String s1, String s2) {
             return history.contains(s1) && history.contains(s2);
         }
 
