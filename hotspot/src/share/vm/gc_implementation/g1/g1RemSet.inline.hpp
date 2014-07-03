@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP
 
 #include "gc_implementation/g1/g1RemSet.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "oops/oop.inline.hpp"
 

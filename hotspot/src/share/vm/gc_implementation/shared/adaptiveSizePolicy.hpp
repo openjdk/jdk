@@ -507,7 +507,7 @@ class AdaptiveSizePolicyOutput : StackObj {
     // always fail (never do the print based on the interval test).
     return PrintGCDetails &&
            UseAdaptiveSizePolicy &&
-           (UseParallelGC || UseConcMarkSweepGC) &&
+           UseParallelGC &&
            (AdaptiveSizePolicyOutputInterval > 0) &&
            ((count == 0) ||
              ((count % AdaptiveSizePolicyOutputInterval) == 0));

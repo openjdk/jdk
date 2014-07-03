@@ -1146,7 +1146,7 @@ void nmethod::cleanup_inline_caches() {
     switch(iter.type()) {
       case relocInfo::virtual_call_type:
       case relocInfo::opt_virtual_call_type: {
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        CompiledIC *ic = CompiledIC_at(&iter);
         // Ok, to lookup references to zombies here
         CodeBlob *cb = CodeCache::find_blob_unsafe(ic->ic_destination());
         if( cb != NULL && cb->is_nmethod() ) {
@@ -1632,7 +1632,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
     RelocIterator iter(this, low_boundary);
     while(iter.next()) {
       if (iter.type() == relocInfo::virtual_call_type) {
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           // The only exception is compiledICHolder oops which may
           // yet be marked below. (We check this further below).
@@ -1741,7 +1741,7 @@ void nmethod::verify_metadata_loaders(address low_boundary, BoolObjectClosure* i
     // compiled code is maintaining a link to dead metadata.
     address static_call_addr = NULL;
     if (iter.type() == relocInfo::opt_virtual_call_type) {
-      CompiledIC* cic = CompiledIC_at(iter.reloc());
+      CompiledIC* cic = CompiledIC_at(&iter);
       if (!cic->is_call_to_interpreted()) {
         static_call_addr = iter.addr();
       }
@@ -1793,7 +1793,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         // Check compiledIC holders associated with this nmethod
-        CompiledIC *ic = CompiledIC_at(iter.reloc());
+        CompiledIC *ic = CompiledIC_at(&iter);
         if (ic->is_icholder_call()) {
           CompiledICHolder* cichk = ic->cached_icholder();
           f(cichk->holder_method());
@@ -2922,7 +2922,7 @@ void nmethod::print_calls(outputStream* st) {
     case relocInfo::virtual_call_type:
     case relocInfo::opt_virtual_call_type: {
       VerifyMutexLocker mc(CompiledIC_lock);
-      CompiledIC_at(iter.reloc())->print();
+      CompiledIC_at(&iter)->print();
       break;
     }
     case relocInfo::static_call_type:

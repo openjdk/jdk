@@ -488,7 +488,7 @@ void CodeCache::gc_epilogue() {
       while(iter.next()) {
         if (iter.type() == relocInfo::virtual_call_type) {
           if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
-            CompiledIC *ic = CompiledIC_at(iter.reloc());
+            CompiledIC *ic = CompiledIC_at(&iter);
             if (TraceCompiledIC) {
               tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
               ic->print();
