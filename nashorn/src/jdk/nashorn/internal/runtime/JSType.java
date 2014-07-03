@@ -220,23 +220,23 @@ public enum JSType {
     public static final int TYPE_OBJECT_INDEX = 3; //getAccessorTypeIndex(Object.class);
 
     /** object conversion quickies with JS semantics - used for return value and parameter filter */
-    public static final MethodHandle[] CONVERT_OBJECT = {
+    public static final List<MethodHandle> CONVERT_OBJECT = toUnmodifiableList(
         JSType.TO_INT32.methodHandle(),
         JSType.TO_UINT32.methodHandle(),
         JSType.TO_NUMBER.methodHandle(),
         null
-    };
+    );
 
     /**
      * object conversion quickies with JS semantics - used for return value and parameter filter, optimistic
      * throws exception upon incompatible type (asking for a narrower one than the storage)
      */
-    public static final MethodHandle[] CONVERT_OBJECT_OPTIMISTIC = {
+    public static final List<MethodHandle> CONVERT_OBJECT_OPTIMISTIC = toUnmodifiableList(
         JSType.TO_INT32_OPTIMISTIC.methodHandle(),
         JSType.TO_LONG_OPTIMISTIC.methodHandle(),
         JSType.TO_NUMBER_OPTIMISTIC.methodHandle(),
         null
-    };
+    );
 
     /** The value of Undefined cast to an int32 */
     public static final int    UNDEFINED_INT    = 0;
@@ -249,12 +249,12 @@ public enum JSType {
      * Method handles for getters that return undefined coerced
      * to the appropriate type
      */
-    public static final MethodHandle[] GET_UNDEFINED = new MethodHandle[] {
+    public static final List<MethodHandle> GET_UNDEFINED = toUnmodifiableList(
         MH.constant(int.class, UNDEFINED_INT),
         MH.constant(long.class, UNDEFINED_LONG),
         MH.constant(double.class, UNDEFINED_DOUBLE),
-        MH.constant(Object.class, Undefined.getUndefined()),
-    };
+        MH.constant(Object.class, Undefined.getUndefined())
+    );
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -1820,5 +1820,7 @@ public enum JSType {
         }
     }
 
-
+    private static final List<MethodHandle> toUnmodifiableList(final MethodHandle... methodHandles) {
+        return Collections.unmodifiableList(Arrays.asList(methodHandles));
+    }
 }
