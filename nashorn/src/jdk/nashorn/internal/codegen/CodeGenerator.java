@@ -1181,7 +1181,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
         assert count > 0; // together with count == 0 check, asserts nonnegative count
-        assert method.hasScope();
+        if (!method.hasScope()) {
+            // We can sometimes invoke this method even if the method has no slot for the scope object. Typical example:
+            // for(;;) { with({}) { break; } }. WithNode normally creates a scope, but if it uses no identifiers and
+            // nothing else forces creation of a scope in the method, we just won't have the :scope local variable.
+            return;
+        }
         method.loadCompilerConstant(SCOPE);
         for(int i = 0; i < count; ++i) {
             method.invoke(ScriptObject.GET_PROTO);
