@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2009 Red Hat, Inc.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,11 +22,25 @@
  *
  */
 
-#include "precompiled.hpp"
-#include "assembler_zero.inline.hpp"
-#include "memory/resourceArea.hpp"
-#include "runtime/java.hpp"
-#include "runtime/stubCodeGenerator.hpp"
-#include "vm_version_zero.hpp"
+#ifndef SHARE_VM_RUNTIME_OS_INLINE_HPP
+#define SHARE_VM_RUNTIME_OS_INLINE_HPP
 
-// This file is intentionally empty
+#include "runtime/os.hpp"
+
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "os_aix.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
+
+#endif // SHARE_VM_RUNTIME_OS_INLINE_HPP

@@ -25,8 +25,6 @@
 #ifndef OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP
 #define OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 
 // System includes
@@ -38,10 +36,6 @@
 #include <unistd.h>
 #include <netdb.h>
 #include <setjmp.h>
-
-inline const char* os::file_separator() { return "/"; }
-inline const char* os::line_separator() { return "\n"; }
-inline const char* os::path_separator() { return ":"; }
 
 // File names are case-sensitive on windows only
 inline int os::file_name_strcmp(const char* s1, const char* s2) {

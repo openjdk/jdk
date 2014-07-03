@@ -629,11 +629,6 @@ class os: AllStatic {
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
   static void     print_jni_name_suffix_on(outputStream* st, int args_size);
 
-  // File conventions
-  static const char* file_separator();
-  static const char* line_separator();
-  static const char* path_separator();
-
   // Init os specific system properties values
   static void init_system_properties_values();
 
