@@ -516,8 +516,6 @@ class SharedRuntime: AllStatic {
   static void trace_ic_miss(address at);
 
  public:
-  static int _monitor_enter_ctr;                 // monitor enter slow
-  static int _monitor_exit_ctr;                  // monitor exit slow
   static int _throw_null_ctr;                    // throwing a null-pointer exception
   static int _ic_miss_ctr;                       // total # of IC misses
   static int _wrong_method_ctr;

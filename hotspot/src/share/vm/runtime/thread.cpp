@@ -4392,6 +4392,12 @@ void Thread::SpinRelease (volatile int * adr) {
   // It's safe if subsequent LDs and STs float "up" into the critical section,
   // but prior LDs and STs within the critical section can't be allowed
   // to reorder or float past the ST that releases the lock.
+  // Loads and stores in the critical section - which appear in program
+  // order before the store that releases the lock - must also appear
+  // before the store that releases the lock in memory visibility order.
+  // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
+  // the ST of 0 into the lock-word which releases the lock, so fence
+  // more than covers this on all platforms.
   *adr = 0;
 }
 
@@ -4573,18 +4579,25 @@ void Thread::muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) {
 // This implementation pops from the head of the list.  This is unfair,
 // but tends to provide excellent throughput as hot threads remain hot.
 // (We wake recently run threads first).
-
+//
+// All paths through muxRelease() will execute a CAS.
+// Release consistency -- We depend on the CAS in muxRelease() to provide full
+// bidirectional fence/MEMBAR semantics, ensuring that all prior memory operations
+// executed within the critical section are complete and globally visible before the
+// store (CAS) to the lock-word that releases the lock becomes globally visible.
 void Thread::muxRelease (volatile intptr_t * Lock)  {
   for (;;) {
     const intptr_t w = Atomic::cmpxchg_ptr(0, Lock, LOCKBIT);
     assert(w & LOCKBIT, "invariant");
     if (w == LOCKBIT) return;
-    ParkEvent * List = (ParkEvent *)(w & ~LOCKBIT);
+    ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
     assert(List != NULL, "invariant");
     assert(List->OnList == intptr_t(Lock), "invariant");
-    ParkEvent * nxt = List->ListNext;
+    ParkEvent * const nxt = List->ListNext;
+    guarantee((intptr_t(nxt) & LOCKBIT) == 0, "invariant");
 
     // The following CAS() releases the lock and pops the head element.
+    // The CAS() also ratifies the previously fetched lock-word value.
     if (Atomic::cmpxchg_ptr (intptr_t(nxt), Lock, w) != w) {
       continue;
     }
