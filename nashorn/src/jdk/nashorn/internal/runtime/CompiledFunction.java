@@ -595,13 +595,13 @@ final class CompiledFunction {
      * Handles a {@link RewriteException} raised during the execution of this function by recompiling (if needed) the
      * function with an optimistic assumption invalidated at the program point indicated by the exception, and then
      * executing a rest-of method to complete the execution with the deoptimized version.
-     * @param oldOptimismInfo the optimism info of this function. We must store it explicitly as a bound argument in the
-     * method handle, otherwise it would be null for handling a rewrite exception in an outer invocation of a recursive
-     * function when inner invocations of the function have completely deoptimized it.
+     * @param oldOptInfo the optimism info of this function. We must store it explicitly as a bound argument in the
+     * method handle, otherwise it could be null for handling a rewrite exception in an outer invocation of a recursive
+     * function when recursive invocations of the function have completely deoptimized it.
      * @param re the rewrite exception that was raised
      * @return the method handle for the rest-of method, for folding composition.
      */
-    private MethodHandle handleRewriteException(final OptimismInfo oldOptimismInfo, final RewriteException re) {
+    private MethodHandle handleRewriteException(final OptimismInfo oldOptInfo, final RewriteException re) {
         if (log.isEnabled()) {
             log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "RewriteException ", re.getMessageShort());
         }
@@ -613,38 +613,37 @@ final class CompiledFunction {
         final MethodType callSiteType = type.parameterType(0) == ScriptFunction.class ?
                 type :
                 type.insertParameterTypes(0, ScriptFunction.class);
-        final boolean shouldRecompile = oldOptimismInfo.requestRecompile(re);
-        final boolean  canBeDeoptimized;
+        final OptimismInfo currentOptInfo = optimismInfo;
+        final boolean shouldRecompile = currentOptInfo != null && currentOptInfo.requestRecompile(re);
 
-        FunctionNode fn = oldOptimismInfo.reparse();
-        final Compiler compiler = oldOptimismInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
+        // Effective optimism info, for subsequent use. We'll normally try to use the current (latest) one, but if it
+        // isn't available, we'll use the old one bound into the call site.
+        final OptimismInfo effectiveOptInfo = currentOptInfo != null ? currentOptInfo : oldOptInfo;
+        FunctionNode fn = effectiveOptInfo.reparse();
+        final Compiler compiler = effectiveOptInfo.getCompiler(fn, callSiteType, re); //set to non rest-of
 
         if (!shouldRecompile) {
             // It didn't necessarily recompile, e.g. for an outer invocation of a recursive function if we already
             // recompiled a deoptimized version for an inner invocation.
             // We still need to do the rest of from the beginning
-            canBeDeoptimized = canBeDeoptimized();
-            assert !canBeDeoptimized || optimismInfo == oldOptimismInfo;
-            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
-            return restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_ALL_RESTOF), canBeDeoptimized);
+            logRecompile("Rest-of compilation [STANDALONE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
+            return restOfHandle(effectiveOptInfo, compiler.compile(fn, CompilationPhases.COMPILE_ALL_RESTOF), currentOptInfo != null);
         }
 
-        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        logRecompile("Deoptimizing recompilation (up to bytecode) ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
         fn = compiler.compile(fn, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Reusable IR generated");
 
-        assert optimismInfo == oldOptimismInfo;
-
         // compile the rest of the function, and install it
         log.info("Generating and installing bytecode from reusable IR...");
-        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, oldOptimismInfo.invalidatedProgramPoints);
+        logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
         final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE);
 
-        FunctionNode fn2 = oldOptimismInfo.reparse();
+        FunctionNode fn2 = effectiveOptInfo.reparse();
         fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Done.");
 
-        canBeDeoptimized = normalFn.canBeDeoptimized();
+        final boolean canBeDeoptimized = normalFn.canBeDeoptimized();
 
         if (log.isEnabled()) {
             log.info("Recompiled '", fn.getName(), "' (", Debug.id(this), ") ", canBeDeoptimized ? " can still be deoptimized." : " is completely deoptimized.");
@@ -652,16 +651,16 @@ final class CompiledFunction {
 
         log.info("Looking up invoker...");
 
-        final MethodHandle newInvoker = oldOptimismInfo.data.lookup(fn);
+        final MethodHandle newInvoker = effectiveOptInfo.data.lookup(fn);
         invoker     = newInvoker.asType(type.changeReturnType(newInvoker.type().returnType()));
         constructor = null; // Will be regenerated when needed
 
         log.info("Done: ", invoker);
-        final MethodHandle restOf = restOfHandle(oldOptimismInfo, compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE_RESTOF), canBeDeoptimized);
+        final MethodHandle restOf = restOfHandle(effectiveOptInfo, compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE_RESTOF), canBeDeoptimized);
 
         // Note that we only adjust the switch point after we set the invoker/constructor. This is important.
         if (canBeDeoptimized) {
-            oldOptimismInfo.newOptimisticAssumptions(); // Otherwise, set a new switch point.
+            effectiveOptInfo.newOptimisticAssumptions(); // Otherwise, set a new switch point.
         } else {
             optimismInfo = null; // If we got to a point where we no longer have optimistic assumptions, let the optimism info go.
         }
