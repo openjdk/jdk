@@ -390,6 +390,10 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return new GuardedInvocationComponent(invocation, getClassGuard(type), clazz, ValidationType.EXACT_CLASS);
     }
 
+    SingleDynamicMethod getConstructorMethod(final String signature) {
+        return null;
+    }
+
     private MethodHandle getAssignableGuard(final MethodType type) {
         return Guards.asType(assignableGuard, type);
     }
@@ -412,18 +416,18 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         return inv == null ? null : new GuardedInvocation(inv, getClassGuard(callSiteDescriptor.getMethodType()));
     }
 
-    private static MethodHandle getDynamicMethodInvocation(final CallSiteDescriptor callSiteDescriptor,
+    private MethodHandle getDynamicMethodInvocation(final CallSiteDescriptor callSiteDescriptor,
             final LinkerServices linkerServices, final String methodName, final Map<String, DynamicMethod> methodMap) {
         final DynamicMethod dynaMethod = getDynamicMethod(methodName, methodMap);
         return dynaMethod != null ? dynaMethod.getInvocation(callSiteDescriptor, linkerServices) : null;
     }
 
-    private static DynamicMethod getDynamicMethod(final String methodName, final Map<String, DynamicMethod> methodMap) {
+    private DynamicMethod getDynamicMethod(final String methodName, final Map<String, DynamicMethod> methodMap) {
         final DynamicMethod dynaMethod = methodMap.get(methodName);
         return dynaMethod != null ? dynaMethod : getExplicitSignatureDynamicMethod(methodName, methodMap);
     }
 
-    private static SingleDynamicMethod getExplicitSignatureDynamicMethod(final String methodName,
+    private SingleDynamicMethod getExplicitSignatureDynamicMethod(final String fullName,
             final Map<String, DynamicMethod> methodsMap) {
         // What's below is meant to support the "name(type, type, ...)" syntax that programmers can use in a method name
         // to manually pin down an exact overloaded variant. This is not usually required, as the overloaded method
@@ -433,23 +437,33 @@ abstract class AbstractJavaLinker implements GuardingDynamicLinker {
         // for performance reasons.
 
         // Is the method name lexically of the form "name(types)"?
-        final int lastChar = methodName.length() - 1;
-        if(methodName.charAt(lastChar) != ')') {
+        final int lastChar = fullName.length() - 1;
+        if(fullName.charAt(lastChar) != ')') {
             return null;
         }
-        final int openBrace = methodName.indexOf('(');
+        final int openBrace = fullName.indexOf('(');
         if(openBrace == -1) {
             return null;
         }
 
+        final String name = fullName.substring(0, openBrace);
+        final String signature = fullName.substring(openBrace + 1, lastChar);
+
         // Find an existing method for the "name" part
-        final DynamicMethod simpleNamedMethod = methodsMap.get(methodName.substring(0, openBrace));
+        final DynamicMethod simpleNamedMethod = methodsMap.get(name);
         if(simpleNamedMethod == null) {
+            // explicit signature constructor access
+            // Java.type("java.awt.Color")["(int,int,int)"]
+            // will get Color(int,int,int) constructor of Color class.
+            if (name.isEmpty()) {
+                return getConstructorMethod(signature);
+            }
+
             return null;
         }
 
         // Try to get a narrowed dynamic method for the explicit parameter types.
-        return simpleNamedMethod.getMethodForExactParamTypes(methodName.substring(openBrace + 1, lastChar));
+        return simpleNamedMethod.getMethodForExactParamTypes(signature);
     }
 
     private static final MethodHandle IS_METHOD_HANDLE_NOT_NULL = Guards.isNotNull().asType(MethodType.methodType(
