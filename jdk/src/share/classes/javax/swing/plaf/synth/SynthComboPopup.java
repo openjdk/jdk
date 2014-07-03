@@ -38,7 +38,7 @@ import java.awt.*;
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class SynthComboPopup extends BasicComboPopup {
-    public SynthComboPopup( JComboBox combo ) {
+    public SynthComboPopup( JComboBox<Object> combo ) {
         super(combo);
     }
 

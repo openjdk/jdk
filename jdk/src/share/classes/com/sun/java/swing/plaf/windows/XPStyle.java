@@ -349,7 +349,7 @@ class XPStyle {
             // special casing for comboboxes.
             // there may be more special cases in the future
             if(c instanceof JComboBox) {
-                JComboBox cb = (JComboBox)c;
+                JComboBox<?> cb = (JComboBox)c;
                 // note. in the future this should be replaced with a call
                 // to BasicLookAndFeel.getUIOfType()
                 if(cb.getUI() instanceof WindowsComboBoxUI) {

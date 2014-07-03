@@ -322,7 +322,7 @@ class SynthParser extends DefaultHandler {
      * If <code>value</code> is an instance of <code>type</code> it is
      * returned, otherwise a SAXException is thrown.
      */
-    private Object checkCast(Object value, Class type) throws SAXException {
+    private Object checkCast(Object value, Class<?> type) throws SAXException {
         if (!type.isInstance(value)) {
             throw new SAXException("Expected type " + type + " got " +
                                    value.getClass());
@@ -334,7 +334,7 @@ class SynthParser extends DefaultHandler {
      * Returns an object created with id=key. If the object is not of
      * type type, this will throw an exception.
      */
-    private Object lookup(String key, Class type) throws SAXException {
+    private Object lookup(String key, Class<?> type) throws SAXException {
         Object value;
         if (_handler != null) {
             if (_handler.hasVariable(key)) {
@@ -641,7 +641,7 @@ class SynthParser extends DefaultHandler {
                 while (tokenizer.hasMoreTokens()) {
                     String typeName = tokenizer.nextToken();
                     int classIndex = typeName.lastIndexOf('.');
-                    Class typeClass;
+                    Class<?> typeClass;
 
                     if (classIndex == -1) {
                         typeClass = ColorType.class;
@@ -783,13 +783,13 @@ class SynthParser extends DefaultHandler {
         }
         else if (_stateInfo != null) {
             if (_stateInfo.getData() == null) {
-                _stateInfo.setData(new HashMap());
+                _stateInfo.setData(new HashMap<>());
             }
             _stateInfo.getData().put(key, value);
         }
         else if (_style != null) {
             if (_style.getData() == null) {
-                _style.setData(new HashMap());
+                _style.setData(new HashMap<>());
             }
             _style.getData().put(key, value);
         }

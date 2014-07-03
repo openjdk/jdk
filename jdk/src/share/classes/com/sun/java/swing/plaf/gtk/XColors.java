@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import javax.swing.plaf.ColorUIResource;
  */
 class XColors {
 
-    private static class XColor implements Comparable {
+    private static class XColor implements Comparable<XColor> {
         String name;
 
         int red;
@@ -52,10 +52,8 @@ class XColors {
             return new ColorUIResource(red, green, blue);
         }
 
-        public int compareTo(Object o) {
-            XColor other = (XColor)o;
-
-            return name.compareTo(other.name);
+        public int compareTo(XColor o) {
+            return name.compareTo(o.name);
         }
     }
 

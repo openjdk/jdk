@@ -1100,7 +1100,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         }
     }
 
-    private boolean isListener(Class c, ActionListener a) {
+    private boolean isListener(Class<?> c, ActionListener a) {
         boolean isListener = false;
         Object[] listeners = listenerList.getListenerList();
         for (int i = listeners.length-2; i>=0; i-=2) {
@@ -1530,11 +1530,11 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
          * @return an int equal to the selected row, where 0 is the
          *         first item and -1 is none.
          */
-        int selectionForKey(char aKey,ComboBoxModel aModel);
+        int selectionForKey(char aKey,ComboBoxModel<?> aModel);
     }
 
     class DefaultKeySelectionManager implements KeySelectionManager, Serializable {
-        public int selectionForKey(char aKey,ComboBoxModel aModel) {
+        public int selectionForKey(char aKey,ComboBoxModel<?> aModel) {
             int i,c;
             int currentSelection = -1;
             Object selectedItem = aModel.getSelectedItem();
@@ -1656,7 +1656,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
     implements AccessibleAction, AccessibleSelection {
 
 
-        private JList popupList; // combo box popup list
+        private JList<?> popupList; // combo box popup list
         private Accessible previousSelectedAccessible = null;
 
         /**
@@ -1980,7 +1980,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
                 a instanceof javax.swing.plaf.basic.ComboPopup) {
 
                 // get the popup list
-                JList list = ((javax.swing.plaf.basic.ComboPopup)a).getList();
+                JList<?> list = ((javax.swing.plaf.basic.ComboPopup)a).getList();
 
                 // return the i-th selection in the popup list
                 AccessibleContext ac = list.getAccessibleContext();

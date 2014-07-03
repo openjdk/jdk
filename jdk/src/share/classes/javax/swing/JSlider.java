@@ -138,7 +138,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     /**
      * {@code Dictionary} of what labels to draw at which values
      */
-    private Dictionary labelTable;
+    private Dictionary<Integer, JComponent> labelTable;
 
 
     /**
@@ -769,10 +769,10 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         }
 
         // Check that there is a label with such image
-        Enumeration elements = labelTable.elements();
+        Enumeration<JComponent> elements = labelTable.elements();
 
         while (elements.hasMoreElements()) {
-            Component component = (Component) elements.nextElement();
+            JComponent component = elements.nextElement();
 
             if (component instanceof JLabel) {
                 JLabel label = (JLabel) component;
@@ -793,7 +793,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @return the <code>Dictionary</code> containing labels and
      *    where to draw them
      */
-    public Dictionary getLabelTable() {
+    public Dictionary<Integer, JComponent> getLabelTable() {
 /*
         if ( labelTable == null && getMajorTickSpacing() > 0 ) {
             setLabelTable( createStandardLabels( getMajorTickSpacing() ) );
@@ -826,8 +826,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      *    attribute: visualUpdate true
      *  description: Specifies what labels will be drawn for any given value.
      */
-    public void setLabelTable( Dictionary labels ) {
-        Dictionary oldTable = labelTable;
+    public void setLabelTable( Dictionary<Integer, JComponent> labels ) {
+        Dictionary<Integer, JComponent> oldTable = labelTable;
         labelTable = labels;
         updateLabelUIs();
         firePropertyChange("labelTable", oldTable, labelTable );
@@ -848,25 +848,25 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @see JComponent#updateUI
      */
     protected void updateLabelUIs() {
-        Dictionary labelTable = getLabelTable();
+        Dictionary<Integer, JComponent> labelTable = getLabelTable();
 
         if (labelTable == null) {
             return;
         }
-        Enumeration labels = labelTable.keys();
+        Enumeration<Integer> labels = labelTable.keys();
         while ( labels.hasMoreElements() ) {
-            JComponent component = (JComponent) labelTable.get(labels.nextElement());
+            JComponent component = labelTable.get(labels.nextElement());
             component.updateUI();
             component.setSize(component.getPreferredSize());
         }
     }
 
     private void updateLabelSizes() {
-        Dictionary labelTable = getLabelTable();
+        Dictionary<Integer, JComponent> labelTable = getLabelTable();
         if (labelTable != null) {
-            Enumeration labels = labelTable.elements();
+            Enumeration<JComponent> labels = labelTable.elements();
             while (labels.hasMoreElements()) {
-                JComponent component = (JComponent) labels.nextElement();
+                JComponent component = labels.nextElement();
                 component.setSize(component.getPreferredSize());
             }
         }
@@ -894,7 +894,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @throws IllegalArgumentException if {@code increment} is less than or
      *          equal to zero
      */
-    public Hashtable createStandardLabels( int increment ) {
+    public Hashtable<Integer, JComponent> createStandardLabels( int increment ) {
         return createStandardLabels( increment, getMinimum() );
     }
 
@@ -922,7 +922,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      *          out of range, or if {@code increment} is less than or equal
      *          to zero
      */
-    public Hashtable createStandardLabels( int increment, int start ) {
+    public Hashtable<Integer, JComponent> createStandardLabels( int increment, int start ) {
         if ( start > getMaximum() || start < getMinimum() ) {
             throw new IllegalArgumentException( "Slider label start point out of range." );
         }
@@ -931,7 +931,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
             throw new IllegalArgumentException( "Label incremement must be > 0" );
         }
 
-        class SmartHashtable extends Hashtable<Object, Object> implements PropertyChangeListener {
+        class SmartHashtable extends Hashtable<Integer, JComponent> implements PropertyChangeListener {
             int increment = 0;
             int start = 0;
             boolean startAtMin = false;
@@ -978,13 +978,13 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                 if ( e.getPropertyName().equals( "minimum" ) ||
                      e.getPropertyName().equals( "maximum" ) ) {
 
-                    Enumeration keys = getLabelTable().keys();
-                    Hashtable<Object, Object> hashtable = new Hashtable<Object, Object>();
+                    Enumeration<Integer> keys = getLabelTable().keys();
+                    Hashtable<Integer, JComponent> hashtable = new Hashtable<>();
 
                     // Save the labels that were added by the developer
                     while ( keys.hasMoreElements() ) {
-                        Object key = keys.nextElement();
-                        Object value = labelTable.get(key);
+                        Integer key = keys.nextElement();
+                        JComponent value = labelTable.get(key);
                         if ( !(value instanceof LabelUIResource) ) {
                             hashtable.put( key, value );
                         }
@@ -996,7 +996,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
                     // Add the saved labels
                     keys = hashtable.keys();
                     while ( keys.hasMoreElements() ) {
-                        Object key = keys.nextElement();
+                        Integer key = keys.nextElement();
                         put( key, hashtable.get( key ) );
                     }
 
@@ -1013,7 +1013,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
         SmartHashtable table = new SmartHashtable( increment, start );
 
-        Dictionary labelTable = getLabelTable();
+        Dictionary<Integer, JComponent> labelTable = getLabelTable();
 
         if (labelTable != null && (labelTable instanceof PropertyChangeListener)) {
             removePropertyChangeListener((PropertyChangeListener) labelTable);

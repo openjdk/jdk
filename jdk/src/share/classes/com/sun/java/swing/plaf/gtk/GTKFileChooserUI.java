@@ -82,14 +82,14 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     private String renameFileErrorTitle = null;
     private String renameFileErrorText = null;
 
-    private JComboBox filterComboBox;
+    private JComboBox<FileFilter> filterComboBox;
     private FilterComboBoxModel filterComboBoxModel;
 
     // From Motif
 
     private JPanel rightPanel;
-    private JList directoryList;
-    private JList fileList;
+    private JList<File> directoryList;
+    private JList<File> fileList;
 
     private JLabel pathField;
     private JTextField fileNameTextField;
@@ -116,7 +116,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     private int pathLabelMnemonic = 0;
     private int filterLabelMnemonic = 0;
 
-    private JComboBox directoryComboBox;
+    private JComboBox<File> directoryComboBox;
     private DirectoryComboBoxModel directoryComboBoxModel;
     private Action directoryComboBoxAction = new DirectoryComboBoxAction();
     private JPanel bottomButtonPanel;
@@ -153,7 +153,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         }
 
         int mode = fc.getFileSelectionMode();
-        JList list = mode == JFileChooser.DIRECTORIES_ONLY ?
+        JList<File> list = mode == JFileChooser.DIRECTORIES_ONLY ?
             directoryList : fileList;
         Object[] files = list.getSelectedValues();
         int len = files.length;
@@ -369,8 +369,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     class DoubleClickListener extends MouseAdapter {
-        JList list;
-        public  DoubleClickListener(JList list) {
+        JList<?> list;
+        public  DoubleClickListener(JList<?> list) {
             this.list = list;
         }
 
@@ -413,7 +413,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         }
     }
 
-    protected MouseListener createDoubleClickListener(JFileChooser fc, JList list) {
+    protected MouseListener createDoubleClickListener(JFileChooser fc, JList<?> list) {
         return new DoubleClickListener(list);
     }
 
@@ -423,7 +423,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         public void valueChanged(ListSelectionEvent e) {
             if (!e.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
-                JList list = (JList) e.getSource();
+                JList<?> list = (JList) e.getSource();
 
                 if (chooser.isMultiSelectionEnabled()) {
                     File[] files = null;
@@ -554,7 +554,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
                                                          0, 0) {
             public void layoutContainer(Container target) {
                 super.layoutContainer(target);
-                JComboBox comboBox = directoryComboBox;
+                JComboBox<?> comboBox = directoryComboBox;
                 if (comboBox.getWidth() > target.getWidth()) {
                     comboBox.setBounds(0, comboBox.getY(), target.getWidth(),
                                        comboBox.getHeight());
@@ -565,7 +565,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
         comboBoxPanel.setName("GTKFileChooser.directoryComboBoxPanel");
         // CurrentDir ComboBox
         directoryComboBoxModel = createDirectoryComboBoxModel(fc);
-        directoryComboBox = new JComboBox(directoryComboBoxModel);
+        directoryComboBox = new JComboBox<>(directoryComboBoxModel);
         directoryComboBox.setName("GTKFileChooser.directoryComboBox");
         directoryComboBox.putClientProperty( "JComboBox.lightweightKeyboardNavigation", "Lightweight" );
         directoryComboBox.addActionListener(directoryComboBoxAction);
@@ -710,7 +710,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
         filterComboBoxModel = createFilterComboBoxModel();
         fc.addPropertyChangeListener(filterComboBoxModel);
-        filterComboBox = new JComboBox(filterComboBoxModel);
+        filterComboBox = new JComboBox<>(filterComboBoxModel);
         filterComboBox.setRenderer(createFilterComboBoxRenderer());
         filterLabel.setLabelFor(filterComboBox);
 
@@ -851,7 +851,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     protected JScrollPane createFilesList() {
-        fileList = new JList();
+        fileList = new JList<>();
         fileList.setName("GTKFileChooser.fileList");
         fileList.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, filesLabelText);
 
@@ -877,7 +877,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     protected JScrollPane createDirectoryList() {
-        directoryList = new JList();
+        directoryList = new JList<>();
         directoryList.setName("GTKFileChooser.directoryList");
         directoryList.putClientProperty(AccessibleContext.ACCESSIBLE_NAME_PROPERTY, foldersLabelText);
         align(directoryList);
@@ -930,7 +930,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class GTKDirectoryListModel extends AbstractListModel implements ListDataListener {
+    protected class GTKDirectoryListModel extends AbstractListModel<File> implements ListDataListener {
         File curDir;
         public GTKDirectoryListModel() {
             getModel().addListDataListener(this);
@@ -941,7 +941,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             return getModel().getDirectories().size() + 1;
         }
 
-        public Object getElementAt(int index) {
+        @Override
+        public File getElementAt(int index) {
             return index > 0 ? getModel().getDirectories().elementAt(index - 1):
                     curDir;
         }
@@ -974,7 +975,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
     }
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class GTKFileListModel extends AbstractListModel implements ListDataListener {
+    protected class GTKFileListModel extends AbstractListModel<File> implements ListDataListener {
         public GTKFileListModel() {
             getModel().addListDataListener(this);
         }
@@ -991,7 +992,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             return getModel().getFiles().indexOf(o);
         }
 
-        public Object getElementAt(int index) {
+        @Override
+        public File getElementAt(int index) {
             return getModel().getFiles().elementAt(index);
         }
 
@@ -1019,7 +1021,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileCellRenderer extends DefaultListCellRenderer  {
-        public Component getListCellRendererComponent(JList list, Object value, int index,
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -1033,7 +1035,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryCellRenderer extends DefaultListCellRenderer  {
-        public Component getListCellRendererComponent(JList list, Object value, int index,
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -1095,7 +1097,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DirectoryComboBoxModel extends AbstractListModel implements ComboBoxModel {
+    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> directories = new Vector<File>();
         File selectedDirectory = null;
         JFileChooser chooser = getFileChooser();
@@ -1163,7 +1165,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             return directories.size();
         }
 
-        public Object getElementAt(int index) {
+        @Override
+        public File getElementAt(int index) {
             return directories.elementAt(index);
         }
     }
@@ -1314,7 +1317,7 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             return name;
         }
 
-        public Component getListCellRendererComponent(JList list, Object value,
+        public Component getListCellRendererComponent(JList<?> list, Object value,
                                                       int index, boolean isSelected,
                                                       boolean cellHasFocus) {
 
@@ -1345,8 +1348,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
      * Data model for filter combo-box.
      */
     @SuppressWarnings("serial") // JDK implementation class
-    protected class FilterComboBoxModel extends AbstractListModel
-            implements ComboBoxModel, PropertyChangeListener {
+    protected class FilterComboBoxModel extends AbstractListModel<FileFilter>
+            implements ComboBoxModel<FileFilter>, PropertyChangeListener {
         protected FileFilter[] filters;
 
         protected FilterComboBoxModel() {
@@ -1400,7 +1403,8 @@ class GTKFileChooserUI extends SynthFileChooserUI {
             }
         }
 
-        public Object getElementAt(int index) {
+        @Override
+        public FileFilter getElementAt(int index) {
             if (index > getSize() - 1) {
                 // This shouldn't happen. Try to recover gracefully.
                 return getFileChooser().getFileFilter();

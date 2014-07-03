@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -427,6 +427,7 @@ public class Region {
 
     private static Map<String, Region> getUItoRegionMap() {
         AppContext context = AppContext.getAppContext();
+        @SuppressWarnings("unchecked")
         Map<String, Region> map = (Map<String, Region>) context.get(UI_TO_REGION_MAP_KEY);
         if (map == null) {
             map = new HashMap<String, Region>();
@@ -482,6 +483,7 @@ public class Region {
 
     private static Map<Region, String> getLowerCaseNameMap() {
         AppContext context = AppContext.getAppContext();
+        @SuppressWarnings("unchecked")
         Map<Region, String> map = (Map<Region, String>) context.get(LOWER_CASE_NAME_MAP_KEY);
         if (map == null) {
             map = new HashMap<Region, String>();
