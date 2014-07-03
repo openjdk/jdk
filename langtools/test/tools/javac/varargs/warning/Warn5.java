@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6993978 7097436 8006694
+ * @bug     6993978 7097436 8006694 7196160
  * @summary Project Coin: Annotation to reduce varargs warnings
  *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore
