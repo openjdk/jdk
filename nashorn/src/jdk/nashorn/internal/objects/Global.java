@@ -447,12 +447,7 @@ public final class Global extends ScriptObject implements Scope {
         // null check on context
         context.getClass();
 
-        /*
-         * Duplicate global's map and use it. This way the initial Map filled
-         * by nasgen (referenced from static field in this class) is retained
-         * 'as is' (as that one is process wide singleton.
-         */
-        return $nasgenmap$.duplicate();
+        return $nasgenmap$;
     }
 
     /**
