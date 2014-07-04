@@ -222,7 +222,6 @@ public final class NativeDebug extends ScriptObject {
         out.println("ScriptFunction allocations " + ScriptFunction.getAllocations());
         out.println("PropertyMap count " + PropertyMap.getCount());
         out.println("PropertyMap cloned " + PropertyMap.getClonedCount());
-        out.println("PropertyMap duplicated " + PropertyMap.getDuplicatedCount());
         out.println("PropertyMap history hit " + PropertyMap.getHistoryHit());
         out.println("PropertyMap proto invalidations " + PropertyMap.getProtoInvalidations());
         out.println("PropertyMap proto history hit " + PropertyMap.getProtoHistoryHit());

@@ -160,7 +160,8 @@ public abstract class ScriptObject implements PropertyAccess {
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
 
     private static final MethodHandle TRUNCATINGFILTER   = findOwnMH_S("truncatingFilter", Object[].class, int.class, Object[].class);
-    private static final MethodHandle KNOWNFUNCPROPGUARD = findOwnMH_S("knownFunctionPropertyGuard", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, Object.class, ScriptFunction.class);
+    private static final MethodHandle KNOWNFUNCPROPGUARDSELF = findOwnMH_S("knownFunctionPropertyGuardSelf", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, ScriptFunction.class);
+    private static final MethodHandle KNOWNFUNCPROPGUARDPROTO = findOwnMH_S("knownFunctionPropertyGuardProto", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, int.class, ScriptFunction.class);
 
     private static final ArrayList<MethodHandle> PROTO_FILTERS = new ArrayList<>();
 
@@ -2271,13 +2272,20 @@ public abstract class ScriptObject implements PropertyAccess {
                 if (scopeAccess && func.isStrict()) {
                     mh = bindTo(mh, UNDEFINED);
                 }
+
                 return new GuardedInvocation(
                         mh,
-                        //TODO this always does a scriptobject check
-                        getKnownFunctionPropertyGuard(
+                        find.isSelf()?
+                            getKnownFunctionPropertyGuardSelf(
                                 getMap(),
                                 find.getGetter(Object.class, INVALID_PROGRAM_POINT),
-                                find.getOwner(),
+                                func)
+                            :
+                            //TODO this always does a scriptobject check
+                            getKnownFunctionPropertyGuardProto(
+                                getMap(),
+                                find.getGetter(Object.class, INVALID_PROGRAM_POINT),
+                                find.getProtoChainLength(),
                                 func),
                         getProtoSwitchPoint(NO_SUCH_PROPERTY_NAME, find.getOwner()),
                         //TODO this doesn't need a ClassCastException as guard always checks script object
@@ -3595,15 +3603,51 @@ public abstract class ScriptObject implements PropertyAccess {
         return MH.findStatic(MethodHandles.lookup(), ScriptObject.class, name, MH.type(rtype, types));
     }
 
-    private static MethodHandle getKnownFunctionPropertyGuard(final PropertyMap map, final MethodHandle getter, final Object where, final ScriptFunction func) {
-        return MH.insertArguments(KNOWNFUNCPROPGUARD, 1, map, getter, where, func);
+    private static MethodHandle getKnownFunctionPropertyGuardSelf(final PropertyMap map, final MethodHandle getter, final ScriptFunction func) {
+        return MH.insertArguments(KNOWNFUNCPROPGUARDSELF, 1, map, getter, func);
     }
 
     @SuppressWarnings("unused")
-    private static boolean knownFunctionPropertyGuard(final Object self, final PropertyMap map, final MethodHandle getter, final Object where, final ScriptFunction func) {
+    private static boolean knownFunctionPropertyGuardSelf(final Object self, final PropertyMap map, final MethodHandle getter, final ScriptFunction func) {
         if (self instanceof ScriptObject && ((ScriptObject)self).getMap() == map) {
             try {
-                return getter.invokeExact(where) == func;
+                return getter.invokeExact(self) == func;
+            } catch (final RuntimeException | Error e) {
+                throw e;
+            } catch (final Throwable t) {
+                throw new RuntimeException(t);
+            }
+        }
+
+        return false;
+    }
+
+    private static MethodHandle getKnownFunctionPropertyGuardProto(final PropertyMap map, final MethodHandle getter, final int depth, final ScriptFunction func) {
+        return MH.insertArguments(KNOWNFUNCPROPGUARDPROTO, 1, map, getter, depth, func);
+    }
+
+    @SuppressWarnings("unused")
+    private static ScriptObject getProto(final ScriptObject self, final int depth) {
+        ScriptObject proto = self;
+        for (int d = 0; d < depth; d++) {
+            proto = proto.getProto();
+            if (proto == null) {
+                return null;
+            }
+        }
+
+        return proto;
+    }
+
+    @SuppressWarnings("unused")
+    private static boolean knownFunctionPropertyGuardProto(final Object self, final PropertyMap map, final MethodHandle getter, final int depth, final ScriptFunction func) {
+        if (self instanceof ScriptObject && ((ScriptObject)self).getMap() == map) {
+            final ScriptObject proto = getProto((ScriptObject)self, depth);
+            if (proto == null) {
+                return false;
+            }
+            try {
+                return getter.invokeExact((Object)proto) == func;
             } catch (final RuntimeException | Error e) {
                 throw e;
             } catch (final Throwable t) {
