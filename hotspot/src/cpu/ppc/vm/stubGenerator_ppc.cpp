@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -401,11 +401,11 @@ class StubGenerator: public StubCodeGenerator {
     __ load_const(exception_file, (void*)__FILE__);
     __ load_const(exception_line, (void*)__LINE__);
 
-    __ std(R3_ARG1, thread_(pending_exception));
+    __ std(R3_ARG1, in_bytes(JavaThread::pending_exception_offset()), R16_thread);
     // store into `char *'
-    __ std(exception_file, thread_(exception_file));
+    __ std(exception_file, in_bytes(JavaThread::exception_file_offset()), R16_thread);
     // store into `int'
-    __ stw(exception_line, thread_(exception_line));
+    __ stw(exception_line, in_bytes(JavaThread::exception_line_offset()), R16_thread);
 
     // complete return to VM
     assert(StubRoutines::_call_stub_return_address != NULL, "must have been generated before");
