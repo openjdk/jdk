@@ -36,7 +36,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "vmreg_ppc.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"

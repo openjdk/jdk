@@ -24,6 +24,8 @@
 
 #include "precompiled.hpp"
 
+#include "code/codeCache.hpp"
+
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -37,6 +39,7 @@
 #include "runtime/arguments.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vm_version.hpp"
 
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"

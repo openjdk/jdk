@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class BlockListBuilder VALUE_OBJ_CLASS_SPEC {

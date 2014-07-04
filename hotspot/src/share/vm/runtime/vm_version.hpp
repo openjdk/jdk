@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,5 +122,21 @@ class Abstract_VM_Version: AllStatic {
   // be VM version specific.
   static unsigned int calc_parallel_worker_threads();
 };
+
+#ifdef TARGET_ARCH_x86
+# include "vm_version_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_sparc
+# include "vm_version_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_zero
+# include "vm_version_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_arm
+# include "vm_version_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_ppc
+# include "vm_version_ppc.hpp"
+#endif
 
 #endif // SHARE_VM_RUNTIME_VM_VERSION_HPP

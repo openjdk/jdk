@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,21 +31,6 @@
 #include "oops/method.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/signature.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "jniTypes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "jniTypes_ppc.hpp"
-#endif
 #ifdef ZERO
 #ifdef TARGET_ARCH_zero
 # include "entryFrame_zero.hpp"

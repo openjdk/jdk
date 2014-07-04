@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,17 +25,16 @@
 #ifndef SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
 #define SHARE_VM_SERVICES_DIAGNOSTICCOMMAND_HPP
 
-#include "runtime/arguments.hpp"
 #include "classfile/vmSymbols.hpp"
-#include "utilities/ostream.hpp"
-#include "runtime/vm_version.hpp"
-#include "runtime/vmThread.hpp"
+#include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vmThread.hpp"
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticCommand.hpp"
-#include "services/diagnosticFramework.hpp"
 #include "services/diagnosticCommand_ext.hpp"
+#include "services/diagnosticFramework.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/ostream.hpp"
 
 class HelpDCmd : public DCmdWithParser {
 protected:

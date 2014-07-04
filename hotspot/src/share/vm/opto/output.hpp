@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,29 +25,9 @@
 #ifndef SHARE_VM_OPTO_OUTPUT_HPP
 #define SHARE_VM_OPTO_OUTPUT_HPP
 
+#include "opto/ad.hpp"
 #include "opto/block.hpp"
 #include "opto/node.hpp"
-#ifdef TARGET_ARCH_MODEL_x86_32
-# include "adfiles/ad_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
-# include "adfiles/ad_x86_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_sparc
-# include "adfiles/ad_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_zero
-# include "adfiles/ad_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_arm
-# include "adfiles/ad_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "adfiles/ad_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
-# include "adfiles/ad_ppc_64.hpp"
-#endif
 
 class Arena;
 class Bundle;

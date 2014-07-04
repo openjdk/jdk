@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/vmreg.inline.hpp"
 #include "interpreter/bytecode.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"

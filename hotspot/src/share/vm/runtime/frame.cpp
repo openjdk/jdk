@@ -23,6 +23,8 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
+#include "code/vmreg.inline.hpp"
 #include "compiler/abstractCompiler.hpp"
 #include "compiler/disassembler.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
@@ -48,21 +50,6 @@
 #include "runtime/thread.inline.hpp"
 #include "utilities/decoder.hpp"
 
-#ifdef TARGET_ARCH_x86
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "nativeInst_ppc.hpp"
-#endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

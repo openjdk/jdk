@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 #define CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "code/vmreg.inline.hpp"
 
 // Inline functions for SPARC frames:
 
