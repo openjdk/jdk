@@ -36,6 +36,7 @@ import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
+import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
@@ -45,6 +46,7 @@ import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ListAdapter;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.JavaAdapterFactory;
@@ -77,6 +79,73 @@ public final class NativeJava {
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static boolean isType(final Object self, final Object type) {
         return type instanceof StaticClass;
+    }
+
+    /**
+     * Returns synchronized wrapper version of the given ECMAScript function.
+     * @param self not used
+     * @param func the ECMAScript function whose synchronized version is returned.
+     * @param obj the object (i.e, lock) on which the function synchronizes.
+     * @return synchronized wrapper version of the given ECMAScript function.
+     */
+    @Function(name="synchronized", attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static Object synchronizedFunc(final Object self, final Object func, final Object obj) {
+        return ScriptUtils.makeSynchronizedFunction(func, obj);
+    }
+
+    /**
+     * Returns true if the specified object is a Java method.
+     * @param self not used
+     * @param obj the object that is checked if it is a Java method object or not
+     * @return tells whether given object is a Java method object or not.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isJavaMethod(final Object self, final Object obj) {
+        return Bootstrap.isDynamicMethod(obj);
+    }
+
+    /**
+     * Returns true if the specified object is a java function (but not script function)
+     * @param self not used
+     * @param obj the object that is checked if it is a Java function or not
+     * @return tells whether given object is a Java function or not
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isJavaFunction(final Object self, final Object obj) {
+        return Bootstrap.isCallable(obj) && !(obj instanceof ScriptFunction);
+    }
+
+    /**
+     * Returns true if the specified object is a Java object but not a script object
+     * @param self not used
+     * @param obj the object that is checked
+     * @return tells whether given object is a Java object but not a script object
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isJavaObject(final Object self, final Object obj) {
+        return obj != null && !(obj instanceof ScriptObject);
+    }
+
+    /**
+     * Returns true if the specified object is a ECMAScript object, that is an instance of {@link ScriptObject}.
+     * @param self not used
+     * @param obj the object that is checked if it is a ECMAScript object or not
+     * @return tells whether given object is a ECMAScript object or not.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isScriptObject(final Object self, final Object obj) {
+        return obj instanceof ScriptObject;
+    }
+
+    /**
+     * Returns true if the specified object is a ECMAScript function, that is an instance of {@link ScriptFunction}.
+     * @param self not used
+     * @param obj the object that is checked if it is a ECMAScript function or not
+     * @return tells whether given object is a ECMAScript function or not.
+     */
+    @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
+    public static boolean isScriptFunction(final Object self, final Object obj) {
+        return obj instanceof ScriptFunction;
     }
 
     /**
