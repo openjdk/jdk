@@ -263,6 +263,10 @@ Method* interpretedVFrame::method() const {
 static StackValue* create_stack_value_from_oop_map(const InterpreterOopMap& oop_mask,
                                                    int index,
                                                    const intptr_t* const addr) {
+
+  assert(index >= 0 &&
+         index < oop_mask.number_of_entries(), "invariant");
+
   // categorize using oop_mask
   if (oop_mask.is_oop(index)) {
     // reference (oop) "r"
@@ -307,6 +311,7 @@ static void stack_locals(StackValueCollection* result,
 
 static void stack_expressions(StackValueCollection* result,
                               int length,
+                              int max_locals,
                               const InterpreterOopMap& oop_mask,
                               const frame& fr) {
 
@@ -319,7 +324,10 @@ static void stack_expressions(StackValueCollection* result,
       // Need to ensure no bogus escapes.
       addr = NULL;
     }
-    StackValue* const sv = create_stack_value_from_oop_map(oop_mask, i, addr);
+
+    StackValue* const sv = create_stack_value_from_oop_map(oop_mask,
+                                                           i + max_locals,
+                                                           addr);
     assert(sv != NULL, "sanity check");
 
     result->add(sv);
@@ -375,7 +383,7 @@ StackValueCollection* interpretedVFrame::stack_data(bool expressions) const {
   }
 
   if (expressions) {
-    stack_expressions(result, length, oop_mask, fr());
+    stack_expressions(result, length, max_locals, oop_mask, fr());
   } else {
     stack_locals(result, length, oop_mask, fr());
   }
