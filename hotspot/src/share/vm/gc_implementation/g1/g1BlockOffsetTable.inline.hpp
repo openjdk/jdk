@@ -113,7 +113,7 @@ forward_to_block_containing_addr_const(HeapWord* q, HeapWord* n,
     q = n;
     oop obj = oop(q);
     if (obj->klass_or_null() == NULL) return q;
-    n += obj->size();
+    n += block_size(q);
   }
   assert(q <= n, "wrong order for q and addr");
   assert(addr < n, "wrong order for addr and n");

@@ -93,18 +93,27 @@ G1OffsetTableContigSpace::block_start_const(const void* p) const {
 
 inline bool
 HeapRegion::block_is_obj(const HeapWord* p) const {
-  return p < top();
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  return !g1h->is_obj_dead(oop(p), this);
 }
 
 inline size_t
 HeapRegion::block_size(const HeapWord *addr) const {
-  const HeapWord* current_top = top();
-  if (addr < current_top) {
-    return oop(addr)->size();
-  } else {
-    assert(addr == current_top, "just checking");
+  // Old regions' dead objects may have dead classes
+  // We need to find the next live object in some other
+  // manner than getting the oop size
+  G1CollectedHeap* g1h = G1CollectedHeap::heap();
+  if (g1h->is_obj_dead(oop(addr), this)) {
+    HeapWord* next = g1h->concurrent_mark()->prevMarkBitMap()->
+        getNextMarkedWordAddress(addr, prev_top_at_mark_start());
+
+    assert(next > addr, "must get the next live object");
+
+    return pointer_delta(next, addr);
+  } else if (addr == top()) {
     return pointer_delta(end(), addr);
   }
+  return oop(addr)->size();
 }
 
 inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t word_size) {
