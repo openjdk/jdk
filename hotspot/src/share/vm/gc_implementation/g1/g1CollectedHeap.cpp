@@ -57,7 +57,6 @@
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
 #include "gc_implementation/shared/isGCActiveMark.hpp"
-#include "memory/allocation.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/generationSpec.hpp"
 #include "memory/iterator.hpp"
@@ -92,10 +91,10 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 // G1ParVerifyTask uses heap_region_par_iterate_chunked() for parallelism.
 // The number of GC workers is passed to heap_region_par_iterate_chunked().
 // It does use run_task() which sets _n_workers in the task.
-// G1ParTask executes g1_process_roots() ->
-// SharedHeap::process_roots() which calls eventually to
+// G1ParTask executes g1_process_strong_roots() ->
+// SharedHeap::process_strong_roots() which calls eventually to
 // CardTableModRefBS::par_non_clean_card_iterate_work() which uses
-// SequentialSubTasksDone.  SharedHeap::process_roots() also
+// SequentialSubTasksDone.  SharedHeap::process_strong_roots() also
 // directly uses SubTasksDone (_process_strong_tasks field in SharedHeap).
 //
 
@@ -3380,19 +3379,25 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
     if (!silent) { gclog_or_tty->print("Roots "); }
     VerifyRootsClosure rootsCl(vo);
     VerifyKlassClosure klassCl(this, &rootsCl);
-    CLDToKlassAndOopClosure cldCl(&klassCl, &rootsCl, false);
 
     // We apply the relevant closures to all the oops in the
-    // system dictionary, class loader data graph, the string table
-    // and the nmethods in the code cache.
+    // system dictionary, class loader data graph and the string table.
+    // Don't verify the code cache here, since it's verified below.
+    const int so = SO_AllClasses | SO_Strings;
+
+    // Need cleared claim bits for the strong roots processing
+    ClassLoaderDataGraph::clear_claimed_marks();
+
+    process_strong_roots(true,      // activate StrongRootsScope
+                         ScanningOption(so),  // roots scanning options
+                         &rootsCl,
+                         &klassCl
+                         );
+
+    // Verify the nmethods in the code cache.
     G1VerifyCodeRootOopClosure codeRootsCl(this, &rootsCl, vo);
     G1VerifyCodeRootBlobClosure blobsCl(&codeRootsCl);
-
-    process_all_roots(true,            // activate StrongRootsScope
-                      SO_AllCodeCache, // roots scanning options
-                      &rootsCl,
-                      &cldCl,
-                      &blobsCl);
+    CodeCache::blobs_do(&blobsCl);
 
     bool failures = rootsCl.failures() || codeRootsCl.failures();
 
@@ -3974,7 +3979,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       increment_gc_time_stamp();
 
       verify_before_gc();
-
       check_bitmaps("GC Start");
 
       COMPILER2_PRESENT(DerivedPointerTable::clear());
@@ -4325,7 +4329,11 @@ void G1CollectedHeap::release_mutator_alloc_region() {
   assert(_mutator_alloc_region.get() == NULL, "post-condition");
 }
 
-void G1CollectedHeap::use_retained_old_gc_alloc_region(EvacuationInfo& evacuation_info) {
+void G1CollectedHeap::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
+  assert_at_safepoint(true /* should_be_vm_thread */);
+
+  _survivor_gc_alloc_region.init();
+  _old_gc_alloc_region.init();
   HeapRegion* retained_region = _retained_old_gc_alloc_region;
   _retained_old_gc_alloc_region = NULL;
 
@@ -4355,15 +4363,6 @@ void G1CollectedHeap::use_retained_old_gc_alloc_region(EvacuationInfo& evacuatio
     _hr_printer.reuse(retained_region);
     evacuation_info.set_alloc_regions_used_before(retained_region->used());
   }
-}
-
-void G1CollectedHeap::init_gc_alloc_regions(EvacuationInfo& evacuation_info) {
-  assert_at_safepoint(true /* should_be_vm_thread */);
-
-  _survivor_gc_alloc_region.init();
-  _old_gc_alloc_region.init();
-
-  use_retained_old_gc_alloc_region(evacuation_info);
 }
 
 void G1CollectedHeap::release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info) {
@@ -4588,7 +4587,7 @@ void G1ParCopyHelper::do_klass_barrier(T* p, oop new_obj) {
   }
 }
 
-template <G1Barrier barrier, G1Mark do_mark_object>
+template <G1Barrier barrier, bool do_mark_object>
 template <class T>
 void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   T heap_oop = oopDesc::load_heap_oop(p);
@@ -4610,7 +4609,7 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
     assert(forwardee != NULL, "forwardee should not be NULL");
     oopDesc::encode_store_heap_oop(p, forwardee);
-    if (do_mark_object != G1MarkNone && forwardee != obj) {
+    if (do_mark_object && forwardee != obj) {
       // If the object is self-forwarded we don't need to explicitly
       // mark it, the evacuation failure protocol will do so.
       mark_forwarded_object(obj, forwardee);
@@ -4621,8 +4620,9 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
     }
   } else {
     // The object is not in collection set. If we're a root scanning
-    // closure during an initial mark pause then attempt to mark the object.
-    if (do_mark_object == G1MarkFromRoot) {
+    // closure during an initial mark pause (i.e. do_mark_object will
+    // be true) then attempt to mark the object.
+    if (do_mark_object) {
       mark_object(obj);
     }
   }
@@ -4632,8 +4632,8 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
   }
 }
 
-template void G1ParCopyClosure<G1BarrierEvac, G1MarkNone>::do_oop_work(oop* p);
-template void G1ParCopyClosure<G1BarrierEvac, G1MarkNone>::do_oop_work(narrowOop* p);
+template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(oop* p);
+template void G1ParCopyClosure<G1BarrierEvac, false>::do_oop_work(narrowOop* p);
 
 class G1ParEvacuateFollowersClosure : public VoidClosure {
 protected:
@@ -4746,51 +4746,6 @@ public:
     _n_workers = active_workers;
   }
 
-  // Helps out with CLD processing.
-  //
-  // During InitialMark we need to:
-  // 1) Scavenge all CLDs for the young GC.
-  // 2) Mark all objects directly reachable from strong CLDs.
-  template <G1Mark do_mark_object>
-  class G1CLDClosure : public CLDClosure {
-    G1ParCopyClosure<G1BarrierNone,  do_mark_object>* _oop_closure;
-    G1ParCopyClosure<G1BarrierKlass, do_mark_object>  _oop_in_klass_closure;
-    G1KlassScanClosure                                _klass_in_cld_closure;
-    bool                                              _claim;
-
-   public:
-    G1CLDClosure(G1ParCopyClosure<G1BarrierNone, do_mark_object>* oop_closure,
-                 bool only_young, bool claim)
-        : _oop_closure(oop_closure),
-          _oop_in_klass_closure(oop_closure->g1(),
-                                oop_closure->pss(),
-                                oop_closure->rp()),
-          _klass_in_cld_closure(&_oop_in_klass_closure, only_young),
-          _claim(claim) {
-
-    }
-
-    void do_cld(ClassLoaderData* cld) {
-      cld->oops_do(_oop_closure, &_klass_in_cld_closure, _claim);
-    }
-  };
-
-  class G1CodeBlobClosure: public CodeBlobClosure {
-    OopClosure* _f;
-
-   public:
-    G1CodeBlobClosure(OopClosure* f) : _f(f) {}
-    void do_code_blob(CodeBlob* blob) {
-      nmethod* that = blob->as_nmethod_or_null();
-      if (that != NULL) {
-        if (!that->test_set_oops_do_mark()) {
-          that->oops_do(_f);
-          that->fix_oop_relocations();
-        }
-      }
-    }
-  };
-
   void work(uint worker_id) {
     if (worker_id >= _n_workers) return;  // no work needed this round
 
@@ -4808,62 +4763,40 @@ public:
 
       pss.set_evac_failure_closure(&evac_failure_cl);
 
-      bool only_young = _g1h->g1_policy()->gcs_are_young();
+      G1ParScanExtRootClosure        only_scan_root_cl(_g1h, &pss, rp);
+      G1ParScanMetadataClosure       only_scan_metadata_cl(_g1h, &pss, rp);
 
-      // Non-IM young GC.
-      G1ParCopyClosure<G1BarrierNone, G1MarkNone>             scan_only_root_cl(_g1h, &pss, rp);
-      G1CLDClosure<G1MarkNone>                                scan_only_cld_cl(&scan_only_root_cl,
-                                                                               only_young, // Only process dirty klasses.
-                                                                               false);     // No need to claim CLDs.
-      // IM young GC.
-      //    Strong roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkFromRoot>         scan_mark_root_cl(_g1h, &pss, rp);
-      G1CLDClosure<G1MarkFromRoot>                            scan_mark_cld_cl(&scan_mark_root_cl,
-                                                                               false, // Process all klasses.
-                                                                               true); // Need to claim CLDs.
-      //    Weak roots closures.
-      G1ParCopyClosure<G1BarrierNone, G1MarkPromotedFromRoot> scan_mark_weak_root_cl(_g1h, &pss, rp);
-      G1CLDClosure<G1MarkPromotedFromRoot>                    scan_mark_weak_cld_cl(&scan_mark_weak_root_cl,
-                                                                                    false, // Process all klasses.
-                                                                                    true); // Need to claim CLDs.
+      G1ParScanAndMarkExtRootClosure scan_mark_root_cl(_g1h, &pss, rp);
+      G1ParScanAndMarkMetadataClosure scan_mark_metadata_cl(_g1h, &pss, rp);
 
-      G1CodeBlobClosure scan_only_code_cl(&scan_only_root_cl);
-      G1CodeBlobClosure scan_mark_code_cl(&scan_mark_root_cl);
-      // IM Weak code roots are handled later.
+      bool only_young                 = _g1h->g1_policy()->gcs_are_young();
+      G1KlassScanClosure              scan_mark_klasses_cl_s(&scan_mark_metadata_cl, false);
+      G1KlassScanClosure              only_scan_klasses_cl_s(&only_scan_metadata_cl, only_young);
 
-      OopClosure* strong_root_cl;
-      OopClosure* weak_root_cl;
-      CLDClosure* strong_cld_cl;
-      CLDClosure* weak_cld_cl;
-      CodeBlobClosure* strong_code_cl;
+      OopClosure*                    scan_root_cl = &only_scan_root_cl;
+      G1KlassScanClosure*            scan_klasses_cl = &only_scan_klasses_cl_s;
 
       if (_g1h->g1_policy()->during_initial_mark_pause()) {
         // We also need to mark copied objects.
-        strong_root_cl = &scan_mark_root_cl;
-        weak_root_cl   = &scan_mark_weak_root_cl;
-        strong_cld_cl  = &scan_mark_cld_cl;
-        weak_cld_cl    = &scan_mark_weak_cld_cl;
-        strong_code_cl = &scan_mark_code_cl;
-      } else {
-        strong_root_cl = &scan_only_root_cl;
-        weak_root_cl   = &scan_only_root_cl;
-        strong_cld_cl  = &scan_only_cld_cl;
-        weak_cld_cl    = &scan_only_cld_cl;
-        strong_code_cl = &scan_only_code_cl;
+        scan_root_cl = &scan_mark_root_cl;
+        scan_klasses_cl = &scan_mark_klasses_cl_s;
       }
 
+      G1ParPushHeapRSClosure          push_heap_rs_cl(_g1h, &pss);
 
-      G1ParPushHeapRSClosure  push_heap_rs_cl(_g1h, &pss);
+      // Don't scan the scavengable methods in the code cache as part
+      // of strong root scanning. The code roots that point into a
+      // region in the collection set are scanned when we scan the
+      // region's RSet.
+      int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings;
 
       pss.start_strong_roots();
-      _g1h->g1_process_roots(strong_root_cl,
-                             weak_root_cl,
-                             &push_heap_rs_cl,
-                             strong_cld_cl,
-                             weak_cld_cl,
-                             strong_code_cl,
-                             worker_id);
-
+      _g1h->g1_process_strong_roots(/* is scavenging */ true,
+                                    SharedHeap::ScanningOption(so),
+                                    scan_root_cl,
+                                    &push_heap_rs_cl,
+                                    scan_klasses_cl,
+                                    worker_id);
       pss.end_strong_roots();
 
       {
@@ -4901,31 +4834,24 @@ public:
 
 void
 G1CollectedHeap::
-g1_process_roots(OopClosure* scan_non_heap_roots,
-                 OopClosure* scan_non_heap_weak_roots,
-                 OopsInHeapRegionClosure* scan_rs,
-                 CLDClosure* scan_strong_clds,
-                 CLDClosure* scan_weak_clds,
-                 CodeBlobClosure* scan_strong_code,
-                 uint worker_i) {
+g1_process_strong_roots(bool is_scavenging,
+                        ScanningOption so,
+                        OopClosure* scan_non_heap_roots,
+                        OopsInHeapRegionClosure* scan_rs,
+                        G1KlassScanClosure* scan_klasses,
+                        uint worker_i) {
 
-  // First scan the shared roots.
+  // First scan the strong roots
   double ext_roots_start = os::elapsedTime();
   double closure_app_time_sec = 0.0;
 
-  bool during_im = _g1h->g1_policy()->during_initial_mark_pause();
-
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
-  BufferingOopClosure buf_scan_non_heap_weak_roots(scan_non_heap_weak_roots);
 
-  process_roots(false, // no scoping; this is parallel code
-                SharedHeap::SO_None,
-                &buf_scan_non_heap_roots,
-                &buf_scan_non_heap_weak_roots,
-                scan_strong_clds,
-                // Initial Mark handles the weak CLDs separately.
-                (during_im ? NULL : scan_weak_clds),
-                scan_strong_code);
+  process_strong_roots(false, // no scoping; this is parallel code
+                       so,
+                       &buf_scan_non_heap_roots,
+                       scan_klasses
+                       );
 
   // Now the CM ref_processor roots.
   if (!_process_strong_tasks->is_task_claimed(G1H_PS_refProcessor_oops_do)) {
@@ -4936,21 +4862,10 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
     ref_processor_cm()->weak_oops_do(&buf_scan_non_heap_roots);
   }
 
-  if (during_im) {
-    // Barrier to make sure all workers passed
-    // the strong CLD and strong nmethods phases.
-    active_strong_roots_scope()->wait_until_all_workers_done_with_threads(n_par_threads());
-
-    // Now take the complement of the strong CLDs.
-    ClassLoaderDataGraph::roots_cld_do(NULL, scan_weak_clds);
-  }
-
   // Finish up any enqueued closure apps (attributed as object copy time).
   buf_scan_non_heap_roots.done();
-  buf_scan_non_heap_weak_roots.done();
 
-  double obj_copy_time_sec = buf_scan_non_heap_roots.closure_app_seconds()
-      + buf_scan_non_heap_weak_roots.closure_app_seconds();
+  double obj_copy_time_sec = buf_scan_non_heap_roots.closure_app_seconds();
 
   g1_policy()->phase_times()->record_obj_copy_time(worker_i, obj_copy_time_sec * 1000.0);
 
@@ -4974,10 +4889,22 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
   }
   g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
-  // Now scan the complement of the collection set.
-  MarkingCodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots, CodeBlobToOopClosure::FixRelocations);
+  // If this is an initial mark pause, and we're not scanning
+  // the entire code cache, we need to mark the oops in the
+  // strong code root lists for the regions that are not in
+  // the collection set.
+  // Note all threads participate in this set of root tasks.
+  double mark_strong_code_roots_ms = 0.0;
+  if (g1_policy()->during_initial_mark_pause() && !(so & SO_AllCodeCache)) {
+    double mark_strong_roots_start = os::elapsedTime();
+    mark_strong_code_roots(worker_i);
+    mark_strong_code_roots_ms = (os::elapsedTime() - mark_strong_roots_start) * 1000.0;
+  }
+  g1_policy()->phase_times()->record_strong_code_root_mark_time(worker_i, mark_strong_code_roots_ms);
 
-  g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
+  // Now scan the complement of the collection set.
+  CodeBlobToOopClosure eager_scan_code_roots(scan_non_heap_roots, true /* do_marking */);
+  g1_rem_set()->oops_into_collection_set_do(scan_rs, &eager_scan_code_roots, worker_i);
 
   _process_strong_tasks->all_tasks_completed();
 }
@@ -4999,8 +4926,7 @@ private:
   bool _do_in_parallel;
 public:
   G1StringSymbolTableUnlinkTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols) :
-    AbstractGangTask("String/Symbol Unlinking"),
-    _is_alive(is_alive),
+    AbstractGangTask("Par String/Symbol table unlink"), _is_alive(is_alive),
     _do_in_parallel(G1CollectedHeap::use_parallel_gc_threads()),
     _process_strings(process_strings), _strings_processed(0), _strings_removed(0),
     _process_symbols(process_symbols), _symbols_processed(0), _symbols_removed(0) {
@@ -5022,14 +4948,6 @@ public:
     guarantee(!_process_symbols || !_do_in_parallel || SymbolTable::parallel_claimed_index() >= _initial_symbol_table_size,
               err_msg("claim value %d after unlink less than initial symbol table size %d",
                       SymbolTable::parallel_claimed_index(), _initial_symbol_table_size));
-
-    if (G1TraceStringSymbolTableScrubbing) {
-      gclog_or_tty->print_cr("Cleaned string and symbol table, "
-                             "strings: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed, "
-                             "symbols: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed",
-                             strings_processed(), strings_removed(),
-                             symbols_processed(), symbols_removed());
-    }
   }
 
   void work(uint worker_id) {
@@ -5065,279 +4983,12 @@ public:
   size_t symbols_removed()   const { return (size_t)_symbols_removed; }
 };
 
-class G1CodeCacheUnloadingTask VALUE_OBJ_CLASS_SPEC {
-private:
-  static Monitor* _lock;
-
-  BoolObjectClosure* const _is_alive;
-  const bool               _unloading_occurred;
-  const uint               _num_workers;
-
-  // Variables used to claim nmethods.
-  nmethod* _first_nmethod;
-  volatile nmethod* _claimed_nmethod;
-
-  // The list of nmethods that need to be processed by the second pass.
-  volatile nmethod* _postponed_list;
-  volatile uint     _num_entered_barrier;
-
- public:
-  G1CodeCacheUnloadingTask(uint num_workers, BoolObjectClosure* is_alive, bool unloading_occurred) :
-      _is_alive(is_alive),
-      _unloading_occurred(unloading_occurred),
-      _num_workers(num_workers),
-      _first_nmethod(NULL),
-      _claimed_nmethod(NULL),
-      _postponed_list(NULL),
-      _num_entered_barrier(0)
-  {
-    nmethod::increase_unloading_clock();
-    _first_nmethod = CodeCache::alive_nmethod(CodeCache::first());
-    _claimed_nmethod = (volatile nmethod*)_first_nmethod;
-  }
-
-  ~G1CodeCacheUnloadingTask() {
-    CodeCache::verify_clean_inline_caches();
-
-    CodeCache::set_needs_cache_clean(false);
-    guarantee(CodeCache::scavenge_root_nmethods() == NULL, "Must be");
-
-    CodeCache::verify_icholder_relocations();
-  }
-
- private:
-  void add_to_postponed_list(nmethod* nm) {
-      nmethod* old;
-      do {
-        old = (nmethod*)_postponed_list;
-        nm->set_unloading_next(old);
-      } while ((nmethod*)Atomic::cmpxchg_ptr(nm, &_postponed_list, old) != old);
-  }
-
-  void clean_nmethod(nmethod* nm) {
-    bool postponed = nm->do_unloading_parallel(_is_alive, _unloading_occurred);
-
-    if (postponed) {
-      // This nmethod referred to an nmethod that has not been cleaned/unloaded yet.
-      add_to_postponed_list(nm);
-    }
-
-    // Mark that this thread has been cleaned/unloaded.
-    // After this call, it will be safe to ask if this nmethod was unloaded or not.
-    nm->set_unloading_clock(nmethod::global_unloading_clock());
-  }
-
-  void clean_nmethod_postponed(nmethod* nm) {
-    nm->do_unloading_parallel_postponed(_is_alive, _unloading_occurred);
-  }
-
-  static const int MaxClaimNmethods = 16;
-
-  void claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods) {
-    nmethod* first;
-    nmethod* last;
-
-    do {
-      *num_claimed_nmethods = 0;
-
-      first = last = (nmethod*)_claimed_nmethod;
-
-      if (first != NULL) {
-        for (int i = 0; i < MaxClaimNmethods; i++) {
-          last = CodeCache::alive_nmethod(CodeCache::next(last));
-
-          if (last == NULL) {
-            break;
-          }
-
-          claimed_nmethods[i] = last;
-          (*num_claimed_nmethods)++;
-        }
-      }
-
-    } while ((nmethod*)Atomic::cmpxchg_ptr(last, &_claimed_nmethod, first) != first);
-  }
-
-  nmethod* claim_postponed_nmethod() {
-    nmethod* claim;
-    nmethod* next;
-
-    do {
-      claim = (nmethod*)_postponed_list;
-      if (claim == NULL) {
-        return NULL;
-      }
-
-      next = claim->unloading_next();
-
-    } while ((nmethod*)Atomic::cmpxchg_ptr(next, &_postponed_list, claim) != claim);
-
-    return claim;
-  }
-
- public:
-  // Mark that we're done with the first pass of nmethod cleaning.
-  void barrier_mark(uint worker_id) {
-    MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
-    _num_entered_barrier++;
-    if (_num_entered_barrier == _num_workers) {
-      ml.notify_all();
-    }
-  }
-
-  // See if we have to wait for the other workers to
-  // finish their first-pass nmethod cleaning work.
-  void barrier_wait(uint worker_id) {
-    if (_num_entered_barrier < _num_workers) {
-      MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
-      while (_num_entered_barrier < _num_workers) {
-          ml.wait(Mutex::_no_safepoint_check_flag, 0, false);
-      }
-    }
-  }
-
-  // Cleaning and unloading of nmethods. Some work has to be postponed
-  // to the second pass, when we know which nmethods survive.
-  void work_first_pass(uint worker_id) {
-    // The first nmethods is claimed by the first worker.
-    if (worker_id == 0 && _first_nmethod != NULL) {
-      clean_nmethod(_first_nmethod);
-      _first_nmethod = NULL;
-    }
-
-    int num_claimed_nmethods;
-    nmethod* claimed_nmethods[MaxClaimNmethods];
-
-    while (true) {
-      claim_nmethods(claimed_nmethods, &num_claimed_nmethods);
-
-      if (num_claimed_nmethods == 0) {
-        break;
-      }
-
-      for (int i = 0; i < num_claimed_nmethods; i++) {
-        clean_nmethod(claimed_nmethods[i]);
-      }
-    }
-  }
-
-  void work_second_pass(uint worker_id) {
-    nmethod* nm;
-    // Take care of postponed nmethods.
-    while ((nm = claim_postponed_nmethod()) != NULL) {
-      clean_nmethod_postponed(nm);
-    }
-  }
-};
-
-Monitor* G1CodeCacheUnloadingTask::_lock = new Monitor(Mutex::leaf, "Code Cache Unload lock");
-
-class G1KlassCleaningTask : public StackObj {
-  BoolObjectClosure*                      _is_alive;
-  volatile jint                           _clean_klass_tree_claimed;
-  ClassLoaderDataGraphKlassIteratorAtomic _klass_iterator;
-
- public:
-  G1KlassCleaningTask(BoolObjectClosure* is_alive) :
-      _is_alive(is_alive),
-      _clean_klass_tree_claimed(0),
-      _klass_iterator() {
-  }
-
- private:
-  bool claim_clean_klass_tree_task() {
-    if (_clean_klass_tree_claimed) {
-      return false;
-    }
-
-    return Atomic::cmpxchg(1, (jint*)&_clean_klass_tree_claimed, 0) == 0;
-  }
-
-  InstanceKlass* claim_next_klass() {
-    Klass* klass;
-    do {
-      klass =_klass_iterator.next_klass();
-    } while (klass != NULL && !klass->oop_is_instance());
-
-    return (InstanceKlass*)klass;
-  }
-
-public:
-
-  void clean_klass(InstanceKlass* ik) {
-    ik->clean_implementors_list(_is_alive);
-    ik->clean_method_data(_is_alive);
-
-    // G1 specific cleanup work that has
-    // been moved here to be done in parallel.
-    ik->clean_dependent_nmethods();
-  }
-
-  void work() {
-    ResourceMark rm;
-
-    // One worker will clean the subklass/sibling klass tree.
-    if (claim_clean_klass_tree_task()) {
-      Klass::clean_subklass_tree(_is_alive);
-    }
-
-    // All workers will help cleaning the classes,
-    InstanceKlass* klass;
-    while ((klass = claim_next_klass()) != NULL) {
-      clean_klass(klass);
-    }
-  }
-};
-
-// To minimize the remark pause times, the tasks below are done in parallel.
-class G1ParallelCleaningTask : public AbstractGangTask {
-private:
-  G1StringSymbolTableUnlinkTask _string_symbol_task;
-  G1CodeCacheUnloadingTask      _code_cache_task;
-  G1KlassCleaningTask           _klass_cleaning_task;
-
-public:
-  // The constructor is run in the VMThread.
-  G1ParallelCleaningTask(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, uint num_workers, bool unloading_occurred) :
-      AbstractGangTask("Parallel Cleaning"),
-      _string_symbol_task(is_alive, process_strings, process_symbols),
-      _code_cache_task(num_workers, is_alive, unloading_occurred),
-      _klass_cleaning_task(is_alive) {
-  }
-
-  // The parallel work done by all worker threads.
-  void work(uint worker_id) {
-    // Do first pass of code cache cleaning.
-    _code_cache_task.work_first_pass(worker_id);
-
-    // Let the threads, mark that the first pass is done.
-    _code_cache_task.barrier_mark(worker_id);
-
-    // Clean the Strings and Symbols.
-    _string_symbol_task.work(worker_id);
-
-    // Wait for all workers to finish the first code cache cleaning pass.
-    _code_cache_task.barrier_wait(worker_id);
-
-    // Do the second code cache cleaning work, which realize on
-    // the liveness information gathered during the first pass.
-    _code_cache_task.work_second_pass(worker_id);
-
-    // Clean all klasses that were not unloaded.
-    _klass_cleaning_task.work();
-  }
-};
-
-
-void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
-                                        bool process_strings,
-                                        bool process_symbols,
-                                        bool class_unloading_occurred) {
+void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
+                                                     bool process_strings, bool process_symbols) {
   uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                    workers()->active_workers() : 1);
+                   _g1h->workers()->active_workers() : 1);
 
-  G1ParallelCleaningTask g1_unlink_task(is_alive, process_strings, process_symbols,
-                                        n_workers, class_unloading_occurred);
+  G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
   if (G1CollectedHeap::use_parallel_gc_threads()) {
     set_par_threads(n_workers);
     workers()->run_task(&g1_unlink_task);
@@ -5345,21 +4996,12 @@ void G1CollectedHeap::parallel_cleaning(BoolObjectClosure* is_alive,
   } else {
     g1_unlink_task.work(0);
   }
-}
-
-void G1CollectedHeap::unlink_string_and_symbol_table(BoolObjectClosure* is_alive,
-                                                     bool process_strings, bool process_symbols) {
-  {
-    uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                     _g1h->workers()->active_workers() : 1);
-    G1StringSymbolTableUnlinkTask g1_unlink_task(is_alive, process_strings, process_symbols);
-    if (G1CollectedHeap::use_parallel_gc_threads()) {
-      set_par_threads(n_workers);
-      workers()->run_task(&g1_unlink_task);
-      set_par_threads(0);
-    } else {
-      g1_unlink_task.work(0);
-    }
+  if (G1TraceStringSymbolTableScrubbing) {
+    gclog_or_tty->print_cr("Cleaned string and symbol table, "
+                           "strings: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed, "
+                           "symbols: "SIZE_FORMAT" processed, "SIZE_FORMAT" removed",
+                           g1_unlink_task.strings_processed(), g1_unlink_task.strings_removed(),
+                           g1_unlink_task.symbols_processed(), g1_unlink_task.symbols_removed());
   }
 
   if (G1StringDedup::is_enabled()) {
@@ -5952,10 +5594,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
   {
     StrongRootsScope srs(this);
-    // InitialMark needs claim bits to keep track of the marked-through CLDs.
-    if (g1_policy()->during_initial_mark_pause()) {
-      ClassLoaderDataGraph::clear_claimed_marks();
-    }
 
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       // The individual threads will set their evac-failure closures.
@@ -6989,6 +6627,106 @@ void G1CollectedHeap::purge_code_root_memory() {
   G1CodeRootSet::purge_chunks(G1CodeRootsChunkCacheKeepPercent);
   double purge_time_ms = (os::elapsedTime() - purge_start) * 1000.0;
   g1_policy()->phase_times()->record_strong_code_root_purge_time(purge_time_ms);
+}
+
+// Mark all the code roots that point into regions *not* in the
+// collection set.
+//
+// Note we do not want to use a "marking" CodeBlobToOopClosure while
+// walking the the code roots lists of regions not in the collection
+// set. Suppose we have an nmethod (M) that points to objects in two
+// separate regions - one in the collection set (R1) and one not (R2).
+// Using a "marking" CodeBlobToOopClosure here would result in "marking"
+// nmethod M when walking the code roots for R1. When we come to scan
+// the code roots for R2, we would see that M is already marked and it
+// would be skipped and the objects in R2 that are referenced from M
+// would not be evacuated.
+
+class MarkStrongCodeRootCodeBlobClosure: public CodeBlobClosure {
+
+  class MarkStrongCodeRootOopClosure: public OopClosure {
+    ConcurrentMark* _cm;
+    HeapRegion* _hr;
+    uint _worker_id;
+
+    template <class T> void do_oop_work(T* p) {
+      T heap_oop = oopDesc::load_heap_oop(p);
+      if (!oopDesc::is_null(heap_oop)) {
+        oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
+        // Only mark objects in the region (which is assumed
+        // to be not in the collection set).
+        if (_hr->is_in(obj)) {
+          _cm->grayRoot(obj, (size_t) obj->size(), _worker_id);
+        }
+      }
+    }
+
+  public:
+    MarkStrongCodeRootOopClosure(ConcurrentMark* cm, HeapRegion* hr, uint worker_id) :
+      _cm(cm), _hr(hr), _worker_id(worker_id) {
+      assert(!_hr->in_collection_set(), "sanity");
+    }
+
+    void do_oop(narrowOop* p) { do_oop_work(p); }
+    void do_oop(oop* p)       { do_oop_work(p); }
+  };
+
+  MarkStrongCodeRootOopClosure _oop_cl;
+
+public:
+  MarkStrongCodeRootCodeBlobClosure(ConcurrentMark* cm, HeapRegion* hr, uint worker_id):
+    _oop_cl(cm, hr, worker_id) {}
+
+  void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = (cb == NULL) ? NULL : cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      nm->oops_do(&_oop_cl);
+    }
+  }
+};
+
+class MarkStrongCodeRootsHRClosure: public HeapRegionClosure {
+  G1CollectedHeap* _g1h;
+  uint _worker_id;
+
+public:
+  MarkStrongCodeRootsHRClosure(G1CollectedHeap* g1h, uint worker_id) :
+    _g1h(g1h), _worker_id(worker_id) {}
+
+  bool doHeapRegion(HeapRegion *hr) {
+    HeapRegionRemSet* hrrs = hr->rem_set();
+    if (hr->continuesHumongous()) {
+      // Code roots should never be attached to a continuation of a humongous region
+      assert(hrrs->strong_code_roots_list_length() == 0,
+             err_msg("code roots should never be attached to continuations of humongous region "HR_FORMAT
+                     " starting at "HR_FORMAT", but has "SIZE_FORMAT,
+                     HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region()),
+                     hrrs->strong_code_roots_list_length()));
+      return false;
+    }
+
+    if (hr->in_collection_set()) {
+      // Don't mark code roots into regions in the collection set here.
+      // They will be marked when we scan them.
+      return false;
+    }
+
+    MarkStrongCodeRootCodeBlobClosure cb_cl(_g1h->concurrent_mark(), hr, _worker_id);
+    hr->strong_code_roots_do(&cb_cl);
+    return false;
+  }
+};
+
+void G1CollectedHeap::mark_strong_code_roots(uint worker_id) {
+  MarkStrongCodeRootsHRClosure cl(this, worker_id);
+  if (G1CollectedHeap::use_parallel_gc_threads()) {
+    heap_region_par_iterate_chunked(&cl,
+                                    worker_id,
+                                    workers()->active_workers(),
+                                    HeapRegion::ParMarkRootClaimValue);
+  } else {
+    heap_region_iterate(&cl);
+  }
 }
 
 class RebuildStrongCodeRootClosure: public CodeBlobClosure {

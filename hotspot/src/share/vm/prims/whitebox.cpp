@@ -24,7 +24,6 @@
 
 #include "precompiled.hpp"
 
-#include "memory/metadataFactory.hpp"
 #include "memory/universe.hpp"
 #include "oops/oop.inline.hpp"
 
@@ -39,7 +38,6 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/os.hpp"
 
-#include "utilities/array.hpp"
 #include "utilities/debug.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/exceptions.hpp"
@@ -728,6 +726,7 @@ WB_ENTRY(jobjectArray, WB_GetNMethod(JNIEnv* env, jobject o, jobject method, jbo
   return result;
 WB_END
 
+
 WB_ENTRY(jlong, WB_GetThreadStackSize(JNIEnv* env, jobject o))
   return (jlong) Thread::current()->stack_size();
 WB_END
@@ -735,35 +734,6 @@ WB_END
 WB_ENTRY(jlong, WB_GetThreadRemainingStackSize(JNIEnv* env, jobject o))
   JavaThread* t = JavaThread::current();
   return (jlong) t->stack_available(os::current_stack_pointer()) - (jlong) StackShadowPages * os::vm_page_size();
-WB_END
-
-int WhiteBox::array_bytes_to_length(size_t bytes) {
-  return Array<u1>::bytes_to_length(bytes);
-}
-
-WB_ENTRY(jlong, WB_AllocateMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong size))
-  if (size < 0) {
-    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
-        err_msg("WB_AllocateMetaspace: size is negative: " JLONG_FORMAT, size));
-  }
-
-  oop class_loader_oop = JNIHandles::resolve(class_loader);
-  ClassLoaderData* cld = class_loader_oop != NULL
-      ? java_lang_ClassLoader::loader_data(class_loader_oop)
-      : ClassLoaderData::the_null_class_loader_data();
-
-  void* metadata = MetadataFactory::new_writeable_array<u1>(cld, WhiteBox::array_bytes_to_length((size_t)size), thread);
-
-  return (jlong)(uintptr_t)metadata;
-WB_END
-
-WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, jlong addr, jlong size))
-  oop class_loader_oop = JNIHandles::resolve(class_loader);
-  ClassLoaderData* cld = class_loader_oop != NULL
-      ? java_lang_ClassLoader::loader_data(class_loader_oop)
-      : ClassLoaderData::the_null_class_loader_data();
-
-  MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
 //Some convenience methods to deal with objects from java
@@ -896,10 +866,6 @@ static JNINativeMethod methods[] = {
   {CC"isInStringTable",    CC"(Ljava/lang/String;)Z", (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
-  {CC"allocateMetaspace",
-     CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
-  {CC"freeMetaspace",
-     CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },

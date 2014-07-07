@@ -30,21 +30,14 @@
 // non-virtually, using a mechanism defined in this file.  Extend these
 // macros in the obvious way to add specializations for new closures.
 
+// Forward declarations.
 enum G1Barrier {
   G1BarrierNone,
   G1BarrierEvac,
   G1BarrierKlass
 };
 
-enum G1Mark {
-  G1MarkNone,
-  G1MarkFromRoot,
-  G1MarkPromotedFromRoot
-};
-
-// Forward declarations.
-
-template<G1Barrier barrier, G1Mark do_mark_object>
+template<G1Barrier barrier, bool do_mark_object>
 class G1ParCopyClosure;
 
 class G1ParScanClosure;

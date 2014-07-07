@@ -1558,11 +1558,11 @@ bool CMSCollector::shouldConcurrentCollect() {
   }
 
   if (MetaspaceGC::should_concurrent_collect()) {
-    if (Verbose && PrintGCDetails) {
+      if (Verbose && PrintGCDetails) {
       gclog_or_tty->print("CMSCollector: collect for metadata allocation ");
+      }
+      return true;
     }
-    return true;
-  }
 
   // CMSTriggerInterval starts a CMS cycle if enough time has passed.
   if (CMSTriggerInterval >= 0) {
@@ -2997,21 +2997,20 @@ void CMSCollector::verify_after_remark_work_1() {
   HandleMark  hm;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Get a clear set of claim bits for the roots processing to work with.
+  // Get a clear set of claim bits for the strong roots processing to work with.
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // Mark from roots one level into CMS
   MarkRefsIntoClosure notOlder(_span, verification_mark_bm());
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
 
-  gch->gen_process_roots(_cmsGen->level(),
-                         true,   // younger gens are roots
-                         true,   // activate StrongRootsScope
-                         SharedHeap::ScanningOption(roots_scanning_options()),
-                         should_unload_classes(),
-                         &notOlder,
-                         NULL,
-                         NULL);  // SSS: Provide correct closure
+  gch->gen_process_strong_roots(_cmsGen->level(),
+                                true,   // younger gens are roots
+                                true,   // activate StrongRootsScope
+                                SharedHeap::ScanningOption(roots_scanning_options()),
+                                &notOlder,
+                                NULL,
+                                NULL); // SSS: Provide correct closure
 
   // Now mark from the roots
   MarkFromRootsClosure markFromRootsClosure(this, _span,
@@ -3062,24 +3061,22 @@ void CMSCollector::verify_after_remark_work_2() {
   HandleMark  hm;
   GenCollectedHeap* gch = GenCollectedHeap::heap();
 
-  // Get a clear set of claim bits for the roots processing to work with.
+  // Get a clear set of claim bits for the strong roots processing to work with.
   ClassLoaderDataGraph::clear_claimed_marks();
 
   // Mark from roots one level into CMS
   MarkRefsIntoVerifyClosure notOlder(_span, verification_mark_bm(),
                                      markBitMap());
-  CLDToOopClosure cld_closure(&notOlder, true);
+  KlassToOopClosure klass_closure(&notOlder);
 
   gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-
-  gch->gen_process_roots(_cmsGen->level(),
-                         true,   // younger gens are roots
-                         true,   // activate StrongRootsScope
-                         SharedHeap::ScanningOption(roots_scanning_options()),
-                         should_unload_classes(),
-                         &notOlder,
-                         NULL,
-                         &cld_closure);
+  gch->gen_process_strong_roots(_cmsGen->level(),
+                                true,   // younger gens are roots
+                                true,   // activate StrongRootsScope
+                                SharedHeap::ScanningOption(roots_scanning_options()),
+                                &notOlder,
+                                NULL,
+                                &klass_closure);
 
   // Now mark from the roots
   MarkFromRootsVerifyClosure markFromRootsClosure(this, _span,
@@ -3266,10 +3263,12 @@ bool ConcurrentMarkSweepGeneration::is_too_full() const {
 void CMSCollector::setup_cms_unloading_and_verification_state() {
   const  bool should_verify =   VerifyBeforeGC || VerifyAfterGC || VerifyDuringGC
                              || VerifyBeforeExit;
-  const  int  rso           =   SharedHeap::SO_AllCodeCache;
+  const  int  rso           =   SharedHeap::SO_Strings | SharedHeap::SO_AllCodeCache;
 
   // We set the proper root for this CMS cycle here.
   if (should_unload_classes()) {   // Should unload classes this cycle
+    remove_root_scanning_option(SharedHeap::SO_AllClasses);
+    add_root_scanning_option(SharedHeap::SO_SystemClasses);
     remove_root_scanning_option(rso);  // Shrink the root set appropriately
     set_verifying(should_verify);    // Set verification state for this cycle
     return;                            // Nothing else needs to be done at this time
@@ -3277,6 +3276,8 @@ void CMSCollector::setup_cms_unloading_and_verification_state() {
 
   // Not unloading classes this cycle
   assert(!should_unload_classes(), "Inconsistency!");
+  remove_root_scanning_option(SharedHeap::SO_SystemClasses);
+  add_root_scanning_option(SharedHeap::SO_AllClasses);
 
   if ((!verifying() || unloaded_classes_last_cycle()) && should_verify) {
     // Include symbols, strings and code cache elements to prevent their resurrection.
@@ -3684,16 +3685,15 @@ void CMSCollector::checkpointRootsInitialWork(bool asynch) {
       gch->set_par_threads(0);
     } else {
       // The serial version.
-      CLDToOopClosure cld_closure(&notOlder, true);
+      KlassToOopClosure klass_closure(&notOlder);
       gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
-      gch->gen_process_roots(_cmsGen->level(),
-                             true,   // younger gens are roots
-                             true,   // activate StrongRootsScope
-                             SharedHeap::ScanningOption(roots_scanning_options()),
-                             should_unload_classes(),
-                             &notOlder,
-                             NULL,
-                             &cld_closure);
+      gch->gen_process_strong_roots(_cmsGen->level(),
+                                    true,   // younger gens are roots
+                                    true,   // activate StrongRootsScope
+                                    SharedHeap::ScanningOption(roots_scanning_options()),
+                                    &notOlder,
+                                    NULL,
+                                    &klass_closure);
     }
   }
 
@@ -5139,6 +5139,7 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   _timer.start();
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   Par_MarkRefsIntoClosure par_mri_cl(_collector->_span, &(_collector->_markBitMap));
+  KlassToOopClosure klass_closure(&par_mri_cl);
 
   // ---------- young gen roots --------------
   {
@@ -5154,17 +5155,13 @@ void CMSParInitialMarkTask::work(uint worker_id) {
   // ---------- remaining roots --------------
   _timer.reset();
   _timer.start();
-
-  CLDToOopClosure cld_closure(&par_mri_cl, true);
-
-  gch->gen_process_roots(_collector->_cmsGen->level(),
-                         false,     // yg was scanned above
-                         false,     // this is parallel code
-                         SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
-                         _collector->should_unload_classes(),
-                         &par_mri_cl,
-                         NULL,
-                         &cld_closure);
+  gch->gen_process_strong_roots(_collector->_cmsGen->level(),
+                                false,     // yg was scanned above
+                                false,     // this is parallel code
+                                SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
+                                &par_mri_cl,
+                                NULL,
+                                &klass_closure);
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
@@ -5293,15 +5290,13 @@ void CMSParRemarkTask::work(uint worker_id) {
   // ---------- remaining roots --------------
   _timer.reset();
   _timer.start();
-  gch->gen_process_roots(_collector->_cmsGen->level(),
-                         false,     // yg was scanned above
-                         false,     // this is parallel code
-                         SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
-                         _collector->should_unload_classes(),
-                         &par_mrias_cl,
-                         NULL,
-                         NULL);     // The dirty klasses will be handled below
-
+  gch->gen_process_strong_roots(_collector->_cmsGen->level(),
+                                false,     // yg was scanned above
+                                false,     // this is parallel code
+                                SharedHeap::ScanningOption(_collector->CMSCollector::roots_scanning_options()),
+                                &par_mrias_cl,
+                                NULL,
+                                NULL);     // The dirty klasses will be handled below
   assert(_collector->should_unload_classes()
          || (_collector->CMSCollector::roots_scanning_options() & SharedHeap::SO_AllCodeCache),
          "if we didn't scan the code cache, we have to be ready to drop nmethods with expired weak oops");
@@ -5356,7 +5351,7 @@ void CMSParRemarkTask::work(uint worker_id) {
   // We might have added oops to ClassLoaderData::_handles during the
   // concurrent marking phase. These oops point to newly allocated objects
   // that are guaranteed to be kept alive. Either by the direct allocation
-  // code, or when the young collector processes the roots. Hence,
+  // code, or when the young collector processes the strong roots. Hence,
   // we don't have to revisit the _handles block during the remark phase.
 
   // ---------- rescan dirty cards ------------
@@ -5778,7 +5773,7 @@ void CMSCollector::do_remark_parallel() {
     cms_space,
     n_workers, workers, task_queues());
 
-  // Set up for parallel process_roots work.
+  // Set up for parallel process_strong_roots work.
   gch->set_par_threads(n_workers);
   // We won't be iterating over the cards in the card table updating
   // the younger_gen cards, so we shouldn't call the following else
@@ -5787,7 +5782,7 @@ void CMSCollector::do_remark_parallel() {
   // gch->rem_set()->prepare_for_younger_refs_iterate(true); // parallel
 
   // The young gen rescan work will not be done as part of
-  // process_roots (which currently doesn't know how to
+  // process_strong_roots (which currently doesn't knw how to
   // parallelize such a scan), but rather will be broken up into
   // a set of parallel tasks (via the sampling that the [abortable]
   // preclean phase did of EdenSpace, plus the [two] tasks of
@@ -5884,15 +5879,13 @@ void CMSCollector::do_remark_non_parallel() {
 
     gch->rem_set()->prepare_for_younger_refs_iterate(false); // Not parallel.
     GenCollectedHeap::StrongRootsScope srs(gch);
-
-    gch->gen_process_roots(_cmsGen->level(),
-                           true,  // younger gens as roots
-                           false, // use the local StrongRootsScope
-                           SharedHeap::ScanningOption(roots_scanning_options()),
-                           should_unload_classes(),
-                           &mrias_cl,
-                           NULL,
-                           NULL); // The dirty klasses will be handled below
+    gch->gen_process_strong_roots(_cmsGen->level(),
+                                  true,  // younger gens as roots
+                                  false, // use the local StrongRootsScope
+                                  SharedHeap::ScanningOption(roots_scanning_options()),
+                                  &mrias_cl,
+                                  NULL,
+                                  NULL);  // The dirty klasses will be handled below
 
     assert(should_unload_classes()
            || (roots_scanning_options() & SharedHeap::SO_AllCodeCache),
@@ -5932,7 +5925,7 @@ void CMSCollector::do_remark_non_parallel() {
   // We might have added oops to ClassLoaderData::_handles during the
   // concurrent marking phase. These oops point to newly allocated objects
   // that are guaranteed to be kept alive. Either by the direct allocation
-  // code, or when the young collector processes the roots. Hence,
+  // code, or when the young collector processes the strong roots. Hence,
   // we don't have to revisit the _handles block during the remark phase.
 
   verify_work_stacks_empty();
@@ -6182,14 +6175,15 @@ void CMSCollector::refProcessingWork(bool asynch, bool clear_all_soft_refs) {
       // Clean up unreferenced symbols in symbol table.
       SymbolTable::unlink();
     }
-
-    {
-      GCTraceTime t("scrub string table", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
-      // Delete entries for dead interned strings.
-      StringTable::unlink(&_is_alive_closure);
-    }
   }
 
+  // CMS doesn't use the StringTable as hard roots when class unloading is turned off.
+  // Need to check if we really scanned the StringTable.
+  if ((roots_scanning_options() & SharedHeap::SO_Strings) == 0) {
+    GCTraceTime t("scrub string table", PrintGCDetails, false, _gc_timer_cm, _gc_tracer_cm->gc_id());
+    // Delete entries for dead interned strings.
+    StringTable::unlink(&_is_alive_closure);
+  }
 
   // Restore any preserved marks as a result of mark stack or
   // work queue overflow

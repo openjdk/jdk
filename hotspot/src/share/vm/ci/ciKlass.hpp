@@ -43,7 +43,6 @@ class ciKlass : public ciType {
   friend class ciMethod;
   friend class ciMethodData;
   friend class ciObjArrayKlass;
-  friend class ciReceiverTypeData;
 
 private:
   ciSymbol* _name;

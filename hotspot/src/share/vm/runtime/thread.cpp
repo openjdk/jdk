@@ -4101,8 +4101,8 @@ void Threads::possibly_parallel_oops_do(OopClosure* f, CLDClosure* cld_f, CodeBl
   SharedHeap* sh = SharedHeap::heap();
   // Cannot yet substitute active_workers for n_par_threads
   // because of G1CollectedHeap::verify() use of
-  // SharedHeap::process_roots().  n_par_threads == 0 will
-  // turn off parallelism in process_roots while active_workers
+  // SharedHeap::process_strong_roots().  n_par_threads == 0 will
+  // turn off parallelism in process_strong_roots while active_workers
   // is being used for parallelism elsewhere.
   bool is_par = sh->n_par_threads() > 0;
   assert(!is_par ||

@@ -332,27 +332,6 @@ void ClassLoaderData::unload() {
   }
 }
 
-#ifdef ASSERT
-class AllAliveClosure : public OopClosure {
-  BoolObjectClosure* _is_alive_closure;
-  bool _found_dead;
- public:
-  AllAliveClosure(BoolObjectClosure* is_alive_closure) : _is_alive_closure(is_alive_closure), _found_dead(false) {}
-  template <typename T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if (!_is_alive_closure->do_object_b(obj)) {
-        _found_dead = true;
-      }
-    }
-  }
-  void do_oop(oop* p)       { do_oop_work<oop>(p); }
-  void do_oop(narrowOop* p) { do_oop_work<narrowOop>(p); }
-  bool found_dead()         { return _found_dead; }
-};
-#endif
-
 oop ClassLoaderData::keep_alive_object() const {
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
   return is_anonymous() ? _klasses->java_mirror() : class_loader();
@@ -362,15 +341,7 @@ bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
   bool alive = keep_alive() // null class loader and incomplete anonymous klasses.
       || is_alive_closure->do_object_b(keep_alive_object());
 
-#ifdef ASSERT
-  if (alive) {
-    AllAliveClosure all_alive_closure(is_alive_closure);
-    KlassToOopClosure klass_closure(&all_alive_closure);
-    const_cast<ClassLoaderData*>(this)->oops_do(&all_alive_closure, &klass_closure, false);
-    assert(!all_alive_closure.found_dead(), err_msg("Found dead oop in alive cld: " PTR_FORMAT, p2i(this)));
-  }
-#endif
-
+  assert(!alive || claimed(), "must be claimed");
   return alive;
 }
 
@@ -648,36 +619,15 @@ void ClassLoaderDataGraph::keep_alive_oops_do(OopClosure* f, KlassClosure* klass
 
 void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim) {
   if (ClassUnloading) {
-    keep_alive_oops_do(f, klass_closure, must_claim);
+    ClassLoaderDataGraph::keep_alive_oops_do(f, klass_closure, must_claim);
   } else {
-    oops_do(f, klass_closure, must_claim);
+    ClassLoaderDataGraph::oops_do(f, klass_closure, must_claim);
   }
 }
 
 void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
   for (ClassLoaderData* cld = _head; cl != NULL && cld != NULL; cld = cld->next()) {
     cl->do_cld(cld);
-  }
-}
-
-void ClassLoaderDataGraph::roots_cld_do(CLDClosure* strong, CLDClosure* weak) {
-  for (ClassLoaderData* cld = _head;  cld != NULL; cld = cld->_next) {
-    CLDClosure* closure = cld->keep_alive() ? strong : weak;
-    if (closure != NULL) {
-      closure->do_cld(cld);
-    }
-  }
-}
-
-void ClassLoaderDataGraph::keep_alive_cld_do(CLDClosure* cl) {
-  roots_cld_do(cl, NULL);
-}
-
-void ClassLoaderDataGraph::always_strong_cld_do(CLDClosure* cl) {
-  if (ClassUnloading) {
-    keep_alive_cld_do(cl);
-  } else {
-    cld_do(cl);
   }
 }
 
@@ -734,16 +684,6 @@ GrowableArray<ClassLoaderData*>* ClassLoaderDataGraph::new_clds() {
   }
 
   return array;
-}
-
-bool ClassLoaderDataGraph::unload_list_contains(const void* x) {
-  assert(SafepointSynchronize::is_at_safepoint(), "only safe to call at safepoint");
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
-    if (cld->metaspace_or_null() != NULL && cld->metaspace_or_null()->contains(x)) {
-      return true;
-    }
-  }
-  return false;
 }
 
 #ifndef PRODUCT
@@ -861,60 +801,6 @@ Metaspace* ClassLoaderData::rw_metaspace() {
   return _rw_metaspace;
 }
 
-ClassLoaderDataGraphKlassIteratorAtomic::ClassLoaderDataGraphKlassIteratorAtomic()
-    : _next_klass(NULL) {
-  ClassLoaderData* cld = ClassLoaderDataGraph::_head;
-  Klass* klass = NULL;
-
-  // Find the first klass in the CLDG.
-  while (cld != NULL) {
-    klass = cld->_klasses;
-    if (klass != NULL) {
-      _next_klass = klass;
-      return;
-    }
-    cld = cld->next();
-  }
-}
-
-Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass_in_cldg(Klass* klass) {
-  Klass* next = klass->next_link();
-  if (next != NULL) {
-    return next;
-  }
-
-  // No more klasses in the current CLD. Time to find a new CLD.
-  ClassLoaderData* cld = klass->class_loader_data();
-  while (next == NULL) {
-    cld = cld->next();
-    if (cld == NULL) {
-      break;
-    }
-    next = cld->_klasses;
-  }
-
-  return next;
-}
-
-Klass* ClassLoaderDataGraphKlassIteratorAtomic::next_klass() {
-  Klass* head = (Klass*)_next_klass;
-
-  while (head != NULL) {
-    Klass* next = next_klass_in_cldg(head);
-
-    Klass* old_head = (Klass*)Atomic::cmpxchg_ptr(next, &_next_klass, head);
-
-    if (old_head == head) {
-      return head; // Won the CAS.
-    }
-
-    head = old_head;
-  }
-
-  // Nothing more for the iterator to hand out.
-  assert(head == NULL, err_msg("head is " PTR_FORMAT ", expected not null:", p2i(head)));
-  return NULL;
-}
 
 ClassLoaderDataGraphMetaspaceIterator::ClassLoaderDataGraphMetaspaceIterator() {
   _data = ClassLoaderDataGraph::_head;

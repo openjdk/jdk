@@ -70,8 +70,8 @@ class ExtendedOopClosure : public OopClosure {
   //
   // Providing default implementations of the _nv functions unfortunately
   // removes the compile-time safeness, but reduces the clutter for the
-  // ExtendedOopClosures that don't need to walk the metadata.
-  // Currently, only CMS and G1 need these.
+  // ExtendedOopClosures that don't need to walk the metadata. Currently,
+  // only CMS needs these.
 
   virtual bool do_metadata() { return do_metadata_nv(); }
   bool do_metadata_v()       { return do_metadata(); }
@@ -126,16 +126,15 @@ class KlassToOopClosure : public KlassClosure {
     _oop_closure = oop_closure;
   }
 
- public:
+public:
   KlassToOopClosure(OopClosure* oop_closure = NULL) : _oop_closure(oop_closure) {}
-
   virtual void do_klass(Klass* k);
 };
 
 class CLDToOopClosure : public CLDClosure {
-  OopClosure*       _oop_closure;
+  OopClosure* _oop_closure;
   KlassToOopClosure _klass_closure;
-  bool              _must_claim_cld;
+  bool _must_claim_cld;
 
  public:
   CLDToOopClosure(OopClosure* oop_closure, bool must_claim_cld = true) :
@@ -143,23 +142,6 @@ class CLDToOopClosure : public CLDClosure {
       _klass_closure(oop_closure),
       _must_claim_cld(must_claim_cld) {}
 
-  void do_cld(ClassLoaderData* cld);
-};
-
-class CLDToKlassAndOopClosure : public CLDClosure {
-  friend class SharedHeap;
-  friend class G1CollectedHeap;
- protected:
-  OopClosure*   _oop_closure;
-  KlassClosure* _klass_closure;
-  bool          _must_claim_cld;
- public:
-  CLDToKlassAndOopClosure(KlassClosure* klass_closure,
-                          OopClosure* oop_closure,
-                          bool must_claim_cld) :
-                              _oop_closure(oop_closure),
-                              _klass_closure(klass_closure),
-                              _must_claim_cld(must_claim_cld) {}
   void do_cld(ClassLoaderData* cld);
 };
 
@@ -264,26 +246,14 @@ class CodeBlobClosure : public Closure {
   virtual void do_code_blob(CodeBlob* cb) = 0;
 };
 
-// Applies an oop closure to all ref fields in code blobs
-// iterated over in an object iteration.
-class CodeBlobToOopClosure : public CodeBlobClosure {
-  OopClosure* _cl;
-  bool _fix_relocations;
- protected:
-  void do_nmethod(nmethod* nm);
- public:
-  CodeBlobToOopClosure(OopClosure* cl, bool fix_relocations) : _cl(cl), _fix_relocations(fix_relocations) {}
-  virtual void do_code_blob(CodeBlob* cb);
 
-  const static bool FixRelocations = true;
-};
-
-class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
+class MarkingCodeBlobClosure : public CodeBlobClosure {
  public:
-  MarkingCodeBlobClosure(OopClosure* cl, bool fix_relocations) : CodeBlobToOopClosure(cl, fix_relocations) {}
   // Called for each code blob, but at most once per unique blob.
+  virtual void do_newly_marked_nmethod(nmethod* nm) = 0;
 
   virtual void do_code_blob(CodeBlob* cb);
+    // = { if (!nmethod(cb)->test_set_oops_do_mark())  do_newly_marked_nmethod(cb); }
 
   class MarkScope : public StackObj {
   protected:
@@ -295,6 +265,23 @@ class MarkingCodeBlobClosure : public CodeBlobToOopClosure {
       // = { if (active) nmethod::oops_do_marking_epilogue(); }
   };
 };
+
+
+// Applies an oop closure to all ref fields in code blobs
+// iterated over in an object iteration.
+class CodeBlobToOopClosure: public MarkingCodeBlobClosure {
+  OopClosure* _cl;
+  bool _do_marking;
+public:
+  virtual void do_newly_marked_nmethod(nmethod* cb);
+    // = { cb->oops_do(_cl); }
+  virtual void do_code_blob(CodeBlob* cb);
+    // = { if (_do_marking)  super::do_code_blob(cb); else cb->oops_do(_cl); }
+  CodeBlobToOopClosure(OopClosure* cl, bool do_marking)
+    : _cl(cl), _do_marking(do_marking) {}
+};
+
+
 
 // MonitorClosure is used for iterating over monitors in the monitors cache
 

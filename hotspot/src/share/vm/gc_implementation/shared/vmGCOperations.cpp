@@ -195,43 +195,6 @@ void VM_GenCollectFull::doit() {
   gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
 }
 
-bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
-#if INCLUDE_ALL_GCS
-  if (UseConcMarkSweepGC || UseG1GC) {
-    if (UseConcMarkSweepGC && CMSClassUnloadingEnabled) {
-      MetaspaceGC::set_should_concurrent_collect(true);
-    } else if (UseG1GC) {
-      G1CollectedHeap* g1h = G1CollectedHeap::heap();
-      g1h->g1_policy()->set_initiate_conc_mark_if_possible();
-
-      GCCauseSetter x(g1h, _gc_cause);
-
-      // At this point we are supposed to start a concurrent cycle. We
-      // will do so if one is not already in progress.
-      bool should_start = g1h->g1_policy()->force_initial_mark_if_outside_cycle(_gc_cause);
-
-      if (should_start) {
-        double pause_target = g1h->g1_policy()->max_pause_time_ms();
-        g1h->do_collection_pause_at_safepoint(pause_target);
-      }
-    }
-
-    return true;
-  }
-#endif
-  return false;
-}
-
-static void log_metaspace_alloc_failure_for_concurrent_GC() {
-  if (Verbose && PrintGCDetails) {
-    if (UseConcMarkSweepGC) {
-      gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
-    } else if (UseG1GC) {
-      gclog_or_tty->print_cr("\nG1 full GC for Metaspace");
-    }
-  }
-}
-
 void VM_CollectForMetadataAllocation::doit() {
   SvcGCMarker sgcm(SvcGCMarker::FULL);
 
@@ -243,57 +206,54 @@ void VM_CollectForMetadataAllocation::doit() {
   // a GC that freed space for the allocation.
   if (!MetadataAllocationFailALot) {
     _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-    if (_result != NULL) {
-      return;
+  }
+
+  if (_result == NULL) {
+    if (UseConcMarkSweepGC) {
+      if (CMSClassUnloadingEnabled) {
+        MetaspaceGC::set_should_concurrent_collect(true);
+      }
+      // For CMS expand since the collection is going to be concurrent.
+      _result =
+        _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
+    }
+    if (_result == NULL) {
+      // Don't clear the soft refs yet.
+      if (Verbose && PrintGCDetails && UseConcMarkSweepGC) {
+        gclog_or_tty->print_cr("\nCMS full GC for Metaspace");
+      }
+      heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
+      // After a GC try to allocate without expanding.  Could fail
+      // and expansion will be tried below.
+      _result =
+        _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+    }
+    if (_result == NULL) {
+      // If still failing, allow the Metaspace to expand.
+      // See delta_capacity_until_GC() for explanation of the
+      // amount of the expansion.
+      // This should work unless there really is no more space
+      // or a MaxMetaspaceSize has been specified on the command line.
+      _result =
+        _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
+      if (_result == NULL) {
+        // If expansion failed, do a last-ditch collection and try allocating
+        // again.  A last-ditch collection will clear softrefs.  This
+        // behavior is similar to the last-ditch collection done for perm
+        // gen when it was full and a collection for failed allocation
+        // did not free perm gen space.
+        heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
+        _result =
+          _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
+      }
+    }
+    if (Verbose && PrintGCDetails && _result == NULL) {
+      gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
+                             SIZE_FORMAT, _size);
     }
   }
 
-  if (initiate_concurrent_GC()) {
-    // For CMS and G1 expand since the collection is going to be concurrent.
-    _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
-    if (_result != NULL) {
-      return;
-    }
-
-    log_metaspace_alloc_failure_for_concurrent_GC();
-  }
-
-  // Don't clear the soft refs yet.
-  heap->collect_as_vm_thread(GCCause::_metadata_GC_threshold);
-  // After a GC try to allocate without expanding.  Could fail
-  // and expansion will be tried below.
-  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-  if (_result != NULL) {
-    return;
-  }
-
-  // If still failing, allow the Metaspace to expand.
-  // See delta_capacity_until_GC() for explanation of the
-  // amount of the expansion.
-  // This should work unless there really is no more space
-  // or a MaxMetaspaceSize has been specified on the command line.
-  _result = _loader_data->metaspace_non_null()->expand_and_allocate(_size, _mdtype);
-  if (_result != NULL) {
-    return;
-  }
-
-  // If expansion failed, do a last-ditch collection and try allocating
-  // again.  A last-ditch collection will clear softrefs.  This
-  // behavior is similar to the last-ditch collection done for perm
-  // gen when it was full and a collection for failed allocation
-  // did not free perm gen space.
-  heap->collect_as_vm_thread(GCCause::_last_ditch_collection);
-  _result = _loader_data->metaspace_non_null()->allocate(_size, _mdtype);
-  if (_result != NULL) {
-    return;
-  }
-
-  if (Verbose && PrintGCDetails) {
-    gclog_or_tty->print_cr("\nAfter Metaspace GC failed to allocate size "
-                           SIZE_FORMAT, _size);
-  }
-
-  if (GC_locker::is_active_and_needs_gc()) {
+  if (_result == NULL && GC_locker::is_active_and_needs_gc()) {
     set_gc_locked();
   }
 }
