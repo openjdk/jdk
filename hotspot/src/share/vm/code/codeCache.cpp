@@ -331,11 +331,6 @@ void CodeCache::blobs_do(CodeBlobClosure* f) {
 // Walk the list of methods which might contain non-perm oops.
 void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
-
   debug_only(mark_scavenge_root_nmethods());
 
   for (nmethod* cur = scavenge_root_nmethods(); cur != NULL; cur = cur->scavenge_root_link()) {
@@ -361,11 +356,6 @@ void CodeCache::scavenge_root_nmethods_do(CodeBlobClosure* f) {
 
 void CodeCache::add_scavenge_root_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
-
   nm->set_on_scavenge_root_list();
   nm->set_scavenge_root_link(_scavenge_root_nmethods);
   set_scavenge_root_nmethods(nm);
@@ -374,11 +364,6 @@ void CodeCache::add_scavenge_root_nmethod(nmethod* nm) {
 
 void CodeCache::drop_scavenge_root_nmethod(nmethod* nm) {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
-
   print_trace("drop_scavenge_root", nm);
   nmethod* last = NULL;
   nmethod* cur = scavenge_root_nmethods();
@@ -400,11 +385,6 @@ void CodeCache::drop_scavenge_root_nmethod(nmethod* nm) {
 
 void CodeCache::prune_scavenge_root_nmethods() {
   assert_locked_or_safepoint(CodeCache_lock);
-
-  if (UseG1GC) {
-    return;
-  }
-
   debug_only(mark_scavenge_root_nmethods());
 
   nmethod* last = NULL;
@@ -437,10 +417,6 @@ void CodeCache::prune_scavenge_root_nmethods() {
 
 #ifndef PRODUCT
 void CodeCache::asserted_non_scavengable_nmethods_do(CodeBlobClosure* f) {
-  if (UseG1GC) {
-    return;
-  }
-
   // While we are here, verify the integrity of the list.
   mark_scavenge_root_nmethods();
   for (nmethod* cur = scavenge_root_nmethods(); cur != NULL; cur = cur->scavenge_root_link()) {
@@ -481,36 +457,9 @@ void CodeCache::verify_perm_nmethods(CodeBlobClosure* f_or_null) {
 }
 #endif //PRODUCT
 
-void CodeCache::verify_clean_inline_caches() {
-#ifdef ASSERT
-  FOR_ALL_ALIVE_BLOBS(cb) {
-    if (cb->is_nmethod()) {
-      nmethod* nm = (nmethod*)cb;
-      assert(!nm->is_unloaded(), "Tautology");
-      nm->verify_clean_inline_caches();
-      nm->verify();
-    }
-  }
-#endif
-}
-
-void CodeCache::verify_icholder_relocations() {
-#ifdef ASSERT
-  // make sure that we aren't leaking icholders
-  int count = 0;
-  FOR_ALL_BLOBS(cb) {
-    if (cb->is_nmethod()) {
-      nmethod* nm = (nmethod*)cb;
-      count += nm->verify_icholder_relocations();
-    }
-  }
-
-  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
-         CompiledICHolder::live_count(), "must agree");
-#endif
-}
 
 void CodeCache::gc_prologue() {
+  assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_epilogue must be called");
 }
 
 void CodeCache::gc_epilogue() {
@@ -523,14 +472,40 @@ void CodeCache::gc_epilogue() {
         nm->cleanup_inline_caches();
       }
       DEBUG_ONLY(nm->verify());
-      DEBUG_ONLY(nm->verify_oop_relocations());
+      nm->fix_oop_relocations();
     }
   }
   set_needs_cache_clean(false);
   prune_scavenge_root_nmethods();
+  assert(!nmethod::oops_do_marking_is_active(), "oops_do_marking_prologue must be called");
 
-  verify_icholder_relocations();
+#ifdef ASSERT
+  // make sure that we aren't leaking icholders
+  int count = 0;
+  FOR_ALL_BLOBS(cb) {
+    if (cb->is_nmethod()) {
+      RelocIterator iter((nmethod*)cb);
+      while(iter.next()) {
+        if (iter.type() == relocInfo::virtual_call_type) {
+          if (CompiledIC::is_icholder_call_site(iter.virtual_call_reloc())) {
+            CompiledIC *ic = CompiledIC_at(&iter);
+            if (TraceCompiledIC) {
+              tty->print("noticed icholder " INTPTR_FORMAT " ", p2i(ic->cached_icholder()));
+              ic->print();
+            }
+            assert(ic->cached_icholder() != NULL, "must be non-NULL");
+            count++;
+          }
+        }
+      }
+    }
+  }
+
+  assert(count + InlineCacheBuffer::pending_icholder_count() + CompiledICHolder::live_not_claimed_count() ==
+         CompiledICHolder::live_count(), "must agree");
+#endif
 }
+
 
 void CodeCache::verify_oops() {
   MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);

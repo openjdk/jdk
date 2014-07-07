@@ -75,8 +75,6 @@ private:
   ciObject* create_new_object(oop o);
   ciMetadata* create_new_object(Metadata* o);
 
-  void ensure_metadata_alive(ciMetadata* m);
-
   static bool is_equal(NonPermObject* p, oop key) {
     return p->object()->get_oop() == key;
   }

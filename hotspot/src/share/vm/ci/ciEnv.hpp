@@ -185,10 +185,6 @@ private:
     }
   }
 
-  void ensure_metadata_alive(ciMetadata* m) {
-    _factory->ensure_metadata_alive(m);
-  }
-
   ciInstance* get_instance(oop o) {
     if (o == NULL) return NULL;
     return get_object(o)->as_instance();

@@ -210,7 +210,6 @@ class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<bool> {
 class RefineCardTableEntryClosure;
 
 class G1CollectedHeap : public SharedHeap {
-  friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
   friend class VM_G1CollectFull;
   friend class VM_G1IncCollectionPause;
@@ -220,7 +219,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class OldGCAllocRegion;
 
   // Closures used in implementation.
-  template <G1Barrier barrier, G1Mark do_mark_object>
+  template <G1Barrier barrier, bool do_mark_object>
   friend class G1ParCopyClosure;
   friend class G1IsAliveClosure;
   friend class G1EvacuateFollowersClosure;
@@ -346,9 +345,6 @@ private:
 
   // It initializes the GC alloc regions at the start of a GC.
   void init_gc_alloc_regions(EvacuationInfo& evacuation_info);
-
-  // Setup the retained old gc alloc region as the currrent old gc alloc region.
-  void use_retained_old_gc_alloc_region(EvacuationInfo& evacuation_info);
 
   // It releases the GC alloc regions at the end of a GC.
   void release_gc_alloc_regions(uint no_of_gc_workers, EvacuationInfo& evacuation_info);
@@ -831,13 +827,12 @@ protected:
   // param is for use with parallel roots processing, and should be
   // the "i" of the calling parallel worker thread's work(i) function.
   // In the sequential case this param will be ignored.
-  void g1_process_roots(OopClosure* scan_non_heap_roots,
-                        OopClosure* scan_non_heap_weak_roots,
-                        OopsInHeapRegionClosure* scan_rs,
-                        CLDClosure* scan_strong_clds,
-                        CLDClosure* scan_weak_clds,
-                        CodeBlobClosure* scan_strong_code,
-                        uint worker_i);
+  void g1_process_strong_roots(bool is_scavenging,
+                               ScanningOption so,
+                               OopClosure* scan_non_heap_roots,
+                               OopsInHeapRegionClosure* scan_rs,
+                               G1KlassScanClosure* scan_klasses,
+                               uint worker_i);
 
   // Notifies all the necessary spaces that the committed space has
   // been updated (either expanded or shrunk). It should be called
@@ -1030,7 +1025,7 @@ protected:
   // of G1CollectedHeap::_gc_time_stamp.
   unsigned int* _worker_cset_start_region_time_stamp;
 
-  enum G1H_process_roots_tasks {
+  enum G1H_process_strong_roots_tasks {
     G1H_PS_filter_satb_buffers,
     G1H_PS_refProcessor_oops_do,
     // Leave this one last.
@@ -1612,6 +1607,10 @@ public:
   // Free up superfluous code root memory.
   void purge_code_root_memory();
 
+  // During an initial mark pause, mark all the code roots that
+  // point into regions *not* in the collection set.
+  void mark_strong_code_roots(uint worker_id);
+
   // Rebuild the strong code root lists for each region
   // after a full GC.
   void rebuild_strong_code_roots();
@@ -1619,9 +1618,6 @@ public:
   // Delete entries for dead interned string and clean up unreferenced symbols
   // in symbol table, possibly in parallel.
   void unlink_string_and_symbol_table(BoolObjectClosure* is_alive, bool unlink_strings = true, bool unlink_symbols = true);
-
-  // Parallel phase of unloading/cleaning after G1 concurrent mark.
-  void parallel_cleaning(BoolObjectClosure* is_alive, bool process_strings, bool process_symbols, bool class_unloading_occurred);
 
   // Redirty logged cards in the refinement queue.
   void redirty_logged_cards();

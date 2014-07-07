@@ -536,14 +536,14 @@ void PSMarkSweep::mark_sweep_phase1(bool clear_all_softrefs) {
     Universe::oops_do(mark_and_push_closure());
     JNIHandles::oops_do(mark_and_push_closure());   // Global (strong) JNI handles
     CLDToOopClosure mark_and_push_from_cld(mark_and_push_closure());
-    MarkingCodeBlobClosure each_active_code_blob(mark_and_push_closure(), !CodeBlobToOopClosure::FixRelocations);
+    CodeBlobToOopClosure each_active_code_blob(mark_and_push_closure(), /*do_marking=*/ true);
     Threads::oops_do(mark_and_push_closure(), &mark_and_push_from_cld, &each_active_code_blob);
     ObjectSynchronizer::oops_do(mark_and_push_closure());
     FlatProfiler::oops_do(mark_and_push_closure());
     Management::oops_do(mark_and_push_closure());
     JvmtiExport::oops_do(mark_and_push_closure());
     SystemDictionary::always_strong_oops_do(mark_and_push_closure());
-    ClassLoaderDataGraph::always_strong_cld_do(follow_cld_closure());
+    ClassLoaderDataGraph::always_strong_oops_do(mark_and_push_closure(), follow_klass_closure(), true);
     // Do not treat nmethods as strong roots for mark/sweep, since we can unload them.
     //CodeCache::scavenge_root_nmethods_do(CodeBlobToOopClosure(mark_and_push_closure()));
   }
@@ -633,16 +633,16 @@ void PSMarkSweep::mark_sweep_phase3() {
   FlatProfiler::oops_do(adjust_pointer_closure());
   Management::oops_do(adjust_pointer_closure());
   JvmtiExport::oops_do(adjust_pointer_closure());
+  // SO_AllClasses
   SystemDictionary::oops_do(adjust_pointer_closure());
-  ClassLoaderDataGraph::cld_do(adjust_cld_closure());
+  ClassLoaderDataGraph::oops_do(adjust_pointer_closure(), adjust_klass_closure(), true);
 
   // Now adjust pointers in remaining weak roots.  (All of which should
   // have been cleared if they pointed to non-surviving objects.)
   // Global (weak) JNI handles
   JNIHandles::weak_oops_do(&always_true, adjust_pointer_closure());
 
-  CodeBlobToOopClosure adjust_from_blobs(adjust_pointer_closure(), CodeBlobToOopClosure::FixRelocations);
-  CodeCache::blobs_do(&adjust_from_blobs);
+  CodeCache::oops_do(adjust_pointer_closure());
   StringTable::oops_do(adjust_pointer_closure());
   ref_processor()->weak_oops_do(adjust_pointer_closure());
   PSScavenge::reference_processor()->weak_oops_do(adjust_pointer_closure());

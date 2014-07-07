@@ -452,7 +452,7 @@ class Thread: public ThreadShadow {
 private:
   bool claim_oops_do_par_case(int collection_parity);
 public:
-  // Requires that "collection_parity" is that of the current roots
+  // Requires that "collection_parity" is that of the current strong roots
   // iteration.  If "is_par" is false, sets the parity of "this" to
   // "collection_parity", and returns "true".  If "is_par" is true,
   // uses an atomic instruction to set the current threads parity to

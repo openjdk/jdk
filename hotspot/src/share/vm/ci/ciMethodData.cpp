@@ -170,7 +170,6 @@ void ciReceiverTypeData::translate_receiver_data_from(const ProfileData* data) {
     Klass* k = data->as_ReceiverTypeData()->receiver(row);
     if (k != NULL) {
       ciKlass* klass = CURRENT_ENV->get_klass(k);
-      CURRENT_ENV->ensure_metadata_alive(klass);
       set_receiver(row, klass);
     }
   }
@@ -192,7 +191,6 @@ void ciReturnTypeEntry::translate_type_data_from(const ReturnTypeEntry* ret) {
 void ciSpeculativeTrapData::translate_from(const ProfileData* data) {
   Method* m = data->as_SpeculativeTrapData()->method();
   ciMethod* ci_m = CURRENT_ENV->get_method(m);
-  CURRENT_ENV->ensure_metadata_alive(ci_m);
   set_method(ci_m);
 }
 
