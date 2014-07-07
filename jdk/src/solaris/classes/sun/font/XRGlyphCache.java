@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -190,20 +190,23 @@ public class XRGlyphCache implements GlyphDisposedListener {
         for (XRGlyphCacheEntry cacheEntry : glyphList) {
             if (cacheEntry.isGrayscale(containsLCDGlyphs)) {
                 if (grayGlyphs == null) {
-                    grayGlyphs = new ArrayList<XRGlyphCacheEntry>(glyphList.size());
+                    grayGlyphs = new ArrayList<>(glyphList.size());
                 }
                 cacheEntry.setGlyphSet(grayGlyphSet);
                 grayGlyphs.add(cacheEntry);
             } else {
                 if (lcdGlyphs == null) {
-                    lcdGlyphs = new ArrayList<XRGlyphCacheEntry>(glyphList.size());
+                    lcdGlyphs = new ArrayList<>(glyphList.size());
                 }
                 cacheEntry.setGlyphSet(lcdGlyphSet);
                 lcdGlyphs.add(cacheEntry);
             }
         }
-
-        return new List[] { grayGlyphs, lcdGlyphs };
+        // Arrays and generics don't play well together
+        @SuppressWarnings({"unchecked", "rawtypes"})
+        List<XRGlyphCacheEntry>[] tmp =
+            (List<XRGlyphCacheEntry>[]) (new List[] { grayGlyphs, lcdGlyphs });
+        return tmp;
     }
 
     /**
