@@ -78,6 +78,7 @@ public class DeferredAttr extends JCTree.Visitor {
     final Flow flow;
     final Names names;
     final Annotate annotate;
+    final TypeEnvs typeEnvs;
 
     public static DeferredAttr instance(Context context) {
         DeferredAttr instance = context.get(deferredAttrKey);
@@ -102,6 +103,7 @@ public class DeferredAttr extends JCTree.Visitor {
         names = Names.instance(context);
         stuckTree = make.Ident(names.empty).setType(Type.stuckType);
         annotate = Annotate.instance(context);
+        typeEnvs = TypeEnvs.instance(context);
         emptyDeferredAttrContext =
             new DeferredAttrContext(AttrMode.CHECK, null, MethodResolutionPhase.BOX, infer.emptyContext, null, null) {
                 @Override
@@ -420,7 +422,7 @@ public class DeferredAttr extends JCTree.Visitor {
                 //it is possible that nested expressions inside argument expression
                 //are left unchecked - in such cases there's nothing to clean up.
                 if (csym == null) return;
-                enter.typeEnvs.remove(csym);
+                typeEnvs.remove(csym);
                 chk.compiled.remove(csym.flatname);
                 syms.classes.remove(csym.flatname);
                 super.visitClassDef(tree);

@@ -26,7 +26,6 @@
  * @summary Tests which path is used to represent an implicit type given
  * various xprefer arguments and multiple .class / .java files involved.
  * @bug 8028196
- * @ignore 8042839 XPreferTest fails on Windows
  */
 
 import java.io.File;
@@ -42,6 +41,7 @@ import java.util.List;
 import java.util.ListIterator;
 import java.util.NoSuchElementException;
 import java.util.Scanner;
+import java.util.regex.Pattern;
 
 import javax.tools.JavaCompiler;
 import javax.tools.JavaCompiler.CompilationTask;
@@ -180,10 +180,16 @@ public class XPreferTest {
             Scanner s = new Scanner(compilerOutput);
             while (s.hasNextLine()) {
                 String line = s.nextLine();
-                if (line.matches("\\[loading .*\\]"))
-                    for (Dir dir : Dir.values())
-                        if (line.contains(dir.file.getName() + "/" + classId))
+                if (line.matches("\\[loading .*\\]")) {
+                    for (Dir dir : Dir.values()) {
+                        // On Windows all paths are printed with '/' except
+                        // paths inside zip-files, which are printed with '\'.
+                        // For this reason we accept both '/' and '\' below.
+                        String regex = dir.file.getName() + "[\\\\/]" + classId;
+                        if (Pattern.compile(regex).matcher(line).find())
                             return dir;
+                    }
+                }
             }
             return null;
         }

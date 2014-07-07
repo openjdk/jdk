@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 OS_VENDOR = $(shell uname -s)
@@ -80,7 +80,7 @@ ifeq ($(SPEC),)
     HOSTCC  = $(CC)
   endif
 
-  AS   = $(CC) -c 
+  AS  = $(CC) -c
 endif
 
 ifeq ($(OS_VENDOR), Darwin)
@@ -100,7 +100,7 @@ else
 endif
 
 ifeq ($(USE_CLANG), true)
-  # clang has precompiled headers support by default, but the user can switch
+  # Clang has precompiled headers support by default, but the user can switch
   # it off by using 'USE_PRECOMPILED_HEADER=0'.
   ifdef LP64
     ifeq ($(USE_PRECOMPILED_HEADER),)
@@ -112,29 +112,29 @@ ifeq ($(USE_CLANG), true)
     # Clang produces an error if the PCH file was compiled with other options than the actual compilation unit.
     USE_PRECOMPILED_HEADER=0
   endif
-  
+
   ifeq ($(USE_PRECOMPILED_HEADER),1)
-  
+
     ifndef LP64
       $(error " Precompiled Headers only supported on 64-bit platforms!")
     endif
-  
+
     PRECOMPILED_HEADER_DIR=.
     PRECOMPILED_HEADER_SRC=$(GAMMADIR)/src/share/vm/precompiled/precompiled.hpp
     PRECOMPILED_HEADER=$(PRECOMPILED_HEADER_DIR)/precompiled.hpp.pch
-  
+
     PCH_FLAG = -include precompiled.hpp
     PCH_FLAG/DEFAULT = $(PCH_FLAG)
     PCH_FLAG/NO_PCH = -DNO_PCH
     PCH_FLAG/BY_FILE = $(PCH_FLAG/$@)$(PCH_FLAG/DEFAULT$(PCH_FLAG/$@))
-  
+
     VM_PCH_FLAG/LIBJVM = $(PCH_FLAG/BY_FILE)
     VM_PCH_FLAG/AOUT =
     VM_PCH_FLAG = $(VM_PCH_FLAG/$(LINK_INTO))
-  
+
     # We only use precompiled headers for the JVM build
     CFLAGS += $(VM_PCH_FLAG)
- 
+
     # The following files are compiled at various optimization
     # levels due to optimization issues encountered at the
     # 'OPT_CFLAGS_DEFAULT' level. The Clang compiler issues a compile
@@ -149,7 +149,7 @@ ifeq ($(USE_CLANG), true)
     PCH_FLAG/sharedRuntimeTrig.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/sharedRuntimeTrans.o = $(PCH_FLAG/NO_PCH)
     PCH_FLAG/unsafe.o = $(PCH_FLAG/NO_PCH)
-  
+
   endif
 else # ($(USE_CLANG), true)
   # check for precompiled headers support
@@ -272,21 +272,24 @@ endif
 
 CFLAGS_WARN/DEFAULT = $(WARNINGS_ARE_ERRORS) $(WARNING_FLAGS)
 # Special cases
-CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@)) 
+CFLAGS_WARN/BYFILE = $(CFLAGS_WARN/$@)$(CFLAGS_WARN/DEFAULT$(CFLAGS_WARN/$@))
 # XXXDARWIN: for _dyld_bind_fully_image_containing_address
 ifeq ($(OS_VENDOR), Darwin)
   CFLAGS_WARN/os_bsd.o = $(CFLAGS_WARN/DEFAULT) -Wno-deprecated-declarations
 endif
 
+# optimization control flags (Used by fastdebug and release variants)
+OPT_CFLAGS/NOOPT=-O0
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  OPT_CFLAGS/DEBUG=-Og
+else
+  # Allow no optimizations.
+ OPT_CFLAGS/DEBUG=-O0
+endif
 OPT_CFLAGS/SIZE=-Os
 OPT_CFLAGS/SPEED=-O3
 
-# Hotspot uses very unstrict aliasing turn this optimization off
-# This option is added to CFLAGS rather than OPT_CFLAGS
-# so that OPT_CFLAGS overrides get this option too.
-CFLAGS += -fno-strict-aliasing
-
-# The flags to use for an Optimized g++ build
 ifeq ($(OS_VENDOR), Darwin)
   # use -Os by default, unless -O3 can be proved to be worth the cost, as per policy
   # <https://wiki.openjdk.java.net/display/MacOSXPort/Compiler+Errata>
@@ -294,6 +297,11 @@ ifeq ($(OS_VENDOR), Darwin)
 else
   OPT_CFLAGS_DEFAULT ?= SPEED
 endif
+
+# Hotspot uses very unstrict aliasing turn this optimization off
+# This option is added to CFLAGS rather than OPT_CFLAGS
+# so that OPT_CFLAGS overrides get this option too.
+CFLAGS += -fno-strict-aliasing
 
 ifdef OPT_CFLAGS
   ifneq ("$(origin OPT_CFLAGS)", "command line")
@@ -308,8 +316,6 @@ OPT_CFLAGS = $(OPT_CFLAGS/$(OPT_CFLAGS_DEFAULT)) $(OPT_EXTRAS)
 ifeq ($(BUILDARCH), ia64)
 OPT_CFLAGS += -fno-expensive-optimizations
 endif
-
-OPT_CFLAGS/NOOPT=-O0
 
 # Work around some compiler bugs.
 ifeq ($(USE_CLANG), true)
@@ -338,7 +344,7 @@ CFLAGS += -DDONT_USE_PRECOMPILED_HEADER
 endif
 
 ifeq ($(OS_VENDOR), Darwin)
-  # Setting these parameters makes it an error to link to macosx APIs that are 
+  # Setting these parameters makes it an error to link to macosx APIs that are
   # newer than the given OS version and makes the linked binaries compatible even
   # if built on a newer version of the OS.
   # The expected format is X.Y.Z
@@ -371,8 +377,20 @@ endif
 
 ifeq ($(USE_CLANG),)
   # statically link libgcc and/or libgcc_s, libgcc does not exist before gcc-3.x.
-  ifneq ("${CC_VER_MAJOR}", "2")
+  ifneq ($(CC_VER_MAJOR), 2)
     STATIC_LIBGCC += -static-libgcc
+  endif
+
+  ifneq ($(OS_VENDOR), Darwin)
+    ifneq (, findstring(debug,$(BUILD_FLAVOR)))
+      # for relocations read-only
+      LFLAGS += -Xlinker -z -Xlinker relro
+
+      ifeq ($(BUILD_FLAVOR), debug)
+        # disable incremental relocations linking
+        LFLAGS += -Xlinker -z -Xlinker now
+      endif
+    endif
   endif
 
   ifeq ($(BUILDARCH), ia64)
@@ -425,6 +443,14 @@ ifeq ($(USE_CLANG), true)
   CFLAGS += -flimit-debug-info
 endif
 
+ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 4 \) \| \( \( $(CC_VER_MAJOR) = 4 \) \& \( $(CC_VER_MINOR) \>= 8 \) \))" "1"
+  # Allow basic optimizations which don't distrupt debugging. (Principally dead code elimination)
+  DEBUG_CFLAGS=-Og
+else
+  # Allow no optimizations.
+  DEBUG_CFLAGS=-O0
+endif
+
 # DEBUG_BINARIES uses full -g debug information for all configs
 ifeq ($(DEBUG_BINARIES), true)
   CFLAGS += -g
@@ -441,9 +467,14 @@ else
   DEBUG_CFLAGS/ppc   = -g
   DEBUG_CFLAGS += $(DEBUG_CFLAGS/$(BUILDARCH))
   ifeq ($(DEBUG_CFLAGS/$(BUILDARCH)),)
-  DEBUG_CFLAGS += -gstabs
+      ifeq ($(USE_CLANG), true)
+        # Clang doesn't understand -gstabs
+        DEBUG_CFLAGS += -g
+      else
+        DEBUG_CFLAGS += -gstabs
+      endif
   endif
-  
+
   ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
     FASTDEBUG_CFLAGS/ia64  = -g
     FASTDEBUG_CFLAGS/amd64 = -g
@@ -458,7 +489,7 @@ else
         FASTDEBUG_CFLAGS += -gstabs
       endif
     endif
-  
+
     OPT_CFLAGS/ia64  = -g
     OPT_CFLAGS/amd64 = -g
     OPT_CFLAGS/arm   = -g
@@ -472,6 +503,18 @@ else
         OPT_CFLAGS += -gstabs
       endif
     endif
+  endif
+endif
+
+ifeq ($(USE_CLANG),)
+  # Enable bounds checking.
+  # _FORTIFY_SOURCE appears in GCC 4.0+
+  ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) )" "1"
+    # compile time size bounds checks
+    FASTDEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
+
+    # and runtime size bounds checks and paranoid stack smashing checks.
+    DEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1
   endif
 endif
 

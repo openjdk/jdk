@@ -882,15 +882,10 @@ startJdb()
 
 startDebuggee()
 {
-    args=
-    # Note that @debuggeeVMOptions is unique to a test run instead of
-    # a test in a run.  It is not modified during a test run.
-    if [ -r $TESTCLASSES/../@debuggeeVMOptions ] ; then
-       args=`cat $TESTCLASSES/../@debuggeeVMOptions`
-    fi
+    args=$TESTVMOPTS $TESTJAVAOPTS
 
     if [ ! -z "$args" ] ; then
-       echo "--Starting debuggee with args from @debuggeeVMOptions: $args"
+       echo "--Starting debuggee with args from TESTVMOPTS and/or TESTJAVAOPTS: $args"
     else
        echo "--Starting debuggee"
     fi

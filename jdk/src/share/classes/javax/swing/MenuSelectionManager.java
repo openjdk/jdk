@@ -80,6 +80,7 @@ public class MenuSelectionManager {
      * generated is always "this".
      */
     protected transient ChangeEvent changeEvent = null;
+    /** The collection of registered listeners */
     protected EventListenerList listenerList = new EventListenerList();
 
     /**
@@ -477,7 +478,11 @@ public class MenuSelectionManager {
     }
 
     /**
-     * Return true if c is part of the currently used menu
+     * Return true if {@code c} is part of the currently used menu
+     *
+     * @param c a {@code Component}
+     * @return true if {@code c} is part of the currently used menu,
+     *         false otherwise
      */
     public boolean isComponentPartOfCurrentMenu(Component c) {
         if(selection.size() > 0) {

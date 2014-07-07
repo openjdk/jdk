@@ -1107,6 +1107,8 @@ public class UIManager implements Serializable
      * UI class is created or when the default look and feel is changed
      * on a component instance.
      * <p>Note these are not the same as the installed look and feels.
+     *
+     * @param laf the {@code LookAndFeel} to be removed
      * @return true if the <code>LookAndFeel</code> was removed from the list
      * @see #removeAuxiliaryLookAndFeel
      * @see #getAuxiliaryLookAndFeels

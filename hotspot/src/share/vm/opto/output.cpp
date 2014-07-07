@@ -67,7 +67,7 @@ void Compile::Output() {
   const StartNode *start = entry->head()->as_Start();
 
   // Replace StartNode with prolog
-  MachPrologNode *prolog = new (this) MachPrologNode();
+  MachPrologNode *prolog = new MachPrologNode();
   entry->map_node(prolog, 0);
   _cfg->map_node_to_block(prolog, entry);
   _cfg->unmap_node_from_block(start); // start is no longer in any block
@@ -77,12 +77,12 @@ void Compile::Output() {
   if( is_osr_compilation() ) {
     if( PoisonOSREntry ) {
       // TODO: Should use a ShouldNotReachHereNode...
-      _cfg->insert( broot, 0, new (this) MachBreakpointNode() );
+      _cfg->insert( broot, 0, new MachBreakpointNode() );
     }
   } else {
     if( _method && !_method->flags().is_static() ) {
       // Insert unvalidated entry point
-      _cfg->insert( broot, 0, new (this) MachUEPNode() );
+      _cfg->insert( broot, 0, new MachUEPNode() );
     }
 
   }
@@ -98,7 +98,7 @@ void Compile::Output() {
     ) {
     // checking for _method means that OptoBreakpoint does not apply to
     // runtime stubs or frame converters
-    _cfg->insert( entry, 1, new (this) MachBreakpointNode() );
+    _cfg->insert( entry, 1, new MachBreakpointNode() );
   }
 
   // Insert epilogs before every return
@@ -107,7 +107,7 @@ void Compile::Output() {
     if (!block->is_connector() && block->non_connector_successor(0) == _cfg->get_root_block()) { // Found a program exit point?
       Node* m = block->end();
       if (m->is_Mach() && m->as_Mach()->ideal_Opcode() != Op_Halt) {
-        MachEpilogNode* epilog = new (this) MachEpilogNode(m->as_Mach()->ideal_Opcode() == Op_Return);
+        MachEpilogNode* epilog = new MachEpilogNode(m->as_Mach()->ideal_Opcode() == Op_Return);
         block->add_inst(epilog);
         _cfg->map_node_to_block(epilog, block);
       }
@@ -268,7 +268,7 @@ void Compile::Insert_zap_nodes() {
 Node* Compile::call_zap_node(MachSafePointNode* node_to_check, int block_no) {
   const TypeFunc *tf = OptoRuntime::zap_dead_locals_Type();
   CallStaticJavaNode* ideal_node =
-    new (this) CallStaticJavaNode( tf,
+    new CallStaticJavaNode( tf,
          OptoRuntime::zap_dead_locals_stub(_method->flags().is_native()),
                        "call zap dead locals stub", 0, TypePtr::BOTTOM);
   // We need to copy the OopMap from the site we're zapping at.
@@ -368,7 +368,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
   // Step one, perform a pessimistic sizing pass.
   uint last_call_adr = max_juint;
   uint last_avoid_back_to_back_adr = max_juint;
-  uint nop_size = (new (this) MachNopNode())->size(_regalloc);
+  uint nop_size = (new MachNopNode())->size(_regalloc);
   for (uint i = 0; i < nblocks; i++) { // For all blocks
     Block* block = _cfg->get_block(i);
 
@@ -1201,7 +1201,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   uint *call_returns = NEW_RESOURCE_ARRAY(uint, nblocks+1);
 
   uint  return_offset = 0;
-  int nop_size = (new (this) MachNopNode())->size(_regalloc);
+  int nop_size = (new MachNopNode())->size(_regalloc);
 
   int previous_offset = 0;
   int current_offset  = 0;
@@ -1327,7 +1327,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
         if(padding > 0) {
           assert((padding % nop_size) == 0, "padding is not a multiple of NOP size");
           int nops_cnt = padding / nop_size;
-          MachNode *nop = new (this) MachNopNode(nops_cnt);
+          MachNode *nop = new MachNopNode(nops_cnt);
           block->insert_node(nop, j++);
           last_inst++;
           _cfg->map_node_to_block(nop, block);
@@ -1413,7 +1413,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
               assert((br_size - new_size) >= (int)nop_size, "short_branch size should be smaller");
               // Insert padding between avoid_back_to_back branches.
               if (needs_padding && replacement->avoid_back_to_back(MachNode::AVOID_BEFORE)) {
-                MachNode *nop = new (this) MachNopNode();
+                MachNode *nop = new MachNopNode();
                 block->insert_node(nop, j++);
                 _cfg->map_node_to_block(nop, block);
                 last_inst++;
@@ -1573,7 +1573,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       Block *nb = _cfg->get_block(i + 1);
       int padding = nb->alignment_padding(current_offset);
       if( padding > 0 ) {
-        MachNode *nop = new (this) MachNopNode(padding / nop_size);
+        MachNode *nop = new MachNopNode(padding / nop_size);
         block->insert_node(nop, block->number_of_nodes());
         _cfg->map_node_to_block(nop, block);
         nop->emit(*cb, _regalloc);
@@ -1786,7 +1786,7 @@ Scheduling::Scheduling(Arena *arena, Compile &compile)
 #endif
 {
   // Create a MachNopNode
-  _nop = new (&compile) MachNopNode();
+  _nop = new MachNopNode();
 
   // Now that the nops are in the array, save the count
   // (but allow entries for the nops)
@@ -2688,7 +2688,7 @@ void Scheduling::anti_do_def( Block *b, Node *def, OptoReg::Name def_reg, int is
     if ( _pinch_free_list.size() > 0) {
       pinch = _pinch_free_list.pop();
     } else {
-      pinch = new (_cfg->C) Node(1); // Pinch point to-be
+      pinch = new Node(1); // Pinch point to-be
     }
     if (pinch->_idx >= _regalloc->node_regs_max_index()) {
       _cfg->C->record_method_not_compilable("too many D-U pinch points");

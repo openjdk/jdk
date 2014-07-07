@@ -34,6 +34,8 @@ import java.lang.invoke.MethodType;
  */
 final class FinalScriptFunctionData extends ScriptFunctionData {
 
+    private static final long serialVersionUID = -930632846167768864L;
+
     /**
      * Constructor - used for bind
      *
