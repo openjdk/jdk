@@ -44,8 +44,7 @@ class VMConnection {
     /**
      * Return a String containing VM Options to pass to the debugee
      * or an empty string if there are none.
-     * These are read from the first non-comment line
-     * in file @debuggeeVMOptions in the test.classes dir
+     * These are read from TESTVMOPTS and/or TESTJAVAOPTS.
      */
     static public String getDebuggeeVMOptions() {
         String retVal = "";

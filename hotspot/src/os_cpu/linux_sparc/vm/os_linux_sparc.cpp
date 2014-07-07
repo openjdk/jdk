@@ -234,7 +234,7 @@ void os::print_context(outputStream *st, void *context) {
                SIG_REGS(sc).u_regs[CON_G3],
                SIG_REGS(sc).u_regs[CON_G4]);
   st->print_cr(" G5=" INTPTR_FORMAT " G6=" INTPTR_FORMAT
-               " G7=" INTPTR_FORMAT " Y=" INTPTR_FORMAT,
+               " G7=" INTPTR_FORMAT " Y=0x%x",
                SIG_REGS(sc).u_regs[CON_G5],
                SIG_REGS(sc).u_regs[CON_G6],
                SIG_REGS(sc).u_regs[CON_G7],
@@ -285,7 +285,7 @@ void os::print_context(outputStream *st, void *context) {
   st->cr();
   st->cr();
 
-  st->print_cr("Top of Stack: (sp=" PTR_FORMAT ")", sp);
+  st->print_cr("Top of Stack: (sp=" INTPTR_FORMAT ")", p2i(sp));
   print_hex_dump(st, (address)sp, (address)(sp + 32), sizeof(intptr_t));
   st->cr();
 
@@ -293,7 +293,7 @@ void os::print_context(outputStream *st, void *context) {
   // point to garbage if entry point in an nmethod is corrupted. Leave
   // this at the end, and hope for the best.
   address pc = os::Linux::ucontext_get_pc(uc);
-  st->print_cr("Instructions: (pc=" PTR_FORMAT ")", pc);
+  st->print_cr("Instructions: (pc=" INTPTR_FORMAT ")", p2i(pc));
   print_hex_dump(st, pc - 32, pc + 32, sizeof(char));
 }
 
@@ -453,7 +453,7 @@ inline static bool checkVerifyOops(address pc, address fault, address* stub) {
       && pc <  MacroAssembler::_verify_oop_implicit_branch[1] ) {
     *stub     =  MacroAssembler::_verify_oop_implicit_branch[2];
     warning("fixed up memory fault in +VerifyOops at address "
-            INTPTR_FORMAT, fault);
+            INTPTR_FORMAT, p2i(fault));
     return true;
   }
   return false;

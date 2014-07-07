@@ -278,6 +278,7 @@ public class JTabbedPane extends JComponent
      * can override this to return a subclass of <code>ModelListener</code> or
      * another <code>ChangeListener</code> implementation.
      *
+     * @return a {@code ChangeListener}
      * @see #fireStateChanged
      */
     protected ChangeListener createChangeListener() {
@@ -423,6 +424,7 @@ public class JTabbedPane extends JComponent
     /**
      * Returns the model associated with this tabbedpane.
      *
+     * @return the {@code SingleSelectionModel} associated with this tabbedpane
      * @see #setModel
      */
     public SingleSelectionModel getModel() {
@@ -459,6 +461,8 @@ public class JTabbedPane extends JComponent
 
     /**
      * Returns the placement of the tabs for this tabbedpane.
+     *
+     * @return an {@code int} specifying the placement for the tabs
      * @see #setTabPlacement
      */
     public int getTabPlacement() {
@@ -507,6 +511,8 @@ public class JTabbedPane extends JComponent
     /**
      * Returns the policy used by the tabbedpane to layout the tabs when all the
      * tabs will not fit within a single run.
+     *
+     * @return an {@code int} specifying the policy used to layout the tabs
      * @see #setTabLayoutPolicy
      * @since 1.4
      */
@@ -664,6 +670,7 @@ public class JTabbedPane extends JComponent
      * will automatically set the <code>selectedIndex</code> to the index
      * corresponding to the specified component.
      *
+     * @param c the selected {@code Component} for this {@code TabbedPane}
      * @exception IllegalArgumentException if component not found in tabbed
      *          pane
      * @see #getSelectedComponent

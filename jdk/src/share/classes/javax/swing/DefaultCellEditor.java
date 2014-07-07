@@ -353,6 +353,7 @@ public class DefaultCellEditor extends AbstractCellEditor
         * Returns true to indicate that editing has begun.
         *
         * @param anEvent          the event
+        * @return true to indicate editing has begun
         */
         public boolean startCellEditing(EventObject anEvent) {
             return true;

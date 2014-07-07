@@ -160,6 +160,9 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * Notifies <code>ListSelectionListeners</code> that the value
      * of the selection, in the closed interval <code>firstIndex</code>,
      * <code>lastIndex</code>, has changed.
+     *
+     * @param firstIndex the first index in the interval
+     * @param lastIndex the last index in the interval
      */
     protected void fireValueChanged(int firstIndex, int lastIndex) {
         fireValueChanged(firstIndex, lastIndex, getValueIsAdjusting());
@@ -231,6 +234,7 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
      * If no such listeners exist,
      * this method returns an empty array.
      *
+     * @param <T> the type of {@code EventListener} class being requested
      * @param listenerType  the type of listeners requested;
      *          this parameter should specify an interface
      *          that descends from <code>java.util.EventListener</code>
@@ -332,6 +336,8 @@ public class DefaultListSelectionModel implements ListSelectionModel, Cloneable,
 
     /**
      * Sets the value of the leadAnchorNotificationEnabled flag.
+     *
+     * @param flag boolean value for {@code leadAnchorNotificationEnabled}
      * @see             #isLeadAnchorNotificationEnabled()
      */
     public void setLeadAnchorNotificationEnabled(boolean flag) {

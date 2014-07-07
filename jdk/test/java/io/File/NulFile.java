@@ -602,7 +602,10 @@ public class NulFile {
             try {
                 File.createTempFile(prefix, suffix, directory);
             } catch (IllegalArgumentException ex) {
-                if ("Prefix string too short".equals(ex.getMessage()))
+                String actual = ex.getMessage();
+                String expected = "Prefix string \"" + prefix +
+                    "\" too short: length must be at least 3";
+                if (actual != null && actual.equals(expected))
                     exceptionThrown = true;
             } catch (IOException ioe) {
                 System.err.println("IOException happens in testCreateTempFile");

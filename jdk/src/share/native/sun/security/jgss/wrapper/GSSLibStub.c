@@ -639,7 +639,7 @@ Java_sun_security_jgss_wrapper_GSSLibStub_releaseCred(JNIEnv *env,
  */
 void inquireCred(JNIEnv *env, jobject jobj, gss_cred_id_t pCred,
                  jint type, void *result) {
-  OM_uint32 minor, major=0;
+  OM_uint32 minor=0, major=0;
   OM_uint32 routineErr;
   gss_cred_id_t credHdl;
 

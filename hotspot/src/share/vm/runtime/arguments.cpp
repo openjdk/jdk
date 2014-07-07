@@ -2187,6 +2187,10 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
+  if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
+    FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
+  }
+
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
   status = status && verify_percentage(GCTimeLimit, "GCTimeLimit");
   if (GCTimeLimit == 100) {
@@ -3833,10 +3837,6 @@ jint Arguments::apply_ergo() {
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
-  }
-  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
-    // Doing the replace in parent maps helps speculation
-    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
   }
 #endif
 

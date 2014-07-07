@@ -2267,7 +2267,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
             if (mh != null) {
                 assert func != null;
-                if (scopeAccess && func != null && func.isStrict()) {
+                if (scopeAccess && func.isStrict()) {
                     mh = bindTo(mh, UNDEFINED);
                 }
                 return new GuardedInvocation(
