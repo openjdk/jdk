@@ -32,6 +32,7 @@
 #include "gc_implementation/shared/generationCounters.hpp"
 #include "memory/freeBlockDictionary.hpp"
 #include "memory/generation.hpp"
+#include "memory/iterator.hpp"
 #include "runtime/mutexLocker.hpp"
 #include "runtime/virtualspace.hpp"
 #include "services/memoryService.hpp"

@@ -99,13 +99,13 @@ void CompiledIC::internal_set_ic_destination(address entry_point, bool is_icstub
   }
 
   {
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+    MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
-  CodeBlob* cb = CodeCache::find_blob_unsafe(_ic_call);
-  assert(cb != NULL && cb->is_nmethod(), "must be nmethod");
+    CodeBlob* cb = CodeCache::find_blob_unsafe(_ic_call);
+    assert(cb != NULL && cb->is_nmethod(), "must be nmethod");
 #endif
-  _ic_call->set_destination_mt_safe(entry_point);
-}
+     _ic_call->set_destination_mt_safe(entry_point);
+  }
 
   if (is_optimized() || is_icstub) {
     // Optimized call sites don't have a cache value and ICStub call
@@ -529,7 +529,7 @@ bool CompiledIC::is_icholder_entry(address entry) {
 void CompiledStaticCall::set_to_clean() {
   assert (CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "mt unsafe call");
   // Reset call site
-  MutexLockerEx pl(Patching_lock, Mutex::_no_safepoint_check_flag);
+  MutexLockerEx pl(SafepointSynchronize::is_at_safepoint() ? NULL : Patching_lock, Mutex::_no_safepoint_check_flag);
 #ifdef ASSERT
   CodeBlob* cb = CodeCache::find_blob_unsafe(this);
   assert(cb != NULL && cb->is_nmethod(), "must be nmethod");
