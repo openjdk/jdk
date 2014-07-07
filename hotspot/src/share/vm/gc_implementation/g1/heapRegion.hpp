@@ -247,11 +247,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool _evacuation_failed;
 
   // A heap region may be a member one of a number of special subsets, each
-  // represented as linked lists through the field below.  Currently, these
-  // sets include:
+  // represented as linked lists through the field below.  Currently, there
+  // is only one set:
   //   The collection set.
-  //   The set of allocation regions used in a collection pause.
-  //   Spaces that may contain gray objects.
   HeapRegion* _next_in_special_set;
 
   // next region in the young "generation" region set

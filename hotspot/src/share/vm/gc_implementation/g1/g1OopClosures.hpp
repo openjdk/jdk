@@ -25,6 +25,8 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1OOPCLOSURES_HPP
 
+#include "memory/iterator.hpp"
+
 class HeapRegion;
 class G1CollectedHeap;
 class G1RemSet;
@@ -106,7 +108,7 @@ protected:
   template <class T> void do_klass_barrier(T* p, oop new_obj);
 };
 
-template <G1Barrier barrier, bool do_mark_object>
+template <G1Barrier barrier, G1Mark do_mark_object>
 class G1ParCopyClosure : public G1ParCopyHelper {
 private:
   template <class T> void do_oop_work(T* p);
@@ -121,19 +123,19 @@ public:
   template <class T> void do_oop_nv(T* p) { do_oop_work(p); }
   virtual void do_oop(oop* p)       { do_oop_nv(p); }
   virtual void do_oop(narrowOop* p) { do_oop_nv(p); }
+
+  G1CollectedHeap*      g1()  { return _g1; };
+  G1ParScanThreadState* pss() { return _par_scan_state; }
+  ReferenceProcessor*   rp()  { return _ref_processor; };
 };
 
-typedef G1ParCopyClosure<G1BarrierNone, false> G1ParScanExtRootClosure;
-typedef G1ParCopyClosure<G1BarrierKlass, false> G1ParScanMetadataClosure;
-
-
-typedef G1ParCopyClosure<G1BarrierNone, true> G1ParScanAndMarkExtRootClosure;
-typedef G1ParCopyClosure<G1BarrierKlass, true> G1ParScanAndMarkMetadataClosure;
-
+typedef G1ParCopyClosure<G1BarrierNone,  G1MarkNone>             G1ParScanExtRootClosure;
+typedef G1ParCopyClosure<G1BarrierNone,  G1MarkFromRoot>         G1ParScanAndMarkExtRootClosure;
+typedef G1ParCopyClosure<G1BarrierNone,  G1MarkPromotedFromRoot> G1ParScanAndMarkWeakExtRootClosure;
 // We use a separate closure to handle references during evacuation
 // failure processing.
 
-typedef G1ParCopyClosure<G1BarrierEvac, false> G1ParScanHeapEvacFailureClosure;
+typedef G1ParCopyClosure<G1BarrierEvac, G1MarkNone> G1ParScanHeapEvacFailureClosure;
 
 class FilterIntoCSClosure: public ExtendedOopClosure {
   G1CollectedHeap* _g1;
@@ -164,10 +166,11 @@ public:
 };
 
 // Closure for iterating over object fields during concurrent marking
-class G1CMOopClosure : public ExtendedOopClosure {
+class G1CMOopClosure : public MetadataAwareOopClosure {
+protected:
+  ConcurrentMark*    _cm;
 private:
   G1CollectedHeap*   _g1h;
-  ConcurrentMark*    _cm;
   CMTask*            _task;
 public:
   G1CMOopClosure(G1CollectedHeap* g1h, ConcurrentMark* cm, CMTask* task);
@@ -177,7 +180,7 @@ public:
 };
 
 // Closure to scan the root regions during concurrent marking
-class G1RootRegionScanClosure : public ExtendedOopClosure {
+class G1RootRegionScanClosure : public MetadataAwareOopClosure {
 private:
   G1CollectedHeap* _g1h;
   ConcurrentMark*  _cm;

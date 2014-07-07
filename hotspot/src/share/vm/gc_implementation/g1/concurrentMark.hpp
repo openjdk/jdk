@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 
+#include "classfile/javaClasses.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/gcId.hpp"
 #include "utilities/taskqueue.hpp"
@@ -86,19 +87,19 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   // Return the address corresponding to the next marked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextMarkedWordAddress(HeapWord* addr,
-                                     HeapWord* limit = NULL) const;
+  HeapWord* getNextMarkedWordAddress(const HeapWord* addr,
+                                     const HeapWord* limit = NULL) const;
   // Return the address corresponding to the next unmarked bit at or after
   // "addr", and before "limit", if "limit" is non-NULL.  If there is no
   // such bit, returns "limit" if that is non-NULL, or else "endWord()".
-  HeapWord* getNextUnmarkedWordAddress(HeapWord* addr,
-                                       HeapWord* limit = NULL) const;
+  HeapWord* getNextUnmarkedWordAddress(const HeapWord* addr,
+                                       const HeapWord* limit = NULL) const;
 
   // conversion utilities
   HeapWord* offsetToHeapWord(size_t offset) const {
     return _bmStartWord + (offset << _shifter);
   }
-  size_t heapWordToOffset(HeapWord* addr) const {
+  size_t heapWordToOffset(const HeapWord* addr) const {
     return pointer_delta(addr, _bmStartWord) >> _shifter;
   }
   int heapWordDiffToOffsetDiff(size_t diff) const;
@@ -476,6 +477,7 @@ protected:
   ForceOverflowSettings _force_overflow_conc;
   ForceOverflowSettings _force_overflow_stw;
 
+  void weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool purged_classes);
   void weakRefsWork(bool clear_all_soft_refs);
 
   void swapMarkBitMaps();

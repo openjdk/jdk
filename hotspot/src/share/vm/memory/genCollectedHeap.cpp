@@ -61,8 +61,8 @@
 GenCollectedHeap* GenCollectedHeap::_gch;
 NOT_PRODUCT(size_t GenCollectedHeap::_skip_header_HeapWords = 0;)
 
-// The set of potentially parallel tasks in strong root scanning.
-enum GCH_process_strong_roots_tasks {
+// The set of potentially parallel tasks in root scanning.
+enum GCH_strong_roots_tasks {
   // We probably want to parallelize both of these internally, but for now...
   GCH_PS_younger_gens,
   // Leave this one last.
@@ -72,11 +72,11 @@ enum GCH_process_strong_roots_tasks {
 GenCollectedHeap::GenCollectedHeap(GenCollectorPolicy *policy) :
   SharedHeap(policy),
   _gen_policy(policy),
-  _gen_process_strong_tasks(new SubTasksDone(GCH_PS_NumElements)),
+  _gen_process_roots_tasks(new SubTasksDone(GCH_PS_NumElements)),
   _full_collections_completed(0)
 {
-  if (_gen_process_strong_tasks == NULL ||
-      !_gen_process_strong_tasks->valid()) {
+  if (_gen_process_roots_tasks == NULL ||
+      !_gen_process_roots_tasks->valid()) {
     vm_exit_during_initialization("Failed necessary allocation.");
   }
   assert(policy != NULL, "Sanity check");
@@ -584,24 +584,29 @@ HeapWord* GenCollectedHeap::satisfy_failed_allocation(size_t size, bool is_tlab)
 
 void GenCollectedHeap::set_par_threads(uint t) {
   SharedHeap::set_par_threads(t);
-  _gen_process_strong_tasks->set_n_threads(t);
+  _gen_process_roots_tasks->set_n_threads(t);
 }
 
 void GenCollectedHeap::
-gen_process_strong_roots(int level,
-                         bool younger_gens_as_roots,
-                         bool activate_scope,
-                         SharedHeap::ScanningOption so,
-                         OopsInGenClosure* not_older_gens,
-                         OopsInGenClosure* older_gens,
-                         KlassClosure* klass_closure) {
-  // General strong roots.
+gen_process_roots(int level,
+                  bool younger_gens_as_roots,
+                  bool activate_scope,
+                  SharedHeap::ScanningOption so,
+                  OopsInGenClosure* not_older_gens,
+                  OopsInGenClosure* weak_roots,
+                  OopsInGenClosure* older_gens,
+                  CLDClosure* cld_closure,
+                  CLDClosure* weak_cld_closure,
+                  CodeBlobClosure* code_closure) {
 
-  SharedHeap::process_strong_roots(activate_scope, so,
-                                   not_older_gens, klass_closure);
+  // General roots.
+  SharedHeap::process_roots(activate_scope, so,
+                            not_older_gens, weak_roots,
+                            cld_closure, weak_cld_closure,
+                            code_closure);
 
   if (younger_gens_as_roots) {
-    if (!_gen_process_strong_tasks->is_task_claimed(GCH_PS_younger_gens)) {
+    if (!_gen_process_roots_tasks->is_task_claimed(GCH_PS_younger_gens)) {
       for (int i = 0; i < level; i++) {
         not_older_gens->set_generation(_gens[i]);
         _gens[i]->oop_iterate(not_older_gens);
@@ -617,7 +622,38 @@ gen_process_strong_roots(int level,
     older_gens->reset_generation();
   }
 
-  _gen_process_strong_tasks->all_tasks_completed();
+  _gen_process_roots_tasks->all_tasks_completed();
+}
+
+void GenCollectedHeap::
+gen_process_roots(int level,
+                  bool younger_gens_as_roots,
+                  bool activate_scope,
+                  SharedHeap::ScanningOption so,
+                  bool only_strong_roots,
+                  OopsInGenClosure* not_older_gens,
+                  OopsInGenClosure* older_gens,
+                  CLDClosure* cld_closure) {
+
+  const bool is_adjust_phase = !only_strong_roots && !younger_gens_as_roots;
+
+  bool is_moving_collection = false;
+  if (level == 0 || is_adjust_phase) {
+    // young collections are always moving
+    is_moving_collection = true;
+  }
+
+  MarkingCodeBlobClosure mark_code_closure(not_older_gens, is_moving_collection);
+  CodeBlobClosure* code_closure = &mark_code_closure;
+
+  gen_process_roots(level,
+                    younger_gens_as_roots,
+                    activate_scope, so,
+                    not_older_gens, only_strong_roots ? NULL : not_older_gens,
+                    older_gens,
+                    cld_closure, only_strong_roots ? NULL : cld_closure,
+                    code_closure);
+
 }
 
 void GenCollectedHeap::gen_process_weak_roots(OopClosure* root_closure) {
