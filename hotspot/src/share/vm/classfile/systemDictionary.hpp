@@ -330,6 +330,7 @@ public:
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
   static void oops_do(OopClosure* f);
+  static void roots_oops_do(OopClosure* strong, OopClosure* weak);
 
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }

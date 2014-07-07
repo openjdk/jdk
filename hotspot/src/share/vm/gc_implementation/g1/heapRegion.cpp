@@ -400,7 +400,6 @@ void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,
   // We always recreate the prev marking info and we'll explicitly
   // mark all objects we find to be self-forwarded on the prev
   // bitmap. So all objects need to be below PTAMS.
-  _prev_top_at_mark_start = top();
   _prev_marked_bytes = 0;
 
   if (during_initial_mark) {
@@ -424,6 +423,7 @@ void HeapRegion::note_self_forwarding_removal_end(bool during_initial_mark,
   assert(0 <= marked_bytes && marked_bytes <= used(),
          err_msg("marked: "SIZE_FORMAT" used: "SIZE_FORMAT,
                  marked_bytes, used()));
+  _prev_top_at_mark_start = top();
   _prev_marked_bytes = marked_bytes;
 }
 
@@ -905,7 +905,8 @@ void HeapRegion::verify(VerifyOption vo,
     size_t obj_size = block_size(p);
     object_num += 1;
 
-    if (is_humongous != g1->isHumongous(obj_size)) {
+    if (is_humongous != g1->isHumongous(obj_size) &&
+        !g1->is_obj_dead(obj, this)) { // Dead objects may have bigger block_size since they span several objects.
       gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
                              SIZE_FORMAT" words) in a %shumongous region",
                              p, g1->isHumongous(obj_size) ? "" : "non-",
@@ -916,7 +917,9 @@ void HeapRegion::verify(VerifyOption vo,
 
     // If it returns false, verify_for_object() will output the
     // appropriate messasge.
-    if (do_bot_verify && !_offsets.verify_for_object(p, obj_size)) {
+    if (do_bot_verify &&
+        !g1->is_obj_dead(obj, this) &&
+        !_offsets.verify_for_object(p, obj_size)) {
       *failures = true;
       return;
     }
@@ -924,7 +927,10 @@ void HeapRegion::verify(VerifyOption vo,
     if (!g1->is_obj_dead_cond(obj, this, vo)) {
       if (obj->is_oop()) {
         Klass* klass = obj->klass();
-        if (!klass->is_metaspace_object()) {
+        bool is_metaspace_object = Metaspace::contains(klass) ||
+                                   (vo == VerifyOption_G1UsePrevMarking &&
+                                   ClassLoaderDataGraph::unload_list_contains(klass));
+        if (!is_metaspace_object) {
           gclog_or_tty->print_cr("klass "PTR_FORMAT" of object "PTR_FORMAT" "
                                  "not metadata", klass, (void *)obj);
           *failures = true;
