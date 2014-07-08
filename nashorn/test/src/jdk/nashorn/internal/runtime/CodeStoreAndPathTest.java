@@ -136,8 +136,7 @@ public class CodeStoreAndPathTest {
             // Check that a new compiled script is stored in existing code cache
             e.eval(code1);
             final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
-            // Already one compiled script has been stored in the cache during initialization
-            checkCompiledScripts(stream, 2);
+            checkCompiledScripts(stream, 1);
             // Setting to default current working dir
         } finally {
             System.setProperty("user.dir", oldUserDir);
@@ -154,9 +153,8 @@ public class CodeStoreAndPathTest {
         e.eval(code1);
         e.eval(code2);
         e.eval(code3);// less than minimum size for storing
-        // Already one compiled script has been stored in the cache during initialization
         // adding code1 and code2.
         final DirectoryStream<Path> stream = Files.newDirectoryStream(codeCachePath);
-        checkCompiledScripts(stream, 3);
+        checkCompiledScripts(stream, 2);
     }
 }
