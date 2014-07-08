@@ -103,10 +103,10 @@ public abstract class ScriptObject implements PropertyAccess {
     public static final String PROTO_PROPERTY_NAME   = "__proto__";
 
     /** Search fall back routine name for "no such method" */
-    static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
+    public static final String NO_SUCH_METHOD_NAME   = "__noSuchMethod__";
 
     /** Search fall back routine name for "no such property" */
-    static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
+    public static final String NO_SUCH_PROPERTY_NAME = "__noSuchProperty__";
 
     /** Per ScriptObject flag - is this a scope object? */
     public static final int IS_SCOPE       = 1 << 0;
