@@ -908,7 +908,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the result of eval
      */
     public static Object eval(final Object self, final Object str) {
-        return directEval(self, str, UNDEFINED, UNDEFINED, UNDEFINED);
+        return directEval(self, str, UNDEFINED, UNDEFINED, false);
     }
 
     /**
@@ -924,14 +924,14 @@ public final class Global extends ScriptObject implements Scope {
      *
      * This is directly invoked from generated when eval(code) is called in user code
      */
-    public static Object directEval(final Object self, final Object str, final Object callThis, final Object location, final Object strict) {
+    public static Object directEval(final Object self, final Object str, final Object callThis, final Object location, final boolean strict) {
         if (!(str instanceof String || str instanceof ConsString)) {
             return str;
         }
         final Global global = Global.instanceFrom(self);
         final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
 
-        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict), true);
+        return global.getContext().eval(scope, str.toString(), callThis, location, strict, true);
     }
 
     /**
