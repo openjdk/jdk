@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -692,13 +692,36 @@ public class TreeMaker implements JCTree.Factory {
             break;
         }
         case CLASS:
-            Type outer = t.getEnclosingType();
-            JCExpression clazz = outer.hasTag(CLASS) && t.tsym.owner.kind == TYP
-                ? Select(Type(outer), t.tsym)
-                : QualIdent(t.tsym);
-            tp = t.getTypeArguments().isEmpty()
-                ? clazz
-                : TypeApply(clazz, Types(t.getTypeArguments()));
+            switch (t.getKind()) {
+            case UNION: {
+                UnionClassType tu = (UnionClassType)t;
+                ListBuffer<JCExpression> la = new ListBuffer<>();
+                for (Type ta : tu.getAlternativeTypes()) {
+                    la.add(Type(ta));
+                }
+                tp = TypeUnion(la.toList());
+                break;
+            }
+            case INTERSECTION: {
+                IntersectionClassType it = (IntersectionClassType)t;
+                ListBuffer<JCExpression> la = new ListBuffer<>();
+                for (Type ta : it.getExplicitComponents()) {
+                    la.add(Type(ta));
+                }
+                tp = TypeIntersection(la.toList());
+                break;
+            }
+            default: {
+                Type outer = t.getEnclosingType();
+                JCExpression clazz = outer.hasTag(CLASS) && t.tsym.owner.kind == TYP
+                        ? Select(Type(outer), t.tsym)
+                        : QualIdent(t.tsym);
+                tp = t.getTypeArguments().isEmpty()
+                        ? clazz
+                        : TypeApply(clazz, Types(t.getTypeArguments()));
+                break;
+            }
+            }
             break;
         case ARRAY:
             tp = TypeArray(Type(types.elemtype(t)));
