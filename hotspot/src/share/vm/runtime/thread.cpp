@@ -4374,7 +4374,7 @@ void Thread::SpinAcquire (volatile int * adr, const char * LockName) {
            if (Yields > 5) {
              os::naked_short_sleep(1);
            } else {
-             os::NakedYield();
+             os::naked_yield();
              ++Yields;
            }
         } else {
