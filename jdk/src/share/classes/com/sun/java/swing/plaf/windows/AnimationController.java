@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,14 @@ class AnimationController implements ActionListener, PropertyChangeListener {
                     //one second seems plausible value
                     duration = 1000;
                 } else {
-                     duration = XPStyle.getXP().getThemeTransitionDuration(
-                           c, part,
-                           normalizeState(oldState),
-                           normalizeState(newState),
-                           Prop.TRANSITIONDURATIONS);
+                    XPStyle xp = XPStyle.getXP();
+                    duration = (xp != null)
+                               ? xp.getThemeTransitionDuration(
+                                       c, part,
+                                       normalizeState(oldState),
+                                       normalizeState(newState),
+                                       Prop.TRANSITIONDURATIONS)
+                               : 1000;
                 }
                 controller.startAnimation(c, part, oldState, newState, duration);
             }
