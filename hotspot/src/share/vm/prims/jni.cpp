@@ -3325,7 +3325,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     directBufferSupportInitializeEnded = 1;
   } else {
     while (!directBufferSupportInitializeEnded && !directBufferSupportInitializeFailed) {
-      os::yield();
+      os::naked_yield();
     }
   }
 

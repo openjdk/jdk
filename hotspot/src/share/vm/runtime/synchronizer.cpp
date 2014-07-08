@@ -449,7 +449,7 @@ static markOop ReadStableMark (oop obj) {
     ++its;
     if (its > 10000 || !os::is_MP()) {
        if (its & 1) {
-         os::NakedYield();
+         os::naked_yield();
          TEVENT(Inflate: INFLATING - yield);
        } else {
          // Note that the following code attenuates the livelock problem but is not
@@ -479,7 +479,7 @@ static markOop ReadStableMark (oop obj) {
            if ((YieldThenBlock++) >= 16) {
               Thread::current()->_ParkEvent->park(1);
            } else {
-              os::NakedYield();
+              os::naked_yield();
            }
          }
          Thread::muxRelease(InflationLocks + ix);

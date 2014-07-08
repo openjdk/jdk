@@ -3042,7 +3042,7 @@ JVM_ENTRY(void, JVM_Yield(JNIEnv *env, jclass threadClass))
   if (ConvertYieldToSleep) {
     os::sleep(thread, MinSleepInterval, false);
   } else {
-    os::yield();
+    os::naked_yield();
   }
 JVM_END
 
@@ -3072,7 +3072,7 @@ JVM_ENTRY(void, JVM_Sleep(JNIEnv* env, jclass threadClass, jlong millis))
     // It appears that in certain GUI contexts, it may be beneficial to do a short sleep
     // for SOLARIS
     if (ConvertSleepToYield) {
-      os::yield();
+      os::naked_yield();
     } else {
       ThreadState old_state = thread->osthread()->get_state();
       thread->osthread()->set_state(SLEEPING);

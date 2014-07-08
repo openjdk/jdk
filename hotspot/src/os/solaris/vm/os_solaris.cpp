@@ -3173,20 +3173,14 @@ bool os::dont_yield() {
   }
 }
 
-// Caveat: Solaris os::yield() causes a thread-state transition whereas
-// the linux and win32 implementations do not.  This should be checked.
-
-void os::yield() {
-  // Yields to all threads with same or greater priority
-  os::sleep(Thread::current(), 0, false);
-}
-
 // Note that yield semantics are defined by the scheduling class to which
 // the thread currently belongs.  Typically, yield will _not yield to
 // other equal or higher priority threads that reside on the dispatch queues
 // of other CPUs.
 
-os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
+void os::naked_yield() {
+  thr_yield();
+}
 
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,

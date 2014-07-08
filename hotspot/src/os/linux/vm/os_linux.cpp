@@ -3791,11 +3791,9 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
-void os::yield() {
+void os::naked_yield() {
   sched_yield();
 }
-
-os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support

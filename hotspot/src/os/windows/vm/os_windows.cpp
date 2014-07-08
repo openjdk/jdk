@@ -3515,18 +3515,15 @@ void os::infinite_sleep() {
 
 typedef BOOL (WINAPI * STTSignature)(void);
 
-os::YieldResult os::NakedYield() {
+void os::naked_yield() {
   // Use either SwitchToThread() or Sleep(0)
   // Consider passing back the return value from SwitchToThread().
   if (os::Kernel32Dll::SwitchToThreadAvailable()) {
-    return SwitchToThread() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY;
+    SwitchToThread();
   } else {
     Sleep(0);
   }
-  return os::YIELD_UNKNOWN;
 }
-
-void os::yield() {  os::NakedYield(); }
 
 // Win32 only gives you access to seven real priorities at a time,
 // so we compress Java's ten down to seven.  It would be better
