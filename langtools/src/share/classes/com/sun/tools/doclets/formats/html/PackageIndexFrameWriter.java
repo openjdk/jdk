@@ -99,7 +99,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Gets each package name as a separate link.
+     * Returns each package name as a separate link.
      *
      * @param pd PackageDoc
      * @return content for the package link

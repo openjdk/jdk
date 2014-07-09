@@ -1,0 +1,139 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">  
+  <component name="ChangeListManager">
+    <ignored path=".idea/" />
+  </component>
+  <component name="CompilerWorkspaceConfiguration">
+    <option name="MAKE_PROJECT_ON_SAVE" value="true" />
+  </component>
+  <component name="RunManager" selected="Application.javac">
+    <configuration default="false" name="javac" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.javac.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="javadoc" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.javadoc.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="javap" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.javap.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="javah" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.javah.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="jdeps" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.jdeps.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="sjavac" type="Application" factoryName="Application">
+      <option name="MAIN_CLASS_NAME" value="com.sun.tools.sjavac.Main" />
+      <option name="VM_PARAMETERS" value="-Xbootclasspath/p:build/classes" />
+      <option name="PROGRAM_PARAMETERS" value="" />
+      <option name="WORKING_DIRECTORY" value="file://$PROJECT_DIR$" />
+      <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="false" />
+      <option name="ALTERNATIVE_JRE_PATH" value="" />
+      <option name="ENABLE_SWING_INSPECTOR" value="false" />
+      <option name="ENV_VARIABLES" />
+      <option name="PASS_PARENT_ENVS" value="true" />
+      <module name="langtools" />
+      <envs />
+      <method />
+    </configuration>
+    <configuration default="false" name="jtreg (remote)" type="Remote" factoryName="Remote" singleton="true">
+      <option name="USE_SOCKET_TRANSPORT" value="true" />
+      <option name="SERVER_MODE" value="true" />
+      <option name="SHMEM_ADDRESS" />
+      <option name="HOST" value="localhost" />
+      <option name="PORT" value="5900" />
+      <RunnerSettings RunnerId="Debug">
+        <option name="DEBUG_PORT" value="5900" />
+        <option name="TRANSPORT" value="0" />
+        <option name="LOCAL" value="false" />
+      </RunnerSettings>
+      <ConfigurationWrapper RunnerId="Debug" />
+      <method>
+        <option name="AntTarget" enabled="true" antfile="file://$PROJECT_DIR$/.idea/build.xml" target="jtreg-debug" />
+      </method>
+      <method />
+    </configuration>
+    <list size="7">
+      <item index="0" class="java.lang.String" itemvalue="Application.javac" />
+      <item index="1" class="java.lang.String" itemvalue="Application.javadoc" />
+      <item index="2" class="java.lang.String" itemvalue="Application.javap" />
+      <item index="3" class="java.lang.String" itemvalue="Application.javah" />
+      <item index="4" class="java.lang.String" itemvalue="Application.jdeps" />
+      <item index="5" class="java.lang.String" itemvalue="Application.sjavac" />
+      <item index="6" class="java.lang.String" itemvalue="Remote.jtreg" />
+    </list>
+  </component>
+  <component name="antWorkspaceConfiguration">
+    <option name="IS_AUTOSCROLL_TO_SOURCE" value="false" />
+    <option name="FILTER_TARGETS" value="false" />
+    <buildFile url="file://$PROJECT_DIR$/.idea/build.xml">
+      <runInBackground value="false" />
+      <targetFilters>
+        <filter targetName="build-all-tools" isVisible="true" />
+        <filter targetName="build-all-classes" isVisible="true" />
+        <filter targetName="clean" isVisible="true" />
+        <filter targetName="jtreg" isVisible="true" />
+        <filter targetName="jtreg-debug" isVisible="true" />
+        <filter targetName="checkstyle" isVisible="true" />
+      </targetFilters>
+      <viewClosedWhenNoErrors value="false" />
+      <expanded value="false" />
+    </buildFile>
+  </component>
+</project>
+

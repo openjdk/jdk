@@ -958,9 +958,10 @@ public class Resolve {
         }
 
         public boolean compatible(Type found, Type req, Warner warn) {
+            InferenceContext inferenceContext = deferredAttrContext.inferenceContext;
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn);
+                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn) :
+                    types.isConvertible(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {

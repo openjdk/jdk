@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,21 +21,42 @@
  * questions.
  */
 
-/*
+/**
  * @test
- * @bug 4433676
- * @summary javac dies with NullPointerException in com.sun.tools.javac.v8.comp.Resolve.find
- * @author gafter
- *
- * @compile/fail C.java
+ * @bug 8048121
+ * @summary javac complex method references: revamp and simplify
  */
-public class C {
 
-    class CInner extends example.B {
+public class MethodRefQualifier1 {
 
-        public CInner(Object o) {
-        }
-
+    interface SAM {
+       void m();
     }
 
+    static int count = 0;
+
+    static void assertTrue(boolean cond, String msg) {
+        if (!cond)
+            throw new AssertionError(msg);
+    }
+
+    MethodRefQualifier1 check() {
+        count++;
+        return this;
+    }
+
+    void ido(Object... args) { }
+
+    public static void main(String[] args) {
+       new MethodRefQualifier1().test();
+    }
+
+    void test() {
+       count = 0;
+       SAM s = check()::ido;
+       assertTrue(count == 1, "creation: unexpected: " + count);
+       count = 0;
+       s.m();
+       assertTrue(count == 0, "evaluation: unexpected: " + count);
+    }
 }

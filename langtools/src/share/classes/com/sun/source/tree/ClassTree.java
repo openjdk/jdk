@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,10 +50,41 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface ClassTree extends StatementTree {
+    /**
+     * Returns the modifiers, including any annotations,
+     * for this type declaration.
+     * @return the modifiers
+     */
     ModifiersTree getModifiers();
+
+    /**
+     * Returns the simple name of this type declaration.
+     * @return the simple name
+     */
     Name getSimpleName();
+
+    /**
+     * Returns any type parameters of this type declaration.
+     * @return the type parameters
+     */
     List<? extends TypeParameterTree> getTypeParameters();
+
+    /**
+     * Returns the supertype of this type declaration,
+     * or {@code null} if none is provided.
+     * @return the supertype
+     */
     Tree getExtendsClause();
+
+    /**
+     * Returns the interfaces implemented by this type declaration.
+     * @return the interfaces
+     */
     List<? extends Tree> getImplementsClause();
+
+    /**
+     * Returns the members declared in this type declaration.
+     * @return the members
+     */
     List<? extends Tree> getMembers();
 }

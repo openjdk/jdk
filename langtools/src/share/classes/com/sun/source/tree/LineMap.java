@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ package com.sun.source.tree;
 @jdk.Exported
 public interface LineMap {
     /**
-     * Find the start position of a line.
+     * Finds the start position of a line.
      *
      * @param line line number (beginning at 1)
      * @return     position of first character in line
@@ -45,7 +45,7 @@ public interface LineMap {
     long getStartPosition(long line);
 
     /**
-     * Find the position corresponding to a (line,column).
+     * Finds the position corresponding to a (line,column).
      *
      * @param   line    line number (beginning at 1)
      * @param   column  tab-expanded column number (beginning 1)
@@ -58,7 +58,7 @@ public interface LineMap {
     long getPosition(long line, long column);
 
     /**
-     * Find the line containing a position; a line termination
+     * Finds the line containing a position; a line termination
      * character is on the line it terminates.
      *
      * @param   pos  character offset of the position
@@ -67,7 +67,7 @@ public interface LineMap {
     long getLineNumber(long pos);
 
     /**
-     * Find the column for a character position.
+     * Finds the column for a character position.
      * Tab characters preceding the position on the same line
      * will be expanded when calculating the column number.
      *
