@@ -45,6 +45,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.jvm.CRTFlags.*;
@@ -302,7 +303,7 @@ public class Gen extends JCTree.Visitor {
 
         if (!target.interfaceObjectOverridesBinaryCompatibility()) {
             if ((sym.owner.flags() & INTERFACE) != 0 &&
-                syms.objectType.tsym.members().lookup(sym.name).scope != null)
+                syms.objectType.tsym.members().findFirst(sym.name) != null)
                 return sym;
         }
 
@@ -651,13 +652,10 @@ public class Gen extends JCTree.Visitor {
     void implementInterfaceMethods(ClassSymbol c, ClassSymbol site) {
         for (List<Type> l = types.interfaces(c.type); l.nonEmpty(); l = l.tail) {
             ClassSymbol i = (ClassSymbol)l.head.tsym;
-            for (Scope.Entry e = i.members().elems;
-                 e != null;
-                 e = e.sibling)
-            {
-                if (e.sym.kind == MTH && (e.sym.flags() & STATIC) == 0)
+            for (Symbol sym : i.members().getSymbols(NON_RECURSIVE)) {
+                if (sym.kind == MTH && (sym.flags() & STATIC) == 0)
                 {
-                    MethodSymbol absMeth = (MethodSymbol)e.sym;
+                    MethodSymbol absMeth = (MethodSymbol)sym;
                     MethodSymbol implMeth = absMeth.binaryImplementation(site, types);
                     if (implMeth == null)
                         addAbstractMethod(site, absMeth);

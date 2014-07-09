@@ -30,6 +30,7 @@ package com.sun.tools.javac.comp;
 import java.util.HashMap;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
@@ -1419,7 +1420,7 @@ public class Flow {
 
         /** The list of unreferenced automatic resources.
          */
-        Scope unrefdResources;
+        WriteableScope unrefdResources;
 
         /** Set when processing a loop body the second time for DU analysis. */
         FlowKind flowKind = FlowKind.NORMAL;
@@ -2410,7 +2411,7 @@ public class Flow {
                 nextadr = 0;
                 pendingExits = new ListBuffer<>();
                 this.classDef = null;
-                unrefdResources = new Scope(env.enclClass.sym);
+                unrefdResources = WriteableScope.create(env.enclClass.sym);
                 scan(tree);
             } finally {
                 // note that recursive invocations of this method fail hard

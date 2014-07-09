@@ -403,7 +403,7 @@ public class Types {
             }
 
             final ListBuffer<Symbol> abstracts = new ListBuffer<>();
-            for (Symbol sym : membersCache.getElements(new DescriptorFilter(origin))) {
+            for (Symbol sym : membersCache.getSymbols(new DescriptorFilter(origin))) {
                 Type mtype = memberType(origin.type, sym);
                 if (abstracts.isEmpty() ||
                         (sym.name == abstracts.first().name &&
@@ -633,7 +633,7 @@ public class Types {
         Type descType = findDescriptorType(targets.head);
         ClassSymbol csym = new ClassSymbol(cflags, name, env.enclClass.sym.outermostClass());
         csym.completer = null;
-        csym.members_field = new Scope(csym);
+        csym.members_field = WriteableScope.create(csym);
         MethodSymbol instDescSym = new MethodSymbol(descSym.flags(), descSym.name, descType, csym);
         csym.members_field.enter(instDescSym);
         Type.ClassType ctype = new Type.ClassType(Type.noType, List.<Type>nil(), csym,
@@ -655,7 +655,7 @@ public class Types {
         Symbol descSym = findDescriptorSymbol(origin);
         CompoundScope members = membersClosure(origin.type, false);
         ListBuffer<Symbol> overridden = new ListBuffer<>();
-        outer: for (Symbol m2 : members.getElementsByName(descSym.name, bridgeFilter)) {
+        outer: for (Symbol m2 : members.getSymbolsByName(descSym.name, bridgeFilter)) {
             if (m2 == descSym) continue;
             else if (descSym.overrides(m2, origin, Types.this, false)) {
                 for (Symbol m3 : overridden) {
@@ -2290,7 +2290,7 @@ public class Types {
         bc.erasure_field = (bounds.head.hasTag(TYPEVAR)) ?
                 syms.objectType : // error condition, recover
                 erasure(firstExplicitBound);
-        bc.members_field = new Scope(bc);
+        bc.members_field = WriteableScope.create(bc);
         return bc.type;
     }
 
@@ -2619,8 +2619,8 @@ public class Types {
     }
 
     public boolean overridesObjectMethod(TypeSymbol origin, Symbol msym) {
-        for (Scope.Entry e = syms.objectType.tsym.members().lookup(msym.name) ; e.scope != null ; e = e.next()) {
-            if (msym.overrides(e.sym, origin, Types.this, true)) {
+        for (Symbol sym : syms.objectType.tsym.members().getSymbolsByName(msym.name)) {
+            if (msym.overrides(sym, origin, Types.this, true)) {
                 return true;
             }
         }
@@ -2680,12 +2680,10 @@ public class Types {
                 while (t.hasTag(TYPEVAR))
                     t = t.getUpperBound();
                 TypeSymbol c = t.tsym;
-                for (Scope.Entry e = c.members().lookup(ms.name, implFilter);
-                     e.scope != null;
-                     e = e.next(implFilter)) {
-                    if (e.sym != null &&
-                             e.sym.overrides(ms, origin, Types.this, checkResult))
-                        return (MethodSymbol)e.sym;
+                for (Symbol sym : c.members().getSymbolsByName(ms.name, implFilter)) {
+                    if (sym != null &&
+                             sym.overrides(ms, origin, Types.this, checkResult))
+                        return (MethodSymbol)sym;
                 }
             }
             return null;
@@ -2742,11 +2740,11 @@ public class Types {
                     CompoundScope membersClosure = new CompoundScope(csym);
                     if (!skipInterface) {
                         for (Type i : interfaces(t)) {
-                            membersClosure.addSubScope(visit(i, skipInterface));
+                            membersClosure.prependSubScope(visit(i, skipInterface));
                         }
                     }
-                    membersClosure.addSubScope(visit(supertype(t), skipInterface));
-                    membersClosure.addSubScope(csym.members());
+                    membersClosure.prependSubScope(visit(supertype(t), skipInterface));
+                    membersClosure.prependSubScope(csym.members());
                     e = new Entry(skipInterface, membersClosure);
                     _map.put(csym, e);
                 }
@@ -2775,7 +2773,7 @@ public class Types {
     public List<MethodSymbol> interfaceCandidates(Type site, MethodSymbol ms) {
         Filter<Symbol> filter = new MethodFilter(ms, site);
         List<MethodSymbol> candidates = List.nil();
-            for (Symbol s : membersClosure(site, false).getElements(filter)) {
+            for (Symbol s : membersClosure(site, false).getSymbols(filter)) {
                 if (!site.tsym.isInterface() && !s.owner.isInterface()) {
                     return List.of((MethodSymbol)s);
                 } else if (!candidates.contains(s)) {

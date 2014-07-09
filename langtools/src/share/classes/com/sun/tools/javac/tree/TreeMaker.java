@@ -25,6 +25,8 @@
 
 package com.sun.tools.javac.tree;
 
+import java.util.Iterator;
+
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -978,24 +980,26 @@ public class TreeMaker implements JCTree.Factory {
             sym.owner.kind == MTH || sym.owner.kind == VAR) {
             return true;
         } else if (sym.kind == TYP && toplevel != null) {
-            Scope.Entry e;
-            e = toplevel.namedImportScope.lookup(sym.name);
-            if (e.scope != null) {
+            Iterator<Symbol> it = toplevel.namedImportScope.getSymbolsByName(sym.name).iterator();
+            if (it.hasNext()) {
+                Symbol s = it.next();
                 return
-                  e.sym == sym &&
-                  e.next().scope == null;
+                  s == sym &&
+                  !it.hasNext();
             }
-            e = toplevel.packge.members().lookup(sym.name);
-            if (e.scope != null) {
+            it = toplevel.packge.members().getSymbolsByName(sym.name).iterator();
+            if (it.hasNext()) {
+                Symbol s = it.next();
                 return
-                  e.sym == sym &&
-                  e.next().scope == null;
+                  s == sym &&
+                  !it.hasNext();
             }
-            e = toplevel.starImportScope.lookup(sym.name);
-            if (e.scope != null) {
+            it = toplevel.starImportScope.getSymbolsByName(sym.name).iterator();
+            if (it.hasNext()) {
+                Symbol s = it.next();
                 return
-                  e.sym == sym &&
-                  e.next().scope == null;
+                  s == sym &&
+                  !it.hasNext();
             }
         }
         return false;

@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import java.util.*;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.main.Option.PkgInfo;
 import com.sun.tools.javac.tree.*;
@@ -45,6 +46,7 @@ import com.sun.tools.javac.tree.EndPosTable;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.BLOCK;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.ByteCodes.*;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
@@ -299,7 +301,7 @@ public class Lower extends TreeTranslator {
             Symbol sym = _sym;
             if (sym.kind == VAR || sym.kind == MTH) {
                 while (sym != null && sym.owner != owner)
-                    sym = proxies.lookup(proxyName(sym.name)).sym;
+                    sym = proxies.findFirst(proxyName(sym.name));
                 if (sym != null && sym.owner == owner) {
                     VarSymbol v = (VarSymbol)sym;
                     if (v.getConstValue() == null) {
@@ -644,7 +646,7 @@ public class Lower extends TreeTranslator {
         }
         c.sourcefile = owner.sourcefile;
         c.completer = null;
-        c.members_field = new Scope(c);
+        c.members_field = WriteableScope.create(c);
         c.flags_field = flags;
         ClassType ctype = (ClassType) c.type;
         ctype.supertype_field = syms.objectType;
@@ -678,7 +680,7 @@ public class Lower extends TreeTranslator {
      *  @param sym           The symbol.
      *  @param s             The scope.
      */
-    private void enterSynthetic(DiagnosticPosition pos, Symbol sym, Scope s) {
+    private void enterSynthetic(DiagnosticPosition pos, Symbol sym, WriteableScope s) {
         s.enter(sym);
     }
 
@@ -746,7 +748,7 @@ public class Lower extends TreeTranslator {
      *  @param name         The name.
      */
     private Symbol lookupSynthetic(Name name, Scope s) {
-        Symbol sym = s.lookup(name).sym;
+        Symbol sym = s.findFirst(name);
         return (sym==null || (sym.flags()&SYNTHETIC)==0) ? null : sym;
     }
 
@@ -901,11 +903,9 @@ public class Lower extends TreeTranslator {
     /** Return binary operator that corresponds to given access code.
      */
     private OperatorSymbol binaryAccessOperator(int acode) {
-        for (Scope.Entry e = syms.predefClass.members().elems;
-             e != null;
-             e = e.sibling) {
-            if (e.sym instanceof OperatorSymbol) {
-                OperatorSymbol op = (OperatorSymbol)e.sym;
+        for (Symbol sym : syms.predefClass.members().getSymbols(NON_RECURSIVE)) {
+            if (sym instanceof OperatorSymbol) {
+                OperatorSymbol op = (OperatorSymbol)sym;
                 if (accessCode(op.opcode) == acode) return op;
             }
         }
@@ -1143,7 +1143,7 @@ public class Lower extends TreeTranslator {
                 return makeLit(sym.type, cv);
             }
             // Otherwise replace the variable by its proxy.
-            sym = proxies.lookup(proxyName(sym.name)).sym;
+            sym = proxies.findFirst(proxyName(sym.name));
             Assert.check(sym != null && (sym.flags_field & FINAL) != 0);
             tree = make.at(tree.pos).Ident(sym);
         }
@@ -1459,12 +1459,12 @@ public class Lower extends TreeTranslator {
      *  in an additional innermost scope, where they represent the constructor
      *  parameters.
      */
-    Scope proxies;
+    WriteableScope proxies;
 
     /** A scope containing all unnamed resource variables/saved
      *  exception variables for translated TWR blocks
      */
-    Scope twrVars;
+    WriteableScope twrVars;
 
     /** A stack containing the this$n field of the currently translated
      *  classes (if needed) in innermost first order.
@@ -1519,7 +1519,7 @@ public class Lower extends TreeTranslator {
             nestingLevel++;
         }
         Name result = names.fromString("this" + target.syntheticNameChar() + nestingLevel);
-        while (owner.kind == TYP && ((ClassSymbol)owner).members().lookup(result).scope != null)
+        while (owner.kind == TYP && ((ClassSymbol)owner).members().findFirst(result) != null)
             result = names.fromString(result.toString() + target.syntheticNameChar());
         return result;
     }
@@ -1859,10 +1859,10 @@ public class Lower extends TreeTranslator {
      *  name is the name of a free variable.
      */
     JCStatement initField(int pos, Name name) {
-        Scope.Entry e = proxies.lookup(name);
-        Symbol rhs = e.sym;
+        Iterator<Symbol> it = proxies.getSymbolsByName(name).iterator();
+        Symbol rhs = it.next();
         Assert.check(rhs.owner.kind == MTH);
-        Symbol lhs = e.next().sym;
+        Symbol lhs = it.next();
         Assert.check(rhs.owner.owner == lhs.owner);
         make.at(pos);
         return
@@ -1903,10 +1903,10 @@ public class Lower extends TreeTranslator {
         if ((clazz.flags() & INTERFACE) == 0 &&
             !target.useInnerCacheClass()) return clazz;
         Scope s = clazz.members();
-        for (Scope.Entry e = s.elems; e != null; e = e.sibling)
-            if (e.sym.kind == TYP &&
-                e.sym.name == names.empty &&
-                (e.sym.flags() & INTERFACE) == 0) return (ClassSymbol) e.sym;
+        for (Symbol sym : s.getSymbols(NON_RECURSIVE))
+            if (sym.kind == TYP &&
+                sym.name == names.empty &&
+                (sym.flags() & INTERFACE) == 0) return (ClassSymbol) sym;
         return makeEmptyClass(STATIC | SYNTHETIC, clazz).sym;
     }
 
@@ -2574,7 +2574,7 @@ public class Lower extends TreeTranslator {
 
         // private static final T[] #VALUES = { a, b, c };
         Name valuesName = names.fromString(target.syntheticNameChar() + "VALUES");
-        while (tree.sym.members().lookup(valuesName).scope != null) // avoid name clash
+        while (tree.sym.members().findFirst(valuesName) != null) // avoid name clash
             valuesName = names.fromString(valuesName + "" + target.syntheticNameChar());
         Type arrayType = new ArrayType(types.erasure(tree.type),
                                        syms.arrayClass, Type.noAnnotations);
@@ -2602,7 +2602,7 @@ public class Lower extends TreeTranslator {
         } else {
             // template: T[] $result = new T[$values.length];
             Name resultName = names.fromString(target.syntheticNameChar() + "result");
-            while (tree.sym.members().lookup(resultName).scope != null) // avoid name clash
+            while (tree.sym.members().findFirst(resultName) != null) // avoid name clash
                 resultName = names.fromString(resultName + "" + target.syntheticNameChar());
             VarSymbol resultVar = new VarSymbol(FINAL|SYNTHETIC,
                                                 resultName,
@@ -2683,8 +2683,7 @@ public class Lower extends TreeTranslator {
         private MethodSymbol systemArraycopyMethod;
         private boolean useClone() {
             try {
-                Scope.Entry e = syms.objectType.tsym.members().lookup(names.clone);
-                return (e.sym != null);
+                return syms.objectType.tsym.members().findFirst(names.clone) != null;
             }
             catch (CompletionFailure e) {
                 return false;
@@ -2786,7 +2785,7 @@ public class Lower extends TreeTranslator {
                         final Name pName = proxyName(l.head.name);
                         m.capturedLocals =
                             m.capturedLocals.append((VarSymbol)
-                                                    (proxies.lookup(pName).sym));
+                                                    (proxies.findFirst(pName)));
                         added = added.prepend(
                           initField(tree.body.pos, pName));
                     }
@@ -3969,8 +3968,8 @@ public class Lower extends TreeTranslator {
             classdefs = new HashMap<>();
             actualSymbols = new HashMap<>();
             freevarCache = new HashMap<>();
-            proxies = new Scope(syms.noSymbol);
-            twrVars = new Scope(syms.noSymbol);
+            proxies = WriteableScope.create(syms.noSymbol);
+            twrVars = WriteableScope.create(syms.noSymbol);
             outerThisStack = List.nil();
             accessNums = new HashMap<>();
             accessSyms = new HashMap<>();
