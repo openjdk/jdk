@@ -141,8 +141,10 @@ final class NTLMServer implements SaslServer {
             server = new Server(version, domain) {
                 public char[] getPassword(String ntdomain, String username) {
                     try {
-                        RealmCallback rcb = new RealmCallback(
-                                "Domain: ", ntdomain);
+                        RealmCallback rcb =
+                                (ntdomain == null || ntdomain.isEmpty())
+                                    ? new RealmCallback("Domain: ")
+                                    : new RealmCallback("Domain: ", ntdomain);
                         NameCallback ncb = new NameCallback(
                                 "Name: ", username);
                         PasswordCallback pcb = new PasswordCallback(
