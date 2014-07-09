@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,10 +55,19 @@ public class BasicToolTipUI extends ToolTipUI
 
     private PropertyChangeListener propertyChangeListener;
 
+    /**
+     * Returns the instance of {@code BasicToolTipUI}.
+     *
+     * @param c a component
+     * @return the instance of {@code BasicToolTipUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return sharedInstance;
     }
 
+    /**
+     * Constructs a new instance of {@code BasicToolTipUI}.
+     */
     public BasicToolTipUI() {
         super();
     }
@@ -76,22 +85,32 @@ public class BasicToolTipUI extends ToolTipUI
         uninstallListeners(c);
     }
 
+    /**
+     * Installs default properties.
+     *
+     * @param c a component
+     */
     protected void installDefaults(JComponent c){
         LookAndFeel.installColorsAndFont(c, "ToolTip.background",
-                                         "ToolTip.foreground",
-                                         "ToolTip.font");
+                "ToolTip.foreground",
+                "ToolTip.font");
         LookAndFeel.installProperty(c, "opaque", Boolean.TRUE);
         componentChanged(c);
     }
 
-   protected void uninstallDefaults(JComponent c){
+    /**
+     * Uninstalls default properties.
+     *
+     * @param c a component
+     */
+    protected void uninstallDefaults(JComponent c){
         LookAndFeel.uninstallBorder(c);
     }
 
     /* Unfortunately this has to remain private until we can make API additions.
      */
     private void installComponents(JComponent c){
-        BasicHTML.updateRenderer(c, ((JToolTip)c).getTipText());
+        BasicHTML.updateRenderer(c, ((JToolTip) c).getTipText());
     }
 
     /* Unfortunately this has to remain private until we can make API additions.
@@ -100,12 +119,22 @@ public class BasicToolTipUI extends ToolTipUI
         BasicHTML.updateRenderer(c, "");
     }
 
+    /**
+     * Registers listeners.
+     *
+     * @param c a component
+     */
     protected void installListeners(JComponent c) {
         propertyChangeListener = createPropertyChangeListener(c);
 
         c.addPropertyChangeListener(propertyChangeListener);
     }
 
+    /**
+     * Unregisters listeners.
+     *
+     * @param c a component
+     */
     protected void uninstallListeners(JComponent c) {
         c.removePropertyChangeListener(propertyChangeListener);
 
