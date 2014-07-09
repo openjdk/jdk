@@ -57,6 +57,9 @@ public final class ContentModel implements Serializable {
      */
     public ContentModel next;
 
+    /**
+     * Creates {@code ContentModel}
+     */
     public ContentModel() {
     }
 

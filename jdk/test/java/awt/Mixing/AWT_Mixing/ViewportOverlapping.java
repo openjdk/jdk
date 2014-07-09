@@ -37,6 +37,7 @@ import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for viewport
@@ -49,6 +50,8 @@ import javax.swing.SwingUtilities;
 @bug 6778882
 @summary Viewport overlapping test for each AWT component
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main ViewportOverlapping
  */
 public class ViewportOverlapping extends OverlappingTestBase {
@@ -116,7 +119,7 @@ public class ViewportOverlapping extends OverlappingTestBase {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Problem preparing test GUI.");
         }
         // run robot
         Robot robot = Util.createRobot();

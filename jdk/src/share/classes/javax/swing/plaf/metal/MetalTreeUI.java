@@ -93,20 +93,26 @@ public class MetalTreeUI extends BasicTreeUI {
     private int lineStyle = LEG_LINE_STYLE;
     private PropertyChangeListener lineStyleListener = new LineListener();
 
-    // Boilerplate
+    /**
+     * Constructs the {@code MetalTreeUI}.
+     *
+     * @param x a component
+     * @return the instance of the {@code MetalTreeUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new MetalTreeUI();
     }
 
-    public MetalTreeUI()
-    {
+    /**
+     * Constructs the {@code MetalTreeUI}.
+     */
+    public MetalTreeUI() {
         super();
     }
 
-    protected int getHorizontalLegBuffer()
-      {
-          return 3;
-      }
+    protected int getHorizontalLegBuffer() {
+        return 3;
+    }
 
     public void installUI( JComponent c ) {
         super.installUI( c );
@@ -123,24 +129,36 @@ public class MetalTreeUI extends BasicTreeUI {
          super.uninstallUI(c);
     }
 
-    /** this function converts between the string passed into the client property
-      * and the internal representation (currently and int)
-      *
-      */
+    /**
+     * Converts between the string passed into the client property
+     * and the internal representation (currently and int)
+     *
+     * @param lineStyleFlag a flag
+     */
     protected void decodeLineStyle(Object lineStyleFlag) {
-      if ( lineStyleFlag == null ||
-                    lineStyleFlag.equals(LEG_LINE_STYLE_STRING)){
-        lineStyle = LEG_LINE_STYLE; // default case
-      } else {
-          if ( lineStyleFlag.equals(NO_STYLE_STRING) ) {
-              lineStyle = NO_LINE_STYLE;
-          } else if ( lineStyleFlag.equals(HORIZ_STYLE_STRING) ) {
-              lineStyle = HORIZ_LINE_STYLE;
-          }
-      }
-
+        if ( lineStyleFlag == null ||
+                    lineStyleFlag.equals(LEG_LINE_STYLE_STRING)) {
+            lineStyle = LEG_LINE_STYLE; // default case
+        } else {
+            if ( lineStyleFlag.equals(NO_STYLE_STRING) ) {
+                lineStyle = NO_LINE_STYLE;
+            } else if ( lineStyleFlag.equals(HORIZ_STYLE_STRING) ) {
+                lineStyle = HORIZ_LINE_STYLE;
+            }
+        }
     }
 
+    /**
+     * Returns {@code true} if a point with X coordinate {@code mouseX}
+     * and Y coordinate {@code mouseY} is in expanded control.
+     *
+     * @param row a row
+     * @param rowLevel a row level
+     * @param mouseX X coordinate
+     * @param mouseY Y coordinate
+     * @return {@code true} if a point with X coordinate {@code mouseX}
+     *         and Y coordinate {@code mouseY} is in expanded control.
+     */
     protected boolean isLocationInExpandControl(int row, int rowLevel,
                                                 int mouseX, int mouseY) {
         if(tree != null && !isLeaf(row)) {
@@ -175,6 +193,12 @@ public class MetalTreeUI extends BasicTreeUI {
         }
     }
 
+    /**
+     * Paints the horizontal separators.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
+     */
     protected void paintHorizontalSeparators(Graphics g, JComponent c) {
         g.setColor( lineColor );
 

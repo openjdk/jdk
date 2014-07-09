@@ -77,6 +77,7 @@ import java.io.IOException;
  *    description: A component that helps determine the visible content range of an area.
  *
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JScrollBar extends JComponent implements Adjustable, Accessible

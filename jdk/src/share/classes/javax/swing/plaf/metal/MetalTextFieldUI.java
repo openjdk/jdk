@@ -50,6 +50,12 @@ import javax.swing.plaf.basic.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public class MetalTextFieldUI extends BasicTextFieldUI {
 
+    /**
+     * Constructs {@code MetalTextFieldUI}.
+     *
+     * @param c a component
+     * @return the instance of {@code MetalTextFieldUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new MetalTextFieldUI();
     }

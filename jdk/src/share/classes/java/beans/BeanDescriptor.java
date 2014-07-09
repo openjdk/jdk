@@ -33,6 +33,8 @@ import java.lang.ref.Reference;
  * <p>
  * This is one of the kinds of descriptor returned by a BeanInfo object,
  * which also returns descriptors for properties, method, and events.
+ *
+ * @since 1.1
  */
 
 public class BeanDescriptor extends FeatureDescriptor {

@@ -1091,6 +1091,7 @@ public abstract class JTextComponent extends JComponent implements Scrollable, A
     private static HashMap<String,Keymap> getKeymapTable() {
         synchronized (KEYMAP_TABLE) {
             AppContext appContext = AppContext.getAppContext();
+            @SuppressWarnings("unchecked")
             HashMap<String,Keymap> keymapTable =
                 (HashMap<String,Keymap>)appContext.get(KEYMAP_TABLE);
             if (keymapTable == null) {

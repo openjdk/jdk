@@ -142,8 +142,8 @@ class BreakpointSpec extends EventRequestSpec {
                                          refSpec.toString()));
         } else if (e instanceof LineNotFoundException) {
             return (MessageOutput.format("No code at line",
-                                         new Object [] {new Long (lineNumber()),
-                                                        refSpec.toString()}));
+                                         new Object [] {Long.valueOf(lineNumber()),
+                                                 refSpec.toString()}));
         } else if (e instanceof InvalidTypeException) {
             return (MessageOutput.format("Breakpoints can be located only in classes.",
                                          refSpec.toString()));

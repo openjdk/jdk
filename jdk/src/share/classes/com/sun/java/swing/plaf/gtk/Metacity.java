@@ -547,7 +547,7 @@ class Metacity implements SynthConstants {
                             i = strLowerCase.indexOf("<stringvalue>", i);
                             if (i > 0) {
                                 i += "<stringvalue>".length();
-                                int i2 = str.indexOf("<", i);
+                                int i2 = str.indexOf('<', i);
                                 return str.substring(i, i2);
                             }
                         }

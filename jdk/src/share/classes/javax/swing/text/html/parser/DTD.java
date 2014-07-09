@@ -57,27 +57,91 @@ import java.net.URL;
  */
 public
 class DTD implements DTDConstants {
+
+    /**
+     * the name of the DTD
+     */
     public String name;
+
+    /**
+     * The vector of elements
+     */
     public Vector<Element> elements = new Vector<Element>();
+
+    /**
+     * The hash table contains the name of element and
+     * the corresponding element.
+     */
     public Hashtable<String,Element> elementHash
         = new Hashtable<String,Element>();
+
+    /**
+     * The hash table contains an {@code Object} and the corresponding {@code Entity}
+     */
     public Hashtable<Object,Entity> entityHash
         = new Hashtable<Object,Entity>();
+
+    /**
+     * The element corresponding to pcdata.
+     */
     public final Element pcdata = getElement("#pcdata");
+
+    /**
+     * The element corresponding to html.
+     */
     public final Element html = getElement("html");
+
+    /**
+     * The element corresponding to meta.
+     */
     public final Element meta = getElement("meta");
+
+    /**
+     * The element corresponding to base.
+     */
     public final Element base = getElement("base");
+
+    /**
+     * The element corresponding to isindex.
+     */
     public final Element isindex = getElement("isindex");
+
+    /**
+     * The element corresponding to head.
+     */
     public final Element head = getElement("head");
+
+    /**
+     * The element corresponding to body.
+     */
     public final Element body = getElement("body");
+
+    /**
+     * The element corresponding to applet.
+     */
     public final Element applet = getElement("applet");
+
+    /**
+     * The element corresponding to param.
+     */
     public final Element param = getElement("param");
+
+    /**
+     * The element corresponding to p.
+     */
     public final Element p = getElement("p");
+
+    /**
+     * The element corresponding to title.
+     */
     public final Element title = getElement("title");
     final Element style = getElement("style");
     final Element link = getElement("link");
     final Element script = getElement("script");
 
+    /**
+     * The version of a file
+     */
     public static final int FILE_VERSION = 1;
 
     /**
@@ -344,6 +408,12 @@ class DTD implements DTDConstants {
      */
     private static final Object DTD_HASH_KEY = new Object();
 
+    /**
+     * Put a name and appropriate DTD to hashtable.
+     *
+     * @param name the name of the DTD
+     * @param dtd the DTD
+     */
     public static void putDTDHash(String name, DTD dtd) {
         getDtdHash().put(name, dtd);
     }
@@ -370,6 +440,7 @@ class DTD implements DTDConstants {
     private static Hashtable<String, DTD> getDtdHash() {
         AppContext appContext = AppContext.getAppContext();
 
+        @SuppressWarnings("unchecked")
         Hashtable<String, DTD> result = (Hashtable<String, DTD>) appContext.get(DTD_HASH_KEY);
 
         if (result == null) {

@@ -106,7 +106,7 @@ public class GetLongAction implements java.security.PrivilegedAction<Long> {
     public Long run() {
         Long value = Long.getLong(theProp);
         if ((value == null) && defaultSet)
-            return new Long(defaultVal);
+            return defaultVal;
         return value;
     }
 }

@@ -36,7 +36,6 @@ import java.awt.font.TextAttribute;
 import java.text.AttributedCharacterIterator;
 import java.util.ArrayList;
 import java.util.Map;
-import sun.text.CodePointIterator;
 
 /**
  * This class maps an individual character to a Font family which can

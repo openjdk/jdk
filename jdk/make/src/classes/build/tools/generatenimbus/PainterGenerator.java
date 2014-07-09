@@ -57,6 +57,9 @@ import java.util.Map;
  * @author  Jasper Potts
  */
 public class PainterGenerator {
+
+    private static final boolean debug = false;
+
     //a handful of counters, incremented whenever the associated object type is encounted.
     //These counters form the basis of the field and method suffixes.
     //These are all 1 based, because I felt like it :-)
@@ -384,16 +387,24 @@ public class PainterGenerator {
         }
 
         if (Float.isNaN(r)) {
-            System.err.println("[Error] Encountered NaN: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            if (debug) {
+                System.err.println("[Error] Encountered NaN: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            }
             return 0;
         } else if (Float.isInfinite(r)) {
-            System.err.println("[Error] Encountered Infinity: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            if (debug) {
+                System.err.println("[Error] Encountered Infinity: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            }
             return 0;
         } else if (r < 0) {
-            System.err.println("[Error] encoded value was less than 0: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            if (debug) {
+                System.err.println("[Error] encoded value was less than 0: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            }
             return 0;
         } else if (r > 3) {
-            System.err.println("[Error] encoded value was greater than 3: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            if (debug) {
+                System.err.println("[Error] encoded value was greater than 3: encode(" + x + ", " + a + ", " + b + ", " + w + ")");
+            }
             return 3;
         } else {
             return r;

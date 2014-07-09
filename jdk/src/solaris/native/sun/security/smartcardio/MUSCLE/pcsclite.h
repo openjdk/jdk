@@ -75,6 +75,13 @@ typedef struct
 }
 SCARD_READERSTATE_A;
 
+typedef struct _SCARD_IO_REQUEST
+{
+        unsigned long dwProtocol;       /* Protocol identifier */
+        unsigned long cbPciLength;      /* Protocol Control Inf Length */
+}
+SCARD_IO_REQUEST, *PSCARD_IO_REQUEST, *LPSCARD_IO_REQUEST;
+
 #else // __APPLE__
 
 #pragma pack(1)
@@ -88,19 +95,19 @@ typedef struct
         unsigned char rgbAtr[MAX_ATR_SIZE];
 }
 SCARD_READERSTATE_A;
+
+typedef struct _SCARD_IO_REQUEST
+{
+        uint32_t dwProtocol;            /* Protocol identifier */
+        uint32_t cbPciLength;           /* Protocol Control Inf Length */
+}
+SCARD_IO_REQUEST, *PSCARD_IO_REQUEST, *LPSCARD_IO_REQUEST;
 #pragma pack()
 
 #endif // __APPLE__
 
 typedef SCARD_READERSTATE_A SCARD_READERSTATE, *PSCARD_READERSTATE_A,
         *LPSCARD_READERSTATE_A;
-
-typedef struct _SCARD_IO_REQUEST
-{
-        unsigned long dwProtocol;       /* Protocol identifier */
-        unsigned long cbPciLength;      /* Protocol Control Inf Length */
-}
-SCARD_IO_REQUEST, *PSCARD_IO_REQUEST, *LPSCARD_IO_REQUEST;
 
 typedef const SCARD_IO_REQUEST *LPCSCARD_IO_REQUEST;
 

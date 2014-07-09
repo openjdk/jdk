@@ -82,6 +82,7 @@ import sun.swing.SwingUtilities2;
  * @author James Gosling
  * @author Amy Fowler
  * @author Steve Wilson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JColorChooser extends JComponent implements Accessible {

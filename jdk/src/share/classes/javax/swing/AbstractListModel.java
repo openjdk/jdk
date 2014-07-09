@@ -45,6 +45,7 @@ import java.util.EventListener;
  * @param <E> the type of the elements of this model
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractListModel<E> implements ListModel<E>, Serializable

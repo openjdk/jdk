@@ -40,6 +40,7 @@ import javax.swing.border.*;
  * a section in <em>The Java Tutorial</em>.
  *
  * @author David Kloba
+ * @since 1.2
  */
 public class BorderFactory
 {
