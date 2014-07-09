@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,5 +26,7 @@ package m;
 
 class Gee extends g.G {
     public sun.misc.Lock lock;
+    public com.sun.tools.classfile.ClassFile cf;     // @jdk.Exported(false)
+    public com.sun.source.tree.BinaryTree tree;      // @jdk.Exported
+    public com.sun.management.ThreadMXBean mxbean;   // @jdk.Exported on package-info
 }
-
