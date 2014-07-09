@@ -147,4 +147,13 @@ abstract class DynamicMethod {
     public String toString() {
         return "[" + getClass().getName() + " " + getName() + "]";
     }
+
+    /**
+     * True if this method happens to be a constructor method.
+     *
+     * @return true if this represents a constructor.
+     */
+    boolean isConstructor() {
+        return false;
+    }
 }
