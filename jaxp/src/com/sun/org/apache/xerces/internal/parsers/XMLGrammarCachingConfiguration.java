@@ -62,7 +62,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLInputSource;
  *
  * @author Neil Graham, IBM
  *
- * @version $Id: XMLGrammarCachingConfiguration.java,v 1.6 2010-11-01 04:40:10 joehw Exp $
  */
 public class XMLGrammarCachingConfiguration
     extends XIncludeAwareParserConfiguration {

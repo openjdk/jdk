@@ -44,7 +44,6 @@ import java.util.Arrays;
  * @author Michael Glavassevich, IBM
  * @author Rahul Srivastava, Sun Microsystems Inc.
  *
- * @version $Id: XMLChar.java,v 1.7 2010-11-01 04:40:15 joehw Exp $
  */
 public class XMLChar {
 

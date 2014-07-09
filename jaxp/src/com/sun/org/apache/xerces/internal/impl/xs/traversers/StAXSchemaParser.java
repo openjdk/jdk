@@ -54,7 +54,6 @@ import org.w3c.dom.Document;
  *
  * @xerces.internal
  *
- * @version $Id: StAXSchemaParser.java,v 1.2 2010-10-26 23:01:12 joehw Exp $
  */
 final class StAXSchemaParser {
 

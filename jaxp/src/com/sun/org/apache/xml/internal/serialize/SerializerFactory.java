@@ -32,7 +32,6 @@ import java.util.StringTokenizer;
 /**
  *
  *
- * @version $Revision: 1.6 $ $Date: 2010-11-01 04:40:36 $
  * @author <a href="mailto:Scott_Boag/CAM/Lotus@lotus.com">Scott Boag</a>
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
  */

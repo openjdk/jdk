@@ -79,7 +79,7 @@ import java.security.PrivilegedAction;
  *
  * @see DOMImplementation
  * @see DOMImplementationSource
- * @since DOM Level 3
+ * @since 1.5, DOM Level 3
  */
 public final class DOMImplementationRegistry {
     /**

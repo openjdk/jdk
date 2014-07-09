@@ -65,7 +65,7 @@ import org.xml.sax.SAXNotRecognizedException;
  * specific methods to modify the event stream or the configuration
  * requests as they pass through.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.XMLFilter
  * @see org.xml.sax.XMLReader
