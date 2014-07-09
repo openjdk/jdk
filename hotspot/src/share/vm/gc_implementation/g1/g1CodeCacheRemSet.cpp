@@ -169,7 +169,7 @@ G1CodeRootSet::~G1CodeRootSet() {
 
 void G1CodeRootSet::add(nmethod* method) {
   if (!contains(method)) {
-    // Find the first chunk thatisn't full.
+    // Find the first chunk that isn't full.
     G1CodeRootChunk* cur = _list.head();
     while (cur != NULL) {
       if (!cur->is_full()) {

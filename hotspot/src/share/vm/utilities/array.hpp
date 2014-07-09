@@ -328,6 +328,8 @@ protected:
   static size_t byte_sizeof(int length) { return sizeof(Array<T>) + MAX2(length - 1, 0) * sizeof(T); }
 
   // WhiteBox API helper.
+  // Can't distinguish between array of length 0 and length 1,
+  // will always return 0 in those cases.
   static int bytes_to_length(size_t bytes)       {
     assert(is_size_aligned(bytes, BytesPerWord), "Must be, for now");
 
