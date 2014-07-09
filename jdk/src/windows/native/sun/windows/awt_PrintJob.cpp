@@ -2541,8 +2541,21 @@ JNIEXPORT void JNICALL Java_sun_awt_windows_WPrinterJob_textOut
      * rounded advances will drift away from the true advance.
      */
     if (glyphPos != NULL && strLen > 0) {
-         xadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, strLen, sizeof(int));
-         xyadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, strLen, sizeof(int) * 2);
+        try {
+            xadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
+                    strLen, sizeof(int));
+            xyadvances = (int*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, strLen,
+                    sizeof(int) * 2);
+        } catch (std::bad_alloc&) {
+            if (xadvances != NULL) {
+                free(xadvances);
+                xadvances = NULL;
+            }
+            if (xyadvances != NULL) {
+                free(xyadvances);
+                xyadvances = NULL;
+            }
+        }
     }
     if (xadvances != NULL && xyadvances != NULL) {
         int *inxAdvances = xadvances;
@@ -2752,8 +2765,12 @@ static jbyte* reverseDIB(jbyte* imageBits, long srcWidth, long srcHeight,
     if ((imgWidthByteSz % sizeof(DWORD)) != 0)
         padBytes = sizeof(DWORD) - (imgWidthByteSz % sizeof(DWORD));
 
-    jbyte* alignedImage = (jbyte*) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
+    jbyte* alignedImage = NULL;
+    try {
+        alignedImage = (jbyte*) SAFE_SIZE_ARRAY_ALLOC(safe_Malloc,
             imgWidthByteSz+padBytes, ROUND_TO_LONG(srcHeight));
+    } catch (std::bad_alloc&) {
+    }
     long newImgSize = (imgWidthByteSz+padBytes) * ROUND_TO_LONG(srcHeight);
 
     if (alignedImage != NULL) {
@@ -3353,36 +3370,6 @@ static void pageFormatToSetup(JNIEnv *env, jobject job,
     }
 
     // Set page size here.
-}
-
-
-/**
- * Return an array of POINTS describing the paper sizes supported
- * by the driver identified by 'deviceName' and 'portName'.
- * If there is an error, then NULL is returned.
- */
-static POINT *getPaperSizeList(LPCTSTR deviceName, LPCTSTR portName) {
-    DWORD numPaperSizes;
-    POINT *paperSizes = NULL;
-
-    SAVE_CONTROLWORD
-    numPaperSizes = DeviceCapabilities(deviceName, portName,
-                                       DC_PAPERSIZE, NULL, NULL);
-
-    if (numPaperSizes > 0) {
-        paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes), numPaperSizes);
-
-        DWORD result = DeviceCapabilities(deviceName, portName,
-                                          DC_PAPERSIZE, (LPTSTR) paperSizes,
-                                          NULL);
-        if (result == -1) {
-            free((char *) paperSizes);
-            paperSizes = NULL;
-        }
-    }
-    RESTORE_CONTROLWORD
-
-    return paperSizes;
 }
 
 static WORD getOrientationFromDevMode2(HGLOBAL hDevMode) {
@@ -3989,20 +3976,33 @@ static void matchPaperSize(HDC printDC, HGLOBAL hDevMode, HGLOBAL hDevNames,
     numPaperSizes = (int)DeviceCapabilities(printer, port, DC_PAPERSIZE,
                                             NULL, NULL);
     if (numPaperSizes > 0) {
-        papers = (WORD*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(WORD), numPaperSizes);
-        paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes), numPaperSizes);
+        try {
+            papers = (WORD*)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(WORD), numPaperSizes);
+            paperSizes = (POINT *)SAFE_SIZE_ARRAY_ALLOC(safe_Malloc, sizeof(*paperSizes), numPaperSizes);
+        } catch (std::bad_alloc&) {
+            if (papers != NULL) {
+                free((char*)papers);
+                papers = NULL;
+            }
+            if (paperSizes != NULL) {
+               free((char *)paperSizes);
+               paperSizes = NULL;
+            }
+        }
 
-        DWORD result1 = DeviceCapabilities(printer, port,
-                                           DC_PAPERS, (LPTSTR) papers, NULL);
-        DWORD result2 = DeviceCapabilities(printer, port,
-                                           DC_PAPERSIZE, (LPTSTR) paperSizes,
-                                           NULL);
+        if (papers != NULL && paperSizes != NULL) {
+             DWORD result1 = DeviceCapabilities(printer, port,
+                                                DC_PAPERS, (LPTSTR) papers, NULL);
+            DWORD result2 = DeviceCapabilities(printer, port,
+                                               DC_PAPERSIZE, (LPTSTR) paperSizes,
+                                               NULL);
 
-        if (result1 == -1 || result2 == -1 ) {
-            free((char *) papers);
-            papers = NULL;
-            free((char *) paperSizes);
-            paperSizes = NULL;
+            if (result1 == -1 || result2 == -1 ) {
+                free((char *) papers);
+                papers = NULL;
+                free((char *) paperSizes);
+                paperSizes = NULL;
+            }
         }
     }
 

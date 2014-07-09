@@ -77,6 +77,7 @@ import java.beans.*;
  *    description: A component that supports selecting a integer value from a range.
  *
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JSlider extends JComponent implements SwingConstants, Accessible {

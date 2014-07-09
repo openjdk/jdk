@@ -85,6 +85,7 @@ import java.io.IOException;
  * @see ButtonGroup
  * @see JCheckBox
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JRadioButton extends JToggleButton implements Accessible {

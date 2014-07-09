@@ -71,6 +71,7 @@ import java.util.*;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractButton extends JComponent implements ItemSelectable, SwingConstants {

@@ -105,6 +105,7 @@ import java.io.IOException;
  * @author Amy Fowler
  *
  * @see SingleSelectionModel
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JTabbedPane extends JComponent

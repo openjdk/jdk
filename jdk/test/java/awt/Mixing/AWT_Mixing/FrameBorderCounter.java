@@ -63,11 +63,6 @@ public class FrameBorderCounter {
             public void run() {
                 frame = new Frame("Frame");
                 frame.setBounds(200, 200, 100, 100);
-                frame.addWindowListener(new WindowAdapter() {
-                    public void windowClosing(WindowEvent e) {
-                        System.exit(0);
-                    }
-                });
                 frame.setVisible(true);
             }
         });

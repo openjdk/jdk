@@ -545,8 +545,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * @exception NullPointerException if paramName is null.
      */
     public String getParameter(String paramName) {
-        return
-            (String)myMimeType.getParameterMap().get(paramName.toLowerCase());
+        return myMimeType.getParameterMap().get(paramName.toLowerCase());
     }
 
     /**

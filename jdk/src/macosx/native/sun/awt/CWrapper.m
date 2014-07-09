@@ -337,12 +337,17 @@ JNF_COCOA_EXIT(env);
  */
 JNIEXPORT void JNICALL
 Java_sun_lwawt_macosx_CWrapper_00024NSWindow_setBackgroundColor
-(JNIEnv *env, jclass cls, jlong windowPtr, jlong colorPtr)
+(JNIEnv *env, jclass cls, jlong windowPtr, jint rgb)
 {
 JNF_COCOA_ENTER(env);
 
     NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
-    NSColor *color = (NSColor *)jlong_to_ptr(colorPtr);
+    CGFloat alpha = (((rgb >> 24) & 0xff) / 255.0);
+    CGFloat red   = (((rgb >> 16) & 0xff) / 255.0);
+    CGFloat green = (((rgb >>  8) & 0xff) / 255.0);
+    CGFloat blue  = (((rgb >>  0) & 0xff) / 255.0);
+    NSColor *color = [NSColor colorWithCalibratedRed:red green:green blue:blue
+                                               alpha:alpha];
     [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
         [window setBackgroundColor:color];
     }];
@@ -575,26 +580,3 @@ JNF_COCOA_ENTER(env);
 
 JNF_COCOA_EXIT(env);
 }
-
-/*
- * Class:     sun_lwawt_macosx_CWrapper$NSColor
- * Method:    clearColor
- * Signature: ()J
- */
-JNIEXPORT jlong JNICALL
-Java_sun_lwawt_macosx_CWrapper_00024NSColor_clearColor
-(JNIEnv *env, jclass cls)
-{
-    __block jlong clearColorPtr = 0L;
-
-JNF_COCOA_ENTER(env);
-
-    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
-        clearColorPtr = ptr_to_jlong([NSColor clearColor]);
-    }];
-
-JNF_COCOA_EXIT(env);
-
-    return clearColorPtr;
-}
-

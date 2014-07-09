@@ -77,6 +77,7 @@ import java.util.Map.Entry;
  * non-serializable listeners will be skipped during serialization.
  *
  * @see VetoableChangeSupport
+ * @since 1.1
  */
 public class PropertyChangeSupport implements Serializable {
     private PropertyChangeListenerMap map = new PropertyChangeListenerMap();
@@ -191,6 +192,7 @@ public class PropertyChangeSupport implements Serializable {
      *
      * @param propertyName  The name of the property to listen on.
      * @param listener  The PropertyChangeListener to be added
+     * @since 1.2
      */
     public void addPropertyChangeListener(
                 String propertyName,
@@ -216,6 +218,7 @@ public class PropertyChangeSupport implements Serializable {
      *
      * @param propertyName  The name of the property that was listened on.
      * @param listener  The PropertyChangeListener to be removed
+     * @since 1.2
      */
     public void removePropertyChangeListener(
                 String propertyName,
@@ -277,6 +280,7 @@ public class PropertyChangeSupport implements Serializable {
      * @param propertyName  the programmatic name of the property that was changed
      * @param oldValue      the old value of the property
      * @param newValue      the new value of the property
+     * @since 1.2
      */
     public void firePropertyChange(String propertyName, int oldValue, int newValue) {
         if (oldValue != newValue) {
@@ -297,6 +301,7 @@ public class PropertyChangeSupport implements Serializable {
      * @param propertyName  the programmatic name of the property that was changed
      * @param oldValue      the old value of the property
      * @param newValue      the new value of the property
+     * @since 1.2
      */
     public void firePropertyChange(String propertyName, boolean oldValue, boolean newValue) {
         if (oldValue != newValue) {
@@ -312,6 +317,7 @@ public class PropertyChangeSupport implements Serializable {
      * No event is fired if the given event's old and new values are equal and non-null.
      *
      * @param event  the {@code PropertyChangeEvent} to be fired
+     * @since 1.2
      */
     public void firePropertyChange(PropertyChangeEvent event) {
         Object oldValue = event.getOldValue();
@@ -410,6 +416,7 @@ public class PropertyChangeSupport implements Serializable {
      *
      * @param propertyName  the property name.
      * @return true if there are one or more listeners for the given property
+     * @since 1.2
      */
     public boolean hasListeners(String propertyName) {
         return this.map.hasListeners(propertyName);

@@ -97,7 +97,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     };
 
     /* let's try to support a few of these */
-    private static final Class[] serviceAttrCats = {
+    private static final Class<?>[] serviceAttrCats = {
         PrinterName.class,
         PrinterIsAcceptingJobs.class,
         QueuedJobCount.class,
@@ -107,7 +107,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     /*  it turns out to be inconvenient to store the other categories
      *  separately because many attributes are in multiple categories.
      */
-    private static Class[] otherAttrCats = {
+    private static Class<?>[] otherAttrCats = {
         JobName.class,
         RequestingUserName.class,
         Copies.class,
@@ -202,7 +202,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private MediaPrintableArea[] mediaPrintables;
     private MediaTray[] mediaTrays;
     private PrinterResolution[] printRes;
-    private HashMap mpaMap;
+    private HashMap<MediaSizeName, MediaPrintableArea> mpaMap;
     private int nCopies;
     private int prnCaps;
     private int[] defaultSettings;
@@ -212,7 +212,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     private boolean mediaInitialized;
     private boolean mpaListInitialized;
 
-    private ArrayList idList;
+    private ArrayList<Integer> idList;
     private MediaSize[] mediaSizes;
 
     private boolean isInvalid;
@@ -279,7 +279,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             (idList.size() == mediaSizes.length)) {
             for (int i=0; i< idList.size(); i++) {
                 if (mediaSizes[i].getMediaSizeName() == msn) {
-                    return ((Integer)idList.get(i)).intValue();
+                    return idList.get(i).intValue();
                 }
             }
         }
@@ -338,10 +338,11 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
     }
 
-    private boolean addToUniqueList(ArrayList msnList, MediaSizeName mediaName) {
+    private boolean addToUniqueList(ArrayList<MediaSizeName> msnList,
+                                    MediaSizeName mediaName) {
         MediaSizeName msn;
         for (int i=0; i< msnList.size(); i++) {
-            msn = (MediaSizeName)msnList.get(i);
+            msn = msnList.get(i);
             if (msn == mediaName) {
                 return false;
             }
@@ -360,9 +361,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             return;
         }
 
-        ArrayList msnList = new ArrayList();
+        ArrayList<MediaSizeName> msnList = new ArrayList<>();
         ArrayList<Win32MediaSize> trailingWmsList = new ArrayList<Win32MediaSize>();
-        ArrayList printableList = new ArrayList();
         MediaSizeName mediaName;
         boolean added;
         boolean queryFailure = false;
@@ -375,7 +375,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         // We remove from ID list any invalid mediaSize.  Though this is rare,
         // it happens in HP 4050 German driver.
 
-        idList = new ArrayList();
+        idList = new ArrayList<>();
         for (int i=0; i < media.length; i++) {
             idList.add(Integer.valueOf(media[i]));
         }
@@ -385,7 +385,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         for (int i = 0; i < idList.size(); i++) {
 
             // match Win ID with our predefined ID using table
-            mediaName = findWin32Media(((Integer)idList.get(i)).intValue());
+            mediaName = findWin32Media(idList.get(i).intValue());
             // Verify that this standard size is the same size as that
             // reported by the driver. This should be the case except when
             // the driver is mis-using a standard windows paper ID.
@@ -420,7 +420,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                  */
                 Win32MediaSize wms = Win32MediaSize.findMediaName(dmPaperNameList.get(i));
                 if ((wms == null) && (idList.size() == mediaSizes.length)) {
-                    wms = new Win32MediaSize(dmPaperNameList.get(i), (Integer)idList.get(i));
+                    wms = new Win32MediaSize(dmPaperNameList.get(i), idList.get(i));
                     mediaSizes[i] = new MediaSize(mediaSizes[i].getX(MediaSize.MM),
                         mediaSizes[i].getY(MediaSize.MM), MediaSize.MM, wms);
                 }
@@ -458,7 +458,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             // get from cached mapping of MPAs
             if (mpaMap != null && (mpaMap.get(msn) != null)) {
                 MediaPrintableArea[] mpaArr = new MediaPrintableArea[1];
-                mpaArr[0] = (MediaPrintableArea)mpaMap.get(msn);
+                mpaArr[0] = mpaMap.get(msn);
                 return mpaArr;
             }
         }
@@ -478,7 +478,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
 
         if (mpaMap == null) {
-            mpaMap = new HashMap();
+            mpaMap = new HashMap<>();
         }
 
         for (int i=0; i < loopNames.length; i++) {
@@ -532,10 +532,10 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
            }
            MediaPrintableArea[] mpaArr = new MediaPrintableArea[1];
            // by this time, we've already gotten the desired MPA
-           mpaArr[0] = (MediaPrintableArea)mpaMap.get(msn);
+           mpaArr[0] = mpaMap.get(msn);
            return mpaArr;
        } else {
-           mediaPrintables = (MediaPrintableArea[])mpaMap.values().toArray(new MediaPrintableArea[0]);
+           mediaPrintables = mpaMap.values().toArray(new MediaPrintableArea[0]);
            mpaListInitialized = true;
            return mediaPrintables;
        }
@@ -624,7 +624,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     }
 
 
-    private MediaSize[] getMediaSizes(ArrayList idList, int[] media, ArrayList<String> dmPaperNameList) {
+    private MediaSize[] getMediaSizes(ArrayList<Integer> idList, int[] media,
+                                      ArrayList<String> dmPaperNameList) {
         if (dmPaperNameList == null) {
             dmPaperNameList = new ArrayList<String>();
         }
@@ -641,7 +642,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
 
         int nMedia = mediaSz.length/2;
-        ArrayList msList = new ArrayList();
+        ArrayList<MediaSize> msList = new ArrayList<>();
 
         for (int i = 0; i < nMedia; i++, ms=null) {
             wid = mediaSz[i*2]/10f;
@@ -814,7 +815,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             } else {
                 int nRes = prnRes.length/2;
 
-                ArrayList arrList = new ArrayList();
+                ArrayList<PrinterResolution> arrList = new ArrayList<>();
                 PrinterResolution pr;
 
                 for (int i=0; i<nRes; i++) {
@@ -826,8 +827,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                     }
                 }
 
-                printRes = (PrinterResolution[])arrList.toArray(
-                                        new PrinterResolution[arrList.size()]);
+                printRes = arrList.toArray(new PrinterResolution[arrList.size()]);
             }
         }
         return printRes;
@@ -915,6 +915,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
     }
 
+    @SuppressWarnings("unchecked")
     public <T extends PrintServiceAttribute> T
         getAttribute(Class<T> category)
     {
@@ -1009,7 +1010,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
     }
 
     public Class<?>[] getSupportedAttributeCategories() {
-        ArrayList categList = new ArrayList(otherAttrCats.length+3);
+        ArrayList<Class<?>> categList = new ArrayList<>(otherAttrCats.length+3);
         for (int i=0; i < otherAttrCats.length; i++) {
             categList.add(otherAttrCats[i]);
         }
@@ -1033,7 +1034,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
             categList.add(PrinterResolution.class);
         }
 
-        return (Class[])categList.toArray(new Class[categList.size()]);
+        return categList.toArray(new Class<?>[categList.size()]);
     }
 
     public boolean
@@ -1049,7 +1050,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
                                                " is not an Attribute");
         }
 
-        Class[] classList = getSupportedAttributeCategories();
+        Class<?>[] classList = getSupportedAttributeCategories();
         for (int i = 0; i < classList.length; i++) {
             if (category.equals(classList[i])) {
                 return true;
@@ -1234,7 +1235,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         }
     }
 
-    private boolean isPSDocAttr(Class category) {
+    private boolean isPSDocAttr(Class<?> category) {
         if (category == OrientationRequested.class || category == Copies.class) {
                 return true;
         }
@@ -1475,7 +1476,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         if (attr == null) {
             throw new NullPointerException("null attribute");
         }
-        Class category = attr.getCategory();
+        Class<? extends Attribute> category = attr.getCategory();
         if (flavor != null) {
             if (!isDocFlavorSupported(flavor)) {
                 throw new IllegalArgumentException(flavor +
@@ -1700,7 +1701,7 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
         return this.getClass().hashCode()+getName().hashCode();
     }
 
-    public boolean usesClass(Class c) {
+    public boolean usesClass(Class<?> c) {
         return (c == sun.awt.windows.WPrinterJob.class);
     }
 
@@ -1722,8 +1723,8 @@ public class Win32PrintService implements PrintService, AttributeUpdater,
 
 @SuppressWarnings("serial") // JDK implementation class
 class Win32MediaSize extends MediaSizeName {
-    private static ArrayList winStringTable = new ArrayList();
-    private static ArrayList winEnumTable = new ArrayList();
+    private static ArrayList<String> winStringTable = new ArrayList<>();
+    private static ArrayList<Win32MediaSize> winEnumTable = new ArrayList<>();
     private static MediaSize[] predefMedia;
 
     private int dmPaperID; // driver ID for this paper.
@@ -1741,7 +1742,7 @@ class Win32MediaSize extends MediaSizeName {
     public static synchronized Win32MediaSize findMediaName(String name) {
         int nameIndex = winStringTable.indexOf(name);
         if (nameIndex != -1) {
-            return (Win32MediaSize)winEnumTable.get(nameIndex);
+            return winEnumTable.get(nameIndex);
         }
         return null;
     }
@@ -1783,12 +1784,12 @@ class Win32MediaSize extends MediaSizeName {
 
     protected String[] getStringTable() {
       String[] nameTable = new String[winStringTable.size()];
-      return (String[])winStringTable.toArray(nameTable);
+      return winStringTable.toArray(nameTable);
     }
 
     protected EnumSyntax[] getEnumValueTable() {
       MediaSizeName[] enumTable = new MediaSizeName[winEnumTable.size()];
-      return (MediaSizeName[])winEnumTable.toArray(enumTable);
+      return winEnumTable.toArray(enumTable);
     }
 
 }

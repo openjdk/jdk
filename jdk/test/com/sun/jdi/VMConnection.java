@@ -44,8 +44,7 @@ class VMConnection {
     /**
      * Return a String containing VM Options to pass to the debugee
      * or an empty string if there are none.
-     * These are read from the first non-comment line
-     * in file @debuggeeVMOptions in the test.classes dir
+     * These are read from TESTVMOPTS and/or TESTJAVAOPTS.
      */
     static public String getDebuggeeVMOptions() {
         String retVal = "";
@@ -59,13 +58,13 @@ class VMConnection {
         retVal += "-classpath " + testClasses;
 
         String vmOpts = System.getProperty("test.vm.opts");
-        System.out.println("vmOpts: "+vmOpts);
-        if (vmOpts != null) {
+        System.out.println("vmOpts: '" + vmOpts + "'");
+        if (vmOpts != null && !vmOpts.trim().isEmpty()) {
             retVal += " " + vmOpts;
         }
         String javaOpts = System.getProperty("test.java.opts");
-        System.out.println("javaOpts: "+javaOpts);
-        if (javaOpts != null) {
+        System.out.println("javaOpts: '" + javaOpts + "'");
+        if (javaOpts != null && !javaOpts.trim().isEmpty()) {
             retVal += " " + javaOpts;
         }
 

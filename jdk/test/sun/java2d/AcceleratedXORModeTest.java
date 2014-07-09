@@ -23,7 +23,7 @@
 
 /*
 * @test
-* @bug     8024343
+* @bug     8024343 8042098
 * @summary Test verifies that accelerated pipelines
 *          correctly draws primitives in XOR mode.
 * @run main/othervm -Dsun.java2d.xrender=True AcceleratedXORModeTest
@@ -128,6 +128,7 @@ public class AcceleratedXORModeTest {
 
     void test() {
         createVImg();
+        BufferedImage bi = null;
         do {
             int valCode = vImg.validate(getDefaultGC());
             if (valCode == VolatileImage.IMAGE_INCOMPATIBLE) {
@@ -135,9 +136,11 @@ public class AcceleratedXORModeTest {
             }
             Graphics2D g = vImg.createGraphics();
             draw(g);
-            BufferedImage bi = vImg.getSnapshot();
+            bi = vImg.getSnapshot();
+        } while (vImg.contentsLost());
+        if (bi != null) {
             test(bi);
             write(bi);
-        } while (vImg.contentsLost());
+        }
     }
 }

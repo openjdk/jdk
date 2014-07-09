@@ -28,18 +28,18 @@ package javax.sound.sampled;
 import java.security.BasicPermission;
 
 /**
- * The <code>AudioPermission</code> class represents access rights to the audio
- * system resources.  An <code>AudioPermission</code> contains a target name
- * but no actions list; you either have the named permission or you don't.
+ * The {@code AudioPermission} class represents access rights to the audio
+ * system resources. An {@code AudioPermission} contains a target name but no
+ * actions list; you either have the named permission or you don't.
  * <p>
  * The target name is the name of the audio permission (see the table below).
- * The names follow the hierarchical property-naming convention. Also, an asterisk
- * can be used to represent all the audio permissions.
+ * The names follow the hierarchical property-naming convention. Also, an
+ * asterisk can be used to represent all the audio permissions.
  * <p>
- * The following table lists the possible <code>AudioPermission</code> target names.
- * For each name, the table provides a description of exactly what that permission
- * allows, as well as a discussion of the risks of granting code the permission.
- *
+ * The following table lists the possible {@code AudioPermission} target names.
+ * For each name, the table provides a description of exactly what that
+ * permission allows, as well as a discussion of the risks of granting code the
+ * permission.
  *
  * <table border=1 cellpadding=5 summary="permission target name, what the permission allows, and associated risks">
  * <tr>
@@ -57,7 +57,7 @@ import java.security.BasicPermission;
  * applications because the audio from one line may be mixed with other audio
  * being played on the system, or because manipulation of a mixer affects the
  * audio for all lines using that mixer.</td>
- *</tr>
+ * </tr>
  *
  * <tr>
  * <td>record</td>
@@ -68,42 +68,40 @@ import java.security.BasicPermission;
  * applications because manipulation of a mixer affects the audio for all lines
  * using that mixer.
  * This permission can enable an applet or application to eavesdrop on a user.</td>
- *</tr>
- *</table>
- *<p>
+ * </tr>
+ * </table>
  *
  * @author Kara Kytle
  * @since 1.3
  */
 public class AudioPermission extends BasicPermission {
+
     private static final long serialVersionUID = -5518053473477801126L;
 
     /**
-     * Creates a new <code>AudioPermission</code> object that has the specified
-     * symbolic name, such as "play" or "record". An asterisk can be used to indicate
-     * all audio permissions.
-     * @param name the name of the new <code>AudioPermission</code>
+     * Creates a new {@code AudioPermission} object that has the specified
+     * symbolic name, such as "play" or "record". An asterisk can be used to
+     * indicate all audio permissions.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @param  name the name of the new {@code AudioPermission}
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if {@code name} is empty
      */
-    public AudioPermission(String name) {
-
+    public AudioPermission(final String name) {
         super(name);
     }
 
     /**
-     * Creates a new <code>AudioPermission</code> object that has the specified
-     * symbolic name, such as "play" or "record".  The <code>actions</code>
-     * parameter is currently unused and should be <code>null</code>.
-     * @param name the name of the new <code>AudioPermission</code>
-     * @param actions (unused; should be <code>null</code>)
+     * Creates a new {@code AudioPermission} object that has the specified
+     * symbolic name, such as "play" or "record". The {@code actions} parameter
+     * is currently unused and should be {@code null}.
      *
-     * @throws NullPointerException if <code>name</code> is <code>null</code>.
-     * @throws IllegalArgumentException if <code>name</code> is empty.
+     * @param  name the name of the new {@code AudioPermission}
+     * @param  actions (unused; should be {@code null})
+     * @throws NullPointerException if {@code name} is {@code null}
+     * @throws IllegalArgumentException if {@code name} is empty
      */
-    public AudioPermission(String name, String actions) {
-
+    public AudioPermission(final String name, final String actions) {
         super(name, actions);
     }
 }

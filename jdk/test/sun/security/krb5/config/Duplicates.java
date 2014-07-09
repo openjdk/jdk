@@ -38,22 +38,22 @@ public class Duplicates {
         config.listTable();
         String s;
 
-        // Latter overwrites former for root section
+        // root section merged
         s = config.get("libdefaults", "default_realm");
-        if (s != null) {
+        if (!s.equals("R1")) {
             throw new Exception();
         }
-        // Latter overwrites former for strings
+        // Former is preferred to latter for strings and sections
         s = config.get("libdefaults", "default_tkt_enctypes");
-        if (!s.equals("aes256-cts")) {
+        if (!s.equals("aes128-cts")) {
             throw new Exception();
         }
-        // Latter overwrites former for sub-section
         s = config.get("realms", "R1", "kdc");
-        if (!s.equals("k2")) {
+        if (!s.equals("k1")) {
             throw new Exception(s);
         }
-        // Duplicate keys in [realms] are merged
+        // Duplicate keys in [realms] are merged, and sections with the same
+        // name in between ignored
         s = config.getAll("realms", "R2", "kdc");
         if (!s.equals("k1 k2 k3 k4")) {
             throw new Exception(s);

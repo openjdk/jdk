@@ -335,6 +335,8 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *
      *  @see #setColumnCount
      * @since 1.3
+     *
+     * @param rowCount  number of rows in the model
      */
     public void setRowCount(int rowCount) {
         setNumRows(rowCount);
@@ -576,6 +578,9 @@ public class DefaultTableModel extends AbstractTableModel implements Serializabl
      *  the new data will be added to model starting with the first
      *  element going to row 0, etc.  This method will send a
      *  <code>tableChanged</code> notification message to all the listeners.
+     *
+     * @param columnName  identifier of the newly created column
+     * @param columnData  new data to be added to the column
      *
      * @see #addColumn(Object, Vector)
      */

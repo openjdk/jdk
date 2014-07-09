@@ -36,6 +36,7 @@ import sun.swing.SwingUtilities2;
  * A MenuSelectionManager owns the selection in menu hierarchy.
  *
  * @author Arnaud Weber
+ * @since 1.2
  */
 public class MenuSelectionManager {
     private Vector<MenuElement> selection = new Vector<MenuElement>();

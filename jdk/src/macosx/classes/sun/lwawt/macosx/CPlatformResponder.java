@@ -125,7 +125,7 @@ final class CPlatformResponder {
     /**
      * Handles key events.
      */
-    void handleKeyEvent(int eventType, int modifierFlags, String chars,
+    void handleKeyEvent(int eventType, int modifierFlags, String chars, String charsIgnoringModifiers,
                         short keyCode, boolean needsKeyTyped, boolean needsKeyReleased) {
         boolean isFlagsChangedEvent =
             isNpapiCallback ? (eventType == CocoaConstants.NPCocoaEventFlagsChanged) :
@@ -153,7 +153,10 @@ final class CPlatformResponder {
                 testChar = chars.charAt(0);
             }
 
-            int[] in = new int[] {testChar, isDeadChar ? 1 : 0, modifierFlags, keyCode};
+            char testCharIgnoringModifiers = charsIgnoringModifiers != null && charsIgnoringModifiers.length() > 0 ?
+                    charsIgnoringModifiers.charAt(0) : KeyEvent.CHAR_UNDEFINED;
+
+            int[] in = new int[] {testCharIgnoringModifiers, isDeadChar ? 1 : 0, modifierFlags, keyCode};
             int[] out = new int[3]; // [jkeyCode, jkeyLocation, deadChar]
 
             postsTyped = NSEvent.nsToJavaKeyInfo(in, out);
