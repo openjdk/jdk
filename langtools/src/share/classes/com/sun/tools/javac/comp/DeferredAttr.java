@@ -516,13 +516,11 @@ public class DeferredAttr extends JCTree.Visitor {
                     }
                 }
                 if (!progress) {
-                    DeferredAttrContext dac = this;
-                    while (dac != emptyDeferredAttrContext) {
-                        if (dac.mode == AttrMode.SPECULATIVE) {
-                            //unsticking does not take place during overload
-                            break;
+                    if (insideOverloadPhase()) {
+                        for (DeferredAttrNode deferredNode: deferredAttrNodes) {
+                            deferredNode.dt.tree.type = Type.noType;
                         }
-                        dac = dac.parent;
+                        return;
                     }
                     //remove all variables that have already been instantiated
                     //from the list of stuck variables
@@ -537,6 +535,17 @@ public class DeferredAttr extends JCTree.Visitor {
                     }
                 }
             }
+        }
+
+        private boolean insideOverloadPhase() {
+            DeferredAttrContext dac = this;
+            if (dac == emptyDeferredAttrContext) {
+                return false;
+            }
+            if (dac.mode == AttrMode.SPECULATIVE) {
+                return true;
+            }
+            return dac.parent.insideOverloadPhase();
         }
     }
 
@@ -598,6 +607,8 @@ public class DeferredAttr extends JCTree.Visitor {
                             return false;
                         }
                     } else {
+                        Assert.check(!deferredAttrContext.insideOverloadPhase(),
+                                "attribution shouldn't be happening here");
                         ResultInfo instResultInfo =
                                 resultInfo.dup(deferredAttrContext.inferenceContext.asInstType(resultInfo.pt));
                         dt.check(instResultInfo, dummyStuckPolicy, basicCompleter);
