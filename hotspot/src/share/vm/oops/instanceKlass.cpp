@@ -1951,8 +1951,7 @@ bool InstanceKlass::is_dependent_nmethod(nmethod* nm) {
     if (nm == b->get_nmethod()) {
 #ifdef ASSERT
       int count = b->count();
-      assert(count >= 0, "Just check if we ever get here 1");
-      assert(count > 0,  "Just check if we ever get here 2");
+      assert(count >= 0, err_msg("count shouldn't be negative: %d", count));
 #endif
       return true;
     }

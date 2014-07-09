@@ -5310,7 +5310,7 @@ public:
     // Do first pass of code cache cleaning.
     _code_cache_task.work_first_pass(worker_id);
 
-    // Let the threads, mark that the first pass is done.
+    // Let the threads mark that the first pass is done.
     _code_cache_task.barrier_mark(worker_id);
 
     // Clean the Strings and Symbols.
