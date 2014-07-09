@@ -141,7 +141,7 @@ public final class FunctionSignature {
             paramTypeList.add(paramType.getTypeClass());
         }
 
-        this.methodType = MH.type(returnType.getTypeClass(), paramTypeList.toArray(new Class[paramTypes.length]));
+        this.methodType = MH.type(returnType.getTypeClass(), paramTypeList.toArray(new Class<?>[paramTypes.length]));
     }
 
     /**

@@ -144,15 +144,6 @@ public abstract class Node implements Cloneable {
     public abstract void toString(final StringBuilder sb, final boolean printType);
 
     /**
-     * Check if this node has terminal flags, i.e. ends or breaks control flow
-     *
-     * @return true if terminal
-     */
-    public boolean hasTerminalFlags() {
-        return isTerminal() || hasGoto();
-    }
-
-    /**
      * Get the finish position for this node in the source string
      * @return finish
      */
@@ -166,15 +157,6 @@ public abstract class Node implements Cloneable {
      */
     public void setFinish(final int finish) {
         this.finish = finish;
-    }
-
-    /**
-     * Check if this function repositions control flow with goto like
-     * semantics, for example {@link BreakNode} or a {@link ForNode} with no test
-     * @return true if node has goto semantics
-     */
-    public boolean hasGoto() {
-        return false;
     }
 
     /**
@@ -247,16 +229,6 @@ public abstract class Node implements Cloneable {
      */
     public long getToken() {
         return token;
-    }
-
-    /**
-     * Is this a terminal Node, i.e. does it end control flow like a throw or return
-     * expression does?
-     *
-     * @return true if this node is terminal
-     */
-    public boolean isTerminal() {
-        return false;
     }
 
     //on change, we have to replace the entire list, that's we can't simple do ListIterator.set
