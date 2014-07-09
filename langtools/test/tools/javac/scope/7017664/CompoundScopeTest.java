@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,13 +117,13 @@ public class CompoundScopeTest {
                 boolean subAdded = false;
                 for (int sc = 0 ; sc < 3 ; sc ++) {
                     if (scopeNesting[sc][i]) {
-                        sub.addSubScope(scopes[sc]);
+                        sub.prependSubScope(scopes[sc]);
                         if (!subAdded) {
-                            root.addSubScope(sub);
+                            root.prependSubScope(sub);
                             subAdded = true;
                         }
                     } else {
-                        root.addSubScope(scopes[sc]);
+                        root.prependSubScope(scopes[sc]);
                     }
                 }
                 log("testing scope: " + root);
@@ -145,7 +145,7 @@ public class CompoundScopeTest {
          * Create a scope containing a given number of synthetic symbols
          */
         Scope createScope(int nelems) {
-            Scope s = new Scope(symtab.noSymbol);
+            WriteableScope s = WriteableScope.create(symtab.noSymbol);
             for (int i = 0 ; i < nelems ; i++) {
                 Symbol sym = new TypeVariableSymbol(0, names.fromString("s" + i), null, null);
                 s.enter(sym);
@@ -181,7 +181,7 @@ public class CompoundScopeTest {
                     elems :
                     filter(elems, sf);
             int expectedCount = allSymbols.length();
-            for (Symbol s : sf == null ? cs.getElements() : cs.getElements(sf)) {
+            for (Symbol s : sf == null ? cs.getSymbols() : cs.getSymbols(sf)) {
                 checkSameSymbols(s, allSymbols.head);
                 allSymbols = allSymbols.tail;
                 found.append(s);
@@ -204,7 +204,7 @@ public class CompoundScopeTest {
                     filter(shadowedEntry.getValue(), sf);
                 int expectedCount = shadowed.length();
                 Name name = shadowedEntry.getKey();
-                for (Symbol s : sf == null ? cs.getElementsByName(name) : cs.getElementsByName(name, sf)) {
+                for (Symbol s : sf == null ? cs.getSymbolsByName(name) : cs.getSymbolsByName(name, sf)) {
                     checkSameSymbols(s, shadowed.head);
                     shadowed = shadowed.tail;
                     count++;

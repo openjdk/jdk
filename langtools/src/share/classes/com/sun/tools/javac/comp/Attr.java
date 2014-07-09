@@ -37,6 +37,7 @@ import com.sun.source.tree.TreeVisitor;
 import com.sun.source.util.SimpleTreeVisitor;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Check.CheckContext;
@@ -618,14 +619,11 @@ public class Attr extends JCTree.Visitor {
         return newEnv;
     }
 
-    Scope copyScope(Scope sc) {
-        Scope newScope = new Scope(sc.owner);
+    WriteableScope copyScope(WriteableScope sc) {
+        WriteableScope newScope = WriteableScope.create(sc.owner);
         List<Symbol> elemsList = List.nil();
-        while (sc != null) {
-            for (Scope.Entry e = sc.elems ; e != null ; e = e.sibling) {
-                elemsList = elemsList.prepend(e.sym);
-            }
-            sc = sc.next;
+        for (Symbol sym : sc.getSymbols()) {
+            elemsList = elemsList.prepend(sym);
         }
         for (Symbol s : elemsList) {
             newScope.enter(s);
@@ -1140,12 +1138,12 @@ public class Attr extends JCTree.Visitor {
             // Block is a static or instance initializer;
             // let the owner of the environment be a freshly
             // created BLOCK-method.
-            final Env<AttrContext> localEnv =
-                env.dup(tree, env.info.dup(env.info.scope.dupUnshared()));
-            localEnv.info.scope.owner =
+            Symbol fakeOwner =
                 new MethodSymbol(tree.flags | BLOCK |
                     env.info.scope.owner.flags() & STRICTFP, names.empty, null,
                     env.info.scope.owner);
+            final Env<AttrContext> localEnv =
+                env.dup(tree, env.info.dup(env.info.scope.dupUnshared(fakeOwner)));
 
             if ((tree.flags & STATIC) != 0) localEnv.info.staticLevel++;
             attribStats(tree.stats, localEnv);
@@ -1328,7 +1326,7 @@ public class Attr extends JCTree.Visitor {
     }
     // where
         /** Add any variables defined in stats to the switch scope. */
-        private static void addVars(List<JCStatement> stats, Scope switchScope) {
+        private static void addVars(List<JCStatement> stats, WriteableScope switchScope) {
             for (;stats.nonEmpty(); stats = stats.tail) {
                 JCTree stat = stats.head;
                 if (stat.hasTag(VARDEF))
@@ -1344,10 +1342,9 @@ public class Attr extends JCTree.Visitor {
         }
         JCIdent ident = (JCIdent)tree;
         Name name = ident.name;
-        for (Scope.Entry e = enumType.tsym.members().lookup(name);
-             e.scope != null; e = e.next()) {
-            if (e.sym.kind == VAR) {
-                Symbol s = ident.sym = e.sym;
+        for (Symbol sym : enumType.tsym.members().getSymbolsByName(name)) {
+            if (sym.kind == VAR) {
+                Symbol s = ident.sym = sym;
                 ((VarSymbol)s).getConstValue(); // ensure initializer is evaluated
                 ident.type = s.type;
                 return ((s.flags_field & Flags.ENUM) == 0)
@@ -2343,7 +2340,7 @@ public class Attr extends JCTree.Visitor {
                     Symbol descriptor = types.findDescriptorSymbol(clazztype.tsym);
                     int count = 0;
                     boolean found = false;
-                    for (Symbol sym : csym.members().getElements()) {
+                    for (Symbol sym : csym.members().getSymbols()) {
                         if ((sym.flags() & SYNTHETIC) != 0 ||
                                 sym.isConstructor()) continue;
                         count++;
@@ -2774,15 +2771,15 @@ public class Attr extends JCTree.Visitor {
             Symbol owner = env.info.scope.owner;
             if (owner.kind == VAR && owner.owner.kind == TYP) {
                 //field initializer
-                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared()));
                 ClassSymbol enclClass = owner.enclClass();
+                Symbol newScopeOwner = env.info.scope.owner;
                 /* if the field isn't static, then we can get the first constructor
                  * and use it as the owner of the environment. This is what
                  * LTM code is doing to look for type annotations so we are fine.
                  */
                 if ((owner.flags() & STATIC) == 0) {
-                    for (Symbol s : enclClass.members_field.getElementsByName(names.init)) {
-                        lambdaEnv.info.scope.owner = s;
+                    for (Symbol s : enclClass.members_field.getSymbolsByName(names.init)) {
+                        newScopeOwner = s;
                         break;
                     }
                 } else {
@@ -2798,8 +2795,9 @@ public class Attr extends JCTree.Visitor {
                         clinit.params = List.<VarSymbol>nil();
                         clinits.put(enclClass, clinit);
                     }
-                    lambdaEnv.info.scope.owner = clinit;
+                    newScopeOwner = clinit;
                 }
+                lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dupUnshared(newScopeOwner)));
             } else {
                 lambdaEnv = env.dup(that, env.info.dup(env.info.scope.dup()));
             }
@@ -4515,7 +4513,7 @@ public class Attr extends JCTree.Visitor {
 
         for (List<JCTypeParameter> l = tree.typarams;
              l.nonEmpty(); l = l.tail) {
-             Assert.checkNonNull(env.info.scope.lookup(l.head.name).scope);
+             Assert.checkNonNull(env.info.scope.findFirst(l.head.name));
         }
 
         // Check that a generic class doesn't extend Throwable
@@ -4602,16 +4600,21 @@ public class Attr extends JCTree.Visitor {
         private void checkSerialVersionUID(JCClassDecl tree, ClassSymbol c) {
 
             // check for presence of serialVersionUID
-            Scope.Entry e = c.members().lookup(names.serialVersionUID);
-            while (e.scope != null && e.sym.kind != VAR) e = e.next();
-            if (e.scope == null) {
+            VarSymbol svuid = null;
+            for (Symbol sym : c.members().getSymbolsByName(names.serialVersionUID)) {
+                if (sym.kind == VAR) {
+                    svuid = (VarSymbol)sym;
+                    break;
+                }
+            }
+
+            if (svuid == null) {
                 log.warning(LintCategory.SERIAL,
                         tree.pos(), "missing.SVUID", c);
                 return;
             }
 
             // check that it is static final
-            VarSymbol svuid = (VarSymbol)e.sym;
             if ((svuid.flags() & (STATIC | FINAL)) !=
                 (STATIC | FINAL))
                 log.warning(LintCategory.SERIAL,

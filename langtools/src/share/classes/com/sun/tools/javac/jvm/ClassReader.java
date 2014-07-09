@@ -42,6 +42,7 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.BaseFileObject;
@@ -141,7 +142,7 @@ public class ClassReader {
 
     /** The current scope where type variables are entered.
      */
-    protected Scope typevars;
+    protected WriteableScope typevars;
 
     /** The path name of the class file currently being read.
      */
@@ -231,7 +232,7 @@ public class ClassReader {
 
         profile = Profile.instance(context);
 
-        typevars = new Scope(syms.noSymbol);
+        typevars = WriteableScope.create(syms.noSymbol);
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
@@ -832,9 +833,9 @@ public class ClassReader {
     /** Find type variable with given name in `typevars' scope.
      */
     Type findTypeVar(Name name) {
-        Scope.Entry e = typevars.lookup(name);
-        if (e.scope != null) {
-            return e.sym.type;
+        Symbol s = typevars.findFirst(name);
+        if (s != null) {
+            return s.type;
         } else {
             if (readingClassAttr) {
                 // While reading the class attribute, the supertypes
@@ -1228,9 +1229,10 @@ public class ClassReader {
 
         MethodType type = nt.uniqueType.type.asMethodType();
 
-        for (Scope.Entry e = scope.lookup(nt.name); e.scope != null; e = e.next())
-            if (e.sym.kind == MTH && isSameBinaryType(e.sym.type.asMethodType(), type))
-                return (MethodSymbol)e.sym;
+        for (Symbol sym : scope.getSymbolsByName(nt.name)) {
+            if (sym.kind == MTH && isSameBinaryType(sym.type.asMethodType(), type))
+                return (MethodSymbol)sym;
+        }
 
         if (nt.name != names.init)
             // not a constructor
@@ -1769,10 +1771,7 @@ public class ClassReader {
         MethodSymbol findAccessMethod(Type container, Name name) {
             CompletionFailure failure = null;
             try {
-                for (Scope.Entry e = container.tsym.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    Symbol sym = e.sym;
+                for (Symbol sym : container.tsym.members().getSymbolsByName(name)) {
                     if (sym.kind == MTH && sym.type.getParameterTypes().length() == 0)
                         return (MethodSymbol) sym;
                 }
@@ -1852,11 +1851,9 @@ public class ClassReader {
             VarSymbol enumerator = null;
             CompletionFailure failure = null;
             try {
-                for (Scope.Entry e = enumTypeSym.members().lookup(proxy.enumerator);
-                     e.scope != null;
-                     e = e.next()) {
-                    if (e.sym.kind == VAR) {
-                        enumerator = (VarSymbol)e.sym;
+                for (Symbol sym : enumTypeSym.members().getSymbolsByName(proxy.enumerator)) {
+                    if (sym.kind == VAR) {
+                        enumerator = (VarSymbol)sym;
                         break;
                     }
                 }
@@ -2197,7 +2194,7 @@ public class ClassReader {
         ClassType ct = (ClassType)c.type;
 
         // allocate scope for members
-        c.members_field = new Scope(c);
+        c.members_field = WriteableScope.create(c);
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);

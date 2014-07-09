@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,24 @@
 
 /*
  * @test
- * @bug 6402516
+ * @bug 6402516 8031569
  * @summary need Trees.getScope(TreePath)
  * @build Checker CheckLocalElements
  * @run main CheckLocalElements
  */
 
+import java.io.IOException;
 import java.util.*;
-import com.sun.source.tree.*;
+import java.util.regex.*;
+
 import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 
+import com.sun.source.tree.*;
+import com.sun.source.util.*;
+
 /*
- * Check the local elements of a scope against the contents of string literals.
+ * Check the local elements of a scope against the contents of string literals and top-level comment.
  */
 public class CheckLocalElements extends Checker {
     public static void main(String... args) throws Exception {
@@ -89,6 +94,16 @@ public class CheckLocalElements extends Checker {
 
         return true;
     }
+
+    @Override
+    void additionalChecks(Trees trees, CompilationUnitTree topLevel) throws IOException {
+        Matcher m = TOPLEVEL_SCOPE_DEF.matcher(topLevel.getSourceFile().getCharContent(false));
+        if (!m.find())
+            throw new AssertionError("Should have top-level scope def!");
+        check(trees.getScope(new TreePath(topLevel)), m.group(1));
+    }
+    //where:
+        Pattern TOPLEVEL_SCOPE_DEF = Pattern.compile("TOPLEVEL_SCOPE:(.*)");
 
     private String getEnclosingName(Element e) {
         Element encl = e.getEnclosingElement();

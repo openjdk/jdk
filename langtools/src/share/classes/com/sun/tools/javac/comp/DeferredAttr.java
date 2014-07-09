@@ -376,9 +376,8 @@ public class DeferredAttr extends JCTree.Visitor {
                              ResultInfo resultInfo,
                              Annotate.PositionCreator creator) {
         final JCTree newTree = new TreeCopier<>(make).copy(tree);
-        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
+        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.isSpeculative = true;
-        speculativeEnv.info.scope.owner = env.info.scope.owner;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
             public boolean accepts(final JCDiagnostic d) {

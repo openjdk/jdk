@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -337,6 +338,8 @@ public class DPrinter {
             printList(label, (List) item);
         } else if (item instanceof Name) {
             printName(label, (Name) item);
+        } else if (item instanceof Scope) {
+            printScope(label, (Scope) item);
         } else {
             printString(label, String.valueOf(item));
         }
@@ -356,7 +359,7 @@ public class DPrinter {
                     out.print(label);
                     out.print(": [");
                     String sep = "";
-                    for (Symbol sym: scope.getElements()) {
+                    for (Symbol sym: scope.getSymbols()) {
                         out.print(sep);
                         out.print(sym.name);
                         sep = ",";
@@ -370,24 +373,78 @@ public class DPrinter {
                     out.println(label);
 
                     indent(+1);
-                    printImplClass(scope, Scope.class);
-                    printSymbol("owner", scope.owner, Details.SUMMARY);
-                    printScope("next", scope.next, Details.SUMMARY);
-                    printObject("shared", getField(scope, Scope.class, "shared"), Details.SUMMARY);
-                    if (scope instanceof CompoundScope) {
-                        printObject("subScopes",
-                                getField(scope, CompoundScope.class, "subScopes"),
-                                Details.FULL);
-                    } else {
-                        for (Symbol sym : scope.getElements()) {
-                            printSymbol(sym.name.toString(), sym, Details.SUMMARY);
-                        }
-                    }
+                    printFullScopeImpl(scope);
                     indent(-1);
                     break;
                 }
             }
         }
+    }
+
+    void printFullScopeImpl(Scope scope) {
+        indent();
+        out.println(scope.getClass().getName());
+        printSymbol("owner", scope.owner, Details.SUMMARY);
+        if (SCOPE_IMPL_CLASS.equals(scope.getClass().getName())) {
+            printScope("next", (Scope) getField(scope, scope.getClass(), "next"), Details.SUMMARY);
+            printObject("shared", getField(scope, scope.getClass(), "shared"), Details.SUMMARY);
+            Object[] table = (Object[]) getField(scope, scope.getClass(), "table");
+            for (int i = 0; i < table.length; i++) {
+                if (i > 0)
+                    out.print(", ");
+                else
+                    indent();
+                out.print(i + ":" + entryToString(table[i], table, false));
+            }
+            out.println();
+        } else if (FILTER_SCOPE_CLASS.equals(scope.getClass().getName())) {
+            printScope("delegate",
+                    (Scope) getField(scope, scope.getClass(), "delegate"), Details.FULL);
+        } else if (scope instanceof CompoundScope) {
+            printList("delegates", (List<?>) getField(scope, CompoundScope.class, "subScopes"));
+        } else {
+            for (Symbol sym : scope.getSymbols()) {
+                printSymbol(sym.name.toString(), sym, Details.SUMMARY);
+            }
+        }
+    }
+        //where:
+        static final String SCOPE_IMPL_CLASS = "com.sun.tools.javac.code.Scope$ScopeImpl";
+        static final String FILTER_SCOPE_CLASS = "com.sun.tools.javac.code.Scope$FilterImportScope";
+
+    /**
+     * Create a string showing the contents of an entry, using the table
+     * to help identify cross-references to other entries in the table.
+     * @param e the entry to be shown
+     * @param table the table containing the other entries
+     */
+    String entryToString(Object e, Object[] table, boolean ref) {
+        if (e == null)
+            return "null";
+        Symbol sym = (Symbol) getField(e, e.getClass(), "sym");
+        if (sym == null)
+            return "sent"; // sentinel
+        if (ref) {
+            int index = indexOf(table, e);
+            if (index != -1)
+                return String.valueOf(index);
+        }
+        Scope scope = (Scope) getField(e, e.getClass(), "scope");
+        return "(" + sym.name + ":" + sym
+                + ",shdw:" + entryToString(callMethod(e, e.getClass(), "next"), table, true)
+                + ",sibl:" + entryToString(getField(e, e.getClass(), "sibling"), table, true)
+                + ((sym.owner != scope.owner)
+                    ? (",BOGUS[" + sym.owner + "," + scope.owner + "]")
+                    : "")
+                + ")";
+    }
+
+    <T> int indexOf(T[] array, T item) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == item)
+                return i;
+        }
+        return -1;
     }
 
     public void printSource(String label, JCTree tree) {
@@ -544,6 +601,23 @@ public class DPrinter {
                 return f.get(o);
             } finally {
                 f.setAccessible(prev);
+            }
+        } catch (ReflectiveOperationException e) {
+            return e;
+        } catch (SecurityException e) {
+            return e;
+        }
+    }
+
+    protected Object callMethod(Object o, Class<?> clazz, String name) {
+        try {
+            Method m = clazz.getDeclaredMethod(name);
+            boolean prev = m.isAccessible();
+            m.setAccessible(true);
+            try {
+                return m.invoke(o);
+            } finally {
+                m.setAccessible(prev);
             }
         } catch (ReflectiveOperationException e) {
             return e;

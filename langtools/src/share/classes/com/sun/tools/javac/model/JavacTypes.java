@@ -310,9 +310,9 @@ public class JavacTypes implements javax.lang.model.util.Types {
         for (Type t : types.closure(origin.type)) {
             if (t != origin.type) {
                 ClassSymbol c = (ClassSymbol) t.tsym;
-                for (Scope.Entry e = c.members().lookup(m.name); e.scope != null; e = e.next()) {
-                    if (e.sym.kind == Kinds.MTH && m.overrides(e.sym, origin, types, true)) {
-                        results.add((MethodSymbol) e.sym);
+                for (Symbol sym : c.members().getSymbolsByName(m.name)) {
+                    if (sym.kind == Kinds.MTH && m.overrides(sym, origin, types, true)) {
+                        results.add((MethodSymbol) sym);
                     }
                 }
             }
