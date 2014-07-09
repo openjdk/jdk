@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,18 +49,17 @@ public class ValuePropertyLoader extends Loader {
 
     public void text(UnmarshallingContext.State state, CharSequence text) throws SAXException {
         try {
-            xacc.parse(state.target,text);
+            xacc.parse(state.getTarget(),text);
         } catch (AccessorException e) {
             handleGenericException(e,true);
         } catch (RuntimeException e) {
-            if(state.prev != null) {
-                if(state.prev.target instanceof JAXBElement) {
-                    ; // do nothing - issue 601 - don't report exceptions like
-                      // NumberFormatException when unmarshalling "nillable" element
-                      // (I suppose JAXBElement indicates this
-                } else {
+            if(state.getPrev() != null) {
+                if (!(state.getPrev().getTarget() instanceof JAXBElement))
                     handleParseConversionException(state,e);
-                }
+                // else
+                // do nothing - issue 601 - don't report exceptions like
+                // NumberFormatException when unmarshalling "nillable" element
+                // (I suppose JAXBElement indicates this
             } else {
                 handleParseConversionException(state,e);
             }
