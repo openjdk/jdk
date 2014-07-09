@@ -407,11 +407,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_OPTIMIZATION],
         C_O_FLAG_HI="-O3"
         C_O_FLAG_NORM="-O2"
       fi
-      if test "x$HAS_CFLAG_OPTIMIZE_DEBUG" = "xtrue"; then
-        C_O_FLAG_DEBUG="$CFLAG_OPTIMIZE_DEBUG_FLAG"
-      else
-        C_O_FLAG_DEBUG="-O0"
-      fi
+      C_O_FLAG_DEBUG="-O0"
       C_O_FLAG_NONE="-O0"
     elif test "x$TOOLCHAIN_TYPE" = xclang; then
       if test "x$OPENJDK_TARGET_OS" = xmacosx; then
