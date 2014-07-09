@@ -208,8 +208,11 @@ public class JDesktopPane extends JLayeredPane implements Accessible
      }
 
     /**
-     * Returns the <code>DesktopManger</code> that handles
+     * Returns the {@code DesktopManger} that handles
      * desktop-specific UI actions.
+     *
+     * @return the {@code DesktopManger} that handles desktop-specific
+     *         UI actions
      */
     public DesktopManager getDesktopManager() {
         return desktopManager;

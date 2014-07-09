@@ -149,6 +149,7 @@ public class JSpinner extends JComponent implements Accessible
      * a set of previous/next buttons, and an editor appropriate
      * for the model.
      *
+     * @param model  a model for the new spinner
      * @throws NullPointerException if the model is {@code null}
      */
     public JSpinner(SpinnerModel model) {
@@ -328,6 +329,7 @@ public class JSpinner extends JComponent implements Accessible
      * getModel().getValue()
      * </pre>
      *
+     * @return the current value of the model
      * @see #setValue
      * @see SpinnerModel#getValue
      */
@@ -349,6 +351,7 @@ public class JSpinner extends JComponent implements Accessible
      * getModel().setValue(value)
      * </pre>
      *
+     * @param value  new value for the spinner
      * @throws IllegalArgumentException if <code>value</code> isn't allowed
      * @see #getValue
      * @see SpinnerModel#setValue
