@@ -54,7 +54,7 @@ package org.w3c.dom.events;
  * the user wishes the same <code>EventListener</code>s to be added to the
  * newly created copy the user must add them manually.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113'>Document Object Model (DOM) Level 2 Events Specification</a>.
- * @since DOM Level 2
+ * @since 1.5, DOM Level 2
  */
 public interface EventListener {
     /**

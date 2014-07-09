@@ -52,7 +52,6 @@ import org.w3c.dom.ls.LSSerializer;
  *
  * @xerces.internal
  *
- * @version $Id: CoreDOMImplementationImpl.java,v 1.6 2010-11-01 04:39:37 joehw Exp $
  * @since PR-DOM-Level-1-19980818.
  */
 public class CoreDOMImplementationImpl

@@ -76,7 +76,6 @@ import org.w3c.dom.traversal.TreeWalker;
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
- * @version $Id: DocumentImpl.java,v 1.6 2010/07/20 20:25:24 joehw Exp $
  * @since  PR-DOM-Level-1-19980818.
  */
 public class DocumentImpl

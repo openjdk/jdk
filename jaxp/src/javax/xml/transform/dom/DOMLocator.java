@@ -37,6 +37,8 @@ import org.w3c.dom.Node;
  * object returned by an exception. A {@link javax.xml.transform.Transformer}
  * may use this object for purposes other than error reporting, for instance,
  * to indicate the source node that originated a result node.
+ *
+ * @since 1.4
  */
 public interface DOMLocator extends SourceLocator {
 
