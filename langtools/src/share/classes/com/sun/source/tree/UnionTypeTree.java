@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,8 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for a union type expression in a multicatch var declaration.
+ * A tree node for a union type expression in a multicatch
+ * variable declaration.
  *
  * @author Maurizio Cimadamore
  *
@@ -36,5 +37,9 @@ import java.util.List;
  */
 @jdk.Exported
 public interface UnionTypeTree extends Tree {
+    /**
+     * Returns the alternative type expressions.
+     * @return the alternative type expressions
+     */
     List<? extends Tree> getTypeAlternatives();
 }

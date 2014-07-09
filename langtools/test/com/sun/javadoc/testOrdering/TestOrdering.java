@@ -117,6 +117,31 @@ public class TestOrdering extends JavadocTester {
         checkExit(Exit.OK);
         checkOrder("index-all.html", composeTestVectors());
     }
+
+    @Test
+    void testIndexTypeClustering() {
+        javadoc("-d", "out-3",
+                "-sourcepath", testSrc("src-2"),
+                "-use",
+                "a",
+                "b",
+                "e",
+                "something");
+        checkOrder("index-all.html", typeTestVectors);
+        checkExit(Exit.OK);
+    }
+    String[] typeTestVectors = {
+        "something</a> - package something</dt>",
+        "something</span></a> - Class in",
+        "something</span></a> - Enum in",
+        "something</span></a> - Interface in",
+        "something</span></a> - Annotation Type in",
+        "something</a></span> - Variable in class",
+        "something()</a></span> - Constructor",
+        "something()</a></span> - Method in class a.<a href=\"a/A.html\"",
+        "something()</a></span> - Method in class a.<a href=\"a/something.html\"",
+        "something()</a></span> - Method in class something.<a href=\"something/J.html\""
+    };
     String[] composeTestVectors() {
         List<String> testList = new ArrayList<>();
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import com.sun.source.doctree.*;
  * <p>The default implementation of the visitXYZ methods will determine
  * a result as follows:
  * <ul>
- * <li>If the node being visited has no children, the result will be null.
+ * <li>If the node being visited has no children, the result will be {@code null}.
  * <li>If the node being visited has one child, the result will be the
  * result of calling {@code scan} on that child. The child may be a simple node
  * or itself a list of nodes.
@@ -71,7 +71,10 @@ import com.sun.source.doctree.*;
 public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
 
     /**
-     * Scan a single node.
+     * Scans a single node.
+     * @param node the node to be scanned
+     * @param p a parameter value passed to the visit method
+     * @return the result value from the visit method
      */
     public R scan(DocTree node, P p) {
         return (node == null) ? null : node.accept(this, p);
@@ -82,7 +85,11 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
     }
 
     /**
-     * Scan a list of nodes.
+     * Scans a sequence of nodes.
+     * @param nodes the nodes to be scanned
+     * @param p a parameter value to be passed to the visit method for each node
+     * @return the combined return value from the visit methods.
+     *      The values are combined using the {@link #reduce reduce} method.
      */
     public R scan(Iterable<? extends DocTree> nodes, P p) {
         R r = null;
@@ -104,6 +111,9 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
      * Reduces two results into a combined result.
      * The default implementation is to return the first parameter.
      * The general contract of the method is that it may take any action whatsoever.
+     * @param r1 the first of the values to be combined
+     * @param r2 the second of the values to be combined
+     * @return the result of combining the two parameters
      */
     public R reduce(R r1, R r2) {
         return r1;
@@ -114,26 +124,61 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
  * Visitor methods
  ****************************************************************************/
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitAttribute(AttributeTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitAuthor(AuthorTree node, P p) {
         return scan(node.getName(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitComment(CommentTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitDeprecated(DeprecatedTree node, P p) {
         return scan(node.getBody(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitDocComment(DocCommentTree node, P p) {
         R r = scan(node.getFirstSentence(), p);
@@ -142,36 +187,85 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitDocRoot(DocRootTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitEndElement(EndElementTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitEntity(EntityTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitErroneous(ErroneousTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitIdentifier(IdentifierTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitInheritDoc(InheritDocTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitLink(LinkTree node, P p) {
         R r = scan(node.getReference(), p);
@@ -179,11 +273,25 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitLiteral(LiteralTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitParam(ParamTree node, P p) {
         R r = scan(node.getName(), p);
@@ -191,31 +299,73 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitReference(ReferenceTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitReturn(ReturnTree node, P p) {
         return scan(node.getDescription(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitSee(SeeTree node, P p) {
         return scan(node.getReference(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitSerial(SerialTree node, P p) {
         return scan(node.getDescription(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitSerialData(SerialDataTree node, P p) {
         return scan(node.getDescription(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitSerialField(SerialFieldTree node, P p) {
         R r = scan(node.getName(), p);
@@ -224,21 +374,49 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitSince(SinceTree node, P p) {
         return scan(node.getBody(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitStartElement(StartElementTree node, P p) {
         return scan(node.getAttributes(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitText(TextTree node, P p) {
         return null;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitThrows(ThrowsTree node, P p) {
         R r = scan(node.getExceptionName(), p);
@@ -246,26 +424,61 @@ public class DocTreeScanner<R,P> implements DocTreeVisitor<R,P> {
         return r;
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitUnknownBlockTag(UnknownBlockTagTree node, P p) {
         return scan(node.getContent(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitUnknownInlineTag(UnknownInlineTagTree node, P p) {
         return scan(node.getContent(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitValue(ValueTree node, P p) {
         return scan(node.getReference(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation scans the children in left to right order.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitVersion(VersionTree node, P p) {
         return scan(node.getBody(), p);
     }
 
+    /**
+     * {@inheritDoc} This implementation returns {@code null}.
+     *
+     * @param node  {@inheritDoc}
+     * @param p  {@inheritDoc}
+     * @return the result of scanning
+     */
     @Override
     public R visitOther(DocTree node, P p) {
         return null;

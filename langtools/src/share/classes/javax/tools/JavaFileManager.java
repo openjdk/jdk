@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
      */
     interface Location {
         /**
-         * Gets the name of this location.
+         * Returns the name of this location.
          *
          * @return a name
          */
@@ -127,7 +127,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     }
 
     /**
-     * Gets a class loader for loading plug-ins from the given
+     * Returns a class loader for loading plug-ins from the given
      * location.  For example, to load annotation processors, a
      * compiler will request a class loader for the {@link
      * StandardLocation#ANNOTATION_PROCESSOR_PATH
@@ -224,7 +224,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
     boolean hasLocation(Location location);
 
     /**
-     * Gets a {@linkplain JavaFileObject file object} for input
+     * Returns a {@linkplain JavaFileObject file object} for input
      * representing the specified class of the specified kind in the
      * given location.
      *
@@ -250,7 +250,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
         throws IOException;
 
     /**
-     * Gets a {@linkplain JavaFileObject file object} for output
+     * Returns a {@linkplain JavaFileObject file object} for output
      * representing the specified class of the specified kind in the
      * given location.
      *
@@ -288,7 +288,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
         throws IOException;
 
     /**
-     * Gets a {@linkplain FileObject file object} for input
+     * Returns a {@linkplain FileObject file object} for input
      * representing the specified <a href="JavaFileManager.html#relative_name">relative
      * name</a> in the specified package in the given location.
      *
@@ -332,7 +332,7 @@ public interface JavaFileManager extends Closeable, Flushable, OptionChecker {
         throws IOException;
 
     /**
-     * Gets a {@linkplain FileObject file object} for output
+     * Returns a {@linkplain FileObject file object} for output
      * representing the specified <a href="JavaFileManager.html#relative_name">relative
      * name</a> in the specified package in the given location.
      *

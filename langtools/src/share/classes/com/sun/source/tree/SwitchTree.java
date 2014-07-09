@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for a 'switch' statement.
+ * A tree node for a {@code switch} statement.
  *
  * For example:
  * <pre>
@@ -45,6 +45,15 @@ import java.util.List;
  */
 @jdk.Exported
 public interface SwitchTree extends StatementTree {
+    /**
+     * Returns the expression for the {@code switch} statement.
+     * @return the expression
+     */
     ExpressionTree getExpression();
+
+    /**
+     * Returns the cases for the {@code switch} statement.
+     * @return the cases
+     */
     List<? extends CaseTree> getCases();
 }

@@ -752,6 +752,17 @@
         />
     </target>
 
+    <!--
+    **** IDE support
+    -->
+
+    <target name="idea">
+        <mkdir dir=".idea"/>
+        <copy todir=".idea" >
+            <fileset dir="make/intellij" includes="**"/>
+        </copy>
+        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.home}"/>               
+    </target>
 
     <!--
     **** Check targets.

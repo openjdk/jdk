@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,16 +39,22 @@ import com.sun.source.tree.*;
 @jdk.Exported
 public class TreePath implements Iterable<Tree> {
     /**
-     * Gets a tree path for a tree node within a compilation unit.
-     * @return null if the node is not found
+     * Returns a tree path for a tree node within a compilation unit,
+     * or {@code null} if the node is not found.
+     * @param unit the compilation unit to search
+     * @param target the node to locate
+     * @return the tree path
      */
     public static TreePath getPath(CompilationUnitTree unit, Tree target) {
         return getPath(new TreePath(unit), target);
     }
 
     /**
-     * Gets a tree path for a tree node within a subtree identified by a TreePath object.
-     * @return null if the node is not found
+     * Returns a tree path for a tree node within a subtree identified by a TreePath object.
+     * Returns {@code null} if the node is not found.
+     * @param path the path in which to search
+     * @param target the node to locate
+     * @return the tree path of the target node
      */
     public static TreePath getPath(TreePath path, Tree target) {
         path.getClass();
@@ -85,41 +91,47 @@ public class TreePath implements Iterable<Tree> {
 
     /**
      * Creates a TreePath for a root node.
+     * @param node the root node
      */
-    public TreePath(CompilationUnitTree t) {
-        this(null, t);
+    public TreePath(CompilationUnitTree node) {
+        this(null, node);
     }
 
     /**
      * Creates a TreePath for a child node.
+     * @param path the parent path
+     * @param tree the child node
      */
-    public TreePath(TreePath p, Tree t) {
-        if (t.getKind() == Tree.Kind.COMPILATION_UNIT) {
-            compilationUnit = (CompilationUnitTree) t;
+    public TreePath(TreePath path, Tree tree) {
+        if (tree.getKind() == Tree.Kind.COMPILATION_UNIT) {
+            compilationUnit = (CompilationUnitTree) tree;
             parent = null;
         }
         else {
-            compilationUnit = p.compilationUnit;
-            parent = p;
+            compilationUnit = path.compilationUnit;
+            parent = path;
         }
-        leaf = t;
+        leaf = tree;
     }
     /**
-     * Get the compilation unit associated with this path.
+     * Returns the compilation unit associated with this path.
+     * @return the compilation unit
      */
     public CompilationUnitTree getCompilationUnit() {
         return compilationUnit;
     }
 
     /**
-     * Get the leaf node for this path.
+     * Returns the leaf node for this path.
+     * @return the leaf node
      */
     public Tree getLeaf() {
         return leaf;
     }
 
     /**
-     * Get the path for the enclosing node, or null if there is no enclosing node.
+     * Returns the path for the enclosing node, or {@code null} if there is no enclosing node.
+     * @return the path for the enclosing node
      */
     public TreePath getParentPath() {
         return parent;
