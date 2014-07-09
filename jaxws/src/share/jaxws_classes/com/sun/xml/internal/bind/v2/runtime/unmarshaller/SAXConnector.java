@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -144,17 +144,7 @@ public final class SAXConnector implements UnmarshallerHandler {
         if( qname==null || qname.length()==0 )
             qname=local;
 
-
-        boolean ignorable = true;
-        StructureLoader sl;
-
-        // not null only if element content is processed (StructureLoader is used)
-        // ugly
-        if((sl = this.context.getStructureLoader()) != null) {
-            ignorable = ((ClassBeanInfoImpl)sl.getBeanInfo()).hasElementOnlyContentModel();
-        }
-
-        processText(ignorable);
+        processText(!context.getCurrentState().isMixed());
 
         tagName.uri = uri;
         tagName.local = local;
@@ -204,7 +194,7 @@ public final class SAXConnector implements UnmarshallerHandler {
     }
 
     private void processText( boolean ignorable ) throws SAXException {
-        if( predictor.expectText() && (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer)))
+        if (predictor.expectText() && (!ignorable || !WhiteSpaceProcessor.isWhiteSpace(buffer)))
             next.text(buffer);
         buffer.setLength(0);
     }

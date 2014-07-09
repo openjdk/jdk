@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,9 +41,19 @@ public final class ByteArrayDataSource implements DataSource {
     private final byte[] buf;
     private final int len;
 
+    /**
+     * @param buf input buffer - the byte array isn't being copied; used directly
+     * @param contentType
+     */
     public ByteArrayDataSource(byte[] buf, String contentType) {
         this(buf,buf.length,contentType);
     }
+
+    /**
+     * @param buf input buffer - the byte array isn't being copied; used directly
+     * @param length
+     * @param contentType
+     */
     public ByteArrayDataSource(byte[] buf, int length, String contentType) {
         this.buf = buf;
         this.len = length;
