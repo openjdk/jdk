@@ -3411,7 +3411,7 @@ void Compile::verify_graph_edges(bool no_dead_code) {
     _root->verify_edges(visited);
     if (no_dead_code) {
       // Now make sure that no visited node is used by an unvisited node.
-      bool dead_nodes = 0;
+      bool dead_nodes = false;
       Unique_Node_List checked(area);
       while (visited.size() > 0) {
         Node* n = visited.pop();
@@ -3422,14 +3422,16 @@ void Compile::verify_graph_edges(bool no_dead_code) {
           if (visited.member(use))  continue;  // already in the graph
           if (use->is_Con())        continue;  // a dead ConNode is OK
           // At this point, we have found a dead node which is DU-reachable.
-          if (dead_nodes++ == 0)
+          if (!dead_nodes) {
             tty->print_cr("*** Dead nodes reachable via DU edges:");
+            dead_nodes = true;
+          }
           use->dump(2);
           tty->print_cr("---");
           checked.push(use);  // No repeats; pretend it is now checked.
         }
       }
-      assert(dead_nodes == 0, "using nodes must be reachable from root");
+      assert(!dead_nodes, "using nodes must be reachable from root");
     }
   }
 }

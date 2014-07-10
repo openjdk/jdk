@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_CONCURRENTMARK_HPP
 
 #include "gc_implementation/g1/heapRegionSet.hpp"
+#include "gc_implementation/shared/gcId.hpp"
 #include "utilities/taskqueue.hpp"
 
 class G1CollectedHeap;
@@ -444,6 +445,7 @@ protected:
   volatile bool           _concurrent;
   // Set at the end of a Full GC so that marking aborts
   volatile bool           _has_aborted;
+  GCId                    _aborted_gc_id;
 
   // Used when remark aborts due to an overflow to indicate that
   // another concurrent marking phase should start
@@ -823,6 +825,8 @@ public:
   void abort();
 
   bool has_aborted()      { return _has_aborted; }
+
+  const GCId& concurrent_gc_id();
 
   // This prints the global/local fingers. It is used for debugging.
   NOT_PRODUCT(void print_finger();)

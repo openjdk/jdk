@@ -159,6 +159,30 @@ address CompiledIC::stub_address() const {
 //-----------------------------------------------------------------------------
 // High-level access to an inline cache. Guaranteed to be MT-safe.
 
+CompiledIC::CompiledIC(nmethod* nm, NativeCall* call)
+  : _ic_call(call)
+{
+  address ic_call = call->instruction_address();
+
+  assert(ic_call != NULL, "ic_call address must be set");
+  assert(nm != NULL, "must pass nmethod");
+  assert(nm->contains(ic_call), "must be in nmethod");
+
+  // Search for the ic_call at the given address.
+  RelocIterator iter(nm, ic_call, ic_call+1);
+  bool ret = iter.next();
+  assert(ret == true, "relocInfo must exist at this address");
+  assert(iter.addr() == ic_call, "must find ic_call");
+  if (iter.type() == relocInfo::virtual_call_type) {
+    virtual_call_Relocation* r = iter.virtual_call_reloc();
+    _is_optimized = false;
+    _value = nativeMovConstReg_at(r->cached_value());
+  } else {
+    assert(iter.type() == relocInfo::opt_virtual_call_type, "must be a virtual call");
+    _is_optimized = true;
+    _value = NULL;
+  }
+}
 
 bool CompiledIC::set_to_megamorphic(CallInfo* call_info, Bytecodes::Code bytecode, TRAPS) {
   assert(CompiledIC_lock->is_locked() || SafepointSynchronize::is_at_safepoint(), "");

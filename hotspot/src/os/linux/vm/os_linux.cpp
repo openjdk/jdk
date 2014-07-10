@@ -41,6 +41,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -3794,13 +3795,6 @@ void os::yield() {
 }
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
-
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  // Threads on Linux are all with same priority. The Solaris style
-  // os::yield_all() with nanosleep(1ms) is not necessary.
-  sched_yield();
-}
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support

@@ -26,7 +26,6 @@
 #define SHARE_VM_RUNTIME_OS_HPP
 
 #include "jvmtifiles/jvmti.h"
-#include "runtime/atomic.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/handles.hpp"
 #include "utilities/top.hpp"
@@ -453,8 +452,6 @@ class os: AllStatic {
     // yield that can be used in lieu of blocking.
   } ;
   static YieldResult NakedYield () ;
-  static void yield_all(); // Yields to all other threads including lower priority
-                           // (for the default scheduling policy)
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
