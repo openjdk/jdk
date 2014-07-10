@@ -275,6 +275,8 @@ public class JFrame  extends Frame implements WindowConstants,
     /**
      * Called by the constructor methods to create the default
      * <code>rootPane</code>.
+     *
+     * @return a new {@code JRootPane}
      */
     protected JRootPane createRootPane() {
         JRootPane rp = new JRootPane();
@@ -874,7 +876,9 @@ public class JFrame  extends Frame implements WindowConstants,
 // Accessibility support
 ////////////////
 
-    /** The accessible context property. */
+    /**
+     * The accessible context property.
+     */
     protected AccessibleContext accessibleContext = null;
 
     /**

@@ -21,36 +21,64 @@
  * questions.
  */
 
+package build.tools.blacklistedcertsconverter;
+
 import java.security.MessageDigest;
-import java.security.NoSuchAlgorithmException;
 import java.security.cert.Certificate;
-import java.security.cert.CertificateEncodingException;
 import java.security.cert.CertificateFactory;
 import java.security.cert.X509Certificate;
 import java.util.Collection;
+import java.util.Set;
+import java.util.TreeSet;
+
 
 /**
- * This is the tool to convert blacklisted.certs.pem to blacklisted.certs.
- * Every time a new blacklisted certs is added, please append the PEM format
- * to the end of blacklisted.certs.pem (with proper comments) and then use
- * this tool to generate an updated blacklisted.certs. Make sure to include
- * changes to both in a changeset.
+ * Converts blacklisted.certs.pem from System.in to blacklisted.certs in
+ * System.out. The input must start with a #! line including the fingerprint
+ * algorithm. The output is sorted and unique.
  */
 public class BlacklistedCertsConverter {
+
     public static void main(String[] args) throws Exception {
-        if (args.length == 0) {
-            System.out.println("Usage: java BlacklistedCertsConverter SHA-256" +
-                    " < blacklisted.certs.pem > blacklisted.certs");
-            System.exit(1);
+
+        byte[] pattern = "#! java BlacklistedCertsConverter ".getBytes();
+        String mdAlg = "";
+
+        for (int i=0; ; i++) {
+            int n = System.in.read();
+            if (n < 0) {
+                throw new Exception("Unexpected EOF");
+            }
+            if (i < pattern.length) {
+                if (n != pattern[i]) {
+                    throw new Exception("The first line must start with \""
+                            + new String(pattern) + "\"");
+                }
+            } else if (i < pattern.length + 100) {
+                if (n < 32) {
+                    break;
+                } else {
+                    mdAlg = mdAlg + String.format("%c", n);
+                }
+            }
         }
-        String mdAlg = args[0];
+
+        mdAlg = mdAlg.trim();
+        System.out.println("Algorithm=" + mdAlg);
+
         CertificateFactory cf = CertificateFactory.getInstance("X.509");
         Collection<? extends Certificate> certs
                 = cf.generateCertificates(System.in);
-        System.out.println("Algorithm=" + mdAlg);
+
+        // Output sorted so that it's easy to locate an entry.
+        Set<String> fingerprints = new TreeSet<>();
         for (Certificate cert: certs) {
-            System.out.println(
+            fingerprints.add(
                     getCertificateFingerPrint(mdAlg, (X509Certificate)cert));
+        }
+
+        for (String s: fingerprints) {
+            System.out.println(s);
         }
     }
 
@@ -69,21 +97,15 @@ public class BlacklistedCertsConverter {
     /**
      * Gets the requested finger print of the certificate.
      */
-    private static String getCertificateFingerPrint(String mdAlg,
-                                                    X509Certificate cert) {
-        String fingerPrint = "";
-        try {
-            byte[] encCertInfo = cert.getEncoded();
-            MessageDigest md = MessageDigest.getInstance(mdAlg);
-            byte[] digest = md.digest(encCertInfo);
-            StringBuffer buf = new StringBuffer();
-            for (int i = 0; i < digest.length; i++) {
-                byte2hex(digest[i], buf);
-            }
-            fingerPrint = buf.toString();
-        } catch (NoSuchAlgorithmException | CertificateEncodingException e) {
-            // ignored
+    private static String getCertificateFingerPrint(
+            String mdAlg, X509Certificate cert) throws Exception {
+        byte[] encCertInfo = cert.getEncoded();
+        MessageDigest md = MessageDigest.getInstance(mdAlg);
+        byte[] digest = md.digest(encCertInfo);
+        StringBuffer buf = new StringBuffer();
+        for (int i = 0; i < digest.length; i++) {
+            byte2hex(digest[i], buf);
         }
-        return fingerPrint;
+        return buf.toString();
     }
 }

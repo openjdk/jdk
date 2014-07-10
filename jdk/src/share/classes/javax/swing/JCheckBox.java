@@ -132,6 +132,7 @@ public class JCheckBox extends JToggleButton implements Accessible {
      * Creates a check box where properties are taken from the
      * Action supplied.
      *
+     * @param a the {@code Action} used to specify the new check box
      * @since 1.3
      */
     public JCheckBox(Action a) {

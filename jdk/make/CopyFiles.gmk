@@ -407,15 +407,10 @@ COPY_FILES += $(CACERTS_DST)
 
 ##########################################################################################
 
-BLACKLISTED_CERTS_SRC := $(JDK_TOPDIR)/src/share/lib/security/blacklisted.certs
-BLACKLISTED_CERTS_DST := $(JDK_OUTPUTDIR)/lib/security/blacklisted.certs
-
 ifndef OPENJDK
 
   BLACKLIST_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/blacklist
   BLACKLIST_DST := $(JDK_OUTPUTDIR)/lib/security/blacklist
-
-  BLACKLISTED_CERTS_SRC += $(wildcard $(JDK_TOPDIR)/src/closed/share/lib/security/blacklisted.certs)
 
   TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
   TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
@@ -431,20 +426,6 @@ ifndef OPENJDK
   COPY_FILES += $(TRUSTEDLIBS_DST)
 
 endif
-
-$(BLACKLISTED_CERTS_DST): $(BLACKLISTED_CERTS_SRC)
-	$(MKDIR) -p $(@D)
-	$(CAT) $^ | $(SED) '/^$$/d' | $(SORT) | $(UNIQ) > $@.tmp
-	$(GREP) -i Algorithm $@.tmp > $@
-	if [ `$(SED) -n -e "$$=" $@` != 1 ]; then \
-	   $(ECHO) "Different algorithms defined in $^"; \
-	   $(RM) $@ $@.tmp; \
-	   false; \
-	fi
-	$(GREP) -iv Algorithm $@.tmp >> $@
-	$(RM) $@.tmp
-
-COPY_FILES += $(BLACKLISTED_CERTS_DST)
 
 ##########################################################################################
 
