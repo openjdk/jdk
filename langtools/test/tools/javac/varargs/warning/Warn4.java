@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6945418 6993978 8006694
+ * @bug     6945418 6993978 8006694 7196160
  * @summary Project Coin: Simplified Varargs Method Invocation
  *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore

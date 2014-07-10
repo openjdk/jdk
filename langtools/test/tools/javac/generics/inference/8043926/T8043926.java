@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,8 +21,23 @@
  * questions.
  */
 
-class A {
-    public A check() {
-        return new A() { enum STRENGTH{}; };
+/**
+ * @test
+ * @bug 8043926
+ * @summary javac, code valid in 7 is not compiling for 8
+ * @compile T8043926.java
+ */
+class T8043926 {
+    interface Iface<T1> {}
+
+    static class Impl implements Iface<Impl> {}
+
+    static class Acceptor<T2 extends Iface<T2>> {
+        public Acceptor(T2 obj) {}
+    }
+
+    void test(Impl impl) {
+        Acceptor<?> acceptor1 = new Acceptor<>(impl);
+        Acceptor<? extends Object> acceptor2 = new Acceptor<>(impl);
     }
 }

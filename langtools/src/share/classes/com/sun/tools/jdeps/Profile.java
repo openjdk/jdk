@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import java.util.jar.JarFile;
  * Build the profile information from ct.sym if exists.
  */
 enum Profile {
-
     COMPACT1("compact1", 1),
     COMPACT2("compact2", 2),
     COMPACT3("compact3", 3),
@@ -61,8 +60,7 @@ enum Profile {
         this.proprietaryPkgs = new HashSet<>();
     }
 
-    @Override
-    public String toString() {
+    public String profileName() {
         return name;
     }
 
@@ -77,7 +75,7 @@ enum Profile {
     public static Profile getProfile(String pn) {
         Profile profile = PackageToProfile.map.get(pn);
         return (profile != null && profile.packages.contains(pn))
-                ? profile : null;
+                    ? profile : null;
     }
 
     static class PackageToProfile {

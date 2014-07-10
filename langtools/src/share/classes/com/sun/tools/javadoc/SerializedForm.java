@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,15 +26,13 @@
 package com.sun.tools.javadoc;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Kinds;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.MethodSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
-import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Name;
-import com.sun.tools.javac.util.Names;
+import com.sun.tools.javac.util.*;
+
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
  * The serialized form is the specification of a class' serialization
@@ -159,9 +157,9 @@ class SerializedForm {
         /* SERIALIZABLE_FIELDS can be private,
          * so must lookup by ClassSymbol, not by ClassDocImpl.
          */
-        for (Scope.Entry e = def.members().lookup(names.fromString(SERIALIZABLE_FIELDS)); e.scope != null; e = e.next()) {
-            if (e.sym.kind == Kinds.VAR) {
-                VarSymbol f = (VarSymbol)e.sym;
+        for (Symbol sym : def.members().getSymbolsByName(names.fromString(SERIALIZABLE_FIELDS))) {
+            if (sym.kind == Kinds.VAR) {
+                VarSymbol f = (VarSymbol)sym;
                 if ((f.flags() & Flags.STATIC) != 0 &&
                     (f.flags() & Flags.PRIVATE) != 0) {
                     return f;
@@ -180,9 +178,9 @@ class SerializedForm {
     private void computeDefaultSerializableFields(DocEnv env,
                                                   ClassSymbol def,
                                                   ClassDocImpl cd) {
-        for (Scope.Entry e = def.members().elems; e != null; e = e.sibling) {
-            if (e.sym != null && e.sym.kind == Kinds.VAR) {
-                VarSymbol f = (VarSymbol)e.sym;
+        for (Symbol sym : def.members().getSymbols(NON_RECURSIVE)) {
+            if (sym != null && sym.kind == Kinds.VAR) {
+                VarSymbol f = (VarSymbol)sym;
                 if ((f.flags() & Flags.STATIC) == 0 &&
                     (f.flags() & Flags.TRANSIENT) == 0) {
                     //### No modifier filtering applied here.
@@ -209,9 +207,9 @@ class SerializedForm {
     private void addMethodIfExist(DocEnv env, ClassSymbol def, String methodName) {
         Names names = def.name.table.names;
 
-        for (Scope.Entry e = def.members().lookup(names.fromString(methodName)); e.scope != null; e = e.next()) {
-            if (e.sym.kind == Kinds.MTH) {
-                MethodSymbol md = (MethodSymbol)e.sym;
+        for (Symbol sym : def.members().getSymbolsByName(names.fromString(methodName))) {
+            if (sym.kind == Kinds.MTH) {
+                MethodSymbol md = (MethodSymbol)sym;
                 if ((md.flags() & Flags.STATIC) == 0) {
                     /*
                      * WARNING: not robust if unqualifiedMethodName is overloaded
@@ -241,10 +239,9 @@ class SerializedForm {
             Name fieldName = names.fromString(tag.fieldName());
 
             // Look for a FieldDocImpl that is documented by serialFieldTagImpl.
-            for (Scope.Entry e = def.members().lookup(fieldName);
-                 e.scope != null; e = e.next()) {
-                if (e.sym.kind == Kinds.VAR) {
-                    VarSymbol f = (VarSymbol) e.sym;
+            for (Symbol sym : def.members().getSymbolsByName(fieldName)) {
+                if (sym.kind == Kinds.VAR) {
+                    VarSymbol f = (VarSymbol) sym;
                     FieldDocImpl fdi = env.getFieldDoc(f);
                     ((SerialFieldTagImpl) (tag)).mapToFieldDocImpl(fdi);
                     break;

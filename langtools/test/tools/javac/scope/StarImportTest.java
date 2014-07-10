@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,17 @@
  * @summary Basher for star-import scopes
  */
 
-import java.lang.reflect.*;
 import java.util.*;
 import java.util.List;
-import com.sun.tools.javac.util.*;
+
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Scope.*;
+import com.sun.tools.javac.code.Scope.ImportFilter;
+import com.sun.tools.javac.code.Scope.StarImportScope;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.*;
+
 import static com.sun.tools.javac.code.Kinds.*;
 
 public class StarImportTest {
@@ -87,13 +90,9 @@ public class StarImportTest {
         System.err.print(msg);
         System.err.print(": ");
         String sep = "(";
-        for (Scope.Entry se = s.elems; se != null; se = se.sibling) {
-            for (Scope.Entry e = se; e.sym != null; e = e.next()) {
-                System.err.print(sep + e.sym.name + ":" + e.sym);
-                sep = ",";
-            }
-            System.err.print(")");
-            sep = ", (";
+        for (Symbol sym : s.getSymbols()) {
+            System.err.print(sep + sym.name + ":" + sym);
+            sep = ",";
         }
         System.err.println();
     }
@@ -171,7 +170,7 @@ public class StarImportTest {
             int count = rgen.nextInt(MAX_SETUP_PACKAGE_COUNT);
             log("setup: creating package " + name + " with " + count + " entries");
             PackageSymbol p = new PackageSymbol(name, symtab.rootPackage);
-            p.members_field = new Scope(p);
+            p.members_field = WriteableScope.create(p);
             for (int i = 0; i < count; i++) {
                 String outer = name + "c" + i;
                 String suffix = random(null, "$Entry", "$Entry2");
@@ -213,38 +212,21 @@ public class StarImportTest {
             log ("createStarImportScope");
             PackageSymbol pkg = new PackageSymbol(names.fromString("pkg"), symtab.rootPackage);
 
-            // if StarImportScope exists, use it, otherwise, for testing legacy code,
-            // fall back on ImportScope
-            Method importAll;
-            try {
-                Class<?> c = Class.forName("com.sun.tools.javac.code.Scope$StarImportScope");
-                Constructor ctor = c.getDeclaredConstructor(new Class[] { Symbol.class });
-                importAll = c.getDeclaredMethod("importAll", new Class[] { Scope.class });
-                starImportScope = (Scope) ctor.newInstance(new Object[] { pkg });
-            } catch (ClassNotFoundException e) {
-                starImportScope = new ImportScope(pkg);
-                importAll = null;
-            }
+            starImportScope = new StarImportScope(pkg);
             starImportModel = new Model();
 
             for (Symbol imp: imports) {
                 Scope members = imp.members();
-                if (importAll != null) {
 //                    log("importAll", members);
-                    importAll.invoke(starImportScope, members);
-                } else {
-                    Scope fromScope = members;
-                    Scope toScope = starImportScope;
-                    // The following lines are taken from MemberEnter.importAll,
-                    // before the use of StarImportScope.importAll.
-                    for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
-                        if (e.sym.kind == TYP && !toScope.includes(e.sym))
-                            toScope.enter(e.sym, fromScope);
+                starImportScope.importAll(members, members, new ImportFilter() {
+                    @Override
+                    public boolean accepts(Scope origin, Symbol t) {
+                        return t.kind == TYP;
                     }
-                }
+                }, false);
 
-                for (Scope.Entry e = members.elems; e != null; e = e.sibling) {
-                    starImportModel.enter(e.sym);
+                for (Symbol sym : members.getSymbols()) {
+                    starImportModel.enter(sym);
                 }
             }
 
@@ -260,9 +242,9 @@ public class StarImportTest {
             log ("test");
             List<ClassSymbol> nestedClasses = new LinkedList<ClassSymbol>();
             for (PackageSymbol p: packages) {
-                for (Scope.Entry se = p.members_field.elems; se != null; se = se.sibling) {
-                    if (se.sym.name.toString().contains("$"))
-                        nestedClasses.add((ClassSymbol) se.sym);
+                for (Symbol sym : p.members_field.getSymbols()) {
+                    if (sym.name.toString().contains("$"))
+                        nestedClasses.add((ClassSymbol) sym);
                 }
             }
 
@@ -283,8 +265,7 @@ public class StarImportTest {
                 // determine new owner
                 Name outerName = names.fromString(s.substring(0, dollar));
 //                log(sym + " owner: " + sym.owner, sym.owner.members());
-                Scope.Entry outerEntry = sym.owner.members().lookup(outerName);
-                ClassSymbol outer = (ClassSymbol) outerEntry.sym;
+                ClassSymbol outer = (ClassSymbol)sym.owner.members().findFirst(outerName);
 //                log("outer: " + outerName + " " + outer);
 
                 // remove from package
@@ -302,7 +283,7 @@ public class StarImportTest {
 
         ClassSymbol createClass(Name name, Symbol owner) {
             ClassSymbol sym = new ClassSymbol(0, name, owner);
-            sym.members_field = new Scope(sym);
+            sym.members_field = WriteableScope.create(sym);
             if (owner != symtab.unnamedPackage)
                 owner.members().enter(sym);
             return sym;
@@ -318,7 +299,7 @@ public class StarImportTest {
         List<Symbol> imports = new ArrayList<Symbol>();
         int nextClassSerial;
 
-        Scope starImportScope;
+        StarImportScope starImportScope;
         Model starImportModel;
     }
 
@@ -355,9 +336,8 @@ public class StarImportTest {
         void check(Scope scope) {
             // First, check all entries in scope are in map
             int bogusCount = 0;
-            for (Scope.Entry se = scope.elems; se != null; se = se.sibling) {
-                Symbol sym = se.sym;
-                if (sym.owner != se.scope.owner) {
+            for (Symbol sym : scope.getSymbols()) {
+                if (sym.owner != scope.getOrigin(sym).owner) {
                     if (bogus.contains(sym)) {
                         bogusCount++;
                     } else {
@@ -380,16 +360,14 @@ public class StarImportTest {
             // Second, check all entries in map are in scope
             for (Map.Entry<Name,Set<Symbol>> me: map.entrySet()) {
                 Name name = me.getKey();
-                Scope.Entry se = scope.lookup(name);
-                assert (se != null);
-                if (se.sym == null) {
+                if (scope.findFirst(name) == null) {
                     error("check: no entries found for " + name + " in scope");
                     continue;
                 }
             nextSym:
                 for (Symbol sym: me.getValue()) {
-                    for (Scope.Entry e = se; e.sym != null; e = e.next()) {
-                        if (sym == e.sym)
+                    for (Symbol s : scope.getSymbolsByName(name)) {
+                        if (sym == s)
                             continue nextSym;
                     }
                     error("check: symbol " + sym + " not found in scope");

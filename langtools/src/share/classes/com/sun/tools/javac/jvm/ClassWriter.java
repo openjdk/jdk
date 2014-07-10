@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,7 @@ import com.sun.tools.javac.util.*;
 
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
 import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.main.Option.*;
@@ -1563,12 +1564,12 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-    void writeFields(Scope.Entry e) {
+    void writeFields(Scope s) {
         // process them in reverse sibling order;
         // i.e., process them in declaration order.
         List<VarSymbol> vars = List.nil();
-        for (Scope.Entry i = e; i != null; i = i.sibling) {
-            if (i.sym.kind == VAR) vars = vars.prepend((VarSymbol)i.sym);
+        for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
+            if (sym.kind == VAR) vars = vars.prepend((VarSymbol)sym);
         }
         while (vars.nonEmpty()) {
             writeField(vars.head);
@@ -1576,11 +1577,11 @@ public class ClassWriter extends ClassFile {
         }
     }
 
-    void writeMethods(Scope.Entry e) {
+    void writeMethods(Scope s) {
         List<MethodSymbol> methods = List.nil();
-        for (Scope.Entry i = e; i != null; i = i.sibling) {
-            if (i.sym.kind == MTH && (i.sym.flags() & HYPOTHETICAL) == 0)
-                methods = methods.prepend((MethodSymbol)i.sym);
+        for (Symbol sym : s.getSymbols(NON_RECURSIVE)) {
+            if (sym.kind == MTH && (sym.flags() & HYPOTHETICAL) == 0)
+                methods = methods.prepend((MethodSymbol)sym);
         }
         while (methods.nonEmpty()) {
             writeMethod(methods.head);
@@ -1654,12 +1655,12 @@ public class ClassWriter extends ClassFile {
             databuf.appendChar(pool.put(l.head.tsym));
         int fieldsCount = 0;
         int methodsCount = 0;
-        for (Scope.Entry e = c.members().elems; e != null; e = e.sibling) {
-            switch (e.sym.kind) {
+        for (Symbol sym : c.members().getSymbols(NON_RECURSIVE)) {
+            switch (sym.kind) {
             case VAR: fieldsCount++; break;
-            case MTH: if ((e.sym.flags() & HYPOTHETICAL) == 0) methodsCount++;
+            case MTH: if ((sym.flags() & HYPOTHETICAL) == 0) methodsCount++;
                       break;
-            case TYP: enterInner((ClassSymbol)e.sym); break;
+            case TYP: enterInner((ClassSymbol)sym); break;
             default : Assert.error();
             }
         }
@@ -1671,9 +1672,9 @@ public class ClassWriter extends ClassFile {
         }
 
         databuf.appendChar(fieldsCount);
-        writeFields(c.members().elems);
+        writeFields(c.members());
         databuf.appendChar(methodsCount);
-        writeMethods(c.members().elems);
+        writeMethods(c.members());
 
         int acountIdx = beginAttrs();
         int acount = 0;
