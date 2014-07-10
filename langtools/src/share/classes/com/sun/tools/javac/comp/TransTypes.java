@@ -67,17 +67,9 @@ public class TransTypes extends TreeTranslator {
     private Symtab syms;
     private TreeMaker make;
     private Enter enter;
-    private boolean allowEnums;
     private boolean allowInterfaceBridges;
     private Types types;
     private final Resolve resolve;
-
-    /**
-     * Flag to indicate whether or not to generate bridge methods.
-     * For pre-Tiger source there is no need for bridge methods, so it
-     * can be skipped to get better performance for -source 1.4 etc.
-     */
-    private final boolean addBridges;
 
     private final CompileStates compileStates;
 
@@ -90,8 +82,6 @@ public class TransTypes extends TreeTranslator {
         enter = Enter.instance(context);
         overridden = new HashMap<>();
         Source source = Source.instance(context);
-        allowEnums = source.allowEnums();
-        addBridges = source.addBridges();
         allowInterfaceBridges = source.allowDefaultMethods();
         types = Types.instance(context);
         make = TreeMaker.instance(context);
@@ -665,9 +655,7 @@ public class TransTypes extends TreeTranslator {
         Symbol meth = TreeInfo.symbol(tree.meth);
         Type mt = meth.erasure(types);
         List<Type> argtypes = mt.getParameterTypes();
-        if (allowEnums &&
-            meth.name==names.init &&
-            meth.owner == syms.enumSym)
+        if (meth.name == names.init && meth.owner == syms.enumSym)
             argtypes = argtypes.tail.tail;
         if (tree.varargsElement != null)
             tree.varargsElement = types.erasure(tree.varargsElement);
@@ -920,13 +908,11 @@ public class TransTypes extends TreeTranslator {
                 tree.typarams = List.nil();
                 super.visitClassDef(tree);
                 make.at(tree.pos);
-                if (addBridges) {
-                    ListBuffer<JCTree> bridges = new ListBuffer<>();
-                    if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
-                        addBridges(tree.pos(), c, bridges);
-                    }
-                    tree.defs = bridges.toList().prependList(tree.defs);
+                ListBuffer<JCTree> bridges = new ListBuffer<>();
+                if (allowInterfaceBridges || (tree.sym.flags() & INTERFACE) == 0) {
+                    addBridges(tree.pos(), c, bridges);
                 }
+                tree.defs = bridges.toList().prependList(tree.defs);
                 tree.type = erasure(tree.type);
             } finally {
                 make = savedMake;

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
 # @bug 4981566 5028634 5094412 6304984 7025786 7025789 8001112 8028545 8000961
 # @summary Check interpretation of -target and -source options
 # @build CheckClassFileVersion
-# @run shell check.sh 
+# @run shell check.sh
 
 TESTJAVA=${TESTJAVA:?}
 TC=${TESTCLASSES-.}
 
-J="$TESTJAVA/bin/java" 
-JC="$TESTJAVA/bin/javac" 
+J="$TESTJAVA/bin/java"
+JC="$TESTJAVA/bin/javac"
 CFV="${TESTVMOPTS} -cp $TC CheckClassFileVersion"
 
 rm -f $TC/X.java $TC/X.java
@@ -58,27 +58,16 @@ check_source_target() {
   check_target $1 1.${2} $3
 }
 
-check 48.0 -source 1.4
 
-check 49.0 -source 1.4 -target 1.5
-check 49.0 -source 1.5 -target 1.5
-
-check_target        50.0 1.4 6
-check_target        50.0 1.5 6
 check_source_target 50.0 6   6
 
-check_target        51.0 1.4 7
-check_target        51.0 1.5 7
 check_source_target 51.0 6   7
 check_source_target 51.0 7   7
 
-check_target        52.0 1.4 8
-check_target        52.0 1.5 8
 check_source_target 52.0 6   8
 check_source_target 52.0 7   8
 check_source_target 52.0 8   8
 
-check_target        52.0 1.5 9
 check_source_target 52.0 8   9
 check_source_target 52.0 9   9
 
@@ -115,11 +104,7 @@ checksrc17() { checksrc15 $* ; }
 checksrc18() { checksrc15 $* ; }
 checksrc19() { checksrc15 $* ; }
 
-checksrc14 -source 1.4
-checksrc14 -source 1.4 -target 1.5
 
-checksrc15 -source 1.5
-checksrc15 -source 1.5 -target 1.5
 
 checksrc16 -source 1.6
 checksrc16 -source 6
@@ -144,9 +129,6 @@ checksrc19 -source 9 -target 9
 checksrc19 -target 1.9
 checksrc19 -target 9
 
-fail -source 1.5 -target 1.4 $TC/X.java
-fail -source 1.6 -target 1.4 $TC/X.java
-fail -source 6   -target 1.4 $TC/X.java
 fail -source 1.6 -target 1.5 $TC/X.java
 fail -source 6   -target 1.5 $TC/X.java
 fail -source 7   -target 1.6 $TC/X.java

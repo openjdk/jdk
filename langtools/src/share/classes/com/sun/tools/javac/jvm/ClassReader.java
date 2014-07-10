@@ -91,18 +91,6 @@ public class ClassReader {
      */
     public boolean readAllOfClassFile = false;
 
-    /** Switch: read GJ signature information.
-     */
-    boolean allowGenerics;
-
-    /** Switch: read varargs attribute.
-     */
-    boolean allowVarargs;
-
-    /** Switch: allow annotations.
-     */
-    boolean allowAnnotations;
-
     /** Switch: allow simplified varargs.
      */
     boolean allowSimplifiedVarargs;
@@ -223,9 +211,6 @@ public class ClassReader {
         checkClassFile = options.isSet("-checkclassfile");
 
         Source source = Source.instance(context);
-        allowGenerics    = source.allowGenerics();
-        allowVarargs     = source.allowVarargs();
-        allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
 
         saveParameterNames = options.isSet("save-parameter-names");
@@ -1026,9 +1011,7 @@ public class ClassReader {
 
             new AttributeReader(names.Synthetic, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    // bridge methods are visible when generics not enabled
-                    if (allowGenerics || (sym.flags_field & BRIDGE) == 0)
-                        sym.flags_field |= SYNTHETIC;
+                    sym.flags_field |= SYNTHETIC;
                 }
             },
 
@@ -1043,11 +1026,6 @@ public class ClassReader {
             },
 
             new AttributeReader(names.Signature, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                @Override
-                protected boolean accepts(AttributeKind kind) {
-                    return super.accepts(kind) && allowGenerics;
-                }
-
                 protected void read(Symbol sym, int attrLen) {
                     if (sym.kind == TYP) {
                         ClassSymbol c = (ClassSymbol) sym;
@@ -1110,16 +1088,13 @@ public class ClassReader {
 
             new AttributeReader(names.Annotation, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    if (allowAnnotations)
-                        sym.flags_field |= ANNOTATION;
+                    sym.flags_field |= ANNOTATION;
                 }
             },
 
             new AttributeReader(names.Bridge, V49, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     sym.flags_field |= BRIDGE;
-                    if (!allowGenerics)
-                        sym.flags_field &= ~SYNTHETIC;
                 }
             },
 
@@ -1131,8 +1106,7 @@ public class ClassReader {
 
             new AttributeReader(names.Varargs, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    if (allowVarargs)
-                        sym.flags_field |= VARARGS;
+                    sym.flags_field |= VARARGS;
                 }
             },
 
@@ -2413,8 +2387,6 @@ public class ClassReader {
         if ((flags & ACC_BRIDGE) != 0) {
             flags &= ~ACC_BRIDGE;
             flags |= BRIDGE;
-            if (!allowGenerics)
-                flags &= ~SYNTHETIC;
         }
         if ((flags & ACC_VARARGS) != 0) {
             flags &= ~ACC_VARARGS;

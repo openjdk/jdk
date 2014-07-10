@@ -127,12 +127,6 @@ public class Attr extends JCTree.Visitor {
         Options options = Options.instance(context);
 
         Source source = Source.instance(context);
-        allowGenerics = source.allowGenerics();
-        allowVarargs = source.allowVarargs();
-        allowEnums = source.allowEnums();
-        allowBoxing = source.allowBoxing();
-        allowCovariantReturns = source.allowCovariantReturns();
-        allowAnonOuterThis = source.allowAnonOuterThis();
         allowStringsInSwitch = source.allowStringsInSwitch();
         allowPoly = source.allowPoly();
         allowTypeAnnos = source.allowTypeAnnotations();
@@ -168,26 +162,6 @@ public class Attr extends JCTree.Visitor {
      */
     boolean allowTypeAnnos;
 
-    /** Switch: support generics?
-     */
-    boolean allowGenerics;
-
-    /** Switch: allow variable-arity methods.
-     */
-    boolean allowVarargs;
-
-    /** Switch: support enums?
-     */
-    boolean allowEnums;
-
-    /** Switch: support boxing and unboxing?
-     */
-    boolean allowBoxing;
-
-    /** Switch: support covariant result types?
-     */
-    boolean allowCovariantReturns;
-
     /** Switch: support lambda expressions ?
      */
     boolean allowLambda;
@@ -199,11 +173,6 @@ public class Attr extends JCTree.Visitor {
     /** Switch: static interface methods enabled?
      */
     boolean allowStaticInterfaceMethods;
-
-    /** Switch: allow references to surrounding object from anonymous
-     * objects during constructor call?
-     */
-    boolean allowAnonOuterThis;
 
     /** Switch: generates a warning if diamond can be safely applied
      *  to a given new expression
@@ -821,7 +790,7 @@ public class Attr extends JCTree.Visitor {
                 return types.createErrorType(t);
             }
         } else {
-            t = chk.checkClassType(tree.pos(), t, checkExtensible|!allowGenerics);
+            t = chk.checkClassType(tree.pos(), t, checkExtensible);
         }
         if (interfaceExpected && (t.tsym.flags() & INTERFACE) == 0) {
             log.error(tree.pos(), "intf.expected.here");
@@ -1262,9 +1231,7 @@ public class Attr extends JCTree.Visitor {
 
         try {
 
-            boolean enumSwitch =
-                allowEnums &&
-                (seltype.tsym.flags() & Flags.ENUM) != 0;
+            boolean enumSwitch = (seltype.tsym.flags() & Flags.ENUM) != 0;
             boolean stringSwitch = false;
             if (types.isSameType(seltype, syms.stringType)) {
                 if (allowStringsInSwitch) {
@@ -1554,9 +1521,9 @@ public class Attr extends JCTree.Visitor {
             if (types.isSameType(thentype, elsetype))
                 return thentype.baseType();
 
-            Type thenUnboxed = (!allowBoxing || thentype.isPrimitive())
+            Type thenUnboxed = (thentype.isPrimitive())
                 ? thentype : types.unboxedType(thentype);
-            Type elseUnboxed = (!allowBoxing || elsetype.isPrimitive())
+            Type elseUnboxed = (elsetype.isPrimitive())
                 ? elsetype : types.unboxedType(elsetype);
 
             // Otherwise, if both arms can be converted to a numeric
@@ -1588,19 +1555,17 @@ public class Attr extends JCTree.Visitor {
             }
 
             // Those were all the cases that could result in a primitive
-            if (allowBoxing) {
-                if (thentype.isPrimitive())
-                    thentype = types.boxedClass(thentype).type;
-                if (elsetype.isPrimitive())
-                    elsetype = types.boxedClass(elsetype).type;
-            }
+            if (thentype.isPrimitive())
+                thentype = types.boxedClass(thentype).type;
+            if (elsetype.isPrimitive())
+                elsetype = types.boxedClass(elsetype).type;
 
             if (types.isSubtype(thentype, elsetype))
                 return elsetype.baseType();
             if (types.isSubtype(elsetype, thentype))
                 return thentype.baseType();
 
-            if (!allowBoxing || thentype.hasTag(VOID) || elsetype.hasTag(VOID)) {
+            if (thentype.hasTag(VOID) || elsetype.hasTag(VOID)) {
                 log.error(pos, "neither.conditional.subtype",
                           thentype, elsetype);
                 return thentype.baseType();
@@ -1853,7 +1818,7 @@ public class Attr extends JCTree.Visitor {
 
                     // if we're calling a java.lang.Enum constructor,
                     // prefix the implicit String and int parameters
-                    if (site.tsym == syms.enumSym && allowEnums)
+                    if (site.tsym == syms.enumSym)
                         argtypes = argtypes.prepend(syms.intType).prepend(syms.stringType);
 
                     // Resolve the called constructor under the assumption
@@ -1932,15 +1897,11 @@ public class Attr extends JCTree.Visitor {
     }
     //where
         Type adjustMethodReturnType(Type qualifierType, Name methodName, List<Type> argtypes, Type restype) {
-            if (allowCovariantReturns &&
-                    methodName == names.clone &&
-                types.isArray(qualifierType)) {
+            if (methodName == names.clone && types.isArray(qualifierType)) {
                 // as a special case, array.clone() has a result that is
                 // the same as static type of the array being cloned
                 return qualifierType;
-            } else if (allowGenerics &&
-                    methodName == names.getClass &&
-                    argtypes.isEmpty()) {
+            } else if (methodName == names.getClass && argtypes.isEmpty()) {
                 // as a special case, x.getClass() has type Class<? extends |X|>
                 return new ClassType(restype.getEnclosingType(),
                               List.<Type>of(new WildcardType(types.erasure(qualifierType),
@@ -2133,10 +2094,9 @@ public class Attr extends JCTree.Visitor {
         // If we have made no mistakes in the class type...
         if (clazztype.hasTag(CLASS)) {
             // Enums may not be instantiated except implicitly
-            if (allowEnums &&
-                (clazztype.tsym.flags_field&Flags.ENUM) != 0 &&
+            if ((clazztype.tsym.flags_field & Flags.ENUM) != 0 &&
                 (!env.tree.hasTag(VARDEF) ||
-                 (((JCVariableDecl) env.tree).mods.flags&Flags.ENUM) == 0 ||
+                 (((JCVariableDecl) env.tree).mods.flags & Flags.ENUM) == 0 ||
                  ((JCVariableDecl) env.tree).init != tree))
                 log.error(tree.pos(), "enum.cant.be.instantiated");
             // Check that class is not abstract
@@ -3370,7 +3330,7 @@ public class Attr extends JCTree.Visitor {
             while (symEnv.outer != null &&
                    !sym.isMemberOf(symEnv.enclClass.sym, types)) {
                 if ((symEnv.enclClass.sym.flags() & NOOUTERTHIS) != 0)
-                    noOuterThisPath = !allowAnonOuterThis;
+                    noOuterThisPath = false;
                 symEnv = symEnv.outer;
             }
         }
@@ -3592,9 +3552,7 @@ public class Attr extends JCTree.Visitor {
                     // In this case, we have already made sure in
                     // visitSelect that qualifier expression is a type.
                     Type t = syms.classType;
-                    List<Type> typeargs = allowGenerics
-                        ? List.of(types.erasure(site))
-                        : List.<Type>nil();
+                    List<Type> typeargs = List.of(types.erasure(site));
                     t = new ClassType(t.getEnclosingType(), typeargs, t.tsym);
                     return new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class, t, site.tsym);
@@ -3774,8 +3732,7 @@ public class Attr extends JCTree.Visitor {
                 // Test (4): if symbol is an instance field of a raw type,
                 // which is being assigned to, issue an unchecked warning if
                 // its type changes under erasure.
-                if (allowGenerics &&
-                    resultInfo.pkind == VAR &&
+                if (resultInfo.pkind == VAR &&
                     v.owner.kind == TYP &&
                     (v.flags() & STATIC) == 0 &&
                     (site.hasTag(CLASS) || site.hasTag(TYPEVAR))) {
@@ -3955,8 +3912,7 @@ public class Attr extends JCTree.Visitor {
                             List<Type> typeargtypes) {
         // Test (5): if symbol is an instance method of a raw type, issue
         // an unchecked warning if its argument types change under erasure.
-        if (allowGenerics &&
-            (sym.flags() & STATIC) == 0 &&
+        if ((sym.flags() & STATIC) == 0 &&
             (site.hasTag(CLASS) || site.hasTag(TYPEVAR))) {
             Type s = types.asOuterSuper(site, sym.owner);
             if (s != null && s.isRaw() &&

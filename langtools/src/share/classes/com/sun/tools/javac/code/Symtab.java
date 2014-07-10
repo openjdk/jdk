@@ -367,11 +367,9 @@ public class Symtab {
                     } catch (CompletionFailure e) {
                         sym.flags_field |= PUBLIC;
                         ((ClassType) sym.type).supertype_field = objectType;
-                        Name n = target.boxWithConstructors() ? names.init : names.valueOf;
                         MethodSymbol boxMethod =
-                            new MethodSymbol(PUBLIC | STATIC,
-                                n,
-                                new MethodType(List.of(type), sym.type,
+                            new MethodSymbol(PUBLIC | STATIC, names.valueOf,
+                                             new MethodType(List.of(type), sym.type,
                                     List.<Type>nil(), methodClass),
                                 sym);
                         sym.members().enter(boxMethod);
@@ -528,9 +526,7 @@ public class Symtab {
         comparableType = enterClass("java.lang.Comparable");
         comparatorType = enterClass("java.util.Comparator");
         arraysType = enterClass("java.util.Arrays");
-        iterableType = target.hasIterable()
-            ? enterClass("java.lang.Iterable")
-            : enterClass("java.util.Collection");
+        iterableType = enterClass("java.lang.Iterable");
         iteratorType = enterClass("java.util.Iterator");
         annotationTargetType = enterClass("java.lang.annotation.Target");
         overrideType = enterClass("java.lang.Override");

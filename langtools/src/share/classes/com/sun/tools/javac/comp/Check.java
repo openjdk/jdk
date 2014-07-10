@@ -124,10 +124,6 @@ public class Check {
         fileManager = context.get(JavaFileManager.class);
 
         Source source = Source.instance(context);
-        allowGenerics = source.allowGenerics();
-        allowVarargs = source.allowVarargs();
-        allowAnnotations = source.allowAnnotations();
-        allowCovariantReturns = source.allowCovariantReturns();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
         allowDefaultMethods = source.allowDefaultMethods();
         allowStrictMethodClashCheck = source.allowStrictMethodClashCheck();
@@ -146,7 +142,7 @@ public class Check {
         boolean verboseDeprecated = lint.isEnabled(LintCategory.DEPRECATION);
         boolean verboseUnchecked = lint.isEnabled(LintCategory.UNCHECKED);
         boolean verboseSunApi = lint.isEnabled(LintCategory.SUNAPI);
-        boolean enforceMandatoryWarnings = source.enforceMandatoryWarnings();
+        boolean enforceMandatoryWarnings = true;
 
         deprecationHandler = new MandatoryWarningHandler(log, verboseDeprecated,
                 enforceMandatoryWarnings, "deprecated", LintCategory.DEPRECATION);
@@ -157,22 +153,6 @@ public class Check {
 
         deferredLintHandler = DeferredLintHandler.instance(context);
     }
-
-    /** Switch: generics enabled?
-     */
-    boolean allowGenerics;
-
-    /** Switch: varargs enabled?
-     */
-    boolean allowVarargs;
-
-    /** Switch: annotations enabled?
-     */
-    boolean allowAnnotations;
-
-    /** Switch: covariant returns enabled?
-     */
-    boolean allowCovariantReturns;
 
     /** Switch: simplified varargs enabled?
      */
@@ -903,8 +883,7 @@ public class Check {
                     assertConvertible(arg, arg.type, varArg, warn);
                     args = args.tail;
                 }
-            } else if ((sym.flags() & (VARARGS | SIGNATURE_POLYMORPHIC)) == VARARGS &&
-                    allowVarargs) {
+            } else if ((sym.flags() & (VARARGS | SIGNATURE_POLYMORPHIC)) == VARARGS) {
                 // non-varargs call to varargs method
                 Type varParam = owntype.getParameterTypes().last();
                 Type lastArg = argtypes.last();
@@ -1671,18 +1650,12 @@ public class Check {
         boolean resultTypesOK =
             types.returnTypeSubstitutable(mt, ot, otres, overrideWarner);
         if (!resultTypesOK) {
-            if (!allowCovariantReturns &&
-                m.owner != origin &&
-                m.owner.isSubClass(other.owner, types)) {
-                // allow limited interoperability with covariant returns
-            } else {
-                log.error(TreeInfo.diagnosticPositionFor(m, tree),
-                          "override.incompatible.ret",
-                          cannotOverride(m, other),
-                          mtres, otres);
-                m.flags_field |= BAD_OVERRIDE;
-                return;
-            }
+            log.error(TreeInfo.diagnosticPositionFor(m, tree),
+                      "override.incompatible.ret",
+                      cannotOverride(m, other),
+                      mtres, otres);
+            m.flags_field |= BAD_OVERRIDE;
+            return;
         } else if (overrideWarner.hasNonSilentLint(LintCategory.UNCHECKED)) {
             warnUnchecked(TreeInfo.diagnosticPositionFor(m, tree),
                     "override.unchecked.ret",
@@ -1817,13 +1790,6 @@ public class Check {
      *  @param t1           The first argument type.
      *  @param t2           The second argument type.
      */
-    public boolean checkCompatibleAbstracts(DiagnosticPosition pos,
-                                            Type t1,
-                                            Type t2) {
-        return checkCompatibleAbstracts(pos, t1, t2,
-                                        types.makeCompoundType(t1, t2));
-    }
-
     public boolean checkCompatibleAbstracts(DiagnosticPosition pos,
                                             Type t1,
                                             Type t2,
@@ -2321,7 +2287,7 @@ public class Check {
         void checkImplementations(JCTree tree, ClassSymbol origin, ClassSymbol ic) {
             for (List<Type> l = types.closure(ic.type); l.nonEmpty(); l = l.tail) {
                 ClassSymbol lc = (ClassSymbol)l.head.tsym;
-                if ((allowGenerics || origin != lc) && (lc.flags() & ABSTRACT) != 0) {
+                if ((lc.flags() & ABSTRACT) != 0) {
                     for (Symbol sym : lc.members().getSymbols(NON_RECURSIVE)) {
                         if (sym.kind == MTH &&
                             (sym.flags() & (STATIC|ABSTRACT)) == ABSTRACT) {
@@ -2356,7 +2322,7 @@ public class Check {
             (supertype.tsym.flags() & ABSTRACT) != 0)
             supertypes = supertypes.prepend(supertype);
         for (List<Type> l = supertypes; l.nonEmpty(); l = l.tail) {
-            if (allowGenerics && !l.head.getTypeArguments().isEmpty() &&
+            if (!l.head.getTypeArguments().isEmpty() &&
                 !checkCompatibleAbstracts(pos, l.head, l.head, c))
                 return;
             for (List<Type> m = supertypes; m != l; m = m.tail)
@@ -3204,8 +3170,7 @@ public class Check {
     }
 
     void checkDeprecatedAnnotation(DiagnosticPosition pos, Symbol s) {
-        if (allowAnnotations &&
-            lint.isEnabled(LintCategory.DEP_ANN) &&
+        if (lint.isEnabled(LintCategory.DEP_ANN) &&
             (s.flags() & DEPRECATED) != 0 &&
             !syms.deprecatedType.isErroneous() &&
             s.attribute(syms.deprecatedType.tsym) == null) {

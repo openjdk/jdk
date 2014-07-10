@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,10 +24,10 @@
 /*
  * @test
  * @bug 5009712
- * @summary 1.4 javac should not accept the Covariant Return Type
+ * @summary Ensure Covariant Return Type allowed in minimum supported version
  * @author gafter
  *
- * @compile/fail -source 1.4 ExtendCovariant2.java
+ * @compile -source 1.6 ExtendCovariant2.java
  * @compile                  ExtendCovariant2.java
  */
 
@@ -38,8 +38,8 @@
  *
  * java.lang.Appendable java.lang.Appendable.append(char)
  *
- * Yet javac should allow extending PrintStream, as long as the user
- * doesn't directly override a covariant method in -source 1.4.
+ * With JDK 1.5, a Covariant Return is allowed so check that is the case.
+ *
  **/
 public class ExtendCovariant2 extends java.io.PrintStream {
     ExtendCovariant2() throws java.io.IOException {

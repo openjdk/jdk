@@ -54,11 +54,9 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import javax.lang.model.element.ElementVisitor;
@@ -92,8 +90,6 @@ public class Resolve {
     TreeInfo treeinfo;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean boxingEnabled;
-    public final boolean varargsEnabled;
     public final boolean allowMethodHandles;
     public final boolean allowFunctionalInterfaceMostSpecific;
     public final boolean checkVarargsAccessAfterResolution;
@@ -128,8 +124,6 @@ public class Resolve {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        boxingEnabled = source.allowBoxing();
-        varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
@@ -3279,8 +3273,8 @@ public class Resolve {
             Symbol bestSoFar = methodNotFound;
             currentResolutionContext = resolveContext;
             for (MethodResolutionPhase phase : methodResolutionSteps) {
-                if (!phase.isApplicable(boxingEnabled, varargsEnabled) ||
-                        lookupHelper.shouldStop(bestSoFar, phase)) break;
+                if (lookupHelper.shouldStop(bestSoFar, phase))
+                    break;
                 MethodResolutionPhase prevPhase = currentResolutionContext.step;
                 Symbol prevBest = bestSoFar;
                 currentResolutionContext.step = phase;
@@ -4206,11 +4200,6 @@ public class Resolve {
 
         public boolean isVarargsRequired() {
             return isVarargsRequired;
-        }
-
-        public boolean isApplicable(boolean boxingEnabled, boolean varargsEnabled) {
-            return (varargsEnabled || !isVarargsRequired) &&
-                   (boxingEnabled || !isBoxingRequired);
         }
 
         public Symbol mergeResults(Symbol prev, Symbol sym) {

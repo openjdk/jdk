@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,12 +21,11 @@
  * questions.
  */
 
-abstract class CompatibleAbstracts2
-    implements A, B // OK, as interfaces A and B are already related
-{
-    void f(A a, B b) {
-        if (a == b) ;
-        B b2 = (B) a;
-        A a2 = (A) b;
-    }
+// key: compiler.err.option.removed.source
+// key: compiler.err.option.removed.target
+// key: compiler.warn.source.no.bootclasspath
+// options: -source 1.5 -target 1.5
+
+class RemovedSourceAndTarget {
+    public static void foo() {;}
 }
