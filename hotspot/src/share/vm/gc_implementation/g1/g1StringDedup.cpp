@@ -31,6 +31,7 @@
 #include "gc_implementation/g1/g1StringDedupStat.hpp"
 #include "gc_implementation/g1/g1StringDedupTable.hpp"
 #include "gc_implementation/g1/g1StringDedupThread.hpp"
+#include "runtime/atomic.inline.hpp"
 
 bool G1StringDedup::_enabled = false;
 
@@ -210,4 +211,17 @@ G1StringDedupUnlinkOrOopsDoClosure::~G1StringDedupUnlinkOrOopsDoClosure() {
   } else if (is_rehashing()) {
     G1StringDedupTable::finish_rehash(_rehashed_table);
   }
+}
+
+// Atomically claims the next available queue for exclusive access by
+// the current thread. Returns the queue number of the claimed queue.
+size_t G1StringDedupUnlinkOrOopsDoClosure::claim_queue() {
+  return (size_t)Atomic::add_ptr(1, &_next_queue) - 1;
+}
+
+// Atomically claims the next available table partition for exclusive
+// access by the current thread. Returns the table bucket number where
+// the claimed partition starts.
+size_t G1StringDedupUnlinkOrOopsDoClosure::claim_table_partition(size_t partition_size) {
+  return (size_t)Atomic::add_ptr(partition_size, &_next_bucket) - partition_size;
 }

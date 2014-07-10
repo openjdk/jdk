@@ -46,6 +46,7 @@
 #include "prims/jvmtiThreadState.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
@@ -1357,14 +1358,24 @@ void WatcherThread::make_startable() {
 }
 
 void WatcherThread::stop() {
-  {
-    MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
-    _should_terminate = true;
-    OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+  // Get the PeriodicTask_lock if we can. If we cannot, then the
+  // WatcherThread is using it and we don't want to block on that lock
+  // here because that might cause a safepoint deadlock depending on
+  // what the current WatcherThread tasks are doing.
+  bool have_lock = PeriodicTask_lock->try_lock();
 
+  _should_terminate = true;
+  OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+
+  if (have_lock) {
     WatcherThread* watcher = watcher_thread();
-    if (watcher != NULL)
+    if (watcher != NULL) {
+      // If we managed to get the lock, then we should unpark the
+      // WatcherThread so that it can see we want it to stop.
       watcher->unpark();
+    }
+
+    PeriodicTask_lock->unlock();
   }
 
   // it is ok to take late safepoints here, if needed

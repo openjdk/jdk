@@ -53,6 +53,7 @@
 #include "oops/typeArrayKlass.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"

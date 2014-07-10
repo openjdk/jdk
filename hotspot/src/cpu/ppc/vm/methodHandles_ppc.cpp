@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -464,7 +464,7 @@ void trace_method_handle_stub(const char* adaptername,
                  strstr(adaptername, "linkTo") == NULL);    // static linkers don't have MH
   const char* mh_reg_name = has_mh ? "R23_method_handle" : "G23";
   tty->print_cr("MH %s %s="INTPTR_FORMAT " sp=" INTPTR_FORMAT,
-                adaptername, mh_reg_name, (intptr_t) mh, entry_sp);
+                adaptername, mh_reg_name, (intptr_t) mh, (intptr_t) entry_sp);
 
   if (Verbose) {
     tty->print_cr("Registers:");
