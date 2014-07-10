@@ -441,20 +441,36 @@ public class JavaCompiler {
         // Unless lint checking on options is disabled, check for
         // obsolete source and target options.
         boolean obsoleteOptionFound = false;
-        if (options.isUnset(XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option)) {
-            if (source.compareTo(Source.JDK1_5) <= 0) {
-                log.warning(LintCategory.OPTIONS, "option.obsolete.source", source.name);
-                obsoleteOptionFound = true;
-            }
 
-            if (target.compareTo(Target.JDK1_5) <= 0) {
-                log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
-                obsoleteOptionFound = true;
-            }
+        boolean lintOptions =
+            options.isUnset(XLINT_CUSTOM, "-"+LintCategory.OPTIONS.option);
+
+        switch (source.compareTo(Source.MIN)) {
+            case -1:
+                log.error("option.removed.source", source.name, Source.MIN.name);
+                break;
+            case 0:
+                if (lintOptions) {
+                    log.warning(LintCategory.OPTIONS, "option.obsolete.source", source.name);
+                    obsoleteOptionFound = true;
+                }
+                break;
+        }
+        // check target version request
+        switch (target.compareTo(Target.MIN)) {
+            case -1:
+                log.error("option.removed.target", target.name, Target.MIN.name);
+                break;
+            case 0:
+                if (lintOptions) {
+                    log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
+                    obsoleteOptionFound = true;
+                }
+                break;
+        }
 
             if (obsoleteOptionFound)
                 log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
-        }
     }
 
     /* Switches:

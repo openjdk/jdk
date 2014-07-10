@@ -75,13 +75,6 @@ public class Gen extends JCTree.Visitor {
     private final Types types;
     private final Lower lower;
 
-    /** Switch: GJ mode?
-     */
-    private final boolean allowGenerics;
-
-    /** Set when Miranda method stubs are to be generated. */
-    private final boolean generateIproxies;
-
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
 
@@ -116,10 +109,7 @@ public class Gen extends JCTree.Visitor {
         target = Target.instance(context);
         types = Types.instance(context);
         methodType = new MethodType(null, null, null, syms.methodClass);
-        allowGenerics = Source.instance(context).allowGenerics();
-        stringBufferType = target.useStringBuilder()
-            ? syms.stringBuilderType
-            : syms.stringBufferType;
+        stringBufferType = syms.stringBuilderType;
         stringBufferAppend = new HashMap<>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
@@ -141,20 +131,8 @@ public class Gen extends JCTree.Visitor {
         allowInvokedynamic = target.hasInvokedynamic() || options.isSet("invokedynamic");
         pool = new Pool(types);
 
-        generateIproxies =
-            target.requiresIproxy() ||
-            options.isSet("miranda");
-
-        if (target.generateStackMapTable()) {
-            // ignore cldc because we cannot have both stackmap formats
-            this.stackMap = StackMapFormat.JSR202;
-        } else {
-            if (target.generateCLDCStackmap()) {
-                this.stackMap = StackMapFormat.CLDC;
-            } else {
-                this.stackMap = StackMapFormat.NONE;
-            }
-        }
+        // ignore cldc because we cannot have both stackmap formats
+        this.stackMap = StackMapFormat.JSR202;
 
         // by default, avoid jsr's for simple finalizers
         int setjsrlimit = 50;
@@ -275,10 +253,8 @@ public class Gen extends JCTree.Visitor {
                 sym.owner != syms.arrayClass)
                 return sym;
             // array clone can be qualified by the array type in later targets
-            Symbol qualifier = target.arrayBinaryCompatibility()
-                ? new ClassSymbol(Flags.PUBLIC, site.tsym.name,
-                                  site, syms.noSymbol)
-                : syms.objectType.tsym;
+            Symbol qualifier = new ClassSymbol(Flags.PUBLIC, site.tsym.name,
+                                               site, syms.noSymbol);
             return sym.clone(qualifier);
         }
 
@@ -286,26 +262,11 @@ public class Gen extends JCTree.Visitor {
             (sym.flags() & (STATIC | SYNTHETIC)) == (STATIC | SYNTHETIC)) {
             return sym;
         }
-        if (!target.obeyBinaryCompatibility())
-            return rs.isAccessible(attrEnv, (TypeSymbol)sym.owner)
-                ? sym
-                : sym.clone(site.tsym);
-
-        if (!target.interfaceFieldsBinaryCompatibility()) {
-            if ((sym.owner.flags() & INTERFACE) != 0 && sym.kind == VAR)
-                return sym;
-        }
 
         // leave alone methods inherited from Object
         // JLS 13.1.
         if (sym.owner == syms.objectType.tsym)
             return sym;
-
-        if (!target.interfaceObjectOverridesBinaryCompatibility()) {
-            if ((sym.owner.flags() & INTERFACE) != 0 &&
-                syms.objectType.tsym.members().findFirst(sym.name) != null)
-                return sym;
-        }
 
         return sym.clone(site.tsym);
     }
@@ -624,75 +585,6 @@ public class Gen extends JCTree.Visitor {
 
             md.sym.appendUniqueTypeAttributes(initTAs);
         }
-    }
-
-/* ********************************************************************
- * Adding miranda methods
- *********************************************************************/
-
-    /** Add abstract methods for all methods defined in one of
-     *  the interfaces of a given class,
-     *  provided they are not already implemented in the class.
-     *
-     *  @param c      The class whose interfaces are searched for methods
-     *                for which Miranda methods should be added.
-     */
-    void implementInterfaceMethods(ClassSymbol c) {
-        implementInterfaceMethods(c, c);
-    }
-
-    /** Add abstract methods for all methods defined in one of
-     *  the interfaces of a given class,
-     *  provided they are not already implemented in the class.
-     *
-     *  @param c      The class whose interfaces are searched for methods
-     *                for which Miranda methods should be added.
-     *  @param site   The class in which a definition may be needed.
-     */
-    void implementInterfaceMethods(ClassSymbol c, ClassSymbol site) {
-        for (List<Type> l = types.interfaces(c.type); l.nonEmpty(); l = l.tail) {
-            ClassSymbol i = (ClassSymbol)l.head.tsym;
-            for (Symbol sym : i.members().getSymbols(NON_RECURSIVE)) {
-                if (sym.kind == MTH && (sym.flags() & STATIC) == 0)
-                {
-                    MethodSymbol absMeth = (MethodSymbol)sym;
-                    MethodSymbol implMeth = absMeth.binaryImplementation(site, types);
-                    if (implMeth == null)
-                        addAbstractMethod(site, absMeth);
-                    else if ((implMeth.flags() & IPROXY) != 0)
-                        adjustAbstractMethod(site, implMeth, absMeth);
-                }
-            }
-            implementInterfaceMethods(i, site);
-        }
-    }
-
-    /** Add an abstract methods to a class
-     *  which implicitly implements a method defined in some interface
-     *  implemented by the class. These methods are called "Miranda methods".
-     *  Enter the newly created method into its enclosing class scope.
-     *  Note that it is not entered into the class tree, as the emitter
-     *  doesn't need to see it there to emit an abstract method.
-     *
-     *  @param c      The class to which the Miranda method is added.
-     *  @param m      The interface method symbol for which a Miranda method
-     *                is added.
-     */
-    private void addAbstractMethod(ClassSymbol c,
-                                   MethodSymbol m) {
-        MethodSymbol absMeth = new MethodSymbol(
-            m.flags() | IPROXY | SYNTHETIC, m.name,
-            m.type, // was c.type.memberType(m), but now only !generics supported
-            c);
-        c.members().enter(absMeth); // add to symbol table
-    }
-
-    private void adjustAbstractMethod(ClassSymbol c,
-                                      MethodSymbol pm,
-                                      MethodSymbol im) {
-        MethodType pmt = (MethodType)pm.type;
-        Type imt = types.memberType(c.type, im);
-        pmt.thrown = chk.intersect(pmt.getThrownTypes(), imt.getThrownTypes());
     }
 
 /* ************************************************************************
@@ -1689,13 +1581,8 @@ public class Gen extends JCTree.Visitor {
                 code.addCatch(startpc1, endpc1, handler_pc1,
                               (char)catch_type);
             } else {
-                if (!useJsrLocally && !target.generateStackMapTable()) {
-                    useJsrLocally = true;
-                    throw new CodeSizeOverflow();
-                } else {
-                    log.error(pos, "limit.code.too.large.for.try.stmt");
-                    nerrs++;
-                }
+                log.error(pos, "limit.code.too.large.for.try.stmt");
+                nerrs++;
             }
         }
 
@@ -2361,7 +2248,6 @@ public class Gen extends JCTree.Visitor {
         Symbol sym = tree.sym;
 
         if (tree.name == names._class) {
-            Assert.check(target.hasClassLiterals());
             code.emitLdc(makeRef(tree.pos(), tree.selected.type));
             result = items.makeStackItem(pt);
             return;
@@ -2472,13 +2358,6 @@ public class Gen extends JCTree.Visitor {
             ClassSymbol c = cdef.sym;
             this.toplevel = env.toplevel;
             this.endPosTable = toplevel.endPositions;
-            // If this is a class definition requiring Miranda methods,
-            // add them.
-            if (generateIproxies &&
-                (c.flags() & (INTERFACE|ABSTRACT)) == ABSTRACT
-                && !allowGenerics // no Miranda methods available with generics
-                )
-                implementInterfaceMethods(c);
             cdef.defs = normalizeDefs(cdef.defs, c);
             c.pool = pool;
             pool.reset();

@@ -270,16 +270,9 @@ public abstract class BaseFileManager implements JavaFileManager {
             } else if (result.isMalformed() || result.isUnmappable()) {
                 // bad character in input
 
-                // report coding error (warn only pre 1.5)
-                if (!getSource().allowEncodingErrors()) {
-                    log.error(new SimpleDiagnosticPosition(dest.limit()),
-                              "illegal.char.for.encoding",
-                              charset == null ? encodingName : charset.name());
-                } else {
-                    log.warning(new SimpleDiagnosticPosition(dest.limit()),
-                                "illegal.char.for.encoding",
-                                charset == null ? encodingName : charset.name());
-                }
+                log.error(new SimpleDiagnosticPosition(dest.limit()),
+                          "illegal.char.for.encoding",
+                          charset == null ? encodingName : charset.name());
 
                 // skip past the coding error
                 inbuf.position(inbuf.position() + result.length());

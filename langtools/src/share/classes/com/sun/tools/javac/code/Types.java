@@ -80,8 +80,6 @@ public class Types {
     final Symtab syms;
     final JavacMessages messages;
     final Names names;
-    final boolean allowBoxing;
-    final boolean allowCovariantReturns;
     final boolean allowObjectToPrimitiveCast;
     final Check chk;
     final Enter enter;
@@ -105,8 +103,6 @@ public class Types {
         syms = Symtab.instance(context);
         names = Names.instance(context);
         Source source = Source.instance(context);
-        allowBoxing = source.allowBoxing();
-        allowCovariantReturns = source.allowCovariantReturns();
         allowObjectToPrimitiveCast = source.allowObjectToPrimitiveCast();
         chk = Check.instance(context);
         enter = Enter.instance(context);
@@ -292,7 +288,6 @@ public class Types {
         if (tPrimitive == sPrimitive) {
             return isSubtypeUnchecked(t, s, warn);
         }
-        if (!allowBoxing) return false;
         return tPrimitive
             ? isSubtype(boxedClass(t).type, s)
             : isSubtype(unboxedType(t), s);
@@ -1484,8 +1479,7 @@ public class Types {
             return true;
 
         if (t.isPrimitive() != s.isPrimitive())
-            return allowBoxing && (
-                    isConvertible(t, s, warn)
+            return (isConvertible(t, s, warn)
                     || (allowObjectToPrimitiveCast &&
                         s.isPrimitive() &&
                         isSubtype(boxedClass(s).type, t)));
@@ -3844,8 +3838,6 @@ public class Types {
 
         if (hasSameArgs(r1, r2))
             return covariantReturnType(r1.getReturnType(), r2res, warner);
-        if (!allowCovariantReturns)
-            return false;
         if (isSubtypeUnchecked(r1.getReturnType(), r2res, warner))
             return true;
         if (!isSubtype(r1.getReturnType(), erasure(r2res)))
@@ -3861,7 +3853,6 @@ public class Types {
     public boolean covariantReturnType(Type t, Type s, Warner warner) {
         return
             isSameType(t, s) ||
-            allowCovariantReturns &&
             !t.isPrimitive() &&
             !s.isPrimitive() &&
             isAssignable(t, s, warner);
@@ -3889,13 +3880,11 @@ public class Types {
      * Return the primitive type corresponding to a boxed type.
      */
     public Type unboxedType(Type t) {
-        if (allowBoxing) {
-            for (int i=0; i<syms.boxedName.length; i++) {
-                Name box = syms.boxedName[i];
-                if (box != null &&
-                    asSuper(t, syms.enterClass(box)) != null)
-                    return syms.typeOfTag[i];
-            }
+        for (int i=0; i<syms.boxedName.length; i++) {
+            Name box = syms.boxedName[i];
+            if (box != null &&
+                asSuper(t, syms.enterClass(box)) != null)
+                return syms.typeOfTag[i];
         }
         return Type.noType;
     }
@@ -4074,10 +4063,6 @@ public class Types {
         }
         if (giveWarning && !isReifiable(reverse ? from : to))
             warn.warn(LintCategory.UNCHECKED);
-        if (!allowCovariantReturns)
-            // reject if there is a common method signature with
-            // incompatible return types.
-            chk.checkCompatibleAbstracts(warn.pos(), from, to);
         return true;
     }
 
@@ -4101,10 +4086,6 @@ public class Types {
         Type t2 = to;
         if (disjointTypes(t1.getTypeArguments(), t2.getTypeArguments()))
             return false;
-        if (!allowCovariantReturns)
-            // reject if there is a common method signature with
-            // incompatible return types.
-            chk.checkCompatibleAbstracts(warn.pos(), from, to);
         if (!isReifiable(target) &&
             (reverse ? giveWarning(t2, t1) : giveWarning(t1, t2)))
             warn.warn(LintCategory.UNCHECKED);

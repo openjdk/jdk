@@ -82,7 +82,6 @@ public class Lower extends TreeTranslator {
     private final Target target;
     private final Source source;
     private final TypeEnvs typeEnvs;
-    private final boolean allowEnums;
     private final Name dollarAssertionsDisabled;
     private final Name classDollar;
     private final Types types;
@@ -103,7 +102,6 @@ public class Lower extends TreeTranslator {
         target = Target.instance(context);
         source = Source.instance(context);
         typeEnvs = TypeEnvs.instance(context);
-        allowEnums = source.allowEnums();
         dollarAssertionsDisabled = names.
             fromString(target.syntheticNameChar() + "assertionsDisabled");
         classDollar = names.
@@ -1492,9 +1490,6 @@ public class Lower extends TreeTranslator {
     List<JCVariableDecl> freevarDefs(int pos, List<VarSymbol> freevars, Symbol owner,
             long additionalFlags) {
         long flags = FINAL | SYNTHETIC | additionalFlags;
-        if (owner.kind == TYP &&
-            target.usePrivateSyntheticFields())
-            flags |= PRIVATE;
         List<JCVariableDecl> defs = List.nil();
         for (List<VarSymbol> l = freevars; l.nonEmpty(); l = l.tail) {
             VarSymbol v = l.head;
@@ -1525,9 +1520,6 @@ public class Lower extends TreeTranslator {
     }
 
     private VarSymbol makeOuterThisVarSymbol(Symbol owner, long flags) {
-        if (owner.kind == TYP &&
-            target.usePrivateSyntheticFields())
-            flags |= PRIVATE;
         Type target = types.erasure(owner.enclClass().type.getEnclosingType());
         VarSymbol outerThis =
             new VarSymbol(flags, outerThisName(target, owner), target, owner);
@@ -1900,8 +1892,6 @@ public class Lower extends TreeTranslator {
      */
     private ClassSymbol outerCacheClass() {
         ClassSymbol clazz = outermostClassDef.sym;
-        if ((clazz.flags() & INTERFACE) == 0 &&
-            !target.useInnerCacheClass()) return clazz;
         Scope s = clazz.members();
         for (Symbol sym : s.getSymbols(NON_RECURSIVE))
             if (sym.kind == TYP &&
@@ -1958,79 +1948,54 @@ public class Lower extends TreeTranslator {
 
         JCBlock returnResult;
 
-        // in 1.4.2 and above, we use
-        // Class.forName(String name, boolean init, ClassLoader loader);
-        // which requires we cache the current loader in cl$
-        if (target.classLiteralsNoInit()) {
-            // clsym = "private static ClassLoader cl$"
-            VarSymbol clsym = new VarSymbol(STATIC|SYNTHETIC,
-                                            names.fromString("cl" + target.syntheticNameChar()),
-                                            syms.classLoaderType,
-                                            outerCacheClass);
-            enterSynthetic(pos, clsym, outerCacheClass.members());
+        // cache the current loader in cl$
+        // clsym = "private static ClassLoader cl$"
+        VarSymbol clsym = new VarSymbol(STATIC | SYNTHETIC,
+                                        names.fromString("cl" + target.syntheticNameChar()),
+                                        syms.classLoaderType,
+                                        outerCacheClass);
+        enterSynthetic(pos, clsym, outerCacheClass.members());
 
-            // emit "private static ClassLoader cl$;"
-            JCVariableDecl cldef = make.VarDef(clsym, null);
-            JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
-            outerCacheClassDef.defs = outerCacheClassDef.defs.prepend(cldef);
+        // emit "private static ClassLoader cl$;"
+        JCVariableDecl cldef = make.VarDef(clsym, null);
+        JCClassDecl outerCacheClassDef = classDef(outerCacheClass);
+        outerCacheClassDef.defs = outerCacheClassDef.defs.prepend(cldef);
 
-            // newcache := "new cache$1[0]"
-            JCNewArray newcache = make.
-                NewArray(make.Type(outerCacheClass.type),
-                         List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
-                         null);
-            newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
-                                          syms.arrayClass, Type.noAnnotations);
+        // newcache := "new cache$1[0]"
+        JCNewArray newcache = make.NewArray(make.Type(outerCacheClass.type),
+                                            List.<JCExpression>of(make.Literal(INT, 0).setType(syms.intType)),
+                                            null);
+        newcache.type = new ArrayType(types.erasure(outerCacheClass.type),
+                                      syms.arrayClass, Type.noAnnotations);
 
-            // forNameSym := java.lang.Class.forName(
-            //     String s,boolean init,ClassLoader loader)
-            Symbol forNameSym = lookupMethod(make_pos, names.forName,
-                                             types.erasure(syms.classType),
-                                             List.of(syms.stringType,
-                                                     syms.booleanType,
-                                                     syms.classLoaderType));
-            // clvalue := "(cl$ == null) ?
-            // $newcache.getClass().getComponentType().getClassLoader() : cl$"
-            JCExpression clvalue =
+        // forNameSym := java.lang.Class.forName(
+        //     String s,boolean init,ClassLoader loader)
+        Symbol forNameSym = lookupMethod(make_pos, names.forName,
+                                         types.erasure(syms.classType),
+                                         List.of(syms.stringType,
+                                                 syms.booleanType,
+                                                 syms.classLoaderType));
+        // clvalue := "(cl$ == null) ?
+        // $newcache.getClass().getComponentType().getClassLoader() : cl$"
+        JCExpression clvalue =
                 make.Conditional(
-                    makeBinary(EQ, make.Ident(clsym), makeNull()),
-                    make.Assign(
-                        make.Ident(clsym),
-                        makeCall(
-                            makeCall(makeCall(newcache,
-                                              names.getClass,
-                                              List.<JCExpression>nil()),
-                                     names.getComponentType,
-                                     List.<JCExpression>nil()),
-                            names.getClassLoader,
-                            List.<JCExpression>nil())).setType(syms.classLoaderType),
-                    make.Ident(clsym)).setType(syms.classLoaderType);
+                        makeBinary(EQ, make.Ident(clsym), makeNull()),
+                        make.Assign(make.Ident(clsym),
+                                    makeCall(
+                                            makeCall(makeCall(newcache,
+                                                              names.getClass,
+                                                              List.<JCExpression>nil()),
+                                                     names.getComponentType,
+                                                     List.<JCExpression>nil()),
+                                            names.getClassLoader,
+                                            List.<JCExpression>nil())).setType(syms.classLoaderType),
+                        make.Ident(clsym)).setType(syms.classLoaderType);
 
-            // returnResult := "{ return Class.forName(param1, false, cl$); }"
-            List<JCExpression> args = List.of(make.Ident(md.params.head.sym),
-                                              makeLit(syms.booleanType, 0),
-                                              clvalue);
-            returnResult = make.
-                Block(0, List.<JCStatement>of(make.
-                              Call(make. // return
-                                   App(make.
-                                       Ident(forNameSym), args))));
-        } else {
-            // forNameSym := java.lang.Class.forName(String s)
-            Symbol forNameSym = lookupMethod(make_pos,
-                                             names.forName,
-                                             types.erasure(syms.classType),
-                                             List.of(syms.stringType));
-            // returnResult := "{ return Class.forName(param1); }"
-            returnResult = make.
-                Block(0, List.of(make.
-                          Call(make. // return
-                              App(make.
-                                  QualIdent(forNameSym),
-                                  List.<JCExpression>of(make.
-                                                        Ident(md.params.
-                                                              head.sym))))));
-        }
+        // returnResult := "{ return Class.forName(param1, false, cl$); }"
+        List<JCExpression> args = List.of(make.Ident(md.params.head.sym),
+                                          makeLit(syms.booleanType, 0),
+                                          clvalue);
+        returnResult = make.Block(0, List.<JCStatement>of(make.Call(make.App(make.Ident(forNameSym), args))));
 
         // catchParam := ClassNotFoundException e1
         VarSymbol catchParam =
@@ -2039,27 +2004,13 @@ public class Lower extends TreeTranslator {
                           classDollarSym);
 
         JCStatement rethrow;
-        if (target.hasInitCause()) {
-            // rethrow = "throw new NoClassDefFoundError().initCause(e);
-            JCExpression throwExpr =
-                makeCall(makeNewClass(syms.noClassDefFoundErrorType,
-                                      List.<JCExpression>nil()),
-                         names.initCause,
-                         List.<JCExpression>of(make.Ident(catchParam)));
-            rethrow = make.Throw(throwExpr);
-        } else {
-            // getMessageSym := ClassNotFoundException.getMessage()
-            Symbol getMessageSym = lookupMethod(make_pos,
-                                                names.getMessage,
-                                                syms.classNotFoundExceptionType,
-                                                List.<Type>nil());
-            // rethrow = "throw new NoClassDefFoundError(e.getMessage());"
-            rethrow = make.
-                Throw(makeNewClass(syms.noClassDefFoundErrorType,
-                          List.<JCExpression>of(make.App(make.Select(make.Ident(catchParam),
-                                                                     getMessageSym),
-                                                         List.<JCExpression>nil()))));
-        }
+        // rethrow = "throw new NoClassDefFoundError().initCause(e);
+        JCExpression throwExpr =
+            makeCall(makeNewClass(syms.noClassDefFoundErrorType,
+                                  List.<JCExpression>nil()),
+                     names.initCause,
+                     List.<JCExpression>of(make.Ident(catchParam)));
+        rethrow = make.Throw(throwExpr);
 
         // rethrowStmt := "( $rethrow )"
         JCBlock rethrowStmt = make.Block(0, List.of(rethrow));
@@ -2147,29 +2098,10 @@ public class Lower extends TreeTranslator {
                 ((VarSymbol)typeSym).getConstValue(); // ensure initializer is evaluated
             return make.QualIdent(typeSym);
         case CLASS: case ARRAY:
-            if (target.hasClassLiterals()) {
                 VarSymbol sym = new VarSymbol(
                         STATIC | PUBLIC | FINAL, names._class,
                         syms.classType, type.tsym);
                 return make_at(pos).Select(make.Type(type), sym);
-            }
-            // replace with <cache == null ? cache = class$(tsig) : cache>
-            // where
-            //  - <tsig>  is the type signature of T,
-            //  - <cache> is the cache variable for tsig.
-            String sig =
-                writer.xClassName(type).toString().replace('/', '.');
-            Symbol cs = cacheSym(pos, sig);
-            return make_at(pos).Conditional(
-                makeBinary(EQ, make.Ident(cs), makeNull()),
-                make.Assign(
-                    make.Ident(cs),
-                    make.App(
-                        make.Ident(classDollarSym(pos)),
-                        List.<JCExpression>of(make.Literal(CLASS, sig)
-                                              .setType(syms.stringType))))
-                .setType(types.erasure(syms.classType)),
-                make.Ident(cs)).setType(types.erasure(syms.classType));
         default:
             throw new AssertionError();
         }
@@ -2415,9 +2347,8 @@ public class Lower extends TreeTranslator {
 
         Name name = names.package_info;
         long flags = Flags.ABSTRACT | Flags.INTERFACE;
-        if (target.isPackageInfoSynthetic())
-            // package-info is marked SYNTHETIC in JDK 1.6 and later releases
-            flags = flags | Flags.SYNTHETIC;
+        // package-info is marked SYNTHETIC in JDK 1.6 and later releases
+        flags = flags | Flags.SYNTHETIC;
         JCClassDecl packageAnnotationsClass
             = make.ClassDef(make.Modifiers(flags, tree.getAnnotations()),
                             name, List.<JCTypeParameter>nil(),
@@ -2549,8 +2480,7 @@ public class Lower extends TreeTranslator {
         if (tree.extending == null)
             tree.extending = make.Type(types.supertype(tree.type));
 
-        // classOfType adds a cache field to tree.defs unless
-        // target.hasClassLiterals().
+        // classOfType adds a cache field to tree.defs
         JCExpression e_class = classOfType(tree.sym.type, tree.pos()).
             setType(types.erasure(syms.classType));
 
@@ -2810,11 +2740,7 @@ public class Lower extends TreeTranslator {
             // recursively translate following local statements and
             // combine with this- or super-call
             List<JCStatement> stats = translate(tree.body.stats.tail);
-            if (target.initializeFieldsBeforeSuper())
-                tree.body.stats = stats.prepend(selfCall).prependList(added);
-            else
-                tree.body.stats = stats.prependList(added).prepend(selfCall);
-
+            tree.body.stats = stats.prepend(selfCall).prependList(added);
             outerThisStack = prevOuterThisStack;
         } else {
             Map<Symbol, Symbol> prevLambdaTranslationMap =
@@ -3056,9 +2982,7 @@ public class Lower extends TreeTranslator {
     public void visitApply(JCMethodInvocation tree) {
         Symbol meth = TreeInfo.symbol(tree.meth);
         List<Type> argtypes = meth.type.getParameterTypes();
-        if (allowEnums &&
-            meth.name==names.init &&
-            meth.owner == syms.enumSym)
+        if (meth.name == names.init && meth.owner == syms.enumSym)
             argtypes = argtypes.tail.tail;
         tree.args = boxArgs(argtypes, tree.args, tree.varargsElement);
         tree.varargsElement = null;
@@ -3195,20 +3119,12 @@ public class Lower extends TreeTranslator {
     /** Box up a single primitive expression. */
     JCExpression boxPrimitive(JCExpression tree, Type box) {
         make_at(tree.pos());
-        if (target.boxWithConstructors()) {
-            Symbol ctor = lookupConstructor(tree.pos(),
-                                            box,
-                                            List.<Type>nil()
-                                            .prepend(tree.type));
-            return make.Create(ctor, List.of(tree));
-        } else {
-            Symbol valueOfSym = lookupMethod(tree.pos(),
-                                             names.valueOf,
-                                             box,
-                                             List.<Type>nil()
-                                             .prepend(tree.type));
-            return make.App(make.QualIdent(valueOfSym), List.of(tree));
-        }
+        Symbol valueOfSym = lookupMethod(tree.pos(),
+                                         names.valueOf,
+                                         box,
+                                         List.<Type>nil()
+                                         .prepend(tree.type));
+        return make.App(make.QualIdent(valueOfSym), List.of(tree));
     }
 
     /** Unbox an object to a primitive value. */

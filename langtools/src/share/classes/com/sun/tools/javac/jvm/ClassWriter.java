@@ -51,7 +51,6 @@ import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.*;
-import static com.sun.tools.javac.jvm.UninitializedType.*;
 import static com.sun.tools.javac.main.Option.*;
 import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
@@ -543,8 +542,6 @@ public class ClassWriter extends ClassFile {
      *  Returns the number of attributes written (0 or 1).
      */
     int writeEnclosingMethodAttribute(ClassSymbol c) {
-        if (!target.hasEnclosingMethodAttribute())
-            return 0;
         return writeEnclosingMethodAttribute(names.EnclosingMethod, c);
     }
 
@@ -578,31 +575,6 @@ public class ClassWriter extends ClassFile {
             endAttr(alenIdx);
             acount++;
         }
-        if ((flags & ENUM) != 0 && !target.useEnumFlag()) {
-            int alenIdx = writeAttr(names.Enum);
-            endAttr(alenIdx);
-            acount++;
-        }
-        if ((flags & SYNTHETIC) != 0 && !target.useSyntheticFlag()) {
-            int alenIdx = writeAttr(names.Synthetic);
-            endAttr(alenIdx);
-            acount++;
-        }
-        if ((flags & BRIDGE) != 0 && !target.useBridgeFlag()) {
-            int alenIdx = writeAttr(names.Bridge);
-            endAttr(alenIdx);
-            acount++;
-        }
-        if ((flags & VARARGS) != 0 && !target.useVarargsFlag()) {
-            int alenIdx = writeAttr(names.Varargs);
-            endAttr(alenIdx);
-            acount++;
-        }
-        if ((flags & ANNOTATION) != 0 && !target.useAnnotationFlag()) {
-            int alenIdx = writeAttr(names.Annotation);
-            endAttr(alenIdx);
-            acount++;
-        }
         return acount;
     }
 
@@ -612,11 +584,10 @@ public class ClassWriter extends ClassFile {
     int writeMemberAttrs(Symbol sym) {
         int acount = writeFlagAttrs(sym.flags());
         long flags = sym.flags();
-        if (source.allowGenerics() &&
-            (flags & (SYNTHETIC|BRIDGE)) != SYNTHETIC &&
+        if ((flags & (SYNTHETIC | BRIDGE)) != SYNTHETIC &&
             (flags & ANONCONSTR) == 0 &&
             (!types.isSameType(sym.type, sym.erasure(types)) ||
-            signatureGen.hasTypeVar(sym.type.getThrownTypes()))) {
+             signatureGen.hasTypeVar(sym.type.getThrownTypes()))) {
             // note that a local class with captured variables
             // will get a signature attribute
             int alenIdx = writeAttr(names.Signature);
@@ -1252,14 +1223,14 @@ public class ClassWriter extends ClassFile {
                 // output locals
                 int localCount = 0;
                 for (int j=0; j<frame.locals.length;
-                     j += (target.generateEmptyAfterBig() ? 1 : Code.width(frame.locals[j]))) {
+                     j += Code.width(frame.locals[j])) {
                     localCount++;
                 }
                 if (debugstackmap) System.out.print(" nlocals=" +
                                                     localCount);
                 databuf.appendChar(localCount);
                 for (int j=0; j<frame.locals.length;
-                     j += (target.generateEmptyAfterBig() ? 1 : Code.width(frame.locals[j]))) {
+                     j += Code.width(frame.locals[j])) {
                     if (debugstackmap) System.out.print(" local[" + j + "]=");
                     writeStackMapType(frame.locals[j]);
                 }
@@ -1267,14 +1238,14 @@ public class ClassWriter extends ClassFile {
                 // output stack
                 int stackCount = 0;
                 for (int j=0; j<frame.stack.length;
-                     j += (target.generateEmptyAfterBig() ? 1 : Code.width(frame.stack[j]))) {
+                     j += Code.width(frame.stack[j])) {
                     stackCount++;
                 }
                 if (debugstackmap) System.out.print(" nstack=" +
                                                     stackCount);
                 databuf.appendChar(stackCount);
                 for (int j=0; j<frame.stack.length;
-                     j += (target.generateEmptyAfterBig() ? 1 : Code.width(frame.stack[j]))) {
+                     j += Code.width(frame.stack[j])) {
                     if (debugstackmap) System.out.print(" stack[" + j + "]=");
                     writeStackMapType(frame.stack[j]);
                 }
@@ -1684,7 +1655,6 @@ public class ClassWriter extends ClassFile {
         for (List<Type> l = interfaces; !sigReq && l.nonEmpty(); l = l.tail)
             sigReq = l.head.allparams().length() != 0;
         if (sigReq) {
-            Assert.check(source.allowGenerics());
             int alenIdx = writeAttr(names.Signature);
             if (typarams.length() != 0) signatureGen.assembleParamsSig(typarams);
             signatureGen.assembleSig(supertype);
@@ -1761,16 +1731,10 @@ public class ClassWriter extends ClassFile {
 
     int adjustFlags(final long flags) {
         int result = (int)flags;
-        if ((flags & SYNTHETIC) != 0  && !target.useSyntheticFlag())
-            result &= ~SYNTHETIC;
-        if ((flags & ENUM) != 0  && !target.useEnumFlag())
-            result &= ~ENUM;
-        if ((flags & ANNOTATION) != 0  && !target.useAnnotationFlag())
-            result &= ~ANNOTATION;
 
-        if ((flags & BRIDGE) != 0  && target.useBridgeFlag())
+        if ((flags & BRIDGE) != 0)
             result |= ACC_BRIDGE;
-        if ((flags & VARARGS) != 0  && target.useVarargsFlag())
+        if ((flags & VARARGS) != 0)
             result |= ACC_VARARGS;
         if ((flags & DEFAULT) != 0)
             result &= ~ABSTRACT;
