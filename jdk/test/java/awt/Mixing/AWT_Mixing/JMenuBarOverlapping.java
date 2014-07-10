@@ -36,6 +36,7 @@ import javax.swing.JMenuBar;
 import javax.swing.JMenuItem;
 import javax.swing.JSeparator;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JMenuBar } and {@link javax.swing.JSeparator} components.
@@ -46,6 +47,8 @@ import javax.swing.SwingUtilities;
 @test
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JMenuBarOverlapping
  */
 public class JMenuBarOverlapping extends OverlappingTestBase {
@@ -132,7 +135,7 @@ public class JMenuBarOverlapping extends OverlappingTestBase {
             });
         } catch (Exception e) {
             e.printStackTrace();
-            System.exit(1);
+            throw new RuntimeException("Where is separator?");
         }
         sepLoc.translate(20, 1);
         clickAndBlink(robot, sepLoc, false);

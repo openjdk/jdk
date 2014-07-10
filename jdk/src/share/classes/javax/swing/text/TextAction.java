@@ -115,8 +115,8 @@ public abstract class TextAction extends AbstractAction {
         }
         Action[] actions = new Action[h.size()];
         int index = 0;
-        for (Enumeration e = h.elements() ; e.hasMoreElements() ;) {
-            actions[index++] = (Action) e.nextElement();
+        for (Enumeration<Action> e = h.elements() ; e.hasMoreElements() ;) {
+            actions[index++] = e.nextElement();
         }
         return actions;
     }

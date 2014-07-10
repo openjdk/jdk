@@ -203,7 +203,7 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getAttributeNS(String namespaceURI,
                                  String localName)
@@ -249,7 +249,7 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public void setAttributeNS(String namespaceURI,
                                String qualifiedName,
@@ -278,7 +278,7 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public void removeAttributeNS(String namespaceURI,
                                   String localName)
@@ -299,7 +299,7 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Attr getAttributeNodeNS(String namespaceURI,
                                    String localName)
@@ -329,7 +329,7 @@ public interface Element extends Node {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Attr setAttributeNodeNS(Attr newAttr)
                                    throws DOMException;
@@ -348,7 +348,7 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public NodeList getElementsByTagNameNS(String namespaceURI,
                                            String localName)
@@ -362,7 +362,7 @@ public interface Element extends Node {
      * @return <code>true</code> if an attribute with the given name is
      *   specified on this element or has a default value, <code>false</code>
      *    otherwise.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public boolean hasAttribute(String name);
 
@@ -383,7 +383,7 @@ public interface Element extends Node {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature <code>"XML"</code> and the language exposed
      *   through the Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public boolean hasAttributeNS(String namespaceURI,
                                   String localName)
@@ -391,7 +391,7 @@ public interface Element extends Node {
 
     /**
      *  The type information associated with this element.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public TypeInfo getSchemaTypeInfo();
 
@@ -413,7 +413,7 @@ public interface Element extends Node {
      *   NO_MODIFICATION_ALLOWED_ERR: Raised if this node is readonly.
      *   <br>NOT_FOUND_ERR: Raised if the specified node is not an attribute
      *   of this element.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setIdAttribute(String name,
                                boolean isId)
@@ -436,7 +436,7 @@ public interface Element extends Node {
      *   NO_MODIFICATION_ALLOWED_ERR: Raised if this node is readonly.
      *   <br>NOT_FOUND_ERR: Raised if the specified node is not an attribute
      *   of this element.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setIdAttributeNS(String namespaceURI,
                                  String localName,
@@ -459,7 +459,7 @@ public interface Element extends Node {
      *   NO_MODIFICATION_ALLOWED_ERR: Raised if this node is readonly.
      *   <br>NOT_FOUND_ERR: Raised if the specified node is not an attribute
      *   of this element.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public void setIdAttributeNode(Attr idAttr,
                                    boolean isId)

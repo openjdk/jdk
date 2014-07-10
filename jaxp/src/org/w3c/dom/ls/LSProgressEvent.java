@@ -53,6 +53,8 @@ import org.w3c.dom.events.Event;
  * input dependent.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
+ *
+ * @since 1.5
  */
 public interface LSProgressEvent extends Event {
     /**

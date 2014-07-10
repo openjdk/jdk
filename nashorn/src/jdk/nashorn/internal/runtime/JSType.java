@@ -130,6 +130,9 @@ public enum JSType {
     /** Combined call to toPrimitive followed by toString. */
     public static final Call TO_PRIMITIVE_TO_STRING = staticCall(JSTYPE_LOOKUP, JSType.class, "toPrimitiveToString", String.class, Object.class);
 
+    /** Combined call to toPrimitive followed by toCharSequence. */
+    public static final Call TO_PRIMITIVE_TO_CHARSEQUENCE = staticCall(JSTYPE_LOOKUP, JSType.class, "toPrimitiveToCharSequence", CharSequence.class, Object.class);
+
     /** Throw an unwarranted optimism exception */
     public static final Call THROW_UNWARRANTED = staticCall(JSTYPE_LOOKUP, JSType.class, "throwUnwarrantedOptimismException", Object.class, Object.class, int.class);
 
@@ -217,23 +220,23 @@ public enum JSType {
     public static final int TYPE_OBJECT_INDEX = 3; //getAccessorTypeIndex(Object.class);
 
     /** object conversion quickies with JS semantics - used for return value and parameter filter */
-    public static final MethodHandle[] CONVERT_OBJECT = {
+    public static final List<MethodHandle> CONVERT_OBJECT = toUnmodifiableList(
         JSType.TO_INT32.methodHandle(),
         JSType.TO_UINT32.methodHandle(),
         JSType.TO_NUMBER.methodHandle(),
         null
-    };
+    );
 
     /**
      * object conversion quickies with JS semantics - used for return value and parameter filter, optimistic
      * throws exception upon incompatible type (asking for a narrower one than the storage)
      */
-    public static final MethodHandle[] CONVERT_OBJECT_OPTIMISTIC = {
+    public static final List<MethodHandle> CONVERT_OBJECT_OPTIMISTIC = toUnmodifiableList(
         JSType.TO_INT32_OPTIMISTIC.methodHandle(),
         JSType.TO_LONG_OPTIMISTIC.methodHandle(),
         JSType.TO_NUMBER_OPTIMISTIC.methodHandle(),
         null
-    };
+    );
 
     /** The value of Undefined cast to an int32 */
     public static final int    UNDEFINED_INT    = 0;
@@ -246,12 +249,12 @@ public enum JSType {
      * Method handles for getters that return undefined coerced
      * to the appropriate type
      */
-    public static final MethodHandle[] GET_UNDEFINED = new MethodHandle[] {
+    public static final List<MethodHandle> GET_UNDEFINED = toUnmodifiableList(
         MH.constant(int.class, UNDEFINED_INT),
         MH.constant(long.class, UNDEFINED_LONG),
         MH.constant(double.class, UNDEFINED_DOUBLE),
-        MH.constant(Object.class, Undefined.getUndefined()),
-    };
+        MH.constant(Object.class, Undefined.getUndefined())
+    );
 
     private static final double INT32_LIMIT = 4294967296.0;
 
@@ -485,6 +488,16 @@ public enum JSType {
      */
     public static String toPrimitiveToString(final Object obj) {
         return toString(toPrimitive(obj));
+    }
+
+    /**
+     * Like {@link #toPrimitiveToString(Object)}, but avoids conversion of ConsString to String.
+     *
+     * @param obj  an object
+     * @return the CharSequence form of the primitive form of the object
+     */
+    public static CharSequence toPrimitiveToCharSequence(final Object obj) {
+        return toCharSequence(toPrimitive(obj));
     }
 
     /**
@@ -1807,5 +1820,7 @@ public enum JSType {
         }
     }
 
-
+    private static final List<MethodHandle> toUnmodifiableList(final MethodHandle... methodHandles) {
+        return Collections.unmodifiableList(Arrays.asList(methodHandles));
+    }
 }

@@ -34,7 +34,6 @@ import org.w3c.dom.ls.LSInput;
  *
  * @author Michael Glavassevich, IBM
  *
- * @version $Id: LSInputListImpl.java,v 1.2 2010-10-26 23:01:04 joehw Exp $
  */
 public final class LSInputListImpl extends AbstractList implements LSInputList {
 

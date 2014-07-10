@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,8 +41,7 @@ void ServiceThread::initialize() {
   instanceKlassHandle klass (THREAD,  SystemDictionary::Thread_klass());
   instanceHandle thread_oop = klass->allocate_instance_handle(CHECK);
 
-  const char* name = JDK_Version::is_gte_jdk17x_version() ?
-      "Service Thread" : "Low Memory Detector";
+  const char* name = "Service Thread";
 
   Handle string = java_lang_String::create_from_str(name, CHECK);
 

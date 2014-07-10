@@ -34,19 +34,19 @@ class PrintJobAttributeException extends PrintException
     implements AttributeException {
 
     private Attribute attr;
-    private Class category;
+    private Class<?> category;
 
-    PrintJobAttributeException(String s, Class cat, Attribute attrval) {
+    PrintJobAttributeException(String s, Class<?> cat, Attribute attrval) {
         super(s);
         attr = attrval;
         category = cat;
     }
 
-    public Class[] getUnsupportedAttributes() {
+    public Class<?>[] getUnsupportedAttributes() {
         if (category == null) {
             return null;
         } else {
-            Class [] cats = { category};
+            Class<?>[] cats = { category};
             return cats;
         }
     }

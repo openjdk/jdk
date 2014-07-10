@@ -361,7 +361,7 @@ public class ElementIterator implements Cloneable {
                 System.out.println("elem: " + elem.getName());
                 AttributeSet attr = elem.getAttributes();
                 String s = "";
-                Enumeration names = attr.getAttributeNames();
+                Enumeration<?> names = attr.getAttributeNames();
                 while (names.hasMoreElements()) {
                     Object key = names.nextElement();
                     Object value = attr.getAttribute(key);

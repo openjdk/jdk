@@ -399,6 +399,7 @@ public class MethodNode extends MethodVisitor {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public AnnotationVisitor visitParameterAnnotation(final int parameter,
             final String desc, final boolean visible) {
         AnnotationNode an = new AnnotationNode(desc);

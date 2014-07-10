@@ -31,7 +31,6 @@ import com.sun.org.apache.xerces.internal.xs.datatypes.ByteList;
  *
  * @author Ankit Pasricha, IBM
  *
- * @version $Id: ByteListImpl.java,v 1.7 2010-11-01 04:39:46 joehw Exp $
  */
 public class ByteListImpl extends AbstractList implements ByteList {
 

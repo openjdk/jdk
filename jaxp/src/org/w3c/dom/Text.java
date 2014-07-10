@@ -93,7 +93,7 @@ public interface Text extends CharacterData {
      * determined to contain whitespace in element content during the load
      * of the document or if validation occurs while using
      * <code>Document.normalizeDocument()</code>.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean isElementContentWhitespace();
 
@@ -121,7 +121,7 @@ public interface Text extends CharacterData {
      * </pre>
      * <em>Figure: barTextNode.wholeText value is "barfoo"</em>
      *
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public String getWholeText();
 
@@ -179,7 +179,7 @@ public interface Text extends CharacterData {
      * @exception DOMException
      *   NO_MODIFICATION_ALLOWED_ERR: Raised if one of the <code>Text</code>
      *   nodes being replaced is readonly.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Text replaceWholeText(String content)
                                  throws DOMException;

@@ -74,6 +74,7 @@ import java.io.IOException;
  * description: A component which can be selected or deselected.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBox extends JToggleButton implements Accessible {

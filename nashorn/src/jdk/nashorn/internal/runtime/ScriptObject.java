@@ -691,6 +691,7 @@ public abstract class ScriptObject implements PropertyAccess {
         assert isValidArrayIndex(index) : "invalid array index";
         final long longIndex = ArrayIndex.toLongIndex(index);
         doesNotHaveEnsureDelete(longIndex, getArray().length(), false);
+        setArray(getArray().ensure(longIndex));
         setArray(getArray().set(index, value, false));
     }
 
@@ -2499,18 +2500,7 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         if (isCallerVarArg) {
-            final int spreadArgs = parameterCount - callCount + 1;
-            return MH.filterArguments(
-                MH.asSpreader(
-                    methodHandle,
-                    Object[].class,
-                    spreadArgs),
-                callCount - 1,
-                MH.insertArguments(
-                    TRUNCATINGFILTER,
-                    0,
-                    spreadArgs)
-                );
+            return adaptHandleToVarArgCallSite(methodHandle, callCount);
         }
 
         if (callCount < parameterCount) {
@@ -2539,6 +2529,21 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         return methodHandle;
+    }
+
+    static MethodHandle adaptHandleToVarArgCallSite(final MethodHandle mh, final int callSiteParamCount) {
+        final int spreadArgs = mh.type().parameterCount() - callSiteParamCount + 1;
+        return MH.filterArguments(
+            MH.asSpreader(
+            mh,
+            Object[].class,
+            spreadArgs),
+            callSiteParamCount - 1,
+            MH.insertArguments(
+                TRUNCATINGFILTER,
+                0,
+                spreadArgs)
+            );
     }
 
     @SuppressWarnings("unused")

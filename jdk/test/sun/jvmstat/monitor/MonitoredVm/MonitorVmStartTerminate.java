@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,228 +21,299 @@
  * questions.
  */
 
-import java.util.concurrent.CountDownLatch;
-import java.util.regex.*;
-import java.util.*;
-import java.net.URISyntaxException;
+import java.io.File;
 import java.io.IOException;
-import sun.jvmstat.monitor.*;
-import sun.jvmstat.monitor.event.*;
+import java.net.URISyntaxException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+import java.util.UUID;
+import java.util.concurrent.Semaphore;
 
-public class MonitorVmStartTerminate {
+import jdk.testlibrary.OutputBuffer;
+import jdk.testlibrary.ProcessTools;
+import sun.jvmstat.monitor.MonitorException;
+import sun.jvmstat.monitor.MonitoredHost;
+import sun.jvmstat.monitor.MonitoredVm;
+import sun.jvmstat.monitor.MonitoredVmUtil;
+import sun.jvmstat.monitor.VmIdentifier;
+import sun.jvmstat.monitor.event.HostEvent;
+import sun.jvmstat.monitor.event.HostListener;
+import sun.jvmstat.monitor.event.VmStatusChangeEvent;
 
-    private static final int SLEEPERS = 10;
-    private static final int SLEEPTIME = 5000;     // sleep time for a sleeper
-    private static final int EXECINTERVAL = 3000;   // wait time between exec's
+/*
 
-    public static void main(String args[]) throws Exception {
+ Test starts ten Java processes, each with a unique id.
 
-        long now = System.currentTimeMillis();
+ Each process creates a file named after the id and then it waits for
+ the test to remove the file, at which the Java process exits.
 
-        String sleeperArgs = SLEEPTIME + " " + now;
-        String sleeperPattern = "Sleeper " + sleeperArgs + " \\d+$";
+ The processes are monitored by the test to make sure notifications
+ are sent when they are started/terminated.
+
+ To avoid Java processes being left behind, in case of an unexpected
+ failure, shutdown hooks are installed that remove files when the test
+ exits. If files are not removed, i.e. due to a JVM crash, the Java
+ processes will exit themselves after 1000 s.
+
+*/
+
+/*
+ * @test
+ * @bug 4990825
+ * @summary attach to external but local JVM processes
+ * @library /lib/testlibrary
+ * @build jdk.testlibrary.*
+ * @run main/othervm MonitorVmStartTerminate
+ */
+public final class MonitorVmStartTerminate {
+
+    private static final int PROCESS_COUNT = 10;
+    private static final long PROCESS_TIMEOUT_IN_NS = 1000*1000_000_000L;
+
+    public static void main(String... args) throws Exception {
 
         MonitoredHost host = MonitoredHost.getMonitoredHost("localhost");
-        host.setInterval(200);
+        host.setInterval(1); // 1 ms
 
-        Matcher matcher = Pattern.compile(sleeperPattern).matcher("");
-        SleeperListener listener = new SleeperListener(host, matcher, SLEEPERS);
+        String id = UUID.randomUUID().toString();
+
+        List<JavaProcess> javaProcesses = new ArrayList<>();
+        for (int i = 0; i < PROCESS_COUNT; i++) {
+            javaProcesses.add(new JavaProcess(id + "_" + i));
+        }
+
+        Listener listener = new Listener(host, javaProcesses);
         host.addHostListener(listener);
-
-        SleeperStarter ss = new SleeperStarter(SLEEPERS, EXECINTERVAL,
-                                               sleeperArgs);
-        ss.start();
-
-        System.out.println("Waiting for "
-                           + SLEEPERS + " sleepers to terminate");
-        try {
-            ss.join();
-        } catch (InterruptedException e) {
-            throw new Exception("Timed out waiting for sleepers");
+        for (JavaProcess javaProcess : javaProcesses) {
+            javaProcess.start();
         }
-        listener.waitForSleepersToStart();
-        listener.waitForSleepersToTerminate();
+
+        // Wait for all processes to start before terminating
+        // them, so pids are not reused within a poll interval.
+        System.out.println("Waiting for all processes to get started notification");
+        listener.started.acquire(PROCESS_COUNT);
+
+        for (JavaProcess javaProcess : javaProcesses) {
+            javaProcess.terminate();
+        }
+        System.out.println("Waiting for all processes to get terminated notification");
+        listener.terminated.acquire(PROCESS_COUNT);
+
+        host.removeHostListener(listener);
     }
 
-    public static class SleeperListener implements HostListener {
-
-        private final List<Integer> targets =  new ArrayList<>();
-        private final CountDownLatch terminateLatch;
-        private final CountDownLatch startLatch;
+    private static final class Listener implements HostListener {
+        private final Semaphore started = new Semaphore(0);
+        private final Semaphore terminated = new Semaphore(0);
         private final MonitoredHost host;
-        private final Matcher patternMatcher;
+        private final List<JavaProcess> processes;
 
-        public SleeperListener(MonitoredHost host, Matcher matcher, int count) {
+        public Listener(MonitoredHost host, List<JavaProcess> processes) {
             this.host = host;
-            this.patternMatcher = matcher;
-            this.terminateLatch = new CountDownLatch(count);
-            this.startLatch = new CountDownLatch(count);
+            this.processes = processes;
+            printStatus();
         }
 
-        public void waitForSleepersToTerminate() throws InterruptedException {
-            terminateLatch.await();
-        }
-
-        public void waitForSleepersToStart() throws InterruptedException {
-            startLatch.await();
-        }
-
-        private void printList(Set<Integer> list, String msg) {
-            System.out.println(msg + ":");
-            for (Integer lvmid : list) {
-                try {
-                    VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
-                    MonitoredVm target = host.getMonitoredVm(vmid);
-
-                    StringMonitor cmdMonitor =
-                            (StringMonitor)target.findByName("sun.rt.javaCommand");
-                    String cmd = cmdMonitor.stringValue();
-
-                    System.out.println("\t" + lvmid.intValue() + ": "
-                                       + "\"" + cmd + "\"" + ": ");
-                } catch (URISyntaxException e) {
-                    System.err.println("Unexpected URISyntaxException: "
-                                       + e.getMessage());
-                } catch (MonitorException e) {
-                    System.out.println("\t" + lvmid.intValue()
-                                       + ": error reading monitoring data: "
-                                       + " target possibly terminated?");
-                }
-            }
-        }
-
-
-        private int addStarted(Set<Integer> started) {
-            int found = 0;
-            for (Integer lvmid : started) {
-                try {
-                    VmIdentifier vmid = new VmIdentifier("//" + lvmid.intValue());
-                    MonitoredVm target = host.getMonitoredVm(vmid);
-
-                    StringMonitor cmdMonitor =
-                            (StringMonitor)target.findByName("sun.rt.javaCommand");
-                    String cmd = cmdMonitor.stringValue();
-
-                    patternMatcher.reset(cmd);
-                    System.out.print("Started: " + lvmid.intValue()
-                                     + ": " + "\"" + cmd + "\"" + ": ");
-
-                    if (patternMatcher.matches()) {
-                        System.out.println("matches pattern - recorded");
-                        targets.add(lvmid);
-                        found++;
-                    }
-                    else {
-                        System.out.println("does not match pattern - ignored");
-                    }
-                } catch (URISyntaxException e) {
-                    System.err.println("Unexpected URISyntaxException: "
-                                       + e.getMessage());
-                } catch (MonitorException e) {
-                    System.err.println("Unexpected MonitorException: "
-                                       + e.getMessage());
-                }
-            }
-            return found;
-        }
-
-        private int removeTerminated(Set<Integer> terminated) {
-            int found = 0;
-            for (Integer lvmid : terminated) {
-                /*
-                 * we don't attempt to attach to the target here as it's
-                 * now dead and has no jvmstat share memory file. Just see
-                 * if the process id is among those that we saved when we
-                 * started the targets (note - duplicated allowed and somewhat
-                 * expected on windows);
-                 */
-                System.out.print("Terminated: " + lvmid.intValue() + ": ");
-                if (targets.contains(lvmid)) {
-                    System.out.println("matches pattern - termination recorded");
-                    targets.remove(lvmid);
-                    found++;
-                }
-                else {
-                    System.out.println("does not match pattern - ignored");
-                }
-            }
-            return found;
-        }
-
+        @Override
         @SuppressWarnings("unchecked")
-        public void vmStatusChanged(VmStatusChangeEvent ev) {
-            printList(ev.getActive(), "Active");
-            printList(ev.getStarted(), "Started");
-            printList(ev.getTerminated(), "Terminated");
+        public void vmStatusChanged(VmStatusChangeEvent event) {
+            releaseStarted(event.getStarted());
+            releaseTerminated(event.getTerminated());
+            printStatus();
+        }
 
-            int recentlyStarted = addStarted(ev.getStarted());
-            int recentlyTerminated = removeTerminated(ev.getTerminated());
+        private void printStatus() {
+            System.out.printf("started=%d, terminated=%d\n",
+                    started.availablePermits(), terminated.availablePermits());
+        }
 
-            for (int i = 0; i < recentlyTerminated; i++) {
-                terminateLatch.countDown();
-            }
-            for (int i = 0; i < recentlyStarted; i++) {
-                startLatch.countDown();
+        @Override
+        public void disconnected(HostEvent arg0) {
+            // ignore
+        }
+
+        private void releaseStarted(Set<Integer> ids) {
+            System.out.println("realeaseStarted(" + ids + ")");
+            for (Integer id : ids) {
+                releaseStarted(id);
             }
         }
 
-        public void disconnected(HostEvent ev) {
+        private void releaseStarted(Integer id) {
+            for (JavaProcess jp : processes) {
+                if (hasMainArgs(id, jp.getMainArgsIdentifier())) {
+                    // store id for terminated identification
+                    jp.setId(id);
+                    System.out.println("RELEASED (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
+                    started.release();
+                    return;
+                }
+            }
+        }
+
+        private void releaseTerminated(Set<Integer> ids) {
+            System.out.println("releaseTerminated(" + ids + ")");
+            for (Integer id : ids) {
+                releaseTerminated(id);
+            }
+        }
+
+        private void releaseTerminated(Integer id) {
+            for (JavaProcess jp : processes) {
+                if (id.equals(jp.getId())) {
+                    System.out.println("RELEASED (id=" + jp.getId() + ", args=" + jp.getMainArgsIdentifier() + ")");
+                    terminated.release();
+                    return;
+                }
+            }
+        }
+
+        private boolean hasMainArgs(Integer id, String args) {
+            try {
+                VmIdentifier vmid = new VmIdentifier("//" + id.intValue());
+                MonitoredVm target = host.getMonitoredVm(vmid);
+                String monitoredArgs = MonitoredVmUtil.mainArgs(target);
+                if (monitoredArgs != null && monitoredArgs.contains(args)) {
+                    return true;
+                }
+            } catch (URISyntaxException | MonitorException e) {
+                // ok. process probably not running
+            }
+            return false;
         }
     }
 
-    public static class SleeperStarter extends Thread {
+    public final static class JavaProcess {
 
-        private final JavaProcess[] processes;
-        private final int execInterval;
-        private final String args;
+        private static final class ShutdownHook extends Thread {
+            private final JavaProcess javaProcess;
 
-        public SleeperStarter(int sleepers, int execInterval, String args) {
-            this.execInterval = execInterval;
-            this.args = args;
-            this.processes = new JavaProcess[sleepers];
-        }
-
-        private synchronized int active() {
-            int active = processes.length;
-            for(JavaProcess jp : processes) {
-                try {
-                    jp.exitValue();
-                    active--;
-                } catch (IllegalThreadStateException e) {
-                    // process hasn't exited yet
-                }
+            public ShutdownHook(JavaProcess javaProcess) {
+                this.javaProcess = javaProcess;
             }
-            return active;
+
+            public void run() {
+                javaProcess.terminate();
+            }
         }
 
-        public void run() {
-           System.out.println("Starting " + processes.length + " sleepers");
+        public static void main(String[] args) throws InterruptedException {
+            try {
+                Path path = Paths.get(args[0]);
+                createFile(path);
+                waitForRemoval(path);
+            } catch (Throwable t) {
+                t.printStackTrace();
+                System.exit(1);
+            }
+        }
 
-           String[] classpath = {
-               "-classpath",
-               System.getProperty("java.class.path")
-           };
+        public Integer getId() {
+            return id;
+        }
 
-           for (int i = 0; i < processes.length; i++) {
-               try {
-                   System.out.println("Starting Sleeper " + i);
-                   synchronized(this) {
-                       processes[i] = new JavaProcess("Sleeper", args + " " + i);
-                       processes[i].addOptions(classpath);
-                   }
-                   processes[i].start();
-                   Thread.sleep(execInterval);
-               } catch (InterruptedException ignore) {
-               } catch (IOException e) {
-                   System.err.println(
-                           "IOException trying to start Sleeper " + i + ": "
-                           + e.getMessage());
-               }
-           }
+        public void setId(Integer id) {
+            this.id = id;
+        }
 
-           // spin waiting for the processes to terminate
-           while (active() > 0) ;
+        private static void createFile(Path path) throws IOException {
+            Files.write(path, new byte[0], StandardOpenOption.CREATE);
+            if (!Files.exists(path)) {
+                throw new Error("Newly created file " + path
+                        + " does not exist!");
+            }
+        }
+
+        private static void waitForRemoval(Path path) {
+            long start = System.nanoTime();
+            while (true) {
+                long now = System.nanoTime();
+                long waited = now - start;
+                System.out.println("Waiting for " + path + " to be removed, " + waited + " ns");
+                if (!Files.exists(path)) {
+                    return;
+                }
+                if (waited > PROCESS_TIMEOUT_IN_NS) {
+                    System.out.println("Start: " + start);
+                    System.out.println("Now: " + now);
+                    System.out.print("Process timed out after " + waited + " ns. Abort.");
+                    System.exit(1);
+                }
+                takeNap();
+            }
+        }
+
+        private static void takeNap() {
+            try {
+                Thread.sleep(100);
+            } catch (InterruptedException e) {
+                // ignore
+            }
+        }
+
+        private final String mainArgsIdentifier;
+        private final ShutdownHook shutdownHook;
+        private volatile Integer id;
+
+        public JavaProcess(String mainArgsIdentifier) {
+            this.mainArgsIdentifier = mainArgsIdentifier;
+            this.shutdownHook = new ShutdownHook(this);
+        }
+
+        /**
+         * Starts a Java process asynchronously.
+         *
+         * The process runs until {@link #stop()} is called. If test exits
+         * unexpectedly the process will be cleaned up by a shutdown hook.
+         *
+         * @throws Exception
+         */
+        public void start() throws Exception {
+            Runtime.getRuntime().addShutdownHook(shutdownHook);
+            System.out.println("Starting " + getMainArgsIdentifier());
+
+            Runnable r = new Runnable() {
+                @Override
+                public void run() {
+                    try {
+                        executeJava();
+                    } catch (Throwable t) {
+                        t.printStackTrace();
+                    }
+                }
+            };
+            new Thread(r).start();
+        }
+
+        public void terminate() {
+            try {
+                System.out.println("Terminating " + mainArgsIdentifier);
+                Files.delete(Paths.get(mainArgsIdentifier));
+            } catch (IOException e) {
+                e.printStackTrace();
+            }
+            Runtime.getRuntime().removeShutdownHook(shutdownHook);
+        }
+
+        private void executeJava() throws Exception, IOException {
+            String className = JavaProcess.class.getName();
+            String classPath = System.getProperty("test.classes");
+            ProcessBuilder pb = ProcessTools.createJavaProcessBuilder("-cp",
+                    classPath, className, mainArgsIdentifier);
+            OutputBuffer ob = ProcessTools.getOutput(pb.start());
+            System.out.println("Java Process " + getMainArgsIdentifier() + " stder:"
+                    + ob.getStderr());
+            System.err.println("Java Process " + getMainArgsIdentifier() + " stdout:"
+                    + ob.getStdout());
+        }
+
+        public String getMainArgsIdentifier() {
+            return mainArgsIdentifier;
         }
     }
 }
-

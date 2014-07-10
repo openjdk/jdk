@@ -415,7 +415,7 @@ public final class CStrike extends FontStrike {
                 generalCache = new HashMap<Integer, Long>();
             }
 
-            generalCache.put(new Integer(index), new Long(value));
+            generalCache.put(new Integer(index), Long.valueOf(value));
         }
 
         public synchronized void dispose() {

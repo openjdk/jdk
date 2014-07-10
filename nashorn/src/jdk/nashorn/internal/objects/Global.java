@@ -883,7 +883,7 @@ public final class Global extends ScriptObject implements Scope {
         final Global global = Global.instance();
         final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
 
-        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict));
+        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict), true);
     }
 
     /**
