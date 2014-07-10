@@ -614,6 +614,9 @@ void DefNewGeneration::collect(bool   full,
 
   KlassScanClosure klass_scan_closure(&fsc_with_no_gc_barrier,
                                       gch->rem_set()->klass_rem_set());
+  CLDToKlassAndOopClosure cld_scan_closure(&klass_scan_closure,
+                                           &fsc_with_no_gc_barrier,
+                                           false);
 
   set_promo_failure_scan_stack_closure(&fsc_with_no_gc_barrier);
   FastEvacuateFollowersClosure evacuate_followers(gch, _level, this,
@@ -623,16 +626,15 @@ void DefNewGeneration::collect(bool   full,
   assert(gch->no_allocs_since_save_marks(0),
          "save marks have not been newly set.");
 
-  int so = SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_ScavengeCodeCache;
-
-  gch->gen_process_strong_roots(_level,
-                                true,  // Process younger gens, if any,
-                                       // as strong roots.
-                                true,  // activate StrongRootsScope
-                                SharedHeap::ScanningOption(so),
-                                &fsc_with_no_gc_barrier,
-                                &fsc_with_gc_barrier,
-                                &klass_scan_closure);
+  gch->gen_process_roots(_level,
+                         true,  // Process younger gens, if any,
+                                // as strong roots.
+                         true,  // activate StrongRootsScope
+                         SharedHeap::SO_ScavengeCodeCache,
+                         GenCollectedHeap::StrongAndWeakRoots,
+                         &fsc_with_no_gc_barrier,
+                         &fsc_with_gc_barrier,
+                         &cld_scan_closure);
 
   // "evacuate followers".
   evacuate_followers.do_void();
