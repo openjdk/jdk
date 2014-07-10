@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,14 @@ import java.beans.*;
  */
 public class BasicDesktopIconUI extends DesktopIconUI {
 
+    /**
+     * The instance of {@code JInternalFrame.JDesktopIcon}.
+     */
     protected JInternalFrame.JDesktopIcon desktopIcon;
+
+    /**
+     * The instance of {@code JInternalFrame}.
+     */
     protected JInternalFrame frame;
 
     /**
@@ -53,12 +60,19 @@ public class BasicDesktopIconUI extends DesktopIconUI {
     protected JComponent iconPane;
     MouseInputListener mouseInputListener;
 
-
-
+    /**
+     * Constructs a new instance of {@code BasicDesktopIconUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicDesktopIconUI}
+     */
     public static ComponentUI createUI(JComponent c)    {
         return new BasicDesktopIconUI();
     }
 
+    /**
+     * Constructs a new instance of {@code BasicDesktopIconUI}.
+     */
     public BasicDesktopIconUI() {
     }
 
@@ -108,39 +122,62 @@ public class BasicDesktopIconUI extends DesktopIconUI {
         desktopIcon = null;
     }
 
+    /**
+     * Registers components.
+     */
     protected void installComponents() {
         iconPane = new BasicInternalFrameTitlePane(frame);
         desktopIcon.setLayout(new BorderLayout());
         desktopIcon.add(iconPane, BorderLayout.CENTER);
     }
 
+    /**
+     * Unregisters components.
+     */
     protected void uninstallComponents() {
         desktopIcon.remove(iconPane);
         desktopIcon.setLayout(null);
         iconPane = null;
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         mouseInputListener = createMouseInputListener();
         desktopIcon.addMouseMotionListener(mouseInputListener);
         desktopIcon.addMouseListener(mouseInputListener);
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         desktopIcon.removeMouseMotionListener(mouseInputListener);
         desktopIcon.removeMouseListener(mouseInputListener);
         mouseInputListener = null;
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         LookAndFeel.installBorder(desktopIcon, "DesktopIcon.border");
         LookAndFeel.installProperty(desktopIcon, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(desktopIcon);
     }
 
+    /**
+     * Returns a new instance of {@code MouseInputListener}.
+     *
+     * @return a new instance of {@code MouseInputListener}
+     */
     protected MouseInputListener createMouseInputListener() {
         return new MouseInputHandler();
     }
@@ -170,6 +207,12 @@ public class BasicDesktopIconUI extends DesktopIconUI {
         return iconPane.getMaximumSize();
     }
 
+    /**
+     * Returns the insets.
+     *
+     * @param c a component
+     * @return the insets
+     */
     public Insets getInsets(JComponent c) {
         JInternalFrame iframe = desktopIcon.getInternalFrame();
         Border border = iframe.getBorder();
@@ -179,6 +222,9 @@ public class BasicDesktopIconUI extends DesktopIconUI {
         return new Insets(0,0,0,0);
     }
 
+    /**
+     * De-iconifies the internal frame.
+     */
     public void deiconize() {
         try { frame.setIcon(false); } catch (PropertyVetoException e2) { }
     }
@@ -284,6 +330,15 @@ public class BasicDesktopIconUI extends DesktopIconUI {
                 return;
         }
 
+        /**
+         * Moves and repaints a component {@code f}.
+         *
+         * @param f a component
+         * @param newX a new X coordinate
+         * @param newY a new Y coordinate
+         * @param newWidth a new width
+         * @param newHeight a new height
+         */
         public void moveAndRepaint(JComponent f, int newX, int newY,
                                         int newWidth, int newHeight) {
             Rectangle r = f.getBounds();
