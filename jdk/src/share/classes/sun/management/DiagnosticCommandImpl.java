@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,10 +84,10 @@ class DiagnosticCommandImpl extends NotificationEmitterSupport
             Exception cause = null;
             if (info.getPermissionClass() != null) {
                 try {
-                    Class c = Class.forName(info.getPermissionClass());
+                    Class<?> c = Class.forName(info.getPermissionClass());
                     if (info.getPermissionAction() == null) {
                         try {
-                            Constructor constructor = c.getConstructor(String.class);
+                            Constructor<?> constructor = c.getConstructor(String.class);
                             permission = (Permission) constructor.newInstance(info.getPermissionName());
 
                         } catch (InstantiationException | IllegalAccessException
@@ -98,7 +98,7 @@ class DiagnosticCommandImpl extends NotificationEmitterSupport
                     }
                     if (permission == null) {
                         try {
-                            Constructor constructor = c.getConstructor(String.class, String.class);
+                            Constructor<?> constructor = c.getConstructor(String.class, String.class);
                             permission = (Permission) constructor.newInstance(
                                     info.getPermissionName(),
                                     info.getPermissionAction());
@@ -158,7 +158,7 @@ class DiagnosticCommandImpl extends NotificationEmitterSupport
         SortedSet<MBeanOperationInfo> operations = new TreeSet<>(new OperationInfoComparator());
         Map<String, Wrapper> wrappersmap;
         if (!isSupported) {
-            wrappersmap = (Map<String, Wrapper>) Collections.EMPTY_MAP;
+            wrappersmap = Collections.emptyMap();
         } else {
             try {
                 String[] command = getDiagnosticCommands();
@@ -189,7 +189,7 @@ class DiagnosticCommandImpl extends NotificationEmitterSupport
                     }
                 }
             } catch (IllegalArgumentException | UnsupportedOperationException e) {
-                wrappersmap = (Map<String, Wrapper>) Collections.EMPTY_MAP;
+                wrappersmap = Collections.emptyMap();
             }
         }
         wrappers =  Collections.unmodifiableMap(wrappersmap);
