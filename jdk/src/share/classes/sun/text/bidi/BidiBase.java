@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,13 +54,12 @@ package sun.text.bidi;
 
 import java.io.IOException;
 import java.lang.reflect.Array;
-import java.lang.reflect.Field;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.text.AttributedCharacterIterator;
 import java.text.Bidi;
 import java.util.Arrays;
 import java.util.MissingResourceException;
+import sun.misc.JavaAWTFontAccess;
+import sun.misc.SharedSecrets;
 import sun.text.normalizer.UBiDiProps;
 import sun.text.normalizer.UCharacter;
 import sun.text.normalizer.UTF16;
@@ -3446,7 +3445,13 @@ public class BidiBase {
      * java.awt.font.TextAttribute without creating a static dependency.
      */
     private static class TextAttributeConstants {
-        private static final Class<?> clazz = getClass("java.awt.font.TextAttribute");
+        // Make sure to load the AWT's TextAttribute class before using the constants, if any.
+        static {
+            try {
+                Class.forName("java.awt.font.TextAttribute", true, null);
+            } catch (ClassNotFoundException e) {}
+        }
+        static final JavaAWTFontAccess jafa = SharedSecrets.getJavaAWTFontAccess();
 
         /**
          * TextAttribute instances (or a fake Attribute type if
@@ -3462,88 +3467,41 @@ public class BidiBase {
         /**
          * TextAttribute.RUN_DIRECTION_LTR
          */
-        static final Boolean RUN_DIRECTION_LTR = (clazz == null) ?
-            Boolean.FALSE : (Boolean)getStaticField(clazz, "RUN_DIRECTION_LTR");
-
-
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-
-        private static Object getStaticField(Class<?> clazz, String name) {
-            try {
-                Field f = clazz.getField(name);
-                return f.get(null);
-            } catch (NoSuchFieldException | IllegalAccessException x) {
-                throw new AssertionError(x);
-            }
-        }
+        static final Boolean RUN_DIRECTION_LTR = (jafa == null) ?
+            Boolean.FALSE : (Boolean)jafa.getTextAttributeConstant("RUN_DIRECTION_LTR");
 
         @SuppressWarnings("serial")
         private static AttributedCharacterIterator.Attribute
             getTextAttribute(String name)
         {
-            if (clazz == null) {
+            if (jafa == null) {
                 // fake attribute
                 return new AttributedCharacterIterator.Attribute(name) { };
             } else {
-                return (AttributedCharacterIterator.Attribute)getStaticField(clazz, name);
+                return (AttributedCharacterIterator.Attribute)jafa.getTextAttributeConstant(name);
             }
         }
     }
 
     /**
-     * A class that provides access to java.awt.font.NumericShaping without
+     * A class that provides access to java.awt.font.NumericShaper without
      * creating a static dependency.
      */
     private static class NumericShapings {
-        private static final Class<?> clazz =
-            getClass("java.awt.font.NumericShaper");
-        private static final Method shapeMethod =
-            getMethod(clazz, "shape", char[].class, int.class, int.class);
-
-        private static Class<?> getClass(String name) {
+        // Make sure to load the AWT's NumericShaper class before calling shape, if any.
+        static {
             try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
+                Class.forName("java.awt.font.NumericShaper", true, null);
+            } catch (ClassNotFoundException e) {}
         }
-
-        private static Method getMethod(Class<?> clazz,
-                                        String name,
-                                        Class<?>... paramTypes)
-        {
-            if (clazz != null) {
-                try {
-                    return clazz.getMethod(name, paramTypes);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(e);
-                }
-            } else {
-                return null;
-            }
-        }
+        static final JavaAWTFontAccess jafa = SharedSecrets.getJavaAWTFontAccess();
 
         /**
          * Invokes NumericShaping shape(text,start,count) method.
          */
         static void shape(Object shaper, char[] text, int start, int count) {
-            if (shapeMethod == null)
-                throw new AssertionError("Should not get here");
-            try {
-                shapeMethod.invoke(shaper, text, start, count);
-            } catch (InvocationTargetException e) {
-                Throwable cause = e.getCause();
-                if (cause instanceof RuntimeException)
-                    throw (RuntimeException)cause;
-                throw new AssertionError(e);
-            } catch (IllegalAccessException iae) {
-                throw new AssertionError(iae);
+            if (jafa != null) {
+                jafa.shape(shaper, text, start, count);
             }
         }
     }

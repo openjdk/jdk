@@ -1071,7 +1071,7 @@ public final class URL implements java.io.Serializable {
     /**
      * The URLStreamHandler factory.
      */
-    static URLStreamHandlerFactory factory;
+    private static volatile URLStreamHandlerFactory factory;
 
     /**
      * Sets an application's {@code URLStreamHandlerFactory}.
@@ -1106,6 +1106,7 @@ public final class URL implements java.io.Serializable {
                 security.checkSetFactory();
             }
             handlers.clear();
+            // safe publication of URLStreamHandlerFactory with volatile write
             factory = fac;
         }
     }
@@ -1127,9 +1128,11 @@ public final class URL implements java.io.Serializable {
 
             boolean checkedWithFactory = false;
 
-            // Use the factory (if any)
-            if (factory != null) {
-                handler = factory.createURLStreamHandler(protocol);
+            // Use the factory (if any). Volatile read makes
+            // URLStreamHandlerFactory appear fully initialized to current thread.
+            URLStreamHandlerFactory fac = factory;
+            if (fac != null) {
+                handler = fac.createURLStreamHandler(protocol);
                 checkedWithFactory = true;
             }
 
@@ -1193,8 +1196,8 @@ public final class URL implements java.io.Serializable {
 
                 // Check with factory if another thread set a
                 // factory since our last check
-                if (!checkedWithFactory && factory != null) {
-                    handler2 = factory.createURLStreamHandler(protocol);
+                if (!checkedWithFactory && (fac = factory) != null) {
+                    handler2 = fac.createURLStreamHandler(protocol);
                 }
 
                 if (handler2 != null) {

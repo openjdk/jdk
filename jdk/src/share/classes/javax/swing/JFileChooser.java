@@ -330,6 +330,8 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Constructs a <code>JFileChooser</code> using the given
      * <code>FileSystemView</code>.
+     *
+     * @param fsv a {@code FileSystemView}
      */
     public JFileChooser(FileSystemView fsv) {
         this((File) null, fsv);
@@ -339,6 +341,10 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Constructs a <code>JFileChooser</code> using the given current directory
      * and <code>FileSystemView</code>.
+     *
+     * @param currentDirectory a {@code File} object specifying the path to a
+     *                         file or directory
+     * @param fsv a {@code FileSystemView}
      */
     public JFileChooser(File currentDirectory, FileSystemView fsv) {
         setup(fsv);
@@ -348,6 +354,10 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Constructs a <code>JFileChooser</code> using the given current directory
      * path and <code>FileSystemView</code>.
+     *
+     * @param currentDirectoryPath a {@code String} specifying the path to a file
+     *                             or directory
+     * @param fsv a {@code FileSystemView}
      */
     public JFileChooser(String currentDirectoryPath, FileSystemView fsv) {
         setup(fsv);
@@ -360,6 +370,8 @@ public class JFileChooser extends JComponent implements Accessible {
 
     /**
      * Performs common constructor initialization and setup.
+     *
+     * @param view the {@code FileSystemView} used for setup
      */
     protected void setup(FileSystemView view) {
         installShowFilesListener();
@@ -512,6 +524,8 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Returns a list of selected files if the file chooser is
      * set to allow multiple selection.
+     *
+     * @return an array of selected {@code File}s
      */
     public File[] getSelectedFiles() {
         if(selectedFiles == null) {
@@ -525,6 +539,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Sets the list of selected files if the file chooser is
      * set to allow multiple selection.
      *
+     * @param selectedFiles an array {@code File}s to be selected
      * @beaninfo
      *       bound: true
      * description: The list of selected files if the chooser is in multiple selection mode.
@@ -971,6 +986,7 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Gets the string that goes in the <code>JFileChooser</code>'s titlebar.
      *
+     * @return the string from the {@code JFileChooser} window's title bar
      * @see #setDialogTitle
      */
     public String getDialogTitle() {
@@ -1158,6 +1174,8 @@ public class JFileChooser extends JComponent implements Accessible {
      * Removes a filter from the list of user choosable file filters. Returns
      * true if the file filter was removed.
      *
+     * @param f the file filter to be removed
+     * @return true if the file filter was removed, false otherwise
      * @see #addChoosableFileFilter
      * @see #getChoosableFileFilters
      * @see #resetChoosableFileFilters
@@ -1215,6 +1233,8 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Returns the <code>AcceptAll</code> file filter.
      * For example, on Microsoft Windows this would be All Files (*.*).
+     *
+     * @return the {@code AcceptAll} file filter
      */
     public FileFilter getAcceptAllFileFilter() {
         FileFilter filter = null;
@@ -1240,8 +1260,10 @@ public class JFileChooser extends JComponent implements Accessible {
     * If false, the <code>AcceptAll</code> file filter is removed from
     * the list of available file filters.
     * If true, the <code>AcceptAll</code> file filter will become the
-    * the actively used file filter.
+    * actively used file filter.
     *
+    * @param b a {@code boolean} which determines whether the {@code AcceptAll}
+    *          file filter is an available choice in the choosable filter list
     * @beaninfo
     *   preferred: true
     *       bound: true
@@ -1284,6 +1306,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * any listeners that the accessory might have registered with the
      * file chooser.
      *
+     * @param newAccessory the accessory component to be set
      * @beaninfo
      *   preferred: true
      *       bound: true
@@ -1355,6 +1378,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Convenience call that determines if files are selectable based on the
      * current file selection mode.
      *
+     * @return true if files are selectable, false otherwise
      * @see #setFileSelectionMode
      * @see #getFileSelectionMode
      */
@@ -1366,6 +1390,7 @@ public class JFileChooser extends JComponent implements Accessible {
      * Convenience call that determines if directories are selectable based
      * on the current file selection mode.
      *
+     * @return true if directories are selectable, false otherwise
      * @see #setFileSelectionMode
      * @see #getFileSelectionMode
      */
@@ -1487,9 +1512,10 @@ public class JFileChooser extends JComponent implements Accessible {
     }
 
     /**
-     * Sets the file view to used to retrieve UI information, such as
+     * Sets the file view to be used to retrieve UI information, such as
      * the icon that represents a file or the type description of a file.
      *
+     * @param fileView a {@code FileView} to be used to retrieve UI information
      * @beaninfo
      *   preferred: true
      *       bound: true
@@ -1506,6 +1532,7 @@ public class JFileChooser extends JComponent implements Accessible {
     /**
      * Returns the current file view.
      *
+     * @return the current file view
      * @see #setFileView
      */
     public FileView getFileView() {
@@ -1765,6 +1792,8 @@ public class JFileChooser extends JComponent implements Accessible {
      * notification on this event type. The event instance
      * is lazily created using the <code>command</code> parameter.
      *
+     * @param command a string that may specify a command associated with
+     *                the event
      * @see EventListenerList
      */
     protected void fireActionPerformed(String command) {
@@ -1973,6 +2002,9 @@ public class JFileChooser extends JComponent implements Accessible {
 // Accessibility support
 ////////////////
 
+    /**
+     * {@code AccessibleContext} associated with this {@code JFileChooser}
+     */
     protected AccessibleContext accessibleContext = null;
 
     /**
