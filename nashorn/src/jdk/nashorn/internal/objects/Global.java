@@ -27,6 +27,7 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
@@ -45,8 +46,11 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+import javax.script.ScriptContext;
+import javax.script.ScriptEngine;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.Lookup;
@@ -106,6 +110,10 @@ public final class Global extends ScriptObject implements Scope {
 
     /** Name invalidator for things like call/apply */
     public static final Call BOOTSTRAP = staticCall(MethodHandles.lookup(), Global.class, "invalidateNameBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
+
+    /** Nashorn extension: arguments array */
+    @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
+    public Object arguments;
 
     /** ECMA 15.1.2.2 parseInt (string , radix) */
     @Property(attributes = Attribute.NOT_ENUMERABLE)
@@ -411,12 +419,13 @@ public final class Global extends ScriptObject implements Scope {
     // Used to store the last RegExp result to support deprecated RegExp constructor properties
     private RegExpResult lastRegExpResult;
 
-    private static final MethodHandle EVAL              = findOwnMH_S("eval",              Object.class, Object.class, Object.class);
-    private static final MethodHandle PRINT             = findOwnMH_S("print",             Object.class, Object.class, Object[].class);
-    private static final MethodHandle PRINTLN           = findOwnMH_S("println",           Object.class, Object.class, Object[].class);
-    private static final MethodHandle LOAD              = findOwnMH_S("load",              Object.class, Object.class, Object.class);
-    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH_S("loadWithNewGlobal", Object.class, Object.class, Object[].class);
-    private static final MethodHandle EXIT              = findOwnMH_S("exit",              Object.class, Object.class, Object.class);
+    private static final MethodHandle EVAL              = findOwnMH_S("eval",                Object.class, Object.class, Object.class);
+    private static final MethodHandle NO_SUCH_PROPERTY  = findOwnMH_S(NO_SUCH_PROPERTY_NAME, Object.class, Object.class, Object.class);
+    private static final MethodHandle PRINT             = findOwnMH_S("print",               Object.class, Object.class, Object[].class);
+    private static final MethodHandle PRINTLN           = findOwnMH_S("println",             Object.class, Object.class, Object[].class);
+    private static final MethodHandle LOAD              = findOwnMH_S("load",                Object.class, Object.class, Object.class);
+    private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH_S("loadWithNewGlobal",   Object.class, Object.class, Object[].class);
+    private static final MethodHandle EXIT              = findOwnMH_S("exit",                Object.class, Object.class, Object.class);
 
     /** Invalidate a reserved name, such as "apply" or "call" if assigned */
     public MethodHandle INVALIDATE_RESERVED_NAME = MH.bindTo(findOwnMH_V("invalidateReservedName", void.class, String.class), this);
@@ -426,6 +435,20 @@ public final class Global extends ScriptObject implements Scope {
 
     // context to which this global belongs to
     private final Context context;
+
+    // current ScriptContext to use - can be null.
+    private ScriptContext scontext;
+    // associated Property object for "context" property.
+    private jdk.nashorn.internal.runtime.Property scontextProperty;
+
+    /**
+     * Set the current script context
+     * @param scontext script context
+     */
+    public void setScriptContext(final ScriptContext scontext) {
+        this.scontext = scontext;
+        scontextProperty.setValue(this, this, scontext, false);
+    }
 
     // global constants for this global - they can be replaced with MethodHandle.constant until invalidated
     private static AtomicReference<GlobalConstants> gcsInstance = new AtomicReference<>();
@@ -447,12 +470,7 @@ public final class Global extends ScriptObject implements Scope {
         // null check on context
         context.getClass();
 
-        /*
-         * Duplicate global's map and use it. This way the initial Map filled
-         * by nasgen (referenced from static field in this class) is retained
-         * 'as is' (as that one is process wide singleton.
-         */
-        return $nasgenmap$.duplicate();
+        return $nasgenmap$;
     }
 
     /**
@@ -481,6 +499,10 @@ public final class Global extends ScriptObject implements Scope {
         final Global global = Context.getGlobal();
         global.getClass(); // null check
         return global;
+    }
+
+    private static Global instanceFrom(final Object self) {
+        return self instanceof Global? (Global)self : instance();
     }
 
     /**
@@ -542,13 +564,13 @@ public final class Global extends ScriptObject implements Scope {
      * as well as our extension builtin objects like "Java", "JSAdapter" as properties
      * of the global scope object.
      */
-    public void initBuiltinObjects() {
+    public void initBuiltinObjects(final ScriptEngine engine) {
         if (this.builtinObject != null) {
             // already initialized, just return
             return;
         }
 
-        init();
+        init(engine);
     }
 
     /**
@@ -849,6 +871,32 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     /**
+     * Hook to search missing variables in ScriptContext if available
+     * @param self used to detect if scope call or not (this function is 'strict')
+     * @param name name of the variable missing
+     * @return value of the missing variable or undefined (or TypeError for scope search)
+     */
+    public static Object __noSuchProperty__(final Object self, final Object name) {
+        final Global global = Global.instance();
+        final ScriptContext sctxt = global.scontext;
+        final String nameStr = name.toString();
+
+        if (sctxt != null) {
+            final int scope = sctxt.getAttributesScope(nameStr);
+            if (scope != -1) {
+                return ScriptObjectMirror.unwrap(sctxt.getAttribute(nameStr, scope), global);
+            }
+        }
+
+        if (self == UNDEFINED) {
+            // scope access and so throw ReferenceError
+            throw referenceError(global, "not.defined", nameStr);
+        }
+
+        return UNDEFINED;
+    }
+
+    /**
      * This is the eval used when 'indirect' eval call is made.
      *
      * var global = this;
@@ -860,7 +908,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return the result of eval
      */
     public static Object eval(final Object self, final Object str) {
-        return directEval(self, str, UNDEFINED, UNDEFINED, UNDEFINED);
+        return directEval(self, str, UNDEFINED, UNDEFINED, false);
     }
 
     /**
@@ -876,14 +924,14 @@ public final class Global extends ScriptObject implements Scope {
      *
      * This is directly invoked from generated when eval(code) is called in user code
      */
-    public static Object directEval(final Object self, final Object str, final Object callThis, final Object location, final Object strict) {
+    public static Object directEval(final Object self, final Object str, final Object callThis, final Object location, final boolean strict) {
         if (!(str instanceof String || str instanceof ConsString)) {
             return str;
         }
-        final Global global = Global.instance();
+        final Global global = Global.instanceFrom(self);
         final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
 
-        return global.getContext().eval(scope, str.toString(), callThis, location, Boolean.TRUE.equals(strict), true);
+        return global.getContext().eval(scope, str.toString(), callThis, location, strict, true);
     }
 
     /**
@@ -895,7 +943,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return result of print (undefined)
      */
     public static Object print(final Object self, final Object... objects) {
-        return printImpl(false, objects);
+        return Global.instanceFrom(self).printImpl(false, objects);
     }
 
     /**
@@ -907,7 +955,7 @@ public final class Global extends ScriptObject implements Scope {
      * @return result of println (undefined)
      */
     public static Object println(final Object self, final Object... objects) {
-        return printImpl(true, objects);
+        return Global.instanceFrom(self).printImpl(true, objects);
     }
 
     /**
@@ -921,7 +969,7 @@ public final class Global extends ScriptObject implements Scope {
      * @throws IOException if source could not be read
      */
     public static Object load(final Object self, final Object source) throws IOException {
-        final Global global = Global.instance();
+        final Global global = Global.instanceFrom(self);
         final ScriptObject scope = self instanceof ScriptObject ? (ScriptObject)self : global;
         return global.getContext().load(scope, source);
     }
@@ -937,7 +985,7 @@ public final class Global extends ScriptObject implements Scope {
      * @throws IOException if source could not be read
      */
     public static Object loadWithNewGlobal(final Object self, final Object...args) throws IOException {
-        final Global global = Global.instance();
+        final Global global = Global.instanceFrom(self);
         final int length = args.length;
         final boolean hasArgs = 0 < length;
         final Object from = hasArgs ? args[0] : UNDEFINED;
@@ -1604,7 +1652,7 @@ public final class Global extends ScriptObject implements Scope {
         splitState = state;
     }
 
-    private void init() {
+    private void init(final ScriptEngine engine) {
         assert Context.getGlobal() == this : "this global is not set as current";
 
         final ScriptEnvironment env = getContext().getEnv();
@@ -1705,12 +1753,19 @@ public final class Global extends ScriptObject implements Scope {
         copyBuiltins();
 
         // expose script (command line) arguments as "arguments" property of global
-        final Object argumentsObject = wrapAsObject(env.getArguments().toArray());
-        final int    argumentsFlags  = Attribute.NOT_ENUMERABLE;
-        addOwnProperty("arguments", argumentsFlags, argumentsObject);
+        arguments = wrapAsObject(env.getArguments().toArray());
         if (env._scripting) {
             // synonym for "arguments" in scripting mode
-            addOwnProperty("$ARG", argumentsFlags, argumentsObject);
+            addOwnProperty("$ARG", Attribute.NOT_ENUMERABLE, arguments);
+        }
+
+        if (engine != null) {
+            final int NOT_ENUMERABLE_NOT_CONFIG = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE;
+            scontextProperty = addOwnProperty("context", NOT_ENUMERABLE_NOT_CONFIG, null);
+            addOwnProperty("engine", NOT_ENUMERABLE_NOT_CONFIG, engine);
+            // __noSuchProperty__ hook for ScriptContext search of missing variables
+            final ScriptFunction noSuchProp = ScriptFunctionImpl.makeStrictFunction(NO_SUCH_PROPERTY_NAME, NO_SUCH_PROPERTY);
+            addOwnProperty(NO_SUCH_PROPERTY_NAME, Attribute.NOT_ENUMERABLE, noSuchProp);
         }
     }
 
@@ -1878,8 +1933,8 @@ public final class Global extends ScriptObject implements Scope {
         this.addOwnProperty("Debug", Attribute.NOT_ENUMERABLE, initConstructor("Debug"));
     }
 
-    private static Object printImpl(final boolean newLine, final Object... objects) {
-        final PrintWriter out = Global.getEnv().getOut();
+    private Object printImpl(final boolean newLine, final Object... objects) {
+        final PrintWriter out = scontext != null? new PrintWriter(scontext.getWriter()) : getContext().getEnv().getOut();
         final StringBuilder sb = new StringBuilder();
 
         for (final Object object : objects) {
@@ -2023,12 +2078,11 @@ public final class Global extends ScriptObject implements Scope {
 
         for (final jdk.nashorn.internal.runtime.Property property : properties) {
             final Object key   = property.getKey();
-            final Object value = ObjectPrototype.get(key);
-
             if (key.equals("constructor")) {
                 continue;
             }
 
+            final Object value = ObjectPrototype.get(key);
             if (value instanceof ScriptFunction) {
                 final ScriptFunction func = (ScriptFunction)value;
                 final ScriptObject prototype = ScriptFunction.getPrototype(func);

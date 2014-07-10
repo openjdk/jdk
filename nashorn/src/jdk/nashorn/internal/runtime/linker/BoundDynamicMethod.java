@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.runtime.linker;
 
+import java.util.Objects;
 import jdk.internal.dynalink.beans.BeansLinker;
 
 /**
@@ -47,5 +48,10 @@ final class BoundDynamicMethod {
 
     Object getBoundThis() {
         return boundThis;
+    }
+
+    @Override
+    public String toString() {
+        return dynamicMethod.toString() + " on " + Objects.toString(boundThis);
     }
 }
