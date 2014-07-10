@@ -1254,8 +1254,11 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
             if (name.equals("IHDR")) {
                 IHDR_width = getIntAttribute(node, "width");
                 IHDR_height = getIntAttribute(node, "height");
-                IHDR_bitDepth = getEnumeratedAttribute(node, "bitDepth",
-                                                       IHDR_bitDepths);
+                IHDR_bitDepth =
+                        Integer.valueOf(IHDR_bitDepths[
+                                getEnumeratedAttribute(node,
+                                                    "bitDepth",
+                                                    IHDR_bitDepths)]);
                 IHDR_colorType = getEnumeratedAttribute(node, "colorType",
                                                         IHDR_colorTypeNames);
                 IHDR_compressionMethod =
