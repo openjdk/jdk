@@ -66,7 +66,7 @@ public abstract class PerfDataBufferImpl {
     /**
      * A cache of resolved monitor aliases.
      */
-    protected Map aliasCache;
+    protected Map<String, Monitor> aliasCache;
 
 
     /**
@@ -79,9 +79,9 @@ public abstract class PerfDataBufferImpl {
     protected PerfDataBufferImpl(ByteBuffer buffer, int lvmid) {
         this.buffer = buffer;
         this.lvmid = lvmid;
-        this.monitors = new TreeMap<String, Monitor>();
-        this.aliasMap = new HashMap<String, ArrayList<String>>();
-        this.aliasCache = new HashMap();
+        this.monitors = new TreeMap<>();
+        this.aliasMap = new HashMap<>();
+        this.aliasCache = new HashMap<>();
     }
 
     /**
@@ -200,12 +200,12 @@ public abstract class PerfDataBufferImpl {
     protected Monitor findByAlias(String name) {
         assert Thread.holdsLock(this);
 
-        Monitor  m = (Monitor)aliasCache.get(name);
+        Monitor  m = aliasCache.get(name);
         if (m == null) {
-            ArrayList al = aliasMap.get(name);
+            ArrayList<String> al = aliasMap.get(name);
             if (al != null) {
-                for (Iterator i = al.iterator(); i.hasNext() && m == null; ) {
-                    String alias = (String)i.next();
+                for (Iterator<String> i = al.iterator(); i.hasNext() && m == null; ) {
+                    String alias = i.next();
                     m = monitors.get(alias);
                 }
             }
@@ -287,21 +287,21 @@ public abstract class PerfDataBufferImpl {
 
         Pattern pattern = Pattern.compile(patternString);
         Matcher matcher = pattern.matcher("");
-        List<Monitor> matches = new ArrayList<Monitor>();
+        List<Monitor> matches = new ArrayList<>();
 
-        Set monitorSet = monitors.entrySet();
+        Set<Map.Entry<String,Monitor>> monitorSet = monitors.entrySet();
 
-        for (Iterator i = monitorSet.iterator(); i.hasNext(); /* empty */) {
-            Map.Entry me = (Map.Entry)i.next();
-            String name = (String)me.getKey();
-            Monitor m = (Monitor)me.getValue();
+        for (Iterator<Map.Entry<String, Monitor>> i = monitorSet.iterator(); i.hasNext(); /* empty */) {
+            Map.Entry<String, Monitor> me = i.next();
+            String name = me.getKey();
+            Monitor m = me.getValue();
 
             // apply pattern to monitor item name
             matcher.reset(name);
 
             // if the pattern matches, then add monitor to list
             if (matcher.lookingAt()) {
-                 matches.add((Monitor)me.getValue());
+                 matches.add(me.getValue());
             }
         }
         return matches;
