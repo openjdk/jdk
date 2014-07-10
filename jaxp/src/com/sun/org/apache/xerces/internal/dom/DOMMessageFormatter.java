@@ -31,7 +31,6 @@ import java.util.ResourceBundle;
  * @xerces.internal
  *
  * @author Sandy Gao, IBM
- * @version $Id: DOMMessageFormatter.java,v 1.6 2010-11-01 04:39:38 joehw Exp $
  */
 public class DOMMessageFormatter {
     public static final String DOM_DOMAIN = "http://www.w3.org/dom/DOMTR";

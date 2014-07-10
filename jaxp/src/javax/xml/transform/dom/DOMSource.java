@@ -40,6 +40,7 @@ import org.w3c.dom.Node;
  *
  * @author <a href="Jeff.Suttor@Sun.com">Jeff Suttor</a>
  * @see <a href="http://www.w3.org/TR/DOM-Level-2">Document Object Model (DOM) Level 2 Specification</a>
+ * @since 1.4
  */
 public class DOMSource implements Source {
 

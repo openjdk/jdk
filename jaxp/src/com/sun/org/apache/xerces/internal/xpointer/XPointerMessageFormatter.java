@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
  *
  * @xerces.internal
  *
- * @version $Id: XPointerMessageFormatter.java,v 1.5 2010-11-01 04:40:26 joehw Exp $
  */
 final class XPointerMessageFormatter implements MessageFormatter {
 

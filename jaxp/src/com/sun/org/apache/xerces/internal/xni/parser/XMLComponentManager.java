@@ -36,7 +36,6 @@ import com.sun.org.apache.xerces.internal.util.PropertyState;
  *
  * @author Andy Clark, IBM
  *
- * @version $Id: XMLComponentManager.java,v 1.6 2010-11-01 04:40:22 joehw Exp $
  */
 public interface XMLComponentManager {
 

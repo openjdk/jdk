@@ -1386,11 +1386,26 @@ public class BytePackedRaster extends SunWritableRaster {
             throw new RasterFormatException("Invalid raster dimension");
         }
 
+        if ((long)minX - sampleModelTranslateX < 0 ||
+            (long)minY - sampleModelTranslateY < 0) {
+
+            throw new RasterFormatException("Incorrect origin/translate: (" +
+                    minX + ", " + minY + ") / (" +
+                    sampleModelTranslateX + ", " + sampleModelTranslateY + ")");
+        }
+
         if (scanlineStride < 0 ||
-            scanlineStride > (Integer.MAX_VALUE / height) ||
-            scanlineStride > data.length)
+            scanlineStride > (Integer.MAX_VALUE / height))
         {
             throw new RasterFormatException("Invalid scanline stride");
+        }
+
+        if (height > 1 || minY - sampleModelTranslateY > 0) {
+            // buffer should contain at least one scanline
+            if (scanlineStride > data.length) {
+                throw new RasterFormatException("Incorrect scanline stride: "
+                        + scanlineStride);
+            }
         }
 
         int lastbit = (dataBitOffset

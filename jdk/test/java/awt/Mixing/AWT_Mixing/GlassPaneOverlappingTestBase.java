@@ -30,6 +30,7 @@ import java.lang.reflect.InvocationTargetException;
 import javax.swing.JFrame;
 import javax.swing.SpringLayout;
 import javax.swing.SwingUtilities;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * Base class for testing overlapping of Swing and AWT component put into GlassPane.

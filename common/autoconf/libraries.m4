@@ -65,8 +65,6 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
     ALSA_NOT_NEEDED=yes
     PULSE_NOT_NEEDED=yes
     X11_NOT_NEEDED=yes
-    # If the java runtime framework is disabled, then we need X11.
-    # This will be adjusted below.
     AC_MSG_RESULT([alsa pulse x11])
   fi
 
@@ -82,20 +80,6 @@ AC_DEFUN_ONCE([LIB_SETUP_INIT],
 
   if test "x$SUPPORT_HEADFUL" = xno; then
     X11_NOT_NEEDED=yes
-  fi
-
-  ###############################################################################
-  #
-  # Check for MacOSX support for OpenJDK.
-  #
-
-  BASIC_DEPRECATED_ARG_ENABLE(macosx-runtime-support, macosx_runtime_support)
-
-  AC_MSG_CHECKING([for Mac OS X Java Framework])
-  if test -f /System/Library/Frameworks/JavaVM.framework/Frameworks/JavaRuntimeSupport.framework/Headers/JavaRuntimeSupport.h; then
-    AC_MSG_RESULT([/System/Library/Frameworks/JavaVM.framework])
-  else
-    AC_MSG_RESULT([no])
   fi
 ])
 
@@ -620,11 +604,36 @@ AC_DEFUN_ONCE([LIB_SETUP_MISC_LIBS],
   # Check for the jpeg library
   #
 
-  USE_EXTERNAL_LIBJPEG=true
-  AC_CHECK_LIB(jpeg, main, [],
-      [ USE_EXTERNAL_LIBJPEG=false
-      AC_MSG_NOTICE([Will use jpeg decoder bundled with the OpenJDK source])
-  ])
+  AC_ARG_WITH(libjpeg, [AS_HELP_STRING([--with-libjpeg],
+      [use libjpeg from build system or OpenJDK source (system, bundled) @<:@bundled@:>@])])
+
+  AC_MSG_CHECKING([for which libjpeg to use])
+
+  # default is bundled
+  DEFAULT_LIBJPEG=bundled
+
+  #
+  # if user didn't specify, use DEFAULT_LIBJPEG
+  #
+  if test "x${with_libjpeg}" = "x"; then
+    with_libjpeg=${DEFAULT_LIBJPEG}
+  fi
+
+  AC_MSG_RESULT(${with_libjpeg})
+
+  if test "x${with_libjpeg}" = "xbundled"; then
+    USE_EXTERNAL_LIBJPEG=false
+  elif test "x${with_libjpeg}" = "xsystem"; then
+    AC_CHECK_HEADER(jpeglib.h, [],
+        [ AC_MSG_ERROR([--with-libjpeg=system specified, but jpeglib.h not found!])])
+    AC_CHECK_LIB(jpeg, jpeg_CreateDecompress, [],
+        [ AC_MSG_ERROR([--with-libjpeg=system specified, but no libjpeg found])])
+
+    USE_EXTERNAL_LIBJPEG=true
+  else
+    AC_MSG_ERROR([Invalid use of --with-libjpeg: ${with_libjpeg}, use 'system' or 'bundled'])
+  fi
+
   AC_SUBST(USE_EXTERNAL_LIBJPEG)
 
   ###############################################################################

@@ -48,6 +48,8 @@ package java.beans;
  * Default PropertyEditors will be provided for the Java primitive types
  * "boolean", "byte", "short", "int", "long", "float", and "double"; and
  * for the classes java.lang.String. java.awt.Color, and java.awt.Font.
+ *
+ * @since 1.1
  */
 
 public class PropertyEditorManager {

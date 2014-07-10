@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8026943
+ * @bug 8026943 8027575
  * @summary Verify that same buffer can be used as input and output when
  * using Cipher objects.
  * @author Valerie Peng
@@ -44,7 +44,7 @@ public class TestCopySafe {
     private static SecretKey KEY = new SecretKeySpec(new byte[16], "AES");
     private static byte[] IV = new byte[16];
 
-    private static int[] OFFSETS = { 1, 8, 17 };
+    private static int[] OFFSETS = { 1, 8, 9, 16, 17, 32, 33 };
 
     private static final String[] MODES = {
         "ECB", "CBC", "PCBC", "CTR", "CTS",

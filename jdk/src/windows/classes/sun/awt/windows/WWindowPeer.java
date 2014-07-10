@@ -450,8 +450,9 @@ public class WWindowPeer extends WPanelPeer implements WindowPeer,
      * active window is always at the end.
      */
     @SuppressWarnings("unchecked")
-    public static long[] getActiveWindowHandles() {
-        AppContext appContext = AppContext.getAppContext();
+    public static long[] getActiveWindowHandles(Component target) {
+        AppContext appContext = SunToolkit.targetToAppContext(target);
+        if (appContext == null) return null;
         synchronized (appContext) {
             List<WWindowPeer> l = (List<WWindowPeer>)appContext.get(ACTIVE_WINDOWS_KEY);
             if (l == null) {

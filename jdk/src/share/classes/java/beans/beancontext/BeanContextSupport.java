@@ -254,7 +254,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * currently nested in this <tt>BeanContext</tt>.
      * @return an <tt>Iterator</tt> of the nested children
      */
-    public Iterator iterator() {
+    public Iterator<Object> iterator() {
         synchronized(children) {
             return new BCSIterator(children.keySet().iterator());
         }
@@ -292,14 +292,14 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * a noop remove() method.
      */
 
-    protected static final class BCSIterator implements Iterator {
-        BCSIterator(Iterator i) { super(); src = i; }
+    protected static final class BCSIterator implements Iterator<Object> {
+        BCSIterator(Iterator<?> i) { super(); src = i; }
 
         public boolean hasNext() { return src.hasNext(); }
-        public Object  next()    { return src.next();    }
+        public Object       next()    { return src.next();    }
         public void    remove()  { /* do nothing */      }
 
-        private Iterator src;
+        private Iterator<?> src;
     }
 
     /************************************************************************/
@@ -504,7 +504,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
                 throw new IllegalStateException();
             }
 
-            BCSChild bcsc  = (BCSChild)children.get(targetChild);
+            BCSChild bcsc  = children.get(targetChild);
             BCSChild pbcsc = null;
             Object   peer  = null;
 
@@ -533,7 +533,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
                     children.remove(targetChild);
 
                     if (bcsc.isProxyPeer()) {
-                        pbcsc = (BCSChild)children.get(peer = bcsc.getProxyPeer());
+                        pbcsc = children.get(peer = bcsc.getProxyPeer());
                         children.remove(peer);
                     }
                 }
@@ -566,9 +566,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * in the collection are children of
      * this <tt>BeanContext</tt>, false if not.
      */
+    @SuppressWarnings("rawtypes")
     public boolean containsAll(Collection c) {
         synchronized(children) {
-            Iterator i = c.iterator();
+            Iterator<?> i = c.iterator();
             while (i.hasNext())
                 if(!contains(i.next()))
                     return false;
@@ -583,6 +584,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @throws UnsupportedOperationException thrown unconditionally by this implementation
      * @return this implementation unconditionally throws {@code UnsupportedOperationException}
      */
+    @SuppressWarnings("rawtypes")
     public boolean addAll(Collection c) {
         throw new UnsupportedOperationException();
     }
@@ -594,6 +596,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @return this implementation unconditionally throws {@code UnsupportedOperationException}
 
      */
+    @SuppressWarnings("rawtypes")
     public boolean removeAll(Collection c) {
         throw new UnsupportedOperationException();
     }
@@ -605,6 +608,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @throws UnsupportedOperationException thrown unconditionally by this implementation
      * @return this implementation unconditionally throws {@code UnsupportedOperationException}
      */
+    @SuppressWarnings("rawtypes")
     public boolean retainAll(Collection c) {
         throw new UnsupportedOperationException();
     }
@@ -763,7 +767,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
         }
 
         synchronized(children) {
-            for (Iterator i = children.keySet().iterator(); i.hasNext();) {
+            for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
                 Object c = i.next();
 
                 try {
@@ -790,7 +794,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
             // lets also tell the Children that can that they may not use their GUI's
             synchronized(children) {
-                for (Iterator i = children.keySet().iterator(); i.hasNext();) {
+                for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
                     Visibility v = getChildVisibility(i.next());
 
                     if (v != null) v.dontUseGui();
@@ -809,7 +813,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
 
             // lets also tell the Children that can that they may use their GUI's
             synchronized(children) {
-                for (Iterator i = children.keySet().iterator(); i.hasNext();) {
+                for (Iterator<Object> i = children.keySet().iterator(); i.hasNext();) {
                     Visibility v = getChildVisibility(i.next());
 
                     if (v != null) v.okToUseGui();
@@ -841,7 +845,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * of this <tt>BeanContext</tt>.
      * @return an iterator for all the current BCSChild values
      */
-    protected Iterator bcsChildren() { synchronized(children) { return children.values().iterator();  } }
+    protected Iterator<BCSChild> bcsChildren() { synchronized(children) { return children.values().iterator();  } }
 
     /**
      * called by writeObject after defaultWriteObject() but prior to
@@ -896,7 +900,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @param coll the <tt>Collection</tt> to serialize
      * @throws IOException if serialization failed
      */
-    protected final void serialize(ObjectOutputStream oos, Collection coll) throws IOException {
+    protected final void serialize(ObjectOutputStream oos, Collection<?> coll) throws IOException {
         int      count   = 0;
         Object[] objects = coll.toArray();
 
@@ -926,6 +930,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @throws IOException if deserialization failed
      * @throws ClassNotFoundException if needed classes are not found
      */
+    @SuppressWarnings({"rawtypes", "unchecked"})
     protected final void deserialize(ObjectInputStream ois, Collection coll) throws IOException, ClassNotFoundException {
         int count = 0;
 
@@ -953,10 +958,10 @@ public class      BeanContextSupport extends BeanContextChildSupport
         int count = 0;
 
         synchronized(children) {
-            Iterator i = children.entrySet().iterator();
+            Iterator<Map.Entry<Object, BCSChild>> i = children.entrySet().iterator();
 
             while (i.hasNext() && count < serializable) {
-                Map.Entry entry = (Map.Entry)i.next();
+                Map.Entry<Object, BCSChild> entry = i.next();
 
                 if (entry.getKey() instanceof Serializable) {
                     try {
@@ -1082,7 +1087,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             if (serializable > 0 && this.equals(getBeanContextPeer()))
                 readChildren(ois);
 
-            deserialize(ois, bcmListeners = new ArrayList(1));
+            deserialize(ois, bcmListeners = new ArrayList<>(1));
         }
     }
 
@@ -1101,7 +1106,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
             ) {
                 if (!validatePendingRemove(source)) {
                     throw new PropertyVetoException("current BeanContext vetoes setBeanContext()", pce);
-                } else ((BCSChild)children.get(source)).setRemovePending(true);
+                } else children.get(source).setRemovePending(true);
             }
         }
     }
@@ -1117,13 +1122,13 @@ public class      BeanContextSupport extends BeanContextChildSupport
         synchronized(children) {
             if ("beanContext".equals(propertyName) &&
                 containsKey(source)                    &&
-                ((BCSChild)children.get(source)).isRemovePending()) {
+                children.get(source).isRemovePending()) {
                 BeanContext bc = getBeanContextPeer();
 
                 if (bc.equals(pce.getOldValue()) && !bc.equals(pce.getNewValue())) {
                     remove(source, false);
                 } else {
-                    ((BCSChild)children.get(source)).setRemovePending(false);
+                    children.get(source).setRemovePending(false);
                 }
             }
         }
@@ -1312,8 +1317,8 @@ public class      BeanContextSupport extends BeanContextChildSupport
      */
 
     protected synchronized void initialize() {
-        children     = new HashMap(serializable + 1);
-        bcmListeners = new ArrayList(1);
+        children     = new HashMap<>(serializable + 1);
+        bcmListeners = new ArrayList<>(1);
 
         childPCL = new PropertyChangeListener() {
 
@@ -1359,7 +1364,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * @param second the second object
      * @return true if equal, false if not
      */
-    protected static final boolean classEquals(Class first, Class second) {
+    protected static final boolean classEquals(Class<?> first, Class<?> second) {
         return first.equals(second) || first.getName().equals(second.getName());
     }
 
@@ -1373,7 +1378,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * all accesses to the <code> protected HashMap children </code> field
      * shall be synchronized on that object.
      */
-    protected transient HashMap         children;
+    protected transient HashMap<Object, BCSChild>         children;
 
     private             int             serializable  = 0; // children serializable
 
@@ -1381,7 +1386,7 @@ public class      BeanContextSupport extends BeanContextChildSupport
      * all accesses to the <code> protected ArrayList bcmListeners </code> field
      * shall be synchronized on that object.
      */
-    protected transient ArrayList       bcmListeners;
+    protected transient ArrayList<BeanContextMembershipListener> bcmListeners;
 
     //
 

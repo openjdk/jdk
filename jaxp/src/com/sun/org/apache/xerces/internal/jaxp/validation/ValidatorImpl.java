@@ -51,7 +51,6 @@ import org.xml.sax.SAXNotSupportedException;
  * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
  * @author Michael Glavassevich, IBM
  * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
- * @version $Id: ValidatorImpl.java,v 1.10 2010-11-01 04:40:08 joehw Exp $
  */
 final class ValidatorImpl extends Validator implements PSVIProvider {
 

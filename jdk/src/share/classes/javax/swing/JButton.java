@@ -74,6 +74,7 @@ import java.io.IOException;
  * description: An implementation of a \"push\" button.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JButton extends AbstractButton implements Accessible {

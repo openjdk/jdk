@@ -48,6 +48,7 @@ import javax.swing.event.*;
  * @author Philip Milne
  * @author Hans Muller
  * @see ListSelectionModel
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultListSelectionModel implements ListSelectionModel, Cloneable, Serializable

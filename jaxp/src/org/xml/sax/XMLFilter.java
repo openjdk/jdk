@@ -53,7 +53,7 @@ package org.xml.sax;
  * {@link org.xml.sax.ContentHandler ContentHandler} and {@link org.xml.sax.ErrorHandler
  * ErrorHandler} events automatically.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.helpers.XMLFilterImpl
  */

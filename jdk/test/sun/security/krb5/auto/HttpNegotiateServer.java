@@ -55,6 +55,8 @@ import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSManager;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.Config;
+import sun.util.logging.PlatformLogger;
+
 import java.util.Base64;
 
 /**
@@ -147,6 +149,10 @@ public class HttpNegotiateServer {
 
     public static void main(String[] args)
             throws Exception {
+
+        String HTTPLOG = "sun.net.www.protocol.http.HttpURLConnection";
+        System.setProperty("sun.security.krb5.debug", "true");
+        PlatformLogger.getLogger(HTTPLOG).setLevel(PlatformLogger.Level.ALL);
 
         KDC kdcw = KDC.create(REALM_WEB);
         kdcw.addPrincipal(WEB_USER, WEB_PASS);

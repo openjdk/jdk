@@ -90,7 +90,7 @@ public final class InvokeByName {
         if(plength == 0) {
             finalPtypes = new Class<?>[] { Object.class, targetClass };
         } else {
-            finalPtypes = new Class[plength + 2];
+            finalPtypes = new Class<?>[plength + 2];
             finalPtypes[0] = Object.class;
             finalPtypes[1] = targetClass;
             System.arraycopy(ptypes, 0, finalPtypes, 2, plength);

@@ -51,7 +51,7 @@ import sun.awt.util.ThreadGroupUtils;
  * @since 1.4
  */
 
-public class Win32ShellFolderManager2 extends ShellFolderManager {
+final class Win32ShellFolderManager2 extends ShellFolderManager {
 
     static {
         // Load library here
@@ -414,14 +414,14 @@ public class Win32ShellFolderManager2 extends ShellFolderManager {
         return false;
     }
 
-    private static List topFolderList = null;
+    private static List<Win32ShellFolder2> topFolderList = null;
     static int compareShellFolders(Win32ShellFolder2 sf1, Win32ShellFolder2 sf2) {
         boolean special1 = sf1.isSpecial();
         boolean special2 = sf2.isSpecial();
 
         if (special1 || special2) {
             if (topFolderList == null) {
-                ArrayList tmpTopFolderList = new ArrayList();
+                ArrayList<Win32ShellFolder2> tmpTopFolderList = new ArrayList<>();
                 tmpTopFolderList.add(Win32ShellFolderManager2.getPersonal());
                 tmpTopFolderList.add(Win32ShellFolderManager2.getDesktop());
                 tmpTopFolderList.add(Win32ShellFolderManager2.getDrives());

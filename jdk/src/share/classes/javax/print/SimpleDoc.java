@@ -89,7 +89,7 @@ public final class SimpleDoc implements Doc {
            throw new IllegalArgumentException("null argument(s)");
        }
 
-       Class repClass = null;
+       Class<?> repClass = null;
        try {
             String className = flavor.getRepresentationClassName();
             sun.reflect.misc.ReflectUtil.checkPackageAccess(className);

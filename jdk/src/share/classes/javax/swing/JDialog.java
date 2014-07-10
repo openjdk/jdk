@@ -94,6 +94,7 @@ import javax.accessibility.*;
  * @author David Kloba
  * @author James Gosling
  * @author Scott Violet
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JDialog extends Dialog implements WindowConstants,
@@ -647,6 +648,7 @@ public class JDialog extends Dialog implements WindowConstants,
         enableEvents(AWTEvent.KEY_EVENT_MASK | AWTEvent.WINDOW_EVENT_MASK);
         setLocale( JComponent.getDefaultLocale() );
         setRootPane(createRootPane());
+        setBackground(UIManager.getColor("control"));
         setRootPaneCheckingEnabled(true);
         if (JDialog.isDefaultLookAndFeelDecorated()) {
             boolean supportsWindowDecorations =

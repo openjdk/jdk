@@ -347,6 +347,9 @@ CPP:=@FIXPATH@ @CPP@
 # The linker can be gcc or ld on posix systems, or link.exe on windows systems.
 LD:=@FIXPATH@ @LD@
 
+# Xcode SDK path
+SDKROOT:=@SDKROOT@
+
 # The linker on older SuSE distros (e.g. on SLES 10) complains with:
 # "Invalid version tag `SUNWprivate_1.1'. Only anonymous version tag is allowed in executable."
 # if feeded with a version script which contains named tags.
@@ -544,7 +547,7 @@ SETFILE:=@SETFILE@
 XATTR:=@XATTR@
 JT_HOME:=@JT_HOME@
 JTREGEXE:=@JTREGEXE@
-
+XCODEBUILD=@XCODEBUILD@
 FIXPATH:=@FIXPATH@
 
 # Where the build output is stored for your convenience.

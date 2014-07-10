@@ -84,7 +84,7 @@ public class SnmpCounter64 extends SnmpValue {
      * @return The <CODE>Long</CODE> representation of the value.
      */
     public Long toLong() {
-        return new Long(value) ;
+        return value;
     }
 
     /**
