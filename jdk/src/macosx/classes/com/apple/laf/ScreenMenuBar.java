@@ -25,6 +25,9 @@
 
 package com.apple.laf;
 
+import sun.awt.AWTAccessor;
+import sun.lwawt.macosx.CMenuBar;
+
 import java.awt.*;
 import java.awt.event.*;
 import java.lang.reflect.*;
@@ -243,55 +246,25 @@ public class ScreenMenuBar extends MenuBar implements ContainerListener, ScreenM
             fSubmenus.remove(menu);
     }
 
-    private static Field[] stolenFields = null;
-
-    static {
-        stolenFields = AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
-            public Field[] run() {
-                try {
-                    final Field[] localFields = new Field[2];
-                    localFields[0] = MenuBar.class.getDeclaredField("menus");
-                    localFields[1] = MenuComponent.class.getDeclaredField("parent");
-                    AccessibleObject.setAccessible(localFields, true);
-                    return localFields;
-                } catch (final NoSuchFieldException nsf) {
-                    // If this happens, Sun changed the definition of MenuBar and MenuComponent!
-                    nsf.printStackTrace(System.err);
-                    return null;
-                }
-            }
-        });
-    };
-
     public Menu add(final Menu m, final int index) {
         synchronized (getTreeLock()) {
             if (m.getParent() != null) {
                 m.getParent().remove(m);
             }
 
-            // Use nasty reflection to get at the menus array and parent fields.
-            try {
-                if (stolenFields == null) return m;
+            final Vector<Menu> menus = AWTAccessor.getMenuBarAccessor().getMenus(this);
+            menus.insertElementAt(m, index);
+            AWTAccessor.getMenuComponentAccessor().setParent(m, this);
 
-                @SuppressWarnings("unchecked")
-                final Vector<Menu> menus = (Vector<Menu>)stolenFields[0].get(this);
-                    menus.insertElementAt(m, index);
+            final CMenuBar peer = (CMenuBar)getPeer();
+            if (peer == null) return m;
 
-                    stolenFields[1].set(m, this);
-
-                    final sun.lwawt.macosx.CMenuBar peer = (sun.lwawt.macosx.CMenuBar)getPeer();
-                if (peer == null) return m;
-
-                        peer.setNextInsertionIndex(index);
-                        if (m.getPeer() == null) {
-                            m.addNotify();
-                        }
-
-                        peer.setNextInsertionIndex(-1);
-            } catch (final IllegalAccessException iae) {
-                iae.printStackTrace(System.err);
+            peer.setNextInsertionIndex(index);
+            if (m.getPeer() == null) {
+                m.addNotify();
             }
 
+            peer.setNextInsertionIndex(-1);
             return m;
         }
     }
