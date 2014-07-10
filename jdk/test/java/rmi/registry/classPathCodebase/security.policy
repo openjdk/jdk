@@ -2,10 +2,6 @@
  * security policy used by the test process
  */
 
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
-
 grant {
   // need to move some classes out of the test's classpath; specific to this test
   permission java.io.FilePermission "${test.classes}", "read,write,delete";
