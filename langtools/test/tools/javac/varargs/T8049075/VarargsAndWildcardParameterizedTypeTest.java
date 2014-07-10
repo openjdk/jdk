@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,6 +21,20 @@
  * questions.
  */
 
-class A {
-    Object o = new Object() { enum STRENGTH{}; };
+/*
+ * @test
+ * @bug 8049075
+ * @summary javac, wildcards and generic vararg method invocation not accepted
+ * @compile VarargsAndWildcardParameterizedTypeTest.java
+ */
+
+class VarargsAndWildcardParameterizedTypeTest {
+    interface I<T> {
+        String m(T... t);
+    }
+
+    void m() {
+        I<? super Integer> i = null;
+        i.m(Integer.valueOf(1), Integer.valueOf(1));
+    }
 }

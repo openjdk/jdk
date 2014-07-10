@@ -27,6 +27,7 @@ package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 
 /** Contains information specific to the attribute and enter
  *  passes, to be used in place of the generic field in environments.
@@ -40,7 +41,7 @@ public class AttrContext {
 
     /** The scope of local symbols.
      */
-    Scope scope = null;
+    WriteableScope scope = null;
 
     /** The number of enclosing `static' modifiers.
      */
@@ -87,7 +88,7 @@ public class AttrContext {
 
     /** Duplicate this context, replacing scope field and copying all others.
      */
-    AttrContext dup(Scope scope) {
+    AttrContext dup(WriteableScope scope) {
         AttrContext info = new AttrContext();
         info.scope = scope;
         info.staticLevel = staticLevel;
@@ -112,7 +113,7 @@ public class AttrContext {
     public Iterable<Symbol> getLocalElements() {
         if (scope == null)
             return List.nil();
-        return scope.getElements();
+        return scope.getSymbols();
     }
 
     boolean lastResolveVarargs() {

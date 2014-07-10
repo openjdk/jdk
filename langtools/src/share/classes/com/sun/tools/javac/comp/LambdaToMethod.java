@@ -31,7 +31,7 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.tree.TreeTranslator;
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Kinds;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.DynamicMethodSymbol;
@@ -448,7 +448,7 @@ public class LambdaToMethod extends TreeTranslator {
                 make.at(prevPos);
             }
             // Replace the entered symbol for this variable
-            Scope sc = tree.sym.owner.members();
+            WriteableScope sc = tree.sym.owner.members();
             if (sc != null) {
                 sc.remove(tree.sym);
                 sc.enter(xsym);
@@ -1475,7 +1475,7 @@ public class LambdaToMethod extends TreeTranslator {
                 return clinit;
             } else {
                 //get the first constructor and treat it as the instance init sym
-                for (Symbol s : csym.members_field.getElementsByName(names.init)) {
+                for (Symbol s : csym.members_field.getSymbolsByName(names.init)) {
                     return s;
                 }
             }
