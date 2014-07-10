@@ -1,3 +1,8 @@
 grant codeBase "file:${java.home}/lib/ext/sunmscapi.jar" {
-        permission java.security.AllPermission;
-};
+        Permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "loadLibrary.sunmscapi";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.SunMSCAPI";
+        permission java.security.SecurityPermission "clearProviderProperties.SunMSCAPI";
+        permission java.security.SecurityPermission "removeProviderProperty.SunMSCAPI";
+}

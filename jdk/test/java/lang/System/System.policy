@@ -1,10 +1,5 @@
 //
 // Used by SecurityRace.java 
-// Standard extensions get all permissions by default
-
-grant codeBase "file:${{java.ext.dirs}}/*" {
-	permission java.security.AllPermission;
-};
 
 // default permissions granted to all domains
 
