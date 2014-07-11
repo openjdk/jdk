@@ -39,6 +39,7 @@ import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaTray;
 import javax.print.attribute.standard.MediaPrintableArea;
+import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.Attribute;
 import javax.print.attribute.EnumSyntax;
@@ -57,6 +58,8 @@ public class CUPSPrinter  {
     // CUPS does not support multi-threading.
     private static synchronized native String[] getMedia(String printer);
     private static synchronized native float[] getPageSizes(String printer);
+    private static synchronized native void
+        getResolutions(String printer, ArrayList<Integer> resolutionList);
     //public static boolean useIPPMedia = false; will be used later
 
     private MediaPrintableArea[] cupsMediaPrintables;
@@ -68,6 +71,7 @@ public class CUPSPrinter  {
     public  int nTrays = 0;
     private  String[] media;
     private  float[] pageSizes;
+    int[]   resolutionsArray;
     private String printer;
 
     private static boolean libFound;
@@ -119,6 +123,12 @@ public class CUPSPrinter  {
                 nTrays = media.length/2-nPageSizes;
                 assert (nTrays >= 0);
             }
+            ArrayList<Integer> resolutionList = new ArrayList<>();
+            getResolutions(printer, resolutionList);
+            resolutionsArray = new int[resolutionList.size()];
+            for (int i=0; i < resolutionList.size(); i++) {
+                resolutionsArray[i] = resolutionList.get(i);
+            }
         }
     }
 
@@ -160,6 +170,12 @@ public class CUPSPrinter  {
         return cupsMediaTrays;
     }
 
+    /**
+     * return the raw packed array of supported printer resolutions.
+     */
+    int[] getRawResolutions() {
+        return resolutionsArray;
+    }
 
     /**
      * Initialize media by translating PPD info to PrintService attributes.
