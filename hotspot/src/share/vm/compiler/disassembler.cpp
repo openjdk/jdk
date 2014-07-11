@@ -30,6 +30,7 @@
 #include "memory/cardTableModRefBS.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
 #ifdef TARGET_ARCH_x86

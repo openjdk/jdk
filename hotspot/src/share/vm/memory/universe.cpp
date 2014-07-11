@@ -72,7 +72,7 @@
 #include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
-#include "gc_implementation/concurrentMarkSweep/cmsAdaptiveSizePolicy.hpp"
+#include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/concurrentMarkSweep/cmsCollectorPolicy.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
@@ -802,13 +802,9 @@ jint Universe::initialize_heap() {
       gc_policy = new MarkSweepPolicy();
     } else if (UseConcMarkSweepGC) {
 #if INCLUDE_ALL_GCS
-      if (UseAdaptiveSizePolicy) {
-        gc_policy = new ASConcurrentMarkSweepPolicy();
-      } else {
-        gc_policy = new ConcurrentMarkSweepPolicy();
-      }
+      gc_policy = new ConcurrentMarkSweepPolicy();
 #else  // INCLUDE_ALL_GCS
-    fatal("UseConcMarkSweepGC not supported in this VM.");
+      fatal("UseConcMarkSweepGC not supported in this VM.");
 #endif // INCLUDE_ALL_GCS
     } else { // default old generation
       gc_policy = new MarkSweepPolicy();

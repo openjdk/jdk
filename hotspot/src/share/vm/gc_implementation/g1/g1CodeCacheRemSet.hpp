@@ -31,6 +31,14 @@
 
 class CodeBlobClosure;
 
+// The elements of the G1CodeRootChunk is either:
+//  1) nmethod pointers
+//  2) nodes in an internally chained free list
+typedef union {
+  nmethod* _nmethod;
+  void*    _link;
+} NmethodOrLink;
+
 class G1CodeRootChunk : public CHeapObj<mtGC> {
  private:
   static const int NUM_ENTRIES = 32;
@@ -38,16 +46,28 @@ class G1CodeRootChunk : public CHeapObj<mtGC> {
   G1CodeRootChunk*     _next;
   G1CodeRootChunk*     _prev;
 
-  nmethod** _top;
+  NmethodOrLink*          _top;
+  // First free position within the chunk.
+  volatile NmethodOrLink* _free;
 
-  nmethod* _data[NUM_ENTRIES];
+  NmethodOrLink _data[NUM_ENTRIES];
 
-  nmethod** bottom() const {
-    return (nmethod**) &(_data[0]);
+  NmethodOrLink* bottom() const {
+    return (NmethodOrLink*) &(_data[0]);
   }
 
-  nmethod** end() const {
-    return (nmethod**) &(_data[NUM_ENTRIES]);
+  NmethodOrLink* end() const {
+    return (NmethodOrLink*) &(_data[NUM_ENTRIES]);
+  }
+
+  bool is_link(NmethodOrLink* nmethod_or_link) {
+    return nmethod_or_link->_link == NULL ||
+        (bottom() <= nmethod_or_link->_link
+        && nmethod_or_link->_link < end());
+  }
+
+  bool is_nmethod(NmethodOrLink* nmethod_or_link) {
+    return !is_link(nmethod_or_link);
   }
 
  public:
@@ -85,46 +105,55 @@ class G1CodeRootChunk : public CHeapObj<mtGC> {
   }
 
   bool is_full() const {
-    return _top == (nmethod**)end();
+    return _top == end() && _free == NULL;
   }
 
   bool contains(nmethod* method) {
-    nmethod** cur = bottom();
+    NmethodOrLink* cur = bottom();
     while (cur != _top) {
-      if (*cur == method) return true;
+      if (cur->_nmethod == method) return true;
       cur++;
     }
     return false;
   }
 
   bool add(nmethod* method) {
-    if (is_full()) return false;
-    *_top = method;
-    _top++;
+    if (is_full()) {
+      return false;
+    }
+
+    if (_free != NULL) {
+      // Take from internally chained free list
+      NmethodOrLink* first_free = (NmethodOrLink*)_free;
+      _free = (NmethodOrLink*)_free->_link;
+      first_free->_nmethod = method;
+    } else {
+      // Take from top.
+      _top->_nmethod = method;
+      _top++;
+    }
+
     return true;
   }
 
-  bool remove(nmethod* method) {
-    nmethod** cur = bottom();
-    while (cur != _top) {
-      if (*cur == method) {
-        memmove(cur, cur + 1, (_top - (cur + 1)) * sizeof(nmethod**));
-        _top--;
-        return true;
-      }
-      cur++;
-    }
-    return false;
-  }
+  bool remove_lock_free(nmethod* method);
 
   void nmethods_do(CodeBlobClosure* blk);
 
   nmethod* pop() {
-    if (is_empty()) {
-      return NULL;
+    if (_free != NULL) {
+      // Kill the free list.
+      _free = NULL;
     }
-    _top--;
-    return *_top;
+
+    while (!is_empty()) {
+      _top--;
+      if (is_nmethod(_top)) {
+        return _top->_nmethod;
+      }
+    }
+
+    return NULL;
   }
 };
 
@@ -193,7 +222,7 @@ class G1CodeRootSet VALUE_OBJ_CLASS_SPEC {
   // method is likely to be repeatedly called with the same nmethod.
   void add(nmethod* method);
 
-  void remove(nmethod* method);
+  void remove_lock_free(nmethod* method);
   nmethod* pop();
 
   bool contains(nmethod* method);

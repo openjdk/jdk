@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1ALLOCREGION_INLINE_HPP
 
 #include "gc_implementation/g1/g1AllocRegion.hpp"
+#include "gc_implementation/g1/heapRegion.inline.hpp"
 
 inline HeapWord* G1AllocRegion::allocate(HeapRegion* alloc_region,
                                          size_t word_size,
