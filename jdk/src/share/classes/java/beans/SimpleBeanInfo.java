@@ -34,6 +34,8 @@ package java.beans;
  * When the introspector sees the "noop" values, it will apply low
  * level introspection and design patterns to automatically analyze
  * the target bean.
+ *
+ * @since 1.1
  */
 
 public class SimpleBeanInfo implements BeanInfo {

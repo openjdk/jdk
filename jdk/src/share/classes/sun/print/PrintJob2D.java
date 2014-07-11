@@ -1011,7 +1011,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
 
         private String qid="noname";
 
-        private ArrayList queue = new ArrayList();
+        private ArrayList<Graphics2D> queue = new ArrayList<>();
 
         MessageQ(String id) {
           qid = id;
@@ -1055,7 +1055,7 @@ public class PrintJob2D extends PrintJob implements Printable, Runnable {
             while (g == null && queue != null) {
 
                 if (queue.size() > 0) {
-                    g = (Graphics2D) queue.remove(0);
+                    g = queue.remove(0);
                     notify();
 
                 } else {

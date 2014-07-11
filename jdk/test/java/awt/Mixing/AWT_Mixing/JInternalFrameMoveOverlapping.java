@@ -30,6 +30,7 @@ import javax.swing.JButton;
 import javax.swing.JDesktopPane;
 import javax.swing.JFrame;
 import javax.swing.JInternalFrame;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * AWT/Swing overlapping test for {@link javax.swing.JInternalFrame } component during move.
@@ -40,6 +41,8 @@ import javax.swing.JInternalFrame;
 @bug 6985399
 @summary Overlapping test for javax.swing.JScrollPane
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JInternalFrameMoveOverlapping
  */
 public class JInternalFrameMoveOverlapping extends OverlappingTestBase {

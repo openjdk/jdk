@@ -40,11 +40,11 @@ class PSMarkSweep : public MarkSweep {
   static CollectorCounters*  _counters;
 
   // Closure accessors
-  static OopClosure* mark_and_push_closure() { return &MarkSweep::mark_and_push_closure; }
-  static KlassClosure* follow_klass_closure() { return &MarkSweep::follow_klass_closure; }
-  static VoidClosure* follow_stack_closure() { return (VoidClosure*)&MarkSweep::follow_stack_closure; }
-  static OopClosure* adjust_pointer_closure() { return (OopClosure*)&MarkSweep::adjust_pointer_closure; }
-  static KlassClosure* adjust_klass_closure() { return &MarkSweep::adjust_klass_closure; }
+  static OopClosure* mark_and_push_closure()   { return &MarkSweep::mark_and_push_closure; }
+  static VoidClosure* follow_stack_closure()   { return (VoidClosure*)&MarkSweep::follow_stack_closure; }
+  static CLDClosure* follow_cld_closure()      { return &MarkSweep::follow_cld_closure; }
+  static OopClosure* adjust_pointer_closure()  { return (OopClosure*)&MarkSweep::adjust_pointer_closure; }
+  static CLDClosure* adjust_cld_closure()      { return &MarkSweep::adjust_cld_closure; }
   static BoolObjectClosure* is_alive_closure() { return (BoolObjectClosure*)&MarkSweep::is_alive; }
 
  debug_only(public:)  // Used for PSParallelCompact debugging

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -56,33 +56,238 @@ package com.sun.source.doctree;
  */
 @jdk.Exported
 public interface DocTreeVisitor<R,P> {
+
+    /**
+     * Visits an AttributeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAttribute(AttributeTree node, P p);
+
+    /**
+     * Visits an AuthorTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAuthor(AuthorTree node, P p);
+
+    /**
+     * Visits a CommentTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitComment(CommentTree node, P p);
+
+    /**
+     * Visits a DeprecatedTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitDeprecated(DeprecatedTree node, P p);
+
+    /**
+     * Visits a DocCommentTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitDocComment(DocCommentTree node, P p);
+
+    /**
+     * Visits a DocRootTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitDocRoot(DocRootTree node, P p);
+
+    /**
+     * Visits an EndElementTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitEndElement(EndElementTree node, P p);
+
+    /**
+     * Visits an EntityTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitEntity(EntityTree node, P p);
+
+    /**
+     * Visits an ErroneousTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitErroneous(ErroneousTree node, P p);
+
+    /**
+     * Visits an IdentifierTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitIdentifier(IdentifierTree node, P p);
+
+    /**
+     * Visits an InheritDocTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitInheritDoc(InheritDocTree node, P p);
+
+    /**
+     * Visits a LinkTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitLink(LinkTree node, P p);
+
+    /**
+     * Visits an LiteralTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitLiteral(LiteralTree node, P p);
+
+    /**
+     * Visits a ParamTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitParam(ParamTree node, P p);
+
+    /**
+     * Visits a ReferenceTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitReference(ReferenceTree node, P p);
+
+    /**
+     * Visits a ReturnTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitReturn(ReturnTree node, P p);
+
+    /**
+     * Visits a SeeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSee(SeeTree node, P p);
+
+    /**
+     * Visits a SerialTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSerial(SerialTree node, P p);
+
+    /**
+     * Visits a SerialDataTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSerialData(SerialDataTree node, P p);
+
+    /**
+     * Visits a SerialFieldTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSerialField(SerialFieldTree node, P p);
+
+    /**
+     * Visits a SinceTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSince(SinceTree node, P p);
+
+    /**
+     * Visits a StartElementTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitStartElement(StartElementTree node, P p);
+
+    /**
+     * Visits a TextTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitText(TextTree node, P p);
+
+    /**
+     * Visits a ThrowsTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitThrows(ThrowsTree node, P p);
+
+    /**
+     * Visits an UnknownBlockTagTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitUnknownBlockTag(UnknownBlockTagTree node, P p);
+
+    /**
+     * Visits an UnknownInlineTagTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitUnknownInlineTag(UnknownInlineTagTree node, P p);
+
+    /**
+     * Visits a ValueTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitValue(ValueTree node, P p);
+
+    /**
+     * Visits a VersionTreeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitVersion(VersionTree node, P p);
+
+    /**
+     * Visits an unknown type of DocTree node.
+     * This can occur if the set of tags evolves and new kinds
+     * of nodes are added to the {@code DocTree} hierarchy.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitOther(DocTree node, P p);
 }

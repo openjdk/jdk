@@ -29,6 +29,7 @@
 #include "memory/sharedHeap.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/mutex.hpp"
+#include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
 
 template <>

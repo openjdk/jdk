@@ -90,7 +90,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
             // Do not list the package if -nodeprecated option is set and the
             // package is marked as deprecated.
             if (aPackage != null &&
-                (!(configuration.nodeprecated && Util.isDeprecated(aPackage)))) {
+                (!(configuration.nodeprecated && utils.isDeprecated(aPackage)))) {
                 ul.addContent(getPackage(aPackage));
             }
         }
@@ -99,7 +99,7 @@ public class PackageIndexFrameWriter extends AbstractPackageIndexWriter {
     }
 
     /**
-     * Gets each package name as a separate link.
+     * Returns each package name as a separate link.
      *
      * @param pd PackageDoc
      * @return content for the package link

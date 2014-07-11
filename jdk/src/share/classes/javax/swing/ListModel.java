@@ -39,6 +39,7 @@ import javax.swing.event.ListDataListener;
  *
  * @author Hans Muller
  * @see JList
+ * @since 1.2
  */
 public interface ListModel<E>
 {

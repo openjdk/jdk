@@ -100,6 +100,8 @@ public class SortingFocusTraversalPolicy
 
     /**
      * Constructs a SortingFocusTraversalPolicy with the specified Comparator.
+     *
+     * @param comparator the {@code Comparator} to sort by
      */
     public SortingFocusTraversalPolicy(Comparator<? super Component> comparator) {
         this.comparator = comparator;

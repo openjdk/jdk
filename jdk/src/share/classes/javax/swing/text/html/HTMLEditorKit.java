@@ -238,7 +238,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * be thrown. When inserting into a non-empty document all tags outside
      * of the body (head, title) will be dropped.
      *
-     * @param in  the stream to read from
+     * @param in the stream to read from
      * @param doc the destination for the insertion
      * @param pos the location in the document to place the
      *   content
@@ -269,14 +269,18 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     /**
      * Inserts HTML into an existing document.
      *
-     * @param doc       the document to insert into
-     * @param offset    the offset to insert HTML at
-     * @param popDepth  the number of ElementSpec.EndTagTypes to generate before
-     *        inserting
+     * @param doc the document to insert into
+     * @param offset the offset to insert HTML at
+     * @param popDepth the number of ElementSpec.EndTagTypes to generate
+     *                  before inserting
+     * @param html the HTML string
      * @param pushDepth the number of ElementSpec.StartTagTypes with a direction
-     *        of ElementSpec.JoinNextDirection that should be generated
-     *        before inserting, but after the end tags have been generated
+     *                  of ElementSpec.JoinNextDirection that should be generated
+     *                  before inserting, but after the end tags have been generated
      * @param insertTag the first tag to start inserting into document
+     *
+     * @throws BadLocationException if {@code offset} is invalid
+     * @throws IOException on I/O error
      * @exception RuntimeException (will eventually be a BadLocationException)
      *            if pos is invalid
      */
@@ -302,13 +306,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Write content from a document to the given stream
      * in a format appropriate for this kind of content handler.
      *
-     * @param out  the stream to write to
-     * @param doc  the source for the write
-     * @param pos  the location in the document to fetch the
+     * @param out the stream to write to
+     * @param doc the source for the write
+     * @param pos the location in the document to fetch the
      *   content
-     * @param len  the amount to write out
+     * @param len the amount to write out
      * @exception IOException on any I/O error
-     * @exception BadLocationException if pos represents an invalid
+     * @exception BadLocationException if {@code pos} represents an invalid
      *   location within the document
      */
     public void write(Writer out, Document doc, int pos, int len)
@@ -369,6 +373,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * specified is shared by all HTMLEditorKit instances.
      * This should be reimplemented to provide a finer granularity
      * if desired.
+     *
+     * @param s a StyleSheet
      */
     public void setStyleSheet(StyleSheet s) {
         if (s == null) {
@@ -383,6 +389,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * HTML elements.  By default the resource specified by
      * DEFAULT_CSS gets loaded, and is shared by all HTMLEditorKit
      * instances.
+     *
+     * @return the StyleSheet
      */
     public StyleSheet getStyleSheet() {
         AppContext appContext = AppContext.getAppContext();
@@ -412,7 +420,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * to function when used in an applet.
      *
      * @param name the name of the resource, relative to the
-     *  HTMLEditorKit class
+     *             HTMLEditorKit class
      * @return a stream representing the resource
      */
     static InputStream getResourceAsStream(final String name) {
@@ -506,6 +514,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     /**
      * Sets the default cursor.
      *
+     * @param cursor a cursor
+     *
      * @since 1.3
      */
     public void setDefaultCursor(Cursor cursor) {
@@ -514,6 +524,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     /**
      * Returns the default cursor.
+     *
+     * @return the cursor
      *
      * @since 1.3
      */
@@ -524,6 +536,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
     /**
      * Sets the cursor to use over links.
      *
+     * @param cursor a cursor
+     *
      * @since 1.3
      */
     public void setLinkCursor(Cursor cursor) {
@@ -532,6 +546,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
 
     /**
      * Returns the cursor to use over hyper links.
+     *
+     * @return the cursor
+     *
      * @since 1.3
      */
     public Cursor getLinkCursor() {
@@ -556,6 +573,8 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Specifies if an html form submission is processed
      * automatically or only <code>FormSubmitEvent</code> is fired.
      * By default it is set to true.
+     *
+     * @param isAuto if {@code true}, html form submission is processed automatically.
      *
      * @see #isAutoFormSubmission()
      * @see FormSubmitEvent
@@ -586,11 +605,13 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * to avoid the overhead of loading the default parser if
      * it's not used.  The default parser is the HotJava parser
      * using an HTML 3.2 DTD.
+     *
+     * @return the parser
      */
     protected Parser getParser() {
         if (defaultParser == null) {
             try {
-                Class c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
+                Class<?> c = Class.forName("javax.swing.text.html.parser.ParserDelegator");
                 defaultParser = (Parser) c.newInstance();
             } catch (Throwable e) {
             }
@@ -972,6 +993,9 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * with the results of the parse.  This method should
          * be implemented to be thread-safe.
          *
+         * @param r a reader
+         * @param cb a parser callback
+         * @param ignoreCharSet if {@code true} charset is ignoring
          * @throws IOException if an I/O exception occurs
          */
         public abstract void parse(Reader r, ParserCallback cb, boolean ignoreCharSet) throws IOException;
@@ -1000,26 +1024,78 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          */
         public static final Object IMPLIED = "_implied_";
 
-
+        /**
+         * The last method called on the reader. It allows
+         * any pending changes to be flushed into the document.
+         * Since this is currently loading synchronously, the entire
+         * set of changes are pushed in at this point.
+         *
+         * @throws BadLocationException if the given position does not
+         *   represent a valid location in the associated document.
+         */
         public void flush() throws BadLocationException {
         }
 
+        /**
+         * Called by the parser to indicate a block of text was
+         * encountered.
+         *
+         * @param data a data
+         * @param pos a position
+         */
         public void handleText(char[] data, int pos) {
         }
 
+        /**
+         * Called by the parser to indicate a block of comment was
+         * encountered.
+         *
+         * @param data a data
+         * @param pos a position
+         */
         public void handleComment(char[] data, int pos) {
         }
 
+        /**
+         * Callback from the parser. Route to the appropriate
+         * handler for the tag.
+         *
+         * @param t an HTML tag
+         * @param a a set of attributes
+         * @param pos a position
+         */
         public void handleStartTag(HTML.Tag t, MutableAttributeSet a, int pos) {
         }
 
+        /**
+         * Callback from the parser. Route to the appropriate
+         * handler for the tag.
+         *
+         * @param t an HTML tag
+         * @param pos a position
+         */
         public void handleEndTag(HTML.Tag t, int pos) {
         }
 
+        /**
+         * Callback from the parser. Route to the appropriate
+         * handler for the tag.
+         *
+         * @param t an HTML tag
+         * @param a a set of attributes
+         * @param pos a position
+         */
         public void handleSimpleTag(HTML.Tag t, MutableAttributeSet a, int pos) {
         }
 
-        public void handleError(String errorMsg, int pos){
+        /**
+         * Callback from the parser. Route to the appropriate
+         * handler for the error.
+         *
+         * @param errorMsg a error message
+         * @param pos a position
+         */
+        public void handleError(String errorMsg, int pos) {
         }
 
         /**
@@ -1489,6 +1565,12 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static abstract class HTMLTextAction extends StyledTextAction {
+
+        /**
+         * Creates a new HTMLTextAction from a string action name.
+         *
+         * @param name the name of the action
+         */
         public HTMLTextAction(String name) {
             super(name);
         }
@@ -1575,6 +1657,12 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         /**
          * Returns the deepest element at <code>offset</code> matching
          * <code>tag</code>.
+         *
+         * @param doc an instance of HTMLDocument
+         * @param offset the specified offset &gt;= 0
+         * @param tag an instance of HTML.Tag
+         *
+         * @return the deepest element
          */
         protected Element findElementMatchingTag(HTMLDocument doc, int offset,
                                                  HTML.Tag tag) {
@@ -1611,11 +1699,30 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public static class InsertHTMLTextAction extends HTMLTextAction {
+
+        /**
+         * Creates a new InsertHTMLTextAction.
+         *
+         * @param name a name of the action
+         * @param html an HTML string
+         * @param parentTag a parent tag
+         * @param addTag the first tag to start inserting into document
+         */
         public InsertHTMLTextAction(String name, String html,
                                     HTML.Tag parentTag, HTML.Tag addTag) {
             this(name, html, parentTag, addTag, null, null);
         }
 
+        /**
+         * Creates a new InsertHTMLTextAction.
+         *
+         * @param name a name of the action
+         * @param html an HTML string
+         * @param parentTag a parent tag
+         * @param addTag the first tag to start inserting into document
+         * @param alternateParentTag an alternative parent tag
+         * @param alternateAddTag an alternative tag
+         */
         public InsertHTMLTextAction(String name, String html,
                                     HTML.Tag parentTag,
                                     HTML.Tag addTag,
@@ -1644,6 +1751,17 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
         /**
          * A cover for HTMLEditorKit.insertHTML. If an exception it
          * thrown it is wrapped in a RuntimeException and thrown.
+         *
+         * @param editor an instance of JEditorPane
+         * @param doc the document to insert into
+         * @param offset the offset to insert HTML at
+         * @param html an HTML string
+         * @param popDepth the number of ElementSpec.EndTagTypes to generate
+         *                  before inserting
+         * @param pushDepth the number of ElementSpec.StartTagTypes with a direction
+         *                  of ElementSpec.JoinNextDirection that should be generated
+         *                  before inserting, but after the end tags have been generated
+         * @param addTag the first tag to start inserting into document
          */
         protected void insertHTML(JEditorPane editor, HTMLDocument doc,
                                   int offset, String html, int popDepth,
@@ -1663,7 +1781,17 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * This is invoked when inserting at a boundary. It determines
          * the number of pops, and then the number of pushes that need
          * to be performed, and then invokes insertHTML.
+         *
+         * @param editor an instance of JEditorPane
+         * @param doc an instance of HTMLDocument
+         * @param offset an offset to start from
+         * @param insertElement an instance of Element
+         * @param html an HTML string
+         * @param parentTag a parent tag
+         * @param addTag the first tag to start inserting into document
+         *
          * @since 1.3
+         *
          */
         protected void insertAtBoundary(JEditorPane editor, HTMLDocument doc,
                                         int offset, Element insertElement,
@@ -1678,6 +1806,14 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
          * the number of pops, and then the number of pushes that need
          * to be performed, and then invokes insertHTML.
          * @deprecated As of Java 2 platform v1.3, use insertAtBoundary
+         *
+         * @param editor an instance of JEditorPane
+         * @param doc an instance of HTMLDocument
+         * @param offset an offset to start from
+         * @param insertElement an instance of Element
+         * @param html an HTML string
+         * @param parentTag a parent tag
+         * @param addTag the first tag to start inserting into document
          */
         @Deprecated
         protected void insertAtBoundry(JEditorPane editor, HTMLDocument doc,
@@ -1874,7 +2010,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
      * Returns the object in an AttributeSet matching a key
      */
     static private Object getAttrValue(AttributeSet attr, HTML.Attribute key) {
-        Enumeration names = attr.getAttributeNames();
+        Enumeration<?> names = attr.getAttributeNames();
         while (names.hasMoreElements()) {
             Object nextKey = names.nextElement();
             Object nextVal = attr.getAttribute(nextKey);
@@ -2050,7 +2186,7 @@ public class HTMLEditorKit extends StyledEditorKit implements Accessible {
              * @param offs0 the starting model offset &ge; 0
              * @param offs1 the ending model offset &ge; offs1
              * @param bounds the bounding box of the view, which is not
-             *        necessarily the region to paint.
+             *               necessarily the region to paint.
              * @param c the editor
              * @param view View painting for
              * @return region in which drawing occurred

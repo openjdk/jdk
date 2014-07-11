@@ -693,7 +693,6 @@ public class DocCommentParser {
         int p = bp;
         nextChar();
         Name name = null;
-        boolean checkSemi = false;
         if (ch == '#') {
             int namep = bp;
             nextChar();

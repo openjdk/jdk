@@ -44,19 +44,18 @@ import java.util.Set;
 import java.util.concurrent.Future;
 
 import javax.tools.JavaCompiler.CompilationTask;
-import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
-import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.sjavac.comp.AttrWithDeps;
 import com.sun.tools.sjavac.comp.Dependencies;
 import com.sun.tools.sjavac.comp.JavaCompilerWithDeps;
+import com.sun.tools.sjavac.comp.JavacServiceImpl;
 import com.sun.tools.sjavac.comp.ResolveWithDeps;
 import com.sun.tools.sjavac.comp.SmartFileManager;
 
@@ -73,6 +72,7 @@ import com.sun.tools.sjavac.comp.SmartFileManager;
 public class CompilerThread implements Runnable {
     private JavacServer javacServer;
     private CompilerPool compilerPool;
+    private JavacServiceImpl javacServiceImpl;
     private List<Future<?>> subTasks;
 
     // Communicating over this socket.
@@ -87,9 +87,10 @@ public class CompilerThread implements Runnable {
     // If true, then this thread is serving a request.
     private boolean inUse = false;
 
-    CompilerThread(CompilerPool cp) {
+    CompilerThread(CompilerPool cp, JavacServiceImpl javacServiceImpl) {
         compilerPool = cp;
         javacServer = cp.getJavacServer();
+        this.javacServiceImpl = javacServiceImpl;
     }
 
     /**
@@ -133,7 +134,7 @@ public class CompilerThread implements Runnable {
         context = new Context();
         ResolveWithDeps.preRegister(context);
         AttrWithDeps.preRegister(context);
-        JavaCompilerWithDeps.preRegister(context, this);
+        JavaCompilerWithDeps.preRegister(context, javacServiceImpl);
         subTasks = new ArrayList<>();
     }
 
@@ -320,6 +321,7 @@ public class CompilerThread implements Runnable {
 
                     // Do the compilation!
                     CompilationTask task = compiler.getTask(stderr, smartFileManager, null, the_options, null, compilationUnits, context);
+                    smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
                     rc = ((JavacTaskImpl) task).doCall();
 
                     while (numActiveSubTasks()>0) {

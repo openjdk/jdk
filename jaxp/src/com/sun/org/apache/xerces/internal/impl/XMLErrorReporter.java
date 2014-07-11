@@ -111,7 +111,6 @@ import org.xml.sax.ErrorHandler;
  * @author Eric Ye, IBM
  * @author Andy Clark, IBM
  *
- * @version $Id: XMLErrorReporter.java,v 1.5 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLErrorReporter
     implements XMLComponent {

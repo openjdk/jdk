@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for a 'while' loop statement.
+ * A tree node for a {@code while} loop statement.
  *
  * For example:
  * <pre>
@@ -43,6 +43,15 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface WhileLoopTree extends StatementTree {
+    /**
+     * Returns the condition of the loop.
+     * @return the condition
+     */
     ExpressionTree getCondition();
+
+    /**
+     * Returns the body of the loop.
+     * @return the body of the loop
+     */
     StatementTree getStatement();
 }

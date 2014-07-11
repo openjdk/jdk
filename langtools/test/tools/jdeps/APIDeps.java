@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8015912 8029216
+ * @bug 8015912 8029216 8048063
  * @summary Test -apionly and -jdkinternals options
  * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
  * @run main APIDeps
@@ -81,27 +81,39 @@ public class APIDeps {
              new String[] {"compact1", "compact3", testDirBasename},
              new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
         test(new File(mDir, "Foo.class"),
+             new String[] {"c.I", "e.E", "f.F"},
+             new String[] {testDirBasename},
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-P"});
+        test(new File(mDir, "Foo.class"),
              new String[] {"c.I", "e.E", "f.F", "m.Bar"},
              new String[] {testDirBasename},
-             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-filter:none", "-P"});
         test(new File(mDir, "Gee.class"),
-             new String[] {"g.G", "sun.misc.Lock"},
-             new String[] {testDirBasename, "JDK internal API"},
-             new String[] {"-classpath", testDir.getPath(), "-verbose"});
+             new String[] {"g.G", "sun.misc.Lock", "com.sun.tools.classfile.ClassFile",
+                           "com.sun.management.ThreadMXBean", "com.sun.source.tree.BinaryTree"},
+             new String[] {testDirBasename, "JDK internal API", "compact3", ""},
+             new String[] {"-classpath", testDir.getPath(), "-verbose", "-P"});
 
         // -jdkinternals
         test(new File(mDir, "Gee.class"),
-             new String[] {"sun.misc.Lock"},
+             new String[] {"sun.misc.Lock", "com.sun.tools.classfile.ClassFile"},
              new String[] {"JDK internal API"},
              new String[] {"-jdkinternals"});
         // -jdkinternals parses all classes on -classpath and the input arguments
         test(new File(mDir, "Gee.class"),
-             new String[] {"sun.misc.Lock", "sun.misc.Unsafe"},
+             new String[] {"com.sun.tools.jdeps.Main", "com.sun.tools.classfile.ClassFile",
+                           "sun.misc.Lock", "sun.misc.Unsafe"},
              new String[] {"JDK internal API"},
              new String[] {"-classpath", testDir.getPath(), "-jdkinternals"});
 
         // parse only APIs
-        // parse only APIs
+        test(mDir,
+             new String[] {"java.lang.Object", "java.lang.String",
+                           "java.util.Set",
+                           "c.C", "d.D", "c.I", "e.E"},
+             new String[] {"compact1", testDirBasename},
+             new String[] {"-classpath", testDir.getPath(), "-verbose:class", "-P", "-apionly"});
+
         test(mDir,
              new String[] {"java.lang.Object", "java.lang.String",
                            "java.util.Set",

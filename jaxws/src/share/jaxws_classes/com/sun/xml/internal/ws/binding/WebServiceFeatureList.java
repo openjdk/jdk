@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Constructor;
 import java.util.*;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 
 /**
@@ -272,7 +273,7 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
             final Method buildMethod = builder.getClass().getDeclaredMethod("build");
 
             for (Method builderMethod : builder.getClass().getDeclaredMethods()) {
-                if (!builderMethod.equals(buildMethod)) {
+                if (!builderMethod.equals(buildMethod) && !builderMethod.isSynthetic()) {
                     final String methodName = builderMethod.getName();
                     final Method annotationMethod = annotation.annotationType().getDeclaredMethod(methodName);
                     final Object annotationFieldValue = annotationMethod.invoke(annotation);
@@ -291,6 +292,7 @@ public final class WebServiceFeatureList extends AbstractMap<Class<? extends Web
                 throw new WebServiceException("Not a WebServiceFeature: " + result);
             }
         } catch (final NoSuchMethodException e) {
+            LOGGER.log(Level.INFO, "Unable to find builder method on webservice feature: " + beanClass.getName(), e);
             return null;
         } catch (final IllegalAccessException e) {
             throw new WebServiceException(e);

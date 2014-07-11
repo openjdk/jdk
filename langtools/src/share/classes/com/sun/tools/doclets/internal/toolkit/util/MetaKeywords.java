@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,12 +50,14 @@ public class MetaKeywords {
      * The global configuration information for this run.
      */
     private final Configuration configuration;
+    private final Utils utils;
 
     /**
      * Constructor
      */
     public MetaKeywords(Configuration configuration) {
         this.configuration = configuration;
+        this.utils = configuration.utils;
     }
 
     /**
@@ -98,7 +100,7 @@ public class MetaKeywords {
      */
     public String[] getMetaKeywords(PackageDoc packageDoc) {
         if( configuration.keywords ) {
-            String pkgName = Util.getPackageName(packageDoc);
+            String pkgName = utils.getPackageName(packageDoc);
             return new String[] { pkgName + " " + "package" };
         } else {
             return new String[] {};

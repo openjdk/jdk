@@ -34,7 +34,6 @@ import java.util.ResourceBundle;
  * @xerces.internal
  *
  * @author Elena Litani, IBM
- * @version $Id: XSMessageFormatter.java,v 1.6 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSMessageFormatter implements MessageFormatter {
     /**

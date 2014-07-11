@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.jvmstat.perfdata.monitor;
 
 import java.util.List;
+import sun.jvmstat.monitor.Monitor;
 
 /**
  * Immutable class containing the list of inserted and deleted
@@ -39,12 +40,12 @@ public class MonitorStatus {
     /**
      * The list of Monitors inserted since the last query.
      */
-    protected List inserted;
+    protected List<Monitor> inserted;
 
     /**
      * The list of Monitors removed since the last query.
      */
-    protected List removed;
+    protected List<Monitor> removed;
 
     /**
      * Create a MonitorStatus instance.
@@ -52,7 +53,7 @@ public class MonitorStatus {
      * @param inserted the list of Monitors inserted
      * @param removed the list of Monitors removed
      */
-    public MonitorStatus(List inserted, List removed) {
+    public MonitorStatus(List<Monitor> inserted, List<Monitor> removed) {
         this.inserted = inserted;
         this.removed = removed;
     }
@@ -62,7 +63,7 @@ public class MonitorStatus {
      *
      * @return List - the List of Monitor objects inserted or an empty List.
      */
-    public List getInserted() {
+    public List<Monitor> getInserted() {
         return inserted;
     }
 
@@ -71,7 +72,7 @@ public class MonitorStatus {
      *
      * @return List - the List of Monitor objects removed or an empty List.
      */
-    public List getRemoved() {
+    public List<Monitor> getRemoved() {
         return removed;
     }
 }

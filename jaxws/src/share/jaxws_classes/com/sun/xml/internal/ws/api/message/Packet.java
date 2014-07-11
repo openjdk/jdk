@@ -1388,7 +1388,12 @@ public final class Packet
     public ContentType getInternalContentType() {
         Message msg = getInternalMessage();
         if (msg instanceof MessageWritable) {
-            return ((MessageWritable)msg).getContentType();
+            MessageWritable mw = (MessageWritable) msg;
+
+            //bug 18121499 fix
+            mw.setMTOMConfiguration(mtomFeature);
+
+            return mw.getContentType();
         }
         return contentType;
     }

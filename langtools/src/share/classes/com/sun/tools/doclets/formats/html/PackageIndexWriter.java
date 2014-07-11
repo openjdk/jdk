@@ -168,7 +168,7 @@ public class PackageIndexWriter extends AbstractPackageIndexWriter {
         boolean altColor = true;
         for (PackageDoc pkg : packages) {
             if (pkg != null && !pkg.name().isEmpty()) {
-                if (!(configuration.nodeprecated && Util.isDeprecated(pkg))) {
+                if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
                     Content packageLinkContent = getPackageLink(pkg, getPackageName(pkg));
                     Content tdPackage = HtmlTree.TD(HtmlStyle.colFirst, packageLinkContent);
                     HtmlTree tdSummary = new HtmlTree(HtmlTag.TD);

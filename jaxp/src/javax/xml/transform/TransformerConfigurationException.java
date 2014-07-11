@@ -27,6 +27,8 @@ package javax.xml.transform;
 
 /**
  * Indicates a serious configuration error.
+ *
+ * @since 1.4
  */
 public class TransformerConfigurationException extends TransformerException {
 

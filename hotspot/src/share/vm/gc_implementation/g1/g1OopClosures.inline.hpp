@@ -28,9 +28,11 @@
 #include "gc_implementation/g1/concurrentMark.inline.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1OopClosures.hpp"
+#include "gc_implementation/g1/g1ParScanThreadState.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
+#include "memory/iterator.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 
 /*
@@ -107,10 +109,6 @@ inline void G1ParPushHeapRSClosure::do_oop_nv(T* p) {
 
 template <class T>
 inline void G1CMOopClosure::do_oop_nv(T* p) {
-  assert(_g1h->is_in_g1_reserved((HeapWord*) p), "invariant");
-  assert(!_g1h->is_on_master_free_list(
-                    _g1h->heap_region_containing((HeapWord*) p)), "invariant");
-
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (_cm->verbose_high()) {
     gclog_or_tty->print_cr("[%u] we're looking at location "

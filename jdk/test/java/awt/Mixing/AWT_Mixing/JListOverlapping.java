@@ -31,6 +31,8 @@ import javax.swing.*;
 @test
 @summary Simple Overlapping test for javax.swing.JList
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JListOverlapping
  */
 public class JListOverlapping extends SimpleOverlappingTestBase {

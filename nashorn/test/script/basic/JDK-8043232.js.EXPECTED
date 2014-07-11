@@ -1,0 +1,14 @@
+java.awt.Color[r=255,g=0,b=255]
+[jdk.internal.dynalink.beans.SimpleDynamicMethod Color java.awt.Color.java.awt.Color(int,int,int)]
+java.awt.Color[r=33,g=233,b=2]
+TypeError: No such Java class: java.lang.NonExistent
+TypeError: No such Java constructor: Object(String)
+TypeError: Java constructor signature invalid: Object()xxxxx
+TypeError: Java constructor signature invalid: Object(
+TypeError: Java constructor signature invalid: Object)
+TypeError: Java method [jdk.internal.dynalink.beans.OverloadedDynamicMethod java.lang.System.getProperty] cant be used as a constructor.
+TypeError: Java method [jdk.internal.dynalink.beans.OverloadedDynamicMethod java.io.PrintStream.println] cant be used as a constructor.
+TypeError: Constructor [jdk.internal.dynalink.beans.SimpleDynamicMethod Color java.awt.Color.java.awt.Color(int,int,int)] requires new.
+TypeError: No such Java constructor: Runnable()
+TypeError: No such Java constructor: Runnable(int)
+java.lang.InstantiationException: java.io.InputStream

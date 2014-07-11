@@ -239,7 +239,7 @@ public interface Attr extends Node {
     /**
      * The <code>Element</code> node this attribute is attached to or
      * <code>null</code> if this attribute is not in use.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Element getOwnerElement();
 
@@ -249,7 +249,7 @@ public interface Attr extends Node {
      * after loading the document or invoking
      * <code>Document.normalizeDocument()</code>, <code>schemaTypeInfo</code>
      *  may not be reliable if the node was moved.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public TypeInfo getSchemaTypeInfo();
 
@@ -297,7 +297,7 @@ public interface Attr extends Node {
      * reevaluated in accordance to the schema used. As a consequence, if
      * the <code>Attr.schemaTypeInfo</code> attribute contains an ID type,
      * <code>isId</code> will always return true.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public boolean isId();
 

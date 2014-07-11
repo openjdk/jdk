@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for a 'synchronized' statement.
+ * A tree node for a {@code synchronized} statement.
  *
  * For example:
  * <pre>
@@ -42,6 +42,15 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface SynchronizedTree extends StatementTree {
+    /**
+     * Returns the expression on which to synchronize.
+     * @return the expression
+     */
     ExpressionTree getExpression();
+
+    /**
+     * Returns the block of the {@code synchronized} statement.
+     * @return the block
+     */
     BlockTree getBlock();
 }

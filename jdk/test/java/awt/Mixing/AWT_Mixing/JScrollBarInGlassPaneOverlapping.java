@@ -36,6 +36,8 @@ import javax.swing.*;
 @test
 @summary Simple Overlapping test for javax.swing.JScrollBar
 @author sergey.grinev@oracle.com: area=awt.mixing
+@library ../../regtesthelpers
+@build Util
 @run main JScrollBarInGlassPaneOverlapping
  */
 public class JScrollBarInGlassPaneOverlapping extends GlassPaneOverlappingTestBase {

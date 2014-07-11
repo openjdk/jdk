@@ -66,6 +66,14 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
             final Image image, final ImageObserver observer,
             final int imgWidth, final int imgHeight,
             final int rvWidth, final int rvHeight) {
+        return getResolutionVariantObserver(image, observer,
+                imgWidth, imgHeight, rvWidth, rvHeight, false);
+    }
+
+    public static ImageObserver getResolutionVariantObserver(
+            final Image image, final ImageObserver observer,
+            final int imgWidth, final int imgHeight,
+            final int rvWidth, final int rvHeight, boolean concatenateInfo) {
 
         if (observer == null) {
             return null;
@@ -90,6 +98,11 @@ public class MultiResolutionToolkitImage extends ToolkitImage implements MultiRe
                             if ((flags & BITS_INFO) != 0) {
                                 x /= 2;
                                 y /= 2;
+                            }
+
+                            if(concatenateInfo){
+                                flags &= ((ToolkitImage) image).
+                                        getImageRep().check(null);
                             }
 
                             return observer.imageUpdate(

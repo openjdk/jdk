@@ -26,11 +26,9 @@
 package com.sun.tools.doclets.internal.toolkit.builders;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Builds the summary for a given annotation type.
@@ -138,7 +136,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            Util.copyDocFiles(configuration, containingPackage);
+            utils.copyDocFiles(configuration, containingPackage);
             containingPackagesSeen.add(containingPackage);
         }
      }
@@ -174,7 +172,7 @@ public class AnnotationTypeBuilder extends AbstractBuilder {
     public void buildAnnotationTypeSignature(XMLNode node, Content annotationInfoTree) {
         StringBuilder modifiers = new StringBuilder(
                 annotationTypeDoc.modifiers() + " ");
-        writer.addAnnotationTypeSignature(Util.replaceText(
+        writer.addAnnotationTypeSignature(utils.replaceText(
                 modifiers.toString(), "interface", "@interface"), annotationInfoTree);
     }
 

@@ -45,6 +45,7 @@ import java.util.EventListener;
  * @param <E> the type of the elements of this model
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
@@ -201,6 +202,7 @@ public abstract class AbstractListModel<E> implements ListModel<E>, Serializable
      * If no such listeners exist,
      * this method returns an empty array.
      *
+     * @param <T> the type of {@code EventListener} class being requested
      * @param listenerType  the type of listeners requested;
      *          this parameter should specify an interface
      *          that descends from <code>java.util.EventListener</code>

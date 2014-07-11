@@ -668,7 +668,7 @@ public abstract class AbstractWriter {
      */
     protected void writeAttributes(AttributeSet attr) throws IOException {
 
-        Enumeration names = attr.getAttributeNames();
+        Enumeration<?> names = attr.getAttributeNames();
         while (names.hasMoreElements()) {
             Object name = names.nextElement();
             write(" " + name + "=" + attr.getAttribute(name));

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,15 @@ import java.util.List;
  */
 @jdk.Exported
 public interface LinkTree extends InlineTagTree {
+    /**
+     * Returns the reference of a link.
+     * @return the reference
+     */
     ReferenceTree getReference();
+
+    /**
+     * Returns the label, if any, of the link.
+     * @return the label
+     */
     List<? extends DocTree> getLabel();
 }

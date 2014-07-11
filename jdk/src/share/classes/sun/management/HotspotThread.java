@@ -60,7 +60,7 @@ class HotspotThread
         int numThreads = getInternalThreadTimes0(names, times);
         Map<String, Long> result = new HashMap<>(numThreads);
         for (int i = 0; i < numThreads; i++) {
-            result.put(names[i], new Long(times[i]));
+            result.put(names[i], times[i]);
         }
         return result;
     }

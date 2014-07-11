@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.tools.doclets.formats.html;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.javac.jvm.Profile;
@@ -183,7 +182,7 @@ public class ProfileWriterImpl extends HtmlDocletWriter
      */
     public void addPackageDeprecationInfo(Content li, PackageDoc pkg) {
         Tag[] deprs;
-        if (Util.isDeprecated(pkg)) {
+        if (utils.isDeprecated(pkg)) {
             deprs = pkg.tags("deprecated");
             HtmlTree deprDiv = new HtmlTree(HtmlTag.DIV);
             deprDiv.addStyle(HtmlStyle.deprecatedContent);

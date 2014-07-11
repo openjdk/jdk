@@ -24,30 +24,22 @@
  */
 package com.sun.tools.sjavac.server;
 
-import java.io.BufferedReader;
 import java.io.File;
 import java.io.IOException;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
 import java.io.FileNotFoundException;
-import java.net.URI;
-import java.util.HashSet;
-import java.util.Set;
 import java.util.HashMap;
 import java.util.Map;
 
 import java.net.InetAddress;
-import java.net.InetSocketAddress;
 import java.net.ServerSocket;
 import java.net.Socket;
-import java.net.SocketAddress;
 import java.util.ArrayList;
 import java.util.Random;
 
 import com.sun.tools.sjavac.Util;
 import com.sun.tools.sjavac.ProblemException;
 import java.io.*;
-import java.util.*;
 
 /**
  * The JavacServer class contains methods both to setup a server that responds to requests and methods to connect to this server.
@@ -73,8 +65,6 @@ public class JavacServer {
     // Though usually only one javac server is started by a client.
     private static Map<String, PortFile> allPortFiles;
     private static Map<String, Long> maxServerMemory;
-    final static int ERROR_FATAL = -1;
-    final static int ERROR_BUT_TRY_AGAIN = -4712;
     final static String PROTOCOL_COOKIE_VERSION = "----THE-COOKIE-V2----";
     final static String PROTOCOL_CWD = "----THE-CWD----";
     final static String PROTOCOL_ID = "----THE-ID----";
@@ -99,7 +89,7 @@ public class JavacServer {
     /**
      * Acquire the port file. Synchronized since several threads inside an smart javac wrapper client acquires the same port file at the same time.
      */
-    private static synchronized PortFile getPortFile(String filename) throws FileNotFoundException {
+    public static synchronized PortFile getPortFile(String filename) throws FileNotFoundException {
         if (allPortFiles == null) {
             allPortFiles = new HashMap<>();
         }
@@ -179,17 +169,12 @@ public class JavacServer {
             // and stderr are redirected already.
             // The pool size is a limit the number of concurrent compiler threads used.
             // The server might use less than these to avoid memory problems.
-            int poolsize = Util.extractIntOption("poolsize", settings);
-            if (poolsize <= 0) {
-                // If not set, default to the number of cores.
-                poolsize = Runtime.getRuntime().availableProcessors();
-            }
+            int defaultPoolSize = Runtime.getRuntime().availableProcessors();
+            int poolsize = Util.extractIntOption("poolsize", settings, defaultPoolSize);
 
             // How many seconds of inactivity will the server accept before quitting?
-            int keepalive = Util.extractIntOption("keepalive", settings);
-            if (keepalive <= 0) {
-                keepalive = 120;
-            }
+            int keepalive = Util.extractIntOption("keepalive", settings, 120);
+
             // The port file is locked and the server port and cookie is written into it.
             PortFile portFile = getPortFile(portfile);
             JavacServer s;
@@ -220,134 +205,6 @@ public class JavacServer {
     }
 
     /**
-     * Dispatch a compilation request to a javac server.
-     *
-     * @param args are the command line args to javac and is allowed to contain source files, @file and other command line options to javac.
-     *
-     * The generated classes, h files and other artifacts from the javac invocation are stored by the javac server to disk.
-     *
-     * @param sources_to_compile The sources to compile.
-     *
-     * @param visibleSources If visible sources has a non zero size, then visible_sources are the only files in the file system that the javac server can see!
-     * (Sources to compile are always visible.) The visible sources are those supplied by the (filtered) -sourcepath
-     *
-     * @param visibleClasses If visible classes for a specific root/jar has a non zero size, then visible_classes are the only class files that the javac server
-     * can see, in that root/jar. It maps from a classpath root or a jar file to the set of visible classes for that root/jar.
-     *
-     * The server return meta data about the build in the following parameters.
-     * @param package_artifacts, map from package name to set of created artifacts for that package.
-     * @param package_dependencies, map from package name to set of packages that it depends upon.
-     * @param package_pubapis, map from package name to unique string identifying its pub api.
-     */
-    public static int useServer(String settings, String[] args,
-            Set<URI> sourcesToCompile,
-            Set<URI> visibleSources,
-            Map<URI, Set<String>> visibleClasses,
-            Map<String, Set<URI>> packageArtifacts,
-            Map<String, Set<String>> packageDependencies,
-            Map<String, String> packagePubapis,
-            SysInfo sysinfo,
-            PrintStream out,
-            PrintStream err) {
-        try {
-            // The id can perhaps be used in the future by the javac server to reuse the
-            // JavaCompiler instance for several compiles using the same id.
-            String id = Util.extractStringOption("id", settings);
-            String portfile = Util.extractStringOption("portfile", settings);
-            String logfile = Util.extractStringOption("logfile", settings);
-            String stdouterrfile = Util.extractStringOption("stdouterrfile", settings);
-            String background = Util.extractStringOption("background", settings);
-            if (background == null || !background.equals("false")) {
-                background = "true";
-            }
-            // The sjavac option specifies how the server part of sjavac is spawned.
-            // If you have the experimental sjavac in your path, you are done. If not, you have
-            // to point to a com.sun.tools.sjavac.Main that supports --startserver
-            // for example by setting: sjavac=java%20-jar%20...javac.jar%com.sun.tools.sjavac.Main
-            String sjavac = Util.extractStringOption("sjavac", settings);
-            int poolsize = Util.extractIntOption("poolsize", settings);
-            int keepalive = Util.extractIntOption("keepalive", settings);
-
-            if (keepalive <= 0) {
-                // Default keepalive for server is 120 seconds.
-                // I.e. it will accept 120 seconds of inactivity before quitting.
-                keepalive = 120;
-            }
-            if (portfile == null) {
-                err.println("No portfile was specified!");
-                return -1;
-            }
-            if (logfile == null) {
-                logfile = portfile + ".javaclog";
-            }
-            if (stdouterrfile == null) {
-                stdouterrfile = portfile + ".stdouterr";
-            }
-            // Default to sjavac and hope it is in the path.
-            if (sjavac == null) {
-                sjavac = "sjavac";
-            }
-
-            int attempts = 0;
-            int rc = -1;
-            do {
-                PortFile port_file = getPortFile(portfile);
-                synchronized (port_file) {
-                    port_file.lock();
-                    port_file.getValues();
-                    port_file.unlock();
-                }
-                if (!port_file.containsPortInfo()) {
-                    String cmd = fork(sjavac, port_file.getFilename(), logfile, poolsize, keepalive, err, stdouterrfile, background);
-
-                    if (background.equals("true") && !port_file.waitForValidValues()) {
-                        // Ouch the server did not start! Lets print its stdouterrfile and the command used.
-                        printFailedAttempt(cmd, stdouterrfile, err);
-                        // And give up.
-                        return -1;
-                    }
-                }
-                rc = connectAndCompile(port_file, id, args, sourcesToCompile, visibleSources,
-                        packageArtifacts, packageDependencies, packagePubapis, sysinfo,
-                        out, err);
-                // Try again until we manage to connect. Any error after that
-                // will cause the compilation to fail.
-                if (rc == ERROR_BUT_TRY_AGAIN) {
-                    // We could not connect to the server. Try again.
-                    attempts++;
-                    try {
-                        Thread.sleep(WAIT_BETWEEN_CONNECT_ATTEMPTS * 1000);
-                    } catch (InterruptedException e) {
-                    }
-                }
-            } while (rc == ERROR_BUT_TRY_AGAIN && attempts < MAX_NUM_CONNECT_ATTEMPTS);
-            return rc;
-        } catch (Exception e) {
-            e.printStackTrace(err);
-            return -1;
-        }
-    }
-
-    private static void printFailedAttempt(String cmd, String f, PrintStream err) {
-        err.println("---- Failed to start javac server with this command -----");
-        err.println(cmd);
-        try {
-            BufferedReader in = new BufferedReader(new FileReader(f));
-            err.println("---- stdout/stderr output from attempt to start javac server -----");
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    break;
-                }
-                err.println(l);
-            }
-            err.println("------------------------------------------------------------------");
-        } catch (Exception e) {
-            err.println("The stdout/stderr output in file " + f + " does not exist and the server did not start.");
-        }
-    }
-
-    /**
      * Spawn the server instance.
      */
 
@@ -367,15 +224,15 @@ public class JavacServer {
     /**
      * Fork a background process. Returns the command line used that can be printed if something failed.
      */
-    private static String fork(String sjavac, String portfile, String logfile, int poolsize, int keepalive,
-            final PrintStream err, String stdouterrfile, String background)
+    public static String fork(String sjavac, String portfile, String logfile, int poolsize, int keepalive,
+            final PrintStream err, String stdouterrfile, boolean background)
             throws IOException, ProblemException {
         if (stdouterrfile != null && stdouterrfile.trim().equals("")) {
             stdouterrfile = null;
         }
         final String startserver = "--startserver:portfile=" + portfile + ",logfile=" + logfile + ",stdouterrfile=" + stdouterrfile + ",poolsize=" + poolsize + ",keepalive="+ keepalive;
 
-        if (background.equals("true")) {
+        if (background) {
             sjavac += "%20" + startserver;
             sjavac = sjavac.replaceAll("%20", " ");
             sjavac = sjavac.replaceAll("%2C", ",");
@@ -418,243 +275,6 @@ public class JavacServer {
         };
         t.start();
         return "";
-    }
-
-    /**
-     * Expect this key on the next line read from the reader.
-     */
-    private static boolean expect(BufferedReader in, String key) throws IOException {
-        String s = in.readLine();
-        if (s != null && s.equals(key)) {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Make a request to the server only to get the maximum possible heap size to use for compilations.
-     *
-     * @param port_file The port file used to synchronize creation of this server.
-     * @param id The identify of the compilation.
-     * @param out Standard out information.
-     * @param err Standard err information.
-     * @return The maximum heap size in bytes.
-     */
-    public static SysInfo connectGetSysInfo(String serverSettings, PrintStream out, PrintStream err) {
-        SysInfo sysinfo = new SysInfo(-1, -1);
-        String id = Util.extractStringOption("id", serverSettings);
-        String portfile = Util.extractStringOption("portfile", serverSettings);
-        try {
-            PortFile pf = getPortFile(portfile);
-            useServer(serverSettings, new String[0],
-                    new HashSet<URI>(),
-                    new HashSet<URI>(),
-                    new HashMap<URI, Set<String>>(),
-                    new HashMap<String, Set<URI>>(),
-                    new HashMap<String, Set<String>>(),
-                    new HashMap<String, String>(),
-                    sysinfo, out, err);
-        } catch (Exception e) {
-            e.printStackTrace(err);
-        }
-        return sysinfo;
-    }
-
-    /**
-     * Connect and compile using the javac server settings and the args. When using more advanced features, the sources_to_compile and visible_sources are
-     * supplied to the server and meta data is returned in package_artifacts, package_dependencies and package_pubapis.
-     */
-    private static int connectAndCompile(PortFile portFile, String id, String[] args,
-            Set<URI> sourcesToCompile,
-            Set<URI> visibleSources,
-            Map<String, Set<URI>> packageArtifacts,
-            Map<String, Set<String>> packageDependencies,
-            Map<String, String> packagePublicApis,
-            SysInfo sysinfo,
-            PrintStream out,
-            PrintStream err) {
-        int rc = -3;
-        try {
-            int port = portFile.containsPortInfo() ? portFile.getPort() : 0;
-            if (port == 0) {
-                return ERROR_BUT_TRY_AGAIN;
-            }
-            long cookie = portFile.getCookie();
-
-            // Acquire the localhost/127.0.0.1 address.
-            InetAddress addr = InetAddress.getByName(null);
-            SocketAddress sockaddr = new InetSocketAddress(addr, port);
-            Socket sock = new Socket();
-            int timeoutMs = CONNECTION_TIMEOUT * 1000;
-            try {
-                sock.connect(sockaddr, timeoutMs);
-            } catch (java.net.ConnectException e) {
-                err.println("Could not connect to javac server found in portfile: " + portFile.getFilename() + " " + e);
-                return ERROR_BUT_TRY_AGAIN;
-            }
-            if (!sock.isConnected()) {
-                err.println("Could not connect to javac server found in portfile: " + portFile.getFilename());
-                return ERROR_BUT_TRY_AGAIN;
-            }
-            BufferedReader in = new BufferedReader(new InputStreamReader(sock.getInputStream()));
-            PrintWriter sockout = new PrintWriter(sock.getOutputStream());
-
-            sockout.println(PROTOCOL_COOKIE_VERSION);
-            sockout.println("" + cookie);
-            sockout.println(PROTOCOL_CWD);
-            sockout.println(System.getProperty("user.dir"));
-            sockout.println(PROTOCOL_ID);
-            sockout.println(id);
-            sockout.println(PROTOCOL_ARGS);
-            for (String s : args) {
-                StringBuffer buf = new StringBuffer();
-                String[] paths = s.split(File.pathSeparator);
-                int c = 0;
-                for (String path : paths) {
-                    File f = new File(path);
-                    if (f.isFile() || f.isDirectory()) {
-                        buf.append(f.getAbsolutePath());
-                        c++;
-                        if (c < paths.length) {
-                            buf.append(File.pathSeparator);
-                        }
-                    } else {
-                        buf = new StringBuffer(s);
-                        break;
-                    }
-                }
-                sockout.println(buf.toString());
-            }
-            sockout.println(PROTOCOL_SOURCES_TO_COMPILE);
-            for (URI uri : sourcesToCompile) {
-                sockout.println(uri.toString());
-            }
-            sockout.println(PROTOCOL_VISIBLE_SOURCES);
-            for (URI uri : visibleSources) {
-                sockout.println(uri.toString());
-            }
-            sockout.println(PROTOCOL_END);
-            sockout.flush();
-
-            StringBuffer stdout = new StringBuffer();
-            StringBuffer stderr = new StringBuffer();
-
-            if (!expect(in, PROTOCOL_STDOUT)) {
-                return ERROR_FATAL;
-            }
-            // Load stdout
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_STDERR)) {
-                    break;
-                }
-                stdout.append(l);
-                stdout.append('\n');
-            }
-            // Load stderr
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_PACKAGE_ARTIFACTS)) {
-                    break;
-                }
-                stderr.append(l);
-                stderr.append('\n');
-            }
-            // Load the package artifacts
-            Set<URI> lastUriSet = null;
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_PACKAGE_DEPENDENCIES)) {
-                    break;
-                }
-                if (l.length() > 1 && l.charAt(0) == '+') {
-                    String pkg = l.substring(1);
-                    lastUriSet = new HashSet<>();
-                    packageArtifacts.put(pkg, lastUriSet);
-                } else if (l.length() > 1 && lastUriSet != null) {
-                    lastUriSet.add(new URI(l.substring(1)));
-                }
-            }
-            // Load package dependencies
-            Set<String> lastPackageSet = null;
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_PACKAGE_PUBLIC_APIS)) {
-                    break;
-                }
-                if (l.length() > 1 && l.charAt(0) == '+') {
-                    String pkg = l.substring(1);
-                    lastPackageSet = new HashSet<>();
-                    packageDependencies.put(pkg, lastPackageSet);
-                } else if (l.length() > 1 && lastPackageSet != null) {
-                    lastPackageSet.add(l.substring(1));
-                }
-            }
-            // Load package pubapis
-            Map<String, StringBuffer> tmp = new HashMap<>();
-            StringBuffer lastPublicApi = null;
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_SYSINFO)) {
-                    break;
-                }
-                if (l.length() > 1 && l.charAt(0) == '+') {
-                    String pkg = l.substring(1);
-                    lastPublicApi = new StringBuffer();
-                    tmp.put(pkg, lastPublicApi);
-                } else if (l.length() > 1 && lastPublicApi != null) {
-                    lastPublicApi.append(l.substring(1));
-                    lastPublicApi.append("\n");
-                }
-            }
-            for (String p : tmp.keySet()) {
-                assert (packagePublicApis.get(p) == null);
-                String api = tmp.get(p).toString();
-                packagePublicApis.put(p, api);
-            }
-            // Now reading the max memory possible.
-            for (;;) {
-                String l = in.readLine();
-                if (l == null) {
-                    return ERROR_FATAL;
-                }
-                if (l.equals(PROTOCOL_RETURN_CODE)) {
-                    break;
-                }
-                if (l.startsWith("num_cores=") && sysinfo != null) {
-                    sysinfo.numCores = Integer.parseInt(l.substring(10));
-                }
-                if (l.startsWith("max_memory=") && sysinfo != null) {
-                    sysinfo.maxMemory = Long.parseLong(l.substring(11));
-                }
-            }
-            String l = in.readLine();
-            if (l == null) {
-                err.println("No return value from the server!");
-                return ERROR_FATAL;
-            }
-            rc = Integer.parseInt(l);
-            out.print(stdout);
-            err.print(stderr);
-        } catch (Exception e) {
-            e.printStackTrace(err);
-        }
-        return rc;
     }
 
     /**

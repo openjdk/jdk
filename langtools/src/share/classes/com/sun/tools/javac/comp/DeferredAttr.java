@@ -376,9 +376,8 @@ public class DeferredAttr extends JCTree.Visitor {
                              ResultInfo resultInfo,
                              Annotate.PositionCreator creator) {
         final JCTree newTree = new TreeCopier<>(make).copy(tree);
-        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared()));
+        Env<AttrContext> speculativeEnv = env.dup(newTree, env.info.dup(env.info.scope.dupUnshared(env.info.scope.owner)));
         speculativeEnv.info.isSpeculative = true;
-        speculativeEnv.info.scope.owner = env.info.scope.owner;
         Log.DeferredDiagnosticHandler deferredDiagnosticHandler =
                 new Log.DeferredDiagnosticHandler(log, new Filter<JCDiagnostic>() {
             public boolean accepts(final JCDiagnostic d) {
@@ -517,13 +516,11 @@ public class DeferredAttr extends JCTree.Visitor {
                     }
                 }
                 if (!progress) {
-                    DeferredAttrContext dac = this;
-                    while (dac != emptyDeferredAttrContext) {
-                        if (dac.mode == AttrMode.SPECULATIVE) {
-                            //unsticking does not take place during overload
-                            break;
+                    if (insideOverloadPhase()) {
+                        for (DeferredAttrNode deferredNode: deferredAttrNodes) {
+                            deferredNode.dt.tree.type = Type.noType;
                         }
-                        dac = dac.parent;
+                        return;
                     }
                     //remove all variables that have already been instantiated
                     //from the list of stuck variables
@@ -538,6 +535,17 @@ public class DeferredAttr extends JCTree.Visitor {
                     }
                 }
             }
+        }
+
+        private boolean insideOverloadPhase() {
+            DeferredAttrContext dac = this;
+            if (dac == emptyDeferredAttrContext) {
+                return false;
+            }
+            if (dac.mode == AttrMode.SPECULATIVE) {
+                return true;
+            }
+            return dac.parent.insideOverloadPhase();
         }
     }
 
@@ -599,6 +607,8 @@ public class DeferredAttr extends JCTree.Visitor {
                             return false;
                         }
                     } else {
+                        Assert.check(!deferredAttrContext.insideOverloadPhase(),
+                                "attribution shouldn't be happening here");
                         ResultInfo instResultInfo =
                                 resultInfo.dup(deferredAttrContext.inferenceContext.asInstType(resultInfo.pt));
                         dt.check(instResultInfo, dummyStuckPolicy, basicCompleter);
@@ -953,7 +963,7 @@ public class DeferredAttr extends JCTree.Visitor {
 
         LambdaReturnScanner() {
             super(EnumSet.of(BLOCK, CASE, CATCH, DOLOOP, FOREACHLOOP,
-                    FORLOOP, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
+                    FORLOOP, IF, RETURN, SYNCHRONIZED, SWITCH, TRY, WHILELOOP));
         }
     }
 
