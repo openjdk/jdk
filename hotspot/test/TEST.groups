@@ -271,6 +271,7 @@ needs_cmsgc = \
   gc/arguments/TestCMSHeapSizeFlags.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/class_unloading/TestCMSClassUnloadingDisabledHWM.java \
   gc/concurrentMarkSweep/ \
   gc/startup_warnings/TestCMS.java \
   gc/startup_warnings/TestCMSIncrementalMode.java \
