@@ -544,9 +544,9 @@ public final class LWCToolkit extends LWToolkit {
             return super.getImage(filename);
         }
 
-        String fileneame2x = getScaledImageName(filename);
-        return (imageExists(fileneame2x))
-                ? getImageWithResolutionVariant(filename, fileneame2x)
+        String filename2x = getScaledImageName(filename);
+        return (imageExists(filename2x))
+                ? getImageWithResolutionVariant(filename, filename2x)
                 : super.getImage(filename);
     }
 
@@ -908,6 +908,9 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     private static boolean isValidPath(String path) {
-        return !path.isEmpty() && !path.endsWith("/") && !path.endsWith(".");
+        return path != null &&
+                !path.isEmpty() &&
+                !path.endsWith("/") &&
+                !path.endsWith(".");
     }
 }
