@@ -23,6 +23,7 @@
 
 /**
  * @test
+ * @run main/othervm LdapTimeoutTest
  * @bug 7094377 8000487 6176036 7056489
  * @summary Timeout tests for ldap
  */
@@ -147,7 +148,7 @@ public class LdapTimeoutTest {
     void deadServerNoTimeout(Hashtable env) {
         InitialContext ctx = null;
         ScheduledFuture killer = killSwitch(30_000);
-        long start = System.nanoTime();
+        long start = System.currentTimeMillis();
         try {
             ctx = new InitialDirContext(env);
             SearchControls scl = new SearchControls();
@@ -157,13 +158,11 @@ public class LdapTimeoutTest {
             // shouldn't reach here
             fail();
         } catch (NamingException e) {
-            long end = System.nanoTime();
-            long elapsed = NANOSECONDS.toMillis(end - start);
+            long elapsed = System.currentTimeMillis() - start;
             if (elapsed < Connection.DEFAULT_READ_TIMEOUT_MILLIS) {
-                System.err.printf(
-                        "fail: timeout should be at least %s ms, actual time is %s ms",
-                        Connection.DEFAULT_READ_TIMEOUT_MILLIS,
-                        elapsed);
+                System.err.printf("fail: timeout should be at least %s ms, " +
+                                "actual time is %s ms%n",
+                        Connection.DEFAULT_READ_TIMEOUT_MILLIS, elapsed);
                 e.printStackTrace();
                 fail();
             } else {
