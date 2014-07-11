@@ -931,7 +931,10 @@ void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
 
 void HeapRegionRemSet::remove_strong_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
-  _code_roots.remove(nm);
+  assert_locked_or_safepoint(CodeCache_lock);
+
+  _code_roots.remove_lock_free(nm);
+
   // Check that there were no duplicates
   guarantee(!_code_roots.contains(nm), "duplicate entry found");
 }

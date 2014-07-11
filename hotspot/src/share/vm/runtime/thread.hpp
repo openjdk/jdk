@@ -452,7 +452,7 @@ class Thread: public ThreadShadow {
 private:
   bool claim_oops_do_par_case(int collection_parity);
 public:
-  // Requires that "collection_parity" is that of the current strong roots
+  // Requires that "collection_parity" is that of the current roots
   // iteration.  If "is_par" is false, sets the parity of "this" to
   // "collection_parity", and returns "true".  If "is_par" is true,
   // uses an atomic instruction to set the current threads parity to
@@ -1761,34 +1761,6 @@ inline CompilerThread* JavaThread::as_CompilerThread() {
   return (CompilerThread*)this;
 }
 
-inline bool JavaThread::stack_guard_zone_unused() {
-  return _stack_guard_state == stack_guard_unused;
-}
-
-inline bool JavaThread::stack_yellow_zone_disabled() {
-  return _stack_guard_state == stack_guard_yellow_disabled;
-}
-
-inline bool JavaThread::stack_yellow_zone_enabled() {
-#ifdef ASSERT
-  if (os::uses_stack_guard_pages()) {
-    assert(_stack_guard_state != stack_guard_unused, "guard pages must be in use");
-  }
-#endif
-    return _stack_guard_state == stack_guard_enabled;
-}
-
-inline size_t JavaThread::stack_available(address cur_sp) {
-  // This code assumes java stacks grow down
-  address low_addr; // Limit on the address for deepest stack depth
-  if (_stack_guard_state == stack_guard_unused) {
-    low_addr =  stack_base() - stack_size();
-  } else {
-    low_addr = stack_yellow_zone_base();
-  }
-  return cur_sp > low_addr ? cur_sp - low_addr : 0;
-}
-
 // A thread used for Compilation.
 class CompilerThread : public JavaThread {
   friend class VMStructs;
@@ -1862,7 +1834,6 @@ public:
 inline CompilerThread* CompilerThread::current() {
   return JavaThread::current()->as_CompilerThread();
 }
-
 
 // The active thread queue. It also keeps track of the current used
 // thread priorities.
