@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -149,7 +149,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least the number
      *      of components in this ColorSpace.
      * @return a float array of length 3.
@@ -201,7 +201,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * convert from CS_CIEXYZ to the output color space.
      * See {@link #toCIEXYZ(float[]) toCIEXYZ} and
      * {@link #fromCIEXYZ(float[]) fromCIEXYZ} for further information.
-     * <p>
+     *
      * @param rgbvalue a float array with length of at least 3.
      * @return a float array with length equal to the number of
      *       components in this ColorSpace.
@@ -336,7 +336,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * will result in a measured device XYZ value of D65.  This will not
      * be the same as the media white point tag XYZ value in the ICC
      * profile for an sRGB device.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least the number
      *        of components in this ColorSpace.
      * @return a float array of length 3.
@@ -480,7 +480,7 @@ public class ICC_ColorSpace extends ColorSpace {
      * will result in a measured device XYZ value of D65.  This will not
      * be the same as the media white point tag XYZ value in the ICC
      * profile for an sRGB device.
-     * <p>
+     *
      * @param colorvalue a float array with length of at least 3.
      * @return a float array with length equal to the number of
      *         components in this ColorSpace.

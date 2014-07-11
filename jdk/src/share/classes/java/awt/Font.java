@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -542,7 +542,6 @@ public class Font implements java.io.Serializable
      * compatible alternative, then the font system will map the Font
      * instance to "Dialog", such that for example, the family as reported
      * by {@link #getFamily() getFamily} will be "Dialog".
-     * <p>
      *
      * @param name the font name.  This can be a font face name or a font
      * family name, and may represent either a logical font or a physical

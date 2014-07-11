@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@ import javax.print.attribute.PrintJobAttribute;
  * for example, a JobHoldUntil value with today's date and 9:00pm local time
  * might be converted to the standard IPP keyword "night". The category name
  * returned by <CODE>getName()</CODE> gives the IPP attribute name.
- * <P>
  *
  * @author  Alan Kaminsky
  */

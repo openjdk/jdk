@@ -381,7 +381,6 @@ import java.io.Serializable;
  * <LI>
  * A line feed (LF) character standing by itself means
  * "go to column 1 of the next line."
- * <LI>
  * </UL>
  * <P>
  * The client must itself perform all plain text print data formatting not
@@ -436,7 +435,6 @@ import java.io.Serializable;
  * Java Print Service instance supports without having
  * to load the representation classes, which may be problematic for
  * limited-resource clients.
- * <P>
  *
  * @author  Alan Kaminsky
  */
@@ -536,7 +534,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * The charset for text types is a commonly useful example.
      * This convenience method will return the value of the specified
      * parameter if one was specified in the mime type for this flavor.
-     * <p>
+     *
      * @param paramName the name of the paramater. This name is internally
      * converted to the canonical lower case format before performing
      * the match.
@@ -638,7 +636,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * Class DocFlavor.BYTE_ARRAY provides predefined static constant
      * DocFlavor objects for example doc flavors using a byte array
      * (<CODE>byte[]</CODE>) as the print data representation class.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
@@ -836,7 +833,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * DocFlavor objects for example doc flavors using a byte stream ({@link
      * java.io.InputStream java.io.InputStream}) as the print
      * data representation class.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
@@ -1038,8 +1034,7 @@ public class DocFlavor implements Serializable, Cloneable {
      * objects.
      * For example doc flavors using a Uniform Resource Locator ({@link
      * java.net.URL java.net.URL}) as the print data
-     * representation  class.
-     * <P>
+     * representation class.
      *
      * @author  Alan Kaminsky
      */
@@ -1229,7 +1224,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * DocFlavor objects for example doc flavors using a character array
      * (<CODE>char[]</CODE>) as the print data representation class. As such,
      * the character set is Unicode.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
@@ -1279,7 +1273,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * objects for example doc flavors using a string ({@link java.lang.String
      * java.lang.String}) as the print data representation class.
      * As such, the character set is Unicode.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
@@ -1327,7 +1320,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * objects for example doc flavors using a character stream ({@link
      * java.io.Reader java.io.Reader}) as the print data
      * representation class. As such, the character set is Unicode.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
@@ -1376,7 +1368,6 @@ public class DocFlavor implements Serializable, Cloneable {
      * Class DocFlavor.SERVICE_FORMATTED provides predefined static constant
      * DocFlavor objects for example doc flavors for service formatted print
      * data.
-     * <P>
      *
      * @author  Alan Kaminsky
      */
