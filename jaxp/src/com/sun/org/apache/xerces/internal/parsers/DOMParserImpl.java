@@ -79,7 +79,6 @@ import org.xml.sax.SAXException;
  * @author Pavani Mukthipudi, Sun Microsystems Inc.
  * @author Elena Litani, IBM
  * @author Rahul Srivastava, Sun Microsystems Inc.
- * @version $Id: DOMParserImpl.java,v 1.8 2010-11-01 04:40:09 joehw Exp $
  */
 
 

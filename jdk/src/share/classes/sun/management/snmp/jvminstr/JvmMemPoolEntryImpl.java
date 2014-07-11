@@ -191,7 +191,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolMaxSize() throws SnmpStatusException {
         final long val = getMemoryUsage().getMax();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -200,7 +200,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolUsed() throws SnmpStatusException {
         final long val = getMemoryUsage().getUsed();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -209,7 +209,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolInitSize() throws SnmpStatusException {
         final long val = getMemoryUsage().getInit();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -218,7 +218,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolCommitted() throws SnmpStatusException {
         final long val = getMemoryUsage().getCommitted();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -227,7 +227,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolPeakMaxSize() throws SnmpStatusException {
         final long val = getPeakMemoryUsage().getMax();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -236,7 +236,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolPeakUsed() throws SnmpStatusException {
         final long val = getPeakMemoryUsage().getUsed();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -245,7 +245,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolPeakCommitted() throws SnmpStatusException {
         final long val = getPeakMemoryUsage().getCommitted();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -254,7 +254,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolCollectMaxSize() throws SnmpStatusException {
         final long val = getCollectMemoryUsage().getMax();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -263,7 +263,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolCollectUsed() throws SnmpStatusException {
         final long val = getCollectMemoryUsage().getUsed();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -272,7 +272,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public Long getJvmMemPoolCollectCommitted() throws SnmpStatusException {
         final long val = getCollectMemoryUsage().getCommitted();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -283,7 +283,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
         if (!pool.isUsageThresholdSupported())
             return JvmMemoryImpl.Long0;
         final long val = pool.getUsageThreshold();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -334,7 +334,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
         if (!pool.isUsageThresholdSupported())
             return JvmMemoryImpl.Long0;
         final long val = pool.getUsageThresholdCount();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -345,7 +345,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
         if (!pool.isCollectionUsageThresholdSupported())
             return JvmMemoryImpl.Long0;
         final long val = pool.getCollectionUsageThreshold();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -399,7 +399,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
         if (!pool.isCollectionUsageThresholdSupported())
             return JvmMemoryImpl.Long0;
         final long val = pool.getCollectionUsageThresholdCount();
-        if (val > -1) return  new Long(val);
+        if (val > -1) return  val;
         else return JvmMemoryImpl.Long0;
     }
 
@@ -450,7 +450,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      */
     public synchronized Long getJvmMemPoolPeakReset()
         throws SnmpStatusException {
-        return new Long(jvmMemPoolPeakReset);
+        return jvmMemPoolPeakReset;
     }
 
     /**

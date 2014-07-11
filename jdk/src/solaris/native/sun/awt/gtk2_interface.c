@@ -783,6 +783,8 @@ gboolean gtk2_load(JNIEnv *env)
         fp_gtk_widget_show = dl_symbol("gtk_widget_show");
         fp_gtk_main = dl_symbol("gtk_main");
 
+        fp_g_path_get_dirname = dl_symbol("g_path_get_dirname");
+
         /**
          * GLib thread system
          */

@@ -37,6 +37,8 @@ import java.util.Properties;
  * <p>Templates must be threadsafe for a given instance
  * over multiple threads running concurrently, and may
  * be used multiple times in a given session.</p>
+ *
+ * @since 1.4
  */
 public interface Templates {
 

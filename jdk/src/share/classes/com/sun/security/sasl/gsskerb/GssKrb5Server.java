@@ -221,7 +221,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
                     "KRB5SRV06:Supported protections: {0}; recv max buf size: {1}",
-                    new Object[]{new Byte(allQop),
+                    new Object[]{allQop,
                                  new Integer(recvMaxBufSize)});
             }
 
@@ -288,7 +288,7 @@ final class GssKrb5Server extends GssKrb5Base implements SaslServer {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
             "KRB5SRV10:Selected protection: {0}; privacy: {1}; integrity: {2}",
-                    new Object[]{new Byte(selectedQop),
+                    new Object[]{selectedQop,
                                  Boolean.valueOf(privacy),
                                  Boolean.valueOf(integrity)});
                 logger.log(Level.FINE,

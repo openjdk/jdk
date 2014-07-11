@@ -40,7 +40,6 @@ import java.util.ServiceLoader;
  * Implementation of {@link SchemaFactory#newInstance(String)}.
  *
  * @author <a href="Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
- * @version $Revision: 1.8 $, $Date: 2010-11-01 04:36:13 $
  * @since 1.5
  */
 class SchemaFactoryFinder  {

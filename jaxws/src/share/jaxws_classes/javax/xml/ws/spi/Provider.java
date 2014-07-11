@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,7 @@ import java.net.URL;
 import java.util.List;
 import java.util.Iterator;
 import java.util.Map;
-import java.lang.reflect.Method;
+import java.util.ServiceLoader;
 import javax.xml.namespace.QName;
 import javax.xml.ws.*;
 import javax.xml.ws.wsaddressing.W3CEndpointReference;
@@ -50,8 +50,7 @@ public abstract class Provider {
      * name of a <code>Provider</code> implementation
      * class.
      */
-    static public final String JAXWSPROVIDER_PROPERTY
-            = "javax.xml.ws.spi.Provider";
+    static public final String JAXWSPROVIDER_PROPERTY = "javax.xml.ws.spi.Provider";
 
     /**
      * A constant representing the name of the default
@@ -60,29 +59,6 @@ public abstract class Provider {
     // Using two strings so that package renaming doesn't change it
     static final String DEFAULT_JAXWSPROVIDER
             = "com.sun"+".xml.internal.ws.spi.ProviderImpl";
-
-    /**
-     * Take advantage of Java SE 6's java.util.ServiceLoader API.
-     * Using reflection so that there is no compile-time dependency on SE 6.
-     */
-    static private final Method loadMethod;
-    static private final Method iteratorMethod;
-    static {
-        Method tLoadMethod = null;
-        Method tIteratorMethod = null;
-        try {
-            Class<?> clazz = Class.forName("java.util.ServiceLoader");
-            tLoadMethod = clazz.getMethod("load", Class.class);
-            tIteratorMethod = clazz.getMethod("iterator");
-        } catch(ClassNotFoundException ce) {
-            // Running on Java SE 5
-        } catch(NoSuchMethodException ne) {
-            // Shouldn't happen
-        }
-        loadMethod = tLoadMethod;
-        iteratorMethod = tIteratorMethod;
-    }
-
 
     /**
      * Creates a new instance of Provider
@@ -146,25 +122,16 @@ public abstract class Provider {
         }
     }
 
-
     private static Provider getProviderUsingServiceLoader() {
-        if (loadMethod != null) {
-            Object loader;
-            try {
-                loader = loadMethod.invoke(null, Provider.class);
-            } catch (Exception e) {
-                throw new WebServiceException("Cannot invoke java.util.ServiceLoader#load()", e);
-            }
-
-            Iterator<Provider> it;
-            try {
-                it = (Iterator<Provider>)iteratorMethod.invoke(loader);
-            } catch(Exception e) {
-                throw new WebServiceException("Cannot invoke java.util.ServiceLoader#iterator()", e);
-            }
-            return it.hasNext() ? it.next() : null;
+        ServiceLoader<Provider> sl;
+        Iterator<Provider> it;
+        try {
+            sl = ServiceLoader.load(Provider.class);
+            it = (Iterator<Provider>)sl.iterator();
+        } catch (Exception e) {
+            throw new WebServiceException("Cannot invoke java.util.ServiceLoader#iterator()", e);
         }
-        return null;
+        return ((it != null) && it.hasNext()) ? it.next() : null;
     }
 
     /**

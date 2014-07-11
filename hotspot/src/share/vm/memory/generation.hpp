@@ -131,8 +131,6 @@ class Generation: public CHeapObj<mtGC> {
  public:
   // The set of possible generation kinds.
   enum Name {
-    ASParNew,
-    ASConcurrentMarkSweep,
     DefNew,
     ParNew,
     MarkSweepCompact,

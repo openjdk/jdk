@@ -354,6 +354,7 @@ public class Infer {
             Type to, Attr.ResultInfo resultInfo,
             InferenceContext inferenceContext) {
         inferenceContext.solve(List.of(from.qtype), new Warner());
+        inferenceContext.notifyChange();
         Type capturedType = resultInfo.checkContext.inferenceContext()
                 .cachedCapture(tree, from.inst, false);
         if (types.isConvertible(capturedType,
@@ -450,7 +451,7 @@ public class Infer {
         class ImplicitArgType extends DeferredAttr.DeferredTypeMap {
 
             public ImplicitArgType(Symbol msym, Resolve.MethodResolutionPhase phase) {
-                rs.deferredAttr.super(AttrMode.SPECULATIVE, msym, phase);
+                (rs.deferredAttr).super(AttrMode.SPECULATIVE, msym, phase);
             }
 
             public Type apply(Type t) {
@@ -518,6 +519,8 @@ public class Infer {
                 //or if it's not a subtype of the original target, issue an error
                 checkContext.report(pos, diags.fragment("no.suitable.functional.intf.inst", funcInterface));
             }
+            //propagate constraints as per JLS 18.2.1
+            checkContext.compatible(owntype, funcInterface, types.noWarnings);
             return owntype;
         }
     }

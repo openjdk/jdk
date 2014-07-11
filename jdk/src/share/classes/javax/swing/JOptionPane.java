@@ -310,6 +310,7 @@ import sun.awt.AWTAccessor;
  *
  * @author James Gosling
  * @author Scott Violet
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JOptionPane extends JComponent implements Accessible

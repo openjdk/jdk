@@ -180,7 +180,7 @@ InterpreterOopMap::~InterpreterOopMap() {
   }
 }
 
-bool InterpreterOopMap::is_empty() {
+bool InterpreterOopMap::is_empty() const {
   bool result = _method == NULL;
   assert(_method != NULL || (_bci == 0 &&
     (_mask_size == 0 || _mask_size == USHRT_MAX) &&
@@ -196,7 +196,7 @@ void InterpreterOopMap::initialize() {
   for (int i = 0; i < N; i++) _bit_mask[i] = 0;
 }
 
-void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) {
+void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) const {
   int n = number_of_entries();
   int word_index = 0;
   uintptr_t value = 0;
@@ -238,7 +238,7 @@ void InterpreterOopMap::iterate_all(OffsetClosure* oop_closure, OffsetClosure* v
 #endif
 
 
-void InterpreterOopMap::print() {
+void InterpreterOopMap::print() const {
   int n = number_of_entries();
   tty->print("oop map for ");
   method()->print_value();
@@ -469,7 +469,7 @@ void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   }
 }
 
-inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) {
+inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) const {
   // We use method->code_size() rather than method->identity_hash() below since
   // the mark may not be present if a pointer to the method is already reversed.
   return   ((unsigned int) bci)
@@ -522,7 +522,7 @@ void OopMapCache::flush_obsolete_entries() {
 
 void OopMapCache::lookup(methodHandle method,
                          int bci,
-                         InterpreterOopMap* entry_for) {
+                         InterpreterOopMap* entry_for) const {
   MutexLocker x(&_mut);
 
   OopMapCacheEntry* entry = NULL;

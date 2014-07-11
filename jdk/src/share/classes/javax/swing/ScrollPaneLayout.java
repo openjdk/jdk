@@ -56,6 +56,7 @@ import java.io.Serializable;
  * @see JViewport
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class ScrollPaneLayout

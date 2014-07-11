@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,8 @@ import com.sun.tools.doclets.internal.toolkit.*;
  */
 public class PackageListWriter extends PrintWriter {
 
-    private Configuration configuration;
+    private final Configuration configuration;
+    private final Utils utils;
 
     /**
      * Constructor.
@@ -54,6 +55,7 @@ public class PackageListWriter extends PrintWriter {
     public PackageListWriter(Configuration configuration) throws IOException {
         super(DocFile.createFileForOutput(configuration, DocPaths.PACKAGE_LIST).openWriter());
         this.configuration = configuration;
+        this.utils = configuration.utils;
     }
 
     /**
@@ -80,7 +82,7 @@ public class PackageListWriter extends PrintWriter {
         for (PackageDoc pkg : configuration.packages) {
             // if the -nodeprecated option is set and the package is marked as
             // deprecated, do not include it in the packages list.
-            if (!(configuration.nodeprecated && Util.isDeprecated(pkg)))
+            if (!(configuration.nodeprecated && utils.isDeprecated(pkg)))
                 names.add(pkg.name());
         }
         Collections.sort(names);

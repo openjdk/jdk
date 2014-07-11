@@ -250,8 +250,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:"
                 + "</span></dt>\n"
-                + "<dd><code><code>"
-                + "IOException</code></code></dd>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"
@@ -358,8 +356,6 @@ public class TestHtmlDefinitionListTag extends JavadocTester {
                 + "<dl>\n"
                 + "<dt><span class=\"throwsLabel\">Throws:"
                 + "</span></dt>\n"
-                + "<dd><code><code>"
-                + "IOException</code></code></dd>\n"
                 + "<dd><code>java.io.IOException</code></dd>\n"
                 + "</dl>",
                 "<span class=\"deprecatedLabel\">Deprecated.</span>"

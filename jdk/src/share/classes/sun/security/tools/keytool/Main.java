@@ -1540,7 +1540,7 @@ public final class Main {
         boolean useDefaultPBEAlgorithm = true;
         SecretKey secKey = null;
 
-        if (keyAlgName.toUpperCase().startsWith("PBE")) {
+        if (keyAlgName.toUpperCase(Locale.ENGLISH).startsWith("PBE")) {
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBE");
 
             // User is prompted for PBE credential
@@ -1675,7 +1675,7 @@ public final class Main {
             Object[] source = {new Integer(keysize),
                                 privKey.getAlgorithm(),
                                 chain[0].getSigAlgName(),
-                                new Long(validity),
+                                validity,
                                 x500Name};
             System.err.println(form.format(source));
         }

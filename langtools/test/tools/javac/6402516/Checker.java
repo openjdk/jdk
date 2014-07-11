@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,6 +67,7 @@ abstract class Checker {
         for (CompilationUnitTree unit: units) {
             TreePath p = new TreePath(unit);
             s.scan(p, getTrees());
+            additionalChecks(getTrees(), unit);
         }
         task = null;
 
@@ -109,6 +110,9 @@ abstract class Checker {
     // override if using default check(Scope,String)
     boolean checkLocal(Scope s, String ref) {
         throw new IllegalStateException();
+    }
+
+    void additionalChecks(Trees trees, CompilationUnitTree topLevel) throws IOException {
     }
 
     void error(Scope s, String ref, String msg) {

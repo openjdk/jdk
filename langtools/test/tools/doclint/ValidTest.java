@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8004832
+ * @bug 8004832 8048806
  * @summary Add new doclint package
  * @build DocLintTester
  * @run main DocLintTester ValidTest.java
@@ -34,6 +34,38 @@ class ValidTest {
      * &lt; &gt; &amp; &#40;
      */
     void entities() { }
+
+    /**
+     * <abbr>abbreviation<abbr>
+     * <acronym>ABC</acronym>
+     * <cite>citation</cite>
+     * <code>code</code>
+     * <dfn>defining instance</dfn>
+     * <em>emphasis</em>
+     * <kbd>keyboard<kbd>
+     * <samp>sample</samp>
+     * <var>variable</var>
+     * <strong>strong</strong>
+     */
+    void phraseElements() { }
+
+    /**
+     * <address>1 Main St., USA</address>
+     */
+    void address() { }
+
+    /**
+     * <del>deleted</del>
+     * <ins>inserted</del>
+     */
+    void docChanges() {}
+
+    /**
+     * <blockquote>
+     * A fine thing.
+     * </blockquote>
+     * <q>A fine thing.</q>
+     */
 
     /**
      * <h1> ... </h1>

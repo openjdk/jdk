@@ -104,6 +104,7 @@ import sun.swing.SwingUtilities2;
  *
  * @author David Kloba
  * @author Rich Schiavi
+ * @since 1.2
  * @beaninfo
  *      attribute: isContainer true
  *      attribute: containerDelegate getContentPane

@@ -37,7 +37,6 @@ import org.w3c.dom.DOMException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  * @author Ralf Pfeiffer, IBM
- * @version $Id: AttrNSImpl.java,v 1.7 2010-11-01 04:39:37 joehw Exp $
  */
 public class AttrNSImpl
     extends AttrImpl {

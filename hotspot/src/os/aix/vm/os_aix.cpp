@@ -42,6 +42,7 @@
 #include "memory/filemap.hpp"
 #include "mutex_aix.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "os_aix.inline.hpp"
 #include "os_share_aix.hpp"
 #include "porting_aix.hpp"
 #include "prims/jniFastGetField.hpp"
@@ -2807,11 +2808,9 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
-void os::yield() {
+void os::naked_yield() {
   sched_yield();
 }
-
-os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
@@ -3069,7 +3068,7 @@ static bool do_suspend(OSThread* osthread) {
 
   for (int n = 0; !osthread->sr.is_suspended(); n++) {
     for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::yield();
+      os::naked_yield();
     }
 
     // timeout, try to cancel the request
@@ -3103,7 +3102,7 @@ static void do_resume(OSThread* osthread) {
     if (sr_notify(osthread) == 0) {
       for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
         for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::yield();
+          os::naked_yield();
         }
       }
     } else {

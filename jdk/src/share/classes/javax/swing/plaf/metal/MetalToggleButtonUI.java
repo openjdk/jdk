@@ -60,8 +60,19 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
 
     private static final Object METAL_TOGGLE_BUTTON_UI_KEY = new Object();
 
+    /**
+     * The color of a focused toggle button.
+     */
     protected Color focusColor;
+
+    /**
+     * The color of a selected button.
+     */
     protected Color selectColor;
+
+    /**
+     * The color of a disabled text.
+     */
     protected Color disabledTextColor;
 
     private boolean defaults_initialized = false;
@@ -69,6 +80,13 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
     // ********************************
     //        Create PLAF
     // ********************************
+
+    /**
+     * Constructs the {@code MetalToogleButtonUI}.
+     *
+     * @param b a component
+     * @return the {@code MetalToogleButtonUI}.
+     */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();
         MetalToggleButtonUI metalToggleButtonUI =
@@ -101,14 +119,29 @@ public class MetalToggleButtonUI extends BasicToggleButtonUI {
     // ********************************
     //         Default Accessors
     // ********************************
+    /**
+     * Returns the color of a selected button.
+     *
+     * @return the color of a selected button
+     */
     protected Color getSelectColor() {
         return selectColor;
     }
 
+    /**
+     * Returns the color of a disabled text.
+     *
+     * @return the color of a disabled text
+     */
     protected Color getDisabledTextColor() {
         return disabledTextColor;
     }
 
+    /**
+     * Returns the color of a focused toggle button.
+     *
+     * @return the color of a focused toggle button
+     */
     protected Color getFocusColor() {
         return focusColor;
     }

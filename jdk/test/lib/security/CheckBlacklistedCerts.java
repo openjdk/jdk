@@ -62,9 +62,9 @@ public class CheckBlacklistedCerts {
         // a -testonly JPRT job.
         File[] blacklists = {
             new File(System.getProperty("test.src"),
-                "../../../src/share/lib/security/blacklisted.certs.pem"),
+                "../../../make/data/blacklistedcertsconverter/blacklisted.certs.pem"),
             new File(System.getProperty("test.src"),
-                "../../../src/closed/share/lib/security/blacklisted.certs.pem")
+                "../../../make/closed/data/blacklistedcertsconverter/blacklisted.certs.pem")
         };
 
         // Is this an OPENJDK build?

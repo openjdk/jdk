@@ -120,7 +120,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   WorkerDataArray<int>    _last_update_rs_processed_buffers;
   WorkerDataArray<double> _last_scan_rs_times_ms;
   WorkerDataArray<double> _last_strong_code_root_scan_times_ms;
-  WorkerDataArray<double> _last_strong_code_root_mark_times_ms;
   WorkerDataArray<double> _last_obj_copy_times_ms;
   WorkerDataArray<double> _last_termination_times_ms;
   WorkerDataArray<size_t> _last_termination_attempts;
@@ -197,10 +196,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_strong_code_root_scan_time(uint worker_i, double ms) {
     _last_strong_code_root_scan_times_ms.set(worker_i, ms);
-  }
-
-  void record_strong_code_root_mark_time(uint worker_i, double ms) {
-    _last_strong_code_root_mark_times_ms.set(worker_i, ms);
   }
 
   void record_obj_copy_time(uint worker_i, double ms) {
@@ -367,10 +362,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double average_last_strong_code_root_scan_time(){
     return _last_strong_code_root_scan_times_ms.average();
-  }
-
-  double average_last_strong_code_root_mark_time(){
-    return _last_strong_code_root_mark_times_ms.average();
   }
 
   double average_last_obj_copy_time() {

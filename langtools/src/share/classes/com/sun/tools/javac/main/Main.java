@@ -295,11 +295,7 @@ public class Main {
         Target target = (targetString != null)
             ? Target.lookup(targetString)
             : Target.DEFAULT;
-        // We don't check source/target consistency for CLDC, as J2ME
-        // profiles are not aligned with J2SE targets; moreover, a
-        // single CLDC target may have many profiles.  In addition,
-        // this is needed for the continued functioning of the JSR14
-        // prototype.
+
         if (Character.isDigit(target.name.charAt(0))) {
             if (target.compareTo(source.requiredTarget()) < 0) {
                 if (targetString != null) {
@@ -315,11 +311,6 @@ public class Main {
                     return null;
                 } else {
                     target = source.requiredTarget();
-                    options.put("-target", target.name);
-                }
-            } else {
-                if (targetString == null && !source.allowGenerics()) {
-                    target = Target.JDK1_4;
                     options.put("-target", target.name);
                 }
             }

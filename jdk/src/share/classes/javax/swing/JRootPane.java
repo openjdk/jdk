@@ -197,6 +197,7 @@ import sun.security.action.GetBooleanAction;
  * Mixing Heavy and Light Components</a>
  *
  * @author David Kloba
+ * @since 1.2
  */
 /// PENDING(klobad) Who should be opaque in this component?
 @SuppressWarnings("serial")

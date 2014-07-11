@@ -42,7 +42,6 @@ import javax.xml.datatype.DatatypeConstants;
  *
  * @author <a href="mailto:Vikram.Aroskar@Sun.COM">Vikram Aroskar</a>
  * @author <a href="mailto:Huizhe.wang@oracle.com">Joe Wang</a>
- * @version $Revision: 1.1 $, $Date: 2010/05/19 05:02:55 $
 
  * @see XMLGregorianCalendar#add(Duration)
  */

@@ -26,21 +26,6 @@
 #include "gc_implementation/parallelScavenge/psVirtualspace.hpp"
 #include "runtime/os.hpp"
 #include "runtime/virtualspace.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 

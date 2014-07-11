@@ -96,13 +96,13 @@ class RTFGenerator extends Object
     static {
         MagicToken = new Object();
 
-        Dictionary textKeywordDictionary = RTFReader.textKeywords;
-        Enumeration keys = textKeywordDictionary.keys();
+        Dictionary<String, String> textKeywordDictionary = RTFReader.textKeywords;
+        Enumeration<String> keys = textKeywordDictionary.keys();
         Vector<CharacterKeywordPair> tempPairs = new Vector<CharacterKeywordPair>();
         while(keys.hasMoreElements()) {
             CharacterKeywordPair pair = new CharacterKeywordPair();
-            pair.keyword = (String)keys.nextElement();
-            pair.character = ((String)textKeywordDictionary.get(pair.keyword)).charAt(0);
+            pair.keyword = keys.nextElement();
+            pair.character = textKeywordDictionary.get(pair.keyword).charAt(0);
             tempPairs.addElement(pair);
         }
         textKeywords = new CharacterKeywordPair[tempPairs.size()];
@@ -340,7 +340,7 @@ public void writeRTFHeader()
     /* write color table */
     if (colorCount > 1) {
         Color[] sortedColorTable = new Color[colorCount];
-        Enumeration colors = colorTable.keys();
+        Enumeration<Object> colors = colorTable.keys();
         Color color;
         while(colors.hasMoreElements()) {
             color = (Color)colors.nextElement();

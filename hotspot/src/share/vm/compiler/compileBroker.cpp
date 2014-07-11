@@ -1048,7 +1048,7 @@ CompilerThread* CompileBroker::make_compiler_thread(const char* name, CompileQue
   }
 
   // Let go of Threads_lock before yielding
-  os::yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
+  os::naked_yield(); // make sure that the compiler thread is started early (especially helpful on SOLARIS)
 
   return compiler_thread;
 }

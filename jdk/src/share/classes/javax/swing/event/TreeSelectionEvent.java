@@ -62,12 +62,16 @@ public class TreeSelectionEvent extends EventObject
     protected TreePath        newLeadSelectionPath;
 
     /**
-      * Represents a change in the selection of a TreeSelectionModel.
-      * paths identifies the paths that have been either added or
+      * Represents a change in the selection of a {@code TreeSelectionModel}.
+      * {@code paths} identifies the paths that have been either added or
       * removed from the selection.
       *
       * @param source source of event
       * @param paths the paths that have changed in the selection
+      * @param areNew a {@code boolean} array indicating whether the paths in
+      *               {@code paths} are new to the selection
+      * @param oldLeadSelectionPath the previous lead selection path
+      * @param newLeadSelectionPath the new lead selection path
       */
     public TreeSelectionEvent(Object source, TreePath[] paths,
                               boolean[] areNew, TreePath oldLeadSelectionPath,
@@ -81,14 +85,16 @@ public class TreeSelectionEvent extends EventObject
     }
 
     /**
-      * Represents a change in the selection of a TreeSelectionModel.
-      * path identifies the path that have been either added or
+      * Represents a change in the selection of a {@code TreeSelectionModel}.
+      * {@code path} identifies the path that has been either added or
       * removed from the selection.
       *
       * @param source source of event
       * @param path the path that has changed in the selection
       * @param isNew whether or not the path is new to the selection, false
-      * means path was removed from the selection.
+      *              means path was removed from the selection.
+      * @param oldLeadSelectionPath the previous lead selection path
+      * @param newLeadSelectionPath the new lead selection path
       */
     public TreeSelectionEvent(Object source, TreePath path, boolean isNew,
                               TreePath oldLeadSelectionPath,
@@ -104,8 +110,9 @@ public class TreeSelectionEvent extends EventObject
     }
 
     /**
-      * Returns the paths that have been added or removed from the
-      * selection.
+      * Returns the paths that have been added or removed from the selection.
+      *
+      * @return copy of the array of {@code TreePath} obects for this event.
       */
     public TreePath[] getPaths()
     {
@@ -120,6 +127,8 @@ public class TreeSelectionEvent extends EventObject
 
     /**
       * Returns the first path element.
+      *
+      * @return the first {@code TreePath} element represented by this event
       */
     public TreePath getPath()
     {
@@ -187,6 +196,8 @@ public class TreeSelectionEvent extends EventObject
 
     /**
      * Returns the path that was previously the lead path.
+     *
+     * @return a {@code TreePath} containing the old lead selection path
      */
     public TreePath getOldLeadSelectionPath() {
         return oldLeadSelectionPath;
@@ -194,6 +205,8 @@ public class TreeSelectionEvent extends EventObject
 
     /**
      * Returns the current lead path.
+     *
+     * @return a {@code TreePath} containing the new lead selection path
      */
     public TreePath getNewLeadSelectionPath() {
         return newLeadSelectionPath;
@@ -201,10 +214,14 @@ public class TreeSelectionEvent extends EventObject
 
     /**
      * Returns a copy of the receiver, but with the source being newSource.
+     *
+     * @param newSource source of event
+     * @return an {@code Object} which is a copy of this event with the source
+     *         being the {@code newSource} provided
      */
     public Object cloneWithSource(Object newSource) {
       // Fix for IE bug - crashing
-      return new TreeSelectionEvent(newSource, paths,areNew,
+      return new TreeSelectionEvent(newSource, paths, areNew,
                                     oldLeadSelectionPath,
                                     newLeadSelectionPath);
     }

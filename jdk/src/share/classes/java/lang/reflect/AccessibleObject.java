@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,15 +129,23 @@ public class AccessibleObject implements AnnotatedElement {
         setAccessible0(this, flag);
     }
 
-    /* Check that you aren't exposing java.lang.Class.<init>. */
+    /* Check that you aren't exposing java.lang.Class.<init> or sensitive
+       fields in java.lang.Class. */
     private static void setAccessible0(AccessibleObject obj, boolean flag)
         throws SecurityException
     {
         if (obj instanceof Constructor && flag == true) {
             Constructor<?> c = (Constructor<?>)obj;
             if (c.getDeclaringClass() == Class.class) {
-                throw new SecurityException("Can not make a java.lang.Class" +
+                throw new SecurityException("Cannot make a java.lang.Class" +
                                             " constructor accessible");
+            }
+        } else if (obj instanceof Field && flag == true) {
+            Field f = (Field)obj;
+            if (f.getDeclaringClass() == Class.class &&
+                f.getName().equals("classLoader")) {
+                throw new SecurityException("Cannot make java.lang.Class.classLoader" +
+                                            " accessible");
             }
         }
         obj.override = flag;

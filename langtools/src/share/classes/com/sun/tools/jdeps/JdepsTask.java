@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,9 @@ import com.sun.tools.classfile.ConstantPoolException;
 import com.sun.tools.classfile.Dependencies;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 import com.sun.tools.classfile.Dependency;
+import com.sun.tools.classfile.Dependency.Location;
 import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
+import static com.sun.tools.jdeps.Analyzer.Type.*;
 import java.io.*;
 import java.nio.file.DirectoryStream;
 import java.nio.file.Files;
@@ -110,7 +112,7 @@ class JdepsTask {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 Path p = Paths.get(arg);
                 if (Files.exists(p) && (!Files.isDirectory(p) || !Files.isWritable(p))) {
-                    throw new BadArgs("err.dot.output.path", arg);
+                    throw new BadArgs("err.invalid.path", arg);
                 }
                 task.options.dotOutputDir = arg;
             }
@@ -118,25 +120,26 @@ class JdepsTask {
         new Option(false, "-s", "-summary") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.showSummary = true;
-                task.options.verbose = Analyzer.Type.SUMMARY;
+                task.options.verbose = SUMMARY;
             }
         },
         new Option(false, "-v", "-verbose",
                           "-verbose:package",
-                          "-verbose:class")
-        {
+                          "-verbose:class") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 switch (opt) {
                     case "-v":
                     case "-verbose":
-                        task.options.verbose = Analyzer.Type.VERBOSE;
+                        task.options.verbose = VERBOSE;
+                        task.options.filterSameArchive = false;
+                        task.options.filterSamePackage = false;
                         break;
                     case "-verbose:package":
-                            task.options.verbose = Analyzer.Type.PACKAGE;
-                            break;
+                        task.options.verbose = PACKAGE;
+                        break;
                     case "-verbose:class":
-                            task.options.verbose = Analyzer.Type.CLASS;
-                            break;
+                        task.options.verbose = CLASS;
+                        break;
                     default:
                         throw new BadArgs("err.invalid.arg.for.option", opt);
                 }
@@ -155,6 +158,32 @@ class JdepsTask {
         new Option(true, "-e", "-regex") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.regex = arg;
+            }
+        },
+
+        new Option(true, "-f", "-filter") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.filterRegex = arg;
+            }
+        },
+        new Option(false, "-filter:package",
+                          "-filter:archive",
+                          "-filter:none") {
+            void process(JdepsTask task, String opt, String arg) {
+                switch (opt) {
+                    case "-filter:package":
+                        task.options.filterSamePackage = true;
+                        task.options.filterSameArchive = false;
+                        break;
+                    case "-filter:archive":
+                        task.options.filterSameArchive = true;
+                        task.options.filterSamePackage = false;
+                        break;
+                    case "-filter:none":
+                        task.options.filterSameArchive = false;
+                        task.options.filterSamePackage = false;
+                        break;
+                }
             }
         },
         new Option(true, "-include") {
@@ -178,12 +207,15 @@ class JdepsTask {
         new Option(false, "-R", "-recursive") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.depth = 0;
+                // turn off filtering
+                task.options.filterSameArchive = false;
+                task.options.filterSamePackage = false;
             }
         },
         new Option(false, "-jdkinternals") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.findJDKInternals = true;
-                task.options.verbose = Analyzer.Type.CLASS;
+                task.options.verbose = CLASS;
                 if (task.options.includePattern == null) {
                     task.options.includePattern = Pattern.compile(".*");
                 }
@@ -262,7 +294,7 @@ class JdepsTask {
                 showHelp();
                 return EXIT_CMDERR;
             }
-            if (options.showSummary && options.verbose != Analyzer.Type.SUMMARY) {
+            if (options.showSummary && options.verbose != SUMMARY) {
                 showHelp();
                 return EXIT_CMDERR;
             }
@@ -283,9 +315,28 @@ class JdepsTask {
 
     private final List<Archive> sourceLocations = new ArrayList<>();
     private boolean run() throws IOException {
+        // parse classfiles and find all dependencies
         findDependencies();
-        Analyzer analyzer = new Analyzer(options.verbose);
+
+        Analyzer analyzer = new Analyzer(options.verbose, new Analyzer.Filter() {
+            @Override
+            public boolean accepts(Location origin, Archive originArchive, Location target, Archive targetArchive) {
+                if (options.findJDKInternals) {
+                    // accepts target that is JDK class but not exported
+                    return isJDKArchive(targetArchive) &&
+                              !((JDKArchive) targetArchive).isExported(target.getClassName());
+                } else if (options.filterSameArchive) {
+                    // accepts origin and target that from different archive
+                    return originArchive != targetArchive;
+                }
+                return true;
+            }
+        });
+
+        // analyze the dependencies
         analyzer.run(sourceLocations);
+
+        // output result
         if (options.dotOutputDir != null) {
             Path dir = Paths.get(options.dotOutputDir);
             Files.createDirectories(dir);
@@ -296,27 +347,34 @@ class JdepsTask {
         return true;
     }
 
-    private void generateDotFiles(Path dir, Analyzer analyzer) throws IOException {
+    private void generateSummaryDotFile(Path dir, Analyzer analyzer) throws IOException {
+        // If verbose mode (-v or -verbose option),
+        // the summary.dot file shows package-level dependencies.
+        Analyzer.Type summaryType =
+            (options.verbose == PACKAGE || options.verbose == SUMMARY) ? SUMMARY : PACKAGE;
         Path summary = dir.resolve("summary.dot");
-        boolean verbose = options.verbose == Analyzer.Type.VERBOSE;
-        DotGraph<?> graph = verbose ? new DotSummaryForPackage()
-                                    : new DotSummaryForArchive();
-        for (Archive archive : sourceLocations) {
-            analyzer.visitArchiveDependences(archive, graph);
-            if (verbose || options.showLabel) {
-                // traverse detailed dependences to generate package-level
-                // summary or build labels for edges
-                analyzer.visitDependences(archive, graph);
+        try (PrintWriter sw = new PrintWriter(Files.newOutputStream(summary));
+             SummaryDotFile dotfile = new SummaryDotFile(sw, summaryType)) {
+            for (Archive archive : sourceLocations) {
+                if (!archive.isEmpty()) {
+                    if (options.verbose == PACKAGE || options.verbose == SUMMARY) {
+                        if (options.showLabel) {
+                            // build labels listing package-level dependencies
+                            analyzer.visitDependences(archive, dotfile.labelBuilder(), PACKAGE);
+                        }
+                    }
+                    analyzer.visitDependences(archive, dotfile, summaryType);
+                }
             }
         }
-        try (PrintWriter sw = new PrintWriter(Files.newOutputStream(summary))) {
-            graph.writeTo(sw);
-        }
+    }
+
+    private void generateDotFiles(Path dir, Analyzer analyzer) throws IOException {
         // output individual .dot file for each archive
-        if (options.verbose != Analyzer.Type.SUMMARY) {
+        if (options.verbose != SUMMARY) {
             for (Archive archive : sourceLocations) {
                 if (analyzer.hasDependences(archive)) {
-                    Path dotfile = dir.resolve(archive.getFileName() + ".dot");
+                    Path dotfile = dir.resolve(archive.getName() + ".dot");
                     try (PrintWriter pw = new PrintWriter(Files.newOutputStream(dotfile));
                          DotFileFormatter formatter = new DotFileFormatter(pw, archive)) {
                         analyzer.visitDependences(archive, formatter);
@@ -324,17 +382,23 @@ class JdepsTask {
                 }
             }
         }
+        // generate summary dot file
+        generateSummaryDotFile(dir, analyzer);
     }
 
     private void printRawOutput(PrintWriter writer, Analyzer analyzer) {
+        RawOutputFormatter depFormatter = new RawOutputFormatter(writer);
+        RawSummaryFormatter summaryFormatter = new RawSummaryFormatter(writer);
         for (Archive archive : sourceLocations) {
-            RawOutputFormatter formatter = new RawOutputFormatter(writer);
-            analyzer.visitArchiveDependences(archive, formatter);
-            if (options.verbose != Analyzer.Type.SUMMARY) {
-                analyzer.visitDependences(archive, formatter);
+            if (!archive.isEmpty()) {
+                analyzer.visitDependences(archive, summaryFormatter, SUMMARY);
+                if (analyzer.hasDependences(archive) && options.verbose != SUMMARY) {
+                    analyzer.visitDependences(archive, depFormatter);
+                }
             }
         }
     }
+
     private boolean isValidClassName(String name) {
         if (!Character.isJavaIdentifierStart(name.charAt(0))) {
             return false;
@@ -348,21 +412,54 @@ class JdepsTask {
         return true;
     }
 
-    private Dependency.Filter getDependencyFilter() {
-         if (options.regex != null) {
-            return Dependencies.getRegexFilter(Pattern.compile(options.regex));
-        } else if (options.packageNames.size() > 0) {
-            return Dependencies.getPackageFilter(options.packageNames, false);
-        } else {
-            return new Dependency.Filter() {
-                @Override
-                public boolean accepts(Dependency dependency) {
-                    return !dependency.getOrigin().equals(dependency.getTarget());
-                }
-            };
+    /*
+     * Dep Filter configured based on the input jdeps option
+     * 1. -p and -regex to match target dependencies
+     * 2. -filter:package to filter out same-package dependencies
+     *
+     * This filter is applied when jdeps parses the class files
+     * and filtered dependencies are not stored in the Analyzer.
+     *
+     * -filter:archive is applied later in the Analyzer as the
+     * containing archive of a target class may not be known until
+     * the entire archive
+     */
+    class DependencyFilter implements Dependency.Filter {
+        final Dependency.Filter filter;
+        final Pattern filterPattern;
+        DependencyFilter() {
+            if (options.regex != null) {
+                this.filter = Dependencies.getRegexFilter(Pattern.compile(options.regex));
+            } else if (options.packageNames.size() > 0) {
+                this.filter = Dependencies.getPackageFilter(options.packageNames, false);
+            } else {
+                this.filter = null;
+            }
+
+            this.filterPattern =
+                options.filterRegex != null ? Pattern.compile(options.filterRegex) : null;
+        }
+        @Override
+        public boolean accepts(Dependency d) {
+            if (d.getOrigin().equals(d.getTarget())) {
+                return false;
+            }
+            String pn = d.getTarget().getPackageName();
+            if (options.filterSamePackage && d.getOrigin().getPackageName().equals(pn)) {
+                return false;
+            }
+
+            if (filterPattern != null && filterPattern.matcher(pn).matches()) {
+                return false;
+            }
+            return filter != null ? filter.accepts(d) : true;
         }
     }
 
+    /**
+     * Tests if the given class matches the pattern given in the -include option
+     * or if it's a public class if -apionly option is specified
+     */
     private boolean matches(String classname, AccessFlags flags) {
         if (options.apiOnly && !flags.is(AccessFlags.ACC_PUBLIC)) {
             return false;
@@ -377,14 +474,14 @@ class JdepsTask {
         Dependency.Finder finder =
             options.apiOnly ? Dependencies.getAPIFinder(AccessFlags.ACC_PROTECTED)
                             : Dependencies.getClassDependencyFinder();
-        Dependency.Filter filter = getDependencyFilter();
+        Dependency.Filter filter = new DependencyFilter();
 
         List<Archive> archives = new ArrayList<>();
         Deque<String> roots = new LinkedList<>();
         for (String s : classes) {
             Path p = Paths.get(s);
             if (Files.exists(p)) {
-                archives.add(new Archive(p, ClassFileReader.newInstance(p)));
+                archives.add(Archive.getInstance(p));
             } else {
                 if (isValidClassName(s)) {
                     roots.add(s);
@@ -421,19 +518,26 @@ class JdepsTask {
                     throw new ClassFileError(e);
                 }
 
-                if (matches(classFileName, cf.access_flags)) {
-                    if (!doneClasses.contains(classFileName)) {
-                        doneClasses.add(classFileName);
-                    }
-                    for (Dependency d : finder.findDependencies(cf)) {
-                        if (filter.accepts(d)) {
-                            String cn = d.getTarget().getName();
-                            if (!doneClasses.contains(cn) && !deque.contains(cn)) {
-                                deque.add(cn);
-                            }
-                            a.addClass(d.getOrigin(), d.getTarget());
+                // tests if this class matches the -include or -apiOnly option if specified
+                if (!matches(classFileName, cf.access_flags)) {
+                    continue;
+                }
+
+                if (!doneClasses.contains(classFileName)) {
+                    doneClasses.add(classFileName);
+                }
+
+                for (Dependency d : finder.findDependencies(cf)) {
+                    if (filter.accepts(d)) {
+                        String cn = d.getTarget().getName();
+                        if (!doneClasses.contains(cn) && !deque.contains(cn)) {
+                            deque.add(cn);
                         }
+                        a.addClass(d.getOrigin(), d.getTarget());
                     }
+                }
+                for (String name : a.reader().skippedEntries()) {
+                    warning("warn.skipped.entry", name, a.getPathName());
                 }
             }
         }
@@ -462,6 +566,10 @@ class JdepsTask {
                             // if name is a fully-qualified class name specified
                             // from command-line, this class might already be parsed
                             doneClasses.add(classFileName);
+                            // process @jdk.Exported for JDK classes
+                            if (isJDKArchive(a)) {
+                                ((JDKArchive)a).processJdkExported(cf);
+                            }
                             for (Dependency d : finder.findDependencies(cf)) {
                                 if (depth == 0) {
                                     // ignore the dependency
@@ -544,7 +652,7 @@ class JdepsTask {
         for (Option o : recognizedOptions) {
             String name = o.aliases[0].substring(1); // there must always be at least one name
             name = name.charAt(0) == '-' ? name.substring(1) : name;
-            if (o.isHidden() || name.equals("h")) {
+            if (o.isHidden() || name.equals("h") || name.startsWith("filter:")) {
                 continue;
             }
             log.println(getMessage("main.opt." + name));
@@ -582,14 +690,18 @@ class JdepsTask {
         boolean fullVersion;
         boolean showProfile;
         boolean showSummary;
-        boolean wildcard;
         boolean apiOnly;
         boolean showLabel;
         boolean findJDKInternals;
+        // default is to show package-level dependencies
+        // and filter references from same package
+        Analyzer.Type verbose = PACKAGE;
+        boolean filterSamePackage = true;
+        boolean filterSameArchive = false;
+        String filterRegex;
         String dotOutputDir;
         String classpath = "";
         int depth = 1;
-        Analyzer.Type verbose = Analyzer.Type.PACKAGE;
         Set<String> packageNames = new HashSet<>();
         String regex;             // apply to the dependences
         Pattern includePattern;   // apply to classes
@@ -611,19 +723,6 @@ class JdepsTask {
                 throw new InternalError("version.resource.missing");
             }
         }
-    }
-
-    private List<Archive> getArchives(List<String> filenames) throws IOException {
-        List<Archive> result = new ArrayList<>();
-        for (String s : filenames) {
-            Path p = Paths.get(s);
-            if (Files.exists(p)) {
-                result.add(new Archive(p, ClassFileReader.newInstance(p)));
-            } else {
-                warning("warn.file.not.exist", s);
-            }
-        }
-        return result;
     }
 
     private List<Archive> getClassPathArchives(String paths) throws IOException {
@@ -648,7 +747,7 @@ class JdepsTask {
                 }
                 for (Path f : files) {
                     if (Files.exists(f)) {
-                        result.add(new Archive(f, ClassFileReader.newInstance(f)));
+                        result.add(Archive.getInstance(f));
                     }
                 }
             }
@@ -656,81 +755,50 @@ class JdepsTask {
         return result;
     }
 
-    /**
-     * If the given archive is JDK archive and non-null Profile,
-     * this method returns the profile name only if -profile option is specified;
-     * a null profile indicates it accesses a private JDK API and this method
-     * will return "JDK internal API".
-     *
-     * For non-JDK archives, this method returns the file name of the archive.
-     */
-    private String getProfileArchiveInfo(Archive source, Profile profile) {
-        if (options.showProfile && profile != null)
-            return profile.toString();
-
-        if (source instanceof JDKArchive) {
-            return profile == null ? "JDK internal API (" + source.getFileName() + ")" : "";
-        }
-        return source.getFileName();
-    }
-
-    /**
-     * Returns the profile name or "JDK internal API" for JDK archive;
-     * otherwise empty string.
-     */
-    private String profileName(Archive archive, Profile profile) {
-        if (archive instanceof JDKArchive) {
-            return Objects.toString(profile, "JDK internal API");
-        } else {
-            return "";
-        }
-    }
-
     class RawOutputFormatter implements Analyzer.Visitor {
         private final PrintWriter writer;
+        private String pkg = "";
         RawOutputFormatter(PrintWriter writer) {
             this.writer = writer;
         }
-
-        private String pkg = "";
         @Override
-        public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, Profile profile) {
-            if (options.findJDKInternals &&
-                    !(archive instanceof JDKArchive && profile == null)) {
-                // filter dependences other than JDK internal APIs
-                return;
-            }
-            if (options.verbose == Analyzer.Type.VERBOSE) {
-                writer.format("   %-50s -> %-50s %s%n",
-                              origin, target, getProfileArchiveInfo(archive, profile));
+        public void visitDependence(String origin, Archive originArchive,
+                                    String target, Archive targetArchive) {
+            String tag = toTag(target, targetArchive);
+            if (options.verbose == VERBOSE) {
+                writer.format("   %-50s -> %-50s %s%n", origin, target, tag);
             } else {
                 if (!origin.equals(pkg)) {
                     pkg = origin;
-                    writer.format("   %s (%s)%n", origin, source.getFileName());
+                    writer.format("   %s (%s)%n", origin, originArchive.getName());
                 }
-                writer.format("      -> %-50s %s%n",
-                              target, getProfileArchiveInfo(archive, profile));
-            }
-        }
-
-        @Override
-        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
-            writer.format("%s -> %s", origin.getPathName(), target.getPathName());
-            if (options.showProfile && profile != null) {
-                writer.format(" (%s)%n", profile);
-            } else {
-                writer.format("%n");
+                writer.format("      -> %-50s %s%n", target, tag);
             }
         }
     }
 
-    class DotFileFormatter extends DotGraph<String> implements AutoCloseable {
+    class RawSummaryFormatter implements Analyzer.Visitor {
+        private final PrintWriter writer;
+        RawSummaryFormatter(PrintWriter writer) {
+            this.writer = writer;
+        }
+        @Override
+        public void visitDependence(String origin, Archive originArchive,
+                                    String target, Archive targetArchive) {
+            writer.format("%s -> %s", originArchive.getName(), targetArchive.getPathName());
+            if (options.showProfile && JDKArchive.isProfileArchive(targetArchive)) {
+                writer.format(" (%s)", target);
+            }
+            writer.format("%n");
+        }
+    }
+
+    class DotFileFormatter implements Analyzer.Visitor, AutoCloseable {
         private final PrintWriter writer;
         private final String name;
         DotFileFormatter(PrintWriter writer, Archive archive) {
             this.writer = writer;
-            this.name = archive.getFileName();
+            this.name = archive.getName();
             writer.format("digraph \"%s\" {%n", name);
             writer.format("    // Path: %s%n", archive.getPathName());
         }
@@ -741,173 +809,123 @@ class JdepsTask {
         }
 
         @Override
-        public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, Profile profile) {
-            if (options.findJDKInternals &&
-                    !(archive instanceof JDKArchive && profile == null)) {
-                // filter dependences other than JDK internal APIs
-                return;
-            }
-            // if -P option is specified, package name -> profile will
-            // be shown and filter out multiple same edges.
-            String name = getProfileArchiveInfo(archive, profile);
-            writeEdge(writer, new Edge(origin, target, getProfileArchiveInfo(archive, profile)));
-        }
-        @Override
-        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
-            throw new UnsupportedOperationException();
+        public void visitDependence(String origin, Archive originArchive,
+                                    String target, Archive targetArchive) {
+            String tag = toTag(target, targetArchive);
+            writer.format("   %-50s -> \"%s\";%n",
+                          String.format("\"%s\"", origin),
+                          tag.isEmpty() ? target
+                                        : String.format("%s (%s)", target, tag));
         }
     }
 
-    class DotSummaryForArchive extends DotGraph<Archive> {
-        @Override
-        public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, Profile profile) {
-            Edge e = findEdge(source, archive);
-            assert e != null;
-            // add the dependency to the label if enabled and not compact1
-            if (profile == Profile.COMPACT1) {
-                return;
-            }
-            e.addLabel(origin, target, profileName(archive, profile));
-        }
-        @Override
-        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
-            // add an edge with the archive's name with no tag
-            // so that there is only one node for each JDK archive
-            // while there may be edges to different profiles
-            Edge e = addEdge(origin, target, "");
-            if (target instanceof JDKArchive) {
-                // add a label to print the profile
-                if (profile == null) {
-                    e.addLabel("JDK internal API");
-                } else if (options.showProfile && !options.showLabel) {
-                    e.addLabel(profile.toString());
-                }
-            }
-        }
-    }
-
-    // DotSummaryForPackage generates the summary.dot file for verbose mode
-    // (-v or -verbose option) that includes all class dependencies.
-    // The summary.dot file shows package-level dependencies.
-    class DotSummaryForPackage extends DotGraph<String> {
-        private String packageOf(String cn) {
-            int i = cn.lastIndexOf('.');
-            return i > 0 ? cn.substring(0, i) : "<unnamed>";
-        }
-        @Override
-        public void visitDependence(String origin, Archive source,
-                                    String target, Archive archive, Profile profile) {
-            // add a package dependency edge
-            String from = packageOf(origin);
-            String to = packageOf(target);
-            Edge e = addEdge(from, to, getProfileArchiveInfo(archive, profile));
-
-            // add the dependency to the label if enabled and not compact1
-            if (!options.showLabel || profile == Profile.COMPACT1) {
-                return;
-            }
-
-            // trim the package name of origin to shorten the label
-            int i = origin.lastIndexOf('.');
-            String n1 = i < 0 ? origin : origin.substring(i+1);
-            e.addLabel(n1, target, profileName(archive, profile));
-        }
-        @Override
-        public void visitArchiveDependence(Archive origin, Archive target, Profile profile) {
-            // nop
-        }
-    }
-    abstract class DotGraph<T> implements Analyzer.Visitor  {
-        private final Set<Edge> edges = new LinkedHashSet<>();
-        private Edge curEdge;
-        public void writeTo(PrintWriter writer) {
+    class SummaryDotFile implements Analyzer.Visitor, AutoCloseable {
+        private final PrintWriter writer;
+        private final Analyzer.Type type;
+        private final Map<Archive, Map<Archive,StringBuilder>> edges = new HashMap<>();
+        SummaryDotFile(PrintWriter writer, Analyzer.Type type) {
+            this.writer = writer;
+            this.type = type;
             writer.format("digraph \"summary\" {%n");
-            for (Edge e: edges) {
-                writeEdge(writer, e);
-            }
+        }
+
+        @Override
+        public void close() {
             writer.println("}");
         }
 
-        void writeEdge(PrintWriter writer, Edge e) {
-            writer.format("   %-50s -> \"%s\"%s;%n",
-                          String.format("\"%s\"", e.from.toString()),
-                          e.tag.isEmpty() ? e.to
-                                          : String.format("%s (%s)", e.to, e.tag),
-                          getLabel(e));
+        @Override
+        public void visitDependence(String origin, Archive originArchive,
+                                    String target, Archive targetArchive) {
+            String targetName = type == PACKAGE ? target : targetArchive.getName();
+            if (type == PACKAGE) {
+                String tag = toTag(target, targetArchive, type);
+                if (!tag.isEmpty())
+                    targetName += " (" + tag + ")";
+            } else if (options.showProfile && JDKArchive.isProfileArchive(targetArchive)) {
+                targetName += " (" + target + ")";
+            }
+            String label = getLabel(originArchive, targetArchive);
+            writer.format("  %-50s -> \"%s\"%s;%n",
+                          String.format("\"%s\"", origin), targetName, label);
         }
 
-        Edge addEdge(T origin, T target, String tag) {
-            Edge e = new Edge(origin, target, tag);
-            if (e.equals(curEdge)) {
-                return curEdge;
-            }
+        String getLabel(Archive origin, Archive target) {
+            if (edges.isEmpty())
+                return "";
 
-            if (edges.contains(e)) {
-                for (Edge e1 : edges) {
-                   if (e.equals(e1)) {
-                       curEdge = e1;
-                   }
+            StringBuilder label = edges.get(origin).get(target);
+            return label == null ? "" : String.format(" [label=\"%s\",fontsize=9]", label.toString());
+        }
+
+        Analyzer.Visitor labelBuilder() {
+            // show the package-level dependencies as labels in the dot graph
+            return new Analyzer.Visitor() {
+                @Override
+                public void visitDependence(String origin, Archive originArchive, String target, Archive targetArchive) {
+                    edges.putIfAbsent(originArchive, new HashMap<>());
+                    edges.get(originArchive).putIfAbsent(targetArchive, new StringBuilder());
+                    StringBuilder sb = edges.get(originArchive).get(targetArchive);
+                    String tag = toTag(target, targetArchive, PACKAGE);
+                    addLabel(sb, origin, target, tag);
                 }
-            } else {
-                edges.add(e);
-                curEdge = e;
-            }
-            return curEdge;
+
+                void addLabel(StringBuilder label, String origin, String target, String tag) {
+                    label.append(origin).append(" -> ").append(target);
+                    if (!tag.isEmpty()) {
+                        label.append(" (" + tag + ")");
+                    }
+                    label.append("\\n");
+                }
+            };
+        }
+    }
+
+    /**
+     * Test if the given archive is part of the JDK
+     */
+    private boolean isJDKArchive(Archive archive) {
+        return JDKArchive.class.isInstance(archive);
+    }
+
+    /**
+     * If the given archive is JDK archive, this method returns the profile name
+     * only if -profile option is specified; it accesses a private JDK API and
+     * the returned value will have "JDK internal API" prefix
+     *
+     * For non-JDK archives, this method returns the file name of the archive.
+     */
+    private String toTag(String name, Archive source, Analyzer.Type type) {
+        if (!isJDKArchive(source)) {
+            return source.getName();
         }
 
-        Edge findEdge(T origin, T target) {
-            for (Edge e : edges) {
-                if (e.from.equals(origin) && e.to.equals(target)) {
-                    return e;
-                }
-            }
-            return null;
+        JDKArchive jdk = (JDKArchive)source;
+        boolean isExported = false;
+        if (type == CLASS || type == VERBOSE) {
+            isExported = jdk.isExported(name);
+        } else {
+            isExported = jdk.isExportedPackage(name);
         }
+        Profile p = getProfile(name, type);
+        if (isExported) {
+            // exported API
+            return options.showProfile && p != null ? p.profileName() : "";
+        } else {
+            return "JDK internal API (" + source.getName() + ")";
+        }
+    }
 
-        String getLabel(Edge e) {
-            String label = e.label.toString();
-            return label.isEmpty() ? "" : String.format("[label=\"%s\",fontsize=9]", label);
-        }
+    private String toTag(String name, Archive source) {
+        return toTag(name, source, options.verbose);
+    }
 
-        class Edge {
-            final T from;
-            final T to;
-            final String tag;  // optional tag
-            final StringBuilder label = new StringBuilder();
-            Edge(T from, T to, String tag) {
-                this.from = from;
-                this.to = to;
-                this.tag = tag;
-            }
-            void addLabel(String s) {
-                label.append(s).append("\\n");
-            }
-            void addLabel(String origin, String target, String profile) {
-                label.append(origin).append(" -> ").append(target);
-                if (!profile.isEmpty()) {
-                    label.append(" (" + profile + ")");
-                }
-                label.append("\\n");
-            }
-            @Override @SuppressWarnings("unchecked")
-            public boolean equals(Object o) {
-                if (o instanceof DotGraph<?>.Edge) {
-                    DotGraph<?>.Edge e = (DotGraph<?>.Edge)o;
-                    return this.from.equals(e.from) &&
-                           this.to.equals(e.to) &&
-                           this.tag.equals(e.tag);
-                }
-                return false;
-            }
-            @Override
-            public int hashCode() {
-                int hash = 7;
-                hash = 67 * hash + Objects.hashCode(this.from) +
-                       Objects.hashCode(this.to) + Objects.hashCode(this.tag);
-                return hash;
-            }
+    private Profile getProfile(String name, Analyzer.Type type) {
+        String pn = name;
+        if (type == CLASS || type == VERBOSE) {
+            int i = name.lastIndexOf('.');
+            pn = i > 0 ? name.substring(0, i) : "";
         }
+        return Profile.getProfile(pn);
     }
 }

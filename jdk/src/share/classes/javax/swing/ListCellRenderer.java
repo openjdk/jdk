@@ -85,6 +85,7 @@ import java.awt.Component;
  * @see DefaultListCellRenderer
  *
  * @author Hans Muller
+ * @since 1.2
  */
 public interface ListCellRenderer<E>
 {

@@ -366,6 +366,11 @@ class AquaFileSystemModel extends AbstractTableModel implements PropertyChangeLi
             final SortableFile otherFile = (SortableFile)other;
             return otherFile.fFile.equals(fFile);
         }
+
+        @Override
+        public int hashCode() {
+            return Objects.hashCode(fFile);
+        }
     }
 
     class LoadFilesThread extends Thread {

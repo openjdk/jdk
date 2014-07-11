@@ -2094,7 +2094,7 @@ public class DecimalFormat extends NumberFormat {
             }
 
             return gotDouble ?
-                (Number)new Double(doubleResult) : (Number)new Long(longResult);
+                (Number)new Double(doubleResult) : (Number)Long.valueOf(longResult);
         }
     }
 

@@ -46,7 +46,6 @@ import org.w3c.dom.Document;
  * @author Rahul Srivastava, Sun Microsystems Inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: SchemaDOMParser.java,v 1.8 2010-11-01 04:40:01 joehw Exp $
  */
 public class SchemaDOMParser extends DefaultXMLDocumentHandler {
 
