@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -95,7 +95,7 @@ public abstract class StreamPrintServiceFactory {
      * Although null is an acceptable value to use in the lookup of stream
      * printing services, it's typical to search for a particular
      * desired format, such as Postscript(TM).
-     * <p>
+     *
      * @param flavor of the input document type - null means match all
      * types.
      * @param outputMimeType representing the required output format, used to
@@ -153,7 +153,7 @@ public abstract class StreamPrintServiceFactory {
      * Implementations which allocate resources on construction should examine
      * the stream and may wish to only allocate resources if the stream is
      * non-null.
-     * <p>
+     *
      * @param out destination stream for generated output.
      * @return a PrintService which will generate the format specified by the
      * DocFlavor supported by this Factory.
