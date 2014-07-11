@@ -23,6 +23,8 @@
 
 package pkg1;
 
+import java.util.List;
+
 /**
  * An implementor
  *
@@ -38,4 +40,49 @@ public class C10 extends UsedClass implements UsedInterface, UsedInterfaceA {
      * Me too
      */
     public void doNothingA() {}
+
+    /**
+     * returns a collection with type param
+     * @return something
+     */
+    public List<? extends UsedClass> foo(){return null;}
+
+    /**
+     * returns and takes type param variants
+     * @param <T> yeah
+     * @return returns a type param
+     */
+    public <T extends UsedInterface<? super T>> UsedInterfaceA<T> withTypeParametersOfType(Class<? extends UsedInterface> c){return null;}
+
+    /**
+     * returns a type param
+     * @param <T> a param
+     * @return something
+     */
+    public <T extends UsedInterface>T[] withReturningTypeParameters(){return null;}
+
+    /**
+     * a return a type parameter, as a static method
+     * @param <T> a type param
+     * @param enumType something
+     * @param name something
+     * @return a trype param
+     */
+    public static <T extends UsedInterface<T>> T withReturnVariant(Class<T> enumType, String name){return null;}
+
+    /**
+     * another variant of a method returning type parameters
+     * @param <T> something
+     * @param listenerInterface something
+     * @param target something
+     * @param action something
+     * @return a type param
+     */
+    public <T> T create(UsedInterfaceA<T> listenerInterface, UsedInterface target, String action){return null;}
+
+    /**
+     * input is an array
+     * @param elements a vararg
+     */
+    public void addAll(UsedInterface... elements) {}
 }
