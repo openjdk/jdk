@@ -54,7 +54,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-import jdk.nashorn.internal.runtime.options.Options;
 import jdk.nashorn.internal.scripts.JS;
 
 /**
@@ -65,9 +64,6 @@ import jdk.nashorn.internal.scripts.JS;
  */
 @Logger(name="recompile")
 public final class RecompilableScriptFunctionData extends ScriptFunctionData implements Loggable {
-    /** Is lazy compilation enabled? TODO: this should be the default */
-    public static final boolean LAZY_COMPILATION = Options.getBooleanProperty("nashorn.lazy");
-
     /** Prefix used for all recompiled script classes */
     public static final String RECOMPILATION_PREFIX = "Recompilation$";
 
@@ -240,6 +236,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return "function " + (name == null ? "" : name) + "() { [native code] }";
     }
 
+    /**
+     * Setter for code and source
+     *
+     * @param code   map of code, class name to class
+     * @param source source
+     */
     public void setCodeAndSource(final Map<String, Class<?>> code, final Source source) {
         this.source = source;
         if (methodLocator != null) {
@@ -292,7 +294,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     private static long tokenFor(final FunctionNode fn) {
         final int  position  = Token.descPosition(fn.getFirstToken());
-        final long lastToken = fn.getLastToken();
+        final long lastToken = Token.withDelimiter(fn.getLastToken());
         // EOL uses length field to store the line number
         final int  length    = Token.descPosition(lastToken) - position + (Token.descType(lastToken) == TokenType.EOL ? 0 : Token.descLength(lastToken));
 

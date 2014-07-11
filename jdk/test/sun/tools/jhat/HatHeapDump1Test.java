@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,31 +21,68 @@
  * questions.
  */
 
+import java.io.File;
+import java.util.Arrays;
 
-/* @test HatHeapDump1Test.java
+import jdk.testlibrary.Asserts;
+import jdk.testlibrary.JDKToolLauncher;
+import jdk.testlibrary.OutputAnalyzer;
+import jdk.testlibrary.ProcessTools;
+
+/* @test
  * @bug 5102009
- * @summary Test jhat
- *
- * @compile -g HelloWorld.java HatRun.java
- * @build HatHeapDump1Test
- * @run main HatHeapDump1Test HelloWorld
+ * @summary Sanity test of jhat functionality
+ * @library /lib/testlibrary
+ * @build jdk.testlibarary.*
+ * @compile -g HelloWorld.java
+ * @run main HatHeapDump1Test
  */
-
 public class HatHeapDump1Test {
 
+    private static final String TEST_CLASSES = System.getProperty("test.classes", ".");
+
     public static void main(String args[]) throws Exception {
-        HatRun run;
+        String className = "HelloWorld";
+        File dumpFile = new File(className + ".hdump");
 
-        /* Run hprof and jhat */
-        run = new HatRun("heap=dump", "");
-        run.runit(args[0]);
+        // Generate a heap dump
+        ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder("-cp",
+                TEST_CLASSES,
+                "-Xcheck:jni",
+                "-Xverify:all",
+                "-agentlib:hprof=heap=dump,format=b,file=" + dumpFile.getAbsolutePath(),
+                className);
+        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        System.out.println(output.getOutput());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Dumping Java heap ... done");
+        Asserts.assertTrue(dumpFile.exists() && dumpFile.isFile(), "Invalid dump file " + dumpFile.getAbsolutePath());
 
-        /* Make sure patterns in output look ok */
-        if (run.output_contains("ERROR")) {
-            throw new RuntimeException("Test failed - ERROR seen in output");
+        // Run jhat to analyze the heap dump
+        output = jhat("-debug", "2", dumpFile.getAbsolutePath());
+        output.shouldHaveExitValue(0);
+        output.shouldContain("Snapshot resolved");
+        output.shouldContain("-debug 2 was used");
+        output.shouldNotContain("ERROR");
+
+        dumpFile.delete();
+    }
+
+    private static OutputAnalyzer jhat(String... toolArgs) throws Exception {
+        JDKToolLauncher launcher = JDKToolLauncher.createUsingTestJDK("jhat");
+        if (toolArgs != null) {
+            for (String toolArg : toolArgs) {
+                launcher.addToolArg(toolArg);
+            }
         }
 
-        /* Must be a pass. */
-        System.out.println("Test passed - cleanly terminated");
+        ProcessBuilder processBuilder = new ProcessBuilder();
+        processBuilder.command(launcher.getCommand());
+        System.out.println(Arrays.toString(processBuilder.command().toArray()).replace(",", ""));
+        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        System.out.println(output.getOutput());
+
+        return output;
     }
+
 }

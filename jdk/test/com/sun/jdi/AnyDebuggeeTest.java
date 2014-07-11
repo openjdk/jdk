@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g AnyDebuggeeTest.java
- *  @run main AnyDebuggeeeTest
+ *  @run driver AnyDebuggeeeTest
  *
  *  This test is intended to be run manually to investigate behaviors;
  *  it is not an actual test of any specific functionality, it just

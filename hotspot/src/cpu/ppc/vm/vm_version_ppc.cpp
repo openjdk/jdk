@@ -32,12 +32,6 @@
 #include "runtime/stubCodeGenerator.hpp"
 #include "utilities/defaultStream.hpp"
 #include "vm_version_ppc.hpp"
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
 
 # include <sys/sysinfo.h>
 
@@ -352,7 +346,7 @@ void VM_Version::determine_section_size() {
 
   if (PrintAssembly) {
     ttyLocker ttyl;
-    tty->print_cr("Decoding section size detection stub at " INTPTR_FORMAT " before execution:", code);
+    tty->print_cr("Decoding section size detection stub at " INTPTR_FORMAT " before execution:", p2i(code));
     Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
     tty->print_cr("Time loop1 :%f", loop1_seconds);
     tty->print_cr("Time loop2 :%f", loop2_seconds);
@@ -435,7 +429,7 @@ void VM_Version::determine_features() {
   // Print the detection code.
   if (PrintAssembly) {
     ttyLocker ttyl;
-    tty->print_cr("Decoding cpu-feature detection stub at " INTPTR_FORMAT " before execution:", code);
+    tty->print_cr("Decoding cpu-feature detection stub at " INTPTR_FORMAT " before execution:", p2i(code));
     Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
   }
 
@@ -468,7 +462,7 @@ void VM_Version::determine_features() {
   // Print the detection code.
   if (PrintAssembly) {
     ttyLocker ttyl;
-    tty->print_cr("Decoding cpu-feature detection stub at " INTPTR_FORMAT " after execution:", code);
+    tty->print_cr("Decoding cpu-feature detection stub at " INTPTR_FORMAT " after execution:", p2i(code));
     Disassembler::decode((u_char*)code, (u_char*)code_end, tty);
   }
 

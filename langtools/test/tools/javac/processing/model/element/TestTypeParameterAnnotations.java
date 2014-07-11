@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8011027
+ * @bug 8011027 8046916
  * @library /tools/javac/lib
  * @build JavacTestingAbstractProcessor TestTypeParameterAnnotations
  * @compile -processor TestTypeParameterAnnotations -proc:only TestTypeParameterAnnotations.java
@@ -33,10 +33,16 @@ import java.util.*;
 import java.lang.annotation.*;
 import javax.annotation.processing.*;
 import javax.lang.model.element.*;
-import javax.lang.model.util.*;
 import javax.tools.*;
 
-public class TestTypeParameterAnnotations<@Foo @Bar @Baz T> extends JavacTestingAbstractProcessor {
+@ExpectedTypeParameterAnnotations(typeParameterName="T1",
+                                  annotations={"Foo1", "Bar1", "Baz1"})
+@ExpectedTypeParameterAnnotations(typeParameterName="T2", annotations={})
+@ExpectedTypeParameterAnnotations(typeParameterName="T3",
+                                  annotations={"Foo2", "Bar2", "Baz2"})
+@ExpectedTypeParameterAnnotations(typeParameterName="T4", annotations={})
+public class TestTypeParameterAnnotations<@Foo1 @Bar1 @Baz1 T1, T2, @Foo2 @Bar2 @Baz2 T3, T4> extends
+        JavacTestingAbstractProcessor {
     int round = 0;
 
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
@@ -74,82 +80,69 @@ public class TestTypeParameterAnnotations<@Foo @Bar @Baz T> extends JavacTesting
     int check(Element e, List<? extends TypeParameterElement> typarams) {
         if (typarams.isEmpty())
             return 0;
-        if (typarams.size() != 1)
-            return 0;
 
-        for (TypeParameterElement tpe: typarams) {
-            boolean b1 = checkAnnotationMirrors(tpe, tpe.getAnnotationMirrors());
-            boolean b2 = checkAnnotationMirrors(tpe, elements.getAllAnnotationMirrors(tpe));
-            boolean b3 = checkGetAnnotation(tpe);
-            boolean b4 = checkGetAnnotations(tpe);
-            return b1 && b2 && b3 && b4 ? 1 : 0;
+        for (TypeParameterElement tpe : typarams) {
+            ExpectedTypeParameterAnnotations expected = null;
+            for (ExpectedTypeParameterAnnotations a : e.getAnnotationsByType(ExpectedTypeParameterAnnotations.class)) {
+                if (tpe.getSimpleName().contentEquals(a.typeParameterName())) {
+                    expected = a;
+                    break;
+                }
+            }
+            if (expected == null) {
+                throw new IllegalStateException("Does not have expected values annotation.");
+            }
+            checkAnnotationMirrors(tpe, tpe.getAnnotationMirrors(), expected);
+            checkAnnotationMirrors(tpe, elements.getAllAnnotationMirrors(tpe), expected);
+            checkGetAnnotation(tpe, expected);
+            checkGetAnnotations(tpe, expected);
         }
-        return 0;
+
+        return typarams.size();
     }
 
-    boolean checkAnnotationMirrors(TypeParameterElement tpe, List<? extends AnnotationMirror> l) {
-        if (l.size() != 3) {
-            error("To few annotations, got " + l.size() +
-                    ", should be 3", tpe);
-            return false;
+    void checkAnnotationMirrors(TypeParameterElement tpe, List<? extends AnnotationMirror> l, ExpectedTypeParameterAnnotations expected) {
+        String[] expectedAnnotations = expected.annotations();
+
+        if (l.size() != expectedAnnotations.length) {
+            error("Incorrect number of annotations, got " + l.size() +
+                    ", should be " + expectedAnnotations.length, tpe);
+            return ;
         }
 
-        AnnotationMirror m = l.get(0);
-        if (!m.getAnnotationType().asElement().equals(elements.getTypeElement("Foo"))) {
-            error("Wrong type of annotation, was expecting @Foo", m.getAnnotationType().asElement());
-            return false;
+        for (int i = 0; i < expectedAnnotations.length; i++) {
+            AnnotationMirror m = l.get(i);
+            if (!m.getAnnotationType().asElement().equals(elements.getTypeElement(expectedAnnotations[i]))) {
+                error("Wrong type of annotation, was expecting @Foo", m.getAnnotationType().asElement());
+                return ;
+            }
         }
-        m = l.get(1);
-        if (!m.getAnnotationType().asElement().equals(elements.getTypeElement("Bar"))) {
-            error("Wrong type of annotation, was expecting @Bar", m.getAnnotationType().asElement());
-            return false;
-        }
-        m = l.get(2);
-        if (!m.getAnnotationType().asElement().equals(elements.getTypeElement("Baz"))) {
-            error("Wrong type of annotation, was expecting @Baz", m.getAnnotationType().asElement());
-            return false;
-        }
-        return true;
     }
 
-    boolean checkGetAnnotation(TypeParameterElement tpe) {
-        Foo f = tpe.getAnnotation(Foo.class);
-        if (f == null)
-            error("Expecting @Foo to be present in getAnnotation()", tpe);
+    void checkGetAnnotation(TypeParameterElement tpe, ExpectedTypeParameterAnnotations expected) {
+        List<String> expectedAnnotations = Arrays.asList(expected.annotations());
 
-        Bar b = tpe.getAnnotation(Bar.class);
-        if (b == null)
-            error("Expecting @Bar to be present in getAnnotation()", tpe);
+        for (Class<? extends Annotation> c : ALL_ANNOTATIONS) {
+            Object a = tpe.getAnnotation(c);
 
-        Baz z = tpe.getAnnotation(Baz.class);
-        if (z == null)
-            error("Expecting @Baz to be present in getAnnotation()", tpe);
-
-        return f != null &&
-            b != null &&
-            z != null;
+            if (a != null ^ expectedAnnotations.indexOf(c.getName()) != (-1)) {
+                error("Unexpected behavior for " + c.getName(), tpe);
+                return ;
+            }
+        }
     }
 
-    boolean checkGetAnnotations(TypeParameterElement tpe) {
-        Foo[] f = tpe.getAnnotationsByType(Foo.class);
-        if (f.length != 1) {
-            error("Expecting 1 @Foo to be present in getAnnotationsByType()", tpe);
-            return false;
-        }
+    void checkGetAnnotations(TypeParameterElement tpe, ExpectedTypeParameterAnnotations expected) {
+        List<String> expectedAnnotations = Arrays.asList(expected.annotations());
 
-        Bar[] b = tpe.getAnnotationsByType(Bar.class);
-        if (b.length != 1) {
-            error("Expecting 1 @Bar to be present in getAnnotationsByType()", tpe);
-            return false;
-        }
+        for (Class<? extends Annotation> c : ALL_ANNOTATIONS) {
+            Object[] a = tpe.getAnnotationsByType(c);
 
-        Baz[] z = tpe.getAnnotationsByType(Baz.class);
-        if (z.length != 1) {
-            error("Expecting 1 @Baz to be present in getAnnotationsByType()", tpe);
-            return false;
+            if (a.length > 0 ^ expectedAnnotations.indexOf(c.getName()) != (-1)) {
+                error("Unexpected behavior for " + c.getName(), tpe);
+                return ;
+            }
         }
-
-        return true;
     }
 
     void note(String msg) {
@@ -168,23 +161,71 @@ public class TestTypeParameterAnnotations<@Foo @Bar @Baz T> extends JavacTesting
         messager.printMessage(Diagnostic.Kind.ERROR, msg);
     }
 
+    Class<? extends Annotation>[] ALL_ANNOTATIONS = new Class[] {
+        Foo1.class, Bar1.class, Baz1.class,
+        Foo2.class, Bar2.class, Baz2.class,
+    };
+
     // additional generic elements to test
-    <@Foo @Bar @Baz X> X m(X x) { return x; }
+    @ExpectedTypeParameterAnnotations(typeParameterName="W",
+                                      annotations={"Foo1", "Bar1", "Baz1"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="X", annotations={})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Y",
+                                      annotations={"Foo2", "Bar2", "Baz2"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Z", annotations={})
+    <@Foo1 @Bar1 @Baz1 W, X, @Foo2 @Bar2 @Baz2 Y, Z> X m(X x) { return x; }
 
-    interface Intf<@Foo @Bar @Baz X> { X m() ; }
+    @ExpectedTypeParameterAnnotations(typeParameterName="W",
+                                      annotations={"Foo1", "Bar1", "Baz1"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="X", annotations={})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Y",
+                                      annotations={"Foo2", "Bar2", "Baz2"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Z", annotations={})
+    interface Intf<@Foo1 @Bar1 @Baz1 W, X, @Foo2 @Bar2 @Baz2 Y, Z> { X m() ; }
 
-    class Class<@Foo @Bar @Baz X> {
-        <@Foo @Bar @Baz Y> Class() { }
+    @ExpectedTypeParameterAnnotations(typeParameterName="W",
+                                      annotations={"Foo1", "Bar1", "Baz1"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="X", annotations={})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Y",
+                                      annotations={"Foo2", "Bar2", "Baz2"})
+    @ExpectedTypeParameterAnnotations(typeParameterName="Z", annotations={})
+    class Clazz<@Foo1 @Bar1 @Baz1 W, X, @Foo2 @Bar2 @Baz2 Y, Z> {
+        @ExpectedTypeParameterAnnotations(typeParameterName="W",
+                                          annotations={"Foo1", "Bar1", "Baz1"})
+        @ExpectedTypeParameterAnnotations(typeParameterName="X", annotations={})
+        @ExpectedTypeParameterAnnotations(typeParameterName="Y",
+                                          annotations={"Foo2", "Bar2", "Baz2"})
+        @ExpectedTypeParameterAnnotations(typeParameterName="Z", annotations={})
+        <@Foo1 @Bar1 @Baz1 W, X, @Foo2 @Bar2 @Baz2 Y, Z> Clazz() { }
     }
 
-    final int expect = 5;  // top level class, plus preceding examples
+    final int expect = 5 * 4;  // top level class, plus preceding examples, 4 type variables each
 }
 
 @Target(ElementType.TYPE_PARAMETER)
-@interface Foo {}
+@interface Foo1 {}
 
 @Target(ElementType.TYPE_PARAMETER)
-@interface Bar {}
+@interface Bar1 {}
 
 @Target(ElementType.TYPE_PARAMETER)
-@interface Baz {}
+@interface Baz1 {}
+
+@Target(ElementType.TYPE_PARAMETER)
+@interface Foo2 {}
+
+@Target(ElementType.TYPE_PARAMETER)
+@interface Bar2 {}
+
+@Target(ElementType.TYPE_PARAMETER)
+@interface Baz2 {}
+
+@Repeatable(ExpectedTypeParameterAnnotationsCollection.class)
+@interface ExpectedTypeParameterAnnotations {
+    public String typeParameterName();
+    public String[] annotations();
+}
+
+@interface ExpectedTypeParameterAnnotationsCollection {
+    public ExpectedTypeParameterAnnotations[] value();
+}

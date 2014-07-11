@@ -241,7 +241,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      *     (unchecked exception) Thrown if {@code units < 1}.
      */
     public String toString(int units, String unitsName) {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(getCrossFeedResolution (units));
         result.append('x');
         result.append(getFeedResolution (units));
@@ -326,7 +326,7 @@ public abstract class ResolutionSyntax implements Serializable, Cloneable {
      * resolution. The values are reported in the internal units of dphi.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         result.append(crossFeedResolution);
         result.append('x');
         result.append(feedResolution);

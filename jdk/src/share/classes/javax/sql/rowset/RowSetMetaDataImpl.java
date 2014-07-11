@@ -48,6 +48,8 @@ import java.lang.reflect.*;
  * Therefore, any <code>RowSetMetaDataImpl</code> method that retrieves information
  * is defined as having unspecified behavior when it is called
  * before the <code>RowSet</code> object contains data.
+ *
+ * @since 1.5
  */
 public class RowSetMetaDataImpl implements RowSetMetaData,  Serializable {
 

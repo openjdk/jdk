@@ -85,18 +85,6 @@
 #include "utilities/events.hpp"
 #include "utilities/preserveException.hpp"
 #include "utilities/macros.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/concurrentMarkSweepThread.hpp"
 #include "gc_implementation/g1/concurrentMarkThread.inline.hpp"
@@ -1358,14 +1346,24 @@ void WatcherThread::make_startable() {
 }
 
 void WatcherThread::stop() {
-  {
-    MutexLockerEx ml(PeriodicTask_lock, Mutex::_no_safepoint_check_flag);
-    _should_terminate = true;
-    OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+  // Get the PeriodicTask_lock if we can. If we cannot, then the
+  // WatcherThread is using it and we don't want to block on that lock
+  // here because that might cause a safepoint deadlock depending on
+  // what the current WatcherThread tasks are doing.
+  bool have_lock = PeriodicTask_lock->try_lock();
 
+  _should_terminate = true;
+  OrderAccess::fence();  // ensure WatcherThread sees update in main loop
+
+  if (have_lock) {
     WatcherThread* watcher = watcher_thread();
-    if (watcher != NULL)
+    if (watcher != NULL) {
+      // If we managed to get the lock, then we should unpark the
+      // WatcherThread so that it can see we want it to stop.
       watcher->unpark();
+    }
+
+    PeriodicTask_lock->unlock();
   }
 
   // it is ok to take late safepoints here, if needed
@@ -4376,7 +4374,7 @@ void Thread::SpinAcquire (volatile int * adr, const char * LockName) {
            if (Yields > 5) {
              os::naked_short_sleep(1);
            } else {
-             os::NakedYield();
+             os::naked_yield();
              ++Yields;
            }
         } else {
@@ -4394,6 +4392,12 @@ void Thread::SpinRelease (volatile int * adr) {
   // It's safe if subsequent LDs and STs float "up" into the critical section,
   // but prior LDs and STs within the critical section can't be allowed
   // to reorder or float past the ST that releases the lock.
+  // Loads and stores in the critical section - which appear in program
+  // order before the store that releases the lock - must also appear
+  // before the store that releases the lock in memory visibility order.
+  // Conceptually we need a #loadstore|#storestore "release" MEMBAR before
+  // the ST of 0 into the lock-word which releases the lock, so fence
+  // more than covers this on all platforms.
   *adr = 0;
 }
 
@@ -4575,18 +4579,25 @@ void Thread::muxAcquireW (volatile intptr_t * Lock, ParkEvent * ev) {
 // This implementation pops from the head of the list.  This is unfair,
 // but tends to provide excellent throughput as hot threads remain hot.
 // (We wake recently run threads first).
-
+//
+// All paths through muxRelease() will execute a CAS.
+// Release consistency -- We depend on the CAS in muxRelease() to provide full
+// bidirectional fence/MEMBAR semantics, ensuring that all prior memory operations
+// executed within the critical section are complete and globally visible before the
+// store (CAS) to the lock-word that releases the lock becomes globally visible.
 void Thread::muxRelease (volatile intptr_t * Lock)  {
   for (;;) {
     const intptr_t w = Atomic::cmpxchg_ptr(0, Lock, LOCKBIT);
     assert(w & LOCKBIT, "invariant");
     if (w == LOCKBIT) return;
-    ParkEvent * List = (ParkEvent *)(w & ~LOCKBIT);
+    ParkEvent * const List = (ParkEvent *) (w & ~LOCKBIT);
     assert(List != NULL, "invariant");
     assert(List->OnList == intptr_t(Lock), "invariant");
-    ParkEvent * nxt = List->ListNext;
+    ParkEvent * const nxt = List->ListNext;
+    guarantee((intptr_t(nxt) & LOCKBIT) == 0, "invariant");
 
     // The following CAS() releases the lock and pops the head element.
+    // The CAS() also ratifies the previously fetched lock-word value.
     if (Atomic::cmpxchg_ptr (intptr_t(nxt), Lock, w) != w) {
       continue;
     }

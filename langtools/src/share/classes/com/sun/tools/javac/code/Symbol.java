@@ -770,42 +770,41 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override
         public List<Attribute.Compound> getAnnotationMirrors() {
-            return onlyTypeVariableAnnotations(owner.getRawTypeAttributes());
-        }
-
-        private List<Attribute.Compound> onlyTypeVariableAnnotations(
-                List<Attribute.TypeCompound> candidates) {
-            // Declaration annotations on TypeParameters are stored in type attributes
+            // Declaration annotations on type variables are stored in type attributes
+            // on the owner of the TypeVariableSymbol
+            List<Attribute.TypeCompound> candidates = owner.getRawTypeAttributes();
+            int index = owner.getTypeParameters().indexOf(this);
             List<Attribute.Compound> res = List.nil();
             for (Attribute.TypeCompound a : candidates) {
-                if (a.position.type == TargetType.CLASS_TYPE_PARAMETER ||
-                    a.position.type == TargetType.METHOD_TYPE_PARAMETER)
+                if (isCurrentSymbolsAnnotation(a, index))
                     res = res.prepend(a);
             }
 
-            return res = res.reverse();
+            return res.reverse();
         }
-
-
 
         // Helper to getAnnotation[s]
         @Override
         public <A extends Annotation> Attribute.Compound getAttribute(Class<A> annoType) {
-
             String name = annoType.getName();
 
             // Declaration annotations on type variables are stored in type attributes
             // on the owner of the TypeVariableSymbol
             List<Attribute.TypeCompound> candidates = owner.getRawTypeAttributes();
+            int index = owner.getTypeParameters().indexOf(this);
             for (Attribute.TypeCompound anno : candidates)
-                if (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
-                        anno.position.type == TargetType.METHOD_TYPE_PARAMETER)
-                    if (name.contentEquals(anno.type.tsym.flatName()))
-                        return anno;
+                if (isCurrentSymbolsAnnotation(anno, index) &&
+                    name.contentEquals(anno.type.tsym.flatName()))
+                    return anno;
 
             return null;
         }
-
+            //where:
+            boolean isCurrentSymbolsAnnotation(Attribute.TypeCompound anno, int index) {
+                return (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
+                        anno.position.type == TargetType.METHOD_TYPE_PARAMETER) &&
+                       anno.position.parameter_index == index;
+            }
 
 
         @Override

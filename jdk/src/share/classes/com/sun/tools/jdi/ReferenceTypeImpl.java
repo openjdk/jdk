@@ -751,7 +751,7 @@ implements ReferenceType {
     String baseSourceDir() {
         if (baseSourceDir == null) {
             String typeName = name();
-            StringBuffer sb = new StringBuffer(typeName.length() + 10);
+            StringBuilder sb = new StringBuilder(typeName.length() + 10);
             int index = 0;
             int nextIndex;
 

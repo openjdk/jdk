@@ -173,6 +173,8 @@ public class JRadioButtonMenuItem extends JMenuItem implements Accessible {
      *
      * @param text  the string displayed on the radio button
      * @param icon  the image that the button should display
+     * @param selected if {@code true}, the button is initially selected,
+     *                 otherwise, the button is initially unselected
      */
     public JRadioButtonMenuItem(String text, Icon icon, boolean selected) {
         super(text, icon);

@@ -99,12 +99,13 @@ public final class Source implements Loggable {
                 // Force any access errors
                 data.checkPermissionAndClose();
                 return existingSource;
-            } else {
-                // All sources in cache must be fully loaded
-                data.load();
-                CACHE.put(newSource, newSource);
-                return newSource;
             }
+
+            // All sources in cache must be fully loaded
+            data.load();
+            CACHE.put(newSource, newSource);
+
+            return newSource;
         } catch (final RuntimeException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IOException) {
@@ -291,7 +292,9 @@ public final class Source implements Loggable {
         }
 
         protected void checkPermissionAndClose() throws IOException {
-            try (InputStream in = url.openStream()) {}
+            try (InputStream in = url.openStream()) {
+                // empty
+            }
             debug("permission checked for ", url);
         }
 
@@ -366,20 +369,24 @@ public final class Source implements Loggable {
     }
 
     /**
-     * Returns an instance
+     * Returns a Source instance
      *
      * @param name    source name
      * @param content contents as char array
+     *
+     * @return source instance
      */
     public static Source sourceFor(final String name, final char[] content) {
         return new Source(name, baseName(name), new RawData(content));
     }
 
     /**
-     * Returns an instance
+     * Returns a Source instance
      *
      * @param name    source name
      * @param content contents as string
+     *
+     * @return source instance
      */
     public static Source sourceFor(final String name, final String content) {
         return new Source(name, baseName(name), new RawData(content));
@@ -390,6 +397,8 @@ public final class Source implements Loggable {
      *
      * @param name  source name
      * @param url   url from which source can be loaded
+     *
+     * @return source instance
      *
      * @throws IOException if source cannot be loaded
      */
@@ -404,6 +413,8 @@ public final class Source implements Loggable {
      * @param url   url from which source can be loaded
      * @param cs    Charset used to convert bytes to chars
      *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final URL url, final Charset cs) throws IOException {
@@ -415,6 +426,8 @@ public final class Source implements Loggable {
      *
      * @param name  source name
      * @param file  file from which source can be loaded
+     *
+     * @return source instance
      *
      * @throws IOException if source cannot be loaded
      */
@@ -429,6 +442,8 @@ public final class Source implements Loggable {
      * @param file  file from which source can be loaded
      * @param cs    Charset used to convert bytes to chars
      *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final File file, final Charset cs) throws IOException {
@@ -441,6 +456,9 @@ public final class Source implements Loggable {
      *
      * @param name source name
      * @param reader reader from which source can be loaded
+     *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final Reader reader) throws IOException {
@@ -542,9 +560,9 @@ public final class Source implements Loggable {
      * @return Index of first character of line.
      */
     private int findBOLN(final int position) {
-        final char[] data = data();
+        final char[] d = data();
         for (int i = position - 1; i > 0; i--) {
-            final char ch = data[i];
+            final char ch = d[i];
 
             if (ch == '\n' || ch == '\r') {
                 return i + 1;
@@ -560,10 +578,10 @@ public final class Source implements Loggable {
      * @return Index of last character of line.
      */
     private int findEOLN(final int position) {
-        final char[] data = data();
-        final int length = data.length;
+        final char[] d = data();
+        final int length = d.length;
         for (int i = position; i < length; i++) {
-            final char ch = data[i];
+            final char ch = d[i];
 
             if (ch == '\n' || ch == '\r') {
                 return i - 1;
@@ -583,12 +601,12 @@ public final class Source implements Loggable {
      * @return Line number.
      */
     public int getLine(final int position) {
-        final char[] data = data();
+        final char[] d = data();
         // Line count starts at 1.
         int line = 1;
 
         for (int i = 0; i < position; i++) {
-            final char ch = data[i];
+            final char ch = d[i];
             // Works for both \n and \r\n.
             if (ch == '\n') {
                 line++;

@@ -231,7 +231,9 @@ import java.sql.SQLException;
  *          }
  *      }
  * }</PRE>
+ *
  * @author  Jonathan Bruce
+ * @since 1.5
  */
 
 public interface SyncResolver extends RowSet {

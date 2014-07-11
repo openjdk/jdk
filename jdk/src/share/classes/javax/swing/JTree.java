@@ -986,6 +986,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * or equal to 0 the height for each row is determined by the
      * renderer.
      *
+     * @return the height of each row
      */
     public int getRowHeight()
     {
@@ -1115,6 +1116,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * <p>
      * This is a bound property.
      *
+     * @param clickCount the number of mouse clicks to get a node expanded or closed
      * @since 1.3
      * @beaninfo
      *        bound: true
@@ -1508,6 +1510,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * is provided as an entry point for subclassers to add filtered
      * editing without having to resort to creating a new editor.
      *
+     * @param path a {@code TreePath} identifying a node
      * @return true if every parent node and the node itself is editable
      * @see #isEditable
      */
@@ -1984,6 +1987,8 @@ public class JTree extends JComponent implements Scrollable, Accessible
     /**
      * Returns true if the node identified by the path has ever been
      * expanded.
+     *
+     * @param path a {@code TreePath} identifying a node
      * @return true if the <code>path</code> has ever been expanded
      */
     public boolean hasBeenExpanded(TreePath path) {
@@ -2079,6 +2084,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * which means it is either the root or all of its parents are expanded.
      * Otherwise, this method returns false.
      *
+     * @param path {@code TreePath} identifying a node
      * @return true if the node is viewable, otherwise false
      */
     public boolean isVisible(TreePath path) {
@@ -2472,6 +2478,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * set the selection model to <code>null</code>, which forces an empty
      * selection model to be used.
      *
+     * @return the model for selections
      * @see #setSelectionModel
      */
     public TreeSelectionModel getSelectionModel() {
@@ -2817,6 +2824,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *
      * @param path the <code>TreePath</code> indicating the node that was
      *          expanded
+     * @throws ExpandVetoException if the expansion is prevented from occurring
      * @see EventListenerList
      */
      public void fireTreeWillExpand(TreePath path) throws ExpandVetoException {
@@ -2843,6 +2851,7 @@ public class JTree extends JComponent implements Scrollable, Accessible
      *
      * @param path the <code>TreePath</code> indicating the node that was
      *          expanded
+     * @throws ExpandVetoException if the collapse is prevented from occurring
      * @see EventListenerList
      */
      public void fireTreeWillCollapse(TreePath path) throws ExpandVetoException {
@@ -3541,6 +3550,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * <code>path</code> are marked EXPANDED, but <code>path</code> itself
      * is marked collapsed.<p>
      * This will fail if a <code>TreeWillExpandListener</code> vetos it.
+     *
+     * @param path a {@code TreePath} identifying a node
+     * @param state if {@code true}, all parents of @{code path} and path are marked as expanded.
+     *              Otherwise, all parents of {@code path} are marked EXPANDED,
+     *              but {@code path} itself is marked collapsed.
      */
     protected void setExpandedState(TreePath path, boolean state) {
         if(path != null) {
@@ -3636,9 +3650,12 @@ public class JTree extends JComponent implements Scrollable, Accessible
     }
 
     /**
-     * Returns an <code>Enumeration</code> of <code>TreePaths</code>
+     * Returns an {@code Enumeration} of {@code TreePaths}
      * that have been expanded that
-     * are descendants of <code>parent</code>.
+     * are descendants of {@code parent}.
+     *
+     * @param parent a path
+     * @return the {@code Enumeration} of {@code TreePaths}
      */
     protected Enumeration<TreePath>
         getDescendantToggledPaths(TreePath parent)
@@ -3701,6 +3718,8 @@ public class JTree extends JComponent implements Scrollable, Accessible
       * <p>
       * For more information on what expanded state means, see the
       * <a href=#jtree_description>JTree description</a> above.
+      *
+      * @return the instance of {@code TreeModelHandler}
       */
      protected TreeModelListener createTreeModelListener() {
          return new TreeModelHandler();
@@ -3711,6 +3730,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
      * <code>path</code>. If <code>includePath</code> is true and
      * <code>path</code> is selected, it will be removed from the selection.
      *
+     * @param path a path
+     * @param includePath is {@code true} and {@code path} is selected,
+     *                    it will be removed from the selection.
      * @return true if a descendant was selected
      * @since 1.3
      */
@@ -3891,6 +3913,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
          * elements are added is children, otherwise if <code>children</code>
          * is a hashtable all the key/value pairs are added in the order
          * <code>Enumeration</code> returns them.
+         *
+         * @param parent the parent node
+         * @param children the children
          */
         public static void createChildren(DefaultMutableTreeNode parent,
                                           Object children) {
@@ -4113,6 +4138,9 @@ public class JTree extends JComponent implements Scrollable, Accessible
         TreePath   leadSelectionPath;
         Accessible leadSelectionAccessible;
 
+        /**
+         * Constructs {@code AccessibleJTree}
+         */
         public AccessibleJTree() {
             // Add a tree model listener for JTree
             TreeModel model = JTree.this.getModel();
@@ -4551,7 +4579,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
             private boolean isLeaf = false;
 
             /**
-             *  Constructs an AccessibleJTreeNode
+             * Constructs an AccessibleJTreeNode
+             *
+             * @param t an instance of {@code JTree}
+             * @param p an instance of {@code TreePath}
+             * @param ap an instance of {@code Accessible}
              * @since 1.4
              */
             public AccessibleJTreeNode(JTree t, TreePath p, Accessible ap) {
@@ -5183,6 +5215,11 @@ public class JTree extends JComponent implements Scrollable, Accessible
                 }
             }
 
+            /**
+             * Returns the relative location of the node
+             *
+             * @return the relative location of the node
+             */
             protected Point getLocationInJTree() {
                 Rectangle r = tree.getPathBounds(path);
                 if (r != null) {
