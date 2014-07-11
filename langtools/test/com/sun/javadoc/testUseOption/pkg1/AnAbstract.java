@@ -20,18 +20,5 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/**
- * An interface
- *
- */
-
 package pkg1;
-
-public interface UsedInterface<T> {
-
-    /**
-     * Does nothing
-     */
-    void doNothing();
-}
+public abstract class AnAbstract implements UsedInterface {}
