@@ -7,7 +7,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g FetchLocals.java
- *  @run main FetchLocals
+ *  @run driver FetchLocals
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

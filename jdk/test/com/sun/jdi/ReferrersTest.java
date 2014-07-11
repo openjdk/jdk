@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g ReferrersTest.java
- *  @run main ReferrersTest
+ *  @run driver ReferrersTest
  */
 
 /*

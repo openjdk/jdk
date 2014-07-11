@@ -384,7 +384,7 @@ public class Main {
     /** Programmatic interface for main function.
      * @param args    The command line parameters.
      */
-    public Result compile(String[] args,
+    protected Result compile(String[] args,
                        Context context,
                        List<JavaFileObject> fileObjects,
                        Iterable<? extends Processor> processors)

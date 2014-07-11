@@ -80,13 +80,13 @@ public abstract class AbstractSaslImpl {
                     "SASLIMPL02:Preferred qop mask: {0}", new Byte(allQop));
 
                 if (qop.length > 0) {
-                    StringBuffer qopbuf = new StringBuffer();
+                    StringBuilder str = new StringBuilder();
                     for (int i = 0; i < qop.length; i++) {
-                        qopbuf.append(Byte.toString(qop[i]));
-                        qopbuf.append(' ');
+                        str.append(Byte.toString(qop[i]));
+                        str.append(' ');
                     }
                     logger.logp(Level.FINE, myClassName, "constructor",
-                        "SASLIMPL03:Preferred qops : {0}", qopbuf.toString());
+                            "SASLIMPL03:Preferred qops : {0}", str.toString());
                 }
             }
 
@@ -95,13 +95,13 @@ public abstract class AbstractSaslImpl {
             logger.logp(Level.FINE, myClassName, "constructor",
                 "SASLIMPL04:Preferred strength property: {0}", prop);
             if (logger.isLoggable(Level.FINE) && strength.length > 0) {
-                StringBuffer strbuf = new StringBuffer();
+                StringBuilder str = new StringBuilder();
                 for (int i = 0; i < strength.length; i++) {
-                    strbuf.append(Byte.toString(strength[i]));
-                    strbuf.append(' ');
+                    str.append(Byte.toString(strength[i]));
+                    str.append(' ');
                 }
                 logger.logp(Level.FINE, myClassName, "constructor",
-                    "SASLIMPL05:Cipher strengths: {0}", strbuf.toString());
+                        "SASLIMPL05:Cipher strengths: {0}", str.toString());
             }
 
             // Max receive buffer size

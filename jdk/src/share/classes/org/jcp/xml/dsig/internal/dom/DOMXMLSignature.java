@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -188,7 +188,7 @@ public final class DOMXMLSignature extends DOMStructure
         return si;
     }
 
-    public List getObjects() {
+    public List<XMLObject> getObjects() {
         return objects;
     }
 
@@ -471,7 +471,8 @@ public final class DOMXMLSignature extends DOMStructure
                     digestReference((DOMReference)xs, signContext);
                 } else if (xs instanceof Manifest) {
                     Manifest man = (Manifest)xs;
-                    List manRefs = man.getReferences();
+                    List<Reference> manRefs =
+                        DOMManifest.getManifestReferences(man);
                     for (int i = 0, size = manRefs.size(); i < size; i++) {
                         digestReference((DOMReference)manRefs.get(i),
                                         signContext);

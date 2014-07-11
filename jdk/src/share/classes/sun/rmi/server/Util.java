@@ -391,7 +391,7 @@ public final class Util {
      * the definition of a "method descriptor".
      */
     private static String getMethodNameAndDescriptor(Method m) {
-        StringBuffer desc = new StringBuffer(m.getName());
+        StringBuilder desc = new StringBuilder(m.getName());
         desc.append('(');
         Class<?>[] paramTypes = m.getParameterTypes();
         for (int i = 0; i < paramTypes.length; i++) {

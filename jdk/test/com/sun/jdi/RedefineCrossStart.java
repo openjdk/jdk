@@ -37,13 +37,13 @@
  *  @run compile -g FramesTest.java
  *  @run compile -g InvokeTest.java
  *
- *  @run main CountEvent -redefstart
- *  @run main CountFilterTest -redefstart
- *  @run main FramesTest -redefstart
- *  @run main InvokeTest -redefstart
+ *  @run driver CountEvent -redefstart
+ *  @run driver CountFilterTest -redefstart
+ *  @run driver FramesTest -redefstart
+ *  @run driver InvokeTest -redefstart
  *
- *  @run main/othervm ExceptionEvents -redefstart U A StackOverflowUncaughtTarg null
- *  @run main/othervm ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.StackOverflowError
- *  @run main PopSynchronousTest -redefstart
+ *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg null
+ *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents -redefstart U A StackOverflowUncaughtTarg java.lang.StackOverflowError
+ *  @run driver PopSynchronousTest -redefstart
  */

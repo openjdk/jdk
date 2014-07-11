@@ -81,6 +81,7 @@ import java.time.temporal.TemporalAccessor;
 import java.time.temporal.TemporalAdjuster;
 import java.time.temporal.TemporalAmount;
 import java.time.temporal.TemporalField;
+import java.time.temporal.TemporalQueries;
 import java.time.temporal.TemporalQuery;
 import java.time.temporal.TemporalUnit;
 import java.time.temporal.UnsupportedTemporalTypeException;
@@ -551,14 +552,14 @@ public final class ZonedDateTime
         }
         try {
             ZoneId zone = ZoneId.from(temporal);
-            try {
+            if (temporal.isSupported(INSTANT_SECONDS)) {
                 long epochSecond = temporal.getLong(INSTANT_SECONDS);
                 int nanoOfSecond = temporal.get(NANO_OF_SECOND);
                 return create(epochSecond, nanoOfSecond, zone);
-
-            } catch (DateTimeException ex1) {
-                LocalDateTime ldt = LocalDateTime.from(temporal);
-                return of(ldt, zone);
+            } else {
+                LocalDate date = LocalDate.from(temporal);
+                LocalTime time = LocalTime.from(temporal);
+                return of(date, time, zone);
             }
         } catch (DateTimeException ex) {
             throw new DateTimeException("Unable to obtain ZonedDateTime from TemporalAccessor: " +
@@ -2039,8 +2040,12 @@ public final class ZonedDateTime
      * @throws DateTimeException if unable to query (defined by the query)
      * @throws ArithmeticException if numeric overflow occurs (defined by the query)
      */
+    @SuppressWarnings("unchecked")
     @Override  // override for Javadoc
     public <R> R query(TemporalQuery<R> query) {
+        if (query == TemporalQueries.localDate()) {
+            return (R) toLocalDate();
+        }
         return ChronoZonedDateTime.super.query(query);
     }
 

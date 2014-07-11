@@ -120,15 +120,15 @@ public final class VMID implements java.io.Serializable {
      * Return string representation of this VMID.
      */
     public String toString() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         if (addr != null)
             for (int i = 0; i < addr.length; ++ i) {
                 int x = addr[i] & 0xFF;
-                result.append((x < 0x10 ? "0" : "") +
-                              Integer.toString(x, 16));
+                sb.append((x < 0x10 ? "0" : "") +
+                          Integer.toString(x, 16));
             }
-        result.append(':');
-        result.append(uid.toString());
-        return result.toString();
+        sb.append(':');
+        sb.append(uid.toString());
+        return sb.toString();
     }
 }

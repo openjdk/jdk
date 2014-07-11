@@ -103,15 +103,23 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Return true if <code>a</code> contains <code>b</code>
+     * Return {@code true} if @{code a} contains {@code b}
+     *
+     * @param a the first rectangle
+     * @param b the second rectangle
+     *
+     * @return {@code true} if @{code a} contains {@code b}
      */
-    public static final boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
+    public static boolean isRectangleContainingRectangle(Rectangle a,Rectangle b) {
         return b.x >= a.x && (b.x + b.width) <= (a.x + a.width) &&
                 b.y >= a.y && (b.y + b.height) <= (a.y + a.height);
     }
 
     /**
-     * Return the rectangle (0,0,bounds.width,bounds.height) for the component <code>aComponent</code>
+     * Return the rectangle (0,0,bounds.width,bounds.height) for the component {@code aComponent}
+     *
+     * @param aComponent a component
+     * @return the local bounds for the component {@code aComponent}
      */
     public static Rectangle getLocalBounds(Component aComponent) {
         Rectangle b = new Rectangle(aComponent.getBounds());
@@ -165,6 +173,12 @@ public class SwingUtilities implements SwingConstants
      * root component coordinate system.
      * If both <code>source</code> and <code>destination</code> are {@code null}, return <code>aPoint</code>
      * without any conversion.
+     *
+     * @param source the source component
+     * @param aPoint the point
+     * @param destination the destination component
+     *
+     * @return the converted coordinate
      */
     public static Point convertPoint(Component source,Point aPoint,Component destination) {
         Point p;
@@ -196,6 +210,13 @@ public class SwingUtilities implements SwingConstants
      * root component coordinate system.
      * If both <code>source</code> and <code>destination</code> are {@code null}, return <code>(x,y)</code>
      * without any conversion.
+     *
+     * @param source the source component
+     * @param x the x-coordinate of the point
+     * @param y the y-coordinate of the point
+     * @param destination the destination component
+     *
+     * @return the converted coordinate
      */
     public static Point convertPoint(Component source,int x, int y,Component destination) {
         Point point = new Point(x,y);
@@ -211,6 +232,12 @@ public class SwingUtilities implements SwingConstants
      * root component coordinate system.
      * If both <code>source</code> and <code>destination</code> are {@code null}, return <code>aRectangle</code>
      * without any conversion.
+     *
+     * @param source the source component
+     * @param aRectangle a rectangle
+     * @param destination the destination component
+     *
+     * @return the converted rectangle
      */
     public static Rectangle convertRectangle(Component source,Rectangle aRectangle,Component destination) {
         Point point = new Point(aRectangle.x,aRectangle.y);
@@ -222,6 +249,12 @@ public class SwingUtilities implements SwingConstants
      * Convenience method for searching above <code>comp</code> in the
      * component hierarchy and returns the first object of class <code>c</code> it
      * finds. Can return {@code null}, if a class <code>c</code> cannot be found.
+     *
+     * @param c the class of a component
+     * @param comp the component
+     *
+     * @return the ancestor of the {@code comp},
+     *         or {@code null} if {@code c} cannot be found.
      */
     public static Container getAncestorOfClass(Class<?> c, Component comp)
     {
@@ -238,6 +271,12 @@ public class SwingUtilities implements SwingConstants
      * Convenience method for searching above <code>comp</code> in the
      * component hierarchy and returns the first object of <code>name</code> it
      * finds. Can return {@code null}, if <code>name</code> cannot be found.
+     *
+     * @param name the name of a component
+     * @param comp the component
+     *
+     * @return the ancestor of the {@code comp},
+     *         or {@code null} if {@code name} cannot be found.
      */
     public static Container getAncestorNamed(String name, Component comp) {
         if(comp == null || name == null)
@@ -260,6 +299,8 @@ public class SwingUtilities implements SwingConstants
      * @param parent the root component to begin the search
      * @param x the x target location
      * @param y the y target location
+     *
+     * @return the deepest component
      */
     public static Component getDeepestComponentAt(Component parent, int x, int y) {
         if (!parent.contains(x, y)) {
@@ -297,6 +338,12 @@ public class SwingUtilities implements SwingConstants
      * to <code>destination</code> if destination is non-{@code null}
      * use the translateMouseEvent() method to translate a mouse event from
      * one component to another without changing the source.
+     *
+     * @param source the source component
+     * @param sourceEvent the source mouse event
+     * @param destination the destination component
+     *
+     * @return the new mouse event
      */
     public static MouseEvent convertMouseEvent(Component source,
                                                MouseEvent sourceEvent,
@@ -456,7 +503,11 @@ public class SwingUtilities implements SwingConstants
     }
 
     /**
-     * Return <code>true</code> if a component <code>a</code> descends from a component <code>b</code>
+     * Return {@code true} if a component {@code a} descends from a component {@code b}
+     *
+     * @param a the first component
+     * @param b the second component
+     * @return {@code true} if a component {@code a} descends from a component {@code b}
      */
     public static boolean isDescendingFrom(Component a,Component b) {
         if(a == b)
@@ -531,6 +582,12 @@ public class SwingUtilities implements SwingConstants
      * Convenience returning an array of rect representing the regions within
      * <code>rectA</code> that do not overlap with <code>rectB</code>. If the
      * two Rects do not overlap, returns an empty array
+     *
+     * @param rectA the first rectangle
+     * @param rectB the second rectangle
+     *
+     * @return an array of rectangles representing the regions within {@code rectA}
+     *         that do not overlap with {@code rectB}.
      */
     public static Rectangle[] computeDifference(Rectangle rectA,Rectangle rectB) {
         if (rectB == null || !rectA.intersects(rectB) || isRectangleContainingRectangle(rectB,rectA)) {
@@ -841,6 +898,21 @@ public class SwingUtilities implements SwingConstants
      * relative to the viewR rectangle.
      * The JComponents orientation (LEADING/TRAILING) will also be taken
      * into account and translated into LEFT/RIGHT values accordingly.
+     *
+     * @param c the component
+     * @param fm the instance of {@code FontMetrics}
+     * @param text the text
+     * @param icon the icon
+     * @param verticalAlignment the vertical alignment
+     * @param horizontalAlignment the horizontal alignment
+     * @param verticalTextPosition the vertical text position
+     * @param horizontalTextPosition the horizontal text position
+     * @param viewR the available rectangle
+     * @param iconR the rectangle for the icon
+     * @param textR the rectangle for the text
+     * @param textIconGap the gap between text and icon
+     *
+     * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(JComponent c,
                                              FontMetrics fm,
@@ -910,6 +982,20 @@ public class SwingUtilities implements SwingConstants
      * values in horizontalTextPosition (they will default to RIGHT) and in
      * horizontalAlignment (they will default to CENTER).
      * Use the other version of layoutCompoundLabel() instead.
+     *
+     * @param fm the instance of {@code FontMetrics}
+     * @param text the text
+     * @param icon the icon
+     * @param verticalAlignment the vertical alignment
+     * @param horizontalAlignment the horizontal alignment
+     * @param verticalTextPosition the vertical text position
+     * @param horizontalTextPosition the horizontal text position
+     * @param viewR the available rectangle
+     * @param iconR the rectangle for the icon
+     * @param textR the rectangle for the text
+     * @param textIconGap the gap between text and icon
+     *
+     * @return the possibly clipped version of the compound labels string
      */
     public static String layoutCompoundLabel(
         FontMetrics fm,
@@ -1219,6 +1305,8 @@ public class SwingUtilities implements SwingConstants
      * A simple minded look and feel change: ask each node in the tree
      * to <code>updateUI()</code> -- that is, to initialize its UI property
      * with the current look and feel.
+     *
+     * @param c the component
      */
     public static void updateComponentTreeUI(Component c) {
         updateComponentTreeUI0(c);
@@ -1284,6 +1372,7 @@ public class SwingUtilities implements SwingConstants
      * <p>
      * Unlike the rest of Swing, this method can be invoked from any thread.
      *
+     * @param doRun the instance of {@code Runnable}
      * @see #invokeAndWait
      */
     public static void invokeLater(Runnable doRun) {
@@ -1334,6 +1423,7 @@ public class SwingUtilities implements SwingConstants
      * As of 1.3 this method is just a cover for
      * <code>java.awt.EventQueue.invokeAndWait()</code>.
      *
+     * @param doRun the instance of {@code Runnable}
      * @exception  InterruptedException if we're interrupted while waiting for
      *             the event dispatching thread to finish executing
      *             <code>doRun.run()</code>
@@ -1374,6 +1464,7 @@ public class SwingUtilities implements SwingConstants
      * Component.AccessibleAWTComponent.getAccessibleIndexInParent() instead
      * of using this method.
      *
+     * @param c the component
      * @return -1 of this object does not have an accessible parent.
      * Otherwise, the index of the child in its accessible parent.
      */
@@ -1386,6 +1477,8 @@ public class SwingUtilities implements SwingConstants
      * local coordinate <code>Point</code>, if one exists.
      * Otherwise returns <code>null</code>.
      *
+     * @param c the component
+     * @param p the local coordinate
      * @return the <code>Accessible</code> at the specified location,
      *    if it exists; otherwise <code>null</code>
      */
@@ -1431,6 +1524,7 @@ public class SwingUtilities implements SwingConstants
      * Component.AccessibleAWTComponent.getAccessibleIndexInParent() instead
      * of using this method.
      *
+     * @param c the component
      * @return an instance of AccessibleStateSet containing the current state
      * set of the object
      * @see AccessibleState
@@ -1448,6 +1542,7 @@ public class SwingUtilities implements SwingConstants
      * Component.AccessibleAWTComponent.getAccessibleIndexInParent() instead
      * of using this method.
      *
+     * @param c the component
      * @return the number of accessible children in the object.
      */
     public static int getAccessibleChildrenCount(Component c) {
@@ -1461,6 +1556,7 @@ public class SwingUtilities implements SwingConstants
      * Component.AccessibleAWTComponent.getAccessibleIndexInParent() instead
      * of using this method.
      *
+     * @param c the component
      * @param i zero-based index of child
      * @return the nth Accessible child of the object
      */
@@ -1502,6 +1598,8 @@ public class SwingUtilities implements SwingConstants
     /**
      * If c is a JRootPane descendant return its JRootPane ancestor.
      * If c is a RootPaneContainer then return its JRootPane.
+     *
+     * @param c the component
      * @return the JRootPane for Component c or {@code null}.
      */
     public static JRootPane getRootPane(Component c) {
@@ -1519,6 +1617,8 @@ public class SwingUtilities implements SwingConstants
 
     /**
      * Returns the root component for the current component tree.
+     *
+     * @param c the component
      * @return the first ancestor of c that's a Window or the last Applet ancestor
      */
     public static Component getRoot(Component c) {
@@ -1616,6 +1716,14 @@ public class SwingUtilities implements SwingConstants
      * This will return true if <code>action</code> is non-{@code null} and
      * actionPerformed is invoked on it.
      *
+     * @param action an action
+     * @param ks a key stroke
+     * @param event a key event
+     * @param sender a sender
+     * @param modifiers action modifiers
+     * @return {@code true} if {@code action} is non-{@code null} and
+     *         actionPerformed is invoked on it.
+     *
      * @since 1.3
      */
     public static boolean notifyAction(Action action, KeyStroke ks,
@@ -1672,6 +1780,9 @@ public class SwingUtilities implements SwingConstants
      * to <code>uiInputMap</code>. If <code>uiInputMap</code> is {@code null},
      * this removes any previously installed UI InputMap.
      *
+     * @param component a component
+     * @param type a type
+     * @param uiInputMap an {@code InputMap}
      * @since 1.3
      */
     public static void replaceUIInputMap(JComponent component, int type,
@@ -1694,6 +1805,8 @@ public class SwingUtilities implements SwingConstants
      * to <code>uiActionMap</code>. If <code>uiActionMap</code> is {@code null},
      * this removes any previously installed UI ActionMap.
      *
+     * @param component a component
+     * @param uiActionMap an {@code ActionMap}
      * @since 1.3
      */
     public static void replaceUIActionMap(JComponent component,
@@ -1714,9 +1827,14 @@ public class SwingUtilities implements SwingConstants
     /**
      * Returns the InputMap provided by the UI for condition
      * <code>condition</code> in component <code>component</code>.
-     * <p>This will return {@code null} if the UI has not installed a InputMap
+     * <p>This will return {@code null} if the UI has not installed an InputMap
      * of the specified type.
      *
+     * @param component a component
+     * @param condition a condition
+     * @return the {@code ActionMap} provided by the UI for {@code condition}
+     *         in the component, or {@code null} if the UI has not installed
+     *         an InputMap of the specified type.
      * @since 1.3
      */
     public static InputMap getUIInputMap(JComponent component, int condition) {
@@ -1736,6 +1854,9 @@ public class SwingUtilities implements SwingConstants
      * in component <code>component</code>.
      * <p>This will return {@code null} if the UI has not installed an ActionMap.
      *
+     * @param component a component
+     * @return the {@code ActionMap} provided by the UI in the component,
+     *         or {@code null} if the UI has not installed an ActionMap.
      * @since 1.3
      */
     public static ActionMap getUIActionMap(JComponent component) {

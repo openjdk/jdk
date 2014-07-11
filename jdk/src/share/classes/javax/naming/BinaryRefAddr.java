@@ -165,7 +165,7 @@ public class BinaryRefAddr extends RefAddr {
       * @return The non-null string representation of this address.
       */
     public String toString(){
-        StringBuffer str = new StringBuffer("Address Type: " + addrType + "\n");
+        StringBuilder str = new StringBuilder("Address Type: " + addrType + "\n");
 
         str.append("AddressContents: ");
         for (int i = 0; i<buf.length && i < 32; i++) {

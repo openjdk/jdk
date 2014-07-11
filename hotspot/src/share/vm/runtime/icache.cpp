@@ -34,6 +34,9 @@ void AbstractICache::initialize() {
   ResourceMark rm;
 
   BufferBlob* b = BufferBlob::create("flush_icache_stub", ICache::stub_size);
+  if (b == NULL) {
+    vm_exit_out_of_memory(ICache::stub_size, OOM_MALLOC_ERROR, "CodeCache: no space for flush_icache_stub");
+  }
   CodeBuffer c(b);
 
   ICacheStubGenerator g(&c);

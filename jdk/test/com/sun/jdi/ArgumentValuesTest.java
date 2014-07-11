@@ -7,7 +7,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile ArgumentValuesTest.java
- *  @run main ArgumentValuesTest
+ *  @run driver ArgumentValuesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

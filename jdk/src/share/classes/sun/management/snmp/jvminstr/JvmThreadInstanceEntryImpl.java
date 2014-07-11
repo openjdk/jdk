@@ -311,19 +311,19 @@ public class JvmThreadInstanceEntryImpl
         StackTraceElement[] stackTrace = info.getStackTrace();
         //We append the stack trace in a buffer
         // XXX Revisit: should check isDebugOn()
-        StringBuffer b = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         final int stackSize = stackTrace.length;
         log.debug("getJvmThreadInstStackTrace", "Stack size : " + stackSize);
         for(int i = 0; i < stackSize; i++) {
             log.debug("getJvmThreadInstStackTrace", "Append " +
                       stackTrace[i].toString());
-            b.append(stackTrace[i].toString());
+            sb.append(stackTrace[i].toString());
             //Append \n at the end of each line except the last one
             if(i < stackSize)
-                b.append("\n");
+                sb.append("\n");
         }
         //The stack trace is truncated if its size exceeds 255.
-        return validPathElementTC(b.toString());
+        return validPathElementTC(sb.toString());
     }
     static final MibLogger log =
         new MibLogger(JvmThreadInstanceEntryImpl.class);

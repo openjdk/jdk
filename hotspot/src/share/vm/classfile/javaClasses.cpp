@@ -618,6 +618,8 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       assert(comp_mirror.not_null(), "must have a mirror");
 
       // Two-way link between the array klass and its component mirror:
+      // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
+      set_component_mirror(mirror(), comp_mirror());
       ArrayKlass::cast(k())->set_component_mirror(comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
@@ -677,6 +679,16 @@ oop java_lang_Class::protection_domain(oop java_class) {
 void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
   assert(_protection_domain_offset != 0, "must be set");
   java_class->obj_field_put(_protection_domain_offset, pd);
+}
+
+void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
+  if (_component_mirror_offset != 0) {
+    java_class->obj_field_put(_component_mirror_offset, comp_mirror);
+  }
+}
+oop java_lang_Class::component_mirror(oop java_class) {
+  assert(_component_mirror_offset != 0, "must be set");
+  return java_class->obj_field(_component_mirror_offset);
 }
 
 oop java_lang_Class::init_lock(oop java_class) {
@@ -874,6 +886,10 @@ void java_lang_Class::compute_offsets() {
   compute_optional_offset(_class_loader_offset,
                  klass_oop, vmSymbols::classLoader_name(),
                  vmSymbols::classloader_signature());
+
+  compute_optional_offset(_component_mirror_offset,
+                 klass_oop, vmSymbols::componentType_name(),
+                 vmSymbols::class_signature());
 
   CLASS_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
@@ -3097,6 +3113,7 @@ int java_lang_Class::_oop_size_offset;
 int java_lang_Class::_static_oop_field_count_offset;
 int java_lang_Class::_class_loader_offset;
 int java_lang_Class::_protection_domain_offset;
+int java_lang_Class::_component_mirror_offset;
 int java_lang_Class::_init_lock_offset;
 int java_lang_Class::_signers_offset;
 GrowableArray<Klass*>* java_lang_Class::_fixup_mirror_list = NULL;

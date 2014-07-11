@@ -36,7 +36,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g EarlyReturnTest.java
- *  @run main EarlyReturnTest
+ *  @run driver EarlyReturnTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;
