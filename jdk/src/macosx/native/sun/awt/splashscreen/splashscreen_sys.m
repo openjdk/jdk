@@ -45,6 +45,7 @@
 #include <dlfcn.h>
 
 #include <sizecalc.h>
+#import "ThreadUtilities.h"
 
 static NSScreen* SplashNSScreen()
 {
@@ -130,8 +131,12 @@ char* SplashGetScaledImageName(const char* jar, const char* file,
     NSAutoreleasePool *pool = [NSAutoreleasePool new];
     *scaleFactor = 1;
     char* scaledFile = nil;
-    float screenScaleFactor = [SplashNSScreen() backingScaleFactor];
-    
+    __block float screenScaleFactor = 1;
+
+    [ThreadUtilities performOnMainThreadWaiting:YES block:^(){
+        screenScaleFactor = [SplashNSScreen() backingScaleFactor];
+    }];
+
     if (screenScaleFactor > 1) {
         NSString *fileName = [NSString stringWithUTF8String: file];
         NSUInteger length = [fileName length];
