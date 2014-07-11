@@ -325,3 +325,24 @@ applicable_cmsgc = \
  -:needs_parallelgc
 
 
+# When called from top level the test suites use the hotspot_ prefix
+hotspot_wbapitest = \
+  sanity/
+
+hotspot_compiler = \
+  sanity/ExecuteInternalVMTests.java
+
+hotspot_gc = \
+  sanity/ExecuteInternalVMTests.java
+
+hotspot_runtime = \
+  sanity/ExecuteInternalVMTests.java
+
+hotspot_serviceability = \
+  sanity/ExecuteInternalVMTests.java
+
+hotspot_all = \
+  :hotspot_compiler \
+  :hotspot_gc \
+  :hotspot_runtime \
+  :hotspot_serviceability
