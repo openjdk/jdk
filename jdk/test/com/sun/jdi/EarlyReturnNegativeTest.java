@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g EarlyReturnNegativeTest.java
- *  @run main EarlyReturnNegativeTest
+ *  @run driver EarlyReturnNegativeTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

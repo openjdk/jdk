@@ -39,7 +39,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  *
  * @author Michael Glavassevich, IBM
  *
- * @version $Id: XIncludeAwareParserConfiguration.java,v 1.5 2010-11-01 04:40:10 joehw Exp $
  */
 public class XIncludeAwareParserConfiguration extends XML11Configuration {
 

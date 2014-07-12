@@ -52,7 +52,7 @@ private:
     return basic_plus_adr(base, base, offset);
   }
   Node* basic_plus_adr(Node* base, Node* ptr, Node* offset) {
-    Node* adr = new (C) AddPNode(base, ptr, offset);
+    Node* adr = new AddPNode(base, ptr, offset);
     return transform_later(adr);
   }
   Node* transform_later(Node* n) {

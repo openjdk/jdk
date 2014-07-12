@@ -57,6 +57,7 @@ import javax.swing.event.*;
  * @see javax.swing.event.CellEditorListener
  *
  * @author Alan Chung
+ * @since 1.2
  */
 public interface CellEditor {
 

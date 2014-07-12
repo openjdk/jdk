@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMKeyInfo.java 1333869 2012-05-04 10:42:44Z coheigea $
@@ -138,7 +138,7 @@ public final class DOMKeyInfo extends DOMStructure implements KeyInfo {
         return id;
     }
 
-    public List getContent() {
+    public List<XMLStructure> getContent() {
         return keyInfoTypes;
     }
 

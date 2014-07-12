@@ -27,11 +27,10 @@ package sun.swing;
 
 import sun.misc.Unsafe;
 
-import java.awt.Point;
-import javax.swing.RepaintManager;
+import java.awt.*;
+import javax.swing.*;
 
 import javax.swing.text.JTextComponent;
-import javax.swing.TransferHandler;
 
 /**
  * The SwingAccessor utility class.
@@ -88,6 +87,14 @@ public final class SwingAccessor {
     public interface RepaintManagerAccessor {
         void addRepaintListener(RepaintManager rm, SwingUtilities2.RepaintListener l);
         void removeRepaintListener(RepaintManager rm, SwingUtilities2.RepaintListener l);
+    }
+
+    /**
+     * An accessor for PopupFactory class.
+     */
+    public interface PopupFactoryAccessor {
+        Popup getHeavyWeightPopup(PopupFactory factory, Component owner, Component contents,
+                                  int ownerX, int ownerY);
     }
 
     /**
@@ -155,5 +162,27 @@ public final class SwingAccessor {
             unsafe.ensureClassInitialized(RepaintManager.class);
         }
         return repaintManagerAccessor;
+    }
+
+    /**
+     * The PopupFactory class accessor object.
+     */
+    private static PopupFactoryAccessor popupFactoryAccessor;
+
+    /**
+     * Retrieve the accessor object for the PopupFactory class.
+     */
+    public static PopupFactoryAccessor getPopupFactoryAccessor() {
+        if (popupFactoryAccessor == null) {
+            unsafe.ensureClassInitialized(PopupFactory.class);
+        }
+        return popupFactoryAccessor;
+    }
+
+    /**
+     * Set an Accessor object for the PopupFactory class.
+     */
+    public static void setPopupFactoryAccessor(PopupFactoryAccessor popupFactoryAccessor) {
+        SwingAccessor.popupFactoryAccessor = popupFactoryAccessor;
     }
 }

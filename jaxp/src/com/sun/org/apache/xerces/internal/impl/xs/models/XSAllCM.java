@@ -35,7 +35,6 @@ import java.util.ArrayList;
  * @xerces.internal
  *
  * @author Pavani Mukthipudi, Sun Microsystems Inc.
- * @version $Id: XSAllCM.java,v 1.10 2010-11-01 04:39:58 joehw Exp $
  */
 public class XSAllCM implements XSCMValidator {
 

@@ -25,6 +25,7 @@
 
 package java.util.logging;
 
+import static java.nio.file.StandardOpenOption.APPEND;
 import static java.nio.file.StandardOpenOption.CREATE_NEW;
 import static java.nio.file.StandardOpenOption.WRITE;
 
@@ -34,10 +35,17 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.channels.FileChannel;
+import java.nio.channels.OverlappingFileLockException;
 import java.nio.file.FileAlreadyExistsException;
+import java.nio.file.Files;
+import java.nio.file.LinkOption;
+import java.nio.file.NoSuchFileException;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.HashSet;
+import java.util.Set;
 
 /**
  * Simple file logging <tt>Handler</tt>.
@@ -149,7 +157,7 @@ public class FileHandler extends StreamHandler {
     private FileChannel lockFileChannel;
     private File files[];
     private static final int MAX_LOCKS = 100;
-    private static final java.util.HashMap<String, String> locks = new java.util.HashMap<>();
+    private static final Set<String> locks = new HashSet<>();
 
     /**
      * A metered stream is a subclass of OutputStream that
@@ -428,34 +436,80 @@ public class FileHandler extends StreamHandler {
             // between processes (and not within a process), we first check
             // if we ourself already have the file locked.
             synchronized(locks) {
-                if (locks.get(lockFileName) != null) {
+                if (locks.contains(lockFileName)) {
                     // We already own this lock, for a different FileHandler
                     // object.  Try again.
                     continue;
                 }
 
-                try {
-                    lockFileChannel = FileChannel.open(Paths.get(lockFileName),
-                            CREATE_NEW, WRITE);
-                } catch (FileAlreadyExistsException ix) {
-                    // try the next lock file name in the sequence
-                    continue;
+                final Path lockFilePath = Paths.get(lockFileName);
+                FileChannel channel = null;
+                int retries = -1;
+                boolean fileCreated = false;
+                while (channel == null && retries++ < 1) {
+                    try {
+                        channel = FileChannel.open(lockFilePath,
+                                CREATE_NEW, WRITE);
+                        fileCreated = true;
+                    } catch (FileAlreadyExistsException ix) {
+                        // This may be a zombie file left over by a previous
+                        // execution. Reuse it - but only if we can actually
+                        // write to its directory.
+                        // Note that this is a situation that may happen,
+                        // but not too frequently.
+                        if (Files.isRegularFile(lockFilePath, LinkOption.NOFOLLOW_LINKS)
+                            && Files.isWritable(lockFilePath.getParent())) {
+                            try {
+                                channel = FileChannel.open(lockFilePath,
+                                    WRITE, APPEND);
+                            } catch (NoSuchFileException x) {
+                                // Race condition - retry once, and if that
+                                // fails again just try the next name in
+                                // the sequence.
+                                continue;
+                            } catch(IOException x) {
+                                // the file may not be writable for us.
+                                // try the next name in the sequence
+                                break;
+                            }
+                        } else {
+                            // at this point channel should still be null.
+                            // break and try the next name in the sequence.
+                            break;
+                        }
+                    }
                 }
+
+                if (channel == null) continue; // try the next name;
+                lockFileChannel = channel;
 
                 boolean available;
                 try {
                     available = lockFileChannel.tryLock() != null;
                     // We got the lock OK.
+                    // At this point we could call File.deleteOnExit().
+                    // However, this could have undesirable side effects
+                    // as indicated by JDK-4872014. So we will instead
+                    // rely on the fact that close() will remove the lock
+                    // file and that whoever is creating FileHandlers should
+                    // be responsible for closing them.
                 } catch (IOException ix) {
                     // We got an IOException while trying to get the lock.
                     // This normally indicates that locking is not supported
                     // on the target directory.  We have to proceed without
-                    // getting a lock.   Drop through.
-                    available = true;
+                    // getting a lock.   Drop through, but only if we did
+                    // create the file...
+                    available = fileCreated;
+                } catch (OverlappingFileLockException x) {
+                    // someone already locked this file in this VM, through
+                    // some other channel - that is - using something else
+                    // than new FileHandler(...);
+                    // continue searching for an available lock.
+                    available = false;
                 }
                 if (available) {
                     // We got the lock.  Remember it.
-                    locks.put(lockFileName, lockFileName);
+                    locks.add(lockFileName);
                     break;
                 }
 

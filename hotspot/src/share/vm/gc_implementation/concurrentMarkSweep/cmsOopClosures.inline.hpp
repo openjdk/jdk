@@ -44,33 +44,20 @@ inline void Par_MarkRefsIntoAndScanClosure::trim_queue(uint max) {
   }
 }
 
-// CMSOopClosure and CMSoopsInGenClosure are duplicated,
+// MetadataAwareOopClosure and MetadataAwareOopsInGenClosure are duplicated,
 // until we get rid of OopsInGenClosure.
 
-inline void CMSOopClosure::do_klass(Klass* k)       { do_klass_nv(k); }
-inline void CMSOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
-
-inline void CMSOopClosure::do_klass_nv(Klass* k) {
+inline void MetadataAwareOopsInGenClosure::do_klass_nv(Klass* k) {
   ClassLoaderData* cld = k->class_loader_data();
   do_class_loader_data(cld);
 }
-inline void CMSOopsInGenClosure::do_klass_nv(Klass* k) {
-  ClassLoaderData* cld = k->class_loader_data();
-  do_class_loader_data(cld);
-}
+inline void MetadataAwareOopsInGenClosure::do_klass(Klass* k) { do_klass_nv(k); }
 
-inline void CMSOopClosure::do_class_loader_data(ClassLoaderData* cld) {
+inline void MetadataAwareOopsInGenClosure::do_class_loader_data(ClassLoaderData* cld) {
   assert(_klass_closure._oop_closure == this, "Must be");
 
   bool claim = true;  // Must claim the class loader data before processing.
   cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
 }
-inline void CMSOopsInGenClosure::do_class_loader_data(ClassLoaderData* cld) {
-  assert(_klass_closure._oop_closure == this, "Must be");
-
-  bool claim = true;  // Must claim the class loader data before processing.
-  cld->oops_do(_klass_closure._oop_closure, &_klass_closure, claim);
-}
-
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_CONCURRENTMARKSWEEP_CMSOOPCLOSURES_INLINE_HPP

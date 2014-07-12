@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "prims/jvmtiRawMonitor.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/thread.inline.hpp"

@@ -260,7 +260,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             pre.addContent(span);
         }
         if (!isInterface) {
-            Type superclass = Util.getFirstVisibleSuperClass(classDoc,
+            Type superclass = utils.getFirstVisibleSuperClass(classDoc,
                     configuration);
             if (superclass != null) {
                 pre.addContent(DocletConstants.NL);
@@ -276,7 +276,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
             int counter = 0;
             for (Type implType : implIntfacs) {
                 ClassDoc classDoc = implType.asClassDoc();
-                if (!(classDoc.isPublic() || Util.isLinkable(classDoc, configuration))) {
+                if (!(classDoc.isPublic() || utils.isLinkable(classDoc, configuration))) {
                     continue;
                 }
                 if (counter == 0) {
@@ -329,7 +329,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         classTreeUl.addStyle(HtmlStyle.inheritance);
         Content liTree = null;
         do {
-            sup = Util.getFirstVisibleSuperClass(
+            sup = utils.getFirstVisibleSuperClass(
                     type instanceof ClassDoc ? (ClassDoc) type : type.asClassDoc(),
                     configuration);
             if (sup != null) {
@@ -471,7 +471,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     public void addImplementedInterfacesInfo(Content classInfoTree) {
         //NOTE:  we really should be using ClassDoc.interfaceTypes() here, but
         //       it doesn't walk up the tree like we want it to.
-        List<Type> interfaceArray = Util.getAllInterfaces(classDoc, configuration);
+        List<Type> interfaceArray = utils.getAllInterfaces(classDoc, configuration);
         if (classDoc.isClass() && interfaceArray.size() > 0) {
             Content label = getResource(
                     "doclet.All_Implemented_Interfaces");
@@ -489,7 +489,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
     public void addSuperInterfacesInfo(Content classInfoTree) {
         //NOTE:  we really should be using ClassDoc.interfaceTypes() here, but
         //       it doesn't walk up the tree like we want it to.
-        List<Type> interfaceArray = Util.getAllInterfaces(classDoc, configuration);
+        List<Type> interfaceArray = utils.getAllInterfaces(classDoc, configuration);
         if (classDoc.isInterface() && interfaceArray.size() > 0) {
             Content label = getResource(
                     "doclet.All_Superinterfaces");
@@ -559,7 +559,7 @@ public class ClassWriterImpl extends SubWriterHolderWriter
         Content hr = new HtmlTree(HtmlTag.HR);
         classInfoTree.addContent(hr);
         Tag[] deprs = classDoc.tags("deprecated");
-        if (Util.isDeprecated(classDoc)) {
+        if (utils.isDeprecated(classDoc)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
             Content div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             if (deprs.length > 0) {

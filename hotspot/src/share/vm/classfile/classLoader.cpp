@@ -1126,7 +1126,7 @@ void ClassLoader::verify() {
 
 
 // JDK 1.3 version
-typedef struct real_jzentry13 {         /* Zip file entry */
+typedef struct real_jzentry {         /* Zip file entry */
     char *name;                 /* entry name */
     jint time;                  /* modification time */
     jint size;                  /* size of uncompressed data */
@@ -1135,9 +1135,9 @@ typedef struct real_jzentry13 {         /* Zip file entry */
     char *comment;              /* optional zip file comment */
     jbyte *extra;               /* optional extra data */
     jint pos;                   /* position of LOC header (if negative) or data */
-} real_jzentry13;
+} real_jzentry;
 
-typedef struct real_jzfile13 {  /* Zip file */
+typedef struct real_jzfile {  /* Zip file */
     char *name;                 /* zip file name */
     jint refs;                  /* number of active references */
     jint fd;                    /* open file descriptor */
@@ -1148,42 +1148,14 @@ typedef struct real_jzfile13 {  /* Zip file */
     jint total;                 /* total number of entries */
     unsigned short *table;      /* Hash chain heads: indexes into entries */
     jint tablelen;              /* number of hash eads */
-    real_jzfile13 *next;        /* next zip file in search list */
+    real_jzfile *next;        /* next zip file in search list */
     jzentry *cache;             /* we cache the most recently freed jzentry */
     /* Information on metadata names in META-INF directory */
     char **metanames;           /* array of meta names (may have null names) */
     jint metacount;             /* number of slots in metanames array */
     /* If there are any per-entry comments, they are in the comments array */
     char **comments;
-} real_jzfile13;
-
-// JDK 1.2 version
-typedef struct real_jzentry12 {  /* Zip file entry */
-    char *name;                  /* entry name */
-    jint time;                   /* modification time */
-    jint size;                   /* size of uncompressed data */
-    jint csize;                  /* size of compressed data (zero if uncompressed) */
-    jint crc;                    /* crc of uncompressed data */
-    char *comment;               /* optional zip file comment */
-    jbyte *extra;                /* optional extra data */
-    jint pos;                    /* position of LOC header (if negative) or data */
-    struct real_jzentry12 *next; /* next entry in hash table */
-} real_jzentry12;
-
-typedef struct real_jzfile12 {  /* Zip file */
-    char *name;                 /* zip file name */
-    jint refs;                  /* number of active references */
-    jint fd;                    /* open file descriptor */
-    void *lock;                 /* read lock */
-    char *comment;              /* zip file comment */
-    char *msg;                  /* zip error message */
-    real_jzentry12 *entries;    /* array of zip entries */
-    jint total;                 /* total number of entries */
-    real_jzentry12 **table;     /* hash table of entries */
-    jint tablelen;              /* number of buckets */
-    jzfile *next;               /* next zip file in search list */
-} real_jzfile12;
-
+} real_jzfile;
 
 void ClassPathDirEntry::compile_the_world(Handle loader, TRAPS) {
   // For now we only compile all methods in all classes in zip/jar files
@@ -1197,10 +1169,14 @@ bool ClassPathDirEntry::is_rt_jar() {
 }
 
 void ClassPathZipEntry::compile_the_world(Handle loader, TRAPS) {
-  if (JDK_Version::is_jdk12x_version()) {
-    compile_the_world12(loader, THREAD);
-  } else {
-    compile_the_world13(loader, THREAD);
+  real_jzfile* zip = (real_jzfile*) _zip;
+  tty->print_cr("CompileTheWorld : Compiling all classes in %s", zip->name);
+  tty->cr();
+  // Iterate over all entries in zip file
+  for (int n = 0; ; n++) {
+    real_jzentry * ze = (real_jzentry *)((*GetNextEntry)(_zip, n));
+    if (ze == NULL) break;
+    ClassLoader::compile_the_world_in(ze->name, loader, CHECK);
   }
   if (HAS_PENDING_EXCEPTION) {
     if (PENDING_EXCEPTION->is_a(SystemDictionary::OutOfMemoryError_klass())) {
@@ -1213,54 +1189,8 @@ void ClassPathZipEntry::compile_the_world(Handle loader, TRAPS) {
   }
 }
 
-// Version that works for JDK 1.3.x
-void ClassPathZipEntry::compile_the_world13(Handle loader, TRAPS) {
-  real_jzfile13* zip = (real_jzfile13*) _zip;
-  tty->print_cr("CompileTheWorld : Compiling all classes in %s", zip->name);
-  tty->cr();
-  // Iterate over all entries in zip file
-  for (int n = 0; ; n++) {
-    real_jzentry13 * ze = (real_jzentry13 *)((*GetNextEntry)(_zip, n));
-    if (ze == NULL) break;
-    ClassLoader::compile_the_world_in(ze->name, loader, CHECK);
-  }
-}
-
-
-// Version that works for JDK 1.2.x
-void ClassPathZipEntry::compile_the_world12(Handle loader, TRAPS) {
-  real_jzfile12* zip = (real_jzfile12*) _zip;
-  tty->print_cr("CompileTheWorld : Compiling all classes in %s", zip->name);
-  tty->cr();
-  // Iterate over all entries in zip file
-  for (int n = 0; ; n++) {
-    real_jzentry12 * ze = (real_jzentry12 *)((*GetNextEntry)(_zip, n));
-    if (ze == NULL) break;
-    ClassLoader::compile_the_world_in(ze->name, loader, CHECK);
-  }
-}
-
 bool ClassPathZipEntry::is_rt_jar() {
-  if (JDK_Version::is_jdk12x_version()) {
-    return is_rt_jar12();
-  } else {
-    return is_rt_jar13();
-  }
-}
-
-// JDK 1.3 version
-bool ClassPathZipEntry::is_rt_jar13() {
-  real_jzfile13* zip = (real_jzfile13*) _zip;
-  int len = (int)strlen(zip->name);
-  // Check whether zip name ends in "rt.jar"
-  // This will match other archives named rt.jar as well, but this is
-  // only used for debugging.
-  return (len >= 6) && (strcasecmp(zip->name + len - 6, "rt.jar") == 0);
-}
-
-// JDK 1.2 version
-bool ClassPathZipEntry::is_rt_jar12() {
-  real_jzfile12* zip = (real_jzfile12*) _zip;
+  real_jzfile* zip = (real_jzfile*) _zip;
   int len = (int)strlen(zip->name);
   // Check whether zip name ends in "rt.jar"
   // This will match other archives named rt.jar as well, but this is

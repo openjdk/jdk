@@ -48,7 +48,6 @@ import org.xml.sax.SAXException;
  *
  * @author Michael Glavassevich, IBM
  * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
- * @version $Id: StreamValidatorHelper.java,v 1.7 2010-11-01 04:40:08 joehw Exp $
  */
 final class StreamValidatorHelper implements ValidatorHelper {
 

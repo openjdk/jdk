@@ -135,7 +135,7 @@
     "sr_SP", "sr_YU",
     "tchinese", "zh_TW",
 #endif
-    ""
+    "", "",
  };
 
 /*
@@ -188,7 +188,7 @@ static char *language_names[] = {
     "japanese", "ja",
     "korean", "ko",
 #endif
-    "",
+    "", "",
 };
 
 /*
@@ -201,7 +201,7 @@ static char *script_names[] = {
     "iqtelif", "Latn",
     "latin", "Latn",
 #endif
-    "",
+    "", "",
 };
 
 /*
@@ -212,7 +212,7 @@ static char *country_names[] = {
     "RN", "US", // used on Linux, not clear what it stands for
 #endif
     "YU", "CS", // YU has been removed from ISO 3166
-    "",
+    "", "",
 };
 
 /*
@@ -220,5 +220,5 @@ static char *country_names[] = {
  */
 static char *variant_names[] = {
     "nynorsk", "NY",
-    "",
+    "", "",
 };

@@ -105,7 +105,11 @@ public enum Source {
         this.name = name;
     }
 
-    public static final Source DEFAULT = JDK1_9;
+    public static final Source MIN = Source.JDK1_6;
+
+    private static final Source MAX = values()[values().length - 1];
+
+    public static final Source DEFAULT = MAX;
 
     public static Source lookup(String name) {
         return tab.get(name);
@@ -121,19 +125,6 @@ public enum Source {
         return Target.JDK1_1;
     }
 
-    /** Allow encoding errors, giving only warnings. */
-    public boolean allowEncodingErrors() {
-        return compareTo(JDK1_6) < 0;
-    }
-    public boolean allowAsserts() {
-        return compareTo(JDK1_4) >= 0;
-    }
-    public boolean allowCovariantReturns() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowGenerics() {
-        return compareTo(JDK1_5) >= 0;
-    }
     public boolean allowDiamond() {
         return compareTo(JDK1_7) >= 0;
     }
@@ -145,37 +136,6 @@ public enum Source {
     }
     public boolean allowImprovedCatchAnalysis() {
         return compareTo(JDK1_7) >= 0;
-    }
-    public boolean allowEnums() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowForeach() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowStaticImport() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowBoxing() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowVarargs() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowAnnotations() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    // hex floating-point literals supported?
-    public boolean allowHexFloats() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean allowAnonOuterThis() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean addBridges() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean enforceMandatoryWarnings() {
-        return compareTo(JDK1_5) >= 0;
     }
     public boolean allowTryWithResources() {
         return compareTo(JDK1_7) >= 0;
@@ -236,6 +196,12 @@ public enum Source {
     }
     public boolean allowFunctionalInterfaceMostSpecific() {
         return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowPostApplicabilityVarargsAccessCheck() {
+        return compareTo(JDK1_8) >= 0;
+    }
+    public boolean allowPrivateSafeVarargs() {
+        return compareTo(JDK1_9) >= 0;
     }
     public static SourceVersion toSourceVersion(Source source) {
         switch(source) {

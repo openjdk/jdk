@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,7 +153,7 @@ public class AllClassesFrameWriter extends HtmlDocletWriter {
                                Content content) {
         for (Doc doc : classlist) {
             ClassDoc cd = (ClassDoc) doc;
-            if (!Util.isCoreClass(cd)) {
+            if (!utils.isCoreClass(cd)) {
                 continue;
             }
             Content label = italicsClassName(cd, false);

@@ -1459,6 +1459,7 @@ public abstract class KeyboardFocusManager
      * Returns an array of all the <code>PropertyChangeListener</code>s
      * associated with the named property.
      *
+     * @param  propertyName the property name
      * @return all of the <code>PropertyChangeListener</code>s associated with
      *         the named property or an empty array if no such listeners have
      *         been added.
@@ -1628,6 +1629,7 @@ public abstract class KeyboardFocusManager
      * Returns an array of all the <code>VetoableChangeListener</code>s
      * associated with the named property.
      *
+     * @param  propertyName the property name
      * @return all of the <code>VetoableChangeListener</code>s associated with
      *         the named property or an empty array if no such listeners have
      *         been added.

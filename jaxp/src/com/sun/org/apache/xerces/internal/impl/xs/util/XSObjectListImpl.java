@@ -36,7 +36,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: XSObjectListImpl.java,v 1.7 2010-11-01 04:40:06 joehw Exp $
  */
 public class XSObjectListImpl extends AbstractList implements XSObjectList {
 

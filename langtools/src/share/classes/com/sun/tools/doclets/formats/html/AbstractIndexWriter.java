@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -121,7 +121,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      * @param dlTree the content tree to which the description will be added
      */
     protected void addDescription(PackageDoc pkg, Content dlTree) {
-        Content link = getPackageLink(pkg, new StringContent(Util.getPackageName(pkg)));
+        Content link = getPackageLink(pkg, new StringContent(utils.getPackageName(pkg)));
         Content dt = HtmlTree.DT(link);
         dt.addContent(" - ");
         dt.addContent(getResource("doclet.package"));
@@ -159,9 +159,9 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addClassInfo(ClassDoc cd, Content contentTree) {
         contentTree.addContent(getResource("doclet.in",
-                Util.getTypeName(configuration, cd, false),
+                utils.getTypeName(configuration, cd, false),
                 getPackageLink(cd.containingPackage(),
-                    Util.getPackageName(cd.containingPackage()))
+                    utils.getPackageName(cd.containingPackage()))
                 ));
     }
 
@@ -200,7 +200,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         Content span = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
         div.addStyle(HtmlStyle.block);
-        if (Util.isDeprecated(element)) {
+        if (utils.isDeprecated(element)) {
             div.addContent(span);
             if ((tags = element.tags("deprecated")).length > 0)
                 addInlineDeprecatedComment(element, tags[0], div);
@@ -208,7 +208,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
         } else {
             ClassDoc cont = element.containingClass();
             while (cont != null) {
-                if (Util.isDeprecated(cont)) {
+                if (utils.isDeprecated(cont)) {
                     div.addContent(span);
                     contentTree.addContent(div);
                     break;
@@ -228,7 +228,7 @@ public class AbstractIndexWriter extends HtmlDocletWriter {
      */
     protected void addMemberDesc(MemberDoc member, Content contentTree) {
         ClassDoc containing = member.containingClass();
-        String classdesc = Util.getTypeName(
+        String classdesc = utils.getTypeName(
                 configuration, containing, true) + " ";
         if (member.isField()) {
             if (member.isStatic()) {

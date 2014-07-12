@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -169,7 +169,7 @@ public abstract class AbstractPerfDataBuffer {
 
         try {
             Class<?> implClass = Class.forName(classname);
-            Constructor cons = implClass.getConstructor(new Class[] {
+            Constructor<?> cons = implClass.getConstructor(new Class<?>[] {
                     Class.forName("java.nio.ByteBuffer"),
                     Integer.TYPE
             });

@@ -222,10 +222,8 @@ void Arguments::init_version_specific_system_properties() {
   const char* spec_vendor = "Sun Microsystems Inc.";
   uint32_t spec_version = 0;
 
-  if (JDK_Version::is_gte_jdk17x_version()) {
-    spec_vendor = "Oracle Corporation";
-    spec_version = JDK_Version::current().major_version();
-  }
+  spec_vendor = "Oracle Corporation";
+  spec_version = JDK_Version::current().major_version();
   jio_snprintf(buffer, bufsz, "1." UINT32_FORMAT, spec_version);
 
   PropertyList_add(&_system_properties,
@@ -2187,6 +2185,10 @@ bool Arguments::check_vm_args_consistency() {
     }
   }
 
+  if (!(UseParallelGC || UseParallelOldGC) && FLAG_IS_DEFAULT(ScavengeBeforeFullGC)) {
+    FLAG_SET_DEFAULT(ScavengeBeforeFullGC, false);
+  }
+
   status = status && verify_percentage(GCHeapFreeLimit, "GCHeapFreeLimit");
   status = status && verify_percentage(GCTimeLimit, "GCTimeLimit");
   if (GCTimeLimit == 100) {
@@ -2450,6 +2452,8 @@ bool Arguments::check_vm_args_consistency() {
   if (!FLAG_IS_DEFAULT(CICompilerCount) && !FLAG_IS_DEFAULT(CICompilerCountPerCPU) && CICompilerCountPerCPU) {
     warning("The VM option CICompilerCountPerCPU overrides CICompilerCount.");
   }
+
+  status &= check_vm_args_consistency_ext();
 
   return status;
 }
@@ -3695,14 +3699,6 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     PrintGC = true;
   }
 
-  if (!JDK_Version::is_gte_jdk18x_version()) {
-    // To avoid changing the log format for 7 updates this flag is only
-    // true by default in JDK8 and above.
-    if (FLAG_IS_DEFAULT(PrintGCCause)) {
-      FLAG_SET_DEFAULT(PrintGCCause, false);
-    }
-  }
-
   // Set object alignment values.
   set_object_alignment();
 
@@ -3833,10 +3829,6 @@ jint Arguments::apply_ergo() {
   if (!UseTypeSpeculation && FLAG_IS_DEFAULT(TypeProfileLevel)) {
     // nothing to use the profiling, turn if off
     FLAG_SET_DEFAULT(TypeProfileLevel, 0);
-  }
-  if (UseTypeSpeculation && FLAG_IS_DEFAULT(ReplaceInParentMaps)) {
-    // Doing the replace in parent maps helps speculation
-    FLAG_SET_DEFAULT(ReplaceInParentMaps, true);
   }
 #endif
 

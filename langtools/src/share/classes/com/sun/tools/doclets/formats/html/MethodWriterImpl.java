@@ -151,7 +151,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         if (method.inlineTags().length > 0) {
             if (holder.asClassDoc().equals(classdoc) ||
                     (! (holderClassDoc.isPublic() ||
-                    Util.isLinkable(holderClassDoc, configuration)))) {
+                    utils.isLinkable(holderClassDoc, configuration)))) {
                 writer.addInlineComment(method, methodDocTree);
             } else {
                 Content link =
@@ -292,7 +292,7 @@ public class MethodWriterImpl extends AbstractExecutableMemberWriter
         }
         ClassDoc holderClassDoc = overriddenType.asClassDoc();
         if (! (holderClassDoc.isPublic() ||
-            Util.isLinkable(holderClassDoc, writer.configuration))) {
+            writer.configuration.utils.isLinkable(holderClassDoc, writer.configuration))) {
             //This is an implementation detail that should not be documented.
             return;
         }

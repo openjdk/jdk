@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -367,6 +367,8 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Returns the horizontal gap between components.
+     *
+     * @return the horizontal gap between components
      * @since   1.1
      */
     public int getHgap() {
@@ -375,6 +377,7 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Sets the horizontal gap between components.
+     *
      * @param hgap the horizontal gap between components
      * @since   1.1
      */
@@ -384,6 +387,8 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Returns the vertical gap between components.
+     *
+     * @return the vertical gap between components
      * @since   1.1
      */
     public int getVgap() {
@@ -392,6 +397,7 @@ public class BorderLayout implements LayoutManager2,
 
     /**
      * Sets the vertical gap between components.
+     *
      * @param vgap the vertical gap between components
      * @since   1.1
      */

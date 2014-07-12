@@ -435,7 +435,8 @@ Java_sun_nio_ch_Net_getIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
 
 JNIEXPORT void JNICALL
 Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
-                                  jboolean mayNeedConversion, jint level, jint opt, jint arg)
+                                  jboolean mayNeedConversion, jint level,
+                                  jint opt, jint arg, jboolean isIPv6)
 {
     int result;
     struct linger linger;
@@ -478,6 +479,12 @@ Java_sun_nio_ch_Net_setIntOption0(JNIEnv *env, jclass clazz, jobject fdo,
                                      JNU_JAVANETPKG "SocketException",
                                      "sun.nio.ch.Net.setIntOption");
     }
+#ifdef __linux__
+    if (level == IPPROTO_IPV6 && opt == IPV6_TCLASS && isIPv6) {
+        // set the V4 option also
+        setsockopt(fdval(env, fdo), IPPROTO_IP, IP_TOS, parg, arglen);
+    }
+#endif
 }
 
 JNIEXPORT jint JNICALL

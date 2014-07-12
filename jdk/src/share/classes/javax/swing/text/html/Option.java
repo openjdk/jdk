@@ -61,6 +61,8 @@ public class Option implements Serializable {
 
     /**
      * Sets the label to be used for the option.
+     *
+     * @param label a label.
      */
     public void setLabel(String label) {
         this.label = label;
@@ -68,6 +70,8 @@ public class Option implements Serializable {
 
     /**
      * Fetch the label associated with the option.
+     *
+     * @return the label associated with the option.
      */
     public String getLabel() {
         return label;
@@ -75,6 +79,8 @@ public class Option implements Serializable {
 
     /**
      * Fetch the attributes associated with this option.
+     *
+     * @return the attributes associated with this option.
      */
     public AttributeSet getAttributes() {
         return attr;
@@ -89,6 +95,8 @@ public class Option implements Serializable {
 
     /**
      * Sets the selected state.
+     *
+     * @param state a selection state
      */
     protected void setSelection(boolean state) {
         selected = state;
@@ -96,16 +104,21 @@ public class Option implements Serializable {
 
     /**
      * Fetches the selection state associated with this option.
+     *
+     * @return the selection state.
      */
     public boolean isSelected() {
         return selected;
     }
 
     /**
-     * Convenience method to return the string associated
-     * with the <code>value</code> attribute.  If the
-     * value has not been specified, the label will be
+     * Convenient method to return the string associated
+     * with the {@code value} attribute. If the
+     * {@code value} has not been specified, the {@code label} will be
      * returned.
+     *
+     * @return the string associated with the {@code value} attribute,
+     * or {@code label} if the value has been not specified.
      */
     public String getValue() {
         String value = (String) attr.getAttribute(HTML.Attribute.VALUE);

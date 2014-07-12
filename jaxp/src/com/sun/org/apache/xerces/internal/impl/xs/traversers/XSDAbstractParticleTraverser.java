@@ -37,7 +37,6 @@ import org.w3c.dom.Element;
  *
  * @author Elena Litani, IBM
  * @author Sandy Gao, IBM
- * @version $Id: XSDAbstractParticleTraverser.java,v 1.7 2010-11-01 04:40:02 joehw Exp $
  */
 abstract class XSDAbstractParticleTraverser extends XSDAbstractTraverser {
 

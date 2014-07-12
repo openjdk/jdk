@@ -43,6 +43,7 @@ package javax.swing;
   * @see JInternalFrame.JDesktopIcon
   *
   * @author David Kloba
+  * @since 1.2
   */
 public interface DesktopManager
 {

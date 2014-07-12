@@ -21,19 +21,24 @@
  * questions.
  */
 
+import sun.hotspot.WhiteBox;
+import java.lang.reflect.Method;
+
 /*
  * @test
  * @bug 8009761
+ * @library /testlibrary /testlibrary/whitebox
  * @summary Deoptimization on sparc doesn't set Llast_SP correctly in the interpreter frames it creates
- * @run main/othervm -XX:CompileCommand=exclude,Test8009761::m2 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xss256K Test8009761
- *
+ * @build Test8009761
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=exclude,Test8009761::m2 -XX:-UseOnStackReplacement -XX:-BackgroundCompilation -Xss256K Test8009761
  */
-
 public class Test8009761 {
 
-    static class UnloadedClass {
-        volatile int i;
-    }
+    private static final WhiteBox WHITE_BOX = WhiteBox.getWhiteBox();
+    private static int COMP_LEVEL_SIMPLE = 1;
+    private static int COMP_LEVEL_FULL_OPTIMIZATION = 4;
+    private static Method m3 = null;
 
     static Object m1(boolean deopt) {
         // When running interpreted, on sparc, the caller's stack is
@@ -142,9 +147,11 @@ public class Test8009761 {
         ll508, ll509, ll510, ll511;
 
         if (deopt) {
-            UnloadedClass res = new UnloadedClass(); // sufficient to force deopt with c2 but not c1
-            res.i = 0; // forces deopt with c1
-            return res;
+            // Force deoptimization of m3
+            WHITE_BOX.deoptimizeMethod(m3);
+            if(WHITE_BOX.isMethodCompiled(m3)) {
+                throw new RuntimeException(m3 + " not deoptimized");
+            }
         }
         return null;
     }
@@ -225,6 +232,18 @@ public class Test8009761 {
     }
 
     static public void main(String[] args) {
+        // Make sure background compilation is disabled
+        if (WHITE_BOX.getBooleanVMFlag("BackgroundCompilation")) {
+            throw new RuntimeException("Background compilation enabled");
+        }
+
+        try {
+            // Get Method object for m3
+            m3 = Test8009761.class.getDeclaredMethod("m3", boolean.class, boolean.class);
+        } catch (NoSuchMethodException | SecurityException ex) {
+            throw new RuntimeException("Failed to retrieve method m3");
+        }
+
         int c1;
         // Call m2 from m3 recursively until stack overflow. Count the number of recursive calls.
         try {
@@ -232,10 +251,18 @@ public class Test8009761 {
         } catch(StackOverflowError soe) {
         }
         c1 = count;
+
         // Force the compilation of m3() that will inline m1()
-        for (int i = 0; i < 20000; i++) {
-            m3(false, false);
+        if(!WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_FULL_OPTIMIZATION)) {
+            // C2 compiler not available, compile with C1
+            WHITE_BOX.enqueueMethodForCompilation(m3, COMP_LEVEL_SIMPLE);
         }
+
+        // Because background compilation is disabled, method should now be compiled
+        if(!WHITE_BOX.isMethodCompiled(m3)) {
+            throw new RuntimeException(m3 + " not compiled");
+        }
+
         count = 0;
         // Force deoptimization of m3() in m1(), then return from m1()
         // to m3(), call recursively m2(). If deoptimization correctly
@@ -245,9 +272,9 @@ public class Test8009761 {
             m3(false, true);
         } catch(StackOverflowError soe) {
         }
-        if (c1 != count) {
-            System.out.println("Failed: init recursive calls: " + c1 + ". After deopt " + count);
-            System.exit(97);
+        // Allow number of recursive calls to vary by 1
+        if ((c1 < (count - 1)) || (c1 > (count + 1))) {
+            throw new RuntimeException("Failed: init recursive calls: " + c1 + ". After deopt " + count);
         } else {
             System.out.println("PASSED " + c1);
         }

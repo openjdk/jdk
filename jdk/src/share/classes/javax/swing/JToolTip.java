@@ -66,6 +66,7 @@ import java.util.Objects;
  * @see JComponent#createToolTip
  * @author Dave Moore
  * @author Rich Shiavi
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JToolTip extends JComponent implements Accessible {

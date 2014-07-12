@@ -440,17 +440,20 @@ AWT_ASSERT_APPKIT_THREAD;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
 
     jstring characters = NULL;
+    jstring charactersIgnoringModifiers = NULL;
     if ([event type] != NSFlagsChanged) {
         characters = JNFNSToJavaString(env, [event characters]);
+        charactersIgnoringModifiers = JNFNSToJavaString(env, [event charactersIgnoringModifiers]);
     }
 
     static JNF_CLASS_CACHE(jc_NSEvent, "sun/lwawt/macosx/NSEvent");
-    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IISLjava/lang/String;)V");
+    static JNF_CTOR_CACHE(jctor_NSEvent, jc_NSEvent, "(IISLjava/lang/String;Ljava/lang/String;)V");
     jobject jEvent = JNFNewObject(env, jctor_NSEvent,
                                   [event type],
                                   [event modifierFlags],
                                   [event keyCode],
-                                  characters);
+                                  characters,
+                                  charactersIgnoringModifiers);
     CHECK_NULL(jEvent);
 
     static JNF_CLASS_CACHE(jc_PlatformView, "sun/lwawt/macosx/CPlatformView");

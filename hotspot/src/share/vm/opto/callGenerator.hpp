@@ -31,8 +31,6 @@
 #include "opto/type.hpp"
 #include "runtime/deoptimization.hpp"
 
-class Parse;
-
 //---------------------------CallGenerator-------------------------------------
 // The subclasses of this class handle generation of ideal nodes for
 // call sites and method entry points.
@@ -63,8 +61,9 @@ class CallGenerator : public ResourceObj {
   virtual bool      is_virtual() const          { return false; }
   // is_deferred: The decision whether to inline or not is deferred.
   virtual bool      is_deferred() const         { return false; }
-  // is_predicted: Uses an explicit check against a predicted type.
-  virtual bool      is_predicted() const        { return false; }
+  // is_predicated: Uses an explicit check (predicate).
+  virtual bool      is_predicated() const       { return false; }
+  virtual int       predicates_count() const    { return 0; }
   // is_trap: Does not return to the caller.  (E.g., uncommon trap.)
   virtual bool      is_trap() const             { return false; }
   // does_virtual_dispatch: Should try inlining as normal method first.
@@ -114,7 +113,7 @@ class CallGenerator : public ResourceObj {
   //
   // If the result is NULL, it means that this CallGenerator was unable
   // to handle the given call, and another CallGenerator should be consulted.
-  virtual JVMState* generate(JVMState* jvms, Parse* parent_parser) = 0;
+  virtual JVMState* generate(JVMState* jvms) = 0;
 
   // How to generate a call site that is inlined:
   static CallGenerator* for_inline(ciMethod* m, float expected_uses = -1);
@@ -160,9 +159,9 @@ class CallGenerator : public ResourceObj {
   // Registry for intrinsics:
   static CallGenerator* for_intrinsic(ciMethod* m);
   static void register_intrinsic(ciMethod* m, CallGenerator* cg);
-  static CallGenerator* for_predicted_intrinsic(CallGenerator* intrinsic,
-                                                CallGenerator* cg);
-  virtual Node* generate_predicate(JVMState* jvms) { return NULL; };
+  static CallGenerator* for_predicated_intrinsic(CallGenerator* intrinsic,
+                                                 CallGenerator* cg);
+  virtual Node* generate_predicate(JVMState* jvms, int predicate) { return NULL; };
 
   virtual void print_inlining_late(const char* msg) { ShouldNotReachHere(); }
 

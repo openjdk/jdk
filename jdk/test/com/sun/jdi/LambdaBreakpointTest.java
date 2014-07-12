@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LambdaBreakpointTest.java
- *  @run main LambdaBreakpointTest
+ *  @run driver LambdaBreakpointTest
  */
 import java.util.List;
 

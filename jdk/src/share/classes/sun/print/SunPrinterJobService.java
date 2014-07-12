@@ -37,6 +37,6 @@ public interface SunPrinterJobService {
      * platform's built-in subclass of PrinterJob.
      * ie the same class as the caller.
      */
-    public boolean usesClass(Class c);
+    public boolean usesClass(Class<?> c);
 
 }

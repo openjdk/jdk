@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/accessFlags.hpp"
 #ifdef TARGET_OS_FAMILY_linux
 # include "os_linux.inline.hpp"

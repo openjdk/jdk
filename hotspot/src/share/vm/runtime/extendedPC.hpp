@@ -25,6 +25,9 @@
 #ifndef SHARE_VM_RUNTIME_EXTENDEDPC_HPP
 #define SHARE_VM_RUNTIME_EXTENDEDPC_HPP
 
+#include "memory/allocation.hpp"
+#include "utilities/globalDefinitions.hpp"
+
 // An ExtendedPC contains the _pc from a signal handler in a platform
 // independent way.
 

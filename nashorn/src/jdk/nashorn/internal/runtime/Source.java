@@ -45,6 +45,7 @@ import java.nio.file.Paths;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Objects;
 import java.util.WeakHashMap;
 import jdk.nashorn.api.scripting.URLReader;
@@ -52,7 +53,6 @@ import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-
 /**
  * Source objects track the origin of JavaScript entities.
  */
@@ -60,6 +60,9 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 public final class Source implements Loggable {
     private static final int BUF_SIZE = 8 * 1024;
     private static final Cache CACHE = new Cache();
+
+    // Message digest to file name encoder
+    private final static Base64.Encoder BASE64 = Base64.getUrlEncoder().withoutPadding();
 
     /**
      * Descriptive name of the source as supplied by the user. Used for error
@@ -81,8 +84,8 @@ public final class Source implements Loggable {
     /** Cached hash code */
     private int hash;
 
-    /** Message digest */
-    private byte[] digest;
+    /** Base64-encoded SHA1 digest of this source object */
+    private volatile byte[] digest;
 
     // Do *not* make this public, ever! Trusts the URL and content.
     private Source(final String name, final String base, final Data data) {
@@ -99,12 +102,13 @@ public final class Source implements Loggable {
                 // Force any access errors
                 data.checkPermissionAndClose();
                 return existingSource;
-            } else {
-                // All sources in cache must be fully loaded
-                data.load();
-                CACHE.put(newSource, newSource);
-                return newSource;
             }
+
+            // All sources in cache must be fully loaded
+            data.load();
+            CACHE.put(newSource, newSource);
+
+            return newSource;
         } catch (final RuntimeException e) {
             final Throwable cause = e.getCause();
             if (cause instanceof IOException) {
@@ -141,29 +145,34 @@ public final class Source implements Loggable {
         long lastModified();
 
         char[] array();
+
+        boolean isEvalCode();
     }
 
     private static class RawData implements Data {
         private final char[] array;
+        private final boolean evalCode;
         private int hash;
 
-        private RawData(final char[] array) {
+        private RawData(final char[] array, final boolean evalCode) {
             this.array = Objects.requireNonNull(array);
+            this.evalCode = evalCode;
         }
 
-        private RawData(final String source) {
+        private RawData(final String source, final boolean evalCode) {
             this.array = Objects.requireNonNull(source).toCharArray();
+            this.evalCode = evalCode;
         }
 
         private RawData(final Reader reader) throws IOException {
-            this(readFully(reader));
+            this(readFully(reader), false);
         }
 
         @Override
         public int hashCode() {
             int h = hash;
             if (h == 0) {
-                h = hash = Arrays.hashCode(array);
+                h = hash = Arrays.hashCode(array) ^ (evalCode? 1 : 0);
             }
             return h;
         }
@@ -174,7 +183,8 @@ public final class Source implements Loggable {
                 return true;
             }
             if (obj instanceof RawData) {
-                return Arrays.equals(array, ((RawData)obj).array);
+                final RawData other = (RawData)obj;
+                return Arrays.equals(array, other.array) && evalCode == other.evalCode;
             }
             return false;
         }
@@ -205,6 +215,10 @@ public final class Source implements Loggable {
         }
 
 
+        @Override
+        public boolean isEvalCode() {
+            return evalCode;
+        }
     }
 
     private static class URLData implements Data {
@@ -286,12 +300,20 @@ public final class Source implements Loggable {
             return array;
         }
 
+        @Override
+        public boolean isEvalCode() {
+            return false;
+        }
+
         boolean isDeferred() {
             return array == null;
         }
 
+        @SuppressWarnings("try")
         protected void checkPermissionAndClose() throws IOException {
-            try (InputStream in = url.openStream()) {}
+            try (InputStream in = url.openStream()) {
+                // empty
+            }
             debug("permission checked for ", url);
         }
 
@@ -366,23 +388,50 @@ public final class Source implements Loggable {
     }
 
     /**
-     * Returns an instance
+     * Returns a Source instance
      *
      * @param name    source name
      * @param content contents as char array
+     * @param isEval does this represent code from 'eval' call?
+     * @return source instance
      */
-    public static Source sourceFor(final String name, final char[] content) {
-        return new Source(name, baseName(name), new RawData(content));
+    public static Source sourceFor(final String name, final char[] content, final boolean isEval) {
+        return new Source(name, baseName(name), new RawData(content, isEval));
     }
 
     /**
-     * Returns an instance
+     * Returns a Source instance
+     *
+     * @param name    source name
+     * @param content contents as char array
+     *
+     * @return source instance
+     */
+    public static Source sourceFor(final String name, final char[] content) {
+        return sourceFor(name, content, false);
+    }
+
+    /**
+     * Returns a Source instance
      *
      * @param name    source name
      * @param content contents as string
+     * @param isEval does this represent code from 'eval' call?
+     * @return source instance
+     */
+    public static Source sourceFor(final String name, final String content, final boolean isEval) {
+        return new Source(name, baseName(name), new RawData(content, isEval));
+    }
+
+    /**
+     * Returns a Source instance
+     *
+     * @param name    source name
+     * @param content contents as string
+     * @return source instance
      */
     public static Source sourceFor(final String name, final String content) {
-        return new Source(name, baseName(name), new RawData(content));
+        return sourceFor(name, content, false);
     }
 
     /**
@@ -390,6 +439,8 @@ public final class Source implements Loggable {
      *
      * @param name  source name
      * @param url   url from which source can be loaded
+     *
+     * @return source instance
      *
      * @throws IOException if source cannot be loaded
      */
@@ -404,6 +455,8 @@ public final class Source implements Loggable {
      * @param url   url from which source can be loaded
      * @param cs    Charset used to convert bytes to chars
      *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final URL url, final Charset cs) throws IOException {
@@ -415,6 +468,8 @@ public final class Source implements Loggable {
      *
      * @param name  source name
      * @param file  file from which source can be loaded
+     *
+     * @return source instance
      *
      * @throws IOException if source cannot be loaded
      */
@@ -429,6 +484,8 @@ public final class Source implements Loggable {
      * @param file  file from which source can be loaded
      * @param cs    Charset used to convert bytes to chars
      *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final File file, final Charset cs) throws IOException {
@@ -441,6 +498,9 @@ public final class Source implements Loggable {
      *
      * @param name source name
      * @param reader reader from which source can be loaded
+     *
+     * @return source instance
+     *
      * @throws IOException if source cannot be loaded
      */
     public static Source sourceFor(final String name, final Reader reader) throws IOException {
@@ -537,14 +597,23 @@ public final class Source implements Loggable {
     }
 
     /**
+     * Returns whether this source was submitted via 'eval' call or not.
+     *
+     * @return true if this source represents code submitted via 'eval'
+     */
+    public boolean isEvalCode() {
+        return data.isEvalCode();
+    }
+
+    /**
      * Find the beginning of the line containing position.
      * @param position Index to offending token.
      * @return Index of first character of line.
      */
     private int findBOLN(final int position) {
-        final char[] data = data();
+        final char[] d = data();
         for (int i = position - 1; i > 0; i--) {
-            final char ch = data[i];
+            final char ch = d[i];
 
             if (ch == '\n' || ch == '\r') {
                 return i + 1;
@@ -560,10 +629,10 @@ public final class Source implements Loggable {
      * @return Index of last character of line.
      */
     private int findEOLN(final int position) {
-        final char[] data = data();
-        final int length = data.length;
+        final char[] d = data();
+        final int length = d.length;
         for (int i = position; i < length; i++) {
-            final char ch = data[i];
+            final char ch = d[i];
 
             if (ch == '\n' || ch == '\r') {
                 return i - 1;
@@ -583,12 +652,12 @@ public final class Source implements Loggable {
      * @return Line number.
      */
     public int getLine(final int position) {
-        final char[] data = data();
+        final char[] d = data();
         // Line count starts at 1.
         int line = 1;
 
         for (int i = 0; i < position; i++) {
-            final char ch = data[i];
+            final char ch = d[i];
             // Works for both \n and \r\n.
             if (ch == '\n') {
                 line++;
@@ -716,12 +785,17 @@ public final class Source implements Loggable {
     }
 
     /**
-     * Get a message digest for this source.
+     * Get a Base64-encoded SHA1 digest for this source.
      *
-     * @return a message digest for this source
+     * @return a Base64-encoded SHA1 digest for this source
      */
-    public synchronized byte[] getDigest() {
-        if (digest == null) {
+    public String getDigest() {
+        return new String(getDigestBytes(), StandardCharsets.US_ASCII);
+    }
+
+    private byte[] getDigestBytes() {
+        byte[] ldigest = digest;
+        if (ldigest == null) {
             final char[] content = data();
             final byte[] bytes = new byte[content.length * 2];
 
@@ -741,12 +815,12 @@ public final class Source implements Loggable {
                 if (getURL() != null) {
                     md.update(getURL().toString().getBytes(StandardCharsets.UTF_8));
                 }
-                digest = md.digest(bytes);
+                digest = ldigest = BASE64.encode(md.digest(bytes));
             } catch (final NoSuchAlgorithmException e) {
                 throw new RuntimeException(e);
             }
         }
-        return digest;
+        return ldigest;
     }
 
     /**

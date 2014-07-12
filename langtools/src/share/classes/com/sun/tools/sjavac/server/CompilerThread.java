@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,23 +39,25 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 import java.util.Map;
+import java.util.Set;
 import java.util.concurrent.Future;
-import javax.tools.JavaFileManager;
+
+import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.Options;
 import com.sun.tools.javac.util.StringUtils;
 import com.sun.tools.sjavac.comp.AttrWithDeps;
 import com.sun.tools.sjavac.comp.Dependencies;
 import com.sun.tools.sjavac.comp.JavaCompilerWithDeps;
-import com.sun.tools.sjavac.comp.SmartFileManager;
+import com.sun.tools.sjavac.comp.JavacServiceImpl;
 import com.sun.tools.sjavac.comp.ResolveWithDeps;
+import com.sun.tools.sjavac.comp.SmartFileManager;
 
 /**
  * The compiler thread maintains a JavaCompiler instance and
@@ -70,6 +72,7 @@ import com.sun.tools.sjavac.comp.ResolveWithDeps;
 public class CompilerThread implements Runnable {
     private JavacServer javacServer;
     private CompilerPool compilerPool;
+    private JavacServiceImpl javacServiceImpl;
     private List<Future<?>> subTasks;
 
     // Communicating over this socket.
@@ -78,16 +81,16 @@ public class CompilerThread implements Runnable {
     // The necessary classes to do a compilation.
     private com.sun.tools.javac.api.JavacTool compiler;
     private StandardJavaFileManager fileManager;
-    private BaseFileManager fileManagerBase;
     private SmartFileManager smartFileManager;
     private Context context;
 
     // If true, then this thread is serving a request.
     private boolean inUse = false;
 
-    CompilerThread(CompilerPool cp) {
+    CompilerThread(CompilerPool cp, JavacServiceImpl javacServiceImpl) {
         compilerPool = cp;
         javacServer = cp.getJavacServer();
+        this.javacServiceImpl = javacServiceImpl;
     }
 
     /**
@@ -127,13 +130,11 @@ public class CompilerThread implements Runnable {
         inUse = true;
         compiler = com.sun.tools.javac.api.JavacTool.create();
         fileManager = compiler.getStandardFileManager(null, null, null);
-        fileManagerBase = (BaseFileManager)fileManager;
         smartFileManager = new SmartFileManager(fileManager);
         context = new Context();
-        context.put(JavaFileManager.class, smartFileManager);
         ResolveWithDeps.preRegister(context);
         AttrWithDeps.preRegister(context);
-        JavaCompilerWithDeps.preRegister(context, this);
+        JavaCompilerWithDeps.preRegister(context, javacServiceImpl);
         subTasks = new ArrayList<>();
     }
 
@@ -145,7 +146,6 @@ public class CompilerThread implements Runnable {
         inUse = false;
         compiler = null;
         fileManager = null;
-        fileManagerBase = null;
         smartFileManager = null;
         context = null;
         subTasks = null;
@@ -315,24 +315,14 @@ public class CompilerThread implements Runnable {
             com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
             try {
                 if (compilationUnits.size() > 0) {
-                    // Bind the new logger to the existing context.
-                    context.put(Log.outKey, stderr);
-                    Log.instance(context).setWriter(Log.WriterKind.NOTICE, stdout);
-                    Log.instance(context).setWriter(Log.WriterKind.WARNING, stderr);
-                    Log.instance(context).setWriter(Log.WriterKind.ERROR, stderr);
-                    // Process the options.
-                    com.sun.tools.javac.api.JavacTool.processOptions(context, smartFileManager, the_options);
-                    fileManagerBase.setContext(context);
                     smartFileManager.setVisibleSources(visibleSources);
                     smartFileManager.cleanArtifacts();
                     smartFileManager.setLog(stdout);
-                    Dependencies.instance(context).reset();
-
-                    com.sun.tools.javac.main.Main ccompiler = new com.sun.tools.javac.main.Main("javacTask", stderr);
-                    String[] aa = the_options.toArray(new String[0]);
 
                     // Do the compilation!
-                    rc = ccompiler.compile(aa, context, compilationUnits.toList(), null);
+                    CompilationTask task = compiler.getTask(stderr, smartFileManager, null, the_options, null, compilationUnits, context);
+                    smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
+                    rc = ((JavacTaskImpl) task).doCall();
 
                     while (numActiveSubTasks()>0) {
                         try { Thread.sleep(1000); } catch (InterruptedException e) { }

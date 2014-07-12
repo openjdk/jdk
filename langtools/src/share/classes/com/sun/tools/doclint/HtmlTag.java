@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,12 +30,12 @@ import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.Locale;
 import java.util.Map;
 
 import javax.lang.model.element.Name;
 
 import static com.sun.tools.doclint.HtmlTag.Attr.*;
+
 import com.sun.tools.javac.util.StringUtils;
 
 /**
@@ -57,6 +57,15 @@ import com.sun.tools.javac.util.StringUtils;
 public enum HtmlTag {
     A(BlockType.INLINE, EndKind.REQUIRED,
             attrs(AttrKind.OK, HREF, TARGET, NAME)),
+
+    ABBR(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    ACRONYM(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    ADDRESS(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
 
     B(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -86,6 +95,10 @@ public enum HtmlTag {
 
     DD(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE, Flag.EXPECT_CONTENT)),
+
+    DEL(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
+            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
 
     DFN(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
@@ -138,6 +151,13 @@ public enum HtmlTag {
             attrs(AttrKind.OBSOLETE, NAME),
             attrs(AttrKind.USE_CSS, ALIGN, HSPACE, VSPACE, BORDER)),
 
+    INS(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST),
+            attrs(AttrKind.OK, Attr.CITE, Attr.DATETIME)),
+
+    KBD(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
     LI(BlockType.LIST_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
             attrs(AttrKind.OK, VALUE)),
@@ -183,12 +203,24 @@ public enum HtmlTag {
         }
     },
 
+    Q(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    S(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
+    SAMP(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT, Flag.NO_NEST)),
+
     SCRIPT(BlockType.OTHER, EndKind.REQUIRED),
 
     SMALL(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     SPAN(BlockType.INLINE, EndKind.REQUIRED,
+            EnumSet.of(Flag.EXPECT_CONTENT)),
+
+    STRIKE(BlockType.INLINE, EndKind.REQUIRED,
             EnumSet.of(Flag.EXPECT_CONTENT)),
 
     STRONG(BlockType.INLINE, EndKind.REQUIRED,
@@ -229,7 +261,7 @@ public enum HtmlTag {
 
     TD(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, ABBR, AXIS,
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR, AXIS,
                 ALIGN, CHAR, CHAROFF, VALIGN),
             attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
@@ -243,7 +275,7 @@ public enum HtmlTag {
 
     TH(BlockType.TABLE_ITEM, EndKind.OPTIONAL,
             EnumSet.of(Flag.ACCEPTS_BLOCK, Flag.ACCEPTS_INLINE),
-            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, ABBR, AXIS,
+            attrs(AttrKind.OK, COLSPAN, ROWSPAN, HEADERS, SCOPE, Attr.ABBR, AXIS,
                 ALIGN, CHAR, CHAROFF, VALIGN),
             attrs(AttrKind.USE_CSS, WIDTH, BGCOLOR, HEIGHT, NOWRAP)),
 
@@ -321,11 +353,13 @@ public enum HtmlTag {
         CELLPADDING,
         CHAR,
         CHAROFF,
+        CITE,
         CLEAR,
         CLASS,
         COLOR,
         COLSPAN,
         COMPACT,
+        DATETIME,
         FACE,
         FRAME,
         HEADERS,

@@ -65,6 +65,7 @@ import java.security.*;
  *
  * @author Jeff Dinkins
  * @author Lynn Monsanto
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class ImageIcon implements Icon, Serializable, Accessible {

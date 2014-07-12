@@ -104,7 +104,6 @@ public class LocalVariableTypeTableTest<THIS> extends LocalVariableTestBase {
     @ExpectedLocals(name = "inTry", type = "TTHIS;")
     @ExpectedLocals(name = "inSync", type = "TTHIS;")
     @ExpectedLocals(name = "inDo", type = "TTHIS;")
-    @ExpectedLocals(name = "inSwitch", type = "TTHIS;")
     @ExpectedLocals(name = "inFor", type = "LLocalVariableTypeTableTest<-TTHIS;>;")
     @ExpectedLocals(name = "s", type = "Ljava/util/stream/Stream<+Ljava/lang/Integer;>;")
     public void deepScope() {
@@ -127,17 +126,6 @@ public class LocalVariableTypeTableTest<THIS> extends LocalVariableTestBase {
                     }
                 }
             }
-        }
-    }
-
-    @ExpectedLocals(name = "i", type = "TTHIS;", scope = 0)
-    @ExpectedLocals(name = "i", type = "Ljava/util/List<TTHIS;>;", scope = 1)
-    public void reuseByLong() {
-        {
-            THIS i = null;
-        }
-        {
-            List<THIS> i = null;
         }
     }
 

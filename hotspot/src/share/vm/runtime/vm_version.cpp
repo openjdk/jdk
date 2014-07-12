@@ -72,14 +72,16 @@ int Abstract_VM_Version::_reserve_for_allocation_prefetch = 0;
 #ifndef JRE_RELEASE_VERSION
   #error JRE_RELEASE_VERSION must be defined
 #endif
-#ifndef HOTSPOT_BUILD_TARGET
-  #error HOTSPOT_BUILD_TARGET must be defined
-#endif
 
-#ifdef PRODUCT
-  #define VM_RELEASE HOTSPOT_RELEASE_VERSION
-#else
+// NOTE: Builds within Visual Studio do not define the build target in
+//       HOTSPOT_RELEASE_VERSION, so it must be done here
+#if defined(VISUAL_STUDIO_BUILD) && !defined(PRODUCT)
+  #ifndef HOTSPOT_BUILD_TARGET
+    #error HOTSPOT_BUILD_TARGET must be defined
+  #endif
   #define VM_RELEASE HOTSPOT_RELEASE_VERSION "-" HOTSPOT_BUILD_TARGET
+#else
+  #define VM_RELEASE HOTSPOT_RELEASE_VERSION
 #endif
 
 // HOTSPOT_RELEASE_VERSION follows the JDK release version naming convention
@@ -160,8 +162,7 @@ const char* Abstract_VM_Version::vm_vendor() {
 #ifdef VENDOR
   return XSTR(VENDOR);
 #else
-  return JDK_Version::is_gte_jdk17x_version() ?
-    "Oracle Corporation" : "Sun Microsystems Inc.";
+  return "Oracle Corporation";
 #endif
 }
 
@@ -222,20 +223,12 @@ const char* Abstract_VM_Version::internal_vm_info_string() {
 
   #ifndef HOTSPOT_BUILD_COMPILER
     #ifdef _MSC_VER
-      #if   _MSC_VER == 1100
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 5.0"
-      #elif _MSC_VER == 1200
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 6.0"
-      #elif _MSC_VER == 1310
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 7.1 (VS2003)"
-      #elif _MSC_VER == 1400
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 8.0 (VS2005)"
-      #elif _MSC_VER == 1500
-        #define HOTSPOT_BUILD_COMPILER "MS VC++ 9.0 (VS2008)"
-      #elif _MSC_VER == 1600
+      #if _MSC_VER == 1600
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 10.0 (VS2010)"
       #elif _MSC_VER == 1700
         #define HOTSPOT_BUILD_COMPILER "MS VC++ 11.0 (VS2012)"
+      #elif _MSC_VER == 1800
+        #define HOTSPOT_BUILD_COMPILER "MS VC++ 12.0 (VS2013)"
       #else
         #define HOTSPOT_BUILD_COMPILER "unknown MS VC++:" XSTR(_MSC_VER)
       #endif

@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LocalVariableEqual.java
- *  @run main LocalVariableEqual
+ *  @run driver LocalVariableEqual
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

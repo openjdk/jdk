@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,25 +46,26 @@ public interface TreeModelListener extends EventListener {
      * altered their children arrays, but other attributes have
      * changed and may affect presentation. Example: the name of a
      * file has changed, but it is in the same location in the file
-     * system.</p>
-     * <p>To indicate the root has changed, childIndices and children
-     * will be null. </p>
+     * system.
      *
-     * <p>Use <code>e.getPath()</code>
-     * to get the parent of the changed node(s).
-     * <code>e.getChildIndices()</code>
-     * returns the index(es) of the changed node(s).</p>
+     * <p>To indicate the root has changed, childIndices and children
+     * will be null.
+     *
+     * <p>Use {@code e.getPath()} to get the parent of the changed node(s).
+     * {@code e.getChildIndices()} returns the index(es) of the changed node(s).
+     *
+     * @param e a {@code TreeModelEvent} describing changes to a tree model
      */
     void treeNodesChanged(TreeModelEvent e);
 
     /**
      * <p>Invoked after nodes have been inserted into the tree.</p>
      *
-     * <p>Use <code>e.getPath()</code>
-     * to get the parent of the new node(s).
-     * <code>e.getChildIndices()</code>
-     * returns the index(es) of the new node(s)
-     * in ascending order.</p>
+     * <p>Use {@code e.getPath()} to get the parent of the new node(s).
+     * {@code e.getChildIndices()} returns the index(es) of the new node(s)
+     * in ascending order.
+     *
+     * @param e a {@code TreeModelEvent} describing changes to a tree model
      */
     void treeNodesInserted(TreeModelEvent e);
 
@@ -74,11 +75,11 @@ public interface TreeModelListener extends EventListener {
      * invoked once for the root of the removed subtree, not once for
      * each individual set of siblings removed.</p>
      *
-     * <p>Use <code>e.getPath()</code>
-     * to get the former parent of the deleted node(s).
-     * <code>e.getChildIndices()</code>
-     * returns, in ascending order, the index(es)
-     * the node(s) had before being deleted.</p>
+     * <p>Use {@code e.getPath()} to get the former parent of the deleted
+     * node(s). {@code e.getChildIndices()} returns, in ascending order, the
+     * index(es) the node(s) had before being deleted.
+     *
+     * @param e a {@code TreeModelEvent} describing changes to a tree model
      */
     void treeNodesRemoved(TreeModelEvent e);
 
@@ -88,10 +89,10 @@ public interface TreeModelListener extends EventListener {
      * one and the first element does not identify the current root node
      * the first element should become the new root of the tree.
      *
-     * <p>Use <code>e.getPath()</code>
-     * to get the path to the node.
-     * <code>e.getChildIndices()</code>
-     * returns null.</p>
+     * <p>Use {@code e.getPath()} to get the path to the node.
+     * {@code e.getChildIndices()} returns null.
+     *
+     * @param e a {@code TreeModelEvent} describing changes to a tree model
      */
     void treeStructureChanged(TreeModelEvent e);
 

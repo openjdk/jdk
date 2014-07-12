@@ -896,31 +896,31 @@ class ExtendedTextSourceLabel extends ExtendedTextLabel implements Decoration.La
     if (true) {
         return source.toString(TextSource.WITHOUT_CONTEXT);
     }
-    StringBuffer buf = new StringBuffer();
-    buf.append(super.toString());
-    buf.append("[source:");
-    buf.append(source.toString(TextSource.WITHOUT_CONTEXT));
-    buf.append(", lb:");
-    buf.append(lb);
-    buf.append(", ab:");
-    buf.append(ab);
-    buf.append(", vb:");
-    buf.append(vb);
-    buf.append(", gv:");
-    buf.append(gv);
-    buf.append(", ci: ");
+    StringBuilder sb = new StringBuilder();
+    sb.append(super.toString());
+    sb.append("[source:");
+    sb.append(source.toString(TextSource.WITHOUT_CONTEXT));
+    sb.append(", lb:");
+    sb.append(lb);
+    sb.append(", ab:");
+    sb.append(ab);
+    sb.append(", vb:");
+    sb.append(vb);
+    sb.append(", gv:");
+    sb.append(gv);
+    sb.append(", ci: ");
     if (charinfo == null) {
-      buf.append("null");
+      sb.append("null");
     } else {
-      buf.append(charinfo[0]);
+      sb.append(charinfo[0]);
       for (int i = 1; i < charinfo.length;) {
-        buf.append(i % numvals == 0 ? "; " : ", ");
-        buf.append(charinfo[i]);
+        sb.append(i % numvals == 0 ? "; " : ", ");
+        sb.append(charinfo[i]);
       }
     }
-    buf.append("]");
+    sb.append("]");
 
-    return buf.toString();
+    return sb.toString();
   }
 
   //public static ExtendedTextLabel create(TextSource source) {

@@ -55,6 +55,7 @@
 #include "opto/mulnode.hpp"
 #include "opto/runtime.hpp"
 #include "opto/subnode.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -892,6 +893,50 @@ const TypeFunc* OptoRuntime::cipherBlockChaining_aescrypt_Type() {
   // returning cipher len (int)
   fields = TypeTuple::fields(1);
   fields[TypeFunc::Parms+0] = TypeInt::INT;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
+  return TypeFunc::make(domain, range);
+}
+
+/*
+ * void implCompress(byte[] buf, int ofs)
+ */
+const TypeFunc* OptoRuntime::sha_implCompress_Type() {
+  // create input type (domain)
+  int num_args = 2;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // buf
+  fields[argp++] = TypePtr::NOTNULL; // state
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL; // void
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+/*
+ * int implCompressMultiBlock(byte[] b, int ofs, int limit)
+ */
+const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type() {
+  // create input type (domain)
+  int num_args = 4;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL; // buf
+  fields[argp++] = TypePtr::NOTNULL; // state
+  fields[argp++] = TypeInt::INT;     // ofs
+  fields[argp++] = TypeInt::INT;     // limit
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // returning ofs (int)
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = TypeInt::INT; // ofs
   const TypeTuple* range = TypeTuple::make(TypeFunc::Parms+1, fields);
   return TypeFunc::make(domain, range);
 }

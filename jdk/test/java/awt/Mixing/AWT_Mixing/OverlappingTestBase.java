@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import javax.swing.*;
 import sun.awt.*;
 import java.io.*;
+import test.java.awt.regtesthelpers.Util;
 
 /**
  * <p>This class provides basis for AWT Mixing testing.
@@ -131,7 +132,7 @@ public abstract class OverlappingTestBase {
                 isFrameBorderCalculated = true;
             } catch (IOException e) {
                 e.printStackTrace();
-                System.exit(1);
+                throw new RuntimeException("Problem calculating a native border size");
             }
         }
         return borderShift;

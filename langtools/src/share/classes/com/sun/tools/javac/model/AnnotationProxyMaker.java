@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,7 @@ import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.ArrayType;
 import com.sun.tools.javac.util.*;
 
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
  * A generator of dynamic proxy implementations of
@@ -119,9 +120,9 @@ public class AnnotationProxyMaker {
 
         // First find the default values.
         ClassSymbol sym = (ClassSymbol) anno.type.tsym;
-        for (Scope.Entry e = sym.members().elems; e != null; e = e.sibling) {
-            if (e.sym.kind == Kinds.MTH) {
-                MethodSymbol m = (MethodSymbol) e.sym;
+        for (Symbol s : sym.members().getSymbols(NON_RECURSIVE)) {
+            if (s.kind == Kinds.MTH) {
+                MethodSymbol m = (MethodSymbol) s;
                 Attribute def = m.getDefaultValue();
                 if (def != null)
                     res.put(m, def);

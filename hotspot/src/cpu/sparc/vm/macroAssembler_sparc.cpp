@@ -1202,7 +1202,7 @@ void RegistersForDebugging::print(outputStream* s) {
     if ( j != last )  s->print(" - f%d", last);
     s->print(" = %f", val);
     s->fill_to(25);
-    s->print_cr(" (0x%x)", val);
+    s->print_cr(" (0x%x)", *(int*)&val);
     j = last + 1;
   }
   s->cr();

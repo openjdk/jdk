@@ -29,6 +29,7 @@
 #include "memory/generation.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
 #include "utilities/macros.hpp"

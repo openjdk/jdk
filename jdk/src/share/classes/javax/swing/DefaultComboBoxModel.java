@@ -35,6 +35,7 @@ import java.io.Serializable;
  *
  * @author Arnaud Weber
  * @author Tom Santos
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class DefaultComboBoxModel<E> extends AbstractListModel<E> implements MutableComboBoxModel<E>, Serializable {

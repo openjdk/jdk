@@ -1193,10 +1193,9 @@ class ConcurrentMarkSweepGeneration: public CardGeneration {
   // Does a "full" (forced) collection invoked on this generation collect
   // all younger generations as well? Note that the second conjunct is a
   // hack to allow the collection of the younger gen first if the flag is
-  // set. This is better than using th policy's should_collect_gen0_first()
-  // since that causes us to do an extra unnecessary pair of restart-&-stop-world.
+  // set.
   virtual bool full_collects_younger_generations() const {
-    return UseCMSCompactAtFullCollection && !CollectGen0First;
+    return UseCMSCompactAtFullCollection && !ScavengeBeforeFullGC;
   }
 
   void space_iterate(SpaceClosure* blk, bool usedOnly = false);
@@ -1445,7 +1444,7 @@ class Par_MarkFromRootsClosure: public BitMapClosure {
 
 // The following closures are used to do certain kinds of verification of
 // CMS marking.
-class PushAndMarkVerifyClosure: public CMSOopClosure {
+class PushAndMarkVerifyClosure: public MetadataAwareOopClosure {
   CMSCollector*    _collector;
   MemRegion        _span;
   CMSBitMap*       _verification_bm;

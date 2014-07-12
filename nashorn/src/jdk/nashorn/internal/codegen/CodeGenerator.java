@@ -145,6 +145,7 @@ import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.RewriteException;
 import jdk.nashorn.internal.runtime.Scope;
+import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
@@ -210,6 +211,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      *  by reflection in class installation */
     private final Compiler compiler;
 
+    /** Is the current code submitted by 'eval' call? */
+    private final boolean evalCode;
+
     /** Call site flags given to the code generator to be used for all generated call sites */
     private final int callSiteFlags;
 
@@ -264,6 +268,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     CodeGenerator(final Compiler compiler, final int[] continuationEntryPoints) {
         super(new CodeGeneratorLexicalContext());
         this.compiler                = compiler;
+        this.evalCode                = compiler.getSource().isEvalCode();
         this.continuationEntryPoints = continuationEntryPoints;
         this.callSiteFlags           = compiler.getScriptEnvironment()._callsite_flags;
         this.log                     = initLogger(compiler.getContext());
@@ -287,6 +292,14 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      */
     int getCallSiteFlags() {
         return lc.getCurrentFunction().isStrict() ? callSiteFlags | CALLSITE_STRICT : callSiteFlags;
+    }
+
+    /**
+     * Are we generating code for 'eval' code?
+     * @return true if currently compiled code is 'eval' code.
+     */
+    boolean isEvalCode() {
+        return evalCode;
     }
 
     /**
@@ -1084,7 +1097,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         closeBlockVariables(block);
         lc.releaseSlots();
-        assert !method.isReachable() || lc.getUsedSlotCount() == method.getFirstTemp();
+        assert !method.isReachable() || (lc.isFunctionBody() ? 0 : lc.getUsedSlotCount()) == method.getFirstTemp();
 
         return block;
     }
@@ -1168,7 +1181,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return;
         }
         assert count > 0; // together with count == 0 check, asserts nonnegative count
-        assert method.hasScope();
+        if (!method.hasScope()) {
+            // We can sometimes invoke this method even if the method has no slot for the scope object. Typical example:
+            // for(;;) { with({}) { break; } }. WithNode normally creates a scope, but if it uses no identifiers and
+            // nothing else forces creation of a scope in the method, we just won't have the :scope local variable.
+            return;
+        }
         method.loadCompilerConstant(SCOPE);
         for(int i = 0; i < count; ++i) {
             method.invoke(ScriptObject.GET_PROTO);
@@ -1277,36 +1295,45 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     int argsCount;
                     @Override
                     void loadStack() {
-                        loadExpressionAsObject(ident); // Type.OBJECT as foo() makes no sense if foo == 3
-                        method.dup();
+                        /**
+                         * We want to load 'eval' to check if it is indeed global builtin eval.
+                         * If this eval call is inside a 'with' statement, dyn:getMethod|getProp|getElem
+                         * would be generated if ident is a "isFunction". But, that would result in a
+                         * bound function from WithObject. We don't want that as bound function as that
+                         * won't be detected as builtin eval. So, we make ident as "not a function" which
+                         * results in "dyn:getProp|getElem|getMethod" being generated and so WithObject
+                         * would return unbounded eval function.
+                         *
+                         * Example:
+                         *
+                         *  var global = this;
+                         *  function func() {
+                         *      with({ eval: global.eval) { eval("var x = 10;") }
+                         *  }
+                         */
+                        loadExpressionAsObject(ident.setIsNotFunction()); // Type.OBJECT as foo() makes no sense if foo == 3
                         globalIsEval();
                         method.ifeq(is_not_eval);
 
-                        // We don't need ScriptFunction object for 'eval'
-                        method.pop();
                         // Load up self (scope).
                         method.loadCompilerConstant(SCOPE);
-                        final CallNode.EvalArgs evalArgs = callNode.getEvalArgs();
+                        final List<Expression> evalArgs = callNode.getEvalArgs().getArgs();
                         // load evaluated code
-                        loadExpressionAsObject(evalArgs.getCode());
+                        loadExpressionAsObject(evalArgs.get(0));
                         // load second and subsequent args for side-effect
-                        final List<Expression> callArgs = callNode.getArgs();
-                        final int numArgs = callArgs.size();
+                        final int numArgs = evalArgs.size();
                         for (int i = 1; i < numArgs; i++) {
-                            loadExpressionUnbounded(callArgs.get(i)).pop();
+                            loadAndDiscard(evalArgs.get(i));
                         }
-                        // special/extra 'eval' arguments
-                        loadExpressionUnbounded(evalArgs.getThis());
-                        method.load(evalArgs.getLocation());
-                        method.load(evalArgs.getStrictMode());
-                        method.convert(Type.OBJECT);
                         method._goto(invoke_direct_eval);
 
                         method.label(is_not_eval);
+                        // load this time but with dyn:getMethod|getProp|getElem
+                        loadExpressionAsObject(ident); // Type.OBJECT as foo() makes no sense if foo == 3
                         // This is some scope 'eval' or global eval replaced by user
                         // but not the built-in ECMAScript 'eval' function call
                         method.loadNull();
-                        argsCount = loadArgs(callArgs);
+                        argsCount = loadArgs(callNode.getArgs());
                     }
 
                     @Override
@@ -1316,6 +1343,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         method._goto(eval_done);
 
                         method.label(invoke_direct_eval);
+                        // Special/extra 'eval' arguments. These can be loaded late (in consumeStack) as we know none of
+                        // them can ever be optimistic.
+                        method.loadCompilerConstant(THIS);
+                        method.load(callNode.getEvalArgs().getLocation());
+                        method.load(CodeGenerator.this.lc.getCurrentFunction().isStrict());
                         // direct call to Global.directEval
                         globalDirectEval();
                         convertOptimisticReturnValue();
@@ -1821,19 +1853,40 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         method.storeCompilerConstant(ARGUMENTS);
     }
 
-    /**
-     * Should this code generator skip generating code for inner functions? If lazy compilation is on, or we're
-     * doing an on-demand ("just-in-time") compilation, then we aren't generating code for inner functions.
-     */
-    private boolean compileOutermostOnly() {
-        return compiler.isOnDemandCompilation() || compiler.getScriptEnvironment()._lazy_compilation;
+    private boolean skipFunction(final FunctionNode functionNode) {
+        final ScriptEnvironment env = compiler.getScriptEnvironment();
+        final boolean lazy = env._lazy_compilation;
+        final boolean onDemand = compiler.isOnDemandCompilation();
+
+        // If this is on-demand or lazy compilation, don't compile a nested (not topmost) function.
+        if((onDemand || lazy) && lc.getOutermostFunction() != functionNode) {
+            return true;
+        }
+
+        // If lazy compiling with optimistic types, don't compile the program eagerly either. It will soon be
+        // invalidated anyway. In presence of a class cache, this further means that an obsoleted program version
+        // lingers around. Also, currently loading previously persisted optimistic types information only works if
+        // we're on-demand compiling a function, so with this strategy the :program method can also have the warmup
+        // benefit of using previously persisted types.
+        // NOTE that this means the first compiled class will effectively just have a :createProgramFunction method, and
+        // the RecompilableScriptFunctionData (RSFD) object in its constants array. It won't even have the :program
+        // method. This is by design. It does mean that we're wasting one compiler execution (and we could minimize this
+        // by just running it up to scope depth calculation, which creates the RSFDs and then this limited codegen).
+        // We could emit an initial separate compile unit with the initial version of :program in it to better utilize
+        // the compilation pipeline, but that would need more invasive changes, as currently the assumption that
+        // :program is emitted into the first compilation unit of the function lives in many places.
+        if(!onDemand && lazy && env._optimistic_types && functionNode.isProgram()) {
+            return true;
+        }
+
+        return false;
     }
 
     @Override
     public boolean enterFunctionNode(final FunctionNode functionNode) {
         final int fnId = functionNode.getId();
 
-        if (compileOutermostOnly() && lc.getOutermostFunction() != functionNode) {
+        if (skipFunction(functionNode)) {
             // In case we are not generating code for the function, we must create or retrieve the function object and
             // load it on the stack here.
             newFunctionObject(functionNode, false);
@@ -4384,7 +4437,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private MethodEmitter globalDirectEval() {
         return method.invokestatic(GLOBAL_OBJECT, "directEval",
-                methodDescriptor(Object.class, Object.class, Object.class, Object.class, Object.class, Object.class));
+                methodDescriptor(Object.class, Object.class, Object.class, Object.class, Object.class, boolean.class));
     }
 
     private abstract class OptimisticOperation {

@@ -53,7 +53,7 @@ public final class WFontConfiguration extends FontConfiguration {
     @Override
     protected void initReorderMap() {
         if (encoding.equalsIgnoreCase("windows-31j")) {
-            localeMap = new Hashtable();
+            localeMap = new Hashtable<>();
             /* Substitute Mincho for Gothic in this one case.
              * Note the windows fontconfig files already contain the mapping:
              * filename.MS_Mincho=MSMINCHO.TTC
@@ -67,7 +67,7 @@ public final class WFontConfiguration extends FontConfiguration {
             localeMap.put("dialoginput.italic.japanese", "MS Mincho");
             localeMap.put("dialoginput.bolditalic.japanese", "MS Mincho");
         }
-        reorderMap = new HashMap();
+        reorderMap = new HashMap<>();
         reorderMap.put("UTF-8.hi", "devanagari");
         reorderMap.put("windows-1255", "hebrew");
         reorderMap.put("x-windows-874", "thai");
@@ -118,7 +118,7 @@ public final class WFontConfiguration extends FontConfiguration {
 
     @Override
     protected String makeAWTFontName(String platformFontName, String characterSubsetName) {
-        String windowsCharset = (String) subsetCharsetMap.get(characterSubsetName);
+        String windowsCharset = subsetCharsetMap.get(characterSubsetName);
         if (windowsCharset == null) {
             windowsCharset = "DEFAULT_CHARSET";
         }
@@ -127,7 +127,7 @@ public final class WFontConfiguration extends FontConfiguration {
 
     @Override
     protected String getEncoding(String awtFontName, String characterSubsetName) {
-        String encoding = (String) subsetEncodingMap.get(characterSubsetName);
+        String encoding = subsetEncodingMap.get(characterSubsetName);
         if (encoding == null) {
             encoding = "default";
         }
@@ -174,8 +174,8 @@ public final class WFontConfiguration extends FontConfiguration {
         return fontName;
     }
 
-    private static HashMap subsetCharsetMap = new HashMap();
-    private static HashMap subsetEncodingMap = new HashMap();
+    private static HashMap<String, String> subsetCharsetMap = new HashMap<>();
+    private static HashMap<String, String> subsetEncodingMap = new HashMap<>();
     private static String textInputCharset;
 
     private void initTables(String defaultEncoding) {

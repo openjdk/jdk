@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package com.sun.source.tree;
 
 /**
- * A tree node for an 'if' statement.
+ * A tree node for an {@code if} statement.
  *
  * For example:
  * <pre>
@@ -47,10 +47,22 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface IfTree extends StatementTree {
-    ExpressionTree getCondition();
-    StatementTree getThenStatement();
     /**
-     * @return null if this if statement has no else branch.
+     * Returns the condition of the if-statement.
+     * @return the condition
+     */
+    ExpressionTree getCondition();
+
+    /**
+     * Returns the statement to be executed if the condition is true
+     * @return the statement to be executed if the condition is true
+     */
+    StatementTree getThenStatement();
+
+    /**
+     * Returns the statement to be executed if the condition is false,
+     * or {@code null} if there is no such statement.
+     * @return the statement to be executed if the condition is false
      */
     StatementTree getElseStatement();
 }

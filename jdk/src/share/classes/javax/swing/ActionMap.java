@@ -94,6 +94,9 @@ public class ActionMap implements Serializable {
      * for <code>key</code>.
      * <p>In most instances, <code>key</code> will be
      * <code>action.getValue(NAME)</code>.
+     *
+     * @param key a key
+     * @param action a binding for {@code key}
      */
     public void put(Object key, Action action) {
         if (key == null) {
@@ -113,6 +116,9 @@ public class ActionMap implements Serializable {
     /**
      * Returns the binding for <code>key</code>, messaging the
      * parent <code>ActionMap</code> if the binding is not locally defined.
+     *
+     * @param key a key
+     * @return the binding for {@code key}
      */
     public Action get(Object key) {
         Action value = (arrayTable == null) ? null :
@@ -130,6 +136,8 @@ public class ActionMap implements Serializable {
 
     /**
      * Removes the binding for <code>key</code> from this <code>ActionMap</code>.
+     *
+     * @param key a key
      */
     public void remove(Object key) {
         if (arrayTable != null) {
@@ -148,6 +156,8 @@ public class ActionMap implements Serializable {
 
     /**
      * Returns the <code>Action</code> names that are bound in this <code>ActionMap</code>.
+     *
+     * @return an array of the keys
      */
     public Object[] keys() {
         if (arrayTable == null) {
@@ -172,6 +182,8 @@ public class ActionMap implements Serializable {
      * Returns an array of the keys defined in this <code>ActionMap</code> and
      * its parent. This method differs from <code>keys()</code> in that
      * this method includes the keys defined in the parent.
+     *
+     * @return an array of the keys
      */
     public Object[] allKeys() {
         int           count = size();

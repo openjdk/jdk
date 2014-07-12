@@ -26,6 +26,7 @@
 package javax.print.attribute.standard;
 
 import javax.print.attribute.EnumSyntax;
+import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 /**
@@ -110,7 +111,7 @@ public final class DialogTypeSelection extends EnumSyntax
      * @return  Printing attribute class (category), an instance of class
      *          {@link java.lang.Class java.lang.Class}.
      */
-    public final Class getCategory() {
+    public final Class<? extends Attribute> getCategory() {
         return DialogTypeSelection.class;
     }
 

@@ -22,12 +22,12 @@
  */
 
 import java.io.File;
+import java.io.IOException;
 import java.net.UnknownHostException;
 import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.Arrays;
-import java.util.regex.Pattern;
 
 import static jdk.testlibrary.Asserts.*;
 import jdk.testlibrary.JDKToolLauncher;
@@ -69,7 +69,7 @@ public final class JstatdTest {
     private boolean useDefaultPort = true;
     private String port;
     private String serverName;
-    private String jstatdPid;
+    private Long jstatdPid;
     private boolean withExternalRegistry = false;
 
     public void setServerName(String serverName) {
@@ -84,65 +84,24 @@ public final class JstatdTest {
         this.withExternalRegistry = withExternalRegistry;
     }
 
-    /**
-     * Parse pid from jps output
-     */
-    private String parsePid(String tool, OutputAnalyzer output) throws Exception {
-        String[] lines = output.getOutput().split(Utils.NEW_LINE);
-        String pid = null;
-        int count = 0;
-        String processName = tool;
-        if (tool == "rmiregistry") {
-            processName = "registryimpl";
-        }
+    private Long waitOnTool(ProcessThread thread) throws Throwable {
+        long pid = thread.getPid();
 
-        Pattern toolInJpsPattern =
-                Pattern.compile("^\\d+\\s{1}" + processName + "\\s{1}.*-dparent\\.pid\\." + ProcessTools.getProcessId() + ".*");
-        for (String line : lines) {
-            if (toolInJpsPattern.matcher(line.toLowerCase()).matches()) {
-                pid = line.split(" ")[0];
-                count++;
+        Throwable t = thread.getUncaught();
+        if (t != null) {
+            if (t.getMessage().contains(
+                    "java.rmi.server.ExportException: Port already in use")) {
+                System.out.println("Port already in use. Trying to restart with a new one...");
+                Thread.sleep(100);
+                return null;
+            } else {
+                // Something unexpected has happened
+                throw new Throwable(t);
             }
         }
-        if (count > 1) {
-            throw new Exception("Expected one " + tool
-                    + " process, got " + count + ". Test will be canceled.");
-        }
 
+        System.out.println(thread.getName() + " pid: " + pid);
         return pid;
-    }
-
-    private String getToolPid(String tool)
-            throws Exception {
-        OutputAnalyzer output = runJps();
-        return parsePid(tool, output);
-    }
-
-    private String waitOnTool(String tool, TestThread thread) throws Throwable {
-        while (true) {
-            String pid = getToolPid(tool);
-
-            if (pid != null) {
-                System.out.println(tool + " pid: " + pid);
-                return pid;
-            }
-
-            Throwable t = thread.getUncaught();
-            if (t != null) {
-                if (t.getMessage().contains(
-                        "java.rmi.server.ExportException: Port already in use")) {
-                    System.out.println("Port already in use. Trying to restart with a new one...");
-                    Thread.sleep(100);
-                    return null;
-                } else {
-                    // Something unexpected has happened
-                    throw new Throwable(t);
-                }
-            }
-
-            System.out.println("Waiting until " + tool + " is running...");
-            Thread.sleep(100);
-        }
     }
 
     private void log(String caption, String... cmd) {
@@ -180,9 +139,26 @@ public final class JstatdTest {
         log("Start jps", cmd);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = waitForJstatdRMI(processBuilder);
         System.out.println(output.getOutput());
 
+        return output;
+    }
+
+    private OutputAnalyzer waitForJstatdRMI(ProcessBuilder pb) throws IOException, InterruptedException {
+        OutputAnalyzer output = new OutputAnalyzer(pb.start());
+
+        while (output.getExitValue() != 0) {
+            String out = output.getOutput();
+
+            if (out.contains("RMI Registry not available") ||
+                out.contains("RMI Server JStatRemoteHost not available")) {
+                Thread.sleep(100);
+                output = new OutputAnalyzer(pb.start());
+            } else {
+                output.shouldHaveExitValue(0);
+            }
+        }
         return output;
     }
 
@@ -235,7 +211,7 @@ public final class JstatdTest {
         log("Start jstat", cmd);
 
         ProcessBuilder processBuilder = new ProcessBuilder(cmd);
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = waitForJstatdRMI(processBuilder);
         System.out.println(output.getOutput());
 
         return output;
@@ -323,7 +299,7 @@ public final class JstatdTest {
         try {
             jstatdThread.start();
             // Make sure jstatd is up and running
-            jstatdPid = waitOnTool("jstatd", jstatdThread);
+            jstatdPid = waitOnTool(jstatdThread);
             if (jstatdPid == null) {
                 // The port is already in use. Cancel and try with new one.
                 jstatdThread.stopProcess();
@@ -344,7 +320,7 @@ public final class JstatdTest {
         try {
             while (jstatdThread == null) {
                 if (!useDefaultPort || withExternalRegistry) {
-                    port = Integer.toString(Utils.getFreePort());
+                    port = String.valueOf(Utils.getFreePort());
                 }
 
                 if (withExternalRegistry) {
