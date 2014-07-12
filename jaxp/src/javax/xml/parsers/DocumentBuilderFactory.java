@@ -34,8 +34,7 @@ import javax.xml.validation.Schema;
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
  * @author <a href="mailto:Neeraj.Bajaj@sun.com">Neeraj Bajaj</a>
  *
- * @version $Revision: 1.9 $, $Date: 2010/05/25 16:19:44 $
-
+ * @since 1.4
  */
 
 public abstract class DocumentBuilderFactory {
@@ -440,6 +439,7 @@ public abstract class DocumentBuilderFactory {
      * @throws ParserConfigurationException if this <code>DocumentBuilderFactory</code> or the <code>DocumentBuilder</code>s
      *   it creates cannot support this feature.
      * @throws NullPointerException If the <code>name</code> parameter is null.
+     * @since 1.5
      */
     public abstract void setFeature(String name, boolean value)
             throws ParserConfigurationException;
@@ -461,6 +461,7 @@ public abstract class DocumentBuilderFactory {
      *
      * @throws ParserConfigurationException if this <code>DocumentBuilderFactory</code>
      *   or the <code>DocumentBuilder</code>s it creates cannot support this feature.
+     * @since 1.5
      */
     public abstract boolean getFeature(String name)
             throws ParserConfigurationException;

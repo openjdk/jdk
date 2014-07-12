@@ -57,7 +57,7 @@ import java.io.Serializable;
  * frequency map (a form of histogram or multiset). For example, to
  * add a count to a {@code ConcurrentHashMap<String,LongAdder> freqs},
  * initializing if not already present, you can use {@code
- * freqs.computeIfAbsent(k -> new LongAdder()).increment();}
+ * freqs.computeIfAbsent(key, k -> new LongAdder()).increment();}
  *
  * <p>This class extends {@link Number}, but does <em>not</em> define
  * methods such as {@code equals}, {@code hashCode} and {@code

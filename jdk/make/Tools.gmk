@@ -87,6 +87,9 @@ TOOL_HASHER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_TZDB = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.tzdb.TzdbZoneRulesCompiler
 
+TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+    build.tools.blacklistedcertsconverter.BlacklistedCertsConverter
+
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.

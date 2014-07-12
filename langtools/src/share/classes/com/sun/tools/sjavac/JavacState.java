@@ -40,6 +40,7 @@ import java.util.*;
 
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
+import com.sun.tools.sjavac.server.JavacService;
 
 /**
  * The javac state class maintains the previous (prev) and the current (now)
@@ -625,7 +626,7 @@ public class JavacState
                 sr.put(e.getKey(), e.getValue());
             }
         }
-        perform(binDir, sr);
+        perform(null, binDir, sr);
     }
 
     /**
@@ -641,20 +642,21 @@ public class JavacState
 
             sr.put(e.getKey(), e.getValue());
         }
-        perform(gensrcDir, sr);
+        perform(null, gensrcDir, sr);
     }
 
     /**
      * Compile all the java sources. Return true, if it needs to be called again!
      */
-    public boolean performJavaCompilations(Options args,
+    public boolean performJavaCompilations(JavacService javacService,
+                                           Options args,
                                            Set<String> recentlyCompiled,
                                            boolean[] rcValue) {
         Map<String,Transformer> suffixRules = new HashMap<>();
         suffixRules.put(".java", compileJavaPackages);
         compileJavaPackages.setExtra(args);
 
-        rcValue[0] = perform(binDir, suffixRules);
+        rcValue[0] = perform(javacService, binDir, suffixRules);
         recentlyCompiled.addAll(taintedPackages());
         clearTaintedPackages();
         boolean again = !packagesWithChangedPublicApis.isEmpty();
@@ -684,7 +686,9 @@ public class JavacState
      * For all packages, find all sources belonging to the package, group the sources
      * based on their transformers and apply the transformers on each source code group.
      */
-    private boolean perform(File outputDir, Map<String,Transformer> suffixRules)
+    private boolean perform(JavacService javacService,
+                            File outputDir,
+                            Map<String,Transformer> suffixRules)
     {
         boolean rc = true;
         // Group sources based on transforms. A source file can only belong to a single transform.
@@ -709,7 +713,8 @@ public class JavacState
             Map<String,String> packagePublicApis =
                     Collections.synchronizedMap(new HashMap<String, String>());
 
-            boolean  r = t.transform(srcs,
+            boolean  r = t.transform(javacService,
+                                     srcs,
                                      visibleSrcs,
                                      visibleClasses,
                                      prev.dependents(),

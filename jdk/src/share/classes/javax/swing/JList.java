@@ -276,6 +276,7 @@ import static sun.swing.SwingUtilities2.Section.*;
  * description: A component which allows for the selection of one or more objects from a list.
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JList<E> extends JComponent implements Scrollable, Accessible

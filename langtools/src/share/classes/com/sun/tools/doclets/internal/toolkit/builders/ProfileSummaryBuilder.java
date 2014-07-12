@@ -129,7 +129,7 @@ public class ProfileSummaryBuilder extends AbstractBuilder {
         profileWriter.addProfileFooter(contentTree);
         profileWriter.printDocument(contentTree);
         profileWriter.close();
-        Util.copyDocFiles(configuration, DocPaths.profileSummary(profile.name));
+        utils.copyDocFiles(configuration, DocPaths.profileSummary(profile.name));
     }
 
     /**

@@ -44,6 +44,7 @@ import java.awt.*;
  *
  * @author Arnaud Weber
  * @author David Mendenhall
+ * @since 1.2
  */
 public abstract class FocusManager extends DefaultKeyboardFocusManager {
 
@@ -140,6 +141,7 @@ public abstract class FocusManager extends DefaultKeyboardFocusManager {
      * Returns whether the application has invoked
      * <code>disableSwingFocusManager()</code>.
      *
+     * @return {@code true} if focus manager is enabled.
      * @see #disableSwingFocusManager
      * @deprecated As of 1.4, replaced by
      *   <code>KeyboardFocusManager.getDefaultFocusTraversalPolicy()</code>

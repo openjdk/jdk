@@ -26,7 +26,6 @@
 #define SHARE_VM_SERVICES_MEM_PTR_HPP
 
 #include "memory/allocation.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
 #include "runtime/safepoint.hpp"
 

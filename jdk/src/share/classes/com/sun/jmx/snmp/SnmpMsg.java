@@ -181,22 +181,22 @@ public abstract class SnmpMsg implements SnmpDefinitions {
      * @return The string containing the dump.
      */
     public static String dumpHexBuffer(byte [] b, int offset, int len) {
-        StringBuffer buf = new StringBuffer(len << 1) ;
+        StringBuilder sb = new StringBuilder(len << 1) ;
         int k = 1 ;
         int flen = offset + len ;
 
         for (int i = offset; i < flen ; i++) {
             int j = b[i] & 0xFF ;
-            buf.append(Character.forDigit((j >>> 4) , 16)) ;
-            buf.append(Character.forDigit((j & 0x0F), 16)) ;
+            sb.append(Character.forDigit((j >>> 4), 16)) ;
+            sb.append(Character.forDigit((j & 0x0F), 16)) ;
             k++ ;
             if (k%16 == 0) {
-                buf.append('\n') ;
+                sb.append('\n') ;
                 k = 1 ;
             } else
-                buf.append(' ') ;
+                sb.append(' ') ;
         }
-        return buf.toString() ;
+        return sb.toString() ;
     }
 
     /**
@@ -205,7 +205,7 @@ public abstract class SnmpMsg implements SnmpDefinitions {
      * @return The string containing the dump.
      */
     public String printMessage() {
-        StringBuffer sb = new StringBuffer() ;
+        StringBuilder sb = new StringBuilder() ;
         sb.append("Version: ") ;
         sb.append(version) ;
         sb.append("\n") ;

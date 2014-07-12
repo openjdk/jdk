@@ -54,6 +54,8 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
   private static OopField threadNameField;
   private static OopField threadGroupField;
   private static LongField threadEETopField;
+  //tid field is new since 1.5
+  private static LongField threadTIDField;
   // threadStatus field is new since 1.5
   private static IntField threadStatusField;
   // parkBlocker field is new since 1.6
@@ -220,6 +222,7 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
       threadNameField  = (OopField) k.findField("name", "[C");
       threadGroupField = (OopField) k.findField("group", "Ljava/lang/ThreadGroup;");
       threadEETopField = (LongField) k.findField("eetop", "J");
+      threadTIDField = (LongField) k.findField("tid", "J");
       threadStatusField = (IntField) k.findField("threadStatus", "I");
       threadParkBlockerField = (OopField) k.findField("parkBlocker",
                                      "Ljava/lang/Object;");
@@ -266,6 +269,15 @@ public class OopUtilities implements /* imports */ JVMTIThreadState {
       return null;
     }
     return VM.getVM().getThreads().createJavaThreadWrapper(addr);
+  }
+
+  public static long threadOopGetTID(Oop threadOop) {
+    initThreadFields();
+    if (threadTIDField != null) {
+      return threadTIDField.getValue(threadOop);
+    } else {
+      return 0;
+    }
   }
 
   /** returns value of java.lang.Thread.threadStatus field */

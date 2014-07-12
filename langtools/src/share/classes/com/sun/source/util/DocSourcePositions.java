@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,7 +40,7 @@ import com.sun.source.tree.CompilationUnitTree;
 public interface DocSourcePositions extends SourcePositions {
 
     /**
-     * Gets the starting position of the tree within the comment within the file.  If tree is not found within
+     * Returns the starting position of the tree within the comment within the file.  If tree is not found within
      * file, or if the starting position is not available,
      * return {@link javax.tools.Diagnostic#NOPOS}.
      * The given tree should be under the given comment tree, and the given documentation
@@ -64,7 +64,7 @@ public interface DocSourcePositions extends SourcePositions {
     long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree);
 
     /**
-     * Gets the ending position of the tree within the comment within the file.  If tree is not found within
+     * Returns the ending position of the tree within the comment within the file.  If tree is not found within
      * file, or if the ending position is not available,
      * return {@link javax.tools.Diagnostic#NOPOS}.
      * The given tree should be under the given comment tree, and the given documentation

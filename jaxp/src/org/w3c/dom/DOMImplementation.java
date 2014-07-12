@@ -77,7 +77,7 @@ public interface DOMImplementation {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public DocumentType createDocumentType(String qualifiedName,
                                            String publicId,
@@ -129,7 +129,7 @@ public interface DOMImplementation {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Document createDocument(String namespaceURI,
                                    String qualifiedName,
@@ -157,7 +157,7 @@ public interface DOMImplementation {
      *   return results inconsistent with the primary core
      *   <code>DOMImplementation</code> such as <code>hasFeature</code>,
      *   <code>getFeature</code>, etc.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public Object getFeature(String feature,
                              String version);

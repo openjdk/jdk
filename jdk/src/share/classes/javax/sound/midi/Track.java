@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,10 +66,10 @@ public class Track {
     // TODO: use arrays for faster access
 
     // the list containing the events
-    private ArrayList eventsList = new ArrayList();
+    private ArrayList<MidiEvent> eventsList = new ArrayList<>();
 
     // use a hashset to detect duplicate events in add(MidiEvent)
-    private HashSet set = new HashSet();
+    private HashSet<MidiEvent> set = new HashSet<>();
 
     private MidiEvent eotEvent;
 
@@ -108,7 +108,7 @@ public class Track {
                 // get the last event
                 MidiEvent lastEvent = null;
                 if (eventsCount > 0) {
-                    lastEvent = (MidiEvent) eventsList.get(eventsCount - 1);
+                    lastEvent = eventsList.get(eventsCount - 1);
                 }
                 // sanity check that we have a correct end-of-track
                 if (lastEvent != eotEvent) {
@@ -148,7 +148,7 @@ public class Track {
                 // tick order
                 int i = eventsCount;
                 for ( ; i > 0; i--) {
-                    if (event.getTick() >= ((MidiEvent)eventsList.get(i-1)).getTick()) {
+                    if (event.getTick() >= (eventsList.get(i-1)).getTick()) {
                         break;
                     }
                 }
@@ -220,7 +220,7 @@ public class Track {
     public MidiEvent get(int index) throws ArrayIndexOutOfBoundsException {
         try {
             synchronized(eventsList) {
-                return (MidiEvent)eventsList.get(index);
+                return eventsList.get(index);
             }
         } catch (IndexOutOfBoundsException ioobe) {
             throw new ArrayIndexOutOfBoundsException(ioobe.getMessage());
@@ -253,7 +253,7 @@ public class Track {
         long ret = 0;
         synchronized (eventsList) {
             if (eventsList.size() > 0) {
-                ret = ((MidiEvent)eventsList.get(eventsList.size() - 1)).getTick();
+                ret = (eventsList.get(eventsList.size() - 1)).getTick();
             }
         }
         return ret;

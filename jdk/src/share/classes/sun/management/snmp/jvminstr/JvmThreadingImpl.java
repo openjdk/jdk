@@ -303,28 +303,28 @@ public class JvmThreadingImpl implements JvmThreadingMBean {
      * Getter for the "JvmThreadTotalStartedCount" variable.
      */
     public Long getJvmThreadTotalStartedCount() throws SnmpStatusException {
-        return new Long(getThreadMXBean().getTotalStartedThreadCount());
+        return getThreadMXBean().getTotalStartedThreadCount();
     }
 
     /**
      * Getter for the "JvmThreadPeakCount" variable.
      */
     public Long getJvmThreadPeakCount() throws SnmpStatusException {
-        return  new Long(getThreadMXBean().getPeakThreadCount());
+        return (long)getThreadMXBean().getPeakThreadCount();
     }
 
     /**
      * Getter for the "JvmThreadDaemonCount" variable.
      */
     public Long getJvmThreadDaemonCount() throws SnmpStatusException {
-        return new Long(getThreadMXBean().getDaemonThreadCount());
+        return (long)getThreadMXBean().getDaemonThreadCount();
     }
 
     /**
      * Getter for the "JvmThreadCount" variable.
      */
     public Long getJvmThreadCount() throws SnmpStatusException {
-        return new Long(getThreadMXBean().getThreadCount());
+        return (long)getThreadMXBean().getThreadCount();
     }
 
    /**
@@ -332,7 +332,7 @@ public class JvmThreadingImpl implements JvmThreadingMBean {
      */
     public synchronized Long getJvmThreadPeakCountReset()
         throws SnmpStatusException {
-        return new Long(jvmThreadPeakCountReset);
+        return jvmThreadPeakCountReset;
     }
 
     /**

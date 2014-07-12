@@ -310,6 +310,7 @@ import sun.awt.AWTAccessor;
  *
  * @author James Gosling
  * @author Scott Violet
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JOptionPane extends JComponent implements Accessible
@@ -435,6 +436,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @exception HeadlessException if
      *   <code>GraphicsEnvironment.isHeadless</code> returns
      *   <code>true</code>
+     * @return user's input
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public static String showInputDialog(Object message)
@@ -451,6 +453,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @param message the <code>Object</code> to display
      * @param initialSelectionValue the value used to initialize the input
      *                 field
+     * @return user's input
      * @since 1.4
      */
     public static String showInputDialog(Object message, Object initialSelectionValue) {
@@ -469,6 +472,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @exception HeadlessException if
      *    <code>GraphicsEnvironment.isHeadless</code> returns
      *    <code>true</code>
+     * @return user's input
      * @see java.awt.GraphicsEnvironment#isHeadless
      */
     public static String showInputDialog(Component parentComponent,
@@ -489,6 +493,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @param message the <code>Object</code> to display
      * @param initialSelectionValue the value used to initialize the input
      *                 field
+     * @return user's input
      * @since 1.4
      */
     public static String showInputDialog(Component parentComponent, Object message,
@@ -515,6 +520,7 @@ public class JOptionPane extends JComponent implements Accessible
      *                  <code>WARNING_MESSAGE</code>,
      *                  <code>QUESTION_MESSAGE</code>,
      *                  or <code>PLAIN_MESSAGE</code>
+     * @return user's input
      * @exception HeadlessException if
      *   <code>GraphicsEnvironment.isHeadless</code> returns
      *   <code>true</code>
@@ -1348,6 +1354,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @param parentComponent  the parent <code>Component</code>
      *          for the dialog
      * @param message  the <code>Object</code> to display
+     * @return user's input
      */
     public static String showInternalInputDialog(Component parentComponent,
                                                  Object message) {
@@ -1368,6 +1375,7 @@ public class JOptionPane extends JComponent implements Accessible
      * @param messageType the type of message that is to be displayed:
      *                    ERROR_MESSAGE, INFORMATION_MESSAGE, WARNING_MESSAGE,
      *                    QUESTION_MESSAGE, or PLAIN_MESSAGE
+     * @return user's input
      */
     public static String showInternalInputDialog(Component parentComponent,
                              Object message, String title, int messageType) {
@@ -2246,6 +2254,8 @@ public class JOptionPane extends JComponent implements Accessible
      * <p>
      * This is a bound property.
      *
+     * @param newValue if true, an input component whose parent is {@code parentComponent}
+     *                 is provided to allow the user to input a value.
      * @see #setSelectionValues
      * @see #setInputValue
      * @beaninfo

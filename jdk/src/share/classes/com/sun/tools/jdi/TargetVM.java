@@ -78,7 +78,7 @@ public class TargetVM implements Runnable {
                           ", errorCode=" + packet.errorCode +
                           ", flags=" + packet.flags);
         }
-        StringBuffer line = new StringBuffer(80);
+        StringBuilder line = new StringBuilder(80);
         line.append("0000: ");
         for (int i = 0; i < packet.data.length; i++) {
             if ((i > 0) && (i % 16 == 0)) {

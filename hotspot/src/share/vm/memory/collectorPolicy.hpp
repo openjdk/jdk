@@ -219,12 +219,12 @@ class ClearedAllSoftRefs : public StackObj {
 class GenCollectorPolicy : public CollectorPolicy {
 friend class TestGenCollectorPolicy;
  protected:
-  size_t _min_gen0_size;
-  size_t _initial_gen0_size;
-  size_t _max_gen0_size;
-  size_t _min_gen1_size;
-  size_t _initial_gen1_size;
-  size_t _max_gen1_size;
+  size_t _min_young_size;
+  size_t _initial_young_size;
+  size_t _max_young_size;
+  size_t _min_old_size;
+  size_t _initial_old_size;
+  size_t _max_old_size;
 
   // _gen_alignment and _space_alignment will have the same value most of the
   // time. When using large pages they can differ.
@@ -260,13 +260,13 @@ friend class TestGenCollectorPolicy;
   GenCollectorPolicy();
 
   // Accessors
-  size_t min_gen0_size()     { return _min_gen0_size; }
-  size_t initial_gen0_size() { return _initial_gen0_size; }
-  size_t max_gen0_size()     { return _max_gen0_size; }
-  size_t gen_alignment()     { return _gen_alignment; }
-  size_t min_gen1_size()     { return _min_gen1_size; }
-  size_t initial_gen1_size() { return _initial_gen1_size; }
-  size_t max_gen1_size()     { return _max_gen1_size; }
+  size_t min_young_size()     { return _min_young_size; }
+  size_t initial_young_size() { return _initial_young_size; }
+  size_t max_young_size()     { return _max_young_size; }
+  size_t gen_alignment()      { return _gen_alignment; }
+  size_t min_old_size()       { return _min_old_size; }
+  size_t initial_old_size()   { return _initial_old_size; }
+  size_t max_old_size()       { return _max_old_size; }
 
   int number_of_generations() { return 2; }
 
@@ -298,7 +298,7 @@ friend class TestGenCollectorPolicy;
                                       size_t init_survivor_size);
 
   virtual void post_heap_initialize() {
-    assert(_max_gen0_size == MaxNewSize, "Should be taken care of by initialize_size_info");
+    assert(_max_young_size == MaxNewSize, "Should be taken care of by initialize_size_info");
   }
 
   BarrierSet::Name barrier_set_name()  { return BarrierSet::CardTableModRef; }

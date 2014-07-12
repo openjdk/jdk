@@ -373,7 +373,14 @@ ifeq ($(OPENJDK_TARGET_OS), windows)
   POLICY_SRC_LIST += $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS)/lib/security/java.policy
 endif
 ifndef OPENJDK
-  ifneq (, $(filter $(OPENJDK_TARGET_OS), windows solaris))
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy-win32
+    else
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy-win64
+    endif
+  endif
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
     POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/$(OPENJDK_TARGET_OS)/lib/security/java.policy
   endif
 endif
@@ -400,15 +407,10 @@ COPY_FILES += $(CACERTS_DST)
 
 ##########################################################################################
 
-BLACKLISTED_CERTS_SRC := $(JDK_TOPDIR)/src/share/lib/security/blacklisted.certs
-BLACKLISTED_CERTS_DST := $(JDK_OUTPUTDIR)/lib/security/blacklisted.certs
-
 ifndef OPENJDK
 
   BLACKLIST_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/blacklist
   BLACKLIST_DST := $(JDK_OUTPUTDIR)/lib/security/blacklist
-
-  BLACKLISTED_CERTS_SRC += $(wildcard $(JDK_TOPDIR)/src/closed/share/lib/security/blacklisted.certs)
 
   TRUSTEDLIBS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/trusted.libraries
   TRUSTEDLIBS_DST := $(JDK_OUTPUTDIR)/lib/security/trusted.libraries
@@ -424,20 +426,6 @@ ifndef OPENJDK
   COPY_FILES += $(TRUSTEDLIBS_DST)
 
 endif
-
-$(BLACKLISTED_CERTS_DST): $(BLACKLISTED_CERTS_SRC)
-	$(MKDIR) -p $(@D)
-	$(CAT) $^ | $(SED) '/^$$/d' | $(SORT) | $(UNIQ) > $@.tmp
-	$(GREP) -i Algorithm $@.tmp > $@
-	if [ `$(SED) -n -e "$$=" $@` != 1 ]; then \
-	   $(ECHO) "Different algorithms defined in $^"; \
-	   $(RM) $@ $@.tmp; \
-	   false; \
-	fi
-	$(GREP) -iv Algorithm $@.tmp >> $@
-	$(RM) $@.tmp
-
-COPY_FILES += $(BLACKLISTED_CERTS_DST)
 
 ##########################################################################################
 

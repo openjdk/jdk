@@ -29,7 +29,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g MethodExitReturnValuesTest.java
- *  @run main MethodExitReturnValuesTest
+ *  @run driver MethodExitReturnValuesTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

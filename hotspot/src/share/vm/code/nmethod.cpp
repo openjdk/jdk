@@ -37,6 +37,7 @@
 #include "oops/methodData.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "prims/jvmtiImpl.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/sweeper.hpp"
@@ -363,26 +364,29 @@ void nmethod::add_exception_cache_entry(ExceptionCache* new_entry) {
   set_exception_cache(new_entry);
 }
 
-void nmethod::remove_from_exception_cache(ExceptionCache* ec) {
+void nmethod::clean_exception_cache(BoolObjectClosure* is_alive) {
   ExceptionCache* prev = NULL;
   ExceptionCache* curr = exception_cache();
-  assert(curr != NULL, "nothing to remove");
-  // find the previous and next entry of ec
-  while (curr != ec) {
-    prev = curr;
-    curr = curr->next();
-    assert(curr != NULL, "ExceptionCache not found");
-  }
-  // now: curr == ec
-  ExceptionCache* next = curr->next();
-  if (prev == NULL) {
-    set_exception_cache(next);
-  } else {
-    prev->set_next(next);
-  }
-  delete curr;
-}
 
+  while (curr != NULL) {
+    ExceptionCache* next = curr->next();
+
+    Klass* ex_klass = curr->exception_type();
+    if (ex_klass != NULL && !ex_klass->is_loader_alive(is_alive)) {
+      if (prev == NULL) {
+        set_exception_cache(next);
+      } else {
+        prev->set_next(next);
+      }
+      delete curr;
+      // prev stays the same.
+    } else {
+      prev = curr;
+    }
+
+    curr = next;
+  }
+}
 
 // public method for accessing the exception cache
 // These are the public access methods.
@@ -668,8 +672,10 @@ nmethod::nmethod(
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
-    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
-      CodeCache::add_scavenge_root_nmethod(this);
+    if (ScavengeRootsInCode) {
+      if (detect_scavenge_root_oops()) {
+        CodeCache::add_scavenge_root_nmethod(this);
+      }
       Universe::heap()->register_nmethod(this);
     }
     debug_only(verify_scavenge_root_oops());
@@ -753,8 +759,10 @@ nmethod::nmethod(
     _hotness_counter         = NMethodSweeper::hotness_counter_reset_val();
 
     code_buffer->copy_values_to(this);
-    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
-      CodeCache::add_scavenge_root_nmethod(this);
+    if (ScavengeRootsInCode) {
+      if (detect_scavenge_root_oops()) {
+        CodeCache::add_scavenge_root_nmethod(this);
+      }
       Universe::heap()->register_nmethod(this);
     }
     DEBUG_ONLY(verify_scavenge_root_oops();)
@@ -869,8 +877,10 @@ nmethod::nmethod(
     code_buffer->copy_values_to(this);
     debug_info->copy_to(this);
     dependencies->copy_to(this);
-    if (ScavengeRootsInCode && detect_scavenge_root_oops()) {
-      CodeCache::add_scavenge_root_nmethod(this);
+    if (ScavengeRootsInCode) {
+      if (detect_scavenge_root_oops()) {
+        CodeCache::add_scavenge_root_nmethod(this);
+      }
       Universe::heap()->register_nmethod(this);
     }
     debug_only(verify_scavenge_root_oops());
@@ -1612,15 +1622,7 @@ void nmethod::do_unloading(BoolObjectClosure* is_alive, bool unloading_occurred)
   }
 
   // Exception cache
-  ExceptionCache* ec = exception_cache();
-  while (ec != NULL) {
-    Klass* ex_klass = ec->exception_type();
-    ExceptionCache* next_ec = ec->next();
-    if (ex_klass != NULL && !ex_klass->is_loader_alive(is_alive)) {
-      remove_from_exception_cache(ec);
-    }
-    ec = next_ec;
-  }
+  clean_exception_cache(is_alive);
 
   // If class unloading occurred we first iterate over all inline caches and
   // clear ICs where the cached oop is referring to an unloaded klass or method.

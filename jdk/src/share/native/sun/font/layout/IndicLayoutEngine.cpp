@@ -151,7 +151,7 @@ le_int32 IndicOpenTypeLayoutEngine::characterProcessing(const LEUnicode chars[],
     le_int32 outCharCount;
     if (fVersion2) {
         _LETRACE("v2process");
-        outCharCount = IndicReordering::v2process(&chars[offset], count, fScriptCode, outChars, glyphStorage);
+        outCharCount = IndicReordering::v2process(&chars[offset], count, fScriptCode, outChars, glyphStorage, success);
     } else {
         _LETRACE("reorder");
         outCharCount = IndicReordering::reorder(&chars[offset], count, fScriptCode, outChars, glyphStorage, &fMPreFixups, success);

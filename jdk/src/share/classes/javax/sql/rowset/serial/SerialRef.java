@@ -43,6 +43,7 @@ import java.util.*;
  * SerialRef is to be used by more than one thread then access to the SerialRef
  * should be controlled by appropriate synchronization.
  *
+ * @since 1.5
  */
 public class SerialRef implements Ref, Serializable, Cloneable {
 

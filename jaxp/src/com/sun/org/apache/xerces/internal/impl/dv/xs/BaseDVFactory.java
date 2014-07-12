@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  * @author Sandy Gao, IBM
  *
- * @version $Id: BaseDVFactory.java,v 1.7 2010-11-01 04:39:46 joehw Exp $
  */
 public class BaseDVFactory extends SchemaDVFactory {
 

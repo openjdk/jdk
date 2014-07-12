@@ -43,6 +43,8 @@ import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.Collections;
@@ -950,7 +952,13 @@ public abstract class RuntimeBuiltinLeafInfoImpl<T> extends BuiltinLeafInfoImpl<
         m.put(DatatypeConstants.DATETIME,   "%Y-%M-%DT%h:%m:%s"+ "%z");
         m.put(DatatypeConstants.DATE,       "%Y-%M-%D" +"%z");
         m.put(DatatypeConstants.TIME,       "%h:%m:%s"+ "%z");
-        if (System.getProperty(USE_OLD_GMONTH_MAPPING) == null) {
+        final String oldGmonthMappingProperty = AccessController.doPrivileged(new PrivilegedAction<String>() {
+            @Override
+            public String run() {
+                return System.getProperty(USE_OLD_GMONTH_MAPPING);
+            }
+        });
+        if (oldGmonthMappingProperty == null) {
             m.put(DatatypeConstants.GMONTH, "--%M%z");      //  E2-12 Error. http://www.w3.org/2001/05/xmlschema-errata#e2-12
         } else {                                            //  backw. compatibility
             if (logger.isLoggable(Level.FINE)) {

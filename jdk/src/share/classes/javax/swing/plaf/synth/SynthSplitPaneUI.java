@@ -209,8 +209,7 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                    SynthLookAndFeel.getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     SynthContext getContext(JComponent c, Region region) {
@@ -219,11 +218,9 @@ public class SynthSplitPaneUI extends BasicSplitPaneUI
 
     private SynthContext getContext(JComponent c, Region region, int state) {
         if (region == Region.SPLIT_PANE_DIVIDER) {
-            return SynthContext.getContext(SynthContext.class, c, region,
-                                           dividerStyle, state);
+            return SynthContext.getContext(c, region, dividerStyle, state);
         }
-        return SynthContext.getContext(SynthContext.class, c, region,
-                                       style, state);
+        return SynthContext.getContext(c, region, style, state);
     }
 
     private int getComponentState(JComponent c, Region subregion) {

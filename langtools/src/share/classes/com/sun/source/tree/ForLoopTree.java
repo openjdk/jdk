@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for a basic 'for' loop statement.
+ * A tree node for a basic {@code for} loop statement.
  *
  * For example:
  * <pre>
@@ -44,8 +44,30 @@ import java.util.List;
  */
 @jdk.Exported
 public interface ForLoopTree extends StatementTree {
+    /**
+     * Returns any initializers of the {@code for} statement.
+     * The result will be an empty list if there are
+     * no initializers
+     * @return the initializers
+     */
     List<? extends StatementTree> getInitializer();
+
+    /**
+     * Returns the condition of the {@code for} statement.
+     * May be {@code null} if there is no condition.
+     * @return the condition
+     */
     ExpressionTree getCondition();
+
+    /**
+     * Returns any update expressions of the {@code for} statement.
+     * @return the update expressions
+     */
     List<? extends ExpressionStatementTree> getUpdate();
+
+    /**
+     * Returns the body of the {@code for} statement.
+     * @return the body
+     */
     StatementTree getStatement();
 }

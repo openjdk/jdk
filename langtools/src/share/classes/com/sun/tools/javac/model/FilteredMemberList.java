@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,11 +27,12 @@ package com.sun.tools.javac.model;
 
 import java.util.AbstractList;
 import java.util.Iterator;
-import java.util.NoSuchElementException;
 import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 
+import com.sun.tools.javac.util.Filter;
 import static com.sun.tools.javac.code.Flags.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
  * Utility to construct a view of a symbol's members,
@@ -53,56 +54,28 @@ public class FilteredMemberList extends AbstractList<Symbol> {
 
     public int size() {
         int cnt = 0;
-        for (Scope.Entry e = scope.elems; e != null; e = e.sibling) {
-            if (!unwanted(e.sym))
+        for (Symbol sym : scope.getSymbols(NON_RECURSIVE)) {
+            if (!unwanted(sym))
                 cnt++;
         }
         return cnt;
     }
 
     public Symbol get(int index) {
-        for (Scope.Entry e = scope.elems; e != null; e = e.sibling) {
-            if (!unwanted(e.sym) && (index-- == 0))
-                return e.sym;
+        for (Symbol sym : scope.getSymbols(NON_RECURSIVE)) {
+            if (!unwanted(sym) && (index-- == 0))
+                return sym;
         }
         throw new IndexOutOfBoundsException();
     }
 
     // A more efficient implementation than AbstractList's.
     public Iterator<Symbol> iterator() {
-        return new Iterator<Symbol>() {
-
-            /** The next entry to examine, or null if none. */
-            private Scope.Entry nextEntry = scope.elems;
-
-            private boolean hasNextForSure = false;
-
-            public boolean hasNext() {
-                if (hasNextForSure) {
-                    return true;
-                }
-                while (nextEntry != null && unwanted(nextEntry.sym)) {
-                    nextEntry = nextEntry.sibling;
-                }
-                hasNextForSure = (nextEntry != null);
-                return hasNextForSure;
+        return scope.getSymbols(new Filter<Symbol>() {
+            public boolean accepts(Symbol t) {
+                return !unwanted(t);
             }
-
-            public Symbol next() {
-                if (hasNext()) {
-                    Symbol result = nextEntry.sym;
-                    nextEntry = nextEntry.sibling;
-                    hasNextForSure = false;
-                    return result;
-                } else {
-                    throw new NoSuchElementException();
-                }
-            }
-
-            public void remove() {
-                throw new UnsupportedOperationException();
-            }
-        };
+        }, NON_RECURSIVE).iterator();
     }
 
     /**

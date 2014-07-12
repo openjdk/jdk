@@ -48,6 +48,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -2812,13 +2813,6 @@ void os::yield() {
 
 os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  // Threads on Linux are all with same priority. The Solaris style
-  // os::yield_all() with nanosleep(1ms) is not necessary.
-  sched_yield();
-}
-
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
 
@@ -3075,7 +3069,7 @@ static bool do_suspend(OSThread* osthread) {
 
   for (int n = 0; !osthread->sr.is_suspended(); n++) {
     for (int i = 0; i < RANDOMLY_LARGE_INTEGER2 && !osthread->sr.is_suspended(); i++) {
-      os::yield_all();
+      os::yield();
     }
 
     // timeout, try to cancel the request
@@ -3109,7 +3103,7 @@ static void do_resume(OSThread* osthread) {
     if (sr_notify(osthread) == 0) {
       for (int n = 0; n < RANDOMLY_LARGE_INTEGER && !osthread->sr.is_running(); n++) {
         for (int i = 0; i < 100 && !osthread->sr.is_running(); i++) {
-          os::yield_all();
+          os::yield();
         }
       }
     } else {
@@ -4734,10 +4728,8 @@ int os::PlatformEvent::park(jlong millis) {
   //
   // Thread.interrupt and object.notify{All} both call Event::set.
   // That is, we treat thread.interrupt as a special case of notification.
-  // The underlying Solaris implementation, cond_timedwait, admits
-  // spurious/premature wakeups, but the JLS/JVM spec prevents the
-  // JVM from making those visible to Java code. As such, we must
-  // filter out spurious wakeups. We assume all ETIME returns are valid.
+  // We ignore spurious OS wakeups unless FilterSpuriousWakeups is false.
+  // We assume all ETIME returns are valid.
   //
   // TODO: properly differentiate simultaneous notify+interrupt.
   // In that case, we should propagate the notify to another waiter.

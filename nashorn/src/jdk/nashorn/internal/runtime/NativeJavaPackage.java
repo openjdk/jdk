@@ -26,11 +26,13 @@
 package jdk.nashorn.internal.runtime;
 
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -230,6 +232,35 @@ public final class NativeJavaPackage extends ScriptObject {
             javaClass = context.findClass(fullName);
         } catch (final NoClassDefFoundError | ClassNotFoundException e) {
             //ignored
+        }
+
+        // Check for explicit constructor signature use
+        // Example: new (java.awt["Color(int, int,int)"])(2, 3, 4);
+        final int openBrace = propertyName.indexOf('(');
+        final int closeBrace = propertyName.lastIndexOf(')');
+        if (openBrace != -1 || closeBrace != -1) {
+            final int lastChar = propertyName.length() - 1;
+            if (openBrace == -1 || closeBrace != lastChar) {
+                throw typeError("improper.constructor.signature", propertyName);
+            }
+
+            // get the class name and try to load it
+            final String className = name + "." + propertyName.substring(0, openBrace);
+            try {
+                javaClass = context.findClass(className);
+            } catch (final NoClassDefFoundError | ClassNotFoundException e) {
+                throw typeError(e, "no.such.java.class", className);
+            }
+
+            // try to find a matching constructor
+            final Object constructor = BeansLinker.getConstructorMethod(
+                    javaClass, propertyName.substring(openBrace + 1, lastChar));
+            if (constructor != null) {
+                set(propertyName, constructor, false);
+                return constructor;
+            }
+            // we didn't find a matching constructor!
+            throw typeError("no.such.java.constructor", propertyName);
         }
 
         final Object propertyValue;

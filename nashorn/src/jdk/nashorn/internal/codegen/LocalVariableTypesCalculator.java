@@ -25,10 +25,12 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.codegen.CompilerConstants.RETURN;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysFalse;
 import static jdk.nashorn.internal.ir.Expression.isAlwaysTrue;
 
 import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Deque;
 import java.util.HashSet;
@@ -63,7 +65,6 @@ import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
 import jdk.nashorn.internal.ir.LiteralNode;
-import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
 import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.LoopNode;
 import jdk.nashorn.internal.ir.Node;
@@ -72,6 +73,7 @@ import jdk.nashorn.internal.ir.ReturnNode;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.RuntimeNode.Request;
 import jdk.nashorn.internal.ir.SplitNode;
+import jdk.nashorn.internal.ir.Statement;
 import jdk.nashorn.internal.ir.SwitchNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TernaryNode;
@@ -356,6 +358,8 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     private boolean reachable = true;
     // Return type of the function
     private Type returnType = Type.UNKNOWN;
+    // Synthetic return node that we must insert at the end of the function if it's end is reachable.
+    private ReturnNode syntheticReturn;
 
     // Topmost current split node (if any)
     private SplitNode topSplit;
@@ -583,7 +587,11 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             }
         }
         setCompilerConstantAsObject(functionNode, CompilerConstants.THIS);
-        if(functionNode.needsParentScope()) {
+
+        // TODO: coarse-grained. If we wanted to solve it completely precisely,
+        // we'd also need to push/pop its type when handling WithNode (so that
+        // it can go back to undefined after a 'with' block.
+        if(functionNode.hasScopeBlock() || functionNode.needsParentScope()) {
             setCompilerConstantAsObject(functionNode, CompilerConstants.SCOPE);
         }
         if(functionNode.needsCallee()) {
@@ -841,6 +849,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
     @Override
     public boolean enterThrowNode(final ThrowNode throwNode) {
+        if(!reachable) {
+            return false;
+        }
+
         throwNode.getExpression().accept(this);
         jumpToCatchBlock(throwNode);
         doesNotContinueSequentially();
@@ -1027,6 +1039,15 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
     @Override
     public Node leaveBlock(final Block block) {
         if(lc.isFunctionBody()) {
+            if(reachable) {
+                // reachable==true means we can reach the end of the function without an explicit return statement. We
+                // need to insert a synthetic one then. This logic used to be in Lower.leaveBlock(), but Lower's
+                // reachability analysis (through Terminal.isTerminal() flags) is not precise enough so
+                // Lower$BlockLexicalContext.afterSetStatements will sometimes think the control flow terminates even
+                // when it didn't. Example: function() { switch((z)) { default: {break; } throw x; } }.
+                createSyntheticReturn(block);
+                assert !reachable;
+            }
             // We must calculate the return type here (and not in leaveFunctionNode) as it can affect the liveness of
             // the :return symbol and thus affect conversion type liveness calculations for it.
             calculateReturnType();
@@ -1085,6 +1106,23 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
             retSymbol.setNeedsSlot(true);
         }
     }
+
+    private void createSyntheticReturn(final Block body) {
+        final FunctionNode functionNode = lc.getCurrentFunction();
+        final long token = functionNode.getToken();
+        final int finish = functionNode.getFinish();
+        final List<Statement> statements = body.getStatements();
+        final int lineNumber = statements.isEmpty() ? functionNode.getLineNumber() : statements.get(statements.size() - 1).getLineNumber();
+        final IdentNode returnExpr;
+        if(functionNode.isProgram()) {
+            returnExpr = new IdentNode(token, finish, RETURN.symbolName()).setSymbol(getCompilerConstantSymbol(functionNode, RETURN));
+        } else {
+            returnExpr = null;
+        }
+        syntheticReturn = new ReturnNode(lineNumber, token, finish, returnExpr);
+        syntheticReturn.accept(this);
+    }
+
     /**
      * Leave a breakable node. If there's a join point associated with its break label (meaning there was at least one
      * break statement to the end of the node), insert the join point into the flow.
@@ -1158,7 +1196,9 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                 } else if(binaryNode.isOptimisticUndecidedType()) {
                     // At this point, we can assign a static type to the optimistic binary ADD operator as now we know
                     // the types of its operands.
-                    return binaryNode.setType(Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType()));
+                    final Type type = Type.widest(binaryNode.lhs().getType(), binaryNode.rhs().getType());
+                    // Use Type.CHARSEQUENCE instead of Type.STRING to avoid conversion of ConsStrings to Strings.
+                    return binaryNode.setType(type.equals(Type.STRING) ? Type.CHARSEQUENCE : type);
                 }
                 return binaryNode;
             }
@@ -1171,6 +1211,16 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
                     return (Node)setLocalVariableConversion(original, (JoinPredecessor)node);
                 }
                 return node;
+            }
+
+            @Override
+            public Node leaveBlock(final Block block) {
+                if(inOuterFunction && syntheticReturn != null && lc.isFunctionBody()) {
+                    final ArrayList<Statement> stmts = new ArrayList<>(block.getStatements());
+                    stmts.add((ReturnNode)syntheticReturn.accept(this));
+                    return block.setStatements(lc, stmts);
+                }
+                return super.leaveBlock(block);
             }
 
             @Override
@@ -1207,10 +1257,10 @@ final class LocalVariableTypesCalculator extends NodeVisitor<LexicalContext>{
 
             @Override
             public Node leaveLiteralNode(final LiteralNode<?> literalNode) {
-                if(literalNode instanceof ArrayLiteralNode) {
-                    ((ArrayLiteralNode)literalNode).analyze();
-                }
-                return literalNode;
+                //for e.g. ArrayLiteralNodes the initial types may have been narrowed due to the
+                //introduction of optimistic behavior - hence ensure that all literal nodes are
+                //reinitialized
+                return literalNode.initialize(lc);
             }
 
             @Override

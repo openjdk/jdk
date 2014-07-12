@@ -1540,7 +1540,7 @@ public final class Main {
         boolean useDefaultPBEAlgorithm = true;
         SecretKey secKey = null;
 
-        if (keyAlgName.toUpperCase().startsWith("PBE")) {
+        if (keyAlgName.toUpperCase(Locale.ENGLISH).startsWith("PBE")) {
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBE");
 
             // User is prompted for PBE credential
@@ -1675,7 +1675,7 @@ public final class Main {
             Object[] source = {new Integer(keysize),
                                 privKey.getAlgorithm(),
                                 chain[0].getSigAlgName(),
-                                new Long(validity),
+                                validity,
                                 x500Name};
             System.err.println(form.format(source));
         }
@@ -3664,7 +3664,7 @@ public final class Main {
                     .startsWith(s.toLowerCase(Locale.ENGLISH))) {
                 match[nmatch++] = i;
             } else {
-                StringBuffer sb = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 boolean first = true;
                 for (char c: one.toCharArray()) {
                     if (first) {
@@ -3690,7 +3690,7 @@ public final class Main {
             if (match[1] > experiment) {
                 return match[0];
             }
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             MessageFormat form = new MessageFormat(rb.getString
                 ("command.{0}.is.ambiguous."));
             Object[] source = {s};

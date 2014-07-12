@@ -47,11 +47,35 @@ import java.io.*;
 @SuppressWarnings("serial") // Same-version serialization only
 public final
 class AttributeList implements DTDConstants, Serializable {
+
+    /**
+     * The attribute name
+     */
     public String name;
+
+    /**
+     * The attribute type
+     */
     public int type;
+
+    /**
+     * The possible attribute values
+     */
     public Vector<?> values;
+
+    /**
+     * The attribute modifier
+     */
     public int modifier;
+
+    /**
+     * The default attribute value
+     */
     public String value;
+
+    /**
+     * The next attribute in the list
+     */
     public AttributeList next;
 
     AttributeList() {
@@ -171,11 +195,23 @@ class AttributeList implements DTDConstants, Serializable {
         attributeTypes.put("implied", Integer.valueOf(IMPLIED));
     }
 
+    /**
+     * Converts an attribute name to the type
+     *
+     * @param nm an attribute name
+     * @return the type
+     */
     public static int name2type(String nm) {
         Integer i = (Integer)attributeTypes.get(nm);
         return (i == null) ? CDATA : i.intValue();
     }
 
+    /**
+     * Converts a type to the attribute name
+     *
+     * @param tp a type
+     * @return the attribute name
+     */
     public static String type2name(int tp) {
         return (String)attributeTypes.get(Integer.valueOf(tp));
     }

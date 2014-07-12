@@ -28,6 +28,7 @@ package com.sun.tools.javac.comp;
 import com.sun.source.tree.MemberReferenceTree.ReferenceMode;
 import com.sun.tools.javac.api.Formattable.LocalizedString;
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr.ResultInfo;
@@ -53,11 +54,9 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.EnumMap;
 import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
 import java.util.Map;
 
 import javax.lang.model.element.ElementVisitor;
@@ -91,15 +90,14 @@ public class Resolve {
     TreeInfo treeinfo;
     Types types;
     JCDiagnostic.Factory diags;
-    public final boolean boxingEnabled;
-    public final boolean varargsEnabled;
     public final boolean allowMethodHandles;
     public final boolean allowFunctionalInterfaceMostSpecific;
+    public final boolean checkVarargsAccessAfterResolution;
     private final boolean debugResolve;
     private final boolean compactMethodDiags;
     final EnumSet<VerboseResolutionMode> verboseResolutionMode;
 
-    Scope polymorphicSignatureScope;
+    WriteableScope polymorphicSignatureScope;
 
     protected Resolve(Context context) {
         context.put(resolveKey, this);
@@ -126,8 +124,6 @@ public class Resolve {
         types = Types.instance(context);
         diags = JCDiagnostic.Factory.instance(context);
         Source source = Source.instance(context);
-        boxingEnabled = source.allowBoxing();
-        varargsEnabled = source.allowVarargs();
         Options options = Options.instance(context);
         debugResolve = options.isSet("debugresolve");
         compactMethodDiags = options.isSet(Option.XDIAGS, "compact") ||
@@ -136,7 +132,9 @@ public class Resolve {
         Target target = Target.instance(context);
         allowMethodHandles = target.hasMethodHandles();
         allowFunctionalInterfaceMostSpecific = source.allowFunctionalInterfaceMostSpecific();
-        polymorphicSignatureScope = new Scope(syms.noSymbol);
+        checkVarargsAccessAfterResolution =
+                source.allowPostApplicabilityVarargsAccessCheck();
+        polymorphicSignatureScope = WriteableScope.create(syms.noSymbol);
 
         inapplicableMethodException = new InapplicableMethodException(diags);
     }
@@ -834,9 +832,15 @@ public class Resolve {
             super.argumentsAcceptable(env, deferredAttrContext, argtypes, formals, warn);
             //should we expand formals?
             if (deferredAttrContext.phase.isVarargsRequired()) {
-                //check varargs element type accessibility
-                varargsAccessible(env, types.elemtype(formals.last()),
-                        deferredAttrContext.inferenceContext);
+                Type typeToCheck = null;
+                if (!checkVarargsAccessAfterResolution) {
+                    typeToCheck = types.elemtype(formals.last());
+                } else if (deferredAttrContext.mode == AttrMode.CHECK) {
+                    typeToCheck = types.erasure(types.elemtype(formals.last()));
+                }
+                if (typeToCheck != null) {
+                    varargsAccessible(env, typeToCheck, deferredAttrContext.inferenceContext);
+                }
             }
         }
 
@@ -952,9 +956,10 @@ public class Resolve {
         }
 
         public boolean compatible(Type found, Type req, Warner warn) {
+            InferenceContext inferenceContext = deferredAttrContext.inferenceContext;
             return strict ?
-                    types.isSubtypeUnchecked(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn) :
-                    types.isConvertible(found, deferredAttrContext.inferenceContext.asUndetVar(req), warn);
+                    types.isSubtypeUnchecked(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn) :
+                    types.isConvertible(inferenceContext.asUndetVar(found), inferenceContext.asUndetVar(req), warn);
         }
 
         public void report(DiagnosticPosition pos, JCDiagnostic details) {
@@ -1289,13 +1294,11 @@ public class Resolve {
             c = c.type.getUpperBound().tsym;
         Symbol bestSoFar = varNotFound;
         Symbol sym;
-        Scope.Entry e = c.members().lookup(name);
-        while (e.scope != null) {
-            if (e.sym.kind == VAR && (e.sym.flags_field & SYNTHETIC) == 0) {
-                return isAccessible(env, site, e.sym)
-                    ? e.sym : new AccessError(env, site, e.sym);
+        for (Symbol s : c.members().getSymbolsByName(name)) {
+            if (s.kind == VAR && (s.flags_field & SYNTHETIC) == 0) {
+                return isAccessible(env, site, s)
+                    ? s : new AccessError(env, site, s);
             }
-            e = e.next();
         }
         Type st = types.supertype(c.type);
         if (st != null && (st.hasTag(CLASS) || st.hasTag(TYPEVAR))) {
@@ -1338,20 +1341,20 @@ public class Resolve {
      */
     Symbol findVar(Env<AttrContext> env, Name name) {
         Symbol bestSoFar = varNotFound;
-        Symbol sym;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
+            Symbol sym = null;
             if (isStatic(env1)) staticOnly = true;
-            Scope.Entry e = env1.info.scope.lookup(name);
-            while (e.scope != null &&
-                   (e.sym.kind != VAR ||
-                    (e.sym.flags_field & SYNTHETIC) != 0))
-                e = e.next();
-            sym = (e.scope != null)
-                ? e.sym
-                : findField(
-                    env1, env1.enclClass.sym.type, name, env1.enclClass.sym);
+            for (Symbol s : env1.info.scope.getSymbolsByName(name)) {
+                if (s.kind == VAR && (s.flags_field & SYNTHETIC) == 0) {
+                    sym = s;
+                    break;
+                }
+            }
+            if (sym == null) {
+                sym = findField(env1, env1.enclClass.sym.type, name, env1.enclClass.sym);
+            }
             if (sym.exists()) {
                 if (staticOnly &&
                     sym.kind == VAR &&
@@ -1368,7 +1371,7 @@ public class Resolve {
             env1 = env1.outer;
         }
 
-        sym = findField(env, syms.predefClass.type, name, syms.predefClass);
+        Symbol sym = findField(env, syms.predefClass.type, name, syms.predefClass);
         if (sym.exists())
             return sym;
         if (bestSoFar.exists())
@@ -1376,18 +1379,16 @@ public class Resolve {
 
         Symbol origin = null;
         for (Scope sc : new Scope[] { env.toplevel.namedImportScope, env.toplevel.starImportScope }) {
-            Scope.Entry e = sc.lookup(name);
-            for (; e.scope != null; e = e.next()) {
-                sym = e.sym;
-                if (sym.kind != VAR)
+            for (Symbol currentSymbol : sc.getSymbolsByName(name)) {
+                if (currentSymbol.kind != VAR)
                     continue;
                 // invariant: sym.kind == VAR
-                if (bestSoFar.kind < AMBIGUOUS && sym.owner != bestSoFar.owner)
-                    return new AmbiguityError(bestSoFar, sym);
+                if (bestSoFar.kind < AMBIGUOUS && currentSymbol.owner != bestSoFar.owner)
+                    return new AmbiguityError(bestSoFar, currentSymbol);
                 else if (bestSoFar.kind >= VAR) {
-                    origin = e.getOrigin().owner;
-                    bestSoFar = isAccessible(env, origin.type, sym)
-                        ? sym : new AccessError(env, origin.type, sym);
+                    origin = sc.getOrigin(currentSymbol).owner;
+                    bestSoFar = isAccessible(env, origin.type, currentSymbol)
+                        ? currentSymbol : new AccessError(env, origin.type, currentSymbol);
                 }
             }
             if (bestSoFar.exists()) break;
@@ -1617,7 +1618,7 @@ public class Resolve {
             boolean useVarargs,
             boolean operator,
             boolean abstractok) {
-        for (Symbol s : sc.getElementsByName(name, new LookupFilter(abstractok))) {
+        for (Symbol s : sc.getSymbolsByName(name, new LookupFilter(abstractok))) {
             bestSoFar = selectBest(env, site, argtypes, typeargtypes, s,
                     bestSoFar, allowBoxing, useVarargs, operator);
         }
@@ -1817,12 +1818,11 @@ public class Resolve {
                    List<Type> argtypes, List<Type> typeargtypes,
                    boolean allowBoxing, boolean useVarargs) {
         Symbol bestSoFar = methodNotFound;
-        Symbol sym;
         Env<AttrContext> env1 = env;
         boolean staticOnly = false;
         while (env1.outer != null) {
             if (isStatic(env1)) staticOnly = true;
-            sym = findMethod(
+            Symbol sym = findMethod(
                 env1, env1.enclClass.sym.type, name, argtypes, typeargtypes,
                 allowBoxing, useVarargs, false);
             if (sym.exists()) {
@@ -1838,41 +1838,37 @@ public class Resolve {
             env1 = env1.outer;
         }
 
-        sym = findMethod(env, syms.predefClass.type, name, argtypes,
-                         typeargtypes, allowBoxing, useVarargs, false);
+        Symbol sym = findMethod(env, syms.predefClass.type, name, argtypes,
+                                typeargtypes, allowBoxing, useVarargs, false);
         if (sym.exists())
             return sym;
 
-        Scope.Entry e = env.toplevel.namedImportScope.lookup(name);
-        for (; e.scope != null; e = e.next()) {
-            sym = e.sym;
-            Type origin = e.getOrigin().owner.type;
-            if (sym.kind == MTH) {
-                if (e.sym.owner.type != origin)
-                    sym = sym.clone(e.getOrigin().owner);
-                if (!isAccessible(env, origin, sym))
-                    sym = new AccessError(env, origin, sym);
-                bestSoFar = selectBest(env, origin,
+        for (Symbol currentSym : env.toplevel.namedImportScope.getSymbolsByName(name)) {
+            Symbol origin = env.toplevel.namedImportScope.getOrigin(currentSym).owner;
+            if (currentSym.kind == MTH) {
+                if (currentSym.owner.type != origin.type)
+                    currentSym = currentSym.clone(origin);
+                if (!isAccessible(env, origin.type, currentSym))
+                    currentSym = new AccessError(env, origin.type, currentSym);
+                bestSoFar = selectBest(env, origin.type,
                                        argtypes, typeargtypes,
-                                       sym, bestSoFar,
+                                       currentSym, bestSoFar,
                                        allowBoxing, useVarargs, false);
             }
         }
         if (bestSoFar.exists())
             return bestSoFar;
 
-        e = env.toplevel.starImportScope.lookup(name);
-        for (; e.scope != null; e = e.next()) {
-            sym = e.sym;
-            Type origin = e.getOrigin().owner.type;
-            if (sym.kind == MTH) {
-                if (e.sym.owner.type != origin)
-                    sym = sym.clone(e.getOrigin().owner);
-                if (!isAccessible(env, origin, sym))
-                    sym = new AccessError(env, origin, sym);
-                bestSoFar = selectBest(env, origin,
+        for (Symbol currentSym : env.toplevel.starImportScope.getSymbolsByName(name)) {
+            Symbol origin = env.toplevel.starImportScope.getOrigin(currentSym).owner;
+            if (currentSym.kind == MTH) {
+                if (currentSym.owner.type != origin.type)
+                    currentSym = currentSym.clone(origin);
+                if (!isAccessible(env, origin.type, currentSym))
+                    currentSym = new AccessError(env, origin.type, currentSym);
+                bestSoFar = selectBest(env, origin.type,
                                        argtypes, typeargtypes,
-                                       sym, bestSoFar,
+                                       currentSym, bestSoFar,
                                        allowBoxing, useVarargs, false);
             }
         }
@@ -1911,14 +1907,12 @@ public class Resolve {
                                    Type site,
                                    Name name,
                                    TypeSymbol c) {
-        Scope.Entry e = c.members().lookup(name);
-        while (e.scope != null) {
-            if (e.sym.kind == TYP) {
-                return isAccessible(env, site, e.sym)
-                    ? e.sym
-                    : new AccessError(env, site, e.sym);
+        for (Symbol sym : c.members().getSymbolsByName(name)) {
+            if (sym.kind == TYP) {
+                return isAccessible(env, site, sym)
+                    ? sym
+                    : new AccessError(env, site, sym);
             }
-            e = e.next();
         }
         return typeNotFound;
     }
@@ -1985,8 +1979,8 @@ public class Resolve {
      */
     Symbol findGlobalType(Env<AttrContext> env, Scope scope, Name name) {
         Symbol bestSoFar = typeNotFound;
-        for (Scope.Entry e = scope.lookup(name); e.scope != null; e = e.next()) {
-            Symbol sym = loadClass(env, e.sym.flatName());
+        for (Symbol s : scope.getSymbolsByName(name)) {
+            Symbol sym = loadClass(env, s.flatName());
             if (bestSoFar.kind == TYP && sym.kind == TYP &&
                 bestSoFar != sym)
                 return new AmbiguityError(bestSoFar, sym);
@@ -1997,15 +1991,13 @@ public class Resolve {
     }
 
     Symbol findTypeVar(Env<AttrContext> env, Name name, boolean staticOnly) {
-        for (Scope.Entry e = env.info.scope.lookup(name);
-             e.scope != null;
-             e = e.next()) {
-            if (e.sym.kind == TYP) {
+        for (Symbol sym : env.info.scope.getSymbolsByName(name)) {
+            if (sym.kind == TYP) {
                 if (staticOnly &&
-                    e.sym.type.hasTag(TYPEVAR) &&
-                    e.sym.owner.kind == TYP)
-                    return new StaticError(e.sym);
-                return e.sym;
+                    sym.type.hasTag(TYPEVAR) &&
+                    sym.owner.kind == TYP)
+                    return new StaticError(sym);
+                return sym;
             }
         }
         return typeNotFound;
@@ -2313,42 +2305,6 @@ public class Resolve {
     }
 
 /* ***************************************************************************
- *  Debugging
- ****************************************************************************/
-
-    /** print all scopes starting with scope s and proceeding outwards.
-     *  used for debugging.
-     */
-    public void printscopes(Scope s) {
-        while (s != null) {
-            if (s.owner != null)
-                System.err.print(s.owner + ": ");
-            for (Scope.Entry e = s.elems; e != null; e = e.sibling) {
-                if ((e.sym.flags() & ABSTRACT) != 0)
-                    System.err.print("abstract ");
-                System.err.print(e.sym + " ");
-            }
-            System.err.println();
-            s = s.next;
-        }
-    }
-
-    void printscopes(Env<AttrContext> env) {
-        while (env.outer != null) {
-            System.err.println("------------------------------");
-            printscopes(env.info.scope);
-            env = env.outer;
-        }
-    }
-
-    public void printscopes(Type t) {
-        while (t.hasTag(CLASS)) {
-            printscopes(t.tsym.members());
-            t = types.supertype(t);
-        }
-    }
-
-/* ***************************************************************************
  *  Name resolution
  *  Naming conventions are as for symbol lookup
  *  Unlike the find... methods these methods will report access errors
@@ -2446,7 +2402,7 @@ public class Resolve {
                                             List<Type> argtypes) {
         Type mtype = infer.instantiatePolymorphicSignatureInstance(env,
                 (MethodSymbol)spMethod, currentResolutionContext, argtypes);
-        for (Symbol sym : polymorphicSignatureScope.getElementsByName(spMethod.name)) {
+        for (Symbol sym : polymorphicSignatureScope.getSymbolsByName(spMethod.name)) {
             if (types.isSameType(mtype, sym.type)) {
                return sym;
             }
@@ -2619,14 +2575,11 @@ public class Resolve {
                               boolean allowBoxing,
                               boolean useVarargs) {
         Symbol bestSoFar = methodNotFound;
-        for (Scope.Entry e = site.tsym.members().lookup(names.init);
-             e.scope != null;
-             e = e.next()) {
-            final Symbol sym = e.sym;
+        for (final Symbol sym : site.tsym.members().getSymbolsByName(names.init)) {
             //- System.out.println(" e " + e.sym);
             if (sym.kind == MTH &&
                 (sym.flags_field & SYNTHETIC) == 0) {
-                    List<Type> oldParams = e.sym.type.hasTag(FORALL) ?
+                    List<Type> oldParams = sym.type.hasTag(FORALL) ?
                             ((ForAll)sym.type).tvars :
                             List.<Type>nil();
                     Type constrType = new ForAll(site.tsym.type.getTypeArguments().appendList(oldParams),
@@ -3242,7 +3195,7 @@ public class Resolve {
 
         @Override
         protected Symbol lookup(Env<AttrContext> env, MethodResolutionPhase phase) {
-            Scope sc = new Scope(syms.arrayClass);
+            WriteableScope sc = WriteableScope.create(syms.arrayClass);
             MethodSymbol arrayConstr = new MethodSymbol(PUBLIC, name, null, site.tsym);
             arrayConstr.type = new MethodType(List.<Type>of(syms.intType), site, List.<Type>nil(), syms.methodClass);
             sc.enter(arrayConstr);
@@ -3320,8 +3273,8 @@ public class Resolve {
             Symbol bestSoFar = methodNotFound;
             currentResolutionContext = resolveContext;
             for (MethodResolutionPhase phase : methodResolutionSteps) {
-                if (!phase.isApplicable(boxingEnabled, varargsEnabled) ||
-                        lookupHelper.shouldStop(bestSoFar, phase)) break;
+                if (lookupHelper.shouldStop(bestSoFar, phase))
+                    break;
                 MethodResolutionPhase prevPhase = currentResolutionContext.step;
                 Symbol prevBest = bestSoFar;
                 currentResolutionContext.step = phase;
@@ -3352,7 +3305,7 @@ public class Resolve {
         while (env1.outer != null) {
             if (isStatic(env1)) staticOnly = true;
             if (env1.enclClass.sym == c) {
-                Symbol sym = env1.info.scope.lookup(name).sym;
+                Symbol sym = env1.info.scope.findFirst(name);
                 if (sym != null) {
                     if (staticOnly) sym = new StaticError(sym);
                     return accessBase(sym, pos, env.enclClass.sym.type,
@@ -3439,7 +3392,7 @@ public class Resolve {
             while (env1 != null && env1.outer != null) {
                 if (isStatic(env1)) staticOnly = true;
                 if (env1.enclClass.sym.isSubClass(member.owner, types)) {
-                    Symbol sym = env1.info.scope.lookup(name).sym;
+                    Symbol sym = env1.info.scope.findFirst(name);
                     if (sym != null) {
                         if (staticOnly) sym = new StaticError(sym);
                         return sym;
@@ -4247,11 +4200,6 @@ public class Resolve {
 
         public boolean isVarargsRequired() {
             return isVarargsRequired;
-        }
-
-        public boolean isApplicable(boolean boxingEnabled, boolean varargsEnabled) {
-            return (varargsEnabled || !isVarargsRequired) &&
-                   (boxingEnabled || !isBoxingRequired);
         }
 
         public Symbol mergeResults(Symbol prev, Symbol sym) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ public interface Tool {
     int run(InputStream in, OutputStream out, OutputStream err, String... arguments);
 
     /**
-     * Gets the source versions of the Java&trade; programming language
+     * Returns the source versions of the Java&trade; programming language
      * supported by this tool.
      * @return a set of supported source versions
      */

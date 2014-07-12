@@ -858,7 +858,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutTraps() {
-        return new Long(snmpOutTraps);
+        return (long)snmpOutTraps;
     }
 
     /**
@@ -868,7 +868,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutGetResponses() {
-        return new Long(snmpOutGetResponses);
+        return (long)snmpOutGetResponses;
     }
 
     /**
@@ -878,7 +878,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutGenErrs() {
-        return new Long(snmpOutGenErrs);
+        return (long)snmpOutGenErrs;
     }
 
     /**
@@ -888,7 +888,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutBadValues() {
-        return new Long(snmpOutBadValues);
+        return (long)snmpOutBadValues;
     }
 
     /**
@@ -898,7 +898,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutNoSuchNames() {
-        return new Long(snmpOutNoSuchNames);
+        return (long)snmpOutNoSuchNames;
     }
 
     /**
@@ -908,7 +908,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutTooBigs() {
-        return new Long(snmpOutTooBigs);
+        return (long)snmpOutTooBigs;
     }
 
     /**
@@ -918,7 +918,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInASNParseErrs() {
-        return new Long(snmpInASNParseErrs);
+        return (long)snmpInASNParseErrs;
     }
 
     /**
@@ -928,7 +928,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInBadCommunityUses() {
-        return new Long(snmpInBadCommunityUses);
+        return (long)snmpInBadCommunityUses;
     }
 
     /**
@@ -939,7 +939,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInBadCommunityNames() {
-        return new Long(snmpInBadCommunityNames);
+        return (long)snmpInBadCommunityNames;
     }
 
     /**
@@ -949,7 +949,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInBadVersions() {
-        return new Long(snmpInBadVersions);
+        return (long)snmpInBadVersions;
     }
 
     /**
@@ -959,7 +959,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpOutPkts() {
-        return new Long(snmpOutPkts);
+        return (long)snmpOutPkts;
     }
 
     /**
@@ -969,7 +969,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInPkts() {
-        return new Long(snmpInPkts);
+        return (long)snmpInPkts;
     }
 
     /**
@@ -979,7 +979,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInGetRequests() {
-        return new Long(snmpInGetRequests);
+        return (long)snmpInGetRequests;
     }
 
     /**
@@ -989,7 +989,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInGetNexts() {
-        return new Long(snmpInGetNexts);
+        return (long)snmpInGetNexts;
     }
 
     /**
@@ -999,7 +999,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInSetRequests() {
-        return new Long(snmpInSetRequests);
+        return (long)snmpInSetRequests;
     }
 
     /**
@@ -1009,7 +1009,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInTotalSetVars() {
-        return new Long(snmpInTotalSetVars);
+        return (long)snmpInTotalSetVars;
     }
 
     /**
@@ -1019,7 +1019,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpInTotalReqVars() {
-        return new Long(snmpInTotalReqVars);
+        return (long)snmpInTotalReqVars;
     }
 
     /**
@@ -1032,7 +1032,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpSilentDrops() {
-        return new Long(snmpSilentDrops);
+        return (long)snmpSilentDrops;
     }
 
     /**
@@ -1045,7 +1045,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Long getSnmpProxyDrops() {
-        return new Long(0);
+        return 0L;
     }
 
 

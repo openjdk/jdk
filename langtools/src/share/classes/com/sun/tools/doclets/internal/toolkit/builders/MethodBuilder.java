@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -207,7 +207,7 @@ public class MethodBuilder extends AbstractMemberBuilder {
             MethodDoc method = (MethodDoc) methods.get(currentMethodIndex);
 
             if (method.inlineTags().length == 0) {
-                DocFinder.Output docs = DocFinder.search(
+                DocFinder.Output docs = DocFinder.search(configuration,
                         new DocFinder.Input(method));
                 method = docs.inlineTags != null && docs.inlineTags.length > 0 ?
                     (MethodDoc) docs.holder : method;

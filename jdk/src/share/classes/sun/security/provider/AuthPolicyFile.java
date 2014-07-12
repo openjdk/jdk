@@ -944,7 +944,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
                     }
                     File f = new File(path);
                     path = f.getCanonicalPath();
-                    StringBuffer sb = new StringBuffer(path);
+                    StringBuilder sb = new StringBuilder(path);
                     // reappend '*' to canonicalized filename (note that
                     // canonicalization may have removed trailing file
                     // separator, so we have to check for that, too)
@@ -1095,7 +1095,7 @@ public class AuthPolicyFile extends javax.security.auth.Policy {
 
         @Override
         public String toString(){
-            StringBuffer sb = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             sb.append(rb.getString("LPARAM"));
             sb.append(getCodeSource());
             sb.append("\n");

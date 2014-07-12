@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.EnumSet;
 import java.util.Set;
+import sun.misc.SharedSecrets;
 
 /**
  * The <code>NumericShaper</code> class is used to convert Latin-1 (European)
@@ -134,6 +135,14 @@ import java.util.Set;
  */
 
 public final class NumericShaper implements java.io.Serializable {
+
+    // For access from java.text.Bidi
+    static {
+        if (SharedSecrets.getJavaAWTFontAccess() == null) {
+            SharedSecrets.setJavaAWTFontAccess(new JavaAWTFontAccessImpl());
+        }
+    }
+
     /**
      * A {@code NumericShaper.Range} represents a Unicode range of a
      * script having its own decimal digits. For example, the {@link

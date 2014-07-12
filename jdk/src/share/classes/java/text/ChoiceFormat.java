@@ -259,7 +259,7 @@ public class ChoiceFormat extends NumberFormat {
      * @return the pattern string
      */
     public String toPattern() {
-        StringBuffer result = new StringBuffer();
+        StringBuilder result = new StringBuilder();
         for (int i = 0; i < choiceLimits.length; ++i) {
             if (i != 0) {
                 result.append('|');

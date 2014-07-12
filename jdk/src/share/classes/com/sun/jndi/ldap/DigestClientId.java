@@ -103,14 +103,14 @@ class DigestClientId extends SimpleClientId {
 
     public String toString() {
         if (propvals != null) {
-            StringBuffer buf = new StringBuffer();
+            StringBuilder sb = new StringBuilder();
             for (int i = 0; i < propvals.length; i++) {
-                buf.append(':');
+                sb.append(':');
                 if (propvals[i] != null) {
-                    buf.append(propvals[i]);
+                    sb.append(propvals[i]);
                 }
             }
-            return super.toString() + buf.toString();
+            return super.toString() + sb.toString();
         } else {
             return super.toString();
         }

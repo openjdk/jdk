@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -981,9 +981,15 @@ java.io.Serializable {
      * This method is obsolete and supplied for backwards
      * compatibility only; new code should call {@link
      * #getLayoutInfo(java.awt.Container, int) getLayoutInfo} instead.
-     * This method is the same as <code>getLayoutInfo</code>;
-     * refer to <code>getLayoutInfo</code> for details on parameters
-     * and return value.
+     *
+     * Fills in an instance of {@code GridBagLayoutInfo} for the
+     * current set of managed children. This method is the same
+     * as {@code getLayoutInfo}; refer to {@code getLayoutInfo}
+     * description for details.
+     *
+     * @param  parent the layout container
+     * @param  sizeflag either {@code PREFERREDSIZE} or {@code MINSIZE}
+     * @return the {@code GridBagLayoutInfo} for the set of children
      */
     protected GridBagLayoutInfo GetLayoutInfo(Container parent, int sizeflag) {
         synchronized (parent.getTreeLock()) {
@@ -1611,13 +1617,17 @@ java.io.Serializable {
     }
 
     /**
+     * Adjusts the x, y, width, and height fields to the correct
+     * values depending on the constraint geometry and pads.
+     * <p>
      * This method is obsolete and supplied for backwards
      * compatibility only; new code should call {@link
      * #adjustForGravity(java.awt.GridBagConstraints, java.awt.Rectangle)
      * adjustForGravity} instead.
-     * This method is the same as <code>adjustForGravity</code>;
-     * refer to <code>adjustForGravity</code> for details
-     * on parameters.
+     * This method is the same as <code>adjustForGravity</code>
+     *
+     * @param  constraints the constraints to be applied
+     * @param  r the {@code Rectangle} to be adjusted
      */
     protected void AdjustForGravity(GridBagConstraints constraints,
                                     Rectangle r) {
@@ -1995,9 +2005,12 @@ java.io.Serializable {
      * This method is obsolete and supplied for backwards
      * compatibility only; new code should call {@link
      * #getMinSize(java.awt.Container, GridBagLayoutInfo) getMinSize} instead.
-     * This method is the same as <code>getMinSize</code>;
-     * refer to <code>getMinSize</code> for details on parameters
-     * and return value.
+     * This method is the same as <code>getMinSize</code>
+     *
+     * @param  parent the layout container
+     * @param  info the layout info for this parent
+     * @return a <code>Dimension</code> object containing the
+     *         minimum size
      */
     protected Dimension GetMinSize(Container parent, GridBagLayoutInfo info) {
         Dimension d = new Dimension();
@@ -2035,9 +2048,9 @@ java.io.Serializable {
      * This method is obsolete and supplied for backwards
      * compatibility only; new code should call {@link
      * #arrangeGrid(Container) arrangeGrid} instead.
-     * This method is the same as <code>arrangeGrid</code>;
-     * refer to <code>arrangeGrid</code> for details on the
-     * parameter.
+     * This method is the same as <code>arrangeGrid</code>
+     *
+     * @param  parent the layout container
      */
     protected void ArrangeGrid(Container parent) {
         Component comp;

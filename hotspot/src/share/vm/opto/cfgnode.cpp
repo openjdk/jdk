@@ -662,17 +662,17 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
                 convf2i->in(1) == bot_in ) {
                 // Matched pattern, including LShiftI; RShiftI, replace with integer compares
                 // max test
-                Node *cmp   = gvn->register_new_node_with_optimizer(new (phase->C) CmpINode( convf2i, min ));
-                Node *boo   = gvn->register_new_node_with_optimizer(new (phase->C) BoolNode( cmp, BoolTest::lt ));
-                IfNode *iff = (IfNode*)gvn->register_new_node_with_optimizer(new (phase->C) IfNode( top_if->in(0), boo, PROB_UNLIKELY_MAG(5), top_if->_fcnt ));
-                Node *if_min= gvn->register_new_node_with_optimizer(new (phase->C) IfTrueNode (iff));
-                Node *ifF   = gvn->register_new_node_with_optimizer(new (phase->C) IfFalseNode(iff));
+                Node *cmp   = gvn->register_new_node_with_optimizer(new CmpINode( convf2i, min ));
+                Node *boo   = gvn->register_new_node_with_optimizer(new BoolNode( cmp, BoolTest::lt ));
+                IfNode *iff = (IfNode*)gvn->register_new_node_with_optimizer(new IfNode( top_if->in(0), boo, PROB_UNLIKELY_MAG(5), top_if->_fcnt ));
+                Node *if_min= gvn->register_new_node_with_optimizer(new IfTrueNode (iff));
+                Node *ifF   = gvn->register_new_node_with_optimizer(new IfFalseNode(iff));
                 // min test
-                cmp         = gvn->register_new_node_with_optimizer(new (phase->C) CmpINode( convf2i, max ));
-                boo         = gvn->register_new_node_with_optimizer(new (phase->C) BoolNode( cmp, BoolTest::gt ));
-                iff         = (IfNode*)gvn->register_new_node_with_optimizer(new (phase->C) IfNode( ifF, boo, PROB_UNLIKELY_MAG(5), bot_if->_fcnt ));
-                Node *if_max= gvn->register_new_node_with_optimizer(new (phase->C) IfTrueNode (iff));
-                ifF         = gvn->register_new_node_with_optimizer(new (phase->C) IfFalseNode(iff));
+                cmp         = gvn->register_new_node_with_optimizer(new CmpINode( convf2i, max ));
+                boo         = gvn->register_new_node_with_optimizer(new BoolNode( cmp, BoolTest::gt ));
+                iff         = (IfNode*)gvn->register_new_node_with_optimizer(new IfNode( ifF, boo, PROB_UNLIKELY_MAG(5), bot_if->_fcnt ));
+                Node *if_max= gvn->register_new_node_with_optimizer(new IfTrueNode (iff));
+                ifF         = gvn->register_new_node_with_optimizer(new IfFalseNode(iff));
                 // update input edges to region node
                 set_req_X( min_idx, if_min, gvn );
                 set_req_X( max_idx, if_max, gvn );
@@ -731,7 +731,7 @@ const TypePtr* flatten_phi_adr_type(const TypePtr* at) {
 PhiNode* PhiNode::make(Node* r, Node* x, const Type *t, const TypePtr* at) {
   uint preds = r->req();   // Number of predecessor paths
   assert(t != Type::MEMORY || at == flatten_phi_adr_type(at), "flatten at");
-  PhiNode* p = new (Compile::current()) PhiNode(r, t, at);
+  PhiNode* p = new PhiNode(r, t, at);
   for (uint j = 1; j < preds; j++) {
     // Fill in all inputs, except those which the region does not yet have
     if (r->in(j) != NULL)
@@ -749,7 +749,7 @@ PhiNode* PhiNode::make_blank(Node* r, Node* x) {
   const Type*    t  = x->bottom_type();
   const TypePtr* at = NULL;
   if (t == Type::MEMORY)  at = flatten_phi_adr_type(x->adr_type());
-  return new (Compile::current()) PhiNode(r, t, at);
+  return new PhiNode(r, t, at);
 }
 
 
@@ -1258,9 +1258,9 @@ static Node *is_x2logic( PhaseGVN *phase, PhiNode *phi, int true_path ) {
   } else return NULL;
 
   // Build int->bool conversion
-  Node *n = new (phase->C) Conv2BNode( cmp->in(1) );
+  Node *n = new Conv2BNode( cmp->in(1) );
   if( flipped )
-    n = new (phase->C) XorINode( phase->transform(n), phase->intcon(1) );
+    n = new XorINode( phase->transform(n), phase->intcon(1) );
 
   return n;
 }
@@ -1320,9 +1320,9 @@ static Node* is_cond_add(PhaseGVN *phase, PhiNode *phi, int true_path) {
   if( q->is_Con() && phase->type(q) != TypeInt::ZERO && y->is_Con() )
     return NULL;
 
-  Node *cmplt = phase->transform( new (phase->C) CmpLTMaskNode(p,q) );
-  Node *j_and   = phase->transform( new (phase->C) AndINode(cmplt,y) );
-  return new (phase->C) AddINode(j_and,x);
+  Node *cmplt = phase->transform( new CmpLTMaskNode(p,q) );
+  Node *j_and   = phase->transform( new AndINode(cmplt,y) );
+  return new AddINode(j_and,x);
 }
 
 //------------------------------is_absolute------------------------------------
@@ -1384,17 +1384,17 @@ static Node* is_absolute( PhaseGVN *phase, PhiNode *phi_root, int true_path) {
     if( sub->Opcode() != Op_SubF ||
         sub->in(2) != x ||
         phase->type(sub->in(1)) != tzero ) return NULL;
-    x = new (phase->C) AbsFNode(x);
+    x = new AbsFNode(x);
     if (flip) {
-      x = new (phase->C) SubFNode(sub->in(1), phase->transform(x));
+      x = new SubFNode(sub->in(1), phase->transform(x));
     }
   } else {
     if( sub->Opcode() != Op_SubD ||
         sub->in(2) != x ||
         phase->type(sub->in(1)) != tzero ) return NULL;
-    x = new (phase->C) AbsDNode(x);
+    x = new AbsDNode(x);
     if (flip) {
-      x = new (phase->C) SubDNode(sub->in(1), phase->transform(x));
+      x = new SubDNode(sub->in(1), phase->transform(x));
     }
   }
 
@@ -1469,7 +1469,7 @@ static Node* split_flow_path(PhaseGVN *phase, PhiNode *phi) {
   // Now start splitting out the flow paths that merge the same value.
   // Split first the RegionNode.
   PhaseIterGVN *igvn = phase->is_IterGVN();
-  RegionNode *newr = new (phase->C) RegionNode(hit+1);
+  RegionNode *newr = new RegionNode(hit+1);
   split_once(igvn, phi, val, r, newr);
 
   // Now split all other Phis than this one
@@ -1781,13 +1781,13 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
       if (doit) {
         if (base == NULL) {
-          base = new (phase->C) PhiNode(in(0), type, NULL);
+          base = new PhiNode(in(0), type, NULL);
           for (uint i = 1; i < req(); i++) {
             base->init_req(i, in(i)->in(AddPNode::Base));
           }
           phase->is_IterGVN()->register_new_node_with_optimizer(base);
         }
-        return new (phase->C) AddPNode(base, base, y);
+        return new AddPNode(base, base, y);
       }
     }
   }
@@ -1864,7 +1864,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         // Phi(...MergeMem(m0, m1:AT1, m2:AT2)...) into
         //     MergeMem(Phi(...m0...), Phi:AT1(...m1...), Phi:AT2(...m2...))
         PhaseIterGVN *igvn = phase->is_IterGVN();
-        Node* hook = new (phase->C) Node(1);
+        Node* hook = new Node(1);
         PhiNode* new_base = (PhiNode*) clone();
         // Must eagerly register phis, since they participate in loops.
         if (igvn) {
@@ -1961,7 +1961,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       } else {
         narrow_t = TypeNarrowKlass::make(this->bottom_type()->is_ptr());
       }
-      PhiNode* new_phi = new (phase->C) PhiNode(r, narrow_t);
+      PhiNode* new_phi = new PhiNode(r, narrow_t);
       uint orig_cnt = req();
       for (uint i=1; i<req(); ++i) {// For all paths in
         Node *ii = in(i);
@@ -1975,9 +1975,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
             new_ii = new_phi;
           } else {
             if (is_decodeN) {
-              new_ii = new (phase->C) EncodePNode(ii, narrow_t);
+              new_ii = new EncodePNode(ii, narrow_t);
             } else {
-              new_ii = new (phase->C) EncodePKlassNode(ii, narrow_t);
+              new_ii = new EncodePKlassNode(ii, narrow_t);
             }
             igvn->register_new_node_with_optimizer(new_ii);
           }
@@ -1986,9 +1986,9 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       }
       igvn->register_new_node_with_optimizer(new_phi, this);
       if (is_decodeN) {
-        progress = new (phase->C) DecodeNNode(new_phi, bottom_type());
+        progress = new DecodeNNode(new_phi, bottom_type());
       } else {
-        progress = new (phase->C) DecodeNKlassNode(new_phi, bottom_type());
+        progress = new DecodeNKlassNode(new_phi, bottom_type());
       }
     }
   }

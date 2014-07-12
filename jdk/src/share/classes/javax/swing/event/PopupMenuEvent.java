@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package javax.swing.event;
 import java.util.EventObject;
 
 /**
- * PopupMenuEvent only contains the source of the event which is the JPoupMenu
+ * PopupMenuEvent only contains the source of the event which is the JPopupMenu
  * sending the event
  * <p>
  * <strong>Warning:</strong>

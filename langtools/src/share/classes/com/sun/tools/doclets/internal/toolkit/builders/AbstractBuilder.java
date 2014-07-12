@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -85,6 +85,8 @@ public abstract class AbstractBuilder {
      */
     protected final Configuration configuration;
 
+    protected final Utils utils;
+
     /**
      * Keep track of which packages we have seen for
      * efficiency purposes.  We don't want to copy the
@@ -106,6 +108,7 @@ public abstract class AbstractBuilder {
      */
     public AbstractBuilder(Context c) {
         this.configuration = c.configuration;
+        this.utils = configuration.utils;
         this.containingPackagesSeen = c.containingPackagesSeen;
         this.layoutParser = c.layoutParser;
     }

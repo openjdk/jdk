@@ -636,7 +636,7 @@ public abstract class DkCrypto {
     // Routines used for debugging
     static String bytesToString(byte[] digest) {
         // Get character representation of digest
-        StringBuffer digestString = new StringBuffer();
+        StringBuilder digestString = new StringBuilder();
 
         for (int i = 0; i < digest.length; i++) {
             if ((digest[i] & 0x000000ff) < 0x10) {

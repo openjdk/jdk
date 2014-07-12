@@ -112,11 +112,11 @@ class ConstantPool : public Metadata {
     int                _version;
   } _saved;
 
-  Monitor*             _lock;
-
   void set_tags(Array<u1>* tags)               { _tags = tags; }
   void tag_at_put(int which, jbyte t)          { tags()->at_put(which, t); }
   void release_tag_at_put(int which, jbyte t)  { tags()->release_at_put(which, t); }
+
+  u1* tag_addr_at(int which) const             { return tags()->adr_at(which); }
 
   void set_operands(Array<u2>* operands)       { _operands = operands; }
 
@@ -360,14 +360,6 @@ class ConstantPool : public Metadata {
     // Must do an acquire here in case another thread resolved the klass
     // behind our back, lest we later load stale values thru the oop.
     return CPSlot((Klass*)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which))).get_klass();
-  }
-
-  // This method should only be used with a cpool lock or during parsing or gc
-  Symbol* unresolved_klass_at(int which) {     // Temporary until actual use
-    Symbol* s = CPSlot((Symbol*)OrderAccess::load_ptr_acquire(obj_at_addr_raw(which))).get_symbol();
-    // check that the klass is still unresolved.
-    assert(tag_at(which).is_unresolved_klass(), "Corrupted constant pool");
-    return s;
   }
 
   // RedefineClasses() API support:
@@ -818,6 +810,8 @@ class ConstantPool : public Metadata {
   static Klass* klass_at_impl(constantPoolHandle this_cp, int which, TRAPS);
   static oop string_at_impl(constantPoolHandle this_cp, int which, int obj_index, TRAPS);
 
+  static void trace_class_resolution(constantPoolHandle this_cp, KlassHandle k);
+
   // Resolve string constants (to prevent allocation during compilation)
   static void resolve_string_constants_impl(constantPoolHandle this_cp, TRAPS);
 
@@ -848,8 +842,6 @@ class ConstantPool : public Metadata {
 
   void set_resolved_reference_length(int length) { _saved._resolved_reference_length = length; }
   int  resolved_reference_length() const  { return _saved._resolved_reference_length; }
-  void set_lock(Monitor* lock)            { _lock = lock; }
-  Monitor* lock()                         { return _lock; }
 
   // Decrease ref counts of symbols that are in the constant pool
   // when the holder class is unloaded

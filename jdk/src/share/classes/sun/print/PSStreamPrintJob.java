@@ -66,9 +66,9 @@ import java.awt.print.*;
 
 public class PSStreamPrintJob implements CancelablePrintJob {
 
-    transient private Vector jobListeners;
-    transient private Vector attrListeners;
-    transient private Vector listenedAttributeSets;
+    transient private Vector<PrintJobListener> jobListeners;
+    transient private Vector<PrintJobAttributeListener> attrListeners;
+    transient private Vector<PrintJobAttributeSet> listenedAttributeSets;
 
     private PSStreamPrintService service;
     private boolean fidelity;
@@ -117,7 +117,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 return;
             }
             if (jobListeners == null) {
-                jobListeners = new Vector();
+                jobListeners = new Vector<>();
             }
             jobListeners.add(listener);
         }
@@ -191,7 +191,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 PrintJobListener listener;
                 PrintJobEvent event = new PrintJobEvent(this, reason);
                 for (int i = 0; i < jobListeners.size(); i++) {
-                    listener = (PrintJobListener)(jobListeners.elementAt(i));
+                    listener = jobListeners.elementAt(i);
                     switch (reason) {
 
                         case PrintJobEvent.JOB_CANCELED :
@@ -230,8 +230,8 @@ public class PSStreamPrintJob implements CancelablePrintJob {
                 return;
             }
             if (attrListeners == null) {
-                attrListeners = new Vector();
-                listenedAttributeSets = new Vector();
+                attrListeners = new Vector<>();
+                listenedAttributeSets = new Vector<>();
             }
             attrListeners.add(listener);
             if (attributes == null) {
@@ -494,7 +494,7 @@ public class PSStreamPrintJob implements CancelablePrintJob {
     private void getAttributeValues(DocFlavor flavor) throws PrintException {
 
         Attribute attr;
-        Class category;
+        Class<? extends Attribute> category;
 
         if (reqAttrSet.get(Fidelity.class) == Fidelity.FIDELITY_TRUE) {
             fidelity = true;

@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * $Id: DOMSignedInfo.java 1333415 2012-05-03 12:03:51Z coheigea $
@@ -206,7 +206,7 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         return id;
     }
 
-    public List getReferences() {
+    public List<Reference> getReferences() {
         return references;
     }
 
@@ -221,22 +221,22 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         }
 
         OutputStream os = new UnsyncBufferedOutputStream(bos);
+
+        DOMSubTreeData subTree = new DOMSubTreeData(localSiElem, true);
         try {
-            os.close();
+            ((DOMCanonicalizationMethod)
+                canonicalizationMethod).canonicalize(subTree, context, os);
+        } catch (TransformException te) {
+            throw new XMLSignatureException(te);
+        }
+
+        try {
+            os.flush();
         } catch (IOException e) {
             if (log.isLoggable(java.util.logging.Level.FINE)) {
                 log.log(java.util.logging.Level.FINE, e.getMessage(), e);
             }
             // Impossible
-        }
-
-        DOMSubTreeData subTree = new DOMSubTreeData(localSiElem, true);
-
-        try {
-            ((DOMCanonicalizationMethod)
-                canonicalizationMethod).canonicalize(subTree, context, bos);
-        } catch (TransformException te) {
-            throw new XMLSignatureException(te);
         }
 
         byte[] signedInfoBytes = bos.toByteArray();
@@ -253,6 +253,15 @@ public final class DOMSignedInfo extends DOMStructure implements SignedInfo {
         }
 
         this.canonData = new ByteArrayInputStream(signedInfoBytes);
+
+        try {
+            os.close();
+        } catch (IOException e) {
+            if (log.isLoggable(java.util.logging.Level.FINE)) {
+                log.log(java.util.logging.Level.FINE, e.getMessage(), e);
+            }
+            // Impossible
+        }
     }
 
     public void marshal(Node parent, String dsPrefix, DOMCryptoContext context)

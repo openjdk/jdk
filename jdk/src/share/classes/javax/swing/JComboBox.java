@@ -77,6 +77,7 @@ import javax.accessibility.*;
  *
  * @author Arnaud Weber
  * @author Mark Davidson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JComboBox<E> extends JComponent
@@ -232,6 +233,13 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
         updateUI();
     }
 
+    /**
+     * Registers ancestor listener so that it will receive
+     * {@code AncestorEvents} when it or any of its ancestors
+     * move or are made visible or invisible.
+     * Events are also sent when the component or its ancestors are added
+     * or removed from the containment hierarchy.
+     */
     protected void installAncestorListener() {
         addAncestorListener(new AncestorListener(){
                                 public void ancestorAdded(AncestorEvent event){ hidePopup();}
@@ -812,6 +820,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
 
     /**
      * Sets the visibility of the popup.
+     *
+     * @param v if {@code true} shows the popup, otherwise, hides the popup.
      */
     public void setPopupVisible(boolean v) {
         getUI().setPopupVisible(this, v);
@@ -1144,6 +1154,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * that of the <code>Action</code>.
      *
      * @param a the combobox's action
+     * @return the {@code PropertyChangeListener}
      * @since 1.3
      * @see Action
      * @see #setAction
@@ -1308,13 +1319,15 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * do not call or override.
      */
     public void actionPerformed(ActionEvent e) {
-        Object newItem = getEditor().getItem();
-        setPopupVisible(false);
-        getModel().setSelectedItem(newItem);
-        String oldCommand = getActionCommand();
-        setActionCommand("comboBoxEdited");
-        fireActionEvent();
-        setActionCommand(oldCommand);
+        ComboBoxEditor editor = getEditor();
+        if ((editor != null) && (e != null) && (editor == e.getSource())) {
+            setPopupVisible(false);
+            getModel().setSelectedItem(editor.getItem());
+            String oldCommand = getActionCommand();
+            setActionCommand("comboBoxEdited");
+            fireActionEvent();
+            setActionCommand(oldCommand);
+        }
     }
 
     /**
@@ -1357,6 +1370,8 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      *
      * @param keyChar a char, typically this is a keyboard key
      *                  typed by the user
+     * @return {@code true} if there is an item corresponding to that character.
+     *         Otherwise, returns {@code false}.
      */
     public boolean selectWithKeyChar(char keyChar) {
         int index;
@@ -1443,6 +1458,7 @@ implements ItemSelectable,ListDataListener,ActionListener, Accessible {
      * selection. Typically, the first selection with a matching first
      * character becomes the selected item.
      *
+     * @param aManager a key selection manager
      * @beaninfo
      *       expert: true
      *  description: The objects that changes the selection when a key is pressed.

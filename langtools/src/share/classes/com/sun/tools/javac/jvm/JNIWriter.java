@@ -37,7 +37,6 @@ import javax.tools.StandardLocation;
 
 import com.sun.tools.javac.code.Attribute;
 import com.sun.tools.javac.code.Flags;
-import com.sun.tools.javac.code.Scope;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.VarSymbol;
@@ -53,6 +52,7 @@ import com.sun.tools.javac.util.Pair;
 
 import static com.sun.tools.javac.main.Option.*;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /** This class provides operations to write native header files for classes.
  *
@@ -146,8 +146,7 @@ public class JNIWriter {
         if (c.isLocal() || isSynthetic(c))
             return false;
 
-        for (Scope.Entry i = c.members_field.elems; i != null; i = i.sibling) {
-            Symbol sym = i.sym;
+        for (Symbol sym : c.members_field.getSymbols(NON_RECURSIVE)) {
             if (sym.kind == MTH && isNative(sym))
                 return true;
             for (Attribute.Compound a: sym.getDeclarationAttributes()) {
@@ -156,8 +155,7 @@ public class JNIWriter {
             }
         }
         if (checkNestedClasses) {
-            for (Scope.Entry i = c.members_field.elems; i != null; i = i.sibling) {
-                Symbol sym = i.sym;
+            for (Symbol sym : c.members_field.getSymbols(NON_RECURSIVE)) {
                 if ((sym.kind == TYP) && needsHeader(((ClassSymbol) sym), true))
                     return true;
             }

@@ -54,7 +54,7 @@ public class TreeExpansionEvent extends EventObject
     /**
       * Path to the value this event represents.
       */
-    protected TreePath              path;
+    protected TreePath path;
 
     /**
      * Constructs a TreeExpansionEvent object.
@@ -71,6 +71,8 @@ public class TreeExpansionEvent extends EventObject
 
     /**
       * Returns the path to the value that has been expanded/collapsed.
+      *
+      * @return this event's {@code TreePath} object
       */
     public TreePath getPath() { return path; }
 }

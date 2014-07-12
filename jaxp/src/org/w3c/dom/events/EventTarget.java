@@ -50,7 +50,7 @@ package org.w3c.dom.events;
  * <code>EventListeners</code> on an <code>EventTarget</code> and dispatch
  * of events to that <code>EventTarget</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2000/REC-DOM-Level-2-Events-20001113'>Document Object Model (DOM) Level 2 Events Specification</a>.
- * @since DOM Level 2
+ * @since 1.5, DOM Level 2
  */
 public interface EventTarget {
     /**

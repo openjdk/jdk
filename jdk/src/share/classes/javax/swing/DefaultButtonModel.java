@@ -44,6 +44,7 @@ import javax.swing.event.*;
  * Please see {@link java.beans.XMLEncoder}.
  *
  * @author Jeff Dinkins
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultButtonModel implements ButtonModel, Serializable {
@@ -477,6 +478,7 @@ public class DefaultButtonModel implements ButtonModel, Serializable {
      * If no such listeners exist,
      * this method returns an empty array.
      *
+     * @param <T> the type of requested listeners
      * @param listenerType  the type of listeners requested;
      *          this parameter should specify an interface
      *          that descends from <code>java.util.EventListener</code>

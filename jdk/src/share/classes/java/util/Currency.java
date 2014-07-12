@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -212,13 +212,9 @@ public final class Currency implements Serializable {
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
-                String homeDir = System.getProperty("java.home");
                 try {
-                    String dataFile = homeDir + File.separator +
-                            "lib" + File.separator + "currency.data";
                     try (DataInputStream dis = new DataInputStream(
-                             new BufferedInputStream(
-                             new FileInputStream(dataFile)))) {
+                             new BufferedInputStream(getClass().getResourceAsStream("/java/util/currency.data")))) {
                         if (dis.readInt() != MAGIC_NUMBER) {
                             throw new InternalError("Currency data is possibly corrupted");
                         }
@@ -248,7 +244,7 @@ public final class Currency implements Serializable {
                 // look for the properties file for overrides
                 String propsFile = System.getProperty("java.util.currency.data");
                 if (propsFile == null) {
-                    propsFile = homeDir + File.separator + "lib" +
+                    propsFile = System.getProperty("java.home") + File.separator + "lib" +
                         File.separator + "currency.properties";
                 }
                 try {

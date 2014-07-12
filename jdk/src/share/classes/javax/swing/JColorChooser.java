@@ -82,6 +82,7 @@ import sun.swing.SwingUtilities2;
  * @author James Gosling
  * @author Amy Fowler
  * @author Steve Wilson
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JColorChooser extends JComponent implements Accessible {
@@ -542,7 +543,7 @@ public class JColorChooser extends JComponent implements Accessible {
      * @return  a string representation of this <code>JColorChooser</code>
      */
     protected String paramString() {
-        StringBuffer chooserPanelsString = new StringBuffer("");
+        StringBuilder chooserPanelsString = new StringBuilder("");
         for (int i=0; i<chooserPanels.length; i++) {
             chooserPanelsString.append("[" + chooserPanels[i].toString()
                                        + "]");

@@ -26,6 +26,7 @@
 #include "gc_implementation/parallelScavenge/parMarkBitMap.hpp"
 #include "gc_implementation/parallelScavenge/psParallelCompact.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 #include "utilities/bitMap.inline.hpp"
 #include "services/memTracker.hpp"
@@ -71,7 +72,7 @@ ParMarkBitMap::initialize(MemRegion covered_region)
   if (_virtual_space != NULL && _virtual_space->expand_by(_reserved_byte_size)) {
     _region_start = covered_region.start();
     _region_size = covered_region.word_size();
-    idx_t* map = (idx_t*)_virtual_space->reserved_low_addr();
+    BitMap::bm_word_t* map = (BitMap::bm_word_t*)_virtual_space->reserved_low_addr();
     _beg_bits.set_map(map);
     _beg_bits.set_size(bits / 2);
     _end_bits.set_map(map + words / 2);

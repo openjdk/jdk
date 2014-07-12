@@ -85,7 +85,7 @@ public class XMLReaderComposite implements XMLStreamReaderEx {
     public XMLReaderComposite(final ElemInfo elem, XMLStreamReader[] wrapees) {
         elemInfo = elem;
         tagInfo = elem.tagInfo;
-        children = wrapees;
+        children = wrapees.clone();
         if (children != null && children.length > 0) {
             payloadIndex = 0;
             payloadReader = children[payloadIndex];

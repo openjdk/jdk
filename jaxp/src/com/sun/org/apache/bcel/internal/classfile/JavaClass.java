@@ -78,7 +78,6 @@ import  java.util.StringTokenizer;
  * class file.  Those interested in programatically generating classes
  * should see the <a href="../generic/ClassGen.html">ClassGen</a> class.
 
- * @version $Id: JavaClass.java,v 1.4 2007-07-19 04:34:42 ofung Exp $
  * @see com.sun.org.apache.bcel.internal.generic.ClassGen
  * @author  <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
  */

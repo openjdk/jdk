@@ -26,11 +26,9 @@
 package com.sun.tools.doclets.internal.toolkit.builders;
 
 import java.io.*;
-import java.util.*;
 
 import com.sun.javadoc.*;
 import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Builds the summary for a given class.
@@ -94,7 +92,7 @@ public class ClassBuilder extends AbstractBuilder {
         } else if (classDoc.isEnum()) {
             isInterface = false;
             isEnum = true;
-            Util.setEnumDocumentation(configuration, classDoc);
+            utils.setEnumDocumentation(configuration, classDoc);
         } else {
             isInterface = false;
             isEnum = false;
@@ -276,7 +274,7 @@ public class ClassBuilder extends AbstractBuilder {
             //Only copy doc files dir if the containing package is not
             //documented AND if we have not documented a class from the same
             //package already. Otherwise, we are making duplicate copies.
-            Util.copyDocFiles(configuration, containingPackage);
+            utils.copyDocFiles(configuration, containingPackage);
             containingPackagesSeen.add(containingPackage);
         }
      }
@@ -296,12 +294,12 @@ public class ClassBuilder extends AbstractBuilder {
             if ((index = modifiers.indexOf("abstract")) >= 0) {
                 modifiers.delete(index, index + "abstract".length());
                 modifiers = new StringBuilder(
-                        Util.replaceText(modifiers.toString(), "  ", " "));
+                        utils.replaceText(modifiers.toString(), "  ", " "));
             }
             if ((index = modifiers.indexOf("final")) >= 0) {
                 modifiers.delete(index, index + "final".length());
                 modifiers = new StringBuilder(
-                        Util.replaceText(modifiers.toString(), "  ", " "));
+                        utils.replaceText(modifiers.toString(), "  ", " "));
             }
         //} else if (classDoc.isAnnotationType()) {
             //modifiers.append("@interface ");

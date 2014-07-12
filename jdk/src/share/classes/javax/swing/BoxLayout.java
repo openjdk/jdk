@@ -134,6 +134,7 @@ import java.io.PrintStream;
  * @see JComponent#getAlignmentY
  *
  * @author   Timothy Prinzing
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class BoxLayout implements LayoutManager2, Serializable {

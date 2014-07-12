@@ -274,7 +274,8 @@ StackValueCollection* interpretedVFrame::locals() const {
   // Get oopmap describing oops and int for current bci
   InterpreterOopMap oop_mask;
   if (TraceDeoptimization && Verbose) {
-    methodHandle m_h(thread(), method());
+    // need the current JavaThread and not thread()
+    methodHandle m_h(Thread::current(), method());
     OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
   } else {
     method()->mask_for(bci(), &oop_mask);
@@ -335,7 +336,8 @@ StackValueCollection* interpretedVFrame::expressions() const {
   if (!method()->is_native()) {
     // Get oopmap describing oops and int for current bci
     if (TraceDeoptimization && Verbose) {
-      methodHandle m_h(method());
+      // need the current JavaThread and not thread()
+      methodHandle m_h(Thread::current(), method());
       OopMapCache::compute_one_oop_map(m_h, bci(), &oop_mask);
     } else {
       method()->mask_for(bci(), &oop_mask);
@@ -478,9 +480,8 @@ void vframeStreamCommon::skip_prefixed_method_and_wrappers() {
 
 void vframeStreamCommon::skip_reflection_related_frames() {
   while (!at_end() &&
-         (JDK_Version::is_gte_jdk14x_version() &&
           (method()->method_holder()->is_subclass_of(SystemDictionary::reflect_MethodAccessorImpl_klass()) ||
-           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass())))) {
+           method()->method_holder()->is_subclass_of(SystemDictionary::reflect_ConstructorAccessorImpl_klass()))) {
     next();
   }
 }

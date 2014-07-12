@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 import java.util.List;
 import java.io.*;
-
+//TOPLEVEL_SCOPE:List, Test2, Test; java.io.*, java.lang.*
 class Test {
     void m1(int m1_arg) {
         String x = "x, m1_arg, super, this; List, Test2, Test; java.io.*, java.lang.*";

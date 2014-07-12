@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.xs.XSObjectList;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: XSModelGroupImpl.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public class XSModelGroupImpl implements XSModelGroup {
 

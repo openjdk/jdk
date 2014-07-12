@@ -103,6 +103,7 @@ import java.util.*;
  * description: A component that displays a short string and an icon.
  *
  * @author Hans Muller
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JLabel extends JComponent implements SwingConstants, Accessible

@@ -863,11 +863,13 @@ public class HTMLDocument extends DefaultStyledDocument {
             Object     maps = getProperty(MAP_PROPERTY);
 
             if (maps == null) {
-                maps = new Hashtable(11);
+                maps = new Hashtable<>(11);
                 putProperty(MAP_PROPERTY, maps);
             }
             if (maps instanceof Hashtable) {
-                ((Hashtable)maps).put("#" + name, map);
+                @SuppressWarnings("unchecked")
+                Hashtable<Object, Object> tmp = (Hashtable)maps;
+                tmp.put("#" + name, map);
             }
         }
     }
@@ -910,11 +912,13 @@ public class HTMLDocument extends DefaultStyledDocument {
      * @return the enumerated list of maps, or <code>null</code>
      *          if the maps are not an instance of <code>Hashtable</code>
      */
-    Enumeration getMaps() {
+    Enumeration<Object> getMaps() {
         Object     maps = getProperty(MAP_PROPERTY);
 
         if (maps instanceof Hashtable) {
-            return ((Hashtable)maps).elements();
+            @SuppressWarnings("unchecked")
+            Hashtable<Object, Object> tmp = (Hashtable) maps;
+            return tmp.elements();
         }
         return null;
     }
@@ -1493,7 +1497,7 @@ public class HTMLDocument extends DefaultStyledDocument {
         else if (searchLeafAttributes && attr != null) {
             // For some leaf elements we store the actual attributes inside
             // the AttributeSet of the Element (such as anchors).
-            Enumeration names = attr.getAttributeNames();
+            Enumeration<?> names = attr.getAttributeNames();
             if (names != null) {
                 while (names.hasMoreElements()) {
                     Object name = names.nextElement();
@@ -2694,10 +2698,12 @@ public class HTMLDocument extends DefaultStyledDocument {
                 return;
             }
             if (comments == null) {
-                comments = new Vector();
+                comments = new Vector<>();
                 putProperty(AdditionalComments, comments);
             }
-            ((Vector)comments).addElement(comment);
+            @SuppressWarnings("unchecked")
+            Vector<Object> v = (Vector<Object>)comments;
+            v.addElement(comment);
         }
 
         /**
@@ -2888,6 +2894,9 @@ public class HTMLDocument extends DefaultStyledDocument {
 
         }
 
+        /**
+         * Action assigned by default to handle the Isindex task of the reader.
+         */
         public class IsindexAction extends TagAction {
 
             public void start(HTML.Tag t, MutableAttributeSet a) {
@@ -3128,7 +3137,9 @@ public class HTMLDocument extends DefaultStyledDocument {
             }
         }
 
-
+        /**
+         * Action assigned by default to handle the Pre block task of the reader.
+         */
         public class PreAction extends BlockAction {
 
             public void start(HTML.Tag t, MutableAttributeSet attr) {
@@ -3439,6 +3450,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                     option = new Option(attr);
 
                     if (selectModel instanceof OptionListModel) {
+                        @SuppressWarnings("unchecked")
                         OptionListModel<Option> m = (OptionListModel<Option>) selectModel;
                         m.addElement(option);
                         if (option.isSelected()) {
@@ -3446,6 +3458,7 @@ public class HTMLDocument extends DefaultStyledDocument {
                             m.setInitialSelection(optionCount);
                         }
                     } else if (selectModel instanceof OptionComboBoxModel) {
+                        @SuppressWarnings("unchecked")
                         OptionComboBoxModel<Option> m = (OptionComboBoxModel<Option>) selectModel;
                         m.addElement(option);
                         if (option.isSelected()) {

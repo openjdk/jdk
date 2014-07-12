@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,6 +50,7 @@ import com.sun.tools.doclets.internal.toolkit.util.*;
 public abstract class AbstractMemberWriter {
 
     protected final ConfigurationImpl configuration;
+    protected final Utils utils;
     protected final SubWriterHolderWriter writer;
     protected final ClassDoc classdoc;
     protected Map<String,Integer> typeMap = new LinkedHashMap<>();
@@ -64,6 +65,7 @@ public abstract class AbstractMemberWriter {
         this.writer = writer;
         this.nodepr = configuration.nodeprecated;
         this.classdoc = classdoc;
+        this.utils = writer.configuration.utils;
     }
 
     public AbstractMemberWriter(SubWriterHolderWriter writer) {
@@ -244,8 +246,8 @@ public abstract class AbstractMemberWriter {
             // it is updated to use the javax.lang.model.element.Modifier, we
             // will need to remove this.
             mod = (member.isMethod() && ((MethodDoc)member).isDefault()) ?
-                    Util.replaceText(mod, "public", "default").trim() :
-                    Util.replaceText(mod, "public", "").trim();
+                    utils.replaceText(mod, "public", "default").trim() :
+                    utils.replaceText(mod, "public", "").trim();
         }
         if(mod.length() > 0) {
             htmltree.addContent(mod);
@@ -538,7 +540,7 @@ public abstract class AbstractMemberWriter {
     }
 
     public ProgramElementDoc[] eligibleMembers(ProgramElementDoc[] members) {
-        return nodepr? Util.excludeDeprecatedMembers(members): members;
+        return nodepr? utils.excludeDeprecatedMembers(members): members;
     }
 
     /**
@@ -573,7 +575,7 @@ public abstract class AbstractMemberWriter {
                         ? methodType | MethodTypes.ABSTRACT.value()
                         : methodType | MethodTypes.CONCRETE.value();
             }
-            if (Util.isDeprecated(member) || Util.isDeprecated(classdoc)) {
+            if (utils.isDeprecated(member) || utils.isDeprecated(classdoc)) {
                 methodType = methodType | MethodTypes.DEPRECATED.value();
             }
             methodTypesOr = methodTypesOr | methodType;

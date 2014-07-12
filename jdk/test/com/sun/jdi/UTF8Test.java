@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g UTF8Test.java
- *  @run main UTF8Test
+ *  @run driver UTF8Test
  */
 
 /*

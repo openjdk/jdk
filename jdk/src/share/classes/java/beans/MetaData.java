@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1401,7 +1401,7 @@ static final class sun_swing_PrintColorUIResource_PersistenceDelegate extends Pe
     }
 
     private static boolean isValid(Constructor<?> constructor, String[] names) {
-        Class[] parameters = constructor.getParameterTypes();
+        Class<?>[] parameters = constructor.getParameterTypes();
         if (names.length != parameters.length) {
             return false;
         }

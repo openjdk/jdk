@@ -3213,10 +3213,10 @@ public class BasicTreeUI extends TreeUI
                     return null;
                 }
 
-                StringBuffer plainBuf = new StringBuffer();
-                StringBuffer htmlBuf = new StringBuffer();
+                StringBuilder plainStr = new StringBuilder();
+                StringBuilder htmlStr = new StringBuilder();
 
-                htmlBuf.append("<html>\n<body>\n<ul>\n");
+                htmlStr.append("<html>\n<body>\n<ul>\n");
 
                 TreeModel model = tree.getModel();
                 TreePath lastPath = null;
@@ -3227,17 +3227,17 @@ public class BasicTreeUI extends TreeUI
                     boolean leaf = model.isLeaf(node);
                     String label = getDisplayString(path, true, leaf);
 
-                    plainBuf.append(label + "\n");
-                    htmlBuf.append("  <li>" + label + "\n");
+                    plainStr.append(label + "\n");
+                    htmlStr.append("  <li>" + label + "\n");
                 }
 
                 // remove the last newline
-                plainBuf.deleteCharAt(plainBuf.length() - 1);
-                htmlBuf.append("</ul>\n</body>\n</html>");
+                plainStr.deleteCharAt(plainStr.length() - 1);
+                htmlStr.append("</ul>\n</body>\n</html>");
 
                 tree = null;
 
-                return new BasicTransferable(plainBuf.toString(), htmlBuf.toString());
+                return new BasicTransferable(plainStr.toString(), htmlStr.toString());
             }
 
             return null;

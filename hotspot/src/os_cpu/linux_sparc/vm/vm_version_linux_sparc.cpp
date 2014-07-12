@@ -36,7 +36,7 @@ static bool detect_niagara() {
   }
 
   while (!feof(fp)) {
-    if (fscanf(fp, "cpu\t\t: %100[^\n]", &cpu) == 1) {
+    if (fscanf(fp, "cpu\t\t: %100[^\n]", cpu) == 1) {
       if (strstr(cpu, "Niagara") != NULL) {
         rv = true;
       }
@@ -55,7 +55,7 @@ int VM_Version::platform_features(int features) {
 
   if (detect_niagara()) {
     NOT_PRODUCT(if (PrintMiscellaneous && Verbose) tty->print_cr("Detected Linux on Niagara");)
-    features = niagara1_m;
+    features = niagara1_m | T_family_m;
   }
 
   return features;

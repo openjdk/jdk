@@ -79,6 +79,47 @@ public class TestUseOption extends JavadocTester {
                 "<a href=\"../../index.html?pkg2/class-use/C3.html\" target=\"_top\">"
                 + "Frames</a></li>"
         );
+        checkOutput("pkg1/class-use/UsedClass.html", true,
+          "that return types with arguments of type"
+        );
+        checkOutput("pkg1/class-use/UsedClass.html", true,
+          "<a href=\"../../pkg1/C1.html#methodInC1ReturningType--\">methodInC1ReturningType</a>"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+          "Classes in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that implement " +
+          "<a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\">UsedInterface</a>"
+        );
+        checkOutput("pkg1/class-use/UsedInterfaceA.html", true,
+          "Classes in <a href=\"../../pkg1/package-summary.html\">pkg1</a> that implement " +
+          "<a href=\"../../pkg1/UsedInterfaceA.html\" title=\"interface in pkg1\">UsedInterfaceA</a>"
+        );
+        checkOutput("pkg1/class-use/UsedClass.html", false,
+           "methodInC1Protected"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+           "<a href=\"../../pkg1/AnAbstract.html\" title=\"class in pkg1\">AnAbstract</a>"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "../../pkg1/C10.html#withReturningTypeParameters--"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "../../pkg1/C10.html#withTypeParametersOfType-java.lang.Class-"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "\"../../pkg1/package-summary.html\">pkg1</a> that return " +
+            "<a href=\"../../pkg1/UsedInterface.html\" title=\"interface in pkg1\""
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "<a href=\"../../pkg1/C10.html#addAll-pkg1.UsedInterface...-\">addAll</a>"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "<a href=\"../../pkg1/C10.html#create-pkg1.UsedInterfaceA-pkg1." +
+            "UsedInterface-java.lang.String-\">"
+        );
+        checkOutput("pkg1/class-use/UsedInterface.html", true,
+            "<a href=\"../../pkg1/C10.html#withTypeParametersOfType-java.lang.Class-\">" +
+            "withTypeParametersOfType</a>"
+        );
     }
 
     @Test

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,6 +40,16 @@ import java.util.List;
  */
 @jdk.Exported
 public interface ThrowsTree extends BlockTagTree {
+    /**
+     * Returns a name of the exception being documented.
+     * @return the name of the exception
+     */
     ReferenceTree getExceptionName();
+
+    /**
+     * Returns the description of the reasons why the
+     * exception may be thrown.
+     * @return the description
+     */
     List<? extends DocTree> getDescription();
 }

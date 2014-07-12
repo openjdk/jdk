@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,6 +41,15 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface AssignmentTree extends ExpressionTree {
+    /**
+     * Returns the variable being assigned to.
+     * @return the variable
+     */
     ExpressionTree getVariable();
+
+    /**
+     * Returns the expression being assigned to the variable.
+     * @return the expression
+     */
     ExpressionTree getExpression();
 }

@@ -77,6 +77,7 @@ import java.beans.*;
  *    description: A component that supports selecting a integer value from a range.
  *
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JSlider extends JComponent implements SwingConstants, Accessible {
@@ -280,6 +281,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     /**
      * Creates a horizontal slider using the specified
      * BoundedRangeModel.
+     *
+     * @param brm a {@code BoundedRangeModel} for the slider
      */
     public JSlider(BoundedRangeModel brm)
     {
@@ -362,6 +365,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * {@code fireStateChanged} method to forward {@code ChangeEvent}s
      * to the {@code ChangeListener}s that have been added directly to the
      * slider.
+     *
+     * @return a instance of new {@code ChangeListener}
      * @see #changeListener
      * @see #fireStateChanged
      * @see javax.swing.event.ChangeListener

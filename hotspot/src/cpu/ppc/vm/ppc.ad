@@ -1285,9 +1285,9 @@ bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
   Compile *C = ra_->C;
 
-  iRegPdstOper *op_dst = new (C) iRegPdstOper();
-  MachNode *m1 = new (C) loadToc_hiNode();
-  MachNode *m2 = new (C) loadToc_loNode();
+  iRegPdstOper *op_dst = new iRegPdstOper();
+  MachNode *m1 = new loadToc_hiNode();
+  MachNode *m2 = new loadToc_loNode();
 
   m1->add_req(NULL);
   m2->add_req(NULL, m1);
@@ -1329,7 +1329,7 @@ void MachPrologNode::format(PhaseRegAlloc *ra_, outputStream *st) const {
 
   if (!false /* TODO: PPC port C->is_frameless_method()*/) {
     st->print("save return pc\n\t");
-    st->print("push frame %d\n\t", -framesize);
+    st->print("push frame %ld\n\t", -framesize);
   }
 }
 #endif
@@ -2232,9 +2232,9 @@ const bool Matcher::isSimpleConstant64(jlong value) {
 MachTypeNode *Matcher::make_decode_node(Compile *C) {
   assert(Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0,
          "This method is only implemented for unscaled cOops mode so far");
-  MachTypeNode *decode = new (C) decodeN_unscaledNode();
-  decode->set_opnd_array(0, new (C) iRegPdstOper());
-  decode->set_opnd_array(1, new (C) iRegNsrcOper());
+  MachTypeNode *decode = new decodeN_unscaledNode();
+  decode->set_opnd_array(0, new iRegPdstOper());
+  decode->set_opnd_array(1, new iRegNsrcOper());
   return decode;
 }
 */
@@ -2600,20 +2600,20 @@ loadConLNodesTuple loadConLNodesTuple_create(Compile *C, PhaseRegAlloc *ra_, Nod
   const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
   if (large_constant_pool) {
     // Create new nodes.
-    loadConL_hiNode *m1 = new (C) loadConL_hiNode();
-    loadConL_loNode *m2 = new (C) loadConL_loNode();
+    loadConL_hiNode *m1 = new loadConL_hiNode();
+    loadConL_loNode *m2 = new loadConL_loNode();
 
     // inputs for new nodes
     m1->add_req(NULL, toc);
     m2->add_req(NULL, m1);
 
     // operands for new nodes
-    m1->_opnds[0] = new (C) iRegLdstOper(); // dst
-    m1->_opnds[1] = immSrc;                 // src
-    m1->_opnds[2] = new (C) iRegPdstOper(); // toc
-    m2->_opnds[0] = new (C) iRegLdstOper(); // dst
-    m2->_opnds[1] = immSrc;                 // src
-    m2->_opnds[2] = new (C) iRegLdstOper(); // base
+    m1->_opnds[0] = new iRegLdstOper(); // dst
+    m1->_opnds[1] = immSrc;             // src
+    m1->_opnds[2] = new iRegPdstOper(); // toc
+    m2->_opnds[0] = new iRegLdstOper(); // dst
+    m2->_opnds[1] = immSrc;             // src
+    m2->_opnds[2] = new iRegLdstOper(); // base
 
     // Initialize ins_attrib TOC fields.
     m1->_const_toc_offset = -1;
@@ -2633,15 +2633,15 @@ loadConLNodesTuple loadConLNodesTuple_create(Compile *C, PhaseRegAlloc *ra_, Nod
     nodes._last = nodes._large_lo;
     assert(m2->bottom_type()->isa_long(), "must be long");
   } else {
-    loadConLNode *m2 = new (C) loadConLNode();
+    loadConLNode *m2 = new loadConLNode();
 
     // inputs for new nodes
     m2->add_req(NULL, toc);
 
     // operands for new nodes
-    m2->_opnds[0] = new (C) iRegLdstOper(); // dst
-    m2->_opnds[1] = immSrc;                 // src
-    m2->_opnds[2] = new (C) iRegPdstOper(); // toc
+    m2->_opnds[0] = new iRegLdstOper(); // dst
+    m2->_opnds[1] = immSrc;             // src
+    m2->_opnds[2] = new iRegPdstOper(); // toc
 
     // Initialize ins_attrib instruction offset.
     m2->_cbuf_insts_offset = -1;
@@ -2750,20 +2750,20 @@ encode %{
     const bool large_constant_pool = true; // TODO: PPC port C->cfg()->_consts_size > 4000;
     if (large_constant_pool) {
       // Create new nodes.
-      loadConP_hiNode *m1 = new (C) loadConP_hiNode();
-      loadConP_loNode *m2 = new (C) loadConP_loNode();
+      loadConP_hiNode *m1 = new loadConP_hiNode();
+      loadConP_loNode *m2 = new loadConP_loNode();
 
       // inputs for new nodes
       m1->add_req(NULL, n_toc);
       m2->add_req(NULL, m1);
 
       // operands for new nodes
-      m1->_opnds[0] = new (C) iRegPdstOper(); // dst
-      m1->_opnds[1] = op_src;                 // src
-      m1->_opnds[2] = new (C) iRegPdstOper(); // toc
-      m2->_opnds[0] = new (C) iRegPdstOper(); // dst
-      m2->_opnds[1] = op_src;                 // src
-      m2->_opnds[2] = new (C) iRegLdstOper(); // base
+      m1->_opnds[0] = new iRegPdstOper(); // dst
+      m1->_opnds[1] = op_src;             // src
+      m1->_opnds[2] = new iRegPdstOper(); // toc
+      m2->_opnds[0] = new iRegPdstOper(); // dst
+      m2->_opnds[1] = op_src;             // src
+      m2->_opnds[2] = new iRegLdstOper(); // base
 
       // Initialize ins_attrib TOC fields.
       m1->_const_toc_offset = -1;
@@ -2777,15 +2777,15 @@ encode %{
       nodes->push(m2);
       assert(m2->bottom_type()->isa_ptr(), "must be ptr");
     } else {
-      loadConPNode *m2 = new (C) loadConPNode();
+      loadConPNode *m2 = new loadConPNode();
 
       // inputs for new nodes
       m2->add_req(NULL, n_toc);
 
       // operands for new nodes
-      m2->_opnds[0] = new (C) iRegPdstOper(); // dst
-      m2->_opnds[1] = op_src;                 // src
-      m2->_opnds[2] = new (C) iRegPdstOper(); // toc
+      m2->_opnds[0] = new iRegPdstOper(); // dst
+      m2->_opnds[1] = op_src;             // src
+      m2->_opnds[2] = new iRegPdstOper(); // toc
 
       // Register allocation for new nodes.
       ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2802,9 +2802,9 @@ encode %{
 
     MachNode *m2;
     if (large_constant_pool) {
-      m2 = new (C) loadConFCompNode();
+      m2 = new loadConFCompNode();
     } else {
-      m2 = new (C) loadConFNode();
+      m2 = new loadConFNode();
     }
     // inputs for new nodes
     m2->add_req(NULL, n_toc);
@@ -2812,7 +2812,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new (C) iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2826,9 +2826,9 @@ encode %{
 
     MachNode *m2;
     if (large_constant_pool) {
-      m2 = new (C) loadConDCompNode();
+      m2 = new loadConDCompNode();
     } else {
-      m2 = new (C) loadConDNode();
+      m2 = new loadConDNode();
     }
     // inputs for new nodes
     m2->add_req(NULL, n_toc);
@@ -2836,7 +2836,7 @@ encode %{
     // operands for new nodes
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_src;
-    m2->_opnds[2] = new (C) iRegPdstOper(); // constanttablebase
+    m2->_opnds[2] = new iRegPdstOper(); // constanttablebase
 
     // register allocation for new nodes
     ra_->set_pair(m2->_idx, ra_->get_reg_second(this), ra_->get_reg_first(this));
@@ -2918,15 +2918,15 @@ encode %{
 
     if (VM_Version::has_isel()) {
       // use isel instruction with Power 7
-      cmpP_reg_imm16Node *n_compare  = new (C) cmpP_reg_imm16Node();
-      encodeP_subNode    *n_sub_base = new (C) encodeP_subNode();
-      encodeP_shiftNode  *n_shift    = new (C) encodeP_shiftNode();
-      cond_set_0_oopNode *n_cond_set = new (C) cond_set_0_oopNode();
+      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
+      encodeP_subNode    *n_sub_base = new encodeP_subNode();
+      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
+      cond_set_0_oopNode *n_cond_set = new cond_set_0_oopNode();
 
       n_compare->add_req(n_region, n_src);
       n_compare->_opnds[0] = op_crx;
       n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new (C) immL16Oper(0);
+      n_compare->_opnds[2] = new immL16Oper(0);
 
       n_sub_base->add_req(n_region, n_src);
       n_sub_base->_opnds[0] = op_dst;
@@ -2956,10 +2956,10 @@ encode %{
 
     } else {
       // before Power 7
-      moveRegNode        *n_move     = new (C) moveRegNode();
-      cmpP_reg_imm16Node *n_compare  = new (C) cmpP_reg_imm16Node();
-      encodeP_shiftNode  *n_shift    = new (C) encodeP_shiftNode();
-      cond_sub_baseNode  *n_sub_base = new (C) cond_sub_baseNode();
+      moveRegNode        *n_move     = new moveRegNode();
+      cmpP_reg_imm16Node *n_compare  = new cmpP_reg_imm16Node();
+      encodeP_shiftNode  *n_shift    = new encodeP_shiftNode();
+      cond_sub_baseNode  *n_sub_base = new cond_sub_baseNode();
 
       n_move->add_req(n_region, n_src);
       n_move->_opnds[0] = op_dst;
@@ -2971,7 +2971,7 @@ encode %{
 
       n_compare->_opnds[0] = op_crx;
       n_compare->_opnds[1] = op_src;
-      n_compare->_opnds[2] = new (C) immL16Oper(0);
+      n_compare->_opnds[2] = new immL16Oper(0);
 
       n_sub_base->add_req(n_region, n_compare, n_src);
       n_sub_base->_opnds[0] = op_dst;
@@ -3000,13 +3000,13 @@ encode %{
 
   enc_class postalloc_expand_encode_oop_not_null(iRegNdst dst, iRegPdst src) %{
 
-    encodeP_subNode *n1 = new (C) encodeP_subNode();
+    encodeP_subNode *n1 = new encodeP_subNode();
     n1->add_req(n_region, n_src);
     n1->_opnds[0] = op_dst;
     n1->_opnds[1] = op_src;
     n1->_bottom_type = _bottom_type;
 
-    encodeP_shiftNode *n2 = new (C) encodeP_shiftNode();
+    encodeP_shiftNode *n2 = new encodeP_shiftNode();
     n2->add_req(n_region, n1);
     n2->_opnds[0] = op_dst;
     n2->_opnds[1] = op_dst;
@@ -3020,13 +3020,13 @@ encode %{
   %}
 
   enc_class postalloc_expand_decode_oop(iRegPdst dst, iRegNsrc src, flagsReg crx) %{
-    decodeN_shiftNode *n_shift    = new (C) decodeN_shiftNode();
-    cmpN_reg_imm0Node *n_compare  = new (C) cmpN_reg_imm0Node();
+    decodeN_shiftNode *n_shift    = new decodeN_shiftNode();
+    cmpN_reg_imm0Node *n_compare  = new cmpN_reg_imm0Node();
 
     n_compare->add_req(n_region, n_src);
     n_compare->_opnds[0] = op_crx;
     n_compare->_opnds[1] = op_src;
-    n_compare->_opnds[2] = new (C) immN_0Oper(TypeNarrowOop::NULL_PTR);
+    n_compare->_opnds[2] = new immN_0Oper(TypeNarrowOop::NULL_PTR);
 
     n_shift->add_req(n_region, n_src);
     n_shift->_opnds[0] = op_dst;
@@ -3036,13 +3036,13 @@ encode %{
     if (VM_Version::has_isel()) {
       // use isel instruction with Power 7
 
-      decodeN_addNode *n_add_base = new (C) decodeN_addNode();
+      decodeN_addNode *n_add_base = new decodeN_addNode();
       n_add_base->add_req(n_region, n_shift);
       n_add_base->_opnds[0] = op_dst;
       n_add_base->_opnds[1] = op_dst;
       n_add_base->_bottom_type = _bottom_type;
 
-      cond_set_0_ptrNode *n_cond_set = new (C) cond_set_0_ptrNode();
+      cond_set_0_ptrNode *n_cond_set = new cond_set_0_ptrNode();
       n_cond_set->add_req(n_region, n_compare, n_add_base);
       n_cond_set->_opnds[0] = op_dst;
       n_cond_set->_opnds[1] = op_crx;
@@ -3064,7 +3064,7 @@ encode %{
 
     } else {
       // before Power 7
-      cond_add_baseNode *n_add_base = new (C) cond_add_baseNode();
+      cond_add_baseNode *n_add_base = new cond_add_baseNode();
 
       n_add_base->add_req(n_region, n_compare, n_shift);
       n_add_base->_opnds[0] = op_dst;
@@ -3086,13 +3086,13 @@ encode %{
   %}
 
   enc_class postalloc_expand_decode_oop_not_null(iRegPdst dst, iRegNsrc src) %{
-    decodeN_shiftNode *n1 = new (C) decodeN_shiftNode();
+    decodeN_shiftNode *n1 = new decodeN_shiftNode();
     n1->add_req(n_region, n_src);
     n1->_opnds[0] = op_dst;
     n1->_opnds[1] = op_src;
     n1->_bottom_type = _bottom_type;
 
-    decodeN_addNode *n2 = new (C) decodeN_addNode();
+    decodeN_addNode *n2 = new decodeN_addNode();
     n2->add_req(n_region, n1);
     n2->_opnds[0] = op_dst;
     n2->_opnds[1] = op_dst;
@@ -3388,7 +3388,7 @@ encode %{
     // Create new nodes.
 
     // Make an operand with the bit pattern to load as float.
-    immLOper *op_repl = new (C) immLOper((jlong)replicate_immF(op_src->constantF()));
+    immLOper *op_repl = new immLOper((jlong)replicate_immF(op_src->constantF()));
 
     loadConLNodesTuple loadConLNodes =
       loadConLNodesTuple_create(C, ra_, n_toc, op_repl,
@@ -3611,11 +3611,11 @@ encode %{
 
     // Create the nodes for loading the IC from the TOC.
     loadConLNodesTuple loadConLNodes_IC =
-      loadConLNodesTuple_create(C, ra_, n_toc, new (C) immLOper((jlong)Universe::non_oop_word()),
+      loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong)Universe::non_oop_word()),
                                 OptoReg::Name(R19_H_num), OptoReg::Name(R19_num));
 
     // Create the call node.
-    CallDynamicJavaDirectSchedNode *call = new (C) CallDynamicJavaDirectSchedNode();
+    CallDynamicJavaDirectSchedNode *call = new CallDynamicJavaDirectSchedNode();
     call->_method_handle_invoke = _method_handle_invoke;
     call->_vtable_index      = _vtable_index;
     call->_method            = _method;
@@ -3765,7 +3765,7 @@ encode %{
 #if defined(ABI_ELFv2)
     jlong entry_address = (jlong) this->entry_point();
     assert(entry_address, "need address here");
-    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new (C) immLOper(entry_address),
+    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper(entry_address),
                                                     OptoReg::Name(R12_H_num), OptoReg::Name(R12_num));
 #else
     // Get the struct that describes the function we are about to call.
@@ -3777,42 +3777,42 @@ encode %{
     loadConLNodesTuple loadConLNodes_Toc;
 
     // Create nodes and operands for loading the entry point.
-    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new (C) immLOper(entry_address),
+    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper(entry_address),
                                                     OptoReg::Name(R12_H_num), OptoReg::Name(R12_num));
 
 
     // Create nodes and operands for loading the env pointer.
     if (fd->env() != NULL) {
-      loadConLNodes_Env = loadConLNodesTuple_create(C, ra_, n_toc, new (C) immLOper((jlong) fd->env()),
+      loadConLNodes_Env = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong) fd->env()),
                                                     OptoReg::Name(R11_H_num), OptoReg::Name(R11_num));
     } else {
       loadConLNodes_Env._large_hi = NULL;
       loadConLNodes_Env._large_lo = NULL;
       loadConLNodes_Env._small    = NULL;
-      loadConLNodes_Env._last = new (C) loadConL16Node();
-      loadConLNodes_Env._last->_opnds[0] = new (C) iRegLdstOper();
-      loadConLNodes_Env._last->_opnds[1] = new (C) immL16Oper(0);
+      loadConLNodes_Env._last = new loadConL16Node();
+      loadConLNodes_Env._last->_opnds[0] = new iRegLdstOper();
+      loadConLNodes_Env._last->_opnds[1] = new immL16Oper(0);
       ra_->set_pair(loadConLNodes_Env._last->_idx, OptoReg::Name(R11_H_num), OptoReg::Name(R11_num));
     }
 
     // Create nodes and operands for loading the Toc point.
-    loadConLNodes_Toc = loadConLNodesTuple_create(C, ra_, n_toc, new (C) immLOper((jlong) fd->toc()),
+    loadConLNodes_Toc = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong) fd->toc()),
                                                   OptoReg::Name(R2_H_num), OptoReg::Name(R2_num));
 #endif // ABI_ELFv2
     // mtctr node
-    MachNode *mtctr = new (C) CallLeafDirect_mtctrNode();
+    MachNode *mtctr = new CallLeafDirect_mtctrNode();
 
     assert(loadConLNodes_Entry._last != NULL, "entry must exist");
     mtctr->add_req(0, loadConLNodes_Entry._last);
 
-    mtctr->_opnds[0] = new (C) iRegLdstOper();
-    mtctr->_opnds[1] = new (C) iRegLdstOper();
+    mtctr->_opnds[0] = new iRegLdstOper();
+    mtctr->_opnds[1] = new iRegLdstOper();
 
     // call node
-    MachCallLeafNode *call = new (C) CallLeafDirectNode();
+    MachCallLeafNode *call = new CallLeafDirectNode();
 
     call->_opnds[0] = _opnds[0];
-    call->_opnds[1] = new (C) methodOper((intptr_t) entry_address); // May get set later.
+    call->_opnds[1] = new methodOper((intptr_t) entry_address); // May get set later.
 
     // Make the new call node look like the old one.
     call->_name        = _name;
@@ -6050,9 +6050,9 @@ instruct loadConN_Ex(iRegNdst dst, immN src) %{
 
   format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
   postalloc_expand %{
-    MachNode *m1 = new (C) loadConN_hiNode();
-    MachNode *m2 = new (C) loadConN_loNode();
-    MachNode *m3 = new (C) clearMs32bNode();
+    MachNode *m1 = new loadConN_hiNode();
+    MachNode *m2 = new loadConN_loNode();
+    MachNode *m3 = new clearMs32bNode();
     m1->add_req(NULL);
     m2->add_req(NULL, m1);
     m3->add_req(NULL, m2);
@@ -6117,7 +6117,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
   format %{ "LoadN   $dst, $src \t// postalloc expanded" %} // mask
   postalloc_expand %{
     // Load high bits into register. Sign extended.
-    MachNode *m1 = new (C) loadConNKlass_hiNode();
+    MachNode *m1 = new loadConNKlass_hiNode();
     m1->add_req(NULL);
     m1->_opnds[0] = op_dst;
     m1->_opnds[1] = op_src;
@@ -6127,7 +6127,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
     MachNode *m2 = m1;
     if (!Assembler::is_uimm((jlong)Klass::encode_klass((Klass *)op_src->constant()), 31)) {
       // Value might be 1-extended. Mask out these bits.
-      m2 = new (C) clearMs32bNode();
+      m2 = new clearMs32bNode();
       m2->add_req(NULL, m1);
       m2->_opnds[0] = op_dst;
       m2->_opnds[1] = op_dst;
@@ -6135,7 +6135,7 @@ instruct loadConNKlass_Ex(iRegNdst dst, immNKlass src) %{
       nodes->push(m2);
     }
 
-    MachNode *m3 = new (C) loadConNKlass_loNode();
+    MachNode *m3 = new loadConNKlass_loNode();
     m3->add_req(NULL, m2);
     m3->_opnds[0] = op_dst;
     m3->_opnds[1] = op_src;
@@ -6987,14 +6987,14 @@ instruct encodePKlass_not_null_Ex(iRegNdst dst, iRegLsrc base, iRegPsrc src) %{
 
   format %{ "EncodePKlass $dst, $src\t// $src != Null, postalloc expanded" %}
   postalloc_expand %{
-    encodePKlass_sub_baseNode *n1 = new (C) encodePKlass_sub_baseNode();
+    encodePKlass_sub_baseNode *n1 = new encodePKlass_sub_baseNode();
     n1->add_req(n_region, n_base, n_src);
     n1->_opnds[0] = op_dst;
     n1->_opnds[1] = op_base;
     n1->_opnds[2] = op_src;
     n1->_bottom_type = _bottom_type;
 
-    encodePKlass_shiftNode *n2 = new (C) encodePKlass_shiftNode();
+    encodePKlass_shiftNode *n2 = new encodePKlass_shiftNode();
     n2->add_req(n_region, n1);
     n2->_opnds[0] = op_dst;
     n2->_opnds[1] = op_dst;
@@ -7064,14 +7064,14 @@ instruct decodeNKlass_notNull_addBase_Ex(iRegPdst dst, iRegLsrc base, iRegNsrc s
 
   format %{ "DecodeNKlass $dst =  $base + ($src << 3) \t// $src != NULL, postalloc expanded" %}
   postalloc_expand %{
-    decodeNKlass_add_baseNode *n1 = new (C) decodeNKlass_add_baseNode();
+    decodeNKlass_add_baseNode *n1 = new decodeNKlass_add_baseNode();
     n1->add_req(n_region, n_base, n_src);
     n1->_opnds[0] = op_dst;
     n1->_opnds[1] = op_base;
     n1->_opnds[2] = op_src;
     n1->_bottom_type = _bottom_type;
 
-    decodeNKlass_shiftNode *n2 = new (C) decodeNKlass_shiftNode();
+    decodeNKlass_shiftNode *n2 = new decodeNKlass_shiftNode();
     n2->add_req(n_region, n1);
     n2->_opnds[0] = op_dst;
     n2->_opnds[1] = op_dst;
@@ -9773,8 +9773,8 @@ instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsReg crx, stackSlo
     //
 
     // Create new nodes.
-    MachNode *m1 = new (C) loadConI16Node();
-    MachNode *m2 = new (C) cmovI_bso_stackSlotLNode();
+    MachNode *m1 = new loadConI16Node();
+    MachNode *m2 = new cmovI_bso_stackSlotLNode();
 
     // inputs for new nodes
     m1->add_req(n_region);
@@ -9785,7 +9785,7 @@ instruct cmovI_bso_stackSlotL_conLvalue0_Ex(iRegIdst dst, flagsReg crx, stackSlo
 
     // operands for new nodes
     m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new (C) immI16Oper(0);
+    m1->_opnds[1] = new immI16Oper(0);
 
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_crx;
@@ -9942,8 +9942,8 @@ instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsReg crx, stackSlo
     //
 
     // Create new nodes.
-    MachNode *m1 = new (C) loadConL16Node();
-    MachNode *m2 = new (C) cmovL_bso_stackSlotLNode();
+    MachNode *m1 = new loadConL16Node();
+    MachNode *m2 = new cmovL_bso_stackSlotLNode();
 
     // inputs for new nodes
     m1->add_req(n_region);
@@ -9952,7 +9952,7 @@ instruct cmovL_bso_stackSlotL_conLvalue0_Ex(iRegLdst dst, flagsReg crx, stackSlo
 
     // operands for new nodes
     m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new (C) immL16Oper(0);
+    m1->_opnds[1] = new immL16Oper(0);
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_crx;
     m2->_opnds[2] = op_mem;
@@ -10288,8 +10288,8 @@ instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsReg c
     //
 
     // Create new nodes.
-    MachNode *m1 = new (C) loadConI16Node();
-    MachNode *m2 = new (C) cmovI_conIvalueMinus1_conIvalue1Node();
+    MachNode *m1 = new loadConI16Node();
+    MachNode *m2 = new cmovI_conIvalueMinus1_conIvalue1Node();
 
     // inputs for new nodes
     m1->add_req(n_region);
@@ -10298,7 +10298,7 @@ instruct cmovI_conIvalueMinus1_conIvalue0_conIvalue1_Ex(iRegIdst dst, flagsReg c
 
     // operands for new nodes
     m1->_opnds[0] = op_dst;
-    m1->_opnds[1] = new (C) immI16Oper(0);
+    m1->_opnds[1] = new immI16Oper(0);
     m2->_opnds[0] = op_dst;
     m2->_opnds[1] = op_crx;
 
@@ -10623,8 +10623,8 @@ instruct cmpF_reg_reg_Ex(flagsReg crx, regF src1, regF src2) %{
     //
 
     // Create new nodes.
-    MachNode *m1 = new (C) cmpFUnordered_reg_regNode();
-    MachNode *m2 = new (C) cmov_bns_lessNode();
+    MachNode *m1 = new cmpFUnordered_reg_regNode();
+    MachNode *m2 = new cmov_bns_lessNode();
 
     // inputs for new nodes
     m1->add_req(n_region, n_src1, n_src2);
@@ -10698,8 +10698,8 @@ instruct cmpD_reg_reg_Ex(flagsReg crx, regD src1, regD src2) %{
     //
 
     // create new nodes
-    MachNode *m1 = new (C) cmpDUnordered_reg_regNode();
-    MachNode *m2 = new (C) cmov_bns_lessNode();
+    MachNode *m1 = new cmpDUnordered_reg_regNode();
+    MachNode *m2 = new cmov_bns_lessNode();
 
     // inputs for new nodes
     m1->add_req(n_region, n_src1, n_src2);

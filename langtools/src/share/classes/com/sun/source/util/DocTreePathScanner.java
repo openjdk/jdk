@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,10 @@ import com.sun.source.doctree.DocTree;
 @jdk.Exported
 public class DocTreePathScanner<R, P> extends DocTreeScanner<R, P> {
     /**
-     * Scan a tree from a position identified by a TreePath.
+     * Scans a tree from a position identified by a tree path.
+     * @param path the path
+     * @param p a value to be passed to visitor methods
+     * @return the result returned from the main visitor method
      */
     public R scan(DocTreePath path, P p) {
         this.path = path;
@@ -51,8 +54,11 @@ public class DocTreePathScanner<R, P> extends DocTreeScanner<R, P> {
     }
 
     /**
-     * Scan a single node.
+     * Scans a single node.
      * The current path is updated for the duration of the scan.
+     * @param tree the tree to be scanned
+     * @param p a value to be passed to visitor methods
+     * @return the result returned from the main visitor method
      */
     @Override
     public R scan(DocTree tree, P p) {
@@ -69,8 +75,9 @@ public class DocTreePathScanner<R, P> extends DocTreeScanner<R, P> {
     }
 
     /**
-     * Get the current path for the node, as built up by the currently
+     * Returns the current path for the node, as built up by the currently
      * active set of scan calls.
+     * @return the current path
      */
     public DocTreePath getCurrentPath() {
         return path;

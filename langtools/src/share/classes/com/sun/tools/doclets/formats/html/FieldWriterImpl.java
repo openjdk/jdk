@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,7 +130,7 @@ public class FieldWriterImpl extends AbstractMemberWriter
         ClassDoc holder = field.containingClass();
         if (field.inlineTags().length > 0) {
             if (holder.equals(classdoc) ||
-                    (! (holder.isPublic() || Util.isLinkable(holder, configuration)))) {
+                    (! (holder.isPublic() || utils.isLinkable(holder, configuration)))) {
                 writer.addInlineComment(field, fieldDocTree);
             } else {
                 Content link =

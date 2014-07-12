@@ -31,7 +31,7 @@
  *  @library scaffold
  *  @run build JDIScaffold VMConnection
  *  @run compile -g HelloWorld.java
- *  @run main/othervm FilterNoMatch
+ *  @run driver FilterNoMatch
  */
 
 /* This tests the patternMatch function in JDK file:

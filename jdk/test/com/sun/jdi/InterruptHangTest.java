@@ -7,7 +7,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g InterruptHangTest.java
- *  @run main InterruptHangTest
+ *  @run driver InterruptHangTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

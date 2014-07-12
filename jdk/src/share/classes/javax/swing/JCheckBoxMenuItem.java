@@ -87,6 +87,7 @@ import javax.accessibility.*;
  *
  * @author Georges Saab
  * @author David Karlton
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
@@ -108,7 +109,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
     /**
      * Creates an initially unselected check box menu item with an icon.
      *
-     * @param icon the icon of the CheckBoxMenuItem.
+     * @param icon the icon of the {@code JCheckBoxMenuItem}.
      */
     public JCheckBoxMenuItem(Icon icon) {
         this(null, icon, false);
@@ -117,7 +118,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
     /**
      * Creates an initially unselected check box menu item with text.
      *
-     * @param text the text of the CheckBoxMenuItem
+     * @param text the text of the {@code JCheckBoxMenuItem}
      */
     public JCheckBoxMenuItem(String text) {
         this(text, null, false);
@@ -127,6 +128,7 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
      * Creates a menu item whose properties are taken from the
      * Action supplied.
      *
+     * @param a the action of the {@code JCheckBoxMenuItem}
      * @since 1.3
      */
     public JCheckBoxMenuItem(Action a) {
@@ -137,8 +139,8 @@ public class JCheckBoxMenuItem extends JMenuItem implements SwingConstants,
     /**
      * Creates an initially unselected check box menu item with the specified text and icon.
      *
-     * @param text the text of the CheckBoxMenuItem
-     * @param icon the icon of the CheckBoxMenuItem
+     * @param text the text of the {@code JCheckBoxMenuItem}
+     * @param icon the icon of the {@code JCheckBoxMenuItem}
      */
     public JCheckBoxMenuItem(String text, Icon icon) {
         this(text, icon, false);
