@@ -445,32 +445,22 @@ public class JavaCompiler {
         boolean lintOptions =
             options.isUnset(XLINT_CUSTOM, "-"+LintCategory.OPTIONS.option);
 
-        switch (source.compareTo(Source.MIN)) {
-            case -1:
-                log.error("option.removed.source", source.name, Source.MIN.name);
-                break;
-            case 0:
-                if (lintOptions) {
-                    log.warning(LintCategory.OPTIONS, "option.obsolete.source", source.name);
-                    obsoleteOptionFound = true;
-                }
-                break;
-        }
-        // check target version request
-        switch (target.compareTo(Target.MIN)) {
-            case -1:
-                log.error("option.removed.target", target.name, Target.MIN.name);
-                break;
-            case 0:
-                if (lintOptions) {
-                    log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
-                    obsoleteOptionFound = true;
-                }
-                break;
+        if (source.compareTo(Source.MIN) < 0) {
+            log.error("option.removed.source", source.name, Source.MIN.name);
+        } else if (source == Source.MIN && lintOptions) {
+            log.warning(LintCategory.OPTIONS, "option.obsolete.source", source.name);
+            obsoleteOptionFound = true;
         }
 
-            if (obsoleteOptionFound)
-                log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
+        if (target.compareTo(Target.MIN) < 0) {
+            log.error("option.removed.target", target.name, Target.MIN.name);
+        } else if (target == Target.MIN && lintOptions) {
+            log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
+            obsoleteOptionFound = true;
+        }
+
+        if (obsoleteOptionFound)
+            log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
     }
 
     /* Switches:
