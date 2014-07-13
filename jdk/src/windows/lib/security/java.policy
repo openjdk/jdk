@@ -5,4 +5,4 @@ grant codeBase "file:${java.home}/lib/ext/sunmscapi.jar" {
         permission java.security.SecurityPermission "putProviderProperty.SunMSCAPI";
         permission java.security.SecurityPermission "clearProviderProperties.SunMSCAPI";
         permission java.security.SecurityPermission "removeProviderProperty.SunMSCAPI";
-}
+};
