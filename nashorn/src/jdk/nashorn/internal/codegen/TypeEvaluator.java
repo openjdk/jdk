@@ -25,6 +25,10 @@
 
 package jdk.nashorn.internal.codegen;
 
+import static jdk.nashorn.internal.runtime.Property.NOT_CONFIGURABLE;
+import static jdk.nashorn.internal.runtime.Property.NOT_ENUMERABLE;
+import static jdk.nashorn.internal.runtime.Property.NOT_WRITABLE;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -43,8 +47,8 @@ import jdk.nashorn.internal.runtime.ScriptRuntime;
  * Used during recompilation.
  */
 final class TypeEvaluator {
-    final Compiler compiler;
-    final ScriptObject runtimeScope;
+    private final Compiler compiler;
+    private final ScriptObject runtimeScope;
 
     TypeEvaluator(final Compiler compiler, final ScriptObject runtimeScope) {
         this.compiler = compiler;
@@ -123,7 +127,7 @@ final class TypeEvaluator {
                     " scope="+runtimeScope;
 
         if (runtimeScope.findProperty(symbolName, false) == null) {
-            runtimeScope.set(symbolName, ScriptRuntime.UNDEFINED, true);
+            runtimeScope.addOwnProperty(symbolName, NOT_WRITABLE | NOT_ENUMERABLE | NOT_CONFIGURABLE, ScriptRuntime.UNDEFINED);
         }
     }
 

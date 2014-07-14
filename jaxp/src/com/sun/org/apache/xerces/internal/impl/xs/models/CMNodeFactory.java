@@ -35,7 +35,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLConfigurationException;
  *
  * @author  Neeraj Bajaj
  *
- * @version $Id: CMNodeFactory.java,v 1.7 2010-11-01 04:39:58 joehw Exp $
  */
 public class CMNodeFactory {
 

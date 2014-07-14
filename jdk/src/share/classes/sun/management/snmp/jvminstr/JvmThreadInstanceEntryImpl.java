@@ -139,7 +139,7 @@ public class JvmThreadInstanceEntryImpl
                           "Unexpected exception: " + r);
                 log.debug("getJvmThreadInstState",r);
             }
-            Byte[] result = { new Byte(bitmap[0]), new Byte(bitmap[1]) };
+            Byte[] result = {bitmap[0], bitmap[1]};
             return result;
         }
     }
@@ -231,7 +231,7 @@ public class JvmThreadInstanceEntryImpl
             log.debug("getJvmThreadInstCpuTimeNs",
                       "Operation not supported: " + e);
         }
-        return new Long(l);
+        return l;
     }
 
     /**
@@ -248,14 +248,14 @@ public class JvmThreadInstanceEntryImpl
             //Monitoring is disabled
             if(l == -1) l = 0;
         }
-        return new Long(l);
+        return l;
     }
 
     /**
      * Getter for the "JvmThreadInstBlockCount" variable.
      */
     public Long getJvmThreadInstBlockCount() throws SnmpStatusException {
-        return new Long(info.getBlockedCount());
+        return info.getBlockedCount();
     }
 
     /**
@@ -272,14 +272,14 @@ public class JvmThreadInstanceEntryImpl
             //Monitoring is disabled
             if(l == -1) l = 0;
         }
-        return new Long(l);
+        return l;
     }
 
     /**
      * Getter for the "JvmThreadInstWaitCount" variable.
      */
     public Long getJvmThreadInstWaitCount() throws SnmpStatusException {
-        return new Long(info.getWaitedCount());
+        return info.getWaitedCount();
     }
 
     /**
@@ -294,7 +294,7 @@ public class JvmThreadInstanceEntryImpl
      * Getter for the "JvmThreadInstId" variable.
      */
     public Long getJvmThreadInstId() throws SnmpStatusException {
-        return new Long(info.getThreadId());
+        return info.getThreadId();
     }
 
     /**
@@ -311,19 +311,19 @@ public class JvmThreadInstanceEntryImpl
         StackTraceElement[] stackTrace = info.getStackTrace();
         //We append the stack trace in a buffer
         // XXX Revisit: should check isDebugOn()
-        StringBuffer b = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         final int stackSize = stackTrace.length;
         log.debug("getJvmThreadInstStackTrace", "Stack size : " + stackSize);
         for(int i = 0; i < stackSize; i++) {
             log.debug("getJvmThreadInstStackTrace", "Append " +
                       stackTrace[i].toString());
-            b.append(stackTrace[i].toString());
+            sb.append(stackTrace[i].toString());
             //Append \n at the end of each line except the last one
             if(i < stackSize)
-                b.append("\n");
+                sb.append("\n");
         }
         //The stack trace is truncated if its size exceeds 255.
-        return validPathElementTC(b.toString());
+        return validPathElementTC(sb.toString());
     }
     static final MibLogger log =
         new MibLogger(JvmThreadInstanceEntryImpl.class);

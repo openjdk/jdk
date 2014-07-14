@@ -25,12 +25,18 @@
 
 package com.sun.tools.javac.comp;
 
+import java.util.Collections;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Set;
 
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.ImportFilter;
+import com.sun.tools.javac.code.Scope.NamedImportScope;
+import com.sun.tools.javac.code.Scope.StarImportScope;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
@@ -43,6 +49,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Flags.ANNOTATION;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
@@ -82,6 +89,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final Target target;
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
+    private final TypeEnvs typeEnvs;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -107,6 +115,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         target = Target.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
+        typeEnvs = TypeEnvs.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
     }
 
@@ -149,7 +158,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                            final TypeSymbol tsym,
                            Env<AttrContext> env) {
         // Check that packages imported from exist (JLS ???).
-        if (tsym.kind == PCK && tsym.members().elems == null && !tsym.exists()) {
+        if (tsym.kind == PCK && tsym.members().isEmpty() && !tsym.exists()) {
             // If we can't find java.lang, exit immediately.
             if (((PackageSymbol)tsym).fullname.equals(names.java_lang)) {
                 JCDiagnostic msg = diags.fragment("fatal.err.no.java.lang");
@@ -158,7 +167,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 log.error(DiagnosticFlag.RESOLVE_ERROR, pos, "doesnt.exist", tsym);
             }
         }
-        env.toplevel.starImportScope.importAll(tsym.members());
+        env.toplevel.starImportScope.importAll(tsym.members(), tsym.members(), typeImportFilter, false);
     }
 
     /** Import all static members of a class or package on demand.
@@ -169,82 +178,16 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private void importStaticAll(int pos,
                                  final TypeSymbol tsym,
                                  Env<AttrContext> env) {
-        final JavaFileObject sourcefile = env.toplevel.sourcefile;
-        final Scope toScope = env.toplevel.starImportScope;
+        final StarImportScope toScope = env.toplevel.starImportScope;
         final PackageSymbol packge = env.toplevel.packge;
         final TypeSymbol origin = tsym;
 
         // enter imported types immediately
-        new Object() {
-            Set<Symbol> processed = new HashSet<>();
-            void importFrom(TypeSymbol tsym) {
-                if (tsym == null || !processed.add(tsym))
-                    return;
-
-                // also import inherited names
-                importFrom(types.supertype(tsym.type).tsym);
-                for (Type t : types.interfaces(tsym.type))
-                    importFrom(t.tsym);
-
-                final Scope fromScope = tsym.members();
-                for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
-                    Symbol sym = e.sym;
-                    if (sym.kind == TYP &&
-                        (sym.flags() & STATIC) != 0 &&
-                        staticImportAccessible(sym, packge) &&
-                        sym.isMemberOf(origin, types) &&
-                        !toScope.includes(sym))
-                        toScope.enter(sym, fromScope, origin.members(), true);
-                }
+        new SymbolImporter() {
+            void doImport(TypeSymbol tsym) {
+                toScope.importAll(tsym.members(), origin.members(), staticImportFilter, true);
             }
         }.importFrom(tsym);
-
-        // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Worker() {
-            Set<Symbol> processed = new HashSet<>();
-
-            public String toString() {
-                return "import static " + tsym + ".*" + " in " + sourcefile;
-            }
-            void importFrom(TypeSymbol tsym) {
-                if (tsym == null || !processed.add(tsym))
-                    return;
-
-                // also import inherited names
-                importFrom(types.supertype(tsym.type).tsym);
-                for (Type t : types.interfaces(tsym.type))
-                    importFrom(t.tsym);
-
-                final Scope fromScope = tsym.members();
-                for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
-                    Symbol sym = e.sym;
-                    if (sym.isStatic() && sym.kind != TYP &&
-                        staticImportAccessible(sym, packge) &&
-                        !toScope.includes(sym) &&
-                        sym.isMemberOf(origin, types)) {
-                        toScope.enter(sym, fromScope, origin.members(), true);
-                    }
-                }
-            }
-            public void run() {
-                importFrom(tsym);
-            }
-        });
-    }
-
-    // is the sym accessible everywhere in packge?
-    boolean staticImportAccessible(Symbol sym, PackageSymbol packge) {
-        int flags = (int)(sym.flags() & AccessFlags);
-        switch (flags) {
-        default:
-        case PUBLIC:
-            return true;
-        case PRIVATE:
-            return false;
-        case 0:
-        case PROTECTED:
-            return sym.packge() == packge;
-        }
     }
 
     /** Import statics types of a given name.  Non-types are handled in Attr.
@@ -263,44 +206,47 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             return;
         }
 
-        final Scope toScope = env.toplevel.namedImportScope;
-        final PackageSymbol packge = env.toplevel.packge;
-        final TypeSymbol origin = tsym;
+        final NamedImportScope toScope = env.toplevel.namedImportScope;
+        final Scope originMembers = tsym.members();
 
         // enter imported types immediately
-        new Object() {
-            Set<Symbol> processed = new HashSet<>();
-            void importFrom(TypeSymbol tsym) {
-                if (tsym == null || !processed.add(tsym))
-                    return;
-
-                // also import inherited names
-                importFrom(types.supertype(tsym.type).tsym);
-                for (Type t : types.interfaces(tsym.type))
-                    importFrom(t.tsym);
-
-                for (Scope.Entry e = tsym.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    Symbol sym = e.sym;
-                    if (sym.isStatic() &&
-                        sym.kind == TYP &&
-                        staticImportAccessible(sym, packge) &&
-                        sym.isMemberOf(origin, types) &&
-                        chk.checkUniqueStaticImport(pos, sym, toScope))
-                        toScope.enter(sym, sym.owner.members(), origin.members(), true);
+        new SymbolImporter() {
+            void doImport(TypeSymbol tsym) {
+                Set<Symbol> maskedOut = null;
+                for (Symbol sym : tsym.members().getSymbolsByName(name)) {
+                    if (sym.kind == TYP &&
+                        staticImportFilter.accepts(originMembers, sym) &&
+                        !chk.checkUniqueStaticImport(pos, env.toplevel, sym)) {
+                        if (maskedOut == null)
+                            maskedOut = Collections.newSetFromMap(new IdentityHashMap<Symbol, Boolean>());
+                        maskedOut.add(sym);
+                    }
                 }
+                ImportFilter importFilter = maskedOut != null ?
+                        new MaskedImportFilter(staticImportFilter, maskedOut) :
+                        staticImportFilter;
+                toScope.importByName(tsym.members(), originMembers, name, importFilter);
             }
         }.importFrom(tsym);
+    }
+    //where:
+        class MaskedImportFilter implements ImportFilter {
 
-        // enter non-types before annotations that might use them
-        annotate.earlier(new Annotate.Worker() {
-            Set<Symbol> processed = new HashSet<>();
-            boolean found = false;
+            private final ImportFilter delegate;
+            private final Set<Symbol> maskedOut;
 
-            public String toString() {
-                return "import static " + tsym + "." + name;
+            public MaskedImportFilter(ImportFilter delegate, Set<Symbol> maskedOut) {
+                this.delegate = delegate;
+                this.maskedOut = maskedOut;
             }
+
+            @Override
+            public boolean accepts(Scope origin, Symbol sym) {
+                return !maskedOut.contains(sym) && delegate.accepts(origin, sym);
+            }
+        }
+        abstract class SymbolImporter {
+            Set<Symbol> processed = new HashSet<>();
             void importFrom(TypeSymbol tsym) {
                 if (tsym == null || !processed.add(tsym))
                     return;
@@ -310,47 +256,21 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 for (Type t : types.interfaces(tsym.type))
                     importFrom(t.tsym);
 
-                for (Scope.Entry e = tsym.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    Symbol sym = e.sym;
-                    if (sym.isStatic() &&
-                        staticImportAccessible(sym, packge) &&
-                        sym.isMemberOf(origin, types)) {
-                        found = true;
-                        if (sym.kind != TYP) {
-                            toScope.enter(sym, sym.owner.members(), origin.members(), true);
-                        }
-                    }
-                }
+                doImport(tsym);
             }
-            public void run() {
-                JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
-                try {
-                    importFrom(tsym);
-                    if (!found) {
-                        log.error(pos, "cant.resolve.location",
-                                  KindName.STATIC,
-                                  name, List.<Type>nil(), List.<Type>nil(),
-                                  Kinds.typeKindName(tsym.type),
-                                  tsym.type);
-                    }
-                } finally {
-                    log.useSource(prev);
-                }
-            }
-        });
-    }
+            abstract void doImport(TypeSymbol tsym);
+        }
+
     /** Import given class.
      *  @param pos           Position to be used for error reporting.
      *  @param tsym          The class to be imported.
      *  @param env           The environment containing the named import
      *                  scope to add to.
      */
-    private void importNamed(DiagnosticPosition pos, Symbol tsym, Env<AttrContext> env) {
+    private void importNamed(DiagnosticPosition pos, final Symbol tsym, Env<AttrContext> env) {
         if (tsym.kind == TYP &&
-            chk.checkUniqueImport(pos, tsym, env.toplevel.namedImportScope))
-            env.toplevel.namedImportScope.enter(tsym, tsym.owner.members());
+            chk.checkUniqueImport(pos, env.toplevel, tsym))
+            env.toplevel.namedImportScope.importType(tsym.owner.members(), tsym.owner.members(), tsym);
     }
 
     /** Construct method type from method signature.
@@ -480,6 +400,32 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
  * Visitor methods for member enter
  *********************************************************************/
 
+    ImportFilter staticImportFilter;
+    ImportFilter typeImportFilter = new ImportFilter() {
+        @Override
+        public boolean accepts(Scope origin, Symbol t) {
+            return t.kind == Kinds.TYP;
+        }
+    };
+
+    protected void memberEnter(JCCompilationUnit tree, Env<AttrContext> env) {
+        ImportFilter prevStaticImportFilter = staticImportFilter;
+        try {
+            final PackageSymbol packge = env.toplevel.packge;
+            this.staticImportFilter = new ImportFilter() {
+                @Override
+                public boolean accepts(Scope origin, Symbol sym) {
+                    return sym.isStatic() &&
+                           chk.staticImportAccessible(sym, packge) &&
+                           sym.isMemberOf((TypeSymbol) origin.owner, types);
+                }
+            };
+            memberEnter((JCTree) tree, env);
+        } finally {
+            this.staticImportFilter = prevStaticImportFilter;
+        }
+    }
+
     /** Visitor argument: the current environment
      */
     protected Env<AttrContext> env;
@@ -568,7 +514,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     public void visitTopLevel(JCCompilationUnit tree) {
-        if (tree.starImportScope.elems != null) {
+        if (!tree.starImportScope.isEmpty()) {
             // we must have already processed this toplevel
             return;
         }
@@ -638,7 +584,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     }
 
     public void visitMethodDef(JCMethodDecl tree) {
-        Scope enclScope = enter.enterScope(env);
+        WriteableScope enclScope = enter.enterScope(env);
         MethodSymbol m = new MethodSymbol(0, tree.name, null, enclScope.owner);
         m.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, m, tree);
         tree.sym = m;
@@ -694,9 +640,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      */
     Env<AttrContext> methodEnv(JCMethodDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv =
-            env.dup(tree, env.info.dup(env.info.scope.dupUnshared()));
+            env.dup(tree, env.info.dup(env.info.scope.dupUnshared(tree.sym)));
         localEnv.enclMethod = tree;
-        localEnv.info.scope.owner = tree.sym;
         if (tree.sym.type != null) {
             //when this is called in the enter stage, there's no type to be set
             localEnv.info.returnResult = attr.new ResultInfo(VAL, tree.sym.type.getReturnType());
@@ -737,7 +682,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 ArrayType atype = (ArrayType)tree.vartype.type;
                 tree.vartype.type = atype.makeVarargs();
             }
-            Scope enclScope = enter.enterScope(env);
+            WriteableScope enclScope = enter.enterScope(env);
             VarSymbol v =
                 new VarSymbol(0, tree.name, tree.vartype.type, enclScope.owner);
             v.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, v, tree);
@@ -873,8 +818,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     Env<AttrContext> initEnv(JCVariableDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv = env.dupto(new AttrContextEnv(tree, env.info.dup()));
         if (tree.sym.owner.kind == TYP) {
-            localEnv.info.scope = env.info.scope.dupUnshared();
-            localEnv.info.scope.owner = tree.sym;
+            localEnv.info.scope = env.info.scope.dupUnshared(tree.sym);
         }
         if ((tree.mods.flags & STATIC) != 0 ||
                 ((env.enclClass.sym.flags() & INTERFACE) != 0 && env.enclMethod == null))
@@ -1000,7 +944,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
         ClassSymbol c = (ClassSymbol)sym;
         ClassType ct = (ClassType)c.type;
-        Env<AttrContext> env = enter.typeEnvs.get(c);
+        Env<AttrContext> env = typeEnvs.get(c);
         JCClassDecl tree = (JCClassDecl)env.tree;
         boolean wasFirst = isFirst;
         isFirst = false;
@@ -1218,23 +1162,30 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         // Enter all member fields and methods of a set of half completed
         // classes in a second phase.
         if (wasFirst) {
+            Set<JCCompilationUnit> topLevels = new HashSet<>();
             try {
                 while (halfcompleted.nonEmpty()) {
                     Env<AttrContext> toFinish = halfcompleted.next();
+                    topLevels.add(toFinish.toplevel);
                     finish(toFinish);
                 }
             } finally {
                 isFirst = true;
             }
+
+            for (JCCompilationUnit toplevel : topLevels) {
+                chk.checkImportsResolvable(toplevel);
+            }
+
         }
     }
 
     private Env<AttrContext> baseEnv(JCClassDecl tree, Env<AttrContext> env) {
-        Scope baseScope = new Scope(tree.sym);
+        WriteableScope baseScope = WriteableScope.create(tree.sym);
         //import already entered local classes into base scope
-        for (Scope.Entry e = env.outer.info.scope.elems ; e != null ; e = e.sibling) {
-            if (e.sym.isLocal()) {
-                baseScope.enter(e.sym);
+        for (Symbol sym : env.outer.info.scope.getSymbols(NON_RECURSIVE)) {
+            if (sym.isLocal()) {
+                baseScope.enter(sym);
             }
         }
         //import current type-parameters into base scope

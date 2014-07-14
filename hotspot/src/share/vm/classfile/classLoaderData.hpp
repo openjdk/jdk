@@ -31,7 +31,6 @@
 #include "memory/metaspaceCounters.hpp"
 #include "runtime/mutex.hpp"
 #include "utilities/growableArray.hpp"
-
 #if INCLUDE_TRACE
 # include "utilities/ticks.hpp"
 #endif
@@ -59,6 +58,7 @@ class Metadebug;
 class ClassLoaderDataGraph : public AllStatic {
   friend class ClassLoaderData;
   friend class ClassLoaderDataGraphMetaspaceIterator;
+  friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class VMStructs;
  private:
   // All CLDs (except the null CLD) can be reached by walking _head->_next->...
@@ -75,10 +75,16 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* find_or_create(Handle class_loader, TRAPS);
   static void purge();
   static void clear_claimed_marks();
+  // oops do
   static void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
-  static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  // cld do
   static void cld_do(CLDClosure* cl);
+  static void roots_cld_do(CLDClosure* strong, CLDClosure* weak);
+  static void keep_alive_cld_do(CLDClosure* cl);
+  static void always_strong_cld_do(CLDClosure* cl);
+  // klass do
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
@@ -104,6 +110,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void dump() { dump_on(tty); }
   static void verify();
 
+  static bool unload_list_contains(const void* x);
 #ifndef PRODUCT
   static bool contains_loader_data(ClassLoaderData* loader_data);
 #endif
@@ -136,6 +143,7 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   };
 
   friend class ClassLoaderDataGraph;
+  friend class ClassLoaderDataGraphKlassIteratorAtomic;
   friend class ClassLoaderDataGraphMetaspaceIterator;
   friend class MetaDataFactory;
   friend class Method;
@@ -195,7 +203,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
 
   void unload();
   bool keep_alive() const       { return _keep_alive; }
-  bool is_alive(BoolObjectClosure* is_alive_closure) const;
   void classes_do(void f(Klass*));
   void loaded_classes_do(KlassClosure* klass_closure);
   void classes_do(void f(InstanceKlass*));
@@ -208,6 +215,9 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   MetaWord* allocate(size_t size);
 
  public:
+
+  bool is_alive(BoolObjectClosure* is_alive_closure) const;
+
   // Accessors
   Metaspace* metaspace_or_null() const     { return _metaspace; }
 
@@ -291,6 +301,16 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   Metaspace* ro_metaspace();
   Metaspace* rw_metaspace();
   void initialize_shared_metaspaces();
+};
+
+// An iterator that distributes Klasses to parallel worker threads.
+class ClassLoaderDataGraphKlassIteratorAtomic : public StackObj {
+  volatile Klass* _next_klass;
+ public:
+  ClassLoaderDataGraphKlassIteratorAtomic();
+  Klass* next_klass();
+ private:
+  static Klass* next_klass_in_cldg(Klass* klass);
 };
 
 class ClassLoaderDataGraphMetaspaceIterator : public StackObj {

@@ -188,6 +188,7 @@ import javax.accessibility.*;
  * description: A text component to edit various types of content.
  *
  * @author  Timothy Prinzing
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JEditorPane extends JTextComponent {
@@ -679,8 +680,8 @@ public class JEditorPane extends JTextComponent {
                         }
                     });
                 }
-                return (pageLoaded ? page : old);
             }
+            return (pageLoaded ? page : old);
         }
 
         /**
@@ -965,7 +966,7 @@ public class JEditorPane extends JTextComponent {
         // The type could have optional info is part of it,
         // for example some charset info.  We need to strip that
         // of and save it.
-        int parm = type.indexOf(";");
+        int parm = type.indexOf(';');
         if (parm > -1) {
             // Save the paramList.
             String paramList = type.substring(parm);
@@ -1250,11 +1251,12 @@ public class JEditorPane extends JTextComponent {
     }
 
     /**
-     * Returns the currently registered <code>EditorKit</code>
-     * class name for the type <code>type</code>.
+     * Returns the currently registered {@code EditorKit} class name for the
+     * type {@code type}.
      *
-     * @param type  the non-<code>null</code> content type
-     *
+     * @param type  the non-{@code null} content type
+     * @return a {@code String} containing the {@code EditorKit} class name
+     *         for {@code type}
      * @since 1.3
      */
     public static String getEditorKitClassNameForContentType(String type) {

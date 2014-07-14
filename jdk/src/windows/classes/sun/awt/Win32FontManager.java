@@ -42,8 +42,6 @@ import sun.awt.windows.WFontConfiguration;
 import sun.font.FontManager;
 import sun.font.SunFontManager;
 import sun.font.TrueTypeFont;
-import sun.java2d.HeadlessGraphicsEnvironment;
-import sun.java2d.SunGraphicsEnvironment;
 
 /**
  * The X11 implementation of {@link FontManager}.
@@ -56,7 +54,7 @@ public class Win32FontManager extends SunFontManager {
 
     static {
 
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
                 public Object run() {
                     String eudcFile = getEUDCFontFile();
@@ -90,7 +88,7 @@ public class Win32FontManager extends SunFontManager {
 
     public Win32FontManager() {
         super();
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
 
                     /* Register the JRE fonts so that the native platform can
@@ -227,7 +225,7 @@ public class Win32FontManager extends SunFontManager {
         final String[] dirs = getPlatformFontDirs(true);
         if (dirs.length > 1) {
             String dir = (String)
-                AccessController.doPrivileged(new PrivilegedAction() {
+                AccessController.doPrivileged(new PrivilegedAction<Object>() {
                         public Object run() {
                             for (int i=0; i<dirs.length; i++) {
                                 String path =
@@ -272,7 +270,7 @@ public class Win32FontManager extends SunFontManager {
             fontsForPrinting = null;
         }
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction() {
+            new java.security.PrivilegedAction<Object>() {
                 public Object run() {
                     File f1 = new File(pathName);
                     String[] ls = f1.list(SunFontManager.getInstance().

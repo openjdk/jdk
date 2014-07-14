@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,18 +46,33 @@ import com.sun.tools.javac.comp.Env;
  * @author Jonathan Gibbons;
  */
 public class JavacScope implements com.sun.source.tree.Scope {
+
+    static JavacScope create(Env<AttrContext> env) {
+        if (env.outer == null || env.outer == env) {
+            //the "top-level" scope needs to return both imported and defined elements
+            //see test CheckLocalElements
+            return new JavacScope(env) {
+                @Override
+                public Iterable<? extends Element> getLocalElements() {
+                    return env.toplevel.namedImportScope.getSymbols();
+                }
+            };
+        } else {
+            return new JavacScope(env);
+        }
+    }
+
     protected final Env<AttrContext> env;
 
-    /** Creates a new instance of JavacScope */
-    JavacScope(Env<AttrContext> env) {
+    private JavacScope(Env<AttrContext> env) {
         env.getClass(); // null-check
         this.env = env;
     }
 
     public JavacScope getEnclosingScope() {
-        if (env.outer != null && env.outer != env)
-            return  new JavacScope(env.outer);
-        else {
+        if (env.outer != null && env.outer != env) {
+            return create(env.outer);
+        } else {
             // synthesize an outermost "star-import" scope
             return new JavacScope(env) {
                 public boolean isStarImportScope() {
@@ -67,7 +82,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
                     return null;
                 }
                 public Iterable<? extends Element> getLocalElements() {
-                    return env.toplevel.starImportScope.getElements();
+                    return env.toplevel.starImportScope.getSymbols();
                 }
             };
         }

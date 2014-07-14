@@ -129,13 +129,15 @@ void G1MarkSweep::mark_sweep_phase1(bool& marked_for_unloading,
 
   SharedHeap* sh = SharedHeap::heap();
 
-  // Need cleared claim bits for the strong roots processing
+  // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  sh->process_strong_roots(true,  // activate StrongRootsScope
-                           SharedHeap::SO_SystemClasses,
+  MarkingCodeBlobClosure follow_code_closure(&GenMarkSweep::follow_root_closure, !CodeBlobToOopClosure::FixRelocations);
+  sh->process_strong_roots(true,   // activate StrongRootsScope
+                           SharedHeap::SO_None,
                            &GenMarkSweep::follow_root_closure,
-                           &GenMarkSweep::follow_klass_closure);
+                           &GenMarkSweep::follow_cld_closure,
+                           &follow_code_closure);
 
   // Process reference objects found during marking
   ReferenceProcessor* rp = GenMarkSweep::ref_processor();
@@ -304,13 +306,15 @@ void G1MarkSweep::mark_sweep_phase3() {
 
   SharedHeap* sh = SharedHeap::heap();
 
-  // Need cleared claim bits for the strong roots processing
+  // Need cleared claim bits for the roots processing
   ClassLoaderDataGraph::clear_claimed_marks();
 
-  sh->process_strong_roots(true,  // activate StrongRootsScope
-                           SharedHeap::SO_AllClasses | SharedHeap::SO_Strings | SharedHeap::SO_AllCodeCache,
-                           &GenMarkSweep::adjust_pointer_closure,
-                           &GenMarkSweep::adjust_klass_closure);
+  CodeBlobToOopClosure adjust_code_closure(&GenMarkSweep::adjust_pointer_closure, CodeBlobToOopClosure::FixRelocations);
+  sh->process_all_roots(true,  // activate StrongRootsScope
+                        SharedHeap::SO_AllCodeCache,
+                        &GenMarkSweep::adjust_pointer_closure,
+                        &GenMarkSweep::adjust_cld_closure,
+                        &adjust_code_closure);
 
   assert(GenMarkSweep::ref_processor() == g1h->ref_processor_stw(), "Sanity");
   g1h->ref_processor_stw()->weak_oops_do(&GenMarkSweep::adjust_pointer_closure);

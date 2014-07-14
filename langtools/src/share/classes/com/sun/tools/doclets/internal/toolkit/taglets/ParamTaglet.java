@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -228,7 +228,7 @@ public class ParamTaglet extends BaseTaglet implements InheritableTaglet {
                 //This parameter does not have any @param documentation.
                 //Try to inherit it.
                 DocFinder.Output inheritedDoc =
-                    DocFinder.search(new DocFinder.Input((MethodDoc) holder, this,
+                    DocFinder.search(writer.configuration(), new DocFinder.Input((MethodDoc) holder, this,
                         String.valueOf(i), ! isNonTypeParams));
                 if (inheritedDoc.inlineTags != null &&
                         inheritedDoc.inlineTags.length > 0) {

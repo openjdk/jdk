@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -314,6 +314,11 @@ public class TextArea extends TextComponent {
     }
 
     /**
+     * Inserts the specified text at the specified position
+     * in this text area.
+     *
+     * @param  str the non-{@code null} text to insert
+     * @param  pos the position at which to insert
      * @deprecated As of JDK version 1.1,
      * replaced by <code>insert(String, int)</code>.
      */
@@ -342,6 +347,9 @@ public class TextArea extends TextComponent {
     }
 
     /**
+     * Appends the given text to the text area's current text.
+     *
+     * @param  str the text to append
      * @deprecated As of JDK version 1.1,
      * replaced by <code>append(String)</code>.
      */
@@ -378,6 +386,15 @@ public class TextArea extends TextComponent {
     }
 
     /**
+     * Replaces a range of characters between
+     * the indicated start and end positions
+     * with the specified replacement text (the text at the end
+     * position will not be replaced).
+     *
+     * @param  str the non-{@code null} text to use as
+     *         the replacement
+     * @param  start the start position
+     * @param  end the end position
      * @deprecated As of JDK version 1.1,
      * replaced by <code>replaceRange(String, int, int)</code>.
      */
@@ -492,6 +509,12 @@ public class TextArea extends TextComponent {
     }
 
     /**
+     * Determines the preferred size of the text area with the specified
+     * number of rows and columns.
+     *
+     * @param  rows the number of rows
+     * @param  columns the number of columns
+     * @return the preferred dimensions needed for the text area
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getPreferredSize(int, int)</code>.
      */
@@ -544,6 +567,12 @@ public class TextArea extends TextComponent {
     }
 
     /**
+     * Determines the minimum size of the text area with the specified
+     * number of rows and columns.
+     *
+     * @param  rows the number of rows
+     * @param  columns the number of columns
+     * @return the minimum size for the text area
      * @deprecated As of JDK version 1.1,
      * replaced by <code>getMinimumSize(int, int)</code>.
      */

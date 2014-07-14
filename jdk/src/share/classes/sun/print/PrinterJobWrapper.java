@@ -26,6 +26,7 @@
 package sun.print;
 
 import java.awt.print.PrinterJob;
+import javax.print.attribute.Attribute;
 import javax.print.attribute.PrintRequestAttribute;
 
 public class PrinterJobWrapper implements PrintRequestAttribute {
@@ -42,7 +43,7 @@ public class PrinterJobWrapper implements PrintRequestAttribute {
         return job;
     }
 
-    public final Class getCategory() {
+    public final Class<? extends Attribute> getCategory() {
         return PrinterJobWrapper.class;
     }
 

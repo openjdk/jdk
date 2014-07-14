@@ -33,7 +33,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g TemplateTest.java
- *  @run main TemplateTest
+ *  @run driver TemplateTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

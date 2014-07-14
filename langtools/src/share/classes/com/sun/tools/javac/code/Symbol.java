@@ -33,19 +33,21 @@ import java.util.concurrent.Callable;
 import javax.lang.model.element.*;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Type.*;
 import com.sun.tools.javac.comp.Attr;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
 import com.sun.tools.javac.jvm.*;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.code.TypeTag.FORALL;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
-import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 
 /** Root class for Java symbols. It contains subclasses
  *  for specific sorts of symbols, such as variables, methods and operators,
@@ -376,7 +378,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
     /** If this is a class or package, its members, otherwise null.
      */
-    public Scope members() {
+    public WriteableScope members() {
         return null;
     }
 
@@ -475,15 +477,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         if (currentClass == owner) {
             return this;
         }
-        Scope.Entry e = currentClass.members().lookup(name);
-        while (e.scope != null) {
-            if (e.sym.kind == kind &&
+        for (Symbol sym : currentClass.members().getSymbolsByName(name)) {
+            if (sym.kind == kind &&
                     (kind != MTH ||
-                    (e.sym.flags() & STATIC) != 0 &&
-                    types.isSubSignature(e.sym.type, type))) {
-                return e.sym;
+                    (sym.flags() & STATIC) != 0 &&
+                    types.isSubSignature(sym.type, type))) {
+                return sym;
             }
-            e = e.next();
         }
         Symbol hiddenSym = null;
         for (Type st : types.interfaces(currentClass.type)
@@ -632,7 +632,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         public boolean isConstructor() { return other.isConstructor(); }
         public Name getQualifiedName() { return other.getQualifiedName(); }
         public Name flatName() { return other.flatName(); }
-        public Scope members() { return other.members(); }
+        public WriteableScope members() { return other.members(); }
         public boolean isInner() { return other.isInner(); }
         public boolean hasOuterInstance() { return other.hasOuterInstance(); }
         public ClassSymbol enclClass() { return other.enclClass(); }
@@ -721,9 +721,9 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             if (kind == TYP && type.hasTag(TYPEVAR)) {
                 return list;
             }
-            for (Scope.Entry e = members().elems; e != null; e = e.sibling) {
-                if (e.sym != null && (e.sym.flags() & SYNTHETIC) == 0 && e.sym.owner == this)
-                    list = list.prepend(e.sym);
+            for (Symbol sym : members().getSymbols(NON_RECURSIVE)) {
+                if (sym != null && (sym.flags() & SYNTHETIC) == 0 && sym.owner == this)
+                    list = list.prepend(sym);
             }
             return list;
         }
@@ -770,42 +770,41 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         @Override
         public List<Attribute.Compound> getAnnotationMirrors() {
-            return onlyTypeVariableAnnotations(owner.getRawTypeAttributes());
-        }
-
-        private List<Attribute.Compound> onlyTypeVariableAnnotations(
-                List<Attribute.TypeCompound> candidates) {
-            // Declaration annotations on TypeParameters are stored in type attributes
+            // Declaration annotations on type variables are stored in type attributes
+            // on the owner of the TypeVariableSymbol
+            List<Attribute.TypeCompound> candidates = owner.getRawTypeAttributes();
+            int index = owner.getTypeParameters().indexOf(this);
             List<Attribute.Compound> res = List.nil();
             for (Attribute.TypeCompound a : candidates) {
-                if (a.position.type == TargetType.CLASS_TYPE_PARAMETER ||
-                    a.position.type == TargetType.METHOD_TYPE_PARAMETER)
+                if (isCurrentSymbolsAnnotation(a, index))
                     res = res.prepend(a);
             }
 
-            return res = res.reverse();
+            return res.reverse();
         }
-
-
 
         // Helper to getAnnotation[s]
         @Override
         public <A extends Annotation> Attribute.Compound getAttribute(Class<A> annoType) {
-
             String name = annoType.getName();
 
             // Declaration annotations on type variables are stored in type attributes
             // on the owner of the TypeVariableSymbol
             List<Attribute.TypeCompound> candidates = owner.getRawTypeAttributes();
+            int index = owner.getTypeParameters().indexOf(this);
             for (Attribute.TypeCompound anno : candidates)
-                if (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
-                        anno.position.type == TargetType.METHOD_TYPE_PARAMETER)
-                    if (name.contentEquals(anno.type.tsym.flatName()))
-                        return anno;
+                if (isCurrentSymbolsAnnotation(anno, index) &&
+                    name.contentEquals(anno.type.tsym.flatName()))
+                    return anno;
 
             return null;
         }
-
+            //where:
+            boolean isCurrentSymbolsAnnotation(Attribute.TypeCompound anno, int index) {
+                return (anno.position.type == TargetType.CLASS_TYPE_PARAMETER ||
+                        anno.position.type == TargetType.METHOD_TYPE_PARAMETER) &&
+                       anno.position.parameter_index == index;
+            }
 
 
         @Override
@@ -819,7 +818,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
     public static class PackageSymbol extends TypeSymbol
         implements PackageElement {
 
-        public Scope members_field;
+        public WriteableScope members_field;
         public Name fullname;
         public ClassSymbol package_info; // see bug 6443073
 
@@ -846,7 +845,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return name.isEmpty() && owner != null;
         }
 
-        public Scope members() {
+        public WriteableScope members() {
             if (completer != null) complete();
             return members_field;
         }
@@ -911,7 +910,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
         /** a scope for all class members; variables, methods and inner classes
          *  type parameters are not part of this scope
          */
-        public Scope members_field;
+        public WriteableScope members_field;
 
         /** the fully qualified name of the class, i.e. pck.outer.inner.
          *  null for anonymous classes
@@ -972,7 +971,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             return flags_field;
         }
 
-        public Scope members() {
+        public WriteableScope members() {
             if (completer != null) complete();
             return members_field;
         }
@@ -1398,15 +1397,13 @@ public abstract class Symbol extends AnnoConstruct implements Element {
 
         public Symbol implementedIn(TypeSymbol c, Types types) {
             Symbol impl = null;
-            for (Scope.Entry e = c.members().lookup(name);
-                 impl == null && e.scope != null;
-                 e = e.next()) {
-                if (this.overrides(e.sym, (TypeSymbol)owner, types, true) &&
+            for (Symbol sym : c.members().getSymbolsByName(name)) {
+                if (this.overrides(sym, (TypeSymbol)owner, types, true) &&
                     // FIXME: I suspect the following requires a
                     // subst() for a parametric return type.
                     types.isSameType(type.getReturnType(),
-                                     types.memberType(owner.type, e.sym).getReturnType())) {
-                    impl = e.sym;
+                                     types.memberType(owner.type, sym).getReturnType())) {
+                    impl = sym;
                 }
             }
             return impl;
@@ -1442,12 +1439,10 @@ public abstract class Symbol extends AnnoConstruct implements Element {
          */
         public MethodSymbol binaryImplementation(ClassSymbol origin, Types types) {
             for (TypeSymbol c = origin; c != null; c = types.supertype(c.type).tsym) {
-                for (Scope.Entry e = c.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    if (e.sym.kind == MTH &&
-                        ((MethodSymbol)e.sym).binaryOverrides(this, origin, types))
-                        return (MethodSymbol)e.sym;
+                for (Symbol sym : c.members().getSymbolsByName(name)) {
+                    if (sym.kind == MTH &&
+                        ((MethodSymbol)sym).binaryOverrides(this, origin, types))
+                        return (MethodSymbol)sym;
                 }
             }
             return null;

@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g GetUninitializedStringValue.java
- *  @run main GetUninitializedStringValue
+ *  @run driver GetUninitializedStringValue
  */
 import com.sun.jdi.ReferenceType;
 import com.sun.jdi.StackFrame;

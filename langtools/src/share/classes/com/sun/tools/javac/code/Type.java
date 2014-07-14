@@ -1050,6 +1050,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitUnion(this, p);
         }
+
+        public Iterable<? extends Type> getAlternativeTypes() {
+            return alternatives_field;
+        }
     }
 
     // a clone of a ClassType that knows about the bounds of an intersection type.

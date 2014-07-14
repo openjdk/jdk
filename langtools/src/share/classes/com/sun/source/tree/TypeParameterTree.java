@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,11 +48,20 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface TypeParameterTree extends Tree {
+    /**
+     * Returns the name of the type parameter.
+     * @return the name
+     */
     Name getName();
+
+    /**
+     * Returns the bounds of the type parameter.
+     * @return the bounds
+     */
     List<? extends Tree> getBounds();
 
     /**
-     * Return annotations on the type parameter declaration.
+     * Returns annotations on the type parameter declaration.
      *
      * Annotations need Target meta-annotations of
      * {@link java.lang.annotation.ElementType#TYPE_PARAMETER} or

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,10 @@ public abstract class AbstractDoclet {
      * The global configuration information for this run.
      */
     public Configuration configuration;
+    /*
+     *  a handle to our utility methods
+     */
+    protected Utils utils;
 
     /**
      * The only doclet that may use this toolkit is {@value}
@@ -75,6 +79,7 @@ public abstract class AbstractDoclet {
     public boolean start(AbstractDoclet doclet, RootDoc root) {
         configuration = configuration();
         configuration.root = root;
+        utils = configuration.utils;
         if (! isValidDoclet(doclet)) {
             return false;
         }
@@ -94,7 +99,6 @@ public abstract class AbstractDoclet {
             }
             return false;
         } catch (Exception exc) {
-            exc.printStackTrace();
             return false;
         }
         return true;
@@ -135,7 +139,7 @@ public abstract class AbstractDoclet {
         ClassTree classtree = new ClassTree(configuration, configuration.nodeprecated);
 
         generateClassFiles(root, classtree);
-        Util.copyDocFiles(configuration, DocPaths.DOC_FILES);
+        configuration.utils.copyDocFiles(configuration, DocPaths.DOC_FILES);
 
         PackageListWriter.generate(configuration);
         generatePackageFiles(classtree);

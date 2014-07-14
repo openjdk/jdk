@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g GetLocalVariables2Test.java
- *  @run main GetLocalVariables2Test
+ *  @run driver GetLocalVariables2Test
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

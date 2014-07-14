@@ -1474,17 +1474,17 @@ class CertificateRequest extends HandshakeMessage
             s.println();
 
             if (protocolVersion.v >= ProtocolVersion.TLS12.v) {
-                StringBuffer buffer = new StringBuffer();
+                StringBuilder sb = new StringBuilder();
                 boolean opened = false;
                 for (SignatureAndHashAlgorithm signAlg : algorithms) {
                     if (opened) {
-                        buffer.append(", " + signAlg.getAlgorithmName());
+                        sb.append(", " + signAlg.getAlgorithmName());
                     } else {
-                        buffer.append(signAlg.getAlgorithmName());
+                        sb.append(signAlg.getAlgorithmName());
                         opened = true;
                     }
                 }
-                s.println("Supported Signature Algorithms: " + buffer);
+                s.println("Supported Signature Algorithms: " + sb);
             }
 
             s.println("Cert Authorities:");

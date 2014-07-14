@@ -93,6 +93,7 @@ ifeq ($(INCLUDE_ALL_GCS), false)
 	ageTable.cpp							\
 	collectorCounters.cpp						\
 	cSpaceCounters.cpp						\
+	gcId.cpp							\
 	gcPolicyCounters.cpp						\
 	gcStats.cpp							\
 	gcTimer.cpp							\

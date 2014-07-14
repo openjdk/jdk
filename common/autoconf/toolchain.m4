@@ -24,11 +24,11 @@
 #
 
 ########################################################################
-# This file is responsible for detecting, verifying and setting up the 
-# toolchain, i.e. the compiler, linker and related utilities. It will setup 
+# This file is responsible for detecting, verifying and setting up the
+# toolchain, i.e. the compiler, linker and related utilities. It will setup
 # proper paths to the binaries, but it will not setup any flags.
 #
-# The binaries used is determined by the toolchain type, which is the family of 
+# The binaries used is determined by the toolchain type, which is the family of
 # compilers and related tools that are used.
 ########################################################################
 
@@ -83,7 +83,7 @@ AC_DEFUN([TOOLCHAIN_SETUP_FILENAME_PATTERNS],
   AC_SUBST(SHARED_LIBRARY)
   AC_SUBST(STATIC_LIBRARY)
   AC_SUBST(OBJ_SUFFIX)
-  AC_SUBST(EXE_SUFFIX)  
+  AC_SUBST(EXE_SUFFIX)
 ])
 
 # Determine which toolchain type to use, and make sure it is valid for this
@@ -98,26 +98,33 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
   VALID_TOOLCHAINS=${!toolchain_var_name}
 
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    # On Mac OS X, default toolchain to clang after Xcode 5
-    XCODE_VERSION_OUTPUT=`xcodebuild -version 2>&1 | $HEAD -n 1`
-    $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
-    if test $? -ne 0; then
-      AC_MSG_ERROR([Failed to determine Xcode version.])
-    fi
-    XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
-        $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
-        $CUT -f 1 -d .`
-    AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
-    if test $XCODE_MAJOR_VERSION -ge 5; then
-        DEFAULT_TOOLCHAIN="clang"
+    if test -n "$XCODEBUILD"; then
+      # On Mac OS X, default toolchain to clang after Xcode 5
+      XCODE_VERSION_OUTPUT=`"$XCODEBUILD" -version 2>&1 | $HEAD -n 1`
+      $ECHO "$XCODE_VERSION_OUTPUT" | $GREP "Xcode " > /dev/null
+      if test $? -ne 0; then
+        AC_MSG_ERROR([Failed to determine Xcode version.])
+      fi
+      XCODE_MAJOR_VERSION=`$ECHO $XCODE_VERSION_OUTPUT | \
+          $SED -e 's/^Xcode \(@<:@1-9@:>@@<:@0-9.@:>@*\)/\1/' | \
+          $CUT -f 1 -d .`
+      AC_MSG_NOTICE([Xcode major version: $XCODE_MAJOR_VERSION])
+      if test $XCODE_MAJOR_VERSION -ge 5; then
+          DEFAULT_TOOLCHAIN="clang"
+      else
+          DEFAULT_TOOLCHAIN="gcc"
+      fi
     else
-        DEFAULT_TOOLCHAIN="gcc"
+      # If Xcode is not installed, but the command line tools are
+      # then we can't run xcodebuild. On these systems we should
+      # default to clang
+      DEFAULT_TOOLCHAIN="clang"
     fi
   else
     # First toolchain type in the list is the default
     DEFAULT_TOOLCHAIN=${VALID_TOOLCHAINS%% *}
   fi
-  
+
   if test "x$with_toolchain_type" = xlist; then
     # List all toolchains
     AC_MSG_NOTICE([The following toolchains are valid on this platform:])
@@ -126,7 +133,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
       TOOLCHAIN_DESCRIPTION=${!toolchain_var_name}
       $PRINTF "  %-10s  %s\n" $toolchain "$TOOLCHAIN_DESCRIPTION"
     done
-    
+
     exit 0
   elif test "x$with_toolchain_type" != x; then
     # User override; check that it is valid
@@ -168,10 +175,10 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETERMINE_TOOLCHAIN_TYPE],
     AC_MSG_NOTICE([Using default toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION)])
   else
     AC_MSG_NOTICE([Using user selected toolchain $TOOLCHAIN_TYPE ($TOOLCHAIN_DESCRIPTION). Default toolchain is $DEFAULT_TOOLCHAIN.])
-  fi 
+  fi
 ])
 
-# Before we start detecting the toolchain executables, we might need some 
+# Before we start detecting the toolchain executables, we might need some
 # special setup, e.g. additional paths etc.
 AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
 [
@@ -184,7 +191,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
   ORG_OBJCFLAGS="$OBJCFLAGS"
 
   # On Windows, we need to detect the visual studio installation first.
-  # This will change the PATH, but we need to keep that new PATH even 
+  # This will change the PATH, but we need to keep that new PATH even
   # after toolchain detection is done, since the compiler (on x86) uses
   # it for DLL resolution in runtime.
   if test "x$OPENJDK_BUILD_OS" = "xwindows" && test "x$TOOLCHAIN_TYPE" = "xmicrosoft"; then
@@ -208,7 +215,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_PRE_DETECTION],
     PATH="/usr/ccs/bin:$PATH"
   fi
 
-  # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to 
+  # Finally add TOOLCHAIN_PATH at the beginning, to allow --with-tools-dir to
   # override all other locations.
   if test "x$TOOLCHAIN_PATH" != x; then
     PATH=$TOOLCHAIN_PATH:$PATH
@@ -254,7 +261,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
       AC_MSG_NOTICE([The result from running with --version was: "$ALT_VERSION_OUTPUT"])
       AC_MSG_ERROR([A $TOOLCHAIN_TYPE compiler is required. Try setting --with-tools-dir.])
     fi
-    # Remove usage instructions (if present), and 
+    # Remove usage instructions (if present), and
     # collapse compiler output into a single line
     COMPILER_VERSION_STRING=`$ECHO $COMPILER_VERSION_OUTPUT | \
         $SED -e 's/ *@<:@Uu@:>@sage:.*//'`
@@ -282,7 +289,7 @@ AC_DEFUN([TOOLCHAIN_CHECK_COMPILER_VERSION],
     # There is no specific version flag, but all output starts with a version string.
     # First line typically looks something like:
     # Microsoft (R) 32-bit C/C++ Optimizing Compiler Version 16.00.40219.01 for 80x86
-    COMPILER_VERSION_OUTPUT=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`    
+    COMPILER_VERSION_OUTPUT=`$COMPILER 2>&1 | $HEAD -n 1 | $TR -d '\r'`
     # Check that this is likely to be Microsoft CL.EXE.
     $ECHO "$COMPILER_VERSION_OUTPUT" | $GREP "Microsoft.*Compiler" > /dev/null
     if test $? -ne 0; then
@@ -360,7 +367,7 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     AC_MSG_NOTICE([Will use user supplied compiler $1=[$]$1])
     if test "x`basename [$]$1`" = "x[$]$1"; then
       # A command without a complete path is provided, search $PATH.
-      
+
       AC_PATH_PROGS(POTENTIAL_$1, [$]$1)
       if test "x$POTENTIAL_$1" != x; then
         $1=$POTENTIAL_$1
@@ -375,12 +382,12 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
     fi
   else
     # No user supplied value. Locate compiler ourselves.
-    
+
     # If we are cross compiling, assume cross compilation tools follows the
     # cross compilation standard where they are prefixed with the autoconf
-    # standard name for the target. For example the binary 
+    # standard name for the target. For example the binary
     # i686-sun-solaris2.10-gcc will cross compile for i686-sun-solaris2.10.
-    # If we are not cross compiling, then the default compiler name will be 
+    # If we are not cross compiling, then the default compiler name will be
     # used.
 
     $1=
@@ -450,9 +457,9 @@ AC_DEFUN([TOOLCHAIN_FIND_COMPILER],
   TOOLCHAIN_CHECK_COMPILER_VERSION([$1], [$COMPILER_NAME])
 ])
 
-# Detect the core components of the toolchain, i.e. the compilers (CC and CXX), 
-# preprocessor (CPP and CXXCPP), the linker (LD), the assembler (AS) and the 
-# archiver (AR). Verify that the compilers are correct according to the 
+# Detect the core components of the toolchain, i.e. the compilers (CC and CXX),
+# preprocessor (CPP and CXXCPP), the linker (LD), the assembler (AS) and the
+# archiver (AR). Verify that the compilers are correct according to the
 # toolchain type.
 AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
 [
@@ -529,7 +536,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_CORE],
 ])
 
 # Setup additional tools that is considered a part of the toolchain, but not the
-# core part. Many of these are highly platform-specific and do not exist, 
+# core part. Many of these are highly platform-specific and do not exist,
 # and/or are not needed on all platforms.
 AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 [
@@ -551,7 +558,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     AC_CHECK_PROG([DUMPBIN], [dumpbin], [dumpbin],,,)
     BASIC_FIXUP_EXECUTABLE(DUMPBIN)
   fi
-  
+
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then
     BASIC_PATH_PROGS(STRIP, strip)
     BASIC_FIXUP_EXECUTABLE(STRIP)
@@ -559,7 +566,7 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     BASIC_FIXUP_EXECUTABLE(NM)
     BASIC_PATH_PROGS(GNM, gnm)
     BASIC_FIXUP_EXECUTABLE(GNM)
-    
+
     BASIC_PATH_PROGS(MCS, mcs)
     BASIC_FIXUP_EXECUTABLE(MCS)
   elif test "x$OPENJDK_TARGET_OS" != xwindows; then
@@ -592,17 +599,17 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
 
 # Setup the build tools (i.e, the compiler and linker used to build programs
 # that should be run on the build platform, not the target platform, as a build
-# helper). Since the non-cross-compile case uses the normal, target compilers 
+# helper). Since the non-cross-compile case uses the normal, target compilers
 # for this, we can only do this after these have been setup.
 AC_DEFUN_ONCE([TOOLCHAIN_SETUP_BUILD_COMPILERS],
-[  
+[
   if test "x$COMPILE_TYPE" = "xcross"; then
     # Now we need to find a C/C++ compiler that can build executables for the
     # build platform. We can't use the AC_PROG_CC macro, since it can only be
     # used once. Also, we need to do this without adding a tools dir to the
     # path, otherwise we might pick up cross-compilers which don't use standard
     # naming.
-    
+
     # FIXME: we should list the discovered compilers as an exclude pattern!
     # If we do that, we can do this detection before POST_DETECTION, and still
     # find the build compilers in the tools dir, if needed.
@@ -690,15 +697,39 @@ AC_DEFUN_ONCE([TOOLCHAIN_MISC_CHECKS],
     # If this is a --hash-style=gnu system, use --hash-style=both, why?
     HAS_GNU_HASH=`$CC -dumpspecs 2>/dev/null | $GREP 'hash-style=gnu'`
     # This is later checked when setting flags.
+
+    # "-Og" suppported for GCC 4.8 and later
+    CFLAG_OPTIMIZE_DEBUG_FLAG="-Og"
+    FLAGS_COMPILER_CHECK_ARGUMENTS([$CFLAG_OPTIMIZE_DEBUG_FLAG],
+      [HAS_CFLAG_OPTIMIZE_DEBUG=true],
+      [HAS_CFLAG_OPTIMIZE_DEBUG=false])
+
+    # "-fsanitize=undefined" supported for GCC 4.9 and later
+    CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG="-fsanitize=undefined -fsanitize-recover"
+    FLAGS_COMPILER_CHECK_ARGUMENTS([$CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG],
+      [HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=true],
+      [HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR=false])
+
+    # "-z relro" supported in GNU binutils 2.17 and later
+    LINKER_RELRO_FLAG="-Xlinker -z -Xlinker relro"
+    FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_RELRO_FLAG],
+      [HAS_LINKER_RELRO=true],
+      [HAS_LINKER_RELRO=false])
+
+    # "-z now" supported in GNU binutils 2.11 and later
+    LINKER_NOW_FLAG="-Xlinker -z -Xlinker now"
+    FLAGS_LINKER_CHECK_ARGUMENTS([$LINKER_NOW_FLAG],
+      [HAS_LINKER_NOW=true],
+      [HAS_LINKER_NOW=false])
   fi
 
-  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed 
+  # Check for broken SuSE 'ld' for which 'Only anonymous version tag is allowed
   # in executable.'
   USING_BROKEN_SUSE_LD=no
   if test "x$OPENJDK_TARGET_OS" = xlinux && test "x$TOOLCHAIN_TYPE" = xgcc; then
     AC_MSG_CHECKING([for broken SuSE 'ld' which only understands anonymous version tags in executables])
-    echo "SUNWprivate_1.1 { local: *; };" > version-script.map
-    echo "int main() { }" > main.c
+    $ECHO "SUNWprivate_1.1 { local: *; };" > version-script.map
+    $ECHO "int main() { }" > main.c
     if $CXX -Xlinker -version-script=version-script.map main.c 2>&AS_MESSAGE_LOG_FD >&AS_MESSAGE_LOG_FD; then
       AC_MSG_RESULT(no)
       USING_BROKEN_SUSE_LD=no

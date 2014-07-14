@@ -83,7 +83,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLDocumentSource;
  * @author Jeffrey Rodriguez IBM
  * @author Neil Graham, IBM
  *
- * @version $Id: XMLDTDValidator.java,v 1.8 2010-11-01 04:39:42 joehw Exp $
  */
 public class XMLDTDValidator
         implements XMLComponent, XMLDocumentFilter, XMLDTDValidatorFilter, RevalidationHandler {

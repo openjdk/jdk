@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,7 +22,7 @@
  */
 
 /* @test
- * @bug 8043484
+ * @bug 8043484 8007307
  * @summary Make sure DPrinter.java compiles
  * @compile DPrinter.java
  */
@@ -31,6 +31,7 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.lang.reflect.Field;
+import java.lang.reflect.Method;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -50,6 +51,7 @@ import javax.tools.StandardJavaFileManager;
 import javax.tools.StandardLocation;
 import javax.tools.ToolProvider;
 
+import com.sun.source.doctree.*;
 import com.sun.source.util.JavacTask;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
@@ -74,6 +76,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Convert;
 import com.sun.tools.javac.util.Log;
 
 
@@ -248,6 +251,20 @@ public class DPrinter {
         }
     }
 
+    public void printDocTree(String label, DocTree tree) {
+        if (tree == null) {
+             printNull(label);
+        } else {
+            indent();
+            out.print(label);
+            out.println(": " + tree.getClass().getSimpleName() + "," + tree.getKind());
+
+            indent(+1);
+            tree.accept(docTreeVisitor, null);
+            indent(-1);
+        }
+    }
+
     public void printFileObject(String label, FileObject fo) {
         if (fo == null) {
             printNull(label);
@@ -263,6 +280,17 @@ public class DPrinter {
 
     public void printInt(String label, int i) {
         printString(label, String.valueOf(i));
+    }
+
+    public void printLimitedEscapedString(String label, String text) {
+        String s = Convert.quote(text);
+        if (s.length() > maxSrcLength) {
+            String trim = "[...]";
+            int head = (maxSrcLength - trim.length()) * 2 / 3;
+            int tail = maxSrcLength - trim.length() - head;
+            s = s.substring(0, head) + trim + s.substring(s.length() - tail);
+        }
+        printString(label, s);
     }
 
     public void printList(String label, List<?> list) {
@@ -304,10 +332,14 @@ public class DPrinter {
             printType(label, (Type) item, details);
         } else if (item instanceof JCTree) {
             printTree(label, (JCTree) item);
+        } else if (item instanceof DocTree) {
+            printDocTree(label, (DocTree) item);
         } else if (item instanceof List) {
             printList(label, (List) item);
         } else if (item instanceof Name) {
             printName(label, (Name) item);
+        } else if (item instanceof Scope) {
+            printScope(label, (Scope) item);
         } else {
             printString(label, String.valueOf(item));
         }
@@ -327,7 +359,7 @@ public class DPrinter {
                     out.print(label);
                     out.print(": [");
                     String sep = "";
-                    for (Symbol sym: scope.getElements()) {
+                    for (Symbol sym: scope.getSymbols()) {
                         out.print(sep);
                         out.print(sym.name);
                         sep = ",";
@@ -341,24 +373,78 @@ public class DPrinter {
                     out.println(label);
 
                     indent(+1);
-                    printImplClass(scope, Scope.class);
-                    printSymbol("owner", scope.owner, Details.SUMMARY);
-                    printScope("next", scope.next, Details.SUMMARY);
-                    printObject("shared", getField(scope, Scope.class, "shared"), Details.SUMMARY);
-                    if (scope instanceof CompoundScope) {
-                        printObject("subScopes",
-                                getField(scope, CompoundScope.class, "subScopes"),
-                                Details.FULL);
-                    } else {
-                        for (Symbol sym : scope.getElements()) {
-                            printSymbol(sym.name.toString(), sym, Details.SUMMARY);
-                        }
-                    }
+                    printFullScopeImpl(scope);
                     indent(-1);
                     break;
                 }
             }
         }
+    }
+
+    void printFullScopeImpl(Scope scope) {
+        indent();
+        out.println(scope.getClass().getName());
+        printSymbol("owner", scope.owner, Details.SUMMARY);
+        if (SCOPE_IMPL_CLASS.equals(scope.getClass().getName())) {
+            printScope("next", (Scope) getField(scope, scope.getClass(), "next"), Details.SUMMARY);
+            printObject("shared", getField(scope, scope.getClass(), "shared"), Details.SUMMARY);
+            Object[] table = (Object[]) getField(scope, scope.getClass(), "table");
+            for (int i = 0; i < table.length; i++) {
+                if (i > 0)
+                    out.print(", ");
+                else
+                    indent();
+                out.print(i + ":" + entryToString(table[i], table, false));
+            }
+            out.println();
+        } else if (FILTER_SCOPE_CLASS.equals(scope.getClass().getName())) {
+            printScope("delegate",
+                    (Scope) getField(scope, scope.getClass(), "delegate"), Details.FULL);
+        } else if (scope instanceof CompoundScope) {
+            printList("delegates", (List<?>) getField(scope, CompoundScope.class, "subScopes"));
+        } else {
+            for (Symbol sym : scope.getSymbols()) {
+                printSymbol(sym.name.toString(), sym, Details.SUMMARY);
+            }
+        }
+    }
+        //where:
+        static final String SCOPE_IMPL_CLASS = "com.sun.tools.javac.code.Scope$ScopeImpl";
+        static final String FILTER_SCOPE_CLASS = "com.sun.tools.javac.code.Scope$FilterImportScope";
+
+    /**
+     * Create a string showing the contents of an entry, using the table
+     * to help identify cross-references to other entries in the table.
+     * @param e the entry to be shown
+     * @param table the table containing the other entries
+     */
+    String entryToString(Object e, Object[] table, boolean ref) {
+        if (e == null)
+            return "null";
+        Symbol sym = (Symbol) getField(e, e.getClass(), "sym");
+        if (sym == null)
+            return "sent"; // sentinel
+        if (ref) {
+            int index = indexOf(table, e);
+            if (index != -1)
+                return String.valueOf(index);
+        }
+        Scope scope = (Scope) getField(e, e.getClass(), "scope");
+        return "(" + sym.name + ":" + sym
+                + ",shdw:" + entryToString(callMethod(e, e.getClass(), "next"), table, true)
+                + ",sibl:" + entryToString(getField(e, e.getClass(), "sibling"), table, true)
+                + ((sym.owner != scope.owner)
+                    ? (",BOGUS[" + sym.owner + "," + scope.owner + "]")
+                    : "")
+                + ")";
+    }
+
+    <T> int indexOf(T[] array, T item) {
+        for (int i = 0; i < array.length; i++) {
+            if (array[i] == item)
+                return i;
+        }
+        return -1;
     }
 
     public void printSource(String label, JCTree tree) {
@@ -515,6 +601,23 @@ public class DPrinter {
                 return f.get(o);
             } finally {
                 f.setAccessible(prev);
+            }
+        } catch (ReflectiveOperationException e) {
+            return e;
+        } catch (SecurityException e) {
+            return e;
+        }
+    }
+
+    protected Object callMethod(Object o, Class<?> clazz, String name) {
+        try {
+            Method m = clazz.getDeclaredMethod(name);
+            boolean prev = m.isAccessible();
+            m.setAccessible(true);
+            try {
+                return m.invoke(o);
+            } finally {
+                m.setAccessible(prev);
             }
         } catch (ReflectiveOperationException e) {
             return e;
@@ -877,6 +980,191 @@ public class DPrinter {
 
     // </editor-fold>
 
+    // <editor-fold defaultstate="collapsed" desc="DocTree visitor">
+
+    protected DocTreeVisitor<Void,Void> docTreeVisitor = new DefaultDocTreeVisitor();
+
+    /**
+     * Default visitor class for DocTree objects.
+     * Note: each visitXYZ method ends by calling the corresponding
+     * visit method for its superclass.
+     */
+    class DefaultDocTreeVisitor implements DocTreeVisitor<Void,Void> {
+
+        public Void visitAttribute(AttributeTree node, Void p) {
+            printName("name", node.getName());
+            printString("vkind", node.getValueKind().name());
+            printList("value", node.getValue());
+            return visitTree(node, null);
+        }
+
+        public Void visitAuthor(AuthorTree node, Void p) {
+            printList("name", node.getName());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitComment(CommentTree node, Void p) {
+            printLimitedEscapedString("body", node.getBody());
+            return visitTree(node, null);
+        }
+
+        public Void visitDeprecated(DeprecatedTree node, Void p) {
+            printList("body", node.getBody());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitDocComment(DocCommentTree node, Void p) {
+            printList("firstSentence", node.getFirstSentence());
+            printList("body", node.getBody());
+            printList("tags", node.getBlockTags());
+            return visitTree(node, null);
+        }
+
+        public Void visitDocRoot(DocRootTree node, Void p) {
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitEndElement(EndElementTree node, Void p) {
+            printName("name", node.getName());
+            return visitTree(node, null);
+        }
+
+        public Void visitEntity(EntityTree node, Void p) {
+            printName("name", node.getName());
+            return visitTree(node, null);
+        }
+
+        public Void visitErroneous(ErroneousTree node, Void p) {
+            printLimitedEscapedString("body", node.getBody());
+            printString("diag", node.getDiagnostic().getMessage(Locale.getDefault()));
+            return visitTree(node, null);
+        }
+
+        public Void visitIdentifier(IdentifierTree node, Void p) {
+            printName("name", node.getName());
+            return visitTree(node, null);
+        }
+
+        public Void visitInheritDoc(InheritDocTree node, Void p) {
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitLink(LinkTree node, Void p) {
+            printString("kind", node.getKind().name());
+            printDocTree("ref", node.getReference());
+            printList("list", node.getLabel());
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitLiteral(LiteralTree node, Void p) {
+            printString("kind", node.getKind().name());
+            printDocTree("body", node.getBody());
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitParam(ParamTree node, Void p) {
+            printString("isTypeParameter", String.valueOf(node.isTypeParameter()));
+            printString("kind", node.getKind().name());
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitReference(ReferenceTree node, Void p) {
+            printString("signature", node.getSignature());
+            return visitTree(node, null);
+        }
+
+        public Void visitReturn(ReturnTree node, Void p) {
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSee(SeeTree node, Void p) {
+            printList("ref", node.getReference());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSerial(SerialTree node, Void p) {
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSerialData(SerialDataTree node, Void p) {
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSerialField(SerialFieldTree node, Void p) {
+            printDocTree("name", node.getName());
+            printDocTree("type", node.getType());
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitSince(SinceTree node, Void p) {
+            printList("body", node.getBody());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitStartElement(StartElementTree node, Void p) {
+            printName("name", node.getName());
+            printList("attrs", node.getAttributes());
+            printString("selfClosing", String.valueOf(node.isSelfClosing()));
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitText(TextTree node, Void p) {
+            printLimitedEscapedString("body", node.getBody());
+            return visitTree(node, null);
+        }
+
+        public Void visitThrows(ThrowsTree node, Void p) {
+            printDocTree("name", node.getExceptionName());
+            printList("desc", node.getDescription());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
+            printString("name", node.getTagName());
+            printList("content", node.getContent());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitUnknownInlineTag(UnknownInlineTagTree node, Void p) {
+            printString("name", node.getTagName());
+            printList("content", node.getContent());
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitValue(ValueTree node, Void p) {
+            printDocTree("value", node.getReference());
+            return visitInlineTag(node, null);
+        }
+
+        public Void visitVersion(VersionTree node, Void p) {
+            printList("body", node.getBody());
+            return visitBlockTag(node, null);
+        }
+
+        public Void visitOther(DocTree node, Void p) {
+            return visitTree(node, null);
+        }
+
+        public Void visitBlockTag(DocTree node, Void p) {
+            return visitTree(node, null);
+        }
+
+        public Void visitInlineTag(DocTree node, Void p) {
+            return visitTree(node, null);
+        }
+
+        public Void visitTree(DocTree node, Void p) {
+            return null;
+        }
+    }
+
+    // </editor-fold>
+
     // <editor-fold defaultstate="collapsed" desc="Symbol visitor">
 
     protected Symbol.Visitor<Void,Void> symVisitor = new SymbolVisitor();
@@ -1228,18 +1516,19 @@ public class DPrinter {
                 }
 
                 private void handle(TaskEvent e) {
+                    JCCompilationUnit unit = (JCCompilationUnit) e.getCompilationUnit();
                      switch (e.getKind()) {
                          case PARSE:
                          case ENTER:
                              h.handle(e.getSourceFile().getName(),
-                                     (JCTree) e.getCompilationUnit(),
+                                     unit, unit,
                                      dprinter);
                              break;
 
                          default:
                              TypeElement elem = e.getTypeElement();
                              h.handle(elem.toString(),
-                                     (JCTree) trees.getTree(elem),
+                                     unit, (JCTree) trees.getTree(elem),
                                      dprinter);
                              break;
                      }
@@ -1258,7 +1547,9 @@ public class DPrinter {
             Handler(String name) {
                 this.name = name;
             }
-            abstract void handle(String label, JCTree tree, DPrinter dprinter);
+            abstract void handle(String label,
+                    JCCompilationUnit unit, JCTree tree,
+                    DPrinter dprinter);
         }
 
         Map<String,Handler> getHandlers() {
@@ -1272,36 +1563,36 @@ public class DPrinter {
         protected final Handler[] defaultHandlers = {
             new Handler("trees") {
                 @Override
-                void handle(String name, JCTree tree, DPrinter dprinter) {
+                void handle(String name, JCCompilationUnit unit, JCTree tree, DPrinter dprinter) {
                     dprinter.printTree(name, tree);
                     dprinter.out.println();
                 }
             },
 
+            new Handler("doctrees") {
+                @Override
+                void handle(final String name, final JCCompilationUnit unit, JCTree tree, final DPrinter dprinter) {
+                    TreeScanner ds = new DeclScanner() {
+                        public void visitDecl(JCTree tree, Symbol sym) {
+                            DocTree dt = unit.docComments.getCommentTree(tree);
+                            if (dt != null) {
+                                String label = (sym == null) ? Pretty.toSimpleString(tree) : sym.name.toString();
+                                dprinter.printDocTree(label, dt);
+                                dprinter.out.println();
+                            }
+                        }
+                    };
+                    ds.scan(tree);
+                }
+            },
+
             new Handler("symbols") {
                 @Override
-                void handle(String name, JCTree tree, final DPrinter dprinter) {
-                    TreeScanner ds = new TreeScanner() {
-                        @Override
-                        public void visitClassDef(JCClassDecl tree) {
-                            visitDecl(tree, tree.sym);
-                            super.visitClassDef(tree);
-                        }
-
-                        @Override
-                        public void visitMethodDef(JCMethodDecl tree) {
-                            visitDecl(tree, tree.sym);
-                            super.visitMethodDef(tree);
-                        }
-
-                        @Override
-                        public void visitVarDef(JCVariableDecl tree) {
-                            visitDecl(tree, tree.sym);
-                            super.visitVarDef(tree);
-                        }
-
-                        void visitDecl(JCTree tree, Symbol sym) {
-                            dprinter.printSymbol(sym.name.toString(), sym);
+                void handle(String name, JCCompilationUnit unit, JCTree tree, final DPrinter dprinter) {
+                    TreeScanner ds = new DeclScanner() {
+                        public void visitDecl(JCTree tree, Symbol sym) {
+                            String label = (sym == null) ? Pretty.toSimpleString(tree) : sym.name.toString();
+                            dprinter.printSymbol(label, sym);
                             dprinter.out.println();
                         }
                     };
@@ -1311,7 +1602,7 @@ public class DPrinter {
 
             new Handler("types") {
                 @Override
-                void handle(String name, JCTree tree, final DPrinter dprinter) {
+                void handle(String name, JCCompilationUnit unit, JCTree tree, final DPrinter dprinter) {
                     TreeScanner ts = new TreeScanner() {
                         @Override
                         public void scan(JCTree tree) {
@@ -1330,6 +1621,28 @@ public class DPrinter {
                 }
             }
         };
+    }
+
+    protected static abstract class DeclScanner extends TreeScanner {
+        @Override
+        public void visitClassDef(JCClassDecl tree) {
+            visitDecl(tree, tree.sym);
+            super.visitClassDef(tree);
+        }
+
+        @Override
+        public void visitMethodDef(JCMethodDecl tree) {
+            visitDecl(tree, tree.sym);
+            super.visitMethodDef(tree);
+        }
+
+        @Override
+        public void visitVarDef(JCVariableDecl tree) {
+            visitDecl(tree, tree.sym);
+            super.visitVarDef(tree);
+        }
+
+        protected abstract void visitDecl(JCTree tree, Symbol sym);
     }
 
     // </editor-fold>

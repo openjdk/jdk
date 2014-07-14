@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,11 +41,19 @@ import javax.swing.tree.ExpandVetoException;
 public interface TreeWillExpandListener extends EventListener {
     /**
      * Invoked whenever a node in the tree is about to be expanded.
+     *
+     * @param event a {@code TreeExpansionEvent} containing a {@code TreePath}
+     *              object for the node
+     * @throws ExpandVetoException to signify expansion has been canceled
      */
     public void treeWillExpand(TreeExpansionEvent event) throws ExpandVetoException;
 
     /**
      * Invoked whenever a node in the tree is about to be collapsed.
+     *
+     * @param event a {@code TreeExpansionEvent} containing a {@code TreePath}
+     *              object for the node
+     * @throws ExpandVetoException to signify collapse has been canceled
      */
     public void treeWillCollapse(TreeExpansionEvent event) throws ExpandVetoException;
 }

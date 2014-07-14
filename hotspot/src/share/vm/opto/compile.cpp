@@ -29,6 +29,7 @@
 #include "classfile/systemDictionary.hpp"
 #include "code/exceptionHandlerTable.hpp"
 #include "code/nmethod.hpp"
+#include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
 #include "compiler/disassembler.hpp"
 #include "compiler/oopMap.hpp"
@@ -534,6 +535,7 @@ void Compile::init_scratch_buffer_blob(int const_size) {
     if (scratch_buffer_blob() == NULL) {
       // Let CompilerBroker disable further compilations.
       record_failure("Not enough space for scratch buffer in CodeCache");
+      CompileBroker::handle_full_code_cache();
       return;
     }
   }

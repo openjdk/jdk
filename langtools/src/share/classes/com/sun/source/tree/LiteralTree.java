@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,5 +42,10 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface LiteralTree extends ExpressionTree {
+    /**
+     * Returns the value of the literal expression.
+     * The value will be a boxed primitive value, a String, or {@code null}.
+     * @return the value
+     */
     Object getValue();
 }

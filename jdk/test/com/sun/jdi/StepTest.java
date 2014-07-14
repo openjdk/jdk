@@ -51,15 +51,15 @@
  *                     |  |    |  +--- Debuggee command Line
  *                     V  V    V  V      Workaround-----+
  *                                                      V
- *  @run main StepTest 2 line  2 MethodCalls
- *  @run main StepTest 3 line 14 MethodCalls
+ *  @run driver StepTest 2 line  2 MethodCalls
+ *  @run driver StepTest 3 line 14 MethodCalls
  *
- *  @run main StepTest 2 line 18 MethodCallsReflection  12
+ *  @run driver StepTest 2 line 18 MethodCallsReflection  12
  *
- *  @run main StepTest 2 min   4 MethodCalls
- *  @run main StepTest 3 min  43 MethodCalls
+ *  @run driver StepTest 2 min   4 MethodCalls
+ *  @run driver StepTest 3 min  43 MethodCalls
  *
- *  @run main StepTest 2 line 65 ControlFlow            64
+ *  @run driver StepTest 2 line 65 ControlFlow            64
  */
 
 /*

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,7 +71,10 @@ import java.lang.annotation.*;
 @Exported
 public @interface Exported {
     /**
-     * Whether or not the annotated type or package is an exported part of the JDK.
+     * Whether or not the annotated type or package is an exported
+     * part of the JDK.
+     * @return whether or not the annotated type or package is an exported
+     * part of the JDK
      */
     boolean value() default true;
 }

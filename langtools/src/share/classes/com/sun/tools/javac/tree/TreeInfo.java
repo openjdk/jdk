@@ -656,6 +656,10 @@ public class TreeInfo {
                 if (that.packge == sym) result = that;
                 else super.visitTopLevel(that);
             }
+            public void visitPackageDef(JCPackageDecl that) {
+                if (that.packge == sym) result = that;
+                else super.visitPackageDef(that);
+            }
             public void visitClassDef(JCClassDecl that) {
                 if (that.sym == sym) result = that;
                 else super.visitClassDef(that);

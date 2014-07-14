@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,9 @@ package com.sun.source.doctree;
  */
 @jdk.Exported
 public interface DocTree {
+    /**
+     * Enumerates all kinds of trees.
+     */
     @jdk.Exported
     enum Kind {
         /**
@@ -227,6 +230,9 @@ public interface DocTree {
          */
         OTHER;
 
+        /**
+         * The name of the tag, if any, associated with this kind of node.
+         */
         public final String tagName;
 
         Kind() {
@@ -239,7 +245,7 @@ public interface DocTree {
     }
 
     /**
-     * Gets the kind of this tree.
+     * Returns the kind of this tree.
      *
      * @return the kind of this tree.
      */
@@ -251,6 +257,9 @@ public interface DocTree {
      *
      * @param <R> result type of this operation.
      * @param <D> type of additional data.
+     * @param visitor the visitor to be called
+     * @param data a parameter value to be passed to the visitor method
+     * @return the value returned from the visitor method
      */
     <R, D> R accept(DocTreeVisitor<R,D> visitor, D data);
 }

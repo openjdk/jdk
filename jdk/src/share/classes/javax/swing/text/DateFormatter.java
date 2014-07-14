@@ -108,8 +108,8 @@ public class DateFormatter extends InternationalFormatter {
     /**
      * Returns the field that will be adjusted by adjustValue.
      */
-    Object getAdjustField(int start, Map attributes) {
-        Iterator attrs = attributes.keySet().iterator();
+    Object getAdjustField(int start, Map<?, ?> attributes) {
+        Iterator<?> attrs = attributes.keySet().iterator();
 
         while (attrs.hasNext()) {
             Object key = attrs.next();
@@ -127,7 +127,7 @@ public class DateFormatter extends InternationalFormatter {
      * Adjusts the Date if FieldPosition identifies a known calendar
      * field.
      */
-    Object adjustValue(Object value, Map attributes, Object key,
+    Object adjustValue(Object value, Map<?, ?> attributes, Object key,
                            int direction) throws
                       BadLocationException, ParseException {
         if (key != null) {

@@ -1,6 +1,3 @@
-grant codeBase "file:${{java.ext.dirs}}/*" {
-	permission java.security.AllPermission;
-};
 
 grant {
 	permission java.lang.RuntimePermission "createClassLoader";

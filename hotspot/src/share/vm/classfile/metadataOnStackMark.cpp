@@ -47,8 +47,11 @@ MetadataOnStackMark::MetadataOnStackMark() {
   if (_marked_objects == NULL) {
     _marked_objects = new (ResourceObj::C_HEAP, mtClass) GrowableArray<Metadata*>(1000, true);
   }
+
   Threads::metadata_do(Metadata::mark_on_stack);
-  CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
+  if (JvmtiExport::has_redefined_a_class()) {
+    CodeCache::alive_nmethods_do(nmethod::mark_on_stack);
+  }
   CompileBroker::mark_on_stack();
   JvmtiCurrentBreakpoints::metadata_do(Metadata::mark_on_stack);
   ThreadService::metadata_do(Metadata::mark_on_stack);

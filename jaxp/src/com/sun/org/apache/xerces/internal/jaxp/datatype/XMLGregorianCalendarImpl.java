@@ -188,7 +188,6 @@ import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
  * @author <a href="mailto:Kohsuke.Kawaguchi@Sun.com">Kohsuke Kawaguchi</a>
  * @author <a href="mailto:Joseph.Fialli@Sun.com">Joseph Fialli</a>
  * @author <a href="mailto:Sunitha.Reddy@Sun.com">Sunitha Reddy</a>
- * @version $Revision: 1.14 $, $Date: 2010-11-10 07:41:41 $
  * @see javax.xml.datatype.Duration
  * @since 1.5
  */

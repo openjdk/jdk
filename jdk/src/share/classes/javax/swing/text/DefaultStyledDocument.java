@@ -1048,8 +1048,9 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                 styleChangeListener = createStyleChangeListener();
             }
             if (styleChangeListener != null && styles != null) {
-                Enumeration styleNames = styles.getStyleNames();
-                Vector v = (Vector)listeningStyles.clone();
+                Enumeration<?> styleNames = styles.getStyleNames();
+                @SuppressWarnings("unchecked")
+                Vector<Style> v = (Vector<Style>)listeningStyles.clone();
                 listeningStyles.removeAllElements();
                 List<ChangeListener> staleListeners =
                     AbstractChangeHandler.getStaleListeners(styleChangeListener);
@@ -1069,7 +1070,7 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
                     }
                 }
                 for (int counter = v.size() - 1; counter >= 0; counter--) {
-                    Style aStyle = (Style)v.elementAt(counter);
+                    Style aStyle = v.elementAt(counter);
                     aStyle.removeChangeListener(styleChangeListener);
                 }
                 if (listeningStyles.size() == 0) {
@@ -2630,14 +2631,14 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
         }
 
         /** Class-specific reference queues.  */
-        private final static Map<Class, ReferenceQueue<DefaultStyledDocument>> queueMap
-                = new HashMap<Class, ReferenceQueue<DefaultStyledDocument>>();
+        private final static Map<Class<?>, ReferenceQueue<DefaultStyledDocument>> queueMap
+                = new HashMap<Class<?>, ReferenceQueue<DefaultStyledDocument>>();
 
         /** A weak reference to the document object.  */
         private DocReference doc;
 
         AbstractChangeHandler(DefaultStyledDocument d) {
-            Class c = getClass();
+            Class<?> c = getClass();
             ReferenceQueue<DefaultStyledDocument> q;
             synchronized (queueMap) {
                 q = queueMap.get(c);

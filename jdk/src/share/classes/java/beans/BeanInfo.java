@@ -48,6 +48,8 @@ import java.awt.Image;
  * the {@code SimpleBeanInfo} class to define specific information.
  * <p>
  * See also the {@link Introspector} class to learn more about bean behavior.
+ *
+ * @since 1.1
  */
 public interface BeanInfo {
 

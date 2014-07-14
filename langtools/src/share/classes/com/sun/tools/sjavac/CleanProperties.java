@@ -36,6 +36,7 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.server.JavacService;
 
 /**
  * The clean properties transform should not be necessary.
@@ -56,7 +57,8 @@ public class CleanProperties implements Transformer
         // Any extra information is ignored for clean properties.
     }
 
-    public boolean transform(Map<String,Set<URI>> pkgSrcs,
+    public boolean transform(JavacService javacService,
+                             Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,
                              Map<String,Set<String>> oldPackageDependencies,

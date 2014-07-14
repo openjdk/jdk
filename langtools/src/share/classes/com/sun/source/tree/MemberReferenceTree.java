@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,13 +48,33 @@ public interface MemberReferenceTree extends ExpressionTree {
      */
     @jdk.Exported
     public enum ReferenceMode {
-        /** enum constant for method references */
+        /** enum constant for method references. */
         INVOKE,
-        /** enum constant for constructor references */
+        /** enum constant for constructor references. */
         NEW
     }
+
+    /**
+     * Returns the mode of the reference.
+     * @return the mode
+     */
     ReferenceMode getMode();
+
+    /**
+     * Returns the qualifier expression for the reference.
+     * @return the qualifier expression
+     */
     ExpressionTree getQualifierExpression();
+
+    /**
+     * Returns the name of the reference.
+     * @return the name
+     */
     Name getName();
+
+    /**
+     * Returns the type arguments for the reference.
+     * @return the type arguments
+     */
     List<? extends ExpressionTree> getTypeArguments();
 }

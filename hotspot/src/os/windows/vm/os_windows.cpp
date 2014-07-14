@@ -3516,18 +3516,15 @@ void os::infinite_sleep() {
 
 typedef BOOL (WINAPI * STTSignature)(void);
 
-os::YieldResult os::NakedYield() {
+void os::naked_yield() {
   // Use either SwitchToThread() or Sleep(0)
   // Consider passing back the return value from SwitchToThread().
   if (os::Kernel32Dll::SwitchToThreadAvailable()) {
-    return SwitchToThread() ? os::YIELD_SWITCHED : os::YIELD_NONEREADY;
+    SwitchToThread();
   } else {
     Sleep(0);
   }
-  return os::YIELD_UNKNOWN;
 }
-
-void os::yield() {  os::NakedYield(); }
 
 // Win32 only gives you access to seven real priorities at a time,
 // so we compress Java's ten down to seven.  It would be better
@@ -4877,8 +4874,7 @@ void os::PlatformEvent::unpark() {
   //    1 :=> 1
   //   -1 :=> either 0 or 1; must signal target thread
   //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
-  //          unpark() calls.
+  //          0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means

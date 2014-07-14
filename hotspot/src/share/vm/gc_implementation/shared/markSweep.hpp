@@ -65,17 +65,6 @@ class MarkSweep : AllStatic {
     virtual void do_oop(narrowOop* p);
   };
 
-  // The one and only place to start following the classes.
-  // Should only be applied to the ClassLoaderData klasses list.
-  class FollowKlassClosure : public KlassClosure {
-   public:
-    void do_klass(Klass* klass);
-  };
-  class AdjustKlassClosure : public KlassClosure {
-   public:
-    void do_klass(Klass* klass);
-  };
-
   class FollowStackClosure: public VoidClosure {
    public:
     virtual void do_void();
@@ -144,10 +133,10 @@ class MarkSweep : AllStatic {
   static IsAliveClosure       is_alive;
   static FollowRootClosure    follow_root_closure;
   static MarkAndPushClosure   mark_and_push_closure;
-  static FollowKlassClosure   follow_klass_closure;
   static FollowStackClosure   follow_stack_closure;
+  static CLDToOopClosure      follow_cld_closure;
   static AdjustPointerClosure adjust_pointer_closure;
-  static AdjustKlassClosure   adjust_klass_closure;
+  static CLDToOopClosure      adjust_cld_closure;
 
   // Accessors
   static uint total_invocations() { return _total_invocations; }

@@ -99,34 +99,34 @@ public class CK_X9_42_DH1_DERIVE_PARAMS {
      * @return the string representation of CK_PKCS5_PBKD2_PARAMS
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("kdf: 0x");
-        buffer.append(Functions.toFullHexString(kdf));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("kdf: 0x");
+        sb.append(Functions.toFullHexString(kdf));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pOtherInfoLen: ");
-        buffer.append(pOtherInfo.length);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pOtherInfoLen: ");
+        sb.append(pOtherInfo.length);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pOtherInfo: ");
-        buffer.append(Functions.toHexString(pOtherInfo));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pOtherInfo: ");
+        sb.append(Functions.toHexString(pOtherInfo));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pPublicDataLen: ");
-        buffer.append(pPublicData.length);
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("pPublicDataLen: ");
+        sb.append(pPublicData.length);
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("pPublicData: ");
-        buffer.append(Functions.toHexString(pPublicData));
+        sb.append(Constants.INDENT);
+        sb.append("pPublicData: ");
+        sb.append(Functions.toHexString(pPublicData));
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString();
+        return sb.toString();
     }
 
 }

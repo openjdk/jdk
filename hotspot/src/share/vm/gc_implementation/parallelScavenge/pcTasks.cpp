@@ -59,7 +59,7 @@ void ThreadRootsMarkingTask::do_it(GCTaskManager* manager, uint which) {
 
   PSParallelCompact::MarkAndPushClosure mark_and_push_closure(cm);
   CLDToOopClosure mark_and_push_from_clds(&mark_and_push_closure, true);
-  CodeBlobToOopClosure mark_and_push_in_blobs(&mark_and_push_closure, /*do_marking=*/ true);
+  MarkingCodeBlobClosure mark_and_push_in_blobs(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
 
   if (_java_thread != NULL)
     _java_thread->oops_do(
@@ -100,7 +100,7 @@ void MarkFromRootsTask::do_it(GCTaskManager* manager, uint which) {
     case threads:
     {
       ResourceMark rm;
-      CodeBlobToOopClosure each_active_code_blob(&mark_and_push_closure, /*do_marking=*/ true);
+      MarkingCodeBlobClosure each_active_code_blob(&mark_and_push_closure, !CodeBlobToOopClosure::FixRelocations);
       CLDToOopClosure mark_and_push_from_cld(&mark_and_push_closure);
       Threads::oops_do(&mark_and_push_closure, &mark_and_push_from_cld, &each_active_code_blob);
     }

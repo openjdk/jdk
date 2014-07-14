@@ -75,7 +75,7 @@ public class GDIWindowSurfaceData extends SurfaceData {
     public static final SurfaceType ThreeByteBgrGdi =
         SurfaceType.ThreeByteBgr.deriveSubType(DESC_GDI);
 
-    private static native void initIDs(Class xorComp);
+    private static native void initIDs(Class<?> xorComp);
 
     static {
         initIDs(XORComposite.class);

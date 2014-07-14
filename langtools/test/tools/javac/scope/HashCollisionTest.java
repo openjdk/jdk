@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,16 +25,21 @@
  * @test
  * @bug 7004029
  * @summary Ensure Scope impl can cope with hash collisions
+ * @library /tools/javac/lib
+ * @build DPrinter HashCollisionTest
+ * @run main HashCollisionTest
  */
 
 import java.lang.reflect.*;
 import java.io.*;
+
+import com.sun.source.util.Trees;
+import com.sun.tools.javac.api.JavacTrees;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Scope.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.file.JavacFileManager;
-import static com.sun.tools.javac.code.Kinds.*;
 
 public class HashCollisionTest {
     public static void main(String... args) throws Exception {
@@ -47,12 +52,13 @@ public class HashCollisionTest {
         JavacFileManager.preRegister(context); // required by ClassReader which is required by Symtab
         names = Names.instance(context);       // Name.Table impls tied to an instance of Names
         symtab = Symtab.instance(context);
+        trees = JavacTrees.instance(context);
 
         // determine hashMask for an empty scope
-        Scope emptyScope = new Scope(symtab.unnamedPackage); // any owner will do
-        Field sHashMask = Scope.class.getDeclaredField("hashMask");
-        sHashMask.setAccessible(true);
-        scopeHashMask = sHashMask.getInt(emptyScope);
+        Scope emptyScope = WriteableScope.create(symtab.unnamedPackage); // any owner will do
+        Field field = emptyScope.getClass().getDeclaredField("hashMask");
+        field.setAccessible(true);
+        scopeHashMask = field.getInt(emptyScope);
         log("scopeHashMask: " + scopeHashMask);
 
         // 1. determine the Name.hashCode of "Entry", and therefore the index of
@@ -92,7 +98,7 @@ public class HashCollisionTest {
 
         // 4. Create a package containing a nested class using the name from 2
         PackageSymbol p = new PackageSymbol(names.fromString("p"), symtab.rootPackage);
-        p.members_field = new Scope(p);
+        p.members_field = WriteableScope.create(p);
         ClassSymbol inner = createClass(innerName, p);
         // we'll need this later when we "rename" cn
         ClassSymbol outer = createClass(outerName, p);
@@ -100,42 +106,25 @@ public class HashCollisionTest {
         // 5. Create a star-import scope
         log ("createStarImportScope");
 
-        // if StarImportScope exists, use it, otherwise, for testing legacy code,
-        // fall back on ImportScope
-        Scope starImportScope;
-        Method importAll;
         PackageSymbol pkg = new PackageSymbol(names.fromString("pkg"), symtab.rootPackage);
-        try {
-            Class<?> c = Class.forName("com.sun.tools.javac.code.Scope$StarImportScope");
-            Constructor ctor = c.getDeclaredConstructor(new Class[] { Symbol.class });
-            importAll = c.getDeclaredMethod("importAll", new Class[] { Scope.class });
-            starImportScope = (Scope) ctor.newInstance(new Object[] { pkg });
-        } catch (ClassNotFoundException e) {
-            starImportScope = new ImportScope(pkg);
-            importAll = null;
-        }
+        StarImportScope starImportScope = new StarImportScope(pkg);
 
         dump("initial", starImportScope);
 
         // 6. Insert the contents of the package from 4.
-        Scope p_members = p.members();
-        if (importAll != null) {
-            importAll.invoke(starImportScope, p_members);
-        } else {
-            Scope fromScope = p_members;
-            Scope toScope = starImportScope;
-            // The following lines are taken from MemberEnter.importAll,
-            // before the use of StarImportScope.importAll.
-            for (Scope.Entry e = fromScope.elems; e != null; e = e.sibling) {
-                if (e.sym.kind == TYP && !toScope.includes(e.sym))
-                    toScope.enter(e.sym, fromScope);
+        Scope fromScope = p.members();
+        ImportFilter typeFilter = new ImportFilter() {
+            @Override
+            public boolean accepts(Scope origin, Symbol sym) {
+                return sym.kind == Kinds.TYP;
             }
-        }
+        };
+        starImportScope.importAll(fromScope, fromScope, typeFilter, false);
 
         dump("imported p", starImportScope);
 
         // 7. Insert the class from 3.
-        starImportScope.enter(ce, cc.members_field);
+        starImportScope.importAll(cc.members_field, cc.members_field, typeFilter, false);
         dump("imported ce", starImportScope);
 
         /*
@@ -149,11 +138,11 @@ public class HashCollisionTest {
         outer.members_field.enter(inner);
 
         // 9. Lookup Entry
-        Scope.Entry e = starImportScope.lookup(entry);
-        dump("final", starImportScope);
+        Symbol found = starImportScope.findFirst(entry);
+        if (found != ce)
+            throw new Exception("correct symbol not found: " + entry + "; found=" + found);
 
-        if (e.sym == null)
-            throw new Exception("symbol not found: " + entry);
+        dump("final", starImportScope);
     }
 
     /*
@@ -170,7 +159,7 @@ public class HashCollisionTest {
      */
     ClassSymbol createClass(Name name, Symbol owner) {
         ClassSymbol sym = new ClassSymbol(0, name, owner);
-        sym.members_field = new Scope(sym);
+        sym.members_field = WriteableScope.create(sym);
         if (owner != symtab.unnamedPackage)
             owner.members().enter(sym);
         return sym;
@@ -180,58 +169,16 @@ public class HashCollisionTest {
      * Dump the contents of a scope to System.err.
      */
     void dump(String label, Scope s) throws Exception {
-        dump(label, s, System.err);
+        PrintWriter pw = new PrintWriter(System.err);
+        new DPrinter(pw, trees).printScope(label, s);
+        pw.flush();
     }
 
-    /**
-     * Dump the contents of a scope to a stream.
-     */
-    void dump(String label, Scope s, PrintStream out) throws Exception {
-        out.println(label);
-        Field sTable = Scope.class.getDeclaredField("table");
-        sTable.setAccessible(true);
+    Object readField(Object scope, String fieldName) throws Exception {
+        Field field = scope.getClass().getDeclaredField(fieldName);
+        field.setAccessible(true);
 
-        out.println("owner:" + s.owner);
-        Scope.Entry[] table = (Scope.Entry[]) sTable.get(s);
-        for (int i = 0; i < table.length; i++) {
-            if (i > 0)
-                out.print(", ");
-            out.print(i + ":" + toString(table[i], table, false));
-        }
-        out.println();
-    }
-
-    /**
-     * Create a string showing the contents of an entry, using the table
-     * to help identify cross-references to other entries in the table.
-     * @param e the entry to be shown
-     * @param table the table containing the other entries
-     */
-    String toString(Scope.Entry e, Scope.Entry[] table, boolean ref) {
-        if (e == null)
-            return "null";
-        if (e.sym == null)
-            return "sent"; // sentinel
-        if (ref) {
-            int index = indexOf(table, e);
-            if (index != -1)
-                return String.valueOf(index);
-        }
-        return "(" + e.sym.name + ":" + e.sym
-                + ",shdw:" + toString(e.next(), table, true)
-                + ",sibl:" + toString(e.sibling, table, true)
-                + ((e.sym.owner != e.scope.owner)
-                    ? (",BOGUS[" + e.sym.owner + "," + e.scope.owner + "]")
-                    : "")
-                + ")";
-    }
-
-    <T> int indexOf(T[] array, T item) {
-        for (int i = 0; i < array.length; i++) {
-            if (array[i] == item)
-                return i;
-        }
-        return -1;
+        return field.get(scope);
     }
 
     /**
@@ -246,4 +193,5 @@ public class HashCollisionTest {
 
     Names names;
     Symtab symtab;
+    Trees trees;
 }

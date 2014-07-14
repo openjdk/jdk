@@ -21,7 +21,7 @@
  * under the License.
  */
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * ===========================================================================
@@ -293,7 +293,7 @@ public final class DOMReference extends DOMStructure
         return type;
     }
 
-    public List getTransforms() {
+    public List<Transform> getTransforms() {
         return Collections.unmodifiableList(allTransforms);
     }
 
@@ -643,7 +643,7 @@ public final class DOMReference extends DOMStructure
                 try {
                     final Set<Node> s = xsi.getNodeSet();
                     return new NodeSetData() {
-                        public Iterator iterator() { return s.iterator(); }
+                        public Iterator<Node> iterator() { return s.iterator(); }
                     };
                 } catch (Exception e) {
                     // log a warning

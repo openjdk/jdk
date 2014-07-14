@@ -85,6 +85,7 @@ import java.util.Hashtable;
  * @author Georges Saab
  * @author Jeff Shapiro
  * @see Action
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class JToolBar extends JComponent implements SwingConstants, Accessible
@@ -161,6 +162,8 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
 
     /**
      * Returns the tool bar's current UI.
+     *
+     * @return the tool bar's current UI.
      * @see #setUI
      */
     public ToolBarUI getUI() {
@@ -555,7 +558,8 @@ public class JToolBar extends JComponent implements SwingConstants, Accessible
      * or <code>null</code> if the default
      * property change listener for the control is desired.
      *
-     * @return <code>null</code>
+     * @param b a {@code JButton}
+     * @return {@code null}
      */
     protected PropertyChangeListener createActionChangeListener(JButton b) {
         return null;

@@ -1997,8 +1997,10 @@ public class File
                                       File directory)
         throws IOException
     {
-        if (prefix.length() < 3)
-            throw new IllegalArgumentException("Prefix string too short");
+        if (prefix.length() < 3) {
+            throw new IllegalArgumentException("Prefix string \"" + prefix +
+                "\" too short: length must be at least 3");
+        }
         if (suffix == null)
             suffix = ".tmp";
 

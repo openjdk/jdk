@@ -7,7 +7,7 @@
  *
  *  @run build VMConnection TargetListener TargetAdapter
  *  @run compile -g LineNumberOnBraceTest.java
- *  @run main LineNumberOnBraceTest
+ *  @run driver LineNumberOnBraceTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

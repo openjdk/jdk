@@ -72,7 +72,7 @@ import org.xml.sax.SAXNotSupportedException;
  * <p>This adapter does not test for duplicate Namespace-qualified
  * attribute names.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @version 2.0.1 (sax2r2)
  * @see org.xml.sax.helpers.XMLReaderAdapter

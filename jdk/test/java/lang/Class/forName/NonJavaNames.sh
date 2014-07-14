@@ -25,19 +25,17 @@
 # @bug 4952558
 # @summary Verify names that aren't legal Java names are accepted by forName.
 # @author Joseph D. Darcy
-# @compile -source 1.5 -target 1.5 NonJavaNames.java
+# @compile NonJavaNames.java
 # @run shell NonJavaNames.sh
 
 # This test uses hand-generated class files stored in the ./classes
 # directory.  After the renaming done below, those class files have
-# single character names that are legal class names under class file
-# version 49 but *not* legal Java language identifiers; e.g. "3" and
-# "+".  First, Z.java is compiled to Z.class using "-target 1.5."
-# Next, to create a test class file, the appropriate name structures
-# within the class files are updated, as is the "Hello world" string
-# the class's main method prints out.  If the definition of the
-# semantics of "-target 1.5" changes, the test class files should be
-# regenerated.
+# single character names that are legal class names under in the class
+# file but *not* legal Java language identifiers; e.g. "3" and "+".
+# First, Z.java is compiled to Z.class.  Next, to create a test class
+# file, the appropriate name structures within the class files are
+# updated, as is the "Hello world" string the class's main method
+# prints out.
 
 # Verify directory context variables are set
 if [ "${TESTJAVA}" = "" ]

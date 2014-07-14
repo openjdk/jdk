@@ -109,7 +109,6 @@ public class LocalManagementTest {
         Process serverPrc = null, clientPrc = null;
         try {
             final AtomicReference<String> port = new AtomicReference<>();
-            final AtomicReference<String> pid = new AtomicReference<>();
 
             serverPrc = ProcessTools.startProcess(
                 "TestApplication(" + testId + ")",
@@ -117,12 +116,10 @@ public class LocalManagementTest {
                 (String line) -> {
                     if (line.startsWith("port:")) {
                          port.set(line.split("\\:")[1]);
-                     } else  if (line.startsWith("pid:")) {
-                         pid.set(line.split("\\:")[1]);
-                     } else if (line.startsWith("waiting")) {
-                         return true;
-                     }
-                     return false;
+                    } else if (line.startsWith("waiting")) {
+                        return true;
+                    }
+                    return false;
                 },
                 5,
                 TimeUnit.SECONDS
@@ -130,7 +127,7 @@ public class LocalManagementTest {
 
             System.out.println("Attaching test manager:");
             System.out.println("=========================");
-            System.out.println("  PID           : " + pid.get());
+            System.out.println("  PID           : " + serverPrc.getPid());
             System.out.println("  shutdown port : " + port.get());
 
             ProcessBuilder client = ProcessTools.createJavaProcessBuilder(
@@ -143,7 +140,7 @@ public class LocalManagementTest {
                     File.separator +
                     "tools.jar",
                 "TestManager",
-                pid.get(),
+                String.valueOf(serverPrc.getPid()),
                 port.get(),
                 "true"
             );

@@ -42,6 +42,7 @@ import com.sun.tools.javac.comp.Annotate;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.code.Type.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.file.BaseFileObject;
@@ -90,18 +91,6 @@ public class ClassReader {
      */
     public boolean readAllOfClassFile = false;
 
-    /** Switch: read GJ signature information.
-     */
-    boolean allowGenerics;
-
-    /** Switch: read varargs attribute.
-     */
-    boolean allowVarargs;
-
-    /** Switch: allow annotations.
-     */
-    boolean allowAnnotations;
-
     /** Switch: allow simplified varargs.
      */
     boolean allowSimplifiedVarargs;
@@ -141,7 +130,7 @@ public class ClassReader {
 
     /** The current scope where type variables are entered.
      */
-    protected Scope typevars;
+    protected WriteableScope typevars;
 
     /** The path name of the class file currently being read.
      */
@@ -222,16 +211,13 @@ public class ClassReader {
         checkClassFile = options.isSet("-checkclassfile");
 
         Source source = Source.instance(context);
-        allowGenerics    = source.allowGenerics();
-        allowVarargs     = source.allowVarargs();
-        allowAnnotations = source.allowAnnotations();
         allowSimplifiedVarargs = source.allowSimplifiedVarargs();
 
         saveParameterNames = options.isSet("save-parameter-names");
 
         profile = Profile.instance(context);
 
-        typevars = new Scope(syms.noSymbol);
+        typevars = WriteableScope.create(syms.noSymbol);
 
         lintClassfile = Lint.instance(context).isEnabled(LintCategory.CLASSFILE);
 
@@ -832,9 +818,9 @@ public class ClassReader {
     /** Find type variable with given name in `typevars' scope.
      */
     Type findTypeVar(Name name) {
-        Scope.Entry e = typevars.lookup(name);
-        if (e.scope != null) {
-            return e.sym.type;
+        Symbol s = typevars.findFirst(name);
+        if (s != null) {
+            return s.type;
         } else {
             if (readingClassAttr) {
                 // While reading the class attribute, the supertypes
@@ -1025,9 +1011,7 @@ public class ClassReader {
 
             new AttributeReader(names.Synthetic, V45_3, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    // bridge methods are visible when generics not enabled
-                    if (allowGenerics || (sym.flags_field & BRIDGE) == 0)
-                        sym.flags_field |= SYNTHETIC;
+                    sym.flags_field |= SYNTHETIC;
                 }
             },
 
@@ -1042,11 +1026,6 @@ public class ClassReader {
             },
 
             new AttributeReader(names.Signature, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
-                @Override
-                protected boolean accepts(AttributeKind kind) {
-                    return super.accepts(kind) && allowGenerics;
-                }
-
                 protected void read(Symbol sym, int attrLen) {
                     if (sym.kind == TYP) {
                         ClassSymbol c = (ClassSymbol) sym;
@@ -1109,16 +1088,13 @@ public class ClassReader {
 
             new AttributeReader(names.Annotation, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    if (allowAnnotations)
-                        sym.flags_field |= ANNOTATION;
+                    sym.flags_field |= ANNOTATION;
                 }
             },
 
             new AttributeReader(names.Bridge, V49, MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
                     sym.flags_field |= BRIDGE;
-                    if (!allowGenerics)
-                        sym.flags_field &= ~SYNTHETIC;
                 }
             },
 
@@ -1130,8 +1106,7 @@ public class ClassReader {
 
             new AttributeReader(names.Varargs, V49, CLASS_OR_MEMBER_ATTRIBUTE) {
                 protected void read(Symbol sym, int attrLen) {
-                    if (allowVarargs)
-                        sym.flags_field |= VARARGS;
+                    sym.flags_field |= VARARGS;
                 }
             },
 
@@ -1228,9 +1203,10 @@ public class ClassReader {
 
         MethodType type = nt.uniqueType.type.asMethodType();
 
-        for (Scope.Entry e = scope.lookup(nt.name); e.scope != null; e = e.next())
-            if (e.sym.kind == MTH && isSameBinaryType(e.sym.type.asMethodType(), type))
-                return (MethodSymbol)e.sym;
+        for (Symbol sym : scope.getSymbolsByName(nt.name)) {
+            if (sym.kind == MTH && isSameBinaryType(sym.type.asMethodType(), type))
+                return (MethodSymbol)sym;
+        }
 
         if (nt.name != names.init)
             // not a constructor
@@ -1769,10 +1745,7 @@ public class ClassReader {
         MethodSymbol findAccessMethod(Type container, Name name) {
             CompletionFailure failure = null;
             try {
-                for (Scope.Entry e = container.tsym.members().lookup(name);
-                     e.scope != null;
-                     e = e.next()) {
-                    Symbol sym = e.sym;
+                for (Symbol sym : container.tsym.members().getSymbolsByName(name)) {
                     if (sym.kind == MTH && sym.type.getParameterTypes().length() == 0)
                         return (MethodSymbol) sym;
                 }
@@ -1852,11 +1825,9 @@ public class ClassReader {
             VarSymbol enumerator = null;
             CompletionFailure failure = null;
             try {
-                for (Scope.Entry e = enumTypeSym.members().lookup(proxy.enumerator);
-                     e.scope != null;
-                     e = e.next()) {
-                    if (e.sym.kind == VAR) {
-                        enumerator = (VarSymbol)e.sym;
+                for (Symbol sym : enumTypeSym.members().getSymbolsByName(proxy.enumerator)) {
+                    if (sym.kind == VAR) {
+                        enumerator = (VarSymbol)sym;
                         break;
                     }
                 }
@@ -2197,7 +2168,7 @@ public class ClassReader {
         ClassType ct = (ClassType)c.type;
 
         // allocate scope for members
-        c.members_field = new Scope(c);
+        c.members_field = WriteableScope.create(c);
 
         // prepare type variable table
         typevars = typevars.dup(currentOwner);
@@ -2416,8 +2387,6 @@ public class ClassReader {
         if ((flags & ACC_BRIDGE) != 0) {
             flags &= ~ACC_BRIDGE;
             flags |= BRIDGE;
-            if (!allowGenerics)
-                flags &= ~SYNTHETIC;
         }
         if ((flags & ACC_VARARGS) != 0) {
             flags &= ~ACC_VARARGS;

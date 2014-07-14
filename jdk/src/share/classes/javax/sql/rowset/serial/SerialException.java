@@ -32,6 +32,7 @@ import java.sql.SQLException;
  * SQL types such as <code>BLOB, CLOB, STRUCT or ARRAY</code> in
  * addition to SQL types such as <code>DATALINK and JAVAOBJECT</code>
  *
+ * @since 1.5
  */
 public class SerialException extends java.sql.SQLException {
 

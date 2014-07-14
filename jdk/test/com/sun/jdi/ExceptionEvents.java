@@ -32,32 +32,32 @@
  *  @run build TestScaffold VMConnection
  *  @run compile -g ExceptionEvents.java
  *
- *  @run main/othervm ExceptionEvents N A StackOverflowCaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents C A StackOverflowCaughtTarg null
- *  @run main/othervm ExceptionEvents C A StackOverflowCaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents C A StackOverflowCaughtTarg java.lang.StackOverflowError
- *  @run main/othervm ExceptionEvents N A StackOverflowCaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N A StackOverflowCaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents C A StackOverflowCaughtTarg null
+ *  @run driver ExceptionEvents C A StackOverflowCaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents C A StackOverflowCaughtTarg java.lang.StackOverflowError
+ *  @run driver ExceptionEvents N A StackOverflowCaughtTarg java.lang.NullPointerException
 
- *  @run main/othervm ExceptionEvents N T StackOverflowCaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents C T StackOverflowCaughtTarg null
- *  @run main/othervm ExceptionEvents C T StackOverflowCaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents C T StackOverflowCaughtTarg java.lang.StackOverflowError
- *  @run main/othervm ExceptionEvents N T StackOverflowCaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N T StackOverflowCaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents C T StackOverflowCaughtTarg null
+ *  @run driver ExceptionEvents C T StackOverflowCaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents C T StackOverflowCaughtTarg java.lang.StackOverflowError
+ *  @run driver ExceptionEvents N T StackOverflowCaughtTarg java.lang.NullPointerException
 
- *  @run main/othervm ExceptionEvents N N StackOverflowCaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents C N StackOverflowCaughtTarg null
- *  @run main/othervm ExceptionEvents C N StackOverflowCaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents C N StackOverflowCaughtTarg java.lang.StackOverflowError
- *  @run main/othervm ExceptionEvents N N StackOverflowCaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N N StackOverflowCaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents C N StackOverflowCaughtTarg null
+ *  @run driver ExceptionEvents C N StackOverflowCaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents C N StackOverflowCaughtTarg java.lang.StackOverflowError
+ *  @run driver ExceptionEvents N N StackOverflowCaughtTarg java.lang.NullPointerException
 
- *  @run main/othervm ExceptionEvents N A StackOverflowUncaughtTarg java.lang.Exception
- *  @run main/othervm ExceptionEvents U A StackOverflowUncaughtTarg null
- *  @run main/othervm ExceptionEvents U A StackOverflowUncaughtTarg java.lang.Error
- *  @run main/othervm ExceptionEvents U A StackOverflowUncaughtTarg java.lang.StackOverflowError
- *  @run main/othervm ExceptionEvents N A StackOverflowUncaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N A StackOverflowUncaughtTarg java.lang.Exception
+ *  @run driver ExceptionEvents U A StackOverflowUncaughtTarg null
+ *  @run driver ExceptionEvents U A StackOverflowUncaughtTarg java.lang.Error
+ *  @run driver ExceptionEvents U A StackOverflowUncaughtTarg java.lang.StackOverflowError
+ *  @run driver ExceptionEvents N A StackOverflowUncaughtTarg java.lang.NullPointerException
 
- *  @run main/othervm ExceptionEvents N T StackOverflowUncaughtTarg java.lang.NullPointerException
- *  @run main/othervm ExceptionEvents N N StackOverflowUncaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N T StackOverflowUncaughtTarg java.lang.NullPointerException
+ *  @run driver ExceptionEvents N N StackOverflowUncaughtTarg java.lang.NullPointerException
 
  */
 import com.sun.jdi.*;

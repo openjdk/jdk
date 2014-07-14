@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g LocationTest.java
- *  @run main LocationTest
+ *  @run driver LocationTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

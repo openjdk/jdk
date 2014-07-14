@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import com.sun.source.tree.*;
 public interface SourcePositions {
 
     /**
-     * Gets the starting position of tree within file.  If tree is not found within
+     * Returns the starting position of tree within file.  If tree is not found within
      * file, or if the starting position is not available,
      * return {@link javax.tools.Diagnostic#NOPOS}.
      * The returned position must be at the start of the yield of this tree, that
@@ -58,7 +58,7 @@ public interface SourcePositions {
      long getStartPosition(CompilationUnitTree file, Tree tree);
 
     /**
-     * Gets the ending position of tree within file.  If tree is not found within
+     * Returns the ending position of tree within file.  If tree is not found within
      * file, or if the ending position is not available,
      * return {@link javax.tools.Diagnostic#NOPOS}.
      * The returned position must be at the end of the yield of this tree,

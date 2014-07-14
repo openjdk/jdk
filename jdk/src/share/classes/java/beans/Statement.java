@@ -248,7 +248,7 @@ public class Statement {
                 // ignored elsewhere.
                 if (target == Character.class && arguments.length == 1 &&
                     argClasses[0] == String.class) {
-                    return new Character(((String)arguments[0]).charAt(0));
+                    return ((String)arguments[0]).charAt(0);
                 }
                 try {
                     m = ConstructorFinder.findConstructor((Class)target, argClasses);
@@ -340,7 +340,7 @@ public class Statement {
         if (arguments == null) {
             arguments = emptyArray;
         }
-        StringBuffer result = new StringBuffer(instanceName(target) + "." + methodName + "(");
+        StringBuilder result = new StringBuilder(instanceName(target) + "." + methodName + "(");
         int n = arguments.length;
         for(int i = 0; i < n; i++) {
             result.append(instanceName(arguments[i]));

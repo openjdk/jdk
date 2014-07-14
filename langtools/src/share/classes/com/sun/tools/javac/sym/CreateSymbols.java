@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@ package com.sun.tools.javac.sym;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Kinds;
-import com.sun.tools.javac.code.Scope;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Attribute;
@@ -189,7 +189,7 @@ public class CreateSymbols extends AbstractProcessor {
             new Attribute.Compound(syms.proprietaryType,
                                    List.<Pair<Symbol.MethodSymbol,Attribute>>nil());
         Attribute.Compound[] profileAnnos = new Attribute.Compound[profiles.getProfileCount() + 1];
-        Symbol.MethodSymbol profileValue = (MethodSymbol) syms.profileType.tsym.members().lookup(names.value).sym;
+        Symbol.MethodSymbol profileValue = (MethodSymbol) syms.profileType.tsym.members().findFirst(names.value);
         for (int i = 1; i < profileAnnos.length; i++) {
             profileAnnos[i] = new Attribute.Compound(syms.profileType,
                     List.<Pair<Symbol.MethodSymbol, Attribute>>of(
@@ -259,9 +259,9 @@ public class CreateSymbols extends AbstractProcessor {
             pool.reset();
             cs.pool = pool;
             writer.writeClass(cs);
-            for (Scope.Entry e = cs.members().elems; e != null; e = e.sibling) {
-                if (e.sym.kind == Kinds.TYP) {
-                    ClassSymbol nestedClass = (ClassSymbol)e.sym;
+            for (Symbol sym : cs.members().getSymbols(NON_RECURSIVE)) {
+                if (sym.kind == Kinds.TYP) {
+                    ClassSymbol nestedClass = (ClassSymbol)sym;
                     nestedClass.complete();
                     writeClass(pool, nestedClass, writer);
                 }
@@ -490,7 +490,6 @@ public class CreateSymbols extends AbstractProcessor {
             "org.xml.sax",
             "org.xml.sax.ext",
             "org.xml.sax.helpers",
-            "com.sun.java.browser.dom",
             "org.w3c.dom",
             "org.w3c.dom.bootstrap",
             "org.w3c.dom.ls",

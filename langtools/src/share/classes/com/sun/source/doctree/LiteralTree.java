@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,5 +36,9 @@ package com.sun.source.doctree;
  */
 @jdk.Exported
 public interface LiteralTree extends InlineTagTree {
+    /**
+     * Returns the body of the {@code @code} or {@code @literal} tag.
+     * @return the body of the tag
+     */
     TextTree getBody();
 }

@@ -88,7 +88,7 @@ package org.xml.sax;
  * @deprecated This interface has been replaced by the SAX2
  *             {@link org.xml.sax.Attributes Attributes}
  *             interface, which includes Namespace support.
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.DocumentHandler#startElement startElement
  * @see org.xml.sax.helpers.AttributeListImpl AttributeListImpl

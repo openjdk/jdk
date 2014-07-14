@@ -145,21 +145,6 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         this(propertyMap, propertyMap.properties);
     }
 
-    /**
-     * Duplicates this PropertyMap instance. This is used to duplicate 'shared'
-     * maps {@link PropertyMap} used as process wide singletons. Shared maps are
-     * duplicated for every global scope object. That way listeners, proto and property
-     * histories are scoped within a global scope.
-     *
-     * @return Duplicated {@link PropertyMap}.
-     */
-    public PropertyMap duplicate() {
-        if (Context.DEBUG) {
-            duplicatedCount++;
-        }
-        return new PropertyMap(this.properties, this.className, 0, 0, 0, containsArrayKeys());
-    }
-
     private void writeObject(final ObjectOutputStream out) throws IOException {
         out.defaultWriteObject();
         out.writeObject(properties.getProperties());
@@ -185,6 +170,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      * properties with keys that are valid array indices.</p>
      *
      * @param properties   Collection of initial properties.
+     * @param className    class name
      * @param fieldCount   Number of fields in use.
      * @param fieldMaximum Number of fields available.
      * @param spillLength  Number of used spill slots.
@@ -967,7 +953,6 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
     // counters updated only in debug mode
     private static int count;
     private static int clonedCount;
-    private static int duplicatedCount;
     private static int historyHit;
     private static int protoInvalidations;
     private static int protoHistoryHit;
@@ -985,13 +970,6 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
      */
     public static int getClonedCount() {
         return clonedCount;
-    }
-
-    /**
-     * @return The number of maps that are duplicated.
-     */
-    public static int getDuplicatedCount() {
-        return duplicatedCount;
     }
 
     /**

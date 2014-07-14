@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,6 @@
 
 import java.util.*;
 import java.io.*;
-import java.net.*;
 import java.nio.file.*;
 import java.nio.file.attribute.*;
 import java.nio.charset.*;
@@ -34,11 +33,18 @@ public
 class SJavac {
 
     public static void main(String... args) throws Exception {
-        SJavac s = new SJavac();
-        s.test();
+        try {
+            SJavac s = new SJavac();
+            s.test();
+        } finally {
+            System.out.println("\ntest complete\n");
+        }
     }
 
     FileSystem defaultfs = FileSystems.getDefault();
+    String serverArg = "--server:"
+            + "portfile=testportfile,"
+            + "background=false";
 
     // Where to put generated sources that will
     // test aspects of sjavac, ie JTWork/scratch/gensrc
@@ -132,7 +138,7 @@ class SJavac {
             "private int b() { return A.DEFINITION; } native void foo(); }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         previous_bin_state = collectState(bin);
         previous_headers_state = collectState(headers);
     }
@@ -141,7 +147,7 @@ class SJavac {
         System.out.println("\nTesting that no change in sources implies no change in binaries.");
         System.out.println("------------------------------------------------------------------");
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyEqual(new_bin_state, previous_bin_state);
         Map<String,Long> new_headers_state = collectState(headers);
@@ -154,7 +160,7 @@ class SJavac {
         System.out.println("-----------------------------------------");
         removeFrom(gensrc, "alfa/omega/AA.java");
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyThatFilesHaveBeenRemoved(previous_bin_state, new_bin_state,
                                        "bin/alfa/omega/AA$1.class",
@@ -181,7 +187,7 @@ class SJavac {
                  "public final static int DEFINITION = 18; public void aint() { } private void foo() { } }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
 
         verifyNewerFiles(previous_bin_state, new_bin_state,
@@ -207,7 +213,7 @@ class SJavac {
                        "private int b() { return A.DEFINITION; } }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyNewerFiles(previous_bin_state, new_bin_state,
                          "bin/beta/B.class",
@@ -232,7 +238,7 @@ class SJavac {
                  "@java.lang.annotation.Native final static int alfa = 42; }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyNewerFiles(previous_bin_state, new_bin_state,
                          "bin/beta/B.class",
@@ -258,7 +264,7 @@ class SJavac {
                  "@java.lang.annotation.Native final static int alfa = 43; }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyNewerFiles(previous_bin_state, new_bin_state,
                          "bin/beta/B.class",
@@ -295,7 +301,7 @@ class SJavac {
                  "package beta; public class B { }");
 
         compile("-x", "beta", "gensrc", "gensrc2", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false");
+                serverArg);
         Map<String,Long> new_bin_state = collectState(bin);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
                                      "bin/alfa/omega/A.class",
@@ -306,7 +312,7 @@ class SJavac {
         System.out.println("----- Compile with exluded beta went well!");
         delete(bin);
         compileExpectFailure("gensrc", "gensrc2", "-d", "bin", "-h", "headers", "-j", "1",
-                             "--server:portfile=testserver,background=false");
+                             serverArg);
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
         delete(bin);
@@ -337,7 +343,7 @@ class SJavac {
 
         compile("gensrc", "-x", "beta", "-sourcepath", "gensrc2",
                 "-sourcepath", "gensrc3", "-d", "bin", "-h", "headers", "-j", "1",
-                "--server:portfile=testserver,background=false");
+                serverArg);
 
         System.out.println("The first compile went well!");
         Map<String,Long> new_bin_state = collectState(bin);
@@ -349,7 +355,7 @@ class SJavac {
         delete(bin);
         compileExpectFailure("gensrc", "-sourcepath", "gensrc2", "-sourcepath", "gensrc3",
                              "-d", "bin", "-h", "headers", "-j", "1",
-                             "--server:portfile=testserver,background=false");
+                             serverArg);
 
         System.out.println("----- Compile without exluded beta failed, as expected! Good!");
         delete(bin);
@@ -374,7 +380,7 @@ class SJavac {
                  "package gamma; public class C { alfa.omega.A a; }");
 
         compile("gensrc", "-d", "bin", "-h", "headers", "-j", "3",
-                "--server:portfile=testserver,background=false","--log=debug");
+                serverArg,"--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
                                      "bin/alfa/omega/A.class",
@@ -403,7 +409,7 @@ class SJavac {
                  "package beta; public class B { }");
 
         compile("-x", "beta", "-src", "gensrc", "-x", "alfa/omega", "-sourcepath", "gensrc",
-                "-d", "bin", "--server:portfile=testserver,background=false");
+                "-d", "bin", serverArg);
 
         Map<String,Long> new_bin_state = collectState(bin);
         verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
@@ -412,7 +418,7 @@ class SJavac {
     }
 
     void incrementalCompileTestFullyQualifiedRef() throws Exception {
-        System.out.println("Verify that \"alfa.omega.A a;\" does create a proper dependency.");
+        System.out.println("\nVerify that \"alfa.omega.A a;\" does create a proper dependency.");
         System.out.println("----------------------------------------------------------------");
 
         populate(gensrc,
@@ -427,7 +433,7 @@ class SJavac {
                  "}");
 
         compile("gensrc", "-d", "bin", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> previous_bin_state = collectState(bin);
 
         // Change pubapi of A, this should trigger a recompile of B.
@@ -439,7 +445,7 @@ class SJavac {
                  "}");
 
         compile("gensrc", "-d", "bin", "-j", "1",
-                "--server:portfile=testserver,background=false", "--log=debug");
+                serverArg, "--log=debug");
         Map<String,Long> new_bin_state = collectState(bin);
 
         verifyNewerFiles(previous_bin_state, new_bin_state,
@@ -517,8 +523,7 @@ class SJavac {
         if (rc == 0) throw new Exception("Expected error during compile! Did not fail!");
     }
 
-    Map<String,Long> collectState(Path dir) throws IOException
-    {
+    Map<String,Long> collectState(Path dir) throws IOException {
         final Map<String,Long> files = new HashMap<>();
         Files.walkFileTree(dir, new SimpleFileVisitor<Path>() {
                  @Override

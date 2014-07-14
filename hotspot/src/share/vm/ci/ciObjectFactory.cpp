@@ -46,6 +46,9 @@
 #include "oops/oop.inline.hpp"
 #include "oops/oop.inline2.hpp"
 #include "runtime/fieldType.hpp"
+#if INCLUDE_ALL_GCS
+# include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#endif
 
 // ciObjectFactory
 //
@@ -372,6 +375,37 @@ ciMetadata* ciObjectFactory::create_new_object(Metadata* o) {
   // The oop is of some type not supported by the compiler interface.
   ShouldNotReachHere();
   return NULL;
+}
+
+// ------------------------------------------------------------------
+// ciObjectFactory::ensure_metadata_alive
+//
+// Ensure that the metadata wrapped by the ciMetadata is kept alive by GC.
+// This is primarily useful for metadata which is considered as weak roots
+// by the GC but need to be strong roots if reachable from a current compilation.
+//
+void ciObjectFactory::ensure_metadata_alive(ciMetadata* m) {
+  ASSERT_IN_VM; // We're handling raw oops here.
+
+#if INCLUDE_ALL_GCS
+  if (!UseG1GC) {
+    return;
+  }
+  Klass* metadata_owner_klass;
+  if (m->is_klass()) {
+    metadata_owner_klass = m->as_klass()->get_Klass();
+  } else if (m->is_method()) {
+    metadata_owner_klass = m->as_method()->get_Method()->constants()->pool_holder();
+  } else {
+    fatal("Not implemented for other types of metadata");
+  }
+
+  oop metadata_holder = metadata_owner_klass->klass_holder();
+  if (metadata_holder != NULL) {
+    G1SATBCardTableModRefBS::enqueue(metadata_holder);
+  }
+
+#endif
 }
 
 //------------------------------------------------------------------
