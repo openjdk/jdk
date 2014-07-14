@@ -919,7 +919,7 @@ void ClassFileParser::parse_field_attributes(u2 attributes_count,
             "Wrong size %u for field's Signature attribute in class file %s",
             attribute_length, CHECK);
         }
-        generic_signature_index = cfs->get_u2(CHECK);
+        generic_signature_index = parse_generic_signature_attribute(CHECK);
       } else if (attribute_name == vmSymbols::tag_runtime_visible_annotations()) {
         if (runtime_visible_annotations != NULL) {
           classfile_parse_error(
@@ -2306,8 +2306,7 @@ methodHandle ClassFileParser::parse_method(bool is_interface,
             "Invalid Signature attribute length %u in class file %s",
             method_attribute_length, CHECK_(nullHandle));
         }
-        cfs->guarantee_more(2, CHECK_(nullHandle));  // generic_signature_index
-        generic_signature_index = cfs->get_u2_fast();
+        generic_signature_index = parse_generic_signature_attribute(CHECK_(nullHandle));
       } else if (method_attribute_name == vmSymbols::tag_runtime_visible_annotations()) {
         if (runtime_visible_annotations != NULL) {
           classfile_parse_error(
@@ -2644,6 +2643,17 @@ intArray* ClassFileParser::sort_methods(Array<Method*>* methods) {
   return method_ordering;
 }
 
+// Parse generic_signature attribute for methods and fields
+u2 ClassFileParser::parse_generic_signature_attribute(TRAPS) {
+  ClassFileStream* cfs = stream();
+  cfs->guarantee_more(2, CHECK_0);  // generic_signature_index
+  u2 generic_signature_index = cfs->get_u2_fast();
+  check_property(
+    valid_symbol_at(generic_signature_index),
+    "Invalid Signature attribute at constant pool index %u in class file %s",
+    generic_signature_index, CHECK_0);
+  return generic_signature_index;
+}
 
 void ClassFileParser::parse_classfile_sourcefile_attribute(TRAPS) {
   ClassFileStream* cfs = stream();

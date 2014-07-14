@@ -266,6 +266,7 @@ class ClassFileParser VALUE_OBJ_CLASS_SPEC {
   u1* parse_stackmap_table(u4 code_attribute_length, TRAPS);
 
   // Classfile attribute parsing
+  u2 parse_generic_signature_attribute(TRAPS);
   void parse_classfile_sourcefile_attribute(TRAPS);
   void parse_classfile_source_debug_extension_attribute(int length, TRAPS);
   u2   parse_classfile_inner_classes_attribute(u1* inner_classes_attribute_start,
