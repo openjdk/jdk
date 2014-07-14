@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,34 @@
 package com.sun.tools.jdeps;
 
 import com.sun.tools.classfile.Dependency.Location;
+
+import java.io.IOException;
 import java.nio.file.Path;
-import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * Represents the source of the class files.
  */
 public class Archive {
+    public static Archive getInstance(Path p) throws IOException {
+        return new Archive(p, ClassFileReader.newInstance(p));
+    }
+
     private final Path path;
     private final String filename;
     private final ClassFileReader reader;
-    private final Map<Location, Set<Location>> deps = new HashMap<>();
+    protected Map<Location, Set<Location>> deps = new ConcurrentHashMap<>();
 
-    public Archive(String name) {
+    protected Archive(String name) {
         this.path = null;
         this.filename = name;
         this.reader = null;
     }
 
-    public Archive(Path p, ClassFileReader reader) {
+    protected Archive(Path p, ClassFileReader reader) {
         this.path = p;
         this.filename = path.getFileName().toString();
         this.reader = reader;
@@ -56,7 +62,7 @@ public class Archive {
         return reader;
     }
 
-    public String getFileName() {
+    public String getName() {
         return filename;
     }
 
@@ -87,6 +93,10 @@ public class Archive {
                 v.visit(e.getKey(), target);
             }
         }
+    }
+
+    public boolean isEmpty() {
+        return getClasses().isEmpty();
     }
 
     public String getPathName() {

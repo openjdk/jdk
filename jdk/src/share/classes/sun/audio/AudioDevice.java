@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,7 @@ public final class AudioDevice {
 
     private boolean DEBUG = false  /*true*/ ;
 
-    /** Hashtable of audio clips / input streams. */
-    private Hashtable clipStreams;
-
-    private Vector infos;
+    private Vector<Info> infos;
 
     /** Are we currently playing audio? */
     private boolean playing = false;
@@ -81,9 +78,7 @@ public final class AudioDevice {
      * Create an AudioDevice instance.
      */
     private AudioDevice() {
-
-        clipStreams = new Hashtable();
-        infos = new Vector();
+        infos = new Vector<>();
     }
 
 
@@ -161,7 +156,7 @@ public final class AudioDevice {
 
         // is this already playing?  if so, then just return
         for(int i=0; i<infos.size(); i++) {
-            info = (AudioDevice.Info)infos.elementAt(i);
+            info = infos.elementAt(i);
             if( info.in == in ) {
 
                 return;
@@ -290,7 +285,7 @@ public final class AudioDevice {
 
         for(int i=0; i<infos.size(); i++) {
 
-            info = (AudioDevice.Info)infos.elementAt(i);
+            info = infos.elementAt(i);
 
             if( info.in == in ) {
 
@@ -355,7 +350,7 @@ public final class AudioDevice {
 
         for(int i=0; i<infos.size(); i++) {
 
-            info = (AudioDevice.Info)infos.elementAt(i);
+            info = infos.elementAt(i);
 
             if( info.sequencer != null ) {
 
@@ -375,8 +370,7 @@ public final class AudioDevice {
             System.err.println("Audio Device: Streams all closed.");
         }
         // Empty the hash table.
-        clipStreams = new Hashtable();
-        infos = new Vector();
+        infos = new Vector<>();
     }
 
     /**

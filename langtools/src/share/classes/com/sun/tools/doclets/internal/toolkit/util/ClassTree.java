@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -81,6 +81,8 @@ public class ClassTree {
     */
     private Map<ClassDoc,List<ClassDoc>> implementingclasses = new HashMap<>();
 
+    private final Configuration configuration;
+    private final Utils utils;
     /**
      * Constructor. Build the Tree using the Root of this Javadoc run.
      *
@@ -90,17 +92,21 @@ public class ClassTree {
      */
     public ClassTree(Configuration configuration, boolean noDeprecated) {
         configuration.message.notice("doclet.Building_Tree");
-        buildTree(configuration.root.classes(), configuration);
+        this.configuration = configuration;
+        this.utils = configuration.utils;
+        buildTree(configuration.root.classes());
     }
 
     /**
      * Constructor. Build the Tree using the Root of this Javadoc run.
      *
      * @param root Root of the Document.
-     * @param configuration The curren configuration of the doclet.
+     * @param configuration The current configuration of the doclet.
      */
     public ClassTree(RootDoc root, Configuration configuration) {
-        buildTree(root.classes(), configuration);
+        this.configuration = configuration;
+        this.utils = configuration.utils;
+        buildTree(root.classes());
     }
 
     /**
@@ -110,7 +116,9 @@ public class ClassTree {
      * @param configuration The curren configuration of the doclet.
      */
     public ClassTree(ClassDoc[] classes, Configuration configuration) {
-        buildTree(classes, configuration);
+        this.configuration = configuration;
+        this.utils = configuration.utils;
+        buildTree(classes);
     }
 
     /**
@@ -122,14 +130,14 @@ public class ClassTree {
      * @param classes all the classes in this run.
      * @param configuration the current configuration of the doclet.
      */
-    private void buildTree(ClassDoc[] classes, Configuration configuration) {
+    private void buildTree(ClassDoc[] classes) {
         for (ClassDoc aClass : classes) {
             // In the tree page (e.g overview-tree.html) do not include
             // information of classes which are deprecated or are a part of a
             // deprecated package.
             if (configuration.nodeprecated &&
-                    (Util.isDeprecated(aClass) ||
-                    Util.isDeprecated(aClass.containingPackage()))) {
+                    (utils.isDeprecated(aClass) ||
+                    utils.isDeprecated(aClass.containingPackage()))) {
                 continue;
             }
 
@@ -177,7 +185,7 @@ public class ClassTree {
      */
     private void processType(ClassDoc cd, Configuration configuration,
             List<ClassDoc> bases, Map<ClassDoc,List<ClassDoc>> subs) {
-        ClassDoc superclass = Util.getFirstVisibleSuperClassCD(cd, configuration);
+        ClassDoc superclass = utils.getFirstVisibleSuperClassCD(cd, configuration);
         if (superclass != null) {
             if (!add(subs, superclass, cd)) {
                 return;
@@ -189,7 +197,7 @@ public class ClassTree {
                 bases.add(cd);
             }
         }
-        List<Type> intfacs = Util.getAllInterfaces(cd, configuration);
+        List<Type> intfacs = utils.getAllInterfaces(cd, configuration);
         for (Type intfac : intfacs) {
             add(implementingclasses, intfac.asClassDoc(), cd);
         }

@@ -171,6 +171,7 @@ struct unpacker {
   bytes inbytes;    // direct
   gunzip* gzin;     // gunzip filter, if any
   jar*  jarout;     // output JAR file
+  uint  gzcrc;      // CRC gathered from gzip content
 
 #ifndef PRODUCT
   int   nowrite;

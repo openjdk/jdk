@@ -42,8 +42,19 @@ import java.net.URL;
  */
 public final
 class Entity implements DTDConstants {
+    /**
+     * The name of the entity.
+     */
     public String name;
+
+    /**
+     * The type of the entity.
+     */
     public int type;
+
+    /**
+     * The char array of data.
+     */
     public char data[];
 
     /**

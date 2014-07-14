@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g SuspendThreadTest.java
- *  @run main SuspendThreadTest
+ *  @run driver SuspendThreadTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

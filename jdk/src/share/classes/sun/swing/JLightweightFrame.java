@@ -54,6 +54,7 @@ import javax.swing.RepaintManager;
 import javax.swing.RootPaneContainer;
 import javax.swing.SwingUtilities;
 
+import sun.awt.DisplayChangedListener;
 import sun.awt.LightweightFrame;
 import sun.security.action.GetPropertyAction;
 import sun.swing.SwingUtilities2.RepaintListener;
@@ -80,6 +81,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
 
     private BufferedImage bbImage;
 
+    private volatile int scaleFactor = 1;
+
     /**
      * {@code copyBufferEnabled}, true by default, defines the following strategy.
      * A duplicating (copy) buffer is created for the original pixel buffer.
@@ -90,7 +93,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
      * by the lock (managed with the {@link LightweightContent#paintLock()},
      * {@link LightweightContent#paintUnlock()} methods).
      */
-    private boolean copyBufferEnabled;
+    private static boolean copyBufferEnabled;
     private int[] copyBuffer;
 
     private PropertyChangeListener layoutSizeListener;
@@ -103,6 +106,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 frame.updateClientCursor();
             }
         });
+        copyBufferEnabled = "true".equals(AccessController.
+            doPrivileged(new GetPropertyAction("swing.jlf.copyBufferEnabled", "true")));
     }
 
     /**
@@ -144,7 +149,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             }
             Point p = SwingUtilities.convertPoint(c, x, y, jlf);
             Rectangle r = new Rectangle(p.x, p.y, w, h).intersection(
-                    new Rectangle(0, 0, bbImage.getWidth(), bbImage.getHeight()));
+                    new Rectangle(0, 0, bbImage.getWidth() / scaleFactor,
+                                  bbImage.getHeight() / scaleFactor));
 
             if (!r.isEmpty()) {
                 notifyImageUpdated(r.x, r.y, r.width, r.height);
@@ -198,6 +204,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         g.setBackground(getBackground());
         g.setColor(getForeground());
         g.setFont(getFont());
+        g.scale(scaleFactor, scaleFactor);
         return g;
     }
 
@@ -221,7 +228,39 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
         if (content != null) content.focusUngrabbed();
     }
 
-    private void syncCopyBuffer(boolean reset, int x, int y, int w, int h) {
+    @Override
+    public int getScaleFactor() {
+        return scaleFactor;
+    }
+
+    @Override
+    public void notifyDisplayChanged(final int scaleFactor) {
+        if (scaleFactor != this.scaleFactor) {
+            if (!copyBufferEnabled) content.paintLock();
+            try {
+                if (bbImage != null) {
+                    resizeBuffer(getWidth(), getHeight(), scaleFactor);
+                }
+            } finally {
+                if (!copyBufferEnabled) content.paintUnlock();
+            }
+            this.scaleFactor = scaleFactor;
+        }
+        if (getPeer() instanceof DisplayChangedListener) {
+            ((DisplayChangedListener)getPeer()).displayChanged();
+        }
+        repaint();
+    }
+
+    @Override
+    public void addNotify() {
+        super.addNotify();
+        if (getPeer() instanceof DisplayChangedListener) {
+            ((DisplayChangedListener)getPeer()).displayChanged();
+        }
+    }
+
+    private void syncCopyBuffer(boolean reset, int x, int y, int w, int h, int scale) {
         content.paintLock();
         try {
             int[] srcBuffer = ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
@@ -229,6 +268,11 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 copyBuffer = new int[srcBuffer.length];
             }
             int linestride = bbImage.getWidth();
+
+            x *= scale;
+            y *= scale;
+            w *= scale;
+            h *= scale;
 
             for (int i=0; i<h; i++) {
                 int from = (y + i) * linestride + x;
@@ -241,7 +285,7 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
 
     private void notifyImageUpdated(int x, int y, int width, int height) {
         if (copyBufferEnabled) {
-            syncCopyBuffer(false, x, y, width, height);
+            syncCopyBuffer(false, x, y, width, height, scaleFactor);
         }
         content.imageUpdated(x, y, width, height);
     }
@@ -269,7 +313,8 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                     EventQueue.invokeLater(new Runnable() {
                         @Override
                         public void run() {
-                            notifyImageUpdated(clip.x, clip.y, clip.width, clip.height);
+                            Rectangle c = contentPane.getBounds().intersection(clip);
+                            notifyImageUpdated(c.x, c.y, c.width, c.height);
                         }
                     });
                 } finally {
@@ -323,48 +368,37 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
             content.paintLock();
         }
         try {
-            if ((bbImage == null) || (width != bbImage.getWidth()) || (height != bbImage.getHeight())) {
-                boolean createBB = true;
-                int newW = width;
-                int newH = height;
-                if (bbImage != null) {
-                    int oldW = bbImage.getWidth();
-                    int oldH = bbImage.getHeight();
-                    if ((oldW >= newW) && (oldH >= newH)) {
-                        createBB = false;
-                    } else {
-                        if (oldW >= newW) {
-                            newW = oldW;
+            boolean createBB = (bbImage == null);
+            int newW = width;
+            int newH = height;
+            if (bbImage != null) {
+                int imgWidth = bbImage.getWidth() / scaleFactor;
+                int imgHeight = bbImage.getHeight() / scaleFactor;
+                if (width != imgWidth || height != imgHeight) {
+                    createBB = true;
+                    if (bbImage != null) {
+                        int oldW = imgWidth;
+                        int oldH = imgHeight;
+                        if ((oldW >= newW) && (oldH >= newH)) {
+                            createBB = false;
                         } else {
-                            newW = Math.max((int)(oldW * 1.2), width);
-                        }
-                        if (oldH >= newH) {
-                            newH = oldH;
-                        } else {
-                            newH = Math.max((int)(oldH * 1.2), height);
+                            if (oldW >= newW) {
+                                newW = oldW;
+                            } else {
+                                newW = Math.max((int)(oldW * 1.2), width);
+                            }
+                            if (oldH >= newH) {
+                                newH = oldH;
+                            } else {
+                                newH = Math.max((int)(oldH * 1.2), height);
+                            }
                         }
                     }
                 }
-                if (createBB) {
-                    BufferedImage oldBB = bbImage;
-                    bbImage = new BufferedImage(newW, newH, BufferedImage.TYPE_INT_ARGB_PRE);
-                    if (oldBB != null) {
-                        Graphics g = bbImage.getGraphics();
-                        try {
-                            g.drawImage(oldBB, 0, 0, newW, newH, null);
-                        } finally {
-                            g.dispose();
-                            oldBB.flush();
-                        }
-                    }
-                    int[] pixels = ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
-                    if (copyBufferEnabled) {
-                        syncCopyBuffer(true, 0, 0, width, height);
-                        pixels = copyBuffer;
-                    }
-                    content.imageBufferReset(pixels, 0, 0, width, height, bbImage.getWidth());
-                    return;
-                }
+            }
+            if (createBB) {
+                resizeBuffer(newW, newH, scaleFactor);
+                return;
             }
             content.imageReshaped(0, 0, width, height);
 
@@ -373,6 +407,18 @@ public final class JLightweightFrame extends LightweightFrame implements RootPan
                 content.paintUnlock();
             }
         }
+    }
+
+    private void resizeBuffer(int width, int height, int newScaleFactor) {
+            bbImage = new BufferedImage(width*newScaleFactor,height*newScaleFactor,
+                                        BufferedImage.TYPE_INT_ARGB_PRE);
+        int[] pixels= ((DataBufferInt)bbImage.getRaster().getDataBuffer()).getData();
+        if (copyBufferEnabled) {
+            syncCopyBuffer(true, 0, 0, width, height, newScaleFactor);
+            pixels = copyBuffer;
+        }
+        content.imageBufferReset(pixels, 0, 0, width, height,
+                                 width * newScaleFactor, newScaleFactor);
     }
 
     @Override

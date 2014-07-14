@@ -66,19 +66,15 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   enum {
-    N                = 2,                // the number of words reserved
+    N                = 4,                // the number of words reserved
                                          // for inlined mask storage
     small_mask_limit = N * BitsPerWord,  // the maximum number of bits
                                          // available for small masks,
                                          // small_mask_limit can be set to 0
                                          // for testing bit_mask allocation
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
     bits_per_entry   = 2,
     dead_bit_number  = 1,
-#else
-    bits_per_entry   = 1,
-#endif
     oop_bit_number   = 0
   };
 
@@ -101,32 +97,27 @@ class InterpreterOopMap: ResourceObj {
 
   // access methods
   Method*        method() const                  { return _method; }
-  void           set_method(Method* v)         { _method = v; }
+  void           set_method(Method* v)           { _method = v; }
   int            bci() const                     { return _bci; }
   void           set_bci(int v)                  { _bci = v; }
   int            mask_size() const               { return _mask_size; }
   void           set_mask_size(int v)            { _mask_size = v; }
-  int            number_of_entries() const       { return mask_size() / bits_per_entry; }
   // Test bit mask size and return either the in-line bit mask or allocated
   // bit mask.
-  uintptr_t*  bit_mask()                         { return (uintptr_t*)(mask_size() <= small_mask_limit ? (intptr_t)_bit_mask : _bit_mask[0]); }
+  uintptr_t*  bit_mask() const                   { return (uintptr_t*)(mask_size() <= small_mask_limit ? (intptr_t)_bit_mask : _bit_mask[0]); }
 
   // return the word size of_bit_mask.  mask_size() <= 4 * MAX_USHORT
-  size_t mask_word_size() {
+  size_t mask_word_size() const {
     return (mask_size() + BitsPerWord - 1) / BitsPerWord;
   }
 
-  uintptr_t entry_at(int offset)            { int i = offset * bits_per_entry; return bit_mask()[i / BitsPerWord] >> (i % BitsPerWord); }
+  uintptr_t entry_at(int offset) const           { int i = offset * bits_per_entry; return bit_mask()[i / BitsPerWord] >> (i % BitsPerWord); }
 
-  void set_expression_stack_size(int sz)    { _expression_stack_size = sz; }
-
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-  bool is_dead(int offset)                       { return (entry_at(offset) & (1 << dead_bit_number)) != 0; }
-#endif
+  void set_expression_stack_size(int sz)         { _expression_stack_size = sz; }
 
   // Lookup
-  bool match(methodHandle method, int bci)       { return _method == method() && _bci == bci; }
-  bool is_empty();
+  bool match(methodHandle method, int bci) const { return _method == method() && _bci == bci; }
+  bool is_empty() const;
 
   // Initialization
   void initialize();
@@ -141,12 +132,14 @@ class InterpreterOopMap: ResourceObj {
   // in-line), allocate the space from a Resource area.
   void resource_copy(OopMapCacheEntry* from);
 
-  void iterate_oop(OffsetClosure* oop_closure);
-  void print();
+  void iterate_oop(OffsetClosure* oop_closure) const;
+  void print() const;
 
-  bool is_oop  (int offset)                      { return (entry_at(offset) & (1 << oop_bit_number )) != 0; }
+  int number_of_entries() const                  { return mask_size() / bits_per_entry; }
+  bool is_dead(int offset) const                 { return (entry_at(offset) & (1 << dead_bit_number)) != 0; }
+  bool is_oop (int offset) const                 { return (entry_at(offset) & (1 << oop_bit_number )) != 0; }
 
-  int expression_stack_size()                    { return _expression_stack_size; }
+  int expression_stack_size() const              { return _expression_stack_size; }
 
 #ifdef ENABLE_ZAP_DEAD_LOCALS
   void iterate_all(OffsetClosure* oop_closure, OffsetClosure* value_closure, OffsetClosure* dead_closure);
@@ -161,10 +154,10 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   OopMapCacheEntry* _array;
 
-  unsigned int hash_value_for(methodHandle method, int bci);
+  unsigned int hash_value_for(methodHandle method, int bci) const;
   OopMapCacheEntry* entry_at(int i) const;
 
-  Mutex _mut;
+  mutable Mutex _mut;
 
   void flush();
 
@@ -177,7 +170,7 @@ class OopMapCache : public CHeapObj<mtClass> {
 
   // Returns the oopMap for (method, bci) in parameter "entry".
   // Returns false if an oop map was not found.
-  void lookup(methodHandle method, int bci, InterpreterOopMap* entry);
+  void lookup(methodHandle method, int bci, InterpreterOopMap* entry) const;
 
   // Compute an oop map without updating the cache or grabbing any locks (for debugging)
   static void compute_one_oop_map(methodHandle method, int bci, InterpreterOopMap* entry);

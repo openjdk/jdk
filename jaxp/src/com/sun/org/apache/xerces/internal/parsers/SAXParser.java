@@ -37,7 +37,6 @@ import org.xml.sax.SAXNotSupportedException;
  * @author Arnaud  Le Hors, IBM
  * @author Andy Clark, IBM
  *
- * @version $Id: SAXParser.java,v 1.7 2010-11-01 04:40:09 joehw Exp $
  */
 public class SAXParser
     extends AbstractSAXParser {

@@ -82,6 +82,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
      */
     public final ConfigurationImpl configuration;
 
+    protected final Utils utils;
+
     /**
      * To check whether annotation heading is printed or not.
      */
@@ -111,6 +113,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             throws IOException {
         super(configuration, path);
         this.configuration = configuration;
+        this.utils = configuration.utils;
         this.path = path;
         this.pathToRoot = path.parent().invert();
         this.filename = path.basename();
@@ -347,7 +350,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (!isTypeInProfile(classes[i], profileValue)) {
                     continue;
                 }
-                if (!Util.isCoreClass(classes[i]) ||
+                if (!utils.isCoreClass(classes[i]) ||
                     !configuration.isGeneratedDoc(classes[i])) {
                     continue;
                 }
@@ -361,7 +364,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                     tr.addStyle(HtmlStyle.rowColor);
                 HtmlTree tdClassDescription = new HtmlTree(HtmlTag.TD);
                 tdClassDescription.addStyle(HtmlStyle.colLast);
-                if (Util.isDeprecated(classes[i])) {
+                if (utils.isDeprecated(classes[i])) {
                     tdClassDescription.addContent(deprecatedLabel);
                     if (classes[i].tags("deprecated").length > 0) {
                         addSummaryDeprecatedComment(classes[i],
@@ -1021,7 +1024,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return getHyperLink(pathString(pkg, DocPaths.PACKAGE_SUMMARY),
                     label);
         } else {
-            DocLink crossPkgLink = getCrossPackageLink(Util.getPackageName(pkg));
+            DocLink crossPkgLink = getCrossPackageLink(utils.getPackageName(pkg));
             if (crossPkgLink != null) {
                 return getHyperLink(crossPkgLink, label);
             } else {
@@ -1288,7 +1291,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
             Content label, boolean strong, boolean isProperty) {
         if (! (doc.isIncluded() ||
-            Util.isLinkable(classDoc, configuration))) {
+            utils.isLinkable(classDoc, configuration))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc)doc;
@@ -1316,7 +1319,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     public Content getDocLink(LinkInfoImpl.Kind context, ClassDoc classDoc, MemberDoc doc,
             Content label) {
         if (! (doc.isIncluded() ||
-            Util.isLinkable(classDoc, configuration))) {
+            utils.isLinkable(classDoc, configuration))) {
             return label;
         } else if (doc instanceof ExecutableMemberDoc) {
             ExecutableMemberDoc emd = (ExecutableMemberDoc) doc;
@@ -1360,7 +1363,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             return new ContentBuilder();
         }
 
-        String seetext = replaceDocRootDir(Util.normalizeNewlines(see.text()));
+        String seetext = replaceDocRootDir(utils.normalizeNewlines(see.text()));
 
         //Check if @see is an href or "string"
         if (seetext.startsWith("<") || seetext.startsWith("\"")) {
@@ -1422,7 +1425,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             ClassDoc containing = refMem.containingClass();
             if (see.text().trim().startsWith("#") &&
                 ! (containing.isPublic() ||
-                Util.isLinkable(containing, configuration))) {
+                utils.isLinkable(containing, configuration))) {
                 // Since the link is relative and the holder is not even being
                 // documented, this must be an inherited link.  Redirect it.
                 // The current class either overrides the referenced member or
@@ -1628,8 +1631,8 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                 if (isFirstSentence) {
                     text = removeNonInlineHtmlTags(text);
                 }
-                text = Util.replaceTabs(configuration, text);
-                text = Util.normalizeNewlines(text);
+                text = utils.replaceTabs(configuration, text);
+                text = utils.normalizeNewlines(text);
                 result.addContent(new RawHtml(text));
             }
         }
@@ -1955,13 +1958,13 @@ public class HtmlDocletWriter extends HtmlDocWriter {
             // and also if its container annotation is not documented, do not add it
             // to the list. If an annotation of a repeatable type is not documented
             // but its container is documented, it will be added to the list.
-            if (!Util.isDocumentedAnnotation(annotationDoc) &&
+            if (!utils.isDocumentedAnnotation(annotationDoc) &&
                 (!isAnnotationDocumented && !isContainerDocumented)) {
                 continue;
             }
             /* TODO: check logic here to correctly handle declaration
              * and type annotations.
-            if  (Util.isDeclarationAnnotation(annotationDoc, isJava5DeclarationLocation)) {
+            if  (util.isDeclarationAnnotation(annotationDoc, isJava5DeclarationLocation)) {
                 continue;
             }*/
             annotation = new ContentBuilder();
@@ -2096,7 +2099,7 @@ public class HtmlDocletWriter extends HtmlDocWriter {
                         AnnotationTypeDoc annotationDoc =
                                 ((AnnotationDesc) annotationArray[0].value()).annotationType();
                         isContainerDocumented = true;
-                        if (Util.isDocumentedAnnotation(annotationDoc)) {
+                        if (utils.isDocumentedAnnotation(annotationDoc)) {
                             isAnnotationDocumented = true;
                         }
                         return true;

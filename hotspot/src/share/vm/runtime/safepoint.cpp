@@ -302,7 +302,7 @@ void SafepointSynchronize::begin() {
         SpinPause() ;     // MP-Polite spin
       } else
       if (steps < DeferThrSuspendLoopCount) {
-        os::NakedYield() ;
+        os::naked_yield() ;
       } else {
         os::naked_short_sleep(1);
       }

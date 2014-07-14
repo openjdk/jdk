@@ -64,7 +64,6 @@ package com.sun.org.apache.xerces.internal.impl;
 /**
  * This class defines the version number of the parser.
  *
- * @version $Id: Version.java,v 1.4 2010-11-01 04:39:40 joehw Exp $
  */
 public class Version {
 

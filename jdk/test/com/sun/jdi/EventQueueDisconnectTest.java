@@ -28,7 +28,7 @@
  *
  *  @run build VMConnection
  *  @run compile -g EventQueueDisconnectTest.java
- *  @run main EventQueueDisconnectTest
+ *  @run driver EventQueueDisconnectTest
  *
  *  @summary EventQueueDisconnectTest checks to see that
  *  VMDisconnectedException is never thrown before VMDisconnectEvent.
@@ -64,7 +64,7 @@ public class EventQueueDisconnectTest {
                                        "com.sun.jdi.CommandLineLaunch:",
                                        VirtualMachine.TRACE_NONE);
         connection.setConnectorArg("main", "EventQueueDisconnectTarg");
-        String debuggeeVMOptions = connection.getDebuggeeVMOptions();
+        String debuggeeVMOptions = VMConnection.getDebuggeeVMOptions();
         if (!debuggeeVMOptions.equals("")) {
             if (connection.connectorArg("options").length() > 0) {
                 throw new IllegalArgumentException("VM options in two places");

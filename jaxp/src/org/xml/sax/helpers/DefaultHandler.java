@@ -73,7 +73,7 @@ import org.xml.sax.SAXParseException;
  * <p>This class replaces the deprecated SAX1
  * {@link org.xml.sax.HandlerBase HandlerBase} class.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson,
  * @see org.xml.sax.EntityResolver
  * @see org.xml.sax.DTDHandler

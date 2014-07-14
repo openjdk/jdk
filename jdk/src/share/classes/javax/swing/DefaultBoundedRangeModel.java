@@ -44,6 +44,7 @@ import java.util.EventListener;
  * @author David Kloba
  * @author Hans Muller
  * @see BoundedRangeModel
+ * @since 1.2
  */
 @SuppressWarnings("serial") // Same-version serialization only
 public class DefaultBoundedRangeModel implements BoundedRangeModel, Serializable

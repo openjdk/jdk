@@ -201,7 +201,7 @@ public class WindowsFlags {
 
     private static void initJavaFlags() {
         java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction()
+            new java.security.PrivilegedAction<Object>()
         {
             public Object run() {
                 magPresent = getBooleanProp(

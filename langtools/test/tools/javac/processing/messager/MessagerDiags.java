@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ import javax.tools.ToolProvider;
 import static javax.tools.Diagnostic.Kind.*;
 import static javax.tools.JavaFileObject.Kind.*;
 
-@SupportedSourceVersion(SourceVersion.RELEASE_6)
+@SupportedSourceVersion(SourceVersion.RELEASE_8)
 @SupportedAnnotationTypes("*")
 public class MessagerDiags extends AbstractProcessor {
     static final String CNAME = "Test";
@@ -64,8 +64,8 @@ public class MessagerDiags extends AbstractProcessor {
     static final String WRN_WITH_SOURCE = "warning with source";
     static final String NONE = "<none>";
     static final String[] EXPECTED = { NONE + ":-1--1:" + WRN_NO_SOURCE,
-                                       TEST_JAVA + ":0-13:" + WRN_WITH_SOURCE,
-                                       NONE + ":-1--1:" + WRN_NO_SOURCE
+                                TEST_JAVA + ":0-13:" + WRN_WITH_SOURCE,
+                                NONE + ":-1--1:" + WRN_NO_SOURCE
     };
 
     @Override
@@ -88,7 +88,7 @@ public class MessagerDiags extends AbstractProcessor {
         DiagnosticCollector<JavaFileObject> dc = new DiagnosticCollector<>();
         List<String> options = new LinkedList<>();
         options.addAll(Arrays.asList("-bootclasspath",  bootPath,
-                        "-source", "1.6", "-classpath",
+                        "-source", "1.8", "-classpath",
                         System.getProperty("java.class.path")));
         options.addAll(Arrays.asList("-processor",
                        MessagerDiags.class.getName()));

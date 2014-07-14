@@ -124,6 +124,10 @@
 
 # jdk_management
 
+# 8046351
+com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
+com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
+
 ############################################################################
 
 # jdk_jmx
@@ -235,9 +239,6 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 
 # jdk_tools
 
-# 8028474
-sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.sh      generic-all
-
 # Tests take too long, on sparcs see 7143279
 tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
 tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
@@ -263,7 +264,6 @@ com/sun/jdi/RepStep.java                                        generic-all
 
 # 8044419
 com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
-
 
 ############################################################################
 
@@ -291,5 +291,8 @@ sun/tools/jstatd/TestJstatdDefaults.java                        generic-all
 
 # 8037285
 sun/tools/jstatd/TestJstatdServer.java                          generic-all
+
+# 8046355
+sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 ############################################################################

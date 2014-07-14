@@ -523,7 +523,7 @@ public final class AttributeSetUtilities {
     public static Class<?>
         verifyAttributeCategory(Object object, Class<?> interfaceName) {
 
-        Class result = (Class) object;
+        Class<?> result = (Class<?>) object;
         if (interfaceName.isAssignableFrom (result)) {
             return result;
         }

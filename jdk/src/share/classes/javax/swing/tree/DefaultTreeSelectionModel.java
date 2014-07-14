@@ -1153,23 +1153,23 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
      */
     public String toString() {
         int                selCount = getSelectionCount();
-        StringBuffer       retBuffer = new StringBuffer();
+        StringBuilder      sb = new StringBuilder();
         int[]              rows;
 
         if(rowMapper != null)
             rows = rowMapper.getRowsForPaths(selection);
         else
             rows = null;
-        retBuffer.append(getClass().getName() + " " + hashCode() + " [ ");
+        sb.append(getClass().getName() + " " + hashCode() + " [ ");
         for(int counter = 0; counter < selCount; counter++) {
             if(rows != null)
-                retBuffer.append(selection[counter].toString() + "@" +
-                                 Integer.toString(rows[counter])+ " ");
+                sb.append(selection[counter].toString() + "@" +
+                          Integer.toString(rows[counter])+ " ");
             else
-                retBuffer.append(selection[counter].toString() + " ");
+                sb.append(selection[counter].toString() + " ");
         }
-        retBuffer.append("]");
-        return retBuffer.toString();
+        sb.append("]");
+        return sb.toString();
     }
 
     /**

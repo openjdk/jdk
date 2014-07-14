@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,11 +59,16 @@ JNIEXPORT jboolean JNICALL Java_sun_security_provider_NativeSeedGenerator_native
 
     numBytes = (*env)->GetArrayLength(env, randArray);
     randBytes = (*env)->GetByteArrayElements(env, randArray, NULL);
+    if (randBytes == NULL) {
+        goto cleanup;
+    }
+
     if (CryptGenRandom(hCryptProv, numBytes, randBytes)) {
         result = JNI_TRUE;
     }
     (*env)->ReleaseByteArrayElements(env, randArray, randBytes, 0);
 
+cleanup:
     CryptReleaseContext(hCryptProv, 0);
 
     return result;

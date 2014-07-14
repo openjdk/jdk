@@ -51,6 +51,8 @@ package java.beans;
  * or support setAsText.
  * <p>
  * Each PropertyEditor should have a null constructor.
+ *
+ * @since 1.1
  */
 
 public interface PropertyEditor {

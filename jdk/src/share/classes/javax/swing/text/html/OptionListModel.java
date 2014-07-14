@@ -40,7 +40,7 @@ import java.io.Serializable;
  * It also stores the initial state of the JList, to ensure an
  * accurate reset, if the user requests a reset of the form.
  *
-  @author Sunita Mani
+ * @author Sunita Mani
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionModel, Serializable {
@@ -469,7 +469,8 @@ class OptionListModel<E> extends DefaultListModel<E> implements ListSelectionMod
      *    and (b) define a <code>clone</code> method
      */
     public Object clone() throws CloneNotSupportedException {
-        OptionListModel clone = (OptionListModel)super.clone();
+        @SuppressWarnings("unchecked")
+        OptionListModel<E> clone = (OptionListModel)super.clone();
         clone.value = (BitSet)value.clone();
         clone.listenerList = new EventListenerList();
         return clone;

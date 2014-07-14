@@ -37,7 +37,6 @@ import java.io.Serializable;
 import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
-import java.util.Base64;
 import java.util.Map;
 
 /**
@@ -47,9 +46,6 @@ final class CodeStore {
 
     private final File dir;
     private final int minSize;
-
-    // Message digest to file name encoder
-    private final static Base64.Encoder BASE64 = Base64.getUrlEncoder().withoutPadding();
 
     // Default minimum size for storing a compiled script class
     private final static int DEFAULT_MIN_SIZE = 1000;
@@ -108,8 +104,7 @@ final class CodeStore {
             return null;
         }
 
-        final String digest = BASE64.encodeToString(source.getDigest());
-        final File file = new File(dir, digest);
+        final File file = new File(dir, source.getDigest());
 
         try {
             return AccessController.doPrivileged(new PrivilegedExceptionAction<CompiledScript>() {
@@ -157,8 +152,7 @@ final class CodeStore {
             }
         }
 
-        final String digest = BASE64.encodeToString(source.getDigest());
-        final File file = new File(dir, digest);
+        final File file = new File(dir, source.getDigest());
         final CompiledScript script = new CompiledScript(source, mainClassName, classBytes, constants);
 
         try {

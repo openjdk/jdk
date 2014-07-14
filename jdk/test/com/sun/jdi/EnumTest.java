@@ -30,7 +30,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g EnumTest.java
- *  @run main EnumTest
+ *  @run driver EnumTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

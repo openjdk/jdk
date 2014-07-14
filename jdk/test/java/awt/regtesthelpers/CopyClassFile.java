@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,6 +39,8 @@ import java.util.Arrays;
  *
  * @build CopyClassFile
  * @run main CopyClassFile package.class dest_directory
+ *
+ * In case the source file should be removed add -r option
  */
 public class CopyClassFile {
 
@@ -48,13 +50,17 @@ public class CopyClassFile {
     private static String className;
     private static String classFile;
 
+    private static boolean removeSource = false;
+
     public static void main(String[] args) throws Exception {
-        if (args.length != 2) {
+        if (args.length < 2) {
             throw new IllegalArgumentException("Illegal usage: class name and destination directory should be specified");
         }
 
-        destinationDir = args[1];
-        className = args[0];
+        int classNameIndex = parseOptions(args);
+
+        className = args[classNameIndex];
+        destinationDir = args[classNameIndex + 1];
         classFile = className.replaceAll("\\.", File.separator) + ".class";
 
         URL url = cl.getResource(classFile);
@@ -67,6 +73,21 @@ public class CopyClassFile {
                 .listFiles((dir, name) -> name.startsWith(cutPackageName(className)) && name.endsWith(".class"));
 
         Arrays.stream(files).forEach(CopyClassFile::copyFile);
+    }
+
+    private static int parseOptions(String[] args) {
+        int optionsEnd = 0;
+        while (args[optionsEnd].startsWith("-")) {
+            switch (args[optionsEnd].substring(1)) {
+                case "r" :
+                    removeSource = true;
+                    break;
+                default:
+                    throw new RuntimeException("Unrecognized option passed to CopyClassFile: " + args[optionsEnd]);
+            }
+            optionsEnd++;
+        }
+        return optionsEnd;
     }
 
     private static String cutPackageName(String className) {
@@ -87,6 +108,11 @@ public class CopyClassFile {
             try (InputStream is = new FileInputStream(f)) {
                 Files.copy(is, p, StandardCopyOption.REPLACE_EXISTING);
             }
+
+            if (removeSource && !f.delete()) {
+                throw new RuntimeException("Failed to delete a file");
+            }
+
         } catch (IOException ex) {
             throw new RuntimeException("Could not copy file " + f, ex);
         }

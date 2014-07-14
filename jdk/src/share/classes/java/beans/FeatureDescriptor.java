@@ -46,6 +46,8 @@ import java.util.Map.Entry;
  * <p>
  * In addition it provides an extension mechanism so that arbitrary
  * attribute/value pairs can be associated with a design feature.
+ *
+ * @since 1.1
  */
 
 public class FeatureDescriptor {
@@ -145,6 +147,7 @@ public class FeatureDescriptor {
      * important for presenting to humans.
      *
      * @return True if this feature should be preferentially shown to human users.
+     * @since 1.2
      */
     public boolean isPreferred() {
         return preferred;
@@ -156,6 +159,7 @@ public class FeatureDescriptor {
      *
      * @param preferred  True if this feature should be preferentially shown
      *                   to human users.
+     * @since 1.2
      */
     public void setPreferred(boolean preferred) {
         this.preferred = preferred;

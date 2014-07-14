@@ -417,6 +417,11 @@ public class BlockView extends BoxView  {
         cssHeight = (CSS.LengthValue) attr.getAttribute(CSS.Attribute.HEIGHT);
     }
 
+    /**
+     * Convenient method to get the StyleSheet.
+     *
+     * @return the StyleSheet
+     */
     protected StyleSheet getStyleSheet() {
         HTMLDocument doc = (HTMLDocument) getDocument();
         return doc.getStyleSheet();

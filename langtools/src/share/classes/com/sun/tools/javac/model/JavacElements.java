@@ -35,6 +35,7 @@ import javax.tools.JavaFileObject;
 import static javax.lang.model.util.ElementFilter.methodsIn;
 
 import com.sun.tools.javac.code.*;
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Enter;
@@ -47,6 +48,7 @@ import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Name;
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
@@ -356,35 +358,31 @@ public class JavacElements implements Elements {
      */
     public FilteredMemberList getAllMembers(TypeElement element) {
         Symbol sym = cast(Symbol.class, element);
-        Scope scope = sym.members().dupUnshared();
+        WriteableScope scope = sym.members().dupUnshared();
         List<Type> closure = types.closure(sym.asType());
         for (Type t : closure)
             addMembers(scope, t);
         return new FilteredMemberList(scope);
     }
     // where
-        private void addMembers(Scope scope, Type type) {
+        private void addMembers(WriteableScope scope, Type type) {
             members:
-            for (Scope.Entry e = type.asElement().members().elems; e != null; e = e.sibling) {
-                Scope.Entry overrider = scope.lookup(e.sym.getSimpleName());
-                while (overrider.scope != null) {
-                    if (overrider.sym.kind == e.sym.kind
-                        && (overrider.sym.flags() & Flags.SYNTHETIC) == 0)
-                    {
-                        if (overrider.sym.getKind() == ElementKind.METHOD
-                        && overrides((ExecutableElement)overrider.sym, (ExecutableElement)e.sym, (TypeElement)type.asElement())) {
+            for (Symbol e : type.asElement().members().getSymbols(NON_RECURSIVE)) {
+                for (Symbol overrider : scope.getSymbolsByName(e.getSimpleName())) {
+                    if (overrider.kind == e.kind && (overrider.flags() & Flags.SYNTHETIC) == 0) {
+                        if (overrider.getKind() == ElementKind.METHOD &&
+                                overrides((ExecutableElement)overrider, (ExecutableElement)e, (TypeElement)type.asElement())) {
                             continue members;
                         }
                     }
-                    overrider = overrider.next();
                 }
-                boolean derived = e.sym.getEnclosingElement() != scope.owner;
-                ElementKind kind = e.sym.getKind();
+                boolean derived = e.getEnclosingElement() != scope.owner;
+                ElementKind kind = e.getKind();
                 boolean initializer = kind == ElementKind.CONSTRUCTOR
                     || kind == ElementKind.INSTANCE_INIT
                     || kind == ElementKind.STATIC_INIT;
-                if (!derived || (!initializer && e.sym.isInheritedIn(scope.owner, types)))
-                    scope.enter(e.sym);
+                if (!derived || (!initializer && e.isInheritedIn(scope.owner, types)))
+                    scope.enter(e);
             }
         }
 

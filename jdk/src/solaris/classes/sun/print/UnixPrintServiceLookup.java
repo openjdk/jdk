@@ -69,7 +69,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     private String defaultPrinter;
     private PrintService defaultPrintService;
     private PrintService[] printServices; /* includes the default printer */
-    private Vector lookupListeners = null;
+    private Vector<BackgroundLookupListener> lookupListeners = null;
     private static String debugPrefix = "UnixPrintServiceLookup>> ";
     private static boolean pollServices = true;
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
@@ -239,7 +239,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         }
     }
 
-    private int addPrintServiceToList(ArrayList printerList, PrintService ps) {
+    private int addPrintServiceToList(ArrayList<PrintService> printerList, PrintService ps) {
         int index = printerList.indexOf(ps);
         // Check if PrintService with same name is already in the list.
         if (CUPSPrinter.isCupsRunning() && index != -1) {
@@ -253,7 +253,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, ignoring the new local printer: "+ps);
                 return index;  // Do not add this.
             }
-            PrintService oldPS = (PrintService)(printerList.get(index));
+            PrintService oldPS = printerList.get(index);
             uri = oldPS.getAttribute(PrinterURI.class);
             if (uri.getURI().getHost().equals("localhost")) {
                 IPPPrintService.debug_println(debugPrefix+"duplicate PrintService, removing existing local printer: "+oldPS);
@@ -319,7 +319,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             return;
         }
 
-        ArrayList printerList = new ArrayList();
+        ArrayList<PrintService> printerList = new ArrayList<>();
         int defaultIndex = -1;
         for (int p=0; p<printers.length; p++) {
             if (printers[p] == null) {
@@ -396,8 +396,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             defaultIndex = addPrintServiceToList(printerList, defaultPrintService);
         }
 
-        printServices = (PrintService[])printerList.toArray(
-                                      new PrintService[] {});
+        printServices = printerList.toArray(new PrintService[] {});
 
         // swap default with the first in the list
         if (defaultIndex > 0) {
@@ -411,9 +410,9 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                                       PrintServiceAttributeSet attributes) {
 
         Attribute [] attrs =  attributes.toArray();
-        Attribute serviceAttr;
         for (int i=0; i<attrs.length; i++) {
-            serviceAttr
+            @SuppressWarnings("unchecked")
+            Attribute serviceAttr
                 = service.getAttribute((Class<PrintServiceAttribute>)attrs[i].getCategory());
             if (serviceAttr == null || !serviceAttr.equals(attrs[i])) {
                 return false;
@@ -542,7 +541,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             }
         } else {
             /* specified service attributes don't include a name.*/
-            Vector matchedServices = new Vector();
+            Vector<PrintService> matchedServices = new Vector<>();
             services = getPrintServices();
             for (int i = 0; i< services.length; i++) {
                 if (matchesAttributes(services[i], serviceSet)) {
@@ -551,7 +550,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             }
             services = new PrintService[matchedServices.size()];
             for (int i = 0; i< services.length; i++) {
-                services[i] = (PrintService)matchedServices.elementAt(i);
+                services[i] = matchedServices.elementAt(i);
             }
             return services;
         }
@@ -591,7 +590,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         }
 
         if (CUPSPrinter.isCupsRunning()) {
-            ArrayList matchingServices = new ArrayList();
+            ArrayList<PrintService> matchingServices = new ArrayList<>();
             for (int i=0; i<services.length; i++) {
                 try {
                     if (services[i].
@@ -602,7 +601,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 }
             }
             services = new PrintService[matchingServices.size()];
-            return (PrintService[])matchingServices.toArray(services);
+            return matchingServices.toArray(services);
 
         } else {
             // We only need to compare 1 PrintService because all
@@ -704,7 +703,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
             listener.notifyServices(printServices);
         } else {
             if (lookupListeners == null) {
-                lookupListeners = new Vector();
+                lookupListeners = new Vector<>();
                 lookupListeners.add(listener);
                 Thread lookupThread = new Thread(this);
                 lookupThread.start();
@@ -733,8 +732,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         synchronized (this) {
             BackgroundLookupListener listener;
             for (int i=0; i<lookupListeners.size(); i++) {
-                listener =
-                    (BackgroundLookupListener)lookupListeners.elementAt(i);
+                listener = lookupListeners.elementAt(i);
                 listener.notifyServices(copyOf(services));
             }
             lookupListeners = null;
@@ -820,7 +818,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         String command = "/usr/bin/lpstat -v|/usr/bin/expand|/usr/bin/cut -f3 -d' ' |/usr/bin/cut -f1 -d':' | /usr/bin/sort";
 
         String [] names = execCmd(command);
-        ArrayList printerNames = new ArrayList();
+        ArrayList<String> printerNames = new ArrayList<>();
         for (int i=0; i < names.length; i++) {
             if (!names[i].equals("_default") &&
                 !names[i].equals(defaultPrinter) &&
@@ -828,7 +826,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 printerNames.add(names[i]);
             }
         }
-        return (String[])printerNames.toArray(new String[printerNames.size()]);
+        return printerNames.toArray(new String[printerNames.size()]);
     }
 
     private String getDefaultPrinterNameAIX() {
@@ -870,7 +868,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     }
 
     static String[] execCmd(final String command) {
-        ArrayList results = null;
+        ArrayList<String> results = null;
         try {
             final String[] cmd = new String[3];
             if (isSysV() || isAIX()) {
@@ -883,9 +881,9 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                 cmd[2] = "LC_ALL=C " + command;
             }
 
-            results = (ArrayList)AccessController.doPrivileged(
-                new PrivilegedExceptionAction() {
-                    public Object run() throws IOException {
+            results = AccessController.doPrivileged(
+                new PrivilegedExceptionAction<ArrayList<String>>() {
+                    public ArrayList<String> run() throws IOException {
 
                         Process proc;
                         BufferedReader bufferedReader = null;
@@ -907,7 +905,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
                                 FileReader reader = new FileReader(f);
                                 bufferedReader = new BufferedReader(reader);
                                 String line;
-                                ArrayList results = new ArrayList();
+                                ArrayList<String> results = new ArrayList<>();
                                 while ((line = bufferedReader.readLine())
                                        != null) {
                                     results.add(line);
@@ -932,7 +930,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
         if (results == null) {
             return new String[0];
         } else {
-            return (String[])results.toArray(new String[results.size()]);
+            return results.toArray(new String[results.size()]);
         }
     }
 

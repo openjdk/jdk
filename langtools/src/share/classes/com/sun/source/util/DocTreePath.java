@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,16 +38,23 @@ import java.util.Iterator;
 @jdk.Exported
 public class DocTreePath implements Iterable<DocTree> {
     /**
-     * Gets a documentation tree path for a tree node within a compilation unit.
-     * @return null if the node is not found
+     * Returns a documentation tree path for a tree node within a compilation unit,
+     * or {@code null} if the node is not found.
+     * @param treePath the path for the node with which the doc comment is associated
+     * @param doc the doc comment associated with the node
+     * @param target a node within the doc comment
+     * @return a path identifying the target within the tree
      */
     public static DocTreePath getPath(TreePath treePath, DocCommentTree doc, DocTree target) {
         return getPath(new DocTreePath(treePath, doc), target);
     }
 
     /**
-     * Gets a documentation tree path for a tree node within a subtree identified by a DocTreePath object.
-     * @return null if the node is not found
+     * Returns a documentation tree path for a tree node within a subtree
+     * identified by a DocTreePath object, or {@code null} if the node is not found.
+     * @param path a path identifying a node within a doc comment tree
+     * @param target a node to be located within the given node
+     * @return a path identifying the target node
      */
     public static DocTreePath getPath(DocTreePath path, DocTree target) {
         path.getClass();
@@ -100,6 +107,8 @@ public class DocTreePath implements Iterable<DocTree> {
 
     /**
      * Creates a DocTreePath for a child node.
+     * @param p the parent node
+     * @param t the child node
      */
     public DocTreePath(DocTreePath p, DocTree t) {
         if (t.getKind() == DocTree.Kind.DOC_COMMENT) {
@@ -113,31 +122,31 @@ public class DocTreePath implements Iterable<DocTree> {
     }
 
     /**
-     * Get the TreePath associated with this path.
-     * @return TreePath for this DocTreePath
+     * Returns the TreePath associated with this path.
+     * @return the TreePath for this DocTreePath
      */
     public TreePath getTreePath() {
         return treePath;
     }
 
     /**
-     * Get the DocCommentTree associated with this path.
-     * @return DocCommentTree for this DocTreePath
+     * Returns the DocCommentTree associated with this path.
+     * @return the DocCommentTree for this DocTreePath
      */
     public DocCommentTree getDocComment() {
         return docComment;
     }
 
     /**
-     * Get the leaf node for this path.
-     * @return DocTree for this DocTreePath
+     * Returns the leaf node for this path.
+     * @return the DocTree for this DocTreePath
      */
     public DocTree getLeaf() {
         return leaf;
     }
 
     /**
-     * Get the path for the enclosing node, or null if there is no enclosing node.
+     * Returns the path for the enclosing node, or {@code null} if there is no enclosing node.
      * @return DocTreePath of parent
      */
     public DocTreePath getParentPath() {

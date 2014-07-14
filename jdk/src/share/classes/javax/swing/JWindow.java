@@ -89,6 +89,7 @@ import javax.accessibility.*;
  *    description: A toplevel window which has no system border or controls.
  *
  * @author David Kloba
+ * @since 1.2
  */
 @SuppressWarnings("serial")
 public class JWindow extends Window implements Accessible,

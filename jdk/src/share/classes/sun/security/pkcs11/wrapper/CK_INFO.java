@@ -131,34 +131,34 @@ public class CK_INFO {
      * @return the string representation of CK_INFO
      */
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
 
-        buffer.append(Constants.INDENT);
-        buffer.append("cryptokiVersion: ");
-        buffer.append(cryptokiVersion.toString());
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("cryptokiVersion: ");
+        sb.append(cryptokiVersion.toString());
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("manufacturerID: ");
-        buffer.append(new String(manufacturerID));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("manufacturerID: ");
+        sb.append(new String(manufacturerID));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("flags: ");
-        buffer.append(Functions.toBinaryString(flags));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("flags: ");
+        sb.append(Functions.toBinaryString(flags));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("libraryDescription: ");
-        buffer.append(new String(libraryDescription));
-        buffer.append(Constants.NEWLINE);
+        sb.append(Constants.INDENT);
+        sb.append("libraryDescription: ");
+        sb.append(new String(libraryDescription));
+        sb.append(Constants.NEWLINE);
 
-        buffer.append(Constants.INDENT);
-        buffer.append("libraryVersion: ");
-        buffer.append(libraryVersion.toString());
+        sb.append(Constants.INDENT);
+        sb.append("libraryVersion: ");
+        sb.append(libraryVersion.toString());
         //buffer.append(Constants.NEWLINE);
 
-        return buffer.toString() ;
+        return sb.toString() ;
     }
 
 }

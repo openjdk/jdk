@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -128,8 +128,8 @@ public class MethodDocImpl
              t.hasTag(CLASS);
              t = env.types.supertype(t)) {
             ClassSymbol c = (ClassSymbol)t.tsym;
-            for (Scope.Entry e = c.members().lookup(sym.name); e.scope != null; e = e.next()) {
-                if (sym.overrides(e.sym, origin, env.types, true)) {
+            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
+                if (sym.overrides(sym2, origin, env.types, true)) {
                     return TypeMaker.getType(env, t);
                 }
             }
@@ -160,9 +160,9 @@ public class MethodDocImpl
              t.hasTag(CLASS);
              t = env.types.supertype(t)) {
             ClassSymbol c = (ClassSymbol)t.tsym;
-            for (Scope.Entry e = c.members().lookup(sym.name); e.scope != null; e = e.next()) {
-                if (sym.overrides(e.sym, origin, env.types, true)) {
-                    return env.getMethodDoc((MethodSymbol)e.sym);
+            for (Symbol sym2 : c.members().getSymbolsByName(sym.name)) {
+                if (sym.overrides(sym2, origin, env.types, true)) {
+                    return env.getMethodDoc((MethodSymbol)sym2);
                 }
             }
         }

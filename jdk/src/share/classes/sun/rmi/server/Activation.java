@@ -1239,7 +1239,7 @@ public class Activation implements Serializable {
                 checkArgs(desc, argv);
 
                 if (debugExec) {
-                    StringBuffer sb = new StringBuffer(argv[0]);
+                    StringBuilder sb = new StringBuilder(argv[0]);
                     int j;
                     for (j = 1; j < argv.length; j++) {
                         sb.append(' ');

@@ -517,7 +517,7 @@ public class AVA implements DerEncoder {
             if (hexDigits.indexOf(Character.toUpperCase((char)c2)) >= 0) {
                 int hi = Character.digit((char)c1, 16);
                 int lo = Character.digit((char)c2, 16);
-                return new Byte((byte)((hi<<4) + lo));
+                return (byte)((hi<<4) + lo);
             } else {
                 throw new IOException
                         ("escaped hex value must include two valid digits");

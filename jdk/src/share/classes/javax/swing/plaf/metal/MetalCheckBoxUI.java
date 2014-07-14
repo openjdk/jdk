@@ -67,6 +67,13 @@ public class MetalCheckBoxUI extends MetalRadioButtonUI {
     // ********************************
     //         Create PlAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code MetalCheckBoxUI}.
+     *
+     * @param b a component
+     * @return a new instance of {@code MetalCheckBoxUI}
+     */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();
         MetalCheckBoxUI checkboxUI =

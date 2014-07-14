@@ -31,7 +31,7 @@
  *
  *  @run build TestScaffold VMConnection TargetListener TargetAdapter
  *  @run compile -g PopAsynchronousTest.java
- *  @run main PopAsynchronousTest
+ *  @run driver PopAsynchronousTest
  */
 import com.sun.jdi.*;
 import com.sun.jdi.event.*;

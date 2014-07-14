@@ -138,7 +138,7 @@ public class LDAPCertStoreParameters implements CertStoreParameters {
      * @return a formatted string describing the parameters
      */
     public String toString() {
-        StringBuffer sb = new StringBuffer();
+        StringBuilder sb = new StringBuilder();
         sb.append("LDAPCertStoreParameters: [\n");
 
         sb.append("  serverName: " + serverName + "\n");

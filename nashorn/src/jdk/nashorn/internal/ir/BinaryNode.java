@@ -45,7 +45,7 @@ import jdk.nashorn.internal.parser.TokenType;
 public final class BinaryNode extends Expression implements Assignment<Expression>, Optimistic {
     // Placeholder for "undecided optimistic ADD type". Unfortunately, we can't decide the type of ADD during optimistic
     // type calculation as it can have local variables as its operands that will decide its ultimate type.
-    private static final Type OPTIMISTIC_UNDECIDED_TYPE = Type.typeFor(new Object(){}.getClass());
+    private static final Type OPTIMISTIC_UNDECIDED_TYPE = Type.typeFor(new Object(){/*empty*/}.getClass());
 
     /** Left hand side argument. */
     private final Expression lhs;

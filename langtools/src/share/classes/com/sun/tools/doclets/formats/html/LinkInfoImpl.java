@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import com.sun.javadoc.*;
 import com.sun.tools.doclets.formats.html.markup.ContentBuilder;
 import com.sun.tools.doclets.formats.html.markup.StringContent;
 import com.sun.tools.doclets.internal.toolkit.Content;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 import com.sun.tools.doclets.internal.toolkit.util.links.*;
 
 /**
@@ -426,6 +425,6 @@ public class LinkInfoImpl extends LinkInfo {
      * desired place.
      */
     public boolean isLinkable() {
-        return Util.isLinkable(classDoc, configuration);
+        return configuration.utils.isLinkable(classDoc, configuration);
     }
 }

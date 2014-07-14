@@ -722,8 +722,7 @@ public class SynthSliderUI extends BasicSliderUI
     }
 
     private SynthContext getContext(JComponent c, int state) {
-        return SynthContext.getContext(SynthContext.class, c,
-                            SynthLookAndFeel.getRegion(c), style, state);
+        return SynthContext.getContext(c, style, state);
     }
 
     private SynthContext getContext(JComponent c, Region subregion) {
@@ -732,14 +731,13 @@ public class SynthSliderUI extends BasicSliderUI
 
     private SynthContext getContext(JComponent c, Region subregion, int state) {
         SynthStyle style = null;
-        Class klass = SynthContext.class;
 
         if (subregion == Region.SLIDER_TRACK) {
             style = sliderTrackStyle;
         } else if (subregion == Region.SLIDER_THUMB) {
             style = sliderThumbStyle;
         }
-        return SynthContext.getContext(klass, c, subregion, style, state);
+        return SynthContext.getContext(c, subregion, style, state);
     }
 
     private int getComponentState(JComponent c, Region region) {

@@ -92,15 +92,15 @@ public class SigningCertificateInfo {
     }
 
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("[\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n");
         for (int i = 0; i < certId.length; i++) {
-            buffer.append(certId[i].toString());
+            sb.append(certId[i].toString());
         }
         // format policies as a string
-        buffer.append("\n]");
+        sb.append("\n]");
 
-        return buffer.toString();
+        return sb.toString();
     }
 
     public void parse(byte[] bytes) throws IOException {
@@ -151,17 +151,17 @@ class ESSCertId {
     }
 
     public String toString() {
-        StringBuffer buffer = new StringBuffer();
-        buffer.append("[\n\tCertificate hash (SHA-1):\n");
+        StringBuilder sb = new StringBuilder();
+        sb.append("[\n\tCertificate hash (SHA-1):\n");
         if (hexDumper == null) {
             hexDumper = new HexDumpEncoder();
         }
-        buffer.append(hexDumper.encode(certHash));
+        sb.append(hexDumper.encode(certHash));
         if (issuer != null && serialNumber != null) {
-            buffer.append("\n\tIssuer: " + issuer + "\n");
-            buffer.append("\t" + serialNumber);
+            sb.append("\n\tIssuer: " + issuer + "\n");
+            sb.append("\t" + serialNumber);
         }
-        buffer.append("\n]");
-        return buffer.toString();
+        sb.append("\n]");
+        return sb.toString();
     }
 }

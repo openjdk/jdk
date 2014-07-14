@@ -75,7 +75,10 @@ import jdk.nashorn.internal.runtime.linker.NashornBeansLinker;
  */
 @ScriptClass("Object")
 public final class NativeObject {
+    /** Methodhandle to proto getter */
     public static final MethodHandle GET__PROTO__ = findOwnMH("get__proto__", ScriptObject.class, Object.class);
+
+    /** Methodhandle to proto setter */
     public static final MethodHandle SET__PROTO__ = findOwnMH("set__proto__", Object.class, Object.class, Object.class);
 
     private static final Object TO_STRING = new Object();
@@ -710,6 +713,32 @@ public final class NativeObject {
                     BeansLinker.getWritableInstancePropertyNames(clazz), BeansLinker.getInstanceMethodNames(clazz));
         }
 
+        return target;
+    }
+
+    /*
+     * Binds the source mirror object's properties to the target object. Binding
+     * properties allows two-way read/write for the properties of the source object.
+     * All inherited, enumerable properties are also bound. This method is used to
+     * to make 'with' statement work with ScriptObjectMirror as scope object.
+     *
+     * @param target the target object to which the source object's properties are bound
+     * @param source the source object whose properties are bound to the target
+     * @return the target object after property binding
+     */
+    public static Object bindAllProperties(final ScriptObject target, final ScriptObjectMirror source) {
+        final Set<String> keys = source.keySet();
+        // make accessor properties using dynamic invoker getters and setters
+        final AccessorProperty[] props = new AccessorProperty[keys.size()];
+        int idx = 0;
+        for (String name : keys) {
+            final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, MIRROR_GETTER_TYPE);
+            final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, MIRROR_SETTER_TYPE);
+            props[idx] = AccessorProperty.create(name, 0, getter, setter);
+            idx++;
+        }
+
+        target.addBoundProperties(source, props);
         return target;
     }
 

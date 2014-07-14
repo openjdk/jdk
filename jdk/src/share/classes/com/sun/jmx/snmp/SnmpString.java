@@ -140,7 +140,7 @@ public class SnmpString extends SnmpValue {
     public Byte[] toByte() {
         Byte[] result = new Byte[value.length] ;
         for (int i = 0 ; i < value.length ; i++) {
-            result[i] = new Byte(value[i]) ;
+            result[i] = value[i];
         }
         return result ;
     }

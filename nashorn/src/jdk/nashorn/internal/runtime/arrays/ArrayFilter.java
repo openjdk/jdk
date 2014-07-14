@@ -141,21 +141,6 @@ abstract class ArrayFilter extends ArrayData {
         return this;
     }
 
-    private static void printTrace(final Throwable t, final String msg) {
-        final java.io.StringWriter sw = new java.io.StringWriter();
-        final java.io.PrintWriter pw = new java.io.PrintWriter(sw, false);
-        pw.println(msg);
-        final StackTraceElement[] trace = t.getStackTrace();
-        for(final StackTraceElement e: trace) {
-            pw.println(" at " + e);
-            if(e.getClassName().startsWith("jdk.nashorn.")) {
-                break;
-            }
-        }
-        pw.flush();
-        System.out.println(sw.toString());
-    }
-
     @Override
     public Type getOptimisticType() {
         return underlying.getOptimisticType();

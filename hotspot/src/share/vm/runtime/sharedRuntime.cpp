@@ -1791,14 +1791,8 @@ JRT_END
 
 
 // Handles the uncommon case in locking, i.e., contention or an inflated lock.
-#ifndef PRODUCT
-int SharedRuntime::_monitor_enter_ctr=0;
-#endif
 JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj, BasicLock* lock, JavaThread* thread))
   oop obj(_obj);
-#ifndef PRODUCT
-  _monitor_enter_ctr++;             // monitor enter slow
-#endif
   if (PrintBiasedLockingStatistics) {
     Atomic::inc(BiasedLocking::slow_path_entry_count_addr());
   }
@@ -1812,15 +1806,9 @@ JRT_ENTRY_NO_ASYNC(void, SharedRuntime::complete_monitor_locking_C(oopDesc* _obj
   assert(!HAS_PENDING_EXCEPTION, "Should have no exception here");
 JRT_END
 
-#ifndef PRODUCT
-int SharedRuntime::_monitor_exit_ctr=0;
-#endif
 // Handles the uncommon cases of monitor unlocking in compiled code
 JRT_LEAF(void, SharedRuntime::complete_monitor_unlocking_C(oopDesc* _obj, BasicLock* lock))
    oop obj(_obj);
-#ifndef PRODUCT
-  _monitor_exit_ctr++;              // monitor exit slow
-#endif
   Thread* THREAD = JavaThread::current();
   // I'm not convinced we need the code contained by MIGHT_HAVE_PENDING anymore
   // testing was unable to ever fire the assert that guarded it so I have removed it.
@@ -1860,8 +1848,6 @@ void SharedRuntime::print_statistics() {
   ttyLocker ttyl;
   if (xtty != NULL)  xtty->head("statistics type='SharedRuntime'");
 
-  if (_monitor_enter_ctr) tty->print_cr("%5d monitor enter slow",  _monitor_enter_ctr);
-  if (_monitor_exit_ctr) tty->print_cr("%5d monitor exit slow",   _monitor_exit_ctr);
   if (_throw_null_ctr) tty->print_cr("%5d implicit null throw", _throw_null_ctr);
 
   SharedRuntime::print_ic_miss_histogram();
@@ -2445,9 +2431,9 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
     if (PrintAdapterHandlers || PrintStubCode) {
       ttyLocker ttyl;
       entry->print_adapter_on(tty);
-      tty->print_cr("i2c argument handler #%d for: %s %s (%d bytes generated)",
+      tty->print_cr("i2c argument handler #%d for: %s %s %s (%d bytes generated)",
                     _adapters->number_of_entries(), (method->is_static() ? "static" : "receiver"),
-                    method->signature()->as_C_string(), insts_size);
+                    method->signature()->as_C_string(), fingerprint->as_string(), insts_size);
       tty->print_cr("c2i argument handler starts at %p", entry->get_c2i_entry());
       if (Verbose || PrintStubCode) {
         address first_pc = entry->base_address();

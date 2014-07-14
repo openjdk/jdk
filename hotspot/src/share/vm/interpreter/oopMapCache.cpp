@@ -180,7 +180,7 @@ InterpreterOopMap::~InterpreterOopMap() {
   }
 }
 
-bool InterpreterOopMap::is_empty() {
+bool InterpreterOopMap::is_empty() const {
   bool result = _method == NULL;
   assert(_method != NULL || (_bci == 0 &&
     (_mask_size == 0 || _mask_size == USHRT_MAX) &&
@@ -196,7 +196,7 @@ void InterpreterOopMap::initialize() {
   for (int i = 0; i < N; i++) _bit_mask[i] = 0;
 }
 
-void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) {
+void InterpreterOopMap::iterate_oop(OffsetClosure* oop_closure) const {
   int n = number_of_entries();
   int word_index = 0;
   uintptr_t value = 0;
@@ -238,16 +238,14 @@ void InterpreterOopMap::iterate_all(OffsetClosure* oop_closure, OffsetClosure* v
 #endif
 
 
-void InterpreterOopMap::print() {
+void InterpreterOopMap::print() const {
   int n = number_of_entries();
   tty->print("oop map for ");
   method()->print_value();
   tty->print(" @ %d = [%d] { ", bci(), n);
   for (int i = 0; i < n; i++) {
-#ifdef ENABLE_ZAP_DEAD_LOCALS
     if (is_dead(i)) tty->print("%d+ ", i);
     else
-#endif
     if (is_oop(i)) tty->print("%d ", i);
   }
   tty->print_cr("}");
@@ -402,13 +400,11 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
       value |= (mask << oop_bit_number );
     }
 
-  #ifdef ENABLE_ZAP_DEAD_LOCALS
     // set dead bit
     if (!cell->is_live()) {
       value |= (mask << dead_bit_number);
       assert(!cell->is_reference(), "dead value marked as oop");
     }
-  #endif
   }
 
   // make sure last word is stored
@@ -469,7 +465,7 @@ void InterpreterOopMap::resource_copy(OopMapCacheEntry* from) {
   }
 }
 
-inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) {
+inline unsigned int OopMapCache::hash_value_for(methodHandle method, int bci) const {
   // We use method->code_size() rather than method->identity_hash() below since
   // the mark may not be present if a pointer to the method is already reversed.
   return   ((unsigned int) bci)
@@ -522,7 +518,7 @@ void OopMapCache::flush_obsolete_entries() {
 
 void OopMapCache::lookup(methodHandle method,
                          int bci,
-                         InterpreterOopMap* entry_for) {
+                         InterpreterOopMap* entry_for) const {
   MutexLocker x(&_mut);
 
   OopMapCacheEntry* entry = NULL;

@@ -46,7 +46,7 @@ package org.xml.sax;
  * unrecognized feature or property identifier; SAX applications and
  * extensions may use this class for other, similar purposes.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  * @see org.xml.sax.SAXNotSupportedException
  */

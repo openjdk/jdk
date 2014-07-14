@@ -123,7 +123,7 @@ public class UUDecoder extends CharacterDecoder {
         throws IOException {
         int i, c1, c2, c3, c4;
         int a, b, c;
-        StringBuffer x = new StringBuffer();
+        StringBuilder x = new StringBuilder();
 
         for (i = 0; i < 4; i++) {
             c1 = inStream.read();
@@ -152,7 +152,7 @@ public class UUDecoder extends CharacterDecoder {
      */
     protected void decodeBufferPrefix(PushbackInputStream inStream, OutputStream outStream) throws IOException {
         int     c;
-        StringBuffer q = new StringBuffer(32);
+        StringBuilder q = new StringBuilder(32);
         String r;
         boolean sawNewLine;
 

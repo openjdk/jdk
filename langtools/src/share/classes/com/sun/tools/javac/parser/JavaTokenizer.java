@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,10 +45,6 @@ import static com.sun.tools.javac.util.LayoutCharacters.*;
 public class JavaTokenizer {
 
     private static final boolean scannerDebug = false;
-
-    /** Allow hex floating-point literals.
-     */
-    private boolean allowHexFloats;
 
     /** Allow binary literals.
      */
@@ -126,7 +122,6 @@ public class JavaTokenizer {
         this.source = fac.source;
         this.reader = reader;
         this.allowBinaryLiterals = source.allowBinaryLiterals();
-        this.allowHexFloats = source.allowHexFloats();
         this.allowUnderscoresInLiterals = source.allowUnderscoresInLiterals();
     }
 
@@ -220,11 +215,7 @@ public class JavaTokenizer {
             skipIllegalUnderscores();
             if ('0' <= reader.ch && reader.ch <= '9') {
                 scanDigits(pos, 10);
-                if (!allowHexFloats) {
-                    lexError(pos, "unsupported.fp.lit", source.name);
-                    allowHexFloats = true;
-                }
-                else if (!hexFloatsWork)
+                if (!hexFloatsWork)
                     lexError(pos, "unsupported.cross.fp.lit");
             } else
                 lexError(pos, "malformed.fp.lit");

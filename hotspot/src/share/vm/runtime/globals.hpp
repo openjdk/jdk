@@ -1130,29 +1130,30 @@ class CommandLineFlags {
           "Use LWP-based instead of libthread-based synchronization "       \
           "(SPARC only)")                                                   \
                                                                             \
-  product(ccstr, SyncKnobs, NULL,                                           \
-          "(Unstable) Various monitor synchronization tunables")            \
+  experimental(ccstr, SyncKnobs, NULL,                                      \
+               "(Unstable) Various monitor synchronization tunables")       \
                                                                             \
-  product(intx, EmitSync, 0,                                                \
-          "(Unsafe, Unstable) "                                             \
-          "Control emission of inline sync fast-path code")                 \
+  experimental(intx, EmitSync, 0,                                           \
+               "(Unsafe, Unstable) "                                        \
+               "Control emission of inline sync fast-path code")            \
                                                                             \
   product(intx, MonitorBound, 0, "Bound Monitor population")                \
                                                                             \
   product(bool, MonitorInUseLists, false, "Track Monitors for Deflation")   \
                                                                             \
-  product(intx, SyncFlags, 0, "(Unsafe, Unstable) Experimental Sync flags") \
+  experimental(intx, SyncFlags, 0, "(Unsafe, Unstable) "                    \
+               "Experimental Sync flags")                                   \
                                                                             \
-  product(intx, SyncVerbose, 0, "(Unstable)")                               \
+  experimental(intx, SyncVerbose, 0, "(Unstable)")                          \
                                                                             \
-  product(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")                    \
+  experimental(intx, ClearFPUAtPark, 0, "(Unsafe, Unstable)")               \
                                                                             \
-  product(intx, hashCode, 5,                                                \
-          "(Unstable) select hashCode generation algorithm")                \
+  experimental(intx, hashCode, 5,                                           \
+               "(Unstable) select hashCode generation algorithm")           \
                                                                             \
-  product(intx, WorkAroundNPTLTimedWaitHang, 1,                             \
-          "(Unstable, Linux-specific) "                                     \
-          "avoid NPTL-FUTEX hang pthread_cond_timedwait")                   \
+  experimental(intx, WorkAroundNPTLTimedWaitHang, 1,                        \
+               "(Unstable, Linux-specific) "                                \
+               "avoid NPTL-FUTEX hang pthread_cond_timedwait")              \
                                                                             \
   product(bool, FilterSpuriousWakeups, true,                                \
           "When true prevents OS-level spurious, or premature, wakeups "    \
@@ -1214,6 +1215,11 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseFastJNIAccessors, true,                                  \
           "Use optimized versions of Get<Primitive>Field")                  \
+                                                                            \
+  product(intx, MaxJNILocalCapacity, 65536,                                 \
+          "Maximum allowable local JNI handle capacity to "                 \
+          "EnsureLocalCapacity() and PushLocalFrame(), "                    \
+          "where <= 0 is unlimited, default: 65536")                        \
                                                                             \
   product(bool, EagerXrunInit, false,                                       \
           "Eagerly initialize -Xrun libraries; allows startup profiling, "  \
