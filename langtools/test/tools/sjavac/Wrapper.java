@@ -25,17 +25,18 @@
 
 import java.io.File;
 import java.lang.reflect.Method;
+import java.util.Arrays;
 
 
-public class SJavacTestUtil {
-
-    public static void runSjavacTest(String testClassName, String[] args)
-            throws Exception {
-
+public class Wrapper {
+    public static void main(String... args) throws Exception {
         if (!isSJavacOnClassPath()) {
             System.out.println("sjavac not available: pass by default");
             return;
         }
+
+        String testClassName = args[0];
+        String[] testArgs = Arrays.copyOfRange(args, 1, args.length);
 
         File srcDir = new File(System.getProperty("test.src"));
         File clsDir = new File(System.getProperty("test.classes"));
@@ -53,12 +54,11 @@ public class SJavacTestUtil {
 
         Class<?> sjavac = Class.forName(testClassName);
         Method main = sjavac.getMethod("main", String[].class);
-        main.invoke(null, new Object[] { args });
-
+        main.invoke(null, new Object[] { testArgs });
     }
 
     private static boolean isSJavacOnClassPath() {
         String cls = "com/sun/tools/sjavac/Main.class";
-        return SJavacTestUtil.class.getClassLoader().getResource(cls) != null;
+        return Wrapper.class.getClassLoader().getResource(cls) != null;
     }
 }

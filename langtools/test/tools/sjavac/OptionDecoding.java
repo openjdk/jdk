@@ -23,6 +23,15 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8035063
+ * @summary Tests decoding of String[] into Options.
+ *
+ * @build Wrapper
+ * @run main Wrapper OptionDecoding
+ */
+
 import static util.OptionTestUtil.assertEquals;
 import static util.OptionTestUtil.checkFilesFound;
 
