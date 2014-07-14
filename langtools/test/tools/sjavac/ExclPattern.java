@@ -23,6 +23,16 @@
  * questions.
  */
 
+
+/*
+ * @test
+ * @bug 8037085
+ * @summary Ensures that sjavac can handle various exclusion patterns.
+ *
+ * @build Wrapper
+ * @run main Wrapper ExclPattern
+ */
+
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.nio.charset.Charset;
