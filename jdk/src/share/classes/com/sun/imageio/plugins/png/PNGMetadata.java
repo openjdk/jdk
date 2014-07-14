@@ -1647,7 +1647,7 @@ public class PNGMetadata extends IIOMetadata implements Cloneable {
                     int compressionMethod =
                         getEnumeratedAttribute(zTXt_node, "compressionMethod",
                                                zTXt_compressionMethodNames);
-                    zTXt_compressionMethod.add(new Integer(compressionMethod));
+                    zTXt_compressionMethod.add(compressionMethod);
 
                     String text = getAttribute(zTXt_node, "text");
                     zTXt_text.add(text);

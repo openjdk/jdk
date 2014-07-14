@@ -633,7 +633,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
         LazyValue toolBarBorder = t -> new MetalBorders.ToolBarBorder();
 
         LazyValue progressBarBorder = t ->
-            new BorderUIResource.LineBorderUIResource(controlDarkShadow, new Integer(1));
+            new BorderUIResource.LineBorderUIResource(controlDarkShadow, 1);
 
         LazyValue toolTipBorder = t ->
             new BorderUIResource.LineBorderUIResource(primaryControlDarkShadow);
@@ -851,8 +851,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Slider.foreground", primaryControlShadow,
             "Slider.focus", focusColor,
             "Slider.focusInsets", zeroInsets,
-            "Slider.trackWidth", new Integer( 7 ),
-            "Slider.majorTickLength", new Integer( 6 ),
+            "Slider.trackWidth",  7 ,
+            "Slider.majorTickLength",  6 ,
             "Slider.horizontalThumbIcon",(LazyValue) t -> MetalIconFactory.getHorizontalSliderThumbIcon(),
             "Slider.verticalThumbIcon",(LazyValue) t -> MetalIconFactory.getVerticalSliderThumbIcon(),
             "Slider.focusInputMap",
@@ -914,7 +914,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
                     new MetalBorders.OptionDialogBorder(),
             "InternalFrame.paletteBorder",(LazyValue) t ->
                     new MetalBorders.PaletteBorder(),
-            "InternalFrame.paletteTitleHeight", new Integer(11),
+            "InternalFrame.paletteTitleHeight", 11,
             "InternalFrame.paletteCloseIcon",(LazyValue) t ->
                     new MetalIconFactory.PaletteCloseIcon(),
             "InternalFrame.closeIcon",
@@ -1067,7 +1067,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "ScrollBar.thumb", primaryControlShadow,
             "ScrollBar.thumbShadow", primaryControlDarkShadow,
             "ScrollBar.thumbHighlight", primaryControl,
-            "ScrollBar.width", new Integer( 17 ),
+            "ScrollBar.width",  17 ,
             "ScrollBar.allowsAbsolutePositioning", Boolean.TRUE,
             "ScrollBar.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
@@ -1238,8 +1238,8 @@ public class MetalLookAndFeel extends BasicLookAndFeel
             "Menu.borderPainted", Boolean.TRUE,
             "Menu.menuPopupOffsetX", zero,
             "Menu.menuPopupOffsetY", zero,
-            "Menu.submenuPopupOffsetX", new Integer(-4),
-            "Menu.submenuPopupOffsetY", new Integer(-3),
+            "Menu.submenuPopupOffsetX", -4,
+            "Menu.submenuPopupOffsetY", -3,
             "Menu.font", menuTextValue,
             "Menu.selectionForeground", menuSelectedForeground,
             "Menu.selectionBackground", menuSelectedBackground,
@@ -1354,7 +1354,7 @@ public class MetalLookAndFeel extends BasicLookAndFeel
 
             // SplitPane
 
-            "SplitPane.dividerSize", new Integer(10),
+            "SplitPane.dividerSize", 10,
             "SplitPane.ancestorInputMap",
                new UIDefaults.LazyInputMap(new Object[] {
                         "UP", "negativeIncrement",
