@@ -1573,6 +1573,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         default:
           constant = new Constant(as_ValueType(field_val));
         }
+        // Stable static fields are checked for non-default values in ciField::initialize_from().
       }
       if (constant != NULL) {
         push(type, append(constant));
@@ -1613,6 +1614,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
               break;
             default:
               constant = new Constant(as_ValueType(field_val));
+            }
+            if (FoldStableValues && field->is_stable() && field_val.is_null_or_zero()) {
+              // Stable field with default value can't be constant.
+              constant = NULL;
             }
           } else {
             // For CallSite objects treat the target field as a compile time constant.
