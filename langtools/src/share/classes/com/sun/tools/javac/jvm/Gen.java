@@ -1072,8 +1072,7 @@ public class Gen extends JCTree.Visitor {
                              boolean testFirst) {
             Env<GenContext> loopEnv = env.dup(loop, new GenContext());
             int startpc = code.entryPoint();
-            boolean recalculateState = false;
-            if (testFirst) { //while or for loop
+            if (testFirst) {
                 CondItem c;
                 if (cond != null) {
                     code.statBegin(cond.pos);
@@ -1082,9 +1081,6 @@ public class Gen extends JCTree.Visitor {
                     c = items.makeCondItem(goto_);
                 }
                 Chain loopDone = c.jumpFalse();
-                if (loopDone == null) {
-                    recalculateState = true;
-                }
                 code.resolve(c.trueJumps);
                 genStat(body, loopEnv, CRT_STATEMENT | CRT_FLOW_TARGET);
                 if (varDebugInfo) {
@@ -1120,9 +1116,6 @@ public class Gen extends JCTree.Visitor {
                 }
                 code.resolve(c.jumpTrue(), startpc);
                 code.resolve(c.falseJumps);
-            }
-            if (recalculateState && loopEnv.info.exit != null) {
-                loopEnv.info.exit.state.defined = code.state.defined.dup();
             }
             code.resolve(loopEnv.info.exit);
         }
