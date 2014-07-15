@@ -169,7 +169,7 @@ class ThisExpression extends Expression {
      * Code
      */
     public void codeValue(Environment env, Context ctx, Assembler asm) {
-        asm.add(where, opc_aload, new Integer(field.number));
+        asm.add(where, opc_aload, field.number);
     }
 
     /**

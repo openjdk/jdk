@@ -67,7 +67,7 @@ public class PAEncTSEnc {
     public PAEncTSEnc() {
         KerberosTime now = KerberosTime.now();
         pATimeStamp = now;
-        pAUSec = new Integer(now.getMicroSeconds());
+        pAUSec = now.getMicroSeconds();
     }
 
     /**
@@ -85,7 +85,7 @@ public class PAEncTSEnc {
         if (encoding.getData().available() > 0) {
             der = encoding.getData().getDerValue();
             if ((der.getTag() & 0x1F) == 0x01) {
-                pAUSec = new Integer(der.getData().getBigInteger().intValue());
+                pAUSec = der.getData().getBigInteger().intValue();
             }
             else throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         }

@@ -180,7 +180,7 @@ public class KrbApRep {
         Integer seqno = null;
 
         if (seqNumber != null)
-            seqno = new Integer(seqNumber.current());
+            seqno = seqNumber.current();
 
         encPart = new EncAPRepPart(ctime,
                                    cusec,

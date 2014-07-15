@@ -71,7 +71,7 @@ abstract public class Enumerated  implements Serializable {
    *            the method is illegal or inappropriate.
    */
   public Enumerated(int valueIndex) throws IllegalArgumentException {
-    if (getIntTable().get(new Integer(valueIndex)) == null) {
+    if (getIntTable().get(valueIndex) == null) {
       throw new IllegalArgumentException() ;
     }
     value = valueIndex ;
@@ -181,7 +181,7 @@ abstract public class Enumerated  implements Serializable {
    */
   @Override
   public String toString() {
-    return getIntTable().get(new Integer(value)) ;
+    return getIntTable().get(value);
   }
 
 

@@ -430,7 +430,7 @@ public class JvmMemPoolEntryImpl implements JvmMemPoolEntryMBean {
      * Getter for the "JvmMemPoolIndex" variable.
      */
     public Integer getJvmMemPoolIndex() throws SnmpStatusException {
-        return new Integer(jvmMemPoolIndex);
+        return jvmMemPoolIndex;
     }
 
 

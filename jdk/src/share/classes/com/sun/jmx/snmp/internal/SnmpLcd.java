@@ -43,15 +43,15 @@ public abstract class SnmpLcd {
 
         public void addModelLcd(int id,
                                 SnmpModelLcd usmlcd) {
-            models.put(new Integer(id), usmlcd);
+            models.put(id, usmlcd);
         }
 
         public SnmpModelLcd getModelLcd(int id) {
-            return models.get(new Integer(id));
+            return models.get(id);
         }
 
         public SnmpModelLcd removeModelLcd(int id) {
-            return models.remove(new Integer(id));
+            return models.remove(id);
         }
     }
 

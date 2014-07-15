@@ -107,7 +107,7 @@ public class GetIntegerAction
     public Integer run() {
         Integer value = Integer.getInteger(theProp);
         if ((value == null) && defaultSet)
-            return new Integer(defaultVal);
+            return defaultVal;
         return value;
     }
 }

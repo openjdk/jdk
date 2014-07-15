@@ -286,7 +286,7 @@ public abstract class AbstractSaslImpl {
 
             // Message id supplied by caller as part of traceTag
             logger.logp(lev, srcClass, srcMethod, "{0} ( {1} ): {2}",
-                new Object[] {traceTag, new Integer(origlen), content});
+                new Object[] {traceTag, origlen, content});
         } catch (Exception e) {
             logger.logp(Level.WARNING, srcClass, srcMethod,
                 "SASLIMPL09:Error generating trace output: {0}", e);

@@ -115,13 +115,13 @@ public class EncKrbPrivPart {
         timestamp = KerberosTime.parse(der.getData(), (byte) 0x01, true);
         if ((der.getData().peekByte() & 0x1F) == 0x02) {
             subDer = der.getData().getDerValue();
-            usec = new Integer(subDer.getData().getBigInteger().intValue());
+            usec = subDer.getData().getBigInteger().intValue();
         } else {
             usec = null;
         }
         if ((der.getData().peekByte() & 0x1F) == 0x03) {
             subDer = der.getData().getDerValue();
-            seqNumber = new Integer(subDer.getData().getBigInteger().intValue());
+            seqNumber = subDer.getData().getBigInteger().intValue();
         } else {
             seqNumber = null;
         }

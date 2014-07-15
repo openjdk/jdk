@@ -72,7 +72,7 @@ public class JvmRTBootClassPathEntryImpl
      * Getter for the "JvmRTBootClassPathIndex" variable.
      */
     public Integer getJvmRTBootClassPathIndex() throws SnmpStatusException {
-        return new Integer(index);
+        return index;
     }
 
 }

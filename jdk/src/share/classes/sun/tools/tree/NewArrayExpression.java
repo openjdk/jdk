@@ -133,21 +133,21 @@ class NewArrayExpression extends NaryExpression {
 
         switch (type.getElementType().getTypeCode()) {
             case TC_BOOLEAN:
-                asm.add(where, opc_newarray, new Integer(T_BOOLEAN));   break;
+                asm.add(where, opc_newarray, T_BOOLEAN);   break;
             case TC_BYTE:
-                asm.add(where, opc_newarray, new Integer(T_BYTE));      break;
+                asm.add(where, opc_newarray, T_BYTE);      break;
             case TC_SHORT:
-                asm.add(where, opc_newarray, new Integer(T_SHORT));     break;
+                asm.add(where, opc_newarray, T_SHORT);     break;
             case TC_CHAR:
-                asm.add(where, opc_newarray, new Integer(T_CHAR));      break;
+                asm.add(where, opc_newarray, T_CHAR);      break;
             case TC_INT:
-                asm.add(where, opc_newarray, new Integer(T_INT));       break;
+                asm.add(where, opc_newarray, T_INT);       break;
             case TC_LONG:
-                asm.add(where, opc_newarray, new Integer(T_LONG));      break;
+                asm.add(where, opc_newarray, T_LONG);      break;
             case TC_FLOAT:
-                asm.add(where, opc_newarray, new Integer(T_FLOAT));     break;
+                asm.add(where, opc_newarray, T_FLOAT);     break;
             case TC_DOUBLE:
-                asm.add(where, opc_newarray, new Integer(T_DOUBLE));    break;
+                asm.add(where, opc_newarray, T_DOUBLE);    break;
             case TC_ARRAY:
                 asm.add(where, opc_anewarray, type.getElementType());   break;
             case TC_CLASS:

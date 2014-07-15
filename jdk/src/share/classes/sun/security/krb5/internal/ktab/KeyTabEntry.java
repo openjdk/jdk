@@ -68,7 +68,7 @@ public class KeyTabEntry implements KeyTabConstants {
     public EncryptionKey getKey() {
         EncryptionKey key = new EncryptionKey(keyblock,
                                               keyType,
-                                              new Integer(keyVersion));
+                                              keyVersion);
         return key;
     }
 
