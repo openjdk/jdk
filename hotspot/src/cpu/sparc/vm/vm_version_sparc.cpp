@@ -251,6 +251,49 @@ void VM_Version::initialize() {
   // buf is started with ", " or is empty
   _features_str = strdup(strlen(buf) > 2 ? buf + 2 : buf);
 
+  // There are three 64-bit SPARC families that do not overlap, e.g.,
+  // both is_ultra3() and is_sparc64() cannot be true at the same time.
+  // Within these families, there can be more than one chip, e.g.,
+  // is_T4() and is_T7() machines are also is_niagara().
+  if (is_ultra3()) {
+    assert(_L1_data_cache_line_size == 0, "overlap with Ultra3 family");
+    // Ref: UltraSPARC III Cu Processor
+    _L1_data_cache_line_size = 64;
+  }
+  if (is_niagara()) {
+    assert(_L1_data_cache_line_size == 0, "overlap with niagara family");
+    // All Niagara's are sun4v's, but not all sun4v's are Niagaras, e.g.,
+    // Fujitsu SPARC64 is sun4v, but we don't want it in this block.
+    //
+    // Ref: UltraSPARC T1 Supplement to the UltraSPARC Architecture 2005
+    // Appendix F.1.3.1 Cacheable Accesses
+    // -> 16-byte L1 cache line size
+    //
+    // Ref: UltraSPARC T2: A Highly-Threaded, Power-Efficient, SPARC SOC
+    // Section III: SPARC Processor Core
+    // -> 16-byte L1 cache line size
+    //
+    // Ref: Oracle's SPARC T4-1, SPARC T4-2, SPARC T4-4, and SPARC T4-1B Server Architecture
+    // Section SPARC T4 Processor Cache Architecture
+    // -> 32-byte L1 cache line size (no longer see that info on this ref)
+    //
+    // XXX - still need a T7 reference here
+    //
+    if (is_T7()) {  // T7 or newer
+      _L1_data_cache_line_size = 64;
+    } else if (is_T4()) {  // T4 or newer (until T7)
+      _L1_data_cache_line_size = 32;
+    } else {  // T1 or newer (until T4)
+      _L1_data_cache_line_size = 16;
+    }
+  }
+  if (is_sparc64()) {
+    guarantee(_L1_data_cache_line_size == 0, "overlap with SPARC64 family");
+    // Ref: Fujitsu SPARC64 VII Processor
+    // Section 4 Cache System
+    _L1_data_cache_line_size = 64;
+  }
+
   // UseVIS is set to the smallest of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseVIS to 3 on
   // older UltraSparc which do not support it.
@@ -356,6 +399,7 @@ void VM_Version::initialize() {
 
 #ifndef PRODUCT
   if (PrintMiscellaneous && Verbose) {
+    tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
     tty->print("Allocation");
     if (AllocatePrefetchStyle <= 0) {
       tty->print_cr(": no prefetching");
