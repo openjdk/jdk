@@ -189,6 +189,8 @@ public:
   bool      check(TRAPS);       // true if the thread owns the monitor.
   void      check_slow(TRAPS);
   void      clear();
+  static void sanity_checks();  // public for -XX:+ExecuteInternalVMTests
+                                // in PRODUCT for -XX:SyncKnobs=Verbose=1
 #ifndef PRODUCT
   void      verify();
   void      print();
@@ -234,8 +236,6 @@ public:
 
   // WARNING: this must be the very first word of ObjectMonitor
   // This means this class can't use any virtual member functions.
-  // TODO-FIXME: assert that offsetof(_header) is 0 or get rid of the
-  // implicit 0 offset in emitted code.
 
   volatile markOop   _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root
