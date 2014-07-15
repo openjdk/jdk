@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,9 +86,8 @@ class ClientId {
             try {
                 Class<?> socketFactoryClass =
                         Obj.helper.loadClass(socketFactory);
-                Class<?> objClass = Class.forName("java.lang.Object");
                 this.sockComparator = socketFactoryClass.getMethod(
-                                "compare", new Class<?>[]{objClass, objClass});
+                                "compare", new Class<?>[]{Object.class, Object.class});
                 Method getDefault = socketFactoryClass.getMethod(
                                             "getDefault", new Class<?>[]{});
                 this.factory =
