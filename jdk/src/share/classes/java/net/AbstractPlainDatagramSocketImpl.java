@@ -322,13 +322,13 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
 
         switch (optID) {
             case SO_TIMEOUT:
-                result = new Integer(timeout);
+                result = timeout;
                 break;
 
             case IP_TOS:
                 result = socketGetOption(optID);
                 if ( ((Integer)result).intValue() == -1) {
-                    result = new Integer(trafficClass);
+                    result = trafficClass;
                 }
                 break;
 

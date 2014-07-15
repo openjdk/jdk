@@ -104,11 +104,11 @@ public class KRBSafeBody {
         timestamp = KerberosTime.parse(encoding.getData(), (byte)0x01, true);
         if ((encoding.getData().peekByte() & 0x1F) == 0x02) {
             der = encoding.getData().getDerValue();
-            usec = new Integer(der.getData().getBigInteger().intValue());
+            usec = der.getData().getBigInteger().intValue();
         }
         if ((encoding.getData().peekByte() & 0x1F) == 0x03) {
             der = encoding.getData().getDerValue();
-            seqNumber = new Integer(der.getData().getBigInteger().intValue());
+            seqNumber = der.getData().getBigInteger().intValue();
         }
         sAddress = HostAddress.parse(encoding.getData(), (byte)0x04, false);
         if (encoding.getData().available() > 0)

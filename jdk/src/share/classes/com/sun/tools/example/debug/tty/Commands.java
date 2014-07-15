@@ -84,7 +84,7 @@ class Commands {
                                     MessageOutput.println("Current thread isnt suspended.");
                                 } catch (ArrayIndexOutOfBoundsException e) {
                                     MessageOutput.println("Requested stack frame is no longer active:",
-                                                          new Object []{new Integer(stackFrame)});
+                                                          new Object []{stackFrame});
                                 }
                             }
                             MessageOutput.printPrompt();
@@ -942,14 +942,14 @@ class Commands {
         }
         if (pc != -1) {
             MessageOutput.println("stack frame dump with pc",
-                                  new Object [] {new Integer(frameNumber + 1),
+                                  new Object [] {(frameNumber + 1),
                                                  meth.declaringType().name(),
                                                  meth.name(),
                                                  methodInfo,
                                                  Long.valueOf(pc)});
         } else {
             MessageOutput.println("stack frame dump",
-                                  new Object [] {new Integer(frameNumber + 1),
+                                  new Object [] {(frameNumber + 1),
                                                  meth.declaringType().name(),
                                                  meth.name(),
                                                  methodInfo});
@@ -2093,8 +2093,8 @@ class Commands {
                         VirtualMachineManager vmm) {
         MessageOutput.println("minus version",
                               new Object [] { debuggerName,
-                                              new Integer(vmm.majorInterfaceVersion()),
-                                              new Integer(vmm.minorInterfaceVersion()),
+                                              vmm.majorInterfaceVersion(),
+                                              vmm.minorInterfaceVersion(),
                                                   System.getProperty("java.version")});
         if (Env.connection() != null) {
             try {

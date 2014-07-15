@@ -62,7 +62,7 @@ public class RemoteHostImpl implements RemoteHost, HostListener {
 
     public RemoteVm attachVm(int lvmid, String mode)
                     throws RemoteException, MonitorException {
-        Integer v = new Integer(lvmid);
+        Integer v = lvmid;
         RemoteVm stub = null;
         StringBuilder sb = new StringBuilder();
 

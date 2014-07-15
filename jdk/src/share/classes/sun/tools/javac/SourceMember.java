@@ -885,7 +885,7 @@ class SourceMember extends MemberDefinition implements Constants {
                     // instance initializers.  Code for these is generated
                     // in the makeVarInits() method of the class
                     // MethodExpression.
-                    asm.add(getWhere(), opc_aload, new Integer(0));
+                    asm.add(getWhere(), opc_aload, 0);
                     e.codeValue(env, ctx, asm);
                     asm.add(getWhere(), opc_putfield, this);
                 }

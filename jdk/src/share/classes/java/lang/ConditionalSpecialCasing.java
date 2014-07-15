@@ -147,7 +147,7 @@ final class ConditionalSpecialCasing {
     }
 
     private static char[] lookUpTable(String src, int index, Locale locale, boolean bLowerCasing) {
-        HashSet<Entry> set = entryTable.get(new Integer(src.codePointAt(index)));
+        HashSet<Entry> set = entryTable.get(src.codePointAt(index));
         char[] ret = null;
 
         if (set != null) {

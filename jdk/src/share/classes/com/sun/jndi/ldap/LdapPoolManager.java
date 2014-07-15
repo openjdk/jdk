@@ -406,7 +406,7 @@ public final class LdapPoolManager {
                 try {
                     return Integer.getInteger(propName, defVal);
                 } catch (SecurityException e) {
-                    return new Integer(defVal);
+                    return defVal;
                 }
             }
         });

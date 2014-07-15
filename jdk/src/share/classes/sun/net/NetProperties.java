@@ -123,7 +123,7 @@ public class NetProperties {
             } catch (NumberFormatException ex) {
             }
         }
-        return new Integer(defval);
+        return defval;
     }
 
     /**

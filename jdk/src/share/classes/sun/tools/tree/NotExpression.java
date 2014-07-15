@@ -139,7 +139,7 @@ class NotExpression extends UnaryExpression {
      */
     public void codeValue(Environment env, Context ctx, Assembler asm) {
         right.codeValue(env, ctx, asm);
-        asm.add(where, opc_ldc, new Integer(1));
+        asm.add(where, opc_ldc, 1);
         asm.add(where, opc_ixor);
     }
 

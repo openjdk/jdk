@@ -67,7 +67,7 @@ public class PerfIntegerMonitor extends AbstractMonitor
      *                   return type is guaranteed to be of type Integer.
      */
     public Object getValue() {
-        return new Integer(ib.get(0));
+        return ib.get(0);
     }
 
     /**

@@ -531,7 +531,7 @@ public final class ConfigFile extends Configuration {
                 } else {
                     throw ioException(
                         "Configuration.Error.Line.line.expected.expect.found.value.",
-                        new Integer(linenum), expect, st.sval);
+                        linenum, expect, st.sval);
                 }
                 break;
 
@@ -541,7 +541,7 @@ public final class ConfigFile extends Configuration {
                 } else {
                     throw ioException(
                         "Configuration.Error.Line.line.expected.expect.",
-                        new Integer(linenum), expect, st.sval);
+                        linenum, expect, st.sval);
                 }
                 break;
 
@@ -551,7 +551,7 @@ public final class ConfigFile extends Configuration {
                 } else {
                     throw ioException(
                         "Configuration.Error.Line.line.expected.expect.",
-                        new Integer(linenum), expect, st.sval);
+                        linenum, expect, st.sval);
                 }
                 break;
 
@@ -561,7 +561,7 @@ public final class ConfigFile extends Configuration {
                 } else {
                     throw ioException(
                         "Configuration.Error.Line.line.expected.expect.",
-                        new Integer(linenum), expect, st.sval);
+                        linenum, expect, st.sval);
                 }
                 break;
 
@@ -571,14 +571,14 @@ public final class ConfigFile extends Configuration {
                 } else {
                     throw ioException(
                         "Configuration.Error.Line.line.expected.expect.",
-                        new Integer(linenum), expect, st.sval);
+                        linenum, expect, st.sval);
                 }
                 break;
 
             default:
                 throw ioException(
                     "Configuration.Error.Line.line.expected.expect.found.value.",
-                    new Integer(linenum), expect, st.sval);
+                    linenum, expect, st.sval);
             }
             return value;
         }
@@ -655,7 +655,7 @@ public final class ConfigFile extends Configuration {
             if (s == null || s.length() == 0) {
                 throw ioException(
                     "Configuration.Error.Line.line.system.property.value.expanded.to.empty.value",
-                    new Integer(linenum), value);
+                    linenum, value);
             }
             return s;
         }

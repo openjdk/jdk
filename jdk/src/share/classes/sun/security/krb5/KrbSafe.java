@@ -115,10 +115,10 @@ class KrbSafe extends KrbAppMessage {
                                 Integer seqno = null;
 
                                 if (timestamp != null)
-                                usec = new Integer(timestamp.getMicroSeconds());
+                                usec = timestamp.getMicroSeconds();
 
                                 if (seqNumber != null) {
-                                    seqno = new Integer(seqNumber.current());
+                                    seqno = seqNumber.current();
                                     seqNumber.step();
                                 }
 

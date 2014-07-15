@@ -50,10 +50,10 @@ public class EnumJvmMemManagerState extends Enumerated implements Serializable {
     protected static Hashtable<String, Integer> stringTable =
             new Hashtable<>();
     static  {
-        intTable.put(new Integer(2), "valid");
-        intTable.put(new Integer(1), "invalid");
-        stringTable.put("valid", new Integer(2));
-        stringTable.put("invalid", new Integer(1));
+        intTable.put(2, "valid");
+        intTable.put(1, "invalid");
+        stringTable.put("valid", 2);
+        stringTable.put("invalid", 1);
     }
 
     public EnumJvmMemManagerState(int valueIndex) throws IllegalArgumentException {

@@ -92,14 +92,14 @@ public class JvmMemMgrPoolRelEntryImpl
      * Getter for the "JvmMemManagerIndex" variable.
      */
     public Integer getJvmMemManagerIndex() throws SnmpStatusException {
-        return new Integer(JvmMemManagerIndex);
+        return JvmMemManagerIndex;
     }
 
     /**
      * Getter for the "JvmMemPoolIndex" variable.
      */
     public Integer getJvmMemPoolIndex() throws SnmpStatusException {
-        return new Integer(JvmMemPoolIndex);
+        return JvmMemPoolIndex;
     }
 
 }

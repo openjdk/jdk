@@ -669,18 +669,18 @@ class Main implements Constants {
             if (env.deprecation()) {
                 if (ndepfiles > 1) {
                     env.error(0, "warn.note.deprecations",
-                              new Integer(ndepfiles), new Integer(ndeps));
+                              ndepfiles, ndeps);
                 } else {
                     env.error(0, "warn.note.1deprecation",
-                              file1, new Integer(ndeps));
+                              file1, ndeps);
                 }
             } else {
                 if (ndepfiles > 1) {
                     env.error(0, "warn.note.deprecations.silent",
-                              new Integer(ndepfiles), new Integer(ndeps));
+                              ndepfiles, ndeps);
                 } else {
                     env.error(0, "warn.note.1deprecation.silent",
-                              file1, new Integer(ndeps));
+                              file1, ndeps);
                 }
             }
         }

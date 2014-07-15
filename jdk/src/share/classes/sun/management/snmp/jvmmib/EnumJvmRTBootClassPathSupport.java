@@ -49,10 +49,10 @@ public class EnumJvmRTBootClassPathSupport extends Enumerated implements Seriali
     protected static Hashtable<String, Integer> stringTable =
             new Hashtable<>();
     static  {
-        intTable.put(new Integer(2), "supported");
-        intTable.put(new Integer(1), "unsupported");
-        stringTable.put("supported", new Integer(2));
-        stringTable.put("unsupported", new Integer(1));
+        intTable.put(2, "supported");
+        intTable.put(1, "unsupported");
+        stringTable.put("supported", 2);
+        stringTable.put("unsupported", 1);
     }
 
     public EnumJvmRTBootClassPathSupport(int valueIndex) throws IllegalArgumentException {
