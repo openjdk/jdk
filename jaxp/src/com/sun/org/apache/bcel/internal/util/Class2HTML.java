@@ -82,7 +82,6 @@ import com.sun.org.apache.bcel.internal.Constants;
  * method in the Method's frame will jump to the appropiate method in
  * the Code frame.
  *
- * @version $Id: Class2HTML.java,v 1.3 2007-07-19 04:34:52 ofung Exp $
  * @author <A HREF="mailto:markus.dahm@berlin.de">M. Dahm</A>
 */
 public class Class2HTML implements Constants

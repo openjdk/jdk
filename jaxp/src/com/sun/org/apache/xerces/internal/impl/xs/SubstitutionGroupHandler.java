@@ -35,7 +35,6 @@ import java.util.Vector;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: SubstitutionGroupHandler.java,v 1.6 2010-11-01 04:39:55 joehw Exp $
  */
 public class SubstitutionGroupHandler {
 

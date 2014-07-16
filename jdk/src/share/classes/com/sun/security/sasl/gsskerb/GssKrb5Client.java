@@ -275,9 +275,9 @@ final class GssKrb5Client extends GssKrb5Base implements SaslClient {
             if (logger.isLoggable(Level.FINE)) {
                 logger.log(Level.FINE,
 "KRB5CLNT07:Client max recv size: {0}; server max recv size: {1}; rawSendSize: {2}",
-                    new Object[] {new Integer(recvMaxBufSize),
-                                  new Integer(srvMaxBufSize),
-                                  new Integer(rawSendSize)});
+                    new Object[] {recvMaxBufSize,
+                                  srvMaxBufSize,
+                                  rawSendSize});
             }
 
             // Construct negotiated security layers and client's max

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,7 +45,21 @@ import java.util.List;
  */
 @jdk.Exported
 public interface MethodInvocationTree extends ExpressionTree {
+    /**
+     * Returns the type arguments for this method invocation.
+     * @return the type arguments
+     */
     List<? extends Tree> getTypeArguments();
+
+    /**
+     * Returns the expression identifying the method to be invoked.
+     * @return the method selection expression
+     */
     ExpressionTree getMethodSelect();
+
+    /**
+     * Returns the arguments for the method invocation.
+     * @return the arguments
+     */
     List<? extends ExpressionTree> getArguments();
 }

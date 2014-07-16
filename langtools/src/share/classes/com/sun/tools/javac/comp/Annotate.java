@@ -690,7 +690,7 @@ public class Annotate {
         Scope scope = targetContainerType.tsym.members();
         int nr_value_elems = 0;
         boolean error = false;
-        for(Symbol elm : scope.getElementsByName(names.value)) {
+        for(Symbol elm : scope.getSymbolsByName(names.value)) {
             nr_value_elems++;
 
             if (nr_value_elems == 1 &&

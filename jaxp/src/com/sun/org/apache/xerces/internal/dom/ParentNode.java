@@ -68,7 +68,6 @@ import org.w3c.dom.UserDataHandler;
  * @author Arnaud  Le Hors, IBM
  * @author Joe Kesselman, IBM
  * @author Andy Clark, IBM
- * @version $Id: ParentNode.java,v 1.6 2009/07/21 20:30:28 joehw Exp $
  */
 public abstract class ParentNode
     extends ChildNode {

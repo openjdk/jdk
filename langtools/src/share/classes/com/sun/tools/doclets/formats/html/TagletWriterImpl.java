@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -53,11 +53,13 @@ public class TagletWriterImpl extends TagletWriter {
 
     private final HtmlDocletWriter htmlWriter;
     private final ConfigurationImpl configuration;
+    private final Utils utils;
 
     public TagletWriterImpl(HtmlDocletWriter htmlWriter, boolean isFirstSentence) {
         super(isFirstSentence);
         this.htmlWriter = htmlWriter;
         configuration = htmlWriter.configuration;
+        this.utils = configuration.utils;
     }
 
     /**
@@ -71,7 +73,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     protected Content codeTagOutput(Tag tag) {
-        Content result = HtmlTree.CODE(new StringContent(Util.normalizeNewlines(tag.text())));
+        Content result = HtmlTree.CODE(new StringContent(utils.normalizeNewlines(tag.text())));
         return result;
     }
 
@@ -94,7 +96,7 @@ public class TagletWriterImpl extends TagletWriter {
         ContentBuilder result = new ContentBuilder();
         Tag[] deprs = doc.tags("deprecated");
         if (doc instanceof ClassDoc) {
-            if (Util.isDeprecated((ProgramElementDoc) doc)) {
+            if (utils.isDeprecated((ProgramElementDoc) doc)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         new StringContent(configuration.getText("doclet.Deprecated"))));
                 result.addContent(RawHtml.nbsp);
@@ -109,7 +111,7 @@ public class TagletWriterImpl extends TagletWriter {
             }
         } else {
             MemberDoc member = (MemberDoc) doc;
-            if (Util.isDeprecated((ProgramElementDoc) doc)) {
+            if (utils.isDeprecated((ProgramElementDoc) doc)) {
                 result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                         new StringContent(configuration.getText("doclet.Deprecated"))));
                 result.addContent(RawHtml.nbsp);
@@ -120,7 +122,7 @@ public class TagletWriterImpl extends TagletWriter {
                         result.addContent(HtmlTree.SPAN(HtmlStyle.deprecationComment, body));
                 }
             } else {
-                if (Util.isDeprecated(member.containingClass())) {
+                if (utils.isDeprecated(member.containingClass())) {
                     result.addContent(HtmlTree.SPAN(HtmlStyle.deprecatedLabel,
                             new StringContent(configuration.getText("doclet.Deprecated"))));
                     result.addContent(RawHtml.nbsp);
@@ -134,7 +136,7 @@ public class TagletWriterImpl extends TagletWriter {
      * {@inheritDoc}
      */
     protected Content literalTagOutput(Tag tag) {
-        Content result = new StringContent(Util.normalizeNewlines(tag.text()));
+        Content result = new StringContent(utils.normalizeNewlines(tag.text()));
         return result;
     }
 

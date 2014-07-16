@@ -34,7 +34,6 @@ import com.sun.org.apache.xerces.internal.impl.dv.ValidationContext;
  * @author Elena Litani
  * @author Gopal Sharma, SUN Microsystem Inc.
  *
- * @version $Id: MonthDV.java,v 1.8 2010-11-01 04:39:47 joehw Exp $
  */
 
 public class MonthDV extends AbstractDateTimeDV {

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "utilities/macros.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/shared/mutableSpace.hpp"

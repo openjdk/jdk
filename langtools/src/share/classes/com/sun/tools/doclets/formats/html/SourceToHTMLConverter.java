@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,6 +61,7 @@ public class SourceToHTMLConverter {
     private static final String NEW_LINE = DocletConstants.NL;
 
     private final ConfigurationImpl configuration;
+    private final Utils utils;
 
     private final RootDoc rootDoc;
 
@@ -75,6 +76,7 @@ public class SourceToHTMLConverter {
     private SourceToHTMLConverter(ConfigurationImpl configuration, RootDoc rd,
             DocPath outputdir) {
         this.configuration  = configuration;
+        this.utils = configuration.utils;
         this.rootDoc = rd;
         this.outputdir = outputdir;
     }
@@ -98,7 +100,7 @@ public class SourceToHTMLConverter {
         for (PackageDoc pd : rootDoc.specifiedPackages()) {
             // If -nodeprecated option is set and the package is marked as deprecated,
             // do not convert the package files to HTML.
-            if (!(configuration.nodeprecated && Util.isDeprecated(pd)))
+            if (!(configuration.nodeprecated && utils.isDeprecated(pd)))
                 convertPackage(pd, outputdir);
         }
         for (ClassDoc cd : rootDoc.specifiedClasses()) {
@@ -106,7 +108,7 @@ public class SourceToHTMLConverter {
             // or the containing package is deprecated, do not convert the
             // package files to HTML.
             if (!(configuration.nodeprecated &&
-                  (Util.isDeprecated(cd) || Util.isDeprecated(cd.containingPackage()))))
+                  (utils.isDeprecated(cd) || utils.isDeprecated(cd.containingPackage()))))
                 convertClass(cd, outputdir);
         }
     }
@@ -126,7 +128,7 @@ public class SourceToHTMLConverter {
             // do not convert the package files to HTML. We do not check for
             // containing package deprecation since it is already check in
             // the calling method above.
-            if (!(configuration.nodeprecated && Util.isDeprecated(cd)))
+            if (!(configuration.nodeprecated && utils.isDeprecated(cd)))
                 convertClass(cd, outputdir);
         }
     }
@@ -260,7 +262,7 @@ public class SourceToHTMLConverter {
      */
     private void addLine(Content pre, String line, int currentLineNo) {
         if (line != null) {
-            pre.addContent(Util.replaceTabs(configuration, line));
+            pre.addContent(utils.replaceTabs(configuration, line));
             Content anchor = HtmlTree.A_NAME("line." + Integer.toString(currentLineNo));
             pre.addContent(anchor);
             pre.addContent(NEW_LINE);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -75,7 +75,7 @@ public enum StandardLocation implements Location {
     NATIVE_HEADER_OUTPUT;
 
     /**
-     * Gets a location object with the given name.  The following
+     * Returns a location object with the given name.  The following
      * property must hold: {@code locationFor(x) ==
      * locationFor(y)} if and only if {@code x.equals(y)}.
      * The returned location will be an output location if and only if

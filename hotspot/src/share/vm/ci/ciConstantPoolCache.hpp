@@ -35,7 +35,7 @@
 // Usage note: this klass has nothing to do with ConstantPoolCache*.
 class ciConstantPoolCache : public ResourceObj {
 private:
-  GrowableArray<intptr_t>*   _keys;
+  GrowableArray<int>*   _keys;
   GrowableArray<void*>* _elements;
 
   int find(int index);

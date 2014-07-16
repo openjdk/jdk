@@ -52,8 +52,8 @@
 // consolidation.
 
 // Forward declarations
-class ContiguousSpace;
 class G1BlockOffsetSharedArray;
+class G1OffsetTableContigSpace;
 
 class G1BlockOffsetTable VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
@@ -157,6 +157,8 @@ private:
     return _offset_array[index];
   }
 
+  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset);
+
   void set_offset_array(size_t index, u_char offset) {
     check_index(index, "index out of range");
     check_offset(offset, "offset too large");
@@ -168,21 +170,6 @@ private:
     assert(high >= low, "addresses out of order");
     check_offset(pointer_delta(high, low), "offset too large");
     _offset_array[index] = (u_char) pointer_delta(high, low);
-  }
-
-  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset) {
-    check_index(index_for(right - 1), "right address out of range");
-    assert(left  < right, "Heap addresses out of order");
-    size_t num_cards = pointer_delta(right, left) >> LogN_words;
-    if (UseMemSetInBOT) {
-      memset(&_offset_array[index_for(left)], offset, num_cards);
-    } else {
-      size_t i = index_for(left);
-      const size_t end = i + num_cards;
-      for (; i < end; i++) {
-        _offset_array[i] = offset;
-      }
-    }
   }
 
   void set_offset_array(size_t left, size_t right, u_char offset) {
@@ -281,11 +268,7 @@ private:
   G1BlockOffsetSharedArray* _array;
 
   // The space that owns this subregion.
-  Space* _sp;
-
-  // If "_sp" is a contiguous space, the field below is the view of "_sp"
-  // as a contiguous space, else NULL.
-  ContiguousSpace* _csp;
+  G1OffsetTableContigSpace* _gsp;
 
   // If true, array entries are initialized to 0; otherwise, they are
   // initialized to point backwards to the beginning of the covered region.
@@ -310,7 +293,9 @@ private:
 
 protected:
 
-  ContiguousSpace* csp() const { return _csp; }
+  G1OffsetTableContigSpace* gsp() const { return _gsp; }
+
+  inline size_t block_size(const HeapWord* p) const;
 
   // Returns the address of a block whose start is at most "addr".
   // If "has_max_index" is true, "assumes "max_index" is the last valid one
@@ -363,7 +348,7 @@ public:
   // "this" to be passed as a parameter to a member constructor for
   // the containing concrete subtype of Space.
   // This would be legal C++, but MS VC++ doesn't allow it.
-  void set_space(Space* sp);
+  void set_space(G1OffsetTableContigSpace* sp);
 
   // Resets the covered region to the given "mr".
   void set_region(MemRegion mr);

@@ -56,7 +56,6 @@ import org.w3c.dom.Node;
  *
  * @xerces.internal
  *
- * @version $Id: NamedNodeMapImpl.java,v 1.8 2010-11-01 04:39:39 joehw Exp $
  * @since  PR-DOM-Level-1-19980818.
  */
 public class NamedNodeMapImpl

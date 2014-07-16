@@ -581,7 +581,7 @@ public class Snapshot {
     // Internals only below this point
     private Number makeId(long id) {
         if (identifierSize == 4) {
-            return new Integer((int)id);
+            return (int)id;
         } else {
             return id;
         }

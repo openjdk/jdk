@@ -3208,7 +3208,7 @@ public class RelationService extends NotificationBroadcasterSupport
                 // End of check :)
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
                         "checkRoleInt");
-                return new Integer(0);
+                return 0;
             }
         }
 
@@ -3218,7 +3218,7 @@ public class RelationService extends NotificationBroadcasterSupport
             if (!isWritable) {
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
                         "checkRoleInt");
-                return new Integer(RoleStatus.ROLE_NOT_WRITABLE);
+                return RoleStatus.ROLE_NOT_WRITABLE;
             }
         }
 
@@ -3229,7 +3229,7 @@ public class RelationService extends NotificationBroadcasterSupport
         if (!chkMinFlag) {
             RELATION_LOGGER.exiting(RelationService.class.getName(),
                     "checkRoleInt");
-            return new Integer(RoleStatus.LESS_THAN_MIN_ROLE_DEGREE);
+            return RoleStatus.LESS_THAN_MIN_ROLE_DEGREE;
         }
 
         // Checks maximum cardinality
@@ -3237,7 +3237,7 @@ public class RelationService extends NotificationBroadcasterSupport
         if (!chkMaxFlag) {
             RELATION_LOGGER.exiting(RelationService.class.getName(),
                     "checkRoleInt");
-            return new Integer(RoleStatus.MORE_THAN_MAX_ROLE_DEGREE);
+            return RoleStatus.MORE_THAN_MAX_ROLE_DEGREE;
         }
 
         // Verifies that each referenced MBean is registered in the MBean
@@ -3254,7 +3254,7 @@ public class RelationService extends NotificationBroadcasterSupport
             if (currObjName == null) {
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
                         "checkRoleInt");
-                return new Integer(RoleStatus.REF_MBEAN_NOT_REGISTERED);
+                return RoleStatus.REF_MBEAN_NOT_REGISTERED;
             }
 
             // Checks if it is of the correct class
@@ -3265,19 +3265,19 @@ public class RelationService extends NotificationBroadcasterSupport
                 if (!classSts) {
                     RELATION_LOGGER.exiting(RelationService.class.getName(),
                             "checkRoleInt");
-                    return new Integer(RoleStatus.REF_MBEAN_OF_INCORRECT_CLASS);
+                    return RoleStatus.REF_MBEAN_OF_INCORRECT_CLASS;
                 }
 
             } catch (InstanceNotFoundException exc) {
                 RELATION_LOGGER.exiting(RelationService.class.getName(),
                         "checkRoleInt");
-                return new Integer(RoleStatus.REF_MBEAN_NOT_REGISTERED);
+                return RoleStatus.REF_MBEAN_NOT_REGISTERED;
             }
         }
 
         RELATION_LOGGER.exiting(RelationService.class.getName(),
                 "checkRoleInt");
-        return new Integer(0);
+        return 0;
     }
 
 

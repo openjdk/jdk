@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,6 @@ import java.io.*;
 import com.sun.javadoc.*;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.*;
-import com.sun.tools.doclets.internal.toolkit.util.*;
 
 /**
  * Builds the summary for a given profile package.
@@ -136,12 +135,12 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
      */
     public void buildPackageDoc(XMLNode node, Content contentTree) throws Exception {
         contentTree = profilePackageWriter.getPackageHeader(
-                Util.getPackageName(packageDoc));
+                utils.getPackageName(packageDoc));
         buildChildren(node, contentTree);
         profilePackageWriter.addPackageFooter(contentTree);
         profilePackageWriter.printDocument(contentTree);
         profilePackageWriter.close();
-        Util.copyDocFiles(configuration, packageDoc);
+        utils.copyDocFiles(configuration, packageDoc);
     }
 
     /**
@@ -190,7 +189,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.interfaces()
                         : configuration.classDocCatalog.interfaces(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (interfaces.length > 0) {
             profilePackageWriter.addClassesSummary(
                     interfaces,
@@ -219,7 +218,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.ordinaryClasses()
                         : configuration.classDocCatalog.ordinaryClasses(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (classes.length > 0) {
             profilePackageWriter.addClassesSummary(
                     classes,
@@ -248,7 +247,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.enums()
                         : configuration.classDocCatalog.enums(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (enums.length > 0) {
             profilePackageWriter.addClassesSummary(
                     enums,
@@ -277,7 +276,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.exceptions()
                         : configuration.classDocCatalog.exceptions(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (exceptions.length > 0) {
             profilePackageWriter.addClassesSummary(
                     exceptions,
@@ -306,7 +305,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.errors()
                         : configuration.classDocCatalog.errors(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (errors.length > 0) {
             profilePackageWriter.addClassesSummary(
                     errors,
@@ -335,7 +334,7 @@ public class ProfilePackageSummaryBuilder extends AbstractBuilder {
                 packageDoc.isIncluded()
                         ? packageDoc.annotationTypes()
                         : configuration.classDocCatalog.annotationTypes(
-                                Util.getPackageName(packageDoc));
+                                utils.getPackageName(packageDoc));
         if (annotationTypes.length > 0) {
             profilePackageWriter.addClassesSummary(
                     annotationTypes,

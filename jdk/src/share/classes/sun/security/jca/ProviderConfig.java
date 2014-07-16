@@ -255,6 +255,14 @@ final class ProviderConfig {
                         disableLoad();
                     }
                     return null;
+                } catch (ExceptionInInitializerError err) {
+                    // no sufficient permission to initialize provider class
+                    if (debug != null) {
+                        debug.println("Error loading provider " + ProviderConfig.this);
+                        err.printStackTrace();
+                    }
+                    disableLoad();
+                    return null;
                 }
             }
         });

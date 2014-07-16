@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,21 @@ import java.util.List;
  */
 @jdk.Exported
 public interface SerialFieldTree extends BlockTagTree {
+    /**
+     * Returns the name of the serial field.
+     * @return the name of the serial field
+     */
     IdentifierTree getName();
+
+    /**
+     * Returns the type of the serial field.
+     * @return the type of the serial field
+     */
     ReferenceTree getType();
+
+    /**
+     * Returns the description of the serial field.
+     * @return the description of the serial field
+     */
     List<? extends DocTree> getDescription();
 }

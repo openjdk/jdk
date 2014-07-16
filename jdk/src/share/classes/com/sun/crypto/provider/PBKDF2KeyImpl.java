@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.Charset;
 import java.util.Arrays;
+import java.util.Locale;
 import java.security.KeyRep;
 import java.security.GeneralSecurityException;
 import java.security.NoSuchAlgorithmException;
@@ -143,7 +144,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
                 @Override
                 public int hashCode() {
                     return Arrays.hashCode(password) * 41 +
-                            prf.getAlgorithm().toLowerCase().hashCode();
+                      prf.getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode();
                 }
                 @Override
                 public boolean equals(Object obj) {
@@ -221,7 +222,7 @@ final class PBKDF2KeyImpl implements javax.crypto.interfaces.PBEKey {
         for (int i = 1; i < this.key.length; i++) {
             retval += this.key[i] * i;
         }
-        return(retval ^= getAlgorithm().toLowerCase().hashCode());
+        return(retval ^= getAlgorithm().toLowerCase(Locale.ENGLISH).hashCode());
     }
 
     public boolean equals(Object obj) {

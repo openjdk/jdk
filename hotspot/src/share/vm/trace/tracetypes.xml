@@ -98,6 +98,7 @@ Now we can use the content + data type in declaring event fields.
       <value type="SYMBOL" field="name" label="Name"/>
       <value type="SYMBOL" field="signature" label="Signature"/>
       <value type="SHORT" field="modifiers" label="Access modifiers"/>
+      <value type="BOOLEAN" field="hidden" label="Hidden"/>
     </content_type>
 
     <content_type id="UTFConstant" hr_name="UTF constant"

@@ -456,10 +456,9 @@ public class JavacTrees extends DocTrees {
         }
         searched.add(tsym);
 
-        for (com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(fieldName);
-                e.scope != null; e = e.next()) {
-            if (e.sym.kind == Kinds.VAR) {
-                return (VarSymbol)e.sym;
+        for (Symbol sym : tsym.members().getSymbolsByName(fieldName)) {
+            if (sym.kind == Kinds.VAR) {
+                return (VarSymbol)sym;
             }
         }
 
@@ -499,11 +498,10 @@ public class JavacTrees extends DocTrees {
 
     /** @see com.sun.tools.javadoc.ClassDocImpl#findConstructor */
     MethodSymbol findConstructor(ClassSymbol tsym, List<Type> paramTypes) {
-        for (com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(names.init);
-                e.scope != null; e = e.next()) {
-            if (e.sym.kind == Kinds.MTH) {
-                if (hasParameterTypes((MethodSymbol) e.sym, paramTypes)) {
-                    return (MethodSymbol) e.sym;
+        for (Symbol sym : tsym.members().getSymbolsByName(names.init)) {
+            if (sym.kind == Kinds.MTH) {
+                if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                    return (MethodSymbol) sym;
                 }
             }
         }
@@ -529,7 +527,6 @@ public class JavacTrees extends DocTrees {
         searched.add(tsym);
 
         // search current class
-        com.sun.tools.javac.code.Scope.Entry e = tsym.members().lookup(methodName);
 
         //### Using modifier filter here isn't really correct,
         //### but emulates the old behavior.  Instead, we should
@@ -542,10 +539,10 @@ public class JavacTrees extends DocTrees {
             // In order to provide textually identical results, we
             // attempt to emulate the old behavior.
             MethodSymbol lastFound = null;
-            for (; e.scope != null; e = e.next()) {
-                if (e.sym.kind == Kinds.MTH) {
-                    if (e.sym.name == methodName) {
-                        lastFound = (MethodSymbol)e.sym;
+            for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
+                if (sym.kind == Kinds.MTH) {
+                    if (sym.name == methodName) {
+                        lastFound = (MethodSymbol)sym;
                     }
                 }
             }
@@ -553,11 +550,11 @@ public class JavacTrees extends DocTrees {
                 return lastFound;
             }
         } else {
-            for (; e.scope != null; e = e.next()) {
-                if (e.sym != null &&
-                    e.sym.kind == Kinds.MTH) {
-                    if (hasParameterTypes((MethodSymbol) e.sym, paramTypes)) {
-                        return (MethodSymbol) e.sym;
+            for (Symbol sym : tsym.members().getSymbolsByName(methodName)) {
+                if (sym != null &&
+                    sym.kind == Kinds.MTH) {
+                    if (hasParameterTypes((MethodSymbol) sym, paramTypes)) {
+                        return (MethodSymbol) sym;
                     }
                 }
             }
@@ -684,7 +681,7 @@ public class JavacTrees extends DocTrees {
     }
 
     public JavacScope getScope(TreePath path) {
-        return new JavacScope(getAttrContext(path));
+        return JavacScope.create(getAttrContext(path));
     }
 
     public String getDocComment(TreePath path) {
@@ -854,7 +851,7 @@ public class JavacTrees extends DocTrees {
     }
 
     /**
-     * Gets the original type from the ErrorType object.
+     * Returns the original type from the ErrorType object.
      * @param errorType The errorType for which we want to get the original type.
      * @returns TypeMirror corresponding to the original type, replaced by the ErrorType.
      *          noType (type.tag == NONE) is returned if there is no original type.

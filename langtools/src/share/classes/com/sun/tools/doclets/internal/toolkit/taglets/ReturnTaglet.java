@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -89,7 +89,7 @@ public class ReturnTaglet extends BaseExecutableMemberTaglet
         //Inherit @return tag if necessary.
         if (tags.length == 0) {
             DocFinder.Output inheritedDoc =
-                DocFinder.search(new DocFinder.Input((MethodDoc) holder, this));
+                DocFinder.search(writer.configuration(), new DocFinder.Input((MethodDoc) holder, this));
             tags = inheritedDoc.holderTag == null ? tags : new Tag[] {inheritedDoc.holderTag};
         }
         return tags.length > 0 ? writer.returnTagOutput(tags[0]) : null;

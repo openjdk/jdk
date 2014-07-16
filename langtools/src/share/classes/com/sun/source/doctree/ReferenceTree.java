@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,14 +26,20 @@
 package com.sun.source.doctree;
 
 /**
- * A tree node to a reference to a Java language element.
+ * A tree node for a reference to a Java language element.
  *
  * <p>
  * package.class#field
+ * package.class#method(<i>arg-types</i>)
  *
  * @since 1.8
  */
 @jdk.Exported
 public interface ReferenceTree extends DocTree {
+    /**
+     * Returns the signature of the Java language element being referenced,
+     * as found in {@code @see} and similar nodes.
+     * @return the signature.
+     */
     String getSignature();
 }

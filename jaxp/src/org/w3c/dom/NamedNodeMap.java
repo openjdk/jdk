@@ -141,7 +141,7 @@ public interface NamedNodeMap {
      *   NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Node getNamedItemNS(String namespaceURI,
                                String localName)
@@ -177,7 +177,7 @@ public interface NamedNodeMap {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Node setNamedItemNS(Node arg)
                                throws DOMException;
@@ -203,7 +203,7 @@ public interface NamedNodeMap {
      *   <br>NOT_SUPPORTED_ERR: May be raised if the implementation does not
      *   support the feature "XML" and the language exposed through the
      *   Document does not support XML Namespaces (such as [<a href='http://www.w3.org/TR/1999/REC-html401-19991224/'>HTML 4.01</a>]).
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public Node removeNamedItemNS(String namespaceURI,
                                   String localName)

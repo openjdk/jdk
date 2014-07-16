@@ -111,7 +111,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         private final TypeBasedGuardingDynamicLinker[] linkers;
         private final List<TypeBasedGuardingDynamicLinker>[] singletonLinkers;
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings(value={"unchecked", "rawtypes"})
         ClassToLinker(final TypeBasedGuardingDynamicLinker[] linkers) {
             this.linkers = linkers;
             singletonLinkers = new List[linkers.length];
@@ -120,6 +120,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
             }
         }
 
+        @SuppressWarnings("fallthrough")
         @Override
         protected List<TypeBasedGuardingDynamicLinker> computeValue(final Class<?> clazz) {
             List<TypeBasedGuardingDynamicLinker> list = NO_LINKER;

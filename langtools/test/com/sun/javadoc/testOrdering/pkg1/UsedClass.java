@@ -25,4 +25,4 @@ package pkg1;
 /**
  * For class-use testing
  */
-public class UsedClass {}
+public class UsedClass<T> {}

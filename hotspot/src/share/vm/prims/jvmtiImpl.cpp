@@ -32,7 +32,7 @@
 #include "prims/jvmtiEventController.inline.hpp"
 #include "prims/jvmtiImpl.hpp"
 #include "prims/jvmtiRedefineClasses.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/deoptimization.hpp"
 #include "runtime/handles.hpp"
 #include "runtime/handles.inline.hpp"

@@ -50,7 +50,6 @@ import com.sun.org.apache.xalan.internal.utils.SecuritySupport;
  * to override encoding names and provide the last printable character
  * for each encoding.
  *
- * @version $Revision: 1.11 $ $Date: 2010-11-01 04:34:44 $
  * @author <a href="mailto:arkin@intalio.com">Assaf Arkin</a>
  */
 

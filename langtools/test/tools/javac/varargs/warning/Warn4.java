@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6945418 6993978 8006694
+ * @bug     6945418 6993978 8006694 7196160
  * @summary Project Coin: Simplified Varargs Method Invocation
  *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore
@@ -73,13 +73,15 @@ public class Warn4
                 ModifierKind modKind) {
             switch(this) {
                 case VARARGS:
-                    return source == SourceLevel.JDK_6 ||
+                    return source.compareTo(SourceLevel.JDK_7) < 0 ||
                             suppressLevelDecl == SuppressLevel.UNCHECKED ||
                             trustMe == TrustMe.TRUST;
                 case UNCHECKED:
                     return suppressLevelClient == SuppressLevel.UNCHECKED ||
-                        (trustMe == TrustMe.TRUST && modKind !=
-                            ModifierKind.NONE && source == SourceLevel.JDK_7);
+                        (trustMe == TrustMe.TRUST &&
+                         (((modKind == ModifierKind.FINAL || modKind == ModifierKind.STATIC) &&
+                           source.compareTo( SourceLevel.JDK_7) >= 0 ) ||
+                          (modKind == ModifierKind.PRIVATE && source.compareTo( SourceLevel.JDK_9) >= 0 )));
             }
 
             SuppressLevel supLev = this == VARARGS ?
@@ -92,7 +94,8 @@ public class Warn4
 
     enum SourceLevel {
         JDK_6("6"),
-        JDK_7("7");
+        JDK_7("7"),
+        JDK_9("9");
 
         String sourceKey;
 
@@ -115,7 +118,8 @@ public class Warn4
     enum ModifierKind {
         NONE(" "),
         FINAL("final "),
-        STATIC("static ");
+        STATIC("static "),
+        PRIVATE("private ");
 
         String mod;
 

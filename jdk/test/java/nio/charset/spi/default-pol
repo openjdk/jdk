@@ -1,10 +1,4 @@
 
-// Standard extensions get all permissions by default
-
-grant codeBase "file:${java.home}/lib/ext/*" {
-	permission java.security.AllPermission;
-};
-
 // default permissions granted to all domains
 
 grant { 

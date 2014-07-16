@@ -41,6 +41,7 @@
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/extendedPC.hpp"
 #include "runtime/globals.hpp"
 #include "runtime/interfaceSupport.hpp"
@@ -786,7 +787,7 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
       case os::java_thread:
         // Java threads use ThreadStackSize which default value can be
         // changed with the flag -Xss
-        assert (JavaThread::stack_size_at_create() > 0, "this should be set");
+        assert(JavaThread::stack_size_at_create() > 0, "this should be set");
         stack_size = JavaThread::stack_size_at_create();
         break;
       case os::compiler_thread:
@@ -1303,7 +1304,7 @@ bool os::dll_build_name(char* buffer, size_t buflen,
     if (pelements == NULL) {
       return false;
     }
-    for (int i = 0 ; i < n ; i++) {
+    for (int i = 0; i < n; i++) {
       // Really shouldn't be NULL, but check can't hurt
       if (pelements[i] == NULL || strlen(pelements[i]) == 0) {
         continue; // skip the empty path values
@@ -1316,7 +1317,7 @@ bool os::dll_build_name(char* buffer, size_t buflen,
       }
     }
     // release the storage
-    for (int i = 0 ; i < n ; i++) {
+    for (int i = 0; i < n; i++) {
       if (pelements[i] != NULL) {
         FREE_C_HEAP_ARRAY(char, pelements[i], mtInternal);
       }
@@ -1467,7 +1468,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 
   bool failed_to_read_elf_head=
     (sizeof(elf_head)!=
-        (::read(file_descriptor, &elf_head,sizeof(elf_head)))) ;
+        (::read(file_descriptor, &elf_head,sizeof(elf_head))));
 
   ::close(file_descriptor);
   if (failed_to_read_elf_head) {
@@ -1565,7 +1566,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   arch_t lib_arch={elf_head.e_machine,0,elf_head.e_ident[EI_CLASS], elf_head.e_ident[EI_DATA], NULL};
   int running_arch_index=-1;
 
-  for (unsigned int i=0 ; i < ARRAY_SIZE(arch_array) ; i++ ) {
+  for (unsigned int i=0; i < ARRAY_SIZE(arch_array); i++) {
     if (running_arch_code == arch_array[i].code) {
       running_arch_index    = i;
     }
@@ -1596,7 +1597,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 #endif // !S390
 
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
-    if ( lib_arch.name!=NULL ) {
+    if (lib_arch.name!=NULL) {
       ::snprintf(diag_msg_buf, diag_msg_max_length-1,
         " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
         lib_arch.name, arch_array[running_arch_index].name);
@@ -2598,14 +2599,7 @@ void os::yield() {
   sched_yield();
 }
 
-os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN ;}
-
-void os::yield_all() {
-  // Yields to all threads, including threads with lower priorities
-  // Threads on Bsd are all with same priority. The Solaris style
-  // os::yield_all() with nanosleep(1ms) is not necessary.
-  sched_yield();
-}
+os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
@@ -2686,7 +2680,7 @@ static int prio_init() {
 }
 
 OSReturn os::set_native_priority(Thread* thread, int newpri) {
-  if ( !UseThreadPriorities || ThreadPriorityPolicy == 0 ) return OS_OK;
+  if (!UseThreadPriorities || ThreadPriorityPolicy == 0) return OS_OK;
 
 #ifdef __OpenBSD__
   // OpenBSD pthread_setprio starves low priority threads
@@ -2713,7 +2707,7 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
 }
 
 OSReturn os::get_native_priority(const Thread* const thread, int *priority_ptr) {
-  if ( !UseThreadPriorities || ThreadPriorityPolicy == 0 ) {
+  if (!UseThreadPriorities || ThreadPriorityPolicy == 0) {
     *priority_ptr = java_to_os_priority[NormPriority];
     return OS_OK;
   }
@@ -3079,7 +3073,7 @@ bool os::Bsd::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 struct sigaction* os::Bsd::get_preinstalled_handler(int sig) {
-  if ((( (unsigned int)1 << sig ) & sigs) != 0) {
+  if ((((unsigned int)1 << sig) & sigs) != 0) {
     return &sigact[sig];
   }
   return NULL;
@@ -3300,7 +3294,7 @@ static void print_signal_handler(outputStream* st, int sig,
 
   address rh = VMError::get_resetted_sighandler(sig);
   // May be, handler was resetted by VMError?
-  if(rh != NULL) {
+  if (rh != NULL) {
     handler = rh;
     sa.sa_flags = VMError::get_resetted_sigflags(sig) & SIGNIFICANT_SIGNAL_MASK;
   }
@@ -3309,11 +3303,11 @@ static void print_signal_handler(outputStream* st, int sig,
   os::Posix::print_sa_flags(st, sa.sa_flags);
 
   // Check: is it our handler?
-  if(handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)signalHandler) ||
+  if (handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)signalHandler) ||
      handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler)) {
     // It is our signal handler
     // check for flags, reset system-used one!
-    if((int)sa.sa_flags != os::Bsd::get_our_sigflags(sig)) {
+    if ((int)sa.sa_flags != os::Bsd::get_our_sigflags(sig)) {
       st->print(
                 ", flags was changed from " PTR32_FORMAT ", consider using jsig library",
                 os::Bsd::get_our_sigflags(sig));
@@ -3382,10 +3376,10 @@ void os::Bsd::check_signal_handler(int sig) {
 
   address thisHandler = (act.sa_flags & SA_SIGINFO)
     ? CAST_FROM_FN_PTR(address, act.sa_sigaction)
-    : CAST_FROM_FN_PTR(address, act.sa_handler) ;
+    : CAST_FROM_FN_PTR(address, act.sa_handler);
 
 
-  switch(sig) {
+  switch (sig) {
   case SIGSEGV:
   case SIGBUS:
   case SIGFPE:
@@ -3515,22 +3509,22 @@ jint os::init_2(void)
 {
   // Allocate a single page and mark it as readable for safepoint polling
   address polling_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-  guarantee( polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page" );
+  guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
 
-  os::set_polling_page( polling_page );
+  os::set_polling_page(polling_page);
 
 #ifndef PRODUCT
-  if(Verbose && PrintMiscellaneous)
+  if (Verbose && PrintMiscellaneous)
     tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n", (intptr_t)polling_page);
 #endif
 
   if (!UseMembar) {
     address mem_serialize_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ | PROT_WRITE, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
-    guarantee( mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
-    os::set_memory_serialize_page( mem_serialize_page );
+    guarantee(mem_serialize_page != MAP_FAILED, "mmap Failed for memory serialize page");
+    os::set_memory_serialize_page(mem_serialize_page);
 
 #ifndef PRODUCT
-    if(Verbose && PrintMiscellaneous)
+    if (Verbose && PrintMiscellaneous)
       tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
 #endif
   }
@@ -3631,13 +3625,13 @@ void os::init_3(void) { }
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
-  if( !guard_memory((char*)_polling_page, Bsd::page_size()) )
+  if (!guard_memory((char*)_polling_page, Bsd::page_size()))
     fatal("Could not disable polling page");
 };
 
 // Mark the polling page as readable
 void os::make_polling_page_readable(void) {
-  if( !bsd_mprotect((char *)_polling_page, Bsd::page_size(), PROT_READ)) {
+  if (!bsd_mprotect((char *)_polling_page, Bsd::page_size(), PROT_READ)) {
     fatal("Could not enable polling page");
   }
 };
@@ -4229,9 +4223,9 @@ static struct timespec* compute_abstime(struct timespec* abstime, jlong millis) 
 
 int os::PlatformEvent::TryPark() {
   for (;;) {
-    const int v = _Event ;
-    guarantee ((v == 0) || (v == 1), "invariant") ;
-    if (Atomic::cmpxchg (0, &_Event, v) == v) return v  ;
+    const int v = _Event;
+    guarantee((v == 0) || (v == 1), "invariant");
+    if (Atomic::cmpxchg(0, &_Event, v) == v) return v;
   }
 }
 
@@ -4239,18 +4233,18 @@ void os::PlatformEvent::park() {       // AKA "down()"
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // TODO: assert that _Assoc != NULL or _Assoc == Self
-  int v ;
+  int v;
   for (;;) {
-      v = _Event ;
-      if (Atomic::cmpxchg (v-1, &_Event, v) == v) break ;
+      v = _Event;
+      if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
   }
-  guarantee (v >= 0, "invariant") ;
+  guarantee(v >= 0, "invariant");
   if (v == 0) {
      // Do this the hard way by blocking ...
      int status = pthread_mutex_lock(_mutex);
      assert_status(status == 0, status, "mutex_lock");
-     guarantee (_nParked == 0, "invariant") ;
-     ++ _nParked ;
+     guarantee(_nParked == 0, "invariant");
+     ++_nParked;
      while (_Event < 0) {
         status = pthread_cond_wait(_cond, _mutex);
         // for some reason, under 2.7 lwp_cond_wait() may return ETIME ...
@@ -4258,28 +4252,28 @@ void os::PlatformEvent::park() {       // AKA "down()"
         if (status == ETIMEDOUT) { status = EINTR; }
         assert_status(status == 0 || status == EINTR, status, "cond_wait");
      }
-     -- _nParked ;
+     --_nParked;
 
-    _Event = 0 ;
+    _Event = 0;
      status = pthread_mutex_unlock(_mutex);
      assert_status(status == 0, status, "mutex_unlock");
     // Paranoia to ensure our locked and lock-free paths interact
     // correctly with each other.
     OrderAccess::fence();
   }
-  guarantee (_Event >= 0, "invariant") ;
+  guarantee(_Event >= 0, "invariant");
 }
 
 int os::PlatformEvent::park(jlong millis) {
-  guarantee (_nParked == 0, "invariant") ;
+  guarantee(_nParked == 0, "invariant");
 
-  int v ;
+  int v;
   for (;;) {
-      v = _Event ;
-      if (Atomic::cmpxchg (v-1, &_Event, v) == v) break ;
+      v = _Event;
+      if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
   }
-  guarantee (v >= 0, "invariant") ;
-  if (v != 0) return OS_OK ;
+  guarantee(v >= 0, "invariant");
+  if (v != 0) return OS_OK;
 
   // We do this the hard way, by blocking the thread.
   // Consider enforcing a minimum timeout value.
@@ -4289,8 +4283,8 @@ int os::PlatformEvent::park(jlong millis) {
   int ret = OS_TIMEOUT;
   int status = pthread_mutex_lock(_mutex);
   assert_status(status == 0, status, "mutex_lock");
-  guarantee (_nParked == 0, "invariant") ;
-  ++_nParked ;
+  guarantee(_nParked == 0, "invariant");
+  ++_nParked;
 
   // Object.wait(timo) will return because of
   // (a) notification
@@ -4308,24 +4302,24 @@ int os::PlatformEvent::park(jlong millis) {
   while (_Event < 0) {
     status = os::Bsd::safe_cond_timedwait(_cond, _mutex, &abst);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy (_cond);
-      pthread_cond_init (_cond, NULL) ;
+      pthread_cond_destroy(_cond);
+      pthread_cond_init(_cond, NULL);
     }
     assert_status(status == 0 || status == EINTR ||
                   status == ETIMEDOUT,
                   status, "cond_timedwait");
-    if (!FilterSpuriousWakeups) break ;                 // previous semantics
-    if (status == ETIMEDOUT) break ;
+    if (!FilterSpuriousWakeups) break;                 // previous semantics
+    if (status == ETIMEDOUT) break;
     // We consume and ignore EINTR and spurious wakeups.
   }
-  --_nParked ;
+  --_nParked;
   if (_Event >= 0) {
      ret = OS_OK;
   }
-  _Event = 0 ;
+  _Event = 0;
   status = pthread_mutex_unlock(_mutex);
   assert_status(status == 0, status, "mutex_unlock");
-  assert (_nParked == 0, "invariant") ;
+  assert(_nParked == 0, "invariant");
   // Paranoia to ensure our locked and lock-free paths interact
   // correctly with each other.
   OrderAccess::fence();
@@ -4409,7 +4403,7 @@ void os::PlatformEvent::unpark() {
  */
 
 static void unpackTime(struct timespec* absTime, bool isAbsolute, jlong time) {
-  assert (time > 0, "convertTime");
+  assert(time > 0, "convertTime");
 
   struct timeval now;
   int status = gettimeofday(&now, NULL);
@@ -4470,7 +4464,7 @@ void Parker::park(bool isAbsolute, jlong time) {
 
   // Next, demultiplex/decode time arguments
   struct timespec absTime;
-  if (time < 0 || (isAbsolute && time == 0) ) { // don't wait at all
+  if (time < 0 || (isAbsolute && time == 0)) { // don't wait at all
     return;
   }
   if (time > 0) {
@@ -4492,11 +4486,11 @@ void Parker::park(bool isAbsolute, jlong time) {
     return;
   }
 
-  int status ;
+  int status;
   if (_counter > 0)  { // no wait needed
     _counter = 0;
     status = pthread_mutex_unlock(_mutex);
-    assert (status == 0, "invariant") ;
+    assert(status == 0, "invariant");
     // Paranoia to ensure our locked and lock-free paths interact
     // correctly with each other and Java-level accesses.
     OrderAccess::fence();
@@ -4516,12 +4510,12 @@ void Parker::park(bool isAbsolute, jlong time) {
   // cleared by handle_special_suspend_equivalent_condition() or java_suspend_self()
 
   if (time == 0) {
-    status = pthread_cond_wait (_cond, _mutex) ;
+    status = pthread_cond_wait(_cond, _mutex);
   } else {
-    status = os::Bsd::safe_cond_timedwait (_cond, _mutex, &absTime) ;
+    status = os::Bsd::safe_cond_timedwait(_cond, _mutex, &absTime);
     if (status != 0 && WorkAroundNPTLTimedWaitHang) {
-      pthread_cond_destroy (_cond) ;
-      pthread_cond_init    (_cond, NULL);
+      pthread_cond_destroy(_cond);
+      pthread_cond_init(_cond, NULL);
     }
   }
   assert_status(status == 0 || status == EINTR ||
@@ -4532,9 +4526,9 @@ void Parker::park(bool isAbsolute, jlong time) {
   pthread_sigmask(SIG_SETMASK, &oldsigs, NULL);
 #endif
 
-  _counter = 0 ;
-  status = pthread_mutex_unlock(_mutex) ;
-  assert_status(status == 0, status, "invariant") ;
+  _counter = 0;
+  status = pthread_mutex_unlock(_mutex);
+  assert_status(status == 0, status, "invariant");
   // Paranoia to ensure our locked and lock-free paths interact
   // correctly with each other and Java-level accesses.
   OrderAccess::fence();
@@ -4546,26 +4540,26 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  int s, status ;
+  int s, status;
   status = pthread_mutex_lock(_mutex);
-  assert (status == 0, "invariant") ;
+  assert(status == 0, "invariant");
   s = _counter;
   _counter = 1;
   if (s < 1) {
      if (WorkAroundNPTLTimedWaitHang) {
-        status = pthread_cond_signal (_cond) ;
-        assert (status == 0, "invariant") ;
+        status = pthread_cond_signal(_cond);
+        assert(status == 0, "invariant");
         status = pthread_mutex_unlock(_mutex);
-        assert (status == 0, "invariant") ;
+        assert(status == 0, "invariant");
      } else {
         status = pthread_mutex_unlock(_mutex);
-        assert (status == 0, "invariant") ;
-        status = pthread_cond_signal (_cond) ;
-        assert (status == 0, "invariant") ;
+        assert(status == 0, "invariant");
+        status = pthread_cond_signal(_cond);
+        assert(status == 0, "invariant");
      }
   } else {
     pthread_mutex_unlock(_mutex);
-    assert (status == 0, "invariant") ;
+    assert(status == 0, "invariant");
   }
 }
 

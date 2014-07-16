@@ -62,6 +62,7 @@
 #include "memory/referenceProcessor.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/oop.pcgc.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/vmThread.hpp"
@@ -431,14 +432,6 @@ HeapRegion* G1CollectedHeap::pop_dirty_cards_region()
   assert(hr != NULL, "invariant");
   hr->set_next_dirty_cards_region(NULL);
   return hr;
-}
-
-void G1CollectedHeap::stop_conc_gc_threads() {
-  _cg1r->stop();
-  _cmThread->stop();
-  if (G1StringDedup::is_enabled()) {
-    G1StringDedup::stop();
-  }
 }
 
 #ifdef ASSERT
@@ -1306,7 +1299,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
     TraceCPUTime tcpu(G1Log::finer(), true, gclog_or_tty);
 
     {
-      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL);
+      GCTraceTime t(GCCauseString("Full GC", gc_cause()), G1Log::fine(), true, NULL, gc_tracer->gc_id());
       TraceCollectorStats tcs(g1mm()->full_collection_counters());
       TraceMemoryManagerStats tms(true /* fullGC */, gc_cause());
 
@@ -2174,20 +2167,14 @@ jint G1CollectedHeap::initialize() {
 }
 
 void G1CollectedHeap::stop() {
-#if 0
-  // Stopping concurrent worker threads is currently disabled until
-  // some bugs in concurrent mark has been resolve. Without fixing
-  // those bugs first we risk haning during VM exit when trying to
-  // stop these threads.
-
-  // Abort any ongoing concurrent root region scanning and stop all
-  // concurrent threads. We do this to make sure these threads do
-  // not continue to execute and access resources (e.g. gclog_or_tty)
+  // Stop all concurrent threads. We do this to make sure these threads
+  // do not continue to execute and access resources (e.g. gclog_or_tty)
   // that are destroyed during shutdown.
-  _cm->root_regions()->abort();
-  _cm->root_regions()->wait_until_scan_finished();
-  stop_conc_gc_threads();
-#endif
+  _cg1r->stop();
+  _cmThread->stop();
+  if (G1StringDedup::is_enabled()) {
+    G1StringDedup::stop();
+  }
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
@@ -3872,8 +3859,7 @@ void G1CollectedHeap::log_gc_header() {
     return;
   }
 
-  gclog_or_tty->date_stamp(PrintGCDateStamps);
-  gclog_or_tty->stamp(PrintGCTimeStamps);
+  gclog_or_tty->gclog_stamp(_gc_tracer_stw->gc_id());
 
   GCCauseString gc_cause_str = GCCauseString("GC pause", gc_cause())
     .append(g1_policy()->gcs_are_young() ? "(young)" : "(mixed)")
@@ -5354,17 +5340,14 @@ public:
 class G1CopyingKeepAliveClosure: public OopClosure {
   G1CollectedHeap*         _g1h;
   OopClosure*              _copy_non_heap_obj_cl;
-  OopsInHeapRegionClosure* _copy_metadata_obj_cl;
   G1ParScanThreadState*    _par_scan_state;
 
 public:
   G1CopyingKeepAliveClosure(G1CollectedHeap* g1h,
                             OopClosure* non_heap_obj_cl,
-                            OopsInHeapRegionClosure* metadata_obj_cl,
                             G1ParScanThreadState* pss):
     _g1h(g1h),
     _copy_non_heap_obj_cl(non_heap_obj_cl),
-    _copy_metadata_obj_cl(metadata_obj_cl),
     _par_scan_state(pss)
   {}
 
@@ -5397,7 +5380,7 @@ public:
         _par_scan_state->push_on_queue(p);
       } else {
         assert(!Metaspace::contains((const void*)p),
-               err_msg("Otherwise need to call _copy_metadata_obj_cl->do_oop(p) "
+               err_msg("Unexpectedly found a pointer from metadata: "
                               PTR_FORMAT, p));
           _copy_non_heap_obj_cl->do_oop(p);
         }
@@ -5492,22 +5475,18 @@ public:
     pss.set_evac_failure_closure(&evac_failure_cl);
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
 
     G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(_g1h, &pss, NULL);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-    OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
     if (_g1h->g1_policy()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
-      copy_metadata_cl = &copy_mark_metadata_cl;
     }
 
     // Keep alive closure.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, copy_metadata_cl, &pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, &pss);
 
     // Complete GC closure
     G1ParEvacuateFollowersClosure drain_queue(_g1h, &pss, _task_queues, _terminator);
@@ -5602,18 +5581,14 @@ public:
 
 
     G1ParScanExtRootClosure        only_copy_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanMetadataClosure       only_copy_metadata_cl(_g1h, &pss, NULL);
 
     G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(_g1h, &pss, NULL);
-    G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(_g1h, &pss, NULL);
 
     OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-    OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
     if (_g1h->g1_policy()->during_initial_mark_pause()) {
       // We also need to mark copied objects.
       copy_non_heap_cl = &copy_mark_non_heap_cl;
-      copy_metadata_cl = &copy_mark_metadata_cl;
     }
 
     // Is alive closure
@@ -5621,7 +5596,7 @@ public:
 
     // Copying keep alive closure. Applied to referent objects that need
     // to be copied.
-    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, copy_metadata_cl, &pss);
+    G1CopyingKeepAliveClosure keep_alive(_g1h, copy_non_heap_cl, &pss);
 
     ReferenceProcessor* rp = _g1h->ref_processor_cm();
 
@@ -5727,22 +5702,18 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
   assert(pss.refs()->is_empty(), "pre-condition");
 
   G1ParScanExtRootClosure        only_copy_non_heap_cl(this, &pss, NULL);
-  G1ParScanMetadataClosure       only_copy_metadata_cl(this, &pss, NULL);
 
   G1ParScanAndMarkExtRootClosure copy_mark_non_heap_cl(this, &pss, NULL);
-  G1ParScanAndMarkMetadataClosure copy_mark_metadata_cl(this, &pss, NULL);
 
   OopClosure*                    copy_non_heap_cl = &only_copy_non_heap_cl;
-  OopsInHeapRegionClosure*       copy_metadata_cl = &only_copy_metadata_cl;
 
   if (_g1h->g1_policy()->during_initial_mark_pause()) {
     // We also need to mark copied objects.
     copy_non_heap_cl = &copy_mark_non_heap_cl;
-    copy_metadata_cl = &copy_mark_metadata_cl;
   }
 
   // Keep alive closure.
-  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, copy_metadata_cl, &pss);
+  G1CopyingKeepAliveClosure keep_alive(this, copy_non_heap_cl, &pss);
 
   // Serial Complete GC closure
   G1STWDrainQueueClosure drain_queue(this, &pss);
@@ -5757,7 +5728,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
                                               &keep_alive,
                                               &drain_queue,
                                               NULL,
-                                              _gc_timer_stw);
+                                              _gc_timer_stw,
+                                              _gc_tracer_stw->gc_id());
   } else {
     // Parallel reference processing
     assert(rp->num_q() == no_of_gc_workers, "sanity");
@@ -5768,7 +5740,8 @@ void G1CollectedHeap::process_discovered_references(uint no_of_gc_workers) {
                                               &keep_alive,
                                               &drain_queue,
                                               &par_task_executor,
-                                              _gc_timer_stw);
+                                              _gc_timer_stw,
+                                              _gc_tracer_stw->gc_id());
   }
 
   _gc_tracer_stw->report_gc_reference_stats(stats);
@@ -7007,7 +6980,7 @@ public:
       return;
     }
 
-    if (ScavengeRootsInCode && nm->detect_scavenge_root_oops()) {
+    if (ScavengeRootsInCode) {
       _g1h->register_nmethod(nm);
     }
   }

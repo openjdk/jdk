@@ -57,6 +57,7 @@
 #include "memory/metadataFactory.hpp"
 #include "memory/metaspaceShared.hpp"
 #include "memory/oopFactory.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/jniHandles.hpp"
 #include "runtime/mutex.hpp"
 #include "runtime/safepoint.hpp"
@@ -549,6 +550,7 @@ bool ClassLoaderData::contains_klass(Klass* klass) {
 // GC root of class loader data created.
 ClassLoaderData* ClassLoaderDataGraph::_head = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_unloading = NULL;
+ClassLoaderData* ClassLoaderDataGraph::_saved_unloading = NULL;
 ClassLoaderData* ClassLoaderDataGraph::_saved_head = NULL;
 
 bool ClassLoaderDataGraph::_should_purge = false;
@@ -624,6 +626,12 @@ void ClassLoaderDataGraph::always_strong_oops_do(OopClosure* f, KlassClosure* kl
   }
 }
 
+void ClassLoaderDataGraph::cld_do(CLDClosure* cl) {
+  for (ClassLoaderData* cld = _head; cl != NULL && cld != NULL; cld = cld->next()) {
+    cl->do_cld(cld);
+  }
+}
+
 void ClassLoaderDataGraph::classes_do(KlassClosure* klass_closure) {
   for (ClassLoaderData* cld = _head; cld != NULL; cld = cld->next()) {
     cld->classes_do(klass_closure);
@@ -650,7 +658,9 @@ void ClassLoaderDataGraph::loaded_classes_do(KlassClosure* klass_closure) {
 
 void ClassLoaderDataGraph::classes_unloading_do(void f(Klass* const)) {
   assert(SafepointSynchronize::is_at_safepoint(), "must be at safepoint!");
-  for (ClassLoaderData* cld = _unloading; cld != NULL; cld = cld->next()) {
+  // Only walk the head until any clds not purged from prior unloading
+  // (CMS doesn't purge right away).
+  for (ClassLoaderData* cld = _unloading; cld != _saved_unloading; cld = cld->next()) {
     cld->classes_do(f);
   }
 }
@@ -698,6 +708,11 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   ClassLoaderData* data = _head;
   ClassLoaderData* prev = NULL;
   bool seen_dead_loader = false;
+
+  // Save previous _unloading pointer for CMS which may add to unloading list before
+  // purging and we don't want to rewalk the previously unloaded class loader data.
+  _saved_unloading = _unloading;
+
   // mark metadata seen on the stack and code cache so we can delete
   // unneeded entries.
   bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();

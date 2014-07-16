@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,10 +43,19 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface ImportTree extends Tree {
-    boolean isStatic();
     /**
-     * @return a qualified identifier ending in "*" if and only if
-     * this is an import-on-demand.
+     * Returns true if this is a static import declaration.
+     * @return true if this is a static import
+     */
+    boolean isStatic();
+
+    /**
+     * Returns the qualified identifier for the declaration(s)
+     * being imported.
+     * If this is an import-on-demand declaration, the
+     * qualified identifier will end in "*".
+     * @return a qualified identifier, ending in "*" if and only if
+     * this is an import-on-demand
      */
     Tree getQualifiedIdentifier();
 }

@@ -36,7 +36,6 @@ import com.sun.org.apache.xerces.internal.impl.xs.XSParticleDecl;
  * @author Elena Litani, IBM
  * @author Sandy Gao, IBM
  *
- * @version $Id: CMBuilder.java,v 1.11 2010/08/06 23:49:43 joehw Exp $
  */
 public class CMBuilder {
 

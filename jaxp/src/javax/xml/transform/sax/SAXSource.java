@@ -41,6 +41,7 @@ import org.xml.sax.XMLReader;
  * {@link javax.xml.parsers.SAXParserFactory#setNamespaceAware(boolean awareness)} method.</p>
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 public class SAXSource implements Source {
 

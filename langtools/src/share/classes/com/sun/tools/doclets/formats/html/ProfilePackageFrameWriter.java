@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
             StringBuilder winTitle = new StringBuilder(profileName);
             String sep = " - ";
             winTitle.append(sep);
-            String pkgName = Util.getPackageName(packageDoc);
+            String pkgName = configuration.utils.getPackageName(packageDoc);
             winTitle.append(pkgName);
             Content body = profpackgen.getBody(false,
                     profpackgen.getWindowTitle(winTitle.toString()));
@@ -163,7 +163,7 @@ public class ProfilePackageFrameWriter extends HtmlDocletWriter {
                 if (!isTypeInProfile(classDoc, profileValue)) {
                     continue;
                 }
-                if (!Util.isCoreClass(classDoc) || !
+                if (!utils.isCoreClass(classDoc) || !
                         configuration.isGeneratedDoc(classDoc)) {
                     continue;
                 }
