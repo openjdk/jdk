@@ -335,6 +335,8 @@ static jboolean purgeOutstandingICMP(JNIEnv *env, jobject this, jint fd)
     SOCKETADDRESS rmtaddr;
     int addrlen = sizeof(rmtaddr);
 
+    memset((char *)&rmtaddr, 0, sizeof(rmtaddr));
+
     /*
      * A no-op if this OS doesn't support it.
      */
@@ -431,8 +433,10 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_bind0(JNIEnv *env, jobject this,
     int ipv6_supported = ipv6_available();
 
     SOCKETADDRESS lcladdr;
-    int lcladdrlen;
+    int lcladdrlen = sizeof(lcladdr);
     int address;
+
+    memset((char *)&lcladdr, 0, sizeof(lcladdr));
 
     family = getInetAddress_family(env, addressObj);
     if (family == IPv6 && !ipv6_supported) {
@@ -614,7 +618,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
     }
     fd = (*env)->GetIntField(env, fdObj, IO_fd_fdID);
 
-    memset(&addr, 0, len);
+    memset((char *)&addr, 0, len);
     connect(fd, (struct sockaddr *)&addr, len);
 
     /*
@@ -622,7 +626,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_disconnect0(JNIEnv *env, jobject 
      * to disable ICMP port unreachable handling here.
      */
     if (xp_or_later) {
-        DWORD x1, x2; /* ignored result codes */
+        DWORD x1 = 0, x2 = 0; /* ignored result codes */
         int t = FALSE;
         WSAIoctl(fd,SIO_UDP_CONNRESET,&t,sizeof(t),&x1,sizeof(x1),&x2,0,0);
     }
@@ -652,8 +656,9 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_send(JNIEnv *env, jobject this,
 
     SOCKETADDRESS rmtaddr;
     SOCKETADDRESS *addrp = &rmtaddr;
-    int addrlen;
+    int addrlen = 0;
 
+    memset((char *)&rmtaddr, 0, sizeof(rmtaddr));
 
     if (IS_NULL(packet)) {
         JNU_ThrowNullPointerException(env, "null packet");
@@ -1412,7 +1417,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_receive0(JNIEnv *env, jobject thi
     } else if (n < 0) {
         NET_ThrowCurrent(env, "Datagram receive failed");
     } else {
-        int port;
+        int port = 0;
         jobject packetAddress;
 
         /*
@@ -1791,11 +1796,11 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketNativeSetOption(JNIEnv *env
                                                       jint opt,jobject value) {
 
     int fd=-1, fd1=-1;
-    int levelv4, levelv6, optnamev4, optnamev6, optlen;
+    int levelv4 = 0, levelv6 = 0, optnamev4 = 0, optnamev6 = 0, optlen = 0;
     union {
         int i;
         char c;
-    } optval;
+    } optval = { 0 };
     int ipv6_supported = ipv6_available();
     fd = getFD(env, this);
 
@@ -2162,7 +2167,7 @@ Java_java_net_TwoStacksPlainDatagramSocketImpl_socketGetOption(JNIEnv *env, jobj
     int level, optname, optlen;
     union {
         int i;
-    } optval;
+    } optval = {0};
     int ipv6_supported = ipv6_available();
 
     fd = getFD(env, this);
@@ -2413,11 +2418,14 @@ static void mcast_join_leave(JNIEnv *env, jobject this,
     struct ipv6_mreq mname6;
 
     struct in_addr in;
-    DWORD ifindex;
+    DWORD ifindex = 0;
 
     int len, family;
     int ipv6_supported = ipv6_available();
     int cmd ;
+
+    memset((char *)&in, 0, sizeof(in));
+    memset((char *)&name, 0, sizeof(name));
 
     if (IS_NULL(fdObj) && IS_NULL(fd1Obj)) {
         JNU_ThrowByName(env, JNU_JAVANETPKG "SocketException",
