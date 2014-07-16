@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@
  * 6358731 6178785 6284152 6231989 6497148 6486934 6233084 6504326 6635133
  * 6350801 6676425 6878475 6919132 6931676 6948903 6990617 7014645 7039066
  * 7067045 7014640 7189363 8007395 8013252 8013254 8012646 8023647 6559590
- * 8027645 8035076 8039124
+ * 8027645 8035076 8039124 8035975
  */
 
 import java.util.regex.*;
@@ -150,6 +150,7 @@ public class RegExTest {
         groupCurlyNotFoundSuppTest();
         groupCurlyBackoffTest();
         patternAsPredicate();
+        invalidFlags();
 
         if (failure) {
             throw new
@@ -4456,5 +4457,31 @@ public class RegExTest {
             failCount++;
         }
         report("Pattern.asPredicate");
+    }
+
+    // This test is for 8035975
+    private static void invalidFlags() throws Exception {
+        for (int flag = 1; flag != 0; flag <<= 1) {
+            switch (flag) {
+            case Pattern.CASE_INSENSITIVE:
+            case Pattern.MULTILINE:
+            case Pattern.DOTALL:
+            case Pattern.UNICODE_CASE:
+            case Pattern.CANON_EQ:
+            case Pattern.UNIX_LINES:
+            case Pattern.LITERAL:
+            case Pattern.UNICODE_CHARACTER_CLASS:
+            case Pattern.COMMENTS:
+                // valid flag, continue
+                break;
+            default:
+                try {
+                    Pattern.compile(".", flag);
+                    failCount++;
+                } catch (IllegalArgumentException expected) {
+                }
+            }
+        }
+        report("Invalid compile flags");
     }
 }
