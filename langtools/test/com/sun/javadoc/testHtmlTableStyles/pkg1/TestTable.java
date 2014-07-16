@@ -28,7 +28,7 @@ package pkg1;
  * should be displayed as a regular table and not have any styles that the javadoc
  * generated tables have.
  *
- * <table border cellpadding=3 cellspacing=1>
+ * <table summary="Summary" border cellpadding=3 cellspacing=1>
  * <caption>Summary of test table</caption>
  *  <tr>
  *    <td></td>

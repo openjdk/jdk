@@ -358,7 +358,7 @@ public class AttachmentPartImpl extends AttachmentPart {
                 bos.close();
             try {
                 if (decoded != null)
-                    decoded.close();
+                decoded.close();
             } catch (IOException ex) {
                 throw new SOAPException(ex);
             }
@@ -582,8 +582,7 @@ public class AttachmentPartImpl extends AttachmentPart {
                     mailMap.addMailcap("text/xml;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
                     mailMap.addMailcap("application/xml;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.XmlDataContentHandler");
                     mailMap.addMailcap("application/fastinfoset;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.FastInfosetDataContentHandler");
-                    // this handler seems to be not used according VCS history ...
-                    // mailMap.addMailcap("multipart/*;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.MultipartDataContentHandler");
+                    //mailMap.addMailcap("multipart/*;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.MultipartDataContentHandler");
                     mailMap.addMailcap("image/*;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.ImageDataContentHandler");
                     mailMap.addMailcap("text/plain;;x-java-content-handler=com.sun.xml.internal.messaging.saaj.soap.StringDataContentHandler");
                 }

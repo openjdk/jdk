@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,7 @@ import javax.tools.FileObject;
 import com.sun.javadoc.*;
 import com.sun.source.util.TreePath;
 import com.sun.tools.javac.code.Attribute;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.tree.JCTree;
@@ -42,6 +42,8 @@ import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Name;
 import com.sun.tools.javac.util.Position;
+
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 /**
  * Represents a java package.  Provides access to information
@@ -146,9 +148,9 @@ public class PackageDocImpl extends DocImpl implements PackageDoc {
             return allClassesFiltered;
         }
         ListBuffer<ClassDocImpl> classes = new ListBuffer<>();
-        for (Scope.Entry e = sym.members().elems; e != null; e = e.sibling) {
-            if (e.sym != null) {
-                ClassSymbol s = (ClassSymbol)e.sym;
+        for (Symbol enumerated : sym.members().getSymbols(NON_RECURSIVE)) {
+            if (enumerated != null) {
+                ClassSymbol s = (ClassSymbol)enumerated;
                 ClassDocImpl c = env.getClassDoc(s);
                 if (c != null && !c.isSynthetic())
                     c.addAllClasses(classes, filtered);

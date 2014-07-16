@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,10 +22,13 @@
  */
 
 // key: compiler.err.neither.conditional.subtype
-// options: -source 1.4 -Xlint:-options
 
-class X {
-    Object m(boolean b) {
-        return (b ? 3 : b);
+class NeitherConditionalSubtype {
+    public int test(Object o) {
+        // Should fail to compile since Object.wait() has a void return type.
+        System.out.println(o instanceof String ? o.hashCode() : o.wait());
+        return 0;
     }
 }
+
+

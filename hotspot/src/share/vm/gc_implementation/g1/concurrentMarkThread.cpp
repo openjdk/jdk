@@ -1,4 +1,4 @@
-/*
+ /*
  * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,6 +29,7 @@
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1MMUTracker.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
+#include "gc_implementation/shared/gcTrace.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/vmThread.hpp"
 
@@ -111,8 +112,7 @@ void ConcurrentMarkThread::run() {
       double scan_start = os::elapsedTime();
       if (!cm()->has_aborted()) {
         if (G1Log::fine()) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
           gclog_or_tty->print_cr("[GC concurrent-root-region-scan-start]");
         }
 
@@ -120,8 +120,7 @@ void ConcurrentMarkThread::run() {
 
         double scan_end = os::elapsedTime();
         if (G1Log::fine()) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
           gclog_or_tty->print_cr("[GC concurrent-root-region-scan-end, %1.7lf secs]",
                                  scan_end - scan_start);
         }
@@ -129,8 +128,7 @@ void ConcurrentMarkThread::run() {
 
       double mark_start_sec = os::elapsedTime();
       if (G1Log::fine()) {
-        gclog_or_tty->date_stamp(PrintGCDateStamps);
-        gclog_or_tty->stamp(PrintGCTimeStamps);
+        gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
         gclog_or_tty->print_cr("[GC concurrent-mark-start]");
       }
 
@@ -153,8 +151,7 @@ void ConcurrentMarkThread::run() {
           }
 
           if (G1Log::fine()) {
-            gclog_or_tty->date_stamp(PrintGCDateStamps);
-            gclog_or_tty->stamp(PrintGCTimeStamps);
+            gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
             gclog_or_tty->print_cr("[GC concurrent-mark-end, %1.7lf secs]",
                                       mark_end_sec - mark_start_sec);
           }
@@ -169,8 +166,7 @@ void ConcurrentMarkThread::run() {
                                    "in remark (restart #%d).", iter);
           }
           if (G1Log::fine()) {
-            gclog_or_tty->date_stamp(PrintGCDateStamps);
-            gclog_or_tty->stamp(PrintGCTimeStamps);
+            gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
             gclog_or_tty->print_cr("[GC concurrent-mark-restart-for-overflow]");
           }
         }
@@ -213,8 +209,7 @@ void ConcurrentMarkThread::run() {
 
         double cleanup_start_sec = os::elapsedTime();
         if (G1Log::fine()) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
           gclog_or_tty->print_cr("[GC concurrent-cleanup-start]");
         }
 
@@ -234,8 +229,7 @@ void ConcurrentMarkThread::run() {
 
         double cleanup_end_sec = os::elapsedTime();
         if (G1Log::fine()) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
           gclog_or_tty->print_cr("[GC concurrent-cleanup-end, %1.7lf secs]",
                                  cleanup_end_sec - cleanup_start_sec);
         }
@@ -276,8 +270,7 @@ void ConcurrentMarkThread::run() {
 
       if (cm()->has_aborted()) {
         if (G1Log::fine()) {
-          gclog_or_tty->date_stamp(PrintGCDateStamps);
-          gclog_or_tty->stamp(PrintGCTimeStamps);
+          gclog_or_tty->gclog_stamp(cm()->concurrent_gc_id());
           gclog_or_tty->print_cr("[GC concurrent-mark-abort]");
         }
       }

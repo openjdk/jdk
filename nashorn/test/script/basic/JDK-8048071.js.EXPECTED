@@ -1,0 +1,11 @@
+23
+typeof x? undefined
+0
+typeof x? undefined
+0
+typeof x? undefined
+local eval called: hello
+[object global]
+with's eval called: hello
+this = [object Object]
+this.foo = 42

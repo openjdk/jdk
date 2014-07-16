@@ -49,12 +49,12 @@ public class EnumJvmThreadCpuTimeMonitoring extends Enumerated implements Serial
     protected static Hashtable<String, Integer> stringTable =
             new Hashtable<>();
     static  {
-        intTable.put(new Integer(3), "enabled");
-        intTable.put(new Integer(4), "disabled");
-        intTable.put(new Integer(1), "unsupported");
-        stringTable.put("enabled", new Integer(3));
-        stringTable.put("disabled", new Integer(4));
-        stringTable.put("unsupported", new Integer(1));
+        intTable.put(3, "enabled");
+        intTable.put(4, "disabled");
+        intTable.put(1, "unsupported");
+        stringTable.put("enabled", 3);
+        stringTable.put("disabled", 4);
+        stringTable.put("unsupported", 1);
     }
 
     public EnumJvmThreadCpuTimeMonitoring(int valueIndex) throws IllegalArgumentException {

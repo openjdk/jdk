@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.source.tree;
 import javax.lang.model.element.Name;
 
 /**
- * A tree node for a 'break' statement.
+ * A tree node for a {@code break} statement.
  *
  * For example:
  * <pre>
@@ -45,5 +45,9 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface BreakTree extends StatementTree {
+    /**
+     * Returns the label for this {@code break} statement.
+     * @return the label
+     */
     Name getLabel();
 }

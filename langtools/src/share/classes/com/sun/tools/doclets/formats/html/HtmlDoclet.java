@@ -28,7 +28,6 @@ import java.io.*;
 import java.util.*;
 
 import com.sun.javadoc.*;
-import com.sun.tools.javac.sym.Profiles;
 import com.sun.tools.javac.jvm.Profile;
 import com.sun.tools.doclets.internal.toolkit.*;
 import com.sun.tools.doclets.internal.toolkit.builders.*;
@@ -223,7 +222,7 @@ public class HtmlDoclet extends AbstractDoclet {
                     // deprecated, do not generate the profilename-package-summary.html
                     // and profilename-package-frame.html pages for that package.
                     PackageDoc pkg = packages.get(j);
-                    if (!(configuration.nodeprecated && Util.isDeprecated(pkg))) {
+                    if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
                         ProfilePackageFrameWriter.generate(configuration, pkg, i);
                         next = getNamedPackage(packages, j + 1);
                         AbstractBuilder profilePackageSummaryBuilder =
@@ -269,7 +268,7 @@ public class HtmlDoclet extends AbstractDoclet {
             // deprecated, do not generate the package-summary.html, package-frame.html
             // and package-tree.html pages for that package.
             PackageDoc pkg = pList.get(i);
-            if (!(configuration.nodeprecated && Util.isDeprecated(pkg))) {
+            if (!(configuration.nodeprecated && utils.isDeprecated(pkg))) {
                 PackageFrameWriter.generate(configuration, pkg);
                 next = getNamedPackage(pList, i + 1);
                 //If the next package is unnamed package, skip 2 ahead if possible

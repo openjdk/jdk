@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -197,58 +197,6 @@ class JDK_Version VALUE_OBJ_CLASS_SPEC {
     _runtime_version = version;
   }
 
-  // Convenience methods for queries on the current major/minor version
-  static bool is_jdk12x_version() {
-    return current().compare_major(2) == 0;
-  }
-
-  static bool is_jdk13x_version() {
-    return current().compare_major(3) == 0;
-  }
-
-  static bool is_jdk14x_version() {
-    return current().compare_major(4) == 0;
-  }
-
-  static bool is_jdk15x_version() {
-    return current().compare_major(5) == 0;
-  }
-
-  static bool is_jdk16x_version() {
-    return current().compare_major(6) == 0;
-  }
-
-  static bool is_jdk17x_version() {
-    return current().compare_major(7) == 0;
-  }
-
-  static bool is_jdk18x_version() {
-    return current().compare_major(8) == 0;
-  }
-
-  static bool is_gte_jdk13x_version() {
-    return current().compare_major(3) >= 0;
-  }
-
-  static bool is_gte_jdk14x_version() {
-    return current().compare_major(4) >= 0;
-  }
-
-  static bool is_gte_jdk15x_version() {
-    return current().compare_major(5) >= 0;
-  }
-
-  static bool is_gte_jdk16x_version() {
-    return current().compare_major(6) >= 0;
-  }
-
-  static bool is_gte_jdk17x_version() {
-    return current().compare_major(7) >= 0;
-  }
-
-  static bool is_gte_jdk18x_version() {
-    return current().compare_major(8) >= 0;
-  }
 };
 
 #endif // SHARE_VM_RUNTIME_JAVA_HPP

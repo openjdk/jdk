@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,7 +41,21 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface ConditionalExpressionTree extends ExpressionTree {
+    /**
+     * Returns the condition.
+     * @return the condition
+     */
     ExpressionTree getCondition();
+
+    /**
+     * Returns the expression to be evaluated if the condition is true.
+     * @return the expression to be evaluated if the condition is true
+     */
     ExpressionTree getTrueExpression();
+
+    /**
+     * Returns the expression to be evaluated if the condition is false.
+     * @return the expression to be evaluated if the condition is false
+     */
     ExpressionTree getFalseExpression();
 }

@@ -26,7 +26,6 @@
 #include "asm/macroAssembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "asm/codeBuffer.hpp"
-#include "runtime/atomic.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/icache.hpp"
 #include "runtime/os.hpp"

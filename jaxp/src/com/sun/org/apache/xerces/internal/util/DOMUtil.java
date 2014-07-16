@@ -42,7 +42,6 @@ import org.w3c.dom.ls.LSException;
  * (such as a DTM), we should easily be able to convert our schema
  * parsing to utilize it.
  *
- * @version $Id: DOMUtil.java,v 1.7 2010-11-01 04:40:14 joehw Exp $
  */
 public class DOMUtil {
 

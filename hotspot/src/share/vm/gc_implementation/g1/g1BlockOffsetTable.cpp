@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.inline.hpp"
+#include "gc_implementation/g1/heapRegion.hpp"
 #include "memory/space.hpp"
 #include "oops/oop.inline.hpp"
 #include "runtime/java.hpp"
@@ -98,6 +99,20 @@ bool G1BlockOffsetSharedArray::is_card_boundary(HeapWord* p) const {
   return (delta & right_n_bits(LogN_words)) == (size_t)NoBits;
 }
 
+void G1BlockOffsetSharedArray::set_offset_array(HeapWord* left, HeapWord* right, u_char offset) {
+  check_index(index_for(right - 1), "right address out of range");
+  assert(left  < right, "Heap addresses out of order");
+  size_t num_cards = pointer_delta(right, left) >> LogN_words;
+  if (UseMemSetInBOT) {
+    memset(&_offset_array[index_for(left)], offset, num_cards);
+  } else {
+    size_t i = index_for(left);
+    const size_t end = i + num_cards;
+    for (; i < end; i++) {
+      _offset_array[i] = offset;
+    }
+  }
+}
 
 //////////////////////////////////////////////////////////////////////
 // G1BlockOffsetArray
@@ -107,7 +122,7 @@ G1BlockOffsetArray::G1BlockOffsetArray(G1BlockOffsetSharedArray* array,
                                        MemRegion mr, bool init_to_zero) :
   G1BlockOffsetTable(mr.start(), mr.end()),
   _unallocated_block(_bottom),
-  _array(array), _csp(NULL),
+  _array(array), _gsp(NULL),
   _init_to_zero(init_to_zero) {
   assert(_bottom <= _end, "arguments out of order");
   if (!_init_to_zero) {
@@ -117,9 +132,8 @@ G1BlockOffsetArray::G1BlockOffsetArray(G1BlockOffsetSharedArray* array,
   }
 }
 
-void G1BlockOffsetArray::set_space(Space* sp) {
-  _sp = sp;
-  _csp = sp->toContiguousSpace();
+void G1BlockOffsetArray::set_space(G1OffsetTableContigSpace* sp) {
+  _gsp = sp;
 }
 
 // The arguments follow the normal convention of denoting
@@ -378,7 +392,7 @@ G1BlockOffsetArray::block_start_unsafe_const(const void* addr) const {
   }
   // Otherwise, find the block start using the table.
   HeapWord* q = block_at_or_preceding(addr, false, 0);
-  HeapWord* n = q + _sp->block_size(q);
+  HeapWord* n = q + block_size(q);
   return forward_to_block_containing_addr_const(q, n, addr);
 }
 
@@ -406,31 +420,17 @@ G1BlockOffsetArray::forward_to_block_containing_addr_slow(HeapWord* q,
          err_msg("next_boundary is beyond the end of the covered region "
                  " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
                  next_boundary, _array->_end));
-  if (csp() != NULL) {
-    if (addr >= csp()->top()) return csp()->top();
-    while (next_boundary < addr) {
-      while (n <= next_boundary) {
-        q = n;
-        oop obj = oop(q);
-        if (obj->klass_or_null() == NULL) return q;
-        n += obj->size();
-      }
-      assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
-      // [q, n) is the block that crosses the boundary.
-      alloc_block_work2(&next_boundary, &next_index, q, n);
+  if (addr >= gsp()->top()) return gsp()->top();
+  while (next_boundary < addr) {
+    while (n <= next_boundary) {
+      q = n;
+      oop obj = oop(q);
+      if (obj->klass_or_null() == NULL) return q;
+      n += obj->size();
     }
-  } else {
-    while (next_boundary < addr) {
-      while (n <= next_boundary) {
-        q = n;
-        oop obj = oop(q);
-        if (obj->klass_or_null() == NULL) return q;
-        n += _sp->block_size(q);
-      }
-      assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
-      // [q, n) is the block that crosses the boundary.
-      alloc_block_work2(&next_boundary, &next_index, q, n);
-    }
+    assert(q <= next_boundary && n > next_boundary, "Consequence of loop");
+    // [q, n) is the block that crosses the boundary.
+    alloc_block_work2(&next_boundary, &next_index, q, n);
   }
   return forward_to_block_containing_addr_const(q, n, addr);
 }
@@ -637,7 +637,7 @@ block_start_unsafe_const(const void* addr) const {
   assert(_bottom <= addr && addr < _end,
          "addr must be covered by this Array");
   HeapWord* q = block_at_or_preceding(addr, true, _next_offset_index-1);
-  HeapWord* n = q + _sp->block_size(q);
+  HeapWord* n = q + block_size(q);
   return forward_to_block_containing_addr_const(q, n, addr);
 }
 

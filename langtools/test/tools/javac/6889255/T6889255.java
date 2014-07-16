@@ -32,7 +32,7 @@ import java.util.*;
 import javax.tools.StandardLocation;
 import com.sun.tools.javac.code.Flags;
 import com.sun.tools.javac.code.Kinds;
-import com.sun.tools.javac.code.Scope;
+import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.code.Type;
@@ -42,6 +42,8 @@ import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.jvm.ClassReader;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Names;
+
+import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 
 public class T6889255 {
     boolean testInterfaces = true;
@@ -380,11 +382,11 @@ public class T6889255 {
             if ((sym.flags() & Flags.INTERFACE) != 0 && !testInterfaces)
                 continue;
 
-            for (Scope.Entry e = sym.members_field.elems; e != null; e = e.sibling) {
-                System.err.println("Checking member " + e.sym);
-                switch (e.sym.kind) {
+            for (Symbol s : sym.members_field.getSymbols(NON_RECURSIVE)) {
+                System.err.println("Checking member " + s);
+                switch (s.kind) {
                     case Kinds.TYP: {
-                        String name = e.sym.flatName().toString();
+                        String name = s.flatName().toString();
                         if (!classes.contains(name)) {
                             classes.add(name);
                             work.add(name);
@@ -392,7 +394,7 @@ public class T6889255 {
                         break;
                     }
                     case Kinds.MTH:
-                        verify((MethodSymbol) e.sym, expectNames);
+                        verify((MethodSymbol) s, expectNames);
                         break;
                 }
 

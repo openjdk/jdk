@@ -36,20 +36,19 @@
 import java.util.Locale;
 
 public class TestHtmlTag extends JavadocTester {
-
+    private static final String defaultLanguage = Locale.getDefault().getLanguage();
     public static void main(String... args) throws Exception {
         TestHtmlTag tester = new TestHtmlTag();
         tester.runTests();
     }
-
     @Test
     void test_default() {
-        javadoc("-d", "out-default",
+        javadoc("-locale", defaultLanguage,
+                "-d", "out-default",
                 "-sourcepath", testSrc,
                 "pkg1");
-        checkExit(Exit.OK);
 
-        String defaultLanguage = Locale.getDefault().getLanguage();
+        checkExit(Exit.OK);
 
         checkOutput("pkg1/C1.html", true,
             "<html lang=\"" + defaultLanguage + "\">");

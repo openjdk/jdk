@@ -131,6 +131,10 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
             -L$SYSROOT/lib$OPENJDK_TARGET_CPU_ISADIR \
             -L$SYSROOT/usr/ccs/lib$OPENJDK_TARGET_CPU_ISADIR"
       fi
+    elif test "x$OPENJDK_TARGET_OS" = xmacosx; then
+      # Apple only wants -isysroot <path>, but we also need -iframework<path>/System/Library/Frameworks
+      SYSROOT_CFLAGS="-isysroot \"$SYSROOT\" -iframework\"$SYSROOT/System/Library/Frameworks\""
+      SYSROOT_LDFLAGS=$SYSROOT_CFLAGS
     elif test "x$TOOLCHAIN_TYPE" = xgcc; then
       SYSROOT_CFLAGS="--sysroot=\"$SYSROOT\""
       SYSROOT_LDFLAGS="--sysroot=\"$SYSROOT\""
@@ -143,6 +147,14 @@ AC_DEFUN_ONCE([FLAGS_SETUP_INIT_FLAGS],
     LEGACY_EXTRA_CXXFLAGS="$LEGACY_EXTRA_CXXFLAGS $SYSROOT_CFLAGS"
     LEGACY_EXTRA_LDFLAGS="$LEGACY_EXTRA_LDFLAGS $SYSROOT_LDFLAGS"
   fi
+
+  # These always need to be set, or we can't find the frameworks embedded in JavaVM.framework
+  # set this here so it doesn't have to be peppered throughout the forest
+  if test "x$OPENJDK_TARGET_OS" = xmacosx; then
+    SYSROOT_CFLAGS="$SYSROOT_CFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+    SYSROOT_LDFLAGS="$SYSROOT_LDFLAGS -F\"$SYSROOT/System/Library/Frameworks/JavaVM.framework/Frameworks\""
+  fi
+
   AC_SUBST(SYSROOT_CFLAGS)
   AC_SUBST(SYSROOT_LDFLAGS)
 ])
@@ -644,23 +656,18 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_FOR_JDK],
 
   # Additional macosx handling
   if test "x$OPENJDK_TARGET_OS" = xmacosx; then
-    if test "x$TOOLCHAIN_TYPE" = xgcc; then
-      # FIXME: This needs to be exported in spec.gmk due to closed legacy code.
-      # FIXME: clean this up, and/or move it elsewhere.
+    # Setting these parameters makes it an error to link to macosx APIs that are
+    # newer than the given OS version and makes the linked binaries compatible
+    # even if built on a newer version of the OS.
+    # The expected format is X.Y.Z
+    MACOSX_VERSION_MIN=10.7.0
+    AC_SUBST(MACOSX_VERSION_MIN)
 
-      # Setting these parameters makes it an error to link to macosx APIs that are
-      # newer than the given OS version and makes the linked binaries compatible
-      # even if built on a newer version of the OS.
-      # The expected format is X.Y.Z
-      MACOSX_VERSION_MIN=10.7.0
-      AC_SUBST(MACOSX_VERSION_MIN)
-
-      # The macro takes the version with no dots, ex: 1070
-      # Let the flags variables get resolved in make for easier override on make
-      # command line.
-      COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-      LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
-    fi
+    # The macro takes the version with no dots, ex: 1070
+    # Let the flags variables get resolved in make for easier override on make
+    # command line.
+    COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK -DMAC_OS_X_VERSION_MAX_ALLOWED=\$(subst .,,\$(MACOSX_VERSION_MIN)) -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
+    LDFLAGS_JDK="$LDFLAGS_JDK -mmacosx-version-min=\$(MACOSX_VERSION_MIN)"
   fi
 
   # Setup some hard coded includes

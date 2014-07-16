@@ -65,7 +65,6 @@ import javax.xml.stream.events.XMLEvent;
  * Refer to the table in unit-test javax.xml.stream.XMLStreamReaderTest.SupportDTD for changes
  * related to property SupportDTD.
  * @author Joe Wang, Sun Microsystems
- * @version $Id: XMLDocumentScannerImpl.java,v 1.17 2010-11-01 04:39:41 joehw Exp $
  */
 public class XMLDocumentScannerImpl
         extends XMLDocumentFragmentScannerImpl{

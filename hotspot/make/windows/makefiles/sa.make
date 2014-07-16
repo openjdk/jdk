@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,22 @@ checkAndBuildSA::
 !include $(WorkSpace)/make/sa.files
 
 GENERATED = ../generated
+
+HS_COMMON_SRC_REL = src
+
+!if "$(OPENJDK)" != "true"
+HS_ALT_SRC_REL=src/closed
+HS_ALT_SRC = $(WorkSpace)/$(HS_ALT_SRC_REL)
+!ifndef HS_ALT_MAKE
+HS_ALT_MAKE=$(WorkSpace)/make/closed
+!endif
+!endif
+
+HS_COMMON_SRC = $(WorkSpace)/$(HS_COMMON_SRC_REL)
+
+!ifdef HS_ALT_MAKE
+!include $(HS_ALT_MAKE)/windows/makefiles/sa.make
+!endif
 
 # tools.jar is needed by the JDI - SA binding
 SA_CLASSPATH = $(BOOT_JAVA_HOME)/lib/tools.jar
@@ -85,14 +101,9 @@ checkAndBuildSA:: $(SAWINDBG)
 # will be useful to have the assertion checks in place
 
 !if "$(BUILDARCH)" == "ia64"
-SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "WIN64" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -YX -FD -c
+SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "WIN64" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -FD -c
 !elseif "$(BUILDARCH)" == "amd64"
-SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "WIN64" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -YX -FD -c
-!if "$(COMPILER_NAME)" == "VS2005"
-# On amd64, VS2005 compiler requires bufferoverflowU.lib on the link command line, 
-# otherwise we get missing __security_check_cookie externals at link time. 
-SA_LD_FLAGS = bufferoverflowU.lib
-!endif
+SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "WIN64" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -FD -c
 !else
 SA_CFLAGS = -nologo $(MS_RUNTIME_OPTION) -W3 $(GX_OPTION) -Od -D "WIN32" -D "_WINDOWS" -D "_DEBUG" -D "_CONSOLE" -D "_MBCS" -FD -RTC1 -c 
 !if "$(ENABLE_FULL_DEBUG_SYMBOLS)" == "1"

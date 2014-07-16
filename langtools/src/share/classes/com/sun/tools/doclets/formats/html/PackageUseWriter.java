@@ -74,7 +74,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                             .get(usingPackage.name());
                     if (usedClasses == null) {
                         usedClasses = new TreeSet<>();
-                        usingPackageToUsedClasses.put(Util.getPackageName(usingPackage),
+                        usingPackageToUsedClasses.put(utils.getPackageName(usingPackage),
                                                       usedClasses);
                     }
                     usedClasses.add(usedClass);
@@ -151,7 +151,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
         Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, useTableSummary,
                 getTableCaption(configuration.getResource(
                 "doclet.ClassUse_Packages.that.use.0",
-                getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)))));
+                getPackageLink(pkgdoc, utils.getPackageName(pkgdoc)))));
         table.addContent(getSummaryTableHeader(packageTableHeader, "col"));
         Content tbody = new HtmlTree(HtmlTag.TBODY);
         Iterator<String> it = usingPackageToUsedClasses.keySet().iterator();
@@ -194,8 +194,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
             Content table = HtmlTree.TABLE(HtmlStyle.useSummary, 0, 3, 0, tableSummary,
                                            getTableCaption(configuration.getResource(
                                                    "doclet.ClassUse_Classes.in.0.used.by.1",
-                                                   getPackageLink(pkgdoc, Util.getPackageName(pkgdoc)),
-                                                   getPackageLink(usingPackage, Util.getPackageName(usingPackage)))));
+                                                   getPackageLink(pkgdoc, utils.getPackageName(pkgdoc)),
+                                                   getPackageLink(usingPackage, utils.getPackageName(usingPackage)))));
             table.addContent(getSummaryTableHeader(classTableHeader, "col"));
             Content tbody = new HtmlTree(HtmlTag.TBODY);
             Iterator<ClassDoc> itc =
@@ -241,8 +241,8 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink(Util.getPackageName(pkg),
-                new StringContent(Util.getPackageName(pkg))));
+                getHyperLink(utils.getPackageName(pkg),
+                new StringContent(utils.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);

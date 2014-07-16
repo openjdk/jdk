@@ -31,6 +31,8 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import jdk.nashorn.api.scripting.AbstractJSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -312,7 +314,22 @@ public final class WithObject extends ScriptObject implements Scope {
 
     @SuppressWarnings("unused")
     private static Object bindToExpression(final Object fn, final Object receiver) {
-        return fn instanceof ScriptFunction ? bindToExpression((ScriptFunction) fn, receiver) : fn;
+        if (fn instanceof ScriptFunction) {
+            return bindToExpression((ScriptFunction) fn, receiver);
+        } else if (fn instanceof ScriptObjectMirror) {
+            final ScriptObjectMirror mirror = (ScriptObjectMirror)fn;
+            if (mirror.isFunction()) {
+                // We need to make sure correct 'this' is used for calls with Ident call
+                // expressions. We do so here using an AbstractJSObject instance.
+                return new AbstractJSObject() {
+                    public Object call(final Object thiz, final Object... args) {
+                        return mirror.call(withFilterExpression(receiver), args);
+                    }
+                };
+            }
+        }
+
+        return fn;
     }
 
     private static Object bindToExpression(final ScriptFunction fn, final Object receiver) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,8 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutput;
-import java.util.Hashtable;
+import java.util.Map;
+import java.util.HashMap;
 
 import org.omg.CORBA.INTERNAL;
 
@@ -49,7 +50,7 @@ public abstract class OutputStreamHook extends ObjectOutputStream
      */
     private class HookPutFields extends ObjectOutputStream.PutField
     {
-        private Hashtable fields = new Hashtable();
+        private Map<String,Object> fields = new HashMap<>();
 
         /**
          * Put the value of the named boolean field into the persistent field.
@@ -140,7 +141,6 @@ public abstract class OutputStreamHook extends ObjectOutputStream
     public OutputStreamHook()
         throws java.io.IOException {
         super();
-
     }
 
     public void defaultWriteObject() throws IOException {

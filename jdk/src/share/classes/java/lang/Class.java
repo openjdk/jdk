@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -130,11 +130,16 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     /*
-     * Constructor. Only the Java Virtual Machine creates Class
-     * objects.
+     * Private constructor. Only the Java Virtual Machine creates Class objects.
+     * This constructor is not used and prevents the default constructor being
+     * generated.
      */
-    private Class() {}
-
+    private Class(ClassLoader loader, Class<?> arrayComponentType) {
+        // Initialize final field for classLoader.  The initialization value of non-null
+        // prevents future JIT optimizations from assuming this final field is null.
+        classLoader = loader;
+        componentType = arrayComponentType;
+    }
 
     /**
      * Converts the object to a string. The string representation is the
@@ -677,8 +682,10 @@ public final class Class<T> implements java.io.Serializable,
     }
 
     // Package-private to allow ClassLoader access
-    native ClassLoader getClassLoader0();
+    ClassLoader getClassLoader0() { return classLoader; }
 
+    // Initialized in JVM not by private constructor
+    private final ClassLoader classLoader;
 
     /**
      * Returns an array of {@code TypeVariable} objects that represent the
@@ -911,7 +918,16 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.reflect.Array
      * @since 1.1
      */
-    public native Class<?> getComponentType();
+    public Class<?> getComponentType() {
+        // Only return for array types. Storage may be reused for Class for instance types.
+        if (isArray()) {
+            return componentType;
+        } else {
+            return null;
+        }
+    }
+
+    private final Class<?> componentType;
 
 
     /**

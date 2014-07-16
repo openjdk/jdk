@@ -147,7 +147,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
         public void startElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
             // create or obtain the Map object
             try {
-                BeanT target = (BeanT) state.prev.target;
+                BeanT target = (BeanT) state.getPrev().getTarget();
                 ValueT mapValue = acc.get(target);
                 if(mapValue == null)
                     mapValue = ClassFactory.create(mapImplClass);
@@ -156,11 +156,11 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
 
                 Stack.push(this.target, target);
                 Stack.push(map, mapValue);
-                state.target = mapValue;
+                state.setTarget(mapValue);
             } catch (AccessorException e) {
                 // recover from error by setting a dummy Map that receives and discards the values
                 handleGenericException(e,true);
-                state.target = new HashMap();
+                state.setTarget(new HashMap());
             }
         }
 
@@ -177,7 +177,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
         @Override
         public void childElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
             if(ea.matches(entryTag)) {
-                state.loader = entryLoader;
+                state.setLoader(entryLoader);
             } else {
                 super.childElement(state,ea);
             }
@@ -197,26 +197,26 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
     private final Loader entryLoader = new Loader(false) {
         @Override
         public void startElement(UnmarshallingContext.State state, TagName ea) {
-            state.target = new Object[2];  // this is inefficient
+            state.setTarget(new Object[2]);  // this is inefficient
         }
 
         @Override
         public void leaveElement(UnmarshallingContext.State state, TagName ea) {
-            Object[] keyValue = (Object[])state.target;
-            Map map = (Map) state.prev.target;
+            Object[] keyValue = (Object[])state.getTarget();
+            Map map = (Map) state.getPrev().getTarget();
             map.put(keyValue[0],keyValue[1]);
         }
 
         @Override
         public void childElement(UnmarshallingContext.State state, TagName ea) throws SAXException {
             if(ea.matches(keyTag)) {
-                state.loader = keyLoader;
-                state.receiver = keyReceiver;
+                state.setLoader(keyLoader);
+                state.setReceiver(keyReceiver);
                 return;
             }
             if(ea.matches(valueTag)) {
-                state.loader = valueLoader;
-                state.receiver = valueReceiver;
+                state.setLoader(valueLoader);
+                state.setReceiver(valueReceiver);
                 return;
             }
             super.childElement(state,ea);
@@ -234,7 +234,7 @@ final class SingleMapNodeProperty<BeanT,ValueT extends Map> extends PropertyImpl
             this.index = index;
         }
         public void receive(UnmarshallingContext.State state, Object o) {
-            ((Object[])state.target)[index] = o;
+            ((Object[])state.getTarget())[index] = o;
         }
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             Content tdSummary) {
         Tag[] deprs = member.tags("deprecated");
         Content div;
-        if (Util.isDeprecated((ProgramElementDoc) member)) {
+        if (utils.isDeprecated((ProgramElementDoc) member)) {
             Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
             div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
             div.addContent(getSpace());
@@ -185,7 +185,7 @@ public abstract class SubWriterHolderWriter extends HtmlDocletWriter {
             return;
         } else {
             ClassDoc cd = ((ProgramElementDoc)member).containingClass();
-            if (cd != null && Util.isDeprecated(cd)) {
+            if (cd != null && utils.isDeprecated(cd)) {
                 Content deprLabel = HtmlTree.SPAN(HtmlStyle.deprecatedLabel, deprecatedPhrase);
                 div = HtmlTree.DIV(HtmlStyle.block, deprLabel);
                 div.addContent(getSpace());

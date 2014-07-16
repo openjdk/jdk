@@ -75,7 +75,6 @@ import com.sun.org.apache.xerces.internal.util.XMLResourceIdentifierImpl;
  * @xerces.internal
  *
  * @author Neil Graham, IBM
- * @version $Id: XMLDTDDescription.java,v 1.4 2010/08/11 07:18:38 joehw Exp $
  */
 public class XMLDTDDescription extends XMLResourceIdentifierImpl
         implements com.sun.org.apache.xerces.internal.xni.grammars.XMLDTDDescription {

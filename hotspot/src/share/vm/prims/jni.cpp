@@ -59,6 +59,7 @@
 #include "prims/jvm_misc.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/compilationPolicy.hpp"
 #include "runtime/fieldDescriptor.hpp"
 #include "runtime/fprofiler.hpp"
@@ -3336,13 +3337,7 @@ static bool initializeDirectBufferSupport(JNIEnv* env, JavaThread* thread) {
     directBufferSupportInitializeEnded = 1;
   } else {
     while (!directBufferSupportInitializeEnded && !directBufferSupportInitializeFailed) {
-      // Set state as yield_all can call os:sleep. On Solaris, yield_all calls
-      // os::sleep which requires the VM state transition. On other platforms, it
-      // is not necessary. The following call to change the VM state is purposely
-      // put inside the loop to avoid potential deadlock when multiple threads
-      // try to call this method. See 6791815 for more details.
-      ThreadInVMfromNative tivn(thread);
-      os::yield_all();
+      os::yield();
     }
   }
 
@@ -3858,6 +3853,7 @@ _JNI_IMPORT_OR_EXPORT_ jint JNICALL JNI_GetDefaultJavaVMInitArgs(void *args_) {
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif
+#include "memory/guardedMemory.hpp"
 #include "utilities/quickSort.hpp"
 #include "utilities/ostream.hpp"
 #if INCLUDE_VM_STRUCTS
@@ -3901,6 +3897,7 @@ void execute_internal_vm_tests() {
     run_unit_test(arrayOopDesc::test_max_array_length());
     run_unit_test(CollectedHeap::test_is_in());
     run_unit_test(QuickSort::test_quick_sort());
+    run_unit_test(GuardedMemory::test_guarded_memory());
     run_unit_test(AltHashing::test_alt_hash());
     run_unit_test(test_loggc_filename());
     run_unit_test(TestNewSize_test());

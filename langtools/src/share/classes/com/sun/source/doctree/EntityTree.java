@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,11 +32,17 @@ import javax.lang.model.element.Name;
  * A tree node for an HTML entity.
  *
  * <p>
- * &amp; name ;
+ * &amp; name ; <br>
+ * &amp; # digits ; <br>
+ * &amp; #X hex-digits ;
  *
  * @since 1.8
  */
 @jdk.Exported
 public interface EntityTree extends DocTree {
+    /**
+     * Returns the name or value of the entity.
+     * @return the name or value of the entity
+     */
     Name getName();
 }

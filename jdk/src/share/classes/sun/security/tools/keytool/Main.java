@@ -1540,7 +1540,7 @@ public final class Main {
         boolean useDefaultPBEAlgorithm = true;
         SecretKey secKey = null;
 
-        if (keyAlgName.toUpperCase().startsWith("PBE")) {
+        if (keyAlgName.toUpperCase(Locale.ENGLISH).startsWith("PBE")) {
             SecretKeyFactory factory = SecretKeyFactory.getInstance("PBE");
 
             // User is prompted for PBE credential
@@ -1577,7 +1577,7 @@ public final class Main {
             if (verbose) {
                 MessageFormat form = new MessageFormat(rb.getString
                     ("Generated.keysize.bit.keyAlgName.secret.key"));
-                Object[] source = {new Integer(keysize),
+                Object[] source = {keysize,
                                     secKey.getAlgorithm()};
                 System.err.println(form.format(source));
             }
@@ -1672,7 +1672,7 @@ public final class Main {
         if (verbose) {
             MessageFormat form = new MessageFormat(rb.getString
                 ("Generating.keysize.bit.keyAlgName.key.pair.and.self.signed.certificate.sigAlgName.with.a.validity.of.validality.days.for"));
-            Object[] source = {new Integer(keysize),
+            Object[] source = {keysize,
                                 privKey.getAlgorithm(),
                                 chain[0].getSigAlgName(),
                                 validity,
@@ -1833,7 +1833,7 @@ public final class Main {
                     for (int i = 0; i < chain.length; i ++) {
                         MessageFormat form = new MessageFormat
                                 (rb.getString("Certificate.i.1."));
-                        Object[] source = {new Integer((i + 1))};
+                        Object[] source = {(i + 1)};
                         out.println(form.format(source));
                         if (verbose && (chain[i] instanceof X509Certificate)) {
                             printX509Cert((X509Certificate)(chain[i]), out);
@@ -2108,7 +2108,7 @@ public final class Main {
                         ("Your.keystore.contains.keyStore.size.entry")) :
                 new MessageFormat(rb.getString
                         ("Your.keystore.contains.keyStore.size.entries"));
-        Object[] source = {new Integer(keyStore.size())};
+        Object[] source = {keyStore.size()};
         out.println(form.format(source));
         out.println();
 
@@ -2380,7 +2380,7 @@ public final class Main {
             if (certs.length > 1) {
                 MessageFormat form = new MessageFormat
                         (rb.getString("Certificate.i.1."));
-                Object[] source = {new Integer(i + 1)};
+                Object[] source = {i + 1};
                 out.println(form.format(source));
             }
             if (rfc)

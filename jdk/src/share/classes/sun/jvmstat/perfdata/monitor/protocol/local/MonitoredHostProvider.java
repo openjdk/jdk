@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2004, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2004, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -160,17 +160,18 @@ public class MonitoredHostProvider extends MonitoredHost {
      * @param terminated a set of Integer objects containing the vmid of
      *                   terminated Vms since last interval.
      */
-    private void fireVmStatusChangedEvents(Set active, Set started,
-                                           Set terminated) {
-        ArrayList registered = null;
+    @SuppressWarnings("unchecked") // Cast of result of clone
+    private void fireVmStatusChangedEvents(Set<Integer> active, Set<Integer> started,
+                                           Set<Integer> terminated) {
+        ArrayList<HostListener> registered = null;
         VmStatusChangeEvent ev = null;
 
         synchronized(listeners) {
             registered = (ArrayList)listeners.clone();
         }
 
-        for (Iterator i = registered.iterator(); i.hasNext(); /* empty */) {
-            HostListener l = (HostListener)i.next();
+        for (Iterator<HostListener> i = registered.iterator(); i.hasNext(); /* empty */) {
+            HostListener l = i.next();
             if (ev == null) {
                 ev = new VmStatusChangeEvent(this, active, started, terminated);
             }
@@ -186,7 +187,7 @@ public class MonitoredHostProvider extends MonitoredHost {
             super.run();
 
             // save the last set of active JVMs
-            Set lastActiveVms = activeVms;
+            Set<Integer> lastActiveVms = activeVms;
 
             // get the current set of active JVMs
             activeVms = (HashSet<Integer>)vmManager.activeVms();
@@ -194,20 +195,20 @@ public class MonitoredHostProvider extends MonitoredHost {
             if (activeVms.isEmpty()) {
                 return;
             }
-            Set<Integer> startedVms = new HashSet<Integer>();
-            Set<Object> terminatedVms = new HashSet<Object>();
+            Set<Integer> startedVms = new HashSet<>();
+            Set<Integer> terminatedVms = new HashSet<>();
 
-            for (Iterator i = activeVms.iterator(); i.hasNext(); /* empty */) {
-                Integer vmid = (Integer)i.next();
+            for (Iterator<Integer> i = activeVms.iterator(); i.hasNext(); /* empty */) {
+                Integer vmid = i.next();
                 if (!lastActiveVms.contains(vmid)) {
                     // a new file has been detected, add to set
                     startedVms.add(vmid);
                 }
             }
 
-            for (Iterator i = lastActiveVms.iterator(); i.hasNext();
+            for (Iterator<Integer> i = lastActiveVms.iterator(); i.hasNext();
                     /* empty */) {
-                Object o = i.next();
+                Integer o = i.next();
                 if (!activeVms.contains(o)) {
                     // JVM has terminated, remove it from the active list
                     terminatedVms.add(o);

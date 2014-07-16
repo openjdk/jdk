@@ -1,0 +1,2 @@
+NonasciiDigit.java:12:26: compiler.err.illegal.char: \uff11
+1 error

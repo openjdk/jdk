@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -48,7 +48,7 @@ public final class DiagnosticCollector<S> implements DiagnosticListener<S> {
     }
 
     /**
-     * Gets a list view of diagnostics collected by this object.
+     * Returns a list view of diagnostics collected by this object.
      *
      * @return a list view of diagnostics
      */

@@ -44,8 +44,16 @@ public class XShareAuto {
             "-server", "-XX:+UnlockDiagnosticVMOptions",
             "-XX:SharedArchiveFile=./sample.jsa", "-version");
         output = new OutputAnalyzer(pb.start());
-        output.shouldNotContain("sharing");
-        output.shouldHaveExitValue(0);
+        // We asked for server but it could be aliased to something else
+        if (output.getOutput().contains("Server VM")) {
+            // In server case we don't expect to see sharing flag
+            output.shouldNotContain("sharing");
+            output.shouldHaveExitValue(0);
+        }
+        else {
+            System.out.println("Skipping test - no Server VM available");
+            return;
+        }
 
         pb = ProcessTools.createJavaProcessBuilder(
             "-server", "-Xshare:auto", "-XX:+UnlockDiagnosticVMOptions",

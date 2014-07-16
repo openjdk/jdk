@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import com.sun.tools.javac.util.Context;
 public abstract class JavacTask implements CompilationTask {
 
     /**
-     * Get the {@code JavacTask} for a {@code ProcessingEnvironment}.
+     * Returns the {@code JavacTask} for a {@code ProcessingEnvironment}.
      * If the compiler is being invoked using a
      * {@link javax.tools.JavaCompiler.CompilationTask CompilationTask},
      * then that task will be returned.
@@ -70,7 +70,7 @@ public abstract class JavacTask implements CompilationTask {
     }
 
     /**
-     * Parse the specified files returning a list of abstract syntax trees.
+     * Parses the specified files returning a list of abstract syntax trees.
      *
      * @return a list of abstract syntax trees
      * @throws IOException if an unhandled I/O error occurred in the compiler.
@@ -80,7 +80,7 @@ public abstract class JavacTask implements CompilationTask {
         throws IOException;
 
     /**
-     * Complete all analysis.
+     * Completes all analysis.
      *
      * @return a list of elements that were analyzed
      * @throws IOException if an unhandled I/O error occurred in the compiler.
@@ -89,7 +89,7 @@ public abstract class JavacTask implements CompilationTask {
     public abstract Iterable<? extends Element> analyze() throws IOException;
 
     /**
-     * Generate code.
+     * Generates code.
      *
      * @return a list of files that were generated
      * @throws IOException if an unhandled I/O error occurred in the compiler.
@@ -98,7 +98,7 @@ public abstract class JavacTask implements CompilationTask {
     public abstract Iterable<? extends JavaFileObject> generate() throws IOException;
 
     /**
-     * The specified listener will receive notification of events
+     * Sets a specified listener to receive notification of events
      * describing the progress of this compilation task.
      *
      * If another listener is receiving notifications as a result of a prior
@@ -108,46 +108,54 @@ public abstract class JavacTask implements CompilationTask {
      * any listener that has been previously set, followed by {@code addTaskListener}
      * for the new listener.
      *
+     * @param taskListener the task listener
      * @throws IllegalStateException if the specified listener has already been added.
      */
     public abstract void setTaskListener(TaskListener taskListener);
 
     /**
-     * The specified listener will receive notification of events
+     * Adds a specified listener so that it receives notification of events
      * describing the progress of this compilation task.
      *
      * This method may be called at any time before or during the compilation.
      *
+     * @param taskListener the task listener
      * @throws IllegalStateException if the specified listener has already been added.
      * @since 1.8
      */
     public abstract void addTaskListener(TaskListener taskListener);
 
     /**
-     * The specified listener will no longer receive notification of events
-     * describing the progress of this compilation task.
+     * Removes the specified listener so that it no longer receives
+     * notification of events describing the progress of this
+     * compilation task.
      *
      * This method may be called at any time before or during the compilation.
      *
+     * @param taskListener the task listener
      * @since 1.8
      */
     public abstract void removeTaskListener(TaskListener taskListener);
 
     /**
-     * Get a type mirror of the tree node determined by the specified path.
+     * Returns a type mirror of the tree node determined by the specified path.
      * This method has been superceded by methods on
      * {@link com.sun.source.util.Trees Trees}.
+     * @param path the path
+     * @return the type mirror
      * @see com.sun.source.util.Trees#getTypeMirror
      */
     public abstract TypeMirror getTypeMirror(Iterable<? extends Tree> path);
 
     /**
-     * Get a utility object for dealing with program elements.
+     * Returns a utility object for dealing with program elements.
+     * @return the utility object for dealing with program elements
      */
     public abstract Elements getElements();
 
     /**
-     * Get a utility object for dealing with type mirrors.
+     * Returns a utility object for dealing with type mirrors.
+     * @return the utility object for dealing with type mirrors
      */
     public abstract Types getTypes();
 }

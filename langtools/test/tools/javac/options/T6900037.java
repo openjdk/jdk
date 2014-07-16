@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
  * @bug 6900037
  * @summary javac should warn if earlier -source is used and bootclasspath not set
  * @compile T6900037.java
- * @compile -source 1.6 T6900037.java
- * @compile/fail/ref=T6900037.out -XDrawDiagnostics -Werror -source 1.6 T6900037.java
- * @compile -Werror -source 1.6 -Xlint:-options T6900037.java
+ * @compile -source 1.8 T6900037.java
+ * @compile/fail/ref=T6900037.out -XDrawDiagnostics -Werror -source 1.8 T6900037.java
+ * @compile -Werror -source 1.8 -Xlint:-options T6900037.java
  */
 
 class T6900037 { }

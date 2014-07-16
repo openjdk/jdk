@@ -116,29 +116,29 @@ public class DOMException extends RuntimeException {
     /**
      * If an attempt is made to use an object that is not, or is no longer,
      * usable.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public static final short INVALID_STATE_ERR         = 11;
     /**
      * If an invalid or illegal string is specified.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public static final short SYNTAX_ERR                = 12;
     /**
      * If an attempt is made to modify the type of the underlying object.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public static final short INVALID_MODIFICATION_ERR  = 13;
     /**
      * If an attempt is made to create or change an object in a way which is
      * incorrect with regard to namespaces.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public static final short NAMESPACE_ERR             = 14;
     /**
      * If a parameter or an operation is not supported by the underlying
      * object.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public static final short INVALID_ACCESS_ERR        = 15;
     /**
@@ -147,13 +147,13 @@ public class DOMException extends RuntimeException {
      * with respect to "partial validity", this exception would be raised
      * and the operation would not be done. This code is used in [<a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Val-20040127/'>DOM Level 3 Validation</a>]
      * . Refer to this specification for further information.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public static final short VALIDATION_ERR            = 16;
     /**
      *  If the type of an object is incompatible with the expected type of the
      * parameter associated to the object.
-     * @since DOM Level 3
+     * @since 1.5, DOM Level 3
      */
     public static final short TYPE_MISMATCH_ERR         = 17;
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -55,11 +55,12 @@ import javax.tools.SimpleJavaFileObject;
  * the @SuppressWarnings annotation on the declaration and verifies than no
  * warnings are produced inside the declaration, but all are produced outside it.
  *
- * Currently only works with <code>unchecked,deprecation,cast</code> warnings.
+ * Currently only works with <code>unchecked,deprecation,cast,divzero</code> warnings.
  */
 public class VerifySuppressWarnings {
 
-    private static final List<String> STANDARD_PARAMS = Arrays.asList("-Xlint:unchecked,deprecation,cast", "-Xjcov");
+    private static final List<String> STANDARD_PARAMS =
+            Arrays.asList("-Xlint:unchecked,deprecation,cast,divzero");
 
     public static void main(String... args) throws IOException, URISyntaxException {
         if (args.length != 1) throw new IllegalStateException("Must provide class name!");
@@ -133,7 +134,8 @@ public class VerifySuppressWarnings {
         }.scan(cut, null);
 
         for (final int[] declarationSpan : declarationSpans) {
-            final String suppressWarnings = "@SuppressWarnings({\"deprecation\", \"unchecked\", \"serial\"})";
+            final String suppressWarnings =
+                    "@SuppressWarnings({\"deprecation\", \"unchecked\", \"serial\", \"divzero\"})";
             final String updatedContent = testContent.substring(0, declarationSpan[0]) + suppressWarnings + testContent.substring(declarationSpan[0]);
             final List<Diagnostic<?>> foundErrors = new ArrayList<>(diagnostics);
             DiagnosticListener<JavaFileObject> verifyDiagnostics = new DiagnosticListener<JavaFileObject>() {

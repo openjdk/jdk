@@ -47,7 +47,7 @@ public class TestHtmlTableStyles extends JavadocTester {
         checkExit(Exit.OK);
 
         checkOutput("pkg1/TestTable.html", true,
-                "<table border cellpadding=3 cellspacing=1>",
+                "<table summary=\"Summary\" border cellpadding=3 cellspacing=1>",
                 "<table class=\"memberSummary\" border=\"0\" cellpadding=\"3\" "
                 + "cellspacing=\"0\" summary=\"Field Summary table, listing fields, "
                 + "and an explanation\">",

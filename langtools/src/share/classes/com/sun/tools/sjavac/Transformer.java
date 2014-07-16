@@ -31,6 +31,7 @@ import java.util.Set;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
+import com.sun.tools.sjavac.server.JavacService;
 
 /**
  * The transform interface is used to transform content inside a package, from one form to another.
@@ -82,7 +83,8 @@ public interface Transformer
      * If num_cores is set to a non-zero value. The transform should attempt to use no more than these
      * number of threads for heavy work.
      */
-    boolean transform(Map<String,Set<URI>> pkgSrcs,
+    boolean transform(JavacService javacService,
+                      Map<String,Set<URI>> pkgSrcs,
                       Set<URI>             visibleSources,
                       Map<URI,Set<String>> visibleClasses,
                       Map<String,Set<String>> oldPackageDependencies,

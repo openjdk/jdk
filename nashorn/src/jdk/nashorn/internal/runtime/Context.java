@@ -62,6 +62,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -444,15 +445,11 @@ public final class Context {
         }
 
         if (env._persistent_cache) {
-            if (env._lazy_compilation || env._optimistic_types) {
-                getErr().println("Can not use persistent class caching with lazy compilation or optimistic compilation.");
-            } else {
-                try {
-                    final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
-                    codeStore = new CodeStore(cacheDir);
-                } catch (final IOException e) {
-                    throw new RuntimeException("Error initializing code cache", e);
-                }
+            try {
+                final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
+                codeStore = new CodeStore(cacheDir);
+            } catch (final IOException e) {
+                throw new RuntimeException("Error initializing code cache", e);
             }
         }
 
@@ -560,12 +557,29 @@ public final class Context {
      * @param callThis     "this" to be passed to the evaluated code
      * @param location     location of the eval call
      * @param strict       is this {@code eval} call from a strict mode code?
+     * @return the return value of the {@code eval}
+     */
+    public Object eval(final ScriptObject initialScope, final String string,
+            final Object callThis, final Object location, final boolean strict) {
+        return eval(initialScope, string, callThis, location, strict, false);
+    }
+
+    /**
+     * Entry point for {@code eval}
+     *
+     * @param initialScope The scope of this eval call
+     * @param string       Evaluated code as a String
+     * @param callThis     "this" to be passed to the evaluated code
+     * @param location     location of the eval call
+     * @param strict       is this {@code eval} call from a strict mode code?
+     * @param evalCall     is this called from "eval" builtin?
      *
      * @return the return value of the {@code eval}
      */
-    public Object eval(final ScriptObject initialScope, final String string, final Object callThis, final Object location, final boolean strict) {
+    public Object eval(final ScriptObject initialScope, final String string,
+            final Object callThis, final Object location, final boolean strict, final boolean evalCall) {
         final String  file       = location == UNDEFINED || location == null ? "<eval>" : location.toString();
-        final Source  source     = sourceFor(file, string);
+        final Source  source     = sourceFor(file, string, evalCall);
         final boolean directEval = location != UNDEFINED; // is this direct 'eval' call or indirectly invoked eval?
         final Global  global = Context.getGlobal();
         ScriptObject scope = initialScope;
@@ -941,22 +955,33 @@ public final class Context {
      * Initialize given global scope object.
      *
      * @param global the global
+     * @param engine the associated ScriptEngine instance, can be null
      * @return the initialized global scope object.
      */
-    public Global initGlobal(final Global global) {
+    public Global initGlobal(final Global global, final ScriptEngine engine) {
         // Need only minimal global object, if we are just compiling.
         if (!env._compile_only) {
             final Global oldGlobal = Context.getGlobal();
             try {
                 Context.setGlobal(global);
                 // initialize global scope with builtin global objects
-                global.initBuiltinObjects();
+                global.initBuiltinObjects(engine);
             } finally {
                 Context.setGlobal(oldGlobal);
             }
         }
 
         return global;
+    }
+
+    /**
+     * Initialize given global scope object.
+     *
+     * @param global the global
+     * @return the initialized global scope object.
+     */
+    public Global initGlobal(final Global global) {
+        return initGlobal(global, null);
     }
 
     /**
@@ -1162,7 +1187,7 @@ public final class Context {
 
         for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
-                ((RecompilableScriptFunctionData) constant).setCodeAndSource(installedClasses, source);
+                ((RecompilableScriptFunctionData) constant).initTransients(source, installer);
             }
         }
 

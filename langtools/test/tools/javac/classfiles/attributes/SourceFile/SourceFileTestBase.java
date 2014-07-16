@@ -45,7 +45,7 @@ public class SourceFileTestBase extends TestBase {
      */
     protected void compileAndTest(String sourceCode, String... classesToTest) throws Exception {
 
-        Map<String, ? extends JavaFileObject> classes = compile(sourceCode);
+        Map<String, ? extends JavaFileObject> classes = compile(sourceCode).getClasses();
         String fileName = ToolBox.getJavaFileNameFromSource(sourceCode);
         for (String className : classesToTest) {
             assertAttributePresent(ClassFile.read(classes.get(className).openInputStream()), fileName);

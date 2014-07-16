@@ -64,7 +64,7 @@ import org.xml.sax.Attributes;
  * AttributeList} interface, it also includes a much more efficient
  * implementation using a single array rather than a set of Vectors.</p>
  *
- * @since SAX 2.0
+ * @since 1.4, SAX 2.0
  * @author David Megginson
  */
 public class AttributesImpl implements Attributes

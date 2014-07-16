@@ -1,5 +1,53 @@
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
+grant codeBase "file:${java.home}/lib/ext/ucrypto.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
+        permission java.lang.RuntimePermission "loadLibrary.j2ucrypto";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.OracleUcrypto";
+        permission java.security.SecurityPermission "clearProviderProperties.OracleUcrypto";
+        permission java.security.SecurityPermission "removeProviderProperty.OracleUcrypto";
+        permission java.io.FilePermission "${java.home}/lib/security/ucrypto-solaris.cfg", "read";
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunec.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "loadLibrary.sunec";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.SunEC";
+        permission java.security.SecurityPermission "clearProviderProperties.SunEC";
+        permission java.security.SecurityPermission "removeProviderProperty.SunEC";
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunjce_provider.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.misc";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.SunJCE";
+        permission java.security.SecurityPermission "clearProviderProperties.SunJCE";
+        permission java.security.SecurityPermission "removeProviderProperty.SunJCE";
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunpkcs11.jar" {
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "accessClassInPackage.sun.nio.ch";
+        permission java.lang.RuntimePermission "loadLibrary.j2pkcs11";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.*";
+        permission java.security.SecurityPermission "clearProviderProperties.*";
+        permission java.security.SecurityPermission "removeProviderProperty.*";
+        permission java.security.SecurityPermission "getProperty.auth.login.defaultCallbackHandler";
+        permission java.security.SecurityPermission "authProvider.*";
+        // Needed for reading PKCS11 config file and NSS library check
+        permission java.io.FilePermission "<<ALL FILES>>", "read";
+};
+
+grant codeBase "file:${java.home}/lib/ext/sunmscapi.jar" {
+        Permission java.lang.RuntimePermission "accessClassInPackage.sun.security.*";
+        permission java.lang.RuntimePermission "loadLibrary.sunmscapi";
+        permission java.util.PropertyPermission "*", "read";
+        permission java.security.SecurityPermission "putProviderProperty.SunMSCAPI";
+        permission java.security.SecurityPermission "clearProviderProperties.SunMSCAPI";
+        permission java.security.SecurityPermission "removeProviderProperty.SunMSCAPI";
 };
 
 grant {
@@ -8,11 +56,11 @@ grant {
     permission java.util.PropertyPermission "test.src", "read";
 
     permission java.lang.RuntimePermission
-	"accessClassInPackage.sun.security.provider";
+        "accessClassInPackage.sun.security.provider";
     permission java.lang.RuntimePermission
-	"accessClassInPackage.sun.security.pkcs";
+        "accessClassInPackage.sun.security.pkcs";
     permission java.lang.RuntimePermission
-	"accessClassInPackage.sun.security.x509";
+        "accessClassInPackage.sun.security.x509";
     permission java.lang.RuntimePermission
-	"accessClassInPackage.sun.security.rsa";
+        "accessClassInPackage.sun.security.rsa";
 };

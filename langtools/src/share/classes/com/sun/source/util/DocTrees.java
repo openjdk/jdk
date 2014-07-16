@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,8 +40,9 @@ import javax.tools.Diagnostic;
 @jdk.Exported
 public abstract class DocTrees extends Trees {
     /**
-     * Gets a DocTrees object for a given CompilationTask.
+     * Returns a DocTrees object for a given CompilationTask.
      * @param task the compilation task for which to get the Trees object
+     * @return the DocTrees object
      * @throws IllegalArgumentException if the task does not support the Trees API.
      */
     public static DocTrees instance(CompilationTask task) {
@@ -49,8 +50,9 @@ public abstract class DocTrees extends Trees {
     }
 
     /**
-     * Gets a DocTrees object for a given ProcessingEnvironment.
+     * Returns a DocTrees object for a given ProcessingEnvironment.
      * @param env the processing environment for which to get the Trees object
+     * @return the DocTrees object
      * @throws IllegalArgumentException if the env does not support the Trees API.
      */
     public static DocTrees instance(ProcessingEnvironment env) {
@@ -60,17 +62,26 @@ public abstract class DocTrees extends Trees {
     }
 
     /**
-     * Gets the doc comment tree, if any, for the Tree node identified by a given TreePath.
-     * Returns null if no doc comment was found.
+     * Returns the doc comment tree, if any, for the Tree node identified by a given TreePath.
+     * Returns {@code null} if no doc comment was found.
+     * @param path the path for the tree node
+     * @return the doc comment tree
      */
     public abstract DocCommentTree getDocCommentTree(TreePath path);
 
     /**
-     * Gets the language model element referred to by the leaf node of the given
-     * {@link DocTreePath}, or null if unknown.
+     * Returns the language model element referred to by the leaf node of the given
+     * {@link DocTreePath}, or {@code null} if unknown.
+     * @param path the path for the tree node
+     * @return the element
      */
     public abstract Element getElement(DocTreePath path);
 
+    /**
+     * Returns a utility object for accessing the source positions
+     * of documentation tree nodes.
+     * @return the utility object
+     */
     public abstract DocSourcePositions getSourcePositions();
 
     /**
@@ -80,6 +91,7 @@ public abstract class DocTrees extends Trees {
      * @param kind the kind of message
      * @param msg  the message, or an empty string if none
      * @param t    the tree to use as a position hint
+     * @param c    the doc comment tree to use as a position hint
      * @param root the compilation unit that contains tree
      */
     public abstract void printMessage(Diagnostic.Kind kind, CharSequence msg,

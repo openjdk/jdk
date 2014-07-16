@@ -70,7 +70,7 @@ class IntegerExpression extends ConstantExpression {
      * Get the value
      */
     public Object getValue() {
-        return new Integer(value);
+        return value;
     }
 
     /**
@@ -91,6 +91,6 @@ class IntegerExpression extends ConstantExpression {
      * Code
      */
     public void codeValue(Environment env, Context ctx, Assembler asm) {
-        asm.add(where, opc_ldc, new Integer(value));
+        asm.add(where, opc_ldc, value);
     }
 }
