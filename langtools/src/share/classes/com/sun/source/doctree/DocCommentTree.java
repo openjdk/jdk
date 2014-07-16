@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,22 @@ import java.util.List;
  */
 @jdk.Exported
 public interface DocCommentTree extends DocTree {
+    /**
+     * Returns the first sentence of a documentation comment.
+     * @return the first sentence of a documentation comment
+     */
     List<? extends DocTree> getFirstSentence();
+
+    /**
+     * Returns the body of a documentation comment,
+     * appearing after the first sentence, and before any block tags.
+     * @return the body of a documentation comment
+     */
     List<? extends DocTree> getBody();
+
+    /**
+     * Returns the block tags for a documentation comment.
+     * @return the block tags of a documentation comment
+     */
     List<? extends DocTree> getBlockTags();
 }

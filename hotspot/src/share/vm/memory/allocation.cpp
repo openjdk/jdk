@@ -29,7 +29,7 @@
 #include "memory/metaspaceShared.hpp"
 #include "memory/resourceArea.hpp"
 #include "memory/universe.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
 #include "runtime/task.hpp"
 #include "runtime/threadCritical.hpp"

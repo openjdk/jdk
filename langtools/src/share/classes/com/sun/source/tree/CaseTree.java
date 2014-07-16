@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,7 @@ package com.sun.source.tree;
 import java.util.List;
 
 /**
- * A tree node for a 'case' in a 'switch' statement.
+ * A tree node for a {@code case} in a {@code switch} statement.
  *
  * For example:
  * <pre>
@@ -48,8 +48,15 @@ import java.util.List;
 @jdk.Exported
 public interface CaseTree extends Tree {
     /**
-     * @return null if and only if this Case is {@code default:}
+     * Returns the expression for the case, or
+     * {@code null} if this is the default case.
+     * @return the expression for the case, or null
      */
     ExpressionTree getExpression();
+
+    /**
+     * Returns the statements labeled by the case.
+     * @return the statements labeled by the case
+     */
     List<? extends StatementTree> getStatements();
 }

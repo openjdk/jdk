@@ -29,7 +29,6 @@ import com.sun.org.apache.xerces.internal.util.EncodingMap;
 /**
  * This class represents an encoding.
  *
- * @version $Id: EncodingInfo.java,v 1.6 2007/10/18 03:39:08 joehw Exp $
  */
 public class EncodingInfo {
 

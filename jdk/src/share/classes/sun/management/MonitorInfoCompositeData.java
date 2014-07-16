@@ -69,7 +69,7 @@ public class MonitorInfoCompositeData extends LazyCompositeData {
                                                toCompositeData(ste)
                                          : null);
             } else if (item.equals(LOCKED_STACK_DEPTH)) {
-                values[i] = new Integer(lock.getLockedStackDepth());
+                values[i] = lock.getLockedStackDepth();
             } else {
                 values[i] = li.get(item);
             }

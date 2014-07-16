@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,6 +91,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
      private Map<String,Set<ClassDoc>> interfaces;
 
      private Configuration configuration;
+     private Utils utils;
 
      /**
       * Construct a new ClassDocCatalog.
@@ -100,6 +101,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
      public ClassDocCatalog (ClassDoc[] classdocs, Configuration config) {
          init();
          this.configuration = config;
+         this.utils = config.utils;
          for (ClassDoc classdoc : classdocs) {
              addClassDoc(classdoc);
          }
@@ -156,13 +158,13 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
       private void addClass(ClassDoc classdoc, Map<String,Set<ClassDoc>> map) {
 
           PackageDoc pkg = classdoc.containingPackage();
-          if (pkg.isIncluded() || (configuration.nodeprecated && Util.isDeprecated(pkg))) {
+          if (pkg.isIncluded() || (configuration.nodeprecated && utils.isDeprecated(pkg))) {
               //No need to catalog this class if it's package is
               //included on the command line or if -nodeprecated option is set
               // and the containing package is marked as deprecated.
               return;
           }
-          String key = Util.getPackageName(pkg);
+          String key = utils.getPackageName(pkg);
           Set<ClassDoc> s = map.get(key);
           if (s == null) {
               packageSet.add(key);
@@ -190,7 +192,7 @@ import com.sun.tools.doclets.internal.toolkit.Configuration;
       public ClassDoc[] allClasses(PackageDoc pkgDoc) {
           return pkgDoc.isIncluded() ?
                 pkgDoc.allClasses() :
-                getArray(allClasses, Util.getPackageName(pkgDoc));
+                getArray(allClasses, utils.getPackageName(pkgDoc));
       }
 
       /**

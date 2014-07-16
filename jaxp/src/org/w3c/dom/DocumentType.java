@@ -87,14 +87,14 @@ public interface DocumentType extends Node {
 
     /**
      * The public identifier of the external subset.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getPublicId();
 
     /**
      * The system identifier of the external subset. This may be an absolute
      * URI or not.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getSystemId();
 
@@ -105,7 +105,7 @@ public interface DocumentType extends Node {
      * information is available to the implementation. This may vary
      * depending on various parameters, including the XML processor used to
      * build the document.
-     * @since DOM Level 2
+     * @since 1.4, DOM Level 2
      */
     public String getInternalSubset();
 

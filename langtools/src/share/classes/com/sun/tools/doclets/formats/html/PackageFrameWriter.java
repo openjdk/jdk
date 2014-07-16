@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -92,7 +92,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
         PackageFrameWriter packgen;
         try {
             packgen = new PackageFrameWriter(configuration, packageDoc);
-            String pkgName = Util.getPackageName(packageDoc);
+            String pkgName = configuration.utils.getPackageName(packageDoc);
             Content body = packgen.getBody(false, packgen.getWindowTitle(pkgName));
             Content pkgNameContent = new StringContent(pkgName);
             Content heading = HtmlTree.HEADING(HtmlConstants.TITLE_HEADING, HtmlStyle.bar,
@@ -136,7 +136,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
             addClassKindListing(packageDoc.annotationTypes(),
                 getResource("doclet.AnnotationTypes"), contentTree);
         } else {
-            String name = Util.getPackageName(packageDoc);
+            String name = utils.getPackageName(packageDoc);
             addClassKindListing(config.classDocCatalog.interfaces(name),
                 getResource("doclet.Interfaces"), contentTree);
             addClassKindListing(config.classDocCatalog.ordinaryClasses(name),
@@ -161,7 +161,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
      */
     protected void addClassKindListing(ClassDoc[] arr, Content labelContent,
             Content contentTree) {
-        arr = Util.filterOutPrivateClasses(arr, configuration.javafx);
+        arr = utils.filterOutPrivateClasses(arr, configuration.javafx);
         if(arr.length > 0) {
             Arrays.sort(arr);
             boolean printedHeader = false;
@@ -171,7 +171,7 @@ public class PackageFrameWriter extends HtmlDocletWriter {
                 if (documentedClasses != null && !documentedClasses.contains(classDoc)) {
                     continue;
                 }
-                if (!Util.isCoreClass(classDoc) || !configuration.isGeneratedDoc(classDoc)) {
+                if (!utils.isCoreClass(classDoc) || !configuration.isGeneratedDoc(classDoc)) {
                     continue;
                 }
                 if (!printedHeader) {

@@ -191,7 +191,7 @@ public class Enter extends JCTree.Visitor {
      */
     public Env<AttrContext> classEnv(JCClassDecl tree, Env<AttrContext> env) {
         Env<AttrContext> localEnv =
-            env.dup(tree, env.info.dup(new Scope(tree.sym)));
+            env.dup(tree, env.info.dup(WriteableScope.create(tree.sym)));
         localEnv.enclClass = tree;
         localEnv.outer = env;
         localEnv.info.isSelfCall = false;
@@ -207,9 +207,10 @@ public class Enter extends JCTree.Visitor {
         Env<AttrContext> localEnv = new Env<>(tree, new AttrContext());
         localEnv.toplevel = tree;
         localEnv.enclClass = predefClassDef;
-        tree.namedImportScope = new ImportScope(tree.packge);
+        tree.toplevelScope = WriteableScope.create(tree.packge);
+        tree.namedImportScope = new NamedImportScope(tree.packge, tree.toplevelScope);
         tree.starImportScope = new StarImportScope(tree.packge);
-        localEnv.info.scope = tree.namedImportScope;
+        localEnv.info.scope = tree.toplevelScope;
         localEnv.info.lint = lint;
         return localEnv;
     }
@@ -218,7 +219,7 @@ public class Enter extends JCTree.Visitor {
         Env<AttrContext> localEnv = new Env<>(tree, new AttrContext());
         localEnv.toplevel = tree;
         localEnv.enclClass = predefClassDef;
-        localEnv.info.scope = tree.namedImportScope;
+        localEnv.info.scope = tree.toplevelScope;
         localEnv.info.lint = lint;
         return localEnv;
     }
@@ -228,7 +229,7 @@ public class Enter extends JCTree.Visitor {
      *  where the local scope is for type variables, and the this and super symbol
      *  only, and members go into the class member scope.
      */
-    Scope enterScope(Env<AttrContext> env) {
+    WriteableScope enterScope(Env<AttrContext> env) {
         return (env.tree.hasTag(JCTree.Tag.CLASSDEF))
             ? ((JCClassDecl) env.tree).sym.members_field
             : env.info.scope;
@@ -324,7 +325,7 @@ public class Enter extends JCTree.Visitor {
             c.flatname = names.fromString(tree.packge + "." + name);
             c.sourcefile = tree.sourcefile;
             c.completer = null;
-            c.members_field = new Scope(c);
+            c.members_field = WriteableScope.create(c);
             tree.packge.package_info = c;
         }
         classEnter(tree.defs, topEnv);
@@ -338,7 +339,7 @@ public class Enter extends JCTree.Visitor {
     @Override
     public void visitClassDef(JCClassDecl tree) {
         Symbol owner = env.info.scope.owner;
-        Scope enclScope = enterScope(env);
+        WriteableScope enclScope = enterScope(env);
         ClassSymbol c;
         if (owner.kind == PCK) {
             // We are seeing a toplevel class.
@@ -392,7 +393,7 @@ public class Enter extends JCTree.Visitor {
         c.completer = memberEnter;
         c.flags_field = chk.checkFlags(tree.pos(), tree.mods.flags, c, tree);
         c.sourcefile = env.toplevel.sourcefile;
-        c.members_field = new Scope(c);
+        c.members_field = WriteableScope.create(c);
 
         ClassType ct = (ClassType)c.type;
         if (owner.kind != PCK && (c.flags_field & STATIC) == 0) {
@@ -495,7 +496,7 @@ public class Enter extends JCTree.Visitor {
                 // if there remain any unimported toplevels (these must have
                 // no classes at all), process their import statements as well.
                 for (JCCompilationUnit tree : trees) {
-                    if (tree.starImportScope.elems == null) {
+                    if (tree.starImportScope.isEmpty()) {
                         JavaFileObject prev = log.useSource(tree.sourcefile);
                         Env<AttrContext> topEnv = topLevelEnv(tree);
                         memberEnter.memberEnter(tree, topEnv);

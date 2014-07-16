@@ -258,9 +258,6 @@ JvmtiEnv::RetransformClasses(jint class_count, const jclass* classes) {
       // VM representation. We don't attach the reconstituted class
       // bytes to the InstanceKlass here because they have not been
       // validated and we're not at a safepoint.
-      constantPoolHandle  constants(current_thread, ikh->constants());
-      MonitorLockerEx ml(constants->lock());    // lock constant pool while we query it
-
       JvmtiClassFileReconstituter reconstituter(ikh);
       if (reconstituter.get_error() != JVMTI_ERROR_NONE) {
         return reconstituter.get_error();
@@ -2445,9 +2442,6 @@ JvmtiEnv::GetConstantPool(oop k_mirror, jint* constant_pool_count_ptr, jint* con
   }
 
   instanceKlassHandle ikh(thread, k_oop);
-  constantPoolHandle  constants(thread, ikh->constants());
-  MonitorLockerEx ml(constants->lock());    // lock constant pool while we query it
-
   JvmtiConstantPoolReconstituter reconstituter(ikh);
   if (reconstituter.get_error() != JVMTI_ERROR_NONE) {
     return reconstituter.get_error();
@@ -2467,6 +2461,7 @@ JvmtiEnv::GetConstantPool(oop k_mirror, jint* constant_pool_count_ptr, jint* con
     return reconstituter.get_error();
   }
 
+  constantPoolHandle  constants(thread, ikh->constants());
   *constant_pool_count_ptr      = constants->length();
   *constant_pool_byte_count_ptr = cpool_size;
   *constant_pool_bytes_ptr      = cpool_bytes;

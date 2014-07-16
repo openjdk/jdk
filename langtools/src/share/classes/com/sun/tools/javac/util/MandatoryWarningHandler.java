@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -42,7 +42,7 @@ import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
  * about conditions that would otherwise merit a warning. Such processing
  * is done when the condition is detected, and in those cases, no call is
  * made on any API to generate a warning at all. In consequence, this handler only
- * gets to handle those warnings that JLS says must be generated.
+ * Returns to handle those warnings that JLS says must be generated.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.

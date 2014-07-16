@@ -106,7 +106,7 @@ class Identifier implements Constants {
      * Set the type of the identifier.
      */
     void setType(int t) {
-        value = new Integer(t);
+        value = t;
         //System.out.println("type(" + this + ")=" + t);
     }
 

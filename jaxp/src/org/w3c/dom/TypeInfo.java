@@ -118,7 +118,7 @@ package org.w3c.dom;
  * and therefore should define how to represent their type systems using
  * <code>TypeInfo</code>.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-Core-20040407'>Document Object Model (DOM) Level 3 Core Specification</a>.
- * @since DOM Level 3
+ * @since 1.5, DOM Level 3
  */
 public interface TypeInfo {
     /**

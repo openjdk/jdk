@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,11 +77,9 @@ public enum Target {
         return instance;
     }
 
-    private static final Target MIN = values()[0];
-    public static Target MIN() { return MIN; }
+    public static final Target MIN = Target.JDK1_6;
 
     private static final Target MAX = values()[values().length - 1];
-    public static Target MAX() { return MAX; }
 
     private static final Map<String,Target> tab = new HashMap<>();
     static {
@@ -110,143 +108,11 @@ public enum Target {
         return tab.get(name);
     }
 
-    /** In -target 1.1 and earlier, the compiler is required to emit
-     *  synthetic method definitions in abstract classes for interface
-     *  methods that are not overridden.  We call them "Miranda" methods.
-     */
-    public boolean requiresIproxy() {
-        return compareTo(JDK1_1) <= 0;
-    }
-
-    /** Beginning in 1.4, we take advantage of the possibility of emitting
-     *  code to initialize fields before calling the superclass constructor.
-     *  This is allowed by the VM spec, but the verifier refused to allow
-     *  it until 1.4.  This is necesary to translate some code involving
-     *  inner classes.  See, for example, 4030374.
-     */
-    public boolean initializeFieldsBeforeSuper() {
-        return compareTo(JDK1_4) >= 0;
-    }
-
-    /** Beginning with -target 1.2 we obey the JLS rules for binary
-     *  compatibility, emitting as the qualifying type of a reference
-     *  to a method or field the type of the qualifier.  In earlier
-     *  targets we use as the qualifying type the class in which the
-     *  member was found.  The following methods named
-     *  *binaryCompatibility() indicate places where we vary from this
-     *  general rule. */
-    public boolean obeyBinaryCompatibility() {
-        return compareTo(JDK1_2) >= 0;
-    }
-
-    /** Starting in 1.5, the compiler uses an array type as
-     *  the qualifier for method calls (such as clone) where required by
-     *  the language and VM spec.  Earlier versions of the compiler
-     *  qualified them by Object.
-     */
-    public boolean arrayBinaryCompatibility() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** Beginning after 1.2, we follow the binary compatibility rules for
-     *  interface fields.  The 1.2 VMs had bugs handling interface fields
-     *  when compiled using binary compatibility (see 4400598), so this is
-     *  an accommodation to them.
-     */
-    public boolean interfaceFieldsBinaryCompatibility() {
-        return compareTo(JDK1_2) > 0;
-    }
-
-    /** Beginning in -target 1.5, we follow the binary compatibility
-     *  rules for interface methods that redefine Object methods.
-     *  Earlier VMs had bugs handling such methods compiled using binary
-     *  compatibility (see 4392595, 4398791, 4392595, 4400415).
-     *  The VMs were fixed during or soon after 1.4.  See 4392595.
-     */
-    public boolean interfaceObjectOverridesBinaryCompatibility() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** Beginning in -target 1.5, we make synthetic variables
-     *  package-private instead of private.  This is to prevent the
-     *  necessity of access methods, which effectively relax the
-     *  protection of the field but bloat the class files and affect
-     *  execution.
-     */
-    public boolean usePrivateSyntheticFields() {
-        return compareTo(JDK1_5) < 0;
-    }
-
-    /** Sometimes we need to create a field to cache a value like a
-     *  class literal of the assertions flag.  In -target 1.5 and
-     *  later we create a new synthetic class for this instead of
-     *  using the outermost class.  See 4401576.
-     */
-    public boolean useInnerCacheClass() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** Return true if cldc-style stack maps need to be generated. */
-    public boolean generateCLDCStackmap() {
-        return false;
-    }
-
-    /** Beginning in -target 6, we generate stackmap attribute in
-     *  compact format. */
-    public boolean generateStackMapTable() {
-        return compareTo(JDK1_6) >= 0;
-    }
-
-    /** Beginning in -target 6, package-info classes are marked synthetic.
-     */
-    public boolean isPackageInfoSynthetic() {
-        return compareTo(JDK1_6) >= 0;
-    }
-
-    /** Do we generate "empty" stackmap slots after double and long?
-     */
-    public boolean generateEmptyAfterBig() {
-        return false;
-    }
-
-    /** Beginning in 1.5, we have an unsynchronized version of
-     *  StringBuffer called StringBuilder that can be used by the
-     *  compiler for string concatenation.
-     */
-    public boolean useStringBuilder() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** Beginning in 1.5, we have flag bits we can use instead of
-     *  marker attributes.
-     */
-    public boolean useSyntheticFlag() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean useEnumFlag() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean useAnnotationFlag() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean useVarargsFlag() {
-        return compareTo(JDK1_5) >= 0;
-    }
-    public boolean useBridgeFlag() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
     /** Return the character to be used in constructing synthetic
      *  identifiers, where not specified by the JLS.
      */
     public char syntheticNameChar() {
         return '$';
-    }
-
-    /** Does the VM have direct support for class literals?
-     */
-    public boolean hasClassLiterals() {
-        return compareTo(JDK1_5) >= 0;
     }
 
     /** Does the VM support an invokedynamic instruction?
@@ -263,39 +129,4 @@ public enum Target {
         return hasInvokedynamic();
     }
 
-    /** Although we may not have support for class literals, should we
-     *  avoid initializing the class that the literal refers to?
-     *  See 4468823
-     */
-    public boolean classLiteralsNoInit() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** Although we may not have support for class literals, when we
-     *  throw a NoClassDefFoundError, should we initialize its cause?
-     */
-    public boolean hasInitCause() {
-        return compareTo(JDK1_4) >= 0;
-    }
-
-    /** For bootstrapping, we use J2SE1.4's wrapper class constructors
-     *  to implement boxing.
-     */
-    public boolean boxWithConstructors() {
-        return compareTo(JDK1_5) < 0;
-    }
-
-    /** For bootstrapping, we use J2SE1.4's java.util.Collection
-     *  instead of java.lang.Iterable.
-     */
-    public boolean hasIterable() {
-        return compareTo(JDK1_5) >= 0;
-    }
-
-    /** In J2SE1.5.0, we introduced the "EnclosingMethod" attribute
-     *  for improved reflection support.
-     */
-    public boolean hasEnclosingMethodAttribute() {
-        return compareTo(JDK1_5) >= 0;
-    }
 }

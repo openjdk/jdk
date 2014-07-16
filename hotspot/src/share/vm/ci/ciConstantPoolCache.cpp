@@ -38,7 +38,7 @@ ciConstantPoolCache::ciConstantPoolCache(Arena* arena,
                                  int expected_size) {
   _elements =
     new (arena) GrowableArray<void*>(arena, expected_size, 0, 0);
-  _keys = new (arena) GrowableArray<intptr_t>(arena, expected_size, 0, 0);
+  _keys = new (arena) GrowableArray<int>(arena, expected_size, 0, 0);
 }
 
 // ------------------------------------------------------------------

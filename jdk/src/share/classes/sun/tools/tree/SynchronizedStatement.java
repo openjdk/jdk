@@ -125,8 +125,8 @@ class SynchronizedStatement extends Statement {
 
         LocalMember f1 = new LocalMember(where, clazz, 0, Type.tObject, null);
         LocalMember f2 = new LocalMember(where, clazz, 0, Type.tInt, null);
-        Integer num1 = new Integer(ctx.declare(env, f1));
-        Integer num2 = new Integer(ctx.declare(env, f2));
+        Integer num1 = ctx.declare(env, f1);
+        Integer num2 = ctx.declare(env, f2);
 
         Label endLabel = new Label();
 

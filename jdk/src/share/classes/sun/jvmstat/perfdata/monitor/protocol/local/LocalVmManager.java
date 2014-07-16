@@ -156,8 +156,8 @@ public class LocalVmManager {
                 if (files != null) {
                     for (int j = 0; j < files.length; j++) {
                         if (files[j].isFile() && files[j].canRead()) {
-                            jvmSet.add(new Integer(
-                                    PerfDataFile.getLocalVmId(files[j])));
+                            jvmSet.add(
+                                    PerfDataFile.getLocalVmId(files[j]));
                         }
                     }
                 }
@@ -175,8 +175,8 @@ public class LocalVmManager {
             if (files != null) {
                 for (int j = 0; j < files.length; j++) {
                     if (files[j].isFile() && files[j].canRead()) {
-                        jvmSet.add(new Integer(
-                                PerfDataFile.getLocalVmId(files[j])));
+                        jvmSet.add(
+                                PerfDataFile.getLocalVmId(files[j]));
                     }
                 }
             }
@@ -187,8 +187,8 @@ public class LocalVmManager {
         if (files != null) {
             for (int j = 0; j < files.length; j++) {
                 if (files[j].isFile() && files[j].canRead()) {
-                    jvmSet.add(new Integer(
-                            PerfDataFile.getLocalVmId(files[j])));
+                    jvmSet.add(
+                            PerfDataFile.getLocalVmId(files[j]));
                 }
             }
         }

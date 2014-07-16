@@ -57,7 +57,6 @@ import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
  *
  * @author Sandy Gao, IBM
  *
- * @version $Id: XSModelImpl.java,v 1.7 2010-11-01 04:39:55 joehw Exp $
  */
 public final class XSModelImpl extends AbstractList implements XSModel, XSNamespaceItemList {
 

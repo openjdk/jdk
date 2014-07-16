@@ -51,9 +51,9 @@ public class TestLegacyTaglet extends JavadocTester {
         checkExit(Exit.OK);
         checkOutput("C.html", true,
                 "This is an <u>underline</u>",
-                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
+                "<DT><B>To Do:</B><DD><table summary=\"Summary\" cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Finish this class.</td></tr></table></DD>",
-                "<DT><B>To Do:</B><DD><table cellpadding=2 cellspacing=0><tr>" +
+                "<DT><B>To Do:</B><DD><table summary=\"Summary\" cellpadding=2 cellspacing=0><tr>" +
                 "<td bgcolor=\"yellow\">Tag in Method.</td></tr></table></DD>");
         checkOutput(Output.STDERR, false,
                 "NullPointerException");

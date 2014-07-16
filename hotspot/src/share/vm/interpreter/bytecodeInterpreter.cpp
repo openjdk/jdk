@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,6 +37,7 @@
 #include "oops/oop.inline.hpp"
 #include "prims/jvmtiExport.hpp"
 #include "prims/jvmtiThreadState.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/handles.inline.hpp"
@@ -2782,11 +2783,11 @@ run:
       if (TraceExceptions) {
         ttyLocker ttyl;
         ResourceMark rm;
-        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), (void*)except_oop());
+        tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), p2i(except_oop()));
         tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
         tty->print_cr(" at bci %d, continuing at %d for thread " INTPTR_FORMAT,
-                      istate->bcp() - (intptr_t)METHOD->code_base(),
-                      continuation_bci, THREAD);
+                      (int)(istate->bcp() - METHOD->code_base()),
+                      (int)continuation_bci, p2i(THREAD));
       }
       // for AbortVMOnException flag
       NOT_PRODUCT(Exceptions::debug_check_abort(except_oop));
@@ -2798,11 +2799,11 @@ run:
     if (TraceExceptions) {
       ttyLocker ttyl;
       ResourceMark rm;
-      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), (void*)except_oop());
+      tty->print_cr("Exception <%s> (" INTPTR_FORMAT ")", except_oop->print_value_string(), p2i(except_oop()));
       tty->print_cr(" thrown in interpreter method <%s>", METHOD->print_value_string());
       tty->print_cr(" at bci %d, unwinding for thread " INTPTR_FORMAT,
-                    istate->bcp() - (intptr_t)METHOD->code_base(),
-                    THREAD);
+                    (int)(istate->bcp() - METHOD->code_base()),
+                    p2i(THREAD));
     }
     // for AbortVMOnException flag
     NOT_PRODUCT(Exceptions::debug_check_abort(except_oop));
@@ -3401,7 +3402,7 @@ BytecodeInterpreter::print() {
   tty->print_cr("osr._osr_buf: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_buf);
   tty->print_cr("osr._osr_entry: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_entry);
   tty->print_cr("prev_link: " INTPTR_FORMAT, (uintptr_t) this->_prev_link);
-  tty->print_cr("native_mirror: " INTPTR_FORMAT, (void*) this->_oop_temp);
+  tty->print_cr("native_mirror: " INTPTR_FORMAT, (uintptr_t) this->_oop_temp);
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
   tty->print_cr("stack_limit: " INTPTR_FORMAT, (uintptr_t) this->_stack_limit);
   tty->print_cr("monitor_base: " INTPTR_FORMAT, (uintptr_t) this->_monitor_base);

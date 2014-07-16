@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -140,7 +140,7 @@ frame frame::sender(RegisterMap* map) const {
 void frame::patch_pc(Thread* thread, address pc) {
   if (TracePcPatching) {
     tty->print_cr("patch_pc at address " PTR_FORMAT " [" PTR_FORMAT " -> " PTR_FORMAT "]",
-                  &((address*) _sp)[-1], ((address*) _sp)[-1], pc);
+                  p2i(&((address*) _sp)[-1]), p2i(((address*) _sp)[-1]), p2i(pc));
   }
   own_abi()->lr = (uint64_t)pc;
   _cb = CodeCache::find_blob(pc);

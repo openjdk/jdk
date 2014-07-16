@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,58 +58,437 @@ package com.sun.source.tree;
  */
 @jdk.Exported
 public interface TreeVisitor<R,P> {
+    /**
+     * Visits an AnnotatedTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAnnotatedType(AnnotatedTypeTree node, P p);
+
+    /**
+     * Visits an AnnotatedTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAnnotation(AnnotationTree node, P p);
+
+    /**
+     * Visits a MethodInvocationTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitMethodInvocation(MethodInvocationTree node, P p);
+
+    /**
+     * Visits an AssertTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAssert(AssertTree node, P p);
+
+    /**
+     * Visits an AssignmentTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitAssignment(AssignmentTree node, P p);
+
+    /**
+     * Visits a CompoundAssignmentTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitCompoundAssignment(CompoundAssignmentTree node, P p);
+
+    /**
+     * Visits a BinaryTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitBinary(BinaryTree node, P p);
+
+    /**
+     * Visits a BlockTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitBlock(BlockTree node, P p);
+
+    /**
+     * Visits a BreakTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitBreak(BreakTree node, P p);
+
+    /**
+     * Visits a CaseTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitCase(CaseTree node, P p);
+
+    /**
+     * Visits a CatchTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitCatch(CatchTree node, P p);
+
+    /**
+     * Visits a ClassTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitClass(ClassTree node, P p);
+
+    /**
+     * Visits a ConditionalExpressionTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitConditionalExpression(ConditionalExpressionTree node, P p);
+
+    /**
+     * Visits a ContinueTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitContinue(ContinueTree node, P p);
+
+    /**
+     * Visits a DoWhileTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitDoWhileLoop(DoWhileLoopTree node, P p);
+
+    /**
+     * Visits an ErroneousTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitErroneous(ErroneousTree node, P p);
+
+    /**
+     * Visits an ExpressionStatementTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitExpressionStatement(ExpressionStatementTree node, P p);
+
+    /**
+     * Visits an EnhancedForLoopTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitEnhancedForLoop(EnhancedForLoopTree node, P p);
+
+    /**
+     * Visits a ForLoopTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitForLoop(ForLoopTree node, P p);
+
+    /**
+     * Visits an IdentifierTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitIdentifier(IdentifierTree node, P p);
+
+    /**
+     * Visits an IfTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitIf(IfTree node, P p);
+
+    /**
+     * Visits an ImportTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitImport(ImportTree node, P p);
+
+    /**
+     * Visits an ArrayAccessTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitArrayAccess(ArrayAccessTree node, P p);
+
+    /**
+     * Visits a LabeledStatementTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitLabeledStatement(LabeledStatementTree node, P p);
+
+    /**
+     * Visits a LiteralTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitLiteral(LiteralTree node, P p);
+
+    /**
+     * Visits a MethodTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitMethod(MethodTree node, P p);
+
+    /**
+     * Visits a ModifiersTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitModifiers(ModifiersTree node, P p);
+
+    /**
+     * Visits a NewArrayTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitNewArray(NewArrayTree node, P p);
+
+    /**
+     * Visits a NewClassTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitNewClass(NewClassTree node, P p);
+
+    /**
+     * Visits a LambdaExpressionTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitLambdaExpression(LambdaExpressionTree node, P p);
+
+    /**
+     * Visits a PackageTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitPackage(PackageTree node, P p);
+
+    /**
+     * Visits a ParenthesizedTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitParenthesized(ParenthesizedTree node, P p);
+
+    /**
+     * Visits a ReturnTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitReturn(ReturnTree node, P p);
+
+    /**
+     * Visits a MemberSelectTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitMemberSelect(MemberSelectTree node, P p);
+
+    /**
+     * Visits a MemberReferenceTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitMemberReference(MemberReferenceTree node, P p);
+
+    /**
+     * Visits an EmptyStatementTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitEmptyStatement(EmptyStatementTree node, P p);
+
+    /**
+     * Visits a SwitchTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSwitch(SwitchTree node, P p);
+
+    /**
+     * Visits a SynchronizedTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitSynchronized(SynchronizedTree node, P p);
+
+    /**
+     * Visits a ThrowTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitThrow(ThrowTree node, P p);
+
+    /**
+     * Visits a CompilationUnitTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitCompilationUnit(CompilationUnitTree node, P p);
+
+    /**
+     * Visits a TryTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitTry(TryTree node, P p);
+
+    /**
+     * Visits a ParameterizedTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitParameterizedType(ParameterizedTypeTree node, P p);
+
+    /**
+     * Visits a UnionTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitUnionType(UnionTypeTree node, P p);
+
+    /**
+     * Visits an IntersectionTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitIntersectionType(IntersectionTypeTree node, P p);
+
+    /**
+     * Visits an ArrayTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitArrayType(ArrayTypeTree node, P p);
+
+    /**
+     * Visits a TypeCastTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitTypeCast(TypeCastTree node, P p);
+
+    /**
+     * Visits a PrimitiveTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitPrimitiveType(PrimitiveTypeTree node, P p);
+
+    /**
+     * Visits a TypeParameterTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitTypeParameter(TypeParameterTree node, P p);
+
+    /**
+     * Visits an InstanceOfTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitInstanceOf(InstanceOfTree node, P p);
+
+    /**
+     * Visits a UnaryTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitUnary(UnaryTree node, P p);
+
+    /**
+     * Visits a VariableTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitVariable(VariableTree node, P p);
+
+    /**
+     * Visits a WhileLoopTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitWhileLoop(WhileLoopTree node, P p);
+
+    /**
+     * Visits a WildcardTypeTree node.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitWildcard(WildcardTree node, P p);
+
+    /**
+     * Visits an unknown type of Tree node.
+     * This can occur if the language evolves and new kinds
+     * of nodes are added to the {@code Tree} hierarchy.
+     * @param node the node being visited
+     * @param p a parameter value
+     * @return a result value
+     */
     R visitOther(Tree node, P p);
 }

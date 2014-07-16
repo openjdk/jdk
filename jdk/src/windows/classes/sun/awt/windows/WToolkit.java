@@ -39,6 +39,7 @@ import java.security.PrivilegedAction;
 import sun.awt.AppContext;
 import sun.awt.AWTAutoShutdown;
 import sun.awt.AWTPermissions;
+import sun.awt.AppContext;
 import sun.awt.LightweightFrame;
 import sun.awt.SunToolkit;
 import sun.awt.util.ThreadGroupUtils;

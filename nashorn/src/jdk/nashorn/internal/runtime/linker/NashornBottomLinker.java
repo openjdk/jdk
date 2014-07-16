@@ -111,6 +111,9 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
                         MH.dropArguments(desc.getLookup().unreflect(m), 1, callType.parameterType(1)),
                         Guards.getInstanceOfGuard(m.getDeclaringClass())), linkerServices, desc);
             }
+            if(BeansLinker.isDynamicConstructor(self)) {
+                throw typeError("constructor.requires.new", ScriptRuntime.safeToString(self));
+            }
             if(BeansLinker.isDynamicMethod(self)) {
                 throw typeError("no.method.matches.args", ScriptRuntime.safeToString(self));
             }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,15 @@ package com.sun.source.util;
 @jdk.Exported
 public interface TaskListener
 {
+    /**
+     * Invoked when an event has begun.
+     * @param e the event
+     */
     public void started(TaskEvent e);
 
+    /**
+     * Invoked when an event has been completed.
+     * @param e the event
+     */
     public void finished(TaskEvent e);
 }

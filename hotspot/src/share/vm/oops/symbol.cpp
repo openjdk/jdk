@@ -26,11 +26,11 @@
 #include "precompiled.hpp"
 #include "classfile/altHashing.hpp"
 #include "classfile/classLoaderData.hpp"
+#include "memory/allocation.inline.hpp"
+#include "memory/resourceArea.hpp"
 #include "oops/symbol.hpp"
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
-#include "memory/allocation.inline.hpp"
-#include "memory/resourceArea.hpp"
 
 Symbol::Symbol(const u1* name, int length, int refcount) {
   _refcount = refcount;

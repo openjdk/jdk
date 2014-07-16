@@ -66,6 +66,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static ClassLoaderData* _unloading;
   // CMS support.
   static ClassLoaderData* _saved_head;
+  static ClassLoaderData* _saved_unloading;
   static bool _should_purge;
 
   static ClassLoaderData* add(Handle class_loader, bool anonymous, TRAPS);
@@ -77,6 +78,7 @@ class ClassLoaderDataGraph : public AllStatic {
   static void oops_do(OopClosure* f, KlassClosure* klass_closure, bool must_claim);
   static void always_strong_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
   static void keep_alive_oops_do(OopClosure* blk, KlassClosure* klass_closure, bool must_claim);
+  static void cld_do(CLDClosure* cl);
   static void classes_do(KlassClosure* klass_closure);
   static void classes_do(void f(Klass* const));
   static void methods_do(void f(Method*));
@@ -186,8 +188,6 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   JNIHandleBlock* handles() const;
   void set_handles(JNIHandleBlock* handles);
 
-  Mutex* metaspace_lock() const { return _metaspace_lock; }
-
   // GC interface.
   void clear_claimed()          { _claimed = 0; }
   bool claimed() const          { return _claimed == 1; }
@@ -214,6 +214,8 @@ class ClassLoaderData : public CHeapObj<mtClass> {
   static ClassLoaderData* the_null_class_loader_data() {
     return _the_null_class_loader_data;
   }
+
+  Mutex* metaspace_lock() const { return _metaspace_lock; }
 
   bool is_anonymous() const { return _is_anonymous; }
 

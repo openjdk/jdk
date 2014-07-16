@@ -2,10 +2,6 @@
  * security policy used by MarshalForeignStub test
  */
 
-grant codeBase "file:${java.home}/lib/ext/*" {
-    permission java.security.AllPermission;
-};
-
 grant {
 
     // used by TestLibrary to determine test environment

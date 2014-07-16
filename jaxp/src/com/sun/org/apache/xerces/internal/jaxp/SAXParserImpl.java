@@ -63,7 +63,6 @@ import org.xml.sax.helpers.DefaultHandler;
  * @author Rajiv Mordani
  * @author Edwin Goei
  *
- * @version $Id: SAXParserImpl.java,v 1.7 2010-11-01 04:40:06 joehw Exp $
  */
 public class SAXParserImpl extends javax.xml.parsers.SAXParser
     implements JAXPConstants, PSVIProvider {

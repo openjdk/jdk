@@ -140,7 +140,7 @@ public abstract class Configuration {
     /**
      * The meta tag keywords instance.
      */
-    public final MetaKeywords metakeywords = new MetaKeywords(this);
+    public final MetaKeywords metakeywords;
 
     /**
      * The list of doc-file subdirectories to exclude
@@ -157,6 +157,10 @@ public abstract class Configuration {
      */
     public RootDoc root;
 
+    /**
+     * An utility class for commonly used helpers
+     */
+    public Utils utils;
     /**
      * Destination directory name, in which doclet will generate the entire
      * documentation. Default is current directory.
@@ -310,6 +314,8 @@ public abstract class Configuration {
         excludedDocFileDirs = new HashSet<>();
         excludedQualifiers = new HashSet<>();
         setTabWidth(DocletConstants.DEFAULT_TAB_STOP_LENGTH);
+        utils = new Utils();
+        metakeywords = new MetaKeywords(this);
     }
 
     /**
@@ -397,7 +403,7 @@ public abstract class Configuration {
             interimResults.put(p, new ArrayList<PackageDoc>());
 
         for (PackageDoc pkg: packages) {
-            if (nodeprecated && Util.isDeprecated(pkg)) {
+            if (nodeprecated && utils.isDeprecated(pkg)) {
                 continue;
             }
             // the getProfile method takes a type name, not a package name,
@@ -933,7 +939,7 @@ public abstract class Configuration {
         if (!nodeprecated) {
             return true;
         }
-        return !(Util.isDeprecated(cd) || Util.isDeprecated(cd.containingPackage()));
+        return !(utils.isDeprecated(cd) || utils.isDeprecated(cd.containingPackage()));
     }
 
     /**

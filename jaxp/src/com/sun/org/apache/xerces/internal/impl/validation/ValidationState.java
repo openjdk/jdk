@@ -34,7 +34,6 @@ import java.util.Locale;
  * @xerces.internal
  *
  * @author Elena Litani, IBM
- * @version $Id: ValidationState.java,v 1.7 2010-11-01 04:39:53 joehw Exp $
  */
 public class ValidationState implements ValidationContext {
 

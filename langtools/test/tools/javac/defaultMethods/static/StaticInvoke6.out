@@ -1,0 +1,3 @@
+StaticInvoke.java:12:15: compiler.err.static.intf.method.invoke.not.supported.in.source: 1.6
+StaticInvoke.java:13:32: compiler.err.static.intf.method.invoke.not.supported.in.source: 1.6
+2 errors

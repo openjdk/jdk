@@ -103,7 +103,6 @@ import com.sun.org.apache.xerces.internal.xni.parser.XMLPullParserConfiguration;
  * @author Michael Glavassevich, IBM
  * @author John Kim, IBM
  *
- * @version $Id: XML11DTDConfiguration.java,v 1.5 2010-11-01 04:40:10 joehw Exp $
  */
 public class XML11DTDConfiguration extends ParserConfigurationSettings
     implements XMLPullParserConfiguration, XML11Configurable {
