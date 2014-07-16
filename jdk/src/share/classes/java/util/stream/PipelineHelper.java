@@ -74,7 +74,7 @@ abstract class PipelineHelper<P_OUT> {
     /**
      * Returns the exact output size of the portion of the output resulting from
      * applying the pipeline stages described by this {@code PipelineHelper} to
-     * the the portion of the input described by the provided
+     * the portion of the input described by the provided
      * {@code Spliterator}, if known.  If not known or known infinite, will
      * return {@code -1}.
      *
