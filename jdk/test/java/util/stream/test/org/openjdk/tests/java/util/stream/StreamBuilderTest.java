@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,6 +38,7 @@ import java.util.stream.Stream;
 import java.util.stream.TestData;
 
 import static java.util.stream.Collectors.toList;
+import static java.util.stream.ThowableHelper.checkISE;
 
 @Test
 public class StreamBuilderTest extends OpTestCase {
@@ -52,23 +53,6 @@ public class StreamBuilderTest extends OpTestCase {
         return sizes.stream().map(i -> new Object[] { i }).toArray(Object[][]::new);
     }
 
-    private void checkException(Class<? extends Exception> ce, Runnable r) {
-        Exception caught = null;
-        try {
-            r.run();
-        } catch (Exception e) {
-            caught = e;
-        }
-
-        assertNotNull(caught);
-        assertTrue(ce.isInstance(caught));
-    }
-
-    private void checkISE(Runnable r) {
-        checkException(IllegalStateException.class, r);
-    }
-
-        //
 
     @Test
     public void testSingleton() {

@@ -115,7 +115,7 @@ import java.util.Spliterator;
  * characteristics that stream has; when describing a stream operation, one need
  * describe whether the operation preserves, injects, or clears that
  * characteristic.  Accordingly, two bits are used for each flag, so as to allow
- * representing not only the presence of of a characteristic, but how an
+ * representing not only the presence of a characteristic, but how an
  * operation modifies that characteristic.  There are two common forms in which
  * flag bits are combined into an {@code int} bit set.  <em>Stream flags</em>
  * are a unioned bit set constructed by ORing the enum characteristic values of

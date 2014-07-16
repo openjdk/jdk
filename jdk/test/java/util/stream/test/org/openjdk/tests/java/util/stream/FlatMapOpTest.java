@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -20,6 +20,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
+/*
+ * @test
+ * @summary flat-map operations
+ * @bug 8044047
+ */
+
 package org.openjdk.tests.java.util.stream;
 
 import org.testng.annotations.Test;
@@ -31,14 +38,17 @@ import java.util.function.Function;
 import java.util.stream.*;
 
 import static java.util.stream.LambdaTestHelpers.*;
+import static java.util.stream.ThowableHelper.checkNPE;
 
-/**
- * ExplodeOpTest
- *
- * @author Brian Goetz
- */
 @Test
-public class ExplodeOpTest extends OpTestCase {
+public class FlatMapOpTest extends OpTestCase {
+
+    public void testNullMapper() {
+        checkNPE(() -> Stream.of(1).flatMap(null));
+        checkNPE(() -> IntStream.of(1).flatMap(null));
+        checkNPE(() -> LongStream.of(1).flatMap(null));
+        checkNPE(() -> DoubleStream.of(1).flatMap(null));
+    }
 
     static final Function<Integer, Stream<Integer>> integerRangeMapper
             = e -> IntStream.range(0, e).boxed();
