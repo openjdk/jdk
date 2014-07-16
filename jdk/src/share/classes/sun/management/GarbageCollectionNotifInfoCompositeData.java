@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,7 +65,7 @@ public class GarbageCollectionNotifInfoCompositeData extends LazyCompositeData {
         final GcInfoBuilder builder = AccessController.doPrivileged (new PrivilegedAction<GcInfoBuilder>() {
                 public GcInfoBuilder run() {
                     try {
-                        Class cl = Class.forName("com.sun.management.GcInfo");
+                        Class<?> cl = Class.forName("com.sun.management.GcInfo");
                         Field f = cl.getDeclaredField("builder");
                         f.setAccessible(true);
                         return (GcInfoBuilder)f.get(gcNotifInfo.getGcInfo());

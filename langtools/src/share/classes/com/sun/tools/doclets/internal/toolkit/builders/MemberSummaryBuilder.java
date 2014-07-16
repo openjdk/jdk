@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -347,7 +347,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                     //Inherit comments from overriden or implemented method if
                     //necessary.
                     DocFinder.Output inheritedDoc =
-                            DocFinder.search(new DocFinder.Input((MethodDoc) member));
+                            DocFinder.search(configuration, new DocFinder.Input((MethodDoc) member));
                     if (inheritedDoc.holder != null
                             && inheritedDoc.holder.firstSentenceTags().length > 0) {
                         firstSentenceTags = inheritedDoc.holder.firstSentenceTags();
@@ -384,13 +384,13 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 commentTextBuilder.append(
                         MessageFormat.format(
                                 configuration.getText("doclet.PropertySetterWithName"),
-                                Util.propertyNameFromMethodName(configuration, member.name())));
+                                utils.propertyNameFromMethodName(configuration, member.name())));
             }
             if (isGetter) {
                 commentTextBuilder.append(
                         MessageFormat.format(
                                 configuration.getText("doclet.PropertyGetterWithName"),
-                                Util.propertyNameFromMethodName(configuration, member.name())));
+                                utils.propertyNameFromMethodName(configuration, member.name())));
             }
             if (propertyDoc.commentText() != null
                         && !propertyDoc.commentText().isEmpty()) {
@@ -477,7 +477,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
             VisibleMemberMap visibleMemberMap, LinkedList<Content> summaryTreeList) {
         for (ClassDoc inhclass : visibleMemberMap.getVisibleClassesList()) {
             if (!(inhclass.isPublic() ||
-                  Util.isLinkable(inhclass, configuration))) {
+                  utils.isLinkable(inhclass, configuration))) {
                 continue;
             }
             if (inhclass == classDoc) {
@@ -491,7 +491,7 @@ public class MemberSummaryBuilder extends AbstractMemberBuilder {
                 for (int j = 0; j < inhmembers.size(); ++j) {
                     writer.addInheritedMemberSummary(
                             inhclass.isPackagePrivate() &&
-                            !Util.isLinkable(inhclass, configuration) ?
+                            !utils.isLinkable(inhclass, configuration) ?
                             classDoc : inhclass,
                             inhmembers.get(j),
                             j == 0,

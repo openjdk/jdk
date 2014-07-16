@@ -1,5 +1,5 @@
 #
-# Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -116,11 +116,10 @@ JDK_MAJOR_VERSION="\\\"$(JDK_MAJOR_VER)\\\""
 JDK_MINOR_VERSION="\\\"$(JDK_MINOR_VER)\\\""
 JDK_MICRO_VERSION="\\\"$(JDK_MICRO_VER)\\\""
 
-ReleaseOptions = -define HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) -define JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION) -define HOTSPOT_VM_DISTRO=$(HOTSPOT_VM_DISTRO) -define JDK_MAJOR_VERSION=$(JDK_MAJOR_VERSION) -define JDK_MINOR_VERSION=$(JDK_MINOR_VERSION) -define JDK_MICRO_VERSION=$(JDK_MICRO_VERSION) -define JDK_BUILD_NUMBER=$(JDK_BUILD_NUMBER)
+ReleaseOptions = -define HOTSPOT_RELEASE_VERSION=$(HOTSPOT_RELEASE_VERSION) -define JRE_RELEASE_VERSION=$(JRE_RELEASE_VERSION) -define HOTSPOT_VM_DISTRO=$(HOTSPOT_VM_DISTRO) -define JDK_MAJOR_VERSION=$(JDK_MAJOR_VERSION) -define JDK_MINOR_VERSION=$(JDK_MINOR_VERSION) -define JDK_MICRO_VERSION=$(JDK_MICRO_VERSION) -define JDK_BUILD_NUMBER=$(JDK_BUILD_NUMBER) -define VISUAL_STUDIO_BUILD=true
 ProjectCreatorIDEOptions = $(ProjectCreatorIDEOptions) $(ReleaseOptions)
 
 $(HOTSPOTBUILDSPACE)/$(ProjectFile): $(HOTSPOTBUILDSPACE)/classes/ProjectCreator.class
-	@if "$(MSC_VER)"=="1500" echo Make sure you have VS2008 SP1 or later, or you may see 'expanded command line too long'
 	@$(RUN_JAVA) -Djava.class.path="$(HOTSPOTBUILDSPACE)/classes" ProjectCreator WinGammaPlatform$(VcVersion) $(ProjectCreatorIDEOptions)
 
 clean:

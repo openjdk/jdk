@@ -67,7 +67,7 @@ package org.xml.sax;
  * obtained through this interface to find the entity and/or
  * notation corresponding with the attribute value.</p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.XMLReader#setDTDHandler
  */

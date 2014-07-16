@@ -71,6 +71,7 @@ public class IndexBuilder {
     // make ProgramElementDoc[] when new toArray is available
     protected final Object[] elements;
 
+    private final Configuration configuration;
     /**
      * Constructor. Build the index map.
      *
@@ -92,6 +93,7 @@ public class IndexBuilder {
      */
     public IndexBuilder(Configuration configuration, boolean noDeprecated,
                         boolean classesOnly) {
+        this.configuration  = configuration;
         if (classesOnly) {
             configuration.message.notice("doclet.Building_Index_For_All_Classes");
         } else {
@@ -112,7 +114,7 @@ public class IndexBuilder {
      */
     protected void sortIndexMap() {
         for (List<Doc> docs : indexmap.values()) {
-            Collections.sort(docs, Util.makeComparatorForIndexUse());
+            Collections.sort(docs, configuration.utils.makeComparatorForIndexUse());
         }
     }
 
@@ -202,14 +204,14 @@ public class IndexBuilder {
         if (element instanceof PackageDoc)
             // Do not add to index map if -nodeprecated option is set and the
             // package is marked as deprecated.
-            return !(noDeprecated && Util.isDeprecated(element));
+            return !(noDeprecated && configuration.utils.isDeprecated(element));
         else
             // Do not add to index map if -nodeprecated option is set and if the
             // Doc is marked as deprecated or the containing package is marked as
             // deprecated.
             return !(noDeprecated &&
-                    (Util.isDeprecated(element) ||
-                    Util.isDeprecated(((ProgramElementDoc)element).containingPackage())));
+                    (configuration.utils.isDeprecated(element) ||
+                    configuration.utils.isDeprecated(((ProgramElementDoc)element).containingPackage())));
     }
 
     /**

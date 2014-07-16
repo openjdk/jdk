@@ -182,9 +182,9 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
 
         final List<Statement> statements = block.getStatements();
 
-        for (final Node statement : statements) {
-            if (printLineNumbers && (statement instanceof Statement)) {
-                final int lineNumber = ((Statement)statement).getLineNumber();
+        for (final Statement statement : statements) {
+            if (printLineNumbers) {
+                final int lineNumber = statement.getLineNumber();
                 sb.append('\n');
                 if (lineNumber != lastLineNumber) {
                     indent();
@@ -195,10 +195,6 @@ public final class PrintVisitor extends NodeVisitor<LexicalContext> {
             indent();
 
             statement.accept(this);
-
-            if (statement instanceof FunctionNode) {
-                continue;
-            }
 
             int  lastIndex = sb.length() - 1;
             char lastChar  = sb.charAt(lastIndex);

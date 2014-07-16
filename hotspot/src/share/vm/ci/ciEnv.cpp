@@ -512,24 +512,9 @@ ciKlass* ciEnv::get_klass_by_index_impl(constantPoolHandle cpool,
   } else {
     // Check if it's resolved if it's not a symbol constant pool entry.
     klass = KlassHandle(THREAD, ConstantPool::klass_at_if_loaded(cpool, index));
-
-  if (klass.is_null()) {
-    // The klass has not been inserted into the constant pool.
     // Try to look it up by name.
-    {
-      // We have to lock the cpool to keep the oop from being resolved
-      // while we are accessing it.
-        MonitorLockerEx ml(cpool->lock());
-      constantTag tag = cpool->tag_at(index);
-      if (tag.is_klass()) {
-        // The klass has been inserted into the constant pool
-        // very recently.
-        klass = KlassHandle(THREAD, cpool->resolved_klass_at(index));
-      } else {
-        assert(cpool->tag_at(index).is_unresolved_klass(), "wrong tag");
-        klass_name = cpool->unresolved_klass_at(index);
-      }
-    }
+  if (klass.is_null()) {
+      klass_name = cpool->klass_name_at(index);
   }
   }
 

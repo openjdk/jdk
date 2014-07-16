@@ -227,6 +227,7 @@ public abstract class MappedMXBeanType {
     //   Enum <-> enum's name
     //
     static class EnumMXBeanType extends MappedMXBeanType {
+        @SuppressWarnings("rawtypes")
         final Class enumClass;
         EnumMXBeanType(Class<?> c) {
             this.enumClass = c;
@@ -754,7 +755,7 @@ public abstract class MappedMXBeanType {
         }
     }
 
-    private static class InProgress extends OpenType {
+    private static class InProgress<T> extends OpenType<T> {
         private static final String description =
                   "Marker to detect recursive type use -- internal use only!";
 
@@ -783,7 +784,7 @@ public abstract class MappedMXBeanType {
     static {
         OpenType<?> t;
         try {
-            t = new InProgress();
+            t = new InProgress<>();
         } catch (OpenDataException e) {
             // Should not reach here
             throw new AssertionError(e);
@@ -791,7 +792,7 @@ public abstract class MappedMXBeanType {
         inProgress = t;
     }
 
-    private static final OpenType[] simpleTypes = {
+    private static final OpenType<?>[] simpleTypes = {
         BIGDECIMAL, BIGINTEGER, BOOLEAN, BYTE, CHARACTER, DATE,
         DOUBLE, FLOAT, INTEGER, LONG, OBJECTNAME, SHORT, STRING,
         VOID,

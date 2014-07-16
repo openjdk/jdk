@@ -558,7 +558,7 @@ class Assembler implements Constants {
               case opc_tableswitch: {
                 SwitchData sw = (SwitchData)inst.value;
                 for (int i = sw.minValue; i <= sw.maxValue; i++) {
-                     TableLot.addElement(new Cover(CT_CASE, sw.whereCase(new Integer(i)), inst.pc));
+                     TableLot.addElement(new Cover(CT_CASE, sw.whereCase(i), inst.pc));
                      count++;
                 }
                 if (!sw.getDefault()) {

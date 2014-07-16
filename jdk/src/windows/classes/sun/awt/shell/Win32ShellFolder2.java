@@ -583,11 +583,18 @@ final class Win32ShellFolder2 extends ShellFolder {
 
     // Needs to be accessible to Win32ShellFolderManager2
     static String getFileSystemPath(final int csidl) throws IOException, InterruptedException {
-        return invoke(new Callable<String>() {
+        String path = invoke(new Callable<String>() {
             public String call() throws IOException {
                 return getFileSystemPath0(csidl);
             }
         }, IOException.class);
+        if (path != null) {
+            SecurityManager security = System.getSecurityManager();
+            if (security != null) {
+                security.checkRead(path);
+            }
+        }
+        return path;
     }
 
     // NOTE: this method uses COM and must be called on the 'COM thread'. See ComInvoker for the details

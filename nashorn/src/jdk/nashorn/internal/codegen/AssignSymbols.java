@@ -209,7 +209,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
                     if (varNode.isFunctionDeclaration()) {
                         symbol.setIsFunctionDeclaration();
                     }
-                    return varNode.setName((IdentNode)ident.setSymbol(symbol));
+                    return varNode.setName(ident.setSymbol(symbol));
                 }
                 return varNode;
             }
@@ -217,7 +217,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     }
 
     private IdentNode compilerConstantIdentifier(final CompilerConstants cc) {
-        return (IdentNode)createImplicitIdentifier(cc.symbolName()).setSymbol(lc.getCurrentFunction().compilerConstant(cc));
+        return createImplicitIdentifier(cc.symbolName()).setSymbol(lc.getCurrentFunction().compilerConstant(cc));
     }
 
     /**
@@ -263,7 +263,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         final Symbol nameSymbol = fn.getBody().getExistingSymbol(name.getName());
         assert nameSymbol != null;
 
-        return (VarNode)synthVar.setName((IdentNode)name.setSymbol(nameSymbol)).accept(this);
+        return (VarNode)synthVar.setName(name.setSymbol(nameSymbol)).accept(this);
     }
 
     private FunctionNode createSyntheticInitializers(final FunctionNode functionNode) {
@@ -522,7 +522,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             final Symbol paramSymbol = body.getExistingSymbol(param.getName());
             assert paramSymbol != null;
             assert paramSymbol.isParam() : paramSymbol + " " + paramSymbol.getFlags();
-            newParams.add((IdentNode)param.setSymbol(paramSymbol));
+            newParams.add(param.setSymbol(paramSymbol));
 
             // parameters should not be slots for a function that uses variable arity signature
             if (isVarArg) {
@@ -702,7 +702,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             // If this is a declared variable or a function parameter, delete always fails (except for globals).
             final String name = ident.getName();
             final Symbol symbol = ident.getSymbol();
-            final boolean failDelete = strictMode || symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel());
+            final boolean failDelete = strictMode || (!symbol.isScope() && (symbol.isParam() || (symbol.isVar() && !symbol.isProgramLevel())));
 
             if (failDelete && symbol.isThis()) {
                 return LiteralNode.newInstance(unaryNode, true).accept(this);

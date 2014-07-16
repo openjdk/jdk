@@ -10,9 +10,3 @@ grant	codebase "http://alias",
 	principal com.sun.security.auth.UnixPrincipal "unix" {
     permission java.security.SecurityPermission "ALIAS";
 };
-
-// Standard extensions get all permissions
-grant codeBase "file:${java.home}/lib/ext/*" {
-        permission java.security.AllPermission;
-};
-

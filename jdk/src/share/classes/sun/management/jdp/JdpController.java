@@ -204,7 +204,7 @@ public final class JdpController {
         packet.setRmiHostname(rmiHostname);
 
         // Set broadcast interval
-        packet.setBroadcastInterval(new Integer(pause).toString());
+        packet.setBroadcastInterval(Integer.toString(pause));
 
         // Set process id
         Integer pid = getProcessId();

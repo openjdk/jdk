@@ -36,7 +36,6 @@ import org.w3c.dom.Element;
  *
  * @xerces.internal
  *
- * @version $Id: XSDAbstractIDConstraintTraverser.java,v 1.7 2010-11-01 04:40:02 joehw Exp $
  */
 class XSDAbstractIDConstraintTraverser extends XSDAbstractTraverser {
 

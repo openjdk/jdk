@@ -62,7 +62,6 @@ import javax.xml.XMLConstants;
  * <p><code>QName</code> is immutable.</p>
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
- * @version $Revision: 1.8 $, $Date: 2010/03/18 03:06:17 $
  * @see <a href="http://www.w3.org/TR/xmlschema-2/#QName">
  *   XML Schema Part2: Datatypes specification</a>
  * @see <a href="http://www.w3.org/TR/REC-xml-names/#ns-qualnames">

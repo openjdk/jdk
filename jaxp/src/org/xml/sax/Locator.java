@@ -62,7 +62,7 @@ package org.xml.sax;
  * event, the application should assume that a locator is not
  * available.</p>
  *
- * @since SAX 1.0
+ * @since 1.4, SAX 1.0
  * @author David Megginson
  * @see org.xml.sax.ContentHandler#setDocumentLocator
  */

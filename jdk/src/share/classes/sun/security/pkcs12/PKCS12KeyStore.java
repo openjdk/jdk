@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -900,7 +900,7 @@ public final class PKCS12KeyStore extends KeyStoreSpi {
     private static ObjectIdentifier mapPBEAlgorithmToOID(String algorithm)
         throws NoSuchAlgorithmException {
         // Check for PBES2 algorithms
-        if (algorithm.toLowerCase().startsWith("pbewithhmacsha")) {
+        if (algorithm.toLowerCase(Locale.ENGLISH).startsWith("pbewithhmacsha")) {
             return pbes2_OID;
         }
         return AlgorithmId.get(algorithm).getOID();

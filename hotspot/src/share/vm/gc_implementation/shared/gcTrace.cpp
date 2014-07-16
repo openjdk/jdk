@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
+#include "gc_implementation/shared/gcId.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/objectCountEventSender.hpp"
@@ -38,19 +39,14 @@
 #include "gc_implementation/g1/evacuationInfo.hpp"
 #endif
 
-#define assert_unset_gc_id() assert(_shared_gc_info.id() == SharedGCInfo::UNSET_GCID, "GC already started?")
-#define assert_set_gc_id() assert(_shared_gc_info.id() != SharedGCInfo::UNSET_GCID, "GC not started?")
-
-static GCId GCTracer_next_gc_id = 0;
-static GCId create_new_gc_id() {
-  return GCTracer_next_gc_id++;
-}
+#define assert_unset_gc_id() assert(_shared_gc_info.gc_id().is_undefined(), "GC already started?")
+#define assert_set_gc_id() assert(!_shared_gc_info.gc_id().is_undefined(), "GC not started?")
 
 void GCTracer::report_gc_start_impl(GCCause::Cause cause, const Ticks& timestamp) {
   assert_unset_gc_id();
 
-  GCId gc_id = create_new_gc_id();
-  _shared_gc_info.set_id(gc_id);
+  GCId gc_id = GCId::create();
+  _shared_gc_info.set_gc_id(gc_id);
   _shared_gc_info.set_cause(cause);
   _shared_gc_info.set_start_timestamp(timestamp);
 }
@@ -62,7 +58,7 @@ void GCTracer::report_gc_start(GCCause::Cause cause, const Ticks& timestamp) {
 }
 
 bool GCTracer::has_reported_gc_start() const {
-  return _shared_gc_info.id() != SharedGCInfo::UNSET_GCID;
+  return !_shared_gc_info.gc_id().is_undefined();
 }
 
 void GCTracer::report_gc_end_impl(const Ticks& timestamp, TimePartitions* time_partitions) {
@@ -81,7 +77,7 @@ void GCTracer::report_gc_end(const Ticks& timestamp, TimePartitions* time_partit
 
   report_gc_end_impl(timestamp, time_partitions);
 
-  _shared_gc_info.set_id(SharedGCInfo::UNSET_GCID);
+  _shared_gc_info.set_gc_id(GCId::undefined());
 }
 
 void GCTracer::report_gc_reference_stats(const ReferenceProcessorStats& rps) const {
@@ -132,7 +128,7 @@ void GCTracer::report_object_count_after_gc(BoolObjectClosure* is_alive_cl) {
     if (!cit.allocation_failed()) {
       HeapInspection hi(false, false, false, NULL);
       hi.populate_table(&cit, is_alive_cl);
-      ObjectCountEventSenderClosure event_sender(_shared_gc_info.id(), cit.size_of_instances_in_words(), Ticks::now());
+      ObjectCountEventSenderClosure event_sender(_shared_gc_info.gc_id(), cit.size_of_instances_in_words(), Ticks::now());
       cit.iterate(&event_sender);
     }
   }

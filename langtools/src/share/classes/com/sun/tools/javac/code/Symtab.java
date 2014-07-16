@@ -34,6 +34,7 @@ import javax.lang.model.element.ElementVisitor;
 import javax.tools.JavaFileObject;
 
 
+import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.code.Symbol.Completer;
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
@@ -366,11 +367,9 @@ public class Symtab {
                     } catch (CompletionFailure e) {
                         sym.flags_field |= PUBLIC;
                         ((ClassType) sym.type).supertype_field = objectType;
-                        Name n = target.boxWithConstructors() ? names.init : names.valueOf;
                         MethodSymbol boxMethod =
-                            new MethodSymbol(PUBLIC | STATIC,
-                                n,
-                                new MethodType(List.of(type), sym.type,
+                            new MethodSymbol(PUBLIC | STATIC, names.valueOf,
+                                             new MethodType(List.of(type), sym.type,
                                     List.<Type>nil(), methodClass),
                                 sym);
                         sym.members().enter(boxMethod);
@@ -396,7 +395,7 @@ public class Symtab {
         sym.completer = null;
         sym.flags_field = PUBLIC|ACYCLIC|ANNOTATION|INTERFACE;
         sym.erasure_field = type;
-        sym.members_field = new Scope(sym);
+        sym.members_field = WriteableScope.create(sym);
         type.typarams_field = List.nil();
         type.allparams_field = List.nil();
         type.supertype_field = annotationType;
@@ -466,7 +465,7 @@ public class Symtab {
 
         // Create class to hold all predefined constants and operations.
         predefClass = new ClassSymbol(PUBLIC|ACYCLIC, names.empty, rootPackage);
-        Scope scope = new Scope(predefClass);
+        WriteableScope scope = WriteableScope.create(predefClass);
         predefClass.members_field = scope;
 
         // Get the initial completer for Symbols from the ClassFinder
@@ -527,9 +526,7 @@ public class Symtab {
         comparableType = enterClass("java.lang.Comparable");
         comparatorType = enterClass("java.util.Comparator");
         arraysType = enterClass("java.util.Arrays");
-        iterableType = target.hasIterable()
-            ? enterClass("java.lang.Iterable")
-            : enterClass("java.util.Collection");
+        iterableType = enterClass("java.lang.Iterable");
         iteratorType = enterClass("java.util.Iterator");
         annotationTargetType = enterClass("java.lang.annotation.Target");
         overrideType = enterClass("java.lang.Override");
@@ -578,7 +575,7 @@ public class Symtab {
         ClassType arrayClassType = (ClassType)arrayClass.type;
         arrayClassType.supertype_field = objectType;
         arrayClassType.interfaces_field = List.of(cloneableType, serializableType);
-        arrayClass.members_field = new Scope(arrayClass);
+        arrayClass.members_field = WriteableScope.create(arrayClass);
         lengthVar = new VarSymbol(
             PUBLIC | FINAL,
             names.length,

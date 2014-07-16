@@ -71,7 +71,7 @@ public class JvmRTLibraryPathEntryImpl implements JvmRTLibraryPathEntryMBean,
      * Getter for the "JvmRTLibraryPathIndex" variable.
      */
     public Integer getJvmRTLibraryPathIndex() throws SnmpStatusException {
-        return new Integer(index);
+        return index;
     }
 
 }

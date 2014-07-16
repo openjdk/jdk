@@ -95,7 +95,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
         ul.setTitle(packagesLabel);
         List<PackageDoc> packages = configuration.profilePackages.get(profileName);
         for (PackageDoc packageDoc : packages) {
-            if ((!(configuration.nodeprecated && Util.isDeprecated(packageDoc)))) {
+            if ((!(configuration.nodeprecated && utils.isDeprecated(packageDoc)))) {
                 ul.addContent(getPackage(packageDoc, profileName));
             }
         }
@@ -104,7 +104,7 @@ public class ProfilePackageIndexFrameWriter extends AbstractProfileIndexWriter {
     }
 
     /**
-     * Gets each package name as a separate link.
+     * Returns each package name as a separate link.
      *
      * @param pd PackageDoc
      * @param profileName the name of the profile being documented

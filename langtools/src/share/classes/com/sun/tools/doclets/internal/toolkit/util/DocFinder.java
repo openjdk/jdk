@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.doclets.internal.toolkit.util;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.internal.toolkit.Configuration;
 import com.sun.tools.doclets.internal.toolkit.taglets.*;
 
 /**
@@ -184,7 +185,7 @@ public class DocFinder {
      *
      * @return an Output object representing the documentation that was found.
      */
-    public static Output search(Input input) {
+    public static Output search(Configuration configuration, Input input) {
         Output output = new Output();
         if (input.isInheritDocTag) {
             //Do nothing because "element" does not have any documentation.
@@ -209,7 +210,7 @@ public class DocFinder {
             MethodDoc overriddenMethod = ((MethodDoc) input.element).overriddenMethod();
             if (overriddenMethod != null) {
                 inheritedSearchInput.element = overriddenMethod;
-                output = search(inheritedSearchInput);
+                output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
                 if (output.inlineTags.length > 0) {
                     return output;
@@ -219,10 +220,10 @@ public class DocFinder {
             //       not pass all implemented interfaces, we will use the
             //       appropriate element here.
             MethodDoc[] implementedMethods =
-                (new ImplementedMethods((MethodDoc) input.element, null)).build(false);
+                (new ImplementedMethods((MethodDoc) input.element, configuration)).build(false);
             for (MethodDoc implementedMethod : implementedMethods) {
                 inheritedSearchInput.element = implementedMethod;
-                output = search(inheritedSearchInput);
+                output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
                 if (output.inlineTags.length > 0) {
                     return output;
@@ -232,7 +233,7 @@ public class DocFinder {
             ProgramElementDoc superclass = ((ClassDoc) input.element).superclass();
             if (superclass != null) {
                 inheritedSearchInput.element = superclass;
-                output = search(inheritedSearchInput);
+                output = search(configuration, inheritedSearchInput);
                 output.isValidInheritDocTag = true;
                 if (output.inlineTags.length > 0) {
                     return output;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,7 +93,7 @@ public class ToolProvider {
         = "com.sun.tools.javac.api.JavacTool";
 
     /**
-     * Gets the Java&trade; programming language compiler provided
+     * Returns the Java&trade; programming language compiler provided
      * with this platform.
      * @return the compiler provided with this platform or
      * {@code null} if no compiler is provided
@@ -106,7 +106,7 @@ public class ToolProvider {
         = "com.sun.tools.javadoc.api.JavadocTool";
 
     /**
-     * Gets the Java&trade; programming language documentation tool provided
+     * Returns the Java&trade; programming language documentation tool provided
      * with this platform.
      * @return the documentation tool provided with this platform or
      * {@code null} if no documentation tool is provided

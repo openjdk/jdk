@@ -529,7 +529,7 @@ implements ReferenceType {
          * to filter that ordered collection.
          */
         List<Method> list = allMethods();
-        list.retainAll(map.values());
+        list.retainAll(new HashSet<Method>(map.values()));
         return list;
     }
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -99,6 +99,7 @@ public class VisibleMemberMap {
      * The configuration this VisibleMemberMap was created with.
      */
     private final Configuration configuration;
+    private final Utils utils;
 
     private static final Map<ClassDoc, ProgramElementDoc[]> propertiesCache = new HashMap<>();
     private static final Map<ProgramElementDoc, ProgramElementDoc> classPropertiesMap = new HashMap<>();
@@ -121,6 +122,7 @@ public class VisibleMemberMap {
         this.classdoc = classdoc;
         this.kind = kind;
         this.configuration = configuration;
+        this.utils = configuration.utils;
         new ClassMembers(classdoc, STARTLEVEL).build();
     }
 
@@ -173,7 +175,7 @@ public class VisibleMemberMap {
         for (ClassDoc currentClass : visibleClasses) {
             if (currentClass != classdoc &&
                 currentClass.isPackagePrivate() &&
-                !Util.isLinkable(currentClass, configuration)) {
+                !utils.isLinkable(currentClass, configuration)) {
                 // Document these members in the child class because
                 // the parent is inaccessible.
                 results.addAll(getMembersFor(currentClass));
@@ -270,7 +272,7 @@ public class VisibleMemberMap {
 
         public boolean isEqual(MethodDoc member) {
             for (ProgramElementDoc element : members) {
-                if (Util.executableMembersEqual(member, (MethodDoc) element)) {
+                if (utils.executableMembersEqual(member, (MethodDoc) element)) {
                     members.add(member);
                     return true;
                 }
@@ -465,7 +467,7 @@ public class VisibleMemberMap {
             }
             // Deprected members should be excluded or not?
             if (configuration.nodeprecated) {
-                return Util.excludeDeprecatedMembersAsList(members);
+                return utils.excludeDeprecatedMembersAsList(members);
             }
             return Arrays.asList(members);
         }
@@ -496,7 +498,7 @@ public class VisibleMemberMap {
 
         private boolean found(List<ProgramElementDoc> list, ProgramElementDoc elem) {
             for (ProgramElementDoc pgmelem : list) {
-                if (Util.matches(pgmelem, elem)) {
+                if (utils.matches(pgmelem, elem)) {
                     return true;
                 }
             }
@@ -692,7 +694,7 @@ public class VisibleMemberMap {
         private boolean isPropertyGetterOrSetter(MethodDoc[] members,
                                                  MethodDoc methodDoc) {
             boolean found = false;
-            String propertyName = Util.propertyNameFromMethodName(configuration, methodDoc.name());
+            String propertyName = utils.propertyNameFromMethodName(configuration, methodDoc.name());
             if (!propertyName.isEmpty()) {
                 String propertyMethodName = propertyName + "Property";
                 for (MethodDoc member: members) {

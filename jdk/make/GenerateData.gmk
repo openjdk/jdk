@@ -50,6 +50,9 @@ GENDATA += $(GENDATA_TZDB)
 include gendata/GendataHtml32dtd.gmk
 GENDATA += $(GENDATA_HTML32DTD)
 
+include gendata/GendataBlacklistedCerts.gmk
+GENDATA += $(GENDATA_BLACKLISTED_CERTS)
+
 ##########################################################################################
 
 GENDATA_UNINAME := $(JDK_OUTPUTDIR)/classes/java/lang/uniName.dat

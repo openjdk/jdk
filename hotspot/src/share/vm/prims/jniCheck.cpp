@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "memory/guardedMemory.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oop.inline.hpp"
 #include "oops/symbol.hpp"
@@ -52,6 +53,8 @@
 # include "jniTypes_ppc.hpp"
 #endif
 
+// Complain every extra number of unplanned local refs
+#define CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD 32
 
 // Heap objects are allowed to be directly referenced only in VM code,
 // not in native code.
@@ -167,12 +170,42 @@ static void NativeReportJNIWarning(JavaThread* thr, const char *msg) {
  * SUPPORT FUNCTIONS
  */
 
+/**
+ * Check whether or not a programmer has actually checked for exceptions. According
+ * to the JNI Specification ("jni/spec/design.html#java_exceptions"):
+ *
+ * There are two cases where the programmer needs to check for exceptions without
+ * being able to first check an error code:
+ *
+ * - The JNI functions that invoke a Java method return the result of the Java method.
+ * The programmer must call ExceptionOccurred() to check for possible exceptions
+ * that occurred during the execution of the Java method.
+ *
+ * - Some of the JNI array access functions do not return an error code, but may
+ * throw an ArrayIndexOutOfBoundsException or ArrayStoreException.
+ *
+ * In all other cases, a non-error return value guarantees that no exceptions have been thrown.
+ */
 static inline void
-functionEnterCritical(JavaThread* thr)
-{
+check_pending_exception(JavaThread* thr) {
   if (thr->has_pending_exception()) {
     NativeReportJNIWarning(thr, "JNI call made with exception pending");
   }
+  if (thr->is_pending_jni_exception_check()) {
+    IN_VM(
+      tty->print_cr("WARNING in native method: JNI call made without checking exceptions when required to from %s",
+        thr->get_pending_jni_exception_check());
+      thr->print_stack();
+    )
+    thr->clear_pending_jni_exception_check(); // Just complain once
+  }
+}
+
+
+static inline void
+functionEnterCritical(JavaThread* thr)
+{
+  check_pending_exception(thr);
 }
 
 static inline void
@@ -186,9 +219,7 @@ functionEnter(JavaThread* thr)
   if (thr->in_critical()) {
     tty->print_cr("%s", warn_other_function_in_critical);
   }
-  if (thr->has_pending_exception()) {
-    NativeReportJNIWarning(thr, "JNI call made with exception pending");
-  }
+  check_pending_exception(thr);
 }
 
 static inline void
@@ -200,9 +231,20 @@ functionEnterExceptionAllowed(JavaThread* thr)
 }
 
 static inline void
-functionExit(JNIEnv *env)
+functionExit(JavaThread* thr)
 {
-  /* nothing to do at this time */
+  JNIHandleBlock* handles = thr->active_handles();
+  size_t planned_capacity = handles->get_planned_capacity();
+  size_t live_handles = handles->get_number_of_live_handles();
+  if (live_handles > planned_capacity) {
+    IN_VM(
+      tty->print_cr("WARNING: JNI local refs: %zu, exceeds capacity: %zu",
+          live_handles, planned_capacity);
+      thr->print_stack();
+    )
+    // Complain just the once, reset to current + warn threshold
+    handles->set_planned_capacity(live_handles + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+  }
 }
 
 static inline void
@@ -323,6 +365,74 @@ check_is_obj_array(JavaThread* thr, jarray jArray) {
   }
 }
 
+/*
+ * Copy and wrap array elements for bounds checking.
+ * Remember the original elements (GuardedMemory::get_tag())
+ */
+static void* check_jni_wrap_copy_array(JavaThread* thr, jarray array,
+    void* orig_elements) {
+  void* result;
+  IN_VM(
+    oop a = JNIHandles::resolve_non_null(array);
+    size_t len = arrayOop(a)->length() <<
+        TypeArrayKlass::cast(a->klass())->log2_element_size();
+    result = GuardedMemory::wrap_copy(orig_elements, len, orig_elements);
+  )
+  return result;
+}
+
+static void* check_wrapped_array(JavaThread* thr, const char* fn_name,
+    void* obj, void* carray, size_t* rsz) {
+  if (carray == NULL) {
+    tty->print_cr("%s: elements vector NULL" PTR_FORMAT, fn_name, p2i(obj));
+    NativeReportJNIFatalError(thr, "Elements vector NULL");
+  }
+  GuardedMemory guarded(carray);
+  void* orig_result = guarded.get_tag();
+  if (!guarded.verify_guards()) {
+    tty->print_cr("ReleasePrimitiveArrayCritical: release array failed bounds "
+        "check, incorrect pointer returned ? array: " PTR_FORMAT " carray: "
+        PTR_FORMAT, p2i(obj), p2i(carray));
+    guarded.print_on(tty);
+    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
+        "failed bounds check");
+  }
+  if (orig_result == NULL) {
+    tty->print_cr("ReleasePrimitiveArrayCritical: unrecognized elements. array: "
+        PTR_FORMAT " carray: " PTR_FORMAT, p2i(obj), p2i(carray));
+    guarded.print_on(tty);
+    NativeReportJNIFatalError(thr, "ReleasePrimitiveArrayCritical: "
+        "unrecognized elements");
+  }
+  if (rsz != NULL) {
+    *rsz = guarded.get_user_size();
+  }
+  return orig_result;
+}
+
+static void* check_wrapped_array_release(JavaThread* thr, const char* fn_name,
+    void* obj, void* carray, jint mode) {
+  size_t sz;
+  void* orig_result = check_wrapped_array(thr, fn_name, obj, carray, &sz);
+  switch (mode) {
+  case 0:
+    memcpy(orig_result, carray, sz);
+    GuardedMemory::free_copy(carray);
+    break;
+  case JNI_COMMIT:
+    memcpy(orig_result, carray, sz);
+    break;
+  case JNI_ABORT:
+    GuardedMemory::free_copy(carray);
+    break;
+  default:
+    tty->print_cr("%s: Unrecognized mode %i releasing array "
+        PTR_FORMAT " elements " PTR_FORMAT, fn_name, mode, p2i(obj), p2i(carray));
+    NativeReportJNIFatalError(thr, "Unrecognized array release mode");
+  }
+  return orig_result;
+}
+
 oop jniCheck::validate_handle(JavaThread* thr, jobject obj) {
   if (JNIHandles::is_frame_handle(thr, obj) ||
       JNIHandles::is_local_handle(thr, obj) ||
@@ -439,7 +549,7 @@ JNI_ENTRY_CHECKED(jclass,
       jniCheck::validate_object(thr, loader);
     )
     jclass result = UNCHECKED()->DefineClass(env, name, loader, buf, len);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -451,7 +561,7 @@ JNI_ENTRY_CHECKED(jclass,
       jniCheck::validate_class_descriptor(thr, name);
     )
     jclass result = UNCHECKED()->FindClass(env, name);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -463,7 +573,7 @@ JNI_ENTRY_CHECKED(jmethodID,
       jniCheck::validate_object(thr, method);
     )
     jmethodID result = UNCHECKED()->FromReflectedMethod(env, method);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -475,7 +585,7 @@ JNI_ENTRY_CHECKED(jfieldID,
       jniCheck::validate_object(thr, field);
     )
     jfieldID result = UNCHECKED()->FromReflectedField(env, field);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -491,7 +601,7 @@ JNI_ENTRY_CHECKED(jobject,
     )
     jobject result = UNCHECKED()->ToReflectedMethod(env, cls, methodID,
                                                     isStatic);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -503,7 +613,7 @@ JNI_ENTRY_CHECKED(jclass,
       jniCheck::validate_class(thr, sub, true);
     )
     jclass result = UNCHECKED()->GetSuperclass(env, sub);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -517,7 +627,7 @@ JNI_ENTRY_CHECKED(jboolean,
       jniCheck::validate_class(thr, sup, true);
     )
     jboolean result = UNCHECKED()->IsAssignableFrom(env, sub, sup);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -532,7 +642,7 @@ JNI_ENTRY_CHECKED(jobject,
     )
     jobject result = UNCHECKED()->ToReflectedField(env, cls, fieldID,
                                                    isStatic);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -550,7 +660,7 @@ JNI_ENTRY_CHECKED(jint,
       }
     )
     jint result = UNCHECKED()->Throw(env, obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -565,15 +675,16 @@ JNI_ENTRY_CHECKED(jint,
       jniCheck::validate_throwable_klass(thr, k);
     )
     jint result = UNCHECKED()->ThrowNew(env, clazz, msg);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
 JNI_ENTRY_CHECKED(jthrowable,
   checked_jni_ExceptionOccurred(JNIEnv *env))
+    thr->clear_pending_jni_exception_check();
     functionEnterExceptionAllowed(thr);
     jthrowable result = UNCHECKED()->ExceptionOccurred(env);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -581,22 +692,24 @@ JNI_ENTRY_CHECKED(void,
   checked_jni_ExceptionDescribe(JNIEnv *env))
     functionEnterExceptionAllowed(thr);
     UNCHECKED()->ExceptionDescribe(env);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
   checked_jni_ExceptionClear(JNIEnv *env))
+    thr->clear_pending_jni_exception_check();
     functionEnterExceptionAllowed(thr);
     UNCHECKED()->ExceptionClear(env);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
   checked_jni_FatalError(JNIEnv *env,
                          const char *msg))
+    thr->clear_pending_jni_exception_check();
     functionEnter(thr);
     UNCHECKED()->FatalError(env, msg);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jint,
@@ -606,7 +719,10 @@ JNI_ENTRY_CHECKED(jint,
     if (capacity < 0)
       NativeReportJNIFatalError(thr, "negative capacity");
     jint result = UNCHECKED()->PushLocalFrame(env, capacity);
-    functionExit(env);
+    if (result == JNI_OK) {
+      thr->active_handles()->set_planned_capacity(capacity + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+    }
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -615,7 +731,7 @@ JNI_ENTRY_CHECKED(jobject,
                             jobject result))
     functionEnterExceptionAllowed(thr);
     jobject res = UNCHECKED()->PopLocalFrame(env, result);
-    functionExit(env);
+    functionExit(thr);
     return res;
 JNI_END
 
@@ -629,7 +745,7 @@ JNI_ENTRY_CHECKED(jobject,
       }
     )
     jobject result = UNCHECKED()->NewGlobalRef(env,lobj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -645,7 +761,7 @@ JNI_ENTRY_CHECKED(void,
       }
     )
     UNCHECKED()->DeleteGlobalRef(env,gref);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -660,7 +776,7 @@ JNI_ENTRY_CHECKED(void,
             "Invalid local JNI handle passed to DeleteLocalRef");
     )
     UNCHECKED()->DeleteLocalRef(env, obj);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jboolean,
@@ -681,7 +797,7 @@ JNI_ENTRY_CHECKED(jboolean,
       }
     )
     jboolean result = UNCHECKED()->IsSameObject(env,obj1,obj2);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -695,7 +811,7 @@ JNI_ENTRY_CHECKED(jobject,
       }
     )
     jobject result = UNCHECKED()->NewLocalRef(env, ref);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -707,7 +823,10 @@ JNI_ENTRY_CHECKED(jint,
       NativeReportJNIFatalError(thr, "negative capacity");
     }
     jint result = UNCHECKED()->EnsureLocalCapacity(env, capacity);
-    functionExit(env);
+    if (result == JNI_OK) {
+      thr->active_handles()->set_planned_capacity(capacity + CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD);
+    }
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -719,7 +838,7 @@ JNI_ENTRY_CHECKED(jobject,
       jniCheck::validate_class(thr, clazz, false);
     )
     jobject result = UNCHECKED()->AllocObject(env,clazz);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -737,7 +856,7 @@ JNI_ENTRY_CHECKED(jobject,
     va_start(args, methodID);
     jobject result = UNCHECKED()->NewObjectV(env,clazz,methodID,args);
     va_end(args);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -752,7 +871,7 @@ JNI_ENTRY_CHECKED(jobject,
       jniCheck::validate_jmethod_id(thr, methodID);
     )
     jobject result = UNCHECKED()->NewObjectV(env,clazz,methodID,args);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -767,7 +886,7 @@ JNI_ENTRY_CHECKED(jobject,
       jniCheck::validate_jmethod_id(thr, methodID);
     )
     jobject result = UNCHECKED()->NewObjectA(env,clazz,methodID,args);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -779,7 +898,7 @@ JNI_ENTRY_CHECKED(jclass,
       jniCheck::validate_object(thr, obj);
     )
     jclass result = UNCHECKED()->GetObjectClass(env,obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -793,7 +912,7 @@ JNI_ENTRY_CHECKED(jboolean,
       jniCheck::validate_class(thr, clazz, true);
     )
     jboolean result = UNCHECKED()->IsInstanceOf(env,obj,clazz);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -807,7 +926,7 @@ JNI_ENTRY_CHECKED(jmethodID,
       jniCheck::validate_class(thr, clazz, false);
     )
     jmethodID result = UNCHECKED()->GetMethodID(env,clazz,name,sig);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -826,7 +945,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
     ResultType result =UNCHECKED()->Call##Result##MethodV(env, obj, methodID, \
                                                           args); \
     va_end(args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("Call"#Result"Method"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -841,7 +961,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
     ) \
     ResultType result = UNCHECKED()->Call##Result##MethodV(env, obj, methodID,\
                                                            args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("Call"#Result"MethodV"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -856,7 +977,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
     ) \
     ResultType result = UNCHECKED()->Call##Result##MethodA(env, obj, methodID,\
                                                            args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("Call"#Result"MethodA"); \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -883,7 +1005,8 @@ JNI_ENTRY_CHECKED(void,
     va_start(args,methodID);
     UNCHECKED()->CallVoidMethodV(env,obj,methodID,args);
     va_end(args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallVoidMethod");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -896,7 +1019,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_call_object(thr, obj, methodID);
     )
     UNCHECKED()->CallVoidMethodV(env,obj,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallVoidMethodV");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -909,7 +1033,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_call_object(thr, obj, methodID);
     )
     UNCHECKED()->CallVoidMethodA(env,obj,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallVoidMethodA");
+    functionExit(thr);
 JNI_END
 
 #define WRAPPER_CallNonvirtualMethod(ResultType, Result) \
@@ -932,7 +1057,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
                                                                      methodID,\
                                                                      args); \
     va_end(args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallNonvirtual"#Result"Method"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -952,7 +1078,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
                                                                      clazz, \
                                                                      methodID,\
                                                                      args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallNonvirtual"#Result"MethodV"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -972,7 +1099,8 @@ JNI_ENTRY_CHECKED(ResultType,  \
                                                                      clazz, \
                                                                      methodID,\
                                                                      args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallNonvirtual"#Result"MethodA"); \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -1001,7 +1129,8 @@ JNI_ENTRY_CHECKED(void,
     va_start(args,methodID);
     UNCHECKED()->CallNonvirtualVoidMethodV(env,obj,clazz,methodID,args);
     va_end(args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallNonvirtualVoidMethod");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1016,7 +1145,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_call_class(thr, clazz, methodID);
     )
     UNCHECKED()->CallNonvirtualVoidMethodV(env,obj,clazz,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallNonvirtualVoidMethodV");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1031,7 +1161,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_call_class(thr, clazz, methodID);
     )
     UNCHECKED()->CallNonvirtualVoidMethodA(env,obj,clazz,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallNonvirtualVoidMethodA");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jfieldID,
@@ -1044,7 +1175,7 @@ JNI_ENTRY_CHECKED(jfieldID,
       jniCheck::validate_class(thr, clazz, false);
     )
     jfieldID result = UNCHECKED()->GetFieldID(env,clazz,name,sig);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1058,7 +1189,7 @@ JNI_ENTRY_CHECKED(ReturnType,  \
       checkInstanceFieldID(thr, fieldID, obj, FieldType); \
     ) \
     ReturnType result = UNCHECKED()->Get##Result##Field(env,obj,fieldID); \
-    functionExit(env); \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -1083,7 +1214,7 @@ JNI_ENTRY_CHECKED(void,  \
       checkInstanceFieldID(thr, fieldID, obj, FieldType); \
     ) \
     UNCHECKED()->Set##Result##Field(env,obj,fieldID,val); \
-    functionExit(env); \
+    functionExit(thr); \
 JNI_END
 
 WRAPPER_SetField(jobject,  Object,  T_OBJECT)
@@ -1107,7 +1238,7 @@ JNI_ENTRY_CHECKED(jmethodID,
       jniCheck::validate_class(thr, clazz, false);
     )
     jmethodID result = UNCHECKED()->GetStaticMethodID(env,clazz,name,sig);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1129,7 +1260,8 @@ JNI_ENTRY_CHECKED(ReturnType,  \
                                                                  methodID, \
                                                                  args); \
     va_end(args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallStatic"#Result"Method"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -1147,7 +1279,8 @@ JNI_ENTRY_CHECKED(ReturnType,  \
                                                                  clazz, \
                                                                  methodID, \
                                                                  args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallStatic"#Result"MethodV"); \
+    functionExit(thr); \
     return result; \
 JNI_END \
 \
@@ -1165,7 +1298,8 @@ JNI_ENTRY_CHECKED(ReturnType,  \
                                                                  clazz, \
                                                                  methodID, \
                                                                  args); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("CallStatic"#Result"MethodA"); \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -1193,7 +1327,8 @@ JNI_ENTRY_CHECKED(void,
     va_start(args,methodID);
     UNCHECKED()->CallStaticVoidMethodV(env,cls,methodID,args);
     va_end(args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallStaticVoidMethod");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1207,7 +1342,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_class(thr, cls, false);
     )
     UNCHECKED()->CallStaticVoidMethodV(env,cls,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallStaticVoidMethodV");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1221,7 +1357,8 @@ JNI_ENTRY_CHECKED(void,
       jniCheck::validate_class(thr, cls, false);
     )
     UNCHECKED()->CallStaticVoidMethodA(env,cls,methodID,args);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("CallStaticVoidMethodA");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jfieldID,
@@ -1234,7 +1371,7 @@ JNI_ENTRY_CHECKED(jfieldID,
       jniCheck::validate_class(thr, clazz, false);
     )
     jfieldID result = UNCHECKED()->GetStaticFieldID(env,clazz,name,sig);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1251,7 +1388,7 @@ JNI_ENTRY_CHECKED(ReturnType,  \
     ReturnType result = UNCHECKED()->GetStatic##Result##Field(env, \
                                                               clazz, \
                                                               fieldID); \
-    functionExit(env); \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -1277,7 +1414,7 @@ JNI_ENTRY_CHECKED(void,  \
       checkStaticFieldID(thr, fieldID, clazz, FieldType); \
     ) \
     UNCHECKED()->SetStatic##Result##Field(env,clazz,fieldID,value); \
-    functionExit(env); \
+    functionExit(thr); \
 JNI_END
 
 WRAPPER_SetStaticField(jobject,  Object,  T_OBJECT)
@@ -1297,7 +1434,7 @@ JNI_ENTRY_CHECKED(jstring,
                         jsize len))
     functionEnter(thr);
     jstring result = UNCHECKED()->NewString(env,unicode,len);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1309,12 +1446,12 @@ JNI_ENTRY_CHECKED(jsize,
       checkString(thr, str);
     )
     jsize result = UNCHECKED()->GetStringLength(env,str);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
 // Arbitrary (but well-known) tag
-const jint STRING_TAG = 0x47114711;
+const void* STRING_TAG = (void*)0x47114711;
 
 JNI_ENTRY_CHECKED(const jchar *,
   checked_jni_GetStringChars(JNIEnv *env,
@@ -1324,21 +1461,22 @@ JNI_ENTRY_CHECKED(const jchar *,
     IN_VM(
       checkString(thr, str);
     )
-    jchar* newResult = NULL;
+    jchar* new_result = NULL;
     const jchar *result = UNCHECKED()->GetStringChars(env,str,isCopy);
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringChars didn't return a copy as expected");
     if (result != NULL) {
       size_t len = UNCHECKED()->GetStringLength(env,str) + 1; // + 1 for NULL termination
-      jint* tagLocation = (jint*) AllocateHeap(len * sizeof(jchar) + sizeof(jint), mtInternal);
-      *tagLocation = STRING_TAG;
-      newResult = (jchar*) (tagLocation + 1);
-      memcpy(newResult, result, len * sizeof(jchar));
+      len *= sizeof(jchar);
+      new_result = (jchar*) GuardedMemory::wrap_copy(result, len, STRING_TAG);
+      if (new_result == NULL) {
+        vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringChars");
+      }
       // Avoiding call to UNCHECKED()->ReleaseStringChars() since that will fire unexpected dtrace probes
       // Note that the dtrace arguments for the allocated memory will not match up with this solution.
       FreeHeap((char*)result);
     }
-    functionExit(env);
-    return newResult;
+    functionExit(thr);
+    return new_result;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1354,13 +1492,25 @@ JNI_ENTRY_CHECKED(void,
        UNCHECKED()->ReleaseStringChars(env,str,chars);
     }
     else {
-       jint* tagLocation = ((jint*) chars) - 1;
-       if (*tagLocation != STRING_TAG) {
-          NativeReportJNIFatalError(thr, "ReleaseStringChars called on something not allocated by GetStringChars");
-       }
-       UNCHECKED()->ReleaseStringChars(env,str,(const jchar*)tagLocation);
+      GuardedMemory guarded((void*)chars);
+      if (!guarded.verify_guards()) {
+        tty->print_cr("ReleaseStringChars: release chars failed bounds check. "
+            "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
+        guarded.print_on(tty);
+        NativeReportJNIFatalError(thr, "ReleaseStringChars: "
+            "release chars failed bounds check.");
+      }
+      if (guarded.get_tag() != STRING_TAG) {
+        tty->print_cr("ReleaseStringChars: called on something not allocated "
+            "by GetStringChars. string: " PTR_FORMAT " chars: " PTR_FORMAT,
+            p2i(str), p2i(chars));
+        NativeReportJNIFatalError(thr, "ReleaseStringChars called on something "
+            "not allocated by GetStringChars");
+      }
+       UNCHECKED()->ReleaseStringChars(env, str,
+           (const jchar*) guarded.release_for_freeing());
     }
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jstring,
@@ -1368,7 +1518,7 @@ JNI_ENTRY_CHECKED(jstring,
                            const char *utf))
     functionEnter(thr);
     jstring result = UNCHECKED()->NewStringUTF(env,utf);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1380,12 +1530,12 @@ JNI_ENTRY_CHECKED(jsize,
       checkString(thr, str);
     )
     jsize result = UNCHECKED()->GetStringUTFLength(env,str);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
 // Arbitrary (but well-known) tag - different than GetStringChars
-const jint STRING_UTF_TAG = 0x48124812;
+const void* STRING_UTF_TAG = (void*) 0x48124812;
 
 JNI_ENTRY_CHECKED(const char *,
   checked_jni_GetStringUTFChars(JNIEnv *env,
@@ -1395,21 +1545,21 @@ JNI_ENTRY_CHECKED(const char *,
     IN_VM(
       checkString(thr, str);
     )
-    char* newResult = NULL;
+    char* new_result = NULL;
     const char *result = UNCHECKED()->GetStringUTFChars(env,str,isCopy);
     assert (isCopy == NULL || *isCopy == JNI_TRUE, "GetStringUTFChars didn't return a copy as expected");
     if (result != NULL) {
       size_t len = strlen(result) + 1; // + 1 for NULL termination
-      jint* tagLocation = (jint*) AllocateHeap(len + sizeof(jint), mtInternal);
-      *tagLocation = STRING_UTF_TAG;
-      newResult = (char*) (tagLocation + 1);
-      strcpy(newResult, result);
+      new_result = (char*) GuardedMemory::wrap_copy(result, len, STRING_UTF_TAG);
+      if (new_result == NULL) {
+        vm_exit_out_of_memory(len, OOM_MALLOC_ERROR, "checked_jni_GetStringUTFChars");
+      }
       // Avoiding call to UNCHECKED()->ReleaseStringUTFChars() since that will fire unexpected dtrace probes
       // Note that the dtrace arguments for the allocated memory will not match up with this solution.
       FreeHeap((char*)result, mtInternal);
     }
-    functionExit(env);
-    return newResult;
+    functionExit(thr);
+    return new_result;
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1425,13 +1575,25 @@ JNI_ENTRY_CHECKED(void,
        UNCHECKED()->ReleaseStringUTFChars(env,str,chars);
     }
     else {
-       jint* tagLocation = ((jint*) chars) - 1;
-       if (*tagLocation != STRING_UTF_TAG) {
-          NativeReportJNIFatalError(thr, "ReleaseStringUTFChars called on something not allocated by GetStringUTFChars");
-       }
-       UNCHECKED()->ReleaseStringUTFChars(env,str,(const char*)tagLocation);
+      GuardedMemory guarded((void*)chars);
+      if (!guarded.verify_guards()) {
+        tty->print_cr("ReleaseStringUTFChars: release chars failed bounds check. "
+            "string: " PTR_FORMAT " chars: " PTR_FORMAT, p2i(str), p2i(chars));
+        guarded.print_on(tty);
+        NativeReportJNIFatalError(thr, "ReleaseStringUTFChars: "
+            "release chars failed bounds check.");
+      }
+      if (guarded.get_tag() != STRING_UTF_TAG) {
+        tty->print_cr("ReleaseStringUTFChars: called on something not "
+            "allocated by GetStringUTFChars. string: " PTR_FORMAT " chars: "
+            PTR_FORMAT, p2i(str), p2i(chars));
+        NativeReportJNIFatalError(thr, "ReleaseStringUTFChars "
+            "called on something not allocated by GetStringUTFChars");
+      }
+      UNCHECKED()->ReleaseStringUTFChars(env, str,
+          (const char*) guarded.release_for_freeing());
     }
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jsize,
@@ -1442,7 +1604,7 @@ JNI_ENTRY_CHECKED(jsize,
       check_is_array(thr, array);
     )
     jsize result = UNCHECKED()->GetArrayLength(env,array);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1453,7 +1615,7 @@ JNI_ENTRY_CHECKED(jobjectArray,
                              jobject init))
     functionEnter(thr);
     jobjectArray result = UNCHECKED()->NewObjectArray(env,len,clazz,init);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1466,7 +1628,8 @@ JNI_ENTRY_CHECKED(jobject,
       check_is_obj_array(thr, array);
     )
     jobject result = UNCHECKED()->GetObjectArrayElement(env,array,index);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("GetObjectArrayElement");
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1480,7 +1643,8 @@ JNI_ENTRY_CHECKED(void,
       check_is_obj_array(thr, array);
     )
     UNCHECKED()->SetObjectArrayElement(env,array,index,val);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("SetObjectArrayElement");
+    functionExit(thr);
 JNI_END
 
 #define WRAPPER_NewScalarArray(Return, Result) \
@@ -1489,7 +1653,7 @@ JNI_ENTRY_CHECKED(Return, \
                                  jsize len)) \
     functionEnter(thr); \
     Return result = UNCHECKED()->New##Result##Array(env,len); \
-    functionExit(env); \
+    functionExit(thr); \
     return (Return) result; \
 JNI_END
 
@@ -1514,7 +1678,10 @@ JNI_ENTRY_CHECKED(ElementType *,  \
     ElementType *result = UNCHECKED()->Get##Result##ArrayElements(env, \
                                                                   array, \
                                                                   isCopy); \
-    functionExit(env); \
+    if (result != NULL) { \
+      result = (ElementType *) check_jni_wrap_copy_array(thr, array, result); \
+    } \
+    functionExit(thr); \
     return result; \
 JNI_END
 
@@ -1538,13 +1705,11 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
       ASSERT_OOPS_ALLOWED; \
       typeArrayOop a = typeArrayOop(JNIHandles::resolve_non_null(array)); \
-      /* cannot check validity of copy, unless every request is logged by
-       * checking code.  Implementation of this check is deferred until a
-       * subsequent release.
-       */ \
     ) \
-    UNCHECKED()->Release##Result##ArrayElements(env,array,elems,mode); \
-    functionExit(env); \
+    ElementType* orig_result = (ElementType *) check_wrapped_array_release( \
+        thr, "checked_jni_Release"#Result"ArrayElements", array, elems, mode); \
+    UNCHECKED()->Release##Result##ArrayElements(env, array, orig_result, mode); \
+    functionExit(thr); \
 JNI_END
 
 WRAPPER_ReleaseScalarArrayElements(T_BOOLEAN,jboolean, Boolean, bool)
@@ -1568,7 +1733,8 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
     ) \
     UNCHECKED()->Get##Result##ArrayRegion(env,array,start,len,buf); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("Get"#Result"ArrayRegion"); \
+    functionExit(thr); \
 JNI_END
 
 WRAPPER_GetScalarArrayRegion(T_BOOLEAN, jboolean, Boolean)
@@ -1592,7 +1758,8 @@ JNI_ENTRY_CHECKED(void,  \
       check_primitive_array_type(thr, array, ElementTag); \
     ) \
     UNCHECKED()->Set##Result##ArrayRegion(env,array,start,len,buf); \
-    functionExit(env); \
+    thr->set_pending_jni_exception_check("Set"#Result"ArrayRegion"); \
+    functionExit(thr); \
 JNI_END
 
 WRAPPER_SetScalarArrayRegion(T_BOOLEAN, jboolean, Boolean)
@@ -1611,7 +1778,7 @@ JNI_ENTRY_CHECKED(jint,
                               jint nMethods))
     functionEnter(thr);
     jint result = UNCHECKED()->RegisterNatives(env,clazz,methods,nMethods);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1620,7 +1787,7 @@ JNI_ENTRY_CHECKED(jint,
                                 jclass clazz))
     functionEnter(thr);
     jint result = UNCHECKED()->UnregisterNatives(env,clazz);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1632,7 +1799,7 @@ JNI_ENTRY_CHECKED(jint,
       jniCheck::validate_object(thr, obj);
     )
     jint result = UNCHECKED()->MonitorEnter(env,obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1644,7 +1811,7 @@ JNI_ENTRY_CHECKED(jint,
       jniCheck::validate_object(thr, obj);
     )
     jint result = UNCHECKED()->MonitorExit(env,obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1653,7 +1820,7 @@ JNI_ENTRY_CHECKED(jint,
                         JavaVM **vm))
     functionEnter(thr);
     jint result = UNCHECKED()->GetJavaVM(env,vm);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1668,7 +1835,8 @@ JNI_ENTRY_CHECKED(void,
       checkString(thr, str);
     )
     UNCHECKED()->GetStringRegion(env, str, start, len, buf);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("GetStringRegion");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void,
@@ -1682,7 +1850,8 @@ JNI_ENTRY_CHECKED(void,
       checkString(thr, str);
     )
     UNCHECKED()->GetStringUTFRegion(env, str, start, len, buf);
-    functionExit(env);
+    thr->set_pending_jni_exception_check("GetStringUTFRegion");
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(void *,
@@ -1694,7 +1863,10 @@ JNI_ENTRY_CHECKED(void *,
       check_is_primitive_array(thr, array);
     )
     void *result = UNCHECKED()->GetPrimitiveArrayCritical(env, array, isCopy);
-    functionExit(env);
+    if (result != NULL) {
+      result = check_jni_wrap_copy_array(thr, array, result);
+    }
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1707,11 +1879,10 @@ JNI_ENTRY_CHECKED(void,
     IN_VM(
       check_is_primitive_array(thr, array);
     )
-    /* The Hotspot JNI code does not use the parameters, so just check the
-     * array parameter as a minor sanity check
-     */
-    UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, carray, mode);
-    functionExit(env);
+    // Check the element array...
+    void* orig_result = check_wrapped_array_release(thr, "ReleasePrimitiveArrayCritical", array, carray, mode);
+    UNCHECKED()->ReleasePrimitiveArrayCritical(env, array, orig_result, mode);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(const jchar*,
@@ -1723,7 +1894,7 @@ JNI_ENTRY_CHECKED(const jchar*,
       checkString(thr, string);
     )
     const jchar *result = UNCHECKED()->GetStringCritical(env, string, isCopy);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1739,7 +1910,7 @@ JNI_ENTRY_CHECKED(void,
      * string parameter as a minor sanity check
      */
     UNCHECKED()->ReleaseStringCritical(env, str, chars);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jweak,
@@ -1752,7 +1923,7 @@ JNI_ENTRY_CHECKED(jweak,
       }
     )
     jweak result = UNCHECKED()->NewWeakGlobalRef(env, obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1761,14 +1932,15 @@ JNI_ENTRY_CHECKED(void,
                                   jweak ref))
     functionEnterExceptionAllowed(thr);
     UNCHECKED()->DeleteWeakGlobalRef(env, ref);
-    functionExit(env);
+    functionExit(thr);
 JNI_END
 
 JNI_ENTRY_CHECKED(jboolean,
   checked_jni_ExceptionCheck(JNIEnv *env))
+    thr->clear_pending_jni_exception_check();
     functionEnterExceptionAllowed(thr);
     jboolean result = UNCHECKED()->ExceptionCheck(env);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1778,7 +1950,7 @@ JNI_ENTRY_CHECKED(jobject,
                                   jlong capacity))
     functionEnter(thr);
     jobject result = UNCHECKED()->NewDirectByteBuffer(env, address, capacity);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1787,7 +1959,7 @@ JNI_ENTRY_CHECKED(void *,
                                      jobject buf))
     functionEnter(thr);
     void* result = UNCHECKED()->GetDirectBufferAddress(env, buf);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1796,7 +1968,7 @@ JNI_ENTRY_CHECKED(jlong,
                                       jobject buf))
     functionEnter(thr);
     jlong result = UNCHECKED()->GetDirectBufferCapacity(env, buf);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1809,7 +1981,7 @@ JNI_ENTRY_CHECKED(jobjectRefType,
       jniCheck::validate_object(thr, obj);
     )
     jobjectRefType result = UNCHECKED()->GetObjectRefType(env, obj);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 
@@ -1818,7 +1990,7 @@ JNI_ENTRY_CHECKED(jint,
   checked_jni_GetVersion(JNIEnv *env))
     functionEnter(thr);
     jint result = UNCHECKED()->GetVersion(env);
-    functionExit(env);
+    functionExit(thr);
     return result;
 JNI_END
 

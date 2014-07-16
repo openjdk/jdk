@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,9 +44,35 @@ import javax.lang.model.element.Name;
  */
 @jdk.Exported
 public interface VariableTree extends StatementTree {
+    /**
+     * Returns the modifiers, including any annotations, on the declaration.
+     * @return the modifiers
+     */
     ModifiersTree getModifiers();
+
+    /**
+     * Returns the name of the variable being declared.
+     * @return the name
+     */
     Name getName();
+
+    /**
+     * Returns the qualified identifier for the name being "declared".
+     * This is only used in certain cases for the receiver of a
+     * method declaration. Returns {@code null} in all other cases.
+     * @return the qualified identifier of a receiver declaration
+     */
     ExpressionTree getNameExpression();
+
+    /**
+     * Returns the type of the variable being declared.
+     * @return the type
+     */
     Tree getType();
+
+    /**
+     * Returns the initializer for the variable, or {@code null} if none.
+     * @return the initializer
+     */
     ExpressionTree getInitializer();
 }

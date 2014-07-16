@@ -23,7 +23,7 @@
 
 /**
  * @test
- * @bug     6993978 7097436 8006694
+ * @bug     6993978 7097436 8006694 7196160
  * @summary Project Coin: Annotation to reduce varargs warnings
  *  temporarily workaround combo tests are causing time out in several platforms
  * @author  mcimadamore
@@ -89,7 +89,8 @@ public class Warn5
     enum ModifierKind {
         NONE(""),
         FINAL("final"),
-        STATIC("static");
+        STATIC("static"),
+        PRIVATE("private");
 
         String mod;
 
@@ -111,7 +112,8 @@ public class Warn5
 
     enum SourceLevel {
         JDK_6("6"),
-        JDK_7("7");
+        JDK_7("7"),
+        JDK_9("9");
 
         String sourceKey;
 
@@ -238,7 +240,7 @@ public class Warn5
         EnumSet<WarningKind> expectedWarnings =
                 EnumSet.noneOf(WarningKind.class);
 
-        if (sourceLevel == SourceLevel.JDK_7 &&
+        if (sourceLevel.compareTo(SourceLevel.JDK_7) >= 0 &&
                 trustMe == TrustMe.TRUST &&
                 suppressLevel != SuppressLevel.VARARGS &&
                 xlint != XlintOption.NONE &&
@@ -247,11 +249,12 @@ public class Warn5
                 body.hasAliasing &&
                 (methKind == MethodKind.CONSTRUCTOR ||
                 (methKind == MethodKind.METHOD &&
-                modKind != ModifierKind.NONE))) {
+                 modKind == ModifierKind.FINAL || modKind == ModifierKind.STATIC ||
+                 (modKind == ModifierKind.PRIVATE && sourceLevel.compareTo(SourceLevel.JDK_9) >= 0)))) {
             expectedWarnings.add(WarningKind.UNSAFE_BODY);
         }
 
-        if (sourceLevel == SourceLevel.JDK_7 &&
+        if (sourceLevel.compareTo(SourceLevel.JDK_7) >= 0 &&
                 trustMe == TrustMe.DONT_TRUST &&
                 sig.isVarargs &&
                 !sig.isReifiableArg &&
@@ -259,20 +262,22 @@ public class Warn5
             expectedWarnings.add(WarningKind.UNSAFE_DECL);
         }
 
-        if (sourceLevel == SourceLevel.JDK_7 &&
+        if (sourceLevel.compareTo(SourceLevel.JDK_7) >= 0 &&
                 trustMe == TrustMe.TRUST &&
                 (!sig.isVarargs ||
-                (modKind == ModifierKind.NONE &&
-                methKind == MethodKind.METHOD))) {
+                 ((modKind == ModifierKind.NONE ||
+                 modKind == ModifierKind.PRIVATE && sourceLevel.compareTo(SourceLevel.JDK_9) < 0 ) &&
+                 methKind == MethodKind.METHOD))) {
             expectedWarnings.add(WarningKind.MALFORMED_SAFEVARARGS);
         }
 
-        if (sourceLevel == SourceLevel.JDK_7 &&
+        if (sourceLevel.compareTo(SourceLevel.JDK_7) >= 0 &&
                 trustMe == TrustMe.TRUST &&
                 xlint != XlintOption.NONE &&
                 suppressLevel != SuppressLevel.VARARGS &&
-                (modKind != ModifierKind.NONE ||
-                methKind == MethodKind.CONSTRUCTOR) &&
+                (modKind == ModifierKind.FINAL || modKind == ModifierKind.STATIC ||
+                 (modKind == ModifierKind.PRIVATE && sourceLevel.compareTo(SourceLevel.JDK_9) >= 0) ||
+                 methKind == MethodKind.CONSTRUCTOR) &&
                 sig.isVarargs &&
                 sig.isReifiableArg) {
             expectedWarnings.add(WarningKind.REDUNDANT_SAFEVARARGS);
@@ -283,6 +288,7 @@ public class Warn5
             throw new Error("invalid diagnostics for source:\n" +
                     source.getCharContent(true) +
                     "\nOptions: " + xlint.getXlintOption() +
+                    "\nSource Level: " + sourceLevel +
                     "\nExpected warnings: " + expectedWarnings +
                     "\nFound warnings: " + dc.warnings);
         }

@@ -335,13 +335,13 @@ public class KRBError implements java.io.Serializable {
         cTime = KerberosTime.parse(der.getData(), (byte)0x02, true);
         if ((der.getData().peekByte() & 0x1F) == 0x03) {
             subDer = der.getData().getDerValue();
-            cuSec = new Integer(subDer.getData().getBigInteger().intValue());
+            cuSec = subDer.getData().getBigInteger().intValue();
         }
         else cuSec = null;
         sTime = KerberosTime.parse(der.getData(), (byte)0x04, false);
         subDer = der.getData().getDerValue();
         if ((subDer.getTag() & (byte)0x1F) == (byte)0x05) {
-            suSec = new Integer (subDer.getData().getBigInteger().intValue());
+            suSec = subDer.getData().getBigInteger().intValue();
         }
         else  throw new Asn1Exception(Krb5.ASN1_BAD_ID);
         subDer = der.getData().getDerValue();

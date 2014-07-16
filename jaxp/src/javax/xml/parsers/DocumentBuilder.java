@@ -57,6 +57,7 @@ import org.xml.sax.SAXException;
  * communicate with the application using these existing APIs.
  *
  * @author <a href="mailto:Jeff.Suttor@Sun.com">Jeff Suttor</a>
+ * @since 1.4
  */
 
 public abstract class DocumentBuilder {

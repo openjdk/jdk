@@ -54,6 +54,8 @@ package org.w3c.dom.ls;
  * implementation dependent.
  * <p>See also the <a href='http://www.w3.org/TR/2004/REC-DOM-Level-3-LS-20040407'>Document Object Model (DOM) Level 3 Load
 and Save Specification</a>.
+ *
+ * @since 1.5
  */
 public class LSException extends RuntimeException {
     public LSException(short code, String message) {

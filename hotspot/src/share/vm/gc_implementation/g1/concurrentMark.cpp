@@ -45,6 +45,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/java.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/prefetch.inline.hpp"
 #include "services/memTracker.hpp"
 
@@ -127,7 +128,7 @@ bool CMBitMap::allocate(ReservedSpace heap_rs) {
   }
   assert(_virtual_space.committed_size() == brs.size(),
          "didn't reserve backing store for all of concurrent marking bit map?");
-  _bm.set_map((uintptr_t*)_virtual_space.low());
+  _bm.set_map((BitMap::bm_word_t*)_virtual_space.low());
   assert(_virtual_space.committed_size() << (_shifter + LogBitsPerByte) >=
          _bmWordSize, "inconsistency in bit map sizing");
   _bm.set_size(_bmWordSize >> _shifter);
@@ -511,6 +512,7 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _has_overflown(false),
   _concurrent(false),
   _has_aborted(false),
+  _aborted_gc_id(GCId::undefined()),
   _restart_for_overflow(false),
   _concurrent_marking_in_progress(false),
 
@@ -1020,8 +1022,7 @@ void ConcurrentMark::enter_first_sync_barrier(uint worker_id) {
       force_overflow()->update();
 
       if (G1Log::fine()) {
-        gclog_or_tty->date_stamp(PrintGCDateStamps);
-        gclog_or_tty->stamp(PrintGCTimeStamps);
+        gclog_or_tty->gclog_stamp(concurrent_gc_id());
         gclog_or_tty->print_cr("[GC concurrent-mark-reset-for-overflow]");
       }
     }
@@ -2469,7 +2470,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     if (G1Log::finer()) {
       gclog_or_tty->put(' ');
     }
-    GCTraceTime t("GC ref-proc", G1Log::finer(), false, g1h->gc_timer_cm());
+    GCTraceTime t("GC ref-proc", G1Log::finer(), false, g1h->gc_timer_cm(), concurrent_gc_id());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2526,7 +2527,8 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
                                           &g1_keep_alive,
                                           &g1_drain_mark_stack,
                                           executor,
-                                          g1h->gc_timer_cm());
+                                          g1h->gc_timer_cm(),
+                                          concurrent_gc_id());
     g1h->gc_tracer_cm()->report_gc_reference_stats(stats);
 
     // The do_oop work routines of the keep_alive and drain_marking_stack
@@ -3261,6 +3263,12 @@ void ConcurrentMark::abort() {
   }
   _first_overflow_barrier_sync.abort();
   _second_overflow_barrier_sync.abort();
+  const GCId& gc_id = _g1h->gc_tracer_cm()->gc_id();
+  if (!gc_id.is_undefined()) {
+    // We can do multiple full GCs before ConcurrentMarkThread::run() gets a chance
+    // to detect that it was aborted. Only keep track of the first GC id that we aborted.
+    _aborted_gc_id = gc_id;
+   }
   _has_aborted = true;
 
   SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
@@ -3273,6 +3281,13 @@ void ConcurrentMark::abort() {
 
   _g1h->trace_heap_after_concurrent_cycle();
   _g1h->register_concurrent_cycle_end();
+}
+
+const GCId& ConcurrentMark::concurrent_gc_id() {
+  if (has_aborted()) {
+    return _aborted_gc_id;
+  }
+  return _g1h->gc_tracer_cm()->gc_id();
 }
 
 static void print_ms_time_info(const char* prefix, const char* name,

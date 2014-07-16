@@ -263,7 +263,7 @@ static bool add_new_thread(struct ps_prochandle* ph, pthread_t pthread_id, lwpid
 
 static bool read_lib_info(struct ps_prochandle* ph) {
   char fname[32];
-  char buf[256];
+  char buf[PATH_MAX];
   FILE *fp = NULL;
 
   sprintf(fname, "/proc/%d/maps", ph->pid);
@@ -273,10 +273,41 @@ static bool read_lib_info(struct ps_prochandle* ph) {
     return false;
   }
 
-  while(fgets_no_cr(buf, 256, fp)){
-    char * word[6];
-    int nwords = split_n_str(buf, 6, word, ' ', '\0');
-    if (nwords > 5 && find_lib(ph, word[5]) == false) {
+  while(fgets_no_cr(buf, PATH_MAX, fp)){
+    char * word[7];
+    int nwords = split_n_str(buf, 7, word, ' ', '\0');
+
+    if (nwords < 6) {
+      // not a shared library entry. ignore.
+      continue;
+    }
+
+    // SA does not handle the lines with patterns:
+    //   "[stack]", "[heap]", "[vdso]", "[vsyscall]", etc.
+    if (word[5][0] == '[') {
+        // not a shared library entry. ignore.
+        continue;
+    }
+
+    if (nwords > 6) {
+      // prelink altered mapfile when the program is running.
+      // Entries like one below have to be skipped
+      //  /lib64/libc-2.15.so (deleted)
+      // SO name in entries like one below have to be stripped.
+      //  /lib64/libpthread-2.15.so.#prelink#.EECVts
+      char *s = strstr(word[5],".#prelink#");
+      if (s == NULL) {
+        // No prelink keyword. skip deleted library
+        print_debug("skip shared object %s deleted by prelink\n", word[5]);
+        continue;
+      }
+
+      // Fall through
+      print_debug("rectifying shared object name %s changed by prelink\n", word[5]);
+      *s = 0;
+    }
+
+    if (find_lib(ph, word[5]) == false) {
        intptr_t base;
        lib_info* lib;
 #ifdef _LP64

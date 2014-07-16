@@ -28,7 +28,7 @@
  * @author  Serguei Spitsyn / Hitachi / Martin Buchholz
  *
  * @build    LoggingDeadlock2
- * @run  main/timeout=15 LoggingDeadlock2
+ * @run  main LoggingDeadlock2
  *
  * There is a clear deadlock between LogManager.<clinit> and
  * Cleaner.run() methods.

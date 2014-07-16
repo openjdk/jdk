@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,6 +47,15 @@ import java.util.List;
  */
 @jdk.Exported
 public interface BlockTree extends StatementTree {
+    /**
+     * Returns true if and only if this is a static initializer block.
+     * @return true if this is a static initializer block
+     */
     boolean isStatic();
+
+    /**
+     * Returns the statements comprising this block.
+     * @return the statements
+     */
     List<? extends StatementTree> getStatements();
 }

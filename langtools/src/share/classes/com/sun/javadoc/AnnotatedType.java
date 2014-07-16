@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,15 @@ package com.sun.javadoc;
  */
 public interface AnnotatedType extends Type {
 
+    /**
+     * Returns the annotations associated with this type.
+     * @return the annotations associated with this type
+     */
     AnnotationDesc[] annotations();
 
+    /**
+     * Returns the underlying type.
+     * @return the underlying type
+     */
     Type underlyingType();
 }

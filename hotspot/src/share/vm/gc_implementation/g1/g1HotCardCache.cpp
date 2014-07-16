@@ -28,7 +28,7 @@
 #include "gc_implementation/g1/g1HotCardCache.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegion.hpp"
-#include "runtime/atomic.hpp"
+#include "runtime/atomic.inline.hpp"
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
   _g1h(g1h), _hot_cache(NULL), _use_cache(false), _card_counts(g1h) {}

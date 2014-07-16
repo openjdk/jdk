@@ -32,11 +32,15 @@
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.inline.hpp"
+#ifdef ASSERT
+#include "memory/guardedMemory.hpp"
+#endif
 #include "oops/oop.inline.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
 #include "prims/privilegedStack.hpp"
 #include "runtime/arguments.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/frame.inline.hpp"
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/java.hpp"
@@ -523,121 +527,20 @@ char *os::strdup(const char *str, MEMFLAGS flags) {
 }
 
 
-
-#ifdef ASSERT
-#define space_before             (MallocCushion + sizeof(double))
-#define space_after              MallocCushion
-#define size_addr_from_base(p)   (size_t*)(p + space_before - sizeof(size_t))
-#define size_addr_from_obj(p)    ((size_t*)p - 1)
-// MallocCushion: size of extra cushion allocated around objects with +UseMallocOnly
-// NB: cannot be debug variable, because these aren't set from the command line until
-// *after* the first few allocs already happened
-#define MallocCushion            16
-#else
-#define space_before             0
-#define space_after              0
-#define size_addr_from_base(p)   should not use w/o ASSERT
-#define size_addr_from_obj(p)    should not use w/o ASSERT
-#define MallocCushion            0
-#endif
 #define paranoid                 0  /* only set to 1 if you suspect checking code has bug */
 
 #ifdef ASSERT
-inline size_t get_size(void* obj) {
-  size_t size = *size_addr_from_obj(obj);
-  if (size < 0) {
-    fatal(err_msg("free: size field of object #" PTR_FORMAT " was overwritten ("
-                  SIZE_FORMAT ")", obj, size));
-  }
-  return size;
-}
 
-u_char* find_cushion_backwards(u_char* start) {
-  u_char* p = start;
-  while (p[ 0] != badResourceValue || p[-1] != badResourceValue ||
-         p[-2] != badResourceValue || p[-3] != badResourceValue) p--;
-  // ok, we have four consecutive marker bytes; find start
-  u_char* q = p - 4;
-  while (*q == badResourceValue) q--;
-  return q + 1;
-}
-
-u_char* find_cushion_forwards(u_char* start) {
-  u_char* p = start;
-  while (p[0] != badResourceValue || p[1] != badResourceValue ||
-         p[2] != badResourceValue || p[3] != badResourceValue) p++;
-  // ok, we have four consecutive marker bytes; find end of cushion
-  u_char* q = p + 4;
-  while (*q == badResourceValue) q++;
-  return q - MallocCushion;
-}
-
-void print_neighbor_blocks(void* ptr) {
-  // find block allocated before ptr (not entirely crash-proof)
-  if (MallocCushion < 4) {
-    tty->print_cr("### cannot find previous block (MallocCushion < 4)");
-    return;
-  }
-  u_char* start_of_this_block = (u_char*)ptr - space_before;
-  u_char* end_of_prev_block_data = start_of_this_block - space_after -1;
-  // look for cushion in front of prev. block
-  u_char* start_of_prev_block = find_cushion_backwards(end_of_prev_block_data);
-  ptrdiff_t size = *size_addr_from_base(start_of_prev_block);
-  u_char* obj = start_of_prev_block + space_before;
-  if (size <= 0 ) {
-    // start is bad; may have been confused by OS data in between objects
-    // search one more backwards
-    start_of_prev_block = find_cushion_backwards(start_of_prev_block);
-    size = *size_addr_from_base(start_of_prev_block);
-    obj = start_of_prev_block + space_before;
-  }
-
-  if (start_of_prev_block + space_before + size + space_after == start_of_this_block) {
-    tty->print_cr("### previous object: " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", obj, size);
-  } else {
-    tty->print_cr("### previous object (not sure if correct): " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", obj, size);
-  }
-
-  // now find successor block
-  u_char* start_of_next_block = (u_char*)ptr + *size_addr_from_obj(ptr) + space_after;
-  start_of_next_block = find_cushion_forwards(start_of_next_block);
-  u_char* next_obj = start_of_next_block + space_before;
-  ptrdiff_t next_size = *size_addr_from_base(start_of_next_block);
-  if (start_of_next_block[0] == badResourceValue &&
-      start_of_next_block[1] == badResourceValue &&
-      start_of_next_block[2] == badResourceValue &&
-      start_of_next_block[3] == badResourceValue) {
-    tty->print_cr("### next object: " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", next_obj, next_size);
-  } else {
-    tty->print_cr("### next object (not sure if correct): " PTR_FORMAT " (" SSIZE_FORMAT " bytes)", next_obj, next_size);
+static void verify_memory(void* ptr) {
+  GuardedMemory guarded(ptr);
+  if (!guarded.verify_guards()) {
+    tty->print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
+    tty->print_cr("## memory stomp:");
+    guarded.print_on(tty);
+    fatal("memory stomping error");
   }
 }
 
-
-void report_heap_error(void* memblock, void* bad, const char* where) {
-  tty->print_cr("## nof_mallocs = " UINT64_FORMAT ", nof_frees = " UINT64_FORMAT, os::num_mallocs, os::num_frees);
-  tty->print_cr("## memory stomp: byte at " PTR_FORMAT " %s object " PTR_FORMAT, bad, where, memblock);
-  print_neighbor_blocks(memblock);
-  fatal("memory stomping error");
-}
-
-void verify_block(void* memblock) {
-  size_t size = get_size(memblock);
-  if (MallocCushion) {
-    u_char* ptr = (u_char*)memblock - space_before;
-    for (int i = 0; i < MallocCushion; i++) {
-      if (ptr[i] != badResourceValue) {
-        report_heap_error(memblock, ptr+i, "in front of");
-      }
-    }
-    u_char* end = (u_char*)memblock + size + space_after;
-    for (int j = -MallocCushion; j < 0; j++) {
-      if (end[j] != badResourceValue) {
-        report_heap_error(memblock, end+j, "after");
-      }
-    }
-  }
-}
 #endif
 
 //
@@ -686,16 +589,18 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
     size = 1;
   }
 
-  const size_t alloc_size = size + space_before + space_after;
-
+#ifndef ASSERT
+  const size_t alloc_size = size;
+#else
+  const size_t alloc_size = GuardedMemory::get_total_size(size);
   if (size > alloc_size) { // Check for rollover.
     return NULL;
   }
+#endif
 
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
 
   u_char* ptr;
-
   if (MallocMaxTestWords > 0) {
     ptr = testMalloc(alloc_size);
   } else {
@@ -703,28 +608,26 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
   }
 
 #ifdef ASSERT
-  if (ptr == NULL) return NULL;
-  if (MallocCushion) {
-    for (u_char* p = ptr; p < ptr + MallocCushion; p++) *p = (u_char)badResourceValue;
-    u_char* end = ptr + space_before + size;
-    for (u_char* pq = ptr+MallocCushion; pq < end; pq++) *pq = (u_char)uninitBlockPad;
-    for (u_char* q = end; q < end + MallocCushion; q++) *q = (u_char)badResourceValue;
+  if (ptr == NULL) {
+    return NULL;
   }
-  // put size just before data
-  *size_addr_from_base(ptr) = size;
+  // Wrap memory with guard
+  GuardedMemory guarded(ptr, size);
+  ptr = guarded.get_user_ptr();
 #endif
-  u_char* memblock = ptr + space_before;
-  if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
-    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, memblock);
+  if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
+    tty->print_cr("os::malloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
     breakpoint();
   }
-  debug_only(if (paranoid) verify_block(memblock));
-  if (PrintMalloc && tty != NULL) tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, memblock);
+  debug_only(if (paranoid) verify_memory(ptr));
+  if (PrintMalloc && tty != NULL) {
+    tty->print_cr("os::malloc " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
+  }
 
-  // we do not track MallocCushion memory
-    MemTracker::record_malloc((address)memblock, size, memflags, caller == 0 ? CALLER_PC : caller);
+  // we do not track guard memory
+  MemTracker::record_malloc((address)ptr, size, memflags, caller == 0 ? CALLER_PC : caller);
 
-  return memblock;
+  return ptr;
 }
 
 
@@ -743,27 +646,32 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller
   return ptr;
 #else
   if (memblock == NULL) {
-    return malloc(size, memflags, (caller == 0 ? CALLER_PC : caller));
+    return os::malloc(size, memflags, (caller == 0 ? CALLER_PC : caller));
   }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
     tty->print_cr("os::realloc caught " PTR_FORMAT, memblock);
     breakpoint();
   }
-  verify_block(memblock);
+  verify_memory(memblock);
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
-  if (size == 0) return NULL;
+  if (size == 0) {
+    return NULL;
+  }
   // always move the block
-  void* ptr = malloc(size, memflags, caller == 0 ? CALLER_PC : caller);
-  if (PrintMalloc) tty->print_cr("os::remalloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
+  void* ptr = os::malloc(size, memflags, caller == 0 ? CALLER_PC : caller);
+  if (PrintMalloc) {
+    tty->print_cr("os::remalloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
+  }
   // Copy to new memory if malloc didn't fail
   if ( ptr != NULL ) {
-    memcpy(ptr, memblock, MIN2(size, get_size(memblock)));
-    if (paranoid) verify_block(ptr);
+    GuardedMemory guarded(memblock);
+    memcpy(ptr, memblock, MIN2(size, guarded.get_user_size()));
+    if (paranoid) verify_memory(ptr);
     if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
       tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
       breakpoint();
     }
-    free(memblock);
+    os::free(memblock);
   }
   return ptr;
 #endif
@@ -771,6 +679,7 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller
 
 
 void  os::free(void *memblock, MEMFLAGS memflags) {
+  address trackp = (address) memblock;
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
@@ -778,34 +687,20 @@ void  os::free(void *memblock, MEMFLAGS memflags) {
     if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, memblock);
     breakpoint();
   }
-  verify_block(memblock);
+  verify_memory(memblock);
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
-  // Added by detlefs.
-  if (MallocCushion) {
-    u_char* ptr = (u_char*)memblock - space_before;
-    for (u_char* p = ptr; p < ptr + MallocCushion; p++) {
-      guarantee(*p == badResourceValue,
-                "Thing freed should be malloc result.");
-      *p = (u_char)freeBlockPad;
-    }
-    size_t size = get_size(memblock);
-    inc_stat_counter(&free_bytes, size);
-    u_char* end = ptr + space_before + size;
-    for (u_char* q = end; q < end + MallocCushion; q++) {
-      guarantee(*q == badResourceValue,
-                "Thing freed should be malloc result.");
-      *q = (u_char)freeBlockPad;
-    }
-    if (PrintMalloc && tty != NULL)
+
+  GuardedMemory guarded(memblock);
+  size_t size = guarded.get_user_size();
+  inc_stat_counter(&free_bytes, size);
+  memblock = guarded.release_for_freeing();
+  if (PrintMalloc && tty != NULL) {
       fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)memblock);
-  } else if (PrintMalloc && tty != NULL) {
-    // tty->print_cr("os::free %p", memblock);
-    fprintf(stderr, "os::free " PTR_FORMAT "\n", (uintptr_t)memblock);
   }
 #endif
-  MemTracker::record_free((address)memblock, memflags);
+  MemTracker::record_free(trackp, memflags);
 
-  ::free((char*)memblock - space_before);
+  ::free(memblock);
 }
 
 void os::init_random(long initval) {

@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1Log.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
+#include "runtime/atomic.inline.hpp"
 
 // Helper class for avoiding interleaved logging
 class LineBuffer: public StackObj {
