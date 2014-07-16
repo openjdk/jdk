@@ -524,8 +524,6 @@ class StubGenerator: public StubCodeGenerator {
     int frame_size_in_bytes = frame::abi_reg_args_size;
     OopMap* map = new OopMap(frame_size_in_bytes / sizeof(jint), 0);
 
-    StubCodeMark mark(this, "StubRoutines", "throw_exception");
-
     address start = __ pc();
 
     __ save_LR_CR(R11_scratch1);
@@ -846,8 +844,6 @@ class StubGenerator: public StubCodeGenerator {
   //
   // Don't generate, rather use C++ code.
   address generate_verify_oop() {
-    StubCodeMark mark(this, "StubRoutines", "verify_oop");
-
     // this is actually a `FunctionDescriptor*'.
     address start = 0;
 
