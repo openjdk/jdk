@@ -27,6 +27,8 @@ package java.awt.datatransfer;
 
 import java.awt.Toolkit;
 
+import java.io.BufferedInputStream;
+import java.io.InputStream;
 import java.lang.ref.SoftReference;
 
 import java.io.BufferedReader;
@@ -38,6 +40,7 @@ import java.net.URL;
 import java.net.MalformedURLException;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -45,6 +48,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.Properties;
 import java.util.Set;
 
 import sun.awt.AppContext;
@@ -210,193 +214,48 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
     }
 
     /**
-     * Initializes a SystemFlavorMap by reading flavormap.properties and
-     * AWT.DnD.flavorMapFileURL.
+     * Initializes a SystemFlavorMap by reading flavormap.properties
      * For thread-safety must be called under lock on this.
      */
     private void initSystemFlavorMap() {
         if (isMapInitialized) {
             return;
         }
-
         isMapInitialized = true;
-        BufferedReader flavormapDotProperties =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<BufferedReader>() {
-                    public BufferedReader run() {
-                        String fileName =
-                            System.getProperty("java.home") +
-                            File.separator +
-                            "lib" +
-                            File.separator +
-                            "flavormap.properties";
-                        try {
-                            return new BufferedReader
-                                (new InputStreamReader
-                                    (new File(fileName).toURI().toURL().openStream(), "ISO-8859-1"));
-                        } catch (MalformedURLException e) {
-                            System.err.println("MalformedURLException:" + e + " while loading default flavormap.properties file:" + fileName);
-                        } catch (IOException e) {
-                            System.err.println("IOException:" + e + " while loading default flavormap.properties file:" + fileName);
-                        }
-                        return null;
-                    }
-                });
 
-        String url =
-            java.security.AccessController.doPrivileged(
-                new java.security.PrivilegedAction<String>() {
-                    public String run() {
-                        return Toolkit.getProperty("AWT.DnD.flavorMapFileURL", null);
-                    }
-                });
-
-        if (flavormapDotProperties != null) {
-            try {
-                parseAndStoreReader(flavormapDotProperties);
-            } catch (IOException e) {
-                System.err.println("IOException:" + e + " while parsing default flavormap.properties file");
-            }
+        InputStream is = SystemFlavorMap.class.getResourceAsStream("/sun/awt/datatransfer/flavormap.properties");
+        if (is == null) {
+            throw new InternalError("Default flavor mapping not found");
         }
 
-        BufferedReader flavormapURL = null;
-        if (url != null) {
-            try {
-                flavormapURL = new BufferedReader(new InputStreamReader(new URL(url).openStream(), "ISO-8859-1"));
-            } catch (MalformedURLException e) {
-                System.err.println("MalformedURLException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
-            } catch (IOException e) {
-                System.err.println("IOException:" + e + " while reading AWT.DnD.flavorMapFileURL:" + url);
-            } catch (SecurityException e) {
-                // ignored
-            }
-        }
-
-        if (flavormapURL != null) {
-            try {
-                parseAndStoreReader(flavormapURL);
-            } catch (IOException e) {
-                System.err.println("IOException:" + e + " while parsing AWT.DnD.flavorMapFileURL");
-            }
-        }
-    }
-    /**
-     * Copied code from java.util.Properties. Parsing the data ourselves is the
-     * only way to handle duplicate keys and values.
-     */
-    private void parseAndStoreReader(BufferedReader in) throws IOException {
-        while (true) {
-            // Get next line
-            String line = in.readLine();
-            if (line == null) {
-                return;
-            }
-
-            if (line.length() > 0) {
-                // Continue lines that end in slashes if they are not comments
-                char firstChar = line.charAt(0);
-                if (firstChar != '#' && firstChar != '!') {
-                    while (continueLine(line)) {
-                        String nextLine = in.readLine();
-                        if (nextLine == null) {
-                            nextLine = "";
-                        }
-                        String loppedLine =
-                            line.substring(0, line.length() - 1);
-                        // Advance beyond whitespace on new line
-                        int startIndex = 0;
-                        for(; startIndex < nextLine.length(); startIndex++) {
-                            if (whiteSpaceChars.
-                                    indexOf(nextLine.charAt(startIndex)) == -1)
-                            {
-                                break;
-                            }
-                        }
-                        nextLine = nextLine.substring(startIndex,
-                                                      nextLine.length());
-                        line = loppedLine+nextLine;
-                    }
-
-                    // Find start of key
-                    int len = line.length();
-                    int keyStart = 0;
-                    for(; keyStart < len; keyStart++) {
-                        if(whiteSpaceChars.
-                               indexOf(line.charAt(keyStart)) == -1) {
-                            break;
-                        }
-                    }
-
-                    // Blank lines are ignored
-                    if (keyStart == len) {
-                        continue;
-                    }
-
-                    // Find separation between key and value
-                    int separatorIndex = keyStart;
-                    for(; separatorIndex < len; separatorIndex++) {
-                        char currentChar = line.charAt(separatorIndex);
-                        if (currentChar == '\\') {
-                            separatorIndex++;
-                        } else if (keyValueSeparators.
-                                       indexOf(currentChar) != -1) {
-                            break;
-                        }
-                    }
-
-                    // Skip over whitespace after key if any
-                    int valueIndex = separatorIndex;
-                    for (; valueIndex < len; valueIndex++) {
-                        if (whiteSpaceChars.
-                                indexOf(line.charAt(valueIndex)) == -1) {
-                            break;
-                        }
-                    }
-
-                    // Skip over one non whitespace key value separators if any
-                    if (valueIndex < len) {
-                        if (strictKeyValueSeparators.
-                                indexOf(line.charAt(valueIndex)) != -1) {
-                            valueIndex++;
-                        }
-                    }
-
-                    // Skip over white space after other separators if any
-                    while (valueIndex < len) {
-                        if (whiteSpaceChars.
-                                indexOf(line.charAt(valueIndex)) == -1) {
-                            break;
-                        }
-                        valueIndex++;
-                    }
-
-                    String key = line.substring(keyStart, separatorIndex);
-                    String value = (separatorIndex < len)
-                        ? line.substring(valueIndex, len)
-                        : "";
-
-                    // Convert then store key and value
-                    key = loadConvert(key);
-                    value = loadConvert(value);
-
+        try (InputStreamReader isr = new InputStreamReader(is);
+             BufferedReader reader = new BufferedReader(isr)) {
+            String line;
+            while ((line = reader.readLine()) != null) {
+                line = line.trim();
+                if (line.startsWith("#") || line.isEmpty()) continue;
+                while (line.endsWith("\\")) {
+                    line = line.substring(0, line.length() - 1) + reader.readLine().trim();
+                }
+                int delimiterPosition = line.indexOf('=');
+                String key = line.substring(0, delimiterPosition).replace("\\ ", " ");
+                String[] values = line.substring(delimiterPosition + 1, line.length()).split(",");
+                for (String value : values) {
                     try {
                         MimeType mime = new MimeType(value);
                         if ("text".equals(mime.getPrimaryType())) {
                             String charset = mime.getParameter("charset");
-                            if (DataTransferer.doesSubtypeSupportCharset
-                                    (mime.getSubType(), charset))
+                            if (DataTransferer.doesSubtypeSupportCharset(mime.getSubType(), charset))
                             {
                                 // We need to store the charset and eoln
                                 // parameters, if any, so that the
                                 // DataTransferer will have this information
                                 // for conversion into the native format.
-                                DataTransferer transferer =
-                                    DataTransferer.getInstance();
+                                DataTransferer transferer = DataTransferer.getInstance();
                                 if (transferer != null) {
-                                    transferer.registerTextFlavorProperties
-                                        (key, charset,
-                                         mime.getParameter("eoln"),
-                                         mime.getParameter("terminators"));
+                                    transferer.registerTextFlavorProperties(key, charset,
+                                            mime.getParameter("eoln"),
+                                            mime.getParameter("terminators"));
                                 }
                             }
 
@@ -441,78 +300,9 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                     }
                 }
             }
+        } catch (IOException e) {
+            throw new InternalError("Error reading default flavor mapping", e);
         }
-    }
-
-    /**
-     * Copied from java.util.Properties.
-     */
-    private boolean continueLine (String line) {
-        int slashCount = 0;
-        int index = line.length() - 1;
-        while((index >= 0) && (line.charAt(index--) == '\\')) {
-            slashCount++;
-        }
-        return (slashCount % 2 == 1);
-    }
-
-    /**
-     * Copied from java.util.Properties.
-     */
-    private String loadConvert(String theString) {
-        char aChar;
-        int len = theString.length();
-        StringBuilder outBuffer = new StringBuilder(len);
-
-        for (int x = 0; x < len; ) {
-            aChar = theString.charAt(x++);
-            if (aChar == '\\') {
-                aChar = theString.charAt(x++);
-                if (aChar == 'u') {
-                    // Read the xxxx
-                    int value = 0;
-                    for (int i = 0; i < 4; i++) {
-                        aChar = theString.charAt(x++);
-                        switch (aChar) {
-                          case '0': case '1': case '2': case '3': case '4':
-                          case '5': case '6': case '7': case '8': case '9': {
-                             value = (value << 4) + aChar - '0';
-                             break;
-                          }
-                          case 'a': case 'b': case 'c':
-                          case 'd': case 'e': case 'f': {
-                             value = (value << 4) + 10 + aChar - 'a';
-                             break;
-                          }
-                          case 'A': case 'B': case 'C':
-                          case 'D': case 'E': case 'F': {
-                             value = (value << 4) + 10 + aChar - 'A';
-                             break;
-                          }
-                          default: {
-                              throw new IllegalArgumentException(
-                                           "Malformed \\uxxxx encoding.");
-                          }
-                        }
-                    }
-                    outBuffer.append((char)value);
-                } else {
-                    if (aChar == 't') {
-                        aChar = '\t';
-                    } else if (aChar == 'r') {
-                        aChar = '\r';
-                    } else if (aChar == 'n') {
-                        aChar = '\n';
-                    } else if (aChar == 'f') {
-                        aChar = '\f';
-                    }
-                    outBuffer.append(aChar);
-                }
-            } else {
-                outBuffer.append(aChar);
-            }
-        }
-        return outBuffer.toString();
     }
 
     /**
