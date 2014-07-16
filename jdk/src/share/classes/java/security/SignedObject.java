@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -211,7 +211,9 @@ public final class SignedObject implements Serializable {
      * @param verificationKey the public key for verification.
      * @param verificationEngine the signature verification engine.
      *
-     * @exception SignatureException if signature verification failed.
+     * @exception SignatureException if signature verification failed (an
+     *     exception prevented the signature verification engine from completing
+     *     normally).
      * @exception InvalidKeyException if the verification key is invalid.
      *
      * @return {@code true} if the signature
