@@ -917,6 +917,13 @@ public final class Pattern
      */
     public static final int UNICODE_CHARACTER_CLASS = 0x100;
 
+    /**
+     * Contains all possible flags for compile(regex, flags).
+     */
+    private static final int ALL_FLAGS = CASE_INSENSITIVE | MULTILINE |
+            DOTALL | UNICODE_CASE | CANON_EQ | UNIX_LINES | LITERAL |
+            UNICODE_CHARACTER_CLASS | COMMENTS;
+
     /* Pattern has only two serialized components: The pattern string
      * and the flags, which are all that is needed to recompile the pattern
      * when it is deserialized.
@@ -1336,6 +1343,10 @@ public final class Pattern
      * only a Start node and a LastNode node.
      */
     private Pattern(String p, int f) {
+        if ((f & ~ALL_FLAGS) != 0) {
+            throw new IllegalArgumentException("Unknown flag 0x"
+                                               + Integer.toHexString(f));
+        }
         pattern = p;
         flags = f;
 
