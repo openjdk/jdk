@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -241,8 +241,8 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
  private:
   intptr_t** interpreter_frame_locals_addr() const;
-  intptr_t*  interpreter_frame_bcx_addr() const;
-  intptr_t*  interpreter_frame_mdx_addr() const;
+  intptr_t*  interpreter_frame_bcp_addr() const;
+  intptr_t*  interpreter_frame_mdp_addr() const;
 
  public:
   // Locals
@@ -252,22 +252,12 @@ class frame VALUE_OBJ_CLASS_SPEC {
 
   void interpreter_frame_set_locals(intptr_t* locs);
 
-  // byte code index/pointer (use these functions for unchecked frame access only!)
-  intptr_t interpreter_frame_bcx() const                  { return *interpreter_frame_bcx_addr(); }
-  void interpreter_frame_set_bcx(intptr_t bcx);
-
   // byte code index
   jint interpreter_frame_bci() const;
-  void interpreter_frame_set_bci(jint bci);
 
   // byte code pointer
   address interpreter_frame_bcp() const;
   void    interpreter_frame_set_bcp(address bcp);
-
-  // Unchecked access to the method data index/pointer.
-  // Only use this if you know what you are doing.
-  intptr_t interpreter_frame_mdx() const                  { return *interpreter_frame_mdx_addr(); }
-  void interpreter_frame_set_mdx(intptr_t mdx);
 
   // method data pointer
   address interpreter_frame_mdp() const;
@@ -437,10 +427,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // RedefineClasses support for finding live interpreted methods on the stack
   void metadata_do(void f(Metadata*));
 
-  void gc_prologue();
-  void gc_epilogue();
-  void pd_gc_epilog();
-
 # ifdef ENABLE_ZAP_DEAD_LOCALS
  private:
   class CheckValueClosure: public OopClosure {
@@ -477,7 +463,6 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // Verification
   void verify(const RegisterMap* map);
   static bool verify_return_pc(address x);
-  static bool is_bci(intptr_t bcx);
   // Usage:
   // assert(frame::verify_return_pc(return_address), "must be a return pc");
 

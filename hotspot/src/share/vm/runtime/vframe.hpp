@@ -511,8 +511,8 @@ inline bool vframeStreamCommon::fill_from_frame() {
 
 inline void vframeStreamCommon::fill_from_interpreter_frame() {
   Method* method = _frame.interpreter_frame_method();
-  intptr_t  bcx    = _frame.interpreter_frame_bcx();
-  int       bci    = method->validate_bci_from_bcx(bcx);
+  address   bcp    = _frame.interpreter_frame_bcp();
+  int       bci    = method->validate_bci_from_bcp(bcp);
   // 6379830 AsyncGetCallTrace sometimes feeds us wild frames.
   if (bci < 0) {
     found_bad_method_frame();

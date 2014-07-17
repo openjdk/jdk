@@ -412,91 +412,32 @@ void frame::interpreter_frame_set_method(Method* method) {
   *interpreter_frame_method_addr() = method;
 }
 
-void frame::interpreter_frame_set_bcx(intptr_t bcx) {
-  assert(is_interpreted_frame(), "Not an interpreted frame");
-  if (ProfileInterpreter) {
-    bool formerly_bci = is_bci(interpreter_frame_bcx());
-    bool is_now_bci = is_bci(bcx);
-    *interpreter_frame_bcx_addr() = bcx;
-
-    intptr_t mdx = interpreter_frame_mdx();
-
-    if (mdx != 0) {
-      if (formerly_bci) {
-        if (!is_now_bci) {
-          // The bcx was just converted from bci to bcp.
-          // Convert the mdx in parallel.
-          MethodData* mdo = interpreter_frame_method()->method_data();
-          assert(mdo != NULL, "");
-          int mdi = mdx - 1; // We distinguish valid mdi from zero by adding one.
-          address mdp = mdo->di_to_dp(mdi);
-          interpreter_frame_set_mdx((intptr_t)mdp);
-        }
-      } else {
-        if (is_now_bci) {
-          // The bcx was just converted from bcp to bci.
-          // Convert the mdx in parallel.
-          MethodData* mdo = interpreter_frame_method()->method_data();
-          assert(mdo != NULL, "");
-          int mdi = mdo->dp_to_di((address)mdx);
-          interpreter_frame_set_mdx((intptr_t)mdi + 1); // distinguish valid from 0.
-        }
-      }
-    }
-  } else {
-    *interpreter_frame_bcx_addr() = bcx;
-  }
-}
-
 jint frame::interpreter_frame_bci() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  intptr_t bcx = interpreter_frame_bcx();
-  return is_bci(bcx) ? bcx : interpreter_frame_method()->bci_from((address)bcx);
-}
-
-void frame::interpreter_frame_set_bci(jint bci) {
-  assert(is_interpreted_frame(), "interpreted frame expected");
-  assert(!is_bci(interpreter_frame_bcx()), "should not set bci during GC");
-  interpreter_frame_set_bcx((intptr_t)interpreter_frame_method()->bcp_from(bci));
+  address bcp = interpreter_frame_bcp();
+  return interpreter_frame_method()->bci_from(bcp);
 }
 
 address frame::interpreter_frame_bcp() const {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  intptr_t bcx = interpreter_frame_bcx();
-  return is_bci(bcx) ? interpreter_frame_method()->bcp_from(bcx) : (address)bcx;
+  return (address)*interpreter_frame_bcp_addr();
 }
 
 void frame::interpreter_frame_set_bcp(address bcp) {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  assert(!is_bci(interpreter_frame_bcx()), "should not set bcp during GC");
-  interpreter_frame_set_bcx((intptr_t)bcp);
-}
-
-void frame::interpreter_frame_set_mdx(intptr_t mdx) {
-  assert(is_interpreted_frame(), "Not an interpreted frame");
-  assert(ProfileInterpreter, "must be profiling interpreter");
-  *interpreter_frame_mdx_addr() = mdx;
+  *interpreter_frame_bcp_addr() = (intptr_t)bcp;
 }
 
 address frame::interpreter_frame_mdp() const {
   assert(ProfileInterpreter, "must be profiling interpreter");
   assert(is_interpreted_frame(), "interpreted frame expected");
-  intptr_t bcx = interpreter_frame_bcx();
-  intptr_t mdx = interpreter_frame_mdx();
-
-  assert(!is_bci(bcx), "should not access mdp during GC");
-  return (address)mdx;
+  return (address)*interpreter_frame_mdp_addr();
 }
 
 void frame::interpreter_frame_set_mdp(address mdp) {
   assert(is_interpreted_frame(), "interpreted frame expected");
-  if (mdp == NULL) {
-    // Always allow the mdp to be cleared.
-    interpreter_frame_set_mdx((intptr_t)mdp);
-  }
-  intptr_t bcx = interpreter_frame_bcx();
-  assert(!is_bci(bcx), "should not set mdp during GC");
-  interpreter_frame_set_mdx((intptr_t)mdp);
+  assert(ProfileInterpreter, "must be profiling interpreter");
+  *interpreter_frame_mdp_addr() = (intptr_t)mdp;
 }
 
 BasicObjectLock* frame::next_monitor_in_interpreter_frame(BasicObjectLock* current) const {
@@ -1181,24 +1122,6 @@ void frame::metadata_do(void f(Metadata*)) {
     f(m);
   }
 }
-
-void frame::gc_prologue() {
-  if (is_interpreted_frame()) {
-    // set bcx to bci to become Method* position independent during GC
-    interpreter_frame_set_bcx(interpreter_frame_bci());
-  }
-}
-
-
-void frame::gc_epilogue() {
-  if (is_interpreted_frame()) {
-    // set bcx back to bcp for interpreter
-    interpreter_frame_set_bcx((intptr_t)interpreter_frame_bcp());
-  }
-  // call processor specific epilog function
-  pd_gc_epilog();
-}
-
 
 # ifdef ENABLE_ZAP_DEAD_LOCALS
 

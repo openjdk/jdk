@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@
 #ifndef CC_INTERP
 
 const int method_offset = frame::interpreter_frame_method_offset * wordSize;
-const int bci_offset    = frame::interpreter_frame_bcx_offset    * wordSize;
+const int bcp_offset    = frame::interpreter_frame_bcp_offset    * wordSize;
 const int locals_offset = frame::interpreter_frame_locals_offset * wordSize;
 
 //-----------------------------------------------------------------------------

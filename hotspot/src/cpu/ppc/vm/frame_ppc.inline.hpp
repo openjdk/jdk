@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -134,12 +134,12 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**)&istate->_locals;
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   interpreterState istate = get_interpreterState();
   return (intptr_t*)&istate->_bcp;
 }
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   interpreterState istate = get_interpreterState();
   return (intptr_t*)&istate->_mdx;
 }
@@ -209,10 +209,10 @@ inline frame::ijava_state* frame::get_ijava_state() const {
 inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) &(get_ijava_state()->locals);
 }
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   return (intptr_t*) &(get_ijava_state()->bcp);
 }
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   return (intptr_t*) &(get_ijava_state()->mdx);
 }
 // Pointer beyond the "oldest/deepest" BasicObjectLock on stack.
