@@ -1863,32 +1863,57 @@ public class BasicTreeUI extends TreeUI
                       y - icon.getIconHeight() / 2);
     }
 
-    // This method is slow -- revisit when Java2D is ready.
-    // assumes x1 <= x2
-    protected void drawDashedHorizontalLine(Graphics g, int y, int x1, int x2){
+    /**
+     * Draws a horizontal dashed line. It is assumed {@code x1} &lt;= {@code x2}.
+     * If {@code x1} is greater than {@code x2}, the method draws nothing.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param y an Y coordinate
+     * @param x1 an X1 coordinate
+     * @param x2 an X2 coordinate
+     */
+    protected void drawDashedHorizontalLine(Graphics g, int y, int x1, int x2) {
         // Drawing only even coordinates helps join line segments so they
         // appear as one line.  This can be defeated by translating the
         // Graphics by an odd amount.
-        x1 += (x1 % 2);
-
-        for (int x = x1; x <= x2; x+=2) {
-            g.drawLine(x, y, x, y);
-        }
+        drawDashedLine(g, y, x1, x2, false);
     }
 
-    // This method is slow -- revisit when Java2D is ready.
-    // assumes y1 <= y2
+    /**
+     * Draws a vertical dashed line. It is assumed {@code y1} &lt;= {@code y2}.
+     * If {@code y1} is greater than {@code y2}, the method draws nothing.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param x an X coordinate
+     * @param y1 an Y1 coordinate
+     * @param y2 an Y2 coordinate
+     */
     protected void drawDashedVerticalLine(Graphics g, int x, int y1, int y2) {
         // Drawing only even coordinates helps join line segments so they
         // appear as one line.  This can be defeated by translating the
         // Graphics by an odd amount.
-        y1 += (y1 % 2);
-
-        for (int y = y1; y <= y2; y+=2) {
-            g.drawLine(x, y, x, y);
-        }
+        drawDashedLine(g, x, y1, y2, true);
     }
 
+    private void drawDashedLine(Graphics g, int v, int v1, int v2, boolean isVertical) {
+        if (v1 >= v2) {
+            return;
+        }
+        v1 += (v1 % 2);
+        Graphics2D g2d = (Graphics2D) g;
+        Stroke oldStroke = g2d.getStroke();
+
+        BasicStroke dashedStroke = new BasicStroke(1, BasicStroke.CAP_BUTT,
+                BasicStroke.JOIN_ROUND, 0, new float[]{1}, 0);
+        g2d.setStroke(dashedStroke);
+        if (isVertical) {
+            g2d.drawLine(v, v1, v, v2);
+        } else {
+            g2d.drawLine(v1, v, v2, v);
+        }
+
+        g2d.setStroke(oldStroke);
+    }
     //
     // Various local methods
     //
