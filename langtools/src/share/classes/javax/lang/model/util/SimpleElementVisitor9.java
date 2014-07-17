@@ -26,19 +26,28 @@
 package javax.lang.model.util;
 
 import javax.annotation.processing.SupportedSourceVersion;
-import javax.lang.model.type.*;
-
+import javax.lang.model.SourceVersion;
 import static javax.lang.model.SourceVersion.*;
 
 /**
- * A skeletal visitor of types with default behavior appropriate for
- * the {@link javax.lang.model.SourceVersion#RELEASE_8 RELEASE_8}
+ * A simple visitor of program elements with default behavior
+ * appropriate for the {@link SourceVersion#RELEASE_9 RELEASE_9}
  * source version.
  *
- * <p> <b>WARNING:</b> The {@code TypeVisitor} interface implemented
- * by this class may have methods added to it in the future to
- * accommodate new, currently unknown, language structures added to
- * future versions of the Java&trade; programming language.
+ * Visit methods corresponding to {@code RELEASE_9} and earlier
+ * language constructs call {@link #defaultAction defaultAction},
+ * passing their arguments to {@code defaultAction}'s corresponding
+ * parameters.
+ *
+ * <p> Methods in this class may be overridden subject to their
+ * general contract.  Note that annotating methods in concrete
+ * subclasses with {@link java.lang.Override @Override} will help
+ * ensure that methods are overridden as intended.
+ *
+ * <p> <b>WARNING:</b> The {@code ElementVisitor} interface
+ * implemented by this class may have methods added to it in the
+ * future to accommodate new, currently unknown, language structures
+ * added to future versions of the Java&trade; programming language.
  * Therefore, methods whose names begin with {@code "visit"} may be
  * added to this class in the future; to avoid incompatibilities,
  * classes which extend this class should not declare any instance
@@ -46,47 +55,39 @@ import static javax.lang.model.SourceVersion.*;
  *
  * <p>When such a new visit method is added, the default
  * implementation in this class will be to call the {@link
- * #visitUnknown visitUnknown} method.  A new abstract type visitor
+ * #visitUnknown visitUnknown} method.  A new simple element visitor
  * class will also be introduced to correspond to the new language
  * level; this visitor will have different default behavior for the
  * visit method in question.  When the new visitor is introduced, all
  * or portions of this visitor may be deprecated.
  *
- * <p>Note that adding a default implementation of a new visit method
- * in a visitor class will occur instead of adding a <em>default
- * method</em> directly in the visitor interface since a Java SE 8
- * language feature cannot be used to this version of the API since
- * this version is required to be runnable on Java SE 7
- * implementations.  Future versions of the API that are only required
- * to run on Java SE 8 and later may take advantage of default methods
- * in this situation.
+ * @param <R> the return type of this visitor's methods.  Use {@code Void}
+ *             for visitors that do not need to return results.
+ * @param <P> the type of the additional parameter to this visitor's methods.  Use {@code Void}
+ *              for visitors that do not need an additional parameter.
  *
- * @param <R> the return type of this visitor's methods.  Use {@link
- *            Void} for visitors that do not need to return results.
- * @param <P> the type of the additional parameter to this visitor's
- *            methods.  Use {@code Void} for visitors that do not need an
- *            additional parameter.
- *
- * @see AbstractTypeVisitor6
- * @see AbstractTypeVisitor7
- * @see AbstractTypeVisitor9
- * @since 1.8
+ * @see SimpleElementVisitor6
+ * @see SimpleElementVisitor7
+ * @see SimpleElementVisitor8
+ * @since 1.9
  */
-@SupportedSourceVersion(RELEASE_8)
-public abstract class AbstractTypeVisitor8<R, P> extends AbstractTypeVisitor7<R, P> {
+@SupportedSourceVersion(RELEASE_9)
+public class SimpleElementVisitor9<R, P> extends SimpleElementVisitor8<R, P> {
     /**
-     * Constructor for concrete subclasses to call.
+     * Constructor for concrete subclasses; uses {@code null} for the
+     * default value.
      */
-    protected AbstractTypeVisitor8() {
-        super();
+    protected SimpleElementVisitor9(){
+        super(null);
     }
 
     /**
-     * Visits an {@code IntersectionType} in a manner defined by a subclass.
+     * Constructor for concrete subclasses; uses the argument for the
+     * default value.
      *
-     * @param t  {@inheritDoc}
-     * @param p  {@inheritDoc}
-     * @return the result of the visit as defined by a subclass
+     * @param defaultValue the value to assign to {@link #DEFAULT_VALUE}
      */
-    public abstract R visitIntersection(IntersectionType t, P p);
+    protected SimpleElementVisitor9(R defaultValue){
+        super(defaultValue);
+    }
 }

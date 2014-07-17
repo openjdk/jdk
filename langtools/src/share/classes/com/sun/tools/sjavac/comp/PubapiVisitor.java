@@ -32,7 +32,7 @@ import javax.lang.model.element.ExecutableElement;
 import javax.lang.model.element.TypeElement;
 import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
-import javax.lang.model.util.ElementScanner6;
+import javax.lang.model.util.ElementScanner9;
 
 /** Utility class that constructs a textual representation
  * of the public api of a class.
@@ -42,7 +42,7 @@ import javax.lang.model.util.ElementScanner6;
  * risk.  This code and its internal interfaces are subject to change
  * or deletion without notice.</b></p>
  */
-public class PubapiVisitor extends ElementScanner6<Void, Void> {
+public class PubapiVisitor extends ElementScanner9<Void, Void> {
 
     StringBuffer sb;
     // Important that it is 1! Part of protocol over wire, silly yes.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,8 +51,6 @@ import javax.lang.model.type.IntersectionType;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.WildcardType;
-import javax.lang.model.util.ElementScanner8;
-import javax.lang.model.util.SimpleAnnotationValueVisitor8;
 import javax.tools.Diagnostic.Kind;
 
 public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
@@ -131,7 +129,7 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
 
     private void verifyReferredTypesAcceptable(Element rootElement,
                                                final Set<String> acceptable) {
-        new ElementScanner8<Void, Void>() {
+        new ElementScanner<Void, Void>() {
             @Override public Void visitType(TypeElement e, Void p) {
                 verifyTypeAcceptable(e.getSuperclass(), acceptable);
                 verifyTypesAcceptable(e.getInterfaces(), acceptable);
@@ -189,7 +187,7 @@ public class NoPrivateTypesExported extends JavacTestingAbstractProcessor {
 
     private void verifyAnnotationValue(AnnotationValue value,
                                        final Set<String> acceptable) {
-        value.accept(new SimpleAnnotationValueVisitor8<Void, Void>() {
+        value.accept(new SimpleAnnotationValueVisitor<Void, Void>() {
             @Override public Void visitType(TypeMirror t, Void p) {
                 verifyTypeAcceptable(t, acceptable);
                 return null;
