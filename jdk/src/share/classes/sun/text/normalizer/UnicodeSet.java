@@ -367,6 +367,7 @@ public class UnicodeSet implements UnicodeMatcher {
      * copied to this object
      * @stable ICU 2.0
      */
+    @SuppressWarnings("unchecked") // Casting result of clone of a collection
     public UnicodeSet set(UnicodeSet other) {
         list = other.list.clone();
         len = other.len;
