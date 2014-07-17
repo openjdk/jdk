@@ -155,15 +155,6 @@ void frame::patch_pc(Thread* thread, address pc) {
   }
 }
 
-void frame::pd_gc_epilog() {
-  if (is_interpreted_frame()) {
-    // Set constant pool cache entry for interpreter.
-    Method* m = interpreter_frame_method();
-
-    *interpreter_frame_cpoolcache_addr() = m->constants()->cache();
-  }
-}
-
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
   // Is there anything to do?
   assert(is_interpreted_frame(), "Not an interpreted frame");
