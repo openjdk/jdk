@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,7 +32,7 @@ import static javax.lang.model.SourceVersion.*;
 
 /**
  * A simple visitor of types with default behavior appropriate for the
- * {@link SourceVersion#RELEASE_7 RELEASE_7} source version.
+ * {@link SourceVersion#RELEASE_8 RELEASE_8} source version.
  *
  * Visit methods corresponding to {@code RELEASE_8} and earlier
  * language constructs call {@link #defaultAction defaultAction},
@@ -78,6 +78,7 @@ import static javax.lang.model.SourceVersion.*;
  *
  * @see SimpleTypeVisitor6
  * @see SimpleTypeVisitor7
+ * @see SimpleTypeVisitor9
  * @since 1.8
  */
 @SupportedSourceVersion(RELEASE_8)
