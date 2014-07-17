@@ -258,9 +258,9 @@ public final class Connection implements Runnable {
 
             // create the factory
 
+            @SuppressWarnings("unchecked")
             Class<? extends SocketFactory> socketFactoryClass =
-                    (Class<? extends SocketFactory>) Obj.helper.loadClass
-                    (socketFactory);
+                (Class<? extends SocketFactory>)Obj.helper.loadClass(socketFactory);
             Method getDefault =
                 socketFactoryClass.getMethod("getDefault", new Class<?>[]{});
             SocketFactory factory = (SocketFactory) getDefault.invoke(null, new Object[]{});
