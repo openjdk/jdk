@@ -36,11 +36,13 @@
                 <pathelement location="${basedir}/jcov2/lib/jcov_j2se_rt.jar"/>
                 <pathelement location="${basedir}/buildtools/nasgen/dist/nasgen.jar"/>
                 <pathelement path="${basedir}/build/classes"/>
+                <pathelement location="${dist.dir}/nasgen.jar"/>
+                <pathelement path="${build.dir}/classes"/>
             </classpath>
             <jvmarg value="-Djava.ext.dirs="/>
-            <arg value="${basedir}/build/classes"/>
+            <arg value="${build.dir}/classes"/>
             <arg value="jdk.nashorn.internal.objects"/>
-            <arg value="${basedir}/build/classes"/>
+            <arg value="${build.dir}/classes"/>
         </java>
     </target>
 
