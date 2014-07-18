@@ -244,10 +244,8 @@ void InterpreterOopMap::print() const {
   method()->print_value();
   tty->print(" @ %d = [%d] { ", bci(), n);
   for (int i = 0; i < n; i++) {
-#ifdef ENABLE_ZAP_DEAD_LOCALS
     if (is_dead(i)) tty->print("%d+ ", i);
     else
-#endif
     if (is_oop(i)) tty->print("%d ", i);
   }
   tty->print_cr("}");
@@ -402,13 +400,11 @@ void OopMapCacheEntry::set_mask(CellTypeState *vars, CellTypeState *stack, int s
       value |= (mask << oop_bit_number );
     }
 
-  #ifdef ENABLE_ZAP_DEAD_LOCALS
     // set dead bit
     if (!cell->is_live()) {
       value |= (mask << dead_bit_number);
       assert(!cell->is_reference(), "dead value marked as oop");
     }
-  #endif
   }
 
   // make sure last word is stored

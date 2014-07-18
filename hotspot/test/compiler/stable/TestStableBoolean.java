@@ -26,9 +26,11 @@
 /*
  * @test TestStableBoolean
  * @summary tests on stable fields and arrays
- * @library /testlibrary
- * @compile -XDignore.symbol.file TestStableBoolean.java
+ * @library /testlibrary /testlibrary/whitebox
+ * @build TestStableBoolean StableConfiguration sun.hotspot.WhiteBox
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main ClassFileInstaller
+ *           java/lang/invoke/StableConfiguration
  *           java/lang/invoke/TestStableBoolean
  *           java/lang/invoke/TestStableBoolean$BooleanStable
  *           java/lang/invoke/TestStableBoolean$StaticBooleanStable
@@ -48,46 +50,60 @@
  *           java/lang/invoke/TestStableBoolean$NestedStableField3
  *           java/lang/invoke/TestStableBoolean$NestedStableField3$A
  *           java/lang/invoke/TestStableBoolean$DefaultValue
+ *           java/lang/invoke/TestStableBoolean$DefaultStaticValue
  *           java/lang/invoke/TestStableBoolean$ObjectArrayLowerDim2
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableBoolean
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableBoolean
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:+FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:+FoldStableValues
+ *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
+ *                   java.lang.invoke.TestStableBoolean
+ * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -server -XX:+TieredCompilation -XX:TieredStopAtLevel=1
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableBoolean
  *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:+UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:+FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableBoolean
- *
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions
- *                   -XX:+UnlockDiagnosticVMOptions -XX:-FoldStableValues -XX:-UseCompressedOop
- *                   -server -XX:-TieredCompilation -Xcomp
+ *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -Xcomp
+ *                   -client -XX:-TieredCompilation
+ *                   -XX:-FoldStableValues
  *                   -XX:CompileOnly=::get,::get1,::get2,::get3,::get4
  *                   java.lang.invoke.TestStableBoolean
  */
 package java.lang.invoke;
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
-import sun.management.ManagementFactoryHelper;
 import java.lang.reflect.InvocationTargetException;
 
 public class TestStableBoolean {
-    public static void main(String[] args) throws Exception {
-        System.out.println("@Stable enabled: "+isStableEnabled);
-        System.out.println();
+    static final boolean isStableEnabled    = StableConfiguration.isStableEnabled;
+    static final boolean isServerWithStable = StableConfiguration.isServerWithStable;
 
+    public static void main(String[] args) throws Exception {
         run(DefaultValue.class);
         run(BooleanStable.class);
+        run(DefaultStaticValue.class);
         run(StaticBooleanStable.class);
         run(VolatileBooleanStable.class);
 
@@ -145,6 +161,21 @@ public class TestStableBoolean {
 
     /* ==================================================== */
 
+    static class DefaultStaticValue {
+        public static @Stable boolean v;
+
+        public static final DefaultStaticValue c = new DefaultStaticValue();
+        public static boolean get() { return c.v; }
+        public static void test() throws Exception {
+                        boolean val1 = get();
+            c.v = true; boolean val2 = get();
+            assertEquals(val1, false);
+            assertEquals(val2, true);
+        }
+    }
+
+    /* ==================================================== */
+
     static class StaticBooleanStable {
         public static @Stable boolean v;
 
@@ -188,14 +219,14 @@ public class TestStableBoolean {
                 c.v = new boolean[1]; c.v[0] = true;  boolean val1 = get();
                                       c.v[0] = false; boolean val2 = get();
                 assertEquals(val1, true);
-                assertEquals(val2, (isStableEnabled ? true : false));
+                assertEquals(val2, (isServerWithStable ? true : false));
             }
 
             {
                 c.v = new boolean[20]; c.v[10] = true;  boolean val1 = get1();
                                        c.v[10] = false; boolean val2 = get1();
                 assertEquals(val1, true);
-                assertEquals(val2, (isStableEnabled ? true : false));
+                assertEquals(val2, (isServerWithStable ? true : false));
             }
 
             {
@@ -220,19 +251,19 @@ public class TestStableBoolean {
                 c.v = new boolean[1][1]; c.v[0][0] = true;  boolean val1 = get();
                                          c.v[0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
-                assertEquals(val2, (isStableEnabled ? true : false));
+                assertEquals(val2, (isServerWithStable ? true : false));
 
                 c.v = new boolean[1][1]; c.v[0][0] = false; boolean val3 = get();
-                assertEquals(val3, (isStableEnabled ? true : false));
+                assertEquals(val3, (isServerWithStable ? true : false));
 
                 c.v[0] = new boolean[1]; c.v[0][0] = false; boolean val4 = get();
-                assertEquals(val4, (isStableEnabled ? true : false));
+                assertEquals(val4, (isServerWithStable ? true : false));
             }
 
             {
                 c.v = new boolean[1][1]; boolean[] val1 = get1();
                 c.v[0] = new boolean[1]; boolean[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -258,28 +289,28 @@ public class TestStableBoolean {
                 c.v = new boolean[1][1][1]; c.v[0][0][0] = true;  boolean val1 = get();
                                             c.v[0][0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
-                assertEquals(val2, (isStableEnabled ? true : false));
+                assertEquals(val2, (isServerWithStable ? true : false));
 
                 c.v = new boolean[1][1][1]; c.v[0][0][0] = false; boolean val3 = get();
-                assertEquals(val3, (isStableEnabled ? true : false));
+                assertEquals(val3, (isServerWithStable ? true : false));
 
                 c.v[0] = new boolean[1][1]; c.v[0][0][0] = false; boolean val4 = get();
-                assertEquals(val4, (isStableEnabled ? true : false));
+                assertEquals(val4, (isServerWithStable ? true : false));
 
                 c.v[0][0] = new boolean[1]; c.v[0][0][0] = false; boolean val5 = get();
-                assertEquals(val5, (isStableEnabled ? true : false));
+                assertEquals(val5, (isServerWithStable ? true : false));
             }
 
             {
                 c.v = new boolean[1][1][1]; boolean[] val1 = get1();
                 c.v[0][0] = new boolean[1]; boolean[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new boolean[1][1][1]; boolean[][] val1 = get2();
                 c.v[0] = new boolean[1][1]; boolean[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -306,37 +337,37 @@ public class TestStableBoolean {
                 c.v = new boolean[1][1][1][1]; c.v[0][0][0][0] = true;  boolean val1 = get();
                                                c.v[0][0][0][0] = false; boolean val2 = get();
                 assertEquals(val1, true);
-                assertEquals(val2, (isStableEnabled ? true : false));
+                assertEquals(val2, (isServerWithStable ? true : false));
 
                 c.v = new boolean[1][1][1][1]; c.v[0][0][0][0] = false; boolean val3 = get();
-                assertEquals(val3, (isStableEnabled ? true : false));
+                assertEquals(val3, (isServerWithStable ? true : false));
 
                 c.v[0] = new boolean[1][1][1]; c.v[0][0][0][0] = false; boolean val4 = get();
-                assertEquals(val4, (isStableEnabled ? true : false));
+                assertEquals(val4, (isServerWithStable ? true : false));
 
                 c.v[0][0] = new boolean[1][1]; c.v[0][0][0][0] = false; boolean val5 = get();
-                assertEquals(val5, (isStableEnabled ? true : false));
+                assertEquals(val5, (isServerWithStable ? true : false));
 
                 c.v[0][0][0] = new boolean[1]; c.v[0][0][0][0] = false; boolean val6 = get();
-                assertEquals(val6, (isStableEnabled ? true : false));
+                assertEquals(val6, (isServerWithStable ? true : false));
             }
 
             {
                 c.v = new boolean[1][1][1][1]; boolean[] val1 = get1();
                 c.v[0][0][0] = new boolean[1]; boolean[] val2 = get1();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new boolean[1][1][1][1]; boolean[][] val1 = get2();
                 c.v[0][0] = new boolean[1][1]; boolean[][] val2 = get2();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new boolean[1][1][1][1]; boolean[][][] val1 = get3();
                 c.v[0] = new boolean[1][1][1]; boolean[][][] val2 = get3();
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -399,7 +430,7 @@ public class TestStableBoolean {
                 c.v = new boolean[1][1]; c.v[0] = new boolean[0]; boolean[] val1 = get1();
                                          c.v[0] = new boolean[0]; boolean[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -435,14 +466,14 @@ public class TestStableBoolean {
                 c.v = new boolean[1][1][1]; c.v[0][0] = new boolean[0]; boolean[] val1 = get1();
                                             c.v[0][0] = new boolean[0]; boolean[] val2 = get1();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
                 c.v = new boolean[1][1][1]; c.v[0] = new boolean[0][0]; boolean[][] val1 = get2();
                                             c.v[0] = new boolean[0][0]; boolean[][] val2 = get2();
 
-                assertTrue((isStableEnabled ? (val1 == val2) : (val1 != val2)));
+                assertTrue((isServerWithStable ? (val1 == val2) : (val1 != val2)));
             }
 
             {
@@ -577,7 +608,7 @@ public class TestStableBoolean {
                                elem.a = false; boolean val3 = get(); boolean val4 = get1();
 
                 assertEquals(val1, true);
-                assertEquals(val3, (isStableEnabled ? true : false));
+                assertEquals(val3, (isServerWithStable ? true : false));
 
                 assertEquals(val2, true);
                 assertEquals(val4, false);
@@ -610,18 +641,5 @@ public class TestStableBoolean {
                 ex.printStackTrace(System.out);
             }
         }
-    }
-
-    static final boolean isStableEnabled;
-    static {
-        HotSpotDiagnosticMXBean diagnostic
-                = ManagementFactoryHelper.getDiagnosticMXBean();
-        VMOption tmp;
-        try {
-            tmp = diagnostic.getVMOption("FoldStableValues");
-        } catch (IllegalArgumentException e) {
-            tmp = null;
-        }
-        isStableEnabled = (tmp == null ? false : Boolean.parseBoolean(tmp.getValue()));
     }
 }
