@@ -25,8 +25,6 @@
 #ifndef OS_LINUX_VM_OS_LINUX_INLINE_HPP
 #define OS_LINUX_VM_OS_LINUX_INLINE_HPP
 
-#include "runtime/atomic.inline.hpp"
-#include "runtime/orderAccess.inline.hpp"
 #include "runtime/os.hpp"
 
 // System includes
@@ -38,18 +36,6 @@
 
 inline void* os::thread_local_storage_at(int index) {
   return pthread_getspecific((pthread_key_t)index);
-}
-
-inline const char* os::file_separator() {
-  return "/";
-}
-
-inline const char* os::line_separator() {
-  return "\n";
-}
-
-inline const char* os::path_separator() {
-  return ":";
 }
 
 // File names are case-sensitive on windows only

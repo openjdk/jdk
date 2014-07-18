@@ -1612,13 +1612,7 @@ void SystemDictionary::add_to_hierarchy(instanceKlassHandle k, TRAPS) {
 // system dictionary and follows the remaining classes' contents.
 
 void SystemDictionary::always_strong_oops_do(OopClosure* blk) {
-  blk->do_oop(&_java_system_loader);
-  blk->do_oop(&_system_loader_lock_obj);
-
-  dictionary()->always_strong_oops_do(blk);
-
-  // Visit extra methods
-  invoke_method_table()->oops_do(blk);
+  roots_oops_do(blk, NULL);
 }
 
 void SystemDictionary::always_strong_classes_do(KlassClosure* closure) {
@@ -1683,6 +1677,17 @@ bool SystemDictionary::do_unloading(BoolObjectClosure* is_alive) {
   dictionary()->oops_do(&cl);
 #endif
   return unloading_occurred;
+}
+
+void SystemDictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
+  strong->do_oop(&_java_system_loader);
+  strong->do_oop(&_system_loader_lock_obj);
+
+  // Adjust dictionary
+  dictionary()->roots_oops_do(strong, weak);
+
+  // Visit extra methods
+  invoke_method_table()->oops_do(strong);
 }
 
 void SystemDictionary::oops_do(OopClosure* f) {

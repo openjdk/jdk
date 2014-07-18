@@ -29,6 +29,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/sharedHeap.hpp"
 #include "oops/oop.inline.hpp"
+#include "runtime/atomic.inline.hpp"
 #include "runtime/fprofiler.hpp"
 #include "runtime/java.hpp"
 #include "services/management.hpp"
@@ -39,8 +40,8 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 SharedHeap* SharedHeap::_sh;
 
-// The set of potentially parallel tasks in strong root scanning.
-enum SH_process_strong_roots_tasks {
+// The set of potentially parallel tasks in root scanning.
+enum SH_process_roots_tasks {
   SH_PS_Universe_oops_do,
   SH_PS_JNIHandles_oops_do,
   SH_PS_ObjectSynchronizer_oops_do,
@@ -58,6 +59,7 @@ SharedHeap::SharedHeap(CollectorPolicy* policy_) :
   CollectedHeap(),
   _collector_policy(policy_),
   _rem_set(NULL),
+  _strong_roots_scope(NULL),
   _strong_roots_parity(0),
   _process_strong_tasks(new SubTasksDone(SH_PS_NumElements)),
   _workers(NULL)
@@ -114,6 +116,19 @@ public:
 static AssertNonScavengableClosure assert_is_non_scavengable_closure;
 #endif
 
+SharedHeap::StrongRootsScope* SharedHeap::active_strong_roots_scope() const {
+  return _strong_roots_scope;
+}
+void SharedHeap::register_strong_roots_scope(SharedHeap::StrongRootsScope* scope) {
+  assert(_strong_roots_scope == NULL, "Should only have one StrongRootsScope active");
+  assert(scope != NULL, "Illegal argument");
+  _strong_roots_scope = scope;
+}
+void SharedHeap::unregister_strong_roots_scope(SharedHeap::StrongRootsScope* scope) {
+  assert(_strong_roots_scope == scope, "Wrong scope unregistered");
+  _strong_roots_scope = NULL;
+}
+
 void SharedHeap::change_strong_roots_parity() {
   // Also set the new collection parity.
   assert(_strong_roots_parity >= 0 && _strong_roots_parity <= 2,
@@ -124,111 +139,160 @@ void SharedHeap::change_strong_roots_parity() {
          "Not in range.");
 }
 
-SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* outer, bool activate)
-  : MarkScope(activate)
+SharedHeap::StrongRootsScope::StrongRootsScope(SharedHeap* heap, bool activate)
+  : MarkScope(activate), _sh(heap), _n_workers_done_with_threads(0)
 {
   if (_active) {
-    outer->change_strong_roots_parity();
+    _sh->register_strong_roots_scope(this);
+    _sh->change_strong_roots_parity();
     // Zero the claimed high water mark in the StringTable
     StringTable::clear_parallel_claimed_index();
   }
 }
 
 SharedHeap::StrongRootsScope::~StrongRootsScope() {
-  // nothing particular
+  if (_active) {
+    _sh->unregister_strong_roots_scope(this);
+  }
 }
 
-void SharedHeap::process_strong_roots(bool activate_scope,
-                                      ScanningOption so,
-                                      OopClosure* roots,
-                                      KlassClosure* klass_closure) {
+Monitor* SharedHeap::StrongRootsScope::_lock = new Monitor(Mutex::leaf, "StrongRootsScope lock", false);
+
+void SharedHeap::StrongRootsScope::mark_worker_done_with_threads(uint n_workers) {
+  // The Thread work barrier is only needed by G1.
+  // No need to use the barrier if this is single-threaded code.
+  if (UseG1GC && n_workers > 0) {
+    uint new_value = (uint)Atomic::add(1, &_n_workers_done_with_threads);
+    if (new_value == n_workers) {
+      // This thread is last. Notify the others.
+      MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
+      _lock->notify_all();
+    }
+  }
+}
+
+void SharedHeap::StrongRootsScope::wait_until_all_workers_done_with_threads(uint n_workers) {
+  // No need to use the barrier if this is single-threaded code.
+  if (n_workers > 0 && (uint)_n_workers_done_with_threads != n_workers) {
+    MonitorLockerEx ml(_lock, Mutex::_no_safepoint_check_flag);
+    while ((uint)_n_workers_done_with_threads != n_workers) {
+      _lock->wait(Mutex::_no_safepoint_check_flag, 0, false);
+    }
+  }
+}
+
+void SharedHeap::process_roots(bool activate_scope,
+                               ScanningOption so,
+                               OopClosure* strong_roots,
+                               OopClosure* weak_roots,
+                               CLDClosure* strong_cld_closure,
+                               CLDClosure* weak_cld_closure,
+                               CodeBlobClosure* code_roots) {
   StrongRootsScope srs(this, activate_scope);
 
-  // General strong roots.
+  // General roots.
   assert(_strong_roots_parity != 0, "must have called prologue code");
+  assert(code_roots != NULL, "code root closure should always be set");
   // _n_termination for _process_strong_tasks should be set up stream
   // in a method not running in a GC worker.  Otherwise the GC worker
   // could be trying to change the termination condition while the task
   // is executing in another GC worker.
+
+  // Iterating over the CLDG and the Threads are done early to allow G1 to
+  // first process the strong CLDs and nmethods and then, after a barrier,
+  // let the thread process the weak CLDs and nmethods.
+
+  if (!_process_strong_tasks->is_task_claimed(SH_PS_ClassLoaderDataGraph_oops_do)) {
+    ClassLoaderDataGraph::roots_cld_do(strong_cld_closure, weak_cld_closure);
+  }
+
+  // Some CLDs contained in the thread frames should be considered strong.
+  // Don't process them if they will be processed during the ClassLoaderDataGraph phase.
+  CLDClosure* roots_from_clds_p = (strong_cld_closure != weak_cld_closure) ? strong_cld_closure : NULL;
+  // Only process code roots from thread stacks if we aren't visiting the entire CodeCache anyway
+  CodeBlobClosure* roots_from_code_p = (so & SO_AllCodeCache) ? NULL : code_roots;
+
+  Threads::possibly_parallel_oops_do(strong_roots, roots_from_clds_p, roots_from_code_p);
+
+  // This is the point where this worker thread will not find more strong CLDs/nmethods.
+  // Report this so G1 can synchronize the strong and weak CLDs/nmethods processing.
+  active_strong_roots_scope()->mark_worker_done_with_threads(n_par_threads());
+
   if (!_process_strong_tasks->is_task_claimed(SH_PS_Universe_oops_do)) {
-    Universe::oops_do(roots);
+    Universe::oops_do(strong_roots);
   }
   // Global (strong) JNI handles
   if (!_process_strong_tasks->is_task_claimed(SH_PS_JNIHandles_oops_do))
-    JNIHandles::oops_do(roots);
-
-  CodeBlobToOopClosure code_roots(roots, true);
-
-  CLDToOopClosure roots_from_clds(roots);
-  // If we limit class scanning to SO_SystemClasses we need to apply a CLD closure to
-  // CLDs which are strongly reachable from the thread stacks.
-  CLDToOopClosure* roots_from_clds_p = ((so & SO_SystemClasses) ? &roots_from_clds : NULL);
-  // All threads execute this; the individual threads are task groups.
-  if (CollectedHeap::use_parallel_gc_threads()) {
-    Threads::possibly_parallel_oops_do(roots, roots_from_clds_p, &code_roots);
-  } else {
-    Threads::oops_do(roots, roots_from_clds_p, &code_roots);
-  }
+    JNIHandles::oops_do(strong_roots);
 
   if (!_process_strong_tasks-> is_task_claimed(SH_PS_ObjectSynchronizer_oops_do))
-    ObjectSynchronizer::oops_do(roots);
+    ObjectSynchronizer::oops_do(strong_roots);
   if (!_process_strong_tasks->is_task_claimed(SH_PS_FlatProfiler_oops_do))
-    FlatProfiler::oops_do(roots);
+    FlatProfiler::oops_do(strong_roots);
   if (!_process_strong_tasks->is_task_claimed(SH_PS_Management_oops_do))
-    Management::oops_do(roots);
+    Management::oops_do(strong_roots);
   if (!_process_strong_tasks->is_task_claimed(SH_PS_jvmti_oops_do))
-    JvmtiExport::oops_do(roots);
+    JvmtiExport::oops_do(strong_roots);
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_SystemDictionary_oops_do)) {
-    if (so & SO_AllClasses) {
-      SystemDictionary::oops_do(roots);
-    } else if (so & SO_SystemClasses) {
-      SystemDictionary::always_strong_oops_do(roots);
-    } else {
-      fatal("We should always have selected either SO_AllClasses or SO_SystemClasses");
-    }
-  }
-
-  if (!_process_strong_tasks->is_task_claimed(SH_PS_ClassLoaderDataGraph_oops_do)) {
-    if (so & SO_AllClasses) {
-      ClassLoaderDataGraph::oops_do(roots, klass_closure, /* must_claim */ false);
-    } else if (so & SO_SystemClasses) {
-      ClassLoaderDataGraph::always_strong_oops_do(roots, klass_closure, /* must_claim */ true);
-    }
+    SystemDictionary::roots_oops_do(strong_roots, weak_roots);
   }
 
   // All threads execute the following. A specific chunk of buckets
   // from the StringTable are the individual tasks.
-  if (so & SO_Strings) {
+  if (weak_roots != NULL) {
     if (CollectedHeap::use_parallel_gc_threads()) {
-      StringTable::possibly_parallel_oops_do(roots);
+      StringTable::possibly_parallel_oops_do(weak_roots);
     } else {
-      StringTable::oops_do(roots);
+      StringTable::oops_do(weak_roots);
     }
   }
 
   if (!_process_strong_tasks->is_task_claimed(SH_PS_CodeCache_oops_do)) {
     if (so & SO_ScavengeCodeCache) {
-      assert(&code_roots != NULL, "must supply closure for code cache");
+      assert(code_roots != NULL, "must supply closure for code cache");
 
       // We only visit parts of the CodeCache when scavenging.
-      CodeCache::scavenge_root_nmethods_do(&code_roots);
+      CodeCache::scavenge_root_nmethods_do(code_roots);
     }
     if (so & SO_AllCodeCache) {
-      assert(&code_roots != NULL, "must supply closure for code cache");
+      assert(code_roots != NULL, "must supply closure for code cache");
 
       // CMSCollector uses this to do intermediate-strength collections.
       // We scan the entire code cache, since CodeCache::do_unloading is not called.
-      CodeCache::blobs_do(&code_roots);
+      CodeCache::blobs_do(code_roots);
     }
     // Verify that the code cache contents are not subject to
     // movement by a scavenging collection.
-    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, /*do_marking=*/ false));
+    DEBUG_ONLY(CodeBlobToOopClosure assert_code_is_non_scavengable(&assert_is_non_scavengable_closure, !CodeBlobToOopClosure::FixRelocations));
     DEBUG_ONLY(CodeCache::asserted_non_scavengable_nmethods_do(&assert_code_is_non_scavengable));
   }
 
   _process_strong_tasks->all_tasks_completed();
 }
+
+void SharedHeap::process_all_roots(bool activate_scope,
+                                   ScanningOption so,
+                                   OopClosure* roots,
+                                   CLDClosure* cld_closure,
+                                   CodeBlobClosure* code_closure) {
+  process_roots(activate_scope, so,
+                roots, roots,
+                cld_closure, cld_closure,
+                code_closure);
+}
+
+void SharedHeap::process_strong_roots(bool activate_scope,
+                                      ScanningOption so,
+                                      OopClosure* roots,
+                                      CLDClosure* cld_closure,
+                                      CodeBlobClosure* code_closure) {
+  process_roots(activate_scope, so,
+                roots, NULL,
+                cld_closure, NULL,
+                code_closure);
+}
+
 
 class AlwaysTrueClosure: public BoolObjectClosure {
 public:

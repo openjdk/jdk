@@ -37,26 +37,12 @@
 #include "runtime/arguments.hpp"
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
 #include "utilities/taskqueue.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_aix
-# include "os_aix.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"

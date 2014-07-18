@@ -37,6 +37,7 @@
 #include "mutex_solaris.inline.hpp"
 #include "oops/oop.inline.hpp"
 #include "os_share_solaris.hpp"
+#include "os_solaris.inline.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
 #include "prims/jvm_misc.hpp"
@@ -1542,9 +1543,6 @@ void os::die() {
   ::abort(); // dump core (for debugging)
 }
 
-// unused
-void os::set_error_file(const char *logfile) {}
-
 // DLL functions
 
 const char* os::dll_file_extension() { return ".so"; }
@@ -2184,6 +2182,7 @@ void os::jvm_path(char *buf, jint buflen) {
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
         len = strlen(buf);
+        assert(len < buflen, "Ran out of buffer space");
         jrelib_p = buf + len;
         snprintf(jrelib_p, buflen-len, "/jre/lib/%s", cpu_arch);
         if (0 != access(buf, F_OK)) {
@@ -2202,7 +2201,7 @@ void os::jvm_path(char *buf, jint buflen) {
     }
   }
 
-  strcpy(saved_jvm_path, buf);
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
 }
 
 
@@ -3172,20 +3171,14 @@ bool os::dont_yield() {
   }
 }
 
-// Caveat: Solaris os::yield() causes a thread-state transition whereas
-// the linux and win32 implementations do not.  This should be checked.
-
-void os::yield() {
-  // Yields to all threads with same or greater priority
-  os::sleep(Thread::current(), 0, false);
-}
-
 // Note that yield semantics are defined by the scheduling class to which
 // the thread currently belongs.  Typically, yield will _not yield to
 // other equal or higher priority threads that reside on the dispatch queues
 // of other CPUs.
 
-os::YieldResult os::NakedYield() { thr_yield(); return os::YIELD_UNKNOWN; }
+void os::naked_yield() {
+  thr_yield();
+}
 
 // Interface for setting lwp priorities.  If we are using T2 libthread,
 // which forces the use of BoundThreads or we manually set UseBoundThreads,
@@ -5439,20 +5432,11 @@ static timestruc_t* compute_abstime(timestruc_t* abstime, jlong millis) {
   return abstime;
 }
 
-// Test-and-clear _Event, always leaves _Event set to 0, returns immediately.
-// Conceptually TryPark() should be equivalent to park(0).
-
-int os::PlatformEvent::TryPark() {
-  for (;;) {
-    const int v = _Event;
-    guarantee((v == 0) || (v == 1), "invariant");
-    if (Atomic::cmpxchg(0, &_Event, v) == v) return v;
-  }
-}
-
 void os::PlatformEvent::park() {           // AKA: down()
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
+  assert(_nParked == 0, "invariant");
+
   int v;
   for (;;) {
       v = _Event;
@@ -5539,8 +5523,7 @@ void os::PlatformEvent::unpark() {
   //    1 :=> 1
   //   -1 :=> either 0 or 1; must signal target thread
   //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
-  //          unpark() calls.
+  //          0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -5744,10 +5727,9 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  int s, status;
-  status = os::Solaris::mutex_lock(_mutex);
+  int status = os::Solaris::mutex_lock(_mutex);
   assert(status == 0, "invariant");
-  s = _counter;
+  const int s = _counter;
   _counter = 1;
   status = os::Solaris::mutex_unlock(_mutex);
   assert(status == 0, "invariant");
