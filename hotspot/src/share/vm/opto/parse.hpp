@@ -142,7 +142,7 @@ public:
 
   void print_value_on(outputStream* st) const PRODUCT_RETURN;
 
-  bool        _forced_inline;     // Inlining was forced by CompilerOracle or ciReplay
+  bool        _forced_inline;     // Inlining was forced by CompilerOracle, ciReplay or annotation
   bool        forced_inline()     const { return _forced_inline; }
   // Count number of nodes in this subtree
   int         count() const;
