@@ -361,24 +361,27 @@ public final class Long extends Number implements Comparable<Long> {
     }
 
     /**
-     * Format a long (treated as unsigned) into a character buffer.
+     * Format a long (treated as unsigned) into a character buffer. If
+     * {@code len} exceeds the formatted ASCII representation of {@code val},
+     * {@code buf} will be padded with leading zeroes.
+     *
      * @param val the unsigned long to format
      * @param shift the log2 of the base to format in (4 for hex, 3 for octal, 1 for binary)
      * @param buf the character buffer to write to
      * @param offset the offset in the destination buffer to start at
      * @param len the number of characters to write
-     * @return the lowest character location used
      */
-     static int formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
-        int charPos = len;
+     static void formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
+        // assert shift > 0 && shift <=5 : "Illegal shift value";
+        // assert offset >= 0 && offset < buf.length : "illegal offset";
+        // assert len > 0 && (offset + len) <= buf.length : "illegal length";
+        int charPos = offset + len;
         int radix = 1 << shift;
         int mask = radix - 1;
         do {
-            buf[offset + --charPos] = Integer.digits[((int) val) & mask];
+            buf[--charPos] = Integer.digits[((int) val) & mask];
             val >>>= shift;
-        } while (val != 0 && charPos > 0);
-
-        return charPos;
+        } while (charPos > offset);
     }
 
     /**
