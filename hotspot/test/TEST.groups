@@ -117,15 +117,6 @@ compact3 = \
 # Tests that require compact3 API's
 #
 needs_compact3 = \
-  compiler/8009761/Test8009761.java \
-  compiler/whitebox/DeoptimizeMethodTest.java \
-  compiler/whitebox/SetForceInlineMethodTest.java \
-  compiler/whitebox/SetDontInlineMethodTest.java \
-  compiler/whitebox/DeoptimizeAllTest.java \
-  compiler/whitebox/MakeMethodNotCompilableTest.java \
-  compiler/whitebox/ClearMethodStateTest.java \
-  compiler/whitebox/EnqueueMethodForCompilationTest.java \
-  compiler/whitebox/IsMethodCompilableTest.java \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
   gc/g1/TestHumongousAllocInitialMark.java \
@@ -138,11 +129,7 @@ needs_compact3 = \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
   serviceability/jvmti/GetObjectSizeOverflow.java \
-  serviceability/jvmti/TestRedefineWithUnresolvedClass.java \
-  compiler/tiered/NonTieredLevelsTest.java \
-  compiler/tiered/TieredLevelsTest.java \
-  compiler/intrinsics/bmi/verifycode \
-  runtime/whitebox/WBStackSize.java
+  serviceability/jvmti/TestRedefineWithUnresolvedClass.java
 
 # Compact 2 adds full VM tests
 compact2 = \
