@@ -857,7 +857,7 @@ class MethodExpression extends NaryExpression {
                 right.code(env, ctx, asm);
             }
         } else if (right == null) {
-            asm.add(where, opc_aload, new Integer(0));
+            asm.add(where, opc_aload, 0);
         } else if (right.op == SUPER) {
             // 'super.<method>(...)', 'super(...)', or '<expr>.super(...)'
             /*****

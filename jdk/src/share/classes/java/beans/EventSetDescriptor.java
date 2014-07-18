@@ -22,12 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.beans;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
 import java.lang.reflect.Modifier;
+
+import com.sun.beans.introspect.EventSetInfo;
 
 /**
  * An EventSetDescriptor describes a group of events that a given Java
@@ -253,6 +254,16 @@ public class EventSetDescriptor extends FeatureDescriptor {
         setRemoveListenerMethod( removeListenerMethod);
         setGetListenerMethod(getListenerMethod);
         setListenerType(listenerType);
+    }
+
+    EventSetDescriptor(String base, EventSetInfo info, Method... methods) {
+        setName(Introspector.decapitalize(base));
+        setListenerMethods(methods);
+        setAddListenerMethod(info.getAddMethod());
+        setRemoveListenerMethod(info.getRemoveMethod());
+        setGetListenerMethod(info.getGetMethod());
+        setListenerType(info.getListenerType());
+        setUnicast(info.isUnicast());
     }
 
     /**

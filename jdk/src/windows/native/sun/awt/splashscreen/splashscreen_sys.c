@@ -563,3 +563,11 @@ SplashReconfigure(Splash * splash)
 {
     PostMessage(splash->hWnd, WM_SPLASHRECONFIGURE, 0, 0);
 }
+
+SPLASHEXPORT char*
+SplashGetScaledImageName(const char* jarName, const char* fileName,
+                           float *scaleFactor)
+{
+    *scaleFactor = 1;
+    return NULL;
+}

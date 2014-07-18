@@ -44,7 +44,7 @@ import java.util.*;
  * @author Scott Violet
  */
 @SuppressWarnings("serial") // JDK-implementation class
-public class BakedArrayList extends ArrayList<Object> {
+public class BakedArrayList<E> extends ArrayList<E> {
     /**
      * The cached hashCode.
      */
@@ -54,7 +54,7 @@ public class BakedArrayList extends ArrayList<Object> {
         super(size);
     }
 
-    public BakedArrayList(java.util.List<?> data) {
+    public BakedArrayList(java.util.List<? extends E> data) {
         this(data.size());
         for (int counter = 0, max = data.size(); counter < max; counter++){
             add(data.get(counter));
@@ -78,7 +78,8 @@ public class BakedArrayList extends ArrayList<Object> {
     }
 
     public boolean equals(Object o) {
-        BakedArrayList list = (BakedArrayList)o;
+        @SuppressWarnings("unchecked")
+        BakedArrayList<E> list = (BakedArrayList)o;
         int size = size();
 
         if (list.size() != size) {

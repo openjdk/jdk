@@ -2910,17 +2910,10 @@ public class Container extends Component {
             }
         }
 
-        Runnable pumpEventsForHierarchy = new Runnable() {
-            public void run() {
-                EventDispatchThread dispatchThread =
-                    (EventDispatchThread)Thread.currentThread();
-                dispatchThread.pumpEventsForHierarchy(
-                        new Conditional() {
-                        public boolean evaluate() {
-                        return ((windowClosingException == null) && (nativeContainer.modalComp != null)) ;
-                        }
-                        }, Container.this);
-            }
+        Runnable pumpEventsForHierarchy = () -> {
+            EventDispatchThread dispatchThread = (EventDispatchThread)Thread.currentThread();
+            dispatchThread.pumpEventsForHierarchy(() -> nativeContainer.modalComp != null,
+                    Container.this);
         };
 
         if (EventQueue.isDispatchThread()) {
@@ -2938,8 +2931,7 @@ public class Container extends Component {
                     postEvent(new PeerEvent(this,
                                 pumpEventsForHierarchy,
                                 PeerEvent.PRIORITY_EVENT));
-                while ((windowClosingException == null) &&
-                       (nativeContainer.modalComp != null))
+                while (nativeContainer.modalComp != null)
                 {
                     try {
                         getTreeLock().wait();
@@ -2948,10 +2940,6 @@ public class Container extends Component {
                     }
                 }
             }
-        }
-        if (windowClosingException != null) {
-            windowClosingException.fillInStackTrace();
-            throw windowClosingException;
         }
         if (predictedFocusOwner != null) {
             KeyboardFocusManager.getCurrentKeyboardFocusManager().

@@ -82,7 +82,7 @@ public class JvmOSImpl implements JvmOSMBean, Serializable {
      * Getter for the "JvmRTProcessorCount" variable.
      */
     public Integer getJvmOSProcessorCount() throws SnmpStatusException {
-        return new Integer(getOSMBean().getAvailableProcessors());
+        return getOSMBean().getAvailableProcessors();
 
     }
 

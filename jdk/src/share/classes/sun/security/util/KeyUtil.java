@@ -272,7 +272,16 @@ public final class KeyUtil {
                     "Diffie-Hellman public key is too large");
         }
 
-        // Don't bother to check against the y^q mod p if safe primes are used.
+        // y^q mod p == 1?
+        // Unable to perform this check as q is unknown in this circumstance.
+
+        // p is expected to be prime.  However, it is too expensive to check
+        // that p is prime.  Instead, in order to mitigate the impact of
+        // non-prime values, we check that y is not a factor of p.
+        BigInteger r = p.remainder(y);
+        if (r.equals(BigInteger.ZERO)) {
+            throw new InvalidKeyException("Invalid Diffie-Hellman parameters");
+        }
     }
 
     /**

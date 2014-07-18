@@ -98,7 +98,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         if (aContainer == null || aComponent == null) {
             throw new IllegalArgumentException("aContainer and aComponent cannot be null");
         }
-        Comparator comparator = getComparator();
+        Comparator<? super Component> comparator = getComparator();
         if (comparator instanceof LayoutComparator) {
             ((LayoutComparator)comparator).
                 setComponentOrientation(aContainer.
@@ -134,7 +134,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         if (aContainer == null || aComponent == null) {
             throw new IllegalArgumentException("aContainer and aComponent cannot be null");
         }
-        Comparator comparator = getComparator();
+        Comparator<? super Component> comparator = getComparator();
         if (comparator instanceof LayoutComparator) {
             ((LayoutComparator)comparator).
                 setComponentOrientation(aContainer.
@@ -158,7 +158,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         if (aContainer == null) {
             throw new IllegalArgumentException("aContainer cannot be null");
         }
-        Comparator comparator = getComparator();
+        Comparator<? super Component> comparator = getComparator();
         if (comparator instanceof LayoutComparator) {
             ((LayoutComparator)comparator).
                 setComponentOrientation(aContainer.
@@ -182,7 +182,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         if (aContainer == null) {
             throw new IllegalArgumentException("aContainer cannot be null");
         }
-        Comparator comparator = getComparator();
+        Comparator<? super Component> comparator = getComparator();
         if (comparator instanceof LayoutComparator) {
             ((LayoutComparator)comparator).
                 setComponentOrientation(aContainer.
@@ -233,7 +233,7 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
             // to be focusable by returning true here.
             return true;
         } else if (SunToolkit.isInstanceOf(aComponent, "javax.swing.JComboBox")) {
-            JComboBox box = (JComboBox)aComponent;
+            JComboBox<?> box = (JComboBox)aComponent;
             return box.getUI().isFocusTraversable(box);
         } else if (aComponent instanceof JComponent) {
             JComponent jComponent = (JComponent)aComponent;
@@ -256,10 +256,11 @@ public class LayoutFocusTraversalPolicy extends SortingFocusTraversalPolicy
         out.writeObject(getComparator());
         out.writeBoolean(getImplicitDownCycleTraversal());
     }
+    @SuppressWarnings("unchecked") // Cast to (Comparator<? super Component>)
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
-        setComparator((Comparator)in.readObject());
+        setComparator((Comparator<? super Component>)in.readObject());
         setImplicitDownCycleTraversal(in.readBoolean());
     }
 }

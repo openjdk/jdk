@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2009, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ public class DesktopProperty implements UIDefaults.ActiveValue {
     private static void updateAllUIs() {
         // Check if the current UI is WindowsLookAndfeel and flush the XP style map.
         // Note: Change the package test if this class is moved to a different package.
-        Class uiClass = UIManager.getLookAndFeel().getClass();
+        Class<?> uiClass = UIManager.getLookAndFeel().getClass();
         if (uiClass.getPackage().equals(DesktopProperty.class.getPackage())) {
             XPStyle.invalidateStyle();
         }

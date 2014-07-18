@@ -146,7 +146,7 @@ public class SnmpInt extends SnmpValue {
      * @return The <CODE>Integer</CODE> representation of the value.
      */
     public Integer toInteger() {
-        return new Integer((int)value) ;
+        return (int)value;
     }
 
     /**

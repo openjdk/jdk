@@ -334,6 +334,8 @@ public abstract class AtomicReferenceFieldUpdater<T,V> {
 
             if (vclass != fieldClass)
                 throw new ClassCastException();
+            if (vclass.isPrimitive())
+                throw new IllegalArgumentException("Must be reference type");
 
             if (!Modifier.isVolatile(modifiers))
                 throw new IllegalArgumentException("Must be volatile type");

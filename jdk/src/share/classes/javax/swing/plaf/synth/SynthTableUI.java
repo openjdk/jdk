@@ -120,7 +120,7 @@ public class SynthTableUI extends BasicTableUI
         updateStyle(table);
     }
 
-    private TableCellRenderer installRendererIfPossible(Class objectClass,
+    private TableCellRenderer installRendererIfPossible(Class<?> objectClass,
                                      TableCellRenderer renderer) {
         TableCellRenderer currentRenderer = table.getDefaultRenderer(
                                  objectClass);
@@ -792,7 +792,7 @@ public class SynthTableUI extends BasicTableUI
             return this;
         }
 
-        private void configureValue(Object value, Class columnClass) {
+        private void configureValue(Object value, Class<?> columnClass) {
             if (columnClass == Object.class || columnClass == null) {
                 setHorizontalAlignment(JLabel.LEADING);
             } else if (columnClass == Float.class || columnClass == Double.class) {

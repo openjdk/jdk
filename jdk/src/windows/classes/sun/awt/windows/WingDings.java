@@ -29,7 +29,7 @@ import java.nio.ByteBuffer;
 import java.nio.CharBuffer;
 import java.nio.charset.*;
 
-final class WingDings extends Charset {
+public final class WingDings extends Charset {
     public WingDings () {
         super("WingDings", null);
     }

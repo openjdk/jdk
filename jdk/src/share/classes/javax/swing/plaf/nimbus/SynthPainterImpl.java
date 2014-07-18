@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ class SynthPainterImpl extends SynthPainter {
      * position and size. Handles if g is a non 2D Graphics by painting via a
      * BufferedImage.
      */
-    private void paint(Painter p, SynthContext ctx, Graphics g, int x, int y,
+    private void paint(Painter<Object> p, SynthContext ctx, Graphics g, int x, int y,
                        int w, int h, AffineTransform transform) {
         if (p != null) {
             if (g instanceof Graphics2D){
@@ -96,7 +96,8 @@ class SynthPainterImpl extends SynthPainter {
         Component c = ctx.getComponent();
         Color bg = (c != null) ? c.getBackground() : null;
         if (bg == null || bg.getAlpha() > 0){
-            Painter backgroundPainter = style.getBackgroundPainter(ctx);
+
+            Painter<Object> backgroundPainter = style.getBackgroundPainter(ctx);
             if (backgroundPainter != null) {
                 paint(backgroundPainter, ctx, g, x, y, w, h,transform);
             }
@@ -105,7 +106,7 @@ class SynthPainterImpl extends SynthPainter {
 
     private void paintForeground(SynthContext ctx, Graphics g, int x, int y,
                                  int w, int h, AffineTransform transform) {
-        Painter foregroundPainter = style.getForegroundPainter(ctx);
+        Painter<Object> foregroundPainter = style.getForegroundPainter(ctx);
         if (foregroundPainter != null) {
             paint(foregroundPainter, ctx, g, x, y, w, h,transform);
         }
@@ -113,7 +114,7 @@ class SynthPainterImpl extends SynthPainter {
 
     private void paintBorder(SynthContext ctx, Graphics g, int x, int y, int w,
                              int h, AffineTransform transform) {
-        Painter borderPainter = style.getBorderPainter(ctx);
+        Painter<Object> borderPainter = style.getBorderPainter(ctx);
         if (borderPainter != null) {
             paint(borderPainter, ctx, g, x, y, w, h,transform);
         }

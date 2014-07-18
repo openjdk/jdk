@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -210,7 +210,8 @@ class MetalUtils {
      */
     static boolean drawGradient(Component c, Graphics g, String key,
                                 int x, int y, int w, int h, boolean vertical) {
-        java.util.List gradient = (java.util.List)UIManager.get(key);
+        @SuppressWarnings("unchecked")
+        java.util.List<?> gradient = (java.util.List)UIManager.get(key);
         if (gradient == null || !(g instanceof Graphics2D)) {
             return false;
         }
@@ -251,7 +252,7 @@ class MetalUtils {
         }
 
         public void paint(Component c, Graphics2D g,
-                          java.util.List gradient, int x, int y, int w,
+                          java.util.List<?> gradient, int x, int y, int w,
                           int h, boolean isVertical) {
             int imageWidth;
             int imageHeight;
@@ -274,7 +275,8 @@ class MetalUtils {
         protected void paintToImage(Component c, Image image, Graphics g,
                                     int w, int h, Object[] args) {
             Graphics2D g2 = (Graphics2D)g;
-            java.util.List gradient = (java.util.List)args[0];
+            @SuppressWarnings("unchecked")
+            java.util.List<?> gradient = (java.util.List)args[0];
             boolean isVertical = ((Boolean)args[1]).booleanValue();
             // Render to the VolatileImage
             if (isVertical) {

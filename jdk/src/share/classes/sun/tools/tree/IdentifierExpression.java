@@ -452,7 +452,7 @@ class IdentifierExpression extends Expression {
     }
     void codeLoad(Environment env, Context ctx, Assembler asm) {
         asm.add(where, opc_iload + type.getTypeCodeOffset(),
-                new Integer(((LocalMember)field).number));
+                ((LocalMember)field).number);
     }
     void codeStore(Environment env, Context ctx, Assembler asm) {
         LocalMember local = (LocalMember)field;

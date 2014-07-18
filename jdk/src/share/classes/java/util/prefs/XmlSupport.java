@@ -262,7 +262,7 @@ class XmlSupport {
         try {
             TransformerFactory tf = TransformerFactory.newInstance();
             try {
-                tf.setAttribute("indent-number", new Integer(2));
+                tf.setAttribute("indent-number", 2);
             } catch (IllegalArgumentException iae) {
                 //Ignore the IAE. Should not fail the writeout even the
                 //transformer provider does not support "indent-number".
