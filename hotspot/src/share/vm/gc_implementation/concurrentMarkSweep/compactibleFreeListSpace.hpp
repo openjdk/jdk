@@ -70,7 +70,6 @@ class LinearAllocBlock VALUE_OBJ_CLASS_SPEC {
 class CompactibleFreeListSpace: public CompactibleSpace {
   friend class VMStructs;
   friend class ConcurrentMarkSweepGeneration;
-  friend class ASConcurrentMarkSweepGeneration;
   friend class CMSCollector;
   // Local alloc buffer for promotion into this space.
   friend class CFLS_LAB;

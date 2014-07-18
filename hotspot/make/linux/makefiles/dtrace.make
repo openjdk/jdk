@@ -40,7 +40,14 @@ else
 ifneq ($(ALT_SDT_H),)
   SDT_H_FILE = $(ALT_SDT_H)
 else
-  SDT_H_FILE = /usr/include/sys/sdt.h
+  ifeq ($(USE_CLANG), true)
+    # Clang doesn't support the -print-sysroot option and there is no known equivalent
+    # option, so fall back to using / as sysroot
+    SDT_SYSROOT=
+  else
+    SDT_SYSROOT=$(shell $(CXX) -print-sysroot)
+  endif
+  SDT_H_FILE = $(SDT_SYSROOT)/usr/include/sys/sdt.h
 endif
 
 DTRACE_ENABLED = $(shell test -f $(SDT_H_FILE) && echo $(SDT_H_FILE))

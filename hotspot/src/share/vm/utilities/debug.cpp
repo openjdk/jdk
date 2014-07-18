@@ -42,6 +42,7 @@
 #include "runtime/atomic.inline.hpp"
 #include "runtime/frame.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
@@ -52,18 +53,6 @@
 #include "utilities/events.hpp"
 #include "utilities/top.hpp"
 #include "utilities/vmError.hpp"
-#ifdef TARGET_OS_FAMILY_linux
-# include "os_linux.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_solaris
-# include "os_solaris.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_windows
-# include "os_windows.inline.hpp"
-#endif
-#ifdef TARGET_OS_FAMILY_bsd
-# include "os_bsd.inline.hpp"
-#endif
 
 #ifndef ASSERT
 #  ifdef _DEBUG

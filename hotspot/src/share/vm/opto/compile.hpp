@@ -852,8 +852,8 @@ class Compile : public Phase {
 
   // Helper functions to identify inlining potential at call-site
   ciMethod* optimize_virtual_call(ciMethod* caller, int bci, ciInstanceKlass* klass,
-                                  ciMethod* callee, const TypeOopPtr* receiver_type,
-                                  bool is_virtual,
+                                  ciKlass* holder, ciMethod* callee,
+                                  const TypeOopPtr* receiver_type, bool is_virtual,
                                   bool &call_does_dispatch, int &vtable_index);
   ciMethod* optimize_inlining(ciMethod* caller, int bci, ciInstanceKlass* klass,
                               ciMethod* callee, const TypeOopPtr* receiver_type);
