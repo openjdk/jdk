@@ -1148,7 +1148,7 @@ public class BasicTreeUI extends TreeUI
         Insets           insets = tree.getInsets();
         TreePath         initialPath = getClosestPathForLocation
                                        (tree, 0, paintBounds.y);
-        Enumeration      paintingEnumerator = treeState.getVisiblePathsFrom
+        Enumeration<?>   paintingEnumerator = treeState.getVisiblePathsFrom
                                               (initialPath);
         int              row = treeState.getRowForPath(initialPath);
         int              endY = paintBounds.y + paintBounds.height;
@@ -1694,7 +1694,7 @@ public class BasicTreeUI extends TreeUI
         if(treeState != null) {
             treeState.setExpandedState(path, true);
 
-            Enumeration   descendants = tree.getExpandedDescendants(path);
+            Enumeration<?> descendants = tree.getExpandedDescendants(path);
 
             if(descendants != null) {
                 while(descendants.hasMoreElements()) {

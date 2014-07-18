@@ -99,7 +99,7 @@ class ObjectQuery extends ClassQuery {
         final JavaField[] fields = obj.getClazz().getFieldsForInstance();
         Integer[] hack = new Integer[things.length];
         for (int i = 0; i < things.length; i++) {
-            hack[i] = new Integer(i);
+            hack[i] = i;
         }
         ArraySorter.sort(hack, new Comparer() {
             public int compare(Object lhs, Object rhs) {

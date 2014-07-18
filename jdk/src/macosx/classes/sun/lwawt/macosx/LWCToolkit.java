@@ -44,6 +44,7 @@ import java.net.MalformedURLException;
 
 import sun.awt.*;
 import sun.awt.datatransfer.DataTransferer;
+import sun.awt.util.ThreadGroupUtils;
 import sun.java2d.opengl.OGLRenderQueue;
 import sun.lwawt.*;
 import sun.lwawt.LWWindowPeer.PeerType;
@@ -70,7 +71,7 @@ public final class LWCToolkit extends LWToolkit {
     private static final int BUTTONS = 5;
 
     private static native void initIDs();
-
+    private static native void initAppkit(ThreadGroup appKitThreadGroup, boolean headless);
     private static CInputMethodDescriptor sInputMethodDescriptor;
 
     static {
@@ -119,6 +120,7 @@ public final class LWCToolkit extends LWToolkit {
         areExtraMouseButtonsEnabled = Boolean.parseBoolean(System.getProperty("sun.awt.enableExtraMouseButtons", "true"));
         //set system property if not yet assigned
         System.setProperty("sun.awt.enableExtraMouseButtons", ""+areExtraMouseButtonsEnabled);
+        initAppkit(ThreadGroupUtils.getRootThreadGroup(), GraphicsEnvironment.isHeadless());
     }
 
     /*
@@ -166,7 +168,7 @@ public final class LWCToolkit extends LWToolkit {
     // This is only called from native code.
     static void systemColorsChanged() {
         EventQueue.invokeLater(() -> {
-            AccessController.doPrivileged ((PrivilegedAction<Object>) () -> {
+            AccessController.doPrivileged( (PrivilegedAction<Object>) () -> {
                 AWTAccessor.getSystemColorAccessor().updateSystemColors();
                 return null;
             });
@@ -789,6 +791,13 @@ public final class LWCToolkit extends LWToolkit {
      * Returns true if the application (one of its windows) owns keyboard focus.
      */
     native boolean isApplicationActive();
+
+    /**
+     * Returns true if AWT toolkit is embedded, false otherwise.
+     *
+     * @return true if AWT toolkit is embedded, false otherwise
+     */
+    public static native boolean isEmbedded();
 
     /************************
      * Native methods section

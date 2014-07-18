@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 1999, 2007, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,13 +21,17 @@
  * questions.
  */
 
-package sun.awt;
+public class RedefineMethodDelInvokeTarget {
+    public void test() {
+        myMethod0();
+    }
 
-/**
- * Interface for identifying and casting toolkits that support
- * WindowClosingListeners.
- */
-public interface WindowClosingSupport {
-    WindowClosingListener getWindowClosingListener();
-    void setWindowClosingListener(WindowClosingListener wcl);
+    public static void myMethod0() {
+        System.out.println("Target 1: myMethod0: Calling myMethod1()");
+        myMethod1();
+    }
+
+    private static void myMethod1() {
+        System.out.println("Target 1: myMethod1");
+    }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ public abstract class ListUI extends ComponentUI
      * @return the cell index closest to the given location, or {@code -1}
      * @throws NullPointerException if {@code location} is null
      */
-    public abstract int locationToIndex(JList list, Point location);
+    public abstract int locationToIndex(JList<?> list, Point location);
 
 
     /**
@@ -62,7 +62,7 @@ public abstract class ListUI extends ComponentUI
      * @param index the cell index
      * @return the origin of the cell, or {@code null}
      */
-    public abstract Point indexToLocation(JList list, int index);
+    public abstract Point indexToLocation(JList<?> list, int index);
 
 
     /**
@@ -80,5 +80,5 @@ public abstract class ListUI extends ComponentUI
      * @param index2 the second index in the range
      * @return the bounding rectangle for the range of cells, or {@code null}
      */
-    public abstract Rectangle getCellBounds(JList list, int index1, int index2);
+    public abstract Rectangle getCellBounds(JList<?> list, int index1, int index2);
 }

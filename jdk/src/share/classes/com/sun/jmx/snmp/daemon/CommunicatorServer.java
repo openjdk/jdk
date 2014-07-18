@@ -1272,8 +1272,8 @@ public abstract class CommunicatorServer
                          message,                    // message
                          "State",                    // attribute name
                          "int",                      // attribute type
-                         new Integer(oldState),      // old value
-                         new Integer(newState) );    // new value
+                         oldState,                   // old value
+                         newState );                 // new value
         if (SNMP_ADAPTOR_LOGGER.isLoggable(Level.FINEST)) {
             SNMP_ADAPTOR_LOGGER.logp(Level.FINEST, dbgTag,
                 "sendStateChangeNotification","Sending AttributeChangeNotification #"

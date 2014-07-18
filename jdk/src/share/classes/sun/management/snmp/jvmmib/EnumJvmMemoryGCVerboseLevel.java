@@ -49,10 +49,10 @@ public class EnumJvmMemoryGCVerboseLevel extends Enumerated implements Serializa
     protected static Hashtable<String, Integer> stringTable =
             new Hashtable<>();
     static  {
-        intTable.put(new Integer(2), "verbose");
-        intTable.put(new Integer(1), "silent");
-        stringTable.put("verbose", new Integer(2));
-        stringTable.put("silent", new Integer(1));
+        intTable.put(2, "verbose");
+        intTable.put(1, "silent");
+        stringTable.put("verbose", 2);
+        stringTable.put("silent", 1);
     }
 
     public EnumJvmMemoryGCVerboseLevel(int valueIndex) throws IllegalArgumentException {

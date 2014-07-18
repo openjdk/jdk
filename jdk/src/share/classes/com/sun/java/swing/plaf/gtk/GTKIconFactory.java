@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class GTKIconFactory {
 
     private static class DelegatingIcon extends SynthIcon implements
                                    UIResource {
-        private static final Class[] PARAM_TYPES = new Class[] {
+        private static final Class<?>[] PARAM_TYPES = new Class<?>[] {
             SynthContext.class, Graphics.class, int.class,
             int.class, int.class, int.class, int.class
         };
@@ -190,7 +190,7 @@ class GTKIconFactory {
             return (Method)method;
         }
 
-        protected Class[] getMethodParamTypes() {
+        protected Class<?>[] getMethodParamTypes() {
             return PARAM_TYPES;
         }
 
@@ -262,7 +262,7 @@ class GTKIconFactory {
     // we create a unique icon per ToolBar and lookup the style for the
     // HandleBox.
     private static class ToolBarHandleIcon extends DelegatingIcon {
-        private static final Class[] PARAM_TYPES = new Class[] {
+        private static final Class<?>[] PARAM_TYPES = new Class<?>[] {
             SynthContext.class, Graphics.class, int.class,
             int.class, int.class, int.class, int.class, Orientation.class,
         };
@@ -273,7 +273,7 @@ class GTKIconFactory {
             super(TOOL_BAR_HANDLE_ICON);
         }
 
-        protected Class[] getMethodParamTypes() {
+        protected Class<?>[] getMethodParamTypes() {
             return PARAM_TYPES;
         }
 
@@ -323,7 +323,7 @@ class GTKIconFactory {
     }
 
     private static class MenuArrowIcon extends DelegatingIcon {
-        private static final Class[] PARAM_TYPES = new Class[] {
+        private static final Class<?>[] PARAM_TYPES = new Class<?>[] {
             SynthContext.class, Graphics.class, int.class,
             int.class, int.class, int.class, int.class, ArrowType.class,
         };
@@ -332,7 +332,7 @@ class GTKIconFactory {
             super(MENU_ARROW_ICON);
         }
 
-        protected Class[] getMethodParamTypes() {
+        protected Class<?>[] getMethodParamTypes() {
             return PARAM_TYPES;
         }
 

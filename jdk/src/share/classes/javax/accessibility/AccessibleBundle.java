@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,7 +49,7 @@ import java.util.ResourceBundle;
  */
 public abstract class AccessibleBundle {
 
-    private static Hashtable table = new Hashtable();
+    private static Hashtable<Locale, Hashtable<String, Object>> table = new Hashtable<>();
     private final String defaultResourceBundleName
         = "com.sun.accessibility.internal.resources.accessibility";
 
@@ -85,14 +85,12 @@ public abstract class AccessibleBundle {
         loadResourceBundle(resourceBundleName, locale);
 
         // returns the localized string
-        Object o = table.get(locale);
-        if (o != null && o instanceof Hashtable) {
-                Hashtable resourceTable = (Hashtable) o;
-                o = resourceTable.get(key);
-
-                if (o != null && o instanceof String) {
-                    return (String)o;
-                }
+        Hashtable<String, Object> ht = table.get(locale);
+        if (ht != null) {
+            Object o = ht.get(key);
+            if (o != null && o instanceof String) {
+                return (String)o;
+            }
         }
         return key;
     }
@@ -134,13 +132,13 @@ public abstract class AccessibleBundle {
         if (! table.contains(locale)) {
 
             try {
-                Hashtable resourceTable = new Hashtable();
+                Hashtable<String, Object> resourceTable = new Hashtable<>();
 
                 ResourceBundle bundle = ResourceBundle.getBundle(resourceBundleName, locale);
 
-                Enumeration iter = bundle.getKeys();
+                Enumeration<String> iter = bundle.getKeys();
                 while(iter.hasMoreElements()) {
-                    String key = (String)iter.nextElement();
+                    String key = iter.nextElement();
                     resourceTable.put(key, bundle.getObject(key));
                 }
 

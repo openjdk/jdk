@@ -349,7 +349,8 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
         // create array of dimensions - (num_choices * 6)
         //to cover length & height
         DPRINTF( "CUPSfuncs::option->num_choices %d\n", option->num_choices)
-        sizeArray = (*env)->NewFloatArray(env, option->num_choices*6);
+        // +1 is for storing the default media index
+        sizeArray = (*env)->NewFloatArray(env, option->num_choices*6+1);
         if (sizeArray == NULL) {
             unlink(filename);
             j2d_ppdClose(ppd);
@@ -369,6 +370,10 @@ Java_sun_print_CUPSPrinter_getPageSizes(JNIEnv *env,
         }
         for (i = 0; i<option->num_choices; i++) {
             choice = (option->choices)+i;
+            // get the index of the default page
+            if (!strcmp(choice->choice, option->defchoice)) {
+                dims[option->num_choices*6] = (float)i;
+            }
             size = j2d_ppdPageSize(ppd, choice->choice);
             if (size != NULL) {
                 // paper width and height

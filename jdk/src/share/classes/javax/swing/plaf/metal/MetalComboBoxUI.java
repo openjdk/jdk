@@ -391,7 +391,7 @@ public class MetalComboBoxUI extends BasicComboBoxUI {
          *
          * @param cBox an instance of {@code JComboBox}
          */
-        public MetalComboPopup( JComboBox cBox) {
+        public MetalComboPopup( JComboBox<Object> cBox) {
             super( cBox );
         }
 
