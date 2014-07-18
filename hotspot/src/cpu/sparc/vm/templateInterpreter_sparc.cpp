@@ -1786,7 +1786,7 @@ void TemplateInterpreterGenerator::generate_throw_exception() {
   __ verify_thread();
   // expression stack is undefined here
   // O0: exception, i.e. Oexception
-  // Lbcp: exception bcx
+  // Lbcp: exception bcp
   __ verify_oop(Oexception);
 
 

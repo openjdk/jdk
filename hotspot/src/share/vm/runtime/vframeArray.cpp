@@ -297,9 +297,9 @@ void vframeArrayElement::unpack_on_stack(int caller_actual_parameters,
     src->lock()->move_to(src->obj(), top->lock());
   }
   if (ProfileInterpreter) {
-    iframe()->interpreter_frame_set_mdx(0); // clear out the mdp.
+    iframe()->interpreter_frame_set_mdp(0); // clear out the mdp.
   }
-  iframe()->interpreter_frame_set_bcx((intptr_t)bcp); // cannot use bcp because frame is not initialized yet
+  iframe()->interpreter_frame_set_bcp(bcp);
   if (ProfileInterpreter) {
     MethodData* mdo = method()->method_data();
     if (mdo != NULL) {

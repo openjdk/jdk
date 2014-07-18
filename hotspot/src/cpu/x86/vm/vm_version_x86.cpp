@@ -394,6 +394,8 @@ void VM_Version::get_processor_features() {
   _stepping = 0;
   _cpuFeatures = 0;
   _logical_processors_per_package = 1;
+  // i486 internal cache is both I&D and has a 16-byte line size
+  _L1_data_cache_line_size = 16;
 
   if (!Use486InstrsOnly) {
     // Get raw processor info
@@ -412,6 +414,7 @@ void VM_Version::get_processor_features() {
       // Logical processors are only available on P4s and above,
       // and only if hyperthreading is available.
       _logical_processors_per_package = logical_processor_count();
+      _L1_data_cache_line_size = L1_line_size();
     }
   }
 
@@ -924,6 +927,7 @@ void VM_Version::get_processor_features() {
   if (PrintMiscellaneous && Verbose) {
     tty->print_cr("Logical CPUs per core: %u",
                   logical_processors_per_package());
+    tty->print_cr("L1 data cache line size: %u", L1_data_cache_line_size());
     tty->print("UseSSE=%d", (int) UseSSE);
     if (UseAVX > 0) {
       tty->print("  UseAVX=%d", (int) UseAVX);

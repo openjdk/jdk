@@ -1416,10 +1416,6 @@ class JavaThread: public Thread {
   // RedefineClasses Support
   void metadata_do(void f(Metadata*));
 
-  // Memory management operations
-  void gc_epilogue();
-  void gc_prologue();
-
   // Misc. operations
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st) const;
@@ -1899,8 +1895,6 @@ class Threads: AllStatic {
   // RedefineClasses support
   static void metadata_do(void f(Metadata*));
 
-  static void gc_epilogue();
-  static void gc_prologue();
 #ifdef ASSERT
   static bool is_vm_complete() { return _vm_complete; }
 #endif

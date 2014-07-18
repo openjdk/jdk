@@ -180,7 +180,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     size_policy->major_collection_begin();
 
     CodeCache::gc_prologue();
-    Threads::gc_prologue();
     BiasedLocking::preserve_marks();
 
     // Capture heap size before collection for printing.
@@ -251,7 +250,6 @@ bool PSMarkSweep::invoke_no_policy(bool clear_all_softrefs) {
     MetaspaceAux::verify_metrics();
 
     BiasedLocking::restore_marks();
-    Threads::gc_epilogue();
     CodeCache::gc_epilogue();
     JvmtiExport::gc_epilogue();
 
