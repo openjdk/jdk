@@ -31,10 +31,10 @@
 
 // This test requires special hardware.
 
-import java.io.*;
-import java.util.*;
-
-import javax.smartcardio.*;
+import java.util.List;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CardTerminals;
+import javax.smartcardio.TerminalFactory;
 import static javax.smartcardio.CardTerminals.State.*;
 
 public class TestMultiplePresent {
