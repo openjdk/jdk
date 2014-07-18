@@ -52,7 +52,7 @@
 #ifndef CC_INTERP
 
 const int method_offset = frame::interpreter_frame_method_offset * wordSize;
-const int bci_offset    = frame::interpreter_frame_bcx_offset    * wordSize;
+const int bcp_offset    = frame::interpreter_frame_bcp_offset    * wordSize;
 const int locals_offset = frame::interpreter_frame_locals_offset * wordSize;
 
 //-----------------------------------------------------------------------------

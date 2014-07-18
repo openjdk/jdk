@@ -169,7 +169,7 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return &(get_interpreterState()->_locals);
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   assert(is_interpreted_frame(), "must be interpreted");
   return (intptr_t*) &(get_interpreterState()->_bcp);
 }
@@ -189,7 +189,7 @@ inline Method** frame::interpreter_frame_method_addr() const {
   return &(get_interpreterState()->_method);
 }
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   assert(is_interpreted_frame(), "must be interpreted");
   return (intptr_t*) &(get_interpreterState()->_mdx);
 }
@@ -211,13 +211,13 @@ inline intptr_t* frame::interpreter_frame_last_sp() const {
   return *(intptr_t**)addr_at(interpreter_frame_last_sp_offset);
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
-  return (intptr_t*)addr_at(interpreter_frame_bcx_offset);
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
+  return (intptr_t*)addr_at(interpreter_frame_bcp_offset);
 }
 
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
-  return (intptr_t*)addr_at(interpreter_frame_mdx_offset);
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
+  return (intptr_t*)addr_at(interpreter_frame_mdp_offset);
 }
 
 

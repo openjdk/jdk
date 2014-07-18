@@ -425,7 +425,7 @@ void ErrorContext::location_details(outputStream* ss, const Method* method) cons
   if (_bci != -1 && method != NULL) {
     streamIndentor si(ss);
     const char* bytecode_name = "<invalid>";
-    if (method->validate_bci_from_bcx(_bci) != -1) {
+    if (method->validate_bci(_bci) != -1) {
       Bytecodes::Code code = Bytecodes::code_or_bp_at(method->bcp_from(_bci));
       if (Bytecodes::is_defined(code)) {
           bytecode_name = Bytecodes::name(code);

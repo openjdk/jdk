@@ -2649,20 +2649,6 @@ void JavaThread::deoptimized_wrt_marked_nmethods() {
 }
 
 
-// GC support
-static void frame_gc_epilogue(frame* f, const RegisterMap* map) { f->gc_epilogue(); }
-
-void JavaThread::gc_epilogue() {
-  frames_do(frame_gc_epilogue);
-}
-
-
-static void frame_gc_prologue(frame* f, const RegisterMap* map) { f->gc_prologue(); }
-
-void JavaThread::gc_prologue() {
-  frames_do(frame_gc_prologue);
-}
-
 // If the caller is a NamedThread, then remember, in the current scope,
 // the given JavaThread in its _processed_thread field.
 class RememberProcessedThread: public StackObj {
@@ -4148,18 +4134,6 @@ void Threads::nmethods_do(CodeBlobClosure* cf) {
 void Threads::metadata_do(void f(Metadata*)) {
   ALL_JAVA_THREADS(p) {
     p->metadata_do(f);
-  }
-}
-
-void Threads::gc_epilogue() {
-  ALL_JAVA_THREADS(p) {
-    p->gc_epilogue();
-  }
-}
-
-void Threads::gc_prologue() {
-  ALL_JAVA_THREADS(p) {
-    p->gc_prologue();
   }
 }
 

@@ -99,12 +99,12 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) &istate->_locals;
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   interpreterState istate = get_interpreterState();
   return (intptr_t*) &istate->_bcp;
 }
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   interpreterState istate = get_interpreterState();
   return (intptr_t*) &istate->_mdx;
 }
@@ -166,12 +166,11 @@ inline intptr_t** frame::interpreter_frame_locals_addr() const {
   return (intptr_t**) sp_addr_at( Llocals->sp_offset_in_saved_window());
 }
 
-inline intptr_t* frame::interpreter_frame_bcx_addr() const {
-  // %%%%% reinterpreting Lbcp as a bcx
+inline intptr_t* frame::interpreter_frame_bcp_addr() const {
   return (intptr_t*) sp_addr_at( Lbcp->sp_offset_in_saved_window());
 }
 
-inline intptr_t* frame::interpreter_frame_mdx_addr() const {
+inline intptr_t* frame::interpreter_frame_mdp_addr() const {
   // %%%%% reinterpreting ImethodDataPtr as a mdx
   return (intptr_t*) sp_addr_at( ImethodDataPtr->sp_offset_in_saved_window());
 }

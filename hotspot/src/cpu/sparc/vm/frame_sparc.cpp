@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -594,17 +594,6 @@ bool frame::interpreter_frame_equals_unpacked_fp(intptr_t* fp) {
   return this->fp() == fp;
 }
 
-
-void frame::pd_gc_epilog() {
-  if (is_interpreted_frame()) {
-    // set constant pool cache entry for interpreter
-    Method* m = interpreter_frame_method();
-
-    *interpreter_frame_cpoolcache_addr() = m->constants()->cache();
-  }
-}
-
-
 bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
 #ifdef CC_INTERP
   // Is there anything to do?
@@ -642,10 +631,10 @@ bool frame::is_interpreted_frame_valid(JavaThread* thread) const {
     return false;
   }
 
-  // validate bci/bcx
+  // validate bci/bcp
 
-  intptr_t  bcx    = interpreter_frame_bcx();
-  if (m->validate_bci_from_bcx(bcx) < 0) {
+  address bcp = interpreter_frame_bcp();
+  if (m->validate_bci_from_bcp(bcp) < 0) {
     return false;
   }
 
