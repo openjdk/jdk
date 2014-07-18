@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -433,7 +433,8 @@ gboolean gtk2_check_version()
             result = TRUE;
         }
 
-        dlclose(lib);
+        // 8048289: workaround for https://bugzilla.gnome.org/show_bug.cgi?id=733065
+        // dlclose(lib);
 
         return result;
     }
