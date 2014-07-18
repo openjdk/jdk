@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,36 +22,19 @@
  */
 
 /**
- * JDK-8015969: Needs to enforce and document that global "context" and "engine" can't be modified when running via jsr223
+ * JDK-8050432: javax.script.filename variable should not be enumerable with nashorn engine's ENGINE_SCOPE bindings
  *
  * @test
- * @option -scripting
  * @run
  */
 
+var ScriptEngine = javax.script.ScriptEngine;
 var m = new javax.script.ScriptEngineManager();
-var e = m.getEngineByName("nashorn");
+var engine = m.getEngineByName("nashorn");
 
-e.eval(<<EOF
-
-'use strict';
-
-try {
-    delete context;
-    print("FAILED!! context delete should have thrown error");
-} catch (e) {
-    if (! (e instanceof SyntaxError)) {
-        print("SyntaxError expected but got " + e);
-    }
+engine.put(ScriptEngine.FILENAME, "foo");
+var desc = engine.eval("Object.getOwnPropertyDescriptor(this, '"
+   + ScriptEngine.FILENAME + "')");
+if (desc.enumerable) {
+    fail(ScriptEngine.FILENAME + " is enumerable");
 }
-
-try {
-    delete engine;
-    print("FAILED!! engine delete should have thrown error");
-} catch (e) {
-    if (! (e instanceof SyntaxError)) {
-        print("SyntaxError expected but got " + e);
-    }
-}
-
-EOF);
