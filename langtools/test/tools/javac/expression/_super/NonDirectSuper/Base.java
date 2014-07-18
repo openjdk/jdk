@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,14 +21,25 @@
  * questions.
  */
 
-/*
- * @test
- * @bug 8035063
- * @summary Tests the preparation of javac-arguments.
- * @run main JavacOptionPrepWrapper
- */
-public class JavacOptionPrepWrapper {
-    public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("JavacOptionPrep", args);
+package base;
+
+public class Base extends PackagePrivate { }
+
+class PackagePrivate {
+    protected int refTobaseBase() {
+        return 0;
     }
+    protected int refTotestOtherPackageTest() {
+        return 0;
+    }
+    protected int refTotestTarget11() {
+        return 0;
+    }
+    protected int refTotestCurPackagePrivateExt11() {
+        return 0;
+    }
+    protected int refTobaseBase;
+    protected int refTotestOtherPackageTest;
+    protected int refTotestTarget11;
+    protected int refTotestCurPackagePrivateExt11;
 }
