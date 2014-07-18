@@ -66,19 +66,15 @@ class InterpreterOopMap: ResourceObj {
 
  public:
   enum {
-    N                = 2,                // the number of words reserved
+    N                = 4,                // the number of words reserved
                                          // for inlined mask storage
     small_mask_limit = N * BitsPerWord,  // the maximum number of bits
                                          // available for small masks,
                                          // small_mask_limit can be set to 0
                                          // for testing bit_mask allocation
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
     bits_per_entry   = 2,
     dead_bit_number  = 1,
-#else
-    bits_per_entry   = 1,
-#endif
     oop_bit_number   = 0
   };
 
@@ -119,10 +115,6 @@ class InterpreterOopMap: ResourceObj {
 
   void set_expression_stack_size(int sz)         { _expression_stack_size = sz; }
 
-#ifdef ENABLE_ZAP_DEAD_LOCALS
-  bool is_dead(int offset) const                 { return (entry_at(offset) & (1 << dead_bit_number)) != 0; }
-#endif
-
   // Lookup
   bool match(methodHandle method, int bci) const { return _method == method() && _bci == bci; }
   bool is_empty() const;
@@ -144,6 +136,7 @@ class InterpreterOopMap: ResourceObj {
   void print() const;
 
   int number_of_entries() const                  { return mask_size() / bits_per_entry; }
+  bool is_dead(int offset) const                 { return (entry_at(offset) & (1 << dead_bit_number)) != 0; }
   bool is_oop (int offset) const                 { return (entry_at(offset) & (1 << oop_bit_number )) != 0; }
 
   int expression_stack_size() const              { return _expression_stack_size; }
