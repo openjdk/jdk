@@ -199,8 +199,7 @@ compact2_minimal = \
 
 # Tests that require compact2 API's
 #
-needs_compact2 = \
-  compiler/6589834/Test_ia32.java
+needs_compact2 =
 
 # All tests that run on the most minimal configuration: Minimal VM on Compact 1
 compact1_minimal = \
