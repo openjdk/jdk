@@ -2132,6 +2132,7 @@ void CompileBroker::set_last_compile(CompilerThread* thread, methodHandle method
   ResourceMark rm;
   char* method_name = method->name()->as_C_string();
   strncpy(_last_method_compiled, method_name, CompileBroker::name_buffer_length);
+  _last_method_compiled[CompileBroker::name_buffer_length - 1] = '\0'; // ensure null terminated
   char current_method[CompilerCounters::cmname_buffer_length];
   size_t maxLen = CompilerCounters::cmname_buffer_length;
 
