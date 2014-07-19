@@ -1,6 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
- * Copyright 2012, 2013 SAP AG. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,26 +22,28 @@
  *
  */
 
-#ifndef CPU_PPC_VM_VMREG_PPC_INLINE_HPP
-#define CPU_PPC_VM_VMREG_PPC_INLINE_HPP
+#ifndef SHARE_VM_INTERPRETER_INTERP_MASM_HPP
+#define SHARE_VM_INTERPRETER_INTERP_MASM_HPP
 
-inline VMReg RegisterImpl::as_VMReg() {
-  if (this == noreg) return VMRegImpl::Bad();
-  return VMRegImpl::as_VMReg(encoding() << 1);
-}
+#include "asm/macroAssembler.hpp"
 
-// Since we don't have two halfs here, don't multiply by 2.
-inline VMReg ConditionRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_fpr);
-}
+#ifdef TARGET_ARCH_x86
+# include "interp_masm_x86.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_sparc
+# include "interp_masm_sparc.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_zero
+# include "interp_masm_zero.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_arm
+# include "interp_masm_arm.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_32
+# include "interp_masm_ppc_32.hpp"
+#endif
+#ifdef TARGET_ARCH_MODEL_ppc_64
+# include "interp_masm_ppc_64.hpp"
+#endif
 
-inline VMReg FloatRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding() << 1) + ConcreteRegisterImpl::max_gpr);
-}
-
-inline VMReg SpecialRegisterImpl::as_VMReg() {
-  return VMRegImpl::as_VMReg((encoding()) + ConcreteRegisterImpl::max_cnd);
-}
-
-
-#endif // CPU_PPC_VM_VMREG_PPC_INLINE_HPP
+#endif // SHARE_VM_INTERPRETER_INTERP_MASM_HPP

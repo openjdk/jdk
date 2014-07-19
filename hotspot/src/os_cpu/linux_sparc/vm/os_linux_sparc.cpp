@@ -142,12 +142,10 @@ frame os::fetch_frame_from_context(void* ucVoid) {
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
+  return frame(fr->sender_sp(), frame::unpatchable, fr->sender_pc());
 }
 
 frame os::current_frame() {
-  fprintf(stderr, "current_frame()");
-
   intptr_t* sp = StubRoutines::Sparc::flush_callers_register_windows_func()();
   frame myframe(sp, frame::unpatchable,
                 CAST_FROM_FN_PTR(address, os::current_frame));

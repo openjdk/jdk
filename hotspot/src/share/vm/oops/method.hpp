@@ -649,7 +649,8 @@ class Method : public Metadata {
   // Returns the byte code index from the byte code pointer
   int     bci_from(address bcp) const;
   address bcp_from(int     bci) const;
-  int validate_bci_from_bcx(intptr_t bcx) const;
+  int validate_bci_from_bcp(address bcp) const;
+  int validate_bci(int bci) const;
 
   // Returns the line number for a bci if debugging information for the method is prowided,
   // -1 is returned otherwise.
