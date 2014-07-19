@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,6 +134,7 @@ void StackMapTable::check_jump_target(
   }
   // check if uninitialized objects exist on backward branches
   check_new_object(frame, target, CHECK_VERIFY(frame->verifier()));
+  frame->verifier()->update_furthest_jump(target);
 }
 
 void StackMapTable::check_new_object(

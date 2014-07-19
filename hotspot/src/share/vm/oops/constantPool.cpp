@@ -520,13 +520,9 @@ bool ConstantPool::resolve_class_constants(TRAPS) {
 
 Symbol* ConstantPool::exception_message(constantPoolHandle this_cp, int which, constantTag tag, oop pending_exception) {
   // Dig out the detailed message to reuse if possible
-  Symbol* message = NULL;
-  oop detailed_message = java_lang_Throwable::message(pending_exception);
-  if (detailed_message != NULL) {
-     message = java_lang_String::as_symbol_or_null(detailed_message);
-     if (message != NULL) {
-       return message;
-     }
+  Symbol* message = java_lang_Throwable::detail_message(pending_exception);
+  if (message != NULL) {
+    return message;
   }
 
   // Return specific message for the tag
