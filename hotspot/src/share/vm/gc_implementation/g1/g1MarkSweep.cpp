@@ -76,7 +76,6 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   // When collecting the permanent generation Method*s may be moving,
   // so we either have to flush all bcp data or convert it into bci.
   CodeCache::gc_prologue();
-  Threads::gc_prologue();
 
   bool marked_for_unloading = false;
 
@@ -106,7 +105,6 @@ void G1MarkSweep::invoke_at_safepoint(ReferenceProcessor* rp,
   //  Universe::set_heap_capacity_at_last_gc(Universe::heap()->capacity());
   //  Universe::set_heap_used_at_last_gc(Universe::heap()->used());
 
-  Threads::gc_epilogue();
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 

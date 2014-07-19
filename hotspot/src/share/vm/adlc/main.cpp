@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -213,7 +213,8 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "memory/allocation.inline.hpp");
   AD.addInclude(AD._CPP_file, "asm/macroAssembler.inline.hpp");
   AD.addInclude(AD._CPP_file, "code/compiledIC.hpp");
-  AD.addInclude(AD._CPP_file, "code/vmreg.hpp");
+  AD.addInclude(AD._CPP_file, "code/nativeInst.hpp");
+  AD.addInclude(AD._CPP_file, "code/vmreg.inline.hpp");
   AD.addInclude(AD._CPP_file, "gc_interface/collectedHeap.inline.hpp");
   AD.addInclude(AD._CPP_file, "oops/compiledICHolder.hpp");
   AD.addInclude(AD._CPP_file, "oops/markOop.hpp");
@@ -230,23 +231,8 @@ int main(int argc, char *argv[])
   AD.addInclude(AD._CPP_file, "runtime/sharedRuntime.hpp");
   AD.addInclude(AD._CPP_file, "runtime/stubRoutines.hpp");
   AD.addInclude(AD._CPP_file, "utilities/growableArray.hpp");
-#ifdef TARGET_ARCH_x86
-  AD.addInclude(AD._CPP_file, "nativeInst_x86.hpp");
-  AD.addInclude(AD._CPP_file, "vmreg_x86.inline.hpp");
-#endif
-#ifdef TARGET_ARCH_sparc
-  AD.addInclude(AD._CPP_file, "nativeInst_sparc.hpp");
-  AD.addInclude(AD._CPP_file, "vmreg_sparc.inline.hpp");
-#endif
-#ifdef TARGET_ARCH_arm
-  AD.addInclude(AD._CPP_file, "nativeInst_arm.hpp");
-  AD.addInclude(AD._CPP_file, "vmreg_arm.inline.hpp");
-#endif
-#ifdef TARGET_ARCH_ppc
-  AD.addInclude(AD._CPP_file, "nativeInst_ppc.hpp");
-  AD.addInclude(AD._CPP_file, "vmreg_ppc.inline.hpp");
-#endif
   AD.addInclude(AD._HPP_file, "memory/allocation.hpp");
+  AD.addInclude(AD._HPP_file, "code/nativeInst.hpp");
   AD.addInclude(AD._HPP_file, "opto/machnode.hpp");
   AD.addInclude(AD._HPP_file, "opto/node.hpp");
   AD.addInclude(AD._HPP_file, "opto/regalloc.hpp");

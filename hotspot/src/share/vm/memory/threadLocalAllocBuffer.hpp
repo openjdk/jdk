@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/gcUtil.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/perfData.hpp"
+#include "runtime/vm_version.hpp"
 
 class GlobalTLABStats;
 
