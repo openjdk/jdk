@@ -81,6 +81,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see SimpleElementVisitor9
  * @since 1.7
  */
+@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public class SimpleElementVisitor7<R, P> extends SimpleElementVisitor6<R, P> {
     /**

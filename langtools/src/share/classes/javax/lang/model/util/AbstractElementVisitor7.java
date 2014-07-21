@@ -72,6 +72,7 @@ import static javax.lang.model.SourceVersion.*;
  * @see AbstractElementVisitor9
  * @since 1.7
  */
+@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public abstract class AbstractElementVisitor7<R, P> extends AbstractElementVisitor6<R, P> {
     /**
