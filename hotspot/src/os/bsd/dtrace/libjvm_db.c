@@ -260,6 +260,9 @@ static int parse_vmstructs(jvm_agent_t* J) {
   uint64_t base;
   int err;
 
+  /* Clear *vmp now in case we jump to fail: */
+  memset(vmp, 0, sizeof(VMStructEntry));
+
   err = ps_pglobal_lookup(J->P, LIBJVM_SO, "gHotSpotVMStructs", &sym_addr);
   CHECK_FAIL(err);
   err = read_pointer(J, sym_addr, &gHotSpotVMStructs);

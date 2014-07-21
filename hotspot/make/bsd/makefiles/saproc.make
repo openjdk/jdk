@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Rules to build serviceability agent library, used by vm.make
@@ -83,7 +83,7 @@ else
     endif
   else
     SASRCFILES = $(SASRCDIR)/StubDebuggerLocal.c
-    SALIBS = 
+    SALIBS =
     SAARCH = $(ARCHFLAG)
   endif
 endif
@@ -163,13 +163,13 @@ install_saproc: $(BUILDLIBSAPROC)
 	@echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)"
 ifeq ($(OS_VENDOR), Darwin)
 	$(QUIETLY) test ! -d $(LIBSAPROC_DEBUGINFO) || \
-	    cp -f -r $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
+	    $(CP) -f -r $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
 else
 	$(QUIETLY) test ! -f $(LIBSAPROC_DEBUGINFO) || \
-	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
+	    $(CP) -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO)
 endif
 	$(QUIETLY) test ! -f $(LIBSAPROC_DIZ) || \
-	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ)
-	$(QUIETLY) cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done"
+	    $(CP) -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ)
+	$(QUIETLY) $(CP) -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done"
 
 .PHONY: install_saproc
