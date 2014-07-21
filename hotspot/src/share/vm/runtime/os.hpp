@@ -469,9 +469,6 @@ class os: AllStatic {
   // run cmd in a separate process and return its exit code; or -1 on failures
   static int fork_and_exec(char *cmd);
 
-  // Set file to send error reports.
-  static void set_error_file(const char *logfile);
-
   // os::exit() is merged with vm_exit()
   // static void exit(int num);
 

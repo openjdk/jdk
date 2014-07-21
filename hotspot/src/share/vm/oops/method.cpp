@@ -731,8 +731,8 @@ void Method::print_made_not_compilable(int comp_level, bool is_osr, bool report,
   }
   if ((TraceDeoptimization || LogCompilation) && (xtty != NULL)) {
     ttyLocker ttyl;
-    xtty->begin_elem("make_not_%scompilable thread='" UINTX_FORMAT "'",
-                     is_osr ? "osr_" : "", os::current_thread_id());
+    xtty->begin_elem("make_not_compilable thread='" UINTX_FORMAT "' osr='%d' level='%d'",
+                     os::current_thread_id(), is_osr, comp_level);
     if (reason != NULL) {
       xtty->print(" reason=\'%s\'", reason);
     }

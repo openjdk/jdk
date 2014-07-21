@@ -856,8 +856,7 @@ void Compile::Process_OopMap_Node(MachNode *mach, int current_offset) {
     }
 
     // Check if a call returns an object.
-    if (mcall->return_value_is_used() &&
-        mcall->tf()->range()->field_at(TypeFunc::Parms)->isa_ptr()) {
+    if (mcall->returns_pointer()) {
       return_oop = true;
     }
     safepoint_pc_offset += mcall->ret_addr_offset();
