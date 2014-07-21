@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -19,7 +19,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 
 # Common rules/macros for the vm, adlc.
@@ -28,7 +28,7 @@
 .SUFFIXES: .cpp $(SUFFIXES)
 
 DEMANGLER       = c++filt
-DEMANGLE        = $(DEMANGLER) < $@ > .$@ && mv -f .$@ $@
+DEMANGLE        = $(DEMANGLER) < $@ > .$@ && $(MV) -f .$@ $@
 
 # $(CC) is the c compiler (cc/gcc), $(CXX) is the c++ compiler (CC/g++).
 CC_COMPILE       = $(CC) $(CXXFLAGS) $(CFLAGS)

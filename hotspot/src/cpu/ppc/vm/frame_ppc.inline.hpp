@@ -27,6 +27,7 @@
 #define CPU_PPC_VM_FRAME_PPC_INLINE_HPP
 
 #include "code/codeCache.hpp"
+#include "code/vmreg.inline.hpp"
 
 // Inline functions for ppc64 frames:
 

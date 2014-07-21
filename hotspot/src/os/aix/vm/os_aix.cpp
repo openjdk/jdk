@@ -66,6 +66,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"
@@ -1212,10 +1213,6 @@ void os::abort(bool dump_core) {
 void os::die() {
   ::abort();
 }
-
-// Unused on Aix for now.
-void os::set_error_file(const char *logfile) {}
-
 
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/solaris/hpi/src/system_md.c

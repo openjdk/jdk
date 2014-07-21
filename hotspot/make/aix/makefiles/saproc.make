@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
 # Copyright 2012, 2013 SAP AG. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
@@ -20,7 +20,7 @@
 # Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
 # or visit www.oracle.com if you need additional information or have any
 # questions.
-#  
+#
 #
 include $(GAMMADIR)/make/defs.make
 
@@ -108,10 +108,10 @@ install_saproc: $(BUILDLIBSAPROC)
 	$(QUIETLY) if [ -e $(LIBSAPROC) ] ; then             \
 	  echo "Copying $(LIBSAPROC) to $(DEST_SAPROC)";     \
 	  test -f $(LIBSAPROC_DEBUGINFO) &&                  \
-	    cp -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
+	    $(CP) -f $(LIBSAPROC_DEBUGINFO) $(DEST_SAPROC_DEBUGINFO); \
 	  test -f $(LIBSAPROC_DIZ) &&                  \
-	    cp -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ); \
-	  cp -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
+	    $(CP) -f $(LIBSAPROC_DIZ) $(DEST_SAPROC_DIZ); \
+	  $(CP) -f $(LIBSAPROC) $(DEST_SAPROC) && echo "Done";  \
 	fi
 
 .PHONY: install_saproc
