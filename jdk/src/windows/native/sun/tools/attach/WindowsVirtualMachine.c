@@ -388,6 +388,7 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
     if (argsLen > 0) {
         if (argsLen > MAX_ARGS) {
             JNU_ThrowInternalError(env, "Too many arguments");
+            return;
         }
         for (i=0; i<argsLen; i++) {
             jobject obj = (*env)->GetObjectArrayElement(env, args, i);
@@ -422,6 +423,8 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
 
     stubLen = (DWORD)(*env)->GetArrayLength(env, stub);
     stubCode = (*env)->GetByteArrayElements(env, stub, &isCopy);
+
+    if ((*env)->ExceptionOccurred(env)) return;
 
     pCode = (PDWORD) VirtualAllocEx( hProcess, 0, stubLen, MEM_COMMIT, PAGE_EXECUTE_READWRITE );
     if (pCode == NULL) {
@@ -592,6 +595,8 @@ static void jstring_to_cstring(JNIEnv* env, jstring jstr, char* cstr, int len) {
         cstr[0] = '\0';
     } else {
         str = JNU_GetStringPlatformChars(env, jstr, &isCopy);
+        if ((*env)->ExceptionOccurred(env)) return;
+
         strncpy(cstr, str, len);
         cstr[len-1] = '\0';
         if (isCopy) {
