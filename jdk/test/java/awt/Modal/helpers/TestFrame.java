@@ -292,13 +292,13 @@ public class TestFrame extends Frame implements ActionListener,
         robot.waitForIdle(delay);
 
         assertFalse(dummyClicked.flag(),
-            "DummyButton on blocked Window triggered action when clicked. " + message);
+            "DummyButton on blocked Frame triggered action when clicked. " + message);
 
         assertFalse(dummyGained.flag(),
-            "DummyButton on blocked Window gained focus when clicked. " + message);
+            "DummyButton on blocked Frame gained focus when clicked. " + message);
 
         assertFalse(focusGained.flag(),
-            "A blocked Dialog gained focus when component clicked. " + message);
+            "A blocked Frame gained focus when component clicked. " + message);
     }
 
     public void checkUnblockedFrame(ExtendedRobot robot,
