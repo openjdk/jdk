@@ -201,6 +201,23 @@ class G1PrepareCompactClosure: public HeapRegionClosure {
   CompactPoint _cp;
   HeapRegionSetCount _humongous_regions_removed;
 
+  bool is_cp_initialized() const {
+    return _cp.space != NULL;
+  }
+
+  void prepare_for_compaction(HeapRegion* hr, HeapWord* end) {
+    // If this is the first live region that we came across which we can compact,
+    // initialize the CompactPoint.
+    if (!is_cp_initialized()) {
+      _cp.space = hr;
+      _cp.threshold = hr->initialize_threshold();
+    }
+    hr->prepare_for_compaction(&_cp);
+    // Also clear the part of the card table that will be unused after
+    // compaction.
+    _mrbs->clear(MemRegion(hr->compaction_top(), end));
+  }
+
   void free_humongous_region(HeapRegion* hr) {
     HeapWord* end = hr->end();
     FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
@@ -212,18 +229,15 @@ class G1PrepareCompactClosure: public HeapRegionClosure {
     _humongous_regions_removed.increment(1u, hr->capacity());
 
     _g1h->free_humongous_region(hr, &dummy_free_list, false /* par */);
-    hr->prepare_for_compaction(&_cp);
-    // Also clear the part of the card table that will be unused after
-    // compaction.
-    _mrbs->clear(MemRegion(hr->compaction_top(), end));
+    prepare_for_compaction(hr, end);
     dummy_free_list.remove_all();
   }
 
 public:
-  G1PrepareCompactClosure(CompactibleSpace* cs)
+  G1PrepareCompactClosure()
   : _g1h(G1CollectedHeap::heap()),
     _mrbs(_g1h->g1_barrier_set()),
-    _cp(NULL, cs, cs->initialize_threshold()),
+    _cp(NULL),
     _humongous_regions_removed() { }
 
   void update_sets() {
@@ -246,10 +260,7 @@ public:
         assert(hr->continuesHumongous(), "Invalid humongous.");
       }
     } else {
-      hr->prepare_for_compaction(&_cp);
-      // Also clear the part of the card table that will be unused after
-      // compaction.
-      _mrbs->clear(MemRegion(hr->compaction_top(), hr->end()));
+      prepare_for_compaction(hr, hr->end());
     }
     return false;
   }
@@ -267,14 +278,7 @@ void G1MarkSweep::mark_sweep_phase2() {
   GCTraceTime tm("phase 2", G1Log::fine() && Verbose, true, gc_timer(), gc_tracer()->gc_id());
   GenMarkSweep::trace("2");
 
-  // find the first region
-  HeapRegion* r = g1h->region_at(0);
-  CompactibleSpace* sp = r;
-  if (r->isHumongous() && oop(r->bottom())->is_gc_marked()) {
-    sp = r->next_compaction_space();
-  }
-
-  G1PrepareCompactClosure blk(sp);
+  G1PrepareCompactClosure blk;
   g1h->heap_region_iterate(&blk);
   blk.update_sets();
 }
