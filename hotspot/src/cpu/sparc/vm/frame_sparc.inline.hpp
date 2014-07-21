@@ -26,6 +26,7 @@
 #define CPU_SPARC_VM_FRAME_SPARC_INLINE_HPP
 
 #include "asm/macroAssembler.hpp"
+#include "code/vmreg.inline.hpp"
 
 // Inline functions for SPARC frames:
 

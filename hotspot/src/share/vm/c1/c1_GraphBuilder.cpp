@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,7 @@
 #include "interpreter/bytecode.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/compilationPolicy.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/bitMap.inline.hpp"
 
 class BlockListBuilder VALUE_OBJ_CLASS_SPEC {
@@ -1573,6 +1574,7 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
         default:
           constant = new Constant(as_ValueType(field_val));
         }
+        // Stable static fields are checked for non-default values in ciField::initialize_from().
       }
       if (constant != NULL) {
         push(type, append(constant));
@@ -1613,6 +1615,10 @@ void GraphBuilder::access_field(Bytecodes::Code code) {
               break;
             default:
               constant = new Constant(as_ValueType(field_val));
+            }
+            if (FoldStableValues && field->is_stable() && field_val.is_null_or_zero()) {
+              // Stable field with default value can't be constant.
+              constant = NULL;
             }
           } else {
             // For CallSite objects treat the target field as a compile time constant.
@@ -3959,9 +3965,14 @@ bool GraphBuilder::try_inline_full(ciMethod* callee, bool holder_known, Bytecode
   // Clear out bytecode stream
   scope_data()->set_stream(NULL);
 
+  CompileLog* log = compilation()->log();
+  if (log != NULL) log->head("parse method='%d'", log->identify(callee));
+
   // Ready to resume parsing in callee (either in the same block we
   // were in before or in the callee's start block)
   iterate_all_blocks(callee_start_block == NULL);
+
+  if (log != NULL) log->done("parse");
 
   // If we bailed out during parsing, return immediately (this is bad news)
   if (bailed_out())

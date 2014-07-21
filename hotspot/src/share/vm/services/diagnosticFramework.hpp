@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@
 #include "memory/allocation.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
-#include "runtime/vm_version.hpp"
 #include "runtime/vmThread.hpp"
 #include "utilities/ostream.hpp"
 
