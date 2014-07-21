@@ -1089,7 +1089,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
 #endif
 
   while (i != NULL) {
-#ifndef PRODUCT
+#ifdef ASSERT
     if (loop_count >= K) {
       dump_infinite_loop_info(i);
     }
