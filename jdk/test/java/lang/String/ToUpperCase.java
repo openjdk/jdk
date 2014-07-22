@@ -23,7 +23,7 @@
 
 /*
     @test
-    @bug 4219630 4304573 4533872 4900935
+    @bug 4219630 4304573 4533872 4900935 8042589
     @summary toUpperCase should upper-case German sharp s correctly even if
              it's the only character in the string. should also uppercase
              all of the 1:M char mappings correctly.  Also it should handle
@@ -91,6 +91,12 @@ public class ToUpperCase {
         test("\uD801\uDC28a\uD801\uDC29b\uD801\uDC2Ac", Locale.US, "\uD801\uDC00A\uD801\uDC01B\uD801\uDC02C");
         // invalid code point tests:
         test("\uD800\uD800\uD801a\uDC00\uDC00\uDC00b", Locale.US, "\uD800\uD800\uD801A\uDC00\uDC00\uDC00B");
+
+        // lower/uppercase + surrogates
+        test("a\uD801\uDC44", Locale.ROOT, "A\uD801\uDC1c");
+        test("A\uD801\uDC44", Locale.ROOT, "A\uD801\uDC1c");
+        test("a\uD801\uDC28\uD801\uDC29\uD801\uDC2A", Locale.US, "A\uD801\uDC00\uD801\uDC01\uD801\uDC02");
+        test("A\uD801\uDC28a\uD801\uDC29b\uD801\uDC2Ac", Locale.US, "A\uD801\uDC00A\uD801\uDC01B\uD801\uDC02C");
     }
 
     static void test(String in, Locale locale, String expected) {
