@@ -1108,7 +1108,10 @@ static NSObject *sAttributeNamesLOCK = nil;
     JNIEnv *env = [ThreadUtilities getJNIEnv];
     id value = nil;
 
+    NSWindow* hostWindow = [[self->fView window] retain];
     jobject focused = JNFCallStaticObjectMethod(env, jm_getFocusOwner, fComponent); // AWT_THREADING Safe (AWTRunLoop)
+    [hostWindow release];
+    
     if (focused != NULL) {
         if (JNFIsInstanceOf(env, focused, &sjc_Accessible)) {
             value = [JavaComponentAccessibility createWithAccessible:focused withEnv:env withView:fView];
