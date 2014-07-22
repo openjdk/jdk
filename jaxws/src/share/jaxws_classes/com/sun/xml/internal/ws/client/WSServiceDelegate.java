@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -91,7 +91,8 @@ import java.lang.reflect.InvocationHandler;
 import java.lang.reflect.Proxy;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.security.*;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -715,11 +716,6 @@ public class WSServiceDelegate extends WSService {
         final ClassLoader loader = getDelegatingLoader(portInterface.getClassLoader(),
                 WSServiceDelegate.class.getClassLoader());
 
-        // accessClassInPackage privilege needs to be granted ...
-        RuntimePermission perm = new RuntimePermission("accessClassInPackage.com.sun." + "xml.internal.*");
-        PermissionCollection perms = perm.newPermissionCollection();
-        perms.add(perm);
-
         return AccessController.doPrivileged(
                 new PrivilegedAction<T>() {
                     @Override
@@ -728,12 +724,8 @@ public class WSServiceDelegate extends WSService {
                                 new Class[]{portInterface, WSBindingProvider.class, Closeable.class}, pis);
                         return portInterface.cast(proxy);
                     }
-                },
-                new AccessControlContext(
-                        new ProtectionDomain[]{
-                                new ProtectionDomain(null, perms)
-                        })
-        );
+                });
+
     }
 
     private WSDLService getWSDLModelfromSEI(final Class sei) {
