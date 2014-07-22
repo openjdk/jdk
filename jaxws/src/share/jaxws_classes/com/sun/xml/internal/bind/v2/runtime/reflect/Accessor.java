@@ -229,8 +229,7 @@ public abstract class Accessor<BeanT, ValueT> implements Receiver {
             if (!Modifier.isPublic(mod) || Modifier.isFinal(mod) || !Modifier.isPublic(f.getDeclaringClass().getModifiers())) {
                 try {
                     // attempt to make it accessible, but do so in the security context of the calling application.
-                    // don't do this in the doPrivilege block, as that would create a security hole for anyone
-                    // to make any field accessible.
+                    // don't do this in the doPrivilege block
                     f.setAccessible(true);
                 } catch (SecurityException e) {
                     if ((!accessWarned) && (!supressAccessorWarnings)) {
