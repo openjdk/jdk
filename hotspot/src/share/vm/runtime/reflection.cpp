@@ -507,7 +507,8 @@ bool Reflection::verify_field_access(Klass* current_class,
   if (access.is_protected()) {
     if (!protected_restriction) {
       // See if current_class (or outermost host class) is a subclass of field_class
-      if (host_class->is_subclass_of(field_class)) {
+      // An interface may not access protected members of j.l.Object
+      if (!host_class->is_interface() && host_class->is_subclass_of(field_class)) {
         if (access.is_static() || // static fields are ok, see 6622385
             current_class == resolved_class ||
             field_class == resolved_class ||
