@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -581,7 +581,7 @@ public:
     return result;
   }
 
-  static intx prefetch_data_size()  {
+  static intx L1_line_size()  {
     intx result = 0;
     if (is_intel()) {
       result = (_cpuid_info.dcp_cpuid4_ebx.bits.L1_line_size + 1);
@@ -591,6 +591,10 @@ public:
     if (result < 32) // not defined ?
       result = 32;   // 32 bytes by default on x86 and other x64
     return result;
+  }
+
+  static intx prefetch_data_size()  {
+    return L1_line_size();
   }
 
   //
