@@ -194,7 +194,23 @@ final class LegacyGlueFocusTraversalPolicy extends FocusTraversalPolicy
     private void readObject(ObjectInputStream in)
         throws IOException, ClassNotFoundException
     {
-        in.defaultReadObject();
+        ObjectInputStream.GetField f = in.readFields();
+
+        @SuppressWarnings("unchecked")
+        HashMap<Component, Component>  newForwardMap =
+                (HashMap<Component, Component> ) f.get("forwardMap", null);
+        if (newForwardMap == null) {
+            throw new InvalidObjectException("Null forwardMap");
+        }
+        forwardMap = newForwardMap;
+        @SuppressWarnings("unchecked")
+        HashMap<Component, Component> newBackwardMap =
+                (HashMap<Component, Component>) f.get("backwardMap", null);
+        if (newBackwardMap == null) {
+            throw new InvalidObjectException("Null backwardMap");
+        }
+        backwardMap = newBackwardMap;
+
         delegatePolicy = (FocusTraversalPolicy)in.readObject();
         delegateManager = (DefaultFocusManager)in.readObject();
     }

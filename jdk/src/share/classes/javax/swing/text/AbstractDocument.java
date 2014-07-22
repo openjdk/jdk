@@ -1429,8 +1429,13 @@ public abstract class AbstractDocument implements Document, Serializable {
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        documentProperties = (Dictionary) f.get("documentProperties", null);
         listenerList = new EventListenerList();
+        data = (Content) f.get("data", null);
+        context = (AttributeContext) f.get("context", null);
+        documentFilter = (DocumentFilter) f.get("documentFilter", null);
 
         // Restore bidi structure
         //REMIND(bcb) This creates an initial bidi element to account for

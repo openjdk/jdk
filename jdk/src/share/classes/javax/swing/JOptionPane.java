@@ -43,13 +43,10 @@ import java.awt.event.WindowEvent;
 import java.awt.event.ComponentAdapter;
 import java.awt.event.ComponentEvent;
 import java.io.IOException;
+import java.io.InvalidObjectException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
 import java.util.Vector;
 import javax.swing.plaf.OptionPaneUI;
 import javax.swing.event.InternalFrameEvent;
@@ -2055,15 +2052,22 @@ public class JOptionPane extends JComponent implements Accessible
      * description: The option pane's message type.
      */
     public void setMessageType(int newType) {
+        checkMessageType(newType);
+        int           oldType = messageType;
+        messageType = newType;
+        firePropertyChange(MESSAGE_TYPE_PROPERTY, oldType, messageType);
+    }
+
+    private static void checkMessageType(int newType){
         if(newType != ERROR_MESSAGE && newType != INFORMATION_MESSAGE &&
            newType != WARNING_MESSAGE && newType != QUESTION_MESSAGE &&
            newType != PLAIN_MESSAGE)
-            throw new RuntimeException("JOptionPane: type must be one of JOptionPane.ERROR_MESSAGE, JOptionPane.INFORMATION_MESSAGE, JOptionPane.WARNING_MESSAGE, JOptionPane.QUESTION_MESSAGE or JOptionPane.PLAIN_MESSAGE");
-
-        int           oldType = messageType;
-
-        messageType = newType;
-        firePropertyChange(MESSAGE_TYPE_PROPERTY, oldType, messageType);
+            throw new RuntimeException("JOptionPane: type must be one of"
+                    + " JOptionPane.ERROR_MESSAGE,"
+                    + " JOptionPane.INFORMATION_MESSAGE,"
+                    + " JOptionPane.WARNING_MESSAGE,"
+                    + " JOptionPane.QUESTION_MESSAGE"
+                    + " or JOptionPane.PLAIN_MESSAGE");
     }
 
     /**
@@ -2097,14 +2101,21 @@ public class JOptionPane extends JComponent implements Accessible
      * description: The option pane's option type.
       */
     public void setOptionType(int newType) {
-        if(newType != DEFAULT_OPTION && newType != YES_NO_OPTION &&
-           newType != YES_NO_CANCEL_OPTION && newType != OK_CANCEL_OPTION)
-            throw new RuntimeException("JOptionPane: option type must be one of JOptionPane.DEFAULT_OPTION, JOptionPane.YES_NO_OPTION, JOptionPane.YES_NO_CANCEL_OPTION or JOptionPane.OK_CANCEL_OPTION");
-
+        checkOptionType(newType);
         int            oldType = optionType;
-
         optionType = newType;
         firePropertyChange(OPTION_TYPE_PROPERTY, oldType, optionType);
+    }
+
+    private static void checkOptionType(int newType) {
+        if (newType != DEFAULT_OPTION && newType != YES_NO_OPTION
+                && newType != YES_NO_CANCEL_OPTION
+                && newType != OK_CANCEL_OPTION) {
+            throw new RuntimeException("JOptionPane: option type must be one of"
+                    + " JOptionPane.DEFAULT_OPTION, JOptionPane.YES_NO_OPTION,"
+                    + " JOptionPane.YES_NO_CANCEL_OPTION"
+                    + " or JOptionPane.OK_CANCEL_OPTION");
+        }
     }
 
     /**
@@ -2385,7 +2396,15 @@ public class JOptionPane extends JComponent implements Accessible
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        int newMessageType = f.get("messageType", 0);
+        checkMessageType(newMessageType);
+        messageType = newMessageType;
+        int newOptionType = f.get("optionType", 0);
+        checkOptionType(newOptionType);
+        optionType = newOptionType;
+        wantsInput = f.get("wantsInput", false);
 
         Vector<?>       values = (Vector)s.readObject();
         int             indexCounter = 0;
