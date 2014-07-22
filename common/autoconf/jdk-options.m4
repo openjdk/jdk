@@ -158,7 +158,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JVM_VARIANTS],
   if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
     INCLUDE_SA=false
   fi
-  if test "x$VAR_CPU" = xppc64 ; then
+  if test "x$OPENJDK_TARGET_OS" = xaix ; then
     INCLUDE_SA=false
   fi
   AC_SUBST(INCLUDE_SA)
