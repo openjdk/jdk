@@ -799,9 +799,15 @@
     <target name="idea">
         <mkdir dir=".idea"/>
         <copy todir=".idea" >
-            <fileset dir="make/intellij" includes="**"/>
+            <fileset dir="make/intellij" excludes="**/src/**"/>
         </copy>
-        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.home}"/>
+        <condition property="jtreg.idea.home" value="${jtreg.home}" else = "[jtreg.home]">
+            <isset property="jtreg.home"/>
+        </condition>
+        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.idea.home}"/>
+        <mkdir dir=".idea/classes"/>
+        <javac srcdir="make/intellij/src"
+               destdir=".idea/classes"/>
     </target>
 
     <!--

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,7 +38,7 @@ import javax.lang.model.type.TypeMirror;
 import javax.lang.model.type.TypeVariable;
 import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.Elements;
-import javax.lang.model.util.SimpleTypeVisitor8;
+import javax.lang.model.util.SimpleTypeVisitor9;
 
 /**
  * Returns internal type signature.
@@ -248,7 +248,7 @@ public class TypeSignature {
 
 
     String qualifiedTypeName(TypeMirror type) {
-        TypeVisitor<Name, Void> v = new SimpleTypeVisitor8<Name, Void>() {
+        TypeVisitor<Name, Void> v = new SimpleTypeVisitor9<Name, Void>() {
             @Override
             public Name visitArray(ArrayType t, Void p) {
                 return t.getComponentType().accept(this, p);

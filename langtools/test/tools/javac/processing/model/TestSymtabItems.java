@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -110,7 +110,7 @@ public class TestSymtabItems {
 
     int errors;
 
-    class ElemPrinter extends ElementScanner8<Void, Void> {
+    class ElemPrinter extends ElementScanner9<Void, Void> {
         @Override
         public Void visitPackage(PackageElement e, Void p) {
             show("package", e);
@@ -201,7 +201,7 @@ public class TestSymtabItems {
         int indent;
     };
 
-    class TypePrinter extends SimpleTypeVisitor7<Void, Types> {
+    class TypePrinter extends SimpleTypeVisitor9<Void, Types> {
         @Override
         public Void defaultAction(TypeMirror m, Types types) {
             System.err.println(m.getKind() + " " + m + " " + types.asElement(m));
