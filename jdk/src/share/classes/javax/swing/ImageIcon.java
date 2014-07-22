@@ -490,11 +490,32 @@ public class ImageIcon implements Icon, Serializable, Accessible {
     private void readObject(ObjectInputStream s)
         throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        imageObserver = (ImageObserver) f.get("imageObserver", null);
+        description = (String) f.get("description", null);
+        width = f.get("width", -1);
+        height = f.get("height", -1);
+        accessibleContext = (AccessibleImageIcon) f.get("accessibleContext", null);
 
         int w = s.readInt();
         int h = s.readInt();
         int[] pixels = (int[])(s.readObject());
+
+        if (pixels == null && (w != -1 || h != -1)) {
+            throw new IllegalStateException("Inconsistent width and height"
+                    + " for null image [" + w + ", " + h + "]");
+        }
+
+        if (pixels != null && (w < 0 || h < 0)) {
+            throw new IllegalStateException("Inconsistent width and height"
+                    + " for image [" + w + ", " + h + "]");
+        }
+
+        if (w != getIconWidth() || h != getIconHeight()) {
+            throw new IllegalStateException("Inconsistent width and height"
+                    + " for image [" + w + ", " + h + "]");
+        }
 
         if (pixels != null) {
             Toolkit tk = Toolkit.getDefaultToolkit();

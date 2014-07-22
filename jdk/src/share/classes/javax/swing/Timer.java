@@ -401,14 +401,15 @@ public class Timer implements Serializable
      * @see #setInitialDelay
      */
     public void setDelay(int delay) {
-        if (delay < 0) {
-            throw new IllegalArgumentException("Invalid delay: " + delay);
-        }
-        else {
+        checkDelay(delay, "Invalid delay: ");
             this.delay = delay;
         }
-    }
 
+    private static void checkDelay(int delay, String message) {
+        if (delay < 0) {
+            throw new IllegalArgumentException(message + delay);
+    }
+    }
 
     /**
      * Returns the delay, in milliseconds,
@@ -435,14 +436,9 @@ public class Timer implements Serializable
      * @see #setDelay
      */
     public void setInitialDelay(int initialDelay) {
-        if (initialDelay < 0) {
-            throw new IllegalArgumentException("Invalid initial delay: " +
-                                               initialDelay);
-        }
-        else {
+        checkDelay(initialDelay, "Invalid initial delay: ");
             this.initialDelay = initialDelay;
         }
-    }
 
 
     /**
@@ -638,7 +634,26 @@ public class Timer implements Serializable
         throws ClassNotFoundException, IOException
     {
         this.acc = AccessController.getContext();
-        in.defaultReadObject();
+        ObjectInputStream.GetField f = in.readFields();
+
+        EventListenerList newListenerList = (EventListenerList)
+                f.get("listenerList", null);
+        if (newListenerList == null) {
+            throw new InvalidObjectException("Null listenerList");
+        }
+        listenerList = newListenerList;
+
+        int newInitialDelay = f.get("initialDelay", 0);
+        checkDelay(newInitialDelay, "Invalid initial delay: ");
+        initialDelay = newInitialDelay;
+
+        int newDelay = f.get("delay", 0);
+        checkDelay(newDelay, "Invalid delay: ");
+        delay = newDelay;
+
+        repeats = f.get("repeats", false);
+        coalesce = f.get("coalesce", false);
+        actionCommand = (String) f.get("actionCommand", null);
     }
 
     /*

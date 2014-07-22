@@ -1345,7 +1345,20 @@ public class JPopupMenu extends JComponent implements Accessible,MenuElement {
     // implements javax.swing.MenuElement
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        int newDesiredLocationX = f.get("desiredLocationX", 0);
+        int newDesiredLocationY = f.get("desiredLocationY", 0);
+        Point p = adjustPopupLocationToFitScreen(
+                newDesiredLocationX, newDesiredLocationY);
+        desiredLocationX = p.x;
+        desiredLocationY = p.y;
+
+        label = (String) f.get("label", null);
+        paintBorder = f.get("paintBorder", false);
+        margin = (Insets) f.get("margin", null);
+        lightWeightPopup = f.get("lightWeightPopup", false);
+        selectionModel = (SingleSelectionModel) f.get("selectionModel", null);
 
         Vector<?>          values = (Vector)s.readObject();
         int             indexCounter = 0;

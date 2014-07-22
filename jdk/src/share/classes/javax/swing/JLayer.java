@@ -648,12 +648,18 @@ public final class JLayer<V extends Component>
 
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
-        if (layerUI != null) {
-            setUI(layerUI);
-        }
+        ObjectInputStream.GetField f = s.readFields();
+
+        view = (V) f.get("view", null);
+        glassPane = (JPanel) f.get("glassPane", null);
+        eventMask = f.get("eventMask", 0l);
         if (eventMask != 0) {
             eventController.updateAWTEventListener(0, eventMask);
+        }
+        @SuppressWarnings("unchecked")
+        LayerUI<V> newLayerUI = (LayerUI<V>) f.get("layerUI", null);
+        if (newLayerUI != null) {
+            setUI(newLayerUI);
         }
     }
 

@@ -714,11 +714,19 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
       throws ClassNotFoundException, IOException
     {
         fontSearch = new FontKey(null, 0, 0);
-        fontTable = new Hashtable<FontKey, Font>();
+        fontTable = new Hashtable<>();
         search = new SimpleAttributeSet();
         attributesPool = Collections.
-                synchronizedMap(new WeakHashMap<SmallAttributeSet, WeakReference<SmallAttributeSet>>());
-        s.defaultReadObject();
+                synchronizedMap(new WeakHashMap<SmallAttributeSet,
+                        WeakReference<SmallAttributeSet>>());
+
+        ObjectInputStream.GetField f = s.readFields();
+        Style newStyles = (Style) f.get("styles", null);
+        if (newStyles == null) {
+            throw new InvalidObjectException("Null styles");
+        }
+        styles = newStyles;
+        unusedSets = f.get("unusedSets", 0);
     }
 
     // --- variables ---------------------------------------------------
@@ -734,7 +742,7 @@ public class StyleContext implements Serializable, AbstractDocument.AttributeCon
 
     private Style styles;
     private transient FontKey fontSearch = new FontKey(null, 0, 0);
-    private transient Hashtable<FontKey, Font> fontTable = new Hashtable<FontKey, Font>();
+    private transient Hashtable<FontKey, Font> fontTable = new Hashtable<>();
 
     private transient Map<SmallAttributeSet, WeakReference<SmallAttributeSet>> attributesPool = Collections.
             synchronizedMap(new WeakHashMap<SmallAttributeSet, WeakReference<SmallAttributeSet>>());

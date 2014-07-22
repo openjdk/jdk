@@ -50,6 +50,8 @@ import java.awt.Toolkit;
 import java.awt.event.*;
 import java.beans.PropertyChangeListener;
 import java.beans.PropertyChangeEvent;
+import java.io.InvalidObjectException;
+import java.io.ObjectInputStream;
 import java.lang.ref.WeakReference;
 
 /**
@@ -460,10 +462,14 @@ public class JFileChooser extends JComponent implements Accessible {
      *        bound: false
      */
     public void setDragEnabled(boolean b) {
+        checkDragEnabled(b);
+        dragEnabled = b;
+    }
+
+    private static void checkDragEnabled(boolean b) {
         if (b && GraphicsEnvironment.isHeadless()) {
             throw new HeadlessException();
         }
-        dragEnabled = b;
     }
 
     /**
@@ -949,15 +955,21 @@ public class JFileChooser extends JComponent implements Accessible {
         if(this.dialogType == dialogType) {
             return;
         }
-        if(!(dialogType == OPEN_DIALOG || dialogType == SAVE_DIALOG || dialogType == CUSTOM_DIALOG)) {
-            throw new IllegalArgumentException("Incorrect Dialog Type: " + dialogType);
-        }
+        checkDialogType(dialogType);
         int oldValue = this.dialogType;
         this.dialogType = dialogType;
         if(dialogType == OPEN_DIALOG || dialogType == SAVE_DIALOG) {
             setApproveButtonText(null);
         }
         firePropertyChange(DIALOG_TYPE_CHANGED_PROPERTY, oldValue, dialogType);
+    }
+
+    private static void checkDialogType(int dialogType) {
+        if (!(dialogType == OPEN_DIALOG || dialogType == SAVE_DIALOG
+                || dialogType == CUSTOM_DIALOG)) {
+            throw new IllegalArgumentException(
+                    "Incorrect Dialog Type: " + dialogType);
+        }
     }
 
     /**
@@ -1349,12 +1361,17 @@ public class JFileChooser extends JComponent implements Accessible {
             return;
         }
 
-        if ((mode == FILES_ONLY) || (mode == DIRECTORIES_ONLY) || (mode == FILES_AND_DIRECTORIES)) {
+        checkFileSelectionMode(mode);
            int oldValue = fileSelectionMode;
            fileSelectionMode = mode;
            firePropertyChange(FILE_SELECTION_MODE_CHANGED_PROPERTY, oldValue, fileSelectionMode);
-        } else {
-           throw new IllegalArgumentException("Incorrect Mode for file selection: " + mode);
+    }
+
+    private static void checkFileSelectionMode(int mode) {
+        if ((mode != FILES_ONLY) && (mode != DIRECTORIES_ONLY)
+                && (mode != FILES_AND_DIRECTORIES)) {
+            throw new IllegalArgumentException(
+                    "Incorrect Mode for file selection: " + mode);
         }
     }
 
@@ -1901,7 +1918,43 @@ public class JFileChooser extends JComponent implements Accessible {
      */
     private void readObject(java.io.ObjectInputStream in)
             throws IOException, ClassNotFoundException {
-        in.defaultReadObject();
+        ObjectInputStream.GetField f = in.readFields();
+
+        dialogTitle = (String) f.get("dialogTitle", null);
+        approveButtonText = (String) f.get("approveButtonText", null);
+        approveButtonToolTipText =
+                (String) f.get("approveButtonToolTipText", null);
+        approveButtonMnemonic = f.get("approveButtonMnemonic", 0);
+        @SuppressWarnings("unchecked")
+        Vector<FileFilter> newFilters = (Vector<FileFilter>) f.get("filters", null);
+        if (newFilters == null) {
+            throw new InvalidObjectException("Null filters");
+        }
+        filters = newFilters;
+        dialog = (JDialog) f.get("dialog", null);
+        int newDialogType = f.get("dialogType", OPEN_DIALOG);
+        checkDialogType(newDialogType);
+        dialogType = newDialogType;
+        returnValue = f.get("returnValue", 0);
+        accessory = (JComponent) f.get("accessory", null);
+        fileView = (FileView) f.get("fileView", null);
+        controlsShown = f.get("controlsShown", false);
+        useFileHiding = f.get("useFileHiding", false);
+        int newFileSelectionMode = f.get("fileSelectionMode", FILES_ONLY);
+        checkFileSelectionMode(newFileSelectionMode);
+        fileSelectionMode = newFileSelectionMode;
+        multiSelectionEnabled = f.get("multiSelectionEnabled", false);
+        useAcceptAllFileFilter = f.get("useAcceptAllFileFilter", false);
+        boolean newDragEnabled = f.get("dragEnabled", false);
+        checkDragEnabled(newDragEnabled);
+        dragEnabled = newDragEnabled;
+        fileFilter = (FileFilter) f.get("fileFilter", null);
+        fileSystemView = (FileSystemView) f.get("fileSystemView", null);
+        currentDirectory = (File) f.get("currentDirectory", null);
+        selectedFile = (File) f.get("selectedFile", null);
+        selectedFiles = (File[]) f.get("selectedFiles", null);
+        accessibleContext = (AccessibleContext) f.get("accessibleContext", null);
+
         installShowFilesListener();
     }
 

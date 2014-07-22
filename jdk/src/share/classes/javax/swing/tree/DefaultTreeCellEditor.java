@@ -571,7 +571,18 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        renderer = (DefaultTreeCellRenderer) f.get("renderer", null);
+        Container newEditingContainer = (Container) f.get("editingContainer", null);
+        if (newEditingContainer == null) {
+            throw new InvalidObjectException("Null editingContainer");
+        }
+        editingContainer = newEditingContainer;
+        canEdit = f.get("canEdit", false);
+        borderSelectionColor = (Color) f.get("borderSelectionColor", null);
+        font = (Font) f.get("font", null);
+
 
         Vector<?>       values = (Vector)s.readObject();
         int             indexCounter = 0;
@@ -579,7 +590,12 @@ public class DefaultTreeCellEditor implements ActionListener, TreeCellEditor,
 
         if(indexCounter < maxCounter && values.elementAt(indexCounter).
            equals("realEditor")) {
-            realEditor = (TreeCellEditor)values.elementAt(++indexCounter);
+            TreeCellEditor newRealEditor =
+                    (TreeCellEditor)values.elementAt(++indexCounter);
+            if (newRealEditor == null) {
+                throw new InvalidObjectException("Null realEditor");
+            }
+            realEditor = newRealEditor;
             indexCounter++;
         }
     }
