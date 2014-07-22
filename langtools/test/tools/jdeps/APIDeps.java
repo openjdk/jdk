@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8015912 8029216 8048063
+ * @bug 8015912 8029216 8048063 8050804
  * @summary Test -apionly and -jdkinternals options
  * @build m.Bar m.Foo m.Gee b.B c.C c.I d.D e.E f.F g.G
  * @run main APIDeps

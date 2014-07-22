@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,6 +72,7 @@ import static javax.lang.model.SourceVersion.*;
  *
  * @see SimpleAnnotationValueVisitor6
  * @see SimpleAnnotationValueVisitor7
+ * @see SimpleAnnotationValueVisitor8
  * @since 1.8
  */
 @SupportedSourceVersion(RELEASE_8)
