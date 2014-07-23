@@ -891,6 +891,10 @@ void ConcurrentMark::clearNextBitmap() {
   guarantee(!g1h->mark_in_progress(), "invariant");
 }
 
+bool ConcurrentMark::nextMarkBitmapIsClear() {
+  return _nextMarkBitMap->getNextMarkedWordAddress(_heap_start, _heap_end) == _heap_end;
+}
+
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
   bool doHeapRegion(HeapRegion* r) {
@@ -3358,7 +3362,8 @@ void ConcurrentMark::print_stats() {
 
 // abandon current marking iteration due to a Full GC
 void ConcurrentMark::abort() {
-  // Clear all marks to force marking thread to do nothing
+  // Clear all marks in the next bitmap for the next marking cycle. This will allow us to skip the next
+  // concurrent bitmap clearing.
   _nextMarkBitMap->clearAll();
 
   // Note we cannot clear the previous marking bitmap here
