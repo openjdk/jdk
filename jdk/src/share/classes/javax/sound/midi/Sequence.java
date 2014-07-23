@@ -26,72 +26,77 @@
 package javax.sound.midi;
 
 import java.util.Vector;
-import com.sun.media.sound.MidiUtils;
-
 
 /**
- * A <code>Sequence</code> is a data structure containing musical
- * information (often an entire song or composition) that can be played
- * back by a <code>{@link Sequencer}</code> object. Specifically, the
- * <code>Sequence</code> contains timing
- * information and one or more tracks.  Each <code>{@link Track track}</code> consists of a
- * series of MIDI events (such as note-ons, note-offs, program changes, and meta-events).
- * The sequence's timing information specifies the type of unit that is used
- * to time-stamp the events in the sequence.
+ * A {@code Sequence} is a data structure containing musical information (often
+ * an entire song or composition) that can be played back by a {@link Sequencer}
+ * object. Specifically, the {@code Sequence} contains timing information and
+ * one or more tracks. Each {@link Track track} consists of a series of MIDI
+ * events (such as note-ons, note-offs, program changes, and meta-events). The
+ * sequence's timing information specifies the type of unit that is used to
+ * time-stamp the events in the sequence.
  * <p>
- * A <code>Sequence</code> can be created from a MIDI file by reading the file
- * into an input stream and invoking one of the <code>getSequence</code> methods of
- * {@link MidiSystem}.  A sequence can also be built from scratch by adding new
- * <code>Tracks</code> to an empty <code>Sequence</code>, and adding
- * <code>{@link MidiEvent}</code> objects to these <code>Tracks</code>.
+ * A {@code Sequence} can be created from a MIDI file by reading the file into
+ * an input stream and invoking one of the {@code getSequence} methods of
+ * {@link MidiSystem}. A sequence can also be built from scratch by adding new
+ * {@code Tracks} to an empty {@code Sequence}, and adding {@link MidiEvent}
+ * objects to these {@code Tracks}.
  *
+ * @author Kara Kytle
  * @see Sequencer#setSequence(java.io.InputStream stream)
  * @see Sequencer#setSequence(Sequence sequence)
  * @see Track#add(MidiEvent)
  * @see MidiFileFormat
- *
- * @author Kara Kytle
  */
 public class Sequence {
-
 
     // Timing types
 
     /**
-     * The tempo-based timing type, for which the resolution is expressed in pulses (ticks) per quarter note.
+     * The tempo-based timing type, for which the resolution is expressed in
+     * pulses (ticks) per quarter note.
+     *
      * @see #Sequence(float, int)
      */
     public static final float PPQ                                                       = 0.0f;
 
     /**
-     * The SMPTE-based timing type with 24 frames per second (resolution is expressed in ticks per frame).
+     * The SMPTE-based timing type with 24 frames per second (resolution is
+     * expressed in ticks per frame).
+     *
      * @see #Sequence(float, int)
      */
     public static final float SMPTE_24                                          = 24.0f;
 
     /**
-     * The SMPTE-based timing type with 25 frames per second (resolution is expressed in ticks per frame).
+     * The SMPTE-based timing type with 25 frames per second (resolution is
+     * expressed in ticks per frame).
+     *
      * @see #Sequence(float, int)
      */
     public static final float SMPTE_25                                          = 25.0f;
 
     /**
-     * The SMPTE-based timing type with 29.97 frames per second (resolution is expressed in ticks per frame).
+     * The SMPTE-based timing type with 29.97 frames per second (resolution is
+     * expressed in ticks per frame).
+     *
      * @see #Sequence(float, int)
      */
     public static final float SMPTE_30DROP                                      = 29.97f;
 
     /**
-     * The SMPTE-based timing type with 30 frames per second (resolution is expressed in ticks per frame).
+     * The SMPTE-based timing type with 30 frames per second (resolution is
+     * expressed in ticks per frame).
+     *
      * @see #Sequence(float, int)
      */
     public static final float SMPTE_30                                          = 30.0f;
-
 
     // Variables
 
     /**
      * The timing division type of the sequence.
+     *
      * @see #PPQ
      * @see #SMPTE_24
      * @see #SMPTE_25
@@ -103,33 +108,33 @@ public class Sequence {
 
     /**
      * The timing resolution of the sequence.
+     *
      * @see #getResolution
      */
     protected int resolution;
 
     /**
      * The MIDI tracks in this sequence.
+     *
      * @see #getTracks
      */
     protected Vector<Track> tracks = new Vector<Track>();
 
-
     /**
-     * Constructs a new MIDI sequence with the specified timing division
-     * type and timing resolution.  The division type must be one of the
-     * recognized MIDI timing types.  For tempo-based timing,
-     * <code>divisionType</code> is PPQ (pulses per quarter note) and
-     * the resolution is specified in ticks per beat.  For SMTPE timing,
-     * <code>divisionType</code> specifies the number of frames per
-     * second and the resolution is specified in ticks per frame.
-     * The sequence will contain no initial tracks.  Tracks may be
-     * added to or removed from the sequence using <code>{@link #createTrack}</code>
-     * and <code>{@link #deleteTrack}</code>.
+     * Constructs a new MIDI sequence with the specified timing division type
+     * and timing resolution. The division type must be one of the recognized
+     * MIDI timing types. For tempo-based timing, {@code divisionType} is PPQ
+     * (pulses per quarter note) and the resolution is specified in ticks per
+     * beat. For SMTPE timing, {@code divisionType} specifies the number of
+     * frames per second and the resolution is specified in ticks per frame. The
+     * sequence will contain no initial tracks. Tracks may be added to or
+     * removed from the sequence using {@link #createTrack} and
+     * {@link #deleteTrack}.
      *
-     * @param divisionType the timing division type (PPQ or one of the SMPTE types)
-     * @param resolution the timing resolution
-     * @throws InvalidMidiDataException if <code>divisionType</code> is not valid
-     *
+     * @param  divisionType the timing division type (PPQ or one of the SMPTE
+     *         types)
+     * @param  resolution the timing resolution
+     * @throws InvalidMidiDataException if {@code divisionType} is not valid
      * @see #PPQ
      * @see #SMPTE_24
      * @see #SMPTE_25
@@ -156,27 +161,25 @@ public class Sequence {
         this.resolution = resolution;
     }
 
-
     /**
-     * Constructs a new MIDI sequence with the specified timing division
-     * type, timing resolution, and number of tracks.  The division type must be one of the
-     * recognized MIDI timing types.  For tempo-based timing,
-     * <code>divisionType</code> is PPQ (pulses per quarter note) and
-     * the resolution is specified in ticks per beat.  For SMTPE timing,
-     * <code>divisionType</code> specifies the number of frames per
-     * second and the resolution is specified in ticks per frame.
-     * The sequence will be initialized with the number of tracks specified by
-     * <code>numTracks</code>. These tracks are initially empty (i.e.
-     * they contain only the meta-event End of Track).
-     * The tracks may be retrieved for editing using the <code>{@link #getTracks}</code>
-     * method.  Additional tracks may be added, or existing tracks removed,
-     * using <code>{@link #createTrack}</code> and <code>{@link #deleteTrack}</code>.
+     * Constructs a new MIDI sequence with the specified timing division type,
+     * timing resolution, and number of tracks. The division type must be one of
+     * the recognized MIDI timing types. For tempo-based timing,
+     * {@code divisionType} is PPQ (pulses per quarter note) and the resolution
+     * is specified in ticks per beat. For SMTPE timing, {@code divisionType}
+     * specifies the number of frames per second and the resolution is specified
+     * in ticks per frame. The sequence will be initialized with the number of
+     * tracks specified by {@code numTracks}. These tracks are initially empty
+     * (i.e. they contain only the meta-event End of Track). The tracks may be
+     * retrieved for editing using the {@link #getTracks} method. Additional
+     * tracks may be added, or existing tracks removed, using
+     * {@link #createTrack} and {@link #deleteTrack}.
      *
-     * @param divisionType the timing division type (PPQ or one of the SMPTE types)
-     * @param resolution the timing resolution
-     * @param numTracks the initial number of tracks in the sequence.
-     * @throws InvalidMidiDataException if <code>divisionType</code> is not valid
-     *
+     * @param  divisionType the timing division type (PPQ or one of the SMPTE
+     *         types)
+     * @param  resolution the timing resolution
+     * @param  numTracks the initial number of tracks in the sequence
+     * @throws InvalidMidiDataException if {@code divisionType} is not valid
      * @see #PPQ
      * @see #SMPTE_24
      * @see #SMPTE_25
@@ -206,11 +209,10 @@ public class Sequence {
         }
     }
 
-
     /**
      * Obtains the timing division type for this sequence.
-     * @return the division type (PPQ or one of the SMPTE types)
      *
+     * @return the division type (PPQ or one of the SMPTE types)
      * @see #PPQ
      * @see #SMPTE_24
      * @see #SMPTE_25
@@ -223,11 +225,10 @@ public class Sequence {
         return divisionType;
     }
 
-
     /**
-     * Obtains the timing resolution for this sequence.
-     * If the sequence's division type is PPQ, the resolution is specified in ticks per beat.
-     * For SMTPE timing, the resolution is specified in ticks per frame.
+     * Obtains the timing resolution for this sequence. If the sequence's
+     * division type is PPQ, the resolution is specified in ticks per beat. For
+     * SMTPE timing, the resolution is specified in ticks per frame.
      *
      * @return the number of ticks per beat (PPQ) or per frame (SMPTE)
      * @see #getDivisionType
@@ -238,13 +239,13 @@ public class Sequence {
         return resolution;
     }
 
-
     /**
-     * Creates a new, initially empty track as part of this sequence.
-     * The track initially contains the meta-event End of Track.
-     * The newly created track is returned.  All tracks in the sequence
-     * may be retrieved using <code>{@link #getTracks}</code>.  Tracks may be
-     * removed from the sequence using <code>{@link #deleteTrack}</code>.
+     * Creates a new, initially empty track as part of this sequence. The track
+     * initially contains the meta-event End of Track. The newly created track
+     * is returned. All tracks in the sequence may be retrieved using
+     * {@link #getTracks}. Tracks may be removed from the sequence using
+     * {@link #deleteTrack}.
+     *
      * @return the newly created track
      */
     public Track createTrack() {
@@ -255,13 +256,12 @@ public class Sequence {
         return track;
     }
 
-
     /**
      * Removes the specified track from the sequence.
-     * @param track the track to remove
-     * @return <code>true</code> if the track existed in the track and was removed,
-     * otherwise <code>false</code>.
      *
+     * @param  track the track to remove
+     * @return {@code true} if the track existed in the track and was removed,
+     *         otherwise {@code false}
      * @see #createTrack
      * @see #getTracks
      */
@@ -273,12 +273,11 @@ public class Sequence {
         }
     }
 
-
     /**
-     * Obtains an array containing all the tracks in this sequence.
-     * If the sequence contains no tracks, an array of length 0 is returned.
-     * @return the array of tracks
+     * Obtains an array containing all the tracks in this sequence. If the
+     * sequence contains no tracks, an array of length 0 is returned.
      *
+     * @return the array of tracks
      * @see #createTrack
      * @see #deleteTrack
      */
@@ -287,22 +286,20 @@ public class Sequence {
         return tracks.toArray(new Track[tracks.size()]);
     }
 
-
     /**
      * Obtains the duration of this sequence, expressed in microseconds.
-     * @return this sequence's duration in microseconds.
+     *
+     * @return this sequence's duration in microseconds
      */
     public long getMicrosecondLength() {
 
         return com.sun.media.sound.MidiUtils.tick2microsecond(this, getTickLength(), null);
     }
 
-
     /**
      * Obtains the duration of this sequence, expressed in MIDI ticks.
      *
      * @return this sequence's length in ticks
-     *
      * @see #getMicrosecondLength
      */
     public long getTickLength() {
@@ -321,15 +318,12 @@ public class Sequence {
         }
     }
 
-
     /**
-     * Obtains a list of patches referenced in this sequence.
-     * This patch list may be used to load the required
-     * <code>{@link Instrument}</code> objects
-     * into a <code>{@link Synthesizer}</code>.
+     * Obtains a list of patches referenced in this sequence. This patch list
+     * may be used to load the required {@link Instrument} objects into a
+     * {@link Synthesizer}.
      *
-     * @return an array of <code>{@link Patch}</code> objects used in this sequence
-     *
+     * @return an array of {@link Patch} objects used in this sequence
      * @see Synthesizer#loadInstruments(Soundbank, Patch[])
      */
     public Patch[] getPatchList() {

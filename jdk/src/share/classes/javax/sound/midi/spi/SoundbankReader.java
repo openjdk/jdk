@@ -32,12 +32,12 @@ import java.net.URL;
 
 import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.Soundbank;
+import javax.sound.midi.Synthesizer;
 
 /**
  * A {@code SoundbankReader} supplies soundbank file-reading services. Concrete
  * subclasses of {@code SoundbankReader} parse a given soundbank file, producing
- * a {@link javax.sound.midi.Soundbank} object that can be loaded into a
- * {@link javax.sound.midi.Synthesizer}.
+ * a {@link Soundbank} object that can be loaded into a {@link Synthesizer}.
  *
  * @since 1.3
  * @author Kara Kytle
@@ -47,7 +47,7 @@ public abstract class SoundbankReader {
     /**
      * Obtains a soundbank object from the URL provided.
      *
-     * @param  url URL representing the soundbank.
+     * @param  url URL representing the soundbank
      * @return soundbank object
      * @throws InvalidMidiDataException if the URL does not point to valid MIDI
      *         soundbank data recognized by this soundbank reader

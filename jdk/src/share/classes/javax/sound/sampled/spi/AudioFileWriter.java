@@ -30,6 +30,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import javax.sound.sampled.AudioInputStream;
+import javax.sound.sampled.AudioSystem;
 
 import static javax.sound.sampled.AudioFileFormat.Type;
 
@@ -110,8 +111,7 @@ public abstract class AudioFileWriter {
      * the length be written into the file header, and cannot be written from
      * start to finish unless the length is known in advance. An attempt to
      * write such a file type will fail with an IOException if the length in the
-     * audio file format is {@link javax.sound.sampled.AudioSystem#NOT_SPECIFIED
-     * AudioSystem.NOT_SPECIFIED}.
+     * audio file format is {@link AudioSystem#NOT_SPECIFIED}.
      *
      * @param  stream the audio input stream containing audio data to be written
      *         to the output stream
