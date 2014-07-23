@@ -2950,10 +2950,17 @@ void G1CollectedHeap::collection_set_iterate_from(HeapRegion* r,
   }
 }
 
-CompactibleSpace* G1CollectedHeap::first_compactible_space() {
-  return n_regions() > 0 ? region_at(0) : NULL;
+HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) const {
+  // We're not using an iterator given that it will wrap around when
+  // it reaches the last region and this is not what we want here.
+  for (uint index = from->hrs_index() + 1; index < n_regions(); index++) {
+    HeapRegion* hr = region_at(index);
+    if (!hr->isHumongous()) {
+      return hr;
+    }
+  }
+  return NULL;
 }
-
 
 Space* G1CollectedHeap::space_containing(const void* addr) const {
   return heap_region_containing(addr);
