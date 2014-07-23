@@ -1926,6 +1926,8 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
+  _humongous_is_live(),
+  _has_humongous_reclaim_candidates(false),
   _free_regions_coming(false),
   _young_list(new YoungList(this)),
   _gc_time_stamp(0),
@@ -2082,6 +2084,7 @@ jint G1CollectedHeap::initialize() {
   _g1h = this;
 
   _in_cset_fast_test.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
+  _humongous_is_live.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2175,6 +2178,11 @@ void G1CollectedHeap::stop() {
   if (G1StringDedup::is_enabled()) {
     G1StringDedup::stop();
   }
+}
+
+void G1CollectedHeap::clear_humongous_is_live_table() {
+  guarantee(G1ReclaimDeadHumongousObjectsAtYoungGC, "Should only be called if true");
+  _humongous_is_live.clear();
 }
 
 size_t G1CollectedHeap::conservative_max_heap_alignment() {
@@ -3771,6 +3779,61 @@ size_t G1CollectedHeap::cards_scanned() {
   return g1_rem_set()->cardsScanned();
 }
 
+bool G1CollectedHeap::humongous_region_is_always_live(uint index) {
+  HeapRegion* region = region_at(index);
+  assert(region->startsHumongous(), "Must start a humongous object");
+  return oop(region->bottom())->is_objArray() || !region->rem_set()->is_empty();
+}
+
+class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
+ private:
+  size_t _total_humongous;
+  size_t _candidate_humongous;
+ public:
+  RegisterHumongousWithInCSetFastTestClosure() : _total_humongous(0), _candidate_humongous(0) {
+  }
+
+  virtual bool doHeapRegion(HeapRegion* r) {
+    if (!r->startsHumongous()) {
+      return false;
+    }
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+    uint region_idx = r->hrs_index();
+    bool is_candidate = !g1h->humongous_region_is_always_live(region_idx);
+    // Is_candidate already filters out humongous regions with some remembered set.
+    // This will not lead to humongous object that we mistakenly keep alive because
+    // during young collection the remembered sets will only be added to.
+    if (is_candidate) {
+      g1h->register_humongous_region_with_in_cset_fast_test(region_idx);
+      _candidate_humongous++;
+    }
+    _total_humongous++;
+
+    return false;
+  }
+
+  size_t total_humongous() const { return _total_humongous; }
+  size_t candidate_humongous() const { return _candidate_humongous; }
+};
+
+void G1CollectedHeap::register_humongous_regions_with_in_cset_fast_test() {
+  if (!G1ReclaimDeadHumongousObjectsAtYoungGC) {
+    g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(0, 0);
+    return;
+  }
+
+  RegisterHumongousWithInCSetFastTestClosure cl;
+  heap_region_iterate(&cl);
+  g1_policy()->phase_times()->record_fast_reclaim_humongous_stats(cl.total_humongous(),
+                                                                  cl.candidate_humongous());
+  _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
+
+  if (_has_humongous_reclaim_candidates) {
+    clear_humongous_is_live_table();
+  }
+}
+
 void
 G1CollectedHeap::setup_surviving_young_words() {
   assert(_surviving_young_words == NULL, "pre-condition");
@@ -4058,6 +4121,8 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
 
         g1_policy()->finalize_cset(target_pause_time_ms, evacuation_info);
 
+        register_humongous_regions_with_in_cset_fast_test();
+
         _cm->note_start_of_gc();
         // We should not verify the per-thread SATB buffers given that
         // we have not filtered them yet (we'll do so during the
@@ -4108,6 +4173,9 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
                                  true  /* verify_fingers */);
 
         free_collection_set(g1_policy()->collection_set(), evacuation_info);
+
+        eagerly_reclaim_humongous_regions();
+
         g1_policy()->clear_collection_set();
 
         cleanup_surviving_young_words();
@@ -4608,7 +4676,9 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
 
   assert(_worker_id == _par_scan_state->queue_num(), "sanity");
 
-  if (_g1->in_cset_fast_test(obj)) {
+  G1CollectedHeap::in_cset_state_t state = _g1->in_cset_state(obj);
+
+  if (state == G1CollectedHeap::InCSet) {
     oop forwardee;
     if (obj->is_forwarded()) {
       forwardee = obj->forwardee();
@@ -4627,6 +4697,9 @@ void G1ParCopyClosure<barrier, do_mark_object>::do_oop_work(T* p) {
       do_klass_barrier(p, forwardee);
     }
   } else {
+    if (state == G1CollectedHeap::IsHumongous) {
+      _g1->set_humongous_is_live(obj);
+    }
     // The object is not in collection set. If we're a root scanning
     // closure during an initial mark pause then attempt to mark the object.
     if (do_mark_object == G1MarkFromRoot) {
@@ -5450,12 +5523,21 @@ class G1KeepAliveClosure: public OopClosure {
 public:
   G1KeepAliveClosure(G1CollectedHeap* g1) : _g1(g1) {}
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
-  void do_oop(      oop* p) {
+  void do_oop(oop* p) {
     oop obj = *p;
 
-    if (_g1->obj_in_cs(obj)) {
+    G1CollectedHeap::in_cset_state_t cset_state = _g1->in_cset_state(obj);
+    if (obj == NULL || cset_state == G1CollectedHeap::InNeither) {
+      return;
+    }
+    if (cset_state == G1CollectedHeap::InCSet) {
       assert( obj->is_forwarded(), "invariant" );
       *p = obj->forwardee();
+    } else {
+      assert(!obj->is_forwarded(), "invariant" );
+      assert(cset_state == G1CollectedHeap::IsHumongous,
+             err_msg("Only allowed InCSet state is IsHumongous, but is %d", cset_state));
+      _g1->set_humongous_is_live(obj);
     }
   }
 };
@@ -5485,7 +5567,7 @@ public:
   template <class T> void do_oop_work(T* p) {
     oop obj = oopDesc::load_decode_heap_oop(p);
 
-    if (_g1h->obj_in_cs(obj)) {
+    if (_g1h->is_in_cset_or_humongous(obj)) {
       // If the referent object has been forwarded (either copied
       // to a new location or to itself in the event of an
       // evacuation failure) then we need to update the reference
@@ -5510,10 +5592,10 @@ public:
         assert(!Metaspace::contains((const void*)p),
                err_msg("Unexpectedly found a pointer from metadata: "
                               PTR_FORMAT, p));
-          _copy_non_heap_obj_cl->do_oop(p);
-        }
+        _copy_non_heap_obj_cl->do_oop(p);
       }
     }
+  }
 };
 
 // Serial drain queue closure. Called as the 'complete_gc'
@@ -6433,6 +6515,147 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
   decrement_summary_bytes(pre_used);
   policy->phase_times()->record_young_free_cset_time_ms(young_time_ms);
   policy->phase_times()->record_non_young_free_cset_time_ms(non_young_time_ms);
+}
+
+class G1FreeHumongousRegionClosure : public HeapRegionClosure {
+ private:
+  FreeRegionList* _free_region_list;
+  HeapRegionSet* _proxy_set;
+  HeapRegionSetCount _humongous_regions_removed;
+  size_t _freed_bytes;
+ public:
+
+  G1FreeHumongousRegionClosure(FreeRegionList* free_region_list) :
+    _free_region_list(free_region_list), _humongous_regions_removed(), _freed_bytes(0) {
+  }
+
+  virtual bool doHeapRegion(HeapRegion* r) {
+    if (!r->startsHumongous()) {
+      return false;
+    }
+
+    G1CollectedHeap* g1h = G1CollectedHeap::heap();
+
+    // The following checks whether the humongous object is live are sufficient.
+    // The main additional check (in addition to having a reference from the roots
+    // or the young gen) is whether the humongous object has a remembered set entry.
+    //
+    // A humongous object cannot be live if there is no remembered set for it
+    // because:
+    // - there can be no references from within humongous starts regions referencing
+    // the object because we never allocate other objects into them.
+    // (I.e. there are no intra-region references that may be missed by the
+    // remembered set)
+    // - as soon there is a remembered set entry to the humongous starts region
+    // (i.e. it has "escaped" to an old object) this remembered set entry will stay
+    // until the end of a concurrent mark.
+    //
+    // It is not required to check whether the object has been found dead by marking
+    // or not, in fact it would prevent reclamation within a concurrent cycle, as
+    // all objects allocated during that time are considered live.
+    // SATB marking is even more conservative than the remembered set.
+    // So if at this point in the collection there is no remembered set entry,
+    // nobody has a reference to it.
+    // At the start of collection we flush all refinement logs, and remembered sets
+    // are completely up-to-date wrt to references to the humongous object.
+    //
+    // Other implementation considerations:
+    // - never consider object arrays: while they are a valid target, they have not
+    // been observed to be used as temporary objects.
+    // - they would also pose considerable effort for cleaning up the the remembered
+    // sets.
+    // While this cleanup is not strictly necessary to be done (or done instantly),
+    // given that their occurrence is very low, this saves us this additional
+    // complexity.
+    uint region_idx = r->hrs_index();
+    if (g1h->humongous_is_live(region_idx) ||
+        g1h->humongous_region_is_always_live(region_idx)) {
+
+      if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
+        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+                               r->isHumongous(),
+                               region_idx,
+                               r->rem_set()->occupied(),
+                               r->rem_set()->strong_code_roots_list_length(),
+                               g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                               g1h->humongous_is_live(region_idx),
+                               oop(r->bottom())->is_objArray()
+                              );
+      }
+
+      return false;
+    }
+
+    guarantee(!((oop)(r->bottom()))->is_objArray(),
+              err_msg("Eagerly reclaiming object arrays is not supported, but the object "PTR_FORMAT" is.",
+                      r->bottom()));
+
+    if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
+      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+                             r->isHumongous(),
+                             r->bottom(),
+                             region_idx,
+                             r->region_num(),
+                             r->rem_set()->occupied(),
+                             r->rem_set()->strong_code_roots_list_length(),
+                             g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                             g1h->humongous_is_live(region_idx),
+                             oop(r->bottom())->is_objArray()
+                            );
+    }
+    _freed_bytes += r->used();
+    r->set_containing_set(NULL);
+    _humongous_regions_removed.increment(1u, r->capacity());
+    g1h->free_humongous_region(r, _free_region_list, false);
+
+    return false;
+  }
+
+  HeapRegionSetCount& humongous_free_count() {
+    return _humongous_regions_removed;
+  }
+
+  size_t bytes_freed() const {
+    return _freed_bytes;
+  }
+
+  size_t humongous_reclaimed() const {
+    return _humongous_regions_removed.length();
+  }
+};
+
+void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
+  assert_at_safepoint(true);
+
+  if (!G1ReclaimDeadHumongousObjectsAtYoungGC || !_has_humongous_reclaim_candidates) {
+    g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms(0.0, 0);
+    return;
+  }
+
+  double start_time = os::elapsedTime();
+
+  FreeRegionList local_cleanup_list("Local Humongous Cleanup List");
+
+  G1FreeHumongousRegionClosure cl(&local_cleanup_list);
+  heap_region_iterate(&cl);
+
+  HeapRegionSetCount empty_set;
+  remove_from_old_sets(empty_set, cl.humongous_free_count());
+
+  G1HRPrinter* hr_printer = _g1h->hr_printer();
+  if (hr_printer->is_active()) {
+    FreeRegionListIterator iter(&local_cleanup_list);
+    while (iter.more_available()) {
+      HeapRegion* hr = iter.get_next();
+      hr_printer->cleanup(hr);
+    }
+  }
+
+  prepend_to_freelist(&local_cleanup_list);
+  decrement_summary_bytes(cl.bytes_freed());
+
+  g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms((os::elapsedTime() - start_time) * 1000.0,
+                                                                    cl.humongous_reclaimed());
 }
 
 // This routine is similar to the above but does not record

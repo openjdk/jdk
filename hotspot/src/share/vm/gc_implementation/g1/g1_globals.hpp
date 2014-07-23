@@ -289,6 +289,13 @@
           "The amount of code root chunks that should be kept at most "     \
           "as percentage of already allocated.")                            \
                                                                             \
+  experimental(bool, G1ReclaimDeadHumongousObjectsAtYoungGC, true,          \
+          "Try to reclaim dead large objects at every young GC.")           \
+                                                                            \
+  experimental(bool, G1TraceReclaimDeadHumongousObjectsAtYoungGC, false,    \
+          "Print some information about large object liveness "             \
+          "at every young GC.")                                             \
+                                                                            \
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \
           "as a percentage of the heap size.")                              \
