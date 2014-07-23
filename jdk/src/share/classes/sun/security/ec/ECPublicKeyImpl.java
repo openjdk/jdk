@@ -31,7 +31,9 @@ import java.security.*;
 import java.security.interfaces.*;
 import java.security.spec.*;
 
-import sun.security.util.*;
+import sun.security.util.ECParameters;
+import sun.security.util.ECUtil;
+
 import sun.security.x509.*;
 
 /**
