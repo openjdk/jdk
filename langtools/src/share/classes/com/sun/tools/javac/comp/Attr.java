@@ -49,6 +49,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.Flags.*;
@@ -94,6 +95,7 @@ public class Attr extends JCTree.Visitor {
     final Annotate annotate;
     final DeferredLintHandler deferredLintHandler;
     final TypeEnvs typeEnvs;
+    final Dependencies dependencies;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -123,6 +125,7 @@ public class Attr extends JCTree.Visitor {
         annotate = Annotate.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
+        dependencies = Dependencies.instance(context);
 
         Options options = Options.instance(context);
 
@@ -695,6 +698,7 @@ public class Attr extends JCTree.Visitor {
      */
     void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams) {
+            dependencies.push(AttributionKind.TVAR, tvar);
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
             a.bound = Type.noType;
@@ -710,6 +714,7 @@ public class Attr extends JCTree.Visitor {
                 types.setBounds(a, List.of(syms.objectType));
             }
             a.tsym.flags_field &= ~UNATTRIBUTED;
+            dependencies.pop();
         }
         for (JCTypeParameter tvar : typarams) {
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
