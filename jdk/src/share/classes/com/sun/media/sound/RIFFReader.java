@@ -147,11 +147,11 @@ public final class RIFFReader extends InputStream {
         }
     }
 
-    public final void readFully(byte b[]) throws IOException {
+    public void readFully(byte b[]) throws IOException {
         readFully(b, 0, b.length);
     }
 
-    public final void readFully(byte b[], int off, int len) throws IOException {
+    public void readFully(byte b[], int off, int len) throws IOException {
         if (len < 0)
             throw new IndexOutOfBoundsException();
         while (len > 0) {
@@ -165,7 +165,7 @@ public final class RIFFReader extends InputStream {
         }
     }
 
-    public final long skipBytes(long n) throws IOException {
+    public long skipBytes(long n) throws IOException {
         if (n < 0)
             return 0;
         long skipped = 0;

@@ -73,7 +73,7 @@ public final class DialogOwner
      * @return  Printing attribute class (category), an instance of class
      *          {@link java.lang.Class java.lang.Class}.
      */
-    public final Class<? extends Attribute> getCategory() {
+    public Class<? extends Attribute> getCategory() {
         return DialogOwner.class;
     }
 
@@ -87,7 +87,7 @@ public final class DialogOwner
      *
      * @return  Attribute category name.
      */
-    public final String getName() {
+    public String getName() {
         return "dialog-owner";
     }
 

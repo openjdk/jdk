@@ -262,7 +262,7 @@ public final class GlyphList {
         return mapChars(info, len);
     }
 
-    private final boolean mapChars(FontInfo info, int len) {
+    private boolean mapChars(FontInfo info, int len) {
         /* REMIND.Is it worthwhile for the iteration to convert
          * chars to glyph ids to directly map to images?
          */

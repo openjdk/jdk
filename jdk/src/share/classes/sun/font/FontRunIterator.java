@@ -140,11 +140,11 @@ public final class FontRunIterator {
 
     static final int DONE = -1;
 
-    final int nextCodePoint() {
+    int nextCodePoint() {
         return nextCodePoint(limit);
     }
 
-    final int nextCodePoint(int lim) {
+    int nextCodePoint(int lim) {
         if (pos >= lim) {
             return DONE;
         }
@@ -159,7 +159,7 @@ public final class FontRunIterator {
         return ch;
     }
 
-    final void pushback(int ch) {
+    void pushback(int ch) {
         if (ch >= 0) {
             if (ch >= 0x10000) {
                 pos -= 2;

@@ -917,7 +917,7 @@ public final class SunGraphics2D
      * Return the SurfaceData object assigned to manage the destination
      * drawable surface of this Graphics2D.
      */
-    public final SurfaceData getSurfaceData() {
+    public SurfaceData getSurfaceData() {
         return surfaceData;
     }
 
@@ -1734,7 +1734,7 @@ public final class SunGraphics2D
      *      compositeState <= COMP_CUSTOM)
      * though nothing bad will happen if it is run in other states.
      */
-    final void validateColor() {
+    void validateColor() {
         int eargb;
         if (imageComp == CompositeType.Clear) {
             eargb = 0;

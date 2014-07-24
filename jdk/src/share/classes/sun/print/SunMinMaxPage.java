@@ -40,23 +40,19 @@ public final class SunMinMaxPage implements PrintRequestAttribute {
        page_max = max;
     }
 
-
-    public final Class<? extends PrintRequestAttribute> getCategory() {
+    public Class<? extends PrintRequestAttribute> getCategory() {
         return SunMinMaxPage.class;
     }
 
-
-    public final int getMin() {
+    public int getMin() {
         return page_min;
     }
 
-    public final int getMax() {
+    public int getMax() {
         return page_max;
     }
 
-
-    public final String getName() {
+    public String getName() {
         return "sun-page-minmax";
     }
-
 }

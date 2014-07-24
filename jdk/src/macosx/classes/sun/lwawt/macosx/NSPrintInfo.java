@@ -54,11 +54,11 @@ public final class NSPrintInfo implements PrintJobAttribute, PrintRequestAttribu
         return "" + fNSPrintInfo;
     }
 
-    public final Class<? extends Attribute> getCategory() {
+    public Class<? extends Attribute> getCategory() {
         return NSPrintInfo.class;
     }
 
-    public final String getName() {
+    public String getName() {
         return "nsPrintInfo";
     }
 }
