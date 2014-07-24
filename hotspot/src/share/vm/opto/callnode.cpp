@@ -688,7 +688,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
     return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
 
   case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
-    assert(tf()->_range->field_at(TypeFunc::Parms+1) == Type::HALF, "");
+    assert(tf()->range()->field_at(TypeFunc::Parms+1) == Type::HALF, "");
     // 2nd half of doubles and longs
     return new MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
 
