@@ -26,9 +26,9 @@ import sun.hotspot.code.NMethod;
 
 /*
  * @test GetNMethodTest
- * @ignore 8046268
  * @bug 8038240
  * @library /testlibrary /testlibrary/whitebox
+ * @ignore 8046268
  * @build GetNMethodTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -Xmixed -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* GetNMethodTest
