@@ -28,7 +28,7 @@
  * @bug 8005722
  * @summary assert(_oprs_len[mode] < maxNumberOfOperands) failed: array overflow
  *
- * @run main/othervm -Xcomp -client Test8004051
+ * @run main/othervm -Xcomp Test8004051
  */
 
 public class Test8004051 {

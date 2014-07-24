@@ -21,11 +21,8 @@
  * questions.
  */
 
-import com.sun.management.HotSpotDiagnosticMXBean;
-import com.sun.management.VMOption;
 import sun.hotspot.WhiteBox;
 import sun.hotspot.code.NMethod;
-import sun.management.ManagementFactoryHelper;
 
 import java.lang.reflect.Constructor;
 import java.lang.reflect.Executable;
@@ -98,15 +95,7 @@ public abstract class CompilerWhiteBoxTest {
      */
     protected static String getVMOption(String name) {
         Objects.requireNonNull(name);
-        HotSpotDiagnosticMXBean diagnostic
-                = ManagementFactoryHelper.getDiagnosticMXBean();
-        VMOption tmp;
-        try {
-            tmp = diagnostic.getVMOption(name);
-        } catch (IllegalArgumentException e) {
-            tmp = null;
-        }
-        return (tmp == null ? null : tmp.getValue());
+        return Objects.toString(WHITE_BOX.getVMFlag(name), null);
     }
 
     /**
@@ -174,7 +163,7 @@ public abstract class CompilerWhiteBoxTest {
      * @see #test()
      */
     protected final void runTest() {
-        if (ManagementFactoryHelper.getCompilationMXBean() == null) {
+        if (CompilerWhiteBoxTest.MODE.startsWith("interpreted ")) {
             System.err.println(
                     "Warning: test is not applicable in interpreted mode");
             return;
