@@ -2125,37 +2125,6 @@ MsgRouting AwtComponent::WmVScroll(UINT scrollCode, UINT pos, HWND hScrollbar)
     return mrDoDefault;
 }
 
-namespace TimeHelper {
-    // Sometimes the message belongs to another event queue and
-    // GetMessageTime() may return wrong non-zero value (the case is
-    // the TrayIcon peer). Using TimeHelper::windowsToUTC(::GetTickCount())
-    // could help there.
-    static DWORD getMessageTimeWindows(){
-        DWORD time = ::GetMessageTime();
-        // The following 'if' seems to be a unneeded hack.
-        // Consider removing it.
-        if (time == 0) {
-            time = ::GetTickCount();
-        }
-        return time;
-    }
-
-    jlong getMessageTimeUTC() {
-        return windowsToUTC(getMessageTimeWindows());
-    }
-
-    // If calling order of GetTickCount and JVM_CurrentTimeMillis
-    // is swapped, it would sometimes give different result.
-    // Anyway, we would not always have determinism
-    // and sortedness of time conversion here (due to Windows's
-    // timers peculiarities). Having some euristic algorithm might
-    // help here.
-    jlong windowsToUTC(DWORD windowsTime) {
-        jlong offset = ::GetTickCount() - windowsTime;
-        jlong jvm_time = ::JVM_CurrentTimeMillis(NULL, 0);
-        return jvm_time - offset;
-    }
-} //TimeHelper
 
 MsgRouting AwtComponent::WmPaint(HDC)
 {
@@ -2253,7 +2222,7 @@ void AwtComponent::PaintUpdateRgn(const RECT *insets)
 MsgRouting AwtComponent::WmMouseEnter(UINT flags, int x, int y)
 {
     SendMouseEvent(java_awt_event_MouseEvent_MOUSE_ENTERED,
-                   TimeHelper::getMessageTimeUTC(), x, y, GetJavaModifiers(), 0, JNI_FALSE);
+                   ::JVM_CurrentTimeMillis(NULL, 0), x, y, GetJavaModifiers(), 0, JNI_FALSE);
     if ((flags & ALL_MK_BUTTONS) == 0) {
         AwtCursor::UpdateCursor(this);
     }
@@ -2288,7 +2257,7 @@ AwtComponent::InitMessage(MSG* msg, UINT message, WPARAM wParam, LPARAM lParam,
     msg->message = message;
     msg->wParam = wParam;
     msg->lParam = lParam;
-    msg->time = TimeHelper::getMessageTimeWindows();
+    msg->time = ::GetMessageTime();
     msg->pt.x = x;
     msg->pt.y = y;
 }
@@ -2327,7 +2296,7 @@ int AwtComponent::GetClickCount()
 
 MsgRouting AwtComponent::WmMouseDown(UINT flags, int x, int y, int button)
 {
-    jlong now = TimeHelper::getMessageTimeUTC();
+    jlong now = ::JVM_CurrentTimeMillis(NULL, 0);
 
     if (lastClickWnd == this &&
         lastButton == button &&
@@ -2392,7 +2361,7 @@ MsgRouting AwtComponent::WmMouseUp(UINT flags, int x, int y, int button)
     MSG msg;
     InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
 
-    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_RELEASED, TimeHelper::getMessageTimeUTC(),
+    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_RELEASED, ::JVM_CurrentTimeMillis(NULL, 0),
                    x, y, GetJavaModifiers(), clickCount,
                    (GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), GetButton(button), &msg);
@@ -2403,7 +2372,7 @@ MsgRouting AwtComponent::WmMouseUp(UINT flags, int x, int y, int button)
      */
     if ((m_mouseButtonClickAllowed & GetButtonMK(button)) != 0) { //CLICK allowed
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
-                       TimeHelper::getMessageTimeUTC(), x, y, GetJavaModifiers(),
+                       ::JVM_CurrentTimeMillis(NULL, 0), x, y, GetJavaModifiers(),
                        clickCount, JNI_FALSE, GetButton(button));
     }
     // Exclude button from allowed to generate CLICK messages
@@ -2452,7 +2421,7 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
             // This is a partial backout of 5039416 fix.
             MSG msg;
             InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_DRAGGED, TimeHelper::getMessageTimeUTC(), x, y,
+            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_DRAGGED, ::JVM_CurrentTimeMillis(NULL, 0), x, y,
                            GetJavaModifiers(), 0, JNI_FALSE,
                            java_awt_event_MouseEvent_NOBUTTON, &msg);
             //dragging means no more CLICKs until next WM_MOUSE_DOWN/WM_MOUSE_UP message sequence
@@ -2460,7 +2429,7 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
         } else {
             MSG msg;
             InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, TimeHelper::getMessageTimeUTC(), x, y,
+            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, ::JVM_CurrentTimeMillis(NULL, 0), x, y,
                            GetJavaModifiers(), 0, JNI_FALSE,
                            java_awt_event_MouseEvent_NOBUTTON, &msg);
         }
@@ -2471,7 +2440,7 @@ MsgRouting AwtComponent::WmMouseMove(UINT flags, int x, int y)
 
 MsgRouting AwtComponent::WmMouseExit(UINT flags, int x, int y)
 {
-    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_EXITED, TimeHelper::getMessageTimeUTC(), x,
+    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_EXITED, ::JVM_CurrentTimeMillis(NULL, 0), x,
                    y, GetJavaModifiers(), 0, JNI_FALSE);
     sm_cursorOn = NULL;
     return mrConsume;   /* Don't pass our synthetic event on! */
@@ -2523,7 +2492,7 @@ MsgRouting AwtComponent::WmMouseWheel(UINT flags, int x, int y,
 
     DTRACE_PRINTLN("calling SendMouseWheelEvent");
 
-    SendMouseWheelEvent(java_awt_event_MouseEvent_MOUSE_WHEEL, TimeHelper::getMessageTimeUTC(),
+    SendMouseWheelEvent(java_awt_event_MouseEvent_MOUSE_WHEEL, ::JVM_CurrentTimeMillis(NULL, 0),
                         eventPt.x, eventPt.y, GetJavaModifiers(), 0, 0, scrollType,
                         scrollLines, roundedWheelRotation, preciseWheelRotation, &msg);
 
@@ -3578,7 +3547,7 @@ MsgRouting AwtComponent::WmKeyDown(UINT wkey, UINT repCnt,
 
 
     SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_PRESSED,
-                             TimeHelper::windowsToUTC(msg.time), jkey, character,
+                             ::JVM_CurrentTimeMillis(NULL, 0), jkey, character,
                              modifiers, keyLocation, (jlong)wkey, &msg);
 
     // bugid 4724007: Windows does not create a WM_CHAR for the Del key
@@ -3588,7 +3557,7 @@ MsgRouting AwtComponent::WmKeyDown(UINT wkey, UINT repCnt,
     // for Java - we don't want Windows trying to process it).
     if (jkey == java_awt_event_KeyEvent_VK_DELETE) {
         SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_TYPED,
-                                 TimeHelper::windowsToUTC(msg.time),
+                                 ::JVM_CurrentTimeMillis(NULL, 0),
                                  java_awt_event_KeyEvent_VK_UNDEFINED,
                                  character, modifiers,
                                  java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0);
@@ -3620,7 +3589,7 @@ MsgRouting AwtComponent::WmKeyUp(UINT wkey, UINT repCnt,
     UpdateDynPrimaryKeymap(wkey, jkey, keyLocation, modifiers);
 
     SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_RELEASED,
-                             TimeHelper::windowsToUTC(msg.time), jkey, character,
+                             ::JVM_CurrentTimeMillis(NULL, 0), jkey, character,
                              modifiers, keyLocation, (jlong)wkey, &msg);
     return mrConsume;
 }
@@ -3665,7 +3634,7 @@ MsgRouting AwtComponent::WmIMEChar(UINT character, UINT repCnt, UINT flags, BOOL
 
     jint modifiers = GetJavaModifiers();
     SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_TYPED,
-                             TimeHelper::windowsToUTC(msg.time),
+                             ::JVM_CurrentTimeMillis(NULL, 0),
                              java_awt_event_KeyEvent_VK_UNDEFINED,
                              unicodeChar, modifiers,
                              java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0,
@@ -3734,7 +3703,7 @@ MsgRouting AwtComponent::WmChar(UINT character, UINT repCnt, UINT flags,
     InitMessage(&msg, message, character,
                               MAKELPARAM(repCnt, flags));
     SendKeyEventToFocusOwner(java_awt_event_KeyEvent_KEY_TYPED,
-                             TimeHelper::windowsToUTC(msg.time),
+                             ::JVM_CurrentTimeMillis(NULL, 0),
                              java_awt_event_KeyEvent_VK_UNDEFINED,
                              unicodeChar, modifiers,
                              java_awt_event_KeyEvent_KEY_LOCATION_UNKNOWN, (jlong)0,
@@ -4020,7 +3989,7 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
     }
 
     // call m_InputMethod.sendInputMethod()
-    env->CallVoidMethod(m_InputMethod, sendIMEventMid, id, TimeHelper::getMessageTimeUTC(),
+    env->CallVoidMethod(m_InputMethod, sendIMEventMid, id, ::JVM_CurrentTimeMillis(NULL, 0),
                         text, clauseBoundary, clauseReading, attrBoundary,
                         attrValue, commitedTextLength, caretPos, visiblePos);
     if (safe_ExceptionOccurred(env))   env->ExceptionDescribe();
