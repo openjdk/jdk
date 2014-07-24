@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -134,7 +134,7 @@ void InterpreterMacroAssembler::profile_arguments_type(Register mdp, Register ca
         shll(tmp, exact_log2(DataLayout::cell_size));
         addptr(mdp, tmp);
       }
-      movptr(Address(rbp, frame::interpreter_frame_mdx_offset * wordSize), mdp);
+      movptr(Address(rbp, frame::interpreter_frame_mdp_offset * wordSize), mdp);
     } else {
       assert(MethodData::profile_return(), "either profile call args or call ret");
       update_mdp_by_constant(mdp, in_bytes(TypeEntriesAtCall::return_only_size()));

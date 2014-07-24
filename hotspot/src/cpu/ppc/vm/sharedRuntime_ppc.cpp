@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -29,16 +29,17 @@
 #include "code/icBuffer.hpp"
 #include "code/vtableStubs.hpp"
 #include "interpreter/interpreter.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "oops/compiledICHolder.hpp"
 #include "prims/jvmtiRedefineClassesTrace.hpp"
 #include "runtime/sharedRuntime.hpp"
 #include "runtime/vframeArray.hpp"
 #include "vmreg_ppc.inline.hpp"
-#include "adfiles/ad_ppc_64.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #endif
 #ifdef COMPILER2
+#include "adfiles/ad_ppc_64.hpp"
 #include "opto/runtime.hpp"
 #endif
 

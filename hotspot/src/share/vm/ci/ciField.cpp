@@ -138,6 +138,17 @@ ciField::ciField(ciInstanceKlass* klass, int index): _known_to_link_with_put(NUL
     return;
   }
 
+  // Access check based on declared_holder. canonical_holder should not be used
+  // to check access because it can erroneously succeed. If this check fails,
+  // propagate the declared holder to will_link() which in turn will bail out
+  // compilation for this field access.
+  if (!Reflection::verify_field_access(klass->get_Klass(), declared_holder->get_Klass(), canonical_holder, field_desc.access_flags(), true)) {
+    _holder = declared_holder;
+    _offset = -1;
+    _is_constant = false;
+    return;
+  }
+
   assert(canonical_holder == field_desc.field_holder(), "just checking");
   initialize_from(&field_desc);
 }

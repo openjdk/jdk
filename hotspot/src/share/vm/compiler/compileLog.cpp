@@ -24,6 +24,7 @@
 
 #include "precompiled.hpp"
 #include "ci/ciMethod.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileLog.hpp"
 #include "memory/allocation.inline.hpp"
 #include "oops/method.hpp"
