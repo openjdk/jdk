@@ -86,7 +86,7 @@ final class XDropTargetRegistry {
         return window;
     }
 
-    static final long getDnDProxyWindow() {
+    static long getDnDProxyWindow() {
         return XWindow.getXAWTRootWindow().getWindow();
     }
 

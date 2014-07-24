@@ -114,7 +114,7 @@ public final class JRSUIControl {
         changes.putAll(other.changes);
     }
 
-    protected synchronized final void finalize() throws Throwable {
+    protected synchronized void finalize() throws Throwable {
         if (cfDictionaryPtr == 0) return;
         disposeCFDictionary(cfDictionaryPtr);
         cfDictionaryPtr = 0;

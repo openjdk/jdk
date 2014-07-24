@@ -179,7 +179,7 @@ public final class XAtom {
         }
         return xatom;
     }
-    public final String getName() {
+    public String getName() {
         if (name == null) {
             XToolkit.awtLock();
             try {

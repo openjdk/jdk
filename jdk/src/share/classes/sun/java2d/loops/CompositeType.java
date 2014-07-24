@@ -242,7 +242,7 @@ public final class CompositeType {
         this.uniqueID = makeUniqueID(desc);
     }
 
-    public synchronized static final int makeUniqueID(String desc) {
+    public synchronized static int makeUniqueID(String desc) {
         Integer i = compositeUIDMap.get(desc);
 
         if (i == null) {

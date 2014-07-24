@@ -39,7 +39,7 @@ public final class ScriptRunData {
     private static final int CHAR_LIMIT = 0x110000;
 
     private static int cache = 0;
-    public static final int getScript(int cp) {
+    public static int getScript(int cp) {
         // optimize for runs of characters in the same script
         if (cp >= data[cache] && cp < data[cache+2]) {
             return data[cache+1];

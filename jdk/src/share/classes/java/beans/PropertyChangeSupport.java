@@ -544,7 +544,7 @@ public class PropertyChangeSupport implements Serializable {
         /**
          * {@inheritDoc}
          */
-        public final PropertyChangeListener extract(PropertyChangeListener listener) {
+        public PropertyChangeListener extract(PropertyChangeListener listener) {
             while (listener instanceof PropertyChangeListenerProxy) {
                 listener = ((PropertyChangeListenerProxy) listener).getListener();
             }

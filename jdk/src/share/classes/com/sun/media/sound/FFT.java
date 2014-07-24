@@ -68,7 +68,7 @@ public final class FFT {
         calc(fftFrameSize, data, sign, w);
     }
 
-    private final static double[] computeTwiddleFactors(int fftFrameSize,
+    private static double[] computeTwiddleFactors(int fftFrameSize,
             int sign) {
 
         int imax = (int) (Math.log(fftFrameSize) / Math.log(2.));
@@ -122,7 +122,7 @@ public final class FFT {
         return warray;
     }
 
-    private final static void calc(int fftFrameSize, double[] data, int sign,
+    private static void calc(int fftFrameSize, double[] data, int sign,
             double[] w) {
 
         final int fftFrameSize2 = fftFrameSize << 1;
@@ -139,7 +139,7 @@ public final class FFT {
 
     }
 
-    private final static void calcF2E(int fftFrameSize, double[] data, int i,
+    private static void calcF2E(int fftFrameSize, double[] data, int i,
             int nstep, double[] w) {
         int jmax = nstep;
         for (int n = 0; n < jmax; n += 2) {
@@ -163,7 +163,7 @@ public final class FFT {
 
     // Perform Factor-4 Decomposition with 3 * complex operators and 8 +/-
     // complex operators
-    private final static void calcF4F(int fftFrameSize, double[] data, int i,
+    private static void calcF4F(int fftFrameSize, double[] data, int i,
             int nstep, double[] w) {
         final int fftFrameSize2 = fftFrameSize << 1; // 2*fftFrameSize;
         // Factor-4 Decomposition
@@ -331,7 +331,7 @@ public final class FFT {
 
     // Perform Factor-4 Decomposition with 3 * complex operators and 8 +/-
     // complex operators
-    private final static void calcF4I(int fftFrameSize, double[] data, int i,
+    private static void calcF4I(int fftFrameSize, double[] data, int i,
             int nstep, double[] w) {
         final int fftFrameSize2 = fftFrameSize << 1; // 2*fftFrameSize;
         // Factor-4 Decomposition
@@ -499,7 +499,7 @@ public final class FFT {
 
     // Perform Factor-4 Decomposition with 3 * complex operators and 8 +/-
     // complex operators
-    private final static void calcF4FE(int fftFrameSize, double[] data, int i,
+    private static void calcF4FE(int fftFrameSize, double[] data, int i,
             int nstep, double[] w) {
         final int fftFrameSize2 = fftFrameSize << 1; // 2*fftFrameSize;
         // Factor-4 Decomposition
@@ -593,7 +593,7 @@ public final class FFT {
 
     // Perform Factor-4 Decomposition with 3 * complex operators and 8 +/-
     // complex operators
-    private final static void calcF4IE(int fftFrameSize, double[] data, int i,
+    private static void calcF4IE(int fftFrameSize, double[] data, int i,
             int nstep, double[] w) {
         final int fftFrameSize2 = fftFrameSize << 1; // 2*fftFrameSize;
         // Factor-4 Decomposition
@@ -685,7 +685,7 @@ public final class FFT {
 
     }
 
-    private final void bitreversal(double[] data) {
+    private void bitreversal(double[] data) {
         if (fftFrameSize < 4)
             return;
 
