@@ -31,22 +31,8 @@
 #include "oops/symbol.hpp"
 #include "oops/typeArrayOop.hpp"
 #include "runtime/handles.hpp"
+#include "utilities/bytes.hpp"
 #include "utilities/constantTag.hpp"
-#ifdef TARGET_ARCH_x86
-# include "bytes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytes_ppc.hpp"
-#endif
 
 // A ConstantPool is an array containing class constants as described in the
 // class file.

@@ -1066,7 +1066,6 @@ void PSParallelCompact::post_compact()
   ClassLoaderDataGraph::purge();
   MetaspaceAux::verify_metrics();
 
-  Threads::gc_epilogue();
   CodeCache::gc_epilogue();
   JvmtiExport::gc_epilogue();
 
@@ -2068,7 +2067,6 @@ bool PSParallelCompact::invoke_no_policy(bool maximum_heap_compaction) {
     size_policy->major_collection_begin();
 
     CodeCache::gc_prologue();
-    Threads::gc_prologue();
 
     COMPILER2_PRESENT(DerivedPointerTable::clear());
 

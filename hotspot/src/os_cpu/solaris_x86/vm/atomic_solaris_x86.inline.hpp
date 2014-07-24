@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,6 @@
 
 #include "runtime/atomic.hpp"
 #include "runtime/os.hpp"
-#include "vm_version_x86.hpp"
 
 inline void Atomic::store    (jbyte    store_value, jbyte*    dest) { *dest = store_value; }
 inline void Atomic::store    (jshort   store_value, jshort*   dest) { *dest = store_value; }

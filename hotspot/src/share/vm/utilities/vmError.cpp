@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "code/codeCache.hpp"
 #include "compiler/compileBroker.hpp"
 #include "gc_interface/collectedHeap.hpp"
 #include "prims/whitebox.hpp"
