@@ -325,7 +325,7 @@ static int clickCount = 0;
 
 MsgRouting AwtTrayIcon::WmMouseDown(UINT flags, int x, int y, int button)
 {
-    jlong now = TimeHelper::windowsToUTC(::GetTickCount());
+    jlong now = ::JVM_CurrentTimeMillis(NULL, 0);
     jint javaModif = AwtComponent::GetJavaModifiers();
 
     if (lastClickTrIc == this &&
@@ -361,14 +361,14 @@ MsgRouting AwtTrayIcon::WmMouseUp(UINT flags, int x, int y, int button)
     MSG msg;
     AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
 
-    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_RELEASED, TimeHelper::windowsToUTC(::GetTickCount()),
+    SendMouseEvent(java_awt_event_MouseEvent_MOUSE_RELEASED, ::JVM_CurrentTimeMillis(NULL, 0),
                    x, y, AwtComponent::GetJavaModifiers(), clickCount,
                    (AwtComponent::GetButton(button) == java_awt_event_MouseEvent_BUTTON3 ?
                     TRUE : FALSE), AwtComponent::GetButton(button), &msg);
 
     if ((m_mouseButtonClickAllowed & AwtComponent::GetButtonMK(button)) != 0) { // No up-button in the drag-state
         SendMouseEvent(java_awt_event_MouseEvent_MOUSE_CLICKED,
-                       TimeHelper::windowsToUTC(::GetTickCount()), x, y, AwtComponent::GetJavaModifiers(),
+                       ::JVM_CurrentTimeMillis(NULL, 0), x, y, AwtComponent::GetJavaModifiers(),
                        clickCount, JNI_FALSE, AwtComponent::GetButton(button));
     }
     m_mouseButtonClickAllowed &= ~AwtComponent::GetButtonMK(button); // Exclude the up-button from the drag-state
@@ -395,7 +395,7 @@ MsgRouting AwtTrayIcon::WmMouseMove(UINT flags, int x, int y)
         if ((flags & ALL_MK_BUTTONS) != 0) {
             m_mouseButtonClickAllowed = 0;
         } else {
-            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, TimeHelper::windowsToUTC(::GetTickCount()), x, y,
+            SendMouseEvent(java_awt_event_MouseEvent_MOUSE_MOVED, ::JVM_CurrentTimeMillis(NULL, 0), x, y,
                            AwtComponent::GetJavaModifiers(), 0, JNI_FALSE,
                            java_awt_event_MouseEvent_NOBUTTON, &msg);
         }
@@ -408,7 +408,7 @@ MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
     if (AwtComponent::GetJavaModifiers() & java_awt_event_InputEvent_BUTTON1_DOWN_MASK) {
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, TimeHelper::windowsToUTC(::GetTickCount()),
+        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
                         AwtComponent::GetJavaModifiers(), &msg);
     }
     return mrConsume;
@@ -417,14 +417,14 @@ MsgRouting AwtTrayIcon::WmBalloonUserClick(UINT flags, int x, int y)
 MsgRouting AwtTrayIcon::WmKeySelect(UINT flags, int x, int y)
 {
     static jlong lastKeySelectTime = 0;
-    jlong now = TimeHelper::windowsToUTC(::GetTickCount());
+    jlong now = ::JVM_CurrentTimeMillis(NULL, 0);
 
     // If a user selects a notify icon with the ENTER key,
     // Shell 5.0 sends double NIN_KEYSELECT notification.
     if (lastKeySelectTime != now) {
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, TimeHelper::windowsToUTC(::GetTickCount()),
+        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
                         AwtComponent::GetJavaModifiers(), &msg);
     }
     lastKeySelectTime = now;
@@ -441,7 +441,7 @@ MsgRouting AwtTrayIcon::WmSelect(UINT flags, int x, int y)
     if (clickCount == 2) {
         MSG msg;
         AwtComponent::InitMessage(&msg, lastMessage, flags, MAKELPARAM(x, y), x, y);
-        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, TimeHelper::windowsToUTC(::GetTickCount()),
+        SendActionEvent(java_awt_event_ActionEvent_ACTION_PERFORMED, ::JVM_CurrentTimeMillis(NULL, 0),
                         AwtComponent::GetJavaModifiers(), &msg);
     }
     return mrConsume;
