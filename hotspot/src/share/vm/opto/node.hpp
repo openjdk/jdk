@@ -398,6 +398,7 @@ protected:
     if (*p != NULL)  (*p)->del_out((Node *)this);
     (*p) = n;
     if (n != NULL)      n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
@@ -409,6 +410,7 @@ protected:
     assert( _in[i] == NULL, "sanity");
     _in[i] = n;
     if (n != NULL)      n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
   int find_edge(Node* n);
