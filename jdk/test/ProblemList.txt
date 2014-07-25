@@ -215,9 +215,12 @@ sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
 sun/security/pkcs11/ec/ReadPKCS12.java                          solaris-all
 sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 
-# 7041639, Solaris DSA keypair generation bug
+# 7041639: Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
+
+# 8051952: Unreachable.java test failing on Windows
+sun/security/krb5/auto/Unreachable.java                         windows-all
 
 ############################################################################
 
