@@ -27,6 +27,7 @@
 
 #include "code/codeBlob.hpp"
 #include "opto/machnode.hpp"
+#include "opto/optoreg.hpp"
 #include "opto/type.hpp"
 #include "runtime/biasedLocking.hpp"
 #include "runtime/rtmLocking.hpp"

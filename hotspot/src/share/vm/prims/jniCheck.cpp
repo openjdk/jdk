@@ -37,21 +37,6 @@
 #include "runtime/interfaceSupport.hpp"
 #include "runtime/jfieldIDWorkaround.hpp"
 #include "runtime/thread.inline.hpp"
-#ifdef TARGET_ARCH_x86
-# include "jniTypes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "jniTypes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "jniTypes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "jniTypes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "jniTypes_ppc.hpp"
-#endif
 
 // Complain every extra number of unplanned local refs
 #define CHECK_JNI_LOCAL_REF_CAP_WARN_THRESHOLD 32

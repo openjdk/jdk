@@ -36,6 +36,9 @@
 #ifdef COMPILER1
 #include "c1/c1_Defs.hpp"
 #endif
+#ifdef COMPILER2
+#include "opto/optoreg.hpp"
+#endif
 
 // OopMapStream
 

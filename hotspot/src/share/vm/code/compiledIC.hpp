@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,23 +25,9 @@
 #ifndef SHARE_VM_CODE_COMPILEDIC_HPP
 #define SHARE_VM_CODE_COMPILEDIC_HPP
 
+#include "code/nativeInst.hpp"
 #include "interpreter/linkResolver.hpp"
 #include "oops/compiledICHolder.hpp"
-#ifdef TARGET_ARCH_x86
-# include "nativeInst_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "nativeInst_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "nativeInst_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "nativeInst_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "nativeInst_ppc.hpp"
-#endif
 
 //-----------------------------------------------------------------------------
 // The CompiledIC represents a compiled inline cache.

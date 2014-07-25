@@ -175,7 +175,7 @@ public abstract class AbstractPerfDataBuffer {
             });
 
             impl = (PerfDataBufferImpl)cons.newInstance(new Object[] {
-                     bb, new Integer(lvmid)
+                     bb, lvmid
             });
 
         } catch (ClassNotFoundException e) {

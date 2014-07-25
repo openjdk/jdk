@@ -92,16 +92,16 @@ class ArrayExpression extends NaryExpression {
      */
     public void codeValue(Environment env, Context ctx, Assembler asm) {
         int t = 0;
-        asm.add(where, opc_ldc, new Integer(args.length));
+        asm.add(where, opc_ldc, args.length);
         switch (type.getElementType().getTypeCode()) {
-          case TC_BOOLEAN:      asm.add(where, opc_newarray, new Integer(T_BOOLEAN));   break;
-          case TC_BYTE:         asm.add(where, opc_newarray, new Integer(T_BYTE));      break;
-          case TC_SHORT:        asm.add(where, opc_newarray, new Integer(T_SHORT));     break;
-          case TC_CHAR:         asm.add(where, opc_newarray, new Integer(T_CHAR));      break;
-          case TC_INT:          asm.add(where, opc_newarray, new Integer(T_INT));       break;
-          case TC_LONG:         asm.add(where, opc_newarray, new Integer(T_LONG));      break;
-          case TC_FLOAT:        asm.add(where, opc_newarray, new Integer(T_FLOAT));     break;
-          case TC_DOUBLE:       asm.add(where, opc_newarray, new Integer(T_DOUBLE));    break;
+          case TC_BOOLEAN:      asm.add(where, opc_newarray, T_BOOLEAN);   break;
+          case TC_BYTE:         asm.add(where, opc_newarray, T_BYTE);      break;
+          case TC_SHORT:        asm.add(where, opc_newarray, T_SHORT);     break;
+          case TC_CHAR:         asm.add(where, opc_newarray, T_CHAR);      break;
+          case TC_INT:          asm.add(where, opc_newarray, T_INT);       break;
+          case TC_LONG:         asm.add(where, opc_newarray, T_LONG);      break;
+          case TC_FLOAT:        asm.add(where, opc_newarray, T_FLOAT);     break;
+          case TC_DOUBLE:       asm.add(where, opc_newarray, T_DOUBLE);    break;
 
           case TC_ARRAY:
             asm.add(where, opc_anewarray, type.getElementType());
@@ -122,7 +122,7 @@ class ArrayExpression extends NaryExpression {
             if (args[i].equalsDefault()) continue;
 
             asm.add(where, opc_dup);
-            asm.add(where, opc_ldc, new Integer(i));
+            asm.add(where, opc_ldc, i);
             args[i].codeValue(env, ctx, asm);
             switch (type.getElementType().getTypeCode()) {
               case TC_BOOLEAN:

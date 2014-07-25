@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -61,8 +61,8 @@
 
 #else
 
-  void save_bcp()                                          { movptr(Address(rbp, frame::interpreter_frame_bcx_offset * wordSize), rsi); }
-  void restore_bcp()                                       { movptr(rsi, Address(rbp, frame::interpreter_frame_bcx_offset * wordSize)); }
+  void save_bcp()                                          { movptr(Address(rbp, frame::interpreter_frame_bcp_offset * wordSize), rsi); }
+  void restore_bcp()                                       { movptr(rsi, Address(rbp, frame::interpreter_frame_bcp_offset * wordSize)); }
   void restore_locals()                                    { movptr(rdi, Address(rbp, frame::interpreter_frame_locals_offset * wordSize)); }
 
   // Helpers for runtime call arguments/results

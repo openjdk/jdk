@@ -231,7 +231,7 @@ public final class ServiceCreds {
         for (int i=0; i<ekeys.length; i++) {
             ekeys[i] =  new EncryptionKey(
                         kkeys[i].getEncoded(), kkeys[i].getKeyType(),
-                        new Integer(kkeys[i].getVersionNumber()));
+                        kkeys[i].getVersionNumber());
         }
         return ekeys;
     }

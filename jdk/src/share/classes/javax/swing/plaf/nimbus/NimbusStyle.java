@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -283,12 +283,12 @@ public final class NimbusStyle extends SynthStyle {
         //list may contain only "standard" states (those defined by Synth),
         //or it may contain custom states, or it may contain only "standard"
         //states but list them in a non-standard order.
-        List<State> states = new ArrayList<State>();
+        List<State<?>> states = new ArrayList<>();
         //a map of state name to code
-        Map<String,Integer> stateCodes = new HashMap<String,Integer>();
+        Map<String,Integer> stateCodes = new HashMap<>();
         //This is a list of runtime "state" context objects. These contain
         //the values associated with each state.
-        List<RuntimeState> runtimeStates = new ArrayList<RuntimeState>();
+        List<RuntimeState> runtimeStates = new ArrayList<>();
 
         //determine whether there are any custom states, or custom state
         //order. If so, then read all those custom states and define the
@@ -304,7 +304,7 @@ public final class NimbusStyle extends SynthStyle {
                     //this is a non-standard state name, so look for the
                     //custom state associated with it
                     String stateName = prefix + "." + s[i];
-                    State customState = (State)defaults.get(stateName);
+                    State<?> customState = (State)defaults.get(stateName);
                     if (customState != null) {
                         states.add(customState);
                     }
@@ -317,12 +317,12 @@ public final class NimbusStyle extends SynthStyle {
             //to be non-null. Otherwise, leave it null (meaning, use the
             //standard synth states).
             if (states.size() > 0) {
-                values.stateTypes = states.toArray(new State[states.size()]);
+                values.stateTypes = states.toArray(new State<?>[states.size()]);
             }
 
             //assign codes for each of the state types
             int code = 1;
-            for (State state : states) {
+            for (State<?> state : states) {
                 stateCodes.put(state.getName(), code);
                 code <<= 1;
             }
@@ -463,12 +463,14 @@ public final class NimbusStyle extends SynthStyle {
         values.states = runtimeStates.toArray(new RuntimeState[runtimeStates.size()]);
     }
 
-    private Painter getPainter(Map<String, Object> defaults, String key) {
+    private Painter<Object> getPainter(Map<String, Object> defaults, String key) {
         Object p = defaults.get(key);
         if (p instanceof UIDefaults.LazyValue) {
             p = ((UIDefaults.LazyValue)p).createValue(UIManager.getDefaults());
         }
-        return (p instanceof Painter ? (Painter)p : null);
+        @SuppressWarnings("unchecked")
+        Painter<Object> tmp = (p instanceof Painter ? (Painter)p : null);
+        return tmp;
     }
 
     /**
@@ -689,6 +691,12 @@ public final class NimbusStyle extends SynthStyle {
         return obj == NULL ? null : obj;
     }
 
+    @SuppressWarnings("unchecked")
+    private static Painter<Object> paintFilter(@SuppressWarnings("rawtypes") Painter painter) {
+        return (Painter<Object>) painter;
+    }
+
+
     /**
      * Gets the appropriate background Painter, if there is one, for the state
      * specified in the given SynthContext. This method does appropriate
@@ -698,14 +706,14 @@ public final class NimbusStyle extends SynthStyle {
      * @return The background painter associated for the given state, or null if
      * none could be found.
      */
-    public Painter getBackgroundPainter(SynthContext ctx) {
+    public Painter<Object> getBackgroundPainter(SynthContext ctx) {
         Values v = getValues(ctx);
         int xstate = getExtendedState(ctx, v);
-        Painter p = null;
+        Painter<Object> p = null;
 
         // check the cache
         tmpKey.init("backgroundPainter$$instance", xstate);
-        p = (Painter)v.cache.get(tmpKey);
+        p = paintFilter((Painter)v.cache.get(tmpKey));
         if (p != null) return p;
 
         // not in cache, so lookup and store in cache
@@ -713,11 +721,11 @@ public final class NimbusStyle extends SynthStyle {
         int[] lastIndex = new int[] {-1};
         while ((s = getNextState(v.states, lastIndex, xstate)) != null) {
             if (s.backgroundPainter != null) {
-                p = s.backgroundPainter;
+                p = paintFilter(s.backgroundPainter);
                 break;
             }
         }
-        if (p == null) p = (Painter)get(ctx, "backgroundPainter");
+        if (p == null) p = paintFilter((Painter)get(ctx, "backgroundPainter"));
         if (p != null) {
             v.cache.put(new CacheKey("backgroundPainter$$instance", xstate), p);
         }
@@ -733,14 +741,14 @@ public final class NimbusStyle extends SynthStyle {
      * @return The foreground painter associated for the given state, or null if
      * none could be found.
      */
-    public Painter getForegroundPainter(SynthContext ctx) {
+    public Painter<Object> getForegroundPainter(SynthContext ctx) {
         Values v = getValues(ctx);
         int xstate = getExtendedState(ctx, v);
-        Painter p = null;
+        Painter<Object> p = null;
 
         // check the cache
         tmpKey.init("foregroundPainter$$instance", xstate);
-        p = (Painter)v.cache.get(tmpKey);
+        p = paintFilter((Painter)v.cache.get(tmpKey));
         if (p != null) return p;
 
         // not in cache, so lookup and store in cache
@@ -748,11 +756,11 @@ public final class NimbusStyle extends SynthStyle {
         int[] lastIndex = new int[] {-1};
         while ((s = getNextState(v.states, lastIndex, xstate)) != null) {
             if (s.foregroundPainter != null) {
-                p = s.foregroundPainter;
+                p = paintFilter(s.foregroundPainter);
                 break;
             }
         }
-        if (p == null) p = (Painter)get(ctx, "foregroundPainter");
+        if (p == null) p = paintFilter((Painter)get(ctx, "foregroundPainter"));
         if (p != null) {
             v.cache.put(new CacheKey("foregroundPainter$$instance", xstate), p);
         }
@@ -768,14 +776,14 @@ public final class NimbusStyle extends SynthStyle {
      * @return The border painter associated for the given state, or null if
      * none could be found.
      */
-    public Painter getBorderPainter(SynthContext ctx) {
+    public Painter<Object> getBorderPainter(SynthContext ctx) {
         Values v = getValues(ctx);
         int xstate = getExtendedState(ctx, v);
-        Painter p = null;
+        Painter<Object> p = null;
 
         // check the cache
         tmpKey.init("borderPainter$$instance", xstate);
-        p = (Painter)v.cache.get(tmpKey);
+        p = paintFilter((Painter)v.cache.get(tmpKey));
         if (p != null) return p;
 
         // not in cache, so lookup and store in cache
@@ -783,11 +791,11 @@ public final class NimbusStyle extends SynthStyle {
         int[] lastIndex = new int[] {-1};
         while ((s = getNextState(v.states, lastIndex, xstate)) != null) {
             if (s.borderPainter != null) {
-                p = s.borderPainter;
+                p = paintFilter(s.borderPainter);
                 break;
             }
         }
-        if (p == null) p = (Painter)get(ctx, "borderPainter");
+        if (p == null) p = paintFilter((Painter)get(ctx, "borderPainter"));
         if (p != null) {
             v.cache.put(new CacheKey("borderPainter$$instance", xstate), p);
         }
@@ -851,6 +859,7 @@ public final class NimbusStyle extends SynthStyle {
      * @param v
      * @return
      */
+    @SuppressWarnings({"unchecked", "rawtypes"})
     private int getExtendedState(SynthContext ctx, Values v) {
         JComponent c = ctx.getComponent();
         int xstate = 0;
@@ -871,7 +880,7 @@ public final class NimbusStyle extends SynthStyle {
                 }
             } else {
                 // custom states
-                for (State s : v.stateTypes) {
+                for (State<?> s : v.stateTypes) {
                     if (contains(states, s.getName())) {
                         xstate |= mask;
                     }
@@ -1018,9 +1027,9 @@ public final class NimbusStyle extends SynthStyle {
      */
     private final class RuntimeState implements Cloneable {
         int state;
-        Painter backgroundPainter;
-        Painter foregroundPainter;
-        Painter borderPainter;
+        Painter<Object> backgroundPainter;
+        Painter<Object> foregroundPainter;
+        Painter<Object> borderPainter;
         String stateName;
         UIDefaults defaults = new UIDefaults(10, .7f);
 
@@ -1055,7 +1064,7 @@ public final class NimbusStyle extends SynthStyle {
          * The list of State types. A State represents a type of state, such
          * as Enabled, Default, WindowFocused, etc. These can be custom states.
          */
-        State[] stateTypes = null;
+        State<?>[] stateTypes = null;
         /**
          * The list of actual runtime state representations. These can represent things such
          * as Enabled + Focused. Thus, they differ from States in that they contain

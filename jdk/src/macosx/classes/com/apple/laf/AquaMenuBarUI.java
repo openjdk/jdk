@@ -26,11 +26,14 @@
 package com.apple.laf;
 
 import java.awt.*;
+import java.security.AccessController;
 
 import javax.swing.*;
 import javax.swing.plaf.ComponentUI;
 import javax.swing.plaf.basic.BasicMenuBarUI;
 
+import sun.lwawt.macosx.LWCToolkit;
+import sun.security.action.GetBooleanAction;
 import sun.security.action.GetPropertyAction;
 
 // MenuBar implementation for Mac L&F
@@ -131,28 +134,20 @@ public class AquaMenuBarUI extends BasicMenuBarUI implements ScreenMenuBarProvid
     ScreenMenuBar fScreenMenuBar;
     boolean useScreenMenuBar = getScreenMenuBarProperty();
 
-    private static String getPrivSysProp(final String propName) {
-        return java.security.AccessController.doPrivileged(new GetPropertyAction(propName));
-    }
-
     static boolean getScreenMenuBarProperty() {
-        final String props[] = new String[]{""};
-
-        boolean useScreenMenuBar = false;
-        try {
-            props[0] = getPrivSysProp(AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
-
-            if (props[0] != null && props[0].equals("true")) useScreenMenuBar = true;
-            else {
-                props[0] = getPrivSysProp(AquaLookAndFeel.sOldPropertyPrefix + "useScreenMenuBar");
-
-                if (props[0] != null && props[0].equals("true")) {
-                    System.err.println(AquaLookAndFeel.sOldPropertyPrefix + "useScreenMenuBar has been deprecated. Please switch to " + AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
-                    useScreenMenuBar = true;
-                }
-            }
-        } catch(final Throwable t) { };
-
-        return useScreenMenuBar;
+        // Do not allow AWT to set the screen menu bar if it's embedded in another UI toolkit
+        if (LWCToolkit.isEmbedded()) return false;
+        if (AccessController.doPrivileged(
+                new GetBooleanAction(AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar"))) {
+            return true;
+        }
+        if (AccessController.doPrivileged(
+                new GetBooleanAction(AquaLookAndFeel.sOldPropertyPrefix + "useScreenMenuBar"))) {
+                System.err.println(AquaLookAndFeel.sOldPropertyPrefix +
+                        "useScreenMenuBar has been deprecated. Please switch to " +
+                        AquaLookAndFeel.sPropertyPrefix + "useScreenMenuBar");
+                return true;
+        }
+        return false;
     }
 }

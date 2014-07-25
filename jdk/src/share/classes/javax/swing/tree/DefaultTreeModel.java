@@ -693,7 +693,7 @@ public class DefaultTreeModel implements Serializable, TreeModel {
         throws IOException, ClassNotFoundException {
         s.defaultReadObject();
 
-        Vector          values = (Vector)s.readObject();
+        Vector<?>       values = (Vector)s.readObject();
         int             indexCounter = 0;
         int             maxCounter = values.size();
 

@@ -1191,7 +1191,7 @@ public class JEditorPane extends JTextComponent {
             String classname = getKitTypeRegistry().get(type);
             ClassLoader loader = getKitLoaderRegistry().get(type);
             try {
-                Class c;
+                Class<?> c;
                 if (loader != null) {
                     c = loader.loadClass(classname);
                 } else {
@@ -1265,18 +1265,26 @@ public class JEditorPane extends JTextComponent {
 
     private static Hashtable<String, String> getKitTypeRegistry() {
         loadDefaultKitsIfNecessary();
-        return (Hashtable)SwingUtilities.appContextGet(kitTypeRegistryKey);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, String> tmp =
+            (Hashtable)SwingUtilities.appContextGet(kitTypeRegistryKey);
+        return tmp;
     }
 
     private static Hashtable<String, ClassLoader> getKitLoaderRegistry() {
         loadDefaultKitsIfNecessary();
-        return (Hashtable)SwingUtilities.appContextGet(kitLoaderRegistryKey);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, ClassLoader> tmp =
+            (Hashtable)SwingUtilities.appContextGet(kitLoaderRegistryKey);
+        return tmp;
     }
 
     private static Hashtable<String, EditorKit> getKitRegisty() {
-        Hashtable ht = (Hashtable)SwingUtilities.appContextGet(kitRegistryKey);
+        @SuppressWarnings("unchecked")
+        Hashtable<String, EditorKit> ht =
+            (Hashtable)SwingUtilities.appContextGet(kitRegistryKey);
         if (ht == null) {
-            ht = new Hashtable(3);
+            ht = new Hashtable<>(3);
             SwingUtilities.appContextPut(kitRegistryKey, ht);
         }
         return ht;
@@ -1302,9 +1310,9 @@ public class JEditorPane extends JTextComponent {
                                             "javax.swing.text.rtf.RTFEditorKit");
                 }
             }
-            Hashtable ht = new Hashtable();
+            Hashtable<Object, Object> ht = new Hashtable<>();
             SwingUtilities.appContextPut(kitTypeRegistryKey, ht);
-            ht = new Hashtable();
+            ht = new Hashtable<>();
             SwingUtilities.appContextPut(kitLoaderRegistryKey, ht);
             for (String key : defaultEditorKitMap.keySet()) {
                 registerEditorKitForContentType(key,defaultEditorKitMap.get(key));

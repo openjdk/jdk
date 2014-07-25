@@ -21,6 +21,16 @@
  * questions.
  */
 
+
+/*
+ * @test
+ * @summary Test all aspects of sjavac.
+ * @bug 8004658 8042441 8042699
+ *
+ * @build Wrapper
+ * @run main Wrapper SJavac
+ */
+
 import java.util.*;
 import java.io.*;
 import java.nio.file.*;
@@ -29,8 +39,7 @@ import java.nio.charset.*;
 
 import com.sun.tools.sjavac.Main;
 
-public
-class SJavac {
+public class SJavac {
 
     public static void main(String... args) throws Exception {
         try {

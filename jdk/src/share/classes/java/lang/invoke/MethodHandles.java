@@ -1505,6 +1505,10 @@ return mh1;
                 // that is *not* the bytecode behavior.
                 mods ^= Modifier.PROTECTED | Modifier.PUBLIC;
             }
+            if (Modifier.isProtected(mods) && refKind == REF_newInvokeSpecial) {
+                // cannot "new" a protected ctor in a different package
+                mods ^= Modifier.PROTECTED;
+            }
             if (Modifier.isFinal(mods) &&
                     MethodHandleNatives.refKindIsSetter(refKind))
                 throw m.makeAccessException("unexpected set of a final field", this);

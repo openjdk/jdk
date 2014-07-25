@@ -91,9 +91,10 @@ public class WindowsTableHeaderUI extends BasicTableHeaderUI {
             this.column = column;
             this.hasRollover = (column == getRolloverColumn());
             if (skin == null) {
-                skin = XPStyle.getXP().getSkin(header, Part.HP_HEADERITEM);
+                XPStyle xp = XPStyle.getXP();
+                skin = (xp != null) ? xp.getSkin(header, Part.HP_HEADERITEM) : null;
             }
-            Insets margins = skin.getContentMargin();
+            Insets margins = (skin != null) ? skin.getContentMargin() : null;
             Border border = null;
             int contentTop = 0;
             int contentLeft = 0;

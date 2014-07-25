@@ -118,7 +118,7 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
       *ret_sp = os::Linux::ucontext_get_sp(uc);
     }
     if (ret_fp) {
-      *ret_fp = os::Linux::ucontext_get_fp(uc);
+      *ret_fp = (intptr_t*)NULL;
     }
   } else {
     // construct empty ExtendedPC for return value checking
@@ -136,18 +136,15 @@ ExtendedPC os::fetch_frame_from_context(void* ucVoid,
 
 frame os::fetch_frame_from_context(void* ucVoid) {
   intptr_t* sp;
-  intptr_t* fp;
-  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, &fp);
-  return frame(sp, fp, epc.pc());
+  ExtendedPC epc = fetch_frame_from_context(ucVoid, &sp, NULL);
+  return frame(sp, frame::unpatchable, epc.pc());
 }
 
 frame os::get_sender_for_C_frame(frame* fr) {
-  return frame(fr->sender_sp(), fr->link(), fr->sender_pc());
+  return frame(fr->sender_sp(), frame::unpatchable, fr->sender_pc());
 }
 
 frame os::current_frame() {
-  fprintf(stderr, "current_frame()");
-
   intptr_t* sp = StubRoutines::Sparc::flush_callers_register_windows_func()();
   frame myframe(sp, frame::unpatchable,
                 CAST_FROM_FN_PTR(address, os::current_frame));

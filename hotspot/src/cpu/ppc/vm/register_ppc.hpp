@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2012, 2014 SAP AG. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -27,7 +27,6 @@
 #define CPU_PPC_VM_REGISTER_PPC_HPP
 
 #include "asm/register.hpp"
-#include "vm_version_ppc.hpp"
 
 // forward declaration
 class Address;
@@ -92,8 +91,8 @@ class RegisterImpl: public AbstractRegisterImpl {
   inline friend Register as_Register(int encoding);
 
   // accessors
-  int      encoding()  const { assert(is_valid(), "invalid register"); return value(); }
-  VMReg    as_VMReg();
+  int encoding()  const { assert(is_valid(), "invalid register"); return value(); }
+  inline VMReg as_VMReg();
   Register successor() const { return as_Register(encoding() + 1); }
 
   // testers
@@ -208,8 +207,8 @@ class ConditionRegisterImpl: public AbstractRegisterImpl {
   inline friend ConditionRegister as_ConditionRegister(int encoding);
 
   // accessors
-  int   encoding() const { assert(is_valid(), "invalid register"); return value(); }
-  VMReg as_VMReg();
+  int encoding() const { assert(is_valid(), "invalid register"); return value(); }
+  inline VMReg as_VMReg();
 
   // testers
   bool is_valid()       const { return  (0 <= value()        &&  value() < number_of_registers); }
@@ -264,7 +263,7 @@ class FloatRegisterImpl: public AbstractRegisterImpl {
 
   // accessors
   int           encoding() const { assert(is_valid(), "invalid register"); return value(); }
-  VMReg         as_VMReg();
+  inline VMReg  as_VMReg();
   FloatRegister successor() const { return as_FloatRegister(encoding() + 1); }
 
   // testers
@@ -365,7 +364,7 @@ class SpecialRegisterImpl: public AbstractRegisterImpl {
 
   // accessors
   int             encoding()  const { assert(is_valid(), "invalid register"); return value(); }
-  VMReg           as_VMReg();
+  inline VMReg    as_VMReg();
 
   // testers
   bool is_valid()       const { return 0 <= value() && value() < number_of_registers; }

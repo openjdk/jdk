@@ -1463,7 +1463,5 @@ public class DebugGraphics extends Graphics {
         }
         return debugGraphicsInfo;
     }
-    private static final Class debugGraphicsInfoKey = DebugGraphicsInfo.class;
-
-
+    private static final Class<DebugGraphicsInfo> debugGraphicsInfoKey = DebugGraphicsInfo.class;
 }
