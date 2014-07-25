@@ -758,6 +758,7 @@ Java_sun_awt_windows_WPrinterJob_getDefaultPage(JNIEnv *env, jobject self,
   // through print dialog or start of printing
   // None of those may have happened yet, so call initPrinter()
   initPrinter(env, self);
+  JNU_CHECK_EXCEPTION(env);
   HANDLE hDevNames = AwtPrintControl::getPrintHDName(env, self);
   HDC hdc = AwtPrintControl::getPrintDC(env, self);
 
@@ -1102,6 +1103,7 @@ Java_sun_awt_windows_WPrinterJob_initPrinter(JNIEnv *env, jobject self) {
     jboolean err;
 
     initPrinter(env, self);
+    JNU_CHECK_EXCEPTION(env);
 
     // check for collation
     HGLOBAL hDevNames = AwtPrintControl::getPrintHDName(env, self);
@@ -1362,6 +1364,13 @@ Java_sun_awt_windows_WPrinterJob__1startDoc(JNIEnv *env, jobject self,
     }
 
     initPrinter(env, self);
+    if (env->ExceptionCheck()) {
+        if (dest != NULL) {
+            JNU_ReleaseStringPlatformChars(env, dest, destination);
+        }
+        return JNI_FALSE;
+    }
+
     HDC printDC = AwtPrintControl::getPrintDC(env, self);
 
     SAVE_CONTROLWORD
@@ -3814,6 +3823,7 @@ void setCapabilities(JNIEnv *env, jobject self, HDC printDC) {
     // pixels per inch in y direction
     jint yRes = GetDeviceCaps(printDC, LOGPIXELSY);
     err = setIntField(env, self, YRES_STR, yRes);
+    if (err) return;
 
     // x coord of printable area in pixels
     jint xOrg = GetDeviceCaps(printDC, PHYSICALOFFSETX);

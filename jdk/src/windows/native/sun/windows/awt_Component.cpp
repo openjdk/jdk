@@ -467,7 +467,9 @@ void AwtComponent::InitPeerGraphicsConfig(JNIEnv *env, jobject peer)
         jclass win32GCCls = env->FindClass("sun/awt/Win32GraphicsConfig");
         DASSERT(win32GCCls != NULL);
         DASSERT(env->IsInstanceOf(compGC, win32GCCls));
-        CHECK_NULL(win32GCCls);
+        if (win32GCCls == NULL) {
+            throw std::bad_alloc();
+        }
         env->SetObjectField(peer, AwtComponent::peerGCID, compGC);
     }
 }
