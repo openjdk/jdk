@@ -58,15 +58,8 @@ public class Application {
     static Application sApplication = null;
 
     static {
-        java.security.AccessController.doPrivileged(
-            new java.security.PrivilegedAction<Void>() {
-                public Void run() {
-                    System.loadLibrary("awt");
-                    return null;
-                }
-            });
-
         checkSecurity();
+        Toolkit.getDefaultToolkit(); // Start AppKit
         if (!Beans.isDesignTime()) {
             nativeInitializeApplicationDelegate();
         }

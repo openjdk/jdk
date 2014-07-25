@@ -66,6 +66,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/threadCritical.hpp"
 #include "runtime/timer.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
 #include "services/runtimeService.hpp"
 #include "utilities/decoder.hpp"

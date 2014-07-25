@@ -436,7 +436,7 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
     protected MouseListener createDoubleClickListener(JFileChooser fc,
-                                                      JList list) {
+                                                      JList<?> list) {
         return new Handler(list);
     }
 
@@ -445,12 +445,12 @@ public class BasicFileChooserUI extends FileChooserUI {
     }
 
     private class Handler implements MouseListener, ListSelectionListener {
-        JList list;
+        JList<?> list;
 
         Handler() {
         }
 
-        Handler(JList list) {
+        Handler(JList<?> list) {
             this.list = list;
         }
 
@@ -506,7 +506,8 @@ public class BasicFileChooserUI extends FileChooserUI {
             if(!evt.getValueIsAdjusting()) {
                 JFileChooser chooser = getFileChooser();
                 FileSystemView fsv = chooser.getFileSystemView();
-                JList list = (JList)evt.getSource();
+                @SuppressWarnings("unchecked")
+                JList<?> list = (JList)evt.getSource();
 
                 int fsm = chooser.getFileSelectionMode();
                 boolean useSetDirectory = usesSingleFilePane &&
@@ -570,7 +571,7 @@ public class BasicFileChooserUI extends FileChooserUI {
         // new functionality add it to the Handler, but make sure this
         // class calls into the Handler.
         Handler handler;
-        public  DoubleClickListener(JList list) {
+        public  DoubleClickListener(JList<?> list) {
             handler = new Handler(list);
         }
 

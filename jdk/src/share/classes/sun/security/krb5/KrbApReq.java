@@ -485,7 +485,7 @@ public class KrbApReq {
         Integer seqno = null;
 
         if (seqNumber != null)
-            seqno = new Integer(seqNumber.current());
+            seqno = seqNumber.current();
 
         authenticator =
             new Authenticator(cname,

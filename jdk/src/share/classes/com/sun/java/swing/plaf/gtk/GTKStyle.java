@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1086,13 +1086,13 @@ class GTKStyle extends SynthStyle implements GTKConstants {
 
         public Object createValue(UIDefaults table) {
             try {
-                Class c = Class.forName(className, true,Thread.currentThread().
-                                        getContextClassLoader());
+                Class<?> c = Class.forName(className, true,Thread.currentThread().
+                                           getContextClassLoader());
 
                 if (methodName == null) {
                     return c.newInstance();
                 }
-                Method m = c.getMethod(methodName, (Class[])null);
+                Method m = c.getMethod(methodName, (Class<?>[])null);
 
                 return m.invoke(c, (Object[])null);
             } catch (ClassNotFoundException cnfe) {

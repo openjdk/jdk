@@ -311,10 +311,10 @@ public class UIDefaults extends Hashtable<Object,Object>
                     } else {
                         b = ResourceBundle.getBundle(bundleName, l);
                     }
-                    Enumeration keys = b.getKeys();
+                    Enumeration<String> keys = b.getKeys();
 
                     while (keys.hasMoreElements()) {
-                        String key = (String)keys.nextElement();
+                        String key = keys.nextElement();
 
                         if (values.get(key) == null) {
                             Object value = b.getObject(key);
@@ -682,7 +682,7 @@ public class UIDefaults extends Hashtable<Object,Object>
             if (className != null) {
                 ReflectUtil.checkPackageAccess(className);
 
-                Class cls = (Class)get(className);
+                Class<?> cls = (Class)get(className);
                 if (cls == null) {
                     if (uiClassLoader == null) {
                         cls = SwingUtilities.loadSystemClass(className);
@@ -695,13 +695,12 @@ public class UIDefaults extends Hashtable<Object,Object>
                         put(className, cls);
                     }
                 }
-                return cls;
+                @SuppressWarnings("unchecked")
+                Class<? extends ComponentUI> tmp = (Class<? extends ComponentUI>)cls;
+                return tmp;
             }
         }
-        catch (ClassNotFoundException e) {
-            return null;
-        }
-        catch (ClassCastException e) {
+        catch (ClassNotFoundException | ClassCastException e) {
             return null;
         }
         return null;
@@ -767,7 +766,7 @@ public class UIDefaults extends Hashtable<Object,Object>
             try {
                 Method m = (Method)get(uiClass);
                 if (m == null) {
-                    m = uiClass.getMethod("createUI", new Class[]{JComponent.class});
+                    m = uiClass.getMethod("createUI", new Class<?>[]{JComponent.class});
                     put(uiClass, m);
                 }
                 uiObject = MethodUtil.invoke(m, null, new Object[]{target});
@@ -1106,12 +1105,12 @@ public class UIDefaults extends Hashtable<Object,Object>
                         c = Class.forName(className, true, (ClassLoader)cl);
                         SwingUtilities2.checkAccess(c.getModifiers());
                         if (methodName != null) {
-                            Class[] types = getClassArray(args);
+                            Class<?>[] types = getClassArray(args);
                             Method m = c.getMethod(methodName, types);
                             return MethodUtil.invoke(m, c, args);
                         } else {
-                            Class[] types = getClassArray(args);
-                            Constructor constructor = c.getConstructor(types);
+                            Class<?>[] types = getClassArray(args);
+                            Constructor<?> constructor = c.getConstructor(types);
                             SwingUtilities2.checkAccess(constructor.getModifiers());
                             return constructor.newInstance(args);
                         }
@@ -1134,10 +1133,10 @@ public class UIDefaults extends Hashtable<Object,Object>
          * and superclasses for subclasses used to add the
          * <code>UIResource</code> tag.
          */
-        private Class[] getClassArray(Object[] args) {
-            Class[] types = null;
+        private Class<?>[] getClassArray(Object[] args) {
+            Class<?>[] types = null;
             if (args!=null) {
-                types = new Class[args.length];
+                types = new Class<?>[args.length];
                 for (int i = 0; i< args.length; i++) {
                     /* PENDING(ges): At present only the primitive types
                        used are handled correctly; this should eventually

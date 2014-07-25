@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -117,7 +117,7 @@ public class MetalToolBarUI extends BasicToolBarUI
      * that shares the JRootPane ancestor of <code>from</code>.
      */
     synchronized static Object findRegisteredComponentOfType(JComponent from,
-                                                             Class target) {
+                                                             Class<?> target) {
         JRootPane rp = SwingUtilities.getRootPane(from);
         if (rp != null) {
             for (int counter = components.size() - 1; counter >= 0; counter--){

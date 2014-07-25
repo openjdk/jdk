@@ -66,6 +66,32 @@ jdk_% core_%s svc_%:
 hotspot_%:
 	@$(NO_STOPPING)$(call SUBDIR_TEST, $(HOTSPOT_DIR), TEST="$@" $@)
 
+#
+# jtreg_tests
+#
+# Invocation:
+#
+# make jtreg_tests TESTDIRS=<test-dirs>
+#
+# where <test-dirs> is something like '../<component>/test/runtime',
+# <component> in turn being one of the top level directories (for
+# example 'hotspot').
+#
+# The below will strip the path prefix and delegate to the
+# corresponding ../<component>/test/Makefile.
+
+ifneq ($(TESTDIRS),)
+# Extract the component from ../<component>/...
+COMPONENT=$(word 2,$(subst /, ,$(TESTDIRS)))
+
+# Strip off the ../<component>/test prefix and pass the rest as TESTDIRS
+# to the delegate Makefile
+TESTDIRS_TESTS=$(patsubst ../$(COMPONENT)/test/%,%,$(TESTDIRS))
+endif
+
+jtreg_tests:
+	@$(NO_STOPPING)$(call SUBDIR_TEST, $(TOPDIR)/$(COMPONENT), TESTDIRS=$(TESTDIRS_TESTS) $@)
+
 ################################################################
 
 # Phony targets (e.g. these are not filenames)

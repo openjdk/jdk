@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,8 @@ import java.lang.reflect.Field;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.lang.reflect.Type;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -41,22 +43,32 @@ import java.util.logging.Logger;
  *
  * Has *package private* access to avoid inappropriate usage.
  */
-/* package */ final class Utils {
+final class Utils {
 
     private static final Logger LOGGER = Logger.getLogger(Utils.class.getName());
 
     /**
      * static ReflectionNavigator field to avoid usage of reflection every time we use it.
      */
-    /* package */ static final Navigator<Type, Class, Field, Method> REFLECTION_NAVIGATOR;
+    static final Navigator<Type, Class, Field, Method> REFLECTION_NAVIGATOR;
 
     static { // we statically initializing REFLECTION_NAVIGATOR property
-        Class refNav = null;
         try {
-            refNav = Class.forName("com.sun.xml.internal.bind.v2.model.nav.ReflectionNavigator");
+            Class refNav = Class.forName("com.sun.xml.internal.bind.v2.model.nav.ReflectionNavigator");
             //noinspection unchecked
-            Method getInstance = refNav.getDeclaredMethod("getInstance");
-            getInstance.setAccessible(true);
+            final Method getInstance = refNav.getDeclaredMethod("getInstance");
+
+            // requires accessClassInPackage privilege
+            AccessController.doPrivileged(
+                    new PrivilegedAction<Object>() {
+                        @Override
+                        public Object run() {
+                            getInstance.setAccessible(true);
+                            return null;
+                        }
+                    }
+            );
+
             //noinspection unchecked
             REFLECTION_NAVIGATOR = (Navigator<Type, Class, Field, Method>) getInstance.invoke(null);
         } catch (ClassNotFoundException e) {

@@ -38,6 +38,7 @@
 #include "runtime/globals_extension.hpp"
 #include "runtime/java.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/management.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
@@ -1537,8 +1538,10 @@ void Arguments::set_conservative_max_heap_alignment() {
     heap_alignment = G1CollectedHeap::conservative_max_heap_alignment();
   }
 #endif // INCLUDE_ALL_GCS
-  _conservative_max_heap_alignment = MAX3(heap_alignment, os::max_page_size(),
-    CollectorPolicy::compute_heap_alignment());
+  _conservative_max_heap_alignment = MAX4(heap_alignment,
+                                          (size_t)os::vm_allocation_granularity(),
+                                          os::max_page_size(),
+                                          CollectorPolicy::compute_heap_alignment());
 }
 
 void Arguments::set_ergonomics_flags() {

@@ -373,14 +373,14 @@ Java_sun_awt_image_ImagingLib_convolveBI(JNIEnv *env, jobject this,
 
 
     /* Parse the source image */
-    if ((status = awt_parseImage(env, jsrc, &srcImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jsrc, &srcImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         free(dkern);
         return 0;
     }
 
     /* Parse the destination image */
-    if ((status = awt_parseImage(env, jdst, &dstImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jdst, &dstImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         awt_freeParsedImage(srcImageP, TRUE);
         free(dkern);
@@ -627,7 +627,7 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
     }
 
     /* Parse the source raster */
-    if ((status = awt_parseRaster(env, jsrc, srcRasterP)) <= 0) {
+    if (awt_parseRaster(env, jsrc, srcRasterP) <= 0) {
         /* Can't handle any custom rasters */
         free(srcRasterP);
         free(dstRasterP);
@@ -636,7 +636,7 @@ Java_sun_awt_image_ImagingLib_convolveRaster(JNIEnv *env, jobject this,
     }
 
     /* Parse the destination raster */
-    if ((status = awt_parseRaster(env, jdst, dstRasterP)) <= 0) {
+    if (awt_parseRaster(env, jdst, dstRasterP) <= 0) {
         /* Can't handle any custom images */
         awt_freeParsedRaster(srcRasterP, TRUE);
         free(dstRasterP);
@@ -839,13 +839,13 @@ Java_sun_awt_image_ImagingLib_transformBI(JNIEnv *env, jobject this,
     (*env)->ReleasePrimitiveArrayCritical(env, jmatrix, matrix, JNI_ABORT);
 
     /* Parse the source image */
-    if ((status = awt_parseImage(env, jsrc, &srcImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jsrc, &srcImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         return 0;
     }
 
     /* Parse the destination image */
-    if ((status = awt_parseImage(env, jdst, &dstImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jdst, &dstImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         awt_freeParsedImage(srcImageP, TRUE);
         return 0;
@@ -1059,7 +1059,7 @@ Java_sun_awt_image_ImagingLib_transformRaster(JNIEnv *env, jobject this,
     (*env)->ReleasePrimitiveArrayCritical(env, jmatrix, matrix, JNI_ABORT);
 
     /* Parse the source raster */
-    if ((status = awt_parseRaster(env, jsrc, srcRasterP)) <= 0) {
+    if (awt_parseRaster(env, jsrc, srcRasterP) <= 0) {
         /* Can't handle any custom rasters */
         free(srcRasterP);
         free(dstRasterP);
@@ -1067,7 +1067,7 @@ Java_sun_awt_image_ImagingLib_transformRaster(JNIEnv *env, jobject this,
     }
 
     /* Parse the destination raster */
-    if ((status = awt_parseRaster(env, jdst, dstRasterP)) <= 0) {
+    if (awt_parseRaster(env, jdst, dstRasterP) <= 0) {
         /* Can't handle any custom images */
         awt_freeParsedRaster(srcRasterP, TRUE);
         free(dstRasterP);
@@ -1306,13 +1306,13 @@ Java_sun_awt_image_ImagingLib_lookupByteBI(JNIEnv *env, jobject thisLib,
     if (s_timeIt) (*start_timer)(3600);
 
     /* Parse the source image */
-    if ((status = awt_parseImage(env, jsrc, &srcImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jsrc, &srcImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         return 0;
     }
 
     /* Parse the destination image */
-    if ((status = awt_parseImage(env, jdst, &dstImageP, FALSE)) <= 0) {
+    if (awt_parseImage(env, jdst, &dstImageP, FALSE) <= 0) {
         /* Can't handle any custom images */
         awt_freeParsedImage(srcImageP, TRUE);
         return 0;
@@ -1554,14 +1554,14 @@ Java_sun_awt_image_ImagingLib_lookupByteRaster(JNIEnv *env,
     }
 
     /* Parse the source raster - reject custom images */
-    if ((status = awt_parseRaster(env, jsrc, srcRasterP)) <= 0) {
+    if (awt_parseRaster(env, jsrc, srcRasterP) <= 0) {
         free(srcRasterP);
         free(dstRasterP);
         return 0;
     }
 
     /* Parse the destination image - reject custom images */
-    if ((status = awt_parseRaster(env, jdst, dstRasterP)) <= 0) {
+    if (awt_parseRaster(env, jdst, dstRasterP) <= 0) {
         awt_freeParsedRaster(srcRasterP, TRUE);
         free(dstRasterP);
         return 0;

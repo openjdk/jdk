@@ -267,7 +267,7 @@ register %{
 // It's worth about 1% on SPEC geomean to get this right.
 
 // Chunk0, chunk1, and chunk2 form the MachRegisterNumbers enumeration
-// in adGlobals_ppc64.hpp which defines the <register>_num values, e.g.
+// in adGlobals_ppc.hpp which defines the <register>_num values, e.g.
 // R3_num. Therefore, R3_num may not be (and in reality is not)
 // the same as R3->encoding()! Furthermore, we cannot make any
 // assumptions on ordering, e.g. R3_num may be less than R2_num.
@@ -1632,7 +1632,7 @@ enum RC { rc_bad, rc_int, rc_float, rc_stack };
 static enum RC rc_class(OptoReg::Name reg) {
   // Return the register class for the given register. The given register
   // reg is a <register>_num value, which is an index into the MachRegisterNumbers
-  // enumeration in adGlobals_ppc64.hpp.
+  // enumeration in adGlobals_ppc.hpp.
 
   if (reg == OptoReg::Bad) return rc_bad;
 

@@ -89,7 +89,7 @@ import java.io.Serializable;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class SpinnerDateModel extends AbstractSpinnerModel implements Serializable
 {
-    private Comparable start, end;
+    private Comparable<Date> start, end;
     private Calendar value;
     private int calendarField;
 
@@ -173,7 +173,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * @see #setEnd
      * @see #setCalendarField
      */
-    public SpinnerDateModel(Date value, Comparable start, Comparable end, int calendarField) {
+    public SpinnerDateModel(Date value, Comparable<Date> start, Comparable<Date> end, int calendarField) {
         if (value == null) {
             throw new IllegalArgumentException("value is null");
         }
@@ -241,7 +241,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * @see #setEnd
      * @see #addChangeListener
      */
-    public void setStart(Comparable start) {
+    public void setStart(Comparable<Date> start) {
         if ((start == null) ? (this.start != null) : !start.equals(this.start)) {
             this.start = start;
             fireStateChanged();
@@ -255,7 +255,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * @return the value of the <code>start</code> property
      * @see #setStart
      */
-    public Comparable getStart() {
+    public Comparable<Date> getStart() {
         return start;
     }
 
@@ -282,7 +282,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * @see #setStart
      * @see #addChangeListener
      */
-    public void setEnd(Comparable end) {
+    public void setEnd(Comparable<Date> end) {
         if ((end == null) ? (this.end != null) : !end.equals(this.end)) {
             this.end = end;
             fireStateChanged();
@@ -296,7 +296,7 @@ public class SpinnerDateModel extends AbstractSpinnerModel implements Serializab
      * @return the value of the <code>end</code> property
      * @see #setEnd
      */
-    public Comparable getEnd() {
+    public Comparable<Date> getEnd() {
         return end;
     }
 

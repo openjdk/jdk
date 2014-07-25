@@ -84,7 +84,16 @@ import java.io.Serializable;
 public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializable
 {
     private Number stepSize, value;
-    private Comparable minimum, maximum;
+    // Both minimum and maximum are logically Comparable<? extends
+    // Number>, but that type is awkward to use since different
+    // instances of Number are not naturally Comparable. For example,
+    // a Double implements Comparable<Double> and an Integer
+    // implements Comparable<Integer>. Neither Integer nor Double will
+    // have a bridge method for Comparable<Number>. However, it safe
+    // to cast Comparable<?> to Comparable<Object> since all
+    // Comparables will have a compare(Object> method, possibly as a
+    // bridge.
+    private Comparable<?> minimum, maximum;
 
 
     /**
@@ -117,12 +126,16 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      *     <code>null</code> or if the following expression is false:
      *     <code>minimum &lt;= value &lt;= maximum</code>
      */
-    public SpinnerNumberModel(Number value, Comparable minimum, Comparable maximum, Number stepSize) {
+    @SuppressWarnings("unchecked") // Casts to Comparable<Object>
+    public SpinnerNumberModel(Number value,
+                               Comparable<?> minimum,
+                               Comparable<?> maximum,
+                               Number stepSize) {
         if ((value == null) || (stepSize == null)) {
             throw new IllegalArgumentException("value and stepSize must be non-null");
         }
-        if (!(((minimum == null) || (minimum.compareTo(value) <= 0)) &&
-              ((maximum == null) || (maximum.compareTo(value) >= 0)))) {
+        if (!(((minimum == null) || (((Comparable<Object>)minimum).compareTo(value) <= 0)) &&
+              ((maximum == null) || (((Comparable<Object>)maximum).compareTo(value) >= 0)))) {
             throw new IllegalArgumentException("(minimum <= value <= maximum) is false");
         }
         this.value = value;
@@ -212,7 +225,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * @see #setMaximum
      * @see SpinnerModel#addChangeListener
      */
-    public void setMinimum(Comparable minimum) {
+    public void setMinimum(Comparable<?> minimum) {
         if ((minimum == null) ? (this.minimum != null) : !minimum.equals(this.minimum)) {
             this.minimum = minimum;
             fireStateChanged();
@@ -226,7 +239,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * @return the value of the <code>minimum</code> property
      * @see #setMinimum
      */
-    public Comparable getMinimum() {
+    public Comparable<?> getMinimum() {
         return minimum;
     }
 
@@ -259,7 +272,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * @see #setMinimum
      * @see SpinnerModel#addChangeListener
      */
-    public void setMaximum(Comparable maximum) {
+    public void setMaximum(Comparable<?> maximum) {
         if ((maximum == null) ? (this.maximum != null) : !maximum.equals(this.maximum)) {
             this.maximum = maximum;
             fireStateChanged();
@@ -273,7 +286,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
      * @return the value of the <code>maximum</code> property
      * @see #setMaximum
      */
-    public Comparable getMaximum() {
+    public Comparable<?> getMaximum() {
         return maximum;
     }
 
@@ -317,7 +330,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
         return stepSize;
     }
 
-
+    @SuppressWarnings("unchecked") // Casts to Comparable<Object>
     private Number incrValue(int dir)
     {
         Number newValue;
@@ -329,8 +342,7 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
             else {
                 newValue = new Float(v);
             }
-        }
-        else {
+        } else {
             long v = value.longValue() + (stepSize.longValue() * (long)dir);
 
             if (value instanceof Long) {
@@ -347,10 +359,10 @@ public class SpinnerNumberModel extends AbstractSpinnerModel implements Serializ
             }
         }
 
-        if ((maximum != null) && (maximum.compareTo(newValue) < 0)) {
+        if ((maximum != null) && (((Comparable<Object>)maximum).compareTo(newValue) < 0)) {
             return null;
         }
-        if ((minimum != null) && (minimum.compareTo(newValue) > 0)) {
+        if ((minimum != null) && (((Comparable<Object>)minimum).compareTo(newValue) > 0)) {
             return null;
         }
         else {
