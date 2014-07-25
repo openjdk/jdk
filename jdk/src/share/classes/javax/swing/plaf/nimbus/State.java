@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,13 +72,13 @@ import javax.swing.plaf.synth.SynthConstants;
  */
 public abstract class State<T extends JComponent>{
     static final Map<String, StandardState> standardStates = new HashMap<String, StandardState>(7);
-    static final State Enabled = new StandardState(SynthConstants.ENABLED);
-    static final State MouseOver = new StandardState(SynthConstants.MOUSE_OVER);
-    static final State Pressed = new StandardState(SynthConstants.PRESSED);
-    static final State Disabled = new StandardState(SynthConstants.DISABLED);
-    static final State Focused = new StandardState(SynthConstants.FOCUSED);
-    static final State Selected = new StandardState(SynthConstants.SELECTED);
-    static final State Default = new StandardState(SynthConstants.DEFAULT);
+    static final State<JComponent> Enabled = new StandardState(SynthConstants.ENABLED);
+    static final State<JComponent> MouseOver = new StandardState(SynthConstants.MOUSE_OVER);
+    static final State<JComponent> Pressed = new StandardState(SynthConstants.PRESSED);
+    static final State<JComponent> Disabled = new StandardState(SynthConstants.DISABLED);
+    static final State<JComponent> Focused = new StandardState(SynthConstants.FOCUSED);
+    static final State<JComponent> Selected = new StandardState(SynthConstants.SELECTED);
+    static final State<JComponent> Default = new StandardState(SynthConstants.DEFAULT);
 
     private String name;
 

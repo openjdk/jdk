@@ -26,8 +26,21 @@ import java.awt.*;
 
 /*
  * @test
- * @summary Check if statically shaped window is dragged and resized
- *          correctly.
+ * @summary Check if statically shaped window is dragged and resized correctly.
+ *
+ * Test Description: Check if PERPIXEL_TRANSPARENT translucency type is supported
+ *      on the current platform. Proceed if it is supported. Create a window
+ *      and apply some shape at window creation. The shape should be bigger than
+ *      window. Drag and resize the window using AWT Robot and verify that shape
+ *      is correctly applied both with pixels checking and clicks. Make the
+ *      window appear on top of a known background. Repeat this for Window, Dialog,
+ *      Frame.
+ * Expected Result: If specified translucency type PERPIXEL_TRANSPARENT is supported,
+ *      the window should appear with the expected shape clipped to the window
+ *      size. Clicks should come to visible parts of shaped window only and to
+ *      background for clipped parts.
+ *
+ * @author mrkam
  * @author Dmitriy Ermashov (dmitriy.ermashov@oracle.com)
  * @library ../../../../lib/testlibrary
  * @build Common ExtendedRobot
@@ -44,8 +57,11 @@ public class StaticallyShaped extends Common {
     }
 
     public StaticallyShaped(Class windowClass) throws Exception{ super(windowClass); }
+
+    @Override
     public void applyShape(){ applyStaticShape(); }
 
+    @Override
     public void doTest() throws Exception{
         super.doTest();
 

@@ -331,6 +331,20 @@ public final class AppContext {
                     while (context == null) {
                         threadGroup = threadGroup.getParent();
                         if (threadGroup == null) {
+                            // We've got up to the root thread group and did not find an AppContext
+                            // Try to get it from the security manager
+                            SecurityManager securityManager = System.getSecurityManager();
+                            if (securityManager != null) {
+                                ThreadGroup smThreadGroup = securityManager.getThreadGroup();
+                                if (smThreadGroup != null) {
+                                    /*
+                                     * If we get this far then it's likely that
+                                     * the ThreadGroup does not actually belong
+                                     * to the applet, so do not cache it.
+                                     */
+                                    return threadGroup2appContext.get(smThreadGroup);
+                                }
+                            }
                             return null;
                         }
                         context = threadGroup2appContext.get(threadGroup);

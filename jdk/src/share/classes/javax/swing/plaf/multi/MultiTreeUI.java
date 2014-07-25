@@ -50,7 +50,7 @@ public class MultiTreeUI extends TreeUI {
      * the <code>getUIs</code> method.  The first element is guaranteed to be the real UI
      * obtained from the default look and feel.
      */
-    protected Vector uis = new Vector();
+    protected Vector<ComponentUI> uis = new Vector<>();
 
 ////////////////////
 // Common UI methods
@@ -221,9 +221,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public boolean contains(JComponent a, int b, int c) {
         boolean returnValue =
-            ((ComponentUI) (uis.elementAt(0))).contains(a,b,c);
+            uis.elementAt(0).contains(a,b,c);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).contains(a,b,c);
+            uis.elementAt(i).contains(a,b,c);
         }
         return returnValue;
     }
@@ -233,7 +233,7 @@ public class MultiTreeUI extends TreeUI {
      */
     public void update(Graphics a, JComponent b) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).update(a,b);
+            uis.elementAt(i).update(a,b);
         }
     }
 
@@ -246,10 +246,8 @@ public class MultiTreeUI extends TreeUI {
      * @return the UI delegate created
      */
     public static ComponentUI createUI(JComponent a) {
-        ComponentUI mui = new MultiTreeUI();
-        return MultiLookAndFeel.createUIs(mui,
-                                          ((MultiTreeUI) mui).uis,
-                                          a);
+        MultiTreeUI mui = new MultiTreeUI();
+        return MultiLookAndFeel.createUIs(mui, mui.uis, a);
     }
 
     /**
@@ -257,7 +255,7 @@ public class MultiTreeUI extends TreeUI {
      */
     public void installUI(JComponent a) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).installUI(a);
+            uis.elementAt(i).installUI(a);
         }
     }
 
@@ -266,7 +264,7 @@ public class MultiTreeUI extends TreeUI {
      */
     public void uninstallUI(JComponent a) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).uninstallUI(a);
+            uis.elementAt(i).uninstallUI(a);
         }
     }
 
@@ -275,7 +273,7 @@ public class MultiTreeUI extends TreeUI {
      */
     public void paint(Graphics a, JComponent b) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).paint(a,b);
+            uis.elementAt(i).paint(a,b);
         }
     }
 
@@ -287,9 +285,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public Dimension getPreferredSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getPreferredSize(a);
+            uis.elementAt(0).getPreferredSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getPreferredSize(a);
+            uis.elementAt(i).getPreferredSize(a);
         }
         return returnValue;
     }
@@ -302,9 +300,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public Dimension getMinimumSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getMinimumSize(a);
+            uis.elementAt(0).getMinimumSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getMinimumSize(a);
+            uis.elementAt(i).getMinimumSize(a);
         }
         return returnValue;
     }
@@ -317,9 +315,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public Dimension getMaximumSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getMaximumSize(a);
+            uis.elementAt(0).getMaximumSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getMaximumSize(a);
+            uis.elementAt(i).getMaximumSize(a);
         }
         return returnValue;
     }
@@ -332,9 +330,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public int getAccessibleChildrenCount(JComponent a) {
         int returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getAccessibleChildrenCount(a);
+            uis.elementAt(0).getAccessibleChildrenCount(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getAccessibleChildrenCount(a);
+            uis.elementAt(i).getAccessibleChildrenCount(a);
         }
         return returnValue;
     }
@@ -347,9 +345,9 @@ public class MultiTreeUI extends TreeUI {
      */
     public Accessible getAccessibleChild(JComponent a, int b) {
         Accessible returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getAccessibleChild(a,b);
+            uis.elementAt(0).getAccessibleChild(a,b);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getAccessibleChild(a,b);
+            uis.elementAt(i).getAccessibleChild(a,b);
         }
         return returnValue;
     }

@@ -175,8 +175,7 @@ public abstract class RowFilter<M,I> {
      */
     public static <M,I> RowFilter<M,I> regexFilter(String regex,
                                                        int... indices) {
-        return (RowFilter<M,I>)new RegexFilter(Pattern.compile(regex),
-                                               indices);
+        return new RegexFilter<M, I>(Pattern.compile(regex), indices);
     }
 
     /**
@@ -205,7 +204,7 @@ public abstract class RowFilter<M,I> {
      */
     public static <M,I> RowFilter<M,I> dateFilter(ComparisonType type,
                                             Date date, int... indices) {
-        return (RowFilter<M,I>)new DateFilter(type, date.getTime(), indices);
+        return new DateFilter<M, I>(type, date.getTime(), indices);
     }
 
     /**
@@ -231,7 +230,7 @@ public abstract class RowFilter<M,I> {
      */
     public static <M,I> RowFilter<M,I> numberFilter(ComparisonType type,
                                             Number number, int... indices) {
-        return (RowFilter<M,I>)new NumberFilter(type, number, indices);
+        return new NumberFilter<M, I>(type, number, indices);
     }
 
     /**
@@ -410,7 +409,7 @@ public abstract class RowFilter<M,I> {
     }
 
 
-    private static abstract class GeneralFilter extends RowFilter<Object,Object> {
+    private static abstract class GeneralFilter<M, I> extends RowFilter<M, I> {
         private int[] columns;
 
         GeneralFilter(int[] columns) {
@@ -418,7 +417,8 @@ public abstract class RowFilter<M,I> {
             this.columns = columns;
         }
 
-        public boolean include(Entry<? extends Object,? extends Object> value){
+        @Override
+        public boolean include(Entry<? extends M, ? extends I> value){
             int count = value.getValueCount();
             if (columns.length > 0) {
                 for (int i = columns.length - 1; i >= 0; i--) {
@@ -429,8 +429,7 @@ public abstract class RowFilter<M,I> {
                         }
                     }
                 }
-            }
-            else {
+            } else {
                 while (--count >= 0) {
                     if (include(value, count)) {
                         return true;
@@ -441,11 +440,11 @@ public abstract class RowFilter<M,I> {
         }
 
         protected abstract boolean include(
-              Entry<? extends Object,? extends Object> value, int index);
+              Entry<? extends M, ? extends I> value, int index);
     }
 
 
-    private static class RegexFilter extends GeneralFilter {
+    private static class RegexFilter<M, I> extends GeneralFilter<M, I> {
         private Matcher matcher;
 
         RegexFilter(Pattern regex, int[] columns) {
@@ -456,15 +455,16 @@ public abstract class RowFilter<M,I> {
             matcher = regex.matcher("");
         }
 
+        @Override
         protected boolean include(
-                Entry<? extends Object,? extends Object> value, int index) {
+                Entry<? extends M, ? extends I> value, int index) {
             matcher.reset(value.getStringValue(index));
             return matcher.find();
         }
     }
 
 
-    private static class DateFilter extends GeneralFilter {
+    private static class DateFilter<M, I> extends GeneralFilter<M, I> {
         private long date;
         private ComparisonType type;
 
@@ -477,8 +477,9 @@ public abstract class RowFilter<M,I> {
             this.date = date;
         }
 
+        @Override
         protected boolean include(
-                Entry<? extends Object,? extends Object> value, int index) {
+                Entry<? extends M, ? extends I> value, int index) {
             Object v = value.getValue(index);
 
             if (v instanceof Date) {
@@ -500,10 +501,7 @@ public abstract class RowFilter<M,I> {
         }
     }
 
-
-
-
-    private static class NumberFilter extends GeneralFilter {
+    private static class NumberFilter<M, I> extends GeneralFilter<M, I> {
         private boolean isComparable;
         private Number number;
         private ComparisonType type;
@@ -519,15 +517,16 @@ public abstract class RowFilter<M,I> {
             isComparable = (number instanceof Comparable);
         }
 
+        @Override
         @SuppressWarnings("unchecked")
         protected boolean include(
-                Entry<? extends Object,? extends Object> value, int index) {
+                Entry<? extends M, ? extends I> value, int index) {
             Object v = value.getValue(index);
 
             if (v instanceof Number) {
                 boolean compared = true;
                 int compareResult;
-                Class vClass = v.getClass();
+                Class<?> vClass = v.getClass();
                 if (number.getClass() == vClass && isComparable) {
                     compareResult = ((Comparable)number).compareTo(v);
                 }

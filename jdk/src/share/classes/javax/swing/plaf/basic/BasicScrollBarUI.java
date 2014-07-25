@@ -1265,7 +1265,7 @@ public class BasicScrollBarUI
                 JViewport viewport = scrollpane.getViewport();
                 Component view = viewport.getView();
                 if (view instanceof JList) {
-                    JList list = (JList)view;
+                    JList<?> list = (JList)view;
                     if (DefaultLookup.getBoolean(list, list.getUI(),
                                                  "List.lockToPositionOnScroll", false)) {
                         int adjustedValue = value;

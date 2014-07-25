@@ -209,8 +209,8 @@ package.access=sun.,\
                org.jcp.xml.dsig.internal.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
-               jdk.nashorn.tools.
-
+               jdk.nashorn.tools.,\
+               com.sun.activation.registries.
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -255,8 +255,8 @@ package.definition=sun.,\
                    org.jcp.xml.dsig.internal.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
-                   jdk.nashorn.tools.
-
+                   jdk.nashorn.tools.,\
+                   com.sun.activation.registries.
 
 #
 # Determines whether this properties file can be appended to

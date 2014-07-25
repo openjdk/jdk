@@ -249,7 +249,7 @@ class Statement extends Node {
                 // Save the return value in the register which should have
                 // been reserved.
                 LocalMember lf = ctx.getLocalField(idFinallyReturnValue);
-                num = new Integer(lf.number);
+                num = lf.number;
                 asm.add(where, opc_istore + save.getTypeCodeOffset(), num);
             } else {
                 // Pop the return value.

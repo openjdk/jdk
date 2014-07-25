@@ -330,9 +330,9 @@ public:
   Generation* gen;
   CompactibleSpace* space;
   HeapWord* threshold;
-  CompactPoint(Generation* _gen, CompactibleSpace* _space,
-               HeapWord* _threshold) :
-    gen(_gen), space(_space), threshold(_threshold) {}
+
+  CompactPoint(Generation* _gen) :
+    gen(_gen), space(NULL), threshold(0) {}
 };
 
 

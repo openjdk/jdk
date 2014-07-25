@@ -721,7 +721,7 @@ public final class JLayer<V extends Component>
                         AWTEvent.HIERARCHY_EVENT_MASK |
                         AWTEvent.HIERARCHY_BOUNDS_EVENT_MASK;
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         public void eventDispatched(AWTEvent event) {
             Object source = event.getSource();
             if (source instanceof Component) {
@@ -729,7 +729,7 @@ public final class JLayer<V extends Component>
                 while (component != null) {
                     if (component instanceof JLayer) {
                         JLayer l = (JLayer) component;
-                        LayerUI ui = l.getUI();
+                        LayerUI<?> ui = l.getUI();
                         if (ui != null &&
                                 isEventEnabled(l.getLayerEventMask(), event.getID()) &&
                                 (!(event instanceof InputEvent) || !((InputEvent)event).isConsumed())) {

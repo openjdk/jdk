@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -164,7 +164,7 @@ struct jvm_agent {
   int32_t  SIZE_CodeCache_log2_segment;
 
   uint64_t methodPtr;
-  uint64_t bcx;
+  uint64_t bcp;
 
   Nmethod_t *N;                 /*Inlined methods support */
   Frame_t   prev_fr;
@@ -259,6 +259,9 @@ static int parse_vmstructs(jvm_agent_t* J) {
   psaddr_t sym_addr;
   uint64_t base;
   int err;
+
+  /* Clear *vmp now in case we jump to fail: */
+  memset(vmp, 0, sizeof(VMStructEntry));
 
   err = ps_pglobal_lookup(J->P, LIBJVM_SO, "gHotSpotVMStructs", &sym_addr);
   CHECK_FAIL(err);
@@ -1068,19 +1071,9 @@ name_for_nmethod(jvm_agent_t* J,
   return err;
 }
 
-int is_bci(intptr_t bcx) {
-  switch (DATA_MODEL) {
-  case PR_MODEL_LP64:
-    return ((uintptr_t) bcx) <= ((uintptr_t) MAX_METHOD_CODE_SIZE) ;
-  case PR_MODEL_ILP32:
-  default:
-    return 0 <= bcx && bcx <= MAX_METHOD_CODE_SIZE;
-  }
-}
-
 static int
 name_for_imethod(jvm_agent_t* J,
-                 uint64_t bcx,
+                 uint64_t bcp,
                  uint64_t method,
                  char *result,
                  size_t size,
@@ -1095,7 +1088,7 @@ name_for_imethod(jvm_agent_t* J,
   err = read_pointer(J, method + OFFSET_Method_constMethod, &constMethod);
   CHECK_FAIL(err);
 
-  bci = is_bci(bcx) ? bcx : bcx - (constMethod + (uint64_t) SIZE_ConstMethod);
+  bci = bcp - (constMethod + (uint64_t) SIZE_ConstMethod);
 
   if (debug)
       fprintf(stderr, "\t name_for_imethod: BEGIN: method: %#llx\n", method);
@@ -1169,7 +1162,7 @@ name_for_codecache(jvm_agent_t* J, uint64_t fp, uint64_t pc, char * result,
     if (err == PS_OK && strncmp(name, "Interpreter", 11) == 0) {
       *is_interpreted = 1;
       if (is_method(J, J->methodPtr)) {
-        return name_for_imethod(J, J->bcx, J->methodPtr, result, size, jframe);
+        return name_for_imethod(J, J->bcp, J->methodPtr, result, size, jframe);
       }
     }
 
@@ -1326,7 +1319,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
   /* arguments given to read_pointer need to be worst case sized */
   uint64_t methodPtr = 0;
   uint64_t sender_sp;
-  uint64_t bcx = 0;
+  uint64_t bcp = 0;
   int is_interpreted = 0;
   int result = PS_OK;
   int err = PS_OK;
@@ -1357,7 +1350,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
      * regs[R_PC] contains a CALL instruction pc offset.
      */
     pc += 8;
-    bcx          = (uintptr_t) regs[R_L1];
+    bcp          = (uintptr_t) regs[R_L1];
     methodPtr = (uintptr_t) regs[R_L2];
     sender_sp = regs[R_I5];
     if (debug > 2) {
@@ -1385,13 +1378,13 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
     if (read_pointer(J,  fp + OFFSET_interpreter_frame_sender_sp, &sender_sp) != PS_OK) {
       sender_sp = 0;
     }
-    if (read_pointer(J,  fp + OFFSET_interpreter_frame_bcx_offset, &bcx) != PS_OK) {
-      bcx = 0;
+    if (read_pointer(J,  fp + OFFSET_interpreter_frame_bcp_offset, &bcp) != PS_OK) {
+      bcp = 0;
     }
 #endif /* i386 */
 
   J->methodPtr = methodPtr;
-  J->bcx = bcx;
+  J->bcp = bcp;
 
   /* On x86 with C2 JVM: native frame may have wrong regs[R_FP]
    * For example: JVM_SuspendThread frame poins to the top interpreted frame.
@@ -1402,7 +1395,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
    */
 #ifndef X86_COMPILER2
   if (is_method(J, J->methodPtr)) {
-    result = name_for_imethod(J, bcx, J->methodPtr, name, size, jframe);
+    result = name_for_imethod(J, bcp, J->methodPtr, name, size, jframe);
     /* If the methodPtr is a method then this is highly likely to be
        an interpreter frame */
     if (result >= 0) {
@@ -1416,7 +1409,7 @@ int Jlookup_by_regs(jvm_agent_t* J, const prgregset_t regs, char *name,
   }
 #ifdef X86_COMPILER2
   else if (is_method(J, J->methodPtr)) {
-    result = name_for_imethod(J, bcx, J->methodPtr, name, size, jframe);
+    result = name_for_imethod(J, bcp, J->methodPtr, name, size, jframe);
     /* If the methodPtr is a method then this is highly likely to be
        an interpreter frame */
     if (result >= 0) {

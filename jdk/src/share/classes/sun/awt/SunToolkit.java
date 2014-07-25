@@ -59,8 +59,7 @@ import java.lang.reflect.InvocationTargetException;
 import java.security.AccessController;
 
 public abstract class SunToolkit extends Toolkit
-    implements WindowClosingSupport, WindowClosingListener,
-    ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
+    implements ComponentFactory, InputMethodSupport, KeyboardFocusManagerPeerProvider {
 
     // 8014718: logging has been removed from SunToolkit
 
@@ -1199,42 +1198,6 @@ public abstract class SunToolkit extends Toolkit
      */
     public Locale getDefaultKeyboardLocale() {
         return getStartupLocale();
-    }
-
-    // Support for window closing event notifications
-    private transient WindowClosingListener windowClosingListener = null;
-    /**
-     * @see sun.awt.WindowClosingSupport#getWindowClosingListener
-     */
-    public WindowClosingListener getWindowClosingListener() {
-        return windowClosingListener;
-    }
-    /**
-     * @see sun.awt.WindowClosingSupport#setWindowClosingListener
-     */
-    public void setWindowClosingListener(WindowClosingListener wcl) {
-        windowClosingListener = wcl;
-    }
-
-    /**
-     * @see sun.awt.WindowClosingListener#windowClosingNotify
-     */
-    public RuntimeException windowClosingNotify(WindowEvent event) {
-        if (windowClosingListener != null) {
-            return windowClosingListener.windowClosingNotify(event);
-        } else {
-            return null;
-        }
-    }
-    /**
-     * @see sun.awt.WindowClosingListener#windowClosingDelivered
-     */
-    public RuntimeException windowClosingDelivered(WindowEvent event) {
-        if (windowClosingListener != null) {
-            return windowClosingListener.windowClosingDelivered(event);
-        } else {
-            return null;
-        }
     }
 
     private static DefaultMouseInfoPeer mPeer = null;

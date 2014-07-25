@@ -444,9 +444,6 @@ JVM_IsArrayClass(JNIEnv *env, jclass cls);
 JNIEXPORT jboolean JNICALL
 JVM_IsPrimitiveClass(JNIEnv *env, jclass cls);
 
-JNIEXPORT jclass JNICALL
-JVM_GetComponentType(JNIEnv *env, jclass cls);
-
 JNIEXPORT jint JNICALL
 JVM_GetClassModifiers(JNIEnv *env, jclass cls);
 

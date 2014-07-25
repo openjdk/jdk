@@ -133,7 +133,7 @@ public class OceanTheme extends DefaultMetalTheme {
         UIDefaults.LazyValue focusBorder = t ->
             new BorderUIResource.LineBorderUIResource(getPrimary1());
         // .30 0 DDE8F3 white secondary2
-        java.util.List buttonGradient = Arrays.asList(
+        java.util.List<?> buttonGradient = Arrays.asList(
                  new Object[] {new Float(.3f), new Float(0f),
                  new ColorUIResource(0xDDE8F3), getWhite(), getSecondary2() });
 
@@ -149,7 +149,7 @@ public class OceanTheme extends DefaultMetalTheme {
         Color c8ddf2 = new ColorUIResource(0xC8DDF2);
         Object directoryIcon = getIconResource("icons/ocean/directory.gif");
         Object fileIcon = getIconResource("icons/ocean/file.gif");
-        java.util.List sliderGradient = Arrays.asList(new Object[] {
+        java.util.List<?> sliderGradient = Arrays.asList(new Object[] {
             new Float(.3f), new Float(.2f),
             c8ddf2, getWhite(), new ColorUIResource(SECONDARY2) });
 

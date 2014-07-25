@@ -858,7 +858,7 @@ class DatagramSocket implements java.io.Closeable {
     public synchronized void setSoTimeout(int timeout) throws SocketException {
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.SO_TIMEOUT, new Integer(timeout));
+        getImpl().setOption(SocketOptions.SO_TIMEOUT, timeout);
     }
 
     /**
@@ -920,7 +920,7 @@ class DatagramSocket implements java.io.Closeable {
         }
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.SO_SNDBUF, new Integer(size));
+        getImpl().setOption(SocketOptions.SO_SNDBUF, size);
     }
 
     /**
@@ -978,7 +978,7 @@ class DatagramSocket implements java.io.Closeable {
         }
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.SO_RCVBUF, new Integer(size));
+        getImpl().setOption(SocketOptions.SO_RCVBUF, size);
     }
 
     /**
@@ -1040,7 +1040,7 @@ class DatagramSocket implements java.io.Closeable {
             throw new SocketException("Socket is closed");
         // Integer instead of Boolean for compatibility with older DatagramSocketImpl
         if (oldImpl)
-            getImpl().setOption(SocketOptions.SO_REUSEADDR, new Integer(on?-1:0));
+            getImpl().setOption(SocketOptions.SO_REUSEADDR, on?-1:0);
         else
             getImpl().setOption(SocketOptions.SO_REUSEADDR, Boolean.valueOf(on));
     }
@@ -1141,7 +1141,7 @@ class DatagramSocket implements java.io.Closeable {
 
         if (isClosed())
             throw new SocketException("Socket is closed");
-        getImpl().setOption(SocketOptions.IP_TOS, new Integer(tc));
+        getImpl().setOption(SocketOptions.IP_TOS, tc);
     }
 
     /**

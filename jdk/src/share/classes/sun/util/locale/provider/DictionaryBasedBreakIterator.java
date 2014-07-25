@@ -461,10 +461,10 @@ class DictionaryBasedBreakIterator extends RuleBasedBreakIterator {
                         if ((currentBreakPositions.size() == 0 ||
                              currentBreakPositions.peek().intValue() != text.getIndex())
                             && text.getIndex() != startPos) {
-                            currentBreakPositions.push(new Integer(text.getIndex()));
+                            currentBreakPositions.push(text.getIndex());
                         }
                         getNext();
-                        currentBreakPositions.push(new Integer(text.getIndex()));
+                        currentBreakPositions.push(text.getIndex());
                     }
                 }
 

@@ -569,7 +569,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Integer getTrapPort() {
-        return new Integer(trapPort) ;
+        return trapPort;
     }
 
     /**
@@ -639,7 +639,7 @@ public class SnmpAdaptorServer extends CommunicatorServer
      */
     @Override
     public Integer getBufferSize() {
-        return new Integer(bufferSize) ;
+        return bufferSize;
     }
 
     /**

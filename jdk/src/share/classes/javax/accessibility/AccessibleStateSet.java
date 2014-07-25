@@ -68,7 +68,7 @@ public class AccessibleStateSet {
      */
     public AccessibleStateSet(AccessibleState[] states) {
         if (states.length != 0) {
-            this.states = new Vector(states.length);
+            this.states = new Vector<>(states.length);
             for (int i = 0; i < states.length; i++) {
                 if (!this.states.contains(states[i])) {
                     this.states.addElement(states[i]);
@@ -92,7 +92,7 @@ public class AccessibleStateSet {
         // to always use a vector of states.  It could be improved by
         // caching the states as a bit set.]]]
         if (states == null) {
-            states = new Vector();
+            states = new Vector<>();
         }
 
         if (!states.contains(state)) {
@@ -111,7 +111,7 @@ public class AccessibleStateSet {
     public void addAll(AccessibleState[] states) {
         if (states.length != 0) {
             if (this.states == null) {
-                this.states = new Vector(states.length);
+                this.states = new Vector<>(states.length);
             }
             for (int i = 0; i < states.length; i++) {
                 if (!this.states.contains(states[i])) {

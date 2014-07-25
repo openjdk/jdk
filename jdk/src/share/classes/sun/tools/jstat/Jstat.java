@@ -158,7 +158,7 @@ public class Jstat {
         // handle target termination events for targets other than ourself
         HostListener terminator = new HostListener() {
             public void vmStatusChanged(VmStatusChangeEvent ev) {
-                Integer lvmid = new Integer(vmId.getLocalVmId());
+                Integer lvmid = vmId.getLocalVmId();
                 if (ev.getTerminated().contains(lvmid)) {
                     logger.stopLogging();
                 } else if (!ev.getActive().contains(lvmid)) {

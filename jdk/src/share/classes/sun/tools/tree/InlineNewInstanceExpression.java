@@ -93,11 +93,11 @@ class InlineNewInstanceExpression extends Expression {
             LocalMember v = (LocalMember)field.getArguments().elementAt(0);
             CodeContext newctx = new CodeContext(ctx, this);
             newctx.declare(env, v);
-            asm.add(where, opc_astore, new Integer(v.number));
+            asm.add(where, opc_astore, v.number);
             body.code(env, newctx, asm);
             asm.add(newctx.breakLabel);
             if (forValue) {
-                asm.add(where, opc_aload, new Integer(v.number));
+                asm.add(where, opc_aload, v.number);
             }
         }
     }

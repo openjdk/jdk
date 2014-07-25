@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <!--
- Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 
  This code is free software; you can redistribute it and/or modify it
@@ -457,6 +457,46 @@
         </javac>
     </target>
 
+    <!-- Generate API docs for "important" test classes that are used by
+         multiple tests.
+    -->
+    <target name="test-framework-docs" depends="build-all-classes">
+        <javadoc executable="${target.java.home}/bin/javadoc"
+                destdir="${build.dir}/testframeworkdocs">
+            <!-- disable doclint for now; it might be good to enable -Xdoclint:missing -->
+            <arg value="-Xdoclint:none"/>
+            <!-- source files to be documented -->
+            <sourcefiles>
+                <fileset dir="${test.dir}">
+                    <include name="**/ToolBox.java"/>
+                    <include name="**/*Tester.java"/>
+                    <include name="**/*TestBase.java"/>
+                    <include name="**/*Testing*.java"/>
+                </fileset>
+            </sourcefiles>
+            <!-- source path used for documentation -->
+            <sourcepath>
+                <pathelement path="${test.dir}/lib"/>
+                <pathelement path="${test.dir}/lib/combo"/>
+                <pathelement path="${test.dir}/tools/javac/lib"/>
+                <pathelement path="${test.dir}/tools/javac/classfiles/attributes/LocalVariableTable"/>
+            </sourcepath>
+            <!-- exclude the following "packages" found by <javadoc>
+                on the sourcepath -->
+            <excludepackage name="combo.tools.javac.combo"/>
+            <excludepackage name="tools.javac.combo"/>
+            <!-- library classes used for documentation -->
+            <classpath>
+                <pathelement path="${jtreg.home}/lib/testng.jar"/>
+            </classpath>
+            <!-- platform classes used for documentation -->
+            <bootclasspath>
+                <pathelement path="${build.dir}/classes"/>
+                <pathelement path="${target.java.home}/jre/lib/rt.jar"/>
+            </bootclasspath>
+        </javadoc>
+    </target>
+
     <!--
     **** Debugging/diagnostic targets.
     -->
@@ -761,7 +801,7 @@
         <copy todir=".idea" >
             <fileset dir="make/intellij" includes="**"/>
         </copy>
-        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.home}"/>               
+        <replace file=".idea/ant.xml" token="@@@" value="${jtreg.home}"/>
     </target>
 
     <!--

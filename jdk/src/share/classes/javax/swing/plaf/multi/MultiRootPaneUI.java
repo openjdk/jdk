@@ -48,7 +48,7 @@ public class MultiRootPaneUI extends RootPaneUI {
      * the <code>getUIs</code> method.  The first element is guaranteed to be the real UI
      * obtained from the default look and feel.
      */
-    protected Vector uis = new Vector();
+    protected Vector<ComponentUI> uis = new Vector<>();
 
 ////////////////////
 // Common UI methods
@@ -81,9 +81,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public boolean contains(JComponent a, int b, int c) {
         boolean returnValue =
-            ((ComponentUI) (uis.elementAt(0))).contains(a,b,c);
+            uis.elementAt(0).contains(a,b,c);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).contains(a,b,c);
+            uis.elementAt(i).contains(a,b,c);
         }
         return returnValue;
     }
@@ -93,7 +93,7 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public void update(Graphics a, JComponent b) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).update(a,b);
+            uis.elementAt(i).update(a,b);
         }
     }
 
@@ -106,10 +106,8 @@ public class MultiRootPaneUI extends RootPaneUI {
      * @return the UI delegate created
      */
     public static ComponentUI createUI(JComponent a) {
-        ComponentUI mui = new MultiRootPaneUI();
-        return MultiLookAndFeel.createUIs(mui,
-                                          ((MultiRootPaneUI) mui).uis,
-                                          a);
+        MultiRootPaneUI mui = new MultiRootPaneUI();
+        return MultiLookAndFeel.createUIs(mui, mui.uis, a);
     }
 
     /**
@@ -117,7 +115,7 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public void installUI(JComponent a) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).installUI(a);
+            uis.elementAt(i).installUI(a);
         }
     }
 
@@ -126,7 +124,7 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public void uninstallUI(JComponent a) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).uninstallUI(a);
+            uis.elementAt(i).uninstallUI(a);
         }
     }
 
@@ -135,7 +133,7 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public void paint(Graphics a, JComponent b) {
         for (int i = 0; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).paint(a,b);
+            uis.elementAt(i).paint(a,b);
         }
     }
 
@@ -147,9 +145,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public Dimension getPreferredSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getPreferredSize(a);
+            uis.elementAt(0).getPreferredSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getPreferredSize(a);
+            uis.elementAt(i).getPreferredSize(a);
         }
         return returnValue;
     }
@@ -162,9 +160,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public Dimension getMinimumSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getMinimumSize(a);
+            uis.elementAt(0).getMinimumSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getMinimumSize(a);
+            uis.elementAt(i).getMinimumSize(a);
         }
         return returnValue;
     }
@@ -177,9 +175,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public Dimension getMaximumSize(JComponent a) {
         Dimension returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getMaximumSize(a);
+            uis.elementAt(0).getMaximumSize(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getMaximumSize(a);
+            uis.elementAt(i).getMaximumSize(a);
         }
         return returnValue;
     }
@@ -192,9 +190,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public int getAccessibleChildrenCount(JComponent a) {
         int returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getAccessibleChildrenCount(a);
+            uis.elementAt(0).getAccessibleChildrenCount(a);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getAccessibleChildrenCount(a);
+            uis.elementAt(i).getAccessibleChildrenCount(a);
         }
         return returnValue;
     }
@@ -207,9 +205,9 @@ public class MultiRootPaneUI extends RootPaneUI {
      */
     public Accessible getAccessibleChild(JComponent a, int b) {
         Accessible returnValue =
-            ((ComponentUI) (uis.elementAt(0))).getAccessibleChild(a,b);
+            uis.elementAt(0).getAccessibleChild(a,b);
         for (int i = 1; i < uis.size(); i++) {
-            ((ComponentUI) (uis.elementAt(i))).getAccessibleChild(a,b);
+            uis.elementAt(i).getAccessibleChild(a,b);
         }
         return returnValue;
     }

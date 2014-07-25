@@ -71,7 +71,7 @@ public class AccessibleRelationSet {
      */
     public AccessibleRelationSet(AccessibleRelation[] relations) {
         if (relations.length != 0) {
-            this.relations = new Vector(relations.length);
+            this.relations = new Vector<>(relations.length);
             for (int i = 0; i < relations.length; i++) {
                 add(relations[i]);
             }
@@ -90,7 +90,7 @@ public class AccessibleRelationSet {
      */
     public boolean add(AccessibleRelation relation) {
         if (relations == null) {
-            relations = new Vector();
+            relations = new Vector<>();
         }
 
         // Merge the relation targets if the key exists
@@ -125,7 +125,7 @@ public class AccessibleRelationSet {
     public void addAll(AccessibleRelation[] relations) {
         if (relations.length != 0) {
             if (this.relations == null) {
-                this.relations = new Vector(relations.length);
+                this.relations = new Vector<>(relations.length);
             }
             for (int i = 0; i < relations.length; i++) {
                 add(relations[i]);

@@ -117,7 +117,7 @@ public class EncAPRepPart {
             if ((subDer.getTag() & 0x1F) != 0x03) {
                 throw new Asn1Exception(Krb5.ASN1_BAD_ID);
             }
-            seqNumber = new Integer(subDer.getData().getBigInteger().intValue());
+            seqNumber = subDer.getData().getBigInteger().intValue();
         } else {
             seqNumber = null;
         }

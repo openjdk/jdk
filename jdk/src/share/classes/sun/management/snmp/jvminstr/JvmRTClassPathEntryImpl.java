@@ -71,7 +71,7 @@ public class JvmRTClassPathEntryImpl implements JvmRTClassPathEntryMBean,
      * Getter for the "JvmRTClassPathIndex" variable.
      */
     public Integer getJvmRTClassPathIndex() throws SnmpStatusException {
-        return new Integer(index);
+        return index;
     }
 
 }
