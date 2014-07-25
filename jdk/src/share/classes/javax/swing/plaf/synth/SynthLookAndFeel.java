@@ -382,7 +382,7 @@ public class SynthLookAndFeel extends BasicLookAndFeel {
      * Returns the ui that is of type <code>klass</code>, or null if
      * one can not be found.
      */
-    static Object getUIOfType(ComponentUI ui, Class klass) {
+    static Object getUIOfType(ComponentUI ui, Class<?> klass) {
         if (klass.isInstance(ui)) {
             return ui;
         }

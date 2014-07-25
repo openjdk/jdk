@@ -54,12 +54,12 @@ public class MetalComboBoxButton extends JButton {
     /**
      * The instance of {@code JComboBox}.
      */
-    protected JComboBox comboBox;
+    protected JComboBox<Object> comboBox;
 
     /**
      * The instance of {@code JList}.
      */
-    protected JList listBox;
+    protected JList<Object> listBox;
 
     /**
      * The instance of {@code CellRendererPane}.
@@ -81,14 +81,14 @@ public class MetalComboBoxButton extends JButton {
      *
      * @return the {@code JComboBox}
      */
-    public final JComboBox getComboBox() { return comboBox;}
+    public final JComboBox<Object> getComboBox() { return comboBox;}
 
     /**
      * Sets the {@code JComboBox}.
      *
      * @param cb the {@code JComboBox}
      */
-    public final void setComboBox( JComboBox cb ) { comboBox = cb;}
+    public final void setComboBox( JComboBox<Object> cb ) { comboBox = cb;}
 
     /**
      * Returns the icon of the {@code JComboBox}.
@@ -136,8 +136,8 @@ public class MetalComboBoxButton extends JButton {
      * @param pane an instance of {@code CellRendererPane}
      * @param list an instance of {@code JList}
      */
-    public MetalComboBoxButton( JComboBox cb, Icon i,
-                                CellRendererPane pane, JList list ) {
+    public MetalComboBoxButton( JComboBox<Object> cb, Icon i,
+                                CellRendererPane pane, JList<Object> list ) {
         this();
         comboBox = cb;
         comboIcon = i;
@@ -155,8 +155,8 @@ public class MetalComboBoxButton extends JButton {
      * @param pane an instance of {@code CellRendererPane}
      * @param list an instance of {@code JList}
      */
-    public MetalComboBoxButton( JComboBox cb, Icon i, boolean onlyIcon,
-                                CellRendererPane pane, JList list ) {
+    public MetalComboBoxButton( JComboBox<Object> cb, Icon i, boolean onlyIcon,
+                                CellRendererPane pane, JList<Object> list ) {
         this( cb, i, pane, list );
         iconOnly = onlyIcon;
     }
@@ -238,7 +238,7 @@ public class MetalComboBoxButton extends JButton {
 
         // Let the renderer paint
         if ( ! iconOnly && comboBox != null ) {
-            ListCellRenderer renderer = comboBox.getRenderer();
+             ListCellRenderer<Object> renderer = comboBox.getRenderer();
             Component c;
             boolean renderPressed = getModel().isPressed();
             c = renderer.getListCellRendererComponent(listBox,

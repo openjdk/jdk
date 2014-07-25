@@ -2111,6 +2111,7 @@ public abstract class JComponent extends Container implements Serializable,
     private void registerWithKeyboardManager(boolean onlyIfNew) {
         InputMap inputMap = getInputMap(WHEN_IN_FOCUSED_WINDOW, false);
         KeyStroke[] strokes;
+        @SuppressWarnings("unchecked")
         Hashtable<KeyStroke, KeyStroke> registered =
                 (Hashtable<KeyStroke, KeyStroke>)getClientProperty
                                 (WHEN_IN_FOCUSED_WINDOW_BINDINGS);
@@ -2164,6 +2165,7 @@ public abstract class JComponent extends Container implements Serializable,
      * <code>WHEN_IN_FOCUSED_WINDOW</code> <code>KeyStroke</code> bindings.
      */
     private void unregisterWithKeyboardManager() {
+        @SuppressWarnings("unchecked")
         Hashtable<KeyStroke, KeyStroke> registered =
                 (Hashtable<KeyStroke, KeyStroke>)getClientProperty
                                 (WHEN_IN_FOCUSED_WINDOW_BINDINGS);
@@ -4126,16 +4128,20 @@ public abstract class JComponent extends Container implements Serializable,
                 setFlag(AUTOSCROLLS_SET, false);
             }
         } else if (propertyName == "focusTraversalKeysForward") {
+            @SuppressWarnings("unchecked")
+            Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_FORWARD_SET)) {
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             FORWARD_TRAVERSAL_KEYS,
-                                            (Set<AWTKeyStroke>)value);
+                                            strokeSet);
             }
         } else if (propertyName == "focusTraversalKeysBackward") {
+            @SuppressWarnings("unchecked")
+            Set<AWTKeyStroke> strokeSet = (Set<AWTKeyStroke>) value;
             if (!getFlag(FOCUS_TRAVERSAL_KEYS_BACKWARD_SET)) {
                 super.setFocusTraversalKeys(KeyboardFocusManager.
                                             BACKWARD_TRAVERSAL_KEYS,
-                                            (Set<AWTKeyStroke>)value);
+                                            strokeSet);
             }
         } else {
             throw new IllegalArgumentException("property \""+
@@ -4713,6 +4719,7 @@ public abstract class JComponent extends Container implements Serializable,
      * @see #getVetoableChangeListeners
      * @see #getAncestorListeners
      */
+    @SuppressWarnings("unchecked") // Casts to (T[])
     public <T extends EventListener> T[] getListeners(Class<T> listenerType) {
         T[] result;
         if (listenerType == AncestorListener.class) {

@@ -59,7 +59,7 @@ import java.io.Serializable;
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class SpinnerListModel extends AbstractSpinnerModel implements Serializable
 {
-    private List list;
+    private List<?> list;
     private int index;
 
 

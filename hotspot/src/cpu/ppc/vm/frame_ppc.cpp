@@ -36,7 +36,6 @@
 #include "runtime/signature.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "runtime/stubRoutines.hpp"
-#include "vmreg_ppc.inline.hpp"
 #ifdef COMPILER1
 #include "c1/c1_Runtime1.hpp"
 #include "runtime/vframeArray.hpp"
@@ -152,15 +151,6 @@ void frame::patch_pc(Thread* thread, address pc) {
   } else {
     _deopt_state = not_deoptimized;
     _pc = pc;
-  }
-}
-
-void frame::pd_gc_epilog() {
-  if (is_interpreted_frame()) {
-    // Set constant pool cache entry for interpreter.
-    Method* m = interpreter_frame_method();
-
-    *interpreter_frame_cpoolcache_addr() = m->constants()->cache();
   }
 }
 

@@ -76,7 +76,9 @@ public final class XMLSecurityManager {
         GENERAL_ENTITY_SIZE_LIMIT(XalanConstants.JDK_GENERAL_ENTITY_SIZE_LIMIT,
                 XalanConstants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
         PARAMETER_ENTITY_SIZE_LIMIT(XalanConstants.JDK_PARAMETER_ENTITY_SIZE_LIMIT,
-                XalanConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000);
+                XalanConstants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
+        MAX_ELEMENT_DEPTH_LIMIT(XalanConstants.JDK_MAX_ELEMENT_DEPTH,
+                XalanConstants.SP_MAX_ELEMENT_DEPTH, 0, 0);
 
         final String apiProperty;
         final String systemProperty;

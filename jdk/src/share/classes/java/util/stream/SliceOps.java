@@ -693,7 +693,7 @@ final class SliceOps {
          * size.
          *
          * @param target the target size
-         * @return return the number of completed elements
+         * @return the number of completed elements
          */
         private long completedSize(long target) {
             if (completed)

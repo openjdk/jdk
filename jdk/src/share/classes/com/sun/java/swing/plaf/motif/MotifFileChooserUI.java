@@ -342,7 +342,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
         leftPanel.add(l);
 
         @SuppressWarnings("serial") // anonymous class
-        JComboBox tmp2 = new JComboBox<FileFilter>() {
+        JComboBox<FileFilter> tmp2 = new JComboBox<FileFilter>() {
             public Dimension getMaximumSize() {
                 Dimension d = super.getMaximumSize();
                 d.height = getPreferredSize().height;
@@ -655,7 +655,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class FileCellRenderer extends DefaultListCellRenderer  {
-        public Component getListCellRendererComponent(JList list, Object value, int index,
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -667,7 +667,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
 
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     protected class DirectoryCellRenderer extends DefaultListCellRenderer  {
-        public Component getListCellRendererComponent(JList list, Object value, int index,
+        public Component getListCellRendererComponent(JList<?> list, Object value, int index,
                                                       boolean isSelected, boolean cellHasFocus) {
 
             super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
@@ -778,7 +778,7 @@ public class MotifFileChooserUI extends BasicFileChooserUI {
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
     public class FilterComboBoxRenderer extends DefaultListCellRenderer {
-        public Component getListCellRendererComponent(JList list,
+        public Component getListCellRendererComponent(JList<?> list,
             Object value, int index, boolean isSelected,
             boolean cellHasFocus) {
 

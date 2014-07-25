@@ -26,6 +26,8 @@
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterGenerator.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/interp_masm.hpp"
+#include "interpreter/templateInterpreter.hpp"
 #include "interpreter/templateTable.hpp"
 
 #ifndef CC_INTERP

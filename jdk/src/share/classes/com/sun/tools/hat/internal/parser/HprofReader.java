@@ -227,7 +227,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     String nm = getNameFromID(classNameID).replace('/', '.');
                     classNameFromObjectID.put(classIdI, nm);
                     if (classNameFromSerialNo != null) {
-                        classNameFromSerialNo.put(new Integer(serialNo), nm);
+                        classNameFromSerialNo.put(serialNo, nm);
                     }
                     break;
                 }
@@ -297,7 +297,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                         String methodSig = getNameFromID(readID());
                         String sourceFile = getNameFromID(readID());
                         int classSer = in.readInt();
-                        String className = classNameFromSerialNo.get(new Integer(classSer));
+                        String className = classNameFromSerialNo.get(classSer);
                         int lineNumber = in.readInt();
                         if (lineNumber < StackFrame.LINE_NUMBER_NATIVE) {
                             warn("Weird stack frame line number:  " + lineNumber);
@@ -324,7 +324,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                                 throw new IOException("Stack frame " + toHex(fid) + " not found");
                             }
                         }
-                        stackTraces.put(new Integer(serialNo),
+                        stackTraces.put(serialNo,
                                         new StackTrace(frames));
                     }
                     break;
@@ -404,7 +404,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
                     int threadSeq = in.readInt();
                     int stackSeq = in.readInt();
                     bytesLeft -= identifierSize + 8;
-                    threadObjects.put(new Integer(threadSeq),
+                    threadObjects.put(threadSeq,
                                       new ThreadObject(id, stackSeq));
                     break;
                 }
@@ -610,7 +610,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
 
     private ThreadObject getThreadObjectFromSequence(int threadSeq)
             throws IOException {
-        ThreadObject to = threadObjects.get(new Integer(threadSeq));
+        ThreadObject to = threadObjects.get(threadSeq);
         if (to == null) {
             throw new IOException("Thread " + threadSeq +
                                   " not found for JNI local ref");
@@ -638,7 +638,7 @@ public class HprofReader extends Reader /* imports */ implements ArrayTypeCodes 
         if (stackTraces == null) {
             return null;
         }
-        StackTrace result = stackTraces.get(new Integer(ser));
+        StackTrace result = stackTraces.get(ser);
         if (result == null) {
             warn("Stack trace not found for serial # " + ser);
         }

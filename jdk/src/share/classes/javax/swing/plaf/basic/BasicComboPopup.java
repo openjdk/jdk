@@ -71,11 +71,11 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         public void removeListDataListener(ListDataListener l) {}
     };
 
-    static final ListModel EmptyListModel = new EmptyListModelClass();
+    static final ListModel<Object> EmptyListModel = new EmptyListModelClass();
 
     private static Border LIST_BORDER = new LineBorder(Color.BLACK, 1);
 
-    protected JComboBox                comboBox;
+    protected JComboBox<Object>             comboBox;
     /**
      * This protected field is implementation specific. Do not access directly
      * or override. Use the accessor methods instead.
@@ -83,7 +83,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @see #getList
      * @see #createList
      */
-    protected JList                    list;
+    protected JList<Object>                 list;
     /**
      * This protected field is implementation specific. Do not access directly
      * or override. Use the create method instead
@@ -229,7 +229,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     /**
      * Implementation of ComboPopup.getList().
      */
-    public JList getList() {
+    public JList<Object> getList() {
         return list;
     }
 
@@ -303,7 +303,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @param model The combo box model to install listeners
      * @see #installComboBoxModelListeners
      */
-    protected void uninstallComboBoxModelListeners( ComboBoxModel model ) {
+    protected void uninstallComboBoxModelListeners( ComboBoxModel<?> model ) {
         if (model != null && listDataListener != null) {
             model.removeListDataListener(listDataListener);
         }
@@ -319,7 +319,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
     //===================================================================
     // begin Initialization routines
     //
-    public BasicComboPopup( JComboBox combo ) {
+    public BasicComboPopup( JComboBox<Object> combo ) {
         super();
         setName("ComboPopup.popup");
         comboBox = combo;
@@ -481,8 +481,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      *
      * @return a <code>JList</code> used to display the combo box items
      */
-    protected JList createList() {
-        return new JList( comboBox.getModel() ) {
+    protected JList<Object> createList() {
+        return new JList<Object>( comboBox.getModel() ) {
             public void processMouseEvent(MouseEvent e)  {
                 if (BasicGraphicsUtils.isMenuShortcutKeyDown(e))  {
                     // Fix for 4234053. Filter out the Control Key from the list.
@@ -610,7 +610,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
      * @param model The combo box model to install listeners
      * @see #uninstallComboBoxModelListeners
      */
-    protected void installComboBoxModelListeners( ComboBoxModel model ) {
+    protected void installComboBoxModelListeners( ComboBoxModel<?> model ) {
         if (model != null && (listDataListener = createListDataListener()) != null) {
             model.addListDataListener(listDataListener);
         }
@@ -928,12 +928,15 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         // PropertyChangeListener
         //
         public void propertyChange(PropertyChangeEvent e) {
-            JComboBox comboBox = (JComboBox)e.getSource();
+            @SuppressWarnings("unchecked")
+            JComboBox<Object> comboBox = (JComboBox)e.getSource();
             String propertyName = e.getPropertyName();
 
             if ( propertyName == "model" ) {
-                ComboBoxModel oldModel = (ComboBoxModel)e.getOldValue();
-                ComboBoxModel newModel = (ComboBoxModel)e.getNewValue();
+                @SuppressWarnings("unchecked")
+                ComboBoxModel<Object> oldModel = (ComboBoxModel)e.getOldValue();
+                @SuppressWarnings("unchecked")
+                ComboBoxModel<Object> newModel = (ComboBoxModel)e.getNewValue();
                 uninstallComboBoxModelListeners(oldModel);
                 installComboBoxModelListeners(newModel);
 
@@ -955,7 +958,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
 
                 ComponentOrientation o =(ComponentOrientation)e.getNewValue();
 
-                JList list = getList();
+                JList<?> list = getList();
                 if (list!=null && list.getComponentOrientation()!=o) {
                     list.setComponentOrientation(o);
                 }
@@ -978,7 +981,8 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         //
         public void itemStateChanged( ItemEvent e ) {
             if (e.getStateChange() == ItemEvent.SELECTED) {
-                JComboBox comboBox = (JComboBox)e.getSource();
+                @SuppressWarnings("unchecked")
+                JComboBox<Object> comboBox = (JComboBox)e.getSource();
                 setListSelection(comboBox.getSelectedIndex());
             }
         }
@@ -1172,7 +1176,7 @@ public class BasicComboPopup extends JPopupMenu implements ComboPopup {
         // Set the cached value of the minimum row count
         int minRowCount = Math.min( maxRowCount, comboBox.getItemCount() );
         int height = 0;
-        ListCellRenderer renderer = list.getCellRenderer();
+        ListCellRenderer<Object> renderer = list.getCellRenderer();
         Object value = null;
 
         for ( int i = 0; i < minRowCount; ++i ) {

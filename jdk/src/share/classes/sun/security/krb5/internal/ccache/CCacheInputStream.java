@@ -94,8 +94,8 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             taglen = read(2);
             switch (tag) {
             case FCC_TAG_DELTATIME:
-                time_offset = new Integer(read(4));
-                usec_offset = new Integer(read(4));
+                time_offset = read(4);
+                usec_offset = read(4);
                 break;
             default:
             }
@@ -186,7 +186,7 @@ public class CCacheInputStream extends KrbDataInputStream implements FileCCacheC
             read(2); /* keytype recorded twice in fvno 3 */
         keyLen = read(4);
         byte[] bytes = IOUtils.readFully(this, keyLen, true);
-        return new EncryptionKey(bytes, keyType, new Integer(version));
+        return new EncryptionKey(bytes, keyType, version);
     }
 
     long[] readTimes() throws IOException {

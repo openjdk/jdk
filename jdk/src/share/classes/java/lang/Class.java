@@ -134,10 +134,11 @@ public final class Class<T> implements java.io.Serializable,
      * This constructor is not used and prevents the default constructor being
      * generated.
      */
-    private Class(ClassLoader loader) {
+    private Class(ClassLoader loader, Class<?> arrayComponentType) {
         // Initialize final field for classLoader.  The initialization value of non-null
         // prevents future JIT optimizations from assuming this final field is null.
         classLoader = loader;
+        componentType = arrayComponentType;
     }
 
     /**
@@ -917,7 +918,16 @@ public final class Class<T> implements java.io.Serializable,
      * @see     java.lang.reflect.Array
      * @since 1.1
      */
-    public native Class<?> getComponentType();
+    public Class<?> getComponentType() {
+        // Only return for array types. Storage may be reused for Class for instance types.
+        if (isArray()) {
+            return componentType;
+        } else {
+            return null;
+        }
+    }
+
+    private final Class<?> componentType;
 
 
     /**

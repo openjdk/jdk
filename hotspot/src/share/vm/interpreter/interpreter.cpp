@@ -30,6 +30,7 @@
 #include "interpreter/bytecodeInterpreter.hpp"
 #include "interpreter/interpreter.hpp"
 #include "interpreter/interpreterRuntime.hpp"
+#include "interpreter/interp_masm.hpp"
 #include "interpreter/templateTable.hpp"
 #include "memory/allocation.inline.hpp"
 #include "memory/resourceArea.hpp"
@@ -80,9 +81,35 @@ void InterpreterCodelet::print_on(outputStream* st) const {
   }
 }
 
+CodeletMark::CodeletMark(InterpreterMacroAssembler*& masm,
+                         const char* description,
+                         Bytecodes::Code bytecode) :
+  _clet((InterpreterCodelet*)AbstractInterpreter::code()->request(codelet_size())),
+  _cb(_clet->code_begin(), _clet->code_size()) {
+  // Request all space (add some slack for Codelet data).
+  assert(_clet != NULL, "we checked not enough space already");
+
+  // Initialize Codelet attributes.
+  _clet->initialize(description, bytecode);
+  // Create assembler for code generation.
+  masm = new InterpreterMacroAssembler(&_cb);
+  _masm = &masm;
+}
+
+CodeletMark::~CodeletMark() {
+  // Align so printing shows nop's instead of random code at the end (Codelets are aligned).
+  (*_masm)->align(wordSize);
+  // Make sure all code is in code buffer.
+  (*_masm)->flush();
+
+  // Commit Codelet.
+  AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size(), (*_masm)->code()->strings());
+  // Make sure nobody can use _masm outside a CodeletMark lifespan.
+  *_masm = NULL;
+}
 
 //------------------------------------------------------------------------------------------------------------------------
-// Implementation of  platform independent aspects of Interpreter
+// Implementation of platform independent aspects of Interpreter
 
 void AbstractInterpreter::initialize() {
   if (_code != NULL) return;

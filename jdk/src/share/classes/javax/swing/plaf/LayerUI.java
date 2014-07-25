@@ -610,7 +610,8 @@ public class LayerUI<V extends Component>
      *                  baseline
      */
     public int getBaseline(JComponent c, int width, int height) {
-        JLayer l = (JLayer) c;
+        @SuppressWarnings("unchecked")
+        JLayer<?> l = (JLayer) c;
         if (l.getView() != null) {
             return l.getView().getBaseline(width, height);
         }
@@ -627,7 +628,8 @@ public class LayerUI<V extends Component>
      *         size changes
      */
     public Component.BaselineResizeBehavior getBaselineResizeBehavior(JComponent c) {
-        JLayer l = (JLayer) c;
+        @SuppressWarnings("unchecked")
+        JLayer<?> l = (JLayer) c;
         if (l.getView() != null) {
             return l.getView().getBaselineResizeBehavior();
         }
@@ -659,7 +661,8 @@ public class LayerUI<V extends Component>
      * @return preferred size for the passed {@code JLayer}
      */
     public Dimension getPreferredSize(JComponent c) {
-        JLayer l = (JLayer) c;
+        @SuppressWarnings("unchecked")
+        JLayer<?> l = (JLayer) c;
         Component view = l.getView();
         if (view != null) {
             return view.getPreferredSize();
@@ -676,7 +679,8 @@ public class LayerUI<V extends Component>
      * @return minimal size for the passed {@code JLayer}
      */
     public Dimension getMinimumSize(JComponent c) {
-        JLayer l = (JLayer) c;
+        @SuppressWarnings("unchecked")
+        JLayer<?> l = (JLayer) c;
         Component view = l.getView();
         if (view != null) {
             return view.getMinimumSize();
@@ -693,7 +697,8 @@ public class LayerUI<V extends Component>
      * @return maximum size for the passed {@code JLayer}
      */
     public Dimension getMaximumSize(JComponent c) {
-        JLayer l = (JLayer) c;
+        @SuppressWarnings("unchecked")
+        JLayer<?> l = (JLayer) c;
         Component view = l.getView();
         if (view != null) {
             return view.getMaximumSize();

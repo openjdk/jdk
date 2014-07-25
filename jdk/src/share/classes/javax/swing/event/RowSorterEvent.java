@@ -71,7 +71,7 @@ public class RowSorterEvent extends java.util.EventObject {
      * @throws IllegalArgumentException if <code>source</code> is
      *         <code>null</code>
      */
-    public RowSorterEvent(RowSorter source) {
+    public RowSorterEvent(RowSorter<?> source) {
         this(source, Type.SORT_ORDER_CHANGED, null);
     }
 
@@ -85,7 +85,7 @@ public class RowSorterEvent extends java.util.EventObject {
      * @throws IllegalArgumentException if source or <code>type</code> is
      *         <code>null</code>
      */
-    public RowSorterEvent(RowSorter source, Type type,
+    public RowSorterEvent(RowSorter<?> source, Type type,
                           int[] previousRowIndexToModel) {
         super(source);
         if (type == null) {
@@ -100,7 +100,8 @@ public class RowSorterEvent extends java.util.EventObject {
      *
      * @return the source of the event as a <code>RowSorter</code>
      */
-    public RowSorter getSource() {
+    @Override
+    public RowSorter<?> getSource() {
         return (RowSorter)super.getSource();
     }
 

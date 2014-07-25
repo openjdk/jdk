@@ -22,11 +22,13 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package java.beans;
 
 import java.lang.ref.Reference;
 import java.lang.reflect.Method;
+import java.util.Map.Entry;
+
+import com.sun.beans.introspect.PropertyInfo;
 
 /**
  * An IndexedPropertyDescriptor describes a property that acts like an
@@ -143,27 +145,21 @@ public class IndexedPropertyDescriptor extends PropertyDescriptor {
     }
 
     /**
-     * Creates <code>PropertyDescriptor</code> for the specified bean
-     * with the specified name and methods to read/write the property value.
+     * Creates {@code IndexedPropertyDescriptor} from the specified property info.
      *
-     * @param bean          the type of the target bean
-     * @param base          the base name of the property (the rest of the method name)
-     * @param read          the method used for reading the property value
-     * @param write         the method used for writing the property value
-     * @param readIndexed   the method used for reading an indexed property value
-     * @param writeIndexed  the method used for writing an indexed property value
-     * @exception IntrospectionException if an exception occurs during introspection
+     * @param entry  the key-value pair,
+     *               where the {@code key} is the base name of the property (the rest of the method name)
+     *               and the {@code value} is the automatically generated property info
+     * @param bound  the flag indicating whether it is possible to treat this property as a bound property
      *
-     * @since 1.7
+     * @since 1.9
      */
-    IndexedPropertyDescriptor(Class<?> bean, String base, Method read, Method write, Method readIndexed, Method writeIndexed) throws IntrospectionException {
-        super(bean, base, read, write);
-
-        setIndexedReadMethod0(readIndexed);
-        setIndexedWriteMethod0(writeIndexed);
-
-        // Type checking
-        setIndexedPropertyType(findIndexedPropertyType(readIndexed, writeIndexed));
+    IndexedPropertyDescriptor(Entry<String,PropertyInfo> entry, boolean bound) {
+        super(entry, bound);
+        PropertyInfo info = entry.getValue().getIndexed();
+        setIndexedReadMethod0(info.getReadMethod());
+        setIndexedWriteMethod0(info.getWriteMethod());
+        setIndexedPropertyType(info.getPropertyType());
     }
 
     /**

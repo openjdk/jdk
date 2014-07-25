@@ -128,7 +128,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
     /**
      * Comparators specified by column.
      */
-    private Comparator[] comparators;
+    private Comparator<?>[] comparators;
 
     /**
      * Whether or not the specified column is sortable, by column.
@@ -143,7 +143,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
     /**
      * Cached comparators for the current sort
      */
-    private Comparator[] sortComparators;
+    private Comparator<?>[] sortComparators;
 
     /**
      * Developer supplied Filter.
@@ -695,7 +695,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     private void cacheSortKeys(List<? extends SortKey> keys) {
         int keySize = keys.size();
-        sortComparators = new Comparator[keySize];
+        sortComparators = new Comparator<?>[keySize];
         for (int i = 0; i < keySize; i++) {
             sortComparators[i] = getComparator0(keys.get(i).getColumn());
         }
@@ -762,7 +762,7 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
     public void setComparator(int column, Comparator<?> comparator) {
         checkColumn(column);
         if (comparators == null) {
-            comparators = new Comparator[getModelWrapper().getColumnCount()];
+            comparators = new Comparator<?>[getModelWrapper().getColumnCount()];
         }
         comparators[column] = comparator;
     }
@@ -788,8 +788,8 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
 
     // Returns the Comparator to use during sorting.  Where as
     // getComparator() may return null, this will never return null.
-    private Comparator getComparator0(int column) {
-        Comparator comparator = getComparator(column);
+    private Comparator<?> getComparator0(int column) {
+        Comparator<?> comparator = getComparator(column);
         if (comparator != null) {
             return comparator;
         }
@@ -967,7 +967,9 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
                 } else if (v2 == null) {
                     result = 1;
                 } else {
-                    result = sortComparators[counter].compare(v1, v2);
+                    Comparator<Object> c =
+                        (Comparator<Object>)sortComparators[counter];
+                    result = c.compare(v1, v2);
                 }
                 if (sortOrder == SortOrder.DESCENDING) {
                     result *= -1;
@@ -1366,10 +1368,10 @@ public abstract class DefaultRowSorter<M, I> extends RowSorter<M> {
      */
     // NOTE: this class is static so that it can be placed in an array
     private static class Row implements Comparable<Row> {
-        private DefaultRowSorter sorter;
+        private DefaultRowSorter<?, ?> sorter;
         int modelIndex;
 
-        public Row(DefaultRowSorter sorter, int index) {
+        public Row(DefaultRowSorter<?, ?> sorter, int index) {
             this.sorter = sorter;
             modelIndex = index;
         }
