@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,8 +28,6 @@ package com.sun.naming.internal;
 import java.io.InputStream;
 import java.io.IOException;
 import java.lang.ref.WeakReference;
-import java.lang.reflect.Method;
-import java.lang.reflect.InvocationTargetException;
 import java.util.HashMap;
 import java.util.Hashtable;
 import java.util.Map;
@@ -126,52 +124,6 @@ public final class ResourceManager {
     private static final WeakReference<Object> NO_FACTORY =
             new WeakReference<>(null);
 
-    /**
-     * A class to allow JNDI properties be specified as applet parameters
-     * without creating a static dependency on java.applet.
-     */
-    private static class AppletParameter {
-        private static final Class<?> clazz = getClass("java.applet.Applet");
-        private static final Method getMethod =
-            getMethod(clazz, "getParameter", String.class);
-        private static Class<?> getClass(String name) {
-            try {
-                return Class.forName(name, true, null);
-            } catch (ClassNotFoundException e) {
-                return null;
-            }
-        }
-        private static Method getMethod(Class<?> clazz,
-                                        String name,
-                                        Class<?>... paramTypes)
-        {
-            if (clazz != null) {
-                try {
-                    return clazz.getMethod(name, paramTypes);
-                } catch (NoSuchMethodException e) {
-                    throw new AssertionError(e);
-                }
-            } else {
-                return null;
-            }
-        }
-
-        /**
-         * Returns the value of the applet's named parameter.
-         */
-        static Object get(Object applet, String name) {
-            // if clazz is null then applet cannot be an Applet.
-            if (clazz == null || !clazz.isInstance(applet))
-                throw new ClassCastException(applet.getClass().getName());
-            try {
-                return getMethod.invoke(applet, name);
-            } catch (InvocationTargetException |
-                     IllegalAccessException e) {
-                throw new AssertionError(e);
-            }
-        }
-    }
-
     // There should be no instances of this class.
     private ResourceManager() {
     }
@@ -179,12 +131,11 @@ public final class ResourceManager {
 
     // ---------- Public methods ----------
 
-    /*
+    /**
      * Given the environment parameter passed to the initial context
      * constructor, returns the full environment for that initial
      * context (never null).  This is based on the environment
-     * parameter, the applet parameters (where appropriate), the
-     * system properties, and all application resource files.
+     * parameter, the system properties, and all application resource files.
      *
      * <p> This method will modify <tt>env</tt> and save
      * a reference to it.  The caller may no longer modify it.
@@ -196,18 +147,16 @@ public final class ResourceManager {
      *          resource file
      */
     @SuppressWarnings("unchecked")
-    public static Hashtable<?, ?> getInitialEnvironment(
-            Hashtable<?, ?> env)
+    public static Hashtable<?, ?> getInitialEnvironment(Hashtable<?, ?> env)
             throws NamingException
     {
-        String[] props = VersionHelper.PROPS;   // system/applet properties
+        String[] props = VersionHelper.PROPS;   // system properties
         if (env == null) {
             env = new Hashtable<>(11);
         }
-        Object applet = env.get(Context.APPLET);
 
-        // Merge property values from env param, applet params, and system
-        // properties.  The first value wins:  there's no concatenation of
+        // Merge property values from env param, and system properties.
+        // The first value wins: there's no concatenation of
         // colon-separated lists.
         // Read system properties by first trying System.getProperties(),
         // and then trying System.getProperty() if that fails.  The former
@@ -217,18 +166,13 @@ public final class ResourceManager {
         for (int i = 0; i < props.length; i++) {
             Object val = env.get(props[i]);
             if (val == null) {
-                if (applet != null) {
-                    val = AppletParameter.get(applet, props[i]);
-                }
-                if (val == null) {
-                    // Read system property.
-                    val = (jndiSysProps != null)
+                // Read system property.
+                val = (jndiSysProps != null)
                         ? jndiSysProps[i]
                         : helper.getJndiProperty(i);
-                }
-                if (val != null) {
-                    ((Hashtable<String, Object>)env).put(props[i], val);
-                }
+            }
+            if (val != null) {
+                ((Hashtable<String, Object>)env).put(props[i], val);
             }
         }
 
@@ -248,8 +192,8 @@ public final class ResourceManager {
     /**
       * Retrieves the property from the environment, or from the provider
       * resource file associated with the given context.  The environment
-      * may in turn contain values that come from applet parameters,
-      * system properties, or application resource files.
+      * may in turn contain values that come from system properties,
+      * or application resource files.
       *
       * If <tt>concat</tt> is true and both the environment and the provider
       * resource file contain the property, the two values are concatenated
@@ -289,7 +233,7 @@ public final class ResourceManager {
      * property.
      *
      * The property is gotten from the environment and the provider
-     * resource file associated with the given context and concantenated.
+     * resource file associated with the given context and concatenated.
      * See getProperty(). The resulting property value is a list of class names.
      *<p>
      * This method then loads each class using the current thread's context
