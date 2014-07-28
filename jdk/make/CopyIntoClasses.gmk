@@ -164,15 +164,15 @@ $(foreach R, $(JAVAX_SOUND_RULES), $(eval $(call addto_meta-inf_services, $R)))
 ################################################################################
 
 ifneq ($(OPENJDK_TARGET_OS), macosx)
-  OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/awt/datatransfer/flavormap.properties
+  OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES = $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes/sun/datatransfer/resources/flavormap.properties
 else
-  OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES = $(JDK_TOPDIR)/src/macosx/classes/sun/awt/datatransfer/flavormap.properties
+  OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES = $(JDK_TOPDIR)/src/macosx/classes/sun/datatransfer/resources/flavormap.properties
 endif
 
-$(JDK_OUTPUTDIR)/classes/sun/awt/datatransfer/flavormap.properties: $(OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES)
+$(JDK_OUTPUTDIR)/classes/sun/datatransfer/resources/flavormap.properties: $(OPENJDK_TARGET_OS_FLAVORMAP_PROPERTIES)
 	$(install-file)
 
-COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/sun/awt/datatransfer/flavormap.properties
+COPY_EXTRA += $(JDK_OUTPUTDIR)/classes/sun/datatransfer/resources/flavormap.properties
 
 ################################################################################
 
