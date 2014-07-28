@@ -74,13 +74,6 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
     private static final Object FLAVOR_MAP_KEY = new Object();
 
     /**
-     * Copied from java.util.Properties.
-     */
-    private static final String keyValueSeparators = "=: \t\r\n\f";
-    private static final String strictKeyValueSeparators = "=:";
-    private static final String whiteSpaceChars = " \t\r\n\f";
-
-    /**
      * The list of valid, decoded text flavor representation classes, in order
      * from best to worst.
      */
@@ -223,7 +216,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         }
         isMapInitialized = true;
 
-        InputStream is = SystemFlavorMap.class.getResourceAsStream("/sun/awt/datatransfer/flavormap.properties");
+        InputStream is = SystemFlavorMap.class.getResourceAsStream("/sun/datatransfer/resources/flavormap.properties");
         if (is == null) {
             throw new InternalError("Default flavor mapping not found");
         }
@@ -238,10 +231,11 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                     line = line.substring(0, line.length() - 1) + reader.readLine().trim();
                 }
                 int delimiterPosition = line.indexOf('=');
-                String key = line.substring(0, delimiterPosition).replace("\\ ", " ");
+                String key = line.substring(0, delimiterPosition).replaceAll("\\ ", " ");
                 String[] values = line.substring(delimiterPosition + 1, line.length()).split(",");
                 for (String value : values) {
                     try {
+                        value = loadConvert(value);
                         MimeType mime = new MimeType(value);
                         if ("text".equals(mime.getPrimaryType())) {
                             String charset = mime.getParameter("charset");
@@ -303,6 +297,63 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         } catch (IOException e) {
             throw new InternalError("Error reading default flavor mapping", e);
         }
+    }
+
+    // Copied from java.util.Properties
+    private static String loadConvert(String theString) {
+        char aChar;
+        int len = theString.length();
+        StringBuilder outBuffer = new StringBuilder(len);
+
+        for (int x = 0; x < len; ) {
+            aChar = theString.charAt(x++);
+            if (aChar == '\\') {
+                aChar = theString.charAt(x++);
+                if (aChar == 'u') {
+                    // Read the xxxx
+                    int value = 0;
+                    for (int i = 0; i < 4; i++) {
+                        aChar = theString.charAt(x++);
+                        switch (aChar) {
+                            case '0': case '1': case '2': case '3': case '4':
+                            case '5': case '6': case '7': case '8': case '9': {
+                                value = (value << 4) + aChar - '0';
+                                break;
+                            }
+                            case 'a': case 'b': case 'c':
+                            case 'd': case 'e': case 'f': {
+                                value = (value << 4) + 10 + aChar - 'a';
+                                break;
+                            }
+                            case 'A': case 'B': case 'C':
+                            case 'D': case 'E': case 'F': {
+                                value = (value << 4) + 10 + aChar - 'A';
+                                break;
+                            }
+                            default: {
+                                throw new IllegalArgumentException(
+                                        "Malformed \\uxxxx encoding.");
+                            }
+                        }
+                    }
+                    outBuffer.append((char)value);
+                } else {
+                    if (aChar == 't') {
+                        aChar = '\t';
+                    } else if (aChar == 'r') {
+                        aChar = '\r';
+                    } else if (aChar == 'n') {
+                        aChar = '\n';
+                    } else if (aChar == 'f') {
+                        aChar = '\f';
+                    }
+                    outBuffer.append(aChar);
+                }
+            } else {
+                outBuffer.append(aChar);
+            }
+        }
+        return outBuffer.toString();
     }
 
     /**
