@@ -203,8 +203,6 @@ public abstract class SunToolkit extends Toolkit
 
     public abstract boolean isTraySupported();
 
-    public abstract DataTransferer getDataTransferer();
-
     @SuppressWarnings("deprecation")
     public abstract FontPeer getFontPeer(String name, int style);
 
