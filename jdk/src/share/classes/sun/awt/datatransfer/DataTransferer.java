@@ -74,6 +74,7 @@ import java.util.*;
 import sun.datatransfer.DataFlavorUtil;
 
 import sun.awt.AppContext;
+import sun.awt.ComponentFactory;
 import sun.awt.SunToolkit;
 
 import java.awt.image.BufferedImage;
@@ -177,7 +178,7 @@ public abstract class DataTransferer {
      * instead, null will be returned.
      */
     public static synchronized DataTransferer getInstance() {
-        return ((SunToolkit) Toolkit.getDefaultToolkit()).getDataTransferer();
+        return ((ComponentFactory) Toolkit.getDefaultToolkit()).getDataTransferer();
     }
 
     /**
