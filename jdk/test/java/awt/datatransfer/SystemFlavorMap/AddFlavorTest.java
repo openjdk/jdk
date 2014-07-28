@@ -23,11 +23,10 @@
  * questions.
  */
 
-import sun.awt.datatransfer.DataTransferer;
-
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.SystemFlavorMap;
 import java.util.*;
+import java.nio.charset.Charset;
 
 /*
  * @test
@@ -70,17 +69,8 @@ public class AddFlavorTest {
             // construct a unique String native
             key = key.concat("TEST");
 
-            for (DataFlavor element : flavorsSet)
+            for (DataFlavor element : flavorsSet) {
                 flavorMap.addFlavorForUnencodedNative(key, element);
-
-            // This part is valid only for X-based graphical systems
-            if (!System.getProperty("os.name").startsWith("Win") && !System.getProperty("os.name").startsWith("Mac") ) {
-                if (key.contains("/")) {
-                    Set<DataFlavor> fls = DataTransferer.getInstance().getPlatformMappingsForNative(key);
-                    flavorsSet.addAll(fls);
-                    if (!fls.isEmpty() && key.startsWith("text/"))
-                        flavorsSet.addAll(convertMimeTypeToDataFlavors(key));
-                }
             }
             hashVerify.put(key, new Vector(flavorsSet));
         }
@@ -103,12 +93,10 @@ public class AddFlavorTest {
     }
 
     void compareFlavors(List<DataFlavor> flavors1, List<DataFlavor> flavors2, String key){
-        DataTransferer.DataFlavorComparator comparator = new DataTransferer.DataFlavorComparator();
         for (DataFlavor flavor1 : flavors1) {
             boolean result = false;
             for (DataFlavor flavor2 : flavors2) {
-                if (comparator.compare(flavor1, flavor2) == 0)
-                    result = true;
+                if (flavor1.equals(flavor2)) result = true;
             }
             if (!result)
                 throw new RuntimeException("\n*** Error in verifyNewMappings()" +
@@ -125,7 +113,7 @@ public class AddFlavorTest {
     Set<DataFlavor> convertMimeTypeToDataFlavors(String baseType) throws Exception {
         Set<DataFlavor> result = new LinkedHashSet<>();
 
-        for (String charset : DataTransferer.standardEncodings()) {
+        for (String charset : getStandardEncodings()) {
             for (String txtClass : new String[]{"java.io.InputStream", "java.nio.ByteBuffer", "\"[B\""}) {
                 String mimeType = baseType + ";charset=" + charset + ";class=" + txtClass;
 
@@ -141,6 +129,18 @@ public class AddFlavorTest {
             }
         }
         return result;
+    }
+
+    Set<String> getStandardEncodings() {
+        Set<String> tempSet = new HashSet<>();
+        tempSet.add("US-ASCII");
+        tempSet.add("ISO-8859-1");
+        tempSet.add("UTF-8");
+        tempSet.add("UTF-16BE");
+        tempSet.add("UTF-16LE");
+        tempSet.add("UTF-16");
+        tempSet.add(Charset.defaultCharset().name());
+        return tempSet;
     }
 }
 

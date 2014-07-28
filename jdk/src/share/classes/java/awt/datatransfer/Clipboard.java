@@ -25,7 +25,7 @@
 
 package java.awt.datatransfer;
 
-import java.awt.EventQueue;
+import sun.datatransfer.DataFlavorUtil;
 
 import java.util.Objects;
 import java.util.Set;
@@ -130,7 +130,8 @@ public class Clipboard {
         this.contents = contents;
 
         if (oldOwner != null && oldOwner != owner) {
-            EventQueue.invokeLater(() -> oldOwner.lostOwnership(Clipboard.this, oldContents));
+            DataFlavorUtil.getDesktopService().invokeOnEventThread(() ->
+                    oldOwner.lostOwnership(Clipboard.this, oldContents));
         }
         fireFlavorsChanged();
     }
@@ -324,7 +325,7 @@ public class Clipboard {
             return;
         }
         flavorListeners.forEach(listener ->
-                EventQueue.invokeLater(() ->
+                DataFlavorUtil.getDesktopService().invokeOnEventThread(() ->
                         listener.flavorsChanged(new FlavorEvent(Clipboard.this))));
     }
 

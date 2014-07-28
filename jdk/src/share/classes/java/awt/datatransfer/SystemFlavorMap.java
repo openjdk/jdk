@@ -25,22 +25,15 @@
 
 package java.awt.datatransfer;
 
-import java.awt.Toolkit;
-
-import java.io.BufferedInputStream;
-import java.io.InputStream;
-import java.lang.ref.SoftReference;
+import sun.datatransfer.DataFlavorUtil;
+import sun.datatransfer.DesktopDatatransferService;
 
 import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStreamReader;
 import java.io.IOException;
-
-import java.net.URL;
-import java.net.MalformedURLException;
-
+import java.io.InputStream;
+import java.io.InputStreamReader;
+import java.lang.ref.SoftReference;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -48,11 +41,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Properties;
 import java.util.Set;
-
-import sun.awt.AppContext;
-import sun.awt.datatransfer.DataTransferer;
 
 /**
  * The SystemFlavorMap is a configurable map between "natives" (Strings), which
@@ -191,16 +180,11 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
 
     /**
      * Returns the default FlavorMap for this thread's ClassLoader.
+     *
      * @return the default FlavorMap for this thread's ClassLoader
      */
     public static FlavorMap getDefaultFlavorMap() {
-        AppContext context = AppContext.getAppContext();
-        FlavorMap fm = (FlavorMap) context.get(FLAVOR_MAP_KEY);
-        if (fm == null) {
-            fm = new SystemFlavorMap();
-            context.put(FLAVOR_MAP_KEY, fm);
-        }
-        return fm;
+        return DataFlavorUtil.getDesktopService().getFlavorMap(SystemFlavorMap::new);
     }
 
     private SystemFlavorMap() {
@@ -239,15 +223,17 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                         MimeType mime = new MimeType(value);
                         if ("text".equals(mime.getPrimaryType())) {
                             String charset = mime.getParameter("charset");
-                            if (DataTransferer.doesSubtypeSupportCharset(mime.getSubType(), charset))
+                            if (DataFlavorUtil.doesSubtypeSupportCharset(mime.getSubType(), charset))
                             {
                                 // We need to store the charset and eoln
                                 // parameters, if any, so that the
                                 // DataTransferer will have this information
                                 // for conversion into the native format.
-                                DataTransferer transferer = DataTransferer.getInstance();
-                                if (transferer != null) {
-                                    transferer.registerTextFlavorProperties(key, charset,
+                                DesktopDatatransferService desktopService =
+                                        DataFlavorUtil.getDesktopService();
+                                if (desktopService.isDesktopPresent()) {
+                                    desktopService.registerTextFlavorProperties(
+                                            key, charset,
                                             mime.getParameter("eoln"),
                                             mime.getParameter("terminators"));
                                 }
@@ -383,10 +369,10 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         LinkedHashSet<DataFlavor> flavors = getNativeToFlavor().get(nat);
 
         if (nat != null && !disabledMappingGenerationKeys.contains(nat)) {
-            DataTransferer transferer = DataTransferer.getInstance();
-            if (transferer != null) {
+            DesktopDatatransferService desktopService = DataFlavorUtil.getDesktopService();
+            if (desktopService.isDesktopPresent()) {
                 LinkedHashSet<DataFlavor> platformFlavors =
-                        transferer.getPlatformMappingsForNative(nat);
+                        desktopService.getPlatformMappingsForNative(nat);
                 if (!platformFlavors.isEmpty()) {
                     if (flavors != null) {
                         // Prepending the platform-specific mappings ensures
@@ -446,10 +432,10 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
         LinkedHashSet<String> natives = getFlavorToNative().get(flav);
 
         if (flav != null && !disabledMappingGenerationKeys.contains(flav)) {
-            DataTransferer transferer = DataTransferer.getInstance();
-            if (transferer != null) {
+            DesktopDatatransferService desktopService = DataFlavorUtil.getDesktopService();
+            if (desktopService.isDesktopPresent()) {
                 LinkedHashSet<String> platformNatives =
-                    transferer.getPlatformMappingsForFlavor(flav);
+                        desktopService.getPlatformMappingsForFlavor(flav);
                 if (!platformNatives.isEmpty()) {
                     if (natives != null) {
                         // Prepend the platform-specific mappings to ensure
@@ -525,7 +511,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             // In this case we shouldn't synthesize a native for this flavor,
             // since its mappings were explicitly specified.
             retval = flavorToNativeLookup(flav, false);
-        } else if (DataTransferer.isFlavorCharsetTextType(flav)) {
+        } else if (DataFlavorUtil.isFlavorCharsetTextType(flav)) {
             retval = new LinkedHashSet<>(0);
 
             // For text/* flavors, flavor-to-native mappings specified in
@@ -553,7 +539,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                 // addUnencodedNativeForFlavor(), so they have lower priority.
                 retval.addAll(flavorToNativeLookup(flav, false));
             }
-        } else if (DataTransferer.isFlavorNoncharsetTextType(flav)) {
+        } else if (DataFlavorUtil.isFlavorNoncharsetTextType(flav)) {
             retval = getTextTypeToNative().get(flav.mimeType.getBaseType());
 
             if (retval == null || retval.isEmpty()) {
@@ -653,7 +639,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
             // on load from flavormap.properties.
         }
 
-        if (DataTransferer.doesSubtypeSupportCharset(subType, null)) {
+        if (DataFlavorUtil.doesSubtypeSupportCharset(subType, null)) {
             if (TEXT_PLAIN_BASE_TYPE.equals(baseType))
             {
                 returnValue.add(DataFlavor.stringFlavor);
@@ -675,7 +661,7 @@ public final class SystemFlavorMap implements FlavorMap, FlavorTable {
                 }
             }
 
-            for (String charset : DataTransferer.standardEncodings()) {
+            for (String charset : DataFlavorUtil.standardEncodings()) {
 
                 for (String encodedTextClass : ENCODED_TEXT_CLASSES) {
                     final String mimeType =
