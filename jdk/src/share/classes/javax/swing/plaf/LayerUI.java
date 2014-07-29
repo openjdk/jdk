@@ -716,7 +716,7 @@ public class LayerUI<V extends Component>
      * @param y  the y value of the region to be painted
      * @param width  the width of the region to be painted
      * @param height  the height of the region to be painted
-     *
+     * @param l  a {@code JLayer} component
      * @see JComponent#paintImmediately(int, int, int, int)
      */
     public void paintImmediately(int x, int y, int width, int height, JLayer<? extends V> l) {
