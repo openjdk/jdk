@@ -61,7 +61,6 @@ import javax.print.attribute.Attribute;
  * between, gives the IPP keyword value for a {@link PrinterStateReasons}.
  * The category name returned by <CODE>getName()</CODE> gives the IPP
  * attribute name.
- * <P>
  *
  * @author  Alan Kaminsky
  */

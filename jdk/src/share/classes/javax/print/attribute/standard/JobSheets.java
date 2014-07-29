@@ -49,7 +49,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <code>toString()</code> method returns the IPP string representation of
  * the attribute value. For a subclass, the attribute value must be
  * localized to give the IPP name and natural language values.
- * <P>
  *
  * @author  Alan Kaminsky
  */

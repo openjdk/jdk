@@ -168,13 +168,6 @@ public class PSPrinterJob extends RasterPrinterJob {
     private static final String IMAGE_STR =     " string /imStr exch def";
     private static final String IMAGE_RESTORE = "imSave restore";
 
-    private static final String COORD_PREP =    " 0 exch translate "
-                                              + "1 -1 scale"
-                                              + "[72 " + PS_XRES + " div "
-                                              + "0 0 "
-                                              + "72 " + PS_YRES + " div "
-                                              + "0 0]concat";
-
     private static final String SetFontName = "F";
 
     private static final String DrawStringName = "S";
@@ -274,6 +267,9 @@ public class PSPrinterJob extends RasterPrinterJob {
    private Shape mLastClip;
 
    private AffineTransform mLastTransform;
+
+   private double xres = PS_XRES;
+   private double yres = PS_XRES;
 
    /* non-null if printing EPS for Java Plugin */
    private EPSPrinter epsPrinter = null;
@@ -796,6 +792,15 @@ public class PSPrinterJob extends RasterPrinterJob {
         }
     }
 
+    private String getCoordPrep() {
+        return " 0 exch translate "
+             + "1 -1 scale"
+             + "[72 " + getXRes() + " div "
+             + "0 0 "
+             + "72 " + getYRes() + " div "
+             + "0 0]concat";
+    }
+
     /**
      * The RasterPrintJob super class calls this method
      * at the start of each page.
@@ -852,7 +857,7 @@ public class PSPrinterJob extends RasterPrinterJob {
             mPSStream.println(" >> setpagedevice");
         }
         mPSStream.println(PAGE_SAVE);
-        mPSStream.println(paperHeight + COORD_PREP);
+        mPSStream.println(paperHeight + getCoordPrep());
     }
 
     /**
@@ -1493,14 +1498,22 @@ public class PSPrinterJob extends RasterPrinterJob {
      * to be rendered.
      */
     protected double getXRes() {
-        return PS_XRES;
+        return xres;
     }
     /**
      * Return the y resolution of the coordinates
      * to be rendered.
      */
     protected double getYRes() {
-        return PS_YRES;
+        return yres;
+    }
+
+    /**
+     * Set the resolution at which to print.
+     */
+    protected void setXYRes(double x, double y) {
+        xres = x;
+        yres = y;
     }
 
     /**

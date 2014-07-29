@@ -102,13 +102,13 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 if (now - 1000 < lastBlink) return;
                 lastBlink = now;
 
-                final JList itemList = popup.getList();
+                final JList<Object> itemList = popup.getList();
                 final ListUI listUI = itemList.getUI();
                 if (!(listUI instanceof AquaListUI)) return;
                 final AquaListUI aquaListUI = (AquaListUI)listUI;
 
                 final int selectedIndex = comboBox.getSelectedIndex();
-                final ListModel dataModel = itemList.getModel();
+                final ListModel<Object> dataModel = itemList.getModel();
                 if (dataModel == null) return;
 
                 final Object value = dataModel.getElementAt(selectedIndex);
@@ -125,7 +125,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         // this space intentionally left blank
     }
 
-    protected ListCellRenderer createRenderer() {
+    protected ListCellRenderer<Object> createRenderer() {
         return new AquaComboBoxRenderer(comboBox);
     }
 
@@ -185,7 +185,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
 
             final Object text = editor.getText();
 
-            final ListModel model = listBox.getModel();
+            final ListModel<Object> model = listBox.getModel();
             final int items = model.getSize();
             for (int i = 0; i < items; i++) {
                 final Object element = model.getElementAt(i);
@@ -423,7 +423,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                 return;
             }
 
-            final JComboBox cb = (JComboBox)parent;
+            final JComboBox<?> cb = (JComboBox<?>) parent;
             final int width = cb.getWidth();
             final int height = cb.getHeight();
 
@@ -450,11 +450,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
         return Boolean.TRUE.equals(c.getClientProperty(AquaComboBoxUI.IS_TABLE_CELL_EDITOR));
     }
 
-    protected static boolean isPopdown(final JComboBox c) {
+    protected static boolean isPopdown(final JComboBox<?> c) {
         return c.isEditable() || Boolean.TRUE.equals(c.getClientProperty(AquaComboBoxUI.POPDOWN_CLIENT_PROPERTY_KEY));
     }
 
-    protected static void triggerSelectionEvent(final JComboBox comboBox, final ActionEvent e) {
+    protected static void triggerSelectionEvent(final JComboBox<?> comboBox, final ActionEvent e) {
         if (!comboBox.isEnabled()) return;
 
         final AquaComboBoxUI aquaUi = (AquaComboBoxUI)comboBox.getUI();
@@ -505,7 +505,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     @SuppressWarnings("serial") // anonymous class
     private static final Action toggleSelectionAction = new AbstractAction() {
         public void actionPerformed(final ActionEvent e) {
-            final JComboBox comboBox = (JComboBox)e.getSource();
+            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             if (!comboBox.isEnabled()) return;
             if (comboBox.isEditable()) return;
 
@@ -525,7 +525,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     private final Action hideAction = new AbstractAction() {
         @Override
         public void actionPerformed(final ActionEvent e) {
-            final JComboBox comboBox = (JComboBox)e.getSource();
+            final JComboBox<?> comboBox = (JComboBox<?>) e.getSource();
             comboBox.firePopupMenuCanceled();
             comboBox.setPopupVisible(false);
         }
@@ -588,10 +588,11 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
     }
 
     @SuppressWarnings("unchecked")
-    static final RecyclableSingleton<ClientPropertyApplicator<JComboBox, AquaComboBoxUI>> APPLICATOR = new RecyclableSingleton<ClientPropertyApplicator<JComboBox, AquaComboBoxUI>>() {
+    static final RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>> APPLICATOR = new
+            RecyclableSingleton<ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>>() {
         @Override
-        protected ClientPropertyApplicator<JComboBox, AquaComboBoxUI> getInstance() {
-            return new ClientPropertyApplicator<JComboBox, AquaComboBoxUI>(
+        protected ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getInstance() {
+            return new ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI>(
                 new Property<AquaComboBoxUI>(AquaFocusHandler.FRAME_ACTIVE_PROPERTY) {
                     public void applyProperty(final AquaComboBoxUI target, final Object value) {
                         if (Boolean.FALSE.equals(value)) {
@@ -633,7 +634,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
                     }
                 }
             ) {
-                public AquaComboBoxUI convertJComponentToTarget(final JComboBox combo) {
+                public AquaComboBoxUI convertJComponentToTarget(final JComboBox<?> combo) {
                     final ComboBoxUI comboUI = combo.getUI();
                     if (comboUI instanceof AquaComboBoxUI) return (AquaComboBoxUI)comboUI;
                     return null;
@@ -641,7 +642,7 @@ public class AquaComboBoxUI extends BasicComboBoxUI implements Sizeable {
             };
         }
     };
-    static ClientPropertyApplicator<JComboBox, AquaComboBoxUI> getApplicator() {
+    static ClientPropertyApplicator<JComboBox<?>, AquaComboBoxUI> getApplicator() {
         return APPLICATOR.get();
     }
 }

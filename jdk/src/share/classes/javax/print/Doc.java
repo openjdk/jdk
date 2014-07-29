@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public interface Doc {
      * from the print data representation object.
      * However, if the print data representation object is itself a Reader,
      * then the print data representation object is simply returned.
-     * <P>
+     *
      * @return  Reader for reading the print data characters from this doc.
      *          If a reader cannot be provided because this doc does not meet
      *          the criteria stated above, null is returned.
@@ -192,7 +192,7 @@ public interface Doc {
      * object as a stream of bytes is created and returned. However, if the
      * print data representation object is itself an input stream, then the
      * print data representation object is simply returned.
-     * <P>
+     *
      * @return  Input stream for reading the print data bytes from this doc. If
      *          an input stream cannot be provided because this doc does not
      *          meet the criteria stated above, null is returned.

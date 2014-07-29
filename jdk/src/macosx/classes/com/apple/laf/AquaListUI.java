@@ -79,7 +79,7 @@ public class AquaListUI extends BasicListUI {
          * For a Home action, scrolls to the top. Otherwise, scroll to the end.
          */
         public void actionPerformed(final ActionEvent e) {
-            final JList list = (JList)e.getSource();
+            final JList<?> list = (JList<?>)e.getSource();
 
             if (fHomeAction) {
                 list.ensureIndexIsVisible(0);
@@ -135,7 +135,7 @@ public class AquaListUI extends BasicListUI {
         }*/
     }
 
-    JList getComponent() {
+    JList<Object> getComponent() {
         return list;
     }
 
@@ -144,7 +144,7 @@ public class AquaListUI extends BasicListUI {
         final Rectangle rowBounds = getCellBounds(list, selectedIndex, selectedIndex);
         if (rowBounds == null) return;
 
-        final ListCellRenderer renderer = list.getCellRenderer();
+        final ListCellRenderer<Object> renderer = list.getCellRenderer();
         if (renderer == null) return;
 
         final Component rendererComponent = renderer.getListCellRendererComponent(list, value, selectedIndex, selected, true);

@@ -69,6 +69,7 @@ public class AquaTableHeaderUI extends BasicTableHeaderUI {
 
     final static RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>> TABLE_HEADER_APPLICATORS = new RecyclableSingleton<ClientPropertyApplicator<JTableHeader, JTableHeader>>() {
         @Override
+        @SuppressWarnings("unchecked")
         protected ClientPropertyApplicator<JTableHeader, JTableHeader> getInstance() {
             return new ClientPropertyApplicator<JTableHeader, JTableHeader>(
                     new Property<JTableHeader>("JTableHeader.selectedColumn") {

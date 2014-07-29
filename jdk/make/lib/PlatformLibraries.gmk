@@ -90,8 +90,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   LIBOSX_DIRS := \
       $(JDK_TOPDIR)/src/macosx/native/com/apple/concurrent \
       $(JDK_TOPDIR)/src/macosx/native/com/apple/eio \
-      $(JDK_TOPDIR)/src/macosx/native/apple/security \
-      $(JDK_TOPDIR)/src/macosx/native/apple/launcher
+      $(JDK_TOPDIR)/src/macosx/native/apple/security
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBOSX, \
       LIBRARY := osx, \

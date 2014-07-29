@@ -41,9 +41,15 @@ import sun.reflect.misc.MethodUtil;
  * @author Mark Davidson
  */
 public class BasicComboBoxEditor implements ComboBoxEditor,FocusListener {
+    /**
+     * An instance of {@code JTextField}.
+     */
     protected JTextField editor;
     private Object oldValue;
 
+    /**
+     * Constructs a new instance of {@code BasicComboBoxEditor}.
+     */
     public BasicComboBoxEditor() {
         editor = createEditorComponent();
     }

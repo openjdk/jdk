@@ -60,44 +60,125 @@ import sun.swing.UIAction;
 @SuppressWarnings("serial") // Same-version serialization only
 public class BasicInternalFrameTitlePane extends JComponent
 {
+    /**
+     * The instance of {@code JMenuBar}.
+     */
     protected JMenuBar menuBar;
+    /**
+     * The iconify button.
+     */
     protected JButton iconButton;
+    /**
+     * The maximize button.
+     */
     protected JButton maxButton;
+    /**
+     * The close button.
+     */
     protected JButton closeButton;
 
+    /**
+     * The instance of {@code JMenu}.
+     */
     protected JMenu windowMenu;
+    /**
+     * The instance of {@code JInternalFrame}.
+     */
     protected JInternalFrame frame;
 
+    /**
+     * The color of a selected title.
+     */
     protected Color selectedTitleColor;
+    /**
+     * The color of a selected text.
+     */
     protected Color selectedTextColor;
+    /**
+     * The color of a not selected title.
+     */
     protected Color notSelectedTitleColor;
+    /**
+     * The color of a not selected text.
+     */
     protected Color notSelectedTextColor;
 
+    /**
+     * The maximize icon.
+     */
     protected Icon maxIcon;
+    /**
+     * The minimize icon.
+     */
     protected Icon minIcon;
+    /**
+     * The iconify icon.
+     */
     protected Icon iconIcon;
+    /**
+     * The close icon.
+     */
     protected Icon closeIcon;
 
+    /**
+     * The instance of a {@code PropertyChangeListener}.
+     */
     protected PropertyChangeListener propertyChangeListener;
 
+    /**
+     * The instance of a {@code CloseAction}.
+     */
     protected Action closeAction;
+    /**
+     * The instance of a {@code MaximizeAction}.
+     */
     protected Action maximizeAction;
+    /**
+     * The instance of an {@code IconifyAction}.
+     */
     protected Action iconifyAction;
+    /**
+     * The instance of a {@code RestoreAction}.
+     */
     protected Action restoreAction;
+    /**
+     * The instance of a {@code MoveAction}.
+     */
     protected Action moveAction;
+    /**
+     * The instance of a {@code SizeAction}.
+     */
     protected Action sizeAction;
 
     // These constants are not used in JDK code
+    /**
+     * The close button text property.
+     */
     protected static final String CLOSE_CMD =
         UIManager.getString("InternalFrameTitlePane.closeButtonText");
+    /**
+     * The minimize button text property.
+     */
     protected static final String ICONIFY_CMD =
         UIManager.getString("InternalFrameTitlePane.minimizeButtonText");
+    /**
+     * The restore button text property.
+     */
     protected static final String RESTORE_CMD =
         UIManager.getString("InternalFrameTitlePane.restoreButtonText");
+    /**
+     * The maximize button text property.
+     */
     protected static final String MAXIMIZE_CMD =
         UIManager.getString("InternalFrameTitlePane.maximizeButtonText");
+    /**
+     * The move button text property.
+     */
     protected static final String MOVE_CMD =
         UIManager.getString("InternalFrameTitlePane.moveButtonText");
+    /**
+     * The size button text property.
+     */
     protected static final String SIZE_CMD =
         UIManager.getString("InternalFrameTitlePane.sizeButtonText");
 
@@ -107,11 +188,19 @@ public class BasicInternalFrameTitlePane extends JComponent
     private String maxButtonToolTip;
     private Handler handler;
 
+    /**
+     * Constructs a new instance of {@code BasicInternalFrameTitlePane}.
+     *
+     * @param f an instance of {@code JInternalFrame}
+     */
     public BasicInternalFrameTitlePane(JInternalFrame f) {
         frame = f;
         installTitlePane();
     }
 
+    /**
+     * Installs the title pane.
+     */
     protected void installTitlePane() {
         installDefaults();
         installListeners();
@@ -128,6 +217,9 @@ public class BasicInternalFrameTitlePane extends JComponent
 
     }
 
+    /**
+     * Adds subcomponents.
+     */
     protected void addSubComponents() {
         add(menuBar);
         add(iconButton);
@@ -135,6 +227,9 @@ public class BasicInternalFrameTitlePane extends JComponent
         add(closeButton);
     }
 
+    /**
+     * Creates actions.
+     */
     protected void createActions() {
         maximizeAction = new MaximizeAction();
         iconifyAction = new IconifyAction();
@@ -151,6 +246,9 @@ public class BasicInternalFrameTitlePane extends JComponent
         return map;
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         if( propertyChangeListener == null ) {
             propertyChangeListener = createPropertyChangeListener();
@@ -158,11 +256,17 @@ public class BasicInternalFrameTitlePane extends JComponent
         frame.addPropertyChangeListener(propertyChangeListener);
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         frame.removePropertyChangeListener(propertyChangeListener);
         handler = null;
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         maxIcon = UIManager.getIcon("InternalFrame.maximizeIcon");
         minIcon = UIManager.getIcon("InternalFrame.minimizeIcon");
@@ -184,10 +288,15 @@ public class BasicInternalFrameTitlePane extends JComponent
                 UIManager.getString("InternalFrame.maxButtonToolTip");
     }
 
-
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
     }
 
+    /**
+     * Creates buttons.
+     */
     protected void createButtons() {
         iconButton = new NoFocusButton(
                      "InternalFrameTitlePane.iconifyButtonAccessibleName",
@@ -213,6 +322,9 @@ public class BasicInternalFrameTitlePane extends JComponent
         setButtonIcons();
     }
 
+    /**
+     * Sets the button icons.
+     */
     protected void setButtonIcons() {
         if(frame.isIcon()) {
             if (minIcon != null) {
@@ -261,6 +373,9 @@ public class BasicInternalFrameTitlePane extends JComponent
         }
     }
 
+    /**
+     * Assembles system menu.
+     */
     protected void assembleSystemMenu() {
         menuBar = createSystemMenuBar();
         windowMenu = createSystemMenu();
@@ -269,6 +384,11 @@ public class BasicInternalFrameTitlePane extends JComponent
         enableActions();
     }
 
+    /**
+     * Adds system menu items to {@code systemMenu}.
+     *
+     * @param systemMenu an instance of {@code JMenu}
+     */
     protected void addSystemMenuItems(JMenu systemMenu) {
         JMenuItem mi = systemMenu.add(restoreAction);
         mi.setMnemonic(getButtonMnemonic("restore"));
@@ -294,16 +414,29 @@ public class BasicInternalFrameTitlePane extends JComponent
         }
     }
 
+    /**
+     * Returns a new instance of {@code JMenu}.
+     *
+     * @return a new instance of {@code JMenu}
+     */
     protected JMenu createSystemMenu() {
         return new JMenu("    ");
     }
 
+    /**
+     * Returns a new instance of {@code JMenuBar}.
+     *
+     * @return a new instance of {@code JMenuBar}
+     */
     protected JMenuBar createSystemMenuBar() {
         menuBar = new SystemMenuBar();
         menuBar.setBorderPainted(false);
         return menuBar;
     }
 
+    /**
+     * Shows system menu.
+     */
     protected void showSystemMenu(){
         //      windowMenu.setPopupMenuVisible(true);
       //      windowMenu.setVisible(true);
@@ -367,14 +500,24 @@ public class BasicInternalFrameTitlePane extends JComponent
         g.fillRect(0, 0, getWidth(), getHeight());
     }
 
+    /**
+     * Returns the title.
+     *
+     * @param text a text
+     * @param fm an instance of {@code FontMetrics}
+     * @param availTextWidth an available text width
+     * @return the title.
+     */
     protected String getTitle(String text, FontMetrics fm, int availTextWidth) {
         return SwingUtilities2.clipStringIfNecessary(
                            frame, fm, text, availTextWidth);
-      }
+    }
 
     /**
      * Post a WINDOW_CLOSING-like event to the frame, so that it can
-     * be treated like a regular Frame.
+     * be treated like a regular {@code Frame}.
+     *
+     * @param frame an instance of {@code JInternalFrame}
      */
     protected void postClosingEvent(JInternalFrame frame) {
         InternalFrameEvent e = new InternalFrameEvent(
@@ -387,7 +530,9 @@ public class BasicInternalFrameTitlePane extends JComponent
         }
     }
 
-
+    /**
+     * Enables actions.
+     */
     protected void enableActions() {
         restoreAction.setEnabled(frame.isMaximum() || frame.isIcon());
         maximizeAction.setEnabled(
@@ -406,10 +551,20 @@ public class BasicInternalFrameTitlePane extends JComponent
         return handler;
     }
 
+    /**
+     * Returns an instance of {@code PropertyChangeListener}.
+     *
+     * @return an instance of {@code PropertyChangeListener}
+     */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
     }
 
+    /**
+     * Returns a layout manager.
+     *
+     * @return a layout manager
+     */
     protected LayoutManager createLayout() {
         return getHandler();
     }
@@ -606,6 +761,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class CloseAction extends AbstractAction {
+        /**
+         * Constructs a new instance of a {@code CloseAction}.
+         */
         public CloseAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.closeButtonText"));
@@ -623,6 +781,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class MaximizeAction extends AbstractAction {
+        /**
+         * Constructs a new instance of a {@code MaximizeAction}.
+         */
         public MaximizeAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.maximizeButtonText"));
@@ -652,6 +813,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class IconifyAction extends AbstractAction {
+        /**
+         * Constructs a new instance of an {@code IconifyAction}.
+         */
         public IconifyAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.minimizeButtonText"));
@@ -673,6 +837,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class RestoreAction extends AbstractAction {
+        /**
+         * Constructs a new instance of a {@code RestoreAction}.
+         */
         public RestoreAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.restoreButtonText"));
@@ -700,6 +867,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class MoveAction extends AbstractAction {
+        /**
+         * Constructs a new instance of a {@code MoveAction}.
+         */
         public MoveAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.moveButtonText"));
@@ -734,6 +904,9 @@ public class BasicInternalFrameTitlePane extends JComponent
      * Instantiate it only within subclasses of <code>Foo</code>.
      */
     public class SizeAction extends AbstractAction {
+        /**
+         * Constructs a new instance of a {@code SizeAction}.
+         */
         public SizeAction() {
             super(UIManager.getString(
                     "InternalFrameTitlePane.sizeButtonText"));

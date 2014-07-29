@@ -241,9 +241,12 @@ Java_sun_java2d_x11_X11PMBlitLoops_updateBitmask
                                       width, height, 1);
         if (xsdo->bitmask == 0) {
             AWT_UNLOCK();
-            JNU_ThrowOutOfMemoryError(env,
-                                      "Cannot create bitmask for "
-                                      "offscreen surface");
+            if (!(*env)->ExceptionCheck(env))
+            {
+                JNU_ThrowOutOfMemoryError(env,
+                                          "Cannot create bitmask for "
+                                          "offscreen surface");
+            }
             return;
         }
     }
@@ -253,7 +256,10 @@ Java_sun_java2d_x11_X11PMBlitLoops_updateBitmask
                          1, XYBitmap, 0, NULL, width, height, 32, 0);
     if (image == NULL) {
         AWT_UNLOCK();
-        JNU_ThrowOutOfMemoryError(env, "Cannot allocate bitmask for mask");
+        if (!(*env)->ExceptionCheck(env))
+        {
+             JNU_ThrowOutOfMemoryError(env, "Cannot allocate bitmask for mask");
+        }
         return;
     }
     dstScan = image->bytes_per_line;
@@ -261,7 +267,10 @@ Java_sun_java2d_x11_X11PMBlitLoops_updateBitmask
     if (image->data == NULL) {
         XFree(image);
         AWT_UNLOCK();
-        JNU_ThrowOutOfMemoryError(env, "Cannot allocate bitmask for mask");
+        if (!(*env)->ExceptionCheck(env))
+        {
+            JNU_ThrowOutOfMemoryError(env, "Cannot allocate bitmask for mask");
+        }
         return;
     }
     pDst = (unsigned char *)image->data;

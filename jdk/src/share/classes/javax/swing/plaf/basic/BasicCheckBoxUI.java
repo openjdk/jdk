@@ -59,6 +59,13 @@ public class BasicCheckBoxUI extends BasicRadioButtonUI {
     // ********************************
     //            Create PLAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code BasicCheckBoxUI}.
+     *
+     * @param b a component
+     * @return an instance of {@code BasicCheckBoxUI}
+     */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();
         BasicCheckBoxUI checkboxUI =
