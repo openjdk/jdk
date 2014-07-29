@@ -61,6 +61,11 @@ public class BasicIconFactory implements Serializable
     private static Icon menuItemArrowIcon;
     private static Icon menuArrowIcon;
 
+    /**
+     * Returns a menu item check icon.
+     *
+     * @return a menu item check icon
+     */
     public static Icon getMenuItemCheckIcon() {
         if (menuItemCheckIcon == null) {
             menuItemCheckIcon = new MenuItemCheckIcon();
@@ -68,6 +73,11 @@ public class BasicIconFactory implements Serializable
         return menuItemCheckIcon;
     }
 
+    /**
+     * Returns a menu item arrow icon.
+     *
+     * @return a menu item arrow icon
+     */
     public static Icon getMenuItemArrowIcon() {
         if (menuItemArrowIcon == null) {
             menuItemArrowIcon = new MenuItemArrowIcon();
@@ -75,6 +85,11 @@ public class BasicIconFactory implements Serializable
         return menuItemArrowIcon;
     }
 
+    /**
+     * Returns a menu arrow icon.
+     *
+     * @return a menu arrow icon
+     */
     public static Icon getMenuArrowIcon() {
         if (menuArrowIcon == null) {
             menuArrowIcon = new MenuArrowIcon();
@@ -82,6 +97,11 @@ public class BasicIconFactory implements Serializable
         return menuArrowIcon;
     }
 
+    /**
+     * Returns a check box icon.
+     *
+     * @return a check box icon
+     */
     public static Icon getCheckBoxIcon() {
         if (checkBoxIcon == null) {
             checkBoxIcon = new CheckBoxIcon();
@@ -89,6 +109,11 @@ public class BasicIconFactory implements Serializable
         return checkBoxIcon;
     }
 
+    /**
+     * Returns a radio button icon.
+     *
+     * @return a radio button icon
+     */
     public static Icon getRadioButtonIcon() {
         if (radioButtonIcon == null) {
             radioButtonIcon = new RadioButtonIcon();
@@ -96,6 +121,11 @@ public class BasicIconFactory implements Serializable
         return radioButtonIcon;
     }
 
+    /**
+     * Returns a check box menu item icon.
+     *
+     * @return a check box menu item icon
+     */
     public static Icon getCheckBoxMenuItemIcon() {
         if (checkBoxMenuItemIcon == null) {
             checkBoxMenuItemIcon = new CheckBoxMenuItemIcon();
@@ -103,6 +133,11 @@ public class BasicIconFactory implements Serializable
         return checkBoxMenuItemIcon;
     }
 
+    /**
+     * Returns a radio button menu item icon.
+     *
+     * @return a radio button menu item icon
+     */
     public static Icon getRadioButtonMenuItemIcon() {
         if (radioButtonMenuItemIcon == null) {
             radioButtonMenuItemIcon = new RadioButtonMenuItemIcon();
@@ -110,6 +145,11 @@ public class BasicIconFactory implements Serializable
         return radioButtonMenuItemIcon;
     }
 
+    /**
+     * Returns an empty frame icon.
+     *
+     * @return an empty frame icon
+     */
     public static Icon createEmptyFrameIcon() {
         if(frame_icon == null)
             frame_icon = new EmptyFrameIcon();

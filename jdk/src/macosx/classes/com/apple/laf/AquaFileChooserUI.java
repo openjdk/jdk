@@ -724,6 +724,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             final Transferable transferable = dtde.getTransferable();
 
             try {
+                @SuppressWarnings("unchecked")
                 final java.util.List<File> fileList = (java.util.List<File>)transferable.getTransferData(DataFlavor.javaFileListFlavor);
                 dropFiles(fileList.toArray(new File[fileList.size()]));
                 dtde.dropComplete(true);
@@ -1144,11 +1145,14 @@ public class AquaFileChooserUI extends FileChooserUI {
     }
 
     @SuppressWarnings("serial") // anonymous class
-    protected ListCellRenderer createDirectoryComboBoxRenderer(final JFileChooser fc) {
-        return new AquaComboBoxRendererInternal(directoryComboBox) {
-            public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                final File directory = (File)value;
+    protected ListCellRenderer<File> createDirectoryComboBoxRenderer(final JFileChooser fc) {
+        return new AquaComboBoxRendererInternal<File>(directoryComboBox) {
+            public Component getListCellRendererComponent(final JList<? extends File> list,
+                                                          final File directory,
+                                                          final int index,
+                                                          final boolean isSelected,
+                                                          final boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, directory, index, isSelected, cellHasFocus);
                 if (directory == null) {
                     setText("");
                     return this;
@@ -1173,7 +1177,7 @@ public class AquaFileChooserUI extends FileChooserUI {
      * Data model for a type-face selection combo-box.
      */
     @SuppressWarnings("serial") // Superclass is not serializable across versions
-    protected class DirectoryComboBoxModel extends AbstractListModel implements ComboBoxModel {
+    protected class DirectoryComboBoxModel extends AbstractListModel<File> implements ComboBoxModel<File> {
         Vector<File> fDirectories = new Vector<File>();
         int topIndex = -1;
         int fPathCount = 0;
@@ -1248,7 +1252,7 @@ public class AquaFileChooserUI extends FileChooserUI {
             return fDirectories.size();
         }
 
-        public Object getElementAt(final int index) {
+        public File getElementAt(final int index) {
             return fDirectories.elementAt(index);
         }
     }
@@ -1257,11 +1261,14 @@ public class AquaFileChooserUI extends FileChooserUI {
     // Renderer for Types ComboBox
     //
     @SuppressWarnings("serial") // anonymous class
-    protected ListCellRenderer createFilterComboBoxRenderer() {
-        return new AquaComboBoxRendererInternal(filterComboBox) {
-            public Component getListCellRendererComponent(final JList list, final Object value, final int index, final boolean isSelected, final boolean cellHasFocus) {
-                super.getListCellRendererComponent(list, value, index, isSelected, cellHasFocus);
-                final FileFilter filter = (FileFilter)value;
+    protected ListCellRenderer<FileFilter> createFilterComboBoxRenderer() {
+        return new AquaComboBoxRendererInternal<FileFilter>(filterComboBox) {
+            public Component getListCellRendererComponent(final JList<? extends FileFilter> list,
+                                                          final FileFilter filter,
+                                                          final int index,
+                                                          final boolean isSelected,
+                                                          final boolean cellHasFocus) {
+                super.getListCellRendererComponent(list, filter, index, isSelected, cellHasFocus);
                 if (filter != null) setText(filter.getDescription());
                 return this;
             }
@@ -1356,7 +1363,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
 
         public void actionPerformed(final ActionEvent e) {
-            getFileChooser().setFileFilter((FileFilter)filterComboBox.getSelectedItem());
+            getFileChooser().setFileFilter((FileFilter) filterComboBox.getSelectedItem());
         }
     }
 
@@ -1503,7 +1510,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         fTextfieldPanel.add(tPanel, BorderLayout.CENTER);
 
         // DirectoryComboBox, left-justified, 200x20 not including drop shadow
-        directoryComboBox = new JComboBox();
+        directoryComboBox = new JComboBox<>();
         directoryComboBox.putClientProperty("JComboBox.lightweightKeyboardNavigation", "Lightweight");
         fDirectoryComboBoxModel = createDirectoryComboBoxModel(fc);
         directoryComboBox.setModel(fDirectoryComboBoxModel);
@@ -1551,7 +1558,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         // Combobox
         filterComboBoxModel = createFilterComboBoxModel();
         fc.addPropertyChangeListener(filterComboBoxModel);
-        filterComboBox = new JComboBox(filterComboBoxModel);
+        filterComboBox = new JComboBox<>(filterComboBoxModel);
         formatLabel.setLabelFor(filterComboBox);
         filterComboBox.setRenderer(createFilterComboBoxRenderer());
         d = new Dimension(220, (int)filterComboBox.getMinimumSize().getHeight());
@@ -1788,7 +1795,7 @@ public class AquaFileChooserUI extends FileChooserUI {
         }
     }
 
-    JComboBox directoryComboBox;
+    JComboBox<File> directoryComboBox;
     DirectoryComboBoxModel fDirectoryComboBoxModel;
     private final Action directoryComboBoxAction = new DirectoryComboBoxAction();
 
@@ -1797,7 +1804,7 @@ public class AquaFileChooserUI extends FileChooserUI {
     JTableExtension fFileList;
 
     private FilterComboBoxModel filterComboBoxModel;
-    JComboBox filterComboBox;
+    JComboBox<FileFilter> filterComboBox;
     private final Action filterComboBoxAction = new FilterComboBoxAction();
 
     private static final Dimension hstrut10 = new Dimension(10, 1);

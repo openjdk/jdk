@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -176,7 +176,7 @@ public final class SimpleDoc implements Doc {
      * However, if the print data representation object is itself a
      * <code>Reader</code> then the print data representation object is
      * simply returned.
-     * <P>
+     *
      * @return  a <code>Reader</code> for reading the print data
      *          characters from this doc.
      *          If a reader cannot be provided because this doc does not meet
@@ -224,7 +224,7 @@ public final class SimpleDoc implements Doc {
      * However, if the print data representation object is itself an
      * input stream then the print data representation object is simply
      * returned.
-     * <P>
+     *
      * @return  an <code>InputStream</code> for reading the print data
      *          bytes from this doc.  If an input stream cannot be
      *          provided because this doc does not meet

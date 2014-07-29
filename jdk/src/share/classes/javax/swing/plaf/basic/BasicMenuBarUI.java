@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,11 +54,29 @@ import javax.swing.plaf.*;
  * @author Arnaud Weber
  */
 public class BasicMenuBarUI extends MenuBarUI  {
+
+    /**
+     * The instance of {@code JMenuBar}.
+     */
     protected JMenuBar              menuBar = null;
+
+    /**
+     * The instance of {@code ContainerListener}.
+     */
     protected ContainerListener     containerListener;
+
+    /**
+     * The instance of {@code ChangeListener}.
+     */
     protected ChangeListener        changeListener;
     private Handler handler;
 
+    /**
+     * Returns a new instance of {@code BasicMenuBarUI}.
+     *
+     * @param x a component
+     * @return a new instance of {@code BasicMenuBarUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicMenuBarUI();
     }
@@ -76,6 +94,9 @@ public class BasicMenuBarUI extends MenuBarUI  {
 
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         if (menuBar.getLayout() == null ||
             menuBar.getLayout() instanceof UIResource) {
@@ -90,6 +111,9 @@ public class BasicMenuBarUI extends MenuBarUI  {
                                               "MenuBar.font");
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         containerListener = createContainerListener();
         changeListener = createChangeListener();
@@ -102,6 +126,9 @@ public class BasicMenuBarUI extends MenuBarUI  {
         menuBar.addContainerListener(containerListener);
     }
 
+    /**
+     * Registers keyboard actions.
+     */
     protected void installKeyboardActions() {
         InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -131,12 +158,18 @@ public class BasicMenuBarUI extends MenuBarUI  {
         menuBar = null;
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         if (menuBar!=null) {
             LookAndFeel.uninstallBorder(menuBar);
         }
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         menuBar.removeContainerListener(containerListener);
 
@@ -151,16 +184,29 @@ public class BasicMenuBarUI extends MenuBarUI  {
         handler = null;
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIInputMap(menuBar, JComponent.
                                        WHEN_IN_FOCUSED_WINDOW, null);
         SwingUtilities.replaceUIActionMap(menuBar, null);
     }
 
+    /**
+     * Returns an instance of {@code ContainerListener}.
+     *
+     * @return an instance of {@code ContainerListener}
+     */
     protected ContainerListener createContainerListener() {
         return getHandler();
     }
 
+    /**
+     * Returns an instance of {@code ChangeListener}.
+     *
+     * @return an instance of {@code ChangeListener}
+     */
     protected ChangeListener createChangeListener() {
         return getHandler();
     }

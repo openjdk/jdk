@@ -109,11 +109,12 @@ public class SortingFocusTraversalPolicy
             AccessController.doPrivileged(new PrivilegedAction<Method>() {
                 public Method run() {
                     try {
-                        Class c = Class.forName("java.util.Arrays");
-                        Method m = c.getDeclaredMethod("legacyMergeSort", new Class[]{Object[].class, Comparator.class});
+                        Method m = java.util.Arrays.class.getDeclaredMethod("legacyMergeSort",
+                                                                            new Class<?>[]{Object[].class,
+                                                                                    Comparator.class});
                         m.setAccessible(true);
                         return m;
-                    } catch (ClassNotFoundException | NoSuchMethodException e) {
+                    } catch (NoSuchMethodException e) {
                         // using default sorting algo
                         return null;
                     }

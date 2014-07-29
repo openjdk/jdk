@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,6 +51,13 @@ public class BasicToggleButtonUI extends BasicButtonUI {
     // ********************************
     //          Create PLAF
     // ********************************
+
+    /**
+     * Returns an instance of {@code BasicToggleButtonUI}.
+     *
+     * @param b a component
+     * @return an instance of {@code BasicToggleButtonUI}
+     */
     public static ComponentUI createUI(JComponent b) {
         AppContext appContext = AppContext.getAppContext();
         BasicToggleButtonUI toggleButtonUI =
@@ -127,6 +134,13 @@ public class BasicToggleButtonUI extends BasicButtonUI {
         }
     }
 
+    /**
+     * Paints an icon in the specified location.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param b an instance of {@code Button}
+     * @param iconRect bounds of an icon
+     */
     protected void paintIcon(Graphics g, AbstractButton b, Rectangle iconRect) {
         ButtonModel model = b.getModel();
         Icon icon = null;

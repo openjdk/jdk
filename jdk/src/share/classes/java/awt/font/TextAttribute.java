@@ -96,7 +96,7 @@ import sun.misc.SharedSecrets;
  * </UL>
  *
  * <h4>Summary of attributes</h4>
- * <table style="float:center" border="0" cellspacing="0" cellpadding="2" width="%95"
+ * <table style="float:center" border="0" cellspacing="0" cellpadding="2" width="95%"
  *     summary="Key, value type, principal constants, and default value
  *     behavior of all TextAttributes">
  * <tr style="background-color:#ccccff">
