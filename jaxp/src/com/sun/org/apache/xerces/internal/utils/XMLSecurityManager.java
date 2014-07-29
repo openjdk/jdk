@@ -66,7 +66,8 @@ public final class XMLSecurityManager {
         ELEMENT_ATTRIBUTE_LIMIT(Constants.JDK_ELEMENT_ATTRIBUTE_LIMIT, Constants.SP_ELEMENT_ATTRIBUTE_LIMIT, 0, 10000),
         TOTAL_ENTITY_SIZE_LIMIT(Constants.JDK_TOTAL_ENTITY_SIZE_LIMIT, Constants.SP_TOTAL_ENTITY_SIZE_LIMIT, 0, 50000000),
         GENERAL_ENTITY_SIZE_LIMIT(Constants.JDK_GENERAL_ENTITY_SIZE_LIMIT, Constants.SP_GENERAL_ENTITY_SIZE_LIMIT, 0, 0),
-        PARAMETER_ENTITY_SIZE_LIMIT(Constants.JDK_PARAMETER_ENTITY_SIZE_LIMIT, Constants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000);
+        PARAMETER_ENTITY_SIZE_LIMIT(Constants.JDK_PARAMETER_ENTITY_SIZE_LIMIT, Constants.SP_PARAMETER_ENTITY_SIZE_LIMIT, 0, 1000000),
+        MAX_ELEMENT_DEPTH_LIMIT(Constants.JDK_MAX_ELEMENT_DEPTH, Constants.SP_MAX_ELEMENT_DEPTH, 0, 0);
 
         final String apiProperty;
         final String systemProperty;
@@ -429,9 +430,10 @@ public final class XMLSecurityManager {
             return false;
         }
 
-        if (index==Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
-                index==Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
-                index==Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal()) {
+        if (index == Limit.ELEMENT_ATTRIBUTE_LIMIT.ordinal() ||
+                index == Limit.ENTITY_EXPANSION_LIMIT.ordinal() ||
+                index == Limit.TOTAL_ENTITY_SIZE_LIMIT.ordinal() ||
+                index == Limit.MAX_ELEMENT_DEPTH_LIMIT.ordinal()) {
             return (limitAnalyzer.getTotalValue(index) > values[index]);
         } else {
             return (limitAnalyzer.getValue(index) > values[index]);

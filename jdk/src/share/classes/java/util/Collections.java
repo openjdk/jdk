@@ -2342,7 +2342,7 @@ public class Collections {
 
         public NavigableSet<E> tailSet(E fromElement, boolean inclusive) {
             synchronized (mutex) {
-                return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, inclusive));
+                return new SynchronizedNavigableSet<>(ns.tailSet(fromElement, inclusive), mutex);
             }
         }
     }

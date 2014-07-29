@@ -27,6 +27,9 @@
  * @test
  * @bug 8047183
  * @summary JDK build fails with sjavac enabled
+ *
+ * @build Wrapper
+ * @run main Wrapper IgnoreSymbolFile
  */
 
 import java.io.File;
@@ -38,12 +41,8 @@ import java.util.Arrays;
 
 public class IgnoreSymbolFile {
     public static void main(String... args) throws Exception {
-        if (sjavacAvailable()) {
-            IgnoreSymbolFile test = new IgnoreSymbolFile();
-            test.run();
-        } else {
-            System.err.println("sjavac not available; test skipped");
-        }
+        IgnoreSymbolFile test = new IgnoreSymbolFile();
+        test.run();
     }
 
     void run() throws Exception {
@@ -96,13 +95,4 @@ public class IgnoreSymbolFile {
     }
 
     int errors;
-
-    static boolean sjavacAvailable() {
-        try {
-            Class.forName("com.sun.tools.sjavac.Main");
-            return true;
-        } catch (ClassNotFoundException e) {
-            return false;
-        }
-    }
 }

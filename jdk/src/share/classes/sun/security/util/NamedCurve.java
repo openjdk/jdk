@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,15 +23,12 @@
  * questions.
  */
 
-package sun.security.ec;
+package sun.security.util;
 
 import java.io.IOException;
 import java.math.BigInteger;
 
 import java.security.spec.*;
-
-import sun.security.util.DerOutputStream;
-import sun.security.util.ObjectIdentifier;
 
 
 /**
@@ -40,7 +37,7 @@ import sun.security.util.ObjectIdentifier;
  * @since   1.6
  * @author  Andreas Sterbenz
  */
-class NamedCurve extends ECParameterSpec {
+public final class NamedCurve extends ECParameterSpec {
 
     // friendly name for toString() output
     private final String name;
@@ -68,15 +65,15 @@ class NamedCurve extends ECParameterSpec {
         encoded = out.toByteArray();
     }
 
-    String getName() {
+    public String getName() {
         return name;
     }
 
-    byte[] getEncoded() {
+    public byte[] getEncoded() {
         return encoded.clone();
     }
 
-    String getObjectId() {
+    public String getObjectId() {
         return oid;
     }
 

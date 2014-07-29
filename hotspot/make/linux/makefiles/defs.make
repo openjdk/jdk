@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,9 @@ ifeq ($(ARCH), arm)
 endif
 
 # PPC
-ifneq (,$(findstring $(ARCH), ppc))
+# Notice: after 8046471 ARCH will be 'ppc' for top-level ppc64 builds but
+# 'ppc64' for HotSpot-only ppc64 builds. Need to detect both variants here!
+ifneq (,$(findstring $(ARCH), ppc ppc64))
   ifeq ($(ARCH_DATA_MODEL), 64)
     MAKE_ARGS        += LP64=1
     PLATFORM         = linux-ppc64

@@ -484,7 +484,7 @@ class MemTracker : AllStatic {
       // as short sleep.
       os::naked_short_sleep(1);
 #else
-      os::NakedYield();
+      os::naked_yield();
 #endif
     }
   }

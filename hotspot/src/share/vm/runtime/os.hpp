@@ -442,16 +442,7 @@ class os: AllStatic {
   // ms = 0, will sleep for the least amount of time allowed by the OS.
   static void naked_short_sleep(jlong ms);
   static void infinite_sleep(); // never returns, use with CAUTION
-  static void yield();        // Yields to all threads with same priority
-  enum YieldResult {
-    YIELD_SWITCHED = 1,         // caller descheduled, other ready threads exist & ran
-    YIELD_NONEREADY = 0,        // No other runnable/ready threads.
-                                // platform-specific yield return immediately
-    YIELD_UNKNOWN = -1          // Unknown: platform doesn't support _SWITCHED or _NONEREADY
-    // YIELD_SWITCHED and YIELD_NONREADY imply the platform supports a "strong"
-    // yield that can be used in lieu of blocking.
-  } ;
-  static YieldResult NakedYield () ;
+  static void naked_yield () ;
   static OSReturn set_priority(Thread* thread, ThreadPriority priority);
   static OSReturn get_priority(const Thread* const thread, ThreadPriority& priority);
 
@@ -477,9 +468,6 @@ class os: AllStatic {
 
   // run cmd in a separate process and return its exit code; or -1 on failures
   static int fork_and_exec(char *cmd);
-
-  // Set file to send error reports.
-  static void set_error_file(const char *logfile);
 
   // os::exit() is merged with vm_exit()
   // static void exit(int num);
@@ -628,11 +616,6 @@ class os: AllStatic {
   // JNI names
   static void     print_jni_name_prefix_on(outputStream* st, int args_size);
   static void     print_jni_name_suffix_on(outputStream* st, int args_size);
-
-  // File conventions
-  static const char* file_separator();
-  static const char* line_separator();
-  static const char* path_separator();
 
   // Init os specific system properties values
   static void init_system_properties_values();
