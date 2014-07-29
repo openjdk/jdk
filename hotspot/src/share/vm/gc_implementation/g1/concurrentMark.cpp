@@ -2403,6 +2403,8 @@ public:
   }
 
   virtual void work(uint worker_id) {
+    ResourceMark rm;
+    HandleMark hm;
     CMTask* task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
     G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, task, false /* is_serial */);

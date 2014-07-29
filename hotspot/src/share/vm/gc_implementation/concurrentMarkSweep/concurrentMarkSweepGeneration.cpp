@@ -5987,6 +5987,8 @@ public:
 };
 
 void CMSRefProcTaskProxy::work(uint worker_id) {
+  ResourceMark rm;
+  HandleMark hm;
   assert(_collector->_span.equals(_span), "Inconsistency in _span");
   CMSParKeepAliveClosure par_keep_alive(_collector, _span,
                                         _mark_bit_map,
