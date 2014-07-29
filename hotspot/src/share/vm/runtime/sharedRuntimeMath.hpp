@@ -27,20 +27,46 @@
 
 #include <math.h>
 
-// VM_LITTLE_ENDIAN is #defined appropriately in the Makefiles
-// [jk] this is not 100% correct because the float word order may different
-// from the byte order (e.g. on ARM FPA)
+// Used to access the lower/higher 32 bits of a double
+typedef union {
+    double d;
+    struct {
 #ifdef VM_LITTLE_ENDIAN
-# define __HI(x) *(1+(int*)&x)
-# define __LO(x) *(int*)&x
+      int lo;
+      int hi;
 #else
-# define __HI(x) *(int*)&x
-# define __LO(x) *(1+(int*)&x)
+      int hi;
+      int lo;
 #endif
+    } split;
+} DoubleIntConv;
+
+static inline int high(double d) {
+  DoubleIntConv x = { d };
+  return x.split.hi;
+}
+
+static inline int low(double d) {
+  DoubleIntConv x = { d };
+  return x.split.lo;
+}
+
+static inline void set_high(double* d, int high) {
+  DoubleIntConv conv = { *d };
+  conv.split.hi = high;
+  *d = conv.d;
+}
+
+static inline void set_low(double* d, int low) {
+  DoubleIntConv conv = { *d };
+  conv.split.lo = low;
+  *d = conv.d;
+}
 
 static double copysignA(double x, double y) {
-  __HI(x) = (__HI(x)&0x7fffffff)|(__HI(y)&0x80000000);
-  return x;
+  DoubleIntConv convX = { x };
+  convX.split.hi = (convX.split.hi & 0x7fffffff) | (high(y) & 0x80000000);
+  return convX.d;
 }
 
 /*
@@ -67,30 +93,32 @@ twom54  =  5.55111512312578270212e-17, /* 0x3C900000, 0x00000000 */
 hugeX  = 1.0e+300,
 tiny   = 1.0e-300;
 
-static double scalbnA (double x, int n) {
+static double scalbnA(double x, int n) {
   int  k,hx,lx;
-  hx = __HI(x);
-  lx = __LO(x);
+  hx = high(x);
+  lx = low(x);
   k = (hx&0x7ff00000)>>20;              /* extract exponent */
   if (k==0) {                           /* 0 or subnormal x */
     if ((lx|(hx&0x7fffffff))==0) return x; /* +-0 */
     x *= two54;
-    hx = __HI(x);
+    hx = high(x);
     k = ((hx&0x7ff00000)>>20) - 54;
     if (n< -50000) return tiny*x;       /*underflow*/
   }
   if (k==0x7ff) return x+x;             /* NaN or Inf */
   k = k+n;
-  if (k >  0x7fe) return hugeX*copysignA(hugeX,x); /* overflow  */
-  if (k > 0)                            /* normal result */
-    {__HI(x) = (hx&0x800fffff)|(k<<20); return x;}
+  if (k > 0x7fe) return hugeX*copysignA(hugeX,x); /* overflow  */
+  if (k > 0) {                          /* normal result */
+    set_high(&x, (hx&0x800fffff)|(k<<20));
+    return x;
+  }
   if (k <= -54) {
     if (n > 50000)      /* in case integer overflow in n+k */
       return hugeX*copysignA(hugeX,x);  /*overflow*/
     else return tiny*copysignA(tiny,x); /*underflow*/
   }
   k += 54;                              /* subnormal result */
-  __HI(x) = (hx&0x800fffff)|(k<<20);
+  set_high(&x, (hx&0x800fffff)|(k<<20));
   return x*twom54;
 }
 
