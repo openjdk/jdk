@@ -1174,6 +1174,16 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
       * this function draws the border around each tab
       * note that this function does now draw the background of the tab.
       * that is done elsewhere
+      *
+      * @param g             the graphics context in which to paint
+      * @param tabPlacement  the placement (left, right, bottom, top) of the tab
+      * @param tabIndex      the index of the tab with respect to other tabs
+      * @param x             the x coordinate of tab
+      * @param y             the y coordinate of tab
+      * @param w             the width of the tab
+      * @param h             the height of the tab
+      * @param isSelected    a {@code boolean} which determines whether or not
+      * the tab is selected
       */
     protected void paintTabBorder(Graphics g, int tabPlacement,
                                   int tabIndex,

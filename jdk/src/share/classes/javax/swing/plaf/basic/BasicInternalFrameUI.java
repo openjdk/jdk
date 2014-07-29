@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -351,10 +351,15 @@ public class BasicInternalFrameUI extends InternalFrameUI
 
 
     /**
-      * Installs necessary mouse handlers on <code>newPane</code>
-      * and adds it to the frame.
-      * Reverse process for the <code>currentPane</code>.
-      */
+     * Installs necessary mouse handlers on <code>newPane</code>
+     * and adds it to the frame.
+     * Reverse process for the <code>currentPane</code>.
+     *
+     * @param currentPane this {@code Jcomponent} is the current pane being
+     * viewed that has mouse handlers installed
+     * @param newPane this {@code Jcomponent} is the pane which will be added
+     * and have mouse handlers installed
+     */
     protected void replacePane(JComponent currentPane, JComponent newPane) {
         if(currentPane != null) {
             deinstallMouseHandlers(currentPane);
@@ -517,11 +522,12 @@ public class BasicInternalFrameUI extends InternalFrameUI
   }
 
 /// DesktopManager methods
-    /** Returns the proper DesktopManager. Calls getDesktopPane() to
-      * find the JDesktop component and returns the desktopManager from
-      * it. If this fails, it will return a default DesktopManager that
-      * should work in arbitrary parents.
-      */
+    /**
+     * Returns the proper DesktopManager. Calls getDesktopPane() to
+     * find the JDesktop component and returns the desktopManager from
+     * it. If this fails, it will return a default DesktopManager that
+     * should work in arbitrary parents.
+     */
     protected DesktopManager getDesktopManager() {
         if(frame.getDesktopPane() != null
            && frame.getDesktopPane().getDesktopManager() != null)
@@ -539,6 +545,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * This method is called when the user wants to close the frame.
      * The <code>playCloseSound</code> Action is fired.
      * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
      */
     protected void closeFrame(JInternalFrame f) {
         // Internal Frame Auditory Cue Activation
@@ -551,6 +559,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * This method is called when the user wants to maximize the frame.
      * The <code>playMaximizeSound</code> Action is fired.
      * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
      */
     protected void maximizeFrame(JInternalFrame f) {
         // Internal Frame Auditory Cue Activation
@@ -563,6 +573,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * This method is called when the user wants to minimize the frame.
      * The <code>playRestoreDownSound</code> Action is fired.
      * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
      */
     protected void minimizeFrame(JInternalFrame f) {
         // Internal Frame Auditory Cue Activation
@@ -579,6 +591,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * This method is called when the user wants to iconify the frame.
      * The <code>playMinimizeSound</code> Action is fired.
      * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
      */
     protected void iconifyFrame(JInternalFrame f) {
         // Internal Frame Auditory Cue Activation
@@ -591,6 +605,8 @@ public class BasicInternalFrameUI extends InternalFrameUI
      * This method is called when the user wants to deiconify the frame.
      * The <code>playRestoreUpSound</code> Action is fired.
      * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
      */
     protected void deiconifyFrame(JInternalFrame f) {
         // Internal Frame Auditory Cue Activation
@@ -603,15 +619,21 @@ public class BasicInternalFrameUI extends InternalFrameUI
         getDesktopManager().deiconifyFrame(f);
     }
 
-    /** This method is called when the frame becomes selected.
+    /**
+      * This method is called when the frame becomes selected.
       * This action is delegated to the desktopManager.
+      *
+      * @param f the {@code JInternalFrame} being viewed
       */
     protected void activateFrame(JInternalFrame f) {
         getDesktopManager().activateFrame(f);
     }
-    /** This method is called when the frame is no longer selected.
-      * This action is delegated to the desktopManager.
-      */
+    /**
+     * This method is called when the frame is no longer selected.
+     * This action is delegated to the desktopManager.
+     *
+     * @param f the {@code JInternalFrame} being viewed
+     */
     protected void deactivateFrame(JInternalFrame f) {
         getDesktopManager().deactivateFrame(f);
     }
@@ -769,7 +791,7 @@ public class BasicInternalFrameUI extends InternalFrameUI
                       resizeDir = SOUTH;
                     }
                 } else {
-                  /* the mouse press happened inside the frame, not in the
+                    /* the mouse press happened inside the frame, not in the
                      border */
                   discardRelease = true;
                   return;
