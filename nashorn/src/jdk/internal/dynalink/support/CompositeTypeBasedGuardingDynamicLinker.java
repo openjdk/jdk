@@ -111,7 +111,7 @@ public class CompositeTypeBasedGuardingDynamicLinker implements TypeBasedGuardin
         private final TypeBasedGuardingDynamicLinker[] linkers;
         private final List<TypeBasedGuardingDynamicLinker>[] singletonLinkers;
 
-        @SuppressWarnings("unchecked")
+        @SuppressWarnings({"unchecked", "rawtypes"})
         ClassToLinker(final TypeBasedGuardingDynamicLinker[] linkers) {
             this.linkers = linkers;
             singletonLinkers = new List[linkers.length];
