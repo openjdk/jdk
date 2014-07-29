@@ -184,6 +184,7 @@ JNIEXPORT jlong JNICALL Java_sun_tracing_dtrace_JVM_activate0(
     jlong handle = 0;
     jsize num_providers;
     jsize i;
+    jsize count = 0;
     JVM_DTraceProvider* jvm_providers;
 
     initialize();
@@ -197,7 +198,6 @@ JNIEXPORT jlong JNICALL Java_sun_tracing_dtrace_JVM_activate0(
     jvm_providers = (JVM_DTraceProvider*)calloc(
         num_providers, sizeof(*jvm_providers));
 
-    int count = 0;
     for (; count < num_providers; ++count) {
         JVM_DTraceProvider* p = &(jvm_providers[count]);
         jobject provider = (*env)->GetObjectArrayElement(
