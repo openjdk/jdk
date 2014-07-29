@@ -23,6 +23,15 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8035063
+ * @summary Tests the preparation of javac-arguments.
+ *
+ * @build Wrapper
+ * @run main Wrapper JavacOptionPrep
+ */
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;

@@ -124,7 +124,7 @@ public:
   operator oopDesc* () const volatile { return obj(); }
   operator intptr_t* () const         { return (intptr_t*)obj(); }
   operator PromotedObject* () const   { return (PromotedObject*)obj(); }
-  operator markOop () const           { return markOop(obj()); }
+  operator markOop () const volatile  { return markOop(obj()); }
   operator address   () const         { return (address)obj(); }
 
   // from javaCalls.cpp

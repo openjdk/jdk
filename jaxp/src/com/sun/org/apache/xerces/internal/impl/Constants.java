@@ -251,6 +251,13 @@ public final class Constants {
      */
     public static final String JDK_XML_NAME_LIMIT =
             ORACLE_JAXP_PROPERTY_PREFIX + "maxXMLNameLimit";
+
+    /**
+     * JDK maxElementDepth limit
+     */
+    public static final String JDK_MAX_ELEMENT_DEPTH =
+            ORACLE_JAXP_PROPERTY_PREFIX + "maxElementDepth";
+
     /**
      * JDK property to allow printing out information from the limit analyzer
      */
@@ -295,6 +302,11 @@ public final class Constants {
      * JDK maximum XML name limit
      */
     public static final String SP_XML_NAME_LIMIT = "jdk.xml.maxXMLNameLimit";
+
+    /**
+     * JDK maxElementDepth limit
+     */
+    public static final String SP_MAX_ELEMENT_DEPTH = "jdk.xml.maxElementDepth";
 
     //legacy System Properties
     public final static String ENTITY_EXPANSION_LIMIT = "entityExpansionLimit";

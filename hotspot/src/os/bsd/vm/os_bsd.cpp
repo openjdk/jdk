@@ -36,6 +36,7 @@
 #include "memory/filemap.hpp"
 #include "mutex_bsd.inline.hpp"
 #include "oops/oop.inline.hpp"
+#include "os_bsd.inline.hpp"
 #include "os_share_bsd.hpp"
 #include "prims/jniFastGetField.hpp"
 #include "prims/jvm.h"
@@ -1171,10 +1172,6 @@ void os::die() {
   ::abort();
 }
 
-// unused on bsd for now.
-void os::set_error_file(const char *logfile) {}
-
-
 // This method is a copy of JDK's sysGetLastErrorString
 // from src/solaris/hpi/src/system_md.c
 
@@ -1831,6 +1828,7 @@ void os::jvm_path(char *buf, jint buflen) {
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
         len = strlen(buf);
+        assert(len < buflen, "Ran out of buffer space");
         jrelib_p = buf + len;
 
         // Add the appropriate library subdir
@@ -1864,7 +1862,7 @@ void os::jvm_path(char *buf, jint buflen) {
     }
   }
 
-  strcpy(saved_jvm_path, buf);
+  strncpy(saved_jvm_path, buf, MAXPATHLEN);
 }
 
 void os::print_jni_name_prefix_on(outputStream* st, int args_size) {
@@ -2595,11 +2593,9 @@ bool os::dont_yield() {
   return DontYieldALot;
 }
 
-void os::yield() {
+void os::naked_yield() {
   sched_yield();
 }
-
-os::YieldResult os::NakedYield() { sched_yield(); return os::YIELD_UNKNOWN; }
 
 ////////////////////////////////////////////////////////////////////////////////
 // thread priority support
@@ -4217,22 +4213,12 @@ static struct timespec* compute_abstime(struct timespec* abstime, jlong millis) 
   return abstime;
 }
 
-
-// Test-and-clear _Event, always leaves _Event set to 0, returns immediately.
-// Conceptually TryPark() should be equivalent to park(0).
-
-int os::PlatformEvent::TryPark() {
-  for (;;) {
-    const int v = _Event;
-    guarantee((v == 0) || (v == 1), "invariant");
-    if (Atomic::cmpxchg(0, &_Event, v) == v) return v;
-  }
-}
-
 void os::PlatformEvent::park() {       // AKA "down()"
   // Invariant: Only the thread associated with the Event/PlatformEvent
   // may call park().
   // TODO: assert that _Assoc != NULL or _Assoc == Self
+  assert(_nParked == 0, "invariant");
+
   int v;
   for (;;) {
       v = _Event;
@@ -4332,8 +4318,7 @@ void os::PlatformEvent::unpark() {
   //    1 :=> 1
   //   -1 :=> either 0 or 1; must signal target thread
   //          That is, we can safely transition _Event from -1 to either
-  //          0 or 1. Forcing 1 is slightly more efficient for back-to-back
-  //          unpark() calls.
+  //          0 or 1.
   // See also: "Semaphores in Plan 9" by Mullender & Cox
   //
   // Note: Forcing a transition from "-1" to "1" on an unpark() means
@@ -4540,10 +4525,9 @@ void Parker::park(bool isAbsolute, jlong time) {
 }
 
 void Parker::unpark() {
-  int s, status;
-  status = pthread_mutex_lock(_mutex);
+  int status = pthread_mutex_lock(_mutex);
   assert(status == 0, "invariant");
-  s = _counter;
+  const int s = _counter;
   _counter = 1;
   if (s < 1) {
      if (WorkAroundNPTLTimedWaitHang) {

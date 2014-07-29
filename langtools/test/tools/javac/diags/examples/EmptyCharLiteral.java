@@ -22,7 +22,6 @@
  */
 
 // key: compiler.err.empty.char.lit
-// key: compiler.err.unclosed.char.lit
 
 class X {
     char c = '';

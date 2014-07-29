@@ -21,6 +21,18 @@
  * questions.
  */
 
+/*
+ * @test
+ * @bug 8035063
+ *
+ * @summary Tests serialization of options. The options needs to be serialized
+ *          and saved in the state file since the files need to be recompiled
+ *          if new options are provided.
+ *
+ * @build Wrapper
+ * @run main Wrapper Serialization
+ */
+
 import static util.OptionTestUtil.assertEquals;
 
 import java.io.IOException;

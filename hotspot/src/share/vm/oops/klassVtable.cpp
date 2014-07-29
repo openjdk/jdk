@@ -251,6 +251,17 @@ void klassVtable::initialize_vtable(bool checkconstraints, TRAPS) {
 // For bytecodes not produced by javac together it is possible that a method does not override
 // the superclass's method, but might indirectly override a super-super class's vtable entry
 // If none found, return a null superk, else return the superk of the method this does override
+// For public and protected methods: if they override a superclass, they will
+// also be overridden themselves appropriately.
+// Private methods do not override and are not overridden.
+// Package Private methods are trickier:
+// e.g. P1.A, pub m
+// P2.B extends A, package private m
+// P1.C extends B, public m
+// P1.C.m needs to override P1.A.m and can not override P2.B.m
+// Therefore: all package private methods need their own vtable entries for
+// them to be the root of an inheritance overriding decision
+// Package private methods may also override other vtable entries
 InstanceKlass* klassVtable::find_transitive_override(InstanceKlass* initialsuper, methodHandle target_method,
                             int vtable_index, Handle target_loader, Symbol* target_classname, Thread * THREAD) {
   InstanceKlass* superk = initialsuper;
@@ -398,8 +409,11 @@ bool klassVtable::update_inherited_vtable(InstanceKlass* klass, methodHandle tar
                              target_classname, THREAD))
                              != (InstanceKlass*)NULL))))
         {
-        // overriding, so no new entry
-        allocate_new = false;
+        // Package private methods always need a new entry to root their own
+        // overriding. They may also override other methods.
+        if (!target_method()->is_package_private()) {
+          allocate_new = false;
+        }
 
         if (checkconstraints) {
         // Override vtable entry if passes loader constraint check
@@ -543,8 +557,9 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
                                          AccessFlags class_flags,
                                          TRAPS) {
   if (class_flags.is_interface()) {
-    // Interfaces do not use vtables, so there is no point to assigning
-    // a vtable index to any of their methods.  If we refrain from doing this,
+    // Interfaces do not use vtables, except for java.lang.Object methods,
+    // so there is no point to assigning
+    // a vtable index to any of their local methods.  If we refrain from doing this,
     // we can use Method::_vtable_index to hold the itable index
     return false;
   }
@@ -579,6 +594,12 @@ bool klassVtable::needs_new_vtable_entry(methodHandle target_method,
   // private methods not overriding
   // JDK8 adds private  methods in interfaces which require invokespecial
   if (target_method()->is_private()) {
+    return true;
+  }
+
+  // Package private methods always need a new entry to root their own
+  // overriding. This allows transitive overriding to work.
+  if (target_method()->is_package_private()) {
     return true;
   }
 

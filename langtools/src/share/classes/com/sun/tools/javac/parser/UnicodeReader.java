@@ -197,24 +197,28 @@ public class UnicodeReader {
     }
 
     /** Scan surrogate pairs.  If 'ch' is a high surrogate and
-     *  the next character is a low surrogate, then put the low
-     *  surrogate in 'ch', and return the high surrogate.
-     *  otherwise, just return 0.
+     *  the next character is a low surrogate, returns the code point
+     *  constructed from these surrogates. Otherwise, returns -1.
+     *  This method will not consume any of the characters.
      */
-    protected char scanSurrogates() {
+    protected int peekSurrogates() {
         if (surrogatesSupported && Character.isHighSurrogate(ch)) {
             char high = ch;
+            int prevBP = bp;
 
             scanChar();
 
-            if (Character.isLowSurrogate(ch)) {
-                return high;
-            }
+            char low = ch;
 
             ch = high;
+            bp = prevBP;
+
+            if (Character.isLowSurrogate(low)) {
+                return Character.toCodePoint(high, low);
+            }
         }
 
-        return 0;
+        return -1;
     }
 
     /** Convert an ASCII digit from its base (8, 10, or 16)
@@ -222,9 +226,14 @@ public class UnicodeReader {
      */
     protected int digit(int pos, int base) {
         char c = ch;
-        int result = Character.digit(c, base);
+        if ('0' <= c && c <= '9')
+            return Character.digit(c, base); //a fast common case
+        int codePoint = peekSurrogates();
+        int result = codePoint >= 0 ? Character.digit(codePoint, base) : Character.digit(c, base);
         if (result >= 0 && c > 0x7f) {
             log.error(pos + 1, "illegal.nonascii.digit");
+            if (codePoint >= 0)
+                scanChar();
             ch = "0123456789abcdef".charAt(result);
         }
         return result;

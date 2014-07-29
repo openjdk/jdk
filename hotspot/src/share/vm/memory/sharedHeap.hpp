@@ -69,14 +69,10 @@ class KlassClosure;
 //    number of active GC workers.  CompactibleFreeListSpace and Space
 //    have SequentialSubTasksDone's.
 // Example of using SubTasksDone and SequentialSubTasksDone
-// G1CollectedHeap::g1_process_strong_roots() calls
-//  process_strong_roots(false, // no scoping; this is parallel code
-//                       is_scavenging, so,
-//                       &buf_scan_non_heap_roots,
-//                       &eager_scan_code_roots);
-//  which delegates to SharedHeap::process_strong_roots() and uses
+// G1CollectedHeap::g1_process_roots()
+//  to SharedHeap::process_roots() and uses
 //  SubTasksDone* _process_strong_tasks to claim tasks.
-//  process_strong_roots() calls
+//  process_roots() calls
 //      rem_set()->younger_refs_iterate()
 //  to scan the card table and which eventually calls down into
 //  CardTableModRefBS::par_non_clean_card_iterate_work().  This method
@@ -182,12 +178,12 @@ public:
   // task.  (This also means that a parallel thread may only call
   // process_strong_roots once.)
   //
-  // For calls to process_strong_roots by sequential code, the parity is
+  // For calls to process_roots by sequential code, the parity is
   // updated automatically.
   //
   // The idea is that objects representing fine-grained tasks, such as
   // threads, will contain a "parity" field.  A task will is claimed in the
-  // current "process_strong_roots" call only if its parity field is the
+  // current "process_roots" call only if its parity field is the
   // same as the "strong_roots_parity"; task claiming is accomplished by
   // updating the parity field to the strong_roots_parity with a CAS.
   //
@@ -198,27 +194,44 @@ public:
   //   c) to never return a distinguished value (zero) with which such
   //      task-claiming variables may be initialized, to indicate "never
   //      claimed".
- private:
-  void change_strong_roots_parity();
  public:
   int strong_roots_parity() { return _strong_roots_parity; }
 
-  // Call these in sequential code around process_strong_roots.
+  // Call these in sequential code around process_roots.
   // strong_roots_prologue calls change_strong_roots_parity, if
   // parallel tasks are enabled.
   class StrongRootsScope : public MarkingCodeBlobClosure::MarkScope {
-  public:
-    StrongRootsScope(SharedHeap* outer, bool activate = true);
+    // Used to implement the Thread work barrier.
+    static Monitor* _lock;
+
+    SharedHeap*   _sh;
+    volatile jint _n_workers_done_with_threads;
+
+   public:
+    StrongRootsScope(SharedHeap* heap, bool activate = true);
     ~StrongRootsScope();
+
+    // Mark that this thread is done with the Threads work.
+    void mark_worker_done_with_threads(uint n_workers);
+    // Wait until all n_workers are done with the Threads work.
+    void wait_until_all_workers_done_with_threads(uint n_workers);
   };
   friend class StrongRootsScope;
 
+  // The current active StrongRootScope
+  StrongRootsScope* _strong_roots_scope;
+
+  StrongRootsScope* active_strong_roots_scope() const;
+
+ private:
+  void register_strong_roots_scope(StrongRootsScope* scope);
+  void unregister_strong_roots_scope(StrongRootsScope* scope);
+  void change_strong_roots_parity();
+
+ public:
   enum ScanningOption {
-    SO_None                = 0x0,
-    SO_AllClasses          = 0x1,
-    SO_SystemClasses       = 0x2,
-    SO_Strings             = 0x4,
-    SO_AllCodeCache        = 0x8,
+    SO_None                =  0x0,
+    SO_AllCodeCache        =  0x8,
     SO_ScavengeCodeCache   = 0x10
   };
 
@@ -227,15 +240,26 @@ public:
   // Invoke the "do_oop" method the closure "roots" on all root locations.
   // The "so" argument determines which roots the closure is applied to:
   // "SO_None" does none;
-  // "SO_AllClasses" applies the closure to all entries in the SystemDictionary;
-  // "SO_SystemClasses" to all the "system" classes and loaders;
-  // "SO_Strings" applies the closure to all entries in StringTable;
   // "SO_AllCodeCache" applies the closure to all elements of the CodeCache.
   // "SO_ScavengeCodeCache" applies the closure to elements on the scavenge root list in the CodeCache.
+  void process_roots(bool activate_scope,
+                     ScanningOption so,
+                     OopClosure* strong_roots,
+                     OopClosure* weak_roots,
+                     CLDClosure* strong_cld_closure,
+                     CLDClosure* weak_cld_closure,
+                     CodeBlobClosure* code_roots);
+  void process_all_roots(bool activate_scope,
+                         ScanningOption so,
+                         OopClosure* roots,
+                         CLDClosure* cld_closure,
+                         CodeBlobClosure* code_roots);
   void process_strong_roots(bool activate_scope,
                             ScanningOption so,
                             OopClosure* roots,
-                            KlassClosure* klass_closure);
+                            CLDClosure* cld_closure,
+                            CodeBlobClosure* code_roots);
+
 
   // Apply "root_closure" to the JNI weak roots..
   void process_weak_roots(OopClosure* root_closure);
@@ -251,7 +275,7 @@ public:
   virtual void gc_epilogue(bool full) = 0;
 
   // Sets the number of parallel threads that will be doing tasks
-  // (such as process strong roots) subsequently.
+  // (such as process roots) subsequently.
   virtual void set_par_threads(uint t);
 
   int n_termination();

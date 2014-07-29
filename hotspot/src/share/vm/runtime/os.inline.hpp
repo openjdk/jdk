@@ -19,20 +19,28 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
-/*
- * @test
- * @bug 8035063
- *
- * @summary Tests serialization of options. The options needs to be serialized
- *          and saved in the state file since the files need to be recompiled
- *          if new options are provided.
- *
- * @run main SerializationWrapper
- */
-public class SerializationWrapper {
-    public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("Serialization", args);
-    }
-}
+#ifndef SHARE_VM_RUNTIME_OS_INLINE_HPP
+#define SHARE_VM_RUNTIME_OS_INLINE_HPP
+
+#include "runtime/os.hpp"
+
+#ifdef TARGET_OS_FAMILY_linux
+# include "os_linux.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_solaris
+# include "os_solaris.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_windows
+# include "os_windows.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_aix
+# include "os_aix.inline.hpp"
+#endif
+#ifdef TARGET_OS_FAMILY_bsd
+# include "os_bsd.inline.hpp"
+#endif
+
+#endif // SHARE_VM_RUNTIME_OS_INLINE_HPP

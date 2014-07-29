@@ -21,14 +21,20 @@
  * questions.
  */
 
-/*
+/**
+ * JDK-8050432: javax.script.filename variable should not be enumerable with nashorn engine's ENGINE_SCOPE bindings
+ *
  * @test
- * @bug 8035063
- * @summary Tests the preparation of javac-arguments.
- * @run main JavacOptionPrepWrapper
+ * @run
  */
-public class JavacOptionPrepWrapper {
-    public static void main(String... args) throws Exception {
-        SJavacTestUtil.runSjavacTest("JavacOptionPrep", args);
-    }
+
+var ScriptEngine = javax.script.ScriptEngine;
+var m = new javax.script.ScriptEngineManager();
+var engine = m.getEngineByName("nashorn");
+
+engine.put(ScriptEngine.FILENAME, "foo");
+var desc = engine.eval("Object.getOwnPropertyDescriptor(this, '"
+   + ScriptEngine.FILENAME + "')");
+if (desc.enumerable) {
+    fail(ScriptEngine.FILENAME + " is enumerable");
 }

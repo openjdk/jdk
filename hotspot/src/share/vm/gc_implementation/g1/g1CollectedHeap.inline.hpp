@@ -29,7 +29,6 @@
 #include "gc_implementation/g1/g1CollectedHeap.hpp"
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
-#include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/g1/heapRegionSeq.inline.hpp"
@@ -287,91 +286,6 @@ inline bool G1CollectedHeap::is_obj_ill(const oop obj) const {
     return false;
   }
   return is_obj_ill(obj, heap_region_containing(obj));
-}
-
-template <class T> inline void G1ParScanThreadState::immediate_rs_update(HeapRegion* from, T* p, int tid) {
-  if (!from->is_survivor()) {
-    _g1_rem->par_write_ref(from, p, tid);
-  }
-}
-
-template <class T> void G1ParScanThreadState::update_rs(HeapRegion* from, T* p, int tid) {
-  if (G1DeferredRSUpdate) {
-    deferred_rs_update(from, p, tid);
-  } else {
-    immediate_rs_update(from, p, tid);
-  }
-}
-
-
-inline void G1ParScanThreadState::do_oop_partial_array(oop* p) {
-  assert(has_partial_array_mask(p), "invariant");
-  oop from_obj = clear_partial_array_mask(p);
-
-  assert(Universe::heap()->is_in_reserved(from_obj), "must be in heap.");
-  assert(from_obj->is_objArray(), "must be obj array");
-  objArrayOop from_obj_array = objArrayOop(from_obj);
-  // The from-space object contains the real length.
-  int length                 = from_obj_array->length();
-
-  assert(from_obj->is_forwarded(), "must be forwarded");
-  oop to_obj                 = from_obj->forwardee();
-  assert(from_obj != to_obj, "should not be chunking self-forwarded objects");
-  objArrayOop to_obj_array   = objArrayOop(to_obj);
-  // We keep track of the next start index in the length field of the
-  // to-space object.
-  int next_index             = to_obj_array->length();
-  assert(0 <= next_index && next_index < length,
-         err_msg("invariant, next index: %d, length: %d", next_index, length));
-
-  int start                  = next_index;
-  int end                    = length;
-  int remainder              = end - start;
-  // We'll try not to push a range that's smaller than ParGCArrayScanChunk.
-  if (remainder > 2 * ParGCArrayScanChunk) {
-    end = start + ParGCArrayScanChunk;
-    to_obj_array->set_length(end);
-    // Push the remainder before we process the range in case another
-    // worker has run out of things to do and can steal it.
-    oop* from_obj_p = set_partial_array_mask(from_obj);
-    push_on_queue(from_obj_p);
-  } else {
-    assert(length == end, "sanity");
-    // We'll process the final range for this object. Restore the length
-    // so that the heap remains parsable in case of evacuation failure.
-    to_obj_array->set_length(end);
-  }
-  _scanner.set_region(_g1h->heap_region_containing_raw(to_obj));
-  // Process indexes [start,end). It will also process the header
-  // along with the first chunk (i.e., the chunk with start == 0).
-  // Note that at this point the length field of to_obj_array is not
-  // correct given that we are using it to keep track of the next
-  // start index. oop_iterate_range() (thankfully!) ignores the length
-  // field and only relies on the start / end parameters.  It does
-  // however return the size of the object which will be incorrect. So
-  // we have to ignore it even if we wanted to use it.
-  to_obj_array->oop_iterate_range(&_scanner, start, end);
-}
-
-template <class T> inline void G1ParScanThreadState::deal_with_reference(T* ref_to_scan) {
-  if (!has_partial_array_mask(ref_to_scan)) {
-    // Note: we can use "raw" versions of "region_containing" because
-    // "obj_to_scan" is definitely in the heap, and is not in a
-    // humongous region.
-    HeapRegion* r = _g1h->heap_region_containing_raw(ref_to_scan);
-    do_oop_evac(ref_to_scan, r);
-  } else {
-    do_oop_partial_array((oop*)ref_to_scan);
-  }
-}
-
-inline void G1ParScanThreadState::deal_with_reference(StarTask ref) {
-  assert(verify_task(ref), "sanity");
-  if (ref.is_narrow()) {
-    deal_with_reference((narrowOop*)ref);
-  } else {
-    deal_with_reference((oop*)ref);
-  }
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1COLLECTEDHEAP_INLINE_HPP
