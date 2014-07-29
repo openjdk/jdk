@@ -661,7 +661,7 @@ JRT_LEAF(BasicType, Deoptimization::unpack_frames(JavaThread* thread, int exec_m
              (iframe->interpreter_frame_expression_stack_size() == (next_mask_expression_stack_size -
                                                                     top_frame_expression_stack_adjustment))) ||
             (is_top_frame && (exec_mode == Unpack_exception) && iframe->interpreter_frame_expression_stack_size() == 0) ||
-            (is_top_frame && (exec_mode == Unpack_uncommon_trap || exec_mode == Unpack_reexecute) &&
+            (is_top_frame && (exec_mode == Unpack_uncommon_trap || exec_mode == Unpack_reexecute || el->should_reexecute()) &&
              (iframe->interpreter_frame_expression_stack_size() == mask.expression_stack_size() + cur_invoke_parameter_size))
             )) {
         ttyLocker ttyl;
