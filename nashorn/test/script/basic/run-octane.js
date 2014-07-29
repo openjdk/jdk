@@ -24,36 +24,8 @@
 /**
  * @subtest
  */
-
-
-function initZlib() {
-    zlib = new BenchmarkSuite('zlib', [152815148], [
-                            new Benchmark('zlib', false, true, 10,
-                                  runZlib, undefined, tearDownZlib, null, 3)]);
-}
-
-var tests = [
-    {name:"box2d",         files:["box2d.js"],                         suite:"Box2DBenchmark"},
-    {name:"code-load",     files:["code-load.js"],                     suite:"CodeLoad"},
-    {name:"crypto",        files:["crypto.js"],                        suite:"Crypto"},
-    {name:"deltablue",     files:["deltablue.js"],                     suite:"DeltaBlue"},
-    {name:"earley-boyer",  files:["earley-boyer.js"],                  suite:"EarleyBoyer"},
-    {name:"gbemu",         files:["gbemu-part1.js", "gbemu-part2.js"], suite:"GameboyBenchmark"},
-    {name:"mandreel",      files:["mandreel.js"],                      suite:"MandreelBenchmark"},
-    {name:"navier-stokes", files:["navier-stokes.js"],                 suite:"NavierStokes"},
-    {name:"pdfjs",         files:["pdfjs.js"],                         suite:"PdfJS"},
-    {name:"raytrace",      files:["raytrace.js"],                      suite:"RayTrace"},
-    {name:"regexp",        files:["regexp.js"],                        suite:"RegExpSuite"},
-    {name:"richards",      files:["richards.js"],                      suite:"Richards"},
-    {name:"splay",         files:["splay.js"],                         suite:"Splay"},
-    {name:"typescript",    files:["typescript.js", "typescript-input.js", "typescript-compiler.js"], suite:"typescript"},
-    //zlib currently disabled - requires read
-    {name:"zlib",          files:["zlib.js", "zlib-data.js"], suite:"zlib", before:initZlib}
-];
-var dir = (typeof(__DIR__) == 'undefined') ? "test/script/basic/" : __DIR__;
-
-// TODO: why is this path hard coded when it's defined in project properties?
-var path = dir + "../external/octane/";
+var payload = __DIR__ + "octane-payload.js";
+load(payload);
 
 var runtime = undefined;
 var verbose = false;

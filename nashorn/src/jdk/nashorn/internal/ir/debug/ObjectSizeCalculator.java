@@ -52,7 +52,7 @@ import java.util.Map;
  * this fact and will report incorrect sizes, as it will presume the default JVM
  * behavior.
  */
-public class ObjectSizeCalculator {
+public final class ObjectSizeCalculator {
 
     /**
      * Describes constant memory overheads for various constructs in a JVM implementation.

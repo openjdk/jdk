@@ -1097,7 +1097,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         closeBlockVariables(block);
         lc.releaseSlots();
-        assert !method.isReachable() || (lc.isFunctionBody() ? 0 : lc.getUsedSlotCount()) == method.getFirstTemp();
+        assert !method.isReachable() || (lc.isFunctionBody() ? 0 : lc.getUsedSlotCount()) == method.getFirstTemp() :
+            "reachable="+method.isReachable() +
+            " isFunctionBody=" + lc.isFunctionBody() +
+            " usedSlotCount=" + lc.getUsedSlotCount() +
+            " firstTemp=" + method.getFirstTemp();
 
         return block;
     }
