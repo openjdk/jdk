@@ -291,7 +291,12 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
             = (*env)->GetBooleanField(env, bisdo->icm, allGrayID);
         int *pRgb = (int *)
             ((*env)->GetPrimitiveArrayCritical(env, bisdo->lutarray, NULL));
-        CHECK_NULL_RETURN(pRgb, (ColorData*)NULL);
+
+        if (pRgb == NULL) {
+            free(cData);
+            return (ColorData*)NULL;
+        }
+
         cData->img_clr_tbl = initCubemap(pRgb, bisdo->lutsize, 32);
         if (allGray == JNI_TRUE) {
             initInverseGrayLut(pRgb, bisdo->lutsize, cData);
@@ -304,7 +309,13 @@ static ColorData *BufImg_SetupICM(JNIEnv *env,
         if (JNU_IsNull(env, colorData)) {
             jlong pData = ptr_to_jlong(cData);
             colorData = (*env)->NewObjectA(env, clsICMCD, initICMCDmID, (jvalue *)&pData);
-            JNU_CHECK_EXCEPTION_RETURN(env, (ColorData*)NULL);
+
+            if ((*env)->ExceptionCheck(env))
+            {
+                free(cData);
+                return (ColorData*)NULL;
+            }
+
             (*env)->SetObjectField(env, bisdo->icm, colorDataID, colorData);
         }
     }
