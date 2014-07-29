@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,6 +52,8 @@ public abstract class FileChooserUI extends ComponentUI
      * <code>JFileChooser</code> will use this button as default button
      * for dialog windows.
      *
+     * @param fc the {@code JFileChooser} whose default button is requested
+     * @return the default JButton for current look and feel
      * @since 1.7
      */
     public JButton getDefaultButton(JFileChooser fc) {
