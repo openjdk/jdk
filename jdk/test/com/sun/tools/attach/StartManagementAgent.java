@@ -40,7 +40,7 @@ import jdk.testlibrary.Utils;
  * @test
  * @summary Test for VirtualMachine.startManagementAgent and VirtualMachine.startLocalManagementAgent
  * @library /lib/testlibrary
- * @run build Application jdk.testlibrary.*
+ * @run build Application SimpleProvider jdk.testlibrary.*
  * @run main StartManagementAgent
  */
 
