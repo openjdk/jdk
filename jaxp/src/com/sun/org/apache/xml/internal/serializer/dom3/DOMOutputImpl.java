@@ -19,7 +19,7 @@
  * $Id:  $
  */
 
-package org.apache.xml.serializer.dom3;
+package com.sun.org.apache.xml.internal.serializer.dom3;
 
 import org.w3c.dom.ls.LSOutput;
 
