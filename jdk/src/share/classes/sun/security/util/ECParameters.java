@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,14 +23,12 @@
  * questions.
  */
 
-package sun.security.ec;
+package sun.security.util;
 
 import java.io.IOException;
 
 import java.security.*;
 import java.security.spec.*;
-
-import sun.security.util.*;
 
 /**
  * This class implements encoding and decoding of Elliptic Curve parameters
@@ -77,7 +75,7 @@ import sun.security.util.*;
 public final class ECParameters extends AlgorithmParametersSpi {
 
     // used by ECPublicKeyImpl and ECPrivateKeyImpl
-    static AlgorithmParameters getAlgorithmParameters(ECParameterSpec spec)
+    public static AlgorithmParameters getAlgorithmParameters(ECParameterSpec spec)
             throws InvalidKeyException {
         try {
             AlgorithmParameters params =

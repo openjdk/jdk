@@ -67,8 +67,6 @@ import sun.security.util.Debug;
 import sun.security.util.DerValue;
 import sun.security.util.ECUtil;
 
-import sun.security.ec.ECParameters;
-
 import sun.security.pkcs11.Secmod.*;
 import static sun.security.pkcs11.P11Util.*;
 
