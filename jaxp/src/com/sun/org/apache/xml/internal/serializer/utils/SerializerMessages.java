@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -200,6 +202,97 @@ public class SerializerMessages extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Warning:  The encoding ''{0}'' is not supported by the Java runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "The parameter ''{0}'' is not recognized."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "The parameter ''{0}'' is recognized but the requested value cannot be set."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "The resulting string is too long to fit in a DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "The value type for this parameter name is incompatible with the expected value type."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "The output destination for data to be written to was null."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "An unsupported encoding is encountered."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "The node could not be serialized."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "The CDATA Section contains one or more termination markers ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "An instance of the Well-Formedness checker could not be created.  The well-formed parameter was set to true but well-formedness checking can not be performed."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "The node ''{0}'' contains invalid XML characters."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "An invalid XML character (Unicode: 0x{0}) was found in the comment."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "An invalid XML character (Unicode: 0x{0}) was found in the processing instructiondata."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "An invalid XML character (Unicode: 0x{0}) was found in the contents of the CDATASection."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "An invalid XML character (Unicode: 0x{0}) was found in the node''s character data content."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "An invalid XML character(s) was found in the {0} node named ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "The string \"--\" is not permitted within comments."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "The value of attribute \"{1}\" associated with an element type \"{0}\" must not contain the ''<'' character."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "The unparsed entity reference \"&{0};\" is not permitted."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "The external entity reference \"&{0};\" is not permitted in an attribute value."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "The prefix \"{0}\" can not be bound to namespace \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "The local name of element \"{0}\" is null."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "The local name of attr \"{0}\" is null."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "The replacement text of the entity node \"{0}\" contains an element node \"{1}\" with an unbound prefix \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "The replacement text of the entity node \"{0}\" contains an attribute node \"{1}\" with an unbound prefix \"{2}\"."
+             },
+
+             { MsgKey.ER_WRITING_INTERNAL_SUBSET,
+                 "An error occured while writing the internal subset."
+             },
 
         };
 
