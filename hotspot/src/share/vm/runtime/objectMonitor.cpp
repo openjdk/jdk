@@ -2497,6 +2497,10 @@ void ObjectMonitor::DeferredInitialize() {
   SETKNOB(FastHSSEC);
   #undef SETKNOB
 
+  if (Knob_Verbose) {
+    sanity_checks();
+  }
+
   if (os::is_MP()) {
      BackOffMask = (1 << Knob_SpinBackOff) - 1;
      if (Knob_ReportSettings) ::printf("BackOffMask=%X\n", BackOffMask);
@@ -2515,6 +2519,66 @@ void ObjectMonitor::DeferredInitialize() {
   free(knobs);
   OrderAccess::fence();
   InitDone = 1;
+}
+
+void ObjectMonitor::sanity_checks() {
+  int error_cnt = 0;
+  int warning_cnt = 0;
+  bool verbose = Knob_Verbose != 0 NOT_PRODUCT(|| VerboseInternalVMTests);
+
+  if (verbose) {
+    tty->print_cr("INFO: sizeof(ObjectMonitor)=" SIZE_FORMAT,
+                  sizeof(ObjectMonitor));
+  }
+
+  uint cache_line_size = VM_Version::L1_data_cache_line_size();
+  if (verbose) {
+    tty->print_cr("INFO: L1_data_cache_line_size=%u", cache_line_size);
+  }
+
+  ObjectMonitor dummy;
+  u_char *addr_begin  = (u_char*)&dummy;
+  u_char *addr_header = (u_char*)&dummy._header;
+  u_char *addr_owner  = (u_char*)&dummy._owner;
+
+  uint offset_header = (uint)(addr_header - addr_begin);
+  if (verbose) tty->print_cr("INFO: offset(_header)=%u", offset_header);
+
+  uint offset_owner = (uint)(addr_owner - addr_begin);
+  if (verbose) tty->print_cr("INFO: offset(_owner)=%u", offset_owner);
+
+  if ((uint)(addr_header - addr_begin) != 0) {
+    tty->print_cr("ERROR: offset(_header) must be zero (0).");
+    error_cnt++;
+  }
+
+  if (cache_line_size != 0) {
+    // We were able to determine the L1 data cache line size so
+    // do some cache line specific sanity checks
+
+    if ((offset_owner - offset_header) < cache_line_size) {
+      tty->print_cr("WARNING: the _header and _owner fields are closer "
+                    "than a cache line which permits false sharing.");
+      warning_cnt++;
+    }
+
+    if ((sizeof(ObjectMonitor) % cache_line_size) != 0) {
+      tty->print_cr("WARNING: ObjectMonitor size is not a multiple of "
+                    "a cache line which permits false sharing.");
+      warning_cnt++;
+    }
+  }
+
+  ObjectSynchronizer::sanity_checks(verbose, cache_line_size, &error_cnt,
+                                    &warning_cnt);
+
+  if (verbose || error_cnt != 0 || warning_cnt != 0) {
+    tty->print_cr("INFO: error_cnt=%d", error_cnt);
+    tty->print_cr("INFO: warning_cnt=%d", warning_cnt);
+  }
+
+  guarantee(error_cnt == 0,
+            "Fatal error(s) found in ObjectMonitor::sanity_checks()");
 }
 
 #ifndef PRODUCT

@@ -247,15 +247,6 @@ void jfieldIDWorkaround::verify_instance_jfieldID(Klass* k, jfieldID id) {
       "Bug in native code: jfieldID offset must address interior of object");
 }
 
-// Pick a reasonable higher bound for local capacity requested
-// for EnsureLocalCapacity and PushLocalFrame.  We don't want it too
-// high because a test (or very unusual application) may try to allocate
-// that many handles and run out of swap space.  An implementation is
-// permitted to allocate more handles than the ensured capacity, so this
-// value is set high enough to prevent compatibility problems.
-const int MAX_REASONABLE_LOCAL_CAPACITY = 4*K;
-
-
 // Wrapper to trace JNI functions
 
 #ifdef ASSERT
@@ -741,7 +732,8 @@ JNI_ENTRY(jint, jni_PushLocalFrame(JNIEnv *env, jint capacity))
   HOTSPOT_JNI_PUSHLOCALFRAME_ENTRY(env, capacity);
 
   //%note jni_11
-  if (capacity < 0 || capacity > MAX_REASONABLE_LOCAL_CAPACITY) {
+  if (capacity < 0 ||
+      ((MaxJNILocalCapacity > 0) && (capacity > MaxJNILocalCapacity))) {
     HOTSPOT_JNI_PUSHLOCALFRAME_RETURN((uint32_t)JNI_ERR);
     return JNI_ERR;
   }
@@ -844,7 +836,8 @@ JNI_LEAF(jint, jni_EnsureLocalCapacity(JNIEnv *env, jint capacity))
   HOTSPOT_JNI_ENSURELOCALCAPACITY_ENTRY(env, capacity);
 
   jint ret;
-  if (capacity >= 0 && capacity <= MAX_REASONABLE_LOCAL_CAPACITY) {
+  if (capacity >= 0 &&
+      ((MaxJNILocalCapacity <= 0) || (capacity <= MaxJNILocalCapacity))) {
     ret = JNI_OK;
   } else {
     ret = JNI_ERR;
@@ -3893,6 +3886,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestKlass_test());
     run_unit_test(TestBitMap_test());
     run_unit_test(TestAsUtf8());
+    run_unit_test(ObjectMonitor::sanity_checks());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif
