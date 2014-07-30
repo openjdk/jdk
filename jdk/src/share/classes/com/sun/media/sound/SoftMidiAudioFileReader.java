@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
 import java.io.File;
@@ -39,14 +40,14 @@ import javax.sound.midi.Receiver;
 import javax.sound.midi.Sequence;
 import javax.sound.midi.Track;
 import javax.sound.sampled.AudioFileFormat;
+import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.UnsupportedAudioFileException;
-import javax.sound.sampled.AudioFileFormat.Type;
 import javax.sound.sampled.spi.AudioFileReader;
 
 /**
- * MIDI File Audio Renderer/Reader
+ * MIDI File Audio Renderer/Reader.
  *
  * @author Karl Helgason
  */
@@ -109,6 +110,9 @@ public final class SoftMidiAudioFileReader extends AudioFileReader {
                 if (divtype == Sequence.PPQ) {
                     if (((MetaMessage) msg).getType() == 0x51) {
                         byte[] data = ((MetaMessage) msg).getData();
+                        if (data.length < 3) {
+                            throw new UnsupportedAudioFileException();
+                        }
                         mpq = ((data[0] & 0xff) << 16)
                                 | ((data[1] & 0xff) << 8) | (data[2] & 0xff);
                     }
