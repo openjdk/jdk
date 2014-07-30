@@ -364,7 +364,7 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
         }
 
         void getMethods() throws ClassNotFoundException, NoSuchMethodException {
-            Class<?> c  = Class.forName("sun.security.ec.ECParameters");
+            Class<?> c  = Class.forName("sun.security.util.ECParameters");
             Class<?>[] params = new Class<?>[] { ECPoint.class,
                                                  EllipticCurve.class };
             encodePoint = c.getMethod("encodePoint", params);
@@ -372,7 +372,7 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
             getCurveName = c.getMethod("getCurveName", params);
             params = new Class<?>[] { byte[].class, EllipticCurve.class };
             decodePoint = c.getMethod("decodePoint", params);
-            c  = Class.forName("sun.security.ec.NamedCurve");
+            c  = Class.forName("sun.security.util.NamedCurve");
             params = new Class<?>[] { String.class };
             getECParameterSpec = c.getMethod("getECParameterSpec", params);
         }
@@ -477,7 +477,7 @@ public abstract class DOMKeyValue extends DOMStructure implements KeyValue {
                 throw new MarshalException(ite);
             }
 /*
-                ecPoint = sun.security.ec.ECParameters.decodePoint(
+                ecPoint = sun.security.util.ECParameters.decodePoint(
                     Base64.decode(curElem), ecParams.getCurve());
 */
             ECPublicKeySpec spec = new ECPublicKeySpec(ecPoint, ecParams);

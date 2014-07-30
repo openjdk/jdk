@@ -26,9 +26,11 @@ import java.security.Key;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.HashMap;
 import java.util.Map;
 import javax.security.auth.Subject;
+import javax.security.auth.kerberos.KerberosCredMessage;
 import javax.security.auth.kerberos.KerberosKey;
 import javax.security.auth.kerberos.KerberosTicket;
 import javax.security.auth.login.LoginContext;
@@ -86,7 +88,6 @@ public class Context {
 
     /**
      * Using the delegated credentials from a previous acceptor
-     * @param c
      */
     public Context delegated() throws Exception {
         Context out = new Context();
@@ -177,7 +178,6 @@ public class Context {
     /**
      * Logins with username/keytab as an existing Subject. The
      * same subject can be used multiple times to simulate multiple logins.
-     * @param s existing subject
      */
     public static Context fromUserKtab(
             String user, String ktab, boolean storeKey) throws Exception {
@@ -411,6 +411,12 @@ public class Context {
                 Key k = (Key)ex.inquireSecContext(
                         InquireType.KRB5_GET_SESSION_KEY);
                 if (k == null) {
+                    throw new Exception("(Old) Session key cannot be null");
+                }
+                System.out.println("(Old) Session key is: " + k);
+                Key k2 = (Key)ex.inquireSecContext(
+                        InquireType.KRB5_GET_SESSION_KEY_EX);
+                if (k2 == null) {
                     throw new Exception("Session key cannot be null");
                 }
                 System.out.println("Session key is: " + k);
@@ -430,6 +436,19 @@ public class Context {
                     AuthorizationDataEntry[] ad = (AuthorizationDataEntry[])ex.inquireSecContext(
                             InquireType.KRB5_GET_AUTHZ_DATA);
                     System.out.println("AuthzData is: " + Arrays.toString(ad));
+                }
+                try {
+                    KerberosCredMessage tok = (KerberosCredMessage)ex.inquireSecContext(
+                            InquireType.KRB5_GET_KRB_CRED);
+                    System.out.println("KRB_CRED is " +
+                            (tok == null?"not ":"") + "available");
+                    if (tok != null) {
+                        System.out.println("From " + tok.getSender() + " to "
+                                + tok.getRecipient());
+                        System.out.println(Base64.getEncoder().encodeToString(tok.getEncoded()));
+                    }
+                } catch (Exception e) {
+                    System.out.println("KRB_CRED is not available: " + e);
                 }
             }
         }

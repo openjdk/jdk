@@ -33,9 +33,7 @@
 
 import java.net.InetAddress;
 import java.util.Date;
-import javax.security.auth.kerberos.KerberosKey;
-import javax.security.auth.kerberos.KerberosPrincipal;
-import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.kerberos.*;
 
 public class KerberosHashEqualsTest {
     public static void main(String[] args) throws Exception {
@@ -66,27 +64,66 @@ public class KerberosHashEqualsTest {
 
         k2.destroy();
         checkNotSame(k1, k2);
-
-        // destroyed keys doesn't equal to each other
         checkNotSame(k2, k1);
         checkSame(k2, k2);
 
+        k1.destroy();
+        checkNotSame(k1, k2);
+
+        // Destroyed key has string and hashCode
+        k1.toString(); k1.hashCode();
+
         // a little different
+        k1 = new KerberosKey(newKP("A"), "pass".getBytes(), 1, 1);
         k2 = new KerberosKey(newKP("B"), "pass".getBytes(), 1, 1);
         checkNotSame(k1, k2);
+
         k2 = new KerberosKey(newKP("A"), "ssap".getBytes(), 1, 1);
         checkNotSame(k1, k2);
+
         k2 = new KerberosKey(newKP("A"), "pass".getBytes(), 2, 1);
         checkNotSame(k1, k2);
+
         k2 = new KerberosKey(newKP("A"), "pass".getBytes(), 1, 2);
         checkNotSame(k1, k2);
 
+        // Null
         k1 = new KerberosKey(null, "pass".getBytes(), 1, 2);
         checkNotSame(k1, k2); // null to non-null
         k2 = new KerberosKey(null, "pass".getBytes(), 1, 2);
         checkSame(k1, k2);    // null to null
 
+        // Even key with null principal has a string and hashCode
+        k1.toString(); k1.hashCode();
+
         checkNotSame(k1, "Another Object");
+
+        EncryptionKey e1, e2;
+        e1 = new EncryptionKey("pass".getBytes(), 1);
+        e2 = new EncryptionKey("pass".getBytes(), 1);
+        checkSame(e1, e1);  // me to me
+        checkSame(e1, e2);  // same
+
+        e2.destroy();
+        checkNotSame(e1, e2);
+        checkNotSame(e2, e1);
+        checkSame(e2, e2);
+
+        e1.destroy();
+        checkNotSame(e1, e2);
+
+        // Destroyed key has string and hashCode
+        e1.toString(); e1.hashCode();
+
+        // a little different
+        e1 = new EncryptionKey("pass".getBytes(), 1);
+        e2 = new EncryptionKey("ssap".getBytes(), 1);
+        checkNotSame(e1, e2);
+
+        e2 = new EncryptionKey("pass".getBytes(), 2);
+        checkNotSame(e1, e2);
+
+        checkNotSame(e1, "Another Object");
 
         KerberosTicket t1, t2;
         t1 = new KerberosTicket("asn1".getBytes(), newKP("client"), newKP("server"), "pass".getBytes(), 1, new boolean[] {true, true}, new Date(0), new Date(0), new Date(0), new Date(0), null);
@@ -120,6 +157,7 @@ public class KerberosHashEqualsTest {
 
         t2.destroy();
         checkNotSame(t1, t2);
+        t2.hashCode(); t2.toString();
 
         // destroyed tickets doesn't equal to each other
         checkNotSame(t2, t1);
@@ -130,6 +168,37 @@ public class KerberosHashEqualsTest {
         checkNotSame(t1, t2);  // renewtill is useful
 
         checkNotSame(t1, "Another Object");
+
+        KerberosCredMessage m1, m2;
+        m1 = new KerberosCredMessage(newKP("C"), newKP("S"), "message".getBytes());
+        m2 = new KerberosCredMessage(newKP("C"), newKP("S"), "message".getBytes());
+        checkSame(m1, m1);  // me to me
+        checkSame(m1, m2);  // same
+
+        m2.destroy();
+        checkNotSame(m1, m2);
+        checkNotSame(m2, m1);
+        checkSame(m2, m2);
+
+        m1.destroy();
+        checkNotSame(m1, m2);
+
+        // Destroyed message has string and hashCode
+        m1.toString(); m1.hashCode();
+
+        // a little different
+        m1 = new KerberosCredMessage(newKP("C"), newKP("S"), "message".getBytes());
+        m2 = new KerberosCredMessage(newKP("A"), newKP("S"), "message".getBytes());
+        checkNotSame(m1, m2);
+
+        m2 = new KerberosCredMessage(newKP("C"), newKP("B"), "message".getBytes());
+        checkNotSame(m1, m2);
+
+        m1 = new KerberosCredMessage(newKP("C"), newKP("S"), "hello".getBytes());
+        checkNotSame(m1, m2);
+
+        checkNotSame(m1, "Another Object");
+
         System.out.println("Good!");
     }
 

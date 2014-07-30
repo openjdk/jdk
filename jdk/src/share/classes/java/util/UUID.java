@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,9 @@
 package java.util;
 
 import java.security.*;
+
+import sun.misc.JavaLangAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * A class that represents an immutable universally unique identifier (UUID).
@@ -87,6 +90,8 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @serial
      */
     private final long leastSigBits;
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /*
      * The random number generator used by this class to create random
@@ -189,21 +194,35 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      *
      */
     public static UUID fromString(String name) {
-        String[] components = name.split("-");
-        if (components.length != 5)
-            throw new IllegalArgumentException("Invalid UUID string: "+name);
-        for (int i=0; i<5; i++)
-            components[i] = "0x"+components[i];
+        if (name.length() > 36) {
+            throw new IllegalArgumentException("UUID string too large");
+        }
 
-        long mostSigBits = Long.decode(components[0]).longValue();
-        mostSigBits <<= 16;
-        mostSigBits |= Long.decode(components[1]).longValue();
-        mostSigBits <<= 16;
-        mostSigBits |= Long.decode(components[2]).longValue();
+        int dash1 = name.indexOf('-', 0);
+        int dash2 = name.indexOf('-', dash1 + 1);
+        int dash3 = name.indexOf('-', dash2 + 1);
+        int dash4 = name.indexOf('-', dash3 + 1);
+        int dash5 = name.indexOf('-', dash4 + 1);
 
-        long leastSigBits = Long.decode(components[3]).longValue();
+        // For any valid input, dash1 through dash4 will be positive and dash5
+        // negative, but it's enough to check dash4 and dash5:
+        // - if dash1 is -1, dash4 will be -1
+        // - if dash1 is positive but dash2 is -1, dash4 will be -1
+        // - if dash1 and dash2 is positive, dash3 will be -1, dash4 will be
+        //   positive, but so will dash5
+        if (dash4 < 0 || dash5 >= 0) {
+            throw new IllegalArgumentException("Invalid UUID string: " + name);
+        }
+
+        long mostSigBits = Long.parseLong(name, 16, 0, dash1) & 0xffffffffL;
+        mostSigBits <<= 16;
+        mostSigBits |= Long.parseLong(name, 16, dash1 + 1, dash2) & 0xffffL;
+        mostSigBits <<= 16;
+        mostSigBits |= Long.parseLong(name, 16, dash2 + 1, dash3) & 0xffffL;
+
+        long leastSigBits = Long.parseLong(name, 16, dash3 + 1, dash4) & 0xffffL;
         leastSigBits <<= 48;
-        leastSigBits |= Long.decode(components[4]).longValue();
+        leastSigBits |= Long.parseLong(name, 16, dash4 + 1) & 0xffffffffffffL;
 
         return new UUID(mostSigBits, leastSigBits);
     }
@@ -373,17 +392,17 @@ public final class UUID implements java.io.Serializable, Comparable<UUID> {
      * @return  A string representation of this {@code UUID}
      */
     public String toString() {
-        return (digits(mostSigBits >> 32, 8) + "-" +
-                digits(mostSigBits >> 16, 4) + "-" +
-                digits(mostSigBits, 4) + "-" +
-                digits(leastSigBits >> 48, 4) + "-" +
-                digits(leastSigBits, 12));
-    }
-
-    /** Returns val represented by the specified number of hex digits. */
-    private static String digits(long val, int digits) {
-        long hi = 1L << (digits * 4);
-        return Long.toHexString(hi | (val & (hi - 1))).substring(1);
+        char[] chars = new char[36];
+        jla.formatUnsignedLong(mostSigBits >> 32, 4, chars, 0, 8);
+        chars[8] = '-';
+        jla.formatUnsignedLong(mostSigBits >> 16, 4, chars, 9, 4);
+        chars[13] = '-';
+        jla.formatUnsignedLong(mostSigBits, 4, chars, 14, 4);
+        chars[18] = '-';
+        jla.formatUnsignedLong(leastSigBits >> 48, 4, chars, 19, 4);
+        chars[23] = '-';
+        jla.formatUnsignedLong(leastSigBits, 4, chars, 24, 12);
+        return jla.newStringUnsafe(chars);
     }
 
     /**
