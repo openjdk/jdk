@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 1999-2002,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -60,6 +61,11 @@ import org.xml.sax.DocumentHandler;
  * @see ContentHandler
  * @see OutputFormat
  * @see DOMSerializer
+ *
+ * @deprecated As of JDK 1.9, Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public interface Serializer
 {
