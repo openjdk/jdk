@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,7 +39,7 @@ import java.lang.reflect.*;
 import java.io.Writer;
 import java.util.*;
 
-import static javax.lang.model.SourceVersion.RELEASE_8;
+import static javax.lang.model.SourceVersion.RELEASE_9;
 import static java.util.Objects.*;
 
 /**
@@ -487,10 +487,10 @@ public class CoreReflectionFactory {
     /**
      * Base class for concrete visitors of elements backed by core reflection.
      */
-    public static abstract class AbstractReflectionElementVisitor8<R, P>
-        extends AbstractElementVisitor8<R, P>
+    public static abstract class AbstractReflectionElementVisitor9<R, P>
+        extends AbstractElementVisitor9<R, P>
         implements ReflectionElementVisitor<R, P> {
-        protected AbstractReflectionElementVisitor8() {
+        protected AbstractReflectionElementVisitor9() {
             super();
         }
     }
@@ -498,16 +498,16 @@ public class CoreReflectionFactory {
     /**
      * Base class for simple visitors of elements that are backed by core reflection.
      */
-    @SupportedSourceVersion(value=RELEASE_8)
-    public static abstract class SimpleReflectionElementVisitor8<R, P>
-        extends SimpleElementVisitor8<R, P>
+    @SupportedSourceVersion(value=RELEASE_9)
+    public static abstract class SimpleReflectionElementVisitor9<R, P>
+        extends SimpleElementVisitor9<R, P>
         implements ReflectionElementVisitor<R, P> {
 
-        protected SimpleReflectionElementVisitor8(){
+        protected SimpleReflectionElementVisitor9(){
             super();
         }
 
-        protected SimpleReflectionElementVisitor8(R defaultValue) {
+        protected SimpleReflectionElementVisitor9(R defaultValue) {
             super(defaultValue);
         }
 
@@ -2527,7 +2527,7 @@ public class CoreReflectionFactory {
                 Constructor<?> printProcCtor = printProcClass.getConstructor(Writer.class, Elements.class);
                 return (ElementVisitor) printProcCtor.newInstance(w, getElements());
             } catch (ReflectiveOperationException | SecurityException e) {
-                return new ElementScanner8<Writer, Void>(w){
+                return new ElementScanner9<Writer, Void>(w){
                     @Override
                     public Writer scan(Element e, Void v) {
                         try {

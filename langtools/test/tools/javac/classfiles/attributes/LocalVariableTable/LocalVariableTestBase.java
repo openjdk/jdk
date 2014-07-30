@@ -129,7 +129,7 @@ public abstract class LocalVariableTestBase extends TestBase {
         }
     }
 
-    private void checkNamesAndTypes(List<LocalVariableTableTest.LocalVariableTable.Entry> entries,
+    private void checkNamesAndTypes(List<VariableTable.Entry> entries,
                                     Map<String, String> expectedLocals2Types) {
         Map<String, List<String>> actualNames2Types = entries.stream()
                 .collect(
@@ -163,7 +163,7 @@ public abstract class LocalVariableTestBase extends TestBase {
 
     }
 
-    private void checkDoubleAndLongIndexes(Collection<LocalVariableTableTest.LocalVariableTable.Entry> entries,
+    private void checkDoubleAndLongIndexes(Collection<VariableTable.Entry> entries,
                                            Map<String, Integer> scopes, int maxLocals) {
         //check every scope separately
         Map<Object, List<VariableTable.Entry>> entriesByScope = groupByScope(entries, scopes);
@@ -185,7 +185,7 @@ public abstract class LocalVariableTestBase extends TestBase {
     }
 
     private Map<Object, List<VariableTable.Entry>> groupByScope(
-            Collection<LocalVariableTableTest.LocalVariableTable.Entry> entries, Map<String, Integer> scopes) {
+            Collection<VariableTable.Entry> entries, Map<String, Integer> scopes) {
         return entries.stream().collect(groupingBy(e -> scopes.getOrDefault(e.name() + "&" + e.type(), DEFAULT_SCOPE)));
     }
 
@@ -203,7 +203,7 @@ public abstract class LocalVariableTestBase extends TestBase {
 
         int localVariableTableLength();
 
-        List<LocalVariableTableTest.VariableTable.Entry> entries();
+        List<VariableTable.Entry> entries();
 
         int attributeLength();
 

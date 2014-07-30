@@ -1,0 +1,2 @@
+T4941882.java:13:17: compiler.err.prob.found.req: (compiler.misc.inferred.do.not.conform.to.upper.bounds: java.lang.Object&java.io.Serializable&java.lang.Cloneable, java.lang.Object[],java.lang.Object)
+1 error
