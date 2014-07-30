@@ -777,11 +777,22 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   // unneeded entries.
   bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
   MetadataOnStackMark md_on_stack;
-  while (data != NULL) {
-    if (data->is_alive(is_alive_closure)) {
-      if (has_redefined_a_class) {
+  if (has_redefined_a_class) {
+    // purge_previous_versions also cleans weak method links. Because
+    // one method's MDO can reference another method from another
+    // class loader, we need to first clean weak method links for all
+    // class loaders here. Below, we can then free redefined methods
+    // for all class loaders.
+    while (data != NULL) {
+      if (data->is_alive(is_alive_closure)) {
         data->classes_do(InstanceKlass::purge_previous_versions);
       }
+      data = data->next();
+    }
+  }
+  data = _head;
+  while (data != NULL) {
+    if (data->is_alive(is_alive_closure)) {
       data->free_deallocate_list();
       prev = data;
       data = data->next();

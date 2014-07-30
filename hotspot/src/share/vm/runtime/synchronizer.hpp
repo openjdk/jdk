@@ -121,6 +121,9 @@ class ObjectSynchronizer : AllStatic {
   static void oops_do(OopClosure* f);
 
   // debugging
+  static void sanity_checks(const bool verbose,
+                            const unsigned int cache_line_size,
+                            int *error_cnt_ptr, int *warning_cnt_ptr);
   static void verify() PRODUCT_RETURN;
   static int  verify_objmon_isinpool(ObjectMonitor *addr) PRODUCT_RETURN0;
 
