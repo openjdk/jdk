@@ -42,6 +42,8 @@ import java.io.OutputStream;
 import java.io.StringWriter;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -90,8 +92,6 @@ public abstract class XMLStreamWriterFactory {
                         f =  new Zephyr(xof,clazz);
                     }
                 } catch (XMLStreamException ex) {
-                    Logger.getLogger(XMLStreamWriterFactory.class.getName()).log(Level.INFO, null, ex);
-                } catch (NoSuchMethodException ex) {
                     Logger.getLogger(XMLStreamWriterFactory.class.getName()).log(Level.INFO, null, ex);
                 }
             }
@@ -282,17 +282,31 @@ public abstract class XMLStreamWriterFactory {
                 return new Zephyr(xof,clazz);
             } catch (XMLStreamException e) {
                 return null;    // impossible
-            } catch (NoSuchMethodException e) {
-                return null;    // this xof wasn't Zephyr
             }
         }
 
-        private Zephyr(XMLOutputFactory xof, Class clazz) throws NoSuchMethodException {
+        private Zephyr(XMLOutputFactory xof, Class clazz) {
             this.xof = xof;
 
             zephyrClass = clazz;
-            setOutputMethod = clazz.getMethod("setOutput", StreamResult.class, String.class);
-            resetMethod = clazz.getMethod("reset");
+            setOutputMethod = getMethod(clazz, "setOutput", StreamResult.class, String.class);
+            resetMethod = getMethod(clazz, "reset");
+        }
+
+        private static Method getMethod(final Class<?> c, final String methodname, final Class<?>... params) {
+            return AccessController.doPrivileged(
+                    new PrivilegedAction<Method>() {
+                        @Override
+                        public Method run() {
+                            try {
+                                return c.getMethod(methodname, params);
+                            } catch (NoSuchMethodException e) {
+                                // impossible
+                                throw new NoSuchMethodError(e.getMessage());
+                            }
+                        }
+                    }
+            );
         }
 
         /**
