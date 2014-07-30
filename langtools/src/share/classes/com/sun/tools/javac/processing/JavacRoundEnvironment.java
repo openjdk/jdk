@@ -114,7 +114,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
         if (a.getKind() != ElementKind.ANNOTATION_TYPE)
             throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);
 
-        ElementScanner8<Set<Element>, TypeElement> scanner =
+        ElementScanner9<Set<Element>, TypeElement> scanner =
             new AnnotationSetScanner(result);
 
         for (Element element : rootElements)
@@ -125,7 +125,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
 
     // Could be written as a local class inside getElementsAnnotatedWith
     private class AnnotationSetScanner extends
-        ElementScanner8<Set<Element>, TypeElement> {
+        ElementScanner9<Set<Element>, TypeElement> {
         // Insertion-order preserving set
         Set<Element> annotatedElements = new LinkedHashSet<>();
 
