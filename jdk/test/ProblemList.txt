@@ -204,7 +204,8 @@ sun/rmi/transport/proxy/EagerHttpFallback.java                  generic-all
 sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 
 # 7164518: no PortUnreachableException on Mac
-sun/security/krb5/auto/Unreachable.java                         macosx-all
+# 8051952: Unreachable.java test failing on Windows
+sun/security/krb5/auto/Unreachable.java                         windows-all, macosx-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -218,9 +219,6 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 # 7041639: Solaris DSA keypair generation bug
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
-
-# 8051952: Unreachable.java test failing on Windows
-sun/security/krb5/auto/Unreachable.java                         windows-all
 
 ############################################################################
 
