@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,10 +58,10 @@ class AllClassesQuery extends QueryHandler {
             startHtml("All Classes (including platform)");
         }
 
-        Iterator classes = snapshot.getClasses();
+        Iterator<JavaClass> classes = snapshot.getClasses();
         String lastPackage = null;
         while (classes.hasNext()) {
-            JavaClass clazz = (JavaClass) classes.next();
+            JavaClass clazz = classes.next();
             if (excludePlatform && PlatformClasses.isPlatformClass(clazz)) {
                 // skip this..
                 continue;
