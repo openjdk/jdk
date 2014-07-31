@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,6 +46,13 @@ public:
     // Dirty card queues are always active, so we create them with their
     // active field set to true.
     PtrQueue(qset_, perm, true /* active */) { }
+
+  // Flush before destroying; queue may be used to capture pending work while
+  // doing something else, with auto-flush on completion.
+  ~DirtyCardQueue() { if (!is_permanent()) flush(); }
+
+  // Process queue entries and release resources.
+  void flush() { flush_impl(); }
 
   // Apply the closure to all elements, and reset the index to make the
   // buffer empty.  If a closure application returns "false", return

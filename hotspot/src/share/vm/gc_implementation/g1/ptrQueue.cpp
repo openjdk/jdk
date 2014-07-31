@@ -31,11 +31,15 @@
 #include "runtime/thread.inline.hpp"
 
 PtrQueue::PtrQueue(PtrQueueSet* qset, bool perm, bool active) :
-  _qset(qset), _buf(NULL), _index(0), _active(active),
+  _qset(qset), _buf(NULL), _index(0), _sz(0), _active(active),
   _perm(perm), _lock(NULL)
 {}
 
-void PtrQueue::flush() {
+PtrQueue::~PtrQueue() {
+  assert(_perm || (_buf == NULL), "queue must be flushed before delete");
+}
+
+void PtrQueue::flush_impl() {
   if (!_perm && _buf != NULL) {
     if (_index == _sz) {
       // No work to do.
