@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -60,9 +60,8 @@ public:
     // field to true. This is done in JavaThread::initialize_queues().
     PtrQueue(qset, perm, false /* active */) { }
 
-  // Overrides PtrQueue::flush() so that it can filter the buffer
-  // before it is flushed.
-  virtual void flush();
+  // Process queue entries and free resources.
+  void flush();
 
   // Overrides PtrQueue::should_enqueue_buffer(). See the method's
   // definition for more information.
