@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class OQLEngine {
 
             // create JavaScript engine
             Method getEngineMethod = managerClass.getMethod("getEngineByName",
-                                new Class[] { String.class });
+                                new Class<?>[] { String.class });
             Object jse = getEngineMethod.invoke(manager, new Object[] {"js"});
             oqlSupported = (jse != null);
         } catch (Exception exp) {
@@ -205,9 +205,9 @@ public class OQLEngine {
             }
 
             if (q.className != null) {
-                Enumeration objects = clazz.getInstances(q.isInstanceOf);
+                Enumeration<JavaHeapObject> objects = clazz.getInstances(q.isInstanceOf);
                 while (objects.hasMoreElements()) {
-                    JavaHeapObject obj = (JavaHeapObject) objects.nextElement();
+                    JavaHeapObject obj = objects.nextElement();
                     Object[] args = new Object[] { wrapJavaObject(obj) };
                     boolean b = (whereCode == null);
                     if (!b) {
@@ -265,14 +265,14 @@ public class OQLEngine {
 
             // create JavaScript engine
             Method getEngineMethod = managerClass.getMethod("getEngineByName",
-                                new Class[] { String.class });
+                                new Class<?>[] { String.class });
             engine = getEngineMethod.invoke(manager, new Object[] {"js"});
 
             // initialize engine with init file (hat.js)
             InputStream strm = getInitStream();
             Class<?> engineClass = Class.forName("javax.script.ScriptEngine");
             evalMethod = engineClass.getMethod("eval",
-                                new Class[] { Reader.class });
+                                new Class<?>[] { Reader.class });
             evalMethod.invoke(engine, new Object[] {new InputStreamReader(strm)});
 
             // initialize ScriptEngine.eval(String) and
@@ -280,13 +280,13 @@ public class OQLEngine {
             Class<?> invocableClass = Class.forName("javax.script.Invocable");
 
             evalMethod = engineClass.getMethod("eval",
-                                  new Class[] { String.class });
+                                  new Class<?>[] { String.class });
             invokeMethod = invocableClass.getMethod("invokeFunction",
-                                  new Class[] { String.class, Object[].class });
+                                  new Class<?>[] { String.class, Object[].class });
 
             // initialize ScriptEngine.put(String, Object) method
             Method putMethod = engineClass.getMethod("put",
-                                  new Class[] { String.class, Object.class });
+                                  new Class<?>[] { String.class, Object.class });
 
             // call ScriptEngine.put to initialize built-in heap object
             putMethod.invoke(engine, new Object[] {
