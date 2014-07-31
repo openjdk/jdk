@@ -59,7 +59,11 @@ public class TrueTypeGlyphMapper extends CharToGlyphMapper {
         }
         missingGlyph = 0; /* standard for TrueType fonts */
         ByteBuffer buffer = font.getTableBuffer(TrueTypeFont.maxpTag);
-        numGlyphs = buffer.getChar(4); // offset 4 bytes in MAXP table.
+        if (buffer != null && buffer.capacity() >= 6) {
+            numGlyphs = buffer.getChar(4); // offset 4 bytes in MAXP table.
+        } else {
+            handleBadCMAP();
+        }
         if (FontUtilities.isSolaris && isJAlocale && font.supportsJA()) {
             needsJAremapping = true;
             if (FontUtilities.isSolaris8 &&
