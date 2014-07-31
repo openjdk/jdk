@@ -42,29 +42,34 @@ typedef union {
 } DoubleIntConv;
 
 static inline int high(double d) {
-  DoubleIntConv x = { d };
+  DoubleIntConv x;
+  x.d = d;
   return x.split.hi;
 }
 
 static inline int low(double d) {
-  DoubleIntConv x = { d };
+  DoubleIntConv x;
+  x.d = d;
   return x.split.lo;
 }
 
 static inline void set_high(double* d, int high) {
-  DoubleIntConv conv = { *d };
+  DoubleIntConv conv;
+  conv.d = *d;
   conv.split.hi = high;
   *d = conv.d;
 }
 
 static inline void set_low(double* d, int low) {
-  DoubleIntConv conv = { *d };
+  DoubleIntConv conv;
+  conv.d = *d;
   conv.split.lo = low;
   *d = conv.d;
 }
 
 static double copysignA(double x, double y) {
-  DoubleIntConv convX = { x };
+  DoubleIntConv convX;
+  convX.d = x;
   convX.split.hi = (convX.split.hi & 0x7fffffff) | (high(y) & 0x80000000);
   return convX.d;
 }
