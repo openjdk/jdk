@@ -53,7 +53,7 @@ public class MultiResolutionCachedImage extends AbstractMultiResolutionImage {
             Dimension2D[] sizes, BiFunction<Integer, Integer, Image> mapper) {
         this.baseImageWidth = baseImageWidth;
         this.baseImageHeight = baseImageHeight;
-        this.sizes = sizes;
+        this.sizes = (sizes == null) ? null : Arrays.copyOf(sizes, sizes.length);
         this.mapper = mapper;
     }
 
