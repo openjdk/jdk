@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,21 +39,20 @@ public final class RIFFReader extends InputStream {
     private long filepointer = 0;
     private final String fourcc;
     private String riff_type = null;
-    private long ckSize = 0;
+    private long ckSize = Integer.MAX_VALUE;
     private InputStream stream;
-    private long avail;
+    private long avail = Integer.MAX_VALUE;
     private RIFFReader lastiterator = null;
 
     public RIFFReader(InputStream stream) throws IOException {
 
-        if (stream instanceof RIFFReader)
-            root = ((RIFFReader)stream).root;
-        else
+        if (stream instanceof RIFFReader) {
+            root = ((RIFFReader) stream).root;
+        } else {
             root = this;
+        }
 
         this.stream = stream;
-        avail = Integer.MAX_VALUE;
-        ckSize = Integer.MAX_VALUE;
 
         // Check for RIFF null paddings,
         int b;
@@ -75,9 +74,12 @@ public final class RIFFReader extends InputStream {
         fourcc[0] = (byte) b;
         readFully(fourcc, 1, 3);
         this.fourcc = new String(fourcc, "ascii");
-        ckSize = readUnsignedInt();
-
-        avail = this.ckSize;
+        final long size = readUnsignedInt();
+        if (size > Integer.MAX_VALUE) {
+            throw new RIFFInvalidDataException("Chunk size too big");
+        }
+        ckSize = size;
+        avail = size;
 
         if (getFormat().equals("RIFF") || getFormat().equals("LIST")) {
             byte[] format = new byte[4];
@@ -118,19 +120,23 @@ public final class RIFFReader extends InputStream {
     }
 
     public int read() throws IOException {
-        if (avail == 0)
+        if (avail == 0) {
             return -1;
+        }
         int b = stream.read();
-        if (b == -1)
+        if (b == -1) {
+            avail = 0;
             return -1;
+        }
         avail--;
         filepointer++;
         return b;
     }
 
     public int read(byte[] b, int offset, int len) throws IOException {
-        if (avail == 0)
+        if (avail == 0) {
             return -1;
+        }
         if (len > avail) {
             int rlen = stream.read(b, offset, (int)avail);
             if (rlen != -1)
@@ -139,8 +145,10 @@ public final class RIFFReader extends InputStream {
             return rlen;
         } else {
             int ret = stream.read(b, offset, len);
-            if (ret == -1)
+            if (ret == -1) {
+                avail = 0;
                 return -1;
+            }
             avail -= ret;
             filepointer += ret;
             return ret;
@@ -191,8 +199,10 @@ public final class RIFFReader extends InputStream {
             return len;
         } else {
             long ret = stream.skip(n);
-            if (ret == -1)
+            if (ret == -1) {
+                avail = 0;
                 return -1;
+            }
             avail -= ret;
             filepointer += ret;
             return ret;
@@ -210,8 +220,13 @@ public final class RIFFReader extends InputStream {
     }
 
     // Read ASCII chars from stream
-    public String readString(int len) throws IOException {
-        byte[] buff = new byte[len];
+    public String readString(final int len) throws IOException {
+        final byte[] buff;
+        try {
+            buff = new byte[len];
+        } catch (final OutOfMemoryError oom) {
+            throw new IOException("Length too big", oom);
+        }
         readFully(buff);
         for (int i = 0; i < buff.length; i++) {
             if (buff[i] == 0) {
