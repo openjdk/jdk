@@ -199,23 +199,29 @@ class ArgumentIterator : public StackObj {
 // Calls from the door function to check that the client credentials
 // match this process. Returns 0 if credentials okay, otherwise -1.
 static int check_credentials() {
-  door_cred_t cred_info;
+  ucred_t *cred_info = NULL;
+  int ret = -1; // deny by default
 
   // get client credentials
-  if (door_cred(&cred_info) == -1) {
-    return -1; // unable to get them
+  if (door_ucred(&cred_info) == -1) {
+    return -1; // unable to get them, deny
   }
 
   // get our euid/eguid (probably could cache these)
   uid_t euid = geteuid();
   gid_t egid = getegid();
 
-  // check that the effective uid/gid matches - discuss this with Jeff.
-  if (cred_info.dc_euid == euid && cred_info.dc_egid == egid) {
-    return 0;  // okay
-  } else {
-    return -1; // denied
+  // get euid/egid from ucred_free
+  uid_t ucred_euid = ucred_geteuid(cred_info);
+  gid_t ucred_egid = ucred_getegid(cred_info);
+
+  // check that the effective uid/gid matches
+  if (ucred_euid == euid && ucred_egid == egid) {
+    ret =  0;  // allow
   }
+
+  ucred_free(cred_info);
+  return ret;
 }
 
 
