@@ -2019,10 +2019,9 @@ void PhaseIdealLoop::do_range_check( IdealLoopTree *loop, Node_List &old_new ) {
   Node *main_bol = main_cle->in(1);
   // Hacking loop bounds; need private copies of exit test
   if( main_bol->outcnt() > 1 ) {// BoolNode shared?
-    _igvn.hash_delete(main_cle);
     main_bol = main_bol->clone();// Clone a private BoolNode
     register_new_node( main_bol, main_cle->in(0) );
-    main_cle->set_req(1,main_bol);
+    _igvn.replace_input_of(main_cle, 1, main_bol);
   }
   Node *main_cmp = main_bol->in(1);
   if( main_cmp->outcnt() > 1 ) { // CmpNode shared?
