@@ -165,7 +165,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
 
-    public native void nativeLoadSystemColors(int[] systemColors);
+    private native void nativeLoadSystemColors(int[] systemColors);
 
     static UIDefaults getUIDefaults() {
         if (uidefaults == null) {
