@@ -21,8 +21,7 @@
  * questions.
  */
 
-/* @ignore JDK-8043896
- * @test LimitSharedSizes
+/* @test LimitSharedSizes
  * @summary Test handling of limits on shared space size
  * @library /testlibrary
  * @run main LimitSharedSizes
