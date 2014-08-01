@@ -127,7 +127,7 @@ public final class JapaneseEra
 
     // the number of defined JapaneseEra constants.
     // There could be an extra era defined in its configuration.
-    private static final int N_ERA_CONSTANTS = HEISEI.getValue() + ERA_OFFSET + 1;
+    private static final int N_ERA_CONSTANTS = HEISEI.getValue() + ERA_OFFSET;
 
     /**
      * Serialization version.
@@ -148,7 +148,7 @@ public final class JapaneseEra
         for (int i = N_ERA_CONSTANTS; i < ERA_CONFIG.length; i++) {
             CalendarDate date = ERA_CONFIG[i].getSinceDate();
             LocalDate isoDate = LocalDate.of(date.getYear(), date.getMonth(), date.getDayOfMonth());
-            KNOWN_ERAS[i] = new JapaneseEra(i - ERA_OFFSET, isoDate);
+            KNOWN_ERAS[i] = new JapaneseEra(i - ERA_OFFSET + 1, isoDate);
         }
     };
 
@@ -195,7 +195,7 @@ public final class JapaneseEra
      * @throws DateTimeException if the value is invalid
      */
     public static JapaneseEra of(int japaneseEra) {
-        if (japaneseEra < MEIJI.eraValue || japaneseEra + ERA_OFFSET - 1 >= KNOWN_ERAS.length) {
+        if (japaneseEra < MEIJI.eraValue || japaneseEra + ERA_OFFSET > KNOWN_ERAS.length) {
             throw new DateTimeException("Invalid era: " + japaneseEra);
         }
         return KNOWN_ERAS[ordinal(japaneseEra)];
