@@ -62,7 +62,7 @@ final class LdapRequest {
         cancelled = true;
 
         // Unblock reader of pending request
-        // Should only ever have atmost one waiter
+        // Should only ever have at most one waiter
         notify();
     }
 
