@@ -62,7 +62,7 @@ class ArrayAccessExpression extends UnaryExpression {
     /**
      * Check expression type
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = right.checkValue(env, ctx, vset, exp);
         if (index == null) {
             env.error(where, "array.index.required");
@@ -83,7 +83,7 @@ class ArrayAccessExpression extends UnaryExpression {
     }
 
     public Vset checkAmbigName(Environment env, Context ctx,
-                               Vset vset, Hashtable exp,
+                               Vset vset, Hashtable<Object, Object> exp,
                                UnaryExpression loc) {
         if (index == null) {
             vset = right.checkAmbigName(env, ctx, vset, exp, this);
@@ -109,7 +109,7 @@ class ArrayAccessExpression extends UnaryExpression {
      * Check the array if it appears on the LHS of an assignment
      */
     public Vset checkLHS(Environment env, Context ctx,
-                         Vset vset, Hashtable exp) {
+                         Vset vset, Hashtable<Object, Object> exp) {
         return checkValue(env, ctx, vset, exp);
     }
 
@@ -117,7 +117,7 @@ class ArrayAccessExpression extends UnaryExpression {
      * Check the array if it appears on the LHS of an op= expression
      */
     public Vset checkAssignOp(Environment env, Context ctx,
-                              Vset vset, Hashtable exp, Expression outside) {
+                              Vset vset, Hashtable<Object, Object> exp, Expression outside) {
         return checkValue(env, ctx, vset, exp);
     }
 
