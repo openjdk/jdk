@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,22 +67,19 @@ public class TypeAnnotationPosition {
         private TypePathEntry(TypePathEntryKind tag) {
             Assert.check(tag == TypePathEntryKind.ARRAY ||
                     tag == TypePathEntryKind.INNER_TYPE ||
-                    tag == TypePathEntryKind.WILDCARD,
-                    "Invalid TypePathEntryKind: " + tag);
+                    tag == TypePathEntryKind.WILDCARD);
             this.tag = tag;
             this.arg = 0;
         }
 
         public TypePathEntry(TypePathEntryKind tag, int arg) {
-            Assert.check(tag == TypePathEntryKind.TYPE_ARGUMENT,
-                    "Invalid TypePathEntryKind: " + tag);
+            Assert.check(tag == TypePathEntryKind.TYPE_ARGUMENT);
             this.tag = tag;
             this.arg = arg;
         }
 
         public static TypePathEntry fromBinary(int tag, int arg) {
-            Assert.check(arg == 0 || tag == TypePathEntryKind.TYPE_ARGUMENT.tag,
-                    "Invalid TypePathEntry tag/arg: " + tag + "/" + arg);
+            Assert.check(arg == 0 || tag == TypePathEntryKind.TYPE_ARGUMENT.tag);
             switch (tag) {
             case 0:
                 return ARRAY;
@@ -351,7 +348,7 @@ public class TypeAnnotationPosition {
         Iterator<Integer> iter = list.iterator();
         while (iter.hasNext()) {
             Integer fst = iter.next();
-            Assert.check(iter.hasNext(), "Could not decode type path: " + list);
+            Assert.check(iter.hasNext());
             Integer snd = iter.next();
             loc = loc.append(TypePathEntry.fromBinary(fst, snd));
         }
