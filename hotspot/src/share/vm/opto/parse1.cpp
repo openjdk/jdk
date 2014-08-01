@@ -575,12 +575,13 @@ Parse::Parse(JVMState* caller, ciMethod* parse_method, float expected_uses)
       decrement_age();
     }
   }
-  if (depth() == 1) {
+
+  if (depth() == 1 && !failing()) {
     // Add check to deoptimize the nmethod if RTM state was changed
     rtm_deopt();
   }
 
-  // Check for bailouts during method entry.
+  // Check for bailouts during method entry or RTM state check setup.
   if (failing()) {
     if (log)  log->done("parse");
     C->set_default_node_notes(caller_nn);

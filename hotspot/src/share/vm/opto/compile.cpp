@@ -1039,6 +1039,7 @@ void Compile::Init(int aliaslevel) {
 
   _node_note_array = NULL;
   _default_node_notes = NULL;
+  DEBUG_ONLY( _modified_nodes = NULL; ) // Used in Optimize()
 
   _immutable_memory = NULL; // filled in at first inquiry
 
@@ -1245,6 +1246,18 @@ void Compile::print_missing_nodes() {
     if (_log != NULL) {
       _log->tail("mismatched_nodes");
     }
+  }
+}
+void Compile::record_modified_node(Node* n) {
+  if (_modified_nodes != NULL && !_inlining_incrementally &&
+      n->outcnt() != 0 && !n->is_Con()) {
+    _modified_nodes->push(n);
+  }
+}
+
+void Compile::remove_modified_node(Node* n) {
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove(n);
   }
 }
 #endif
@@ -2035,6 +2048,9 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   // Initialize IterGVN with types and values from parse-time GVN
   PhaseIterGVN igvn(initial_gvn());
+#ifdef ASSERT
+  _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
+#endif
   {
     NOT_PRODUCT( TracePhase t2("iterGVN", &_t_iterGVN, TimeCompiler); )
     igvn.optimize();
@@ -2197,6 +2213,7 @@ void Compile::Optimize() {
     }
   }
 
+  DEBUG_ONLY( _modified_nodes = NULL; )
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
   process_print_inlining();
@@ -4031,6 +4048,7 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
   int j = 0;
   int identical = 0;
   int i = 0;
+  bool modified = false;
   for (; i < _expensive_nodes->length()-1; i++) {
     assert(j <= i, "can't write beyond current index");
     if (_expensive_nodes->at(i)->Opcode() == _expensive_nodes->at(i+1)->Opcode()) {
@@ -4043,20 +4061,23 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
       identical = 0;
     } else {
       Node* n = _expensive_nodes->at(i);
-      igvn.hash_delete(n);
-      n->set_req(0, NULL);
+      igvn.replace_input_of(n, 0, NULL);
       igvn.hash_insert(n);
+      modified = true;
     }
   }
   if (identical > 0) {
     _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
   } else if (_expensive_nodes->length() >= 1) {
     Node* n = _expensive_nodes->at(i);
-    igvn.hash_delete(n);
-    n->set_req(0, NULL);
+    igvn.replace_input_of(n, 0, NULL);
     igvn.hash_insert(n);
+    modified = true;
   }
   _expensive_nodes->trunc_to(j);
+  if (modified) {
+    igvn.optimize();
+  }
 }
 
 void Compile::add_expensive_node(Node * n) {

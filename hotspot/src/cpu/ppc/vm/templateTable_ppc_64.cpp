@@ -189,8 +189,12 @@ void TemplateTable::patch_bytecode(Bytecodes::Code new_bc, Register Rnew_bc, Reg
       assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
       assert(load_bc_into_bc_reg, "we use bc_reg as temp");
       __ get_cache_and_index_at_bcp(Rtemp /* dst = cache */, 1);
-      // Big Endian: ((*(cache+indices))>>((1+byte_no)*8))&0xFF
+      // ((*(cache+indices))>>((1+byte_no)*8))&0xFF:
+#if defined(VM_LITTLE_ENDIAN)
+      __ lbz(Rnew_bc, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 1 + byte_no, Rtemp);
+#else
       __ lbz(Rnew_bc, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 7 - (1 + byte_no), Rtemp);
+#endif
       __ cmpwi(CCR0, Rnew_bc, 0);
       __ li(Rnew_bc, (unsigned int)(unsigned char)new_bc);
       __ beq(CCR0, L_patch_done);
@@ -1839,8 +1843,8 @@ void TemplateTable::tableswitch() {
   __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
 
   // Load lo & hi.
-  __ lwz(Rlow_byte, BytesPerInt, Rdef_offset_addr);
-  __ lwz(Rhigh_byte, BytesPerInt * 2, Rdef_offset_addr);
+  __ get_u4(Rlow_byte, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
+  __ get_u4(Rhigh_byte, Rdef_offset_addr, 2 *BytesPerInt, InterpreterMacroAssembler::Unsigned);
 
   // Check for default case (=index outside [low,high]).
   __ cmpw(CCR0, R17_tos, Rlow_byte);
@@ -1854,12 +1858,17 @@ void TemplateTable::tableswitch() {
   __ profile_switch_case(Rindex, Rhigh_byte /* scratch */, Rscratch1, Rscratch2);
   __ sldi(Rindex, Rindex, LogBytesPerInt);
   __ addi(Rindex, Rindex, 3 * BytesPerInt);
+#if defined(VM_LITTLE_ENDIAN)
+  __ lwbrx(Roffset, Rdef_offset_addr, Rindex);
+  __ extsw(Roffset, Roffset);
+#else
   __ lwax(Roffset, Rdef_offset_addr, Rindex);
+#endif
   __ b(Ldispatch);
 
   __ bind(Ldefault_case);
   __ profile_switch_default(Rhigh_byte, Rscratch1);
-  __ lwa(Roffset, 0, Rdef_offset_addr);
+  __ get_u4(Roffset, Rdef_offset_addr, 0, InterpreterMacroAssembler::Signed);
 
   __ bind(Ldispatch);
 
@@ -1875,12 +1884,11 @@ void TemplateTable::lookupswitch() {
 // Table switch using linear search through cases.
 // Bytecode stream format:
 // Bytecode (1) | 4-byte padding | default offset (4) | count (4) | value/offset pair1 (8) | value/offset pair2 (8) | ...
-// Note: Everything is big-endian format here. So on little endian machines, we have to revers offset and count and cmp value.
+// Note: Everything is big-endian format here.
 void TemplateTable::fast_linearswitch() {
   transition(itos, vtos);
 
-  Label Lloop_entry, Lsearch_loop, Lfound, Lcontinue_execution, Ldefault_case;
-
+  Label Lloop_entry, Lsearch_loop, Lcontinue_execution, Ldefault_case;
   Register Rcount           = R3_ARG1,
            Rcurrent_pair    = R4_ARG2,
            Rdef_offset_addr = R5_ARG3, // Is going to contain address of default offset.
@@ -1894,47 +1902,40 @@ void TemplateTable::fast_linearswitch() {
   __ clrrdi(Rdef_offset_addr, Rdef_offset_addr, log2_long((jlong)BytesPerInt));
 
   // Setup loop counter and limit.
-  __ lwz(Rcount, BytesPerInt, Rdef_offset_addr);    // Load count.
+  __ get_u4(Rcount, Rdef_offset_addr, BytesPerInt, InterpreterMacroAssembler::Unsigned);
   __ addi(Rcurrent_pair, Rdef_offset_addr, 2 * BytesPerInt); // Rcurrent_pair now points to first pair.
 
-  // Set up search loop.
-  __ cmpwi(CCR0, Rcount, 0);
-  __ beq(CCR0, Ldefault_case);
-
   __ mtctr(Rcount);
+  __ cmpwi(CCR0, Rcount, 0);
+  __ bne(CCR0, Lloop_entry);
 
-  // linear table search
-  __ bind(Lsearch_loop);
-
-  __ lwz(Rvalue, 0, Rcurrent_pair);
-  __ lwa(Roffset, 1 * BytesPerInt, Rcurrent_pair);
-
-  __ cmpw(CCR0, Rvalue, Rcmp_value);
-  __ beq(CCR0, Lfound);
-
-  __ addi(Rcurrent_pair, Rcurrent_pair, 2 * BytesPerInt);
-  __ bdnz(Lsearch_loop);
-
-  // default case
+  // Default case
   __ bind(Ldefault_case);
-
-  __ lwa(Roffset, 0, Rdef_offset_addr);
+  __ get_u4(Roffset, Rdef_offset_addr, 0, InterpreterMacroAssembler::Signed);
   if (ProfileInterpreter) {
     __ profile_switch_default(Rdef_offset_addr, Rcount/* scratch */);
-    __ b(Lcontinue_execution);
+  }
+  __ b(Lcontinue_execution);
+
+  // Next iteration
+  __ bind(Lsearch_loop);
+  __ bdz(Ldefault_case);
+  __ addi(Rcurrent_pair, Rcurrent_pair, 2 * BytesPerInt);
+  __ bind(Lloop_entry);
+  __ get_u4(Rvalue, Rcurrent_pair, 0, InterpreterMacroAssembler::Unsigned);
+  __ cmpw(CCR0, Rvalue, Rcmp_value);
+  __ bne(CCR0, Lsearch_loop);
+
+  // Found, load offset.
+  __ get_u4(Roffset, Rcurrent_pair, BytesPerInt, InterpreterMacroAssembler::Signed);
+  // Calculate case index and profile
+  __ mfctr(Rcurrent_pair);
+  if (ProfileInterpreter) {
+    __ sub(Rcurrent_pair, Rcount, Rcurrent_pair);
+    __ profile_switch_case(Rcurrent_pair, Rcount /*scratch*/, Rdef_offset_addr/*scratch*/, Rscratch);
   }
 
-  // Entry found, skip Roffset bytecodes and continue.
-  __ bind(Lfound);
-  if (ProfileInterpreter) {
-    // Calc the num of the pair we hit. Careful, Rcurrent_pair points 2 ints
-    // beyond the actual current pair due to the auto update load above!
-    __ sub(Rcurrent_pair, Rcurrent_pair, Rdef_offset_addr);
-    __ addi(Rcurrent_pair, Rcurrent_pair, - 2 * BytesPerInt);
-    __ srdi(Rcurrent_pair, Rcurrent_pair, LogBytesPerInt + 1);
-    __ profile_switch_case(Rcurrent_pair, Rcount /*scratch*/, Rdef_offset_addr/*scratch*/, Rscratch);
-    __ bind(Lcontinue_execution);
-  }
+  __ bind(Lcontinue_execution);
   __ add(R14_bcp, Roffset, R14_bcp);
   __ dispatch_next(vtos);
 }
@@ -1990,7 +1991,7 @@ void TemplateTable::fast_binaryswitch() {
 
   // initialize i & j
   __ li(Ri,0);
-  __ lwz(Rj, -BytesPerInt, Rarray);
+  __ get_u4(Rj, Rarray, -BytesPerInt, InterpreterMacroAssembler::Unsigned);
 
   // and start.
   Label entry;
@@ -2007,7 +2008,11 @@ void TemplateTable::fast_binaryswitch() {
     //   i = h;
     // }
     __ sldi(Rscratch, Rh, log_entry_size);
+#if defined(VM_LITTLE_ENDIAN)
+    __ lwbrx(Rscratch, Rscratch, Rarray);
+#else
     __ lwzx(Rscratch, Rscratch, Rarray);
+#endif
 
     // if (key < current value)
     //   Rh = Rj
@@ -2039,20 +2044,20 @@ void TemplateTable::fast_binaryswitch() {
   // Ri = value offset
   __ sldi(Ri, Ri, log_entry_size);
   __ add(Ri, Ri, Rarray);
-  __ lwz(Rscratch, 0, Ri);
+  __ get_u4(Rscratch, Ri, 0, InterpreterMacroAssembler::Unsigned);
 
   Label not_found;
   // Ri = offset offset
   __ cmpw(CCR0, Rkey, Rscratch);
   __ beq(CCR0, not_found);
   // entry not found -> j = default offset
-  __ lwz(Rj, -2 * BytesPerInt, Rarray);
+  __ get_u4(Rj, Rarray, -2 * BytesPerInt, InterpreterMacroAssembler::Unsigned);
   __ b(default_case);
 
   __ bind(not_found);
   // entry found -> j = offset
   __ profile_switch_case(Rh, Rj, Rscratch, Rkey);
-  __ lwz(Rj, BytesPerInt, Ri);
+  __ get_u4(Rj, Ri, BytesPerInt, InterpreterMacroAssembler::Unsigned);
 
   if (ProfileInterpreter) {
     __ b(continue_execution);
@@ -2147,8 +2152,11 @@ void TemplateTable::resolve_cache_and_index(int byte_no, Register Rcache, Regist
 
   assert(byte_no == f1_byte || byte_no == f2_byte, "byte_no out of range");
   // We are resolved if the indices offset contains the current bytecode.
-  // Big Endian:
+#if defined(VM_LITTLE_ENDIAN)
+  __ lbz(Rscratch, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + byte_no + 1, Rcache);
+#else
   __ lbz(Rscratch, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()) + 7 - (byte_no + 1), Rcache);
+#endif
   // Acquire by cmp-br-isync (see below).
   __ cmpdi(CCR0, Rscratch, (int)bytecode());
   __ beq(CCR0, Lresolved);
