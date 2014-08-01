@@ -392,8 +392,8 @@ class Parser extends Scanner implements ParserActions, Constants {
             if (superName == null) {
                 env.error(type.getWhere(), "type.expected");
             }
-            Vector ext = new Vector(1);
-            Vector impl = new Vector(0);
+            Vector<IdentifierToken> ext = new Vector<>(1);
+            Vector<IdentifierToken> impl = new Vector<>(0);
             ext.addElement(new IdentifierToken(idNull));
             if (token == IMPLEMENTS || token == EXTENDS) {
                 env.error(pos, "anonymous.extends");
@@ -1682,7 +1682,7 @@ class Parser extends Scanner implements ParserActions, Constants {
             // Parse and ignore throws clause
             IdentifierToken exp[] = null;
             if (token == THROWS) {
-                Vector v = new Vector();
+                Vector<IdentifierToken> v = new Vector<>();
                 scan();
                 v.addElement(parseName(false));
                 while (token == COMMA) {
@@ -1890,8 +1890,8 @@ class Parser extends Scanner implements ParserActions, Constants {
         long p = pos;
         expect(IDENT);
 
-        Vector ext = new Vector();
-        Vector impl = new Vector();
+        Vector<IdentifierToken> ext = new Vector<>();
+        Vector<IdentifierToken> impl = new Vector<>();
         parseInheritance(ext, impl);
 
         ClassDefinition tmp = parseClassBody(nm, mod, ctx, doc, ext, impl, p);
@@ -1901,7 +1901,7 @@ class Parser extends Scanner implements ParserActions, Constants {
         return tmp;
     }
 
-    protected void parseInheritance(Vector ext, Vector impl) throws SyntaxError, IOException {
+    protected void parseInheritance(Vector<IdentifierToken> ext, Vector<IdentifierToken> impl) throws SyntaxError, IOException {
         // Parse extends clause
         if (token == EXTENDS) {
             scan();
@@ -1929,23 +1929,23 @@ class Parser extends Scanner implements ParserActions, Constants {
      */
     protected ClassDefinition parseClassBody(IdentifierToken nm, int mod,
                                              int ctx, String doc,
-                                             Vector ext, Vector impl, long p
+                                             Vector<IdentifierToken> ext, Vector<IdentifierToken> impl, long p
                                              ) throws SyntaxError, IOException {
         // Decide which is the super class
         IdentifierToken sup = null;
         if ((mod & M_INTERFACE) != 0) {
             if (impl.size() > 0) {
-                env.error(((IdentifierToken)impl.elementAt(0)).getWhere(),
+                env.error(impl.elementAt(0).getWhere(),
                           "intf.impl.intf");
             }
             impl = ext;
         } else {
             if (ext.size() > 0) {
                 if (ext.size() > 1) {
-                    env.error(((IdentifierToken)ext.elementAt(1)).getWhere(),
+                    env.error(ext.elementAt(1).getWhere(),
                               "multiple.inherit");
                 }
-                sup = (IdentifierToken)ext.elementAt(0);
+                sup = ext.elementAt(0);
             }
         }
 

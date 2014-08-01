@@ -82,9 +82,9 @@ class BinaryMember extends MemberDefinition {
     /**
      * Get arguments
      */
-    public Vector getArguments() {
+    public Vector<MemberDefinition> getArguments() {
         if (isConstructor() && (getClassDefinition().getSuperClass() == null)) {
-            Vector v = new Vector();
+            Vector<MemberDefinition> v = new Vector<>();
             v.addElement(new LocalMember(0, getClassDefinition(), 0,
                                         getClassDefinition().getType(), idThis));
             return v;

@@ -50,7 +50,7 @@ class AssignExpression extends BinaryAssignExpression {
     /**
      * Check an assignment expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         if (left instanceof IdentifierExpression) {
             // we don't want to mark an identifier as having a value
             // until having evaluated the right-hand side

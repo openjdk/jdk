@@ -46,7 +46,7 @@ class CommaExpression extends BinaryExpression {
     /**
      * Check void expression
      */
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = left.check(env, ctx, vset, exp);
         vset = right.check(env, ctx, vset, exp);
         return vset;
