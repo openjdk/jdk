@@ -1431,6 +1431,22 @@ bool verify_object_alignment() {
                 (int)ObjectAlignmentInBytes, os::vm_page_size());
     return false;
   }
+  if(SurvivorAlignmentInBytes == 0) {
+    SurvivorAlignmentInBytes = ObjectAlignmentInBytes;
+  } else {
+    if (!is_power_of_2(SurvivorAlignmentInBytes)) {
+      jio_fprintf(defaultStream::error_stream(),
+            "error: SurvivorAlignmentInBytes=%d must be power of 2\n",
+            (int)SurvivorAlignmentInBytes);
+      return false;
+    }
+    if (SurvivorAlignmentInBytes < ObjectAlignmentInBytes) {
+      jio_fprintf(defaultStream::error_stream(),
+          "error: SurvivorAlignmentInBytes=%d must be greater than ObjectAlignmentInBytes=%d \n",
+          (int)SurvivorAlignmentInBytes, (int)ObjectAlignmentInBytes);
+      return false;
+    }
+  }
   return true;
 }
 

@@ -27,6 +27,7 @@
 
 #include "gc_implementation/parallelScavenge/psOldGen.hpp"
 #include "gc_implementation/parallelScavenge/psPromotionManager.hpp"
+#include "gc_implementation/parallelScavenge/psPromotionLAB.inline.hpp"
 #include "gc_implementation/parallelScavenge/psScavenge.hpp"
 #include "oops/oop.psgc.inline.hpp"
 

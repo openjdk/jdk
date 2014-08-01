@@ -3871,6 +3871,9 @@ class CommandLineFlags {
   product(bool, PrintGCCause, true,                                         \
           "Include GC cause in GC logging")                                 \
                                                                             \
+  experimental(intx, SurvivorAlignmentInBytes, 0,                           \
+           "Default survivor space alignment in bytes")                     \
+                                                                            \
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
                                                                             \
