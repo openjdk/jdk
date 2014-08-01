@@ -2084,9 +2084,9 @@ Node* GraphKit::just_allocated_object(Node* current_control) {
 void GraphKit::round_double_arguments(ciMethod* dest_method) {
   // (Note:  TypeFunc::make has a cache that makes this fast.)
   const TypeFunc* tf    = TypeFunc::make(dest_method);
-  int             nargs = tf->_domain->_cnt - TypeFunc::Parms;
+  int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
   for (int j = 0; j < nargs; j++) {
-    const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
+    const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if( targ->basic_type() == T_DOUBLE ) {
       // If any parameters are doubles, they must be rounded before
       // the call, dstore_rounding does gvn.transform
@@ -2188,10 +2188,10 @@ void GraphKit::record_profiled_arguments_for_speculation(ciMethod* dest_method, 
     return;
   }
   const TypeFunc* tf    = TypeFunc::make(dest_method);
-  int             nargs = tf->_domain->_cnt - TypeFunc::Parms;
+  int             nargs = tf->domain()->cnt() - TypeFunc::Parms;
   int skip = Bytecodes::has_receiver(bc) ? 1 : 0;
   for (int j = skip, i = 0; j < nargs && i < TypeProfileArgsLimit; j++) {
-    const Type *targ = tf->_domain->field_at(j + TypeFunc::Parms);
+    const Type *targ = tf->domain()->field_at(j + TypeFunc::Parms);
     if (targ->basic_type() == T_OBJECT || targ->basic_type() == T_ARRAY) {
       bool maybe_null = true;
       ciKlass* better_type = NULL;

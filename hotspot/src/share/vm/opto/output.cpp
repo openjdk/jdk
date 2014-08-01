@@ -785,9 +785,10 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jint   *dp = (jint*)&d;
-    array->append(new ConstantIntValue(dp[1]));
-    array->append(new ConstantIntValue(dp[0]));
+    jlong_accessor acc;
+    acc.long_value = jlong_cast(d);
+    array->append(new ConstantIntValue(acc.words[1]));
+    array->append(new ConstantIntValue(acc.words[0]));
 #endif
     break;
   }
@@ -804,9 +805,10 @@ void Compile::FillLocArray( int idx, MachSafePointNode* sfpt, Node *local,
     // grow downwards in all implementations.
     // (If, on some machine, the interpreter's Java locals or stack
     // were to grow upwards, the embedded doubles would be word-swapped.)
-    jint *dp = (jint*)&d;
-    array->append(new ConstantIntValue(dp[1]));
-    array->append(new ConstantIntValue(dp[0]));
+    jlong_accessor acc;
+    acc.long_value = d;
+    array->append(new ConstantIntValue(acc.words[1]));
+    array->append(new ConstantIntValue(acc.words[0]));
 #endif
     break;
   }
