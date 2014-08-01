@@ -421,7 +421,7 @@ public class Rdn implements Serializable, Comparable<Object> {
         private String type;
         private Object value;
 
-        // If non-null, a cannonical representation of the value suitable
+        // If non-null, a canonical representation of the value suitable
         // for comparison using String.compareTo()
         private String comparable = null;
 
@@ -571,10 +571,10 @@ public class Rdn implements Serializable, Comparable<Object> {
     }
 
     /**
-     * Given an attribute value string formated according to the rules
+     * Given an attribute value string formatted according to the rules
      * specified in
      * <a href="http://www.ietf.org/rfc/rfc2253.txt">RFC 2253</a>,
-     * returns the unformated value.  Escapes and quotes are
+     * returns the unformatted value.  Escapes and quotes are
      * stripped away, and hex-encoded UTF-8 is converted to equivalent
      * UTF-16 characters. Returns a string value as a String, and a
      * binary value as a byte array.
