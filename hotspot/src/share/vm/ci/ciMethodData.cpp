@@ -81,19 +81,38 @@ ciMethodData::ciMethodData() : ciMetadata(NULL) {
 void ciMethodData::load_extra_data() {
   MethodData* mdo = get_MethodData();
 
+  MutexLocker(mdo->extra_data_lock());
+
   // speculative trap entries also hold a pointer to a Method so need to be translated
   DataLayout* dp_src  = mdo->extra_data_base();
-  DataLayout* end_src = mdo->extra_data_limit();
+  DataLayout* end_src = mdo->args_data_limit();
   DataLayout* dp_dst  = extra_data_base();
   for (;; dp_src = MethodData::next_extra(dp_src), dp_dst = MethodData::next_extra(dp_dst)) {
     assert(dp_src < end_src, "moved past end of extra data");
-    // New traps in the MDO can be added as we translate the copy so
-    // look at the entries in the copy.
-    switch(dp_dst->tag()) {
+    assert(((intptr_t)dp_dst) - ((intptr_t)extra_data_base()) == ((intptr_t)dp_src) - ((intptr_t)mdo->extra_data_base()), "source and destination don't match");
+
+    // New traps in the MDO may have been added since we copied the
+    // data (concurrent deoptimizations before we acquired
+    // extra_data_lock above) or can be removed (a safepoint may occur
+    // in the translate_from call below) as we translate the copy:
+    // update the copy as we go.
+    int tag = dp_src->tag();
+    if (tag != DataLayout::arg_info_data_tag) {
+      memcpy(dp_dst, dp_src, ((intptr_t)MethodData::next_extra(dp_src)) - ((intptr_t)dp_src));
+    }
+
+    switch(tag) {
     case DataLayout::speculative_trap_data_tag: {
       ciSpeculativeTrapData* data_dst = new ciSpeculativeTrapData(dp_dst);
       SpeculativeTrapData* data_src = new SpeculativeTrapData(dp_src);
+
       data_dst->translate_from(data_src);
+
+#ifdef ASSERT
+      SpeculativeTrapData* data_src2 = new SpeculativeTrapData(dp_src);
+      assert(data_src2->method() == data_src->method() && data_src2->bci() == data_src->bci(), "entries changed while translating");
+#endif
+
       break;
     }
     case DataLayout::bit_data_tag:
@@ -244,8 +263,8 @@ ciProfileData* ciMethodData::next_data(ciProfileData* current) {
 }
 
 ciProfileData* ciMethodData::bci_to_extra_data(int bci, ciMethod* m, bool& two_free_slots) {
-  DataLayout* dp  = data_layout_at(data_size());
-  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  DataLayout* dp  = extra_data_base();
+  DataLayout* end = args_data_limit();
   two_free_slots = false;
   for (;dp < end; dp = MethodData::next_extra(dp)) {
     switch(dp->tag()) {
@@ -492,8 +511,8 @@ ByteSize ciMethodData::offset_of_slot(ciProfileData* data, ByteSize slot_offset_
 
 ciArgInfoData *ciMethodData::arg_info() const {
   // Should be last, have to skip all traps.
-  DataLayout* dp  = data_layout_at(data_size());
-  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  DataLayout* dp  = extra_data_base();
+  DataLayout* end = args_data_limit();
   for (; dp < end; dp = MethodData::next_extra(dp)) {
     if (dp->tag() == DataLayout::arg_info_data_tag)
       return new ciArgInfoData(dp);
@@ -535,8 +554,8 @@ template<class T> void ciMethodData::dump_replay_data_call_type_helper(outputStr
 }
 
 void ciMethodData::dump_replay_data_extra_data_helper(outputStream* out, int round, int& count) {
-  DataLayout* dp  = data_layout_at(data_size());
-  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  DataLayout* dp  = extra_data_base();
+  DataLayout* end = args_data_limit();
 
   for (;dp < end; dp = MethodData::next_extra(dp)) {
     switch(dp->tag()) {
@@ -653,8 +672,8 @@ void ciMethodData::print_data_on(outputStream* st) {
     data->print_data_on(st);
   }
   st->print_cr("--- Extra data:");
-  DataLayout* dp  = data_layout_at(data_size());
-  DataLayout* end = data_layout_at(data_size() + extra_data_size());
+  DataLayout* dp  = extra_data_base();
+  DataLayout* end = args_data_limit();
   for (;; dp = MethodData::next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
     switch (dp->tag()) {
