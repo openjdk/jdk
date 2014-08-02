@@ -702,6 +702,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   ciType* elem_type;
 
   Node* res = alloc->result_cast();
+  assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = NULL;
   if (res != NULL) { // Could be NULL when there are no users
     res_type = _igvn.type(res)->isa_oopptr();
@@ -1036,6 +1037,8 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   if (!C->eliminate_boxing() || boxing->proj_out(TypeFunc::Parms) != NULL) {
     return false;
   }
+
+  assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
   extract_call_projections(boxing);
 

@@ -778,7 +778,7 @@ bool CallNode::has_non_debug_use(Node *n) {
 }
 
 // Returns the unique CheckCastPP of a call
-// or 'this' if there are several CheckCastPP
+// or 'this' if there are several CheckCastPP or unexpected uses
 // or returns NULL if there is no one.
 Node *CallNode::result_cast() {
   Node *cast = NULL;
@@ -794,6 +794,13 @@ Node *CallNode::result_cast() {
         return this;  // more than 1 CheckCastPP
       }
       cast = use;
+    } else if (!use->is_Initialize() &&
+               !use->is_AddP()) {
+      // Expected uses are restricted to a CheckCastPP, an Initialize
+      // node, and AddP nodes. If we encounter any other use (a Phi
+      // node can be seen in rare cases) return this to prevent
+      // incorrect optimizations.
+      return this;
     }
   }
   return cast;
