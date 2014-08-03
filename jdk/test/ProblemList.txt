@@ -205,7 +205,7 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 
 # 7164518: no PortUnreachableException on Mac
 # 8051952: Unreachable.java test failing on Windows
-sun/security/krb5/auto/Unreachable.java                         windows-all, macosx-all
+sun/security/krb5/auto/Unreachable.java                         windows-all,macosx-all
 
 # 7147060
 com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
@@ -241,8 +241,8 @@ sun/security/tools/keytool/standard.sh                          solaris-all
 # jdk_tools
 
 # Tests take too long, on sparcs see 7143279
-tools/pack200/CommandLineTests.java                             solaris-all, macosx-all
-tools/pack200/Pack200Test.java                                  solaris-all, macosx-all
+tools/pack200/CommandLineTests.java                             solaris-all,macosx-all
+tools/pack200/Pack200Test.java                                  solaris-all,macosx-all
 
 # 8007410
 tools/launcher/FXLauncherTest.java                              linux-all
@@ -252,7 +252,7 @@ tools/launcher/FXLauncherTest.java                              linux-all
 # jdk_jdi
 
 # 6983531
-com/sun/jdi/BadHandshakeTest.java                               linux-all, windows-all
+com/sun/jdi/BadHandshakeTest.java                               linux-all,windows-all
 
 # 8004127
 com/sun/jdi/RedefineImplementor.sh                              generic-all
