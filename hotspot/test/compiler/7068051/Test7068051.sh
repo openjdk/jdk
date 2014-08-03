@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -41,5 +41,5 @@ ${COMPILEJAVA}/bin/jar -uf0 foo.jar Test7068051.java
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7068051.java
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -showversion -Xbatch Test7068051 foo.jar
+${TESTJAVA}/bin/java ${TESTOPTS} -showversion -Xbatch Test7068051 f3oo.jar
 

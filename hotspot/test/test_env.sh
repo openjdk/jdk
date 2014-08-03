@@ -1,6 +1,6 @@
 #!/bin/sh
 #
-#  Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 #  This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ then
   TESTCLASSES=.
 fi
 echo "TESTCLASSES=${TESTCLASSES}"
+
+TESTOPTS="${TESTVMOPTS} ${TESTJAVAOPTS}"
+echo "TESTOPTS=${TESTOPTS}"
 
 # set platform-dependent variables
 OS=`uname -s`
@@ -101,14 +104,14 @@ THIS_DIR=.
 echo "THIS_DIR=${THIS_DIR}"
 
 # Check to ensure the java defined actually works
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -version
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -version
 if [ $? != 0 ]; then
-  echo "Wrong TESTJAVA or TESTVMOPTS:"
-  echo $TESTJAVA TESTVMOPTS
+  echo "Wrong TESTJAVA or TESTJAVAOPTS or TESTVMOPTS:"
+  echo ''$TESTJAVA'' ''$TESTJAVAOPTS'' ''$TESTVMOPTS''
   exit 1
 fi
 
-${TESTJAVA}${FS}bin${FS}java ${TESTVMOPTS} -Xinternalversion > vm_version.out 2>&1
+${TESTJAVA}${FS}bin${FS}java ${TESTOPTS} -Xinternalversion > vm_version.out 2>&1
 
 VM_TYPE="unknown"
 grep "Server" vm_version.out > ${NULL}
