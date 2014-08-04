@@ -43,7 +43,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * <p>The comment element is a place holder for any comments that the code
  * generator may want to include in the generated code.</p>
  *
- * @since Common Annotations 1.0
+ * @since 1.6, Common Annotations 1.0
  */
 
 @Documented

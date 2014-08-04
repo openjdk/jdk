@@ -249,7 +249,7 @@ import org.xml.sax.helpers.XMLFilterImpl;
  *
  * @author David Megginson, david@megginson.com
  * @version 0.2
- * @since JAXB1.0
+ * @since JAXB 1.0
  * @see org.xml.sax.XMLFilter
  * @see org.xml.sax.ContentHandler
  */

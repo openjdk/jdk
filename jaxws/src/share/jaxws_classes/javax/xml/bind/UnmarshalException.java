@@ -40,7 +40,7 @@ package javax.xml.bind;
  * @see JAXBException
  * @see Unmarshaller
  * @see ValidationEventHandler
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public class UnmarshalException extends JAXBException {
 

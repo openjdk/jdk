@@ -58,7 +58,7 @@ import java.io.Serializable;
  * </p>
  *
  * @author Kohsuke Kawaguchi, Joe Fialli
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 
 public class JAXBElement<T> implements Serializable {

@@ -39,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  * overloading conflicts in document literal mode. Only the <code>className</code>
  * is required in this case.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 
 @Target(ElementType.METHOD)
@@ -65,7 +65,7 @@ public @interface ResponseWrapper {
     /**
      * wsdl:part name for the wrapper part
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public String partName() default "";
 

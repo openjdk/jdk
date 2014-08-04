@@ -34,7 +34,7 @@ import java.io.PrintWriter;
  * @see JAXBContext
  * @see Marshaller
  * @see Unmarshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public class JAXBException extends Exception {
 

@@ -58,7 +58,7 @@ import javax.xml.stream.XMLStreamWriter;
  * This class is responsible for whitespace normalization.
  *
  * @author <ul><li>Ryan Shoemaker, Martin Grebac</li></ul>
- * @since JAXB1.0
+ * @since JAXB 1.0
  * @deprecated in JAXB 2.2.4 - use javax.xml.bind.DatatypeConverterImpl instead
  * or let us know why you can't
  */

@@ -42,6 +42,7 @@ import javax.xml.namespace.QName;
  * error information, is an example of a <code>SOAPBodyElement</code> object.
  *
  * @see SOAPFault
+ * @since 1.6
  */
 public interface SOAPBody extends SOAPElement {
 
@@ -90,7 +91,7 @@ public interface SOAPBody extends SOAPElement {
      * @exception SOAPException if there is a SOAP error
      * @see SOAPFault#setFaultCode
      * @see SOAPFault#setFaultString
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public SOAPFault addFault(Name faultCode, String faultString, Locale locale) throws SOAPException;
 
@@ -127,7 +128,7 @@ public interface SOAPBody extends SOAPElement {
      * @see SOAPFault#setFaultString
      * @see SOAPBody#addFault(Name faultCode, String faultString, Locale locale)
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPFault addFault(QName faultCode, String faultString, Locale locale)
         throws SOAPException;
@@ -164,7 +165,7 @@ public interface SOAPBody extends SOAPElement {
      *                if there is a SOAP error
      * @see SOAPFault#setFaultCode
      * @see SOAPFault#setFaultString
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public SOAPFault addFault(Name faultCode, String faultString)
         throws SOAPException;
@@ -202,7 +203,7 @@ public interface SOAPBody extends SOAPElement {
      * @see SOAPFault#setFaultCode
      * @see SOAPFault#setFaultString
      * @see SOAPBody#addFault(Name faultCode, String faultString)
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPFault addFault(QName faultCode, String faultString)
         throws SOAPException;
@@ -252,7 +253,7 @@ public interface SOAPBody extends SOAPElement {
      * @exception SOAPException
      *                if a SOAP error occurs
      * @see SOAPBody#addBodyElement(Name)
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPBodyElement addBodyElement(QName qname) throws SOAPException;
 
@@ -272,7 +273,7 @@ public interface SOAPBody extends SOAPElement {
      *         that was added.
      * @exception SOAPException
      *                if the <code>Document</code> cannot be added
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public SOAPBodyElement addDocument(org.w3c.dom.Document document)
         throws SOAPException;
@@ -290,7 +291,7 @@ public interface SOAPBody extends SOAPElement {
      *                if there is not exactly one child <code>SOAPElement</code> of the <code>
      *              <code>SOAPBody</code>.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public org.w3c.dom.Document extractContentAsDocument()
         throws SOAPException;
