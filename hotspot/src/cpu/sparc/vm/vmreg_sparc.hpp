@@ -25,10 +25,35 @@
 #ifndef CPU_SPARC_VM_VMREG_SPARC_HPP
 #define CPU_SPARC_VM_VMREG_SPARC_HPP
 
-  bool is_Register();
-  Register as_Register();
+inline bool is_Register() { return value() >= 0 && value() < ConcreteRegisterImpl::max_gpr; }
+inline bool is_FloatRegister() { return value() >= ConcreteRegisterImpl::max_gpr &&
+                                                   value() < ConcreteRegisterImpl::max_fpr; }
+inline Register as_Register() {
 
-  bool is_FloatRegister();
-  FloatRegister as_FloatRegister();
+  assert( is_Register() && is_even(value()), "even-aligned GPR name" );
+  // Yuk
+  return ::as_Register(value()>>1);
+}
+
+inline FloatRegister as_FloatRegister() {
+  assert( is_FloatRegister(), "must be" );
+  // Yuk
+  return ::as_FloatRegister( value() - ConcreteRegisterImpl::max_gpr );
+}
+
+inline   bool is_concrete() {
+  assert(is_reg(), "must be");
+  int v = value();
+  if ( v  <  ConcreteRegisterImpl::max_gpr ) {
+    return is_even(v);
+  }
+  // F0..F31
+  if ( v <= ConcreteRegisterImpl::max_gpr + 31) return true;
+  if ( v <  ConcreteRegisterImpl::max_fpr) {
+    return is_even(v);
+  }
+  assert(false, "what register?");
+  return false;
+}
 
 #endif // CPU_SPARC_VM_VMREG_SPARC_HPP

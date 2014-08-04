@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -36,6 +36,8 @@
 
 // This file contains the platform-independent parts
 // of the interpreter and the interpreter generator.
+
+class InterpreterMacroAssembler;
 
 //------------------------------------------------------------------------------------------------------------------------
 // An InterpreterCodelet is a piece of interpreter code. All
@@ -99,42 +101,17 @@ class CodeletMark: ResourceMark {
     int codelet_size = AbstractInterpreter::code()->available_space() - 2*K;
 
     // Guarantee there's a little bit of code space left.
-    guarantee (codelet_size > 0 && (size_t)codelet_size >  2*K,
-               "not enough space for interpreter generation");
+    guarantee(codelet_size > 0 && (size_t)codelet_size > 2*K,
+              "not enough space for interpreter generation");
 
     return codelet_size;
   }
 
  public:
-  CodeletMark(
-    InterpreterMacroAssembler*& masm,
-    const char* description,
-    Bytecodes::Code bytecode = Bytecodes::_illegal):
-    _clet((InterpreterCodelet*)AbstractInterpreter::code()->request(codelet_size())),
-    _cb(_clet->code_begin(), _clet->code_size())
-
-  { // request all space (add some slack for Codelet data)
-    assert (_clet != NULL, "we checked not enough space already");
-
-    // initialize Codelet attributes
-    _clet->initialize(description, bytecode);
-    // create assembler for code generation
-    masm  = new InterpreterMacroAssembler(&_cb);
-    _masm = &masm;
-  }
-
-  ~CodeletMark() {
-    // align so printing shows nop's instead of random code at the end (Codelets are aligned)
-    (*_masm)->align(wordSize);
-    // make sure all code is in code buffer
-    (*_masm)->flush();
-
-
-    // commit Codelet
-    AbstractInterpreter::code()->commit((*_masm)->code()->pure_insts_size(), (*_masm)->code()->strings());
-    // make sure nobody can use _masm outside a CodeletMark lifespan
-    *_masm = NULL;
-  }
+  CodeletMark(InterpreterMacroAssembler*& masm,
+              const char* description,
+              Bytecodes::Code bytecode = Bytecodes::_illegal);
+  ~CodeletMark();
 };
 
 // Wrapper classes to produce Interpreter/InterpreterGenerator from either
@@ -142,9 +119,10 @@ class CodeletMark: ResourceMark {
 
 class Interpreter: public CC_INTERP_ONLY(CppInterpreter) NOT_CC_INTERP(TemplateInterpreter) {
 
-  public:
+ public:
   // Debugging/printing
-  static InterpreterCodelet* codelet_containing(address pc)     { return (InterpreterCodelet*)_code->stub_containing(pc); }
+  static InterpreterCodelet* codelet_containing(address pc) { return (InterpreterCodelet*)_code->stub_containing(pc); }
+
 #ifdef TARGET_ARCH_x86
 # include "interpreter_x86.hpp"
 #endif

@@ -25,6 +25,10 @@
 package sun.hotspot;
 
 import java.lang.reflect.Executable;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Function;
+import java.util.stream.Stream;
 import java.security.BasicPermission;
 import sun.hotspot.parser.DiagnosticCommand;
 
@@ -171,4 +175,15 @@ public class WhiteBox {
   public native Long    getUint64VMFlag(String name);
   public native String  getStringVMFlag(String name);
   public native Double  getDoubleVMFlag(String name);
+  private final List<Function<String,Object>> flagsGetters = Arrays.asList(
+    this::getBooleanVMFlag, this::getIntxVMFlag, this::getUintxVMFlag,
+    this::getUint64VMFlag, this::getStringVMFlag, this::getDoubleVMFlag);
+
+  public Object getVMFlag(String name) {
+    return flagsGetters.stream()
+                       .map(f -> f.apply(name))
+                       .filter(x -> x != null)
+                       .findAny()
+                       .orElse(null);
+  }
 }

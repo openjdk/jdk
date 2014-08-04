@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,103 +24,116 @@
 /**
  * @test
  * @bug 6589834
- * @summary deoptimization problem with -XX:+DeoptimizeALot
- *
- * @run main Test_ia32
+ * @summary Safepoint placed between stack pointer increment and decrement leads
+ *          to interpreter's stack corruption after deoptimization.
+ * @library /testlibrary /testlibrary/whitebox
+ * @build ClassFileInstaller sun.hotspot.WhiteBox com.oracle.java.testlibrary.*
+ *        Test_ia32 InlinedArrayCloneTestCase
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
+ *      -XX:+WhiteBoxAPI -XX:CompileOnly=InlinedArrayCloneTestCase
+ *      -XX:CompileCommand=dontinline,InlinedArrayCloneTestCase.invokeArrayClone
+ *      -XX:CompileCommand=inline,InlinedArrayCloneTestCase.verifyArguments
+ *      -XX:+IgnoreUnrecognizedVMOptions -XX:+VerifyStack Test_ia32
  */
 
-/***************************************************************************************
-NOTE: The bug shows up (with several "Bug!" message) even without the
-      flag -XX:+DeoptimizeALot. In a debug build, you may want to try
-      the flags -XX:+VerifyStack and -XX:+DeoptimizeALot to get more information.
-****************************************************************************************/
-import java.lang.reflect.Constructor;
+import java.lang.reflect.Method;
+
+import com.oracle.java.testlibrary.Asserts;
+import sun.hotspot.WhiteBox;
 
 public class Test_ia32 {
+    private static final int NUM_THREADS
+            = Math.min(100, 2 * Runtime.getRuntime().availableProcessors());
+    private static final int CLONE_LENGTH = 1000;
 
-    public static int NUM_THREADS = 100;
+    private static WhiteBox wb = WhiteBox.getWhiteBox();
 
-    public static int CLONE_LENGTH = 1000;
+    private final LoadedClass[] ARRAY = new LoadedClass[Test_ia32.CLONE_LENGTH];
+    private volatile boolean doSpin = true;
+    private volatile boolean testFailed = false;
 
-    public static void main(String[] args) throws InterruptedException, ClassNotFoundException {
+    public boolean continueExecution() {
+        return doSpin;
+    }
 
-        Reflector[] threads = new Reflector[NUM_THREADS];
+    public void stopExecution() {
+        doSpin = false;
+    }
+
+    public boolean isTestFailed() {
+        return testFailed;
+    }
+
+    public void setTestFailed() {
+        this.testFailed = true;
+        stopExecution();
+    }
+
+    public LoadedClass[] getArray() {
+        return ARRAY;
+    }
+
+    public void runTest() {
+        Thread[] threads = new Thread[Test_ia32.NUM_THREADS];
+        Method method;
+
+        try {
+            method = InlinedArrayCloneTestCase.class.getDeclaredMethod(
+                    "invokeArrayClone", LoadedClass[].class);
+        } catch (NoSuchMethodException e) {
+            throw new Error("Tested method not found", e);
+        }
+
+        Asserts.assertTrue(wb.isMethodCompilable(method),
+                "Method " + method.getName() + " should be compilable.");
+
         for (int i = 0; i < threads.length; i++) {
-            threads[i] = new Reflector();
+            threads[i] = new Thread(new InlinedArrayCloneTestCase(this));
             threads[i].start();
         }
 
-        System.out.println("Give Reflector.run() some time to compile...");
-        Thread.sleep(5000);
+        /*
+         * Wait until InlinedArrayCloneTestCase::invokeArrayClone is compiled.
+         */
+        while (!wb.isMethodCompiled(method)) {
+            Thread.yield();
+        }
 
-        System.out.println("Load RMISecurityException causing run() deoptimization");
-        ClassLoader.getSystemClassLoader().loadClass("java.rmi.RMISecurityException");
+        /*
+         * Load NotLoadedClass to cause deoptimization of
+         * InlinedArrayCloneTestCase::invokeArrayClone due to invalidated
+         * dependency.
+         */
+        try {
+            Class.forName("NotLoadedClass");
+        } catch (ClassNotFoundException e) {
+            throw new Error("Unable to load class that invalidates "
+                    + "CHA-dependency for method " + method.getName(), e);
+        }
 
-        for (Reflector thread : threads)
-            thread.requestStop();
+        stopExecution();
 
-        for (Reflector thread : threads)
+        for (Thread thread : threads) {
             try {
                 thread.join();
             } catch (InterruptedException e) {
-                System.out.println(e);
+                throw new Error("Fail to join thread " + thread, e);
             }
+        }
 
+        Asserts.assertFalse(isTestFailed(), "Test failed.");
     }
 
+    public static void main(String[] args) {
+        new Test_ia32().runTest();
+    }
 }
 
-class Reflector extends Thread {
+class LoadedClass {
+}
 
-    volatile boolean _doSpin = true;
-
-    Test_ia32[] _tests;
-
-    Reflector() {
-        _tests = new Test_ia32[Test_ia32.CLONE_LENGTH];
-        for (int i = 0; i < _tests.length; i++) {
-            _tests[i] = new Test_ia32();
-        }
-    }
-
-    static int g(int i1, int i2, Test_ia32[] arr, int i3, int i4) {
-
-        if (!(i1==1 && i2==2 && i3==3 && i4==4)) {
-            System.out.println("Bug!");
-        }
-
-        return arr.length;
-    }
-
-    static int f(Test_ia32[] arr) {
-        return g(1, 2, arr.clone(), 3, 4);
-    }
-
-    @Override
-    public void run() {
-        Constructor[] ctrs = null;
-        Class<Test_ia32> klass = Test_ia32.class;
-        try {
-            ctrs = klass.getConstructors();
-        } catch (SecurityException e) {
-            System.out.println(e);
-        }
-
-        try {
-            while (_doSpin) {
-                if (f(_tests) < 0)
-                    System.out.println("return value usage");
-            }
-        } catch (NullPointerException e) {
-            e.printStackTrace();
-        }
-
-        System.out.println(this + " - stopped.");
-    }
-
-    public void requestStop() {
-        System.out.println(this + " - stop requested.");
-        _doSpin = false;
-    }
-
+@SuppressWarnings("unused")
+class NotLoadedClass extends LoadedClass {
 }

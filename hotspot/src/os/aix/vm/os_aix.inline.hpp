@@ -36,9 +36,6 @@
 #include <sys/ioctl.h>
 #include <netdb.h>
 
-// Defined in the system headers included above.
-#undef rem_size
-
 inline void* os::thread_local_storage_at(int index) {
   return pthread_getspecific((pthread_key_t)index);
 }

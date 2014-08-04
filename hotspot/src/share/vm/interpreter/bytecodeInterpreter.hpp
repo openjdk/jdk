@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2002, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2002, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,21 +32,6 @@
 #include "runtime/frame.hpp"
 #include "runtime/globals.hpp"
 #include "utilities/globalDefinitions.hpp"
-#ifdef TARGET_ARCH_x86
-# include "bytes_x86.hpp"
-#endif
-#ifdef TARGET_ARCH_sparc
-# include "bytes_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_zero
-# include "bytes_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_arm
-# include "bytes_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_ppc
-# include "bytes_ppc.hpp"
-#endif
 
 #ifdef CC_INTERP
 
@@ -55,6 +40,8 @@
     (topOfStack -= ((count) * Interpreter::stackElementWords))
 
 // CVM definitions find hotspot equivalents...
+
+class InterpreterMacroAssembler;
 
 union VMJavaVal64 {
     jlong   l;

@@ -146,6 +146,10 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
         }
 
         protected int countCpuInstructions(byte[] nativeCode) {
+            return countCpuInstructions(nativeCode, instrMask, instrPattern);
+        }
+
+        public static int countCpuInstructions(byte[] nativeCode, byte[] instrMask, byte[] instrPattern) {
             int count = 0;
             int patternSize = Math.min(instrMask.length, instrPattern.length);
             boolean found;
@@ -181,6 +185,23 @@ public class BmiIntrinsicBase extends CompilerWhiteBoxTest {
 
         protected String getVMFlag() {
             return "UseBMI1Instructions";
+        }
+    }
+
+    abstract static class BmiTestCase_x64 extends BmiTestCase {
+        protected byte[] instrMask_x64;
+        protected byte[] instrPattern_x64;
+
+        protected BmiTestCase_x64(Method method) {
+            super(method);
+        }
+
+        protected int countCpuInstructions(byte[] nativeCode) {
+            int cnt = super.countCpuInstructions(nativeCode);
+            if (Platform.isX64()) { // on x64 platform the instruction we search for can be encoded in 2 different ways
+                cnt += countCpuInstructions(nativeCode, instrMask_x64, instrPattern_x64);
+            }
+            return cnt;
         }
     }
 }
