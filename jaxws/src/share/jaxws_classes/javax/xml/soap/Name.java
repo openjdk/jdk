@@ -73,6 +73,7 @@ package javax.xml.soap;
  * in favor of <code>javax.xml.namespace.QName<code>
  * @see SOAPEnvelope#createName(String, String, String) SOAPEnvelope.createName
  * @see SOAPFactory#createName(String, String, String) SOAPFactory.createName
+ * @since 1.6
  */
 public interface Name {
     /**

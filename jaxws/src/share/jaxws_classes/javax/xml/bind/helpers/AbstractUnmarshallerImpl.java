@@ -68,7 +68,7 @@ import java.net.URL;
  *         <li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li>
  *         </ul>
  * @see javax.xml.bind.Unmarshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public abstract class AbstractUnmarshallerImpl implements Unmarshaller
 {

@@ -39,7 +39,7 @@ import java.lang.annotation.RetentionPolicy;
  *  This annotation may be overriden programmatically or via
  *  deployment descriptors, depending on the platform in use.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
  *
  **/
 @Target(ElementType.TYPE)

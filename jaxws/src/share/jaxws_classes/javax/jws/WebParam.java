@@ -27,6 +27,9 @@ package javax.jws;
 import java.lang.annotation.*;
 import static java.lang.annotation.ElementType.*;
 
+/**
+ * @since 1.6
+ */
 @Retention(value=RetentionPolicy.RUNTIME)
 @Target({PARAMETER})
 public @interface WebParam {

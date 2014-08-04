@@ -45,7 +45,7 @@ import java.util.List;
  * @see javax.xml.bind.ValidationEventHandler
  * @see javax.xml.bind.ValidationEvent
  * @see javax.xml.bind.ValidationEventLocator
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public class ValidationEventCollector implements ValidationEventHandler
 {
