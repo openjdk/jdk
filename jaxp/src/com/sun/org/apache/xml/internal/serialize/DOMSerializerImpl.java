@@ -72,6 +72,9 @@ import org.w3c.dom.ls.LSSerializerFilter;
  * @author Gopal Sharma, Sun Microsystems
  * @author Arun Yadav, Sun Microsystems
  * @author Sunitha Reddy, Sun Microsystems
+ *
+ * @deprecated As of JDK 1.9, Xerces 2.9.0, replaced by
+ * {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}
  */
 public class DOMSerializerImpl implements LSSerializer, DOMConfiguration {
 
