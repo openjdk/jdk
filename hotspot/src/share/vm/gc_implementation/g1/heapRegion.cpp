@@ -381,18 +381,7 @@ HeapRegion::HeapRegion(uint hrs_index,
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
-  // We're not using an iterator given that it will wrap around when
-  // it reaches the last region and this is not what we want here.
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  uint index = hrs_index() + 1;
-  while (index < g1h->n_regions()) {
-    HeapRegion* hr = g1h->region_at(index);
-    if (!hr->isHumongous()) {
-      return hr;
-    }
-    index += 1;
-  }
-  return NULL;
+  return G1CollectedHeap::heap()->next_compaction_region(this);
 }
 
 void HeapRegion::note_self_forwarding_removal_start(bool during_initial_mark,

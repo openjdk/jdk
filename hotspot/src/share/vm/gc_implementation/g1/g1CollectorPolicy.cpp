@@ -1047,7 +1047,7 @@ void G1CollectorPolicy::record_collection_pause_end(double pause_time_ms, Evacua
 
   bool new_in_marking_window = _in_marking_window;
   bool new_in_marking_window_im = false;
-  if (during_initial_mark_pause()) {
+  if (last_pause_included_initial_mark) {
     new_in_marking_window = true;
     new_in_marking_window_im = true;
   }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,6 @@
 //    Lesp         first free element of expression stack
 //                 (which grows towards __higher__ addresses)
 //    Lbcp         is set to address of bytecode to execute
-//                 It is accessed in the frame under the name "bcx".
 //                 It may at times (during GC) be an index instead.
 //    Lmethod      the method being interpreted
 //    Llocals      the base pointer for accessing the locals array

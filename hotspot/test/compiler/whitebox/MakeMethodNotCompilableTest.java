@@ -23,9 +23,9 @@
 
 /*
  * @test MakeMethodNotCompilableTest
- * @ignore 8046268
  * @bug 8012322 8006683 8007288 8022832
  * @library /testlibrary /testlibrary/whitebox
+ * @ignore 8046268
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* MakeMethodNotCompilableTest
