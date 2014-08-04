@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,64 +27,43 @@ import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
 
-import javax.lang.model.element.TypeElement;
-import javax.tools.JavaFileObject;
-
-import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
-import com.sun.source.util.Plugin;
-import com.sun.source.util.TaskEvent;
-import com.sun.source.util.TaskListener;
-import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.BasicJavacTask;
+import com.sun.tools.javac.code.Symtab;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.JCDiagnostic;
+import com.sun.tools.javac.util.JCDiagnostic.DiagnosticType;
 import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.RawDiagnosticFormatter;
 
 import static com.sun.source.util.TaskEvent.Kind;
 
-public abstract class AbstractCodingRulesAnalyzer implements Plugin {
+public abstract class AbstractCodingRulesAnalyzer {
 
-    protected Log log;
-    protected Trees trees;
+    private   final Log log;
+    private   final boolean rawDiagnostics;
+    private   final JCDiagnostic.Factory diags;
+    private   final Options options;
+    protected final Messages messages;
+    protected final Symtab syms;
     protected TreeScanner treeVisitor;
     protected Kind eventKind;
-    protected Messages messages;
 
-    public void init(JavacTask task, String... args) {
+    public AbstractCodingRulesAnalyzer(JavacTask task) {
         BasicJavacTask impl = (BasicJavacTask)task;
         Context context = impl.getContext();
         log = Log.instance(context);
-        trees = Trees.instance(task);
+        options = Options.instance(context);
+        rawDiagnostics = options.isSet("rawDiagnostics");
+        diags = JCDiagnostic.Factory.instance(context);
         messages = new Messages();
-        task.addTaskListener(new PostAnalyzeTaskListener());
+        syms = Symtab.instance(context);
     }
 
-    public class PostAnalyzeTaskListener implements TaskListener {
-
-        @Override
-        public void started(TaskEvent taskEvent) {}
-
-        @Override
-        public void finished(TaskEvent taskEvent) {
-            if (taskEvent.getKind().equals(eventKind)) {
-                TypeElement typeElem = taskEvent.getTypeElement();
-                Tree tree = trees.getTree(typeElem);
-                if (tree != null) {
-                    JavaFileObject prevSource = log.currentSourceFile();
-                    try {
-                        log.useSource(taskEvent.getCompilationUnit().getSourceFile());
-                        treeVisitor.scan((JCTree)tree);
-                    } finally {
-                        log.useSource(prevSource);
-                    }
-                }
-            }
-        }
-    }
-
-    class Messages {
+    protected class Messages {
         ResourceBundle bundle;
 
         Messages() {
@@ -93,7 +72,14 @@ public abstract class AbstractCodingRulesAnalyzer implements Plugin {
         }
 
         public void error(JCTree tree, String code, Object... args) {
-            String msg = (code == null) ? (String) args[0] : localize(code, args);
+            String msg;
+            if (rawDiagnostics) {
+                RawDiagnosticFormatter f = new RawDiagnosticFormatter(options);
+                msg = f.formatMessage(diags.create(DiagnosticType.FRAGMENT, log.currentSource(),
+                                                   tree.pos(), code, args), null);
+            } else {
+                msg = (code == null) ? (String) args[0] : localize(code, args);
+            }
             log.error(tree, "proc.messager", msg.toString());
         }
 

@@ -1,0 +1,107 @@
+/*
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+ *
+ * This code is free software; you can redistribute it and/or modify it
+ * under the terms of the GNU General Public License version 2 only, as
+ * published by the Free Software Foundation.
+ *
+ * This code is distributed in the hope that it will be useful, but WITHOUT
+ * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+ * FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+ * version 2 for more details (a copy is included in the LICENSE file that
+ * accompanied this code).
+ *
+ * You should have received a copy of the GNU General Public License version
+ * 2 along with this work; if not, write to the Free Software Foundation,
+ * Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+ *
+ * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+ * or visit www.oracle.com if you need additional information or have any
+ * questions.
+ */
+
+package crules;
+
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+
+import javax.lang.model.element.TypeElement;
+import javax.tools.JavaFileObject;
+
+import com.sun.source.tree.Tree;
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.Plugin;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskEvent.Kind;
+import com.sun.source.util.TaskListener;
+import com.sun.source.util.Trees;
+import com.sun.tools.javac.api.BasicJavacTask;
+import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.Log;
+
+public class CodingRulesAnalyzerPlugin implements Plugin {
+
+    protected Log log;
+    protected Trees trees;
+
+    public void init(JavacTask task, String... args) {
+        BasicJavacTask impl = (BasicJavacTask)task;
+        Context context = impl.getContext();
+        log = Log.instance(context);
+        trees = Trees.instance(task);
+        task.addTaskListener(new PostAnalyzeTaskListener(
+                new MutableFieldsAnalyzer(task),
+                new AssertCheckAnalyzer(task)
+        ));
+    }
+
+    public class PostAnalyzeTaskListener implements TaskListener {
+        private final Map<Kind, List<AbstractCodingRulesAnalyzer>> analyzers = new HashMap<>();
+
+        public PostAnalyzeTaskListener(AbstractCodingRulesAnalyzer... analyzers) {
+            for (AbstractCodingRulesAnalyzer analyzer : analyzers) {
+                List<AbstractCodingRulesAnalyzer> currentAnalyzers = this.analyzers.get(analyzer.eventKind);
+
+                if (currentAnalyzers == null) {
+                    this.analyzers.put(analyzer.eventKind, currentAnalyzers = new ArrayList<>());
+                }
+
+                currentAnalyzers.add(analyzer);
+            }
+        }
+
+        @Override
+        public void started(TaskEvent taskEvent) {}
+
+        @Override
+        public void finished(TaskEvent taskEvent) {
+            List<AbstractCodingRulesAnalyzer> currentAnalyzers = this.analyzers.get(taskEvent.getKind());
+
+            if (currentAnalyzers != null) {
+                TypeElement typeElem = taskEvent.getTypeElement();
+                Tree tree = trees.getTree(typeElem);
+                if (tree != null) {
+                    JavaFileObject prevSource = log.currentSourceFile();
+                    try {
+                        log.useSource(taskEvent.getCompilationUnit().getSourceFile());
+                        for (AbstractCodingRulesAnalyzer analyzer : currentAnalyzers) {
+                            analyzer.treeVisitor.scan((JCTree)tree);
+                        }
+                    } finally {
+                        log.useSource(prevSource);
+                    }
+                }
+            }
+        }
+    }
+
+    @Override
+    public String getName() {
+        return "coding_rules";
+    }
+
+}

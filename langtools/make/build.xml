@@ -760,7 +760,8 @@
     **** crules targets.
     -->
 
-    <target name="build-crules" depends="-def-compilecrules,-def-build-jar-with-services">
+    <target name="build-crules"
+            depends="-def-compilecrules,-def-build-jar-with-services,build-bootstrap-javac,-create-import-jdk-stubs">
         <compilecrules/>
         <build-jar-with-services
                     name="crules"
@@ -770,13 +771,19 @@
                     jarmainclass=""
                     jarclasspath="crules.jar"
                     service.type="com.sun.source.util.Plugin"
-                    service.provider="crules.MutableFieldsAnalyzer"/>
+                    service.provider="crules.CodingRulesAnalyzerPlugin"/>
         <build-tool name="crules"/>
+    </target>
+
+    <target name="jtreg-crules" depends="build-javac,build-crules,-def-jtreg">
+        <jtreg-tool name="crules"
+                    tests="${crules.tests}"
+                    extra.jvmargs="-Xbootclasspath/a:${build.toolclasses.dir}/crules.jar" />
     </target>
 
     <target name="check-coding-rules" depends="build-bootstrap-javac,-create-import-jdk-stubs,build-crules">
         <build-classes includes="${javac.includes}"
-            plugin.options="-J-Xbootclasspath/a:${build.toolclasses.dir}/crules.jar -Xplugin:mutable_fields_analyzer" />
+            plugin.options="-J-Xbootclasspath/a:${build.toolclasses.dir}/crules.jar -Xplugin:coding_rules" />
     </target>
 
     <!--
@@ -1150,6 +1157,7 @@
             <attribute name="options" default="${other.jtreg.options}"/>
             <attribute name="keywords" default="-keywords:!ignore"/>
             <attribute name="jpda.jvmargs" default=""/>
+            <attribute name="extra.jvmargs" default=""/>
             <sequential>
                 <property name="coverage.options" value=""/>              <!-- default -->
                 <property name="coverage.classpath" value=""/>            <!-- default -->
@@ -1163,7 +1171,7 @@
                     samevm="@{samevm}" verbose="@{verbose}"
                     failonerror="false" resultproperty="jtreg.@{name}.result"
                     javacoptions="-g"
-                    vmoptions="${coverage.options} -Xbootclasspath/p:${coverage.classpath}${path.separator}${build.classes.dir} @{jpda.jvmargs}">
+                    vmoptions="${coverage.options} -Xbootclasspath/p:${coverage.classpath}${path.separator}${build.classes.dir} @{jpda.jvmargs} @{extra.jvmargs}">
                     <arg line="@{keywords}"/>
                     <arg line="@{options}"/>
                     <arg line="@{tests}"/>
