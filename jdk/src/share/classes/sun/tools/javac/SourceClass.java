@@ -70,7 +70,7 @@ class SourceClass extends ClassDefinition {
    /**
      * The list of class dependencies
      */
-    Hashtable deps = new Hashtable(11);
+    Hashtable<ClassDeclaration, ClassDeclaration> deps = new Hashtable<>(11);
 
     /**
      * The field used to represent "this" in all of my code.
@@ -357,7 +357,7 @@ class SourceClass extends ClassDefinition {
                     f.addModifiers(M_ABSTRACT);
                 }
             }
-            Vector arguments = f.getArguments();
+            Vector<MemberDefinition> arguments = f.getArguments();
             if (arguments != null) {
                 // arguments can be null if this is an implicit abstract method
                 int argumentLength = arguments.size();
@@ -921,9 +921,9 @@ class SourceClass extends ClassDefinition {
             // Tell the user which methods force this class to be abstract.
 
             // First list all of the "unimplementable" abstract methods.
-            Iterator iter = getPermanentlyAbstractMethods();
+            Iterator<MemberDefinition> iter = getPermanentlyAbstractMethods();
             while (iter.hasNext()) {
-                MemberDefinition method = (MemberDefinition) iter.next();
+                MemberDefinition method = iter.next();
                 // We couldn't override this method even if we
                 // wanted to.  Try to make the error message
                 // as non-confusing as possible.
@@ -937,7 +937,7 @@ class SourceClass extends ClassDefinition {
             while (iter.hasNext()) {
                 // For each method, check if it is abstract.  If it is,
                 // output an appropriate error message.
-                MemberDefinition method = (MemberDefinition) iter.next();
+                MemberDefinition method = iter.next();
                 if (method.isAbstract()) {
                     env.error(where, "abstract.class",
                               getClassDeclaration(), method,
@@ -1163,11 +1163,10 @@ class SourceClass extends ClassDefinition {
      * sun/tools/java/ClassDeclaration.java
      */
     protected void addMirandaMethods(Environment env,
-                                     Iterator mirandas) {
+                                     Iterator<MemberDefinition> mirandas) {
 
         while(mirandas.hasNext()) {
-            MemberDefinition method =
-                (MemberDefinition)mirandas.next();
+            MemberDefinition method = mirandas.next();
 
             addMember(method);
 
@@ -2040,7 +2039,7 @@ class SourceClass extends ClassDefinition {
      * is used to stop two compilations from saving the
      * same class.
      */
-    private static Vector active = new Vector();
+    private static Vector<Object> active = new Vector<>();
 
     /**
      * Compile this class
@@ -2082,9 +2081,9 @@ class SourceClass extends ClassDefinition {
 
     protected void compileClass(Environment env, OutputStream out)
                 throws IOException, ClassNotFound {
-        Vector variables = new Vector();
-        Vector methods = new Vector();
-        Vector innerClasses = new Vector();
+        Vector<CompilerMember> variables = new Vector<>();
+        Vector<CompilerMember> methods = new Vector<>();
+        Vector<ClassDefinition> innerClasses = new Vector<>();
         CompilerMember init = new CompilerMember(new MemberDefinition(getWhere(), this, M_STATIC, Type.tMethod(Type.tVoid), idClassInit, null, null), new Assembler());
         Context ctx = new Context((Context)null, init.field);
 
@@ -2243,8 +2242,8 @@ class SourceClass extends ClassDefinition {
             methods.setElementAt(ordered_methods[i], i);
 
         // Optimize Code and Collect method constants
-        for (Enumeration e = methods.elements() ; e.hasMoreElements() ; ) {
-            CompilerMember f = (CompilerMember)e.nextElement();
+        for (Enumeration<CompilerMember> e = methods.elements() ; e.hasMoreElements() ; ) {
+            CompilerMember f = e.nextElement();
             try {
                 f.asm.optimize(env);
                 f.asm.collect(env, f.field, tab);
@@ -2262,8 +2261,8 @@ class SourceClass extends ClassDefinition {
         }
 
         // Collect field constants
-        for (Enumeration e = variables.elements() ; e.hasMoreElements() ; ) {
-            CompilerMember f = (CompilerMember)e.nextElement();
+        for (Enumeration<CompilerMember> e = variables.elements() ; e.hasMoreElements() ; ) {
+            CompilerMember f = e.nextElement();
             tab.put(f.name);
             tab.put(f.sig);
 
@@ -2274,9 +2273,9 @@ class SourceClass extends ClassDefinition {
         }
 
         // Collect inner class constants
-        for (Enumeration e = innerClasses.elements();
+        for (Enumeration<ClassDefinition> e = innerClasses.elements();
              e.hasMoreElements() ; ) {
-            ClassDefinition inner = (ClassDefinition)e.nextElement();
+            ClassDefinition inner = e.nextElement();
             tab.put(inner.getClassDeclaration());
 
             // If the inner class is local, we do not need to add its
@@ -2368,8 +2367,8 @@ class SourceClass extends ClassDefinition {
         DataOutputStream databuf = new DataOutputStream(buf);
 
         data.writeShort(variables.size());
-        for (Enumeration e = variables.elements() ; e.hasMoreElements() ; ) {
-            CompilerMember f = (CompilerMember)e.nextElement();
+        for (Enumeration<CompilerMember> e = variables.elements() ; e.hasMoreElements() ; ) {
+            CompilerMember f = e.nextElement();
             Object val = f.field.getInitialValue();
 
             data.writeShort(f.field.getModifiers() & MM_FIELD);
@@ -2400,8 +2399,8 @@ class SourceClass extends ClassDefinition {
         // write methods
 
         data.writeShort(methods.size());
-        for (Enumeration e = methods.elements() ; e.hasMoreElements() ; ) {
-            CompilerMember f = (CompilerMember)e.nextElement();
+        for (Enumeration<CompilerMember> e = methods.elements() ; e.hasMoreElements() ; ) {
+            CompilerMember f = e.nextElement();
 
             int xmods = f.field.getModifiers() & MM_METHOD;
             // Transform floating point modifiers.  M_STRICTFP
@@ -2530,7 +2529,7 @@ class SourceClass extends ClassDefinition {
             data.writeShort(tab.index("InnerClasses"));
             data.writeInt(2 + 2*4*innerClasses.size());
             data.writeShort(innerClasses.size());
-            for (Enumeration e = innerClasses.elements() ;
+            for (Enumeration<ClassDefinition> e = innerClasses.elements() ;
                  e.hasMoreElements() ; ) {
                 // For each inner class name transformation, we have a record
                 // with the following fields:
@@ -2549,7 +2548,7 @@ class SourceClass extends ClassDefinition {
                 // See also the initInnerClasses() method in BinaryClass.java.
 
                 // Generate inner_class_info_index.
-                ClassDefinition inner = (ClassDefinition)e.nextElement();
+                ClassDefinition inner = e.nextElement();
                 data.writeShort(tab.index(inner.getClassDeclaration()));
 
                 // Generate outer_class_info_index.
@@ -2662,8 +2661,8 @@ class SourceClass extends ClassDefinition {
             //  where className1 is the name of the class we are in, and
             //        classname2 is the name of the class className1
             //          is dependent on.
-            for(Enumeration e = deps.elements();  e.hasMoreElements(); ) {
-                ClassDeclaration data = (ClassDeclaration) e.nextElement();
+            for(Enumeration<ClassDeclaration> e = deps.elements();  e.hasMoreElements(); ) {
+                ClassDeclaration data = e.nextElement();
                 // Mangle name of class dependend on.
                 String depName =
                     Type.mangleInnerType(data.getName()).toString();

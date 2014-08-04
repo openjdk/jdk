@@ -57,7 +57,7 @@ class VarDeclarationStatement extends Statement {
     /**
      * Check statement
      */
-    Vset checkDeclaration(Environment env, Context ctx, Vset vset, int mod, Type t, Hashtable exp) {
+    Vset checkDeclaration(Environment env, Context ctx, Vset vset, int mod, Type t, Hashtable<Object, Object> exp) {
         if (labels != null) {
             env.error(where, "declaration.with.label", labels[0]);
         }

@@ -159,15 +159,15 @@ import javax.accessibility.*;
 public class JLayeredPane extends JComponent implements Accessible {
     /// Watch the values in getObjectForLayer()
     /** Convenience object defining the Default layer. Equivalent to new Integer(0).*/
-    public final static Integer DEFAULT_LAYER = new Integer(0);
+    public final static Integer DEFAULT_LAYER = 0;
     /** Convenience object defining the Palette layer. Equivalent to new Integer(100).*/
-    public final static Integer PALETTE_LAYER = new Integer(100);
+    public final static Integer PALETTE_LAYER = 100;
     /** Convenience object defining the Modal layer. Equivalent to new Integer(200).*/
-    public final static Integer MODAL_LAYER = new Integer(200);
+    public final static Integer MODAL_LAYER = 200;
     /** Convenience object defining the Popup layer. Equivalent to new Integer(300).*/
-    public final static Integer POPUP_LAYER = new Integer(300);
+    public final static Integer POPUP_LAYER = 300;
     /** Convenience object defining the Drag layer. Equivalent to new Integer(400).*/
-    public final static Integer DRAG_LAYER = new Integer(400);
+    public final static Integer DRAG_LAYER = 400;
     /** Convenience object defining the Frame Content layer.
       * This layer is normally only use to position the contentPane and menuBar
       * components of JFrame.
@@ -294,10 +294,7 @@ public class JLayeredPane extends JComponent implements Accessible {
       */
     public static void putLayer(JComponent c, int layer) {
         /// MAKE SURE THIS AND setLayer(Component c, int layer, int position)  are SYNCED
-        Integer layerObj;
-
-        layerObj = new Integer(layer);
-        c.putClientProperty(LAYER_PROPERTY, layerObj);
+        c.putClientProperty(LAYER_PROPERTY, layer);
     }
 
     /** Gets the layer property for a JComponent, it
@@ -609,27 +606,20 @@ public class JLayeredPane extends JComponent implements Accessible {
      * @return an Integer object for that layer
      */
     protected Integer getObjectForLayer(int layer) {
-        Integer layerObj;
         switch(layer) {
         case 0:
-            layerObj = DEFAULT_LAYER;
-            break;
+            return DEFAULT_LAYER;
         case 100:
-            layerObj = PALETTE_LAYER;
-            break;
+            return PALETTE_LAYER;
         case 200:
-            layerObj = MODAL_LAYER;
-            break;
+            return MODAL_LAYER;
         case 300:
-            layerObj = POPUP_LAYER;
-            break;
+            return POPUP_LAYER;
         case 400:
-            layerObj = DRAG_LAYER;
-            break;
+            return DRAG_LAYER;
         default:
-            layerObj = new Integer(layer);
+            return layer;
         }
-        return layerObj;
     }
 
     /**

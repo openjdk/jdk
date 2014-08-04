@@ -645,7 +645,7 @@ class UnixFileSystemView extends FileSystemView {
         int i = 1;
         while (newFolder.exists() && i < 100) {
             newFolder = createFileObject(containingDir, MessageFormat.format(
-                    newFolderNextString, new Integer(i)));
+                    newFolderNextString, i));
             i++;
         }
 
@@ -755,7 +755,7 @@ class WindowsFileSystemView extends FileSystemView {
         int i = 2;
         while (newFolder.exists() && i < 100) {
             newFolder = createFileObject(containingDir, MessageFormat.format(
-                newFolderNextString, new Integer(i)));
+                newFolderNextString, i));
             i++;
         }
 

@@ -86,7 +86,7 @@ class BooleanExpression extends ConstantExpression {
      */
 
     public void checkCondition(Environment env, Context ctx,
-                               Vset vset, Hashtable exp, ConditionVars cvars) {
+                               Vset vset, Hashtable<Object, Object> exp, ConditionVars cvars) {
         if (value) {
             cvars.vsFalse = Vset.DEAD_END;
             cvars.vsTrue = vset;

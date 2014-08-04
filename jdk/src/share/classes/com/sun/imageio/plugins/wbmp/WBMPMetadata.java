@@ -75,9 +75,9 @@ public class WBMPMetadata extends IIOMetadata {
         IIOMetadataNode root =
             new IIOMetadataNode(nativeMetadataFormatName);
 
-        addChildNode(root, "WBMPType", new Integer(wbmpType));
-        addChildNode(root, "Width", new Integer(width));
-        addChildNode(root, "Height", new Integer(height));
+        addChildNode(root, "WBMPType", wbmpType);
+        addChildNode(root, "Width", width);
+        addChildNode(root, "Height", height);
 
         return root;
     }

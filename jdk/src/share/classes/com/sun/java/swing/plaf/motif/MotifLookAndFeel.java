@@ -567,7 +567,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "ProgressBar.selectionForeground", table.get("control"),
             "ProgressBar.selectionBackground", table.get("controlText"),
             "ProgressBar.border", loweredBevelBorder,
-            "ProgressBar.cellLength", new Integer(6),
+            "ProgressBar.cellLength", 6,
             "ProgressBar.cellSpacing", Integer.valueOf(0),
 
             // Buttons
@@ -582,7 +582,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                  "released SPACE", "released"
               }),
 
-            "CheckBox.textIconGap", new Integer(8),
+            "CheckBox.textIconGap", 8,
             "CheckBox.margin", new InsetsUIResource(4, 2, 4, 2),
             "CheckBox.icon", checkBoxIcon,
             "CheckBox.focus", table.get("activeCaptionBorder"),
@@ -593,7 +593,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
                  }),
 
             "RadioButton.margin", new InsetsUIResource(4, 2, 4, 2),
-            "RadioButton.textIconGap", new Integer(8),
+            "RadioButton.textIconGap", 8,
             "RadioButton.background", table.get("control"),
             "RadioButton.foreground", table.get("controlText"),
             "RadioButton.icon", radioButtonIcon,
@@ -627,10 +627,10 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "Menu.selectionBackground", menuItemPressedBackground,
             "Menu.checkIcon", menuItemCheckIcon,
             "Menu.arrowIcon", menuArrowIcon,
-            "Menu.menuPopupOffsetX", new Integer(0),
-            "Menu.menuPopupOffsetY", new Integer(0),
-            "Menu.submenuPopupOffsetX", new Integer(-2),
-            "Menu.submenuPopupOffsetY", new Integer(3),
+            "Menu.menuPopupOffsetX", 0,
+            "Menu.menuPopupOffsetY", 0,
+            "Menu.submenuPopupOffsetX", -2,
+            "Menu.submenuPopupOffsetY", 3,
             "Menu.shortcutKeys", new int[]{
                 SwingUtilities2.getSystemMnemonicKeyMask(),
                 KeyEvent.META_MASK
@@ -938,7 +938,7 @@ public class MotifLookAndFeel extends BasicLookAndFeel
             "Tree.collapsedIcon", treeCollapsedIcon,
             "Tree.editorBorder", focusBorder,
             "Tree.editorBorderSelectionColor", table.get("activeCaptionBorder"),
-            "Tree.rowHeight", new Integer(18),
+            "Tree.rowHeight", 18,
             "Tree.drawsFocusBorderAroundIcon", Boolean.TRUE,
             "Tree.focusInputMap", new UIDefaults.LazyInputMap(new Object[] {
                                 "COPY", "copy",

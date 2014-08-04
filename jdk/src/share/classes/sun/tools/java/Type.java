@@ -57,7 +57,7 @@ class Type implements Constants {
     /**
      * This hashtable is used to cache types
      */
-    private static final Hashtable typeHash = new Hashtable(231);
+    private static final Hashtable<String, Type> typeHash = new Hashtable<>(231);
 
     /**
      * The TypeCode of this type. The value of this field is one
@@ -169,7 +169,7 @@ class Type implements Constants {
      */
     public static synchronized Type tArray(Type elem) {
         String sig = new String(SIG_ARRAY + elem.getTypeSignature());
-        Type t = (Type)typeHash.get(sig);
+        Type t = typeHash.get(sig);
         if (t == null) {
             t = new ArrayType(sig, elem);
         }
@@ -213,7 +213,7 @@ class Type implements Constants {
             new String(SIG_CLASS +
                        className.toString().replace('.', SIGC_PACKAGE) +
                        SIG_ENDCLASS);
-        Type t = (Type)typeHash.get(sig);
+        Type t = typeHash.get(sig);
         if (t == null) {
             t = new ClassType(sig, className);
         }
@@ -283,7 +283,7 @@ class Type implements Constants {
         sb.append(returnType.getTypeSignature());
 
         String sig = sb.toString();
-        Type t = (Type)typeHash.get(sig);
+        Type t = typeHash.get(sig);
         if (t == null) {
             t = new MethodType(sig, returnType, argTypes);
         }
@@ -309,7 +309,7 @@ class Type implements Constants {
      * @exception CompilerError invalid type signature.
      */
     public static synchronized Type tType(String sig) {
-        Type t = (Type)typeHash.get(sig);
+        Type t = typeHash.get(sig);
         if (t != null) {
             return t;
         }

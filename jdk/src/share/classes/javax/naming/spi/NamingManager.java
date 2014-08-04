@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -491,7 +491,7 @@ public class NamingManager {
      * (e.g. "ftpURLContextFactory" for the "ftp" scheme-id),
      * in the package specified as follows.
      * The <tt>Context.URL_PKG_PREFIXES</tt> environment property (which
-     * may contain values taken from applet parameters, system properties,
+     * may contain values taken from system properties,
      * or application resource files)
      * contains a colon-separated list of package prefixes.
      * Each package prefix in
@@ -661,8 +661,7 @@ public class NamingManager {
             if (className == null) {
                 NoInitialContextException ne = new NoInitialContextException(
                     "Need to specify class name in environment or system " +
-                    "property, or as an applet parameter, or in an " +
-                    "application resource file:  " +
+                    "property, or in an application resource file: " +
                     Context.INITIAL_CONTEXT_FACTORY);
                 throw ne;
             }

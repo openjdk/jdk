@@ -34,7 +34,6 @@ import java.util.HashMap;
 /**
  * Class HashAttributeSet provides an <code>AttributeSet</code>
  * implementation with characteristics of a hash map.
- * <P>
  *
  * @author  Alan Kaminsky
  */

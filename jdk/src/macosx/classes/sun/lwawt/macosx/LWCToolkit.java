@@ -32,6 +32,7 @@ import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.event.InputEvent;
 import java.awt.event.InvocationEvent;
 import java.awt.event.KeyEvent;
+import java.awt.font.TextAttribute;
 import java.awt.im.InputMethodHighlight;
 import java.awt.im.spi.InputMethodDescriptor;
 import java.awt.peer.*;
@@ -543,9 +544,9 @@ public final class LWCToolkit extends LWToolkit {
             return super.getImage(filename);
         }
 
-        String fileneame2x = getScaledImageName(filename);
-        return (imageExists(fileneame2x))
-                ? getImageWithResolutionVariant(filename, fileneame2x)
+        String filename2x = getScaledImageName(filename);
+        return (imageExists(filename2x))
+                ? getImageWithResolutionVariant(filename, filename2x)
                 : super.getImage(filename);
     }
 
@@ -691,6 +692,7 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     @Override
+    @SuppressWarnings("unchecked")
     public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
             Class<T> abstractRecognizerClass, DragSource ds, Component c,
             int srcActions, DragGestureListener dgl) {
@@ -743,7 +745,7 @@ public final class LWCToolkit extends LWToolkit {
      * @since 1.3
      */
     @Override
-    public Map mapInputMethodHighlight(InputMethodHighlight highlight) {
+    public Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight) {
         return CInputMethod.mapInputMethodHighlight(highlight);
     }
 
@@ -906,6 +908,9 @@ public final class LWCToolkit extends LWToolkit {
     }
 
     private static boolean isValidPath(String path) {
-        return !path.isEmpty() && !path.endsWith("/") && !path.endsWith(".");
+        return path != null &&
+                !path.isEmpty() &&
+                !path.endsWith("/") &&
+                !path.endsWith(".");
     }
 }

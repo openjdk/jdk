@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -58,6 +58,11 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
     }
 
 
+    /**
+     * Constructs a new instance of {@code BasicButtonListener}.
+     *
+     * @param b an abstract button
+     */
     public BasicButtonListener(AbstractButton b) {
     }
 
@@ -76,13 +81,20 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
         }
     }
 
+    /**
+     * Checks the opacity of the {@code AbstractButton}.
+     *
+     * @param b an abstract button
+     */
     protected void checkOpacity(AbstractButton b) {
         b.setOpaque( b.isContentAreaFilled() );
     }
 
     /**
      * Register default key actions: pressing space to "click" a
-     * button and registring the keyboard mnemonic (if any).
+     * button and registering the keyboard mnemonic (if any).
+     *
+     * @param c a component
      */
     public void installKeyboardActions(JComponent c) {
         AbstractButton b = (AbstractButton)c;
@@ -98,7 +110,9 @@ public class BasicButtonListener implements MouseListener, MouseMotionListener,
     }
 
     /**
-     * Unregister's default key actions
+     * Unregister default key actions.
+     *
+     * @param c a component
      */
     public void uninstallKeyboardActions(JComponent c) {
         SwingUtilities.replaceUIInputMap(c, JComponent.

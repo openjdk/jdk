@@ -99,6 +99,8 @@ public class BasicArrowButton extends JButton implements SwingConstants
 
         /**
          * Returns the direction of the arrow.
+         *
+         * @return the direction of the arrow
          */
         public int getDirection() {
             return direction;

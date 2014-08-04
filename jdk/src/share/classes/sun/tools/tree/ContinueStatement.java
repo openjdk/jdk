@@ -52,7 +52,7 @@ class ContinueStatement extends Statement {
      * Check statement
      */
 
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         checkLabel(env, ctx);
         reach(env, vset);
         // A new context is established here because the 'continue' statement

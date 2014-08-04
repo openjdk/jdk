@@ -384,7 +384,8 @@ class LCMSImageLayout {
     }
     public static LCMSImageLayout createImageLayout(Raster r) {
         LCMSImageLayout l = new LCMSImageLayout();
-        if (r instanceof ByteComponentRaster) {
+        if (r instanceof ByteComponentRaster &&
+                r.getSampleModel() instanceof ComponentSampleModel) {
             ByteComponentRaster br = (ByteComponentRaster)r;
 
             ComponentSampleModel csm = (ComponentSampleModel)r.getSampleModel();

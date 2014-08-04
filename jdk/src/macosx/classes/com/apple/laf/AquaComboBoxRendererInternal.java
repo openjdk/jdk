@@ -31,8 +31,8 @@ import javax.swing.*;
 import java.awt.*;
 
 @SuppressWarnings("serial") // Superclass is not serializable across versions
-class AquaComboBoxRendererInternal extends JLabel implements ListCellRenderer {
-    final JComboBox fComboBox;
+class AquaComboBoxRendererInternal<E> extends JLabel implements ListCellRenderer<E> {
+    final JComboBox<?> fComboBox;
     boolean fSelected;
     boolean fChecked;
     boolean fInList;
@@ -40,7 +40,7 @@ class AquaComboBoxRendererInternal extends JLabel implements ListCellRenderer {
     boolean fDrawCheckedItem = true;
 
     // Provides space for a checkbox, and is translucent
-    public AquaComboBoxRendererInternal(final JComboBox comboBox) {
+    public AquaComboBoxRendererInternal(final JComboBox<?> comboBox) {
         super();
         fComboBox = comboBox;
     }
@@ -72,7 +72,10 @@ class AquaComboBoxRendererInternal extends JLabel implements ListCellRenderer {
     }
 
     // Really means is the one with the mouse over it
-    public Component getListCellRendererComponent(final JList list, final Object value, int index, final boolean isSelected, final boolean cellHasFocus) {
+    public Component getListCellRendererComponent(final JList<? extends E> list,
+                                                  final E value, int index,
+                                                  final boolean isSelected,
+                                                  final boolean cellHasFocus) {
         fInList = (index >= 0); // When the button wants the item painted, it passes in -1
         fSelected = isSelected;
         if (index < 0) {
