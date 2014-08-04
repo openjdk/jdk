@@ -165,6 +165,7 @@ public class CorbaUtils {
 
         // Get Applet from environment
         if (env != null) {
+            @SuppressWarnings("deprecation")
             Applet applet = (Applet) env.get(Context.APPLET);
             if (applet != null) {
             // Create ORBs using applet and orbProp

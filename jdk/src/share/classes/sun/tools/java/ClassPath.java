@@ -233,11 +233,11 @@ class ClassPath {
     /**
      * Returns list of files given a package name and extension.
      */
-    public Enumeration getFiles(String pkg, String ext) {
-        Hashtable files = new Hashtable();
+    public Enumeration<ClassFile> getFiles(String pkg, String ext) {
+        Hashtable<String, ClassFile> files = new Hashtable<>();
         for (int i = path.length; --i >= 0; ) {
             if (path[i].zip != null) {
-                Enumeration e = path[i].zip.entries();
+                Enumeration<? extends ZipEntry> e = path[i].zip.entries();
                 while (e.hasMoreElements()) {
                     ZipEntry entry = (ZipEntry)e.nextElement();
                     String name = entry.getName();
@@ -287,9 +287,9 @@ class ClassPathEntry {
     File dir;
     ZipFile zip;
 
-    Hashtable subdirs = new Hashtable(29); // cache of sub-directory listings
+    Hashtable<String, String[]> subdirs = new Hashtable<>(29); // cache of sub-directory listings:
     String[] getFiles(String subdir) {
-        String files[] = (String[]) subdirs.get(subdir);
+        String files[] = subdirs.get(subdir);
         if (files == null) {
             // search the directory, exactly once
             File sd = new File(dir.getPath(), subdir);

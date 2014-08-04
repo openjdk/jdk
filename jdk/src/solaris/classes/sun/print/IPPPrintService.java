@@ -96,6 +96,8 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
     private MediaSizeName[] mediaSizeNames;
     private CustomMediaSizeName[] customMediaSizeNames;
     private int defaultMediaIndex;
+    private int[] rawResolutions = null;
+    private PrinterResolution[] printerResolutions = null;
     private boolean isCupsPrinter;
     private boolean init;
     private Boolean isPS;
@@ -414,6 +416,7 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     mediaTrays = cps.getMediaTrays();
                     customMediaSizeNames = cps.getCustomMediaSizeNames();
                     defaultMediaIndex = cps.getDefaultMediaIndex();
+                    rawResolutions = cps.getRawResolutions();
                     urlConnection.disconnect();
                     init = true;
                     return;
@@ -765,6 +768,15 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                     return sidesSup;
                 }
             }
+        } else if (category == PrinterResolution.class) {
+            PrinterResolution[] supportedRes = getPrintResolutions();
+            if (supportedRes == null) {
+                return null;
+            }
+            PrinterResolution []arr =
+                new PrinterResolution[supportedRes.length];
+            System.arraycopy(supportedRes, 0, arr, 0, supportedRes.length);
+            return arr;
         }
 
         return null;
@@ -1043,6 +1055,14 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
         if (getAttMap != null && getAttMap.containsKey("color-supported")) {
             catList.add(Chromaticity.class);
         }
+
+        // CUPS does not report printer resolution via IPP but it
+        // may be gleaned from the PPD.
+        PrinterResolution[] supportedRes = getPrintResolutions();
+        if (supportedRes != null && (supportedRes.length > 0)) {
+            catList.add(PrinterResolution.class);
+        }
+
         supportedCats = new Class<?>[catList.size()];
         catList.toArray(supportedCats);
         return supportedCats;
@@ -1362,6 +1382,10 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
             }
             return false;
+        } if (attr.getCategory() == PrinterResolution.class) {
+            if (attr instanceof PrinterResolution) {
+                return isSupportedResolution((PrinterResolution)attr);
+            }
         }
         return true;
     }
@@ -1523,9 +1547,46 @@ public class IPPPrintService implements PrintService, SunPrinterJobService {
                 }
             }
             return Sides.ONE_SIDED;
+        } else if (category == PrinterResolution.class) {
+             PrinterResolution[] supportedRes = getPrintResolutions();
+             if ((supportedRes != null) && (supportedRes.length > 0)) {
+                return supportedRes[0];
+             } else {
+                 return new PrinterResolution(300, 300, PrinterResolution.DPI);
+             }
         }
 
         return null;
+    }
+
+    private PrinterResolution[] getPrintResolutions() {
+        if (printerResolutions == null) {
+            if (rawResolutions == null) {
+              printerResolutions = new PrinterResolution[0];
+            } else {
+                int numRes = rawResolutions.length / 2;
+                PrinterResolution[] pres = new PrinterResolution[numRes];
+                for (int i=0; i < numRes; i++) {
+                    pres[i] =  new PrinterResolution(rawResolutions[i*2],
+                                                     rawResolutions[i*2+1],
+                                                     PrinterResolution.DPI);
+                }
+                printerResolutions = pres;
+            }
+        }
+        return printerResolutions;
+    }
+
+    private boolean isSupportedResolution(PrinterResolution res) {
+        PrinterResolution[] supportedRes = getPrintResolutions();
+        if (supportedRes != null) {
+            for (int i=0; i<supportedRes.length; i++) {
+                if (res.equals(supportedRes[i])) {
+                    return true;
+                }
+            }
+        }
+        return false;
     }
 
     public ServiceUIFactory getServiceUIFactory() {

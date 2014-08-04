@@ -43,7 +43,7 @@ public final
 class BinaryClass extends ClassDefinition implements Constants {
     BinaryConstantPool cpool;
     BinaryAttribute atts;
-    Vector dependencies;
+    Vector<ClassDeclaration> dependencies;
     private boolean haveLoadedNested = false;
 
     /**
@@ -51,7 +51,7 @@ class BinaryClass extends ClassDefinition implements Constants {
      */
     public BinaryClass(Object source, ClassDeclaration declaration, int modifiers,
                            ClassDeclaration superClass, ClassDeclaration interfaces[],
-                           Vector dependencies) {
+                           Vector<ClassDeclaration> dependencies) {
         super(source, 0, declaration, modifiers, null, null);
         this.dependencies = dependencies;
         this.superClass = superClass;
@@ -134,7 +134,7 @@ class BinaryClass extends ClassDefinition implements Constants {
         BinaryConstantPool cpool = new BinaryConstantPool(in);
 
         // The dependencies of this class
-        Vector dependencies = cpool.getDependencies(env);
+        Vector<ClassDeclaration> dependencies = cpool.getDependencies(env);
 
         // Read modifiers
         int classMod = in.readUnsignedShort() & ACCM_CLASS;  // JVM 4.1 ClassFile.access_flags
@@ -500,7 +500,7 @@ class BinaryClass extends ClassDefinition implements Constants {
     /**
      * Get the dependencies
      */
-    public Enumeration getDependencies() {
+    public Enumeration<ClassDeclaration> getDependencies() {
         return dependencies.elements();
     }
 

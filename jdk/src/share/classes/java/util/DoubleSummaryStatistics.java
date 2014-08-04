@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -129,9 +129,6 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * Returns the sum of values recorded, or zero if no values have been
      * recorded.
      *
-     * If any recorded value is a NaN or the sum is at any point a NaN
-     * then the sum will be NaN.
-     *
      * <p> The value of a floating-point sum is a function both of the
      * input values as well as the order of addition operations. The
      * order of addition operations of this method is intentionally
@@ -142,6 +139,44 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * summation or other technique to reduce the error bound in the
      * numerical sum compared to a simple summation of {@code double}
      * values.
+     *
+     * Because of the unspecified order of operations and the
+     * possibility of using differing summation schemes, the output of
+     * this method may vary on the same input values.
+     *
+     * <p>Various conditions can result in a non-finite sum being
+     * computed. This can occur even if the all the recorded values
+     * being summed are finite. If any recorded value is non-finite,
+     * the sum will be non-finite:
+     *
+     * <ul>
+     *
+     * <li>If any recorded value is a NaN, then the final sum will be
+     * NaN.
+     *
+     * <li>If the recorded values contain one or more infinities, the
+     * sum will be infinite or NaN.
+     *
+     * <ul>
+     *
+     * <li>If the recorded values contain infinities of opposite sign,
+     * the sum will be NaN.
+     *
+     * <li>If the recorded values contain infinities of one sign and
+     * an intermediate sum overflows to an infinity of the opposite
+     * sign, the sum may be NaN.
+     *
+     * </ul>
+     *
+     * </ul>
+     *
+     * It is possible for intermediate sums of finite values to
+     * overflow into opposite-signed infinities; if that occurs, the
+     * final sum will be NaN even if the recorded values are all
+     * finite.
+     *
+     * If all the recorded values are zero, the sign of zero is
+     * <em>not</em> guaranteed to be preserved in the final sum.
      *
      * @apiNote Values sorted by increasing absolute magnitude tend to yield
      * more accurate results.
@@ -193,15 +228,9 @@ public class DoubleSummaryStatistics implements DoubleConsumer {
      * Returns the arithmetic mean of values recorded, or zero if no
      * values have been recorded.
      *
-     * If any recorded value is a NaN or the sum is at any point a NaN
-     * then the average will be code NaN.
-     *
-     * <p>The average returned can vary depending upon the order in
-     * which values are recorded.
-     *
-     * This method may be implemented using compensated summation or
-     * other technique to reduce the error bound in the {@link #getSum
-     * numerical sum} used to compute the average.
+     * <p> The computed average can vary numerically and have the
+     * special case behavior as computing the sum; see {@link #getSum}
+     * for details.
      *
      * @apiNote Values sorted by increasing absolute magnitude tend to yield
      * more accurate results.

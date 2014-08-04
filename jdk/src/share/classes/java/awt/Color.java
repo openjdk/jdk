@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,7 +50,7 @@ import java.awt.color.ColorSpace;
  * see <A href="http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html">
  * http://www.w3.org/pub/WWW/Graphics/Color/sRGB.html
  * </A>.
- * <p>
+ *
  * @version     10 Feb 1997
  * @author      Sami Shaio
  * @author      Arthur van Hoff

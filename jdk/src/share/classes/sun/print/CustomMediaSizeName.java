@@ -67,6 +67,22 @@ class CustomMediaSizeName extends MediaSizeName {
                                             MediaSize.INCH);
         } catch (IllegalArgumentException iae) {
         }
+        // The public API method finds a closest match even if it not
+        // all that close. Here we want to be sure its *really* close.
+        if (mediaName != null) {
+            MediaSize sz = MediaSize.getMediaSizeForName(mediaName);
+            if (sz == null) {
+                mediaName = null;
+            } else {
+                float w = sz.getX(MediaSize.INCH);
+                float h = sz.getY(MediaSize.INCH);
+                float dw = Math.abs(w - width);
+                float dh = Math.abs(h - length);
+                if (dw > 0.1 || dh > 0.1) {
+                    mediaName = null;
+                }
+            }
+        }
     }
 
     /**

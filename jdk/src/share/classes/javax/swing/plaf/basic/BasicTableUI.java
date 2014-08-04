@@ -64,12 +64,29 @@ public class BasicTableUI extends TableUI
 //
 
     // The JTable that is delegating the painting to this UI.
+    /**
+     * The instance of {@code JTable}.
+     */
     protected JTable table;
+
+    /**
+     * The instance of {@code CellRendererPane}.
+     */
     protected CellRendererPane rendererPane;
 
-    // Listeners that are attached to the JTable
+    /**
+     * {@code KeyListener} that are attached to the {@code JTable}.
+     */
     protected KeyListener keyListener;
+
+    /**
+     * {@code FocusListener} that are attached to the {@code JTable}.
+     */
     protected FocusListener focusListener;
+
+    /**
+     * {@code MouseInputListener} that are attached to the {@code JTable}.
+     */
     protected MouseInputListener mouseInputListener;
 
     private Handler handler;
@@ -1350,21 +1367,27 @@ public class BasicTableUI extends TableUI
     }
 
     /**
-     * Creates the key listener for handling keyboard navigation in the JTable.
+     * Creates the key listener for handling keyboard navigation in the {@code JTable}.
+     *
+     * @return the key listener for handling keyboard navigation in the {@code JTable}
      */
     protected KeyListener createKeyListener() {
         return null;
     }
 
     /**
-     * Creates the focus listener for handling keyboard navigation in the JTable.
+     * Creates the focus listener for handling keyboard navigation in the {@code JTable}.
+     *
+     * @return the focus listener for handling keyboard navigation in the {@code JTable}
      */
     protected FocusListener createFocusListener() {
         return getHandler();
     }
 
     /**
-     * Creates the mouse listener for the JTable.
+     * Creates the mouse listener for the {@code JTable}.
+     *
+     * @return the mouse listener for the {@code JTable}
      */
     protected MouseInputListener createMouseInputListener() {
         return getHandler();
@@ -1374,6 +1397,12 @@ public class BasicTableUI extends TableUI
 //  The installation/uninstall procedures and support
 //
 
+    /**
+     * Returns a new instance of {@code BasicTableUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicTableUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicTableUI();
     }
@@ -1616,12 +1645,18 @@ public class BasicTableUI extends TableUI
         table = null;
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         if (table.getTransferHandler() instanceof UIResource) {
             table.setTransferHandler(null);
         }
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         table.removeFocusListener(focusListener);
         table.removeKeyListener(keyListener);
@@ -1638,6 +1673,9 @@ public class BasicTableUI extends TableUI
         handler = null;
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIInputMap(table, JComponent.
                                    WHEN_ANCESTOR_OF_FOCUSED_COMPONENT, null);

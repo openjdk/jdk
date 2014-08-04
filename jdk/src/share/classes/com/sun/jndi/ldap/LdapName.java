@@ -346,8 +346,8 @@ public final class LdapName implements Name {
     }
 
     /**
-     * Given an attribute value formated according to RFC 2253,
-     * returns the unformated value.  Returns a string value as
+     * Given an attribute value formatted according to RFC 2253,
+     * returns the unformatted value.  Returns a string value as
      * a string, and a binary value as a byte array.
      */
     public static Object unescapeAttributeValue(String val) {
@@ -687,7 +687,7 @@ public final class LdapName implements Name {
         private final boolean binary;
         private final boolean valueCaseSensitive;
 
-        // If non-null, a canonical represention of the value suitable
+        // If non-null, a canonical representation of the value suitable
         // for comparison using String.compareTo().
         private String comparable = null;
 
@@ -842,8 +842,8 @@ public final class LdapName implements Name {
         }
 
         /*
-         * Given an attribute value formated according to RFC 2253,
-         * returns the unformated value.  Escapes and quotes are
+         * Given an attribute value formatted according to RFC 2253,
+         * returns the unformatted value.  Escapes and quotes are
          * stripped away, and hex-encoded UTF-8 is converted to 16-bit
          * Unicode chars.  Returns a string value as a String, and a
          * binary value as a byte array.

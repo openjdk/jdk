@@ -126,18 +126,18 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
             new IIOMetadataNode(nativeMetadataFormatName);
 
         addChildNode(root, "BMPVersion", bmpVersion);
-        addChildNode(root, "Width", new Integer(width));
-        addChildNode(root, "Height", new Integer(height));
+        addChildNode(root, "Width", width);
+        addChildNode(root, "Height", height);
         addChildNode(root, "BitsPerPixel", new Short(bitsPerPixel));
-        addChildNode(root, "Compression", new Integer(compression));
-        addChildNode(root, "ImageSize", new Integer(imageSize));
+        addChildNode(root, "Compression", compression);
+        addChildNode(root, "ImageSize", imageSize);
 
         IIOMetadataNode node = addChildNode(root, "PixelsPerMeter", null);
-        addChildNode(node, "X", new Integer(xPixelsPerMeter));
-        addChildNode(node, "Y", new Integer(yPixelsPerMeter));
+        addChildNode(node, "X", xPixelsPerMeter);
+        addChildNode(node, "Y", yPixelsPerMeter);
 
-        addChildNode(root, "ColorsUsed", new Integer(colorsUsed));
-        addChildNode(root, "ColorsImportant", new Integer(colorsImportant));
+        addChildNode(root, "ColorsUsed", colorsUsed);
+        addChildNode(root, "ColorsImportant", colorsImportant);
 
         int version = 0;
         for (int i = 0; i < bmpVersion.length(); i++)
@@ -146,19 +146,19 @@ public class BMPMetadata extends IIOMetadata implements BMPConstants {
 
         if (version >= 4) {
             node = addChildNode(root, "Mask", null);
-            addChildNode(node, "Red", new Integer(redMask));
-            addChildNode(node, "Green", new Integer(greenMask));
-            addChildNode(node, "Blue", new Integer(blueMask));
-            addChildNode(node, "Alpha", new Integer(alphaMask));
+            addChildNode(node, "Red", redMask);
+            addChildNode(node, "Green", greenMask);
+            addChildNode(node, "Blue", blueMask);
+            addChildNode(node, "Alpha", alphaMask);
 
-            addChildNode(root, "ColorSpaceType", new Integer(colorSpace));
+            addChildNode(root, "ColorSpaceType", colorSpace);
 
             node = addChildNode(root, "CIEXYZEndPoints", null);
             addXYZPoints(node, "Red", redX, redY, redZ);
             addXYZPoints(node, "Green", greenX, greenY, greenZ);
             addXYZPoints(node, "Blue", blueX, blueY, blueZ);
 
-            node = addChildNode(root, "Intent", new Integer(intent));
+            node = addChildNode(root, "Intent", intent);
         }
 
         // Palette

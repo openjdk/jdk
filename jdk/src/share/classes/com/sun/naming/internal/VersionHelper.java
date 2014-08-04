@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,19 @@
 
 package com.sun.naming.internal;
 
-import java.io.InputStream;
+import javax.naming.NamingEnumeration;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
-import java.util.StringTokenizer;
-import java.util.Vector;
-
-import javax.naming.NamingEnumeration;
+import java.net.URLClassLoader;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
+import java.util.*;
 
 /**
  * VersionHelper was used by JNDI to accommodate differences between
@@ -45,10 +50,10 @@ import javax.naming.NamingEnumeration;
  * @author Scott Seligman
  */
 
-public abstract class VersionHelper {
-    private static VersionHelper helper = null;
+public final class VersionHelper {
+    private static final VersionHelper helper = new VersionHelper();
 
-    final static String[] PROPS = new String[] {
+    final static String[] PROPS = new String[]{
         javax.naming.Context.INITIAL_CONTEXT_FACTORY,
         javax.naming.Context.OBJECT_FACTORIES,
         javax.naming.Context.URL_PKG_PREFIXES,
@@ -67,31 +72,57 @@ public abstract class VersionHelper {
     public final static int DNS_URL = 5;
     public final static int CONTROL_FACTORIES = 6;
 
-    VersionHelper() {} // Disallow anyone from creating one of these.
-
-    static {
-        helper = new VersionHelper12();
-    }
+    private VersionHelper() {} // Disallow anyone from creating one of these.
 
     public static VersionHelper getVersionHelper() {
         return helper;
     }
 
-    public abstract Class<?> loadClass(String className)
-        throws ClassNotFoundException;
+    public Class<?> loadClass(String className) throws ClassNotFoundException {
+        return loadClass(className, getContextClassLoader());
+    }
 
-    abstract Class<?> loadClass(String className, ClassLoader cl)
-        throws ClassNotFoundException;
+    /**
+     * @param className A non-null fully qualified class name.
+     * @param codebase  A non-null, space-separated list of URL strings.
+     */
+    public Class<?> loadClass(String className, String codebase)
+            throws ClassNotFoundException, MalformedURLException {
 
-    public abstract Class<?> loadClass(String className, String codebase)
-        throws ClassNotFoundException, MalformedURLException;
+        ClassLoader parent = getContextClassLoader();
+        ClassLoader cl =
+                URLClassLoader.newInstance(getUrlArray(codebase), parent);
+
+        return loadClass(className, cl);
+    }
+
+    /**
+     * Package private.
+     * <p>
+     * This internal method is used with Thread Context Class Loader (TCCL),
+     * please don't expose this method as public.
+     */
+    Class<?> loadClass(String className, ClassLoader cl)
+            throws ClassNotFoundException {
+        Class<?> cls = Class.forName(className, true, cl);
+        return cls;
+    }
 
     /*
-     * Returns a JNDI property from the system properties.  Returns
+     * Returns a JNDI property from the system properties. Returns
      * null if the property is not set, or if there is no permission
      * to read it.
      */
-    abstract String getJndiProperty(int i);
+    String getJndiProperty(int i) {
+        PrivilegedAction<String> act = () -> {
+            try {
+                return System.getProperty(PROPS[i]);
+            } catch (SecurityException e) {
+                return null;
+            }
+        };
+        return AccessController.doPrivileged(act);
+    }
 
     /*
      * Reads each property in PROPS from the system properties, and
@@ -99,13 +130,33 @@ public abstract class VersionHelper {
      * unset property, the corresponding array element is set to null.
      * Returns null if there is no permission to call System.getProperties().
      */
-    abstract String[] getJndiProperties();
+    String[] getJndiProperties() {
+        PrivilegedAction<Properties> act = () -> {
+            try {
+                return System.getProperties();
+            } catch (SecurityException e) {
+                return null;
+            }
+        };
+        Properties sysProps = AccessController.doPrivileged(act);
+        if (sysProps == null) {
+            return null;
+        }
+        String[] jProps = new String[PROPS.length];
+        for (int i = 0; i < PROPS.length; i++) {
+            jProps[i] = sysProps.getProperty(PROPS[i]);
+        }
+        return jProps;
+    }
 
     /*
      * Returns the resource of a given name associated with a particular
      * class (never null), or null if none can be found.
      */
-    abstract InputStream getResourceAsStream(Class<?> c, String name);
+    InputStream getResourceAsStream(Class<?> c, String name) {
+        PrivilegedAction<InputStream> act = () -> c.getResourceAsStream(name);
+        return AccessController.doPrivileged(act);
+    }
 
     /*
      * Returns an input stream for a file in <java.home>/lib,
@@ -113,7 +164,22 @@ public abstract class VersionHelper {
      *
      * @param filename  The file name, sans directory.
      */
-    abstract InputStream getJavaHomeLibStream(String filename);
+    InputStream getJavaHomeLibStream(String filename) {
+        PrivilegedAction<InputStream> act = () -> {
+            try {
+                String javahome = System.getProperty("java.home");
+                if (javahome == null) {
+                    return null;
+                }
+                String pathname = javahome + File.separator +
+                        "lib" + File.separator + filename;
+                return new FileInputStream(pathname);
+            } catch (Exception e) {
+                return null;
+            }
+        };
+        return AccessController.doPrivileged(act);
+    }
 
     /*
      * Returns an enumeration (never null) of InputStreams of the
@@ -121,29 +187,55 @@ public abstract class VersionHelper {
      * loader.  Null represents the bootstrap class loader in some
      * Java implementations.
      */
-    abstract NamingEnumeration<InputStream> getResources(
-            ClassLoader cl, String name)
-        throws IOException;
+    NamingEnumeration<InputStream> getResources(ClassLoader cl,
+                                                String name) throws IOException {
+        Enumeration<URL> urls;
+        PrivilegedExceptionAction<Enumeration<URL>> act = () ->
+                (cl == null)
+                        ? ClassLoader.getSystemResources(name)
+                        : cl.getResources(name);
+        try {
+            urls = AccessController.doPrivileged(act);
+        } catch (PrivilegedActionException e) {
+            throw (IOException) e.getException();
+        }
+        return new InputStreamEnumeration(urls);
+    }
 
-    /*
-     * Returns the context class loader associated with the current thread.
-     * Null indicates the bootstrap class loader in some Java implementations.
-     *
-     * @throws SecurityException if the class loader is not accessible.
+
+    /**
+     * Package private.
+     * <p>
+     * This internal method returns Thread Context Class Loader (TCCL),
+     * if null, returns the system Class Loader.
+     * <p>
+     * Please don't expose this method as public.
+     * @throws SecurityException if the class loader is not accessible
      */
-    abstract ClassLoader getContextClassLoader();
+    ClassLoader getContextClassLoader() {
 
-    static protected URL[] getUrlArray(String codebase)
-        throws MalformedURLException {
+        PrivilegedAction<ClassLoader> act = () -> {
+            ClassLoader loader = Thread.currentThread().getContextClassLoader();
+            if (loader == null) {
+                // Don't use bootstrap class loader directly!
+                loader = ClassLoader.getSystemClassLoader();
+            }
+            return loader;
+        };
+        return AccessController.doPrivileged(act);
+    }
+
+    private static URL[] getUrlArray(String codebase)
+            throws MalformedURLException {
         // Parse codebase into separate URLs
         StringTokenizer parser = new StringTokenizer(codebase);
-        Vector<String> vec = new Vector<>(10);
+        List<String> list = new ArrayList<>();
         while (parser.hasMoreTokens()) {
-            vec.addElement(parser.nextToken());
+            list.add(parser.nextToken());
         }
-        String[] url = new String[vec.size()];
+        String[] url = new String[list.size()];
         for (int i = 0; i < url.length; i++) {
-            url[i] = vec.elementAt(i);
+            url[i] = list.get(i);
         }
 
         URL[] urlArray = new URL[url.length];
@@ -151,5 +243,71 @@ public abstract class VersionHelper {
             urlArray[i] = new URL(url[i]);
         }
         return urlArray;
+    }
+
+    /**
+     * Given an enumeration of URLs, an instance of this class represents
+     * an enumeration of their InputStreams.  Each operation on the URL
+     * enumeration is performed within a doPrivileged block.
+     * This is used to enumerate the resources under a foreign codebase.
+     * This class is not MT-safe.
+     */
+    private class InputStreamEnumeration implements
+            NamingEnumeration<InputStream> {
+
+        private final Enumeration<URL> urls;
+
+        private InputStream nextElement;
+
+        InputStreamEnumeration(Enumeration<URL> urls) {
+            this.urls = urls;
+        }
+
+        /*
+         * Returns the next InputStream, or null if there are no more.
+         * An InputStream that cannot be opened is skipped.
+         */
+        private InputStream getNextElement() {
+            PrivilegedAction<InputStream> act = () -> {
+                while (urls.hasMoreElements()) {
+                    try {
+                        return urls.nextElement().openStream();
+                    } catch (IOException e) {
+                        // skip this URL
+                    }
+                }
+                return null;
+            };
+            return AccessController.doPrivileged(act);
+        }
+
+        public boolean hasMore() {
+            if (nextElement != null) {
+                return true;
+            }
+            nextElement = getNextElement();
+            return (nextElement != null);
+        }
+
+        public boolean hasMoreElements() {
+            return hasMore();
+        }
+
+        public InputStream next() {
+            if (hasMore()) {
+                InputStream res = nextElement;
+                nextElement = null;
+                return res;
+            } else {
+                throw new NoSuchElementException();
+            }
+        }
+
+        public InputStream nextElement() {
+            return next();
+        }
+
+        public void close() {
+        }
     }
 }

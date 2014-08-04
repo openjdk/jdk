@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -49,6 +49,9 @@ public class BasicButtonUI extends ButtonUI{
     // Visual constants
     // NOTE: This is not used or set any where. Were we allowed to remove
     // fields, this would be removed.
+    /**
+     * The default gap between a text and an icon.
+     */
     protected int defaultTextIconGap;
 
     // Amount to offset text, the value of this comes from
@@ -56,6 +59,9 @@ public class BasicButtonUI extends ButtonUI{
     private int shiftOffset = 0;
     // Value that is set in shiftOffset once setTextShiftOffset has been
     // invoked. The value of this comes from the defaults table.
+    /**
+     * The default offset of a text.
+     */
     protected int defaultTextShiftOffset;
 
     private final static String propertyPrefix = "Button" + ".";
@@ -65,6 +71,12 @@ public class BasicButtonUI extends ButtonUI{
     // ********************************
     //          Create PLAF
     // ********************************
+    /**
+     * Returns an instance of {@code BasicButtonUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code BasicButtonUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         AppContext appContext = AppContext.getAppContext();
         BasicButtonUI buttonUI =
@@ -76,6 +88,11 @@ public class BasicButtonUI extends ButtonUI{
         return buttonUI;
     }
 
+    /**
+     * Returns the property prefix.
+     *
+     * @return the property prefix
+     */
     protected String getPropertyPrefix() {
         return propertyPrefix;
     }
@@ -91,6 +108,11 @@ public class BasicButtonUI extends ButtonUI{
         BasicHTML.updateRenderer(c, ((AbstractButton) c).getText());
     }
 
+    /**
+     * Installs default properties.
+     *
+     * @param b an abstract button
+     */
     protected void installDefaults(AbstractButton b) {
         // load shared instance defaults
         String pp = getPropertyPrefix();
@@ -120,6 +142,11 @@ public class BasicButtonUI extends ButtonUI{
         LookAndFeel.installProperty(b, "iconTextGap", Integer.valueOf(4));
     }
 
+    /**
+     * Registers listeners.
+     *
+     * @param b an abstract button
+     */
     protected void installListeners(AbstractButton b) {
         BasicButtonListener listener = createButtonListener(b);
         if(listener != null) {
@@ -131,6 +158,11 @@ public class BasicButtonUI extends ButtonUI{
         }
     }
 
+    /**
+     * Registers keyboard actions.
+     *
+     * @param b an abstract button
+     */
     protected void installKeyboardActions(AbstractButton b){
         BasicButtonListener listener = getButtonListener(b);
 
@@ -150,6 +182,11 @@ public class BasicButtonUI extends ButtonUI{
         BasicHTML.updateRenderer(c, "");
     }
 
+    /**
+     * Unregisters keyboard actions.
+     *
+     * @param b an abstract button
+     */
     protected void uninstallKeyboardActions(AbstractButton b) {
         BasicButtonListener listener = getButtonListener(b);
         if(listener != null) {
@@ -157,6 +194,11 @@ public class BasicButtonUI extends ButtonUI{
         }
     }
 
+    /**
+     * Unregisters listeners.
+     *
+     * @param b an abstract button
+     */
     protected void uninstallListeners(AbstractButton b) {
         BasicButtonListener listener = getButtonListener(b);
         if(listener != null) {
@@ -168,6 +210,11 @@ public class BasicButtonUI extends ButtonUI{
         }
     }
 
+    /**
+     * Uninstalls default properties.
+     *
+     * @param b an abstract button
+     */
     protected void uninstallDefaults(AbstractButton b) {
         LookAndFeel.uninstallBorder(b);
     }
@@ -175,10 +222,22 @@ public class BasicButtonUI extends ButtonUI{
     // ********************************
     //        Create Listeners
     // ********************************
+    /**
+     * Returns a new instance of {@code BasicButtonListener}.
+     *
+     * @param b an abstract button
+     * @return a new instance of {@code BasicButtonListener}
+     */
     protected BasicButtonListener createButtonListener(AbstractButton b) {
         return new BasicButtonListener(b);
     }
 
+    /**
+     * Returns the default gap between a text and an icon.
+     *
+     * @param b an abstract button
+     * @return the default gap between text and an icon
+     */
     public int getDefaultTextIconGap(AbstractButton b) {
         return defaultTextIconGap;
     }
@@ -231,6 +290,13 @@ public class BasicButtonUI extends ButtonUI{
         }
     }
 
+    /**
+     * Paints an icon of the current button.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
+     * @param iconRect a bounding rectangle to render the icon
+     */
     protected void paintIcon(Graphics g, JComponent c, Rectangle iconRect){
             AbstractButton b = (AbstractButton) c;
             ButtonModel model = b.getModel();
@@ -295,8 +361,15 @@ public class BasicButtonUI extends ButtonUI{
     }
 
     /**
+     * Method which renders the text of the current button.
+     *
      * As of Java 2 platform v 1.4 this method should not be used or overriden.
      * Use the paintText method which takes the AbstractButton argument.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
+     * @param textRect a bounding rectangle to render the text
+     * @param text a string to render
      */
     protected void paintText(Graphics g, JComponent c, Rectangle textRect, String text) {
         AbstractButton b = (AbstractButton) c;
@@ -328,7 +401,7 @@ public class BasicButtonUI extends ButtonUI{
      *
      * @param g Graphics context
      * @param b Current button to render
-     * @param textRect Bounding rectangle to render the text.
+     * @param textRect Bounding rectangle to render the text
      * @param text String to render
      * @since 1.4
      */
@@ -338,23 +411,48 @@ public class BasicButtonUI extends ButtonUI{
 
     // Method signature defined here overriden in subclasses.
     // Perhaps this class should be abstract?
+    /**
+     * Paints a focused button.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param b an abstract button
+     * @param viewRect a bounding rectangle to render the button
+     * @param textRect a bounding rectangle to render the text
+     * @param iconRect a bounding rectangle to render the icon
+     */
     protected void paintFocus(Graphics g, AbstractButton b,
                               Rectangle viewRect, Rectangle textRect, Rectangle iconRect){
     }
 
 
-
+    /**
+     * Paints a pressed button.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param b an abstract button
+     */
     protected void paintButtonPressed(Graphics g, AbstractButton b){
     }
 
+    /**
+     * Clears the offset of the text.
+     */
     protected void clearTextShiftOffset(){
         this.shiftOffset = 0;
     }
 
+    /**
+     * Sets the offset of the text.
+     */
     protected void setTextShiftOffset(){
         this.shiftOffset = defaultTextShiftOffset;
     }
 
+    /**
+     * Returns the offset of the text.
+     *
+     * @return the offset of the text
+     */
     protected int getTextShiftOffset() {
         return shiftOffset;
     }

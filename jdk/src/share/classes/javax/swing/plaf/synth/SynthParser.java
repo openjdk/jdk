@@ -764,7 +764,7 @@ class SynthParser extends DefaultHandler {
                 break;
             case 4: // integer
                 try {
-                    value = new Integer(Integer.parseInt(aValue));
+                    value = Integer.valueOf(aValue);
                 } catch (NumberFormatException nfe) {
                     throw new SAXException(property + " invalid value");
                 }

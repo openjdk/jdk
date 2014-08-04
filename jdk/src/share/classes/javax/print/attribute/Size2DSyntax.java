@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -77,7 +77,6 @@ import java.io.Serializable;
  * client's units will be an exact integer. If the conversion factor isn't an
  * exact integer, resolution values in the client's units won't be stored
  * precisely.
- * <P>
  *
  * @author  Alan Kaminsky
  */

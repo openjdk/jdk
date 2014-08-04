@@ -1241,10 +1241,9 @@ public abstract class Toolkit {
      * clipboard enables data transfer between Java programs and native
      * applications which use native clipboard facilities.
      * <p>
-     * In addition to any and all formats specified in the flavormap.properties
-     * file, or other file specified by the <code>AWT.DnD.flavorMapFileURL
-     * </code> Toolkit property, text returned by the system Clipboard's <code>
-     * getTransferData()</code> method is available in the following flavors:
+     * In addition to any and all default formats text returned by the system
+     * Clipboard's <code>getTransferData()</code> method is available in the
+     * following flavors:
      * <ul>
      * <li>DataFlavor.stringFlavor</li>
      * <li>DataFlavor.plainTextFlavor (<b>deprecated</b>)</li>

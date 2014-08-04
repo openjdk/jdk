@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,21 +41,13 @@ import com.sun.naming.internal.ResourceManager;
  * is initialized with properties defined in the environment parameter
  * passed to the constructor, and in any
  * <a href=Context.html#RESOURCEFILES>application resource files</a>.
- * In addition, a small number of standard JNDI properties may
- * be specified as system properties or as applet parameters
- * (through the use of {@link Context#APPLET}).
- * These special properties are listed in the field detail sections of the
- * <a href=Context.html#field_detail><tt>Context</tt></a> and
- * <a href=ldap/LdapContext.html#field_detail><tt>LdapContext</tt></a>
- * interface documentation.
  *<p>
  * JNDI determines each property's value by merging
  * the values from the following two sources, in order:
  * <ol>
  * <li>
  * The first occurrence of the property from the constructor's
- * environment parameter and (for appropriate properties) the applet
- * parameters and system properties.
+ * environment parameter and system properties.
  * <li>
  * The application resource files (<tt>jndi.properties</tt>).
  * </ol>

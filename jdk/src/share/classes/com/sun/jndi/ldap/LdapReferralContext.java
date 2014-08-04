@@ -679,7 +679,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
         } catch (LdapReferralException e) {
 
-            // %%% VR - setNameResolved(true);
+            // %%% setNameResolved(true);
 
             // append (referrals from) the exception that generated this
             // context to the new exception, so that referral processing
@@ -897,7 +897,7 @@ final class LdapReferralContext implements DirContext, LdapContext {
 
     /*
      * Use the attributes and scope components from the LDAP URL (if present)
-     * to override the corrpesonding components supplied in SearchControls.
+     * to override the corresponding components supplied in SearchControls.
      */
     private SearchControls overrideAttributesAndScope(SearchControls cons) {
         SearchControls urlCons;

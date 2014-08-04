@@ -83,7 +83,7 @@ class NewInstanceExpression extends NaryExpression {
     /**
      * Check expression type
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         // What type?
         ClassDefinition def = null;
 
@@ -366,7 +366,7 @@ class NewInstanceExpression extends NaryExpression {
     /**
      * Check void expression
      */
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         return checkValue(env, ctx, vset, exp);
     }
 

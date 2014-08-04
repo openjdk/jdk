@@ -53,7 +53,7 @@ class WhileStatement extends Statement {
     /**
      * Check a while statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         checkLabel(env, ctx);
         CheckContext newctx = new CheckContext(ctx, this);
         // remember what was unassigned on entry

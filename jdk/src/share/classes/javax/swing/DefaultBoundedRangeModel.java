@@ -88,6 +88,11 @@ public class DefaultBoundedRangeModel implements BoundedRangeModel, Serializable
      * <pre>
      * min &lt;= value &lt;= value+extent &lt;= max
      * </pre>
+     *
+     * @param value  an int giving the current value
+     * @param extent the length of the inner range that begins at the model's value
+     * @param min    an int giving the minimum value
+     * @param max    an int giving the maximum value
      */
     public DefaultBoundedRangeModel(int value, int extent, int min, int max)
     {
@@ -403,6 +408,7 @@ public class DefaultBoundedRangeModel implements BoundedRangeModel, Serializable
      * If no such listeners exist,
      * this method returns an empty array.
      *
+     * @param <T> the type of {@code EventListener} class being requested
      * @param listenerType  the type of listeners requested;
      *          this parameter should specify an interface
      *          that descends from <code>java.util.EventListener</code>

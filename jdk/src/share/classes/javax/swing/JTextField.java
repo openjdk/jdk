@@ -675,6 +675,9 @@ public class JTextField extends JTextComponent implements SwingConstants {
      * that of the <code>Action</code>.
      *
      * @param a the textfield's action
+     * @return a {@code PropertyChangeListener} that is responsible for
+     *         listening for changes from the specified {@code Action} and
+     *         updating the appropriate properties
      * @since 1.3
      * @see Action
      * @see #setAction
