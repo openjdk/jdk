@@ -104,7 +104,7 @@ public final class SwitchNode extends BreakableStatement {
         if (visitor.enterSwitchNode(this)) {
             return visitor.leaveSwitchNode(
                 setExpression(lc, (Expression)expression.accept(visitor)).
-                setCases(lc, Node.accept(visitor, CaseNode.class, cases), defaultCaseIndex));
+                setCases(lc, Node.accept(visitor, cases), defaultCaseIndex));
         }
 
         return this;

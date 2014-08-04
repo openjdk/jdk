@@ -484,17 +484,16 @@ public final class ScriptRuntime {
             final Object unwrapped = ScriptObjectMirror.unwrap(expression, global);
             if (unwrapped instanceof ScriptObject) {
                 return new WithObject(scope, (ScriptObject)unwrapped);
-            } else {
-                // foreign ScriptObjectMirror
-                ScriptObject exprObj = global.newObject();
-                NativeObject.bindAllProperties(exprObj, (ScriptObjectMirror)expression);
-                return new WithObject(scope, exprObj);
             }
-        } else {
-            final Object wrappedExpr = JSType.toScriptObject(global, expression);
-            if (wrappedExpr instanceof ScriptObject) {
-                return new WithObject(scope, (ScriptObject)wrappedExpr);
-            }
+            // foreign ScriptObjectMirror
+            final ScriptObject exprObj = global.newObject();
+            NativeObject.bindAllProperties(exprObj, (ScriptObjectMirror)expression);
+            return new WithObject(scope, exprObj);
+        }
+
+        final Object wrappedExpr = JSType.toScriptObject(global, expression);
+        if (wrappedExpr instanceof ScriptObject) {
+            return new WithObject(scope, (ScriptObject)wrappedExpr);
         }
 
         throw typeError(global, "cant.apply.with.to.non.scriptobject");
