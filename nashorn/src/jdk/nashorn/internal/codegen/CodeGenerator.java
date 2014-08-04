@@ -4742,7 +4742,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          */
         private void replaceCompileTimeProperty(final Object propertyValue) {
             assert method.peekType().isObject();
-            if(propertyValue instanceof String) {
+            if(propertyValue instanceof String || propertyValue == null) {
                 method.load((String)propertyValue);
             } else if(propertyValue instanceof Integer) {
                 method.load(((Integer)propertyValue).intValue());
