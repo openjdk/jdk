@@ -50,6 +50,7 @@ import java.util.TreeMap;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.logging.Level;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -502,7 +503,7 @@ public final class Compiler implements Loggable {
      */
     public FunctionNode compile(final FunctionNode functionNode, final CompilationPhases phases) throws CompilationException {
 
-        log.info("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
+        log.finest("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
         log.indent();
 
         final String name = DebugLogger.quote(functionNode.getName());
@@ -531,7 +532,7 @@ public final class Compiler implements Loggable {
             time += (env.isTimingEnabled() ? phase.getEndTime() - phase.getStartTime() : 0L);
         }
 
-        if(typeInformationFile != null && !phases.isRestOfCompilation()) {
+        if (typeInformationFile != null && !phases.isRestOfCompilation()) {
             OptimisticTypesPersistence.store(typeInformationFile, invalidatedProgramPoints);
         }
 
