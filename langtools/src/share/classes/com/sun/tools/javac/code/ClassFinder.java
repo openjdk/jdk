@@ -103,6 +103,10 @@ public class ClassFinder {
      */
     private final JavaFileManager fileManager;
 
+    /** Dependency tracker
+     */
+    private final Dependencies dependencies;
+
     /** Factory for diagnostics
      */
     JCDiagnostic.Factory diagFactory;
@@ -150,6 +154,7 @@ public class ClassFinder {
         names = Names.instance(context);
         syms = Symtab.instance(context);
         fileManager = context.get(JavaFileManager.class);
+        dependencies = Dependencies.instance(context);
         if (fileManager == null)
             throw new AssertionError("FileManager initialization error");
         diagFactory = JCDiagnostic.Factory.instance(context);
@@ -179,18 +184,23 @@ public class ClassFinder {
      */
     private void complete(Symbol sym) throws CompletionFailure {
         if (sym.kind == TYP) {
-            ClassSymbol c = (ClassSymbol)sym;
-            c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
-            annotate.enterStart();
             try {
-                completeOwners(c.owner);
-                completeEnclosing(c);
+                ClassSymbol c = (ClassSymbol) sym;
+                dependencies.push(c);
+                c.members_field = new Scope.ErrorScope(c); // make sure it's always defined
+                annotate.enterStart();
+                try {
+                    completeOwners(c.owner);
+                    completeEnclosing(c);
+                } finally {
+                    // The flush needs to happen only after annotations
+                    // are filled in.
+                    annotate.enterDoneWithoutFlush();
+                }
+                fillIn(c);
             } finally {
-                // The flush needs to happen only after annotations
-                // are filled in.
-                annotate.enterDoneWithoutFlush();
+                dependencies.pop();
             }
-            fillIn(c);
         } else if (sym.kind == PCK) {
             PackageSymbol p = (PackageSymbol)sym;
             try {
@@ -257,7 +267,6 @@ public class ClassFinder {
                                                         + classfile.toUri());
                     }
                 }
-                return;
             } finally {
                 currentClassFile = previousClassFile;
             }

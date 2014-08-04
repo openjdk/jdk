@@ -23,11 +23,14 @@
 
 import java.io.File;
 import java.io.IOException;
-import java.io.PrintStream;
-import java.util.*;
+import java.util.List;
+import java.util.Objects;
 import java.util.function.Function;
 import java.util.stream.Stream;
-import javax.tools.*;
+import javax.tools.DiagnosticCollector;
+import javax.tools.JavaCompiler;
+import javax.tools.JavaFileObject;
+import javax.tools.ToolProvider;
 
 import static java.lang.String.format;
 import static java.lang.System.lineSeparator;
@@ -36,6 +39,11 @@ import static java.util.Collections.emptyList;
 import static java.util.stream.Collectors.joining;
 import static java.util.stream.Collectors.toList;
 
+/**
+ * Base class for class file attribute tests.
+ * Contains methods for compiling generated sources in memory,
+ * for reading files from disk and a lot of assert* methods.
+ */
 public class TestBase {
 
     public static final String LINE_SEPARATOR = lineSeparator();
@@ -66,35 +74,48 @@ public class TestBase {
         }
     }
 
+    /**
+     * Compiles sources in memory.
+     *
+     * @param sources to compile.
+     * @return memory file manager which contains class files and class loader.
+     */
     public InMemoryFileManager compile(String... sources)
             throws IOException, CompilationException {
         return compile(emptyList(), sources);
     }
 
     /**
-     * @param options - compiler options
-     * @param sources
+     * Compiles sources in memory.
+     *
+     * @param options compiler options.
+     * @param sources sources to compile.
      * @return map where key is className, value is corresponding ClassFile.
-     * @throws IOException
      */
-    public InMemoryFileManager compile(List<String> options, String...sources)
+    public InMemoryFileManager compile(List<String> options, String... sources)
             throws IOException, CompilationException {
         return compile(options, ToolBox.JavaSource::new, asList(sources));
     }
 
+    /**
+     * Compiles sources in memory.
+     *
+     * @param sources sources[i][0] - name of file, sources[i][1] - sources.
+     * @return map where key is className, value is corresponding ClassFile.
+     */
     public InMemoryFileManager compile(String[]... sources) throws IOException,
             CompilationException {
         return compile(emptyList(), sources);
     }
 
     /**
-     * @param options -  compiler options
-     * @param sources - sources[i][0] - name of file, sources[i][1] - sources
+     * Compiles sources in memory.
+     *
+     * @param options compiler options
+     * @param sources sources[i][0] - name of file, sources[i][1] - sources.
      * @return map where key is className, value is corresponding ClassFile.
-     * @throws IOException
-     * @throws CompilationException
      */
-    public InMemoryFileManager compile(List<String> options, String[]...sources)
+    public InMemoryFileManager compile(List<String> options, String[]... sources)
             throws IOException, CompilationException {
         return compile(options, src -> new ToolBox.JavaSource(src[0], src[1]), asList(sources));
     }
@@ -142,11 +163,22 @@ public class TestBase {
         return getClassFile(clazz.getName().replace(".", "/") + ".class");
     }
 
+    /**
+     * Prints message to standard error. New lines are converted to system dependent NL.
+     *
+     * @param message string to print.
+     */
     public void echo(String message) {
         System.err.println(message.replace("\n", LINE_SEPARATOR));
     }
 
-    public void printf(String template, Object...args) {
+    /**
+     * Substitutes args in template and prints result to standard error. New lines are converted to system dependent NL.
+     *
+     * @param template template in standard String.format(...) format.
+     * @param args arguments to substitute in template.
+     */
+    public void printf(String template, Object... args) {
         System.err.printf(template, Stream.of(args)
                 .map(Objects::toString)
                 .map(m -> m.replace("\n", LINE_SEPARATOR))

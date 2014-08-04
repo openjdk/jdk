@@ -1,0 +1,2 @@
+Test.java:9:21: compiler.err.proc.messager: compiler.misc.crules.should.not.use.string.concatenation
+1 error
