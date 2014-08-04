@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2003-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -110,9 +112,29 @@ public interface SerializationHandler
     public void setNamespaceMappings(NamespaceMappings mappings);
 
     /**
-     * Flush any pending events currently queued up in the serializer. This will
-     * flush any input that the serializer has which it has not yet sent as
-     * output.
+     * A SerializationHandler accepts SAX-like events, so
+     * it can accumulate attributes or namespace nodes after
+     * a startElement().
+     * <p>
+     * If the SerializationHandler has a Writer or OutputStream,
+     * a call to this method will flush such accumulated
+     * events as a closed start tag for an element.
+     * <p>
+     * If the SerializationHandler wraps a ContentHandler,
+     * a call to this method will flush such accumulated
+     * events as a SAX (not SAX-like) calls to
+     * startPrefixMapping() and startElement().
+     * <p>
+     * If one calls endDocument() then one need not call
+     * this method since a call to endDocument() will
+     * do what this method does. However, in some
+     * circumstances, such as with document fragments,
+     * endDocument() is not called and it may be
+     * necessary to call this method to flush
+     * any pending events.
+     * <p>
+     * For performance reasons this method should not be called
+     * very often.
      */
     public void flushPending() throws SAXException;
 
