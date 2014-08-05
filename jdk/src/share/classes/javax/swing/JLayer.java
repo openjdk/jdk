@@ -646,6 +646,7 @@ public final class JLayer<V extends Component>
         return 1;
     }
 
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
             throws IOException, ClassNotFoundException {
         ObjectInputStream.GetField f = s.readFields();
@@ -656,7 +657,6 @@ public final class JLayer<V extends Component>
         if (eventMask != 0) {
             eventController.updateAWTEventListener(0, eventMask);
         }
-        @SuppressWarnings("unchecked")
         LayerUI<V> newLayerUI = (LayerUI<V>) f.get("layerUI", null);
         if (newLayerUI != null) {
             setUI(newLayerUI);

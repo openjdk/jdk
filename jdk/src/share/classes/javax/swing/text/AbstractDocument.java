@@ -1426,12 +1426,14 @@ public abstract class AbstractDocument implements Document, Serializable {
 
     // --- serialization ---------------------------------------------
 
+    @SuppressWarnings("unchecked")
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
         ObjectInputStream.GetField f = s.readFields();
 
-        documentProperties = (Dictionary) f.get("documentProperties", null);
+        documentProperties =
+            (Dictionary<Object, Object>) f.get("documentProperties", null);
         listenerList = new EventListenerList();
         data = (Content) f.get("data", null);
         context = (AttributeContext) f.get("context", null);
