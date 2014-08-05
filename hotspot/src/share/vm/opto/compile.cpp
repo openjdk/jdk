@@ -2842,7 +2842,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           // oops implicit null check is not generated.
           // This will allow to generate normal oop implicit null check.
           if (Matcher::gen_narrow_oop_implicit_null_checks())
-            new_in2 = ConNode::make(this, TypeNarrowOop::NULL_PTR);
+            new_in2 = ConNode::make(TypeNarrowOop::NULL_PTR);
           //
           // This transformation together with CastPP transformation above
           // will generated code for implicit NULL checks for compressed oops.
@@ -2881,9 +2881,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           //    NullCheck base_reg
           //
         } else if (t->isa_oopptr()) {
-          new_in2 = ConNode::make(this, t->make_narrowoop());
+          new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(this, t->make_narrowklass());
+          new_in2 = ConNode::make(t->make_narrowklass());
         }
       }
       if (new_in2 != NULL) {
@@ -2916,11 +2916,11 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
         assert(t->isa_oopptr(), "null klass?");
-        n->subsume_by(ConNode::make(this, TypeNarrowOop::NULL_PTR), this);
+        n->subsume_by(ConNode::make(TypeNarrowOop::NULL_PTR), this);
       } else if (t->isa_oopptr()) {
-        n->subsume_by(ConNode::make(this, t->make_narrowoop()), this);
+        n->subsume_by(ConNode::make(t->make_narrowoop()), this);
       } else if (t->isa_klassptr()) {
-        n->subsume_by(ConNode::make(this, t->make_narrowklass()), this);
+        n->subsume_by(ConNode::make(t->make_narrowklass()), this);
       }
     }
     if (in1->outcnt() == 0) {
@@ -2981,7 +2981,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
-          DivModINode* divmod = DivModINode::make(this, n);
+          DivModINode* divmod = DivModINode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3001,7 +3001,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
-          DivModLNode* divmod = DivModLNode::make(this, n);
+          DivModLNode* divmod = DivModLNode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3027,7 +3027,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     if (n->req()-1 > 2) {
       // Replace many operand PackNodes with a binary tree for matching
       PackNode* p = (PackNode*) n;
-      Node* btp = p->binary_tree_pack(this, 1, n->req());
+      Node* btp = p->binary_tree_pack(1, n->req());
       n->subsume_by(btp, this);
     }
     break;
@@ -3052,11 +3052,11 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (t != NULL && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          n->set_req(2, ConNode::make(this, TypeInt::make(shift & mask)));
+          n->set_req(2, ConNode::make(TypeInt::make(shift & mask)));
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
-          Node* shift = new AndINode(in2, ConNode::make(this, TypeInt::make(mask)));
+          Node* shift = new AndINode(in2, ConNode::make(TypeInt::make(mask)));
           n->set_req(2, shift);
         }
       }

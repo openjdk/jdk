@@ -1280,7 +1280,7 @@ DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) 
 }
 
 //------------------------------make------------------------------------------
-DivModINode* DivModINode::make(Compile* C, Node* div_or_mod) {
+DivModINode* DivModINode::make(Node* div_or_mod) {
   Node* n = div_or_mod;
   assert(n->Opcode() == Op_DivI || n->Opcode() == Op_ModI,
          "only div or mod input pattern accepted");
@@ -1292,7 +1292,7 @@ DivModINode* DivModINode::make(Compile* C, Node* div_or_mod) {
 }
 
 //------------------------------make------------------------------------------
-DivModLNode* DivModLNode::make(Compile* C, Node* div_or_mod) {
+DivModLNode* DivModLNode::make(Node* div_or_mod) {
   Node* n = div_or_mod;
   assert(n->Opcode() == Op_DivL || n->Opcode() == Op_ModL,
          "only div or mod input pattern accepted");

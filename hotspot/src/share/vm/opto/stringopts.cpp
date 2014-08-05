@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1438,7 +1438,7 @@ void PhaseStringOpts::replace_string_concat(StringConcat* sc) {
   }
   // Make sure the memory state is a MergeMem for parsing.
   if (!map->in(TypeFunc::Memory)->is_MergeMem()) {
-    map->set_req(TypeFunc::Memory, MergeMemNode::make(C, map->in(TypeFunc::Memory)));
+    map->set_req(TypeFunc::Memory, MergeMemNode::make(map->in(TypeFunc::Memory)));
   }
 
   jvms->set_map(map);

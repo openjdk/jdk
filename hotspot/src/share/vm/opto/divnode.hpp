@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,7 +168,7 @@ public:
   virtual Node *match( const ProjNode *proj, const Matcher *m );
 
   // Make a divmod and associated projections from a div or mod.
-  static DivModINode* make(Compile* C, Node* div_or_mod);
+  static DivModINode* make(Node* div_or_mod);
 };
 
 //------------------------------DivModLNode---------------------------------------
@@ -181,7 +181,7 @@ public:
   virtual Node *match( const ProjNode *proj, const Matcher *m );
 
   // Make a divmod and associated projections from a div or mod.
-  static DivModLNode* make(Compile* C, Node* div_or_mod);
+  static DivModLNode* make(Node* div_or_mod);
 };
 
 #endif // SHARE_VM_OPTO_DIVNODE_HPP

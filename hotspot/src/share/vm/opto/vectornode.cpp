@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -245,7 +245,7 @@ void VectorNode::vector_operands(Node* n, uint* start, uint* end) {
 }
 
 // Return the vector version of a scalar operation node.
-VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
+VectorNode* VectorNode::make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   int vopc = VectorNode::opcode(opc, bt);
   // This method should not be called for unimplemented vectors.
@@ -299,7 +299,7 @@ VectorNode* VectorNode::make(Compile* C, int opc, Node* n1, Node* n2, uint vlen,
 }
 
 // Scalar promotion
-VectorNode* VectorNode::scalar2vector(Compile* C, Node* s, uint vlen, const Type* opd_t) {
+VectorNode* VectorNode::scalar2vector(Node* s, uint vlen, const Type* opd_t) {
   BasicType bt = opd_t->array_element_basic_type();
   const TypeVect* vt = opd_t->singleton() ? TypeVect::make(opd_t, vlen)
                                           : TypeVect::make(bt, vlen);
@@ -323,7 +323,7 @@ VectorNode* VectorNode::scalar2vector(Compile* C, Node* s, uint vlen, const Type
   return NULL;
 }
 
-VectorNode* VectorNode::shift_count(Compile* C, Node* shift, Node* cnt, uint vlen, BasicType bt) {
+VectorNode* VectorNode::shift_count(Node* shift, Node* cnt, uint vlen, BasicType bt) {
   assert(VectorNode::is_shift(shift) && !cnt->is_Con(), "only variable shift count");
   // Match shift count type with shift vector type.
   const TypeVect* vt = TypeVect::make(bt, vlen);
@@ -342,7 +342,7 @@ VectorNode* VectorNode::shift_count(Compile* C, Node* shift, Node* cnt, uint vle
 }
 
 // Return initial Pack node. Additional operands added with add_opd() calls.
-PackNode* PackNode::make(Compile* C, Node* s, uint vlen, BasicType bt) {
+PackNode* PackNode::make(Node* s, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   switch (bt) {
   case T_BOOLEAN:
@@ -365,18 +365,18 @@ PackNode* PackNode::make(Compile* C, Node* s, uint vlen, BasicType bt) {
 }
 
 // Create a binary tree form for Packs. [lo, hi) (half-open) range
-PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
+PackNode* PackNode::binary_tree_pack(int lo, int hi) {
   int ct = hi - lo;
   assert(is_power_of_2(ct), "power of 2");
   if (ct == 2) {
-    PackNode* pk = PackNode::make(C, in(lo), 2, vect_type()->element_basic_type());
+    PackNode* pk = PackNode::make(in(lo), 2, vect_type()->element_basic_type());
     pk->add_opd(in(lo+1));
     return pk;
 
   } else {
     int mid = lo + ct/2;
-    PackNode* n1 = binary_tree_pack(C, lo,  mid);
-    PackNode* n2 = binary_tree_pack(C, mid, hi );
+    PackNode* n1 = binary_tree_pack(lo,  mid);
+    PackNode* n2 = binary_tree_pack(mid, hi );
 
     BasicType bt = n1->vect_type()->element_basic_type();
     assert(bt == n2->vect_type()->element_basic_type(), "should be the same");
@@ -402,23 +402,23 @@ PackNode* PackNode::binary_tree_pack(Compile* C, int lo, int hi) {
 }
 
 // Return the vector version of a scalar load node.
-LoadVectorNode* LoadVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
+LoadVectorNode* LoadVectorNode::make(int opc, Node* ctl, Node* mem,
                                      Node* adr, const TypePtr* atyp, uint vlen, BasicType bt) {
   const TypeVect* vt = TypeVect::make(bt, vlen);
   return new LoadVectorNode(ctl, mem, adr, atyp, vt);
 }
 
 // Return the vector version of a scalar store node.
-StoreVectorNode* StoreVectorNode::make(Compile* C, int opc, Node* ctl, Node* mem,
+StoreVectorNode* StoreVectorNode::make(int opc, Node* ctl, Node* mem,
                                        Node* adr, const TypePtr* atyp, Node* val,
                                        uint vlen) {
   return new StoreVectorNode(ctl, mem, adr, atyp, val);
 }
 
 // Extract a scalar element of vector.
-Node* ExtractNode::make(Compile* C, Node* v, uint position, BasicType bt) {
+Node* ExtractNode::make(Node* v, uint position, BasicType bt) {
   assert((int)position < Matcher::max_vector_size(bt), "pos in range");
-  ConINode* pos = ConINode::make(C, (int)position);
+  ConINode* pos = ConINode::make((int)position);
   switch (bt) {
   case T_BOOLEAN:
     return new ExtractUBNode(v, pos);

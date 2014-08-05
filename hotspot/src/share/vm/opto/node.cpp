@@ -507,7 +507,7 @@ Node *Node::clone() const {
                                   (const void*)(&mthis->_opnds), 1));
     mach->_opnds = to;
     for ( uint i = 0; i < nopnds; ++i ) {
-      to[i] = from[i]->clone(C);
+      to[i] = from[i]->clone();
     }
   }
   // cloning CallNode may need to clone JVMState

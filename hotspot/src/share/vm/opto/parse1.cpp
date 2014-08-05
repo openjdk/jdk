@@ -1757,7 +1757,7 @@ void Parse::merge_memory_edges(MergeMemNode* n, int pnum, bool nophi) {
       if (remerge == NULL) {
         assert(base != NULL, "");
         assert(base->in(0) != NULL, "should not be xformed away");
-        remerge = MergeMemNode::make(C, base->in(pnum));
+        remerge = MergeMemNode::make(base->in(pnum));
         gvn().set_type(remerge, Type::MEMORY);
         base->set_req(pnum, remerge);
       }
@@ -2200,7 +2200,7 @@ void Parse::add_safepoint() {
   // down below a SafePoint.
 
   // Clone the current memory state
-  Node* mem = MergeMemNode::make(C, map()->memory());
+  Node* mem = MergeMemNode::make(map()->memory());
 
   mem = _gvn.transform(mem);
 
@@ -2214,7 +2214,7 @@ void Parse::add_safepoint() {
 
   // Create a node for the polling address
   if( add_poll_param ) {
-    Node *polladr = ConPNode::make(C, (address)os::get_polling_page());
+    Node *polladr = ConPNode::make((address)os::get_polling_page());
     sfpnt->init_req(TypeFunc::Parms+0, _gvn.transform(polladr));
   }
 
