@@ -207,9 +207,6 @@ sun/security/pkcs11/ec/TestKeyFactory.java                      generic-all
 # 8051952: Unreachable.java test failing on Windows
 sun/security/krb5/auto/Unreachable.java                         windows-all,macosx-all
 
-# 7147060
-com/sun/org/apache/xml/internal/security/transforms/ClassLoaderTest.java	generic-all
-
 # 6988842: 4 tests failing on Solaris 5.10
 sun/security/pkcs11/Secmod/AddPrivateKey.java                   solaris-all
 sun/security/pkcs11/ec/ReadCertificates.java                    solaris-all
