@@ -48,7 +48,7 @@ class InstanceOfExpression extends BinaryExpression {
     /**
      * Check the expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = left.checkValue(env, ctx, vset, exp);
         right = new TypeExpression(right.where, right.toType(env, ctx));
 

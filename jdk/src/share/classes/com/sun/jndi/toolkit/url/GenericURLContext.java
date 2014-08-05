@@ -168,7 +168,7 @@ abstract public class GenericURLContext implements Context {
             }
         }
 
-        // else 0 or 1 iniitial slashes; start is unchanged
+        // else 0 or 1 initial slashes; start is unchanged
         return url.substring(0, start);
     }
 

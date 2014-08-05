@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,8 @@ package com.sun.xml.internal.bind.v2.runtime;
 import java.io.IOException;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
@@ -415,6 +417,15 @@ public abstract class JaxBeanInfo<BeanT> {
     private static final Class[] unmarshalEventParams = { Unmarshaller.class, Object.class };
     private static Class[] marshalEventParams = { Marshaller.class };
 
+    private Method[] getDeclaredMethods(final Class<BeanT> c) {
+        return AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+            @Override
+            public Method[] run() {
+                return c.getDeclaredMethods();
+            }
+        });
+    }
+
     /**
      * use reflection to determine which of the 4 object lifecycle methods exist on
      * the JAXB bound type.
@@ -428,7 +439,7 @@ public abstract class JaxBeanInfo<BeanT> {
             }
 
             while (jt != null) {
-                for (Method m : jt.getDeclaredMethods()) {
+                for (Method m : getDeclaredMethods(jt)) {
                     String name = m.getName();
 
                     if (lcm.beforeUnmarshal == null) {
@@ -468,7 +479,7 @@ public abstract class JaxBeanInfo<BeanT> {
         } catch (SecurityException e) {
             // this happens when we don't have enough permission.
             logger.log(Level.WARNING, Messages.UNABLE_TO_DISCOVER_EVENTHANDLER.format(
-                    jaxbType.getName(), e));
+                    jaxbType.getName(), e), e);
         }
     }
 

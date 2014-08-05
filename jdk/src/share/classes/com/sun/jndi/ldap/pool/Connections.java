@@ -254,7 +254,7 @@ final class Connections implements PoolCallback {
     /**
      * Removes PooledConnection from list of connections.
      * The closing of the connection is separate from this method.
-     * This method is called usually when the caller encouters an error
+     * This method is called usually when the caller encounters an error
      * when using the connection and wants it removed from the pool.
      *
      * @return true if conn removed; false if it was not in pool

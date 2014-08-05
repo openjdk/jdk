@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,15 +47,15 @@ public class RefsByTypeQuery extends QueryHandler {
         } else {
             Map<JavaClass, Long> referrersStat = new HashMap<JavaClass, Long>();
             final Map<JavaClass, Long> refereesStat = new HashMap<JavaClass, Long>();
-            Enumeration instances = clazz.getInstances(false);
+            Enumeration<JavaHeapObject> instances = clazz.getInstances(false);
             while (instances.hasMoreElements()) {
-                JavaHeapObject instance = (JavaHeapObject) instances.nextElement();
+                JavaHeapObject instance = instances.nextElement();
                 if (instance.getId() == -1) {
                     continue;
                 }
-                Enumeration e = instance.getReferers();
+                Enumeration<JavaThing> e = instance.getReferers();
                 while (e.hasMoreElements()) {
-                    JavaHeapObject ref = (JavaHeapObject) e.nextElement();
+                    JavaHeapObject ref = (JavaHeapObject)e.nextElement();
                     JavaClass cl = ref.getClazz();
                     if (cl == null) {
                          System.out.println("null class for " + ref);

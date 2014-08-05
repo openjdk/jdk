@@ -483,7 +483,7 @@ public class FtpURL {
 
             // Now let's check the URL handler
 
-            url = new URL("ftp://user2:@localhost:" + port + "/%2Fusr/bin;type=d");
+            url = new URL("ftp://user2@localhost:" + port + "/%2Fusr/bin;type=d");
             con = url.openConnection();
             in = new BufferedReader(new InputStreamReader(con.getInputStream()));
             do {

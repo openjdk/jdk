@@ -68,8 +68,8 @@ import javax.naming.NamingException;
  * whenever a pooled connection is requested or a call to remove the expired
  * connections is made. The monitoring is done regularly when idle connection
  * timeout is set as the PoolCleaner removes expired connections periodically.
- * As determined by the experiements, cleanup of resources using the
- * ReferenceQueue mechanism is reliable and has immidiate effect than the
+ * As determined by experimentation, cleanup of resources using the
+ * ReferenceQueue mechanism is reliable and has more immediate effect than the
  * finalizer approach.
  *
  * @author Rosanna Lee

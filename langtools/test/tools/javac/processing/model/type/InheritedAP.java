@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8024513
  * @library /tools/javac/lib
- * @build InheritedAP
+ * @build JavacTestingAbstractProcessor InheritedAP
  * @compile -cp . -processor InheritedAP -proc:only InheritedAP.java
  * @summary NPE in annotation processing
  */
@@ -40,8 +40,7 @@ import static javax.lang.model.SourceVersion.*;
 import static javax.lang.model.util.ElementFilter.*;
 
 @SupportedAnnotationTypes("testclass")
-@SupportedSourceVersion(RELEASE_8)
-public class InheritedAP extends AbstractProcessor {
+public class InheritedAP extends JavacTestingAbstractProcessor {
     static Types types;
     public void init(ProcessingEnvironment penv) {super.init(penv);}
     public static Types getTypes() { return types; }
@@ -54,14 +53,14 @@ public class InheritedAP extends AbstractProcessor {
         types=processingEnv.getTypeUtils();
         for (TypeElement typeElem: typesIn(renv.getRootElements())) {
             if (typeElem.getAnnotation(testclass.class) != null) {
-                new ElementScanner( new SimpleTypeMirrorVisitor()).scan(typeElem, null);
+                new LocalElementScanner( new SimpleTypeMirrorVisitor()).scan(typeElem, null);
             }
         }
         return true ;
     }
 }
 
-class SimpleTypeMirrorVisitor extends SimpleTypeVisitor6 <Void, Void> {
+class SimpleTypeMirrorVisitor extends JavacTestingAbstractProcessor.SimpleTypeVisitor<Void, Void> {
     protected Void defaultAction(TypeMirror mirror, Void p ) {
         try {
             System.out.println( "InheritedAP.getTypes().directSupertypes( "+mirror.toString()+" );" );
@@ -72,11 +71,11 @@ class SimpleTypeMirrorVisitor extends SimpleTypeVisitor6 <Void, Void> {
     }
 }
 
-class ElementScanner <T extends SimpleTypeVisitor6<Void, Void> >
-                    extends ElementScanner6<Void, Void> {
-    SimpleTypeVisitor6<Void, Void> typeVisitor;
+class LocalElementScanner <T extends JavacTestingAbstractProcessor.SimpleTypeVisitor<Void, Void> >
+                    extends JavacTestingAbstractProcessor.ElementScanner<Void, Void> {
+    JavacTestingAbstractProcessor.SimpleTypeVisitor<Void, Void> typeVisitor;
 
-    public ElementScanner(T typeVisitor) { this.typeVisitor=typeVisitor;}
+    public LocalElementScanner(T typeVisitor) { this.typeVisitor=typeVisitor;}
 
     @Override
     public Void scan(Element e, Void p) {
@@ -86,7 +85,6 @@ class ElementScanner <T extends SimpleTypeVisitor6<Void, Void> >
         }
         return p;
     }
-
 }
 
 

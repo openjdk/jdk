@@ -56,7 +56,7 @@ class BatchParser extends Parser {
     /**
      * The classes defined in this file
      */
-    protected Vector classes;
+    protected Vector<SourceClass> classes;
 
 
     /**
@@ -76,7 +76,7 @@ class BatchParser extends Parser {
         super(env, in);
 
         imports = new Imports(env);
-        classes = new Vector();
+        classes = new Vector<>();
         toplevelEnv = imports.newEnvironment(env);
     }
 

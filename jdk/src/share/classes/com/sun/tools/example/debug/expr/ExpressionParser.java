@@ -33,18 +33,18 @@ import java.util.ArrayList;
 
 public class ExpressionParser implements ExpressionParserConstants {
 
-  Stack stack = new Stack();
+  Stack<LValue> stack = new Stack<>();
   VirtualMachine vm = null;
   GetFrame frameGetter = null;
   private static GetFrame lastFrameGetter;
   private static LValue lastLValue;
 
   LValue peek() {
-    return (LValue)stack.peek();
+    return stack.peek();
   }
 
   LValue pop() {
-    return (LValue)stack.pop();
+    return stack.pop();
   }
 
   void push(LValue lval) {
@@ -915,7 +915,7 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
   final public void PrimarySuffix() throws ParseException {
- List argList;
+ List<Value> argList;
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case LBRACKET:
       jj_consume_token(LBRACKET);
@@ -993,8 +993,8 @@ public class ExpressionParser implements ExpressionParserConstants {
     jj_consume_token(NULL);
   }
 
-  final public List Arguments() throws ParseException {
- List argList = new ArrayList();
+  final public List<Value> Arguments() throws ParseException {
+ List<Value> argList = new ArrayList<>();
     jj_consume_token(LPAREN);
     switch ((jj_ntk==-1)?jj_ntk():jj_ntk) {
     case FALSE:
@@ -1026,7 +1026,7 @@ public class ExpressionParser implements ExpressionParserConstants {
     throw new Error("Missing return statement in function");
   }
 
-  final public void ArgumentList(List argList) throws ParseException {
+  final public void ArgumentList(List<Value> argList) throws ParseException {
     Expression();
                 argList.add(pop().interiorGetValue());
     label_17:
@@ -1046,7 +1046,7 @@ public class ExpressionParser implements ExpressionParserConstants {
   }
 
   final public void AllocationExpression() throws ParseException {
- List argList; String className;
+ List<Value> argList; String className;
     if (jj_2_7(2)) {
       jj_consume_token(NEW);
       PrimitiveType();

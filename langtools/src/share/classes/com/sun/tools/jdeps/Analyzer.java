@@ -24,8 +24,6 @@
  */
 package com.sun.tools.jdeps;
 
-import com.sun.tools.classfile.Dependency.Location;
-import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -33,6 +31,10 @@ import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Set;
+import java.util.stream.Collectors;
+
+import com.sun.tools.classfile.Dependency.Location;
+import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
 
 /**
  * Dependency Analyzer.
@@ -108,6 +110,13 @@ public class Analyzer {
             return results.get(archive).dependencies().size() > 0;
         }
         return false;
+    }
+
+    public Set<String> dependences(Archive source) {
+        ArchiveDeps result = results.get(source);
+        return result.dependencies().stream()
+                     .map(Dep::target)
+                     .collect(Collectors.toSet());
     }
 
     public interface Visitor {
