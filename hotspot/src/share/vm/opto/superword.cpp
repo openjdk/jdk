@@ -1378,6 +1378,20 @@ void SuperWord::output() {
       if (n->is_Load()) {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
+        SWPointer p1(n->as_Mem(), this);
+        // Identify the memory dependency for the new loadVector node by
+        // walking up through memory chain.
+        // This is done to give flexibility to the new loadVector node so that
+        // it can move above independent storeVector nodes.
+        while (mem->is_StoreVector()) {
+          SWPointer p2(mem->as_Mem(), this);
+          int cmp = p1.cmp(p2);
+          if (SWPointer::not_equal(cmp) || !SWPointer::comparable(cmp)) {
+            mem = mem->in(MemNode::Memory);
+          } else {
+            break; // dependent memory
+          }
+        }
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
         vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
