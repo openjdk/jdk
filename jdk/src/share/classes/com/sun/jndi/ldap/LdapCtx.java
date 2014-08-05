@@ -1651,7 +1651,7 @@ final public class LdapCtx extends ComponentDirContext
      *
      * This function is called regardless of the server's version, since
      * an administrator may have setup the server to support client schema
-     * queries. If this function trys a serarch on a v2 server that
+     * queries. If this function tries a search on a v2 server that
      * doesn't support schema, one of these two things will happen:
      * 1) It will get an exception when querying the root DSE
      * 2) It will not find a subschemasubentry on the root DSE
@@ -2016,7 +2016,7 @@ final public class LdapCtx extends ComponentDirContext
      *    - the returning attributes list is present but empty
      */
 
-    // returns true if a search can be caried out as a compare, and sets
+    // returns true if a search can be carried out as a compare, and sets
     // tokens[0] and tokens[1] to the type and value respectively.
     // e.g. filter "cn=Jon Ruiz" becomes, type "cn" and value "Jon Ruiz"
     // This function uses the documents JNDI Compare example as a model
@@ -2083,7 +2083,7 @@ final public class LdapCtx extends ComponentDirContext
             return false; // unbalanced
         }
 
-        // make sure the left and right half are not expresions themselves
+        // make sure the left and right half are not expressions themselves
         StringTokenizer illegalCharsTokenizer =
             new StringTokenizer(tokens[0], "()&|!=~><*", true);
 
@@ -2443,7 +2443,7 @@ final public class LdapCtx extends ComponentDirContext
     }
 
     /**
-     * Set whether aliases are derefereced during resolution and searches.
+     * Set whether aliases are dereferenced during resolution and searches.
      */
     private void setDerefAliases(String deref) {
         if (deref != null) {

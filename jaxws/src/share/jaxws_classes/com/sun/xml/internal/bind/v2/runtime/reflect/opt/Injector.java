@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -146,26 +146,31 @@ final class Injector {
     private static final Method findLoadedClass;
 
     static {
+        Method[] m = AccessController.doPrivileged(
+                new PrivilegedAction<Method[]>() {
+                    @Override
+                    public Method[] run() {
+                        return new Method[]{
+                                getMethod(ClassLoader.class, "defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE),
+                                getMethod(ClassLoader.class, "resolveClass", Class.class),
+                                getMethod(ClassLoader.class, "findLoadedClass", String.class)
+                        };
+                    }
+                }
+        );
+        defineClass = m[0];
+        resolveClass = m[1];
+        findLoadedClass = m[2];
+    }
+
+    private static Method getMethod(final Class<?> c, final String methodname, final Class<?>... params) {
         try {
-            defineClass = ClassLoader.class.getDeclaredMethod("defineClass", String.class, byte[].class, Integer.TYPE, Integer.TYPE);
-            resolveClass = ClassLoader.class.getDeclaredMethod("resolveClass", Class.class);
-            findLoadedClass = ClassLoader.class.getDeclaredMethod("findLoadedClass", String.class);
+            Method m = c.getDeclaredMethod(methodname, params);
+            m.setAccessible(true);
+            return m;
         } catch (NoSuchMethodException e) {
-            // impossible
             throw new NoSuchMethodError(e.getMessage());
         }
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-
-            @Override
-            public Void run() {
-                // TODO: check security implication
-                // do these setAccessible allow anyone to call these methods freely?s
-                defineClass.setAccessible(true);
-                resolveClass.setAccessible(true);
-                findLoadedClass.setAccessible(true);
-                return null;
-            }
-        });
     }
 
     private Injector(ClassLoader parent) {

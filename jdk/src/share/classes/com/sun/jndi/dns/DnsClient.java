@@ -376,7 +376,7 @@ public class DnsClient {
 
 
     /**
-     * Tries to retreive an UDP packet matching the given xid
+     * Tries to retrieve a UDP packet matching the given xid
      * received within the timeout.
      * If a packet with different xid is received, the received packet
      * is enqueued with the corresponding xid in 'resps'.

@@ -749,7 +749,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * Leave class public for external testing purposes.
      */
     public static class ComputeAnnotationSet extends
-        ElementScanner8<Set<TypeElement>, Set<TypeElement>> {
+        ElementScanner9<Set<TypeElement>, Set<TypeElement>> {
         final Elements elements;
 
         public ComputeAnnotationSet(Elements elements) {

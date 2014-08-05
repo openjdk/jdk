@@ -42,7 +42,7 @@ import java.io.DataOutputStream;
  */
 public final
 class ConstantPool implements RuntimeConstants {
-    Hashtable<Object,ConstantPoolData> hash = new Hashtable<>(101);
+    Hashtable<Object, ConstantPoolData> hash = new Hashtable<>(101);
 
     /**
      * Find an entry, may return 0

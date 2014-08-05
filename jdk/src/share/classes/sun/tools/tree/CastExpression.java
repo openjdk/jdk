@@ -48,7 +48,7 @@ class CastExpression extends BinaryExpression {
     /**
      * Check the expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         type = left.toType(env, ctx);
         vset = right.checkValue(env, ctx, vset, exp);
 
