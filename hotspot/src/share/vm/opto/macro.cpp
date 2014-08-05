@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -791,6 +791,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         for (int k = 0;  k < j; k++) {
           sfpt->del_req(last--);
         }
+        _igvn._worklist.push(sfpt);
         // rollback processed safepoints
         while (safepoints_done.length() > 0) {
           SafePointNode* sfpt_done = safepoints_done.pop();
@@ -815,6 +816,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
               }
             }
           }
+          _igvn._worklist.push(sfpt_done);
         }
 #ifndef PRODUCT
         if (PrintEliminateAllocations) {
