@@ -76,10 +76,6 @@ class StackMapTable : public StackObj {
   // Returns the frame array index where the frame with offset is stored.
   int get_index_from_offset(int32_t offset) const;
 
-  // Make sure that there's no uninitialized object exist on backward branch.
-  void check_new_object(
-    const StackMapFrame* frame, int32_t target, TRAPS) const;
-
   void print_on(outputStream* str) const;
 };
 

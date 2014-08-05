@@ -130,19 +130,6 @@ void StackMapTable::check_jump_target(
   if (!match || (target < 0 || target >= _code_length)) {
     frame->verifier()->verify_error(ctx,
         "Inconsistent stackmap frames at branch target %d", target);
-    return;
-  }
-  // check if uninitialized objects exist on backward branches
-  check_new_object(frame, target, CHECK_VERIFY(frame->verifier()));
-}
-
-void StackMapTable::check_new_object(
-    const StackMapFrame* frame, int32_t target, TRAPS) const {
-  if (frame->offset() > target && frame->has_new_object()) {
-    frame->verifier()->verify_error(
-        ErrorContext::bad_code(frame->offset()),
-        "Uninitialized object exists on backward branch %d", target);
-    return;
   }
 }
 
