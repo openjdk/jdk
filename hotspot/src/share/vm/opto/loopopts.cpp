@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         set_ctrl(inp, cmov_ctrl);
       }
     }
-    Node *cmov = CMoveNode::make( C, cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi) );
+    Node *cmov = CMoveNode::make(cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi));
     register_new_node( cmov, cmov_ctrl );
     _igvn.replace_node( phi, cmov );
 #ifndef PRODUCT

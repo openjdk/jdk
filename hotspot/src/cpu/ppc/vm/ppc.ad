@@ -1283,8 +1283,6 @@ int Compile::ConstantTable::calculate_table_base_offset() const {
 
 bool MachConstantBaseNode::requires_postalloc_expand() const { return true; }
 void MachConstantBaseNode::postalloc_expand(GrowableArray <Node *> *nodes, PhaseRegAlloc *ra_) {
-  Compile *C = ra_->C;
-
   iRegPdstOper *op_dst = new iRegPdstOper();
   MachNode *m1 = new loadToc_hiNode();
   MachNode *m2 = new loadToc_loNode();
@@ -2229,7 +2227,7 @@ const bool Matcher::isSimpleConstant64(jlong value) {
 }
 /* TODO: PPC port
 // Make a new machine dependent decode node (with its operands).
-MachTypeNode *Matcher::make_decode_node(Compile *C) {
+MachTypeNode *Matcher::make_decode_node() {
   assert(Universe::narrow_oop_base() == NULL && Universe::narrow_oop_shift() == 0,
          "This method is only implemented for unscaled cOops mode so far");
   MachTypeNode *decode = new decodeN_unscaledNode();
@@ -2593,7 +2591,7 @@ typedef struct {
   MachNode        *_last;
 } loadConLNodesTuple;
 
-loadConLNodesTuple loadConLNodesTuple_create(Compile *C, PhaseRegAlloc *ra_, Node *toc, immLOper *immSrc,
+loadConLNodesTuple loadConLNodesTuple_create(PhaseRegAlloc *ra_, Node *toc, immLOper *immSrc,
                                              OptoReg::Name reg_second, OptoReg::Name reg_first) {
   loadConLNodesTuple nodes;
 
@@ -2669,7 +2667,7 @@ encode %{
   enc_class postalloc_expand_load_long_constant(iRegLdst dst, immL src, iRegLdst toc) %{
     // Create new nodes.
     loadConLNodesTuple loadConLNodes =
-      loadConLNodesTuple_create(C, ra_, n_toc, op_src,
+      loadConLNodesTuple_create(ra_, n_toc, op_src,
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
@@ -3391,7 +3389,7 @@ encode %{
     immLOper *op_repl = new immLOper((jlong)replicate_immF(op_src->constantF()));
 
     loadConLNodesTuple loadConLNodes =
-      loadConLNodesTuple_create(C, ra_, n_toc, op_repl,
+      loadConLNodesTuple_create(ra_, n_toc, op_repl,
                                 ra_->get_reg_second(this), ra_->get_reg_first(this));
 
     // Push new nodes.
@@ -3611,7 +3609,7 @@ encode %{
 
     // Create the nodes for loading the IC from the TOC.
     loadConLNodesTuple loadConLNodes_IC =
-      loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong)Universe::non_oop_word()),
+      loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong)Universe::non_oop_word()),
                                 OptoReg::Name(R19_H_num), OptoReg::Name(R19_num));
 
     // Create the call node.
@@ -3765,7 +3763,7 @@ encode %{
 #if defined(ABI_ELFv2)
     jlong entry_address = (jlong) this->entry_point();
     assert(entry_address, "need address here");
-    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper(entry_address),
+    loadConLNodes_Entry = loadConLNodesTuple_create(ra_, n_toc, new immLOper(entry_address),
                                                     OptoReg::Name(R12_H_num), OptoReg::Name(R12_num));
 #else
     // Get the struct that describes the function we are about to call.
@@ -3777,13 +3775,13 @@ encode %{
     loadConLNodesTuple loadConLNodes_Toc;
 
     // Create nodes and operands for loading the entry point.
-    loadConLNodes_Entry = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper(entry_address),
+    loadConLNodes_Entry = loadConLNodesTuple_create(ra_, n_toc, new immLOper(entry_address),
                                                     OptoReg::Name(R12_H_num), OptoReg::Name(R12_num));
 
 
     // Create nodes and operands for loading the env pointer.
     if (fd->env() != NULL) {
-      loadConLNodes_Env = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong) fd->env()),
+      loadConLNodes_Env = loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) fd->env()),
                                                     OptoReg::Name(R11_H_num), OptoReg::Name(R11_num));
     } else {
       loadConLNodes_Env._large_hi = NULL;
@@ -3796,7 +3794,7 @@ encode %{
     }
 
     // Create nodes and operands for loading the Toc point.
-    loadConLNodes_Toc = loadConLNodesTuple_create(C, ra_, n_toc, new immLOper((jlong) fd->toc()),
+    loadConLNodes_Toc = loadConLNodesTuple_create(ra_, n_toc, new immLOper((jlong) fd->toc()),
                                                   OptoReg::Name(R2_H_num), OptoReg::Name(R2_num));
 #endif // ABI_ELFv2
     // mtctr node

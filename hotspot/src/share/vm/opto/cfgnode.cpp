@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1876,7 +1876,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           igvn->register_new_node_with_optimizer(new_base);
           hook->add_req(new_base);
         }
-        MergeMemNode* result = MergeMemNode::make(phase->C, new_base);
+        MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
           Node *ii = in(i);
           if (ii->is_MergeMem()) {

@@ -615,7 +615,7 @@ ConNode* PhaseTransform::makecon(const Type *t) {
 // Make an idealized constant - one of ConINode, ConPNode, etc.
 ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
-  ConNode* x = ConNode::make(C, t);
+  ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
   if (k == NULL) {
     set_type(x, t);             // Missed, provide type mapping
@@ -1628,7 +1628,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     if( t == Type::TOP ) {
       // cache my top node on the Compile instance
       if( C->cached_top_node() == NULL || C->cached_top_node()->in(0) == NULL ) {
-        C->set_cached_top_node( ConNode::make(C, Type::TOP) );
+        C->set_cached_top_node(ConNode::make(Type::TOP));
         set_type(C->top(), Type::TOP);
       }
       nn = C->top();
@@ -1754,7 +1754,7 @@ void PhasePeephole::do_transform() {
         MachNode *m = n->as_Mach();
         int deleted_count = 0;
         // check for peephole opportunities
-        MachNode *m2 = m->peephole( block, instruction_index, _regalloc, deleted_count, C );
+        MachNode *m2 = m->peephole(block, instruction_index, _regalloc, deleted_count);
         if( m2 != NULL ) {
 #ifndef PRODUCT
           if( PrintOptoPeephole ) {

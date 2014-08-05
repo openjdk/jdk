@@ -526,7 +526,7 @@ void Compile::shorten_branches(uint* blk_starts, int& code_size, int& reloc_size
 
         if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
           // We've got a winner.  Replace this branch.
-          MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+          MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
           // Update the jmp_size.
           int new_size = replacement->size(_regalloc);
@@ -1176,7 +1176,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
 
   // fill in the nop array for bundling computations
   MachNode *_nop_list[Bundle::_nop_count];
-  Bundle::initialize_nops(_nop_list, this);
+  Bundle::initialize_nops(_nop_list);
 
   return cb;
 }
@@ -1410,7 +1410,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
 
             if (_matcher->is_short_branch_offset(mach->rule(), br_size, offset)) {
               // We've got a winner.  Replace this branch.
-              MachNode* replacement = mach->as_MachBranch()->short_branch_version(this);
+              MachNode* replacement = mach->as_MachBranch()->short_branch_version();
 
               // Update the jmp_size.
               int new_size = replacement->size(_regalloc);

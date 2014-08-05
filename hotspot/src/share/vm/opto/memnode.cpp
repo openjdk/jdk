@@ -933,12 +933,12 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
   return (LoadNode*)NULL;
 }
 
-LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
   return new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
-LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
   return new LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
 }
@@ -2017,7 +2017,6 @@ const Type* LoadSNode::Value(PhaseTransform *phase) const {
 //----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
 Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at, const TypeKlassPtr *tk ) {
-  Compile* C = gvn.C;
   Node *ctl = NULL;
   // sanity check the alias category against the created node type
   const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
@@ -2382,12 +2381,12 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   return (StoreNode*)NULL;
 }
 
-StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+StoreLNode* StoreLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
-StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+StoreDNode* StoreDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
@@ -2463,7 +2462,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // and I need to disappear.
       if (moved != NULL) {
         // %%% hack to ensure that Ideal returns a new node:
-        mem = MergeMemNode::make(phase->C, mem);
+        mem = MergeMemNode::make(mem);
         return mem;             // fold me away
       }
     }
@@ -2823,7 +2822,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
                                    Node* end_offset,
                                    PhaseGVN* phase) {
-  Compile* C = phase->C;
   intptr_t offset = start_offset;
 
   int unit = BytesPerLong;
@@ -2850,7 +2848,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     return mem;
   }
 
-  Compile* C = phase->C;
   int unit = BytesPerLong;
   Node* zbase = start_offset;
   Node* zend  = end_offset;
@@ -2878,7 +2875,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     return mem;
   }
 
-  Compile* C = phase->C;
   assert((end_offset % BytesPerInt) == 0, "odd end offset");
   intptr_t done_offset = end_offset;
   if ((done_offset % BytesPerLong) != 0) {
@@ -4132,7 +4128,7 @@ MergeMemNode::MergeMemNode(Node *new_base) : Node(1+Compile::AliasIdxRaw) {
 
 // Make a new, untransformed MergeMem with the same base as 'mem'.
 // If mem is itself a MergeMem, populate the result with the same edges.
-MergeMemNode* MergeMemNode::make(Compile* C, Node* mem) {
+MergeMemNode* MergeMemNode::make(Node* mem) {
   return new MergeMemNode(mem);
 }
 
