@@ -158,8 +158,9 @@ public final class JLayer<V extends Component>
     private LayerUI<? super V> layerUI;
     private JPanel glassPane;
     private long eventMask;
-    private transient boolean isPainting;
-    private transient boolean isPaintingImmediately;
+    private transient boolean isPaintCalling;
+    private transient boolean isPaintImmediatelyCalling;
+    private transient boolean isImageUpdateCalling;
 
     private static final LayerEventController eventController =
             new LayerEventController();
@@ -405,15 +406,42 @@ public final class JLayer<V extends Component>
      * @param h  the height of the region to be painted
      */
     public void paintImmediately(int x, int y, int w, int h) {
-        if (!isPaintingImmediately && getUI() != null) {
-            isPaintingImmediately = true;
+        if (!isPaintImmediatelyCalling && getUI() != null) {
+            isPaintImmediatelyCalling = true;
             try {
                 getUI().paintImmediately(x, y, w, h, this);
             } finally {
-                isPaintingImmediately = false;
+                isPaintImmediatelyCalling = false;
             }
         } else {
             super.paintImmediately(x, y, w, h);
+        }
+    }
+
+    /**
+     * Delegates its functionality to the
+     * {@link javax.swing.plaf.LayerUI#imageUpdate(java.awt.Image, int, int, int, int, int, JLayer)} method,
+     * if the {@code LayerUI} is set.
+     *
+     * @param     img   the image being observed
+     * @param     infoflags   see {@code imageUpdate} for more information
+     * @param     x   the <i>x</i> coordinate
+     * @param     y   the <i>y</i> coordinate
+     * @param     w   the width
+     * @param     h   the height
+     * @return    {@code false} if the infoflags indicate that the
+     *            image is completely loaded; {@code true} otherwise.
+     */
+    public boolean imageUpdate(Image img, int infoflags, int x, int y, int w, int h) {
+        if (!isImageUpdateCalling && getUI() != null) {
+            isImageUpdateCalling = true;
+            try {
+                return getUI().imageUpdate(img, infoflags, x, y, w, h, this);
+            } finally {
+                isImageUpdateCalling = false;
+            }
+        } else {
+            return super.imageUpdate(img, infoflags, x, y, w, h);
         }
     }
 
@@ -423,12 +451,12 @@ public final class JLayer<V extends Component>
      * @param g the {@code Graphics} to render to
      */
     public void paint(Graphics g) {
-        if (!isPainting) {
-            isPainting = true;
+        if (!isPaintCalling) {
+            isPaintCalling = true;
             try {
                 super.paintComponent(g);
             } finally {
-                isPainting = false;
+                isPaintCalling = false;
             }
         } else {
             super.paint(g);
