@@ -78,7 +78,10 @@ public final class Options {
     /** The options map of enabled options */
     private final TreeMap<String, Option<?>> options;
 
-    /** System property that can be used for command line option propagation */
+    /** System property that can be used to prepend options to the explicitly specified command line. */
+    private static final String NASHORN_ARGS_PREPEND_PROPERTY = "nashorn.args.prepend";
+
+    /** System property that can be used to append options to the explicitly specified command line. */
     private static final String NASHORN_ARGS_PROPERTY = "nashorn.args";
 
     /**
@@ -419,15 +422,9 @@ public final class Options {
      */
     public void process(final String[] args) {
         final LinkedList<String> argList = new LinkedList<>();
+        addSystemProperties(NASHORN_ARGS_PREPEND_PROPERTY, argList);
         Collections.addAll(argList, args);
-
-        final String extra = getStringProperty(NASHORN_ARGS_PROPERTY, null);
-        if (extra != null) {
-            final StringTokenizer st = new StringTokenizer(extra);
-            while (st.hasMoreTokens()) {
-                argList.add(st.nextToken());
-            }
-        }
+        addSystemProperties(NASHORN_ARGS_PROPERTY, argList);
 
         while (!argList.isEmpty()) {
             final String arg = argList.remove(0);
@@ -505,6 +502,16 @@ public final class Options {
             // scripting->anon.functions
             if (parg.template.getDependency() != null) {
                 argList.addFirst(parg.template.getDependency());
+            }
+        }
+    }
+
+    private static void addSystemProperties(final String sysPropName, final List<String> argList) {
+        final String sysArgs = getStringProperty(sysPropName, null);
+        if (sysArgs != null) {
+            final StringTokenizer st = new StringTokenizer(sysArgs);
+            while (st.hasMoreTokens()) {
+                argList.add(st.nextToken());
             }
         }
     }
