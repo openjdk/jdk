@@ -41,5 +41,5 @@ ${COMPILEJAVA}/bin/jar -uf0 foo.jar Test7068051.java
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7068051.java
 
-${TESTJAVA}/bin/java ${TESTOPTS} -showversion -Xbatch Test7068051 f3oo.jar
+${TESTJAVA}/bin/java ${TESTOPTS} -showversion -Xbatch Test7068051 foo.jar
 
