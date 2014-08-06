@@ -1078,6 +1078,9 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
+  product(bool, ClassUnloadingWithConcurrentMark, true,                     \
+          "Do unloading of classes with a concurrent marking cycle")        \
+                                                                            \
   develop(bool, DisableStartThread, false,                                  \
           "Disable starting of additional Java threads "                    \
           "(for debugging only)")                                           \

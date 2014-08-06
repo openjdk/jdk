@@ -21,53 +21,7 @@
  * questions.
  */
 
-/*
- * @test
- * @key gc
- * @bug 8049831
- * @library /testlibrary /testlibrary/whitebox
- * @build TestCMSClassUnloadingDisabledHWM
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- * @run driver TestCMSClassUnloadingDisabledHWM
- * @summary Test that -XX:-CMSClassUnloadingEnabled will trigger a Full GC when more than MetaspaceSize metadata is allocated.
- */
-
-import com.oracle.java.testlibrary.OutputAnalyzer;
-import com.oracle.java.testlibrary.ProcessTools;
 import sun.hotspot.WhiteBox;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-
-public class TestCMSClassUnloadingDisabledHWM {
-
-  private static OutputAnalyzer run(long metaspaceSize, long youngGenSize) throws Exception {
-      ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-Xbootclasspath/a:.",
-        "-XX:+WhiteBoxAPI",
-        "-XX:MetaspaceSize=" + metaspaceSize,
-        "-Xmn" + youngGenSize,
-        "-XX:+UseConcMarkSweepGC",
-        "-XX:-CMSClassUnloadingEnabled",
-        "-XX:+PrintHeapAtGC",
-        "-XX:+PrintGCDetails",
-        "AllocateBeyondMetaspaceSize",
-        "" + metaspaceSize,
-        "" + youngGenSize);
-    return new OutputAnalyzer(pb.start());
-  }
-
-  public static void main(String args[]) throws Exception {
-    long metaspaceSize = 32 * 1024 * 1024;
-    long youngGenSize = 32 * 1024 * 1024;
-
-    OutputAnalyzer out = run(metaspaceSize, youngGenSize);
-
-    // -XX:-CMSClassUnloadingEnabled is used, so we expect a full GC instead of a concurrent cycle.
-    out.shouldMatch(".*Full GC.*");
-    out.shouldNotMatch(".*CMS Initial Mark.*");
-  }
-}
 
 class AllocateBeyondMetaspaceSize {
   public static Object dummy;
