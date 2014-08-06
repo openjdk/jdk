@@ -314,7 +314,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (!symbol.isScope()) {
             final Type type = identNode.getType();
             if(type == Type.UNDEFINED) {
-                return method.loadUndefined(Type.OBJECT);
+                return method.loadUndefined(resultBounds.widest);
             }
 
             assert symbol.hasSlot() || symbol.isParam();
