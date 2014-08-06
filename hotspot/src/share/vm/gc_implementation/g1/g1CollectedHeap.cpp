@@ -4920,10 +4920,15 @@ public:
       if (_g1h->g1_policy()->during_initial_mark_pause()) {
         // We also need to mark copied objects.
         strong_root_cl = &scan_mark_root_cl;
-        weak_root_cl   = &scan_mark_weak_root_cl;
         strong_cld_cl  = &scan_mark_cld_cl;
-        weak_cld_cl    = &scan_mark_weak_cld_cl;
         strong_code_cl = &scan_mark_code_cl;
+        if (ClassUnloadingWithConcurrentMark) {
+          weak_root_cl = &scan_mark_weak_root_cl;
+          weak_cld_cl  = &scan_mark_weak_cld_cl;
+        } else {
+          weak_root_cl = &scan_mark_root_cl;
+          weak_cld_cl  = &scan_mark_cld_cl;
+        }
       } else {
         strong_root_cl = &scan_only_root_cl;
         weak_root_cl   = &scan_only_root_cl;
@@ -4994,6 +4999,7 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
   double closure_app_time_sec = 0.0;
 
   bool during_im = _g1h->g1_policy()->during_initial_mark_pause();
+  bool trace_metadata = during_im && ClassUnloadingWithConcurrentMark;
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
   BufferingOopClosure buf_scan_non_heap_weak_roots(scan_non_heap_weak_roots);
@@ -5003,8 +5009,8 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
                 &buf_scan_non_heap_roots,
                 &buf_scan_non_heap_weak_roots,
                 scan_strong_clds,
-                // Initial Mark handles the weak CLDs separately.
-                (during_im ? NULL : scan_weak_clds),
+                // Unloading Initial Marks handle the weak CLDs separately.
+                (trace_metadata ? NULL : scan_weak_clds),
                 scan_strong_code);
 
   // Now the CM ref_processor roots.
@@ -5016,7 +5022,7 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
     ref_processor_cm()->weak_oops_do(&buf_scan_non_heap_roots);
   }
 
-  if (during_im) {
+  if (trace_metadata) {
     // Barrier to make sure all workers passed
     // the strong CLD and strong nmethods phases.
     active_strong_roots_scope()->wait_until_all_workers_done_with_threads(n_par_threads());
