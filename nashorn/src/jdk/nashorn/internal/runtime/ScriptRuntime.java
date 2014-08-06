@@ -818,9 +818,8 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.6 The Strict Equality Comparison Algorithm */
     private static boolean strictEquals(final Object x, final Object y) {
-        if(x == y) {
-            return true;
-        }
+        // NOTE: you might be tempted to do a quick x == y comparison. Remember, though, that any Double object having
+        // NaN value is not equal to itself by value even though it is referentially.
 
         final JSType xType = JSType.ofNoFunction(x);
         final JSType yType = JSType.ofNoFunction(y);
