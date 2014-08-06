@@ -722,4 +722,16 @@ public class LayerUI<V extends Component>
     public void paintImmediately(int x, int y, int width, int height, JLayer<? extends V> l) {
         l.paintImmediately(x, y, width, height);
     }
+
+    /**
+     * Delegates its functionality to the default implementation of the {@code JLayer.imageUpdate} method
+     * which is inherited from {@code JLayer}'s base classes.
+     * <p>
+     * This method is to be overridden instead of {@code JLayer.imageUpdate}.
+     * <p>
+     * <b>Note:</b> This method is usually called <b>not</b> on the Event Dispatching Thread.
+     */
+    public boolean imageUpdate(Image img, int infoflags, int x, int y, int w, int h, JLayer<? extends V> l) {
+        return l.imageUpdate(img, infoflags, x, y, w, h);
+    }
 }
