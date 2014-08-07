@@ -2582,15 +2582,12 @@ bool G1CollectedHeap::is_in(const void* p) const {
 
 // Iteration functions.
 
-// Iterates an OopClosure over all ref-containing fields of objects
-// within a HeapRegion.
+// Applies an ExtendedOopClosure onto all references of objects within a HeapRegion.
 
 class IterateOopClosureRegionClosure: public HeapRegionClosure {
-  MemRegion _mr;
   ExtendedOopClosure* _cl;
 public:
-  IterateOopClosureRegionClosure(MemRegion mr, ExtendedOopClosure* cl)
-    : _mr(mr), _cl(cl) {}
+  IterateOopClosureRegionClosure(ExtendedOopClosure* cl) : _cl(cl) {}
   bool doHeapRegion(HeapRegion* r) {
     if (!r->continuesHumongous()) {
       r->oop_iterate(_cl);
@@ -2600,12 +2597,7 @@ public:
 };
 
 void G1CollectedHeap::oop_iterate(ExtendedOopClosure* cl) {
-  IterateOopClosureRegionClosure blk(_g1_committed, cl);
-  heap_region_iterate(&blk);
-}
-
-void G1CollectedHeap::oop_iterate(MemRegion mr, ExtendedOopClosure* cl) {
-  IterateOopClosureRegionClosure blk(mr, cl);
+  IterateOopClosureRegionClosure blk(cl);
   heap_region_iterate(&blk);
 }
 
@@ -4791,11 +4783,6 @@ protected:
 
   Mutex _stats_lock;
   Mutex* stats_lock() { return &_stats_lock; }
-
-  size_t getNCards() {
-    return (_g1h->capacity() + G1BlockOffsetSharedArray::N_bytes - 1)
-      / G1BlockOffsetSharedArray::N_bytes;
-  }
 
 public:
   G1ParTask(G1CollectedHeap* g1h, RefToScanQueueSet *task_queues)
