@@ -582,6 +582,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <!-- clone test262 git repo -->
     <exec executable="${git.executable}">
        <arg value="clone"/>
+       <arg value="--branch"/>
+       <arg value="es5-tests"/>
        <arg value="https://github.com/tc39/test262"/>
        <arg value="${test.external.dir}/test262"/>
     </exec>

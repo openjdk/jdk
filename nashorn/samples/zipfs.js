@@ -30,51 +30,19 @@
  */
 
 if (arguments.length == 0) {
-    print("Usage: jjs ziplist -- <zip-file>");
-    exit(1);
+   print("Usage: jjs zipfs.js -- <.zip/.jar file>")
+   exit(1)
 }
 
-// list the content details of a .zip or .jar file
-var file = arguments[0];
+var Files = Java.type("java.nio.file.Files")
+var FileSystems = Java.type("java.nio.file.FileSystems")
+var FileVisitOption = Java.type("java.nio.file.FileVisitOption")
+var Paths = Java.type("java.nio.file.Paths")
 
-// java classes used
-var Attributes = Java.type("java.util.jar.Attributes");
-var FileTime = Java.type("java.nio.file.attribute.FileTime");
-var JarFile = Java.type("java.util.jar.JarFile");
-var ZipEntry = Java.type("java.util.zip.ZipEntry");
-var ZipFile = Java.type("java.util.zip.ZipFile");
-
-var zf = file.endsWith(".jar")? new JarFile(file) : new ZipFile(file);
-
-var entries = zf.entries();
-// make overall output a valid JSON
-var zfObj = {
-    name: zf.name,
-    comment: zf.comment,
-    size: zf.size(),
-    entries: []
-};
-
-while (entries.hasMoreElements()) {
-    zfObj.entries.push(entries.nextElement());
-}
-
-print(JSON.stringify(zfObj, function (key, value) {
-   if (value instanceof ZipEntry) {
-       return Object.bindProperties({}, value);
-   } else if (value instanceof FileTime) {
-       return value.toString();
-   } else if (value instanceof Attributes) {
-       var attrs = {};
-       var itr = value.entrySet().iterator();
-       while (itr.hasNext()) {
-           var n = itr.next();
-           attrs[n.key] = String(n.value);
-       }
-       return attrs;
-   }
-
-   return value;
-}, ' '));
-
-zf.close();
+var zipfile = Paths.get(arguments[0])
+var fs = FileSystems.newFileSystem(zipfile, null)
+var root = fs.rootDirectories[0]
+Files.walk(root, FileVisitOption.FOLLOW_LINKS).forEach(
+   function(p) (print(p), print(Files.readAttributes(p, "zip:*")))
+)
+fs.close()
