@@ -37,7 +37,9 @@ import java.lang.invoke.SwitchPoint;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.function.Supplier;
 import java.util.logging.Level;
+import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.types.ArrayType;
@@ -69,7 +71,7 @@ final class CompiledFunction {
     private MethodHandle invoker;
     private MethodHandle constructor;
     private OptimismInfo optimismInfo;
-    private int flags; // from FunctionNode
+    private final int flags; // from FunctionNode
 
     CompiledFunction(final MethodHandle invoker) {
         this(invoker, null);
@@ -80,19 +82,19 @@ final class CompiledFunction {
     }
 
     CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
-        this(invoker, constructor, DebugLogger.DISABLED_LOGGER);
+        this(invoker, constructor, 0, DebugLogger.DISABLED_LOGGER);
     }
 
-    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final DebugLogger log) {
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final int flags, final DebugLogger log) {
         this.invoker = invoker;
         this.constructor = constructor;
+        this.flags = flags;
         this.log = log;
     }
 
     CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData,
             final Map<Integer, Type> invalidatedProgramPoints, final int flags) {
-        this(invoker, null, functionData.getLogger());
-        this.flags = flags;
+        this(invoker, null, flags, functionData.getLogger());
         if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
             optimismInfo = new OptimismInfo(functionData, invalidatedProgramPoints);
         } else {
@@ -142,7 +144,7 @@ final class CompiledFunction {
      * all other cases, use {@link #createComposableConstructor()}.
      * @return a direct constructor method handle for this function.
      */
-    MethodHandle getConstructor() {
+    private MethodHandle getConstructor() {
         if (constructor == null) {
             constructor = createConstructorFromInvoker(createInvokerForPessimisticCaller());
         }
@@ -462,17 +464,7 @@ final class CompiledFunction {
         return type.parameterType(paramCount - 1).isArray() ? Integer.MAX_VALUE : paramCount;
     }
 
-    /**
-     * Returns the switch point embodying the optimistic assumptions in this compiled function. It should be used to
-     * guard any linking to the function's invoker or constructor.
-     * @return the switch point embodying the optimistic assumptions in this compiled function. Null is returned if the
-     * function has no optimistic assumptions.
-     */
-    SwitchPoint getOptimisticAssumptionsSwitchPoint() {
-        return canBeDeoptimized() ? optimismInfo.optimisticAssumptions : null;
-    }
-
-    boolean canBeDeoptimized() {
+    private boolean canBeDeoptimized() {
         return optimismInfo != null;
     }
 
@@ -491,19 +483,73 @@ final class CompiledFunction {
         relinkComposableInvoker(cs, this, isConstructor);
         return cs.dynamicInvoker();
     }
+
+    private static class HandleAndAssumptions {
+        final MethodHandle handle;
+        final SwitchPoint assumptions;
+
+        HandleAndAssumptions(final MethodHandle handle, final SwitchPoint assumptions) {
+            this.handle = handle;
+            this.assumptions = assumptions;
+        }
+
+        GuardedInvocation createInvocation() {
+            return new GuardedInvocation(handle, assumptions);
+        }
+    }
+
+    /**
+     * Returns a pair of an invocation created with a passed-in supplier and a non-invalidated switch point for
+     * optimistic assumptions (or null for the switch point if the function can not be deoptimized). While the method
+     * makes a best effort to return a non-invalidated switch point (compensating for possible deoptimizing
+     * recompilation happening on another thread) it is still possible that by the time this method returns the
+     * switchpoint has been invalidated by a {@code RewriteException} triggered on another thread for this function.
+     * This is not a problem, though, as these switch points are always used to produce call sites that fall back to
+     * relinking when they are invalidated, and in this case the execution will end up here again. What this method
+     * basically does is minimize such busy-loop relinking while the function is being recompiled on a different thread.
+     * @param invocationSupplier the supplier that constructs the actual invocation method handle; should use the
+     * {@code CompiledFunction} method itself in some capacity.
+     * @return a tuple object containing the method handle as created by the supplier and an optimistic assumptions
+     * switch point that is guaranteed to not have been invalidated before the call to this method (or null if the
+     * function can't be further deoptimized).
+     */
+    private synchronized HandleAndAssumptions getValidOptimisticInvocation(final Supplier<MethodHandle> invocationSupplier) {
+        for(;;) {
+            final MethodHandle handle = invocationSupplier.get();
+            final SwitchPoint assumptions = canBeDeoptimized() ? optimismInfo.optimisticAssumptions : null;
+            if(assumptions != null && assumptions.hasBeenInvalidated()) {
+                // We can be in a situation where one thread is in the middle of a deoptimizing compilation when we hit
+                // this and thus, it has invalidated the old switch point, but hasn't created the new one yet. Note that
+                // the behavior of invalidating the old switch point before recompilation, and only creating the new one
+                // after recompilation is by design. If we didn't wait here for the recompilation to complete, we would
+                // be busy looping through the fallback path of the invalidated switch point, relinking the call site
+                // again with the same invalidated switch point, invoking the fallback, etc. stealing CPU cycles from
+                // the recompilation task we're dependent on. This can still happen if the switch point gets invalidated
+                // after we grabbed it here, in which case we'll indeed do one busy relink immediately.
+                try {
+                    wait();
+                } catch (InterruptedException e) {
+                    // Intentionally ignored. There's nothing meaningful we can do if we're interrupted
+                }
+            } else {
+                return new HandleAndAssumptions(handle, assumptions);
+            }
+        }
+    }
+
     private static void relinkComposableInvoker(final CallSite cs, final CompiledFunction inv, final boolean constructor) {
-        final MethodHandle handle = inv.getInvokerOrConstructor(constructor);
-        final SwitchPoint assumptions = inv.getOptimisticAssumptionsSwitchPoint();
+        final HandleAndAssumptions handleAndAssumptions = inv.getValidOptimisticInvocation(new Supplier<MethodHandle>() {
+            @Override
+            public MethodHandle get() {
+                return inv.getInvokerOrConstructor(constructor);
+            }
+        });
+        final MethodHandle handle = handleAndAssumptions.handle;
+        final SwitchPoint assumptions = handleAndAssumptions.assumptions;
         final MethodHandle target;
         if(assumptions == null) {
             target = handle;
         } else {
-            // This assertion can obviously fail in a multithreaded environment, as we can be in a situation where
-            // one thread is in the middle of a deoptimizing compilation when we hit this and thus, it has invalidated
-            // the old switch point, but hasn't created the new one yet. Note that the behavior of invalidating the old
-            // switch point before recompilation, and only creating the new one after recompilation is by design.
-            // TODO: We need to think about thread safety of CompiledFunction objects.
-            assert !assumptions.hasBeenInvalidated();
             final MethodHandle relink = MethodHandles.insertArguments(RELINK_COMPOSABLE_INVOKER, 0, cs, inv, constructor);
             target = assumptions.guardWithTest(handle, MethodHandles.foldArguments(cs.dynamicInvoker(), relink));
         }
@@ -514,7 +560,41 @@ final class CompiledFunction {
         return selectCtor ? getConstructor() : createInvokerForPessimisticCaller();
     }
 
-    MethodHandle createInvoker(final Class<?> callSiteReturnType, final int callerProgramPoint) {
+    /**
+     * Returns a guarded invocation for this function when not invoked as a constructor. The guarded invocation has no
+     * guard but it potentially has an optimistic assumptions switch point. As such, it will probably not be used as a
+     * final guarded invocation, but rather as a holder for an invocation handle and switch point to be decomposed and
+     * reassembled into a different final invocation by the user of this method. Any recompositions should take care to
+     * continue to use the switch point. If that is not possible, use {@link #createComposableInvoker()} instead.
+     * @return a guarded invocation for an ordinary (non-constructor) invocation of this function.
+     */
+    GuardedInvocation createFunctionInvocation(final Class<?> callSiteReturnType, final int callerProgramPoint) {
+        return getValidOptimisticInvocation(new Supplier<MethodHandle>() {
+            @Override
+            public MethodHandle get() {
+                return createInvoker(callSiteReturnType, callerProgramPoint);
+            }
+        }).createInvocation();
+    }
+
+    /**
+     * Returns a guarded invocation for this function when invoked as a constructor. The guarded invocation has no guard
+     * but it potentially has an optimistic assumptions switch point. As such, it will probably not be used as a final
+     * guarded invocation, but rather as a holder for an invocation handle and switch point to be decomposed and
+     * reassembled into a different final invocation by the user of this method. Any recompositions should take care to
+     * continue to use the switch point. If that is not possible, use {@link #createComposableConstructor()} instead.
+     * @return a guarded invocation for invocation of this function as a constructor.
+     */
+    GuardedInvocation createConstructorInvocation() {
+        return getValidOptimisticInvocation(new Supplier<MethodHandle>() {
+            @Override
+            public MethodHandle get() {
+                return getConstructor();
+            }
+        }).createInvocation();
+    }
+
+    private MethodHandle createInvoker(final Class<?> callSiteReturnType, final int callerProgramPoint) {
         final boolean isOptimistic = canBeDeoptimized();
         MethodHandle handleRewriteException = isOptimistic ? createRewriteExceptionHandler() : null;
 
@@ -601,7 +681,7 @@ final class CompiledFunction {
      * @param re the rewrite exception that was raised
      * @return the method handle for the rest-of method, for folding composition.
      */
-    private MethodHandle handleRewriteException(final OptimismInfo oldOptInfo, final RewriteException re) {
+    private synchronized MethodHandle handleRewriteException(final OptimismInfo oldOptInfo, final RewriteException re) {
         if (log.isEnabled()) {
             log.info(new RecompilationEvent(Level.INFO, re, re.getReturnValueNonDestructive()), "RewriteException ", re.getMessageShort());
         }
@@ -664,6 +744,7 @@ final class CompiledFunction {
         } else {
             optimismInfo = null; // If we got to a point where we no longer have optimistic assumptions, let the optimism info go.
         }
+        notifyAll();
 
         return restOf;
     }

@@ -465,7 +465,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
         final CompiledFunction cf = data.getBestConstructor(type, scope);
-        final GuardedInvocation bestCtorInv = new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
+        final GuardedInvocation bestCtorInv = cf.createConstructorInvocation();
         //TODO - ClassCastException
         return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this, cf.getFlags()), bestCtorInv.getSwitchPoints(), null);
     }
@@ -545,11 +545,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
         final CompiledFunction cf = data.getBestInvoker(type, scope);
-        final GuardedInvocation bestInvoker =
-                new GuardedInvocation(
-                        cf.createInvoker(type.returnType(), programPoint),
-                        cf.getOptimisticAssumptionsSwitchPoint());
-
+        final GuardedInvocation bestInvoker = cf.createFunctionInvocation(type.returnType(), programPoint);
         final MethodHandle callHandle = bestInvoker.getInvocation();
 
         if (data.needsCallee()) {

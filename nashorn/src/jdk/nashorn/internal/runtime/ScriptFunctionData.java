@@ -222,8 +222,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * and not suddenly a "real" object
      *
      * @param callSiteType callsite type
-     * @return guarded invocation with method handle to best invoker and potentially a switch point guarding optimistic
-     * assumptions.
+     * @return compiled function object representing the best invoker.
      */
      final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope) {
         final CompiledFunction cf = getBest(callSiteType, runtimeScope);
