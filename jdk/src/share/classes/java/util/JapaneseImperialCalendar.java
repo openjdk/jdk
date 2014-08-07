@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,20 +38,20 @@ import sun.util.calendar.LocalGregorianCalendar;
 import sun.util.calendar.ZoneInfo;
 
 /**
- * <code>JapaneseImperialCalendar</code> implements a Japanese
+ * {@code JapaneseImperialCalendar} implements a Japanese
  * calendar system in which the imperial era-based year numbering is
  * supported from the Meiji era. The following are the eras supported
  * by this calendar system.
- * <pre><tt>
+ * <pre>{@code
  * ERA value   Era name    Since (in Gregorian)
  * ------------------------------------------------------
  *     0       N/A         N/A
- *     1       Meiji       1868-01-01 midnight local time
- *     2       Taisho      1912-07-30 midnight local time
- *     3       Showa       1926-12-25 midnight local time
- *     4       Heisei      1989-01-08 midnight local time
+ *     1       Meiji       1868-01-01T00:00:00 local time
+ *     2       Taisho      1912-07-30T00:00:00 local time
+ *     3       Showa       1926-12-25T00:00:00 local time
+ *     4       Heisei      1989-01-08T00:00:00 local time
  * ------------------------------------------------------
- * </tt></pre>
+ * }</pre>
  *
  * <p><code>ERA</code> value 0 specifies the years before Meiji and
  * the Gregorian year values are used. Unlike {@link
@@ -62,6 +62,31 @@ import sun.util.calendar.ZoneInfo;
  * Imperial rescripts and government decrees don't specify how to deal
  * with time differences for applying the era transitions. This
  * calendar implementation assumes local time for all transitions.
+ *
+ * <p>A new era can be specified using property
+ * jdk.calendar.japanese.supplemental.era. The new era is added to the
+ * predefined eras. The syntax of the property is as follows.
+ * <p><pre>
+ *   {@code name=<name>,abbr=<abbr>,since=<time['u']>}
+ * </pre>
+ * where
+ * <dl>
+ * <dt>{@code <name>:}<dd>the full name of the new era (non-ASCII characters allowed)
+ * <dt>{@code <abbr>:}<dd>the abbreviation of the new era (non-ASCII characters allowed)
+ * <dt>{@code <time['u']>:}<dd>the start time of the new era represented by
+ * milliseconds from 1970-01-01T00:00:00 local time or UTC if {@code 'u'} is
+ * appended to the milliseconds value. (ASCII digits only)
+ * </dl>
+ *
+ * <p>If the given era is invalid, such as the since value before the
+ * beginning of the last predefined era, the given era will be
+ * ignored.
+ *
+ * <p>The following is an example of the property usage.
+ * <p><pre>
+ *   java -Djdk.calendar.japanese.supplemental.era="name=NewEra,abbr=N,since=253374307200000"
+ * </pre>
+ * The property specifies an era change to NewEra at 9999-02-11T00:00:00 local time.
  *
  * @author Masayoshi Okutsu
  * @since 1.6
@@ -102,7 +127,6 @@ class JapaneseImperialCalendar extends Calendar {
     public static final int HEISEI = 4;
 
     private static final int EPOCH_OFFSET   = 719163; // Fixed date of January 1, 1970 (Gregorian)
-    private static final int EPOCH_YEAR     = 1970;
 
     // Useful millisecond constants.  Although ONE_DAY and ONE_WEEK can fit
     // into ints, they must be longs in order to prevent arithmetic overflow
@@ -111,7 +135,6 @@ class JapaneseImperialCalendar extends Calendar {
     private static final int  ONE_MINUTE = 60*ONE_SECOND;
     private static final int  ONE_HOUR   = 60*ONE_MINUTE;
     private static final long ONE_DAY    = 24*ONE_HOUR;
-    private static final long ONE_WEEK   = 7*ONE_DAY;
 
     // Reference to the sun.util.calendar.LocalGregorianCalendar instance (singleton).
     private static final LocalGregorianCalendar jcal
@@ -217,6 +240,7 @@ class JapaneseImperialCalendar extends Calendar {
     };
 
     // Proclaim serialization compatibility with JDK 1.6
+    @SuppressWarnings("FieldNameHidesFieldInSuperclass")
     private static final long serialVersionUID = -3364572813905467929L;
 
     static {
@@ -340,6 +364,7 @@ class JapaneseImperialCalendar extends Calendar {
      * <code>false</code> otherwise.
      * @see Calendar#compareTo(Calendar)
      */
+    @Override
     public boolean equals(Object obj) {
         return obj instanceof JapaneseImperialCalendar &&
             super.equals(obj);
@@ -349,6 +374,7 @@ class JapaneseImperialCalendar extends Calendar {
      * Generates the hash code for this
      * <code>JapaneseImperialCalendar</code> object.
      */
+    @Override
     public int hashCode() {
         return super.hashCode() ^ jdate.hashCode();
     }
@@ -381,6 +407,7 @@ class JapaneseImperialCalendar extends Calendar {
      * or if any calendar fields have out-of-range values in
      * non-lenient mode.
      */
+    @Override
     public void add(int field, int amount) {
         // If amount == 0, do nothing even the given field is out of
         // range. This is tested by JCK.
@@ -509,6 +536,7 @@ class JapaneseImperialCalendar extends Calendar {
         }
     }
 
+    @Override
     public void roll(int field, boolean up) {
         roll(field, up ? +1 : -1);
     }
@@ -533,6 +561,7 @@ class JapaneseImperialCalendar extends Calendar {
      * @see #add(int,int)
      * @see #set(int,int)
      */
+    @Override
     public void roll(int field, int amount) {
         // If amount == 0, do nothing even the given field is out of
         // range. This is tested by JCK.
