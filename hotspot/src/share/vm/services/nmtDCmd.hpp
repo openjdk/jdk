@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,12 @@
 #ifndef SHARE_VM_SERVICES_NMT_DCMD_HPP
 #define SHARE_VM_SERVICES_NMT_DCMD_HPP
 
+#if INCLUDE_NMT
+
 #include "services/diagnosticArgument.hpp"
 #include "services/diagnosticFramework.hpp"
+#include "services/memBaseline.hpp"
+#include "services/mallocTracker.hpp"
 
 /**
  * Native memory tracking DCmd implementation
@@ -39,10 +43,7 @@ class NMTDCmd: public DCmdWithParser {
   DCmdArgument<bool>  _summary_diff;
   DCmdArgument<bool>  _detail_diff;
   DCmdArgument<bool>  _shutdown;
-  DCmdArgument<bool>  _auto_shutdown;
-#ifndef PRODUCT
-  DCmdArgument<bool>  _debug;
-#endif
+  DCmdArgument<bool>  _statistics;
   DCmdArgument<char*> _scale;
 
  public:
@@ -61,6 +62,17 @@ class NMTDCmd: public DCmdWithParser {
   }
   static int num_arguments();
   virtual void execute(DCmdSource source, TRAPS);
+
+ private:
+  void report(bool summaryOnly, size_t scale);
+  void report_diff(bool summaryOnly, size_t scale);
+
+  size_t get_scale(const char* scale) const;
+
+  // check if NMT running at detail tracking level
+  bool check_detail_tracking_level(outputStream* out);
 };
+
+#endif // INCLUDE_NMT
 
 #endif // SHARE_VM_SERVICES_NMT_DCMD_HPP

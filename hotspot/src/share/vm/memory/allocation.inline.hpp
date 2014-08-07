@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
 
 #include "runtime/atomic.inline.hpp"
 #include "runtime/os.hpp"
+#include "services/memTracker.hpp"
 
 // Explicit C-heap memory management
 
@@ -49,12 +50,10 @@ inline void inc_stat_counter(volatile julong* dest, julong add_value) {
 #endif
 
 // allocate using malloc; will fail if no memory available
-inline char* AllocateHeap(size_t size, MEMFLAGS flags, address pc = 0,
+inline char* AllocateHeap(size_t size, MEMFLAGS flags,
+    const NativeCallStack& stack,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-  if (pc == 0) {
-    pc = CURRENT_PC;
-  }
-  char* p = (char*) os::malloc(size, flags, pc);
+  char* p = (char*) os::malloc(size, flags, stack);
   #ifdef ASSERT
   if (PrintMallocFree) trace_heap_malloc(size, "AllocateHeap", p);
   #endif
@@ -63,10 +62,14 @@ inline char* AllocateHeap(size_t size, MEMFLAGS flags, address pc = 0,
   }
   return p;
 }
-
-inline char* ReallocateHeap(char *old, size_t size, MEMFLAGS flags,
+inline char* AllocateHeap(size_t size, MEMFLAGS flags,
     AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
-  char* p = (char*) os::realloc(old, size, flags, CURRENT_PC);
+  return AllocateHeap(size, flags, CURRENT_PC, alloc_failmode);
+}
+
+inline char* ReallocateHeap(char *old, size_t size, MEMFLAGS flag,
+    AllocFailType alloc_failmode = AllocFailStrategy::EXIT_OOM) {
+  char* p = (char*) os::realloc(old, size, flag, CURRENT_PC);
   #ifdef ASSERT
   if (PrintMallocFree) trace_heap_malloc(size, "ReallocateHeap", p);
   #endif
@@ -85,8 +88,22 @@ inline void FreeHeap(void* p, MEMFLAGS memflags = mtInternal) {
 
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size,
-      address caller_pc) throw() {
-    void* p = (void*)AllocateHeap(size, F, (caller_pc != 0 ? caller_pc : CALLER_PC));
+      const NativeCallStack& stack) throw() {
+  void* p = (void*)AllocateHeap(size, F, stack);
+#ifdef ASSERT
+  if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
+#endif
+  return p;
+}
+
+template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size) throw() {
+  return CHeapObj<F>::operator new(size, CALLER_PC);
+}
+
+template <MEMFLAGS F> void* CHeapObj<F>::operator new (size_t size,
+  const std::nothrow_t&  nothrow_constant, const NativeCallStack& stack) throw() {
+  void* p = (void*)AllocateHeap(size, F, stack,
+      AllocFailStrategy::RETURN_NULL);
 #ifdef ASSERT
     if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
 #endif
@@ -94,23 +111,28 @@ template <MEMFLAGS F> void* CHeapObj<F>::operator new(size_t size,
   }
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new (size_t size,
-  const std::nothrow_t&  nothrow_constant, address caller_pc) throw() {
-  void* p = (void*)AllocateHeap(size, F, (caller_pc != 0 ? caller_pc : CALLER_PC),
-      AllocFailStrategy::RETURN_NULL);
-#ifdef ASSERT
-    if (PrintMallocFree) trace_heap_malloc(size, "CHeapObj-new", p);
-#endif
-    return p;
+  const std::nothrow_t& nothrow_constant) throw() {
+  return CHeapObj<F>::operator new(size, nothrow_constant, CALLER_PC);
 }
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new [](size_t size,
-      address caller_pc) throw() {
-    return CHeapObj<F>::operator new(size, caller_pc);
+      const NativeCallStack& stack) throw() {
+  return CHeapObj<F>::operator new(size, stack);
+}
+
+template <MEMFLAGS F> void* CHeapObj<F>::operator new [](size_t size)
+  throw() {
+  return CHeapObj<F>::operator new(size, CALLER_PC);
 }
 
 template <MEMFLAGS F> void* CHeapObj<F>::operator new [](size_t size,
-  const std::nothrow_t&  nothrow_constant, address caller_pc) throw() {
-    return CHeapObj<F>::operator new(size, nothrow_constant, caller_pc);
+  const std::nothrow_t&  nothrow_constant, const NativeCallStack& stack) throw() {
+  return CHeapObj<F>::operator new(size, nothrow_constant, stack);
+}
+
+template <MEMFLAGS F> void* CHeapObj<F>::operator new [](size_t size,
+  const std::nothrow_t& nothrow_constant) throw() {
+  return CHeapObj<F>::operator new(size, nothrow_constant, CALLER_PC);
 }
 
 template <MEMFLAGS F> void CHeapObj<F>::operator delete(void* p){

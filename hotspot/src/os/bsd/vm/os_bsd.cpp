@@ -2439,23 +2439,25 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
   }
 
   // The memory is committed
-  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
 
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-  // detaching the SHM segment will also delete it, see reserve_memory_special()
-  int rslt = shmdt(base);
-  if (rslt == 0) {
-    tkr.record((address)base, bytes);
-    return true;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    // detaching the SHM segment will also delete it, see reserve_memory_special()
+    int rslt = shmdt(base);
+    if (rslt == 0) {
+      tkr.record((address)base, bytes);
+      return true;
+    } else {
+      return false;
+    }
   } else {
-    tkr.discard();
-    return false;
+    return shmdt(base) == 0;
   }
-
 }
 
 size_t os::large_page_size() {

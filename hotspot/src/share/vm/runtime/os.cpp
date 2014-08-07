@@ -52,6 +52,7 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_version.hpp"
 #include "services/attachListener.hpp"
+#include "services/nmtCommon.hpp"
 #include "services/memTracker.hpp"
 #include "services/threadService.hpp"
 #include "utilities/defaultStream.hpp"
@@ -553,7 +554,11 @@ static u_char* testMalloc(size_t alloc_size) {
   return ptr;
 }
 
-void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
+void* os::malloc(size_t size, MEMFLAGS flags) {
+  return os::malloc(size, flags, CALLER_PC);
+}
+
+void* os::malloc(size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
 
@@ -579,11 +584,15 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
     size = 1;
   }
 
+  // NMT support
+  NMT_TrackingLevel level = MemTracker::tracking_level();
+  size_t            nmt_header_size = MemTracker::malloc_header_size(level);
+
 #ifndef ASSERT
-  const size_t alloc_size = size;
+  const size_t alloc_size = size + nmt_header_size;
 #else
-  const size_t alloc_size = GuardedMemory::get_total_size(size);
-  if (size > alloc_size) { // Check for rollover.
+  const size_t alloc_size = GuardedMemory::get_total_size(size + nmt_header_size);
+  if (size + nmt_header_size > alloc_size) { // Check for rollover.
     return NULL;
   }
 #endif
@@ -602,7 +611,7 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
     return NULL;
   }
   // Wrap memory with guard
-  GuardedMemory guarded(ptr, size);
+  GuardedMemory guarded(ptr, size + nmt_header_size);
   ptr = guarded.get_user_ptr();
 #endif
   if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
@@ -615,48 +624,50 @@ void* os::malloc(size_t size, MEMFLAGS memflags, address caller) {
   }
 
   // we do not track guard memory
-  MemTracker::record_malloc((address)ptr, size, memflags, caller == 0 ? CALLER_PC : caller);
-
-  return ptr;
+  return MemTracker::record_malloc((address)ptr, size, memflags, stack, level);
 }
 
+void* os::realloc(void *memblock, size_t size, MEMFLAGS flags) {
+  return os::realloc(memblock, size, flags, CALLER_PC);
+}
 
-void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller) {
+void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, const NativeCallStack& stack) {
 #ifndef ASSERT
   NOT_PRODUCT(inc_stat_counter(&num_mallocs, 1));
   NOT_PRODUCT(inc_stat_counter(&alloc_bytes, size));
-  MemTracker::Tracker tkr = MemTracker::get_realloc_tracker();
-  void* ptr = ::realloc(memblock, size);
-  if (ptr != NULL) {
-    tkr.record((address)memblock, (address)ptr, size, memflags,
-     caller == 0 ? CALLER_PC : caller);
-  } else {
-    tkr.discard();
-  }
-  return ptr;
+   // NMT support
+  void* membase = MemTracker::record_free(memblock);
+  NMT_TrackingLevel level = MemTracker::tracking_level();
+  size_t  nmt_header_size = MemTracker::malloc_header_size(level);
+  void* ptr = ::realloc(membase, size + nmt_header_size);
+  return MemTracker::record_malloc(ptr, size, memflags, stack, level);
 #else
   if (memblock == NULL) {
-    return os::malloc(size, memflags, (caller == 0 ? CALLER_PC : caller));
+    return os::malloc(size, memflags, stack);
   }
   if ((intptr_t)memblock == (intptr_t)MallocCatchPtr) {
     tty->print_cr("os::realloc caught " PTR_FORMAT, memblock);
     breakpoint();
   }
-  verify_memory(memblock);
+  // NMT support
+  void* membase = MemTracker::malloc_base(memblock);
+  verify_memory(membase);
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
   if (size == 0) {
     return NULL;
   }
   // always move the block
-  void* ptr = os::malloc(size, memflags, caller == 0 ? CALLER_PC : caller);
+  void* ptr = os::malloc(size, memflags, stack);
   if (PrintMalloc) {
     tty->print_cr("os::remalloc " SIZE_FORMAT " bytes, " PTR_FORMAT " --> " PTR_FORMAT, size, memblock, ptr);
   }
   // Copy to new memory if malloc didn't fail
   if ( ptr != NULL ) {
-    GuardedMemory guarded(memblock);
-    memcpy(ptr, memblock, MIN2(size, guarded.get_user_size()));
-    if (paranoid) verify_memory(ptr);
+    GuardedMemory guarded(MemTracker::malloc_base(memblock));
+    // Guard's user data contains NMT header
+    size_t memblock_size = guarded.get_user_size() - MemTracker::malloc_header_size(memblock);
+    memcpy(ptr, memblock, MIN2(size, memblock_size));
+    if (paranoid) verify_memory(MemTracker::malloc_base(ptr));
     if ((intptr_t)ptr == (intptr_t)MallocCatchPtr) {
       tty->print_cr("os::realloc caught, " SIZE_FORMAT " bytes --> " PTR_FORMAT, size, ptr);
       breakpoint();
@@ -669,7 +680,6 @@ void* os::realloc(void *memblock, size_t size, MEMFLAGS memflags, address caller
 
 
 void  os::free(void *memblock, MEMFLAGS memflags) {
-  address trackp = (address) memblock;
   NOT_PRODUCT(inc_stat_counter(&num_frees, 1));
 #ifdef ASSERT
   if (memblock == NULL) return;
@@ -677,20 +687,22 @@ void  os::free(void *memblock, MEMFLAGS memflags) {
     if (tty != NULL) tty->print_cr("os::free caught " PTR_FORMAT, memblock);
     breakpoint();
   }
-  verify_memory(memblock);
+  void* membase = MemTracker::record_free(memblock);
+  verify_memory(membase);
   NOT_PRODUCT(if (MallocVerifyInterval > 0) check_heap());
 
-  GuardedMemory guarded(memblock);
+  GuardedMemory guarded(membase);
   size_t size = guarded.get_user_size();
   inc_stat_counter(&free_bytes, size);
-  memblock = guarded.release_for_freeing();
+  membase = guarded.release_for_freeing();
   if (PrintMalloc && tty != NULL) {
-      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)memblock);
+      fprintf(stderr, "os::free " SIZE_FORMAT " bytes --> " PTR_FORMAT "\n", size, (uintptr_t)membase);
   }
+  ::free(membase);
+#else
+  void* membase = MemTracker::record_free(memblock);
+  ::free(membase);
 #endif
-  MemTracker::record_free(trackp, memflags);
-
-  ::free(memblock);
 }
 
 void os::init_random(long initval) {
@@ -1404,7 +1416,7 @@ bool os::create_stack_guard_pages(char* addr, size_t bytes) {
 char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
 
   return result;
@@ -1414,7 +1426,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
    MEMFLAGS flags) {
   char* result = pd_reserve_memory(bytes, addr, alignment_hint);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
     MemTracker::record_virtual_memory_type((address)result, flags);
   }
 
@@ -1424,7 +1436,7 @@ char* os::reserve_memory(size_t bytes, char* addr, size_t alignment_hint,
 char* os::attempt_reserve_memory_at(size_t bytes, char* addr) {
   char* result = pd_attempt_reserve_memory_at(bytes, addr);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve((address)result, bytes, mtNone, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve((address)result, bytes, CALLER_PC);
   }
   return result;
 }
@@ -1464,23 +1476,29 @@ void os::commit_memory_or_exit(char* addr, size_t size, size_t alignment_hint,
 }
 
 bool os::uncommit_memory(char* addr, size_t bytes) {
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
-  bool res = pd_uncommit_memory(addr, bytes);
-  if (res) {
-    tkr.record((address)addr, bytes);
+  bool res;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_uncommit_tracker();
+    res = pd_uncommit_memory(addr, bytes);
+    if (res) {
+      tkr.record((address)addr, bytes);
+    }
   } else {
-    tkr.discard();
+    res = pd_uncommit_memory(addr, bytes);
   }
   return res;
 }
 
 bool os::release_memory(char* addr, size_t bytes) {
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-  bool res = pd_release_memory(addr, bytes);
-  if (res) {
-    tkr.record((address)addr, bytes);
+  bool res;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    res = pd_release_memory(addr, bytes);
+    if (res) {
+      tkr.record((address)addr, bytes);
+    }
   } else {
-    tkr.discard();
+    res = pd_release_memory(addr, bytes);
   }
   return res;
 }
@@ -1491,7 +1509,7 @@ char* os::map_memory(int fd, const char* file_name, size_t file_offset,
                            bool allow_exec) {
   char* result = pd_map_memory(fd, file_name, file_offset, addr, bytes, read_only, allow_exec);
   if (result != NULL) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, mtNone, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)result, bytes, CALLER_PC);
   }
   return result;
 }
@@ -1504,12 +1522,15 @@ char* os::remap_memory(int fd, const char* file_name, size_t file_offset,
 }
 
 bool os::unmap_memory(char *addr, size_t bytes) {
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-  bool result = pd_unmap_memory(addr, bytes);
-  if (result) {
-    tkr.record((address)addr, bytes);
+  bool result;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    result = pd_unmap_memory(addr, bytes);
+    if (result) {
+      tkr.record((address)addr, bytes);
+    }
   } else {
-    tkr.discard();
+    result = pd_unmap_memory(addr, bytes);
   }
   return result;
 }

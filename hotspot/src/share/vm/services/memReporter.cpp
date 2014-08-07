@@ -22,618 +22,595 @@
  *
  */
 #include "precompiled.hpp"
-#include "classfile/systemDictionary.hpp"
-#include "runtime/os.hpp"
+
+#include "memory/allocation.hpp"
+#include "services/mallocTracker.hpp"
 #include "services/memReporter.hpp"
-#include "services/memPtrArray.hpp"
-#include "services/memTracker.hpp"
+#include "services/virtualMemoryTracker.hpp"
+#include "utilities/globalDefinitions.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+size_t MemReporterBase::reserved_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+  return malloc->malloc_size() + malloc->arena_size() + vm->reserved();
+}
 
-const char* BaselineOutputer::memory_unit(size_t scale) {
-  switch(scale) {
-    case K: return "KB";
-    case M: return "MB";
-    case G: return "GB";
+size_t MemReporterBase::committed_total(const MallocMemory* malloc, const VirtualMemory* vm) const {
+  return malloc->malloc_size() + malloc->arena_size() + vm->committed();
+}
+
+void MemReporterBase::print_total(size_t reserved, size_t committed) const {
+  const char* scale = current_scale();
+  output()->print("reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s",
+    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+}
+
+void MemReporterBase::print_malloc(size_t amount, size_t count) const {
+  const char* scale = current_scale();
+  outputStream* out = output();
+  out->print("(malloc=" SIZE_FORMAT "%s",
+    amount_in_current_scale(amount), scale);
+
+  if (count > 0) {
+    out->print(" #" SIZE_FORMAT "", count);
   }
-  ShouldNotReachHere();
-  return NULL;
+
+  out->print(")");
+}
+
+void MemReporterBase::print_virtual_memory(size_t reserved, size_t committed) const {
+  const char* scale = current_scale();
+  output()->print("(mmap: reserved=" SIZE_FORMAT "%s, committed=" SIZE_FORMAT "%s)",
+    amount_in_current_scale(reserved), scale, amount_in_current_scale(committed), scale);
+}
+
+void MemReporterBase::print_malloc_line(size_t amount, size_t count) const {
+  output()->print("%28s", " ");
+  print_malloc(amount, count);
+  output()->print_cr(" ");
+}
+
+void MemReporterBase::print_virtual_memory_line(size_t reserved, size_t committed) const {
+  output()->print("%28s", " ");
+  print_virtual_memory(reserved, committed);
+  output()->print_cr(" ");
+}
+
+void MemReporterBase::print_arena_line(size_t amount, size_t count) const {
+  const char* scale = current_scale();
+  output()->print_cr("%27s (arena=" SIZE_FORMAT "%s #" SIZE_FORMAT ")", " ",
+    amount_in_current_scale(amount), scale, count);
+}
+
+void MemReporterBase::print_virtual_memory_region(const char* type, address base, size_t size) const {
+  const char* scale = current_scale();
+  output()->print("[" PTR_FORMAT " - " PTR_FORMAT "] %s " SIZE_FORMAT "%s",
+    p2i(base), p2i(base + size), type, amount_in_current_scale(size), scale);
 }
 
 
-void BaselineReporter::report_baseline(const MemBaseline& baseline, bool summary_only) {
-  assert(MemTracker::is_on(), "Native memory tracking is off");
-  _outputer.start(scale());
-  _outputer.total_usage(
-    amount_in_current_scale(baseline.total_malloc_amount() + baseline.total_reserved_amount()),
-    amount_in_current_scale(baseline.total_malloc_amount() + baseline.total_committed_amount()));
+void MemSummaryReporter::report() {
+  const char* scale = current_scale();
+  outputStream* out = output();
+  size_t total_reserved_amount = _malloc_snapshot->total() +
+    _vm_snapshot->total_reserved();
+  size_t total_committed_amount = _malloc_snapshot->total() +
+    _vm_snapshot->total_committed();
 
-  _outputer.num_of_classes(baseline.number_of_classes());
-  _outputer.num_of_threads(baseline.number_of_threads());
+  // Overall total
+  out->print_cr("\nNative Memory Tracking:\n");
+  out->print("Total: ");
+  print_total(total_reserved_amount, total_committed_amount);
+  out->print("\n");
 
-  report_summaries(baseline);
-  if (!summary_only && MemTracker::track_callsite()) {
-    report_virtual_memory_map(baseline);
-    report_callsites(baseline);
+  // Summary by memory type
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    // thread stack is reported as part of thread category
+    if (flag == mtThreadStack) continue;
+    MallocMemory* malloc_memory = _malloc_snapshot->by_type(flag);
+    VirtualMemory* virtual_memory = _vm_snapshot->by_type(flag);
+
+    report_summary_of_type(flag, malloc_memory, virtual_memory);
   }
-  _outputer.done();
 }
 
-void BaselineReporter::report_summaries(const MemBaseline& baseline) {
-  _outputer.start_category_summary();
-  MEMFLAGS type;
+void MemSummaryReporter::report_summary_of_type(MEMFLAGS flag,
+  MallocMemory*  malloc_memory, VirtualMemory* virtual_memory) {
 
-  for (int index = 0; index < NUMBER_OF_MEMORY_TYPE; index ++) {
-    type = MemBaseline::MemType2NameMap[index]._flag;
-    _outputer.category_summary(type,
-      amount_in_current_scale(baseline.reserved_amount(type)),
-      amount_in_current_scale(baseline.committed_amount(type)),
-      amount_in_current_scale(baseline.malloc_amount(type)),
-      baseline.malloc_count(type),
-      amount_in_current_scale(baseline.arena_amount(type)),
-      baseline.arena_count(type));
+  size_t reserved_amount  = reserved_total (malloc_memory, virtual_memory);
+  size_t committed_amount = committed_total(malloc_memory, virtual_memory);
+
+  // Count thread's native stack in "Thread" category
+  if (flag == mtThread) {
+    const VirtualMemory* thread_stack_usage =
+      (const VirtualMemory*)_vm_snapshot->by_type(mtThreadStack);
+    reserved_amount  += thread_stack_usage->reserved();
+    committed_amount += thread_stack_usage->committed();
+  } else if (flag == mtNMT) {
+    // Count malloc headers in "NMT" category
+    reserved_amount  += _malloc_snapshot->malloc_overhead()->size();
+    committed_amount += _malloc_snapshot->malloc_overhead()->size();
   }
 
-  _outputer.done_category_summary();
-}
+  if (amount_in_current_scale(reserved_amount) > 0) {
+    outputStream* out   = output();
+    const char*   scale = current_scale();
+    out->print("-%26s (", NMTUtil::flag_to_name(flag));
+    print_total(reserved_amount, committed_amount);
+    out->print_cr(")");
 
-void BaselineReporter::report_virtual_memory_map(const MemBaseline& baseline) {
-  _outputer.start_virtual_memory_map();
-  MemBaseline* pBL = const_cast<MemBaseline*>(&baseline);
-  MemPointerArrayIteratorImpl itr = MemPointerArrayIteratorImpl(pBL->_vm_map);
-  VMMemRegionEx* rgn = (VMMemRegionEx*)itr.current();
-  while (rgn != NULL) {
-    if (rgn->is_reserved_region()) {
-      _outputer.reserved_memory_region(FLAGS_TO_MEMORY_TYPE(rgn->flags()),
-        rgn->base(), rgn->base() + rgn->size(), amount_in_current_scale(rgn->size()), rgn->pc());
-    } else {
-      _outputer.committed_memory_region(rgn->base(), rgn->base() + rgn->size(),
-        amount_in_current_scale(rgn->size()), rgn->pc());
+    if (flag == mtClass) {
+      // report class count
+      out->print_cr("%27s (classes #" SIZE_FORMAT ")", " ", _class_count);
+    } else if (flag == mtThread) {
+      // report thread count
+      out->print_cr("%27s (thread #" SIZE_FORMAT ")", " ", _malloc_snapshot->thread_count());
+      const VirtualMemory* thread_stack_usage =
+       _vm_snapshot->by_type(mtThreadStack);
+      out->print("%27s (stack: ", " ");
+      print_total(thread_stack_usage->reserved(), thread_stack_usage->committed());
+      out->print_cr(")");
     }
-    rgn = (VMMemRegionEx*)itr.next();
-  }
 
-  _outputer.done_virtual_memory_map();
+     // report malloc'd memory
+    if (amount_in_current_scale(malloc_memory->malloc_size()) > 0) {
+      // We don't know how many arena chunks are in used, so don't report the count
+      size_t count = (flag == mtChunk) ? 0 : malloc_memory->malloc_count();
+      print_malloc_line(malloc_memory->malloc_size(), count);
+    }
+
+    if (amount_in_current_scale(virtual_memory->reserved()) > 0) {
+      print_virtual_memory_line(virtual_memory->reserved(), virtual_memory->committed());
+    }
+
+    if (amount_in_current_scale(malloc_memory->arena_size()) > 0) {
+      print_arena_line(malloc_memory->arena_size(), malloc_memory->arena_count());
+    }
+
+    if (flag == mtNMT &&
+      amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()) > 0) {
+      out->print_cr("%27s (tracking overhead=" SIZE_FORMAT "%s)", " ",
+        amount_in_current_scale(_malloc_snapshot->malloc_overhead()->size()), scale);
+    }
+
+    out->print_cr(" ");
+  }
 }
 
-void BaselineReporter::report_callsites(const MemBaseline& baseline) {
-  _outputer.start_callsite();
-  MemBaseline* pBL = const_cast<MemBaseline*>(&baseline);
+void MemDetailReporter::report_detail() {
+  // Start detail report
+  outputStream* out = output();
+  out->print_cr("Details:\n");
 
-  pBL->_malloc_cs->sort((FN_SORT)MemBaseline::bl_malloc_sort_by_size);
-  pBL->_vm_cs->sort((FN_SORT)MemBaseline::bl_vm_sort_by_size);
-
-  // walk malloc callsites
-  MemPointerArrayIteratorImpl malloc_itr(pBL->_malloc_cs);
-  MallocCallsitePointer*      malloc_callsite =
-                  (MallocCallsitePointer*)malloc_itr.current();
-  while (malloc_callsite != NULL) {
-    _outputer.malloc_callsite(malloc_callsite->addr(),
-        amount_in_current_scale(malloc_callsite->amount()), malloc_callsite->count());
-    malloc_callsite = (MallocCallsitePointer*)malloc_itr.next();
-  }
-
-  // walk virtual memory callsite
-  MemPointerArrayIteratorImpl vm_itr(pBL->_vm_cs);
-  VMCallsitePointer*          vm_callsite = (VMCallsitePointer*)vm_itr.current();
-  while (vm_callsite != NULL) {
-    _outputer.virtual_memory_callsite(vm_callsite->addr(),
-      amount_in_current_scale(vm_callsite->reserved_amount()),
-      amount_in_current_scale(vm_callsite->committed_amount()));
-    vm_callsite = (VMCallsitePointer*)vm_itr.next();
-  }
-  pBL->_malloc_cs->sort((FN_SORT)MemBaseline::bl_malloc_sort_by_pc);
-  pBL->_vm_cs->sort((FN_SORT)MemBaseline::bl_vm_sort_by_pc);
-  _outputer.done_callsite();
+  report_malloc_sites();
+  report_virtual_memory_allocation_sites();
 }
 
-void BaselineReporter::diff_baselines(const MemBaseline& cur, const MemBaseline& prev,
-  bool summary_only) {
-  assert(MemTracker::is_on(), "Native memory tracking is off");
-  _outputer.start(scale());
-  size_t total_reserved = cur.total_malloc_amount() + cur.total_reserved_amount();
-  size_t total_committed = cur.total_malloc_amount() + cur.total_committed_amount();
+void MemDetailReporter::report_malloc_sites() {
+  MallocSiteIterator         malloc_itr = _baseline.malloc_sites(MemBaseline::by_size);
+  if (malloc_itr.is_empty()) return;
 
-  _outputer.diff_total_usage(
-    amount_in_current_scale(total_reserved), amount_in_current_scale(total_committed),
-    diff_in_current_scale(total_reserved,  (prev.total_malloc_amount() + prev.total_reserved_amount())),
-    diff_in_current_scale(total_committed, (prev.total_committed_amount() + prev.total_malloc_amount())));
+  outputStream* out = output();
 
-  _outputer.diff_num_of_classes(cur.number_of_classes(),
-       diff(cur.number_of_classes(), prev.number_of_classes()));
-  _outputer.diff_num_of_threads(cur.number_of_threads(),
-       diff(cur.number_of_threads(), prev.number_of_threads()));
+  const MallocSite* malloc_site;
+  while ((malloc_site = malloc_itr.next()) != NULL) {
+    // Don't report if size is too small
+    if (amount_in_current_scale(malloc_site->size()) == 0)
+      continue;
 
-  diff_summaries(cur, prev);
-  if (!summary_only && MemTracker::track_callsite()) {
-    diff_callsites(cur, prev);
+    const NativeCallStack* stack = malloc_site->call_stack();
+    stack->print_on(out);
+    out->print("%29s", " ");
+    print_malloc(malloc_site->size(), malloc_site->count());
+    out->print_cr("\n");
   }
-  _outputer.done();
 }
 
-void BaselineReporter::diff_summaries(const MemBaseline& cur, const MemBaseline& prev) {
-  _outputer.start_category_summary();
-  MEMFLAGS type;
+void MemDetailReporter::report_virtual_memory_allocation_sites()  {
+  VirtualMemorySiteIterator  virtual_memory_itr =
+    _baseline.virtual_memory_sites(MemBaseline::by_size);
 
-  for (int index = 0; index < NUMBER_OF_MEMORY_TYPE; index ++) {
-    type = MemBaseline::MemType2NameMap[index]._flag;
-    _outputer.diff_category_summary(type,
-      amount_in_current_scale(cur.reserved_amount(type)),
-      amount_in_current_scale(cur.committed_amount(type)),
-      amount_in_current_scale(cur.malloc_amount(type)),
-      cur.malloc_count(type),
-      amount_in_current_scale(cur.arena_amount(type)),
-      cur.arena_count(type),
-      diff_in_current_scale(cur.reserved_amount(type), prev.reserved_amount(type)),
-      diff_in_current_scale(cur.committed_amount(type), prev.committed_amount(type)),
-      diff_in_current_scale(cur.malloc_amount(type), prev.malloc_amount(type)),
-      diff(cur.malloc_count(type), prev.malloc_count(type)),
-      diff_in_current_scale(cur.arena_amount(type), prev.arena_amount(type)),
-      diff(cur.arena_count(type), prev.arena_count(type)));
+  if (virtual_memory_itr.is_empty()) return;
+
+  outputStream* out = output();
+  const VirtualMemoryAllocationSite*  virtual_memory_site;
+
+  while ((virtual_memory_site = virtual_memory_itr.next()) != NULL) {
+    // Don't report if size is too small
+    if (amount_in_current_scale(virtual_memory_site->reserved()) == 0)
+      continue;
+
+    const NativeCallStack* stack = virtual_memory_site->call_stack();
+    stack->print_on(out);
+    out->print("%28s (", " ");
+    print_total(virtual_memory_site->reserved(), virtual_memory_site->committed());
+    out->print_cr(")\n");
   }
-
-  _outputer.done_category_summary();
 }
 
-void BaselineReporter::diff_callsites(const MemBaseline& cur, const MemBaseline& prev) {
-  _outputer.start_callsite();
-  MemBaseline* pBL_cur = const_cast<MemBaseline*>(&cur);
-  MemBaseline* pBL_prev = const_cast<MemBaseline*>(&prev);
 
-  // walk malloc callsites
-  MemPointerArrayIteratorImpl cur_malloc_itr(pBL_cur->_malloc_cs);
-  MemPointerArrayIteratorImpl prev_malloc_itr(pBL_prev->_malloc_cs);
+void MemDetailReporter::report_virtual_memory_map() {
+  // Virtual memory map always in base address order
+  VirtualMemoryAllocationIterator itr = _baseline.virtual_memory_allocations();
+  const ReservedMemoryRegion* rgn;
 
-  MallocCallsitePointer*      cur_malloc_callsite =
-                  (MallocCallsitePointer*)cur_malloc_itr.current();
-  MallocCallsitePointer*      prev_malloc_callsite =
-                  (MallocCallsitePointer*)prev_malloc_itr.current();
+  output()->print_cr("Virtual memory map:");
+  while ((rgn = itr.next()) != NULL) {
+    report_virtual_memory_region(rgn);
+  }
+}
 
-  while (cur_malloc_callsite != NULL || prev_malloc_callsite != NULL) {
-    if (prev_malloc_callsite == NULL) {
-      assert(cur_malloc_callsite != NULL, "sanity check");
-      // this is a new callsite
-      _outputer.diff_malloc_callsite(cur_malloc_callsite->addr(),
-        amount_in_current_scale(cur_malloc_callsite->amount()),
-        cur_malloc_callsite->count(),
-        diff_in_current_scale(cur_malloc_callsite->amount(), 0),
-        diff(cur_malloc_callsite->count(), 0));
-      cur_malloc_callsite = (MallocCallsitePointer*)cur_malloc_itr.next();
-    } else if (cur_malloc_callsite == NULL) {
-      assert(prev_malloc_callsite != NULL, "Sanity check");
-      // this callsite is already gone
-      _outputer.diff_malloc_callsite(prev_malloc_callsite->addr(),
-        0, 0,
-        diff_in_current_scale(0, prev_malloc_callsite->amount()),
-        diff(0, prev_malloc_callsite->count()));
-      prev_malloc_callsite = (MallocCallsitePointer*)prev_malloc_itr.next();
+void MemDetailReporter::report_virtual_memory_region(const ReservedMemoryRegion* reserved_rgn) {
+  assert(reserved_rgn != NULL, "NULL pointer");
+
+  // Don't report if size is too small
+  if (amount_in_current_scale(reserved_rgn->size()) == 0) return;
+
+  outputStream* out = output();
+  const char* scale = current_scale();
+  const NativeCallStack*  stack = reserved_rgn->call_stack();
+  bool all_committed = reserved_rgn->all_committed();
+  const char* region_type = (all_committed ? "reserved and committed" : "reserved");
+  out->print_cr(" ");
+  print_virtual_memory_region(region_type, reserved_rgn->base(), reserved_rgn->size());
+  out->print(" for %s", NMTUtil::flag_to_name(reserved_rgn->flag()));
+  if (stack->is_empty()) {
+    out->print_cr(" ");
+  } else {
+    out->print_cr(" from");
+    stack->print_on(out, 4);
+  }
+
+  if (all_committed) return;
+
+  CommittedRegionIterator itr = reserved_rgn->iterate_committed_regions();
+  const CommittedMemoryRegion* committed_rgn;
+  while ((committed_rgn = itr.next()) != NULL) {
+    // Don't report if size is too small
+    if (amount_in_current_scale(committed_rgn->size()) == 0) continue;
+    stack = committed_rgn->call_stack();
+    out->print("\n\t");
+    print_virtual_memory_region("committed", committed_rgn->base(), committed_rgn->size());
+    if (stack->is_empty()) {
+      out->print_cr(" ");
     } else {
-      assert(cur_malloc_callsite  != NULL,  "Sanity check");
-      assert(prev_malloc_callsite != NULL,  "Sanity check");
-      if (cur_malloc_callsite->addr() < prev_malloc_callsite->addr()) {
-        // this is a new callsite
-        _outputer.diff_malloc_callsite(cur_malloc_callsite->addr(),
-          amount_in_current_scale(cur_malloc_callsite->amount()),
-          cur_malloc_callsite->count(),
-          diff_in_current_scale(cur_malloc_callsite->amount(), 0),
-          diff(cur_malloc_callsite->count(), 0));
-          cur_malloc_callsite = (MallocCallsitePointer*)cur_malloc_itr.next();
-      } else if (cur_malloc_callsite->addr() > prev_malloc_callsite->addr()) {
-        // this callsite is already gone
-        _outputer.diff_malloc_callsite(prev_malloc_callsite->addr(),
-          0, 0,
-          diff_in_current_scale(0, prev_malloc_callsite->amount()),
-          diff(0, prev_malloc_callsite->count()));
-        prev_malloc_callsite = (MallocCallsitePointer*)prev_malloc_itr.next();
+      out->print_cr(" from");
+      stack->print_on(out, 12);
+    }
+  }
+}
+
+void MemSummaryDiffReporter::report_diff() {
+  const char* scale = current_scale();
+  outputStream* out = output();
+  out->print_cr("\nNative Memory Tracking:\n");
+
+  // Overall diff
+  out->print("Total: ");
+  print_virtual_memory_diff(_current_baseline.total_reserved_memory(),
+    _current_baseline.total_committed_memory(), _early_baseline.total_reserved_memory(),
+    _early_baseline.total_committed_memory());
+
+  out->print_cr("\n");
+
+  // Summary diff by memory type
+  for (int index = 0; index < mt_number_of_types; index ++) {
+    MEMFLAGS flag = NMTUtil::index_to_flag(index);
+    // thread stack is reported as part of thread category
+    if (flag == mtThreadStack) continue;
+    diff_summary_of_type(flag, _early_baseline.malloc_memory(flag),
+      _early_baseline.virtual_memory(flag), _current_baseline.malloc_memory(flag),
+      _current_baseline.virtual_memory(flag));
+  }
+}
+
+void MemSummaryDiffReporter::print_malloc_diff(size_t current_amount, size_t current_count,
+    size_t early_amount, size_t early_count) const {
+  const char* scale = current_scale();
+  outputStream* out = output();
+
+  out->print("malloc=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
+  long amount_diff = diff_in_current_scale(current_amount, early_amount);
+  if (amount_diff != 0) {
+    out->print(" %+ld%s", amount_diff, scale);
+  }
+  if (current_count > 0) {
+    out->print(" #" SIZE_FORMAT "", current_count);
+    if (current_count != early_count) {
+      out->print(" %+d", (int)(current_count - early_count));
+    }
+  }
+}
+
+void MemSummaryDiffReporter::print_arena_diff(size_t current_amount, size_t current_count,
+  size_t early_amount, size_t early_count) const {
+  const char* scale = current_scale();
+  outputStream* out = output();
+  out->print("arena=" SIZE_FORMAT "%s", amount_in_current_scale(current_amount), scale);
+  if (diff_in_current_scale(current_amount, early_amount) != 0) {
+    out->print(" %+ld", diff_in_current_scale(current_amount, early_amount));
+  }
+
+  out->print(" #" SIZE_FORMAT "", current_count);
+  if (current_count != early_count) {
+    out->print(" %+d", (int)(current_count - early_count));
+  }
+}
+
+void MemSummaryDiffReporter::print_virtual_memory_diff(size_t current_reserved, size_t current_committed,
+    size_t early_reserved, size_t early_committed) const {
+  const char* scale = current_scale();
+  outputStream* out = output();
+  out->print("reserved=" SIZE_FORMAT "%s", amount_in_current_scale(current_reserved), scale);
+  long reserved_diff = diff_in_current_scale(current_reserved, early_reserved);
+  if (reserved_diff != 0) {
+    out->print(" %+ld%s", reserved_diff, scale);
+  }
+
+  out->print(", committed=" SIZE_FORMAT "%s", amount_in_current_scale(current_committed), scale);
+  long committed_diff = diff_in_current_scale(current_committed, early_committed);
+  if (committed_diff != 0) {
+    out->print(" %+ld%s", committed_diff, scale);
+  }
+}
+
+
+void MemSummaryDiffReporter::diff_summary_of_type(MEMFLAGS flag, const MallocMemory* early_malloc,
+  const VirtualMemory* early_vm, const MallocMemory* current_malloc,
+  const VirtualMemory* current_vm) const {
+
+  outputStream* out = output();
+  const char* scale = current_scale();
+
+  // Total reserved and committed memory in current baseline
+  size_t current_reserved_amount  = reserved_total (current_malloc, current_vm);
+  size_t current_committed_amount = committed_total(current_malloc, current_vm);
+
+  // Total reserved and committed memory in early baseline
+  size_t early_reserved_amount  = reserved_total(early_malloc, early_vm);
+  size_t early_committed_amount = committed_total(early_malloc, early_vm);
+
+  // Adjust virtual memory total
+  if (flag == mtThread) {
+    const VirtualMemory* early_thread_stack_usage =
+      _early_baseline.virtual_memory(mtThreadStack);
+    const VirtualMemory* current_thread_stack_usage =
+      _current_baseline.virtual_memory(mtThreadStack);
+
+    early_reserved_amount  += early_thread_stack_usage->reserved();
+    early_committed_amount += early_thread_stack_usage->committed();
+
+    current_reserved_amount  += current_thread_stack_usage->reserved();
+    current_committed_amount += current_thread_stack_usage->committed();
+  } else if (flag == mtNMT) {
+    early_reserved_amount  += _early_baseline.malloc_tracking_overhead();
+    early_committed_amount += _early_baseline.malloc_tracking_overhead();
+
+    current_reserved_amount  += _current_baseline.malloc_tracking_overhead();
+    current_committed_amount += _current_baseline.malloc_tracking_overhead();
+  }
+
+  if (amount_in_current_scale(current_reserved_amount) > 0 ||
+      diff_in_current_scale(current_reserved_amount, early_reserved_amount) != 0) {
+
+    // print summary line
+    out->print("-%26s (", NMTUtil::flag_to_name(flag));
+    print_virtual_memory_diff(current_reserved_amount, current_committed_amount,
+      early_reserved_amount, early_committed_amount);
+    out->print_cr(")");
+
+    // detail lines
+    if (flag == mtClass) {
+      // report class count
+      out->print("%27s (classes #" SIZE_FORMAT "", " ", _current_baseline.class_count());
+      int class_count_diff = (int)(_current_baseline.class_count() -
+        _early_baseline.class_count());
+      if (_current_baseline.class_count() != _early_baseline.class_count()) {
+        out->print(" %+d", (int)(_current_baseline.class_count() - _early_baseline.class_count()));
+      }
+      out->print_cr(")");
+    } else if (flag == mtThread) {
+      // report thread count
+      out->print("%27s (thread #" SIZE_FORMAT "", " ", _current_baseline.thread_count());
+      int thread_count_diff = (int)(_current_baseline.thread_count() -
+          _early_baseline.thread_count());
+      if (thread_count_diff != 0) {
+        out->print(" %+d", thread_count_diff);
+      }
+      out->print_cr(")");
+
+      // report thread stack
+      const VirtualMemory* current_thread_stack =
+          _current_baseline.virtual_memory(mtThreadStack);
+      const VirtualMemory* early_thread_stack =
+        _early_baseline.virtual_memory(mtThreadStack);
+
+      out->print("%27s (stack: ", " ");
+      print_virtual_memory_diff(current_thread_stack->reserved(), current_thread_stack->committed(),
+        early_thread_stack->reserved(), early_thread_stack->committed());
+      out->print_cr(")");
+    }
+
+    // Report malloc'd memory
+    size_t current_malloc_amount = current_malloc->malloc_size();
+    size_t early_malloc_amount   = early_malloc->malloc_size();
+    if (amount_in_current_scale(current_malloc_amount) > 0 ||
+        diff_in_current_scale(current_malloc_amount, early_malloc_amount) != 0) {
+      out->print("%28s(", " ");
+      print_malloc_diff(current_malloc_amount, (flag == mtChunk) ? 0 : current_malloc->malloc_count(),
+        early_malloc_amount, early_malloc->malloc_count());
+      out->print_cr(")");
+    }
+
+    // Report virtual memory
+    if (amount_in_current_scale(current_vm->reserved()) > 0 ||
+        diff_in_current_scale(current_vm->reserved(), early_vm->reserved()) != 0) {
+      out->print("%27s (mmap: ", " ");
+      print_virtual_memory_diff(current_vm->reserved(), current_vm->committed(),
+        early_vm->reserved(), early_vm->committed());
+      out->print_cr(")");
+    }
+
+    // Report arena memory
+    if (amount_in_current_scale(current_malloc->arena_size()) > 0 ||
+        diff_in_current_scale(current_malloc->arena_size(), early_malloc->arena_size()) != 0) {
+      out->print("%28s(", " ");
+      print_arena_diff(current_malloc->arena_size(), current_malloc->arena_count(),
+        early_malloc->arena_size(), early_malloc->arena_count());
+      out->print_cr(")");
+    }
+
+    // Report native memory tracking overhead
+    if (flag == mtNMT) {
+      size_t current_tracking_overhead = amount_in_current_scale(_current_baseline.malloc_tracking_overhead());
+      size_t early_tracking_overhead   = amount_in_current_scale(_early_baseline.malloc_tracking_overhead());
+
+      out->print("%27s (tracking overhead=" SIZE_FORMAT "%s", " ",
+        amount_in_current_scale(_current_baseline.malloc_tracking_overhead()), scale);
+
+      long overhead_diff = diff_in_current_scale(_current_baseline.malloc_tracking_overhead(),
+           _early_baseline.malloc_tracking_overhead());
+      if (overhead_diff != 0) {
+        out->print(" %+ld%s", overhead_diff, scale);
+      }
+      out->print_cr(")");
+    }
+    out->print_cr(" ");
+  }
+}
+
+void MemDetailDiffReporter::report_diff() {
+  MemSummaryDiffReporter::report_diff();
+  diff_malloc_sites();
+  diff_virtual_memory_sites();
+}
+
+void MemDetailDiffReporter::diff_malloc_sites() const {
+  MallocSiteIterator early_itr = _early_baseline.malloc_sites(MemBaseline::by_site);
+  MallocSiteIterator current_itr = _current_baseline.malloc_sites(MemBaseline::by_site);
+
+  const MallocSite* early_site   = early_itr.next();
+  const MallocSite* current_site = current_itr.next();
+
+  while (early_site != NULL || current_site != NULL) {
+    if (early_site == NULL) {
+      new_malloc_site(current_site);
+      current_site = current_itr.next();
+    } else if (current_site == NULL) {
+      old_malloc_site(early_site);
+      early_site = early_itr.next();
+    } else {
+      int compVal = current_site->call_stack()->compare(*early_site->call_stack());
+      if (compVal < 0) {
+        new_malloc_site(current_site);
+        current_site = current_itr.next();
+      } else if (compVal > 0) {
+        old_malloc_site(early_site);
+        early_site = early_itr.next();
       } else {
-        // the same callsite
-        _outputer.diff_malloc_callsite(cur_malloc_callsite->addr(),
-          amount_in_current_scale(cur_malloc_callsite->amount()),
-          cur_malloc_callsite->count(),
-          diff_in_current_scale(cur_malloc_callsite->amount(), prev_malloc_callsite->amount()),
-          diff(cur_malloc_callsite->count(), prev_malloc_callsite->count()));
-        cur_malloc_callsite = (MallocCallsitePointer*)cur_malloc_itr.next();
-        prev_malloc_callsite = (MallocCallsitePointer*)prev_malloc_itr.next();
+        diff_malloc_site(early_site, current_site);
+        early_site   = early_itr.next();
+        current_site = current_itr.next();
       }
     }
   }
-
-  // walk virtual memory callsite
-  MemPointerArrayIteratorImpl cur_vm_itr(pBL_cur->_vm_cs);
-  MemPointerArrayIteratorImpl prev_vm_itr(pBL_prev->_vm_cs);
-  VMCallsitePointer*          cur_vm_callsite = (VMCallsitePointer*)cur_vm_itr.current();
-  VMCallsitePointer*          prev_vm_callsite = (VMCallsitePointer*)prev_vm_itr.current();
-  while (cur_vm_callsite != NULL || prev_vm_callsite != NULL) {
-    if (prev_vm_callsite == NULL || cur_vm_callsite->addr() < prev_vm_callsite->addr()) {
-      // this is a new callsite
-      _outputer.diff_virtual_memory_callsite(cur_vm_callsite->addr(),
-        amount_in_current_scale(cur_vm_callsite->reserved_amount()),
-        amount_in_current_scale(cur_vm_callsite->committed_amount()),
-        diff_in_current_scale(cur_vm_callsite->reserved_amount(), 0),
-        diff_in_current_scale(cur_vm_callsite->committed_amount(), 0));
-      cur_vm_callsite = (VMCallsitePointer*)cur_vm_itr.next();
-    } else if (cur_vm_callsite == NULL || cur_vm_callsite->addr() > prev_vm_callsite->addr()) {
-      // this callsite is already gone
-      _outputer.diff_virtual_memory_callsite(prev_vm_callsite->addr(),
-        amount_in_current_scale(0),
-        amount_in_current_scale(0),
-        diff_in_current_scale(0, prev_vm_callsite->reserved_amount()),
-        diff_in_current_scale(0, prev_vm_callsite->committed_amount()));
-      prev_vm_callsite = (VMCallsitePointer*)prev_vm_itr.next();
-    } else { // the same callsite
-      _outputer.diff_virtual_memory_callsite(cur_vm_callsite->addr(),
-        amount_in_current_scale(cur_vm_callsite->reserved_amount()),
-        amount_in_current_scale(cur_vm_callsite->committed_amount()),
-        diff_in_current_scale(cur_vm_callsite->reserved_amount(), prev_vm_callsite->reserved_amount()),
-        diff_in_current_scale(cur_vm_callsite->committed_amount(), prev_vm_callsite->committed_amount()));
-      cur_vm_callsite  = (VMCallsitePointer*)cur_vm_itr.next();
-      prev_vm_callsite = (VMCallsitePointer*)prev_vm_itr.next();
-    }
-  }
-
-  _outputer.done_callsite();
 }
 
-size_t BaselineReporter::amount_in_current_scale(size_t amt) const {
-  return (size_t)(((float)amt/(float)_scale) + 0.5);
-}
+void MemDetailDiffReporter::diff_virtual_memory_sites() const {
+  VirtualMemorySiteIterator early_itr = _early_baseline.virtual_memory_sites(MemBaseline::by_site);
+  VirtualMemorySiteIterator current_itr = _current_baseline.virtual_memory_sites(MemBaseline::by_site);
 
-int BaselineReporter::diff_in_current_scale(size_t value1, size_t value2) const {
-  return (int)(((float)value1 - (float)value2)/((float)_scale) + 0.5);
-}
+  const VirtualMemoryAllocationSite* early_site   = early_itr.next();
+  const VirtualMemoryAllocationSite* current_site = current_itr.next();
 
-int BaselineReporter::diff(size_t value1, size_t value2) const {
-  return ((int)value1 - (int)value2);
-}
-
-void BaselineTTYOutputer::start(size_t scale, bool report_diff) {
-  _scale = scale;
-  _output->print_cr(" ");
-  _output->print_cr("Native Memory Tracking:");
-  _output->print_cr(" ");
-}
-
-void BaselineTTYOutputer::done() {
-
-}
-
-void BaselineTTYOutputer::total_usage(size_t total_reserved, size_t total_committed) {
-  const char* unit = memory_unit(_scale);
-  _output->print_cr("Total:  reserved=%d%s,  committed=%d%s",
-    total_reserved, unit, total_committed, unit);
-}
-
-void BaselineTTYOutputer::start_category_summary() {
-  _output->print_cr(" ");
-}
-
-/**
- * report a summary of memory type
- */
-void BaselineTTYOutputer::category_summary(MEMFLAGS type,
-  size_t reserved_amt, size_t committed_amt, size_t malloc_amt,
-  size_t malloc_count, size_t arena_amt, size_t arena_count) {
-
-  // we report mtThreadStack under mtThread category
-  if (type == mtThreadStack) {
-    assert(malloc_amt == 0 && malloc_count == 0 && arena_amt == 0,
-      "Just check");
-    _thread_stack_reserved = reserved_amt;
-    _thread_stack_committed = committed_amt;
-  } else {
-    const char* unit = memory_unit(_scale);
-    size_t total_reserved = (reserved_amt + malloc_amt + arena_amt);
-    size_t total_committed = (committed_amt + malloc_amt + arena_amt);
-    if (type == mtThread) {
-      total_reserved += _thread_stack_reserved;
-      total_committed += _thread_stack_committed;
-    }
-
-    if (total_reserved > 0) {
-      _output->print_cr("-%26s (reserved=%d%s, committed=%d%s)",
-        MemBaseline::type2name(type), total_reserved, unit,
-        total_committed, unit);
-
-      if (type == mtClass) {
-        _output->print_cr("%27s (classes #%d)", " ", _num_of_classes);
-      } else if (type == mtThread) {
-        _output->print_cr("%27s (thread #%d)", " ", _num_of_threads);
-        _output->print_cr("%27s (stack: reserved=%d%s, committed=%d%s)", " ",
-          _thread_stack_reserved, unit, _thread_stack_committed, unit);
-      }
-
-      if (malloc_amt > 0) {
-        if (type != mtChunk) {
-          _output->print_cr("%27s (malloc=%d%s, #%d)", " ", malloc_amt, unit,
-            malloc_count);
-        } else {
-          _output->print_cr("%27s (malloc=%d%s)", " ", malloc_amt, unit);
-        }
-      }
-
-      if (reserved_amt > 0) {
-        _output->print_cr("%27s (mmap: reserved=%d%s, committed=%d%s)",
-          " ", reserved_amt, unit, committed_amt, unit);
-      }
-
-      if (arena_amt > 0) {
-        _output->print_cr("%27s (arena=%d%s, #%d)", " ", arena_amt, unit, arena_count);
-      }
-
-      _output->print_cr(" ");
-    }
-  }
-}
-
-void BaselineTTYOutputer::done_category_summary() {
-  _output->print_cr(" ");
-}
-
-
-void BaselineTTYOutputer::start_virtual_memory_map() {
-  _output->print_cr("Virtual memory map:");
-}
-
-void BaselineTTYOutputer::reserved_memory_region(MEMFLAGS type, address base, address end,
-                                                 size_t size, address pc) {
-  const char* unit = memory_unit(_scale);
-  char buf[128];
-  int  offset;
-  _output->print_cr(" ");
-  _output->print_cr("[" PTR_FORMAT " - " PTR_FORMAT "] reserved %d%s for %s", base, end, size, unit,
-            MemBaseline::type2name(type));
-  if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-      _output->print_cr("\t\tfrom [%s+0x%x]", buf, offset);
-  }
-}
-
-void BaselineTTYOutputer::committed_memory_region(address base, address end, size_t size, address pc) {
-  const char* unit = memory_unit(_scale);
-  char buf[128];
-  int  offset;
-  _output->print("\t[" PTR_FORMAT " - " PTR_FORMAT "] committed %d%s", base, end, size, unit);
-  if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-      _output->print_cr(" from [%s+0x%x]", buf, offset);
-  }
-}
-
-void BaselineTTYOutputer::done_virtual_memory_map() {
-  _output->print_cr(" ");
-}
-
-
-
-void BaselineTTYOutputer::start_callsite() {
-  _output->print_cr("Details:");
-  _output->print_cr(" ");
-}
-
-void BaselineTTYOutputer::done_callsite() {
-  _output->print_cr(" ");
-}
-
-void BaselineTTYOutputer::malloc_callsite(address pc, size_t malloc_amt,
-  size_t malloc_count) {
-  if (malloc_amt > 0) {
-    const char* unit = memory_unit(_scale);
-    char buf[128];
-    int  offset;
-    if (pc == 0) {
-      _output->print("[BOOTSTRAP]%18s", " ");
-    } else if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-      _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
-      _output->print("%28s", " ");
+  while (early_site != NULL || current_site != NULL) {
+    if (early_site == NULL) {
+      new_virtual_memory_site(current_site);
+      current_site = current_itr.next();
+    } else if (current_site == NULL) {
+      old_virtual_memory_site(early_site);
+      early_site = early_itr.next();
     } else {
-      _output->print("[" PTR_FORMAT "]%18s", pc, " ");
+      int compVal = current_site->call_stack()->compare(*early_site->call_stack());
+      if (compVal < 0) {
+        new_virtual_memory_site(current_site);
+        current_site = current_itr.next();
+      } else if (compVal > 0) {
+        old_virtual_memory_site(early_site);
+        early_site = early_itr.next();
+      } else {
+        diff_virtual_memory_site(early_site, current_site);
+        early_site   = early_itr.next();
+        current_site = current_itr.next();
+      }
     }
-
-    _output->print_cr("(malloc=%d%s #%d)", malloc_amt, unit, malloc_count);
-    _output->print_cr(" ");
   }
 }
 
-void BaselineTTYOutputer::virtual_memory_callsite(address pc, size_t reserved_amt,
-  size_t committed_amt) {
-  if (reserved_amt > 0) {
-    const char* unit = memory_unit(_scale);
-    char buf[128];
-    int  offset;
-    if (pc == 0) {
-      _output->print("[BOOTSTRAP]%18s", " ");
-    } else if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-      _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
-      _output->print("%28s", " ");
-    } else {
-      _output->print("[" PTR_FORMAT "]%18s", pc, " ");
-    }
 
-    _output->print_cr("(mmap: reserved=%d%s, committed=%d%s)",
-      reserved_amt, unit, committed_amt, unit);
-    _output->print_cr(" ");
-  }
+void MemDetailDiffReporter::new_malloc_site(const MallocSite* malloc_site) const {
+  diff_malloc_site(malloc_site->call_stack(), malloc_site->size(), malloc_site->count(),
+    0, 0);
 }
 
-void BaselineTTYOutputer::diff_total_usage(size_t total_reserved,
-  size_t total_committed, int reserved_diff, int committed_diff) {
-  const char* unit = memory_unit(_scale);
-  _output->print_cr("Total:  reserved=%d%s  %+d%s, committed=%d%s %+d%s",
-    total_reserved, unit, reserved_diff, unit, total_committed, unit,
-    committed_diff, unit);
+void MemDetailDiffReporter::old_malloc_site(const MallocSite* malloc_site) const {
+  diff_malloc_site(malloc_site->call_stack(), 0, 0, malloc_site->size(),
+    malloc_site->count());
 }
 
-void BaselineTTYOutputer::diff_category_summary(MEMFLAGS type,
-  size_t cur_reserved_amt, size_t cur_committed_amt,
-  size_t cur_malloc_amt, size_t cur_malloc_count,
-  size_t cur_arena_amt, size_t cur_arena_count,
-  int reserved_diff, int committed_diff, int malloc_diff,
-  int malloc_count_diff, int arena_diff, int arena_count_diff) {
+void MemDetailDiffReporter::diff_malloc_site(const MallocSite* early,
+  const MallocSite* current)  const {
+  diff_malloc_site(current->call_stack(), current->size(), current->count(),
+    early->size(), early->count());
+}
 
-  if (type == mtThreadStack) {
-    assert(cur_malloc_amt == 0 && cur_malloc_count == 0 &&
-      cur_arena_amt == 0, "Just check");
-    _thread_stack_reserved = cur_reserved_amt;
-    _thread_stack_committed = cur_committed_amt;
-    _thread_stack_reserved_diff = reserved_diff;
-    _thread_stack_committed_diff = committed_diff;
-  } else {
-    const char* unit = memory_unit(_scale);
-    size_t total_reserved = (cur_reserved_amt + cur_malloc_amt + cur_arena_amt);
-    // nothing to report in this category
-    if (total_reserved == 0) {
+void MemDetailDiffReporter::diff_malloc_site(const NativeCallStack* stack, size_t current_size,
+  size_t current_count, size_t early_size, size_t early_count) const {
+  outputStream* out = output();
+
+  assert(stack != NULL, "NULL stack");
+
+  if (diff_in_current_scale(current_size, early_size) == 0) {
       return;
-    }
-    int    diff_reserved = (reserved_diff + malloc_diff + arena_diff);
-
-    // category summary
-    _output->print("-%26s (reserved=%d%s", MemBaseline::type2name(type),
-      total_reserved, unit);
-
-    if (diff_reserved != 0) {
-      _output->print(" %+d%s", diff_reserved, unit);
-    }
-
-    size_t total_committed = cur_committed_amt + cur_malloc_amt + cur_arena_amt;
-    _output->print(", committed=%d%s", total_committed, unit);
-
-    int total_committed_diff = committed_diff + malloc_diff + arena_diff;
-    if (total_committed_diff != 0) {
-      _output->print(" %+d%s", total_committed_diff, unit);
-    }
-
-    _output->print_cr(")");
-
-    // special cases
-    if (type == mtClass) {
-      _output->print("%27s (classes #%d", " ", _num_of_classes);
-      if (_num_of_classes_diff != 0) {
-        _output->print(" %+d", _num_of_classes_diff);
-      }
-      _output->print_cr(")");
-    } else if (type == mtThread) {
-      // thread count
-      _output->print("%27s (thread #%d", " ", _num_of_threads);
-      if (_num_of_threads_diff != 0) {
-        _output->print_cr(" %+d)", _num_of_threads_diff);
-      } else {
-        _output->print_cr(")");
-      }
-      _output->print("%27s (stack: reserved=%d%s", " ", _thread_stack_reserved, unit);
-      if (_thread_stack_reserved_diff != 0) {
-        _output->print(" %+d%s", _thread_stack_reserved_diff, unit);
-      }
-
-      _output->print(", committed=%d%s", _thread_stack_committed, unit);
-      if (_thread_stack_committed_diff != 0) {
-        _output->print(" %+d%s",_thread_stack_committed_diff, unit);
-      }
-
-      _output->print_cr(")");
-    }
-
-    // malloc'd memory
-    if (cur_malloc_amt > 0) {
-      _output->print("%27s (malloc=%d%s", " ", cur_malloc_amt, unit);
-      if (malloc_diff != 0) {
-        _output->print(" %+d%s", malloc_diff, unit);
-      }
-      if (type != mtChunk) {
-        _output->print(", #%d", cur_malloc_count);
-        if (malloc_count_diff) {
-          _output->print(" %+d", malloc_count_diff);
-        }
-      }
-      _output->print_cr(")");
-    }
-
-    // mmap'd memory
-    if (cur_reserved_amt > 0) {
-      _output->print("%27s (mmap: reserved=%d%s", " ", cur_reserved_amt, unit);
-      if (reserved_diff != 0) {
-        _output->print(" %+d%s", reserved_diff, unit);
-      }
-
-      _output->print(", committed=%d%s", cur_committed_amt, unit);
-      if (committed_diff != 0) {
-        _output->print(" %+d%s", committed_diff, unit);
-      }
-      _output->print_cr(")");
-    }
-
-    // arena memory
-    if (cur_arena_amt > 0) {
-      _output->print("%27s (arena=%d%s", " ", cur_arena_amt, unit);
-      if (arena_diff != 0) {
-        _output->print(" %+d%s", arena_diff, unit);
-      }
-      _output->print(", #%d", cur_arena_count);
-      if (arena_count_diff != 0) {
-        _output->print(" %+d", arena_count_diff);
-      }
-      _output->print_cr(")");
-    }
-
-    _output->print_cr(" ");
   }
+
+  stack->print_on(out);
+  out->print("%28s (", " ");
+  print_malloc_diff(current_size, current_count,
+    early_size, early_count);
+
+  out->print_cr(")\n");
 }
 
-void BaselineTTYOutputer::diff_malloc_callsite(address pc,
-    size_t cur_malloc_amt, size_t cur_malloc_count,
-    int malloc_diff, int malloc_count_diff) {
-  if (malloc_diff != 0) {
-    const char* unit = memory_unit(_scale);
-    char buf[128];
-    int  offset;
-    if (pc == 0) {
-      _output->print_cr("[BOOTSTRAP]%18s", " ");
-    } else {
-      if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-        _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
-        _output->print("%28s", " ");
-      } else {
-        _output->print("[" PTR_FORMAT "]%18s", pc, " ");
-      }
-    }
 
-    _output->print("(malloc=%d%s", cur_malloc_amt, unit);
-    if (malloc_diff != 0) {
-      _output->print(" %+d%s", malloc_diff, unit);
-    }
-    _output->print(", #%d", cur_malloc_count);
-    if (malloc_count_diff != 0) {
-      _output->print(" %+d", malloc_count_diff);
-    }
-    _output->print_cr(")");
-    _output->print_cr(" ");
-  }
+void MemDetailDiffReporter::new_virtual_memory_site(const VirtualMemoryAllocationSite* site) const {
+  diff_virtual_memory_site(site->call_stack(), site->reserved(), site->committed(), 0, 0);
 }
 
-void BaselineTTYOutputer::diff_virtual_memory_callsite(address pc,
-    size_t cur_reserved_amt, size_t cur_committed_amt,
-    int reserved_diff, int committed_diff) {
-  if (reserved_diff != 0 || committed_diff != 0) {
-    const char* unit = memory_unit(_scale);
-    char buf[64];
-    int  offset;
-    if (pc == 0) {
-      _output->print_cr("[BOOSTRAP]%18s", " ");
-    } else {
-      if (os::dll_address_to_function_name(pc, buf, sizeof(buf), &offset)) {
-        _output->print_cr("[" PTR_FORMAT "] %s+0x%x", pc, buf, offset);
-        _output->print("%28s", " ");
-      } else {
-        _output->print("[" PTR_FORMAT "]%18s", pc, " ");
-      }
-    }
-
-    _output->print("(mmap: reserved=%d%s", cur_reserved_amt, unit);
-    if (reserved_diff != 0) {
-      _output->print(" %+d%s", reserved_diff, unit);
-    }
-    _output->print(", committed=%d%s", cur_committed_amt, unit);
-    if (committed_diff != 0) {
-      _output->print(" %+d%s", committed_diff, unit);
-    }
-    _output->print_cr(")");
-    _output->print_cr(" ");
-  }
+void MemDetailDiffReporter::old_virtual_memory_site(const VirtualMemoryAllocationSite* site) const {
+  diff_virtual_memory_site(site->call_stack(), 0, 0, site->reserved(), site->committed());
 }
+
+void MemDetailDiffReporter::diff_virtual_memory_site(const VirtualMemoryAllocationSite* early,
+  const VirtualMemoryAllocationSite* current) const {
+  diff_virtual_memory_site(current->call_stack(), current->reserved(), current->committed(),
+    early->reserved(), early->committed());
+}
+
+void MemDetailDiffReporter::diff_virtual_memory_site(const NativeCallStack* stack, size_t current_reserved,
+  size_t current_committed, size_t early_reserved, size_t early_committed) const  {
+  outputStream* out = output();
+
+  // no change
+  if (diff_in_current_scale(current_reserved, early_reserved) == 0 &&
+      diff_in_current_scale(current_committed, early_committed) == 0) {
+    return;
+  }
+
+  stack->print_on(out);
+  out->print("%28s (mmap: ", " ");
+  print_virtual_memory_diff(current_reserved, current_committed,
+    early_reserved, early_committed);
+
+  out->print_cr(")\n");
+ }
+

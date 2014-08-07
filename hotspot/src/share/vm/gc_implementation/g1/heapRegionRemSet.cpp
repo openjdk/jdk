@@ -289,7 +289,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   }
 
   _fine_grain_regions = NEW_C_HEAP_ARRAY3(PerRegionTablePtr, _max_fine_entries,
-                        mtGC, 0, AllocFailStrategy::RETURN_NULL);
+                        mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
 
   if (_fine_grain_regions == NULL) {
     vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries, OOM_MALLOC_ERROR,

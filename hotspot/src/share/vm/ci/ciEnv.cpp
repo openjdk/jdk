@@ -86,7 +86,8 @@ static bool firstEnv = true;
 
 // ------------------------------------------------------------------
 // ciEnv::ciEnv
-ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter) {
+ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter)
+  : _ciEnv_arena(mtCompiler) {
   VM_ENTRY_MARK;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
@@ -144,7 +145,7 @@ ciEnv::ciEnv(CompileTask* task, int system_dictionary_modification_counter) {
   _jvmti_can_pop_frame = false;
 }
 
-ciEnv::ciEnv(Arena* arena) {
+ciEnv::ciEnv(Arena* arena) : _ciEnv_arena(mtCompiler) {
   ASSERT_IN_VM;
 
   // Set up ciEnv::current immediately, for the sake of ciObjectFactory, etc.
