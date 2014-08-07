@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,23 +21,53 @@
  * questions.
  *
  */
-
 #include "precompiled.hpp"
-#include "runtime/atomic.inline.hpp"
-#include "services/memPtr.hpp"
-#include "services/memTracker.hpp"
+#include "services/nmtCommon.hpp"
 
-volatile jint SequenceGenerator::_seq_number = 1;
-volatile unsigned long SequenceGenerator::_generation = 1;
-NOT_PRODUCT(jint SequenceGenerator::_max_seq_number = 1;)
+const char* NMTUtil::_memory_type_names[] = {
+  "Java Heap",
+  "Class",
+  "Thread",
+  "Thread Stack",
+  "Code",
+  "GC",
+  "Compiler",
+  "Internal",
+  "Other",
+  "Symbol",
+  "Native Memory Tracking",
+  "Shared class space",
+  "Arena Chunk",
+  "Test",
+  "Tracing",
+  "Unknown"
+};
 
-jint SequenceGenerator::next() {
-  jint seq = Atomic::add(1, &_seq_number);
-  if (seq < 0) {
-    MemTracker::shutdown(MemTracker::NMT_sequence_overflow);
-  } else {
-    NOT_PRODUCT(_max_seq_number = (seq > _max_seq_number) ? seq : _max_seq_number;)
+
+const char* NMTUtil::scale_name(size_t scale) {
+  switch(scale) {
+    case K: return "KB";
+    case M: return "MB";
+    case G: return "GB";
   }
-  return seq;
+  ShouldNotReachHere();
+  return NULL;
+}
+
+size_t NMTUtil::scale_from_name(const char* scale) {
+  assert(scale != NULL, "Null pointer check");
+  if (strncmp(scale, "KB", 2) == 0 ||
+      strncmp(scale, "kb", 2) == 0) {
+    return K;
+  } else if (strncmp(scale, "MB", 2) == 0 ||
+             strncmp(scale, "mb", 2) == 0) {
+    return M;
+  } else if (strncmp(scale, "GB", 2) == 0 ||
+             strncmp(scale, "gb", 2) == 0) {
+    return G;
+  } else {
+    return 0; // Invalid value
+  }
+  return K;
 }
 

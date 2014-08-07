@@ -43,10 +43,6 @@
 #include "runtime/unhandledOops.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_NMT
-#include "services/memRecorder.hpp"
-#endif // INCLUDE_NMT
-
 #include "trace/traceBackend.hpp"
 #include "trace/traceMacros.hpp"
 #include "utilities/exceptions.hpp"
@@ -1036,16 +1032,6 @@ class JavaThread: public Thread {
   bool do_not_unlock_if_synchronized()             { return _do_not_unlock_if_synchronized; }
   void set_do_not_unlock_if_synchronized(bool val) { _do_not_unlock_if_synchronized = val; }
 
-#if INCLUDE_NMT
-  // native memory tracking
-  inline MemRecorder* get_recorder() const          { return (MemRecorder*)_recorder; }
-  inline void         set_recorder(MemRecorder* rc) { _recorder = rc; }
-
- private:
-  // per-thread memory recorder
-  MemRecorder* volatile _recorder;
-#endif // INCLUDE_NMT
-
   // Suspend/resume support for JavaThread
  private:
   inline void set_ext_suspended();
@@ -1485,19 +1471,6 @@ public:
      return result;
    }
 
- // NMT (Native memory tracking) support.
- // This flag helps NMT to determine if this JavaThread will be blocked
- // at safepoint. If not, ThreadCritical is needed for writing memory records.
- // JavaThread is only safepoint visible when it is in Threads' thread list,
- // it is not visible until it is added to the list and becomes invisible
- // once it is removed from the list.
- public:
-  bool is_safepoint_visible() const { return _safepoint_visible; }
-  void set_safepoint_visible(bool visible) { _safepoint_visible = visible; }
- private:
-  bool _safepoint_visible;
-
-  // Static operations
  public:
   // Returns the running thread as a JavaThread
   static inline JavaThread* current();

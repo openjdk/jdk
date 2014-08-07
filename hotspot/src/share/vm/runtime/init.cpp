@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,9 @@
 #include "runtime/init.hpp"
 #include "runtime/safepoint.hpp"
 #include "runtime/sharedRuntime.hpp"
+#include "services/memTracker.hpp"
 #include "utilities/macros.hpp"
+
 
 // Initialization done by VM thread in vm_init_globals()
 void check_ThreadShadow();
@@ -130,6 +132,12 @@ jint init_globals() {
   }
   javaClasses_init();   // must happen after vtable initialization
   stubRoutines_init2(); // note: StubRoutines need 2-phase init
+
+#if INCLUDE_NMT
+  // Solaris stack is walkable only after stubRoutines are set up.
+  // On Other platforms, the stack is always walkable.
+  NMT_stack_walkable = true;
+#endif // INCLUDE_NMT
 
   // All the flags that get adjusted by VM_Version_init and os::init_2
   // have been set so dump the flags now.

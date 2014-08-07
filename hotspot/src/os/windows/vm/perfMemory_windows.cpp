@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1498,7 +1498,8 @@ static char* mapping_create_shared(size_t size) {
   (void)memset(mapAddress, '\0', size);
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress,
+    size, CURRENT_PC, mtInternal);
 
   return (char*) mapAddress;
 }
@@ -1680,7 +1681,8 @@ static void open_file_mapping(const char* user, int vmid,
   }
 
   // it does not go through os api, the operation has to record from here
-  MemTracker::record_virtual_memory_reserve((address)mapAddress, size, mtInternal, CURRENT_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)mapAddress, size,
+    CURRENT_PC, mtInternal);
 
 
   *addrp = (char*)mapAddress;
@@ -1834,10 +1836,14 @@ void PerfMemory::detach(char* addr, size_t bytes, TRAPS) {
     return;
   }
 
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-  remove_file_mapping(addr);
-  // it does not go through os api, the operation has to record from here
-  tkr.record((address)addr, bytes);
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    // it does not go through os api, the operation has to record from here
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    remove_file_mapping(addr);
+    tkr.record((address)addr, bytes);
+  } else {
+    remove_file_mapping(addr);
+  }
 }
 
 char* PerfMemory::backing_store_filename() {
