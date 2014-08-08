@@ -25,12 +25,14 @@
 
 package com.sun.tools.sjavac.options;
 
+import java.io.IOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
 import java.util.List;
 
+import com.sun.tools.javac.main.CommandLine;
 import com.sun.tools.sjavac.Transformer;
 
 /**
@@ -112,7 +114,11 @@ public abstract class OptionHelper {
      * @param args the arguments to traverse.
      */
     void traverse(String[] args) {
-
+        try {
+            args = CommandLine.parse(args); // Detect @file and load it as a command line.
+        } catch (java.io.IOException e) {
+            throw new IllegalArgumentException("Problem reading @"+e.getMessage());
+        }
         ArgumentIterator argIter = new ArgumentIterator(Arrays.asList(args));
 
         nextArg:

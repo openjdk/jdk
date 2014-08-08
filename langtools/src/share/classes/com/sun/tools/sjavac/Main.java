@@ -375,8 +375,6 @@ public class Main {
             err = "Please specify output directory.";
         } else if (options.isJavaFilesAmongJavacArgs()) {
             err = "Sjavac does not handle explicit compilation of single .java files.";
-        } else if (options.isAtFilePresent()) {
-            err = "Sjavac does not handle @-files.";
         } else if (options.getServerConf() == null) {
             err = "No server configuration provided.";
         } else if (!options.getImplicitPolicy().equals("none")) {

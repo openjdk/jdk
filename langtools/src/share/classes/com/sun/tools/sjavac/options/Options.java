@@ -176,14 +176,6 @@ public class Options {
         return false;
     }
 
-    /** Returns true iff an @-file is among the javac arguments */
-    public boolean isAtFilePresent() {
-        for (String javacArg : javacArgs)
-            if (javacArg.startsWith("@"))
-                return true;
-        return false;
-    }
-
     /**
      * Returns a string representation of the options that affect the result of
      * the compilation. (Used for saving the state of the options used in a
