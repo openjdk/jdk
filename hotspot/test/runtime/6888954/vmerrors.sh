@@ -1,4 +1,4 @@
-# Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -44,6 +44,16 @@
 # export TESTJAVA TESTVMOPTS
 # sh test/runtime/6888954/vmerrors.sh
 
+if [ "${TESTSRC}" = "" ]
+then
+  TESTSRC=${PWD}
+  echo "TESTSRC not set.  Using "${TESTSRC}" as default"
+fi
+echo "TESTSRC=${TESTSRC}"
+
+## Adding common setup Variables for running shell tests.
+. ${TESTSRC}/../../test_env.sh
+
 ulimit -c 0 # no core files
 
 i=1
@@ -84,7 +94,7 @@ do
     i2=$i
     [ $i -lt 10 ] && i2=0$i
 
-    "$TESTJAVA/bin/java" $TESTVMOPTS -XX:+IgnoreUnrecognizedVMOptions \
+    "$TESTJAVA/bin/java" $TESTOPTS -XX:+IgnoreUnrecognizedVMOptions \
         -XX:-TransmitErrorReport -XX:-CreateMinidumpOnCrash \
         -XX:ErrorHandlerTest=${i} -version > ${i2}.out 2>&1
 

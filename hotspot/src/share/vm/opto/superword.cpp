@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1378,9 +1378,23 @@ void SuperWord::output() {
       if (n->is_Load()) {
         Node* ctl = n->in(MemNode::Control);
         Node* mem = first->in(MemNode::Memory);
+        SWPointer p1(n->as_Mem(), this);
+        // Identify the memory dependency for the new loadVector node by
+        // walking up through memory chain.
+        // This is done to give flexibility to the new loadVector node so that
+        // it can move above independent storeVector nodes.
+        while (mem->is_StoreVector()) {
+          SWPointer p2(mem->as_Mem(), this);
+          int cmp = p1.cmp(p2);
+          if (SWPointer::not_equal(cmp) || !SWPointer::comparable(cmp)) {
+            mem = mem->in(MemNode::Memory);
+          } else {
+            break; // dependent memory
+          }
+        }
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = LoadVectorNode::make(C, opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
+        vn = LoadVectorNode::make(opc, ctl, mem, adr, atyp, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_LoadVector()->memory_size();
       } else if (n->is_Store()) {
         // Promote value to be stored to vector
@@ -1389,7 +1403,7 @@ void SuperWord::output() {
         Node* mem = first->in(MemNode::Memory);
         Node* adr = low_adr->in(MemNode::Address);
         const TypePtr* atyp = n->adr_type();
-        vn = StoreVectorNode::make(C, opc, ctl, mem, adr, atyp, val, vlen);
+        vn = StoreVectorNode::make(opc, ctl, mem, adr, atyp, val, vlen);
         vlen_in_bytes = vn->as_StoreVector()->memory_size();
       } else if (n->req() == 3) {
         // Promote operands to vector
@@ -1401,7 +1415,7 @@ void SuperWord::output() {
           in1 = in2;
           in2 = tmp;
         }
-        vn = VectorNode::make(C, opc, in1, in2, vlen, velt_basic_type(n));
+        vn = VectorNode::make(opc, in1, in2, vlen, velt_basic_type(n));
         vlen_in_bytes = vn->as_Vector()->length_in_bytes();
       } else {
         ShouldNotReachHere();
@@ -1450,11 +1464,11 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
       if (t != NULL && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          cnt = ConNode::make(C, TypeInt::make(shift & mask));
+          cnt = ConNode::make(TypeInt::make(shift & mask));
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
-          cnt = ConNode::make(C, TypeInt::make(mask));
+          cnt = ConNode::make(TypeInt::make(mask));
           _igvn.register_new_node_with_optimizer(cnt);
           cnt = new AndINode(opd, cnt);
           _igvn.register_new_node_with_optimizer(cnt);
@@ -1462,7 +1476,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
         }
         assert(opd->bottom_type()->isa_int(), "int type only");
         // Move non constant shift count into vector register.
-        cnt = VectorNode::shift_count(C, p0, cnt, vlen, velt_basic_type(p0));
+        cnt = VectorNode::shift_count(p0, cnt, vlen, velt_basic_type(p0));
       }
       if (cnt != opd) {
         _igvn.register_new_node_with_optimizer(cnt);
@@ -1475,7 +1489,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
     // p0's vector. Use p0's type because size of operand's container in
     // vector should match p0's size regardless operand's size.
     const Type* p0_t = velt_type(p0);
-    VectorNode* vn = VectorNode::scalar2vector(_phase->C, opd, vlen, p0_t);
+    VectorNode* vn = VectorNode::scalar2vector(opd, vlen, p0_t);
 
     _igvn.register_new_node_with_optimizer(vn);
     _phase->set_ctrl(vn, _phase->get_ctrl(opd));
@@ -1490,7 +1504,7 @@ Node* SuperWord::vector_opd(Node_List* p, int opd_idx) {
 
   // Insert pack operation
   BasicType bt = velt_basic_type(p0);
-  PackNode* pk = PackNode::make(_phase->C, opd, vlen, bt);
+  PackNode* pk = PackNode::make(opd, vlen, bt);
   DEBUG_ONLY( const BasicType opd_bt = opd->bottom_type()->basic_type(); )
 
   for (uint i = 1; i < vlen; i++) {
@@ -1546,7 +1560,7 @@ void SuperWord::insert_extracts(Node_List* p) {
     _igvn.hash_delete(def);
     int def_pos = alignment(def) / data_size(def);
 
-    Node* ex = ExtractNode::make(_phase->C, def, def_pos, velt_basic_type(def));
+    Node* ex = ExtractNode::make(def, def_pos, velt_basic_type(def));
     _igvn.register_new_node_with_optimizer(ex);
     _phase->set_ctrl(ex, _phase->get_ctrl(def));
     _igvn.replace_input_of(use, idx, ex);

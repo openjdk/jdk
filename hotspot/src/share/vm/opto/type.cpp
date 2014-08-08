@@ -5087,11 +5087,11 @@ int TypeFunc::hash(void) const {
 // Dump Function Type
 #ifndef PRODUCT
 void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
-  if( _range->_cnt <= Parms )
+  if( _range->cnt() <= Parms )
     st->print("void");
   else {
     uint i;
-    for (i = Parms; i < _range->_cnt-1; i++) {
+    for (i = Parms; i < _range->cnt()-1; i++) {
       _range->field_at(i)->dump2(d,depth,st);
       st->print("/");
     }
@@ -5104,9 +5104,9 @@ void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
     return;
   }
   d.Insert((void*)this,(void*)this);    // Stop recursion
-  if (Parms < _domain->_cnt)
+  if (Parms < _domain->cnt())
     _domain->field_at(Parms)->dump2(d,depth-1,st);
-  for (uint i = Parms+1; i < _domain->_cnt; i++) {
+  for (uint i = Parms+1; i < _domain->cnt(); i++) {
     st->print(", ");
     _domain->field_at(i)->dump2(d,depth-1,st);
   }

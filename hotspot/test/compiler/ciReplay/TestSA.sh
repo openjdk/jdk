@@ -68,7 +68,7 @@ then
 fi
 
 echo "dumpreplaydata -a > ${replay_data}" | \
-        ${JAVA} ${TESTVMOPTS} \
+        ${JAVA} ${TESTOPTS} \
         -cp ${TESTJAVA}${FS}lib${FS}sa-jdi.jar \
         sun.jvm.hotspot.CLHSDB  ${JAVA} ${core_file}
 
