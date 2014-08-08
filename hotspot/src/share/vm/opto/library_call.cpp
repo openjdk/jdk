@@ -1905,7 +1905,7 @@ bool LibraryCallKit::inline_pow() {
     Node *bolyplus1 = _gvn.transform(new BoolNode( cmpyplus1, BoolTest::eq ));
     Node* correctedsign = NULL;
     if (ConditionalMoveLimit != 0) {
-      correctedsign = _gvn.transform( CMoveNode::make(C, NULL, bolyplus1, signnode, longcon(0), TypeLong::LONG));
+      correctedsign = _gvn.transform(CMoveNode::make(NULL, bolyplus1, signnode, longcon(0), TypeLong::LONG));
     } else {
       IfNode *ifyplus1 = create_and_xform_if(ylong_path,bolyplus1, PROB_FAIR, COUNT_UNKNOWN);
       RegionNode *r = new RegionNode(3);
@@ -1934,7 +1934,7 @@ bool LibraryCallKit::inline_pow() {
     // (1&(long)y)==1?-DPow(abs(x), y):DPow(abs(x), y)
     Node *signresult = NULL;
     if (ConditionalMoveLimit != 0) {
-      signresult = _gvn.transform( CMoveNode::make(C, NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
+      signresult = _gvn.transform(CMoveNode::make(NULL, bol3, absxpowy, negabsxpowy, Type::DOUBLE));
     } else {
       IfNode *ifyeven = create_and_xform_if(ylong_path,bol3, PROB_FAIR, COUNT_UNKNOWN);
       RegionNode *r = new RegionNode(3);
@@ -2268,7 +2268,7 @@ LibraryCallKit::generate_min_max(vmIntrinsics::ID id, Node* x0, Node* y0) {
   // which could hinder other optimizations.
   // Since Math.min/max is often used with arraycopy, we want
   // tightly_coupled_allocation to be able to see beyond min/max expressions.
-  Node* cmov = CMoveNode::make(C, NULL, best_bol,
+  Node* cmov = CMoveNode::make(NULL, best_bol,
                                answer_if_false, answer_if_true,
                                TypeInt::make(lo, hi, widen));
 

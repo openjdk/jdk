@@ -688,7 +688,7 @@ Node *CallNode::match( const ProjNode *proj, const Matcher *match ) {
     return new MachProjNode(this,proj->_con,RegMask::Empty,MachProjNode::unmatched_proj);
 
   case TypeFunc::Parms+1:       // For LONG & DOUBLE returns
-    assert(tf()->_range->field_at(TypeFunc::Parms+1) == Type::HALF, "");
+    assert(tf()->range()->field_at(TypeFunc::Parms+1) == Type::HALF, "");
     // 2nd half of doubles and longs
     return new MachProjNode(this,proj->_con, RegMask::Empty, (uint)OptoReg::Bad);
 
@@ -778,7 +778,7 @@ bool CallNode::has_non_debug_use(Node *n) {
 }
 
 // Returns the unique CheckCastPP of a call
-// or 'this' if there are several CheckCastPP
+// or 'this' if there are several CheckCastPP or unexpected uses
 // or returns NULL if there is no one.
 Node *CallNode::result_cast() {
   Node *cast = NULL;
@@ -794,6 +794,13 @@ Node *CallNode::result_cast() {
         return this;  // more than 1 CheckCastPP
       }
       cast = use;
+    } else if (!use->is_Initialize() &&
+               !use->is_AddP()) {
+      // Expected uses are restricted to a CheckCastPP, an Initialize
+      // node, and AddP nodes. If we encounter any other use (a Phi
+      // node can be seen in rare cases) return this to prevent
+      // incorrect optimizations.
+      return this;
     }
   }
   return cast;

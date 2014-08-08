@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -320,7 +320,7 @@ Node* IdealKit::copy_cvstate() {
   Node* ns = new_cvstate();
   for (uint i = 0; i < ns->req(); i++) ns->init_req(i, _cvstate->in(i));
   // We must clone memory since it will be updated as we do stores.
-  ns->set_req(TypeFunc::Memory, MergeMemNode::make(C, ns->in(TypeFunc::Memory)));
+  ns->set_req(TypeFunc::Memory, MergeMemNode::make(ns->in(TypeFunc::Memory)));
   return ns;
 }
 
@@ -359,7 +359,7 @@ Node* IdealKit::load(Node* ctl,
   Node* mem = memory(adr_idx);
   Node* ld;
   if (require_atomic_access && bt == T_LONG) {
-    ld = LoadLNode::make_atomic(C, ctl, mem, adr, adr_type, t, MemNode::unordered);
+    ld = LoadLNode::make_atomic(ctl, mem, adr, adr_type, t, MemNode::unordered);
   } else {
     ld = LoadNode::make(_gvn, ctl, mem, adr, adr_type, t, bt, MemNode::unordered);
   }
@@ -375,7 +375,7 @@ Node* IdealKit::store(Node* ctl, Node* adr, Node *val, BasicType bt,
   Node *mem = memory(adr_idx);
   Node* st;
   if (require_atomic_access && bt == T_LONG) {
-    st = StoreLNode::make_atomic(C, ctl, mem, adr, adr_type, val, mo);
+    st = StoreLNode::make_atomic(ctl, mem, adr, adr_type, val, mo);
   } else {
     st = StoreNode::make(_gvn, ctl, mem, adr, adr_type, val, bt, mo);
   }
