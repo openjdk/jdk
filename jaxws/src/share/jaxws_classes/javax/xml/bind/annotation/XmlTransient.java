@@ -88,7 +88,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * </pre>
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 
 @Retention(RUNTIME) @Target({FIELD, METHOD, TYPE})

@@ -43,7 +43,7 @@ import java.lang.reflect.InvocationTargetException;
  *
  * @see Provider#createEndpoint(String, Class, Invoker, WebServiceFeature...)
  * @author Jitendra Kotamraju
- * @since JAX-WS 2.2
+ * @since 1.7, JAX-WS 2.2
  */
 
 public abstract class Invoker {

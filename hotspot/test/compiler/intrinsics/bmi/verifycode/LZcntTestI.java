@@ -33,12 +33,15 @@
 
 import java.lang.reflect.Method;
 
-public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase {
+public class LZcntTestI extends BmiIntrinsicBase.BmiTestCase_x64 {
 
     protected LZcntTestI(Method method) {
         super(method);
         instrMask = new byte[]{(byte) 0xFF, (byte) 0xFF, (byte) 0xFF};
         instrPattern = new byte[]{(byte) 0xF3, (byte) 0x0F, (byte) 0xBD};
+
+        instrMask_x64 = new byte[]{(byte) 0xFF, (byte) 0x00, (byte) 0xFF, (byte) 0xFF};
+        instrPattern_x64 = new byte[]{(byte) 0xF3, (byte) 0x00, (byte) 0x0F, (byte) 0xBD};
     }
 
     public static void main(String[] args) throws Exception {

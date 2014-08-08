@@ -314,7 +314,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         if (!symbol.isScope()) {
             final Type type = identNode.getType();
             if(type == Type.UNDEFINED) {
-                return method.loadUndefined(Type.OBJECT);
+                return method.loadUndefined(resultBounds.widest);
             }
 
             assert symbol.hasSlot() || symbol.isParam();
@@ -1097,7 +1097,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
         closeBlockVariables(block);
         lc.releaseSlots();
-        assert !method.isReachable() || (lc.isFunctionBody() ? 0 : lc.getUsedSlotCount()) == method.getFirstTemp();
+        assert !method.isReachable() || (lc.isFunctionBody() ? 0 : lc.getUsedSlotCount()) == method.getFirstTemp() :
+            "reachable="+method.isReachable() +
+            " isFunctionBody=" + lc.isFunctionBody() +
+            " usedSlotCount=" + lc.getUsedSlotCount() +
+            " firstTemp=" + method.getFirstTemp();
 
         return block;
     }
@@ -4738,7 +4742,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
          */
         private void replaceCompileTimeProperty(final Object propertyValue) {
             assert method.peekType().isObject();
-            if(propertyValue instanceof String) {
+            if(propertyValue instanceof String || propertyValue == null) {
                 method.load((String)propertyValue);
             } else if(propertyValue instanceof Integer) {
                 method.load(((Integer)propertyValue).intValue());

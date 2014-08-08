@@ -46,8 +46,10 @@ import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.atomic.AtomicReference;
+
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
+
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
@@ -563,6 +565,8 @@ public final class Global extends ScriptObject implements Scope {
      * Initialize standard builtin objects like "Object", "Array", "Function" etc.
      * as well as our extension builtin objects like "Java", "JSAdapter" as properties
      * of the global scope object.
+     *
+     * @param engine ScriptEngine to initialize
      */
     public void initBuiltinObjects(final ScriptEngine engine) {
         if (this.builtinObject != null) {
@@ -1936,15 +1940,16 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private Object printImpl(final boolean newLine, final Object... objects) {
+        @SuppressWarnings("resource")
         final PrintWriter out = scontext != null? new PrintWriter(scontext.getWriter()) : getContext().getEnv().getOut();
         final StringBuilder sb = new StringBuilder();
 
-        for (final Object object : objects) {
+        for (final Object obj : objects) {
             if (sb.length() != 0) {
                 sb.append(' ');
             }
 
-            sb.append(JSType.toString(object));
+            sb.append(JSType.toString(obj));
         }
 
         // Print all at once to ensure thread friendly result.

@@ -30,6 +30,8 @@ package javax.xml.soap;
  * This interface extnends the standard DOM Node interface with methods for
  * getting and setting the value of a node, for
  * getting and setting the parent of a node, and for removing a node.
+ *
+ * @since 1.6
  */
 public interface Node extends org.w3c.dom.Node {
     /**
@@ -61,7 +63,7 @@ public interface Node extends org.w3c.dom.Node {
      *              node and either has more than one child node or has a child
      *              node that is not a <code>Text</code> node.
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public void setValue(String value);
 

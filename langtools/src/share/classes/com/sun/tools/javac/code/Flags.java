@@ -66,7 +66,7 @@ public class Flags {
                 flags &= ~flag.value;
             }
         }
-        Assert.check(flags == 0, "Flags parameter contains unknown flags " + flags);
+        Assert.check(flags == 0);
         return flagSet;
     }
 

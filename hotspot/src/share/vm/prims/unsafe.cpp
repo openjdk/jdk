@@ -38,6 +38,7 @@
 #include "runtime/orderAccess.inline.hpp"
 #include "runtime/reflection.hpp"
 #include "runtime/synchronizer.hpp"
+#include "runtime/vm_version.hpp"
 #include "services/threadService.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/copy.hpp"

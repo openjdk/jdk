@@ -81,7 +81,7 @@ import java.io.StringWriter;
  *
  * @see W3CEndpointReference
  * @see Service
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 @XmlTransient // to treat this class like Object as far as databinding is concerned (proposed JAXB 2.1 feature)
 public abstract class EndpointReference {

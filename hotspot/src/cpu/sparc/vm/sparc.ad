@@ -9728,7 +9728,7 @@ instruct cmpN_reg_branch_short(cmpOp cmp, iRegN op1, iRegN op2, label labl, flag
 
   size(4);
   ins_cost(BRANCH_COST);
-  format %{ "CWB$cmp  $op1,op2,$labl\t! compressed ptr" %}
+  format %{ "CWB$cmp  $op1,$op2,$labl\t! compressed ptr" %}
   ins_encode %{
     Label* L = $labl$$label;
     assert(__ use_cbcond(*L), "back to back cbcond");

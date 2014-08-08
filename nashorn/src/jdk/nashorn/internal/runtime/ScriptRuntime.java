@@ -484,17 +484,16 @@ public final class ScriptRuntime {
             final Object unwrapped = ScriptObjectMirror.unwrap(expression, global);
             if (unwrapped instanceof ScriptObject) {
                 return new WithObject(scope, (ScriptObject)unwrapped);
-            } else {
-                // foreign ScriptObjectMirror
-                ScriptObject exprObj = global.newObject();
-                NativeObject.bindAllProperties(exprObj, (ScriptObjectMirror)expression);
-                return new WithObject(scope, exprObj);
             }
-        } else {
-            final Object wrappedExpr = JSType.toScriptObject(global, expression);
-            if (wrappedExpr instanceof ScriptObject) {
-                return new WithObject(scope, (ScriptObject)wrappedExpr);
-            }
+            // foreign ScriptObjectMirror
+            final ScriptObject exprObj = global.newObject();
+            NativeObject.bindAllProperties(exprObj, (ScriptObjectMirror)expression);
+            return new WithObject(scope, exprObj);
+        }
+
+        final Object wrappedExpr = JSType.toScriptObject(global, expression);
+        if (wrappedExpr instanceof ScriptObject) {
+            return new WithObject(scope, (ScriptObject)wrappedExpr);
         }
 
         throw typeError(global, "cant.apply.with.to.non.scriptobject");
@@ -819,9 +818,8 @@ public final class ScriptRuntime {
 
     /** ECMA 11.9.6 The Strict Equality Comparison Algorithm */
     private static boolean strictEquals(final Object x, final Object y) {
-        if(x == y) {
-            return true;
-        }
+        // NOTE: you might be tempted to do a quick x == y comparison. Remember, though, that any Double object having
+        // NaN value is not equal to itself by value even though it is referentially.
 
         final JSType xType = JSType.ofNoFunction(x);
         final JSType yType = JSType.ofNoFunction(y);

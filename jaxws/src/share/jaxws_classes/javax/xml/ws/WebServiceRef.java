@@ -75,7 +75,7 @@ import java.lang.annotation.RetentionPolicy;
  * @see javax.annotation.Resource
  * @see WebServiceFeatureAnnotation
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  *
 **/
 
@@ -143,7 +143,7 @@ public @interface WebServiceRef {
      * A portable JNDI lookup name that resolves to the target
      * web service reference.
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     String lookup() default "";
 

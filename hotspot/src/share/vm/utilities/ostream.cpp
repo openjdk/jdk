@@ -28,6 +28,7 @@
 #include "oops/oop.inline.hpp"
 #include "runtime/arguments.hpp"
 #include "runtime/os.hpp"
+#include "runtime/vm_version.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/ostream.hpp"
 #include "utilities/top.hpp"

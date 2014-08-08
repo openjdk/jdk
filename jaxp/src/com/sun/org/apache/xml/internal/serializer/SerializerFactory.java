@@ -136,7 +136,7 @@ public final class SerializerFactory
         if (obj instanceof SerializationHandler)
         {
               // this is one of the supplied serializers
-            ser = (Serializer) cls.newInstance();
+            ser = (Serializer) obj;
             ser.setOutputFormat(format);
         }
         else

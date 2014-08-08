@@ -736,6 +736,9 @@ public:
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
 
+  // Return whether the next mark bitmap has no marks set.
+  bool nextMarkBitmapIsClear();
+
   // These two do the work that needs to be done before and after the
   // initial root checkpoint. Since this checkpoint can be done at two
   // different points (i.e. an explicit pause or piggy-backed on a

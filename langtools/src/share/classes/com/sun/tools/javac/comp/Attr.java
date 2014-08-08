@@ -49,6 +49,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import static com.sun.tools.javac.code.Flags.*;
@@ -94,6 +95,7 @@ public class Attr extends JCTree.Visitor {
     final Annotate annotate;
     final DeferredLintHandler deferredLintHandler;
     final TypeEnvs typeEnvs;
+    final Dependencies dependencies;
 
     public static Attr instance(Context context) {
         Attr instance = context.get(attrKey);
@@ -123,6 +125,7 @@ public class Attr extends JCTree.Visitor {
         annotate = Annotate.instance(context);
         deferredLintHandler = DeferredLintHandler.instance(context);
         typeEnvs = TypeEnvs.instance(context);
+        dependencies = Dependencies.instance(context);
 
         Options options = Options.instance(context);
 
@@ -254,7 +257,7 @@ public class Attr extends JCTree.Visitor {
      *  @param env    The current environment.
      */
     boolean isAssignableAsBlankFinal(VarSymbol v, Env<AttrContext> env) {
-        Symbol owner = owner(env);
+        Symbol owner = env.info.scope.owner;
            // owner refers to the innermost variable, method or
            // initializer block declaration at this point.
         return
@@ -267,41 +270,6 @@ public class Attr extends JCTree.Visitor {
              v.owner == owner.owner
              &&
              ((v.flags() & STATIC) != 0) == Resolve.isStatic(env));
-    }
-
-    /**
-     * Return the innermost enclosing owner symbol in a given attribution context
-     */
-    Symbol owner(Env<AttrContext> env) {
-        while (true) {
-            switch (env.tree.getTag()) {
-                case VARDEF:
-                    //a field can be owner
-                    VarSymbol vsym = ((JCVariableDecl)env.tree).sym;
-                    if (vsym.owner.kind == TYP) {
-                        return vsym;
-                    }
-                    break;
-                case METHODDEF:
-                    //method def is always an owner
-                    return ((JCMethodDecl)env.tree).sym;
-                case CLASSDEF:
-                    //class def is always an owner
-                    return ((JCClassDecl)env.tree).sym;
-                case BLOCK:
-                    //static/instance init blocks are owner
-                    Symbol blockSym = env.info.scope.owner;
-                    if ((blockSym.flags() & BLOCK) != 0) {
-                        return blockSym;
-                    }
-                    break;
-                case TOPLEVEL:
-                    //toplevel is always an owner (for pkge decls)
-                    return env.info.scope.owner;
-            }
-            Assert.checkNonNull(env.next);
-            env = env.next;
-        }
     }
 
     /** Check that variable can be assigned to.
@@ -695,6 +663,7 @@ public class Attr extends JCTree.Visitor {
      */
     void attribTypeVariables(List<JCTypeParameter> typarams, Env<AttrContext> env) {
         for (JCTypeParameter tvar : typarams) {
+            dependencies.push(AttributionKind.TVAR, tvar);
             TypeVar a = (TypeVar)tvar.type;
             a.tsym.flags_field |= UNATTRIBUTED;
             a.bound = Type.noType;
@@ -710,6 +679,7 @@ public class Attr extends JCTree.Visitor {
                 types.setBounds(a, List.of(syms.objectType));
             }
             a.tsym.flags_field &= ~UNATTRIBUTED;
+            dependencies.pop();
         }
         for (JCTypeParameter tvar : typarams) {
             chk.checkNonCyclic(tvar.pos(), (TypeVar)tvar.type);
@@ -3815,7 +3785,7 @@ public class Attr extends JCTree.Visitor {
             // and are subject to definite assignment checking.
             if ((env.info.enclVar == v || v.pos > tree.pos) &&
                 v.owner.kind == TYP &&
-                canOwnInitializer(owner(env)) &&
+                enclosingInitEnv(env) != null &&
                 v.owner == env.info.scope.owner.enclClass() &&
                 ((v.flags() & STATIC) != 0) == Resolve.isStatic(env) &&
                 (!env.tree.hasTag(ASSIGN) ||
@@ -3832,6 +3802,36 @@ public class Attr extends JCTree.Visitor {
             v.getConstValue(); // ensure initializer is evaluated
 
             checkEnumInitializer(tree, env, v);
+        }
+
+        /**
+         * Returns the enclosing init environment associated with this env (if any). An init env
+         * can be either a field declaration env or a static/instance initializer env.
+         */
+        Env<AttrContext> enclosingInitEnv(Env<AttrContext> env) {
+            while (true) {
+                switch (env.tree.getTag()) {
+                    case VARDEF:
+                        JCVariableDecl vdecl = (JCVariableDecl)env.tree;
+                        if (vdecl.sym.owner.kind == TYP) {
+                            //field
+                            return env;
+                        }
+                        break;
+                    case BLOCK:
+                        if (env.next.tree.hasTag(CLASSDEF)) {
+                            //instance/static initializer
+                            return env;
+                        }
+                        break;
+                    case METHODDEF:
+                    case CLASSDEF:
+                    case TOPLEVEL:
+                        return null;
+                }
+                Assert.checkNonNull(env.next);
+                env = env.next;
+            }
         }
 
         /**
@@ -3885,17 +3885,6 @@ public class Attr extends JCTree.Visitor {
                    Flags.isStatic(v) &&
                    !Flags.isConstant(v) &&
                    v.name != names._class;
-        }
-
-        /** Can the given symbol be the owner of code which forms part
-         *  if class initialization? This is the case if the symbol is
-         *  a type or field, or if the symbol is the synthetic method.
-         *  owning a block.
-         */
-        private boolean canOwnInitializer(Symbol sym) {
-            return
-                (sym.kind & (VAR | TYP)) != 0 ||
-                (sym.kind == MTH && (sym.flags() & BLOCK) != 0);
         }
 
     Warner noteWarner = new Warner();
