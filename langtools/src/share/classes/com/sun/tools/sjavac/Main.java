@@ -205,6 +205,9 @@ public class Main {
         if (!createIfMissing(options.getDestDir()))
             return -1;
 
+        if (!createIfMissing(options.getStateDir()))
+            return -1;
+
         Path gensrc = options.getGenSrcDir();
         if (gensrc != null && !createIfMissing(gensrc))
             return -1;
@@ -345,7 +348,7 @@ public class Main {
                 // Currently sjavac always connects to a server through a socket
                 // regardless if sjavac runs as a background service or not.
                 // This will most likely change in the future.
-                JavacService javacService = new JavacServiceClient(options.getServerConf());
+                JavacService javacService = new JavacServiceClient(options);
                 again = javac_state.performJavaCompilations(javacService, options, recently_compiled, rc);
                 if (!rc[0]) break;
             } while (again);

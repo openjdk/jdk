@@ -143,4 +143,10 @@ public class JavacServiceImpl implements JavacService {
 
         return compilationResult;
     }
+
+    @Override
+    public String serverSettings() {
+        return "";
+    }
+
 }

@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test all aspects of sjavac.
- * @bug 8004658 8042441 8042699 8054461
+ * @bug 8004658 8042441 8042699 8054461 8054474
  *
  * @build Wrapper
  * @run main Wrapper SJavac
@@ -100,6 +100,7 @@ public class SJavac {
         compileExcludingDependency();
         incrementalCompileTestFullyQualifiedRef();
         compileWithAtFile();
+        testStateDir();
 
         delete(gensrc);
         delete(gensrc2);
@@ -493,6 +494,37 @@ public class SJavac {
                          "bin/javac_state",
                          "bin/alfa/omega/A.class",
                          "bin/beta/B.class");
+    }
+
+    /**
+     * Tests storing javac_state into another directory.
+     * @throws Exception If test fails
+     */
+    void testStateDir() throws Exception {
+        System.out.println("\nVerify that --state-dir=bar works.");
+        System.out.println("----------------------------------");
+
+        Path bar = defaultfs.getPath("bar");
+        Files.createDirectory(bar);
+
+        delete(gensrc);
+        delete(bin);
+        delete(bar);
+        previous_bin_state = collectState(bin);
+        Map<String,Long> previous_bar_state = collectState(bar);
+
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { }");
+
+        compile("--state-dir=bar", "-src", "gensrc", "-d", "bin", serverArg);
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                                     "bin/alfa/omega/A.class");
+        Map<String,Long> new_bar_state = collectState(bar);
+        verifyThatFilesHaveBeenAdded(previous_bar_state, new_bar_state,
+                                     "bar/javac_state");
     }
 
     void removeFrom(Path dir, String... args) throws IOException {

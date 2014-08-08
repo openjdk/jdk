@@ -274,7 +274,15 @@ public enum Option {
             if (dir != null)
                 helper.headerDir(dir);
         }
+    },
+    STATE_DIR("--state-dir=", "Directory used to store sjavac state and log files.") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            String p = iter.current().substring(arg.length());
+            helper.stateDir(Paths.get(p));
+        }
     };
+
 
     public final String arg;
 
