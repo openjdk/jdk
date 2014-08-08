@@ -266,7 +266,6 @@ public class Shell {
                        env,
                        null,
                        functionNode.getSource(),
-                       functionNode.getSourceURL(),
                        env._strict | functionNode.isStrict()).
                        compile(functionNode, CompilationPhases.COMPILE_ALL_NO_INSTALL);
             }

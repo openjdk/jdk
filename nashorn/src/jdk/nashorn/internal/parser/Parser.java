@@ -477,8 +477,7 @@ loop:
                 name,
                 parameters,
                 kind,
-                flags,
-                sourceURL);
+                flags);
 
         lc.push(functionNode);
         // Create new block, and just put it on the context stack, restoreFunctionNode() will associate it with the
@@ -702,10 +701,6 @@ loop:
 
         script = restoreFunctionNode(script, token); //commit code
         script = script.setBody(lc, script.getBody().setNeedsScope(lc));
-        // user may have directive comment to set sourceURL
-        if (sourceURL != null) {
-            script = script.setSourceURL(lc, sourceURL);
-        }
 
         return script;
     }
