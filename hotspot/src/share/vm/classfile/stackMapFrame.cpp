@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,21 +52,6 @@ StackMapFrame* StackMapFrame::frame_in_exception_handler(u1 flags) {
   VerificationType* stack = NEW_RESOURCE_ARRAY_IN_THREAD(thr, VerificationType, 1);
   StackMapFrame* frame = new StackMapFrame(_offset, flags, _locals_size, 0, _max_locals, _max_stack, _locals, stack, _verifier);
   return frame;
-}
-
-bool StackMapFrame::has_new_object() const {
-  int32_t i;
-  for (i = 0; i < _max_locals; i++) {
-    if (_locals[i].is_uninitialized()) {
-      return true;
-    }
-  }
-  for (i = 0; i < _stack_size; i++) {
-    if (_stack[i].is_uninitialized()) {
-      return true;
-    }
-  }
-  return false;
 }
 
 void StackMapFrame::initialize_object(

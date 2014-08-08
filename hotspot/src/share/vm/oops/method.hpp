@@ -648,7 +648,8 @@ class Method : public Metadata {
 
   // Returns the byte code index from the byte code pointer
   int     bci_from(address bcp) const;
-  address bcp_from(int     bci) const;
+  address bcp_from(int bci) const;
+  address bcp_from(address bcp) const;
   int validate_bci_from_bcp(address bcp) const;
   int validate_bci(int bci) const;
 
