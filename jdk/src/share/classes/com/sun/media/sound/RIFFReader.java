@@ -74,14 +74,13 @@ public final class RIFFReader extends InputStream {
         fourcc[0] = (byte) b;
         readFully(fourcc, 1, 3);
         this.fourcc = new String(fourcc, "ascii");
-        final long size = readUnsignedInt();
-        if (size > Integer.MAX_VALUE) {
-            throw new RIFFInvalidDataException("Chunk size too big");
-        }
-        ckSize = size;
-        avail = size;
+        ckSize = readUnsignedInt();
+        avail = ckSize;
 
         if (getFormat().equals("RIFF") || getFormat().equals("LIST")) {
+            if (avail > Integer.MAX_VALUE) {
+                throw new RIFFInvalidDataException("Chunk size too big");
+            }
             byte[] format = new byte[4];
             readFully(format);
             this.riff_type = new String(format, "ascii");
