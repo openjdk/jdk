@@ -66,6 +66,7 @@ import javax.xml.namespace.QName;
  * </PRE>
  *
  * @see SOAPHeaderElement
+ * @since 1.6
  */
 public interface SOAPHeader extends SOAPElement {
     /**
@@ -92,7 +93,7 @@ public interface SOAPHeader extends SOAPElement {
      *          inserted into this <code>SOAPHeader</code> object
      * @exception SOAPException if a SOAP error occurs
      * @see SOAPHeader#addHeaderElement(Name)
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPHeaderElement addHeaderElement(QName qname)
         throws SOAPException;
@@ -115,7 +116,7 @@ public interface SOAPHeader extends SOAPElement {
      * @see #extractHeaderElements
      * @see SOAPConstants#URI_SOAP_ACTOR_NEXT
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Iterator examineMustUnderstandHeaderElements(String actor);
 
@@ -180,7 +181,7 @@ public interface SOAPHeader extends SOAPElement {
      *          inserted into this <code>SOAPHeader</code> object
      * @exception SOAPException if a SOAP error occurs.
      * @exception UnsupportedOperationException if this is a SOAP 1.1 Header.
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPHeaderElement addNotUnderstoodHeaderElement(QName name)
         throws SOAPException;
@@ -196,7 +197,7 @@ public interface SOAPHeader extends SOAPElement {
      * @return the new <code>SOAPHeaderElement</code> object that was
      *          inserted into this <code>SOAPHeader</code> object
      * @exception SOAPException if a SOAP error occurs.
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPHeaderElement addUpgradeHeaderElement(Iterator supportedSOAPURIs)
         throws SOAPException;
@@ -211,7 +212,7 @@ public interface SOAPHeader extends SOAPElement {
      * @return the new <code>SOAPHeaderElement</code> object that was
      *          inserted into this <code>SOAPHeader</code> object
      * @exception SOAPException if a SOAP error occurs.
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPHeaderElement addUpgradeHeaderElement(String[] supportedSoapUris)
         throws SOAPException;
@@ -226,7 +227,7 @@ public interface SOAPHeader extends SOAPElement {
      * @return the new <code>SOAPHeaderElement</code> object that was
      *          inserted into this <code>SOAPHeader</code> object
      * @exception SOAPException if a SOAP error occurs.
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SOAPHeaderElement addUpgradeHeaderElement(String supportedSoapUri)
         throws SOAPException;
@@ -240,7 +241,7 @@ public interface SOAPHeader extends SOAPElement {
      *          <code>SOAPHeader</code>
      * @see #extractAllHeaderElements
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Iterator examineAllHeaderElements();
 
@@ -255,7 +256,7 @@ public interface SOAPHeader extends SOAPElement {
      *
      * @see #examineAllHeaderElements
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Iterator extractAllHeaderElements();
 

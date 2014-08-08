@@ -36,6 +36,7 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
+
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
@@ -236,14 +237,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /**
      * Initialize transient fields on deserialized instances
      *
-     * @param source source
-     * @param installer code installer
+     * @param src source
+     * @param inst code installer
      */
-    public void initTransients(final Source source, final CodeInstaller<ScriptEnvironment> installer) {
+    public void initTransients(final Source src, final CodeInstaller<ScriptEnvironment> inst) {
         if (this.source == null && this.installer == null) {
-            this.source = source;
-            this.installer = installer;
-        } else if (this.source != source || this.installer != installer) {
+            this.source    = src;
+            this.installer = inst;
+        } else if (this.source != src || this.installer != inst) {
             // Existing values must be same as those passed as parameters
             throw new IllegalArgumentException();
         }

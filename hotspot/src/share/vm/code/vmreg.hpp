@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,34 +25,13 @@
 #ifndef SHARE_VM_CODE_VMREG_HPP
 #define SHARE_VM_CODE_VMREG_HPP
 
+#include "asm/register.hpp"
 #include "memory/allocation.hpp"
 #include "utilities/globalDefinitions.hpp"
-#include "asm/register.hpp"
 
 #ifdef COMPILER2
 #include "opto/adlcVMDeps.hpp"
 #include "utilities/ostream.hpp"
-#ifdef TARGET_ARCH_MODEL_x86_32
-# include "adfiles/adGlobals_x86_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_x86_64
-# include "adfiles/adGlobals_x86_64.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_sparc
-# include "adfiles/adGlobals_sparc.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_zero
-# include "adfiles/adGlobals_zero.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_arm
-# include "adfiles/adGlobals_arm.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_32
-# include "adfiles/adGlobals_ppc_32.hpp"
-#endif
-#ifdef TARGET_ARCH_MODEL_ppc_64
-# include "adfiles/adGlobals_ppc_64.hpp"
-#endif
 #endif
 
 //------------------------------VMReg------------------------------------------
@@ -107,7 +86,7 @@ public:
   // also a register you could use in the assembler. On machines with
   // 64bit registers only one half of the VMReg (and OptoReg) is considered
   // concrete.
-  bool is_concrete();
+  //  bool is_concrete();
 
   // VMRegs are 4 bytes wide on all platforms
   static const int stack_slot_size;

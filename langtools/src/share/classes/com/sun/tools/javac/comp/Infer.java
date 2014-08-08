@@ -29,6 +29,7 @@ import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCTypeCast;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.GraphUtils.DottableNode;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.code.*;
@@ -40,9 +41,9 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph;
 import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
-import com.sun.tools.javac.util.GraphUtils.TarjanNode;
 
 import java.util.ArrayList;
+import java.util.Collection;
 import java.util.Collections;
 import java.util.EnumMap;
 import java.util.EnumSet;
@@ -50,6 +51,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
 import java.util.Map;
+import java.util.Properties;
 import java.util.Set;
 
 import static com.sun.tools.javac.code.TypeTag.*;
@@ -1607,11 +1609,6 @@ public class Infer {
         private DependencyKind(String dotSyle) {
             this.dotSyle = dotSyle;
         }
-
-        @Override
-        public String getDotStyle() {
-            return dotSyle;
-        }
     }
 
     /**
@@ -1684,7 +1681,7 @@ public class Infer {
              * updates on the structure of the graph this node belongs to (used to
              * keep dependencies in sync).
              */
-            class Node extends GraphUtils.TarjanNode<ListBuffer<Type>> {
+            class Node extends GraphUtils.TarjanNode<ListBuffer<Type>, Node> implements DottableNode<ListBuffer<Type>, Node> {
 
                 /** map listing all dependencies (grouped by kind) */
                 EnumMap<DependencyKind, Set<Node>> deps;
@@ -1699,33 +1696,12 @@ public class Infer {
                     return DependencyKind.values();
                 }
 
-                @Override
-                public String getDependencyName(GraphUtils.Node<ListBuffer<Type>> to, GraphUtils.DependencyKind dk) {
-                    if (dk == DependencyKind.STUCK) return "";
-                    else {
-                        StringBuilder buf = new StringBuilder();
-                        String sep = "";
-                        for (Type from : data) {
-                            UndetVar uv = (UndetVar)inferenceContext.asUndetVar(from);
-                            for (Type bound : uv.getBounds(InferenceBound.values())) {
-                                if (bound.containsAny(List.from(to.data))) {
-                                    buf.append(sep);
-                                    buf.append(bound);
-                                    sep = ",";
-                                }
-                            }
-                        }
-                        return buf.toString();
-                    }
-                }
-
-                @Override
                 public Iterable<? extends Node> getAllDependencies() {
                     return getDependencies(DependencyKind.values());
                 }
 
                 @Override
-                public Iterable<? extends TarjanNode<ListBuffer<Type>>> getDependenciesByKind(GraphUtils.DependencyKind dk) {
+                public Collection<? extends Node> getDependenciesByKind(GraphUtils.DependencyKind dk) {
                     return getDependencies((DependencyKind)dk);
                 }
 
@@ -1854,6 +1830,36 @@ public class Infer {
                             addDependency(dk, to);
                         }
                     }
+                }
+
+                @Override
+                public Properties nodeAttributes() {
+                    Properties p = new Properties();
+                    p.put("label", toString());
+                    return p;
+                }
+
+                @Override
+                public Properties dependencyAttributes(Node sink, GraphUtils.DependencyKind dk) {
+                    Properties p = new Properties();
+                    p.put("style", ((DependencyKind)dk).dotSyle);
+                    if (dk == DependencyKind.STUCK) return p;
+                    else {
+                        StringBuilder buf = new StringBuilder();
+                        String sep = "";
+                        for (Type from : data) {
+                            UndetVar uv = (UndetVar)inferenceContext.asUndetVar(from);
+                            for (Type bound : uv.getBounds(InferenceBound.values())) {
+                                if (bound.containsAny(List.from(sink.data))) {
+                                    buf.append(sep);
+                                    buf.append(bound);
+                                    sep = ",";
+                                }
+                            }
+                        }
+                        p.put("label", buf.toString());
+                    }
+                    return p;
                 }
             }
 

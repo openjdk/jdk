@@ -32,6 +32,8 @@ package javax.xml.soap;
  * <P>
  * Content is added to a <code>SOAPFaultElement</code> using the
  * <code>SOAPElement</code> method <code>addTextNode</code>.
+ *
+ * @since 1.6
  */
 public interface SOAPFaultElement extends SOAPElement {
 }

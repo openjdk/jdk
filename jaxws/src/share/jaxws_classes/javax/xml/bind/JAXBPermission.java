@@ -73,7 +73,7 @@ import java.security.BasicPermission;
  * @see java.lang.SecurityManager
  *
  * @author Joe Fialli
- * @since JAXB 2.2
+ * @since 1.7, JAXB 2.2
  */
 
 /* code was borrowed originally from java.lang.RuntimePermission. */

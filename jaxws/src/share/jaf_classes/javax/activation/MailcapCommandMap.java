@@ -603,7 +603,7 @@ public class MailcapCommandMap extends CommandMap {
      * Get all the MIME types known to this command map.
      *
      * @return          array of MIME types as strings
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public synchronized String[] getMimeTypes() {
         List mtList = new ArrayList();
@@ -639,7 +639,7 @@ public class MailcapCommandMap extends CommandMap {
      * MIME type are returned.
      *
      * @return          array of native command entries
-     * @since   JAF 1.1
+     * @since   1.6, JAF 1.1
      */
     public synchronized String[] getNativeCommands(String mimeType) {
         List cmdList = new ArrayList();

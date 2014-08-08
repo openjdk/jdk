@@ -51,7 +51,7 @@ import javax.activation.DataHandler;
  * ever called for the property. The binary data will always be inlined.
  *
  * @author Joseph Fialli
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD,TYPE})

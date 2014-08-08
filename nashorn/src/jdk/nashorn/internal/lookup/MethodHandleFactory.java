@@ -124,11 +124,13 @@ public final class MethodHandleFactory {
      * @return return value unmodified
      */
     static Object traceReturn(final DebugLogger logger, final Object value) {
-        final String str = "    return" +
-                (VOID_TAG.equals(value) ?
-                    ";" :
-                    " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
-        logger.log(TRACE_LEVEL, str);
+        if (logger.isEnabled()) {
+            final String str = "    return" +
+                    (VOID_TAG.equals(value) ?
+                        ";" :
+                        " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
+            logger.log(TRACE_LEVEL, str);
+        }
         return value;
     }
 

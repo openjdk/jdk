@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,20 +41,15 @@ import java.util.TimeZone;
  * <code>CalendarDate</code>.
  *
  * <p>The following era names are defined in this release.
- * <!-- TODO: use HTML table -->
- * <pre><tt>
+ * <pre>{@code
  *   Calendar system         Era name         Since (in Gregorian)
  *   -----------------------------------------------------------------------
- *   Japanese calendar       Meiji            1868-01-01 midnight local time
- *                           Taisho           1912-07-30 midnight local time
- *                           Showa            1926-12-26 midnight local time
- *                           Heisei           1989-01-08 midnight local time
- *   Julian calendar         BeforeCommonEra  -292275055-05-16T16:47:04.192Z
- *                           CommonEra        0000-12-30 midnight local time
- *   Taiwanese calendar      MinGuo           1911-01-01 midnight local time
- *   Thai Buddhist calendar  BuddhistEra      -543-01-01 midnight local time
+ *   Japanese calendar       Meiji            1868-01-01T00:00:00 local time
+ *                           Taisho           1912-07-30T00:00:00 local time
+ *                           Showa            1926-12-25T00:00:00 local time
+ *                           Heisei           1989-01-08T00:00:00 local time
  *   -----------------------------------------------------------------------
- * </tt></pre>
+ * }</pre>
  *
  * @author Masayoshi Okutsu
  * @since 1.5

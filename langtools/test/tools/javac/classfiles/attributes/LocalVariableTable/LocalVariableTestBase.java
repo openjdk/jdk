@@ -36,14 +36,26 @@ import java.util.stream.Stream;
 import static java.lang.String.format;
 import static java.util.stream.Collectors.*;
 
-
+/**
+ * Base class for LocalVariableTable and LocalVariableTypeTable attributes tests.
+ * To add tests cases you should extend this class.
+ * Then implement {@link #getVariableTables} to get LocalVariableTable or LocalVariableTypeTable attribute.
+ * Then add method with local variables.
+ * Finally, annotate method with information about expected variables and their types
+ * by several {@link LocalVariableTestBase.ExpectedLocals} annotations.
+ * To run test invoke {@link #test()} method.
+ * If there are variables with the same name, set different scopes for them.
+ *
+ * @see #test()
+ */
 public abstract class LocalVariableTestBase extends TestBase {
     public static final int DEFAULT_SCOPE = 0;
     private final ClassFile classFile;
     private final Class<?> clazz;
 
-    protected abstract List<VariableTable> getVariableTables(Code_attribute codeAttribute);
-
+    /**
+     * @param clazz class to test. Must contains annotated methods with expected results.
+     */
     public LocalVariableTestBase(Class<?> clazz) {
         this.clazz = clazz;
         try {
@@ -53,8 +65,12 @@ public abstract class LocalVariableTestBase extends TestBase {
         }
     }
 
+    protected abstract List<VariableTable> getVariableTables(Code_attribute codeAttribute);
 
-    //info in the LocalVariableTable attribute is compared against expected info stored in annotations
+    /**
+     * Finds expected variables with their type in VariableTable.
+     * Also does consistency checks, like variables from the same scope must point to different indexes.
+     */
     public void test() throws IOException {
         List<java.lang.reflect.Method> testMethods = Stream.of(clazz.getDeclaredMethods())
                 .filter(m -> m.getAnnotationsByType(ExpectedLocals.class).length > 0)
@@ -198,7 +214,10 @@ public abstract class LocalVariableTestBase extends TestBase {
         }
     }
 
-
+    /**
+     * LocalVariableTable and LocalVariableTypeTable are similar.
+     * VariableTable interface is introduced to test this attributes in the same way without code duplication.
+     */
     interface VariableTable {
 
         int localVariableTableLength();
@@ -231,14 +250,23 @@ public abstract class LocalVariableTestBase extends TestBase {
         }
     }
 
+    /**
+     * Used to store expected results in sources
+     */
     @Retention(RetentionPolicy.RUNTIME)
     @Repeatable(Container.class)
     @interface ExpectedLocals {
+        /**
+         * @return name of a local variable
+         */
         String name();
 
+        /**
+         * @return type of local variable in the internal format.
+         */
         String type();
 
-        //variables from different scopes can share local variable table index and/or name.
+        //variables from different scopes can share the local variable table index and/or name.
         int scope() default DEFAULT_SCOPE;
     }
 

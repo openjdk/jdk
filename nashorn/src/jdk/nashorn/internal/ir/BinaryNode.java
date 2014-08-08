@@ -183,17 +183,31 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         switch (tokenType()) {
         case ADD:
         case ASSIGN_ADD: {
+            // Compare this logic to decideType(Type, Type); it's similar, but it handles the optimistic type
+            // calculation case while this handles the conservative case.
             final Type lhsType = lhs.getType(localVariableTypes);
             final Type rhsType = rhs.getType(localVariableTypes);
             if(lhsType == Type.BOOLEAN && rhsType == Type.BOOLEAN) {
+                // Will always fit in an int, as the value range is [0, 1, 2]. If we didn't treat them specially here,
+                // they'd end up being treated as generic INT operands and their sum would be conservatively considered
+                // to be a LONG in the generic case below; we can do better here.
                 return Type.INT;
+            } else if(isString(lhsType) || isString(rhsType)) {
+                // We can statically figure out that this is a string if either operand is a string. In this case, use
+                // CHARSEQUENCE to prevent it from being proactively flattened.
+                return Type.CHARSEQUENCE;
             }
-            final Type widestOperandType = Type.widest(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
+            final Type widestOperandType = Type.widest(undefinedToNumber(booleanToInt(lhsType)), undefinedToNumber(booleanToInt(rhsType)));
             if(widestOperandType == Type.INT) {
                 return Type.LONG;
             } else if (widestOperandType.isNumeric()) {
                 return Type.NUMBER;
             }
+            // We pretty much can't know what it will be statically. Must presume OBJECT conservatively, as we can end
+            // up getting either a string or an object when adding something + object, e.g.:
+            // 1 + {} == "1[object Object]", but
+            // 1 + {valueOf: function() { return 2 }} == 3. Also:
+            // 1 + {valueOf: function() { return "2" }} == "12".
             return Type.OBJECT;
         }
         case SHR:
@@ -256,8 +270,16 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
         }
     }
 
+    private static boolean isString(final Type type) {
+        return type == Type.STRING || type == Type.CHARSEQUENCE;
+    }
+
     private static Type booleanToInt(final Type type) {
         return type == Type.BOOLEAN ? Type.INT : type;
+    }
+
+    private static Type undefinedToNumber(final Type type) {
+        return type == Type.UNDEFINED ? Type.NUMBER : type;
     }
 
     /**
@@ -527,13 +549,39 @@ public final class BinaryNode extends Expression implements Assignment<Expressio
 
     private Type getTypeUncached(final Function<Symbol, Type> localVariableTypes) {
         if(type == OPTIMISTIC_UNDECIDED_TYPE) {
-            return Type.widest(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
+            return decideType(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes));
         }
         final Type widest = getWidestOperationType(localVariableTypes);
         if(type == null) {
             return widest;
         }
         return Type.narrowest(widest, Type.widest(type, Type.widest(lhs.getType(localVariableTypes), rhs.getType(localVariableTypes))));
+    }
+
+    private static Type decideType(final Type lhsType, final Type rhsType) {
+        // Compare this to getWidestOperationType() for ADD and ASSIGN_ADD cases. There's some similar logic, but these
+        // are optimistic decisions, meaning that we don't have to treat boolean addition separately (as it'll become
+        // int addition in the general case anyway), and that we also don't conservatively widen sums of ints to
+        // longs, or sums of longs to doubles.
+        if(isString(lhsType) || isString(rhsType)) {
+            return Type.CHARSEQUENCE;
+        }
+        // NOTE: We don't have optimistic object-to-(int, long) conversions. Therefore, if any operand is an Object, we
+        // bail out of optimism here and presume a conservative Object return value, as the object's ToPrimitive() can
+        // end up returning either a number or a string, and their common supertype is Object, for better or worse.
+        final Type widest = Type.widest(undefinedToNumber(booleanToInt(lhsType)), undefinedToNumber(booleanToInt(rhsType)));
+        return widest.isObject() ? Type.OBJECT : widest;
+    }
+
+    /**
+     * If the node is a node representing an add operation and has {@link #isOptimisticUndecidedType() optimistic
+     * undecided type}, decides its type. Should be invoked after its operands types have been finalized.
+     * @return returns a new node similar to this node, but with its type set to the type decided from the type of its
+     * operands.
+     */
+    public BinaryNode decideType() {
+        assert type == OPTIMISTIC_UNDECIDED_TYPE;
+        return setType(decideType(lhs.getType(), rhs.getType()));
     }
 
     @Override

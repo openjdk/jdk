@@ -48,7 +48,7 @@ import javax.xml.soap.SOAPFault;
  *  @see javax.xml.ws.soap.SOAPBinding#getSOAPFactory
  *  @see javax.xml.ws.ProtocolException
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
  **/
 public class SOAPFaultException extends javax.xml.ws.ProtocolException  {
 

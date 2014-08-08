@@ -39,6 +39,8 @@ package javax.xml.soap;
  * the provider.  Reasons for embedding a <code>Throwable</code>
  * object include problems such as input/output errors or a parsing
  * problem, such as an error in parsing a header.
+ *
+ * @since 1.6
  */
 public class SOAPException extends Exception {
     private Throwable cause;
