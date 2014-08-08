@@ -42,6 +42,7 @@ import java.util.logging.Level;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
+import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -72,6 +73,7 @@ final class CompiledFunction {
     private MethodHandle constructor;
     private OptimismInfo optimismInfo;
     private final int flags; // from FunctionNode
+    private final MethodType callSiteType;
 
     CompiledFunction(final MethodHandle invoker) {
         this(invoker, null);
@@ -82,19 +84,20 @@ final class CompiledFunction {
     }
 
     CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
-        this(invoker, constructor, 0, DebugLogger.DISABLED_LOGGER);
+        this(invoker, constructor, 0, null, DebugLogger.DISABLED_LOGGER);
     }
 
-    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final int flags, final DebugLogger log) {
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final int flags, final MethodType callSiteType, final DebugLogger log) {
         this.invoker = invoker;
         this.constructor = constructor;
         this.flags = flags;
+        this.callSiteType = callSiteType;
         this.log = log;
     }
 
     CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData,
-            final Map<Integer, Type> invalidatedProgramPoints, final int flags) {
-        this(invoker, null, flags, functionData.getLogger());
+            final Map<Integer, Type> invalidatedProgramPoints, final MethodType callSiteType, final int flags) {
+        this(invoker, null, flags, callSiteType, functionData.getLogger());
         if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
             optimismInfo = new OptimismInfo(functionData, invalidatedProgramPoints);
         } else {
@@ -127,9 +130,9 @@ final class CompiledFunction {
      * Returns an invoker method handle for this function. Note that the handle is safely composable in
      * the sense that you can compose it with other handles using any combinators even if you can't affect call site
      * invalidation. If this compiled function is non-optimistic, then it returns the same value as
-     * {@link #getInvoker()}. However, if the function is optimistic, then this handle will incur an overhead as it will
-     * add an intermediate internal call site that can relink itself when the function needs to regenerate its code to
-     * always point at the latest generated code version.
+     * {@link #getInvokerOrConstructor(boolean)}. However, if the function is optimistic, then this handle will
+     * incur an overhead as it will add an intermediate internal call site that can relink itself when the function
+     * needs to regenerate its code to always point at the latest generated code version.
      * @return a guaranteed composable invoker method handle for this function.
      */
     MethodHandle createComposableInvoker() {
@@ -165,8 +168,6 @@ final class CompiledFunction {
      * Compose a constructor from an invoker.
      *
      * @param invoker         invoker
-     * @param needsCallee  do we need to pass a callee
-     *
      * @return the composed constructor
      */
     private static MethodHandle createConstructorFromInvoker(final MethodHandle invoker) {
@@ -427,6 +428,9 @@ final class CompiledFunction {
     }
 
     boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
+        if (callSiteType.equals(this.callSiteType)) {
+            return true;
+        }
         final MethodType type  = type();
         final int fnParamCount = getParamCount(type);
         final boolean isVarArg = fnParamCount == Integer.MAX_VALUE;
@@ -719,6 +723,15 @@ final class CompiledFunction {
         logRecompile("Rest-of compilation [CODE PIPELINE REUSE] ", fn, callSiteType, effectiveOptInfo.invalidatedProgramPoints);
         final FunctionNode normalFn = compiler.compile(fn, CompilationPhases.COMPILE_FROM_BYTECODE);
 
+        if (effectiveOptInfo.data.usePersistentCodeCache()) {
+            final RecompilableScriptFunctionData data = effectiveOptInfo.data;
+            final int functionNodeId = data.getFunctionNodeId();
+            final TypeMap typeMap = data.typeMap(callSiteType);
+            final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
+            final String cacheKey = CodeStore.getCacheKey(functionNodeId, paramTypes);
+            compiler.persistClassInfo(cacheKey, normalFn);
+        }
+
         FunctionNode fn2 = effectiveOptInfo.reparse();
         fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Done.");
@@ -751,11 +764,11 @@ final class CompiledFunction {
 
     private MethodHandle restOfHandle(final OptimismInfo info, final FunctionNode restOfFunction, final boolean canBeDeoptimized) {
         assert info != null;
-        assert restOfFunction.getCompileUnit().getUnitClassName().indexOf("restOf") != -1;
+        assert restOfFunction.getCompileUnit().getUnitClassName().contains("restOf");
         final MethodHandle restOf =
                 changeReturnType(
-                        info.data.lookupWithExplicitType(
-                                restOfFunction,
+                        info.data.lookupCodeMethod(
+                                restOfFunction.getCompileUnit().getCode(),
                                 MH.type(restOfFunction.getReturnType().getTypeClass(),
                                         RewriteException.class)),
                         Object.class);

@@ -217,7 +217,6 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
                 allocatorClassName,
                 allocatorMap,
                 nestedFunctions,
-                compiler.getSourceURL(),
                 externalSymbolDepths.get(fnId),
                 internalSymbols.get(fnId)
                 );

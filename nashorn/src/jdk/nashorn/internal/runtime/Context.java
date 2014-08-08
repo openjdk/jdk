@@ -164,10 +164,13 @@ public final class Context {
         public void initialize(final Collection<Class<?>> classes, final Source source, final Object[] constants) {
             // do these in parallel, this significantly reduces class installation overhead
             // however - it still means that every thread needs a separate doPrivileged
+            final Global global = currentGlobal.get();
             classes.parallelStream().forEach(
                 new Consumer<Class<?>>() {
                     @Override
                     public void accept(final Class<?> clazz) {
+                        // Global threadlocal may be needed by StructureLoader during in field lookup.
+                        currentGlobal.set(global);
                         try {
                             AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                                 @Override
@@ -210,15 +213,20 @@ public final class Context {
         }
 
         @Override
-        public void storeCompiledScript(final Source source, final String mainClassName,
-                                        final Map<String, byte[]> classBytes, final Object[] constants) {
+        public void storeScript(final String classInfoFile, final Source source, final String mainClassName,
+                                final Map<String,byte[]> classBytes, Map<Integer, FunctionInitializer> initializers,
+                                final Object[] constants, final int compilationId) {
             if (context.codeStore != null) {
-                try {
-                    context.codeStore.putScript(source, mainClassName, classBytes, constants);
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
+                context.codeStore.storeScript(classInfoFile, source, mainClassName, classBytes, initializers, constants, compilationId);
             }
+        }
+
+        @Override
+        public StoredScript loadScript(final Source source, final String functionKey) {
+            if (context.codeStore != null) {
+                return context.codeStore.loadScript(source, functionKey);
+            }
+            return null;
         }
     }
 
@@ -447,7 +455,7 @@ public final class Context {
         if (env._persistent_cache) {
             try {
                 final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
-                codeStore = new CodeStore(cacheDir);
+                codeStore = new CodeStore(this, cacheDir);
             } catch (final IOException e) {
                 throw new RuntimeException("Error initializing code cache", e);
             }
@@ -1080,19 +1088,16 @@ public final class Context {
             return script;
         }
 
-        CompiledScript compiledScript = null;
+        StoredScript storedScript = null;
         FunctionNode functionNode = null;
+        final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
+        final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
-        if (!env._parse_only && codeStore != null) {
-            try {
-                compiledScript = codeStore.getScript(source);
-            } catch (IOException | ClassNotFoundException e) {
-                getLogger(Compiler.class).warning("Error loading ", source, " from cache: ", e);
-                // Fall back to normal compilation
-            }
+        if (useCodeStore) {
+            storedScript = codeStore.loadScript(source, cacheKey);
         }
 
-        if (compiledScript == null) {
+        if (storedScript == null) {
             functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
             if (errors.hasErrors()) {
@@ -1117,7 +1122,7 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        if (functionNode != null) {
+        if (storedScript == null) {
             final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
 
             final Compiler compiler = new Compiler(
@@ -1125,12 +1130,14 @@ public final class Context {
                     env,
                     installer,
                     source,
-                    functionNode.getSourceURL(),
                     strict | functionNode.isStrict());
 
-            script = compiler.compile(functionNode, phases).getRootClass();
+            final FunctionNode compiledFunction = compiler.compile(functionNode, phases);
+            script = compiledFunction.getRootClass();
+            compiler.persistClassInfo(cacheKey, compiledFunction);
         } else {
-            script = install(compiledScript, installer);
+            Compiler.updateCompilationId(storedScript.getCompilationId());
+            script = install(storedScript, source, installer);
         }
 
         cacheClass(source, script);
@@ -1155,27 +1162,26 @@ public final class Context {
         return uniqueScriptId.getAndIncrement();
     }
 
-
     /**
      * Install a previously compiled class from the code cache.
      *
-     * @param compiledScript cached script containing class bytes and constants
+     * @param storedScript cached script containing class bytes and constants
      * @return main script class
      */
-    private static Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
+    private static Class<?> install(final StoredScript storedScript, final Source source, final CodeInstaller<ScriptEnvironment> installer) {
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
-        final Source   source        = compiledScript.getSource();
-        final Object[] constants     = compiledScript.getConstants();
-        final String   rootClassName = compiledScript.getMainClassName();
-        final byte[]   rootByteCode  = compiledScript.getClassBytes().get(rootClassName);
-        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode);
+        final Object[] constants       = storedScript.getConstants();
+        final String   mainClassName   = storedScript.getMainClassName();
+        final byte[]   mainClassBytes  = storedScript.getClassBytes().get(mainClassName);
+        final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
+        final Map<Integer, FunctionInitializer> initialzers = storedScript.getInitializers();
 
-        installedClasses.put(rootClassName, rootClass);
+        installedClasses.put(mainClassName, mainClass);
 
-        for (final Map.Entry<String, byte[]> entry : compiledScript.getClassBytes().entrySet()) {
+        for (final Map.Entry<String, byte[]> entry : storedScript.getClassBytes().entrySet()) {
             final String className = entry.getKey();
-            if (className.equals(rootClassName)) {
+            if (className.equals(mainClassName)) {
                 continue;
             }
             final byte[] code = entry.getValue();
@@ -1187,11 +1193,17 @@ public final class Context {
 
         for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
-                ((RecompilableScriptFunctionData) constant).initTransients(source, installer);
+                final RecompilableScriptFunctionData data = (RecompilableScriptFunctionData) constant;
+                data.initTransients(source, installer);
+                if (initialzers != null) {
+                    final FunctionInitializer initializer = initialzers.get(data.getFunctionNodeId());
+                    initializer.setCode(installedClasses.get(initializer.getClassName()));
+                    data.initializeCode(initializer);
+                }
             }
         }
 
-        return rootClass;
+        return mainClass;
     }
 
     /**

@@ -80,12 +80,11 @@ public final class OptimisticTypesPersistence {
         final StringBuilder b = new StringBuilder(48);
         // Base64-encode the digest of the source, and append the function id.
         b.append(source.getDigest()).append('-').append(functionId);
-        // Finally, if this is a parameter-type specialized version of the function, add the parameter types to the file
-        // name.
+        // Finally, if this is a parameter-type specialized version of the function, add the parameter types to the file name.
         if(paramTypes != null && paramTypes.length > 0) {
             b.append('-');
             for(final Type t: paramTypes) {
-                b.append(t.getBytecodeStackType());
+                b.append(Type.getShortSignatureDescriptor(t));
             }
         }
         return new LocationDescriptor(new File(cacheDir, b.toString()));
@@ -117,25 +116,10 @@ public final class OptimisticTypesPersistence {
             @Override
             public Void run() {
                 synchronized(getFileLock(file)) {
-                    try (final FileOutputStream out = new FileOutputStream(file);) {
+                    try (final FileOutputStream out = new FileOutputStream(file)) {
                         out.getChannel().lock(); // lock exclusive
                         final DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
-                        dout.writeInt(optimisticTypes.size());
-                        for(final Map.Entry<Integer, Type> e: optimisticTypes.entrySet()) {
-                            dout.writeInt(e.getKey());
-                            final byte typeChar;
-                            final Type type = e.getValue();
-                            if(type == Type.OBJECT) {
-                                typeChar = 'L';
-                            } else if(type == Type.NUMBER) {
-                                typeChar = 'D';
-                            } else if(type == Type.LONG) {
-                                typeChar = 'J';
-                            } else {
-                                throw new AssertionError();
-                            }
-                            dout.write(typeChar);
-                        }
+                        Type.writeTypeMap(optimisticTypes, dout);
                         dout.flush();
                     } catch(final Exception e) {
                         reportError("write", file, e);
@@ -166,24 +150,10 @@ public final class OptimisticTypesPersistence {
                         return null;
                     }
                     synchronized(getFileLock(file)) {
-                        try (final FileInputStream in = new FileInputStream(file);) {
+                        try (final FileInputStream in = new FileInputStream(file)) {
                             in.getChannel().lock(0, Long.MAX_VALUE, true); // lock shared
                             final DataInputStream din = new DataInputStream(new BufferedInputStream(in));
-                            final Map<Integer, Type> map = new TreeMap<>();
-                            final int size = din.readInt();
-                            for(int i = 0; i < size; ++i) {
-                                final int pp = din.readInt();
-                                final int typeChar = din.read();
-                                final Type type;
-                                switch(typeChar) {
-                                case 'L': type = Type.OBJECT; break;
-                                case 'D': type = Type.NUMBER; break;
-                                case 'J': type = Type.LONG; break;
-                                default: throw new AssertionError();
-                                }
-                                map.put(pp, type);
-                            }
-                            return map;
+                            return Type.readTypeMap(din);
                         }
                     }
                 } catch (final Exception e) {
@@ -276,7 +246,7 @@ public final class OptimisticTypesPersistence {
     private static String getVersionDirName() throws Exception {
         final URL url = OptimisticTypesPersistence.class.getResource("");
         final String protocol = url.getProtocol();
-        if(protocol.equals("jar")) {
+        if (protocol.equals("jar")) {
             // Normal deployment: nashorn.jar
             final String jarUrlFile = url.getFile();
             final String filePath = jarUrlFile.substring(0, jarUrlFile.indexOf('!'));
@@ -310,12 +280,12 @@ public final class OptimisticTypesPersistence {
         for(final File f: dir.listFiles()) {
             if(f.getName().endsWith(".class")) {
                 final long lastModified = f.lastModified();
-                if(lastModified > currentMax) {
+                if (lastModified > currentMax) {
                     currentMax = lastModified;
                 }
-            } else if(f.isDirectory()) {
+            } else if (f.isDirectory()) {
                 final long lastModified = getLastModifiedClassFile(f, currentMax);
-                if(lastModified > currentMax) {
+                if (lastModified > currentMax) {
                     currentMax = lastModified;
                 }
             }
@@ -325,7 +295,7 @@ public final class OptimisticTypesPersistence {
 
     private static Object[] createLockArray() {
         final Object[] lockArray = new Object[Runtime.getRuntime().availableProcessors() * 2];
-        for(int i = 0; i < lockArray.length; ++i) {
+        for (int i = 0; i < lockArray.length; ++i) {
             lockArray[i] = new Object();
         }
         return lockArray;
