@@ -2167,7 +2167,9 @@ void ConcurrentMark::cleanup() {
   g1h->increment_total_collections();
 
   // Clean out dead classes and update Metaspace sizes.
-  ClassLoaderDataGraph::purge();
+  if (ClassUnloadingWithConcurrentMark) {
+    ClassLoaderDataGraph::purge();
+  }
   MetaspaceGC::compute_new_size();
 
   // We reclaimed old regions so we should calculate the sizes to make
@@ -2403,6 +2405,8 @@ public:
   }
 
   virtual void work(uint worker_id) {
+    ResourceMark rm;
+    HandleMark hm;
     CMTask* task = _cm->task(worker_id);
     G1CMIsAliveClosure g1_is_alive(_g1h);
     G1CMKeepAliveAndDrainClosure g1_par_keep_alive(_cm, task, false /* is_serial */);
@@ -2595,24 +2599,27 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   assert(_markStack.isEmpty(), "Marking should have completed");
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
-
-  G1RemarkGCTraceTime trace("Unloading", G1Log::finer());
-
-  bool purged_classes;
-
   {
-    G1RemarkGCTraceTime trace("System Dictionary Unloading", G1Log::finest());
-    purged_classes = SystemDictionary::do_unloading(&g1_is_alive);
-  }
+    G1RemarkGCTraceTime trace("Unloading", G1Log::finer());
 
-  {
-    G1RemarkGCTraceTime trace("Parallel Unloading", G1Log::finest());
-    weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
-  }
+    if (ClassUnloadingWithConcurrentMark) {
+      bool purged_classes;
 
-  if (G1StringDedup::is_enabled()) {
-    G1RemarkGCTraceTime trace("String Deduplication Unlink", G1Log::finest());
-    G1StringDedup::unlink(&g1_is_alive);
+      {
+        G1RemarkGCTraceTime trace("System Dictionary Unloading", G1Log::finest());
+        purged_classes = SystemDictionary::do_unloading(&g1_is_alive);
+      }
+
+      {
+        G1RemarkGCTraceTime trace("Parallel Unloading", G1Log::finest());
+        weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
+      }
+    }
+
+    if (G1StringDedup::is_enabled()) {
+      G1RemarkGCTraceTime trace("String Deduplication Unlink", G1Log::finest());
+      G1StringDedup::unlink(&g1_is_alive);
+    }
   }
 }
 

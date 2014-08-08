@@ -1,6 +1,6 @@
 #!/bin/sh
 # 
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 # 
 # This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ cp ${TESTSRC}/Test7005594.sh .
 
 ${COMPILEJAVA}/bin/javac ${TESTJAVACOPTS} -d . Test7005594.java
 
-${TESTJAVA}/bin/java ${TESTVMOPTS} -Xmx1600m -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
+${TESTJAVA}/bin/java ${TESTOPTS} -Xmx1600m -Xms1600m -XX:+IgnoreUnrecognizedVMOptions -XX:-ZapUnusedHeapArea -Xcomp -XX:CompileOnly=Test7005594.test Test7005594 > test.out 2>&1
 
 result=$?
 

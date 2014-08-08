@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -153,10 +153,6 @@ class StackMapFrame : public ResourceObj {
   // Set local variable type array based on m's signature.
   VerificationType set_locals_from_arg(
     const methodHandle m, VerificationType thisKlass, TRAPS);
-
-  // Search local variable type array and stack type array.
-  // Return true if an uninitialized object is found.
-  bool has_new_object() const;
 
   // Search local variable type array and stack type array.
   // Set every element with type of old_object to new_object.

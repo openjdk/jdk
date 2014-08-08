@@ -195,6 +195,7 @@ void VM_GenCollectFull::doit() {
   gch->do_full_collection(gch->must_clear_all_soft_refs(), _max_level);
 }
 
+// Returns true iff concurrent GCs unloads metadata.
 bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
 #if INCLUDE_ALL_GCS
   if (UseConcMarkSweepGC && CMSClassUnloadingEnabled) {
@@ -202,7 +203,7 @@ bool VM_CollectForMetadataAllocation::initiate_concurrent_GC() {
     return true;
   }
 
-  if (UseG1GC) {
+  if (UseG1GC && ClassUnloadingWithConcurrentMark) {
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
     g1h->g1_policy()->set_initiate_conc_mark_if_possible();
 

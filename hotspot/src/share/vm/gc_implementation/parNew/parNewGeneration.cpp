@@ -28,12 +28,12 @@
 #include "gc_implementation/parNew/parOopClosures.inline.hpp"
 #include "gc_implementation/shared/adaptiveSizePolicy.hpp"
 #include "gc_implementation/shared/ageTable.hpp"
-#include "gc_implementation/shared/parGCAllocBuffer.hpp"
+#include "gc_implementation/shared/copyFailedInfo.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
 #include "gc_implementation/shared/gcTrace.hpp"
 #include "gc_implementation/shared/gcTraceTime.hpp"
-#include "gc_implementation/shared/copyFailedInfo.hpp"
+#include "gc_implementation/shared/parGCAllocBuffer.inline.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
 #include "memory/defNewGeneration.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
@@ -252,7 +252,7 @@ HeapWord* ParScanThreadState::alloc_in_to_space_slow(size_t word_sz) {
         plab->set_word_size(buf_size);
         plab->set_buf(buf_space);
         record_survivor_plab(buf_space, buf_size);
-        obj = plab->allocate(word_sz);
+        obj = plab->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
         // Note that we cannot compare buf_size < word_sz below
         // because of AlignmentReserve (see ParGCAllocBuffer::allocate()).
         assert(obj != NULL || plab->words_remaining() < word_sz,
