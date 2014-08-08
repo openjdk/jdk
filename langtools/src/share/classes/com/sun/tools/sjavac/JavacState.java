@@ -60,7 +60,6 @@ public class JavacState
     int numCores;
 
     // The bin_dir/javac_state
-    private String javacStateFilename;
     private File javacState;
 
     // The previous build state is loaded from javac_state
@@ -99,7 +98,7 @@ public class JavacState
     private Set<String> recompiledPackages;
 
     // The output directories filled with tasty artifacts.
-    private File binDir, gensrcDir, headerDir;
+    private File binDir, gensrcDir, headerDir, stateDir;
 
     // The current status of the file system.
     private Set<File> binArtifacts;
@@ -136,8 +135,8 @@ public class JavacState
         binDir = Util.pathToFile(options.getDestDir());
         gensrcDir = Util.pathToFile(options.getGenSrcDir());
         headerDir = Util.pathToFile(options.getHeaderDir());
-        javacStateFilename = binDir.getPath()+File.separator+"javac_state";
-        javacState = new File(javacStateFilename);
+        stateDir = Util.pathToFile(options.getStateDir());
+        javacState = new File(stateDir, "javac_state");
         if (removeJavacState && javacState.exists()) {
             javacState.delete();
         }
@@ -268,7 +267,7 @@ public class JavacState
      */
     public void save() throws IOException {
         if (!needsSaving) return;
-        try (FileWriter out = new FileWriter(javacStateFilename)) {
+        try (FileWriter out = new FileWriter(javacState)) {
             StringBuilder b = new StringBuilder();
             long millisNow = System.currentTimeMillis();
             Date d = new Date(millisNow);
@@ -311,7 +310,7 @@ public class JavacState
         boolean newCommandLine = false;
         boolean syntaxError = false;
 
-        try (BufferedReader in = new BufferedReader(new FileReader(db.javacStateFilename))) {
+        try (BufferedReader in = new BufferedReader(new FileReader(db.javacState))) {
             for (;;) {
                 String l = in.readLine();
                 if (l==null) break;

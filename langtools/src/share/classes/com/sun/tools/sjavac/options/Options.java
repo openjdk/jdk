@@ -41,7 +41,7 @@ import com.sun.tools.sjavac.Transformer;
 public class Options {
 
     // Output directories
-    private Path destDir, genSrcDir, headerDir;
+    private Path destDir, genSrcDir, headerDir, stateDir;
 
     // Input directories
     private List<SourceLocation> sources = new ArrayList<>();
@@ -84,6 +84,11 @@ public class Options {
     /** Get the path for the header directory (or null if no such path is set) */
     public Path getHeaderDir() {
         return headerDir;
+    }
+
+    /** Get the path for the state directory, defaults to destDir. */
+    public Path getStateDir() {
+        return stateDir != null ? stateDir : destDir;
     }
 
     /** Get all source locations for files to be compiled */
@@ -231,6 +236,9 @@ public class Options {
         if (destDir != null)
             args.addArg(Option.D, destDir.normalize());
 
+        if (stateDir != null)
+            args.addArg(Option.STATE_DIR, stateDir.normalize());
+
         // Source roots
         args.addSourceLocations(Option.SRC, sources);
         args.addSourceLocations(Option.SOURCEPATH, sourceSearchPaths);
@@ -319,6 +327,7 @@ public class Options {
 
         boolean headerProvided = false;
         boolean genSrcProvided = false;
+        boolean stateProvided = false;
 
         @Override
         public void reportError(String msg) {
@@ -455,6 +464,16 @@ public class Options {
             }
             headerProvided = true;
             headerDir = dir.toAbsolutePath();
+        }
+
+        @Override
+        public void stateDir(Path dir) {
+            if (stateProvided) {
+                reportError("State directory already specified.");
+                return;
+            }
+            stateProvided = true;
+            stateDir = dir.toAbsolutePath();
         }
 
         private List<SourceLocation> createSourceLocations(List<Path> paths) {

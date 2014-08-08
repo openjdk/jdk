@@ -46,6 +46,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.options.Options;
 
 import static com.sun.tools.sjavac.server.CompilationResult.ERROR_BUT_TRY_AGAIN;
 import static com.sun.tools.sjavac.server.CompilationResult.ERROR_FATAL;
@@ -72,19 +73,34 @@ public class JavacServiceClient implements JavacService {
     // for example by setting: sjavac=java%20-jar%20...javac.jar%com.sun.tools.sjavac.Main
     private final String sjavac;
 
-    public JavacServiceClient(String settings) {
-        id = Util.extractStringOption("id", settings);
-        portfile = Util.extractStringOption("portfile", settings);
-        logfile = Util.extractStringOption("logfile", settings, portfile + ".javaclog");
-        stdouterrfile = Util.extractStringOption("stdouterrfile", settings, portfile + ".stdouterr");
-        background = Util.extractBooleanOption("background", settings, true);
-        sjavac = Util.extractStringOption("sjavac", settings, "sjavac");
-        int poolsize = Util.extractIntOption("poolsize", settings);
-        keepalive = Util.extractIntOption("keepalive", settings, 120);
+    // Store the server conf settings here.
+    private final String settings;
+
+    public JavacServiceClient(Options options) {
+        String tmpServerConf = options.getServerConf();
+        String serverConf = (tmpServerConf!=null)? tmpServerConf : "";
+        String tmpId = Util.extractStringOption("id", serverConf);
+        id = (tmpId!=null) ? tmpId : "id"+(((new java.util.Random()).nextLong())&Long.MAX_VALUE);
+        String p = Util.extractStringOption("portfile", serverConf);
+        portfile = (p!=null) ? p : options.getStateDir().toFile().getAbsolutePath()+File.separatorChar+"javac_server";
+        logfile = Util.extractStringOption("logfile", serverConf, portfile + ".javaclog");
+        stdouterrfile = Util.extractStringOption("stdouterrfile", serverConf, portfile + ".stdouterr");
+        background = Util.extractBooleanOption("background", serverConf, true);
+        sjavac = Util.extractStringOption("sjavac", serverConf, "sjavac");
+        int poolsize = Util.extractIntOption("poolsize", serverConf);
+        keepalive = Util.extractIntOption("keepalive", serverConf, 120);
 
         this.poolsize = poolsize > 0 ? poolsize : Runtime.getRuntime().availableProcessors();
+        settings = (serverConf.equals("")) ? "id="+id+",portfile="+portfile : serverConf;
     }
 
+    /**
+     * Hand out the server settings.
+     * @return The server settings, possibly a default value.
+     */
+    public String serverSettings() {
+        return settings;
+    }
 
     /**
      * Make a request to the server only to get the maximum possible heap size to use for compilations.
