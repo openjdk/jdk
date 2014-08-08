@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.sun.tools.sjavac.Transformer;
 
@@ -51,7 +53,8 @@ public class Options {
 
     private String logLevel = "info";
 
-    private boolean permitUnidentifiedArtifact = false;
+    private Set<String> permitted_artifacts = new HashSet<>();
+    private boolean permitUnidentifiedArtifacts = false;
     private boolean permitSourcesInDefaultPackage = false;
 
     private Path sourceReferenceList;
@@ -119,10 +122,15 @@ public class Options {
         return logLevel;
     }
 
+    /** Returns true iff the artifact is permitted in the output dir. */
+    public boolean isUnidentifiedArtifactPermitted(String f) {
+        return permitted_artifacts.contains(f);
+    }
+
     /** Returns true iff artifacts in the output directories should be kept,
      * even if they would not be generated in a clean build. */
-    public boolean isUnidentifiedArtifactPermitted() {
-        return permitUnidentifiedArtifact;
+    public boolean areUnidentifiedArtifactsPermitted() {
+        return permitUnidentifiedArtifacts;
     }
 
     /** Returns true iff sources in the default package should be permitted. */
@@ -249,7 +257,11 @@ public class Options {
         if (permitSourcesInDefaultPackage)
             args.addArg(Option.PERMIT_SOURCES_WITHOUT_PACKAGE);
 
-        if (permitUnidentifiedArtifact)
+        for (String f : permitted_artifacts) {
+            args.addArg(Option.PERMIT_ARTIFACT, f);
+        }
+
+        if (permitUnidentifiedArtifacts)
             args.addArg(Option.PERMIT_UNIDENTIFIED_ARTIFACTS);
 
         // Translation rules
@@ -400,8 +412,13 @@ public class Options {
         }
 
         @Override
+        public void permitArtifact(String f) {
+            permitted_artifacts.add(f);
+        }
+
+        @Override
         public void permitUnidentifiedArtifacts() {
-            permitUnidentifiedArtifact = true;
+            permitUnidentifiedArtifacts = true;
         }
 
         @Override

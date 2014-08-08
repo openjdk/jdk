@@ -305,7 +305,7 @@ public class Main {
         // For examples, files that have been manually copied into these dirs.
         // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
         // in javac_state) have already been removed when the javac_state was loaded.
-        if (!options.isUnidentifiedArtifactPermitted()) {
+        if (!options.areUnidentifiedArtifactsPermitted()) {
             javac_state.removeUnidentifiedArtifacts();
         }
         // Go through all sources and taint all packages that miss artifacts.

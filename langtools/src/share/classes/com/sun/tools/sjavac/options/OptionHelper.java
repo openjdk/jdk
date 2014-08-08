@@ -80,6 +80,9 @@ public abstract class OptionHelper {
     /** Record path for reference source list */
     public abstract void compareFoundSources(Path referenceList);
 
+    /** Record a single permitted artifact */
+    public abstract void permitArtifact(String f);
+
     /** Record the fact that unidentified artifacts are permitted */
     public abstract void permitUnidentifiedArtifacts();
 

@@ -127,7 +127,11 @@ public class JavacState
     // Where to send stdout and stderr.
     private PrintStream out, err;
 
-    JavacState(Options options, boolean removeJavacState, PrintStream o, PrintStream e) {
+    // Command line options.
+    private Options options;
+
+    JavacState(Options op, boolean removeJavacState, PrintStream o, PrintStream e) {
+        options = op;
         out = o;
         err = e;
         numCores = options.getNumCores();
@@ -147,7 +151,7 @@ public class JavacState
             // We do not want to risk building a broken incremental build.
             // BUT since the makefiles still copy things straight into the bin_dir et al,
             // we avoid deleting files here, if the option --permit-unidentified-classes was supplied.
-            if (!options.isUnidentifiedArtifactPermitted()) {
+            if (!options.areUnidentifiedArtifactsPermitted()) {
                 deleteContents(binDir);
                 deleteContents(gensrcDir);
                 deleteContents(headerDir);
@@ -511,7 +515,8 @@ public class JavacState
         allKnownArtifacts.add(javacState);
 
         for (File f : binArtifacts) {
-            if (!allKnownArtifacts.contains(f)) {
+            if (!allKnownArtifacts.contains(f) &&
+                !options.isUnidentifiedArtifactPermitted(f.getAbsolutePath())) {
                 Log.debug("Removing "+f.getPath()+" since it is unknown to the javac_state.");
                 f.delete();
             }
@@ -604,13 +609,16 @@ public class JavacState
     /**
      * Recursively delete a directory and all its contents.
      */
-    private static void deleteContents(File dir) {
+    private void deleteContents(File dir) {
         if (dir != null && dir.exists()) {
             for (File f : dir.listFiles()) {
                 if (f.isDirectory()) {
                     deleteContents(f);
                 }
-                f.delete();
+                if (!options.isUnidentifiedArtifactPermitted(f.getAbsolutePath())) {
+                    Log.debug("Removing "+f.getAbsolutePath());
+                    f.delete();
+                }
             }
         }
     }

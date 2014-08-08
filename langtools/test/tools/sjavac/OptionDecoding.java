@@ -25,7 +25,7 @@
 
 /*
  * @test
- * @bug 8035063
+ * @bug 8035063 8054465
  * @summary Tests decoding of String[] into Options.
  *
  * @build Wrapper
@@ -192,13 +192,16 @@ public class OptionDecoding {
         assertEquals(17, options.getNumCores());
         assertEquals("debug", options.getLogLevel());
         assertEquals(false, options.isDefaultPackagePermitted());
-        assertEquals(false, options.isUnidentifiedArtifactPermitted());
+        assertEquals(false, options.areUnidentifiedArtifactsPermitted());
+        assertEquals(false, options.isUnidentifiedArtifactPermitted(Paths.get("bar.txt").toFile().getAbsolutePath()));
 
         options = Options.parseArgs("--permit-unidentified-artifacts",
+                                    "--permit-artifact=bar.txt",
                                     "--permit-sources-without-package");
         assertEquals("info", options.getLogLevel());
         assertEquals(true, options.isDefaultPackagePermitted());
-        assertEquals(true, options.isUnidentifiedArtifactPermitted());
+        assertEquals(true, options.areUnidentifiedArtifactsPermitted());
+        assertEquals(true, options.isUnidentifiedArtifactPermitted(Paths.get("bar.txt").toFile().getAbsolutePath()));
     }
 
     // Test server configuration options

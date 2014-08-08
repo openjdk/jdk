@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test all aspects of sjavac.
- * @bug 8004658 8042441 8042699 8054461 8054474
+ * @bug 8004658 8042441 8042699 8054461 8054474 8054465
  *
  * @build Wrapper
  * @run main Wrapper SJavac
@@ -101,6 +101,7 @@ public class SJavac {
         incrementalCompileTestFullyQualifiedRef();
         compileWithAtFile();
         testStateDir();
+        testPermittedArtifact();
 
         delete(gensrc);
         delete(gensrc2);
@@ -525,6 +526,36 @@ public class SJavac {
         Map<String,Long> new_bar_state = collectState(bar);
         verifyThatFilesHaveBeenAdded(previous_bar_state, new_bar_state,
                                      "bar/javac_state");
+    }
+
+    /**
+     * Test white listing of external artifacts inside the destination dir.
+     * @throws Exception If test fails
+     */
+    void testPermittedArtifact() throws Exception {
+        System.out.println("\nVerify that --permit-artifact=bar works.");
+        System.out.println("-------------------------------------------");
+
+        delete(gensrc);
+        delete(bin);
+
+        previous_bin_state = collectState(bin);
+
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { }");
+
+        populate(bin,
+                 "alfa/omega/AA.class",
+                 "Ugh, a messy build system (tobefixed) wrote this class file, sjavac must not delete it.");
+
+        compile("--log=debug", "--permit-artifact=bin/alfa/omega/AA.class", "-src", "gensrc", "-d", "bin", serverArg);
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                                     "bin/alfa/omega/A.class",
+                                     "bin/alfa/omega/AA.class",
+                                     "bin/javac_state");
     }
 
     void removeFrom(Path dir, String... args) throws IOException {
