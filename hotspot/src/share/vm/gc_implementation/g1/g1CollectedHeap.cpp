@@ -6536,6 +6536,9 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
+    oop obj = (oop)r->bottom();
+    CMBitMap* next_bitmap = g1h->concurrent_mark()->nextMarkBitMap();
+
     // The following checks whether the humongous object is live are sufficient.
     // The main additional check (in addition to having a reference from the roots
     // or the young gen) is whether the humongous object has a remembered set entry.
@@ -6572,36 +6575,40 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
         g1h->humongous_region_is_always_live(region_idx)) {
 
       if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                                r->isHumongous(),
                                region_idx,
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
-                               g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                               next_bitmap->isMarked(r->bottom()),
                                g1h->humongous_is_live(region_idx),
-                               oop(r->bottom())->is_objArray()
+                               obj->is_objArray()
                               );
       }
 
       return false;
     }
 
-    guarantee(!((oop)(r->bottom()))->is_objArray(),
+    guarantee(!obj->is_objArray(),
               err_msg("Eagerly reclaiming object arrays is not supported, but the object "PTR_FORMAT" is.",
                       r->bottom()));
 
     if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                              r->isHumongous(),
                              r->bottom(),
                              region_idx,
                              r->region_num(),
                              r->rem_set()->occupied(),
                              r->rem_set()->strong_code_roots_list_length(),
-                             g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                             next_bitmap->isMarked(r->bottom()),
                              g1h->humongous_is_live(region_idx),
-                             oop(r->bottom())->is_objArray()
+                             obj->is_objArray()
                             );
+    }
+    // Need to clear mark bit of the humongous object if already set.
+    if (next_bitmap->isMarked(r->bottom())) {
+      next_bitmap->clear(r->bottom());
     }
     _freed_bytes += r->used();
     r->set_containing_set(NULL);
