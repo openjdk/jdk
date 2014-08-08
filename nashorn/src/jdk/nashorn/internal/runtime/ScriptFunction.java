@@ -423,9 +423,9 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param constructor constructor
      * @return prototype, or null if given constructor is not a ScriptFunction
      */
-    public static ScriptObject getPrototype(final Object constructor) {
-        if (constructor instanceof ScriptFunction) {
-            final Object proto = ((ScriptFunction)constructor).getPrototype();
+    public static ScriptObject getPrototype(final ScriptFunction constructor) {
+        if (constructor != null) {
+            final Object proto = constructor.getPrototype();
             if (proto instanceof ScriptObject) {
                 return (ScriptObject)proto;
             }

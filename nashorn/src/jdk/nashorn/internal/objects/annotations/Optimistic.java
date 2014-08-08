@@ -40,7 +40,7 @@ import java.lang.annotation.Target;
  * in NativeArray that takes an int, write
  *
  *  <pre>
- *  @SpecializedFunction @Optimistic
+ *  {@literal @}SpecializedFunction {@literal @}Optimistic
  *  public static int push(final Object self, final int x, final int programPoint) {
  *    try {
  *    //push code assuming that this is an int array

@@ -396,19 +396,19 @@ public final class Global extends ScriptObject implements Scope {
     private ScriptObject   builtinJavafx;
     private ScriptObject   builtinJavax;
     private ScriptObject   builtinOrg;
-    private ScriptObject   builtinJavaImporter;
+    private ScriptFunction builtinJavaImporter;
     private ScriptObject   builtinJavaApi;
-    private ScriptObject   builtinArrayBuffer;
-    private ScriptObject   builtinDataView;
-    private ScriptObject   builtinInt8Array;
-    private ScriptObject   builtinUint8Array;
-    private ScriptObject   builtinUint8ClampedArray;
-    private ScriptObject   builtinInt16Array;
-    private ScriptObject   builtinUint16Array;
-    private ScriptObject   builtinInt32Array;
-    private ScriptObject   builtinUint32Array;
-    private ScriptObject   builtinFloat32Array;
-    private ScriptObject   builtinFloat64Array;
+    private ScriptFunction builtinArrayBuffer;
+    private ScriptFunction builtinDataView;
+    private ScriptFunction builtinInt8Array;
+    private ScriptFunction builtinUint8Array;
+    private ScriptFunction builtinUint8ClampedArray;
+    private ScriptFunction builtinInt16Array;
+    private ScriptFunction builtinUint16Array;
+    private ScriptFunction builtinInt32Array;
+    private ScriptFunction builtinUint32Array;
+    private ScriptFunction builtinFloat32Array;
+    private ScriptFunction builtinFloat64Array;
 
     /*
      * ECMA section 13.2.3 The [[ThrowTypeError]] Function Object
@@ -1688,15 +1688,15 @@ public final class Global extends ScriptObject implements Scope {
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
 
         // built-in constructors
-        this.builtinArray     = (ScriptFunction)initConstructor("Array");
-        this.builtinBoolean   = (ScriptFunction)initConstructor("Boolean");
-        this.builtinDate      = (ScriptFunction)initConstructor("Date");
-        this.builtinJSON      = initConstructor("JSON");
-        this.builtinJSAdapter = (ScriptFunction)initConstructor("JSAdapter");
-        this.builtinMath      = initConstructor("Math");
-        this.builtinNumber    = (ScriptFunction)initConstructor("Number");
-        this.builtinRegExp    = (ScriptFunction)initConstructor("RegExp");
-        this.builtinString    = (ScriptFunction)initConstructor("String");
+        this.builtinArray     = initConstructor("Array", ScriptFunction.class);
+        this.builtinBoolean   = initConstructor("Boolean", ScriptFunction.class);
+        this.builtinDate      = initConstructor("Date", ScriptFunction.class);
+        this.builtinJSON      = initConstructor("JSON", ScriptObject.class);
+        this.builtinJSAdapter = initConstructor("JSAdapter", ScriptFunction.class);
+        this.builtinMath      = initConstructor("Math", ScriptObject.class);
+        this.builtinNumber    = initConstructor("Number", ScriptFunction.class);
+        this.builtinRegExp    = initConstructor("RegExp", ScriptFunction.class);
+        this.builtinString    = initConstructor("String", ScriptFunction.class);
 
         // initialize String.prototype.length to 0
         // add String.prototype.length
@@ -1777,7 +1777,7 @@ public final class Global extends ScriptObject implements Scope {
 
     private void initErrorObjects() {
         // Error objects
-        this.builtinError = (ScriptFunction)initConstructor("Error");
+        this.builtinError = initConstructor("Error", ScriptFunction.class);
         final ScriptObject errorProto = getErrorPrototype();
 
         // Nashorn specific accessors on Error.prototype - stack, lineNumber, columnNumber and fileName
@@ -1810,12 +1810,12 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private ScriptFunction initErrorSubtype(final String name, final ScriptObject errorProto) {
-        final ScriptObject cons = initConstructor(name);
+        final ScriptFunction cons = initConstructor(name, ScriptFunction.class);
         final ScriptObject prototype = ScriptFunction.getPrototype(cons);
         prototype.set(NativeError.NAME, name, false);
         prototype.set(NativeError.MESSAGE, "", false);
         prototype.setInitialProto(errorProto);
-        return (ScriptFunction)cons;
+        return cons;
     }
 
     private void initJavaAccess() {
@@ -1827,8 +1827,8 @@ public final class Global extends ScriptObject implements Scope {
         this.builtinJavafx = new NativeJavaPackage("javafx", objectProto);
         this.builtinJavax = new NativeJavaPackage("javax", objectProto);
         this.builtinOrg = new NativeJavaPackage("org", objectProto);
-        this.builtinJavaImporter = initConstructor("JavaImporter");
-        this.builtinJavaApi = initConstructor("Java");
+        this.builtinJavaImporter = initConstructor("JavaImporter", ScriptFunction.class);
+        this.builtinJavaApi = initConstructor("Java", ScriptObject.class);
     }
 
     private void initScripting(final ScriptEnvironment scriptEnv) {
@@ -1881,17 +1881,17 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private void initTypedArray() {
-        this.builtinArrayBuffer       = initConstructor("ArrayBuffer");
-        this.builtinDataView          = initConstructor("DataView");
-        this.builtinInt8Array         = initConstructor("Int8Array");
-        this.builtinUint8Array        = initConstructor("Uint8Array");
-        this.builtinUint8ClampedArray = initConstructor("Uint8ClampedArray");
-        this.builtinInt16Array        = initConstructor("Int16Array");
-        this.builtinUint16Array       = initConstructor("Uint16Array");
-        this.builtinInt32Array        = initConstructor("Int32Array");
-        this.builtinUint32Array       = initConstructor("Uint32Array");
-        this.builtinFloat32Array      = initConstructor("Float32Array");
-        this.builtinFloat64Array      = initConstructor("Float64Array");
+        this.builtinArrayBuffer       = initConstructor("ArrayBuffer", ScriptFunction.class);
+        this.builtinDataView          = initConstructor("DataView", ScriptFunction.class);
+        this.builtinInt8Array         = initConstructor("Int8Array", ScriptFunction.class);
+        this.builtinUint8Array        = initConstructor("Uint8Array", ScriptFunction.class);
+        this.builtinUint8ClampedArray = initConstructor("Uint8ClampedArray", ScriptFunction.class);
+        this.builtinInt16Array        = initConstructor("Int16Array", ScriptFunction.class);
+        this.builtinUint16Array       = initConstructor("Uint16Array", ScriptFunction.class);
+        this.builtinInt32Array        = initConstructor("Int32Array", ScriptFunction.class);
+        this.builtinUint32Array       = initConstructor("Uint32Array", ScriptFunction.class);
+        this.builtinFloat32Array      = initConstructor("Float32Array", ScriptFunction.class);
+        this.builtinFloat64Array      = initConstructor("Float64Array", ScriptFunction.class);
     }
 
     private void copyBuiltins() {
@@ -1936,7 +1936,7 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private void initDebug() {
-        this.addOwnProperty("Debug", Attribute.NOT_ENUMERABLE, initConstructor("Debug"));
+        this.addOwnProperty("Debug", Attribute.NOT_ENUMERABLE, initConstructor("Debug", ScriptObject.class));
     }
 
     private Object printImpl(final boolean newLine, final Object... objects) {
@@ -1968,7 +1968,7 @@ public final class Global extends ScriptObject implements Scope {
      * These classes are generated by nasgen tool and so we have to use
      * reflection to load and create new instance of these classes.
      */
-    private ScriptObject initConstructor(final String name) {
+    private <T extends ScriptObject> T initConstructor(final String name, final Class<T> clazz) {
         try {
             // Assuming class name pattern for built-in JS constructors.
             final StringBuilder sb = new StringBuilder("jdk.nashorn.internal.objects.");
@@ -1977,8 +1977,8 @@ public final class Global extends ScriptObject implements Scope {
             sb.append(name);
             sb.append("$Constructor");
 
-            final Class<?>     funcClass = Class.forName(sb.toString());
-            final ScriptObject res       = (ScriptObject)funcClass.newInstance();
+            final Class<?> funcClass = Class.forName(sb.toString());
+            final T res = clazz.cast(funcClass.newInstance());
 
             if (res instanceof ScriptFunction) {
                 // All global constructor prototypes are not-writable,
@@ -1992,9 +1992,7 @@ public final class Global extends ScriptObject implements Scope {
             }
 
             res.setIsBuiltin();
-
             return res;
-
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
         }
@@ -2008,7 +2006,7 @@ public final class Global extends ScriptObject implements Scope {
     // to play with object references carefully!!
     private void initFunctionAndObject() {
         // First-n-foremost is Function
-        this.builtinFunction      = (ScriptFunction)initConstructor("Function");
+        this.builtinFunction      = initConstructor("Function", ScriptFunction.class);
 
         // create global anonymous function
         final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction();
@@ -2030,7 +2028,7 @@ public final class Global extends ScriptObject implements Scope {
         typeErrorThrower.preventExtensions();
 
         // now initialize Object
-        this.builtinObject = (ScriptFunction)initConstructor("Object");
+        this.builtinObject = initConstructor("Object", ScriptFunction.class);
         final ScriptObject ObjectPrototype = getObjectPrototype();
         // Object.getPrototypeOf(Function.prototype) === Object.prototype
         anon.setInitialProto(ObjectPrototype);
@@ -2154,7 +2152,7 @@ public final class Global extends ScriptObject implements Scope {
     /**
      * Tag a reserved name as invalidated - used when someone writes
      * to a property with this name - overly conservative, but link time
-     * is too late to apply e.g. apply->call specialization
+     * is too late to apply e.g. apply-&gt;call specialization
      * @param name property name
      */
     public void invalidateReservedName(final String name) {

@@ -80,7 +80,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         LOWERED,
         /** program points have been assigned to unique locations */
         PROGRAM_POINTS_ASSIGNED,
-        /** any transformations of builtins have taken place, e.g. apply=>call */
+        /** any transformations of builtins have taken place, e.g. apply=&gt;call */
         BUILTINS_TRANSFORMED,
         /** method has been split */
         SPLIT,
@@ -422,11 +422,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Check whether the state of this FunctionNode contains a given compilation<
+     * Check whether the state of this FunctionNode contains a given compilation
      * state.
      *
      * A node can be in many states at once, e.g. both lowered and initialized.
-     * To check for an exact state, use {FunctionNode{@link #hasState(EnumSet)}
+     * To check for an exact state, use {@link #hasState(EnumSet)}
      *
      * @param state state to check for
      * @return true if state is present in the total compilation state of this FunctionNode
