@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test all aspects of sjavac.
- * @bug 8004658 8042441 8042699
+ * @bug 8004658 8042441 8042699 8054461
  *
  * @build Wrapper
  * @run main Wrapper SJavac
@@ -99,6 +99,7 @@ public class SJavac {
         compileCircularSources();
         compileExcludingDependency();
         incrementalCompileTestFullyQualifiedRef();
+        compileWithAtFile();
 
         delete(gensrc);
         delete(gensrc2);
@@ -461,6 +462,37 @@ public class SJavac {
                          "bin/alfa/omega/A.class",
                          "bin/beta/B.class",
                          "bin/javac_state");
+    }
+
+   /**
+     * Tests @atfile
+     * @throws Exception If test fails
+     */
+    void compileWithAtFile() throws Exception {
+        System.out.println("\nTest @atfile with command line content.");
+        System.out.println("---------------------------------------");
+
+        delete(gensrc);
+        delete(gensrc2);
+        delete(bin);
+
+        populate(gensrc,
+                 "list.txt",
+                 "-if */alfa/omega/A.java\n-if */beta/B.java\ngensrc\n-d bin\n",
+                 "alfa/omega/A.java",
+                 "package alfa.omega; import beta.B; public class A { B b; }",
+                 "beta/B.java",
+                 "package beta; public class B { }",
+                 "beta/C.java",
+                 "broken");
+        previous_bin_state = collectState(bin);
+        compile("@gensrc/list.txt", "--server:portfile=testserver,background=false");
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                         "bin/javac_state",
+                         "bin/alfa/omega/A.class",
+                         "bin/beta/B.class");
     }
 
     void removeFrom(Path dir, String... args) throws IOException {
