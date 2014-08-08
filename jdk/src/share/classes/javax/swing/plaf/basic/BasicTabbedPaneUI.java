@@ -3540,12 +3540,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
             else if (name =="indexForTitle") {
                 calculatedBaseline = false;
                 Integer index = (Integer) e.getNewValue();
-                // remove the current index
-                // to let updateHtmlViews() insert the correct one
-                if (htmlViews != null) {
-                    htmlViews.removeElementAt(index);
-                }
-                updateHtmlViews(index);
+                updateHtmlViews(index, false);
             } else if (name == "tabLayoutPolicy") {
                 BasicTabbedPaneUI.this.uninstallUI(pane);
                 BasicTabbedPaneUI.this.installUI(pane);
@@ -3584,13 +3579,13 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 calculatedBaseline = false;
             } else if (name == "indexForNullComponent") {
                 isRunsDirty = true;
-                updateHtmlViews((Integer)e.getNewValue());
+                updateHtmlViews((Integer)e.getNewValue(), true);
             } else if (name == "font") {
                 calculatedBaseline = false;
             }
         }
 
-        private void updateHtmlViews(int index) {
+        private void updateHtmlViews(int index, boolean inserted) {
             String title = tabPane.getTitleAt(index);
             boolean isHTML = BasicHTML.isHTMLString(title);
             if (isHTML) {
@@ -3598,14 +3593,22 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                     htmlViews = createHTMLVector();
                 } else {                  // Vector already exists
                     View v = BasicHTML.createHTMLView(tabPane, title);
-                    htmlViews.insertElementAt(v, index);
+                    setHtmlView(v, inserted, index);
                 }
             } else {                             // Not HTML
                 if (htmlViews!=null) {           // Add placeholder
-                    htmlViews.insertElementAt(null, index);
+                    setHtmlView(null, inserted, index);
                 }                                // else nada!
             }
             updateMnemonics();
+        }
+
+        private void setHtmlView(View v, boolean inserted, int index) {
+            if (inserted || index >= htmlViews.size()) {
+                htmlViews.insertElementAt(v, index);
+            } else {
+                htmlViews.setElementAt(v, index);
+            }
         }
 
         //
@@ -3726,7 +3729,7 @@ public class BasicTabbedPaneUI extends TabbedPaneUI implements SwingConstants {
                 return;
             }
             isRunsDirty = true;
-            updateHtmlViews(tp.indexOfComponent(child));
+            updateHtmlViews(tp.indexOfComponent(child), true);
         }
         public void componentRemoved(ContainerEvent e) {
             JTabbedPane tp = (JTabbedPane)e.getContainer();
