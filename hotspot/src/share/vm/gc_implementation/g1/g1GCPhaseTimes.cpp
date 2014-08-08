@@ -255,6 +255,10 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
 }
 
+void G1GCPhaseTimes::print_stats(int level, const char* str, size_t value) {
+  LineBuffer(level).append_and_print_cr("[%s: "SIZE_FORMAT"]", str, value);
+}
+
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %u]", str, value, workers);
 }
@@ -355,6 +359,14 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     if (G1Log::finest()) {
       _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
       _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
+    }
+  }
+  if (G1ReclaimDeadHumongousObjectsAtYoungGC) {
+    print_stats(2, "Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+    if (G1Log::finest()) {
+      print_stats(3, "Humongous Total", _cur_fast_reclaim_humongous_total);
+      print_stats(3, "Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
+      print_stats(3, "Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
     }
   }
   print_stats(2, "Free CSet",

@@ -220,14 +220,6 @@
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \
-  experimental(bool, G1UseParallelRSetUpdating, true,                       \
-          "Enables the parallelization of remembered set updating "         \
-          "during evacuation pauses")                                       \
-                                                                            \
-  experimental(bool, G1UseParallelRSetScanning, true,                       \
-          "Enables the parallelization of remembered set scanning "         \
-          "during evacuation pauses")                                       \
-                                                                            \
   product(uintx, G1ConcRefinementThreads, 0,                                \
           "If non-0 is the number of parallel rem set update threads, "     \
           "otherwise the value is determined ergonomically.")               \
@@ -288,6 +280,13 @@
   experimental(uintx, G1CodeRootsChunkCacheKeepPercent, 10,                 \
           "The amount of code root chunks that should be kept at most "     \
           "as percentage of already allocated.")                            \
+                                                                            \
+  experimental(bool, G1ReclaimDeadHumongousObjectsAtYoungGC, true,          \
+          "Try to reclaim dead large objects at every young GC.")           \
+                                                                            \
+  experimental(bool, G1TraceReclaimDeadHumongousObjectsAtYoungGC, false,    \
+          "Print some information about large object liveness "             \
+          "at every young GC.")                                             \
                                                                             \
   experimental(uintx, G1OldCSetRegionThresholdPercent, 10,                  \
           "An upper bound for the number of old CSet regions expressed "    \

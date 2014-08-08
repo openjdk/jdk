@@ -479,7 +479,10 @@ Node *DivINode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   if (i == 0) return NULL;      // Dividing by zero constant does not idealize
 
-  set_req(0,NULL);              // Dividing by a not-zero constant; no faulting
+  if (in(0) != NULL) {
+    phase->igvn_rehash_node_delayed(this);
+    set_req(0, NULL);           // Dividing by a not-zero constant; no faulting
+  }
 
   // Dividing by MININT does not optimize as a power-of-2 shift.
   if( i == min_jint ) return NULL;
@@ -578,7 +581,10 @@ Node *DivLNode::Ideal( PhaseGVN *phase, bool can_reshape) {
 
   if (l == 0) return NULL;      // Dividing by zero constant does not idealize
 
-  set_req(0,NULL);              // Dividing by a not-zero constant; no faulting
+  if (in(0) != NULL) {
+    phase->igvn_rehash_node_delayed(this);
+    set_req(0, NULL);           // Dividing by a not-zero constant; no faulting
+  }
 
   // Dividing by MINLONG does not optimize as a power-of-2 shift.
   if( l == min_jlong ) return NULL;
@@ -1274,7 +1280,7 @@ DivModNode::DivModNode( Node *c, Node *dividend, Node *divisor ) : MultiNode(3) 
 }
 
 //------------------------------make------------------------------------------
-DivModINode* DivModINode::make(Compile* C, Node* div_or_mod) {
+DivModINode* DivModINode::make(Node* div_or_mod) {
   Node* n = div_or_mod;
   assert(n->Opcode() == Op_DivI || n->Opcode() == Op_ModI,
          "only div or mod input pattern accepted");
@@ -1286,7 +1292,7 @@ DivModINode* DivModINode::make(Compile* C, Node* div_or_mod) {
 }
 
 //------------------------------make------------------------------------------
-DivModLNode* DivModLNode::make(Compile* C, Node* div_or_mod) {
+DivModLNode* DivModLNode::make(Node* div_or_mod) {
   Node* n = div_or_mod;
   assert(n->Opcode() == Op_DivL || n->Opcode() == Op_ModL,
          "only div or mod input pattern accepted");

@@ -6184,7 +6184,11 @@ instruct loadConP_no_oop_cheap(iRegP dst, immP_no_oop_cheap con) %{
   ins_cost(DEFAULT_COST * 3/2);
   format %{ "SET    $con,$dst\t! non-oop ptr" %}
   ins_encode %{
-    __ set($con$$constant, $dst$$Register);
+    if (_opnds[1]->constant_reloc() == relocInfo::metadata_type) {
+      __ set_metadata_constant((Metadata*)$con$$constant, $dst$$Register);
+    } else {
+      __ set($con$$constant, $dst$$Register);
+    }
   %}
   ins_pipe(loadConP);
 %}

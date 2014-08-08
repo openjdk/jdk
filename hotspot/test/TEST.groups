@@ -217,6 +217,7 @@ needs_g1gc = \
   gc/arguments/TestMaxHeapSizeTools.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/class_unloading/TestG1ClassUnloadingHWM.java \
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
@@ -257,7 +258,7 @@ needs_cmsgc = \
   gc/arguments/TestCMSHeapSizeFlags.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
-  gc/class_unloading/TestCMSClassUnloadingDisabledHWM.java \
+  gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
   gc/concurrentMarkSweep/ \
   gc/startup_warnings/TestCMS.java \
   gc/startup_warnings/TestCMSIncrementalMode.java \

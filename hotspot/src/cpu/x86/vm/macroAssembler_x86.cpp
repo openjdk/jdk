@@ -7316,17 +7316,34 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  * Fold 128-bit data chunk
  */
 void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset) {
-  vpclmulhdq(xtmp, xK, xcrc); // [123:64]
-  vpclmulldq(xcrc, xK, xcrc); // [63:0]
-  vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
-  pxor(xcrc, xtmp);
+  if (UseAVX > 0) {
+    vpclmulhdq(xtmp, xK, xcrc); // [123:64]
+    vpclmulldq(xcrc, xK, xcrc); // [63:0]
+    vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
+    pxor(xcrc, xtmp);
+  } else {
+    movdqa(xtmp, xcrc);
+    pclmulhdq(xtmp, xK);   // [123:64]
+    pclmulldq(xcrc, xK);   // [63:0]
+    pxor(xcrc, xtmp);
+    movdqu(xtmp, Address(buf, offset));
+    pxor(xcrc, xtmp);
+  }
 }
 
 void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf) {
-  vpclmulhdq(xtmp, xK, xcrc);
-  vpclmulldq(xcrc, xK, xcrc);
-  pxor(xcrc, xbuf);
-  pxor(xcrc, xtmp);
+  if (UseAVX > 0) {
+    vpclmulhdq(xtmp, xK, xcrc);
+    vpclmulldq(xcrc, xK, xcrc);
+    pxor(xcrc, xbuf);
+    pxor(xcrc, xtmp);
+  } else {
+    movdqa(xtmp, xcrc);
+    pclmulhdq(xtmp, xK);
+    pclmulldq(xcrc, xK);
+    pxor(xcrc, xbuf);
+    pxor(xcrc, xtmp);
+  }
 }
 
 /**
@@ -7444,9 +7461,17 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   // Fold 128 bits in xmm1 down into 32 bits in crc register.
   BIND(L_fold_128b);
   movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()));
-  vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
-  vpand(xmm3, xmm0, xmm2, false /* vector256 */);
-  vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
+  if (UseAVX > 0) {
+    vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
+    vpand(xmm3, xmm0, xmm2, false /* vector256 */);
+    vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
+  } else {
+    movdqa(xmm2, xmm0);
+    pclmulqdq(xmm2, xmm1, 0x1);
+    movdqa(xmm3, xmm0);
+    pand(xmm3, xmm2);
+    pclmulqdq(xmm0, xmm3, 0x1);
+  }
   psrldq(xmm1, 8);
   psrldq(xmm2, 4);
   pxor(xmm0, xmm1);
