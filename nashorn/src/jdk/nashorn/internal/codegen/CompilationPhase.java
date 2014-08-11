@@ -61,6 +61,7 @@ import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
+import jdk.nashorn.internal.runtime.FunctionInitializer;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -324,15 +325,15 @@ enum CompilationPhase {
             final DebugLogger log = compiler.getLogger();
 
             log.fine("Clearing bytecode cache");
+            compiler.clearBytecode();
 
             for (final CompileUnit oldUnit : compiler.getCompileUnits()) {
-                CompileUnit newUnit = map.get(oldUnit);
                 assert map.get(oldUnit) == null;
                 final StringBuilder sb = new StringBuilder(compiler.nextCompileUnitName());
                 if (phases.isRestOfCompilation()) {
                     sb.append("$restOf");
                 }
-                newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
+                CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
                 assert newUnit != null;
@@ -502,8 +503,7 @@ enum CompilationPhase {
             long length = 0L;
 
             final CodeInstaller<ScriptEnvironment> codeInstaller = compiler.getCodeInstaller();
-
-            final Map<String, byte[]> bytecode = compiler.getBytecode();
+            final Map<String, byte[]>              bytecode      = compiler.getBytecode();
 
             for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
                 final String className = entry.getKey();
@@ -536,17 +536,18 @@ enum CompilationPhase {
             // initialize function in the compile units
             for (final CompileUnit unit : compiler.getCompileUnits()) {
                 unit.setCode(installedClasses.get(unit.getUnitClassName()));
-                unit.initializeFunctionsCode();
             }
 
             if (!compiler.isOnDemandCompilation()) {
-                codeInstaller.storeCompiledScript(compiler.getSource(), compiler.getFirstCompileUnit().getUnitClassName(), bytecode, constants);
-            }
-
-            // remove installed bytecode from table in case compiler is reused
-            for (final String className : installedClasses.keySet()) {
-                log.fine("Removing installed class ", quote(className), " from bytecode table...");
-                compiler.removeClass(className);
+                // Initialize functions
+                final Map<Integer, FunctionInitializer> initializers = compiler.getFunctionInitializers();
+                if (initializers != null) {
+                    for (final Entry<Integer, FunctionInitializer> entry : initializers.entrySet()) {
+                        final FunctionInitializer initializer = entry.getValue();
+                        initializer.setCode(installedClasses.get(initializer.getClassName()));
+                        compiler.getScriptFunctionData(entry.getKey()).initializeCode(initializer);
+                    }
+                }
             }
 
             if (log.isEnabled()) {
