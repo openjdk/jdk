@@ -1,4 +1,5 @@
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+	#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -22,8 +23,16 @@
 # questions.
 #
 
-#
-# Hijrah calendars
-#
-calendar.hijrah.Hijrah-umalqura: hijrah-config-umalqura.properties
-calendar.hijrah.Hijrah-umalqura.type: islamic-umalqura
+GENDATA_JAVA_SECURITY_SRC := $(JDK_TOPDIR)/src/share/lib/security/java.security
+GENDATA_JAVA_SECURITY := $(JDK_OUTPUTDIR)/lib/security/java.security
+
+ifndef OPENJDK
+  RESTRICTED_PKGS_SRC := $(JDK_TOPDIR)/src/closed/share/lib/security/restricted.pkgs
+else
+  RESTRICTED_PKGS_SRC :=
+endif
+
+$(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
+	$(ECHO) "Generating java.security"
+	$(MKDIR) -p $(@D)
+	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) $(RESTRICTED_PKGS_SRC) || exit 1
