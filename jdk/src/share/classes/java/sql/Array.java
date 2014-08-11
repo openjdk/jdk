@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -181,7 +181,7 @@ public interface Array {
   Object getArray(long index, int count) throws SQLException;
 
   /**
-   * Retreives a slice of the SQL <code>ARRAY</code> value
+   * Retrieves a slice of the SQL <code>ARRAY</code> value
    * designated by this <code>Array</code> object, beginning with the specified
    * <code>index</code> and containing up to <code>count</code>
    * successive elements of the SQL array.

@@ -173,7 +173,7 @@ import javax.sql.*;
  * are used as return values or parameters for <code>SyncProvider</code> methods.
  * <code>SyncProvider</code> objects may be implemented to perform synchronization
  * between a <code>RowSet</code> object and its underlying data source with varying
- * degrees of of care. The first group of constants indicate how synchronization
+ * degrees of care. The first group of constants indicate how synchronization
  * is handled. For example, <code>GRADE_NONE</code> indicates that a
  * <code>SyncProvider</code> object will not take any care to see what data is
  * valid and will simply write the <code>RowSet</code> data to the data source.

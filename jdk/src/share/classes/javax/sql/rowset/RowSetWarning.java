@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -111,7 +111,7 @@ public class RowSetWarning extends SQLException {
      * @param reason a <code>String</code> giving a description of the
      *        warning;
      * @param SQLState an XOPEN code identifying the warning; if a non standard
-     *        XPOEN <i>SQLState</i> is supplied, no exception is thrown.
+     *        XOPEN <i>SQLState</i> is supplied, no exception is thrown.
      * @param vendorCode a database vendor-specific warning code
      */
     public RowSetWarning(java.lang.String reason, java.lang.String SQLState, int vendorCode) {

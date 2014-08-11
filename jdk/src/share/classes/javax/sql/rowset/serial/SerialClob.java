@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -565,7 +565,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
     }
 
     /**
-     * This method frees the {@code SeriableClob} object and releases the
+     * This method frees the {@code SerialClob} object and releases the
      * resources that it holds.
      * The object is invalid once the {@code free} method is called.
      * <p>
@@ -670,7 +670,7 @@ public class SerialClob implements Clob, Serializable, Cloneable {
         fields.put("len", len);
         fields.put("origLen", origLen);
         // Note: this check to see if it is an instance of Serializable
-        // is for backwards compatibiity
+        // is for backwards compatibility
         fields.put("clob", clob instanceof Serializable ? clob : null);
         s.writeFields();
     }

@@ -274,7 +274,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * <code>close</code> method.  If the <code>close</code> method is called
      * and there is an active transaction, the results are implementation-defined.
      *
-     * @exception SQLException SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs
      */
     void close() throws SQLException;
 
@@ -335,7 +335,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      *
      * @return <code>true</code> if this <code>Connection</code> object
      *         is read-only; <code>false</code> otherwise
-     * @exception SQLException SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
     boolean isReadOnly() throws SQLException;
@@ -492,7 +492,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * returns <code>null</code> until a new warning is
      * reported for this <code>Connection</code> object.
      *
-     * @exception SQLException SQLException if a database access error occurs
+     * @exception SQLException if a database access error occurs
      * or this method is called on a closed connection
      */
     void clearWarnings() throws SQLException;
@@ -632,7 +632,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * this <code>Connection</code> object.  The type map will be used for the
      * custom mapping of SQL structured types and distinct types.
      * <p>
-     * You must set the the values for the <code>TypeMap</code> prior to
+     * You must set the values for the <code>TypeMap</code> prior to
      * callng <code>setMap</code> as a JDBC driver may create an internal copy
      * of the <code>TypeMap</code>:
      *
@@ -662,7 +662,7 @@ public interface Connection  extends Wrapper, AutoCloseable {
      * Changes the default holdability of <code>ResultSet</code> objects
      * created using this <code>Connection</code> object to the given
      * holdability.  The default holdability of <code>ResultSet</code> objects
-     * can be be determined by invoking
+     * can be determined by invoking
      * {@link DatabaseMetaData#getResultSetHoldability}.
      *
      * @param holdability a <code>ResultSet</code> holdability constant; one of

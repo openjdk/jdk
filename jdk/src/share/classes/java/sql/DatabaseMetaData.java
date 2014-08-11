@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1216,7 +1216,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>PROCEDURE_CAT</code>, <code>PROCEDURE_SCHEM</code>,
      * <code>PROCEDURE_NAME</code> and <code>SPECIFIC_ NAME</code>.
      *
-     * <P>Each procedure description has the the following columns:
+     * <P>Each procedure description has the following columns:
      *  <OL>
      *  <LI><B>PROCEDURE_CAT</B> String {@code =>} procedure catalog (may be <code>null</code>)
      *  <LI><B>PROCEDURE_SCHEM</B> String {@code =>} procedure schema (may be <code>null</code>)
@@ -1487,7 +1487,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>TABLE_TYPE</B> String {@code =>} table type.  Typical types are "TABLE",
      *                  "VIEW", "SYSTEM TABLE", "GLOBAL TEMPORARY",
      *                  "LOCAL TEMPORARY", "ALIAS", "SYNONYM".
-     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the table
+     *  <LI><B>REMARKS</B> String {@code =>} explanatory comment on the table (may be {@code null})
      *  <LI><B>TYPE_CAT</B> String {@code =>} the types catalog (may be <code>null</code>)
      *  <LI><B>TYPE_SCHEM</B> String {@code =>} the types schema (may be <code>null</code>)
      *  <LI><B>TYPE_NAME</B> String {@code =>} type name (may be <code>null</code>)
@@ -1710,7 +1710,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
      *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
      *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
-     *      INSERT, UPDATE, REFRENCES, ...)
+     *      INSERT, UPDATE, REFERENCES, ...)
      *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
      *      to grant to others; "NO" if not; <code>null</code> if unknown
      *  </OL>
@@ -1755,7 +1755,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>GRANTOR</B> String {@code =>} grantor of access (may be <code>null</code>)
      *  <LI><B>GRANTEE</B> String {@code =>} grantee of access
      *  <LI><B>PRIVILEGE</B> String {@code =>} name of access (SELECT,
-     *      INSERT, UPDATE, REFRENCES, ...)
+     *      INSERT, UPDATE, REFERENCES, ...)
      *  <LI><B>IS_GRANTABLE</B> String {@code =>} "YES" if grantee is permitted
      *      to grant to others; "NO" if not; <code>null</code> if unknown
      *  </OL>
@@ -2509,7 +2509,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>TYPE</B> short {@code =>} index type:
      *      <UL>
      *      <LI> tableIndexStatistic - this identifies table statistics that are
-     *           returned in conjuction with a table's index descriptions
+     *           returned in conjunction with a table's index descriptions
      *      <LI> tableIndexClustered - this is a clustered index
      *      <LI> tableIndexHashed - this is a hashed index
      *      <LI> tableIndexOther - this is some other style of index
@@ -2524,7 +2524,7 @@ public interface DatabaseMetaData extends Wrapper {
      *  <LI><B>CARDINALITY</B> long {@code =>} When TYPE is tableIndexStatistic, then
      *      this is the number of rows in the table; otherwise, it is the
      *      number of unique values in the index.
-     *  <LI><B>PAGES</B> long {@code =>} When TYPE is  tableIndexStatisic then
+     *  <LI><B>PAGES</B> long {@code =>} When TYPE is  tableIndexStatistic then
      *      this is the number of pages used for the table, otherwise it
      *      is the number of pages used for the current index.
      *  <LI><B>FILTER_CONDITION</B> String {@code =>} Filter condition, if any.
@@ -2858,7 +2858,7 @@ public interface DatabaseMetaData extends Wrapper {
      * @return <code>true</code> if a <code>CallableStatement</code> object
      *         can return multiple <code>ResultSet</code> objects
      *         simultaneously; <code>false</code> otherwise
-     * @exception SQLException if a datanase access error occurs
+     * @exception SQLException if a database access error occurs
      * @since 1.4
      */
     boolean supportsMultipleOpenResults() throws SQLException;
@@ -3302,7 +3302,7 @@ public interface DatabaseMetaData extends Wrapper {
      * <code>FUNCTION_NAME</code> and
      * <code>SPECIFIC_ NAME</code>.
      *
-     * <P>Each function description has the the following columns:
+     * <P>Each function description has the following columns:
      *  <OL>
      *  <LI><B>FUNCTION_CAT</B> String {@code =>} function catalog (may be <code>null</code>)
      *  <LI><B>FUNCTION_SCHEM</B> String {@code =>} function schema (may be <code>null</code>)

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -102,7 +102,7 @@ import java.sql.*;
  */
 
  // <h3>3.0 FilteredRowSet Internals</h3>
- // internalNext, Frist, Last. Discuss guidelines on how to approach this
+ // internalNext, First, Last. Discuss guidelines on how to approach this
  // and cite examples in reference implementations.
 public interface Predicate {
     /**
