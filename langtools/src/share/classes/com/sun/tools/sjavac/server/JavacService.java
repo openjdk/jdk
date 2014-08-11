@@ -40,4 +40,5 @@ public interface JavacService {
                               List<File> explicitSources,
                               Set<URI> sourcesToCompile,
                               Set<URI> visibleSources);
+    String serverSettings();
 }

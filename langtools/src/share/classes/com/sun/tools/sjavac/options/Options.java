@@ -32,6 +32,8 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
+import java.util.HashSet;
 
 import com.sun.tools.sjavac.Transformer;
 
@@ -41,7 +43,7 @@ import com.sun.tools.sjavac.Transformer;
 public class Options {
 
     // Output directories
-    private Path destDir, genSrcDir, headerDir;
+    private Path destDir, genSrcDir, headerDir, stateDir;
 
     // Input directories
     private List<SourceLocation> sources = new ArrayList<>();
@@ -51,7 +53,8 @@ public class Options {
 
     private String logLevel = "info";
 
-    private boolean permitUnidentifiedArtifact = false;
+    private Set<String> permitted_artifacts = new HashSet<>();
+    private boolean permitUnidentifiedArtifacts = false;
     private boolean permitSourcesInDefaultPackage = false;
 
     private Path sourceReferenceList;
@@ -86,6 +89,11 @@ public class Options {
         return headerDir;
     }
 
+    /** Get the path for the state directory, defaults to destDir. */
+    public Path getStateDir() {
+        return stateDir != null ? stateDir : destDir;
+    }
+
     /** Get all source locations for files to be compiled */
     public List<SourceLocation> getSources() {
         return sources;
@@ -114,10 +122,15 @@ public class Options {
         return logLevel;
     }
 
+    /** Returns true iff the artifact is permitted in the output dir. */
+    public boolean isUnidentifiedArtifactPermitted(String f) {
+        return permitted_artifacts.contains(f);
+    }
+
     /** Returns true iff artifacts in the output directories should be kept,
      * even if they would not be generated in a clean build. */
-    public boolean isUnidentifiedArtifactPermitted() {
-        return permitUnidentifiedArtifact;
+    public boolean areUnidentifiedArtifactsPermitted() {
+        return permitUnidentifiedArtifacts;
     }
 
     /** Returns true iff sources in the default package should be permitted. */
@@ -172,14 +185,6 @@ public class Options {
     public boolean isJavaFilesAmongJavacArgs() {
         for (String javacArg : javacArgs)
             if (javacArg.endsWith(".java"))
-                return true;
-        return false;
-    }
-
-    /** Returns true iff an @-file is among the javac arguments */
-    public boolean isAtFilePresent() {
-        for (String javacArg : javacArgs)
-            if (javacArg.startsWith("@"))
                 return true;
         return false;
     }
@@ -239,6 +244,9 @@ public class Options {
         if (destDir != null)
             args.addArg(Option.D, destDir.normalize());
 
+        if (stateDir != null)
+            args.addArg(Option.STATE_DIR, stateDir.normalize());
+
         // Source roots
         args.addSourceLocations(Option.SRC, sources);
         args.addSourceLocations(Option.SOURCEPATH, sourceSearchPaths);
@@ -249,7 +257,11 @@ public class Options {
         if (permitSourcesInDefaultPackage)
             args.addArg(Option.PERMIT_SOURCES_WITHOUT_PACKAGE);
 
-        if (permitUnidentifiedArtifact)
+        for (String f : permitted_artifacts) {
+            args.addArg(Option.PERMIT_ARTIFACT, f);
+        }
+
+        if (permitUnidentifiedArtifacts)
             args.addArg(Option.PERMIT_UNIDENTIFIED_ARTIFACTS);
 
         // Translation rules
@@ -327,6 +339,7 @@ public class Options {
 
         boolean headerProvided = false;
         boolean genSrcProvided = false;
+        boolean stateProvided = false;
 
         @Override
         public void reportError(String msg) {
@@ -399,8 +412,13 @@ public class Options {
         }
 
         @Override
+        public void permitArtifact(String f) {
+            permitted_artifacts.add(f);
+        }
+
+        @Override
         public void permitUnidentifiedArtifacts() {
-            permitUnidentifiedArtifact = true;
+            permitUnidentifiedArtifacts = true;
         }
 
         @Override
@@ -463,6 +481,16 @@ public class Options {
             }
             headerProvided = true;
             headerDir = dir.toAbsolutePath();
+        }
+
+        @Override
+        public void stateDir(Path dir) {
+            if (stateProvided) {
+                reportError("State directory already specified.");
+                return;
+            }
+            stateProvided = true;
+            stateDir = dir.toAbsolutePath();
         }
 
         private List<SourceLocation> createSourceLocations(List<Path> paths) {

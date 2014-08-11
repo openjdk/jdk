@@ -231,7 +231,14 @@ public enum Option {
             helper.logLevel("info");
         }
     },
-    PERMIT_UNIDENTIFIED_ARTIFACTS("--permit-unidentified-artifacts", "Keep unidentified artifacts in destination directory") {
+    PERMIT_ARTIFACT("--permit-artifact=", "Allow this artifact in destination directory") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            String a = iter.current().substring(arg.length());
+            helper.permitArtifact(Paths.get(a).toFile().getAbsolutePath());
+        }
+    },
+    PERMIT_UNIDENTIFIED_ARTIFACTS("--permit-unidentified-artifacts", "Allow unidentified artifacts in destination directory") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             helper.permitUnidentifiedArtifacts();
@@ -274,7 +281,15 @@ public enum Option {
             if (dir != null)
                 helper.headerDir(dir);
         }
+    },
+    STATE_DIR("--state-dir=", "Directory used to store sjavac state and log files.") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            String p = iter.current().substring(arg.length());
+            helper.stateDir(Paths.get(p));
+        }
     };
+
 
     public final String arg;
 
