@@ -28,6 +28,7 @@
  * @ignore 8046268
  * @build MakeMethodNotCompilableTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=2400 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* MakeMethodNotCompilableTest
  * @summary testing of WB::makeMethodNotCompilable()
  * @author igor.ignatyev@oracle.com
