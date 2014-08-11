@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -202,7 +202,7 @@ public class SerialArray implements Array, Serializable, Cloneable {
   }
 
     /**
-     * This method frees the {@code SeriableArray} object and releases the
+     * This method frees the {@code SerialArray} object and releases the
      * resources that it holds. The object is invalid once the {@code free}
      * method is called. <p> If {@code free} is called multiple times, the
      * subsequent calls to {@code free} are treated as a no-op. </P>
@@ -313,7 +313,6 @@ public class SerialArray implements Array, Serializable, Cloneable {
         return dst;
     }
 
- //[if an error occurstype map used??]
     /**
      * Returns a new array that is a copy of this <code>SerialArray</code>
      * object, using the given type map for the custom
