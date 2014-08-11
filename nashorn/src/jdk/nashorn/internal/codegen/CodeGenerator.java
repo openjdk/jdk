@@ -250,8 +250,6 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     private final Deque<Label> scopeEntryLabels = new ArrayDeque<>();
 
-    private final Set<Integer> initializedFunctionIds = new HashSet<>();
-
     private static final Label METHOD_BOUNDARY = new Label("");
     private final Deque<Label> catchLabels = new ArrayDeque<>();
     // Number of live locals on entry to (and thus also break from) labeled blocks.
@@ -1872,6 +1870,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // lingers around. Also, currently loading previously persisted optimistic types information only works if
         // we're on-demand compiling a function, so with this strategy the :program method can also have the warmup
         // benefit of using previously persisted types.
+        //
         // NOTE that this means the first compiled class will effectively just have a :createProgramFunction method, and
         // the RecompilableScriptFunctionData (RSFD) object in its constants array. It won't even have the :program
         // method. This is by design. It does mean that we're wasting one compiler execution (and we could minimize this
@@ -1879,11 +1878,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // We could emit an initial separate compile unit with the initial version of :program in it to better utilize
         // the compilation pipeline, but that would need more invasive changes, as currently the assumption that
         // :program is emitted into the first compilation unit of the function lives in many places.
-        if(!onDemand && lazy && env._optimistic_types && functionNode.isProgram()) {
-            return true;
-        }
-
-        return false;
+        return !onDemand && lazy && env._optimistic_types && functionNode.isProgram();
     }
 
     @Override
@@ -4383,9 +4378,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             createFunction.end();
         }
 
-        if (addInitializer && !initializedFunctionIds.contains(fnId) && !compiler.isOnDemandCompilation()) {
-            functionNode.getCompileUnit().addFunctionInitializer(data, functionNode);
-            initializedFunctionIds.add(fnId);
+        if (addInitializer && !compiler.isOnDemandCompilation()) {
+            compiler.addFunctionInitializer(data, functionNode);
         }
 
         // We don't emit a ScriptFunction on stack for the outermost compiled function (as there's no code being

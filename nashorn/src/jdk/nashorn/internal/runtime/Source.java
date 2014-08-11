@@ -87,6 +87,9 @@ public final class Source implements Loggable {
     /** Base64-encoded SHA1 digest of this source object */
     private volatile byte[] digest;
 
+    /** source URL set via //@ sourceURL or //# sourceURL directive */
+    private String explicitURL;
+
     // Do *not* make this public, ever! Trusts the URL and content.
     private Source(final String name, final String base, final Data data) {
         this.name = name;
@@ -594,6 +597,22 @@ public final class Source implements Loggable {
      */
     public URL getURL() {
         return data.url();
+    }
+
+    /**
+     * Get explicit source URL.
+     * @return URL set vial sourceURL directive
+     */
+    public String getExplicitURL() {
+        return explicitURL;
+    }
+
+    /**
+     * Set explicit source URL.
+     * @param explicitURL URL set via sourceURL directive
+     */
+    public void setExplicitURL(String explicitURL) {
+        this.explicitURL = explicitURL;
     }
 
     /**

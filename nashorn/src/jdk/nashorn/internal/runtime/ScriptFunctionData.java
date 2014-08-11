@@ -35,6 +35,9 @@ import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.LinkedList;
+import java.util.List;
+
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
 
 
@@ -54,9 +57,10 @@ public abstract class ScriptFunctionData implements Serializable {
     /** Name of the function or "" for anonymous functions */
     protected final String name;
 
-    /** All versions of this function that have been generated to code */
-    // TODO: integrate it into ScriptFunctionData; there's not much reason for this to be in its own class.
-    protected transient CompiledFunctions code;
+    /**
+     * A list of code versions of a function sorted in ascending order of generic descriptors.
+     */
+    protected transient LinkedList<CompiledFunction> code = new LinkedList<>();
 
     /** Function flags */
     protected int flags;
@@ -71,7 +75,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * multiple threads concurrently, but we still tolerate a race condition in it as all values stored into it are
      * idempotent.
      */
-    private volatile GenericInvokers genericInvokers;
+    private volatile transient GenericInvokers genericInvokers;
 
     private static final MethodHandle BIND_VAR_ARGS = findOwnMH("bindVarArgs", Object[].class, Object[].class, Object[].class);
 
@@ -108,7 +112,6 @@ public abstract class ScriptFunctionData implements Serializable {
      */
     ScriptFunctionData(final String name, final int arity, final int flags) {
         this.name  = name;
-        this.code  = new CompiledFunctions(name);
         this.flags = flags;
         setArity(arity);
     }
@@ -222,8 +225,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * and not suddenly a "real" object
      *
      * @param callSiteType callsite type
-     * @return guarded invocation with method handle to best invoker and potentially a switch point guarding optimistic
-     * assumptions.
+     * @return compiled function object representing the best invoker.
      */
      final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope) {
         final CompiledFunction cf = getBest(callSiteType, runtimeScope);
@@ -298,6 +300,50 @@ public abstract class ScriptFunctionData implements Serializable {
         return lgenericInvokers;
     }
 
+    private static MethodType widen(final MethodType cftype) {
+        final Class<?>[] paramTypes = new Class<?>[cftype.parameterCount()];
+        for (int i = 0; i < cftype.parameterCount(); i++) {
+            paramTypes[i] = cftype.parameterType(i).isPrimitive() ? cftype.parameterType(i) : Object.class;
+        }
+        return MH.type(cftype.returnType(), paramTypes);
+    }
+
+    /**
+     * Used to find an apply to call version that fits this callsite.
+     * We cannot just, as in the normal matcher case, return e.g. (Object, Object, int)
+     * for (Object, Object, int, int, int) or we will destroy the semantics and get
+     * a function that, when padded with undefineds, behaves differently
+     * @param type actual call site type
+     * @return apply to call that perfectly fits this callsite or null if none found
+     */
+    CompiledFunction lookupExactApplyToCall(final MethodType type) {
+        for (final CompiledFunction cf : code) {
+            if (!cf.isApplyToCall()) {
+                continue;
+            }
+
+            final MethodType cftype = cf.type();
+            if (cftype.parameterCount() != type.parameterCount()) {
+                continue;
+            }
+
+            if (widen(cftype).equals(widen(type))) {
+                return cf;
+            }
+        }
+
+        return null;
+    }
+
+    CompiledFunction pickFunction(final MethodType callSiteType, final boolean canPickVarArg) {
+        for (final CompiledFunction candidate : code) {
+            if (candidate.matchesCallSite(callSiteType, canPickVarArg)) {
+                return candidate;
+            }
+        }
+        return null;
+    }
+
     /**
      * Returns the best function for the specified call site type.
      * @param callSiteType The call site type. Call site types are expected to have the form
@@ -308,8 +354,27 @@ public abstract class ScriptFunctionData implements Serializable {
      * @return the best function for the specified call site type.
      */
     CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
-        return code.best(callSiteType, isRecompilable());
+        assert callSiteType.parameterCount() >= 2 : callSiteType; // Must have at least (callee, this)
+        assert callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class) : callSiteType; // Callee must be assignable from script function
+
+        if (isRecompilable()) {
+            final CompiledFunction candidate = pickFunction(callSiteType, false);
+            if (candidate != null) {
+                return candidate;
+            }
+            return pickFunction(callSiteType, true); //try vararg last
+        }
+
+        CompiledFunction best = null;
+        for(final CompiledFunction candidate: code) {
+            if(candidate.betterThanFinal(best, callSiteType)) {
+                best = candidate;
+            }
+        }
+
+        return best;
     }
+
 
     abstract boolean isRecompilable();
 
@@ -317,7 +382,10 @@ public abstract class ScriptFunctionData implements Serializable {
         return getBest(getGenericType(), runtimeScope);
     }
 
-
+    /**
+     * Get a method type for a generic invoker.
+     * @return the method type for the generic invoker
+     */
     abstract MethodType getGenericType();
 
     /**
@@ -353,7 +421,7 @@ public abstract class ScriptFunctionData implements Serializable {
         // Clear the callee and this flags
         final int boundFlags = flags & ~NEEDS_CALLEE & ~USES_THIS;
 
-        final CompiledFunctions boundList = new CompiledFunctions(fn.getName());
+        final List<CompiledFunction> boundList = new LinkedList<>();
         final ScriptObject runtimeScope = fn.getScope();
         final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(runtimeScope), getGenericConstructor(runtimeScope));
         boundList.add(bind(bindTarget, fn, self, allArgs));
@@ -806,6 +874,6 @@ public abstract class ScriptFunctionData implements Serializable {
 
     private void readObject(final ObjectInputStream in) throws IOException, ClassNotFoundException {
         in.defaultReadObject();
-        code = new CompiledFunctions(name);
+        code = new LinkedList<>();
     }
 }

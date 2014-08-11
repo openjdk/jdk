@@ -136,16 +136,16 @@ public class AccessorProperty extends Property {
     }
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private transient MethodHandle primitiveGetter;
+    transient MethodHandle primitiveGetter;
 
     /** Seed setter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private transient MethodHandle primitiveSetter;
+    transient MethodHandle primitiveSetter;
 
     /** Seed getter for the Object version of this field */
-    private transient MethodHandle objectGetter;
+    transient MethodHandle objectGetter;
 
     /** Seed setter for the Object version of this field */
-    private transient MethodHandle objectSetter;
+    transient MethodHandle objectSetter;
 
     /**
      * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
@@ -185,10 +185,10 @@ public class AccessorProperty extends Property {
      * @param key    the property key
      * @param flags  the property flags
      * @param slot   spill slot
-     * @param objectGetter
-     * @param objectSetter
-     * @param primitiveGetter
-     * @param primitiveSetter
+     * @param primitiveGetter primitive getter
+     * @param primitiveSetter primitive setter
+     * @param objectGetter    object getter
+     * @param objectSetter    object setter
      */
     protected AccessorProperty(
             final String key,
@@ -255,7 +255,7 @@ public class AccessorProperty extends Property {
     }
 
     /**
-     * Normal ACCESS PROPERTY constructor given a structure glass.
+     * Normal ACCESS PROPERTY constructor given a structure class.
      * Constructor for dual field AccessorPropertys.
      *
      * @param key              property key
@@ -267,6 +267,7 @@ public class AccessorProperty extends Property {
         super(key, flags, slot);
 
         initGetterSetter(structure);
+        initializeType();
     }
 
     private void initGetterSetter(final Class<?> structure) {
@@ -291,8 +292,6 @@ public class AccessorProperty extends Property {
             objectSetter    = gs.objectSetters[slot];
             primitiveSetter = gs.primitiveSetters[slot];
         }
-
-        initializeType();
     }
 
     /**
@@ -412,8 +411,8 @@ public class AccessorProperty extends Property {
         }
      }
 
-     @Override
-     public long getLongValue(final ScriptObject self, final ScriptObject owner) {
+    @Override
+    public long getLongValue(final ScriptObject self, final ScriptObject owner) {
         try {
             return (long)getGetter(long.class).invokeExact((Object)self);
         } catch (final Error | RuntimeException e) {
@@ -531,12 +530,13 @@ public class AccessorProperty extends Property {
 
     @Override
     void initMethodHandles(final Class<?> structure) {
+        // sanity check for structure class
         if (!ScriptObject.class.isAssignableFrom(structure) || !StructureLoader.isStructureClass(structure.getName())) {
             throw new IllegalArgumentException();
         }
-        if (!isSpill()) {
-            initGetterSetter(structure);
-        }
+        // this method is overridden in SpillProperty
+        assert !isSpill();
+        initGetterSetter(structure);
     }
 
     @Override

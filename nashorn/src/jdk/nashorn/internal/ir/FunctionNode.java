@@ -30,7 +30,6 @@ import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import jdk.nashorn.internal.codegen.CompileUnit;
@@ -81,7 +80,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         LOWERED,
         /** program points have been assigned to unique locations */
         PROGRAM_POINTS_ASSIGNED,
-        /** any transformations of builtins have taken place, e.g. apply=>call */
+        /** any transformations of builtins have taken place, e.g. apply=&gt;call */
         BUILTINS_TRANSFORMED,
         /** method has been split */
         SPLIT,
@@ -149,9 +148,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     /** Function flags. */
     private final int flags;
-
-    /** //@ sourceURL or //# sourceURL for program function nodes */
-    private final String sourceURL;
 
     /** Line number of function start */
     private final int lineNumber;
@@ -269,7 +265,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @param parameters parameter list
      * @param kind       kind of function as in {@link FunctionNode.Kind}
      * @param flags      initial flags
-     * @param sourceURL  sourceURL specified in script (optional)
      */
     public FunctionNode(
         final Source source,
@@ -283,8 +278,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final String name,
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
-        final int flags,
-        final String sourceURL) {
+        final int flags) {
         super(token, finish);
 
         this.source           = source;
@@ -300,7 +294,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.compilationState = EnumSet.of(CompilationState.INITIALIZED);
         this.declaredSymbols  = new HashSet<>();
         this.flags            = flags;
-        this.sourceURL        = sourceURL;
         this.compileUnit      = null;
         this.body             = null;
         this.thisProperties   = 0;
@@ -311,7 +304,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final FunctionNode functionNode,
         final long lastToken,
         final int flags,
-        final String sourceURL,
         final String name,
         final Type returnType,
         final CompileUnit compileUnit,
@@ -324,7 +316,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
         this.lineNumber       = functionNode.lineNumber;
         this.flags            = flags;
-        this.sourceURL        = sourceURL;
         this.name             = name;
         this.returnType       = returnType;
         this.compileUnit      = compileUnit;
@@ -384,56 +375,18 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return name for the script source
      */
     public String getSourceName() {
-        return getSourceName(source, sourceURL);
+        return getSourceName(source);
     }
 
     /**
      * Static source name getter
      *
-     * @param source
-     * @param sourceURL
+     * @param source the source
      * @return source name
      */
-    public static String getSourceName(final Source source, final String sourceURL) {
-        return sourceURL != null ? sourceURL : source.getName();
-    }
-
-    /**
-     * get the sourceURL
-     * @return the sourceURL
-     */
-    public String getSourceURL() {
-        return sourceURL;
-    }
-
-    /**
-     * Set the sourceURL
-     *
-     * @param lc lexical context
-     * @param newSourceURL source url string to set
-     * @return function node or a new one if state was changed
-     */
-    public FunctionNode setSourceURL(final LexicalContext lc, final String newSourceURL) {
-        if (Objects.equals(sourceURL, newSourceURL)) {
-            return this;
-        }
-
-        return Node.replaceInLexicalContext(
-                lc,
-                this,
-                new FunctionNode(
-                        this,
-                        lastToken,
-                        flags,
-                        newSourceURL,
-                        name,
-                        returnType,
-                        compileUnit,
-                        compilationState,
-                        body,
-                        parameters,
-                        thisProperties,
-                        rootClass));
+    public static String getSourceName(final Source source) {
+        final String explicitURL = source.getExplicitURL();
+        return explicitURL != null ? explicitURL : source.getName();
     }
 
     /**
@@ -469,11 +422,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Check whether the state of this FunctionNode contains a given compilation<
+     * Check whether the state of this FunctionNode contains a given compilation
      * state.
      *
      * A node can be in many states at once, e.g. both lowered and initialized.
-     * To check for an exact state, use {FunctionNode{@link #hasState(EnumSet)}
+     * To check for an exact state, use {@link #hasState(EnumSet)}
      *
      * @param state state to check for
      * @return true if state is present in the total compilation state of this FunctionNode
@@ -504,7 +457,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -576,7 +528,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -733,7 +684,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                             (body.needsScope() ?
                                     FunctionNode.HAS_SCOPE_BLOCK :
                                     0),
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -829,7 +779,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -890,7 +839,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -926,7 +874,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -992,7 +939,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -1071,7 +1017,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 this,
                 lastToken,
                 flags,
-                sourceURL,
                 name,
                 type,
                 compileUnit,
@@ -1118,7 +1063,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -1174,7 +1118,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,

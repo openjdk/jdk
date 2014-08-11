@@ -48,10 +48,15 @@ import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
 
+import java.io.DataInput;
+import java.io.DataOutput;
+import java.io.IOException;
 import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Map;
+import java.util.TreeMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.org.objectweb.asm.Handle;
@@ -204,6 +209,20 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     /**
+     * Return a character representing {@code type} in a method signature.
+     *
+     * @param type parameter type
+     * @return descriptor character
+     */
+    public static char getShortSignatureDescriptor(final Type type) {
+        // Use 'Z' for boolean parameters as we need to distinguish from int
+        if (type instanceof BooleanType) {
+            return 'Z';
+        }
+        return type.getBytecodeStackType();
+    }
+
+    /**
      * Return the type for an internal type, package private - do not use
      * outside code gen
      *
@@ -273,6 +292,64 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
             types[i] = Type.typeFor(itypes[i]);
         }
         return types;
+    }
+
+    /**
+     * Write a map of {@code int} to {@code Type} to an output stream. This is used to store deoptimization state.
+     *
+     * @param typeMap the type map
+     * @param output data output
+     * @throws IOException
+     */
+    public static void writeTypeMap(Map<Integer, Type> typeMap, final DataOutput output) throws IOException {
+        if (typeMap == null) {
+            output.writeInt(0);
+        } else {
+            output.writeInt(typeMap.size());
+            for(Map.Entry<Integer, Type> e: typeMap.entrySet()) {
+                output.writeInt(e.getKey());
+                final byte typeChar;
+                final Type type = e.getValue();
+                if(type == Type.OBJECT) {
+                    typeChar = 'L';
+                } else if (type == Type.NUMBER) {
+                    typeChar = 'D';
+                } else if (type == Type.LONG) {
+                    typeChar = 'J';
+                } else {
+                    throw new AssertionError();
+                }
+                output.writeByte(typeChar);
+            }
+        }
+    }
+
+    /**
+     * Read a map of {@code int} to {@code Type} from an input stream. This is used to store deoptimization state.
+     *
+     * @param input data input
+     * @return type map
+     * @throws IOException
+     */
+    public static Map<Integer, Type> readTypeMap(DataInput input) throws IOException {
+        final int size = input.readInt();
+        if (size == 0) {
+            return null;
+        }
+        final Map<Integer, Type> map = new TreeMap<>();
+        for(int i = 0; i < size; ++i) {
+            final int pp = input.readInt();
+            final int typeChar = input.readByte();
+            final Type type;
+            switch(typeChar) {
+                case 'L': type = Type.OBJECT; break;
+                case 'D': type = Type.NUMBER; break;
+                case 'J': type = Type.LONG; break;
+                default: throw new AssertionError();
+            }
+            map.put(pp, type);
+        }
+        return map;
     }
 
     static jdk.internal.org.objectweb.asm.Type getInternalType(final String className) {
