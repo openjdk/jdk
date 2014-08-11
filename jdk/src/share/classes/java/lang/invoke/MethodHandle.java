@@ -679,7 +679,7 @@ public abstract class MethodHandle {
      * This method provides the crucial behavioral difference between
      * {@link #invokeExact invokeExact} and plain, inexact {@link #invoke invoke}.
      * The two methods
-     * perform the same steps when the caller's type descriptor exactly m atches
+     * perform the same steps when the caller's type descriptor exactly matches
      * the callee's, but when the types differ, plain {@link #invoke invoke}
      * also calls {@code asType} (or some internal equivalent) in order
      * to match up the caller's and callee's types.
