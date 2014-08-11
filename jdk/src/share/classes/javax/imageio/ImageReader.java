@@ -2806,7 +2806,7 @@ public abstract class ImageReader {
      * @param imageTypes an <code>Iterator</code> of
      * <code>ImageTypeSpecifier</code>s indicating the legal image
      * types, with the default first.
-     * @param width the true width of the image or tile begin decoded.
+     * @param width the true width of the image or tile being decoded.
      * @param height the true width of the image or tile being decoded.
      *
      * @return the <code>BufferedImage</code> to which decoded pixel
