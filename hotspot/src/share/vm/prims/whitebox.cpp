@@ -597,6 +597,15 @@ WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
+WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
+  uintx result;
+  if (GetVMFlag <size_t> (thread, env, name, &result, &CommandLineFlags::size_tAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
   if (GetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAt)) {
@@ -635,6 +644,11 @@ WB_END
 WB_ENTRY(void, WB_SetUint64VMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
   uint64_t result = value;
   SetVMFlag <uint64_t> (thread, env, name, &result, &CommandLineFlags::uint64_tAtPut);
+WB_END
+
+WB_ENTRY(void, WB_SetSizeTVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  size_t result = value;
+  SetVMFlag <size_t> (thread, env, name, &result, &CommandLineFlags::size_tAtPut);
 WB_END
 
 WB_ENTRY(void, WB_SetDoubleVMFlag(JNIEnv* env, jobject o, jstring name, jdouble value))
@@ -880,6 +894,7 @@ static JNINativeMethod methods[] = {
   {CC"setIntxVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntxVMFlag},
   {CC"setUintxVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintxVMFlag},
   {CC"setUint64VMFlag",    CC"(Ljava/lang/String;J)V",(void*)&WB_SetUint64VMFlag},
+  {CC"setSizeTVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetSizeTVMFlag},
   {CC"setDoubleVMFlag",    CC"(Ljava/lang/String;D)V",(void*)&WB_SetDoubleVMFlag},
   {CC"setStringVMFlag",    CC"(Ljava/lang/String;Ljava/lang/String;)V",
                                                       (void*)&WB_SetStringVMFlag},
@@ -891,6 +906,8 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetUintxVMFlag},
   {CC"getUint64VMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Long;",
                                                       (void*)&WB_GetUint64VMFlag},
+  {CC"getSizeTVMFlag",     CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetSizeTVMFlag},
   {CC"getDoubleVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Double;",
                                                       (void*)&WB_GetDoubleVMFlag},
   {CC"getStringVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/String;",
