@@ -67,7 +67,7 @@ public final class DialogTypeSelection extends EnumSyntax
         COMMON = new DialogTypeSelection(1);
 
     /**
-     * Construct a new dialog type selection enumeration value with the
+     * Constructs a new dialog type selection enumeration value with the
      * given integer value.
      *
      * @param  value  Integer value.
@@ -101,7 +101,7 @@ public final class DialogTypeSelection extends EnumSyntax
 
 
    /**
-     * Get the printing attribute class which is to be used as the "category"
+     * Gets the printing attribute class which is to be used as the "category"
      * for this printing attribute value.
      * <P>
      * For class DialogTypeSelection the category is class
@@ -116,7 +116,7 @@ public final class DialogTypeSelection extends EnumSyntax
 
 
     /**
-     * Get the name of the category of which this attribute value is an
+     * Gets the name of the category of which this attribute value is an
      * instance.
      * <P>
      * For class DialogTypeSelection the category name is
