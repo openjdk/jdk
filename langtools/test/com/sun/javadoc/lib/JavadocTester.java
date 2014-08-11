@@ -38,6 +38,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -290,6 +291,7 @@ public abstract class JavadocTester {
                 break;
             }
         }
+        out.println("args: " + Arrays.toString(args));
 //        log.setOutDir(outputDir);
 
         outputDirectoryCheck.check(outputDir);
