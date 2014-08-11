@@ -1063,4 +1063,96 @@ public:
   virtual bool        guaranteed_safepoint()  { return false; }
 };
 
+class GraphKit;
+
+class ArrayCopyNode : public CallNode {
+private:
+
+  // What kind of arraycopy variant is this?
+  enum {
+    ArrayCopy,       // System.arraycopy()
+    ArrayCopyNoTest, // System.arraycopy(), all arguments validated
+    CloneBasic,      // A clone that can be copied by 64 bit chunks
+    CloneOop,        // An oop array clone
+    CopyOf,          // Arrays.copyOf()
+    CopyOfRange      // Arrays.copyOfRange()
+  } _kind;
+
+#ifndef PRODUCT
+  static const char* _kind_names[CopyOfRange+1];
+#endif
+  // Is the alloc obtained with
+  // AllocateArrayNode::Ideal_array_allocation() tighly coupled
+  // (arraycopy follows immediately the allocation)?
+  // We cache the result of LibraryCallKit::tightly_coupled_allocation
+  // here because it's much easier to find whether there's a tightly
+  // couple allocation at parse time than at macro expansion time. At
+  // macro expansion time, for every use of the allocation node we
+  // would need to figure out whether it happens after the arraycopy (and
+  // can be ignored) or between the allocation and the arraycopy. At
+  // parse time, it's straightforward because whatever happens after
+  // the arraycopy is not parsed yet so doesn't exist when
+  // LibraryCallKit::tightly_coupled_allocation() is called.
+  bool _alloc_tightly_coupled;
+
+  static const TypeFunc* arraycopy_type() {
+    const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
+    fields[Src]     = TypeInstPtr::BOTTOM;
+    fields[SrcPos]  = TypeInt::INT;
+    fields[Dest]    = TypeInstPtr::BOTTOM;
+    fields[DestPos] = TypeInt::INT;
+    fields[Length]  = TypeInt::INT;
+    const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
+
+    // create result type (range)
+    fields = TypeTuple::fields(0);
+
+    const TypeTuple *range = TypeTuple::make(TypeFunc::Parms+0, fields);
+
+    return TypeFunc::make(domain, range);
+  }
+
+  ArrayCopyNode(Compile* C, bool alloc_tightly_coupled);
+
+public:
+
+  enum {
+    Src   = TypeFunc::Parms,
+    SrcPos,
+    Dest,
+    DestPos,
+    Length,
+    ParmLimit
+  };
+
+  static ArrayCopyNode* make(GraphKit* kit, bool may_throw,
+                             Node* src, Node* src_offset, Node* dest, Node* dest_offset, Node* length,
+                             bool alloc_tightly_coupled);
+
+  void connect_outputs(GraphKit* kit);
+
+  bool is_arraycopy()         const { return _kind == ArrayCopy; }
+  bool is_arraycopy_notest()  const { return _kind == ArrayCopyNoTest; }
+  bool is_clonebasic()        const { return _kind == CloneBasic; }
+  bool is_cloneoop()          const { return _kind == CloneOop; }
+  bool is_copyof()            const { return _kind == CopyOf; }
+  bool is_copyofrange()       const { return _kind == CopyOfRange; }
+
+  void set_arraycopy()         { _kind = ArrayCopy; }
+  void set_arraycopy_notest()  { _kind = ArrayCopyNoTest; }
+  void set_clonebasic()        { _kind = CloneBasic; }
+  void set_cloneoop()          { _kind = CloneOop; }
+  void set_copyof()            { _kind = CopyOf; }
+  void set_copyofrange()       { _kind = CopyOfRange; }
+
+  virtual int Opcode() const;
+  virtual uint size_of() const; // Size is bigger
+  virtual bool guaranteed_safepoint()  { return false; }
+
+  bool is_alloc_tightly_coupled() const { return _alloc_tightly_coupled; }
+
+#ifndef PRODUCT
+  virtual void dump_spec(outputStream *st) const;
+#endif
+};
 #endif // SHARE_VM_OPTO_CALLNODE_HPP

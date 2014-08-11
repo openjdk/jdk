@@ -3787,6 +3787,56 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   }
 }
 
+//----------------------------static_subtype_check-----------------------------
+// Shortcut important common cases when superklass is exact:
+// (0) superklass is java.lang.Object (can occur in reflective code)
+// (1) subklass is already limited to a subtype of superklass => always ok
+// (2) subklass does not overlap with superklass => always fail
+// (3) superklass has NO subtypes and we can check with a simple compare.
+int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
+  if (StressReflectiveCode) {
+    return SSC_full_test;       // Let caller generate the general case.
+  }
+
+  if (superk == env()->Object_klass()) {
+    return SSC_always_true;     // (0) this test cannot fail
+  }
+
+  ciType* superelem = superk;
+  if (superelem->is_array_klass())
+    superelem = superelem->as_array_klass()->base_element_type();
+
+  if (!subk->is_interface()) {  // cannot trust static interface types yet
+    if (subk->is_subtype_of(superk)) {
+      return SSC_always_true;   // (1) false path dead; no dynamic test needed
+    }
+    if (!(superelem->is_klass() && superelem->as_klass()->is_interface()) &&
+        !superk->is_subtype_of(subk)) {
+      return SSC_always_false;
+    }
+  }
+
+  // If casting to an instance klass, it must have no subtypes
+  if (superk->is_interface()) {
+    // Cannot trust interfaces yet.
+    // %%% S.B. superk->nof_implementors() == 1
+  } else if (superelem->is_instance_klass()) {
+    ciInstanceKlass* ik = superelem->as_instance_klass();
+    if (!ik->has_subklass() && !ik->is_interface()) {
+      if (!ik->is_final()) {
+        // Add a dependency if there is a chance of a later subclass.
+        dependencies()->assert_leaf_type(ik);
+      }
+      return SSC_easy_test;     // (3) caller can do a simple ptr comparison
+    }
+  } else {
+    // A primitive array type has no subtypes.
+    return SSC_easy_test;       // (3) caller can do a simple ptr comparison
+  }
+
+  return SSC_full_test;
+}
+
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transfered into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
