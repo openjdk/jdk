@@ -30,6 +30,7 @@
  * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
  * @build TestRTMTotalCountIncrRate
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI TestRTMTotalCountIncrRate
  */

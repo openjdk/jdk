@@ -35,6 +35,7 @@ import java.net.URLClassLoader;
  * @build TestMethodUnloading
  * @build WorkerClass
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:-BackgroundCompilation -XX:-UseCompressedOops -XX:+UseParallelGC -XX:CompileOnly=TestMethodUnloading::doWork TestMethodUnloading
  */
 public class TestMethodUnloading {
