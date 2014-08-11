@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@
  * @summary Sanity check the output of NMT
  * @library /testlibrary /testlibrary/whitebox
  * @build SummarySanityCheck
+ * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
@@ -43,11 +44,6 @@ public class SummarySanityCheck {
   public static void main(String args[]) throws Exception {
     // Grab my own PID
     String pid = Integer.toString(ProcessTools.getProcessId());
-
-    // Use WB API to ensure that all data has been merged before we continue
-    if (!WhiteBox.getWhiteBox().NMTWaitForDataMerge()) {
-      throw new Exception("Call to WB API NMTWaitForDataMerge() failed");
-    }
 
     ProcessBuilder pb = new ProcessBuilder();
 
@@ -69,13 +65,13 @@ public class SummarySanityCheck {
     // Match '- <mtType> (reserved=<reserved>KB, committed=<committed>KB)
     Pattern mtTypePattern = Pattern.compile("-\\s+(?<typename>[\\w\\s]+)\\(reserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB\\)");
     // Match 'Total: reserved=<reserved>KB, committed=<committed>KB'
-    Pattern totalMemoryPattern = Pattern.compile("Total\\:\\s\\sreserved=(?<reserved>\\d+)KB,\\s\\scommitted=(?<committed>\\d+)KB");
+    Pattern totalMemoryPattern = Pattern.compile("Total\\:\\sreserved=(?<reserved>\\d+)KB,\\scommitted=(?<committed>\\d+)KB");
 
     for (int i = 0; i < lines.length; i++) {
       if (lines[i].startsWith("Total")) {
         Matcher totalMemoryMatcher = totalMemoryPattern.matcher(lines[i]);
 
-        if (totalMemoryMatcher.matches() && totalMemoryMatcher.groupCount() == 2) {
+        if (totalMemoryMatcher.matches()) {
           totalCommitted = Integer.parseInt(totalMemoryMatcher.group("committed"));
           totalReserved = Integer.parseInt(totalMemoryMatcher.group("reserved"));
         } else {

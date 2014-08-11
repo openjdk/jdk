@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@
  * @key nmt regression
  * @library /testlibrary /testlibrary/whitebox
  * @build ReleaseCommittedMemory
+ * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ReleaseCommittedMemory
  */
@@ -44,7 +45,6 @@ public class ReleaseCommittedMemory {
     addr = wb.NMTReserveMemory(reserveSize);
     wb.NMTCommitMemory(addr, 128*1024);
     wb.NMTReleaseMemory(addr, reserveSize);
-    wb.NMTWaitForDataMerge();
   }
 }
 
