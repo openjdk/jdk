@@ -300,6 +300,7 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseNewReflection",              JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "AutoShutdownNMT",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -2388,7 +2389,7 @@ bool Arguments::check_vm_args_consistency() {
 
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
-    if (MemTracker::tracking_level() == MemTracker::NMT_off) {
+    if (MemTracker::tracking_level() == NMT_off) {
 #endif // INCLUDE_NMT
       warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
       PrintNMTStatistics = false;
@@ -3598,15 +3599,24 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
-    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
 #if INCLUDE_NMT
-      MemTracker::init_tracking_options(tail);
-#else
-      jio_fprintf(defaultStream::error_stream(),
-        "Native Memory Tracking is not supported in this VM\n");
-      return JNI_ERR;
-#endif
+    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+      // The launcher did not setup nmt environment variable properly.
+//      if (!MemTracker::check_launcher_nmt_support(tail)) {
+//        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
+//      }
+
+      // Verify if nmt option is valid.
+      if (MemTracker::verify_nmt_option()) {
+        // Late initialization, still in single-threaded mode.
+        if (MemTracker::tracking_level() >= NMT_summary) {
+          MemTracker::init();
+        }
+      } else {
+        vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
+      }
     }
+#endif
 
 
 #ifndef PRODUCT

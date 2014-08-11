@@ -945,11 +945,6 @@ class CommandLineFlags {
   diagnostic(bool, PrintNMTStatistics, false,                               \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
-  diagnostic(bool, AutoShutdownNMT, true,                                   \
-          "Automatically shutdown native memory tracking under stress "     \
-          "situations. When set to false, native memory tracking tries to " \
-          "stay alive at the expense of JVM performance")                   \
-                                                                            \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to LogFile")                  \
                                                                             \
