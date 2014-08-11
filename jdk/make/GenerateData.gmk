@@ -53,6 +53,9 @@ GENDATA += $(GENDATA_HTML32DTD)
 include gendata/GendataBlacklistedCerts.gmk
 GENDATA += $(GENDATA_BLACKLISTED_CERTS)
 
+include gendata/GendataJavaSecurity.gmk
+GENDATA += $(GENDATA_JAVA_SECURITY)
+
 ##########################################################################################
 
 GENDATA_UNINAME := $(JDK_OUTPUTDIR)/classes/java/lang/uniName.dat

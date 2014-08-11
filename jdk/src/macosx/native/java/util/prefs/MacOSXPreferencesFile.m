@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -71,6 +71,8 @@ static void throwOutOfMemoryError(JNIEnv *env, const char *msg)
     static jclass exceptionClass = NULL;
     jclass c;
 
+    (*env)->ExceptionClear(env);  // If an exception is pending, clear it before
+                                  // calling FindClass() and/or ThrowNew().
     if (exceptionClass) {
         c = exceptionClass;
     } else {
@@ -534,8 +536,13 @@ Java_java_util_prefs_MacOSXPreferencesFile_addNode
 (JNIEnv *env, jobject klass, jobject jpath,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFDictionaryRef node = NULL;
@@ -579,8 +586,13 @@ Java_java_util_prefs_MacOSXPreferencesFile_removeNode
 (JNIEnv *env, jobject klass, jobject jpath,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFStringRef parentName;
@@ -647,9 +659,17 @@ Java_java_util_prefs_MacOSXPreferencesFile_addChildToNode
  jobject jname, jlong juser, jlong jhost)
 {
     // like addNode, but can put a three-level-deep dict into the root file
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef child = toCF(env, jchild);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef child = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        child = toCF(env, jchild);
+    }
+    if (child != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFMutableDictionaryRef parent;
@@ -693,9 +713,17 @@ Java_java_util_prefs_MacOSXPreferencesFile_removeChildFromNode
 (JNIEnv *env, jobject klass, jobject jpath, jobject jchild,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef child = toCF(env, jchild);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef child = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        child = toCF(env, jchild);
+    }
+    if (child != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFDictionaryRef constParent;
@@ -734,10 +762,21 @@ Java_java_util_prefs_MacOSXPreferencesFile_addKeyToNode
 (JNIEnv *env, jobject klass, jobject jpath, jobject jkey, jobject jvalue,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef key = toCF(env, jkey);
-    CFStringRef value = toCF(env, jvalue);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef key = NULL;
+    CFStringRef value = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        key = toCF(env, jkey);
+    }
+    if (key != NULL) {
+        value = toCF(env, jvalue);
+    }
+    if (value != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFMutableDictionaryRef node = NULL;
@@ -771,9 +810,17 @@ Java_java_util_prefs_MacOSXPreferencesFile_removeKeyFromNode
 (JNIEnv *env, jobject klass, jobject jpath, jobject jkey,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef key = toCF(env, jkey);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef key = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        key = toCF(env, jkey);
+    }
+    if (key != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFDictionaryRef constNode;
@@ -812,9 +859,17 @@ Java_java_util_prefs_MacOSXPreferencesFile_getKeyFromNode
 (JNIEnv *env, jobject klass, jobject jpath, jobject jkey,
  jobject jname, jlong juser, jlong jhost)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef key = toCF(env, jkey);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef key = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        key = toCF(env, jkey);
+    }
+    if (key != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFPropertyListRef value;
@@ -914,8 +969,13 @@ static jarray getStringsForNode(JNIEnv *env, jobject klass, jobject jpath,
                                 jobject jname, jlong juser, jlong jhost,
                                 Boolean allowSlash)
 {
-    CFStringRef path = toCF(env, jpath);
-    CFStringRef name = toCF(env, jname);
+    CFStringRef path = NULL;
+    CFStringRef name = NULL;
+
+    path = toCF(env, jpath);
+    if (path != NULL) {
+        name = toCF(env, jname);
+    }
     CFStringRef user = (CFStringRef)jlong_to_ptr(juser);
     CFStringRef host = (CFStringRef)jlong_to_ptr(jhost);
     CFDictionaryRef node;
