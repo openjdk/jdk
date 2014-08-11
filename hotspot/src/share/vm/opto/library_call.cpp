@@ -146,15 +146,10 @@ class LibraryCallKit : public GraphKit {
   Node* generate_negative_guard(Node* index, RegionNode* region,
                                 // resulting CastII of index:
                                 Node* *pos_index = NULL);
-  Node* generate_nonpositive_guard(Node* index, bool never_negative,
-                                   // resulting CastII of index:
-                                   Node* *pos_index = NULL);
   Node* generate_limit_guard(Node* offset, Node* subseq_length,
                              Node* array_length,
                              RegionNode* region);
   Node* generate_current_thread(Node* &tls_output);
-  address basictype2arraycopy(BasicType t, Node *src_offset, Node *dest_offset,
-                              bool disjoint_bases, const char* &name, bool dest_uninitialized);
   Node* load_mirror_from_klass(Node* klass);
   Node* load_klass_from_mirror_common(Node* mirror, bool never_see_null,
                                       RegionNode* region, int null_path,
@@ -264,47 +259,8 @@ class LibraryCallKit : public GraphKit {
 
   // Helper functions for inlining arraycopy
   bool inline_arraycopy();
-  void generate_arraycopy(const TypePtr* adr_type,
-                          BasicType basic_elem_type,
-                          Node* src,  Node* src_offset,
-                          Node* dest, Node* dest_offset,
-                          Node* copy_length,
-                          bool disjoint_bases = false,
-                          bool length_never_negative = false,
-                          RegionNode* slow_region = NULL);
   AllocateArrayNode* tightly_coupled_allocation(Node* ptr,
                                                 RegionNode* slow_region);
-  void generate_clear_array(const TypePtr* adr_type,
-                            Node* dest,
-                            BasicType basic_elem_type,
-                            Node* slice_off,
-                            Node* slice_len,
-                            Node* slice_end);
-  bool generate_block_arraycopy(const TypePtr* adr_type,
-                                BasicType basic_elem_type,
-                                AllocateNode* alloc,
-                                Node* src,  Node* src_offset,
-                                Node* dest, Node* dest_offset,
-                                Node* dest_size, bool dest_uninitialized);
-  void generate_slow_arraycopy(const TypePtr* adr_type,
-                               Node* src,  Node* src_offset,
-                               Node* dest, Node* dest_offset,
-                               Node* copy_length, bool dest_uninitialized);
-  Node* generate_checkcast_arraycopy(const TypePtr* adr_type,
-                                     Node* dest_elem_klass,
-                                     Node* src,  Node* src_offset,
-                                     Node* dest, Node* dest_offset,
-                                     Node* copy_length, bool dest_uninitialized);
-  Node* generate_generic_arraycopy(const TypePtr* adr_type,
-                                   Node* src,  Node* src_offset,
-                                   Node* dest, Node* dest_offset,
-                                   Node* copy_length, bool dest_uninitialized);
-  void generate_unchecked_arraycopy(const TypePtr* adr_type,
-                                    BasicType basic_elem_type,
-                                    bool disjoint_bases,
-                                    Node* src,  Node* src_offset,
-                                    Node* dest, Node* dest_offset,
-                                    Node* copy_length, bool dest_uninitialized);
   typedef enum { LS_xadd, LS_xchg, LS_cmpxchg } LoadStoreKind;
   bool inline_unsafe_load_store(BasicType type,  LoadStoreKind kind);
   bool inline_unsafe_ordered_store(BasicType type);
@@ -1047,25 +1003,6 @@ inline Node* LibraryCallKit::generate_negative_guard(Node* index, RegionNode* re
     (*pos_index) = _gvn.transform(ccast);
   }
   return is_neg;
-}
-
-inline Node* LibraryCallKit::generate_nonpositive_guard(Node* index, bool never_negative,
-                                                        Node* *pos_index) {
-  if (stopped())
-    return NULL;                // already stopped
-  if (_gvn.type(index)->higher_equal(TypeInt::POS1)) // [1,maxint]
-    return NULL;                // index is already adequately typed
-  Node* cmp_le = _gvn.transform(new CmpINode(index, intcon(0)));
-  BoolTest::mask le_or_eq = (never_negative ? BoolTest::eq : BoolTest::le);
-  Node* bol_le = _gvn.transform(new BoolNode(cmp_le, le_or_eq));
-  Node* is_notp = generate_guard(bol_le, NULL, PROB_MIN);
-  if (is_notp != NULL && pos_index != NULL) {
-    // Emulate effect of Parse::adjust_map_after_if.
-    Node* ccast = new CastIINode(index, TypeInt::POS1);
-    ccast->set_req(0, control());
-    (*pos_index) = _gvn.transform(ccast);
-  }
-  return is_notp;
 }
 
 // Make sure that 'position' is a valid limit index, in [0..length].
@@ -3928,13 +3865,18 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       // oop stores need checking.
       // Extreme case:  Arrays.copyOf((Integer[])x, 10, String[].class).
       // This will fail a store-check if x contains any non-nulls.
-      bool disjoint_bases = true;
-      // if start > orig_length then the length of the copy may be
-      // negative.
-      bool length_never_negative = !is_copyOfRange;
-      generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
-                         original, start, newcopy, intcon(0), moved,
-                         disjoint_bases, length_never_negative);
+
+      Node* alloc = tightly_coupled_allocation(newcopy, NULL);
+
+      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL);
+      if (!is_copyOfRange) {
+        ac->set_copyof();
+      } else {
+        ac->set_copyofrange();
+      }
+      Node* n = _gvn.transform(ac);
+      assert(n == ac, "cannot disappear");
+      ac->connect_outputs(this);
     }
   } // original reexecute is set back here
 
@@ -4445,10 +4387,12 @@ void LibraryCallKit::copy_to_clone(Node* obj, Node* alloc_obj, Node* obj_size, b
   countx = _gvn.transform(new URShiftXNode(countx, intcon(LogBytesPerLong) ));
 
   const TypePtr* raw_adr_type = TypeRawPtr::BOTTOM;
-  bool disjoint_bases = true;
-  generate_unchecked_arraycopy(raw_adr_type, T_LONG, disjoint_bases,
-                               src, NULL, dest, NULL, countx,
-                               /*dest_uninitialized*/true);
+
+  ArrayCopyNode* ac = ArrayCopyNode::make(this, false, src, NULL, dest, NULL, countx, false);
+  ac->set_clonebasic();
+  Node* n = _gvn.transform(ac);
+  assert(n == ac, "cannot disappear");
+  set_predefined_output_for_runtime_call(ac, ac->in(TypeFunc::Memory), raw_adr_type);
 
   // If necessary, emit some card marks afterwards.  (Non-arrays only.)
   if (card_mark) {
@@ -4557,12 +4501,13 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
           PreserveJVMState pjvms2(this);
           set_control(is_obja);
           // Generate a direct call to the right arraycopy function(s).
-          bool disjoint_bases = true;
-          bool length_never_negative = true;
-          generate_arraycopy(TypeAryPtr::OOPS, T_OBJECT,
-                             obj, intcon(0), alloc_obj, intcon(0),
-                             obj_length,
-                             disjoint_bases, length_never_negative);
+          Node* alloc = tightly_coupled_allocation(alloc_obj, NULL);
+          ArrayCopyNode* ac = ArrayCopyNode::make(this, true, obj, intcon(0), alloc_obj, intcon(0), obj_length, alloc != NULL);
+          ac->set_cloneoop();
+          Node* n = _gvn.transform(ac);
+          assert(n == ac, "cannot disappear");
+          ac->connect_outputs(this);
+
           result_reg->init_req(_objArray_path, control());
           result_val->init_req(_objArray_path, alloc_obj);
           result_i_o ->set_req(_objArray_path, i_o());
@@ -4656,42 +4601,6 @@ bool LibraryCallKit::inline_native_clone(bool is_virtual) {
   return true;
 }
 
-//------------------------------basictype2arraycopy----------------------------
-address LibraryCallKit::basictype2arraycopy(BasicType t,
-                                            Node* src_offset,
-                                            Node* dest_offset,
-                                            bool disjoint_bases,
-                                            const char* &name,
-                                            bool dest_uninitialized) {
-  const TypeInt* src_offset_inttype  = gvn().find_int_type(src_offset);;
-  const TypeInt* dest_offset_inttype = gvn().find_int_type(dest_offset);;
-
-  bool aligned = false;
-  bool disjoint = disjoint_bases;
-
-  // if the offsets are the same, we can treat the memory regions as
-  // disjoint, because either the memory regions are in different arrays,
-  // or they are identical (which we can treat as disjoint.)  We can also
-  // treat a copy with a destination index  less that the source index
-  // as disjoint since a low->high copy will work correctly in this case.
-  if (src_offset_inttype != NULL && src_offset_inttype->is_con() &&
-      dest_offset_inttype != NULL && dest_offset_inttype->is_con()) {
-    // both indices are constants
-    int s_offs = src_offset_inttype->get_con();
-    int d_offs = dest_offset_inttype->get_con();
-    int element_size = type2aelembytes(t);
-    aligned = ((arrayOopDesc::base_offset_in_bytes(t) + s_offs * element_size) % HeapWordSize == 0) &&
-              ((arrayOopDesc::base_offset_in_bytes(t) + d_offs * element_size) % HeapWordSize == 0);
-    if (s_offs >= d_offs)  disjoint = true;
-  } else if (src_offset == dest_offset && src_offset != NULL) {
-    // This can occur if the offsets are identical non-constants.
-    disjoint = true;
-  }
-
-  return StubRoutines::select_arraycopy_function(t, aligned, disjoint, name, dest_uninitialized);
-}
-
-
 //------------------------------inline_arraycopy-----------------------
 // public static native void java.lang.System.arraycopy(Object src,  int  srcPos,
 //                                                      Object dest, int destPos,
@@ -4704,13 +4613,26 @@ bool LibraryCallKit::inline_arraycopy() {
   Node* dest_offset = argument(3);  // type: int
   Node* length      = argument(4);  // type: int
 
-  // Compile time checks.  If any of these checks cannot be verified at compile time,
-  // we do not make a fast path for this call.  Instead, we let the call remain as it
-  // is.  The checks we choose to mandate at compile time are:
-  //
+  // The following tests must be performed
   // (1) src and dest are arrays.
-  const Type* src_type  = src->Value(&_gvn);
-  const Type* dest_type = dest->Value(&_gvn);
+  // (2) src and dest arrays must have elements of the same BasicType
+  // (3) src and dest must not be null.
+  // (4) src_offset must not be negative.
+  // (5) dest_offset must not be negative.
+  // (6) length must not be negative.
+  // (7) src_offset + length must not exceed length of src.
+  // (8) dest_offset + length must not exceed length of dest.
+  // (9) each element of an oop array must be assignable
+
+  // (3) src and dest must not be null.
+  // always do this here because we need the JVM state for uncommon traps
+  src  = null_check(src,  T_ARRAY);
+  dest = null_check(dest, T_ARRAY);
+
+  bool notest = false;
+
+  const Type* src_type  = _gvn.type(src);
+  const Type* dest_type = _gvn.type(dest);
   const TypeAryPtr* top_src  = src_type->isa_aryptr();
   const TypeAryPtr* top_dest = dest_type->isa_aryptr();
 
@@ -4768,556 +4690,114 @@ bool LibraryCallKit::inline_arraycopy() {
     }
   }
 
-  if (!has_src || !has_dest) {
-    // Conservatively insert a memory barrier on all memory slices.
-    // Do not let writes into the source float below the arraycopy.
-    insert_mem_bar(Op_MemBarCPUOrder);
+  if (has_src && has_dest) {
+    BasicType src_elem  = top_src->klass()->as_array_klass()->element_type()->basic_type();
+    BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
+    if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
+    if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
 
-    // Call StubRoutines::generic_arraycopy stub.
-    generate_arraycopy(TypeRawPtr::BOTTOM, T_CONFLICT,
-                       src, src_offset, dest, dest_offset, length);
-
-    // Do not let reads from the destination float above the arraycopy.
-    // Since we cannot type the arrays, we don't know which slices
-    // might be affected.  We could restrict this barrier only to those
-    // memory slices which pertain to array elements--but don't bother.
-    if (!InsertMemBarAfterArraycopy)
-      // (If InsertMemBarAfterArraycopy, there is already one in place.)
-      insert_mem_bar(Op_MemBarCPUOrder);
-    return true;
-  }
-
-  // (2) src and dest arrays must have elements of the same BasicType
-  // Figure out the size and type of the elements we will be copying.
-  BasicType src_elem  =  top_src->klass()->as_array_klass()->element_type()->basic_type();
-  BasicType dest_elem = top_dest->klass()->as_array_klass()->element_type()->basic_type();
-  if (src_elem  == T_ARRAY)  src_elem  = T_OBJECT;
-  if (dest_elem == T_ARRAY)  dest_elem = T_OBJECT;
-
-  if (src_elem != dest_elem || dest_elem == T_VOID) {
-    // The component types are not the same or are not recognized.  Punt.
-    // (But, avoid the native method wrapper to JVM_ArrayCopy.)
-    generate_slow_arraycopy(TypePtr::BOTTOM,
-                            src, src_offset, dest, dest_offset, length,
-                            /*dest_uninitialized*/false);
-    return true;
-  }
-
-  if (src_elem == T_OBJECT) {
-    // If both arrays are object arrays then having the exact types
-    // for both will remove the need for a subtype check at runtime
-    // before the call and may make it possible to pick a faster copy
-    // routine (without a subtype check on every element)
-    // Do we have the exact type of src?
-    bool could_have_src = src_spec;
-    // Do we have the exact type of dest?
-    bool could_have_dest = dest_spec;
-    ciKlass* src_k = top_src->klass();
-    ciKlass* dest_k = top_dest->klass();
-    if (!src_spec) {
-      src_k = src_type->speculative_type_not_null();
-      if (src_k != NULL && src_k->is_array_klass()) {
+    if (src_elem == dest_elem && src_elem == T_OBJECT) {
+      // If both arrays are object arrays then having the exact types
+      // for both will remove the need for a subtype check at runtime
+      // before the call and may make it possible to pick a faster copy
+      // routine (without a subtype check on every element)
+      // Do we have the exact type of src?
+      bool could_have_src = src_spec;
+      // Do we have the exact type of dest?
+      bool could_have_dest = dest_spec;
+      ciKlass* src_k = top_src->klass();
+      ciKlass* dest_k = top_dest->klass();
+      if (!src_spec) {
+        src_k = src_type->speculative_type_not_null();
+        if (src_k != NULL && src_k->is_array_klass()) {
           could_have_src = true;
-      }
-    }
-    if (!dest_spec) {
-      dest_k = dest_type->speculative_type_not_null();
-      if (dest_k != NULL && dest_k->is_array_klass()) {
-        could_have_dest = true;
-      }
-    }
-    if (could_have_src && could_have_dest) {
-      // If we can have both exact types, emit the missing guards
-      if (could_have_src && !src_spec) {
-        src = maybe_cast_profiled_obj(src, src_k);
-      }
-      if (could_have_dest && !dest_spec) {
-        dest = maybe_cast_profiled_obj(dest, dest_k);
-      }
-    }
-  }
-
-  //---------------------------------------------------------------------------
-  // We will make a fast path for this call to arraycopy.
-
-  // We have the following tests left to perform:
-  //
-  // (3) src and dest must not be null.
-  // (4) src_offset must not be negative.
-  // (5) dest_offset must not be negative.
-  // (6) length must not be negative.
-  // (7) src_offset + length must not exceed length of src.
-  // (8) dest_offset + length must not exceed length of dest.
-  // (9) each element of an oop array must be assignable
-
-  RegionNode* slow_region = new RegionNode(1);
-  record_for_igvn(slow_region);
-
-  // (3) operands must not be null
-  // We currently perform our null checks with the null_check routine.
-  // This means that the null exceptions will be reported in the caller
-  // rather than (correctly) reported inside of the native arraycopy call.
-  // This should be corrected, given time.  We do our null check with the
-  // stack pointer restored.
-  src  = null_check(src,  T_ARRAY);
-  dest = null_check(dest, T_ARRAY);
-
-  // (4) src_offset must not be negative.
-  generate_negative_guard(src_offset, slow_region);
-
-  // (5) dest_offset must not be negative.
-  generate_negative_guard(dest_offset, slow_region);
-
-  // (6) length must not be negative (moved to generate_arraycopy()).
-  // generate_negative_guard(length, slow_region);
-
-  // (7) src_offset + length must not exceed length of src.
-  generate_limit_guard(src_offset, length,
-                       load_array_length(src),
-                       slow_region);
-
-  // (8) dest_offset + length must not exceed length of dest.
-  generate_limit_guard(dest_offset, length,
-                       load_array_length(dest),
-                       slow_region);
-
-  // (9) each element of an oop array must be assignable
-  // The generate_arraycopy subroutine checks this.
-
-  // This is where the memory effects are placed:
-  const TypePtr* adr_type = TypeAryPtr::get_array_body_type(dest_elem);
-  generate_arraycopy(adr_type, dest_elem,
-                     src, src_offset, dest, dest_offset, length,
-                     false, false, slow_region);
-
-  return true;
-}
-
-//-----------------------------generate_arraycopy----------------------
-// Generate an optimized call to arraycopy.
-// Caller must guard against non-arrays.
-// Caller must determine a common array basic-type for both arrays.
-// Caller must validate offsets against array bounds.
-// The slow_region has already collected guard failure paths
-// (such as out of bounds length or non-conformable array types).
-// The generated code has this shape, in general:
-//
-//     if (length == 0)  return   // via zero_path
-//     slowval = -1
-//     if (types unknown) {
-//       slowval = call generic copy loop
-//       if (slowval == 0)  return  // via checked_path
-//     } else if (indexes in bounds) {
-//       if ((is object array) && !(array type check)) {
-//         slowval = call checked copy loop
-//         if (slowval == 0)  return  // via checked_path
-//       } else {
-//         call bulk copy loop
-//         return  // via fast_path
-//       }
-//     }
-//     // adjust params for remaining work:
-//     if (slowval != -1) {
-//       n = -1^slowval; src_offset += n; dest_offset += n; length -= n
-//     }
-//   slow_region:
-//     call slow arraycopy(src, src_offset, dest, dest_offset, length)
-//     return  // via slow_call_path
-//
-// This routine is used from several intrinsics:  System.arraycopy,
-// Object.clone (the array subcase), and Arrays.copyOf[Range].
-//
-void
-LibraryCallKit::generate_arraycopy(const TypePtr* adr_type,
-                                   BasicType basic_elem_type,
-                                   Node* src,  Node* src_offset,
-                                   Node* dest, Node* dest_offset,
-                                   Node* copy_length,
-                                   bool disjoint_bases,
-                                   bool length_never_negative,
-                                   RegionNode* slow_region) {
-
-  if (slow_region == NULL) {
-    slow_region = new RegionNode(1);
-    record_for_igvn(slow_region);
-  }
-
-  Node* original_dest      = dest;
-  AllocateArrayNode* alloc = NULL;  // used for zeroing, if needed
-  bool  dest_uninitialized = false;
-
-  // See if this is the initialization of a newly-allocated array.
-  // If so, we will take responsibility here for initializing it to zero.
-  // (Note:  Because tightly_coupled_allocation performs checks on the
-  // out-edges of the dest, we need to avoid making derived pointers
-  // from it until we have checked its uses.)
-  if (ReduceBulkZeroing
-      && !ZeroTLAB              // pointless if already zeroed
-      && basic_elem_type != T_CONFLICT // avoid corner case
-      && !src->eqv_uncast(dest)
-      && ((alloc = tightly_coupled_allocation(dest, slow_region))
-          != NULL)
-      && _gvn.find_int_con(alloc->in(AllocateNode::ALength), 1) > 0
-      && alloc->maybe_set_complete(&_gvn)) {
-    // "You break it, you buy it."
-    InitializeNode* init = alloc->initialization();
-    assert(init->is_complete(), "we just did this");
-    init->set_complete_with_arraycopy();
-    assert(dest->is_CheckCastPP(), "sanity");
-    assert(dest->in(0)->in(0) == init, "dest pinned");
-    adr_type = TypeRawPtr::BOTTOM;  // all initializations are into raw memory
-    // From this point on, every exit path is responsible for
-    // initializing any non-copied parts of the object to zero.
-    // Also, if this flag is set we make sure that arraycopy interacts properly
-    // with G1, eliding pre-barriers. See CR 6627983.
-    dest_uninitialized = true;
-  } else {
-    // No zeroing elimination here.
-    alloc             = NULL;
-    //original_dest   = dest;
-    //dest_uninitialized = false;
-  }
-
-  // Results are placed here:
-  enum { fast_path        = 1,  // normal void-returning assembly stub
-         checked_path     = 2,  // special assembly stub with cleanup
-         slow_call_path   = 3,  // something went wrong; call the VM
-         zero_path        = 4,  // bypass when length of copy is zero
-         bcopy_path       = 5,  // copy primitive array by 64-bit blocks
-         PATH_LIMIT       = 6
-  };
-  RegionNode* result_region = new RegionNode(PATH_LIMIT);
-  PhiNode*    result_i_o    = new PhiNode(result_region, Type::ABIO);
-  PhiNode*    result_memory = new PhiNode(result_region, Type::MEMORY, adr_type);
-  record_for_igvn(result_region);
-  _gvn.set_type_bottom(result_i_o);
-  _gvn.set_type_bottom(result_memory);
-  assert(adr_type != TypePtr::BOTTOM, "must be RawMem or a T[] slice");
-
-  // The slow_control path:
-  Node* slow_control;
-  Node* slow_i_o = i_o();
-  Node* slow_mem = memory(adr_type);
-  debug_only(slow_control = (Node*) badAddress);
-
-  // Checked control path:
-  Node* checked_control = top();
-  Node* checked_mem     = NULL;
-  Node* checked_i_o     = NULL;
-  Node* checked_value   = NULL;
-
-  if (basic_elem_type == T_CONFLICT) {
-    assert(!dest_uninitialized, "");
-    Node* cv = generate_generic_arraycopy(adr_type,
-                                          src, src_offset, dest, dest_offset,
-                                          copy_length, dest_uninitialized);
-    if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
-    checked_control = control();
-    checked_i_o     = i_o();
-    checked_mem     = memory(adr_type);
-    checked_value   = cv;
-    set_control(top());         // no fast path
-  }
-
-  Node* not_pos = generate_nonpositive_guard(copy_length, length_never_negative);
-  if (not_pos != NULL) {
-    PreserveJVMState pjvms(this);
-    set_control(not_pos);
-
-    // (6) length must not be negative.
-    if (!length_never_negative) {
-      generate_negative_guard(copy_length, slow_region);
-    }
-
-    // copy_length is 0.
-    if (!stopped() && dest_uninitialized) {
-      Node* dest_length = alloc->in(AllocateNode::ALength);
-      if (copy_length->eqv_uncast(dest_length)
-          || _gvn.find_int_con(dest_length, 1) <= 0) {
-        // There is no zeroing to do. No need for a secondary raw memory barrier.
-      } else {
-        // Clear the whole thing since there are no source elements to copy.
-        generate_clear_array(adr_type, dest, basic_elem_type,
-                             intcon(0), NULL,
-                             alloc->in(AllocateNode::AllocSize));
-        // Use a secondary InitializeNode as raw memory barrier.
-        // Currently it is needed only on this path since other
-        // paths have stub or runtime calls as raw memory barriers.
-        InitializeNode* init = insert_mem_bar_volatile(Op_Initialize,
-                                                       Compile::AliasIdxRaw,
-                                                       top())->as_Initialize();
-        init->set_complete(&_gvn);  // (there is no corresponding AllocateNode)
-      }
-    }
-
-    // Present the results of the fast call.
-    result_region->init_req(zero_path, control());
-    result_i_o   ->init_req(zero_path, i_o());
-    result_memory->init_req(zero_path, memory(adr_type));
-  }
-
-  if (!stopped() && dest_uninitialized) {
-    // We have to initialize the *uncopied* part of the array to zero.
-    // The copy destination is the slice dest[off..off+len].  The other slices
-    // are dest_head = dest[0..off] and dest_tail = dest[off+len..dest.length].
-    Node* dest_size   = alloc->in(AllocateNode::AllocSize);
-    Node* dest_length = alloc->in(AllocateNode::ALength);
-    Node* dest_tail   = _gvn.transform(new AddINode(dest_offset, copy_length));
-
-    // If there is a head section that needs zeroing, do it now.
-    if (find_int_con(dest_offset, -1) != 0) {
-      generate_clear_array(adr_type, dest, basic_elem_type,
-                           intcon(0), dest_offset,
-                           NULL);
-    }
-
-    // Next, perform a dynamic check on the tail length.
-    // It is often zero, and we can win big if we prove this.
-    // There are two wins:  Avoid generating the ClearArray
-    // with its attendant messy index arithmetic, and upgrade
-    // the copy to a more hardware-friendly word size of 64 bits.
-    Node* tail_ctl = NULL;
-    if (!stopped() && !dest_tail->eqv_uncast(dest_length)) {
-      Node* cmp_lt   = _gvn.transform(new CmpINode(dest_tail, dest_length));
-      Node* bol_lt   = _gvn.transform(new BoolNode(cmp_lt, BoolTest::lt));
-      tail_ctl = generate_slow_guard(bol_lt, NULL);
-      assert(tail_ctl != NULL || !stopped(), "must be an outcome");
-    }
-
-    // At this point, let's assume there is no tail.
-    if (!stopped() && alloc != NULL && basic_elem_type != T_OBJECT) {
-      // There is no tail.  Try an upgrade to a 64-bit copy.
-      bool didit = false;
-      { PreserveJVMState pjvms(this);
-        didit = generate_block_arraycopy(adr_type, basic_elem_type, alloc,
-                                         src, src_offset, dest, dest_offset,
-                                         dest_size, dest_uninitialized);
-        if (didit) {
-          // Present the results of the block-copying fast call.
-          result_region->init_req(bcopy_path, control());
-          result_i_o   ->init_req(bcopy_path, i_o());
-          result_memory->init_req(bcopy_path, memory(adr_type));
         }
       }
-      if (didit)
-        set_control(top());     // no regular fast path
-    }
-
-    // Clear the tail, if any.
-    if (tail_ctl != NULL) {
-      Node* notail_ctl = stopped() ? NULL : control();
-      set_control(tail_ctl);
-      if (notail_ctl == NULL) {
-        generate_clear_array(adr_type, dest, basic_elem_type,
-                             dest_tail, NULL,
-                             dest_size);
-      } else {
-        // Make a local merge.
-        Node* done_ctl = new RegionNode(3);
-        Node* done_mem = new PhiNode(done_ctl, Type::MEMORY, adr_type);
-        done_ctl->init_req(1, notail_ctl);
-        done_mem->init_req(1, memory(adr_type));
-        generate_clear_array(adr_type, dest, basic_elem_type,
-                             dest_tail, NULL,
-                             dest_size);
-        done_ctl->init_req(2, control());
-        done_mem->init_req(2, memory(adr_type));
-        set_control( _gvn.transform(done_ctl));
-        set_memory(  _gvn.transform(done_mem), adr_type );
+      if (!dest_spec) {
+        dest_k = dest_type->speculative_type_not_null();
+        if (dest_k != NULL && dest_k->is_array_klass()) {
+          could_have_dest = true;
+        }
+      }
+      if (could_have_src && could_have_dest) {
+        // If we can have both exact types, emit the missing guards
+        if (could_have_src && !src_spec) {
+          src = maybe_cast_profiled_obj(src, src_k);
+        }
+        if (could_have_dest && !dest_spec) {
+          dest = maybe_cast_profiled_obj(dest, dest_k);
+        }
       }
     }
   }
 
-  BasicType copy_type = basic_elem_type;
-  assert(basic_elem_type != T_ARRAY, "caller must fix this");
-  if (!stopped() && copy_type == T_OBJECT) {
-    // If src and dest have compatible element types, we can copy bits.
-    // Types S[] and D[] are compatible if D is a supertype of S.
-    //
-    // If they are not, we will use checked_oop_disjoint_arraycopy,
-    // which performs a fast optimistic per-oop check, and backs off
-    // further to JVM_ArrayCopy on the first per-oop check that fails.
-    // (Actually, we don't move raw bits only; the GC requires card marks.)
+  if (!too_many_traps(Deoptimization::Reason_intrinsic) && !src->is_top() && !dest->is_top()) {
+    // validate arguments: enables transformation the ArrayCopyNode
+    notest = true;
 
-    // Get the Klass* for both src and dest
+    RegionNode* slow_region = new RegionNode(1);
+    record_for_igvn(slow_region);
+
+    // (1) src and dest are arrays.
+    generate_non_array_guard(load_object_klass(src), slow_region);
+    generate_non_array_guard(load_object_klass(dest), slow_region);
+
+    // (2) src and dest arrays must have elements of the same BasicType
+    // done at macro expansion or at Ideal transformation time
+
+    // (4) src_offset must not be negative.
+    generate_negative_guard(src_offset, slow_region);
+
+    // (5) dest_offset must not be negative.
+    generate_negative_guard(dest_offset, slow_region);
+
+    // (7) src_offset + length must not exceed length of src.
+    generate_limit_guard(src_offset, length,
+                         load_array_length(src),
+                         slow_region);
+
+    // (8) dest_offset + length must not exceed length of dest.
+    generate_limit_guard(dest_offset, length,
+                         load_array_length(dest),
+                         slow_region);
+
+    // (9) each element of an oop array must be assignable
     Node* src_klass  = load_object_klass(src);
     Node* dest_klass = load_object_klass(dest);
-
-    // Generate the subtype check.
-    // This might fold up statically, or then again it might not.
-    //
-    // Non-static example:  Copying List<String>.elements to a new String[].
-    // The backing store for a List<String> is always an Object[],
-    // but its elements are always type String, if the generic types
-    // are correct at the source level.
-    //
-    // Test S[] against D[], not S against D, because (probably)
-    // the secondary supertype cache is less busy for S[] than S.
-    // This usually only matters when D is an interface.
     Node* not_subtype_ctrl = gen_subtype_check(src_klass, dest_klass);
-    // Plug failing path into checked_oop_disjoint_arraycopy
+
     if (not_subtype_ctrl != top()) {
       PreserveJVMState pjvms(this);
       set_control(not_subtype_ctrl);
-      // (At this point we can assume disjoint_bases, since types differ.)
-      int ek_offset = in_bytes(ObjArrayKlass::element_klass_offset());
-      Node* p1 = basic_plus_adr(dest_klass, ek_offset);
-      Node* n1 = LoadKlassNode::make(_gvn, immutable_memory(), p1, TypeRawPtr::BOTTOM);
-      Node* dest_elem_klass = _gvn.transform(n1);
-      Node* cv = generate_checkcast_arraycopy(adr_type,
-                                              dest_elem_klass,
-                                              src, src_offset, dest, dest_offset,
-                                              ConvI2X(copy_length), dest_uninitialized);
-      if (cv == NULL)  cv = intcon(-1);  // failure (no stub available)
-      checked_control = control();
-      checked_i_o     = i_o();
-      checked_mem     = memory(adr_type);
-      checked_value   = cv;
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+      assert(stopped(), "Should be stopped");
     }
-    // At this point we know we do not need type checks on oop stores.
-
-    // Let's see if we need card marks:
-    if (alloc != NULL && use_ReduceInitialCardMarks()) {
-      // If we do not need card marks, copy using the jint or jlong stub.
-      copy_type = LP64_ONLY(UseCompressedOops ? T_INT : T_LONG) NOT_LP64(T_INT);
-      assert(type2aelembytes(basic_elem_type) == type2aelembytes(copy_type),
-             "sizes agree");
+    {
+      PreserveJVMState pjvms(this);
+      set_control(_gvn.transform(slow_region));
+      uncommon_trap(Deoptimization::Reason_intrinsic,
+                    Deoptimization::Action_make_not_entrant);
+      assert(stopped(), "Should be stopped");
     }
   }
 
-  if (!stopped()) {
-    // Generate the fast path, if possible.
-    PreserveJVMState pjvms(this);
-    generate_unchecked_arraycopy(adr_type, copy_type, disjoint_bases,
-                                 src, src_offset, dest, dest_offset,
-                                 ConvI2X(copy_length), dest_uninitialized);
-
-    // Present the results of the fast call.
-    result_region->init_req(fast_path, control());
-    result_i_o   ->init_req(fast_path, i_o());
-    result_memory->init_req(fast_path, memory(adr_type));
+  if (stopped()) {
+    return true;
   }
 
-  // Here are all the slow paths up to this point, in one bundle:
-  slow_control = top();
-  if (slow_region != NULL)
-    slow_control = _gvn.transform(slow_region);
-  DEBUG_ONLY(slow_region = (RegionNode*)badAddress);
+  AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
+  ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL);
 
-  set_control(checked_control);
-  if (!stopped()) {
-    // Clean up after the checked call.
-    // The returned value is either 0 or -1^K,
-    // where K = number of partially transferred array elements.
-    Node* cmp = _gvn.transform(new CmpINode(checked_value, intcon(0)));
-    Node* bol = _gvn.transform(new BoolNode(cmp, BoolTest::eq));
-    IfNode* iff = create_and_map_if(control(), bol, PROB_MAX, COUNT_UNKNOWN);
-
-    // If it is 0, we are done, so transfer to the end.
-    Node* checks_done = _gvn.transform(new IfTrueNode(iff));
-    result_region->init_req(checked_path, checks_done);
-    result_i_o   ->init_req(checked_path, checked_i_o);
-    result_memory->init_req(checked_path, checked_mem);
-
-    // If it is not zero, merge into the slow call.
-    set_control( _gvn.transform(new IfFalseNode(iff) ));
-    RegionNode* slow_reg2 = new RegionNode(3);
-    PhiNode*    slow_i_o2 = new PhiNode(slow_reg2, Type::ABIO);
-    PhiNode*    slow_mem2 = new PhiNode(slow_reg2, Type::MEMORY, adr_type);
-    record_for_igvn(slow_reg2);
-    slow_reg2  ->init_req(1, slow_control);
-    slow_i_o2  ->init_req(1, slow_i_o);
-    slow_mem2  ->init_req(1, slow_mem);
-    slow_reg2  ->init_req(2, control());
-    slow_i_o2  ->init_req(2, checked_i_o);
-    slow_mem2  ->init_req(2, checked_mem);
-
-    slow_control = _gvn.transform(slow_reg2);
-    slow_i_o     = _gvn.transform(slow_i_o2);
-    slow_mem     = _gvn.transform(slow_mem2);
-
-    if (alloc != NULL) {
-      // We'll restart from the very beginning, after zeroing the whole thing.
-      // This can cause double writes, but that's OK since dest is brand new.
-      // So we ignore the low 31 bits of the value returned from the stub.
-    } else {
-      // We must continue the copy exactly where it failed, or else
-      // another thread might see the wrong number of writes to dest.
-      Node* checked_offset = _gvn.transform(new XorINode(checked_value, intcon(-1)));
-      Node* slow_offset    = new PhiNode(slow_reg2, TypeInt::INT);
-      slow_offset->init_req(1, intcon(0));
-      slow_offset->init_req(2, checked_offset);
-      slow_offset  = _gvn.transform(slow_offset);
-
-      // Adjust the arguments by the conditionally incoming offset.
-      Node* src_off_plus  = _gvn.transform(new AddINode(src_offset,  slow_offset));
-      Node* dest_off_plus = _gvn.transform(new AddINode(dest_offset, slow_offset));
-      Node* length_minus  = _gvn.transform(new SubINode(copy_length, slow_offset));
-
-      // Tweak the node variables to adjust the code produced below:
-      src_offset  = src_off_plus;
-      dest_offset = dest_off_plus;
-      copy_length = length_minus;
-    }
+  if (notest) {
+    ac->set_arraycopy_notest();
   }
 
-  set_control(slow_control);
-  if (!stopped()) {
-    // Generate the slow path, if needed.
-    PreserveJVMState pjvms(this);   // replace_in_map may trash the map
+  Node* n = _gvn.transform(ac);
+  assert(n == ac, "cannot disappear");
+  ac->connect_outputs(this);
 
-    set_memory(slow_mem, adr_type);
-    set_i_o(slow_i_o);
-
-    if (dest_uninitialized) {
-      generate_clear_array(adr_type, dest, basic_elem_type,
-                           intcon(0), NULL,
-                           alloc->in(AllocateNode::AllocSize));
-    }
-
-    generate_slow_arraycopy(adr_type,
-                            src, src_offset, dest, dest_offset,
-                            copy_length, /*dest_uninitialized*/false);
-
-    result_region->init_req(slow_call_path, control());
-    result_i_o   ->init_req(slow_call_path, i_o());
-    result_memory->init_req(slow_call_path, memory(adr_type));
-  }
-
-  // Remove unused edges.
-  for (uint i = 1; i < result_region->req(); i++) {
-    if (result_region->in(i) == NULL)
-      result_region->init_req(i, top());
-  }
-
-  // Finished; return the combined state.
-  set_control( _gvn.transform(result_region));
-  set_i_o(     _gvn.transform(result_i_o)    );
-  set_memory(  _gvn.transform(result_memory), adr_type );
-
-  // The memory edges above are precise in order to model effects around
-  // array copies accurately to allow value numbering of field loads around
-  // arraycopy.  Such field loads, both before and after, are common in Java
-  // collections and similar classes involving header/array data structures.
-  //
-  // But with low number of register or when some registers are used or killed
-  // by arraycopy calls it causes registers spilling on stack. See 6544710.
-  // The next memory barrier is added to avoid it. If the arraycopy can be
-  // optimized away (which it can, sometimes) then we can manually remove
-  // the membar also.
-  //
-  // Do not let reads from the cloned object float above the arraycopy.
-  if (alloc != NULL) {
-    // Do not let stores that initialize this object be reordered with
-    // a subsequent store that would make this object accessible by
-    // other threads.
-    // Record what AllocateNode this StoreStore protects so that
-    // escape analysis can go from the MemBarStoreStoreNode to the
-    // AllocateNode and eliminate the MemBarStoreStoreNode if possible
-    // based on the escape status of the AllocateNode.
-    insert_mem_bar(Op_MemBarStoreStore, alloc->proj_out(AllocateNode::RawAddress));
-  } else if (InsertMemBarAfterArraycopy)
-    insert_mem_bar(Op_MemBarCPUOrder);
+  return true;
 }
 
 
@@ -5395,305 +4875,6 @@ LibraryCallKit::tightly_coupled_allocation(Node* ptr,
   // a new control state to which we will anchor the destination pointer.
 
   return alloc;
-}
-
-// Helper for initialization of arrays, creating a ClearArray.
-// It writes zero bits in [start..end), within the body of an array object.
-// The memory effects are all chained onto the 'adr_type' alias category.
-//
-// Since the object is otherwise uninitialized, we are free
-// to put a little "slop" around the edges of the cleared area,
-// as long as it does not go back into the array's header,
-// or beyond the array end within the heap.
-//
-// The lower edge can be rounded down to the nearest jint and the
-// upper edge can be rounded up to the nearest MinObjAlignmentInBytes.
-//
-// Arguments:
-//   adr_type           memory slice where writes are generated
-//   dest               oop of the destination array
-//   basic_elem_type    element type of the destination
-//   slice_idx          array index of first element to store
-//   slice_len          number of elements to store (or NULL)
-//   dest_size          total size in bytes of the array object
-//
-// Exactly one of slice_len or dest_size must be non-NULL.
-// If dest_size is non-NULL, zeroing extends to the end of the object.
-// If slice_len is non-NULL, the slice_idx value must be a constant.
-void
-LibraryCallKit::generate_clear_array(const TypePtr* adr_type,
-                                     Node* dest,
-                                     BasicType basic_elem_type,
-                                     Node* slice_idx,
-                                     Node* slice_len,
-                                     Node* dest_size) {
-  // one or the other but not both of slice_len and dest_size:
-  assert((slice_len != NULL? 1: 0) + (dest_size != NULL? 1: 0) == 1, "");
-  if (slice_len == NULL)  slice_len = top();
-  if (dest_size == NULL)  dest_size = top();
-
-  // operate on this memory slice:
-  Node* mem = memory(adr_type); // memory slice to operate on
-
-  // scaling and rounding of indexes:
-  int scale = exact_log2(type2aelembytes(basic_elem_type));
-  int abase = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
-  int clear_low = (-1 << scale) & (BytesPerInt  - 1);
-  int bump_bit  = (-1 << scale) & BytesPerInt;
-
-  // determine constant starts and ends
-  const intptr_t BIG_NEG = -128;
-  assert(BIG_NEG + 2*abase < 0, "neg enough");
-  intptr_t slice_idx_con = (intptr_t) find_int_con(slice_idx, BIG_NEG);
-  intptr_t slice_len_con = (intptr_t) find_int_con(slice_len, BIG_NEG);
-  if (slice_len_con == 0) {
-    return;                     // nothing to do here
-  }
-  intptr_t start_con = (abase + (slice_idx_con << scale)) & ~clear_low;
-  intptr_t end_con   = find_intptr_t_con(dest_size, -1);
-  if (slice_idx_con >= 0 && slice_len_con >= 0) {
-    assert(end_con < 0, "not two cons");
-    end_con = round_to(abase + ((slice_idx_con + slice_len_con) << scale),
-                       BytesPerLong);
-  }
-
-  if (start_con >= 0 && end_con >= 0) {
-    // Constant start and end.  Simple.
-    mem = ClearArrayNode::clear_memory(control(), mem, dest,
-                                       start_con, end_con, &_gvn);
-  } else if (start_con >= 0 && dest_size != top()) {
-    // Constant start, pre-rounded end after the tail of the array.
-    Node* end = dest_size;
-    mem = ClearArrayNode::clear_memory(control(), mem, dest,
-                                       start_con, end, &_gvn);
-  } else if (start_con >= 0 && slice_len != top()) {
-    // Constant start, non-constant end.  End needs rounding up.
-    // End offset = round_up(abase + ((slice_idx_con + slice_len) << scale), 8)
-    intptr_t end_base  = abase + (slice_idx_con << scale);
-    int      end_round = (-1 << scale) & (BytesPerLong  - 1);
-    Node*    end       = ConvI2X(slice_len);
-    if (scale != 0)
-      end = _gvn.transform(new LShiftXNode(end, intcon(scale) ));
-    end_base += end_round;
-    end = _gvn.transform(new AddXNode(end, MakeConX(end_base)));
-    end = _gvn.transform(new AndXNode(end, MakeConX(~end_round)));
-    mem = ClearArrayNode::clear_memory(control(), mem, dest,
-                                       start_con, end, &_gvn);
-  } else if (start_con < 0 && dest_size != top()) {
-    // Non-constant start, pre-rounded end after the tail of the array.
-    // This is almost certainly a "round-to-end" operation.
-    Node* start = slice_idx;
-    start = ConvI2X(start);
-    if (scale != 0)
-      start = _gvn.transform(new LShiftXNode( start, intcon(scale) ));
-    start = _gvn.transform(new AddXNode(start, MakeConX(abase)));
-    if ((bump_bit | clear_low) != 0) {
-      int to_clear = (bump_bit | clear_low);
-      // Align up mod 8, then store a jint zero unconditionally
-      // just before the mod-8 boundary.
-      if (((abase + bump_bit) & ~to_clear) - bump_bit
-          < arrayOopDesc::length_offset_in_bytes() + BytesPerInt) {
-        bump_bit = 0;
-        assert((abase & to_clear) == 0, "array base must be long-aligned");
-      } else {
-        // Bump 'start' up to (or past) the next jint boundary:
-        start = _gvn.transform(new AddXNode(start, MakeConX(bump_bit)));
-        assert((abase & clear_low) == 0, "array base must be int-aligned");
-      }
-      // Round bumped 'start' down to jlong boundary in body of array.
-      start = _gvn.transform(new AndXNode(start, MakeConX(~to_clear)));
-      if (bump_bit != 0) {
-        // Store a zero to the immediately preceding jint:
-        Node* x1 = _gvn.transform(new AddXNode(start, MakeConX(-bump_bit)));
-        Node* p1 = basic_plus_adr(dest, x1);
-        mem = StoreNode::make(_gvn, control(), mem, p1, adr_type, intcon(0), T_INT, MemNode::unordered);
-        mem = _gvn.transform(mem);
-      }
-    }
-    Node* end = dest_size; // pre-rounded
-    mem = ClearArrayNode::clear_memory(control(), mem, dest,
-                                       start, end, &_gvn);
-  } else {
-    // Non-constant start, unrounded non-constant end.
-    // (Nobody zeroes a random midsection of an array using this routine.)
-    ShouldNotReachHere();       // fix caller
-  }
-
-  // Done.
-  set_memory(mem, adr_type);
-}
-
-
-bool
-LibraryCallKit::generate_block_arraycopy(const TypePtr* adr_type,
-                                         BasicType basic_elem_type,
-                                         AllocateNode* alloc,
-                                         Node* src,  Node* src_offset,
-                                         Node* dest, Node* dest_offset,
-                                         Node* dest_size, bool dest_uninitialized) {
-  // See if there is an advantage from block transfer.
-  int scale = exact_log2(type2aelembytes(basic_elem_type));
-  if (scale >= LogBytesPerLong)
-    return false;               // it is already a block transfer
-
-  // Look at the alignment of the starting offsets.
-  int abase = arrayOopDesc::base_offset_in_bytes(basic_elem_type);
-
-  intptr_t src_off_con  = (intptr_t) find_int_con(src_offset, -1);
-  intptr_t dest_off_con = (intptr_t) find_int_con(dest_offset, -1);
-  if (src_off_con < 0 || dest_off_con < 0)
-    // At present, we can only understand constants.
-    return false;
-
-  intptr_t src_off  = abase + (src_off_con  << scale);
-  intptr_t dest_off = abase + (dest_off_con << scale);
-
-  if (((src_off | dest_off) & (BytesPerLong-1)) != 0) {
-    // Non-aligned; too bad.
-    // One more chance:  Pick off an initial 32-bit word.
-    // This is a common case, since abase can be odd mod 8.
-    if (((src_off | dest_off) & (BytesPerLong-1)) == BytesPerInt &&
-        ((src_off ^ dest_off) & (BytesPerLong-1)) == 0) {
-      Node* sptr = basic_plus_adr(src,  src_off);
-      Node* dptr = basic_plus_adr(dest, dest_off);
-      Node* sval = make_load(control(), sptr, TypeInt::INT, T_INT, adr_type, MemNode::unordered);
-      store_to_memory(control(), dptr, sval, T_INT, adr_type, MemNode::unordered);
-      src_off += BytesPerInt;
-      dest_off += BytesPerInt;
-    } else {
-      return false;
-    }
-  }
-  assert(src_off % BytesPerLong == 0, "");
-  assert(dest_off % BytesPerLong == 0, "");
-
-  // Do this copy by giant steps.
-  Node* sptr  = basic_plus_adr(src,  src_off);
-  Node* dptr  = basic_plus_adr(dest, dest_off);
-  Node* countx = dest_size;
-  countx = _gvn.transform(new SubXNode(countx, MakeConX(dest_off)));
-  countx = _gvn.transform(new URShiftXNode(countx, intcon(LogBytesPerLong)));
-
-  bool disjoint_bases = true;   // since alloc != NULL
-  generate_unchecked_arraycopy(adr_type, T_LONG, disjoint_bases,
-                               sptr, NULL, dptr, NULL, countx, dest_uninitialized);
-
-  return true;
-}
-
-
-// Helper function; generates code for the slow case.
-// We make a call to a runtime method which emulates the native method,
-// but without the native wrapper overhead.
-void
-LibraryCallKit::generate_slow_arraycopy(const TypePtr* adr_type,
-                                        Node* src,  Node* src_offset,
-                                        Node* dest, Node* dest_offset,
-                                        Node* copy_length, bool dest_uninitialized) {
-  assert(!dest_uninitialized, "Invariant");
-  Node* call = make_runtime_call(RC_NO_LEAF | RC_UNCOMMON,
-                                 OptoRuntime::slow_arraycopy_Type(),
-                                 OptoRuntime::slow_arraycopy_Java(),
-                                 "slow_arraycopy", adr_type,
-                                 src, src_offset, dest, dest_offset,
-                                 copy_length);
-
-  // Handle exceptions thrown by this fellow:
-  make_slow_call_ex(call, env()->Throwable_klass(), false);
-}
-
-// Helper function; generates code for cases requiring runtime checks.
-Node*
-LibraryCallKit::generate_checkcast_arraycopy(const TypePtr* adr_type,
-                                             Node* dest_elem_klass,
-                                             Node* src,  Node* src_offset,
-                                             Node* dest, Node* dest_offset,
-                                             Node* copy_length, bool dest_uninitialized) {
-  if (stopped())  return NULL;
-
-  address copyfunc_addr = StubRoutines::checkcast_arraycopy(dest_uninitialized);
-  if (copyfunc_addr == NULL) { // Stub was not generated, go slow path.
-    return NULL;
-  }
-
-  // Pick out the parameters required to perform a store-check
-  // for the target array.  This is an optimistic check.  It will
-  // look in each non-null element's class, at the desired klass's
-  // super_check_offset, for the desired klass.
-  int sco_offset = in_bytes(Klass::super_check_offset_offset());
-  Node* p3 = basic_plus_adr(dest_elem_klass, sco_offset);
-  Node* n3 = new LoadINode(NULL, memory(p3), p3, _gvn.type(p3)->is_ptr(), TypeInt::INT, MemNode::unordered);
-  Node* check_offset = ConvI2X(_gvn.transform(n3));
-  Node* check_value  = dest_elem_klass;
-
-  Node* src_start  = array_element_address(src,  src_offset,  T_OBJECT);
-  Node* dest_start = array_element_address(dest, dest_offset, T_OBJECT);
-
-  // (We know the arrays are never conjoint, because their types differ.)
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                                 OptoRuntime::checkcast_arraycopy_Type(),
-                                 copyfunc_addr, "checkcast_arraycopy", adr_type,
-                                 // five arguments, of which two are
-                                 // intptr_t (jlong in LP64)
-                                 src_start, dest_start,
-                                 copy_length XTOP,
-                                 check_offset XTOP,
-                                 check_value);
-
-  return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-}
-
-
-// Helper function; generates code for cases requiring runtime checks.
-Node*
-LibraryCallKit::generate_generic_arraycopy(const TypePtr* adr_type,
-                                           Node* src,  Node* src_offset,
-                                           Node* dest, Node* dest_offset,
-                                           Node* copy_length, bool dest_uninitialized) {
-  assert(!dest_uninitialized, "Invariant");
-  if (stopped())  return NULL;
-  address copyfunc_addr = StubRoutines::generic_arraycopy();
-  if (copyfunc_addr == NULL) { // Stub was not generated, go slow path.
-    return NULL;
-  }
-
-  Node* call = make_runtime_call(RC_LEAF|RC_NO_FP,
-                    OptoRuntime::generic_arraycopy_Type(),
-                    copyfunc_addr, "generic_arraycopy", adr_type,
-                    src, src_offset, dest, dest_offset, copy_length);
-
-  return _gvn.transform(new ProjNode(call, TypeFunc::Parms));
-}
-
-// Helper function; generates the fast out-of-line call to an arraycopy stub.
-void
-LibraryCallKit::generate_unchecked_arraycopy(const TypePtr* adr_type,
-                                             BasicType basic_elem_type,
-                                             bool disjoint_bases,
-                                             Node* src,  Node* src_offset,
-                                             Node* dest, Node* dest_offset,
-                                             Node* copy_length, bool dest_uninitialized) {
-  if (stopped())  return;               // nothing to do
-
-  Node* src_start  = src;
-  Node* dest_start = dest;
-  if (src_offset != NULL || dest_offset != NULL) {
-    assert(src_offset != NULL && dest_offset != NULL, "");
-    src_start  = array_element_address(src,  src_offset,  basic_elem_type);
-    dest_start = array_element_address(dest, dest_offset, basic_elem_type);
-  }
-
-  // Figure out which arraycopy runtime method to call.
-  const char* copyfunc_name = "arraycopy";
-  address     copyfunc_addr =
-      basictype2arraycopy(basic_elem_type, src_offset, dest_offset,
-                          disjoint_bases, copyfunc_name, dest_uninitialized);
-
-  // Call it.  Note that the count_ix value is not scaled to a byte-size.
-  make_runtime_call(RC_LEAF|RC_NO_FP,
-                    OptoRuntime::fast_arraycopy_Type(),
-                    copyfunc_addr, copyfunc_name, adr_type,
-                    src_start, dest_start, copy_length XTOP);
 }
 
 //-------------inline_encodeISOArray-----------------------------------
