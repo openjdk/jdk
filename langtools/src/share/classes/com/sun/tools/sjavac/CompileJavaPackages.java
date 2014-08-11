@@ -86,15 +86,9 @@ public class CompileJavaPackages implements Transformer {
         boolean concurrentCompiles = true;
 
         // Fetch the id.
-        String idOpt = Util.extractStringOption("id", args.getServerConf());
-        if (idOpt == null || idOpt.equals("")) {
-            // No explicit id set. Create a random id so that the requests can be
-            // grouped properly in the server.
-            idOpt = "id"+(((new Random()).nextLong())&Long.MAX_VALUE);
-        }
-        final String id = idOpt;
+        final String id = Util.extractStringOption("id", javacService.serverSettings());
         // Only keep portfile and sjavac settings..
-        String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), args.getServerConf());
+        String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), javacService.serverSettings());
 
         // Get maximum heap size from the server!
         SysInfo sysinfo = javacService.getSysInfo();

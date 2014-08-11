@@ -205,6 +205,9 @@ public class Main {
         if (!createIfMissing(options.getDestDir()))
             return -1;
 
+        if (!createIfMissing(options.getStateDir()))
+            return -1;
+
         Path gensrc = options.getGenSrcDir();
         if (gensrc != null && !createIfMissing(gensrc))
             return -1;
@@ -302,7 +305,7 @@ public class Main {
         // For examples, files that have been manually copied into these dirs.
         // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
         // in javac_state) have already been removed when the javac_state was loaded.
-        if (!options.isUnidentifiedArtifactPermitted()) {
+        if (!options.areUnidentifiedArtifactsPermitted()) {
             javac_state.removeUnidentifiedArtifacts();
         }
         // Go through all sources and taint all packages that miss artifacts.
@@ -345,7 +348,7 @@ public class Main {
                 // Currently sjavac always connects to a server through a socket
                 // regardless if sjavac runs as a background service or not.
                 // This will most likely change in the future.
-                JavacService javacService = new JavacServiceClient(options.getServerConf());
+                JavacService javacService = new JavacServiceClient(options);
                 again = javac_state.performJavaCompilations(javacService, options, recently_compiled, rc);
                 if (!rc[0]) break;
             } while (again);
@@ -375,8 +378,6 @@ public class Main {
             err = "Please specify output directory.";
         } else if (options.isJavaFilesAmongJavacArgs()) {
             err = "Sjavac does not handle explicit compilation of single .java files.";
-        } else if (options.isAtFilePresent()) {
-            err = "Sjavac does not handle @-files.";
         } else if (options.getServerConf() == null) {
             err = "No server configuration provided.";
         } else if (!options.getImplicitPolicy().equals("none")) {
