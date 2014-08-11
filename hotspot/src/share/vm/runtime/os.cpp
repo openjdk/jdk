@@ -517,6 +517,14 @@ char *os::strdup(const char *str, MEMFLAGS flags) {
   return dup_str;
 }
 
+char* os::strdup_check_oom(const char* str, MEMFLAGS flags) {
+  char* p = os::strdup(str, flags);
+  if (p == NULL) {
+    vm_exit_out_of_memory(strlen(str) + 1, OOM_MALLOC_ERROR, "os::strdup_check_oom");
+  }
+  return p;
+}
+
 
 #define paranoid                 0  /* only set to 1 if you suspect checking code has bug */
 
