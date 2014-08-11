@@ -800,7 +800,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   } else {
     *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtInternal);
   }
-  (*bldarray)[*count] = strdup(arg);
+  (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
 }
 
@@ -1886,7 +1886,7 @@ void Arguments::process_java_compiler_argument(char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
-  _sun_java_launcher = strdup(launcher);
+  _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
 bool Arguments::created_by_java_launcher() {
@@ -2996,7 +2996,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename
       // to initialize a fileStream.
-      _gc_log_filename = strdup(tail);
+      _gc_log_filename = os::strdup_check_oom(tail);
      if (!is_filename_valid(_gc_log_filename)) {
        jio_fprintf(defaultStream::output_stream(),
                   "Invalid file name for use with -Xloggc: Filename can only contain the "

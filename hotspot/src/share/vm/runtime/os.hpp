@@ -664,6 +664,8 @@ class os: AllStatic {
   static void  free    (void *memblock, MEMFLAGS flags = mtNone);
   static bool  check_heap(bool force = false);      // verify C heap integrity
   static char* strdup(const char *, MEMFLAGS flags = mtInternal);  // Like strdup
+  // Like strdup, but exit VM when strdup() returns NULL
+  static char* strdup_check_oom(const char*, MEMFLAGS flags = mtInternal);
 
 #ifndef PRODUCT
   static julong num_mallocs;         // # of calls to malloc/realloc

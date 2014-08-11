@@ -29,6 +29,7 @@
 #include "oops/oop.inline.hpp"
 #include "os_windows.inline.hpp"
 #include "runtime/handles.inline.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/exceptions.hpp"
@@ -1388,7 +1389,7 @@ static HANDLE create_sharedmem_resources(const char* dirname, const char* filena
   // the file has been successfully created and the file mapping
   // object has been created.
   sharedmem_fileHandle = fh;
-  sharedmem_fileName = strdup(filename);
+  sharedmem_fileName = os::strdup(filename);
 
   return fmh;
 }
