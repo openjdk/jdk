@@ -2469,6 +2469,8 @@ void PhaseMacroExpand::eliminate_macro_nodes() {
         assert(!n->as_AbstractLock()->is_eliminated(), "sanity");
         _has_locks = true;
         break;
+      case Node::Class_ArrayCopy:
+        break;
       default:
         assert(n->Opcode() == Op_LoopLimit ||
                n->Opcode() == Op_Opaque1   ||
@@ -2542,6 +2544,25 @@ bool PhaseMacroExpand::expand_macro_nodes() {
       assert(success == (C->macro_count() < old_macro_count), "elimination reduces macro count");
       progress = progress || success;
     }
+  }
+
+  // expand arraycopy "macro" nodes first
+  // For ReduceBulkZeroing, we must first process all arraycopy nodes
+  // before the allocate nodes are expanded.
+  int macro_idx = C->macro_count() - 1;
+  while (macro_idx >= 0) {
+    Node * n = C->macro_node(macro_idx);
+    assert(n->is_macro(), "only macro nodes expected here");
+    if (_igvn.type(n) == Type::TOP || n->in(0)->is_top() ) {
+      // node is unreachable, so don't try to expand it
+      C->remove_macro_node(n);
+    } else if (n->is_ArrayCopy()){
+      int macro_count = C->macro_count();
+      expand_arraycopy_node(n->as_ArrayCopy());
+      assert(C->macro_count() < macro_count, "must have deleted a node from macro list");
+    }
+    if (C->failing())  return true;
+    macro_idx --;
   }
 
   // expand "macro" nodes
