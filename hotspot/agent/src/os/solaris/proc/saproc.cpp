@@ -314,7 +314,7 @@ static void * pathmap_dlopen(const char * name, int mode) {
     handle = dlopen(name, mode);
   }
   if (_libsaproc_debug) {
-    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%x\n", name, handle);
+    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%lx\n", name, (unsigned long) handle);
   }
   return handle;
 }
