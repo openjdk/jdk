@@ -207,11 +207,6 @@ public class SpillProperty extends AccessorProperty {
     }
 
     @Override
-    public int getSpillCount() {
-        return 1;
-    }
-
-    @Override
     void initMethodHandles(Class<?> structure) {
         final int slot  = getSlot();
         primitiveGetter = primitiveGetter(slot);

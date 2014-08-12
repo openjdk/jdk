@@ -2457,20 +2457,19 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     private Property addSpillProperty(final String key, final int propertyFlags, final Object value, final boolean hasInitialValue) {
         final PropertyMap propertyMap = getMap();
-        final int         fieldCount  = propertyMap.getFieldCount();
-        final int         fieldMax    = propertyMap.getFieldMaximum();
+        final int fieldSlot  = propertyMap.getFreeFieldSlot();
 
         Property property;
-        if (fieldCount < fieldMax) {
+        if (fieldSlot > -1) {
             property = hasInitialValue ?
-                new AccessorProperty(key, propertyFlags, fieldCount, this, value) :
-                new AccessorProperty(key, propertyFlags, getClass(), fieldCount);
+                new AccessorProperty(key, propertyFlags, fieldSlot, this, value) :
+                new AccessorProperty(key, propertyFlags, getClass(), fieldSlot);
             property = addOwnProperty(property);
         } else {
-            final int spillCount = propertyMap.getSpillLength();
+            final int spillSlot = propertyMap.getFreeSpillSlot();
             property = hasInitialValue ?
-                new SpillProperty(key, propertyFlags, spillCount, this, value) :
-                new SpillProperty(key, propertyFlags, spillCount);
+                new SpillProperty(key, propertyFlags, spillSlot, this, value) :
+                new SpillProperty(key, propertyFlags, spillSlot);
             property = addOwnProperty(property);
             ensureSpillSize(property.getSlot());
         }
