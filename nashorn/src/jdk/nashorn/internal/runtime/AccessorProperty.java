@@ -712,7 +712,7 @@ public class AccessorProperty extends Property {
 
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return mh;
         }
 
@@ -734,7 +734,7 @@ public class AccessorProperty extends Property {
     }
 
     private MethodHandle debugReplace(final Class<?> oldType, final Class<?> newType, final PropertyMap oldMap, final PropertyMap newMap) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return REPLACE_MAP;
         }
 
@@ -767,7 +767,7 @@ public class AccessorProperty extends Property {
     }
 
     private static MethodHandle debugInvalidate(final String key, final SwitchPoint sp) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return INVALIDATE_SP;
         }
 
