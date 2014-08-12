@@ -69,7 +69,7 @@ class UnaryExpression extends Expression {
     /**
      * Check a unary expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = right.checkValue(env, ctx, vset, exp);
 
         int tm = right.type.getTypeMask();

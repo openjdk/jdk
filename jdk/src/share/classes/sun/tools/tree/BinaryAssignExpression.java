@@ -67,7 +67,7 @@ class BinaryAssignExpression extends BinaryExpression {
     /**
      * Check void expression
      */
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object,Object> exp) {
         return checkValue(env, ctx, vset, exp);
     }
 

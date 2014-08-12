@@ -120,6 +120,18 @@ public class CellRendererPane extends Container implements Accessible
      * The Container p is the component we're actually drawing on, typically it's
      * equal to this.getParent(). If shouldValidate is true the component c will be
      * validated before painted.
+     *
+     * @param g  the {@code Graphics} object to draw on
+     * @param c  the {@code Component} to draw
+     * @param p  the {@code Container} component actually drawn on
+     * @param x  an int specifying the left side of the area draw in, in pixels,
+     *           measured from the left edge of the graphics context
+     * @param y  an int specifying the top of the area to draw in, in pixels
+     *           measured down from the top edge of the graphics context
+     * @param w  an int specifying the width of the area draw in, in pixels
+     * @param h  an int specifying the height of the area draw in, in pixels
+     * @param shouldValidate  if true, component {@code c} will be validated
+     *                        before being painted
      */
     public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h, boolean shouldValidate) {
         if (c == null) {
@@ -166,6 +178,16 @@ public class CellRendererPane extends Container implements Accessible
 
     /**
      * Calls this.paintComponent(g, c, p, x, y, w, h, false).
+     *
+     * @param g  the {@code Graphics} object to draw on
+     * @param c  the {@code Component} to draw
+     * @param p  the {@code Container} component actually drawn on
+     * @param x  an int specifying the left side of the area draw in, in pixels,
+     *           measured from the left edge of the graphics context
+     * @param y  an int specifying the top of the area to draw in, in pixels
+     *           measured down from the top edge of the graphics context
+     * @param w  an int specifying the width of the area draw in, in pixels
+     * @param h  an int specifying the height of the area draw in, in pixels
      */
     public void paintComponent(Graphics g, Component c, Container p, int x, int y, int w, int h) {
         paintComponent(g, c, p, x, y, w, h, false);
@@ -174,6 +196,11 @@ public class CellRendererPane extends Container implements Accessible
 
     /**
      * Calls this.paintComponent() with the rectangles x,y,width,height fields.
+     *
+     * @param g  the {@code Graphics} object to draw on
+     * @param c  the {@code Component} to draw
+     * @param p  the {@code Container} component actually drawn on
+     * @param r  the {@code Rectangle} to draw in
      */
     public void paintComponent(Graphics g, Component c, Container p, Rectangle r) {
         paintComponent(g, c, p, r.x, r.y, r.width, r.height);

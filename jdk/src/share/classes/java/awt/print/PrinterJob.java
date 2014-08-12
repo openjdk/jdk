@@ -546,7 +546,6 @@ public abstract class PrinterJob {
      * user settings returned from
      * <code>printDialog(PrintRequestAttributeSet attributes</code> to
      * this print() method.
-     * <p>
      *
      * @param attributes a set of attributes for the job
      * @exception PrinterException an error in the print system

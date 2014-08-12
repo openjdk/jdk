@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -72,8 +72,12 @@ import javax.annotation.processing.SupportedSourceVersion;
  *
  * @see AbstractAnnotationValueVisitor7
  * @see AbstractAnnotationValueVisitor8
+ * @see AbstractAnnotationValueVisitor9
  * @since 1.6
+ * @deprecated Release 6 is obsolete; update to a visitor for a newer
+ * release level.
  */
+@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public abstract class AbstractAnnotationValueVisitor6<R, P>
     implements AnnotationValueVisitor<R, P> {

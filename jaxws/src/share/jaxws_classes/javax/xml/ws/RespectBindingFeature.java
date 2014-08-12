@@ -80,7 +80,7 @@ import javax.xml.ws.soap.AddressingFeature;
  *
  * @see AddressingFeature
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 public final class RespectBindingFeature extends WebServiceFeature {
     /**

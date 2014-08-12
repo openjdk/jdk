@@ -62,7 +62,7 @@ import org.xml.sax.Attributes;
  * AttributeList} interface, it also includes a much more efficient
  * implementation using a single array rather than a set of Vectors.</p>
  *
- * @since JAXB1.0
+ * @since JAXB 1.0
  * @since SAX 2.0
  * @author David Megginson
  * @version 2.0.1 (sax2r2)

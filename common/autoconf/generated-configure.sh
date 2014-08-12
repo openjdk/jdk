@@ -4311,7 +4311,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1404942241
+DATE_WHEN_GENERATED=1405336663
 
 ###############################################################################
 #
@@ -14548,7 +14548,7 @@ $as_echo "$with_jvm_variants" >&6; }
   if test "x$JVM_VARIANT_ZEROSHARK" = xtrue ; then
     INCLUDE_SA=false
   fi
-  if test "x$VAR_CPU" = xppc64 ; then
+  if test "x$OPENJDK_TARGET_OS" = xaix ; then
     INCLUDE_SA=false
   fi
 

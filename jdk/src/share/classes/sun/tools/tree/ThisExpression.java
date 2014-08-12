@@ -87,7 +87,7 @@ class ThisExpression extends Expression {
     /**
      * Check expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         if (ctx.field.isStatic()) {
             env.error(where, "undef.var", opNames[op]);
             type = Type.tError;

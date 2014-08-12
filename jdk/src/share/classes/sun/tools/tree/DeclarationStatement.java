@@ -55,11 +55,11 @@ class DeclarationStatement extends Statement {
      * Check statement
      * Report an error unless the call is checkBlockStatement.
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         env.error(where, "invalid.decl");
         return checkBlockStatement(env, ctx, vset, exp);
     }
-    Vset checkBlockStatement(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset checkBlockStatement(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         if (labels != null) {
             env.error(where, "declaration.with.label", labels[0]);
         }

@@ -95,7 +95,7 @@ class _AppDockIconHandler {
 
     static Creator getCImageCreator() {
         try {
-            final Method getCreatorMethod = CImage.class.getDeclaredMethod("getCreator", new Class[] {});
+            final Method getCreatorMethod = CImage.class.getDeclaredMethod("getCreator", new Class<?>[] {});
             getCreatorMethod.setAccessible(true);
             return (Creator)getCreatorMethod.invoke(null, new Object[] {});
         } catch (final Throwable e) {

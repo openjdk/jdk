@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -198,8 +200,95 @@ public class SerializerMessages_es extends ListResourceBundle {
                 "El objeto de propiedades transferido a SerializerFactory no tiene una propiedad ''{0}''." },
 
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
-                "Advertencia: el tiempo de ejecuci\u00F3n de Java no soporta la codificaci\u00F3n ''{0}''." },
+                "Aviso: La codificaci\u00f3n ''{0}'' no est\u00e1 soportada por Java Runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "El par\u00e1metro ''{0}'' no se reconoce."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Se reconoce el par\u00e1metro ''{0}'' pero no puede establecerse el valor solicitado."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "La serie producida es demasiado larga para ajustarse a DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "El tipo de valor para este nombre de par\u00e1metro es incompatible con el tipo de valor esperado."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "El destino de salida de escritura de los datos es nulo."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "Se ha encontrado una codificaci\u00f3n no soportada."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "No se ha podido serializar el nodo."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "La secci\u00f3n CDATA contiene uno o m\u00e1s marcadores ']]>' de terminaci\u00f3n."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "No se ha podido crear una instancia del comprobador de gram\u00e1tica correcta.  El par\u00e1metro well-formed se ha establecido en true pero no se puede realizar la comprobaci\u00f3n de gram\u00e1tica correcta."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "El nodo ''{0}'' contiene caracteres XML no v\u00e1lidos."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el comentario."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en los datos de la instrucci\u00f3n de proceso."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el contenido de CDATASection."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Se ha encontrado un car\u00e1cter XML no v\u00e1lido (Unicode: 0x{0}) en el contenido de datos de caracteres del nodo."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Se ha encontrado un car\u00e1cter o caracteres XML no v\u00e1lidos en el nodo {0} denominado ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "No se permite la serie \"--\" dentro de los comentarios."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "El valor del atributo \"{1}\" asociado a un tipo de elemento \"{0}\" no debe contener el car\u00e1cter ''''<''''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "No se permite la referencia de entidad no analizada \"&{0};\"."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "La referencia de entidad externa \"&{0};\" no est\u00e1 permitida en un valor de atributo."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "No se puede encontrar el prefijo \"{0}\" en el espacio de nombres \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "El nombre local del elemento \"{0}\" es null."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "El nombre local del atributo \"{0}\" es null."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "El texto de sustituci\u00f3n del nodo de entidad \"{0}\" contiene un nodo de elemento \"{1}\" con un prefijo no enlazado \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "El texto de sustituci\u00f3n del nodo de entidad \"{0}\" contiene un nodo de atributo \"{1}\" con un prefijo no enlazado \"{2}\"."
+             },
 
         };
 

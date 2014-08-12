@@ -33,7 +33,7 @@ package javax.xml.bind;
  * @see ValidationEvent
  * @see ValidationEventHandler
  * @see Unmarshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public interface ParseConversionEvent extends ValidationEvent {
 

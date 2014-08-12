@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -229,9 +229,9 @@ public class JavaClass extends JavaHeapObject {
         return name.indexOf('[') != -1;
     }
 
-    public Enumeration getInstances(boolean includeSubclasses) {
+    public Enumeration<JavaHeapObject> getInstances(boolean includeSubclasses) {
         if (includeSubclasses) {
-            Enumeration res = instances.elements();
+            Enumeration<JavaHeapObject> res = instances.elements();
             for (int i = 0; i < subclasses.length; i++) {
                 res = new CompositeEnumeration(res,
                               subclasses[i].getInstances(true));

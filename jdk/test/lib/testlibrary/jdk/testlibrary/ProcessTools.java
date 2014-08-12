@@ -74,7 +74,7 @@ public final class ProcessTools {
     public static Process startProcess(String name,
                                        ProcessBuilder processBuilder)
     throws IOException {
-        return startProcess(name, processBuilder, null);
+        return startProcess(name, processBuilder, (Consumer)null);
     }
 
     /**
@@ -124,7 +124,7 @@ public final class ProcessTools {
      *                      Used to determine the moment the target app is
      *                      properly warmed-up.
      *                      It can be null - in that case the warmup is skipped.
-     * @param timeout The timeout for the warmup waiting
+     * @param timeout The timeout for the warmup waiting; -1 = no wait; 0 = wait forever
      * @param unit The timeout {@linkplain TimeUnit}
      * @return Returns the initialized {@linkplain Process}
      * @throws IOException
@@ -156,15 +156,20 @@ public final class ProcessTools {
             };
             stdout.addPump(pump);
             stderr.addPump(pump);
+        } else {
+            latch.countDown();
         }
         Future<Void> stdoutTask = stdout.process();
         Future<Void> stderrTask = stderr.process();
 
         try {
             if (timeout > -1) {
-                long realTimeout = Math.round(timeout * Utils.TIMEOUT_FACTOR);
-                if (!latch.await(realTimeout, unit)) {
-                    throw new TimeoutException();
+                if (timeout == 0) {
+                    latch.await();
+                } else {
+                    if (!latch.await(Utils.adjustTimeout(timeout), unit)) {
+                        throw new TimeoutException();
+                    }
                 }
             }
         } catch (TimeoutException | InterruptedException e) {
@@ -178,6 +183,31 @@ public final class ProcessTools {
         }
 
         return p;
+    }
+
+    /**
+     * <p>Starts a process from its builder.</p>
+     * <span>The default redirects of STDOUT and STDERR are started</span>
+     * <p>
+     * It is possible to wait for the process to get to a warmed-up state
+     * via {@linkplain Predicate} condition on the STDOUT
+     * </p>
+     * @param name The process name
+     * @param processBuilder The process builder
+     * @param linePredicate The {@linkplain Predicate} to use on the STDOUT
+     *                      Used to determine the moment the target app is
+     *                      properly warmed-up.
+     *                      It can be null - in that case the warmup is skipped.
+     * @return Returns the initialized {@linkplain Process}
+     * @throws IOException
+     * @throws InterruptedException
+     * @throws TimeoutException
+     */
+    public static Process startProcess(String name,
+                                       ProcessBuilder processBuilder,
+                                       final Predicate<String> linePredicate)
+    throws IOException, InterruptedException, TimeoutException {
+        return startProcess(name, processBuilder, linePredicate, 0, TimeUnit.SECONDS);
     }
 
     /**

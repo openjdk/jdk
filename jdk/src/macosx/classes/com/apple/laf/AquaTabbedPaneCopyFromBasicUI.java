@@ -3820,7 +3820,7 @@ public class AquaTabbedPaneCopyFromBasicUI extends TabbedPaneUI implements Swing
                 _loader = null;
                 final Class<?> klass = (Class<?>)loader;
                 try {
-                    final java.lang.reflect.Method method = klass.getDeclaredMethod("loadActionMap", new Class[] { LazyActionMap.class });
+                    final java.lang.reflect.Method method = klass.getDeclaredMethod("loadActionMap", new Class<?>[] { LazyActionMap.class });
                     method.invoke(klass, new Object[] { this });
                 } catch (final NoSuchMethodException nsme) {
                     assert false : "LazyActionMap unable to load actions " + klass;

@@ -575,6 +575,9 @@ public class JavapTask implements DisassemblerTool.DisassemblerTask, Messages {
                 }
                 reportError("err.ioerror", className, msg);
                 result = EXIT_ERROR;
+            } catch (OutOfMemoryError e) {
+                reportError("err.nomem");
+                result = EXIT_ERROR;
             } catch (Throwable t) {
                 StringWriter sw = new StringWriter();
                 PrintWriter pw = new PrintWriter(sw);

@@ -61,21 +61,45 @@ public class BasicColorChooserUI extends ColorChooserUI
     boolean isMultiPanel = false;
     private static TransferHandler defaultTransferHandler = new ColorTransferHandler();
 
+    /**
+     * The array of default color choosers.
+     */
     protected AbstractColorChooserPanel[] defaultChoosers;
 
+    /**
+     * The instance of {@code ChangeListener}.
+     */
     protected ChangeListener previewListener;
+
+    /**
+     * The instance of {@code PropertyChangeListener}.
+     */
     protected PropertyChangeListener propertyChangeListener;
     private Handler handler;
 
+    /**
+     * Returns a new instance of {@code BasicColorChooserUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicColorChooserUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicColorChooserUI();
     }
 
+    /**
+     * Returns an array of default color choosers.
+     *
+     * @return an array of default color choosers
+     */
     protected AbstractColorChooserPanel[] createDefaultChoosers() {
         AbstractColorChooserPanel[] panels = ColorChooserComponentFactory.getDefaultChooserPanels();
         return panels;
     }
 
+    /**
+     * Uninstalls default color choosers.
+     */
     protected void uninstallDefaultChoosers() {
         AbstractColorChooserPanel[] choosers = chooser.getChooserPanels();
         for( int i = 0 ; i < choosers.length; i++) {
@@ -138,6 +162,9 @@ public class BasicColorChooserUI extends ColorChooserUI
         handler = null;
     }
 
+    /**
+     * Installs preview panel.
+     */
     protected void installPreviewPanel() {
         JComponent previewPanel = this.chooser.getPreviewPanel();
         if (previewPanel == null) {
@@ -169,6 +196,9 @@ public class BasicColorChooserUI extends ColorChooserUI
         this.chooser.remove(this.previewPanelHolder);
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         LookAndFeel.installColorsAndFont(chooser, "ColorChooser.background",
                                               "ColorChooser.foreground",
@@ -180,16 +210,21 @@ public class BasicColorChooserUI extends ColorChooserUI
         }
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         if (chooser.getTransferHandler() instanceof UIResource) {
             chooser.setTransferHandler(null);
         }
     }
 
-
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         propertyChangeListener = createPropertyChangeListener();
-        chooser.addPropertyChangeListener( propertyChangeListener );
+        chooser.addPropertyChangeListener(propertyChangeListener);
 
         previewListener = getHandler();
         chooser.getSelectionModel().addChangeListener(previewListener);
@@ -202,10 +237,18 @@ public class BasicColorChooserUI extends ColorChooserUI
         return handler;
     }
 
+    /**
+     * Returns an instance of {@code PropertyChangeListener}.
+     *
+     * @return an instance of {@code PropertyChangeListener}
+     */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         chooser.removePropertyChangeListener( propertyChangeListener );
         chooser.getSelectionModel().removeChangeListener(previewListener);

@@ -2107,7 +2107,7 @@ public class JInternalFrame extends JComponent implements
             if (n == null) {
                 return false;
             }
-            setLayer(new Integer(n.intValue()));
+            setLayer(Integer.valueOf(n.intValue()));
             return true;
         }
 

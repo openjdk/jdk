@@ -64,7 +64,7 @@ class BinaryExpression extends UnaryExpression {
     /**
      * Check a binary expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = left.checkValue(env, ctx, vset, exp);
         vset = right.checkValue(env, ctx, vset, exp);
 

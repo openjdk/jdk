@@ -148,9 +148,7 @@ public class ProcessThread extends TestThread {
          */
         @Override
         public void xrun() throws Throwable {
-            this.process = ProcessTools.startProcess(
-                name, processBuilder, waitfor, -1, TimeUnit.SECONDS
-            );
+            this.process = ProcessTools.startProcess(name, processBuilder, waitfor);
             // Release when process is started
             latch.countDown();
 

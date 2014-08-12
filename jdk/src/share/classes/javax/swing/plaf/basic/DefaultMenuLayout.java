@@ -41,6 +41,17 @@ import java.awt.Dimension;
  */
 @SuppressWarnings("serial") // Superclass is not serializable across versions
 public class DefaultMenuLayout extends BoxLayout implements UIResource {
+
+    /**
+     * Constructs a new instance of {@code DefaultMenuLayout}.
+     *
+     * @param target the container that needs to be laid out
+     * @param axis the axis to lay out components along. Can be one of:
+     *              {@code BoxLayout.X_AXIS},
+     *              {@code BoxLayout.Y_AXIS},
+     *              {@code BoxLayout.LINE_AXIS} or
+     *              {@code BoxLayout.PAGE_AXIS}
+     */
     public DefaultMenuLayout(Container target, int axis) {
         super(target, axis);
     }

@@ -31,10 +31,11 @@
 
 // This test requires special hardware.
 
-import java.io.*;
-import java.util.*;
-
-import javax.smartcardio.*;
+import java.util.List;
+import javax.smartcardio.TerminalFactory;
+import javax.smartcardio.Card;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.CardTerminal;
 
 public class TestConnect extends Utils {
 
@@ -63,7 +64,7 @@ public class TestConnect extends Utils {
             throw new Exception("Not T=0 protocol");
         }
         transmit(card);
-        card.disconnect(false);
+        card.disconnect(true);
 
         try {
             transmit(card);
@@ -96,7 +97,7 @@ public class TestConnect extends Utils {
             throw new Exception("Not T=0 protocol");
         }
         transmit(card);
-        card.disconnect(true);
+        card.disconnect(false);
 
         card = terminal.connect("*");
         System.out.println("card: " + card);
@@ -104,7 +105,6 @@ public class TestConnect extends Utils {
             throw new Exception("Not T=0 protocol");
         }
         transmit(card);
-        card.disconnect(true);
         card.disconnect(true);
 
         System.out.println("OK.");

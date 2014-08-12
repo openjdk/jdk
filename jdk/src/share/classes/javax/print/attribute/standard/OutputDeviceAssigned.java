@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,7 +43,6 @@ import javax.print.attribute.PrintJobAttribute;
  * <B>IPP Compatibility:</B> The string value gives the IPP name value. The
  * locale gives the IPP natural language. The category name returned by
  * <CODE>getName()</CODE> gives the IPP attribute name.
- * <P>
  *
  * @author  Alan Kaminsky
  */

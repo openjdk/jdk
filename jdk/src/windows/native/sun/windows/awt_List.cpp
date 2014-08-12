@@ -1018,8 +1018,8 @@ Java_sun_awt_windows_WListPeer_isSelected(JNIEnv *env, jobject self,
     ses->list = env->NewGlobalRef(self);
     ses->index = index;
 
-    return JNI_IS_TRUE(AwtToolkit::GetInstance().SyncCall(
-                       (void *(*)(void *))AwtList::_IsSelected, ses));
+    return (jboolean)AwtToolkit::GetInstance().SyncCall(
+        (void *(*)(void *))AwtList::_IsSelected, ses);
     // global ref and ses are deleted in _IsSelected
 
     CATCH_BAD_ALLOC_RET(FALSE);

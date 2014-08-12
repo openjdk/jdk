@@ -292,13 +292,13 @@ public class TestFrame extends Frame implements ActionListener,
         robot.waitForIdle(delay);
 
         assertFalse(dummyClicked.flag(),
-            "DummyButton on blocked Window triggered action when clicked. " + message);
+            "DummyButton on blocked Frame triggered action when clicked. " + message);
 
         assertFalse(dummyGained.flag(),
-            "DummyButton on blocked Window gained focus when clicked. " + message);
+            "DummyButton on blocked Frame gained focus when clicked. " + message);
 
         assertFalse(focusGained.flag(),
-            "A blocked Dialog gained focus when component clicked. " + message);
+            "A blocked Frame gained focus when component clicked. " + message);
     }
 
     public void checkUnblockedFrame(ExtendedRobot robot,
@@ -324,46 +324,50 @@ public class TestFrame extends Frame implements ActionListener,
             "button did not gain focus on tab press. " + message);
     }
 
-    public void checkCloseButtonFocusGained() {
-        checkCloseButtonFocusGained(Flag.ATTEMPTS);
+    public void checkCloseButtonFocusGained(boolean refState) {
+        checkCloseButtonFocusGained(refState, Flag.ATTEMPTS);
     }
 
-    public void checkCloseButtonFocusGained(int attempts) {
-
+    public void checkCloseButtonFocusGained(boolean refState, int attempts) {
         try {
             closeGained.waitForFlagTriggered(attempts);
         } catch (InterruptedException e) {}
 
-        if (closeGained.flag()) {
-            Component focusOwner =
-                KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-            assertTrue(closeButton.equals(focusOwner),
-                "close button gained focus, but it is not the current focus owner");
-        } else {
-            assertTrue(false, "frame Close button did not gain focus");
-        }
+        String msg = "frame Close button ";
+        msg += (refState ? "did not gain focus" :
+                "gained focus when it should not");
+
+        assertTrue(closeGained.flag() == refState, msg);
     }
 
-    public void checkOpenButtonFocusGained() {
-        try {
-            openGained.waitForFlagTriggered();
-        } catch (InterruptedException e) {}
-
-        if (openGained.flag()) {
-            Component focusOwner =
-                KeyboardFocusManager.getCurrentKeyboardFocusManager().getFocusOwner();
-            assertTrue(openButton.equals(focusOwner),
-                "open button gained focus, but it is not the current focus owner");
-        } else {
-            assertTrue(false, "frame Open button did not gain focus");
-        }
+    public void checkOpenButtonFocusGained(boolean refState) {
+        checkOpenButtonFocusGained(refState, Flag.ATTEMPTS);
     }
 
-    public void checkOpenButtonFocusLost() {
+    public void checkOpenButtonFocusGained(boolean refState, int attempts) {
         try {
-            openLost.waitForFlagTriggered();
+            openGained.waitForFlagTriggered(attempts);
         } catch (InterruptedException e) {}
 
-        assertTrue(openLost.flag(), "frame Open button did not lose focus");
+        String msg = "frame Open button ";
+        msg += (refState ? "did not gain focus" :
+                "gained focus when it should not");
+
+        assertTrue(openGained.flag() == refState, msg);
+    }
+
+    public void checkOpenButtonFocusLost(boolean refState) {
+        checkOpenButtonFocusLost(refState, Flag.ATTEMPTS);
+    }
+
+    public void checkOpenButtonFocusLost(boolean refState, int attempts) {
+        try {
+            openLost.waitForFlagTriggered(attempts);
+        } catch (InterruptedException e) {}
+
+        String msg = "frame Open button ";
+        msg += (refState ? "did not lose focus" :
+                "lost focus when it should not");
+        assertTrue(openLost.flag()== refState, msg);
     }
 }

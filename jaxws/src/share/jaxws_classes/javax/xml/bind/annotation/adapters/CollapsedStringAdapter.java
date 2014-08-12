@@ -35,7 +35,7 @@ package javax.xml.bind.annotation.adapters;
  * sequnce of tab, CR, LF, and SP by a single whitespace character ' '.
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 public class CollapsedStringAdapter extends XmlAdapter<String,String> {
     /**

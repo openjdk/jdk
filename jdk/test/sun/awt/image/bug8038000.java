@@ -23,11 +23,13 @@
 
 /**
  * @test
- * @bug     8038000
+ * @bug     8038000 8047066
  *
  * @summary Verifies that we could create different type of Rasters with height 1
  * and strideline which exceeds raster width.
  * Also checks that a set of RasterOp work correctly with such kind of Rasters.
+ * For 8047066 verifies that ColorConvertOp could process
+ * Raster (ByteBuffer + SinglePixelPackedSampleModel)
  *
  * @run     main bug8038000
  */

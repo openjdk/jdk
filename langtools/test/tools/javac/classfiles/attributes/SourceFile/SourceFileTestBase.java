@@ -30,18 +30,41 @@ import java.util.List;
 import java.util.Map;
 import javax.tools.JavaFileObject;
 
+/**
+ * Base class for Source file attribute tests. Checks expected file name for specified classes in the SourceFile attribute.
+ * To add new tests you should extend the SourceFileTestBase class and invoke {@link #test} for static sources
+ * or {@link #compileAndTest} for generated sources. For more information see corresponding methods.
+ *
+ * @see #test
+ * @see #compileAndTest
+ */
 public class SourceFileTestBase extends TestBase {
-
+    /**
+     * Checks expected fileName for the specified class in the SourceFile attribute.
+     *
+     * @param classToTest class to check its SourceFile attribute
+     * @param fileName    expected name of the file from which the test file is compiled.
+     */
     protected void test(Class<?> classToTest, String fileName) throws Exception {
         assertAttributePresent(ClassFile.read(getClassFile(classToTest)), fileName);
     }
 
+    /**
+     * Checks expected fileName for the specified class in the SourceFile attribute.
+     *
+     * @param classToTest class name to check its SourceFile attribute
+     * @param fileName    expected name of the file from which the test file is compiled.
+     */
     protected void test(String classToTest, String fileName) throws Exception {
         assertAttributePresent(ClassFile.read(getClassFile(classToTest + ".class")), fileName);
     }
 
     /**
-     * Compile sourceCode and for all "classesToTest" checks SourceFile attribute.
+     * Compiles sourceCode and for each specified class name checks the SourceFile attribute.
+     * The file name is extracted from source code.
+     *
+     * @param sourceCode    source code to compile
+     * @param classesToTest class names to check their SourceFile attribute.
      */
     protected void compileAndTest(String sourceCode, String... classesToTest) throws Exception {
 

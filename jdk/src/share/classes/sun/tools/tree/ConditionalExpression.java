@@ -64,7 +64,7 @@ class ConditionalExpression extends BinaryExpression {
     /**
      * Check the expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         ConditionVars cvars = cond.checkCondition(env, ctx, vset, exp);
         vset = left.checkValue(env, ctx, cvars.vsTrue, exp).join(
                right.checkValue(env, ctx, cvars.vsFalse, exp) );
@@ -107,7 +107,7 @@ class ConditionalExpression extends BinaryExpression {
         return vset;
     }
 
-    public Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = cond.checkValue(env, ctx, vset, exp);
         cond = convert(env, ctx, Type.tBoolean, cond);
         return left.check(env, ctx, vset.copy(), exp).join(right.check(env, ctx, vset, exp));

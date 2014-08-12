@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,22 +28,23 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import com.sun.source.util.JavacTask;
+import com.sun.source.util.TaskEvent.Kind;
 import com.sun.tools.javac.code.Kinds;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.tree.TreeScanner;
 
-import static com.sun.source.util.TaskEvent.Kind;
-import static com.sun.tools.javac.code.Flags.*;
-import static com.sun.tools.javac.tree.JCTree.JCVariableDecl;
+import static com.sun.tools.javac.code.Flags.ENUM;
+import static com.sun.tools.javac.code.Flags.FINAL;
+import static com.sun.tools.javac.code.Flags.STATIC;
+import static com.sun.tools.javac.code.Flags.SYNTHETIC;
 
 public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
 
-    public MutableFieldsAnalyzer() {
+    public MutableFieldsAnalyzer(JavacTask task) {
+        super(task);
         treeVisitor = new MutableFieldsVisitor();
         eventKind = Kind.ANALYZE;
-    }
-
-    public String getName() {
-        return "mutable_fields_analyzer";
     }
 
     private boolean ignoreField(String className, String field) {
@@ -89,7 +90,7 @@ public class MutableFieldsAnalyzer extends AbstractCodingRulesAnalyzer {
     private static final String packageToCheck = "com.sun.tools.javac";
 
     private static final Map<String, List<String>> classFieldsToIgnoreMap =
-                new HashMap<String, List<String>>();
+                new HashMap<>();
 
     static {
         classFieldsToIgnoreMap.

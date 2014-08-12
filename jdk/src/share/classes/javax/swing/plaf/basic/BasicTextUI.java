@@ -443,6 +443,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
     protected void uninstallListeners() {
     }
 
+    /**
+     * Registers keyboard actions.
+     */
     protected void installKeyboardActions() {
         // backward compatibility support... keymaps for the UI
         // are now installed in the more friendly input map.
@@ -637,6 +640,9 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         return map;
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         editor.setKeymap(null);
         SwingUtilities.replaceUIInputMap(editor, JComponent.
@@ -1280,8 +1286,14 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
         return null;
     }
 
+    /**
+     * Default implementation of the interface {@code Caret}.
+     */
     public static class BasicCaret extends DefaultCaret implements UIResource {}
 
+    /**
+     * Default implementation of the interface {@code Highlighter}.
+     */
     public static class BasicHighlighter extends DefaultHighlighter implements UIResource {}
 
     static class BasicCursor extends Cursor implements UIResource {

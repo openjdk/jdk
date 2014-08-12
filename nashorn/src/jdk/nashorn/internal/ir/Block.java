@@ -149,7 +149,7 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     @Override
     public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
         if (visitor.enterBlock(this)) {
-            return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, Statement.class, statements)));
+            return visitor.leaveBlock(setStatements(lc, Node.accept(visitor, statements)));
         }
 
         return this;

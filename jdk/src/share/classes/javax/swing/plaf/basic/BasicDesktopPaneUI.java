@@ -55,7 +55,14 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     private Handler handler;
     private PropertyChangeListener pcl;
 
+    /**
+     * The instance of {@code JDesktopPane}.
+     */
     protected JDesktopPane desktop;
+
+    /**
+     * The instance of {@code DesktopManager}.
+     */
     protected DesktopManager desktopManager;
 
     /**
@@ -109,10 +116,19 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
     @Deprecated
     protected KeyStroke navigateKey2;
 
+    /**
+     * Constructs a new instance of {@code BasicDesktopPaneUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicDesktopPaneUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicDesktopPaneUI();
     }
 
+    /**
+     * Constructs a new instance of {@code BasicDesktopPaneUI}.
+     */
     public BasicDesktopPaneUI() {
     }
 
@@ -133,6 +149,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         handler = null;
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         if (desktop.getBackground() == null ||
             desktop.getBackground() instanceof UIResource) {
@@ -141,6 +160,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         LookAndFeel.installProperty(desktop, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() { }
 
     /**
@@ -169,6 +191,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         pcl = null;
     }
 
+    /**
+     * Installs desktop manager.
+     */
     protected void installDesktopManager() {
         desktopManager = desktop.getDesktopManager();
         if(desktopManager == null) {
@@ -177,6 +202,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         }
     }
 
+    /**
+     * Uninstalls desktop manager.
+     */
     protected void uninstallDesktopManager() {
         if(desktop.getDesktopManager() instanceof UIResource) {
             desktop.setDesktopManager(null);
@@ -184,6 +212,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         desktopManager = null;
     }
 
+    /**
+     * Installs keyboard actions.
+     */
     protected void installKeyboardActions(){
         InputMap inputMap = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
         if (inputMap != null) {
@@ -202,9 +233,15 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         registerKeyboardActions();
     }
 
+    /**
+     * Registers keyboard actions.
+     */
     protected void registerKeyboardActions(){
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void unregisterKeyboardActions(){
     }
 
@@ -253,6 +290,9 @@ public class BasicDesktopPaneUI extends DesktopPaneUI {
         map.put(new Actions(Actions.NAVIGATE_PREVIOUS));
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions(){
       unregisterKeyboardActions();
       SwingUtilities.replaceUIInputMap(desktop, JComponent.

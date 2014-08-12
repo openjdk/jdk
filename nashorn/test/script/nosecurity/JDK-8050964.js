@@ -46,8 +46,11 @@ if (! nashornJar.isAbsolute()) {
     nashornJar = new File(".", nashornJar);
 }
 
+var javahome = System.getProperty("java.home");
+var jdepsPath = javahome + "/../bin/jdeps".replaceAll(/\//g, File.separater);
+
 // run jdep on nashorn.jar - only summary but print profile info
-`jdeps -s -P ${nashornJar.absolutePath}`
+`${jdepsPath} -s -P ${nashornJar.absolutePath}`
 
 // check for "(compact1)" in output from jdep tool
 if (! /(compact1)/.test($OUT)) {

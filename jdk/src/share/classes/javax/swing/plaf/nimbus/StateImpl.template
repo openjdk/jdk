@@ -28,7 +28,7 @@ import java.awt.*;
 import javax.swing.*;
 
 
-class ${STATE_NAME} extends State {
+class ${STATE_NAME} extends State<JComponent> {
     ${STATE_NAME}() {
         super("${STATE_KEY}");
     }

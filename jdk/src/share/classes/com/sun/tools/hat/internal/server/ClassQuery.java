@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -151,7 +151,7 @@ class ClassQuery extends QueryHandler {
         }
         out.println("<h2>References to this object:</h2>");
         out.flush();
-        Enumeration referers = obj.getReferers();
+        Enumeration<JavaThing> referers = obj.getReferers();
         while (referers.hasMoreElements()) {
             JavaHeapObject ref = (JavaHeapObject) referers.nextElement();
             printThing(ref);

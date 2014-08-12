@@ -38,6 +38,8 @@ package javax.xml.soap;
  * <PRE>
  *    SOAPBodyElement sbe = sb.addBodyElement(myName);
  * </PRE>
+ *
+ * @since 1.6
  */
 public interface SOAPBodyElement extends SOAPElement {
 }

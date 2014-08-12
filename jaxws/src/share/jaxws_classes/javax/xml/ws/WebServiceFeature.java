@@ -44,7 +44,7 @@ package javax.xml.ws;
  * @see javax.xml.ws.soap.AddressingFeature
  * @see javax.xml.ws.soap.MTOMFeature
  *
- * @since 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 public abstract class WebServiceFeature {
    /**

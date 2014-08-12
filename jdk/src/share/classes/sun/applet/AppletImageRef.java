@@ -65,7 +65,7 @@ class AppletImageRef {
      * invoke reconstitute().
      */
     public synchronized void flush() {
-        SoftReference s = soft;
+        SoftReference<Image> s = soft;
         if (s != null) s.clear();
         soft = null;
     }
@@ -74,9 +74,9 @@ class AppletImageRef {
      * Sets the thing to the specified object.
      * @param thing the specified object
      */
-    public synchronized void setThing(Object thing) {
+    public synchronized void setThing(Image thing) {
         flush();
-        soft = new SoftReference(thing);
+        soft = new SoftReference<>(thing);
     }
 
     /**

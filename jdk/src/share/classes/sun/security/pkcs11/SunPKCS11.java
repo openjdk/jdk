@@ -593,7 +593,7 @@ public final class SunPKCS11 extends AuthProvider {
 
         // AlgorithmParameters for EC.
         // Only needed until we have an EC implementation in the SUN provider.
-        d(AGP, "EC",            "sun.security.ec.ECParameters",
+        d(AGP, "EC",            "sun.security.util.ECParameters",
                                                 s("1.2.840.10045.2.1"),
                 m(CKM_EC_KEY_PAIR_GEN, CKM_ECDH1_DERIVE,
                     CKM_ECDSA, CKM_ECDSA_SHA1));
@@ -1032,7 +1032,7 @@ public final class SunPKCS11 extends AuthProvider {
             } else if (type == KS) {
                 return token.getKeyStore();
             } else if (type == AGP) {
-                return new sun.security.ec.ECParameters();
+                return new sun.security.util.ECParameters();
             } else {
                 throw new NoSuchAlgorithmException("Unknown type: " + type);
             }

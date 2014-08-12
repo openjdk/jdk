@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,7 +24,6 @@
  */
 
 package com.sun.tools.javac.util;
-
 
 /**
  * Simple facility for unconditional assertions.
@@ -87,7 +86,7 @@ public class Assert {
     }
 
     /** Equivalent to
-     *   assert cond : value;
+     *   assert cond : msg;
      */
     public static void check(boolean cond, String msg) {
         if (!cond)
@@ -103,7 +102,7 @@ public class Assert {
     }
 
     /** Equivalent to
-     *   assert (o == null) : value;
+     *   assert (o == null) : msg;
      */
     public static void checkNull(Object o, String msg) {
         if (o != null)
@@ -111,7 +110,7 @@ public class Assert {
     }
 
     /** Equivalent to
-     *   assert (o != null) : value;
+     *   assert (o != null) : msg;
      */
     public static <T> T checkNonNull(T t, String msg) {
         if (t == null)

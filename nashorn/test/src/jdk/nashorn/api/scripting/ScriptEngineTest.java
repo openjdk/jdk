@@ -607,6 +607,14 @@ public class ScriptEngineTest {
         assertEquals(res, "hello");
     }
 
+    // @bug 8054223: Nashorn: AssertionError when use __DIR__ and ScriptEngine.eval()
+    @Test
+    public void check__DIR__Test() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.eval("__DIR__");
+    }
+
     // @bug 8050432:javax.script.filename variable should not be enumerable
     // with nashorn engine's ENGINE_SCOPE bindings
     @Test

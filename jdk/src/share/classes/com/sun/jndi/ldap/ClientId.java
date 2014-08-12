@@ -196,7 +196,7 @@ class ClientId {
                 System.out.println("ClientId received an exception");
                 e.printStackTrace();
             }
-            // Failed to invoke the comparator; flag unequality
+            // Failed to invoke the comparator; flag inequality
             return false;
         }
         if (((Integer) ret) == 0) {

@@ -132,4 +132,14 @@ public interface JavaLangAccess {
      * Invokes the finalize method of the given object.
      */
     void invokeFinalize(Object o) throws Throwable;
+
+    /**
+     * Invokes Long.formatUnsignedLong(long val, int shift, char[] buf, int offset, int len)
+     */
+    void formatUnsignedLong(long val, int shift, char[] buf, int offset, int len);
+
+    /**
+     * Invokes Integer.formatUnsignedInt(long val, int shift, char[] buf, int offset, int len)
+     */
+    void formatUnsignedInt(int val, int shift, char[] buf, int offset, int len);
 }

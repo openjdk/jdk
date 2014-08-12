@@ -1559,6 +1559,21 @@ public abstract class SerializerBase
     }
 
     /**
+     * Return a {@link DOM3Serializer} interface into this serializer. If the
+     * serializer does not support the {@link DOM3Serializer} interface, it should
+     * return null.
+     *
+     * @return A {@link DOM3Serializer} interface into this serializer,  or null
+     * if the serializer is not DOM capable
+     * @throws IOException An I/O exception occured
+     * @see org.apache.xml.serializer.Serializer#asDOM3Serializer()
+     */
+    public Object asDOM3Serializer() throws IOException
+    {
+        return new com.sun.org.apache.xml.internal.serializer.dom3.DOM3SerializerImpl(this);
+    }
+
+    /**
      * Get the default value of an xsl:output property,
      * which would be null only if no default value exists
      * for the property.

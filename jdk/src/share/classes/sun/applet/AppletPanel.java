@@ -179,7 +179,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
         handler = new Thread(appletGroup, this, "thread " + nm);
         // set the context class loader for this thread
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 @Override
                 public Object run() {
                     handler.setContextClassLoader(loader);
@@ -253,7 +253,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * AppletEvent Queue
      */
-    private Queue queue = null;
+    private Queue<Integer> queue = null;
 
 
     synchronized public void addAppletListener(AppletListener l) {
@@ -282,7 +282,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         synchronized(this) {
             if (queue == null) {
                 //System.out.println("SEND0= " + id);
-                queue = new Queue();
+                queue = new Queue<>();
             }
             Integer eventId = Integer.valueOf(id);
             queue.enqueue(eventId);
@@ -309,7 +309,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         while (queue == null || queue.isEmpty()) {
             wait();
         }
-        Integer eventId = (Integer)queue.dequeue();
+        Integer eventId = queue.dequeue();
         return new AppletEvent(this, eventId.intValue(), null);
     }
 
@@ -631,14 +631,15 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * calls KeyboardFocusManager directly.
      */
     private Component getMostRecentFocusOwnerForWindow(Window w) {
-        Method meth = (Method)AccessController.doPrivileged(new PrivilegedAction() {
+        Method meth = AccessController.doPrivileged(
+            new PrivilegedAction<Method>() {
                 @Override
-                public Object run() {
+                public Method run() {
                     Method meth = null;
                     try {
                         meth = KeyboardFocusManager.class.getDeclaredMethod(
                                 "getMostRecentFocusOwner",
-                                new Class[]{Window.class});
+                                new Class<?>[]{Window.class});
                         meth.setAccessible(true);
                     } catch (Exception e) {
                         // Must never happen
@@ -988,7 +989,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
     /**
      * The class loaders
      */
-    private static HashMap classloaders = new HashMap();
+    private static HashMap<String, AppletClassLoader> classloaders = new HashMap<>();
 
     /**
      * Flush a class loader.
@@ -1001,7 +1002,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Flush all class loaders.
      */
     public static synchronized void flushClassLoaders() {
-        classloaders = new HashMap();
+        classloaders = new HashMap<>();
     }
 
     /**
@@ -1018,14 +1019,14 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      * Get a class loader. Create in a restricted context
      */
     synchronized AppletClassLoader getClassLoader(final URL codebase, final String key) {
-        AppletClassLoader c = (AppletClassLoader)classloaders.get(key);
+        AppletClassLoader c = classloaders.get(key);
         if (c == null) {
             AccessControlContext acc =
                 getAccessControlContext(codebase);
-            c = (AppletClassLoader)
-                AccessController.doPrivileged(new PrivilegedAction() {
+            c = AccessController.doPrivileged(
+                    new PrivilegedAction<AppletClassLoader>() {
                         @Override
-                        public Object run() {
+                        public AppletClassLoader run() {
                             AppletClassLoader ac = createClassLoader(codebase);
                             /* Should the creation of the classloader be
                              * within the class synchronized block?  Since
@@ -1043,8 +1044,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
                              * (which timeout when called from the browser).
                              */
                             synchronized (getClass()) {
-                                AppletClassLoader res =
-                                    (AppletClassLoader)classloaders.get(key);
+                                AppletClassLoader res = classloaders.get(key);
                                 if (res == null) {
                                     classloaders.put(key, ac);
                                     return ac;
@@ -1066,10 +1066,10 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
      */
     private AccessControlContext getAccessControlContext(final URL codebase) {
 
-        PermissionCollection perms = (PermissionCollection)
-            AccessController.doPrivileged(new PrivilegedAction() {
+        PermissionCollection perms = AccessController.doPrivileged(
+                new PrivilegedAction<PermissionCollection>() {
                     @Override
-                    public Object run() {
+                    public PermissionCollection run() {
                         Policy p = java.security.Policy.getPolicy();
                         if (p != null) {
                             return p.getPermissions(new CodeSource(null,
@@ -1172,13 +1172,15 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         // critical section of the window list in AppContext.
         synchronized (Window.class)
         {
-            WeakReference weakRef = null;
+            WeakReference<Window> weakRef = null;
             // Remove frame from the Window list in wrong AppContext
             {
                 // Lookup current frame's AppContext
-                Vector<WeakReference<Window>> windowList = (Vector<WeakReference<Window>>)oldAppContext.get(Window.class);
+                @SuppressWarnings("unchecked")
+                Vector<WeakReference<Window>> windowList =
+                    (Vector<WeakReference<Window>>)oldAppContext.get(Window.class);
                 if (windowList != null) {
-                    for (WeakReference ref : windowList) {
+                    for (WeakReference<Window> ref : windowList) {
                         if (ref.get() == frame) {
                             weakRef = ref;
                             break;
@@ -1195,7 +1197,9 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
 
             // Insert frame into the Window list in the applet's AppContext map
             {
-                Vector<WeakReference<Window>> windowList = (Vector)newAppContext.get(Window.class);
+                @SuppressWarnings("unchecked")
+                Vector<WeakReference<Window>> windowList =
+                    (Vector<WeakReference<Window>>)newAppContext.get(Window.class);
                 if (windowList == null) {
                     windowList = new Vector<WeakReference<Window>>();
                     newAppContext.put(Window.class, windowList);
@@ -1224,7 +1228,7 @@ abstract class AppletPanel extends Panel implements AppletStub, Runnable {
         // synchronized on applet class object, so calling from
         // different instances of the same applet will be
         // serialized.
-        Class appletClass = applet.getClass();
+        Class<?> appletClass = applet.getClass();
 
         synchronized(appletClass)  {
             // Determine if the JDK level of an applet has been

@@ -2323,7 +2323,7 @@ public class JPEGMetadata extends IIOMetadata implements Cloneable {
                 SOSMarkerSegment sos = (SOSMarkerSegment) seg;
                 SOSMarkerSegment.ScanComponentSpec [] specs = sos.componentSpecs;
                 for (int i = 0; i < specs.length; i++) {
-                    Integer id = new Integer(specs[i].componentSelector);
+                    Integer id = specs[i].componentSelector;
                     if (!ids.contains(id)) {
                         ids.add(id);
                     }

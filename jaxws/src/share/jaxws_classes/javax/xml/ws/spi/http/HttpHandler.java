@@ -36,7 +36,7 @@ import java.io.IOException;
  * {@link Endpoint#publish(HttpContext) }
  *
  * @author Jitendra Kotamraju
- * @since JAX-WS 2.2
+ * @since 1.7, JAX-WS 2.2
  */
 public abstract class HttpHandler {
     /**

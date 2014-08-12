@@ -94,7 +94,7 @@ final class StdAppletViewerFactory implements AppletViewerFactory {
 
     @Override
     public AppletViewer createAppletViewer(int x, int y,
-                                           URL doc, Hashtable atts) {
+                                           URL doc, Hashtable<String, String> atts) {
         return new AppletViewer(x, y, doc, atts, System.out, this);
     }
 
@@ -156,7 +156,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Create the applet viewer.
      */
-    public AppletViewer(int x, int y, URL doc, Hashtable atts,
+    public AppletViewer(int x, int y, URL doc, Hashtable<String, String> atts,
                         PrintStream statusMsgStream, AppletViewerFactory factory) {
         this.factory = factory;
         this.statusMsgStream = statusMsgStream;
@@ -350,7 +350,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      *             s.  Whitespace not stripped.
      */
     private String [] splitSeparator(String sep, String s) {
-        Vector v = new Vector();
+        Vector<String> v = new Vector<>();
         int tokenStart = 0;
         int tokenEnd   = 0;
 
@@ -370,7 +370,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      * Methods for java.applet.AppletContext
      */
 
-    private static Map audioClips = new HashMap();
+    private static Map<URL, AudioClip> audioClips = new HashMap<>();
 
     /**
      * Get an audio clip.
@@ -379,7 +379,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     public AudioClip getAudioClip(URL url) {
         checkConnect(url);
         synchronized (audioClips) {
-            AudioClip clip = (AudioClip)audioClips.get(url);
+            AudioClip clip = audioClips.get(url);
             if (clip == null) {
                 audioClips.put(url, clip = new AppletAudioClip(url));
             }
@@ -387,7 +387,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         }
     }
 
-    private static Map imageRefs = new HashMap();
+    private static Map<URL, AppletImageRef> imageRefs = new HashMap<>();
 
     /**
      * Get an image.
@@ -403,7 +403,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     static Image getCachedImage(URL url) {
         // System.getSecurityManager().checkConnection(url.getHost(), url.getPort());
         synchronized (imageRefs) {
-            AppletImageRef ref = (AppletImageRef)imageRefs.get(url);
+            AppletImageRef ref = imageRefs.get(url);
             if (ref == null) {
                 ref = new AppletImageRef(url);
                 imageRefs.put(url, ref);
@@ -419,7 +419,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         imageRefs.clear();
     }
 
-    static Vector appletPanels = new Vector();
+    static Vector<AppletPanel> appletPanels = new Vector<>();
 
     /**
      * Get an applet by name.
@@ -430,8 +430,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         name = name.toLowerCase();
         SocketPermission panelSp =
             new SocketPermission(panel.getCodeBase().getHost(), "connect");
-        for (Enumeration e = appletPanels.elements() ; e.hasMoreElements() ;) {
-            AppletPanel p = (AppletPanel)e.nextElement();
+        for (Enumeration<AppletPanel> e = appletPanels.elements() ; e.hasMoreElements() ;) {
+            AppletPanel p = e.nextElement();
             String param = p.getParameter("name");
             if (param != null) {
                 param = param.toLowerCase();
@@ -455,14 +455,14 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      * applets on this page.
      */
     @Override
-    public Enumeration getApplets() {
+    public Enumeration<Applet> getApplets() {
         AppletSecurity security = (AppletSecurity)System.getSecurityManager();
-        Vector v = new Vector();
+        Vector<Applet> v = new Vector<>();
         SocketPermission panelSp =
             new SocketPermission(panel.getCodeBase().getHost(), "connect");
 
-        for (Enumeration e = appletPanels.elements() ; e.hasMoreElements() ;) {
-            AppletPanel p = (AppletPanel)e.nextElement();
+        for (Enumeration<AppletPanel> e = appletPanels.elements() ; e.hasMoreElements() ;) {
+            AppletPanel p = e.nextElement();
             if (p.getDocumentBase().equals(panel.getDocumentBase())) {
 
                 SocketPermission sp =
@@ -509,7 +509,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     }
 
     @Override
-    public Iterator getStreamKeys(){
+    public Iterator<String> getStreamKeys(){
         // We do nothing.
         return null;
     }
@@ -517,7 +517,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * System parameters.
      */
-    static Hashtable systemParam = new Hashtable();
+    static Hashtable<String, String> systemParam = new Hashtable<>();
 
     static {
         systemParam.put("codebase", "codebase");
@@ -533,32 +533,32 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Print the HTML tag.
      */
-    public static void printTag(PrintStream out, Hashtable atts) {
+    public static void printTag(PrintStream out, Hashtable<String, String> atts) {
         out.print("<applet");
 
-        String v = (String)atts.get("codebase");
+        String v = atts.get("codebase");
         if (v != null) {
             out.print(" codebase=\"" + v + "\"");
         }
 
-        v = (String)atts.get("code");
+        v = atts.get("code");
         if (v == null) {
             v = "applet.class";
         }
         out.print(" code=\"" + v + "\"");
-        v = (String)atts.get("width");
+        v = atts.get("width");
         if (v == null) {
             v = "150";
         }
         out.print(" width=" + v);
 
-        v = (String)atts.get("height");
+        v = atts.get("height");
         if (v == null) {
             v = "100";
         }
         out.print(" height=" + v);
 
-        v = (String)atts.get("name");
+        v = atts.get("name");
         if (v != null) {
             out.print(" name=\"" + v + "\"");
         }
@@ -568,8 +568,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         int len = atts.size();
         String params[] = new String[len];
         len = 0;
-        for (Enumeration e = atts.keys() ; e.hasMoreElements() ;) {
-            String param = (String)e.nextElement();
+        for (Enumeration<String> e = atts.keys() ; e.hasMoreElements() ;) {
+            String param = e.nextElement();
             int i = 0;
             for (; i < len ; i++) {
                 if (params[i].compareTo(param) >= 0) {
@@ -649,7 +649,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
      * Save the applet to a well known file (for now) as a serialized object
      */
     void appletSave() {
-        AccessController.doPrivileged(new PrivilegedAction() {
+        AccessController.doPrivileged(new PrivilegedAction<Object>() {
 
             @Override
             public Object run() {
@@ -702,8 +702,10 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     void appletClone() {
         Point p = location();
         updateAtts();
+        @SuppressWarnings("unchecked")
+        Hashtable<String, String> tmp = (Hashtable<String, String>) panel.atts.clone();
         factory.createAppletViewer(p.x + XDELTA, p.y + YDELTA,
-                                   panel.documentURL, (Hashtable)panel.atts.clone());
+                                   panel.documentURL, tmp);
     }
 
     /**
@@ -884,8 +886,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
             @Override
             public void run()
             {
-                for (Enumeration e = appletPanels.elements() ; e.hasMoreElements() ;) {
-                    AppletPanel p = (AppletPanel)e.nextElement();
+                for (Enumeration<AppletPanel> e = appletPanels.elements() ; e.hasMoreElements() ;) {
+                    AppletPanel p = e.nextElement();
                     appletShutdown(p);
                 }
                 appletSystemExit();
@@ -1016,8 +1018,8 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
     /**
      * Scan tag
      */
-    public static Hashtable scanTag(Reader in) throws IOException {
-        Hashtable atts = new Hashtable();
+    public static Hashtable<String, String> scanTag(Reader in) throws IOException {
+        Hashtable<String, String> atts = new Hashtable<>();
         skipSpace(in);
         while (c >= 0 && c != '>') {
             String att = scanIdentifier(in);
@@ -1122,7 +1124,7 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
         url = conn.getURL();
 
         int ydisp = 1;
-        Hashtable atts = null;
+        Hashtable<String, String> atts = null;
 
         while(true) {
             c = in.read();
@@ -1172,12 +1174,12 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
                 else {
                     String nm = scanIdentifier(in);
                     if (nm.equalsIgnoreCase("param")) {
-                        Hashtable t = scanTag(in);
-                        String att = (String)t.get("name");
+                        Hashtable<String, String> t = scanTag(in);
+                        String att = t.get("name");
                         if (att == null) {
                             statusMsgStream.println(requiresNameWarning);
                         } else {
-                            String val = (String)t.get("value");
+                            String val = t.get("value");
                             if (val == null) {
                                 statusMsgStream.println(requiresNameWarning);
                             } else if (atts != null) {
@@ -1235,13 +1237,13 @@ public class AppletViewer extends Frame implements AppletContext, Printable {
                     }
                     else if (nm.equalsIgnoreCase("app")) {
                         statusMsgStream.println(appNotLongerSupportedWarning);
-                        Hashtable atts2 = scanTag(in);
-                        nm = (String)atts2.get("class");
+                        Hashtable<String, String> atts2 = scanTag(in);
+                        nm = atts2.get("class");
                         if (nm != null) {
                             atts2.remove("class");
                             atts2.put("code", nm + ".class");
                         }
-                        nm = (String)atts2.get("src");
+                        nm = atts2.get("src");
                         if (nm != null) {
                             atts2.remove("src");
                             atts2.put("codebase", nm);

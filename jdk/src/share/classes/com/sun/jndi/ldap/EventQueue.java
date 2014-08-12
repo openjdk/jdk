@@ -75,7 +75,7 @@ final class EventQueue implements Runnable {
      * Enqueue an event.
      * @param event Either a <tt>NamingExceptionEvent</tt> or a subclass
      *              of <tt>NamingEvent</tt> or
-     * <tt>UnsolicitedNotificatoniEvent</tt>.
+     * <tt>UnsolicitedNotificationEvent</tt>.
      * If it is a subclass of <tt>NamingEvent</tt>, all listeners must implement
      * the corresponding subinterface of <tt>NamingListener</tt>.
      * For example, for a <tt>ObjectAddedEvent</tt>, all listeners <em>must</em>
@@ -141,7 +141,7 @@ final class EventQueue implements Runnable {
                     // it is interested in. (No need to check mask or
                     // instanceof subinterfaces.)
                     // It is the responsibility of the enqueuer to
-                    // only enqueue events with listseners of the correct type.
+                    // only enqueue events with listeners of the correct type.
 
                     if (e instanceof NamingEvent) {
                         ((NamingEvent)e).dispatch(v.elementAt(i));

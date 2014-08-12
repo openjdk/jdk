@@ -23,29 +23,31 @@
 
 /*
  * @test
- * @bug 5017980 6576055
+ * @bug 5017980 6576055 8041972
  * @summary Test parsing methods
  * @author Joseph D. Darcy
  */
 
-
 /**
- * There are six methods in java.lang.Long which transform strings
+ * There are eight methods in java.lang.Long which transform strings
  * into a long or Long value:
  *
  * public Long(String s)
  * public static Long decode(String nm)
+ * public static long parseLong(CharSequence s, int radix, int beginIndex, int endIndex)
+ * public static long parseLong(CharSequence s, int radix, int beginIndex)
  * public static long parseLong(String s, int radix)
  * public static long parseLong(String s)
  * public static Long valueOf(String s, int radix)
  * public static Long valueOf(String s)
  *
  * Besides decode, all the methods and constructor call down into
- * parseLong(String, int) to do the actual work.  Therefore, the
- * behavior of parseLong(String, int) will be tested here.
+ * parseLong(CharSequence, int, int, int) to do the actual work.  Therefore, the
+ * behavior of parseLong(CharSequence, int, int, int) will be tested here.
  */
 
 public class ParsingTest {
+
     public static void main(String... argv) {
         check("+100", +100L);
         check("-100", -100L);
@@ -59,6 +61,7 @@ public class ParsingTest {
         check("1", 1L);
         check("9", 9L);
 
+        checkFailure("");
         checkFailure("\u0000");
         checkFailure("\u002f");
         checkFailure("+");
@@ -72,12 +75,44 @@ public class ParsingTest {
         checkFailure("+-6");
         checkFailure("-+6");
         checkFailure("*100");
+
+        check("test-00000", 0L, 4, 10);
+        check("test-12345", -12345L, 4, 10);
+        check("xx12345yy", 12345L, 2, 7);
+        check("xx123456789012345yy", 123456789012345L, 2, 17);
+
+        checkNumberFormatException("100", 10, 3);
+        checkNumberFormatException("", 10, 0);
+        checkNumberFormatException("+1000000", 10, 8);
+        checkNumberFormatException("-1000000", 10, 8);
+
+        checkNumberFormatException("", 10, 0, 0);
+        checkNumberFormatException("+-6", 10, 0, 3);
+        checkNumberFormatException("1000000", 10, 7, 7);
+        checkNumberFormatException("1000000", Character.MAX_RADIX + 1, 0, 2);
+        checkNumberFormatException("1000000", Character.MIN_RADIX - 1, 0, 2);
+
+        checkIndexOutOfBoundsException("", 10, 1, 1);
+        checkIndexOutOfBoundsException("1000000", 10, 10, 4);
+        checkIndexOutOfBoundsException("1000000", Character.MAX_RADIX + 1, 10, 2);
+        checkIndexOutOfBoundsException("1000000", Character.MIN_RADIX - 1, 10, 2);
+        checkIndexOutOfBoundsException("1000000", Character.MAX_RADIX + 1, -1, 2);
+        checkIndexOutOfBoundsException("1000000", Character.MIN_RADIX - 1, -1, 2);
+        checkIndexOutOfBoundsException("-1", 10, 0, 3);
+        checkIndexOutOfBoundsException("-1", 10, 2, 3);
+        checkIndexOutOfBoundsException("-1", 10, -1, 2);
+
+        checkNull(10, 0, 1);
+        checkNull(10, -1, 0);
+        checkNull(10, 0, 0);
+        checkNull(10, 0, -1);
+        checkNull(-1, -1, -1);
     }
 
     private static void check(String val, long expected) {
         long n = Long.parseLong(val);
         if (n != expected)
-            throw new RuntimeException("Long.parsedLong failed. String:" +
+            throw new RuntimeException("Long.parseLong failed. String:" +
                                        val + " Result:" + n);
     }
 
@@ -90,5 +125,72 @@ public class ParsingTest {
         } catch (NumberFormatException nfe) {
             ; // Expected
         }
+    }
+
+    private static void checkNumberFormatException(String val, int radix, int start) {
+        int n = 0;
+        try {
+            n = Integer.parseInt(val, radix, start);
+            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+                    ") incorrectly returned " + n);
+            throw new RuntimeException();
+        } catch (NumberFormatException nfe) {
+            ; // Expected
+        }
+    }
+
+    private static void checkNumberFormatException(String val, int radix, int start, int end) {
+        long n = 0;
+        try {
+            n = Long.parseLong(val, radix, start, end);
+            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
+                    ") incorrectly returned " + n);
+            throw new RuntimeException();
+        } catch (NumberFormatException nfe) {
+            ; // Expected
+        }
+    }
+
+    private static void checkIndexOutOfBoundsException(String val, int radix, int start) {
+        int n = 0;
+        try {
+            n = Integer.parseInt(val, radix, start);
+            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+                    ") incorrectly returned " + n);
+            throw new RuntimeException();
+        } catch (IndexOutOfBoundsException ioob) {
+            ; // Expected
+        }
+    }
+
+    private static void checkIndexOutOfBoundsException(String val, int radix, int start, int end) {
+        long n = 0;
+        try {
+            n = Long.parseLong(val, radix, start, end);
+            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
+                    ") incorrectly returned " + n);
+            throw new RuntimeException();
+        } catch (IndexOutOfBoundsException ioob) {
+            ; // Expected
+        }
+    }
+
+    private static void checkNull(int radix, int start, int end) {
+        long n = 0;
+        try {
+            n = Long.parseLong(null, 10, start, end);
+            System.err.println("parseInt(null, " + radix + ", " + start + ", " + end +
+                    ") incorrectly returned " + n);
+            throw new RuntimeException();
+        } catch (NullPointerException npe) {
+            ; // Expected
+        }
+    }
+
+    private static void check(String val, long expected, int start, int end) {
+        long n = Long.parseLong(val, 10, start, end);
+        if (n != expected)
+            throw new RuntimeException("Long.parseLong failed. String:" +
+                    val + ", start: " + start + ", end: " + end + " Result:" + n);
     }
 }

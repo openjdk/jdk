@@ -4920,10 +4920,15 @@ public:
       if (_g1h->g1_policy()->during_initial_mark_pause()) {
         // We also need to mark copied objects.
         strong_root_cl = &scan_mark_root_cl;
-        weak_root_cl   = &scan_mark_weak_root_cl;
         strong_cld_cl  = &scan_mark_cld_cl;
-        weak_cld_cl    = &scan_mark_weak_cld_cl;
         strong_code_cl = &scan_mark_code_cl;
+        if (ClassUnloadingWithConcurrentMark) {
+          weak_root_cl = &scan_mark_weak_root_cl;
+          weak_cld_cl  = &scan_mark_weak_cld_cl;
+        } else {
+          weak_root_cl = &scan_mark_root_cl;
+          weak_cld_cl  = &scan_mark_cld_cl;
+        }
       } else {
         strong_root_cl = &scan_only_root_cl;
         weak_root_cl   = &scan_only_root_cl;
@@ -4994,6 +4999,7 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
   double closure_app_time_sec = 0.0;
 
   bool during_im = _g1h->g1_policy()->during_initial_mark_pause();
+  bool trace_metadata = during_im && ClassUnloadingWithConcurrentMark;
 
   BufferingOopClosure buf_scan_non_heap_roots(scan_non_heap_roots);
   BufferingOopClosure buf_scan_non_heap_weak_roots(scan_non_heap_weak_roots);
@@ -5003,8 +5009,8 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
                 &buf_scan_non_heap_roots,
                 &buf_scan_non_heap_weak_roots,
                 scan_strong_clds,
-                // Initial Mark handles the weak CLDs separately.
-                (during_im ? NULL : scan_weak_clds),
+                // Unloading Initial Marks handle the weak CLDs separately.
+                (trace_metadata ? NULL : scan_weak_clds),
                 scan_strong_code);
 
   // Now the CM ref_processor roots.
@@ -5016,7 +5022,7 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
     ref_processor_cm()->weak_oops_do(&buf_scan_non_heap_roots);
   }
 
-  if (during_im) {
+  if (trace_metadata) {
     // Barrier to make sure all workers passed
     // the strong CLD and strong nmethods phases.
     active_strong_roots_scope()->wait_until_all_workers_done_with_threads(n_par_threads());
@@ -6536,6 +6542,9 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
+    oop obj = (oop)r->bottom();
+    CMBitMap* next_bitmap = g1h->concurrent_mark()->nextMarkBitMap();
+
     // The following checks whether the humongous object is live are sufficient.
     // The main additional check (in addition to having a reference from the roots
     // or the young gen) is whether the humongous object has a remembered set entry.
@@ -6572,36 +6581,40 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
         g1h->humongous_region_is_always_live(region_idx)) {
 
       if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                                r->isHumongous(),
                                region_idx,
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
-                               g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                               next_bitmap->isMarked(r->bottom()),
                                g1h->humongous_is_live(region_idx),
-                               oop(r->bottom())->is_objArray()
+                               obj->is_objArray()
                               );
       }
 
       return false;
     }
 
-    guarantee(!((oop)(r->bottom()))->is_objArray(),
+    guarantee(!obj->is_objArray(),
               err_msg("Eagerly reclaiming object arrays is not supported, but the object "PTR_FORMAT" is.",
                       r->bottom()));
 
     if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is dead-bitmap %d live-other %d obj array %d",
+      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                              r->isHumongous(),
                              r->bottom(),
                              region_idx,
                              r->region_num(),
                              r->rem_set()->occupied(),
                              r->rem_set()->strong_code_roots_list_length(),
-                             g1h->mark_in_progress() && !g1h->g1_policy()->during_initial_mark_pause(),
+                             next_bitmap->isMarked(r->bottom()),
                              g1h->humongous_is_live(region_idx),
-                             oop(r->bottom())->is_objArray()
+                             obj->is_objArray()
                             );
+    }
+    // Need to clear mark bit of the humongous object if already set.
+    if (next_bitmap->isMarked(r->bottom())) {
+      next_bitmap->clear(r->bottom());
     }
     _freed_bytes += r->used();
     r->set_containing_set(NULL);

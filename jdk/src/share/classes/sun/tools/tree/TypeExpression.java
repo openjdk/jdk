@@ -53,13 +53,13 @@ class TypeExpression extends Expression {
     /**
      * Check an expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         env.error(where, "invalid.term");
         type = Type.tError;
         return vset;
     }
 
-    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable exp,
+    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp,
                                UnaryExpression loc) {
         return vset;
     }

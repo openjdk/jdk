@@ -38,7 +38,7 @@ import java.util.Set;
  *
  *  @see javax.xml.soap.SOAPMessage
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface SOAPMessageContext
                     extends javax.xml.ws.handler.MessageContext {

@@ -33,7 +33,7 @@ import java.lang.annotation.RetentionPolicy;
 /**
  * Used to annotate a Provider implementation class.
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  * @see javax.xml.ws.Provider
  */
 @Target(ElementType.TYPE)

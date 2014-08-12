@@ -183,7 +183,7 @@ public class Bits {
      */
     public void incl(int x) {
         Assert.check(currentState != BitsState.UNKNOWN);
-        Assert.check(x >= 0, "Value of x " + x);
+        Assert.check(x >= 0);
         sizeTo((x >>> wordshift) + 1);
         bits[x >>> wordshift] = bits[x >>> wordshift] |
             (1 << (x & wordmask));

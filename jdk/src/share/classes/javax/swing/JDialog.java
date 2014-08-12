@@ -664,6 +664,8 @@ public class JDialog extends Dialog implements WindowConstants,
     /**
      * Called by the constructor methods to create the default
      * {@code rootPane}.
+     *
+     * @return  a new {@code JRootPane}
      */
     protected JRootPane createRootPane() {
         JRootPane rp = new JRootPane();
@@ -854,6 +856,7 @@ public class JDialog extends Dialog implements WindowConstants,
    /**
     * Returns the menubar set on this dialog.
     *
+    * @return the menubar set on this dialog
     * @see #setJMenuBar
     */
     public JMenuBar getJMenuBar() {
@@ -1225,6 +1228,9 @@ public class JDialog extends Dialog implements WindowConstants,
 // Accessibility support
 ////////////////
 
+    /**
+     * {@code AccessibleContext} associated with this {@code JDialog}
+     */
     protected AccessibleContext accessibleContext = null;
 
     /**

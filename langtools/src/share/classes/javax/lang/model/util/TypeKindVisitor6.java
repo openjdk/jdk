@@ -85,7 +85,10 @@ import static javax.lang.model.SourceVersion.*;
  * @see TypeKindVisitor7
  * @see TypeKindVisitor8
  * @since 1.6
+ * @deprecated Release 6 is obsolete; update to a visitor for a newer
+ * release level.
  */
+@Deprecated
 @SupportedSourceVersion(RELEASE_6)
 public class TypeKindVisitor6<R, P> extends SimpleTypeVisitor6<R, P> {
     /**

@@ -1173,8 +1173,7 @@ public class ExtendedCharsets
         if (!sun.misc.VM.isBooted())
             return;
 
-        String map = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("sun.nio.cs.map"));
+        String map = getProperty("sun.nio.cs.map");
         boolean sjisIsMS932 = false;
         boolean iso2022jpIsMS50221 = false;
         boolean iso2022jpIsMS50220 = false;
@@ -1294,8 +1293,7 @@ public class ExtendedCharsets
 
             }
         }
-        String osName = AccessController.doPrivileged(
-            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
+        String osName = getProperty("os.name");
         if ("SunOS".equals(osName) || "Linux".equals(osName) || "AIX".equals(osName)
                || osName.contains("OS X")) {
             charset("x-COMPOUND_TEXT", "COMPOUND_TEXT",
@@ -1306,6 +1304,18 @@ public class ExtendedCharsets
                     });
         }
         initialized = true;
+    }
+
+    private static String getProperty(String key) {
+        // this method may be called during initialization of
+        // system class loader and thus not using lambda
+        return AccessController.doPrivileged(
+            new PrivilegedAction<String>() {
+                @Override
+                public String run() {
+                    return System.getProperty(key);
+                }
+            });
     }
 
     public static String[] aliasesFor(String charsetName) {

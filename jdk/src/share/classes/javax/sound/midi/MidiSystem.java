@@ -914,7 +914,7 @@ public class MidiSystem {
             MidiFileWriter writer = providers.get(i);
             int[] types = writer.getMidiFileTypes();
             for (int j = 0; j < types.length; j++ ) {
-                allTypes.add(new Integer(types[j]));
+                allTypes.add(types[j]);
             }
         }
         int resultTypes[] = new int[allTypes.size()];
@@ -968,7 +968,7 @@ public class MidiSystem {
             MidiFileWriter writer = providers.get(i);
             int[] types = writer.getMidiFileTypes(sequence);
             for (int j = 0; j < types.length; j++ ) {
-                allTypes.add(new Integer(types[j]));
+                allTypes.add(types[j]);
             }
         }
         int resultTypes[] = new int[allTypes.size()];

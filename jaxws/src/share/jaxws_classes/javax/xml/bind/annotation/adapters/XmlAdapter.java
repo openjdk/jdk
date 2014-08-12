@@ -160,7 +160,7 @@ package javax.xml.bind.annotation.adapters;
  *
  * @author <ul><li>Sekhar Vajjhala, Sun Microsystems Inc.</li> <li> Kohsuke Kawaguchi, Sun Microsystems Inc.</li></ul>
  * @see XmlJavaTypeAdapter
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 public abstract class XmlAdapter<ValueType,BoundType> {
 

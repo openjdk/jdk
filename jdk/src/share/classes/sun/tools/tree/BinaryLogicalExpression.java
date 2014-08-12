@@ -46,7 +46,7 @@ class BinaryLogicalExpression extends BinaryExpression {
      * Check a binary expression
      */
     public Vset checkValue(Environment env, Context ctx,
-                           Vset vset, Hashtable exp) {
+                           Vset vset, Hashtable<Object, Object> exp) {
         ConditionVars cvars = new ConditionVars();
         // evaluate the logical expression, determining which variables are
         // set if the resulting value is true or false
@@ -61,7 +61,7 @@ class BinaryLogicalExpression extends BinaryExpression {
      */
     abstract
     public void checkCondition(Environment env, Context ctx, Vset vset,
-                               Hashtable exp, ConditionVars cvars);
+                               Hashtable<Object, Object> exp, ConditionVars cvars);
 
 
     /**

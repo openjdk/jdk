@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 import java.io.File;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
+
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.Source;
 
@@ -652,6 +653,7 @@ public class LexicalContext {
             return lnext;
         }
 
+        @SuppressWarnings("unchecked")
         private T findNext() {
             for (int i = index; i >= 0; i--) {
                 final Object node = stack[i];
@@ -660,7 +662,7 @@ public class LexicalContext {
                 }
                 if (clazz.isAssignableFrom(node.getClass())) {
                     index = i - 1;
-                    return clazz.cast(node);
+                    return (T)node;
                 }
             }
             return null;

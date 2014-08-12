@@ -88,6 +88,7 @@ public interface SpinnerModel
      * that case, <code>model.setValue(new Number(11))</code>
      * would throw an exception.
      *
+     * @param value  new value for the spinner
      * @throws IllegalArgumentException if <code>value</code> isn't allowed
      * @see #getValue
      */

@@ -44,13 +44,14 @@ import sun.lwawt.*;
 public class CInputMethod extends InputMethodAdapter {
     private InputMethodContext fIMContext;
     private Component fAwtFocussedComponent;
-    private LWComponentPeer fAwtFocussedComponentPeer;
+    private LWComponentPeer<?, ?> fAwtFocussedComponentPeer;
     private boolean isActive;
 
     private static Map<TextAttribute, Integer>[] sHighlightStyles;
 
     // Intitalize highlight mapping table and its mapper.
     static {
+        @SuppressWarnings({"rawtypes", "unchecked"})
         Map<TextAttribute, Integer> styles[] = new Map[4];
         HashMap<TextAttribute, Integer> map;
 
@@ -242,7 +243,7 @@ public class CInputMethod extends InputMethodAdapter {
     public void hideWindows() {
     }
 
-    long getNativeViewPtr(LWComponentPeer peer) {
+    long getNativeViewPtr(LWComponentPeer<?, ?> peer) {
         if (peer.getPlatformWindow() instanceof CPlatformWindow) {
             CPlatformWindow platformWindow = (CPlatformWindow) peer.getPlatformWindow();
             CPlatformView platformView = platformWindow.getContentView();
@@ -272,7 +273,7 @@ public class CInputMethod extends InputMethodAdapter {
      * to talk to when responding to key events.
      */
     protected void setAWTFocussedComponent(Component component) {
-        LWComponentPeer peer = null;
+        LWComponentPeer<?, ?> peer = null;
         long modelPtr = 0;
         CInputMethod imInstance = this;
 
@@ -305,7 +306,7 @@ public class CInputMethod extends InputMethodAdapter {
     /**
         * @see java.awt.Toolkit#mapInputMethodHighlight
      */
-    public static Map mapInputMethodHighlight(InputMethodHighlight highlight) {
+    public static Map<TextAttribute, ?> mapInputMethodHighlight(InputMethodHighlight highlight) {
         int index;
         int state = highlight.getState();
         if (state == InputMethodHighlight.RAW_TEXT) {
@@ -384,7 +385,7 @@ public class CInputMethod extends InputMethodAdapter {
 
     // java.awt.Toolkit#getNativeContainer() is not available
     //    from this package
-    private LWComponentPeer getNearestNativePeer(Component comp) {
+    private LWComponentPeer<?, ?> getNearestNativePeer(Component comp) {
         if (comp==null)
             return null;
 
@@ -796,7 +797,7 @@ public class CInputMethod extends InputMethodAdapter {
     // these calls will be ignored.
     private native void nativeNotifyPeer(long nativePeer, CInputMethod imInstance);
     private native void nativeEndComposition(long nativePeer);
-    private native void nativeHandleEvent(LWComponentPeer peer, AWTEvent event);
+    private native void nativeHandleEvent(LWComponentPeer<?, ?> peer, AWTEvent event);
 
     // Returns the locale of the active input method.
     static native Locale getNativeLocale();

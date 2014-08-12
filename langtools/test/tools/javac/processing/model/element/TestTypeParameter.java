@@ -53,7 +53,7 @@ public class TestTypeParameter<T> extends JavacTestingAbstractProcessor {
         return true;
     }
 
-    class Scanner extends ElementScanner7<Integer,Void> {
+    class Scanner extends ElementScanner<Integer, Void> {
         @Override
         public Integer visitExecutable(ExecutableElement e, Void p) {
             super.visitExecutable(e, p);

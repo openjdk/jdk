@@ -182,14 +182,14 @@ public class ContextEnumerator implements NamingEnumeration<Binding> {
 
         if (!currentReturned) {
             // returning parent
-            if(debug) {System.out.println("getNextDescedant: simple case");}
+            if(debug) {System.out.println("getNextDescendant: simple case");}
 
             currentReturned = true;
             return currentChild;
 
         } else if (currentChildExpanded && currentChildEnum.hasMore()) {
 
-            if(debug) {System.out.println("getNextDescedant: expanded case");}
+            if(debug) {System.out.println("getNextDescendant: expanded case");}
 
             // if the current child is expanded, use it's enumerator
             return currentChildEnum.next();
@@ -197,7 +197,7 @@ public class ContextEnumerator implements NamingEnumeration<Binding> {
         } else {
 
             // Ready to go onto next child
-            if(debug) {System.out.println("getNextDescedant: next case");}
+            if(debug) {System.out.println("getNextDescendant: next case");}
 
             prepNextChild();
             return getNextDescendant();

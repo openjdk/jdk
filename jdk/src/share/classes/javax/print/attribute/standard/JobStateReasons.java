@@ -62,7 +62,6 @@ import javax.print.attribute.PrintJobAttribute;
  * JobStateReason JobStateReason} object's <CODE>toString()</CODE> method gives
  * the IPP keyword value. The category name returned by <CODE>getName()</CODE>
  * gives the IPP attribute name.
- * <P>
  *
  * @author  Alan Kaminsky
  */

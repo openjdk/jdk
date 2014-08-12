@@ -57,7 +57,7 @@ import javax.xml.ws.spi.Provider;
  * can be enabled by creating a <code>ThreadPoolExecutor</code> and
  * registering it with the service.
  *
- * @since JAX-WS 2.0
+ * @since 1.6, JAX-WS 2.0
  *
  * @see javax.xml.ws.spi.Provider
  * @see javax.xml.ws.handler.HandlerResolver
@@ -153,7 +153,7 @@ public class Service {
      * @see java.lang.reflect.InvocationHandler
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T> T getPort(QName portName,
             Class<T> serviceEndpointInterface, WebServiceFeature... features) {
@@ -219,7 +219,7 @@ public class Service {
      *
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T> T getPort(Class<T> serviceEndpointInterface,
             WebServiceFeature... features) {
@@ -297,7 +297,7 @@ public class Service {
      *                      with this port or is unsupported.
      *                  </UL>
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T> T getPort(EndpointReference endpointReference,
            Class<T> serviceEndpointInterface, WebServiceFeature... features) {
@@ -381,7 +381,7 @@ public class Service {
      * @see javax.xml.soap.SOAPMessage
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T> Dispatch<T> createDispatch(QName portName, Class<T> type,
             Service.Mode mode, WebServiceFeature... features) {
@@ -456,7 +456,7 @@ public class Service {
      * @see javax.xml.soap.SOAPMessage
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T> Dispatch<T> createDispatch(EndpointReference endpointReference,
             Class<T> type, Service.Mode mode,
@@ -514,7 +514,7 @@ public class Service {
      * @see javax.xml.bind.JAXBContext
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public Dispatch<Object> createDispatch(QName portName,
             JAXBContext context, Service.Mode mode, WebServiceFeature... features) {
@@ -587,7 +587,7 @@ public class Service {
      * @see javax.xml.bind.JAXBContext
      * @see WebServiceFeature
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
     **/
     public Dispatch<Object> createDispatch(EndpointReference endpointReference,
             JAXBContext context, Service.Mode mode,
@@ -722,7 +722,7 @@ public class Service {
      *        it must throw a WebServiceException.
      * @throws WebServiceException If any error in creation of the
      *                    specified service.
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      **/
     public static Service create(
             java.net.URL wsdlDocumentLocation,
@@ -752,7 +752,7 @@ public class Service {
      * @throws WebServiceException If any error in creation of the
      *                    specified service
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public static Service create(QName serviceName, WebServiceFeature ... features) {
         return new Service(null, serviceName, features);

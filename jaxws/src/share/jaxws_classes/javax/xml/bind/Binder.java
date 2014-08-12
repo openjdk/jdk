@@ -76,7 +76,7 @@ import javax.xml.validation.Schema;
  *     Kohsuke Kawaguchi (kohsuke.kawaguchi@sun.com)
  *     Joseph Fialli
  *
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  */
 public abstract class Binder<XmlNode> {
     /**
@@ -153,7 +153,7 @@ public abstract class Binder<XmlNode> {
      *     binding.
      * @throws IllegalArgumentException
      *      If any of the input parameters are null
-     * @since JAXB2.0
+     * @since 1.6, JAXB 2.0
      */
     public abstract <T> JAXBElement<T>
         unmarshal( XmlNode xmlNode, Class<T> declaredType )

@@ -66,7 +66,7 @@ import java.lang.annotation.Target;
  * The above binding supports WS-I AP 1.0 <a href="http://www.ws-i.org/Profiles/AttachmentsProfile-1.0-2004-08-24.html#Referencing_Attachments_from_the_SOAP_Envelope">WS-I Attachments Profile Version 1.0.</a>
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD,PARAMETER})

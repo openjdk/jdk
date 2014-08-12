@@ -79,17 +79,26 @@ import sun.security.action.GetPropertyAction;
  */
 public class BasicOptionPaneUI extends OptionPaneUI {
 
+    /**
+     * The mininum width of {@code JOptionPane}.
+     */
     public static final int MinimumWidth = 262;
+    /**
+     * The mininum height of {@code JOptionPane}.
+     */
     public static final int MinimumHeight = 90;
 
     private static String newline;
 
     /**
-     * <code>JOptionPane</code> that the receiver is providing the
+     * {@code JOptionPane} that the receiver is providing the
      * look and feel for.
      */
     protected JOptionPane         optionPane;
 
+    /**
+     * The size of {@code JOptionPane}.
+     */
     protected Dimension minimumSize;
 
     /** JComponent provide for input if optionPane.getWantsInput() returns
@@ -103,6 +112,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * in either the message or the buttons. */
     protected boolean             hasCustomComponents;
 
+    /**
+     * The instance of {@code PropertyChangeListener}.
+     */
     protected PropertyChangeListener propertyChangeListener;
 
     private Handler handler;
@@ -123,8 +135,10 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
 
     /**
-      * Creates a new BasicOptionPaneUI instance.
-      */
+     * Creates a new {@code BasicOptionPaneUI} instance.
+     *
+     * @return a new {@code BasicOptionPaneUI} instance
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicOptionPaneUI();
     }
@@ -155,6 +169,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         optionPane = null;
     }
 
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         LookAndFeel.installColorsAndFont(optionPane, "OptionPane.background",
                                          "OptionPane.foreground", "OptionPane.font");
@@ -163,10 +180,16 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         LookAndFeel.installProperty(optionPane, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(optionPane);
     }
 
+    /**
+     * Registers components.
+     */
     protected void installComponents() {
         optionPane.add(createMessageArea());
 
@@ -178,6 +201,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         optionPane.applyComponentOrientation(optionPane.getComponentOrientation());
     }
 
+    /**
+     * Unregisters components.
+     */
     protected void uninstallComponents() {
         hasCustomComponents = false;
         inputComponent = null;
@@ -185,16 +211,27 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         optionPane.removeAll();
     }
 
+    /**
+     * Returns a layout manager.
+     *
+     * @return a layout manager
+     */
     protected LayoutManager createLayoutManager() {
         return new BoxLayout(optionPane, BoxLayout.Y_AXIS);
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         if ((propertyChangeListener = createPropertyChangeListener()) != null) {
             optionPane.addPropertyChangeListener(propertyChangeListener);
         }
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         if (propertyChangeListener != null) {
             optionPane.removePropertyChangeListener(propertyChangeListener);
@@ -203,6 +240,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         handler = null;
     }
 
+    /**
+     * Returns an instance of {@code PropertyChangeListener}.
+     *
+     * @return an instance of {@code PropertyChangeListener}
+     */
     protected PropertyChangeListener createPropertyChangeListener() {
         return getHandler();
     }
@@ -214,6 +256,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         return handler;
     }
 
+    /**
+     * Registers keyboard actions.
+     */
     protected void installKeyboardActions() {
         InputMap map = getInputMap(JComponent.WHEN_IN_FOCUSED_WINDOW);
 
@@ -224,6 +269,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
                                            "OptionPane.actionMap");
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIInputMap(optionPane, JComponent.
                                        WHEN_IN_FOCUSED_WINDOW, null);
@@ -244,6 +292,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     /**
      * Returns the minimum size the option pane should be. Primarily
      * provided for subclassers wishing to offer a different minimum size.
+     *
+     * @return the minimum size of the option pane
      */
     public Dimension getMinimumOptionPaneSize() {
         if (minimumSize == null) {
@@ -280,9 +330,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Messaged from installComponents to create a Container containing the
-     * body of the message. The icon is the created by calling
-     * <code>addIcon</code>.
+     * Messaged from {@code installComponents} to create a {@code Container}
+     * containing the body of the message. The icon is the created
+     * by calling {@code addIcon}.
+     *
+     * @return a instance of {@code Container}
      */
     protected Container createMessageArea() {
         JPanel top = new JPanel();
@@ -325,15 +377,21 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Creates the appropriate object to represent <code>msg</code> and
-     * places it into <code>container</code>. If <code>msg</code> is an
-     * instance of Component, it is added directly, if it is an Icon,
-     * a JLabel is created to represent it, otherwise a JLabel is
-     * created for the string, if <code>d</code> is an Object[], this
-     * method will be recursively invoked for the children.
-     * <code>internallyCreated</code> is true if Objc is an instance
-     * of Component and was created internally by this method (this is
-     * used to correctly set hasCustomComponents only if !internallyCreated).
+     * Creates the appropriate object to represent {@code msg} and
+     * places it into {@code container}. If {@code msg} is an instance of
+     * {@code Component}, it is added directly, if it is an {@code Icon},
+     * a {@code JLabel} is created to represent it, otherwise a {@code JLabel} is
+     * created for the string, if {@code d} is an Object[], this method
+     * will be recursively invoked for the children. {@code internallyCreated} is
+     * {@code true} if Objc is an instance of {@code Component} and was created
+     * internally by this method (this is used to correctly set
+     * {@code hasCustomComponents} only if {@code internallyCreated} is {@code false}).
+     *
+     * @param container a container
+     * @param cons an instance of {@code GridBagConstraints}
+     * @param msg a message
+     * @param maxll a maximum length
+     * @param internallyCreated {@code true} if the component was internally created
      */
     protected void addMessageComponents(Container container,
                                      GridBagConstraints cons,
@@ -431,8 +489,10 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Returns the message to display from the JOptionPane the receiver is
+     * Returns the message to display from the {@code JOptionPane} the receiver is
      * providing the look and feel for.
+     *
+     * @return the message to display
      */
     protected Object getMessage() {
         inputComponent = null;
@@ -514,8 +574,10 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
      * Creates and adds a JLabel representing the icon returned from
-     * <code>getIcon</code> to <code>top</code>. This is messaged from
-     * <code>createMessageArea</code>
+     * {@code getIcon} to {@code top}. This is messaged from
+     * {@code createMessageArea}.
+     *
+     * @param top a container
      */
     protected void addIcon(Container top) {
         /* Create the icon. */
@@ -531,9 +593,11 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Returns the icon from the JOptionPane the receiver is providing
+     * Returns the icon from the {@code JOptionPane} the receiver is providing
      * the look and feel for, or the default icon as returned from
-     * <code>getDefaultIcon</code>.
+     * {@code getDefaultIcon}.
+     *
+     * @return the icon
      */
     protected Icon getIcon() {
         Icon      mIcon = (optionPane == null ? null : optionPane.getIcon());
@@ -545,6 +609,9 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
      * Returns the icon to use for the passed in type.
+     *
+     * @param messageType a type of message
+     * @return the icon to use for the passed in type
      */
     protected Icon getIconForType(int messageType) {
         if(messageType < 0 || messageType > 3)
@@ -572,14 +639,20 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
      * Returns the maximum number of characters to place on a line.
+     *
+     * @return the maximum number of characters to place on a line
      */
     protected int getMaxCharactersPerLineCount() {
         return optionPane.getMaxCharactersPerLineCount();
     }
 
-   /**
-     * Recursively creates new JLabel instances to represent <code>d</code>.
-     * Each JLabel instance is added to <code>c</code>.
+    /**
+     * Recursively creates new {@code JLabel} instances to represent {@code d}.
+     * Each {@code JLabel} instance is added to {@code c}.
+     *
+     * @param c a container
+     * @param d a text
+     * @param maxll a maximum length of a text
      */
     protected void burstStringInto(Container c, String d, int maxll) {
         // Primitive line wrapping
@@ -602,13 +675,20 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         c.add(label);
     }
 
+    /**
+     * Returns a separator.
+     *
+     * @return a separator
+     */
     protected Container createSeparator() {
         return null;
     }
 
     /**
-     * Creates and returns a Container containing the buttons. The buttons
-     * are created by calling <code>getButtons</code>.
+     * Creates and returns a {@code Container} containing the buttons.
+     * The buttons are created by calling {@code getButtons}.
+     *
+     * @return a {@code Container} containing the buttons
      */
     protected Container createButtonArea() {
         JPanel bottom = new JPanel();
@@ -633,10 +713,14 @@ public class BasicOptionPaneUI extends OptionPaneUI {
 
     /**
      * Creates the appropriate object to represent each of the objects in
-     * <code>buttons</code> and adds it to <code>container</code>. This
+     * {@code buttons} and adds it to {@code container}. This
      * differs from addMessageComponents in that it will recurse on
-     * <code>buttons</code> and that if button is not a Component
+     * {@code buttons} and that if button is not a Component
      * it will create an instance of JButton.
+     *
+     * @param container a container
+     * @param buttons an array of buttons
+     * @param initialIndex an initial index
      */
     protected void addButtonComponents(Container container, Object[] buttons,
                                  int initialIndex) {
@@ -733,17 +817,25 @@ public class BasicOptionPaneUI extends OptionPaneUI {
         }
     }
 
+    /**
+     * Constructs a new instance of a {@code ButtonActionListener}.
+     *
+     * @param buttonIndex an index of the button
+     * @return a new instance of a {@code ButtonActionListener}
+     */
     protected ActionListener createButtonActionListener(int buttonIndex) {
         return new ButtonActionListener(buttonIndex);
     }
 
     /**
-     * Returns the buttons to display from the JOptionPane the receiver is
-     * providing the look and feel for. If the JOptionPane has options
+     * Returns the buttons to display from the {@code JOptionPane} the receiver is
+     * providing the look and feel for. If the {@code JOptionPane} has options
      * set, they will be provided, otherwise if the optionType is
-     * YES_NO_OPTION, yesNoOptions is returned, if the type is
-     * YES_NO_CANCEL_OPTION yesNoCancelOptions is returned, otherwise
-     * defaultButtons are returned.
+     * {@code YES_NO_OPTION}, {@code yesNoOptions} is returned, if the type is
+     * {@code YES_NO_CANCEL_OPTION} {@code yesNoCancelOptions} is returned, otherwise
+     * {@code defaultButtons} are returned.
+     *
+     * @return the buttons to display from the JOptionPane
      */
     protected Object[] getButtons() {
         if (optionPane != null) {
@@ -827,8 +919,10 @@ public class BasicOptionPaneUI extends OptionPaneUI {
     }
 
     /**
-     * Returns true, basic L&amp;F wants all the buttons to have the same
+     * Returns {@code true}, basic L&amp;F wants all the buttons to have the same
      * width.
+     *
+     * @return {@code true} if all the buttons should have the same width
      */
     protected boolean getSizeButtonsToSameWidth() {
         return true;
@@ -838,6 +932,8 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * Returns the initial index into the buttons to select. The index
      * is calculated from the initial value from the JOptionPane and
      * options of the JOptionPane or 0.
+     *
+     * @return the initial index into the buttons to select
      */
     protected int getInitialValueIndex() {
         if (optionPane != null) {
@@ -915,7 +1011,13 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public static class ButtonAreaLayout implements LayoutManager {
+        /**
+         * The value represents if the width of children should be synchronized.
+         */
         protected boolean           syncAllWidths;
+        /**
+         * The padding value.
+         */
         protected int               padding;
         /** If true, children are lumped together in parent. */
         protected boolean           centersChildren;
@@ -928,6 +1030,12 @@ public class BasicOptionPaneUI extends OptionPaneUI {
          */
         private boolean useOrientation;
 
+        /**
+         * Constructs a new instance of {@code ButtonAreaLayout}.
+         *
+         * @param syncAllWidths if the width of children should be synchronized
+         * @param padding the padding value
+         */
         public ButtonAreaLayout(boolean syncAllWidths, int padding) {
             this.syncAllWidths = syncAllWidths;
             this.padding = padding;
@@ -943,27 +1051,57 @@ public class BasicOptionPaneUI extends OptionPaneUI {
             this.reverseButtons = reverseButtons;
         }
 
+        /**
+         * Sets if the width of children should be synchronized.
+         *
+         * @param newValue if the width of children should be synchronized
+         */
         public void setSyncAllWidths(boolean newValue) {
             syncAllWidths = newValue;
         }
 
+        /**
+         * Returns if the width of children should be synchronized.
+         *
+         * @return if the width of children should be synchronized
+         */
         public boolean getSyncAllWidths() {
             return syncAllWidths;
         }
 
+        /**
+         * Sets the padding value.
+         *
+         * @param newPadding the new padding
+         */
         public void setPadding(int newPadding) {
             this.padding = newPadding;
         }
 
+        /**
+         * Returns the padding.
+         *
+         * @return the padding
+         */
         public int getPadding() {
             return padding;
         }
 
+        /**
+         * Sets whether or not center children should be used.
+         *
+         * @param newValue a new value
+         */
         public void setCentersChildren(boolean newValue) {
             centersChildren = newValue;
             useOrientation = false;
         }
 
+        /**
+         * Returns whether or not center children should be used.
+         *
+         * @return whether or not center children should be used
+         */
         public boolean getCentersChildren() {
             return centersChildren;
         }
@@ -1163,8 +1301,16 @@ public class BasicOptionPaneUI extends OptionPaneUI {
      * Instantiate it only within subclasses of {@code BasicOptionPaneUI}.
      */
     public class ButtonActionListener implements ActionListener {
+        /**
+         * The index of the button.
+         */
         protected int buttonIndex;
 
+        /**
+         * Constructs a new instance of {@code ButtonActionListener}.
+         *
+         * @param buttonIndex an index of the button
+         */
         public ButtonActionListener(int buttonIndex) {
             this.buttonIndex = buttonIndex;
         }

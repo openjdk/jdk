@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -86,7 +86,7 @@ public class ReachableObjects {
         // Now grab the elements into a vector, and sort it in decreasing size
         JavaThing[] things = new JavaThing[bag.size()];
         int i = 0;
-        for (Enumeration e = bag.elements(); e.hasMoreElements(); ) {
+        for (Enumeration<JavaHeapObject> e = bag.elements(); e.hasMoreElements(); ) {
             things[i++] = (JavaThing) e.nextElement();
         }
         ArraySorter.sort(things, new Comparer() {
@@ -131,7 +131,7 @@ public class ReachableObjects {
         return usedFields;
     }
 
-    private String[] getElements(Hashtable ht) {
+    private String[] getElements(Hashtable<?, ?> ht) {
         Object[] keys = ht.keySet().toArray();
         int len = keys.length;
         String[] res = new String[len];

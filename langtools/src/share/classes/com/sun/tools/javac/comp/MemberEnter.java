@@ -55,6 +55,7 @@ import static com.sun.tools.javac.code.TypeTag.ERROR;
 import static com.sun.tools.javac.code.TypeTag.TYPEVAR;
 import static com.sun.tools.javac.tree.JCTree.Tag.*;
 
+import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticFlag;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 
@@ -90,6 +91,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
     private final DeferredLintHandler deferredLintHandler;
     private final Lint lint;
     private final TypeEnvs typeEnvs;
+    private final Dependencies dependencies;
 
     public static MemberEnter instance(Context context) {
         MemberEnter instance = context.get(memberEnterKey);
@@ -116,6 +118,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         deferredLintHandler = DeferredLintHandler.instance(context);
         lint = Lint.instance(context);
         typeEnvs = TypeEnvs.instance(context);
+        dependencies = Dependencies.instance(context);
         allowTypeAnnos = source.allowTypeAnnotations();
     }
 
@@ -555,6 +558,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
 
     // process the non-static imports and the static imports of types.
     public void visitImport(JCImport tree) {
+        dependencies.push(AttributionKind.IMPORT, tree);
         JCFieldAccess imp = (JCFieldAccess)tree.qualid;
         Name name = TreeInfo.name(imp);
 
@@ -581,6 +585,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                 importNamed(tree.pos(), c, env);
             }
         }
+        dependencies.pop();
     }
 
     public void visitMethodDef(JCMethodDecl tree) {
@@ -952,6 +957,8 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         JavaFileObject prev = log.useSource(env.toplevel.sourcefile);
         DiagnosticPosition prevLintPos = deferredLintHandler.setPos(tree.pos());
         try {
+            dependencies.push(c);
+
             // Save class environment for later member enter (2) processing.
             halfcompleted.append(env);
 
@@ -990,16 +997,21 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             Type supertype;
 
             if (tree.extending != null) {
-                supertype = attr.attribBase(tree.extending, baseEnv,
-                                            true, false, true);
-                if (sym.isAnonymous()) {
-                    annotate.annotateAnonClassDefLater(tree.extending,
-                                                       tree.mods.annotations,
-                                                       baseEnv, sym, tree.pos(),
-                                                       annotate.extendsCreator);
-                } else {
-                    annotate.annotateTypeLater(tree.extending, baseEnv, sym,
-                                               tree.pos(), annotate.extendsCreator);
+                dependencies.push(AttributionKind.EXTENDS, tree.extending);
+                try {
+                    supertype = attr.attribBase(tree.extending, baseEnv,
+                            true, false, true);
+                    if (sym.isAnonymous()) {
+                        annotate.annotateAnonClassDefLater(tree.extending,
+                                tree.mods.annotations,
+                                baseEnv, sym, tree.pos(),
+                                annotate.extendsCreator);
+                    } else {
+                        annotate.annotateTypeLater(tree.extending, baseEnv, sym,
+                                tree.pos(), annotate.extendsCreator);
+                    }
+                } finally {
+                    dependencies.pop();
                 }
             } else {
                 supertype = ((tree.mods.flags & Flags.ENUM) != 0)
@@ -1018,29 +1030,34 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             List<JCExpression> interfaceTrees = tree.implementing;
             int i = 0;
             for (JCExpression iface : interfaceTrees) {
-                Type it = attr.attribBase(iface, baseEnv, false, true, true);
-                if (it.hasTag(CLASS)) {
-                    interfaces.append(it);
-                    if (all_interfaces != null) all_interfaces.append(it);
-                    chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
-                } else {
-                    if (all_interfaces == null)
-                        all_interfaces = new ListBuffer<Type>().appendList(interfaces);
-                    all_interfaces.append(modelMissingTypes(it, iface, true));
+                dependencies.push(AttributionKind.IMPLEMENTS, iface);
+                try {
+                    Type it = attr.attribBase(iface, baseEnv, false, true, true);
+                    if (it.hasTag(CLASS)) {
+                        interfaces.append(it);
+                        if (all_interfaces != null) all_interfaces.append(it);
+                        chk.checkNotRepeated(iface.pos(), types.erasure(it), interfaceSet);
+                    } else {
+                        if (all_interfaces == null)
+                            all_interfaces = new ListBuffer<Type>().appendList(interfaces);
+                        all_interfaces.append(modelMissingTypes(it, iface, true));
 
+                    }
+                    if (sym.isAnonymous()) {
+                        // Note: if an anonymous class ever has more than
+                        // one supertype for some reason, this will
+                        // incorrectly attach tree.mods.annotations to ALL
+                        // supertypes, not just the first.
+                        annotate.annotateAnonClassDefLater(iface, tree.mods.annotations,
+                                baseEnv, sym, tree.pos(),
+                                annotate.implementsCreator(i++));
+                    } else {
+                        annotate.annotateTypeLater(iface, baseEnv, sym, tree.pos(),
+                                annotate.implementsCreator(i++));
+                    }
+                } finally {
+                    dependencies.pop();
                 }
-                if (sym.isAnonymous()) {
-                    // Note: if an anonymous class ever has more than
-                    // one supertype for some reason, this will
-                    // incorrectly attach tree.mods.annotations to ALL
-                    // supertypes, not just the first.
-                    annotate.annotateAnonClassDefLater(iface, tree.mods.annotations,
-                                                       baseEnv, sym, tree.pos(),
-                                                       annotate.implementsCreator(i++));
-                } else {
-                    annotate.annotateTypeLater(iface, baseEnv, sym, tree.pos(),
-                                               annotate.implementsCreator(i++));
-            }
             }
 
             if ((c.flags_field & ANNOTATION) != 0) {
@@ -1157,6 +1174,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
         } finally {
             deferredLintHandler.setPos(prevLintPos);
             log.useSource(prev);
+            dependencies.pop();
         }
 
         // Enter all member fields and methods of a set of half completed

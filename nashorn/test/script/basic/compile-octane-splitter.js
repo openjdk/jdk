@@ -22,12 +22,22 @@
  */
 
 /**
+ * Make sure that we run with the class cache off to so that every
+ * run produces compile time and with optimistic type info caching
+ * and persistent code store off, for the same reasons. These last two
+ * are currently default, but this is not guaranteed to be the case
+ * forever, so make this test future safe, we specify them explicitly
+ *
  * @test
  * @option -Dnashorn.compiler.splitter.threshold=1000
  * @fork
  * @runif external.octane
  * @option -scripting
+ * @option -Dnashorn.typeInfo.disabled=true
+ * @option --class-cache-size=0
+ * @option --persistent-code-cache=false
  */
 
-compile_only = true;
-load(__DIR__ + 'run-octane.js');
+var fn  = __DIR__ + 'compile-octane.js';
+var url = "file://" + fn; 
+loadWithNewGlobal(new java.net.URL(url));

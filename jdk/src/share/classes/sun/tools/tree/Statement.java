@@ -100,7 +100,7 @@ class Statement extends Node {
     /**
      * Check a statement
      */
-    public Vset checkMethod(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkMethod(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         // Set up ctx.getReturnContext() for the sake of ReturnStatement.check().
         CheckContext mctx = new CheckContext(ctx, new Statement(METHOD, 0));
         ctx = mctx;
@@ -130,7 +130,7 @@ class Statement extends Node {
 
         return vset;
     }
-    Vset checkDeclaration(Environment env, Context ctx, Vset vset, int mod, Type t, Hashtable exp) {
+    Vset checkDeclaration(Environment env, Context ctx, Vset vset, int mod, Type t, Hashtable<Object, Object> exp) {
         throw new CompilerError("checkDeclaration");
     }
 
@@ -164,12 +164,12 @@ class Statement extends Node {
         }
     }
 
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         throw new CompilerError("check");
     }
 
     /** This is called in contexts where declarations are valid. */
-    Vset checkBlockStatement(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset checkBlockStatement(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         return check(env, ctx, vset, exp);
     }
 

@@ -94,26 +94,37 @@ G1OffsetTableContigSpace::block_start_const(const void* p) const {
 inline bool
 HeapRegion::block_is_obj(const HeapWord* p) const {
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  return !g1h->is_obj_dead(oop(p), this);
+  if (ClassUnloadingWithConcurrentMark) {
+    return !g1h->is_obj_dead(oop(p), this);
+  }
+  return p < top();
 }
 
 inline size_t
 HeapRegion::block_size(const HeapWord *addr) const {
+  if (addr == top()) {
+    return pointer_delta(end(), addr);
+  }
+
+  if (block_is_obj(addr)) {
+    return oop(addr)->size();
+  }
+
+  assert(ClassUnloadingWithConcurrentMark,
+      err_msg("All blocks should be objects if G1 Class Unloading isn't used. "
+              "HR: ["PTR_FORMAT", "PTR_FORMAT", "PTR_FORMAT") "
+              "addr: " PTR_FORMAT,
+              p2i(bottom()), p2i(top()), p2i(end()), p2i(addr)));
+
   // Old regions' dead objects may have dead classes
   // We need to find the next live object in some other
   // manner than getting the oop size
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
-  if (g1h->is_obj_dead(oop(addr), this)) {
-    HeapWord* next = g1h->concurrent_mark()->prevMarkBitMap()->
-        getNextMarkedWordAddress(addr, prev_top_at_mark_start());
+  HeapWord* next = g1h->concurrent_mark()->prevMarkBitMap()->
+      getNextMarkedWordAddress(addr, prev_top_at_mark_start());
 
-    assert(next > addr, "must get the next live object");
-
-    return pointer_delta(next, addr);
-  } else if (addr == top()) {
-    return pointer_delta(end(), addr);
-  }
-  return oop(addr)->size();
+  assert(next > addr, "must get the next live object");
+  return pointer_delta(next, addr);
 }
 
 inline HeapWord* HeapRegion::par_allocate_no_bot_updates(size_t word_size) {

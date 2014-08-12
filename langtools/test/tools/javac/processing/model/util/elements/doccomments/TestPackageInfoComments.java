@@ -25,8 +25,10 @@
  * @test
  * @bug 8042345
  * @summary getDocComment() fails for doc comments on PackageElement found in package-info.java
+ * @library /tools/javac/lib
+ * @build JavacTestingAbstractProcessor TestPackageInfoComments
+ * @run main TestPackageInfoComments
  */
-
 import com.sun.source.util.JavacTask;
 
 import java.io.*;
@@ -37,14 +39,13 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import javax.tools.*;
 
-@SupportedAnnotationTypes("*")
-public class TestPackageInfoComments extends AbstractProcessor {
+public class TestPackageInfoComments extends JavacTestingAbstractProcessor {
 
     public static void main(String... args) throws Exception {
         String[] opts = {
             "-implicit:none",
             "-processor", TestPackageInfoComments.class.getName(),
-            "-processorpath", System.getProperty("test.classes")
+            "-processorpath", System.getProperty("test.class.path")
         };
         File[] files = {
             new File(System.getProperty("test.src"), "p/package-info.java")
@@ -68,21 +69,6 @@ public class TestPackageInfoComments extends AbstractProcessor {
 
     // -- Annotation processor: Check all PackageDecl's have a doc comment
 
-    Messager messager;
-    Elements elements;
-
-    @Override
-    public SourceVersion getSupportedSourceVersion() {
-        return SourceVersion.latest();
-    }
-
-    @Override
-    public void init(ProcessingEnvironment pEnv) {
-        super.init(pEnv);
-        messager = pEnv.getMessager();
-        elements = pEnv.getElementUtils();
-    }
-
     @Override
     public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
         for (Element e: roundEnv.getRootElements())
@@ -90,7 +76,7 @@ public class TestPackageInfoComments extends AbstractProcessor {
         return true;
     }
 
-    class TestElementScanner extends ElementScanner7<Void, Void> {
+    class TestElementScanner extends ElementScanner<Void, Void> {
         @Override
         public Void visitPackage(PackageElement e, Void v) {
             if (elements.getDocComment(e) == null)

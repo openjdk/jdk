@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2004, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.net.URI;
  * Class URISyntax is an abstract base class providing the common
  * implementation of all attributes whose value is a Uniform Resource
  * Identifier (URI). Once constructed, a URI attribute's value is immutable.
- * <P>
  *
  * @author  Alan Kaminsky
  */

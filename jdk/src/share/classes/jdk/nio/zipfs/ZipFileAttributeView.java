@@ -59,6 +59,7 @@ class ZipFileAttributeView implements BasicFileAttributeView
         this.isZipView = isZipView;
     }
 
+    @SuppressWarnings("unchecked") // Cast to V
     static <V extends FileAttributeView> V get(ZipPath path, Class<V> type) {
         if (type == null)
             throw new NullPointerException();

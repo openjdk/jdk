@@ -114,6 +114,8 @@ import javax.activation.DataHandler;
  * <PRE>
  *     ap1.clearContent();
  * </PRE>
+ *
+ * @since 1.6
  */
 
 public abstract class AttachmentPart {
@@ -190,7 +192,7 @@ public abstract class AttachmentPart {
      *      <code>AttachmentPart</code> object or if there was a data
      *      transformation error.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      * @see #getRawContentBytes
      */
     public abstract InputStream getRawContent() throws SOAPException;
@@ -208,7 +210,7 @@ public abstract class AttachmentPart {
      *      <code>AttachmentPart</code> object or if there was a data
      *      transformation error.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract byte[] getRawContentBytes() throws SOAPException;
 
@@ -225,7 +227,7 @@ public abstract class AttachmentPart {
      *      <code>AttachmentPart</code> object or if there was a data
      *      transformation error.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract InputStream getBase64Content() throws SOAPException;
 
@@ -267,7 +269,7 @@ public abstract class AttachmentPart {
      *
      * @exception SOAPException if an there is an error in setting the content
      * @exception NullPointerException if <code>content</code> is null
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract void setRawContent(InputStream content, String contentType) throws SOAPException;
 
@@ -285,7 +287,7 @@ public abstract class AttachmentPart {
      *
      * @exception SOAPException if an there is an error in setting the content
      * or content is null
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract void setRawContentBytes(
         byte[] content, int offset, int len,  String contentType)
@@ -309,7 +311,7 @@ public abstract class AttachmentPart {
      * @exception SOAPException if an there is an error in setting the content
      * @exception NullPointerException if <code>content</code> is null
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public abstract void setBase64Content(
         InputStream content, String contentType) throws SOAPException;

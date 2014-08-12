@@ -37,6 +37,7 @@ package javax.xml.soap;
  * inserted.
  * @deprecated - Use <code>javax.xml.soap.SOAPFactory</code> for creating SOAPElements.
  * @see javax.xml.soap.SOAPFactory
+ * @since 1.6
  */
 public class SOAPElementFactory {
 

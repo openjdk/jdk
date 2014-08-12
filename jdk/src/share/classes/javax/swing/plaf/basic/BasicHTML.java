@@ -48,6 +48,10 @@ public class BasicHTML {
     /**
      * Create an html renderer for the given component and
      * string of html.
+     *
+     * @param c a component
+     * @param html an HTML string
+     * @return an HTML renderer
      */
     public static View createHTMLView(JComponent c, String html) {
         BasicEditorKit kit = getFactory();
@@ -178,6 +182,10 @@ public class BasicHTML {
      * Check the given string to see if it should trigger the
      * html rendering logic in a non-text component that supports
      * html rendering.
+     *
+     * @param s a text
+     * @return {@code true} if the given string should trigger the
+     *         html rendering logic in a non-text component
      */
     public static boolean isHTMLString(String s) {
         if (s != null) {
@@ -198,6 +206,9 @@ public class BasicHTML {
      * This method is useful for ComponentUI implementations
      * that are static (i.e. shared) and get their state
      * entirely from the JComponent.
+     *
+     * @param c a component
+     * @param text a text
      */
     public static void updateRenderer(JComponent c, String text) {
         View value = null;

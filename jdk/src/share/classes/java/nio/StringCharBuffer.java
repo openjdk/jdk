@@ -100,7 +100,7 @@ class StringCharBuffer                                  // package-private
     }
 
     final String toString(int start, int end) {
-        return str.toString().substring(start + offset, end + offset);
+        return str.subSequence(start + offset, end + offset).toString();
     }
 
     public final CharBuffer subSequence(int start, int end) {

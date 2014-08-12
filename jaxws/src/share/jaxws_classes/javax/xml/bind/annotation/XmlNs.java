@@ -42,7 +42,7 @@ import java.lang.annotation.Target;
  *
  * <p><b>Example:</b>See <tt>XmlSchema</tt> annotation type for an example.
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 
 @Retention(RUNTIME) @Target({})

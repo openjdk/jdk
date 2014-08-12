@@ -112,7 +112,7 @@ public final class TryNode extends Statement implements JoinPredecessor {
             return visitor.leaveTryNode(
                 setBody(newBody).
                 setFinallyBody(newFinallyBody).
-                setCatchBlocks(Node.accept(visitor, Block.class, catchBlocks)).
+                setCatchBlocks(Node.accept(visitor, catchBlocks)).
                 setFinallyCatchAll(finallyCatchAll));
         }
 

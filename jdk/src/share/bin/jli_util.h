@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -64,17 +64,22 @@ int     JLI_GetStdArgc();
 #ifdef _WIN32
 #include <windows.h>
 #include <io.h>
+#include <process.h>
 #define JLI_StrCaseCmp(p1, p2)          stricmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strnicmp((p1), (p2), (p3))
 int  JLI_Snprintf(char *buffer, size_t size, const char *format, ...);
 void JLI_CmdToArgs(char *cmdline);
 #define JLI_Lseek                       _lseeki64
+#define JLI_PutEnv                      _putenv
+#define JLI_GetPid                      _getpid
 #else  /* NIXES */
 #include <unistd.h>
 #include <strings.h>
 #define JLI_StrCaseCmp(p1, p2)          strcasecmp((p1), (p2))
 #define JLI_StrNCaseCmp(p1, p2, p3)     strncasecmp((p1), (p2), (p3))
 #define JLI_Snprintf                    snprintf
+#define JLI_PutEnv                      putenv
+#define JLI_GetPid                      getpid
 #ifdef __solaris__
 #define JLI_Lseek                       llseek
 #endif

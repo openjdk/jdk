@@ -165,14 +165,14 @@ public void examineElement(Element el)
         foregroundColor = StyleConstants.getForeground(a);
         if (foregroundColor != null &&
             colorTable.get(foregroundColor) == null) {
-            colorTable.put(foregroundColor, new Integer(colorCount));
+            colorTable.put(foregroundColor, colorCount);
             colorCount ++;
         }
 
         backgroundColor = a.getAttribute(StyleConstants.Background);
         if (backgroundColor != null &&
             colorTable.get(backgroundColor) == null) {
-            colorTable.put(backgroundColor, new Integer(colorCount));
+            colorTable.put(backgroundColor, colorCount);
             colorCount ++;
         }
 
@@ -183,7 +183,7 @@ public void examineElement(Element el)
 
         if (fontName != null &&
             fontTable.get(fontName) == null) {
-            fontTable.put(fontName, new Integer(fontCount));
+            fontTable.put(fontName, fontCount);
             fontCount ++;
         }
     }
@@ -200,7 +200,7 @@ private void tallyStyles(AttributeSet a) {
             Integer aNum = styleTable.get(a);
             if (aNum == null) {
                 styleCount = styleCount + 1;
-                aNum = new Integer(styleCount);
+                aNum = styleCount;
                 styleTable.put(a, aNum);
             }
         }

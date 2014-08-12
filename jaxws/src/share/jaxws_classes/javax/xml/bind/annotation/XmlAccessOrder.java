@@ -30,7 +30,7 @@ package javax.xml.bind.annotation;
  * fields in a JAXB bound class.
  *
  * @author Sekhar Vajjhala, Sun Microsystems, Inc.
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  * @see XmlAccessorOrder
  */
 

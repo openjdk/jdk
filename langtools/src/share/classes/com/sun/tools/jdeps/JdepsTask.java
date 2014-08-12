@@ -236,6 +236,11 @@ class JdepsTask {
                 task.options.showLabel = true;
             }
         },
+        new HiddenOption(false, "-q", "-quiet") {
+            void process(JdepsTask task, String opt, String arg) {
+                task.options.nowarning = true;
+            }
+        },
         new HiddenOption(true, "-depth") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 try {
@@ -320,7 +325,9 @@ class JdepsTask {
 
         Analyzer analyzer = new Analyzer(options.verbose, new Analyzer.Filter() {
             @Override
-            public boolean accepts(Location origin, Archive originArchive, Location target, Archive targetArchive) {
+            public boolean accepts(Location origin, Archive originArchive,
+                                   Location target, Archive targetArchive)
+            {
                 if (options.findJDKInternals) {
                     // accepts target that is JDK class but not exported
                     return isJDKArchive(targetArchive) &&
@@ -343,6 +350,10 @@ class JdepsTask {
             generateDotFiles(dir, analyzer);
         } else {
             printRawOutput(log, analyzer);
+        }
+
+        if (options.findJDKInternals && !options.nowarning) {
+            showReplacements(analyzer);
         }
         return true;
     }
@@ -693,6 +704,7 @@ class JdepsTask {
         boolean apiOnly;
         boolean showLabel;
         boolean findJDKInternals;
+        boolean nowarning;
         // default is to show package-level dependencies
         // and filter references from same package
         Analyzer.Type verbose = PACKAGE;
@@ -709,6 +721,7 @@ class JdepsTask {
     private static class ResourceBundleHelper {
         static final ResourceBundle versionRB;
         static final ResourceBundle bundle;
+        static final ResourceBundle jdkinternals;
 
         static {
             Locale locale = Locale.getDefault();
@@ -721,6 +734,11 @@ class JdepsTask {
                 versionRB = ResourceBundle.getBundle("com.sun.tools.jdeps.resources.version");
             } catch (MissingResourceException e) {
                 throw new InternalError("version.resource.missing");
+            }
+            try {
+                jdkinternals = ResourceBundle.getBundle("com.sun.tools.jdeps.resources.jdkinternals");
+            } catch (MissingResourceException e) {
+                throw new InternalError("Cannot find jdkinternals resource bundle");
             }
         }
     }
@@ -927,5 +945,51 @@ class JdepsTask {
             pn = i > 0 ? name.substring(0, i) : "";
         }
         return Profile.getProfile(pn);
+    }
+
+    /**
+     * Returns the recommended replacement API for the given classname;
+     * or return null if replacement API is not known.
+     */
+    private String replacementFor(String cn) {
+        String name = cn;
+        String value = null;
+        while (value == null && name != null) {
+            try {
+                value = ResourceBundleHelper.jdkinternals.getString(name);
+            } catch (MissingResourceException e) {
+                // go up one subpackage level
+                int i = name.lastIndexOf('.');
+                name = i > 0 ? name.substring(0, i) : null;
+            }
+        }
+        return value;
+    };
+
+    private void showReplacements(Analyzer analyzer) {
+        Map<String,String> jdkinternals = new TreeMap<>();
+        boolean useInternals = false;
+        for (Archive source : sourceLocations) {
+            useInternals = useInternals || analyzer.hasDependences(source);
+            for (String cn : analyzer.dependences(source)) {
+                String repl = replacementFor(cn);
+                if (repl != null) {
+                    jdkinternals.putIfAbsent(cn, repl);
+                }
+            }
+        }
+        if (useInternals) {
+            log.println();
+            warning("warn.replace.useJDKInternals", getMessage("jdeps.wiki.url"));
+        }
+        if (!jdkinternals.isEmpty()) {
+            log.println();
+            log.format("%-40s %s%n", "JDK Internal API", "Suggested Replacement");
+            log.format("%-40s %s%n", "----------------", "---------------------");
+            for (Map.Entry<String,String> e : jdkinternals.entrySet()) {
+                log.format("%-40s %s%n", e.getKey(), e.getValue());
+            }
+        }
+
     }
 }

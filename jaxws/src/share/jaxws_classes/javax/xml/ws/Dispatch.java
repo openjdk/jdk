@@ -33,7 +33,7 @@ import java.util.concurrent.Future;
  *  class acts as a factory for the creation of <code>Dispatch</code>
  *  instances.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface Dispatch<T> extends BindingProvider {
 

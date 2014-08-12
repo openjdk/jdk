@@ -934,7 +934,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         public Node accept(final LexicalContext lc, final NodeVisitor<? extends LexicalContext> visitor) {
             if (visitor.enterLiteralNode(this)) {
                 final List<Expression> oldValue = Arrays.asList(value);
-                final List<Expression> newValue = Node.accept(visitor, Expression.class, oldValue);
+                final List<Expression> newValue = Node.accept(visitor, oldValue);
                 return visitor.leaveLiteralNode(oldValue != newValue ? setValue(lc, newValue) : this);
             }
             return this;

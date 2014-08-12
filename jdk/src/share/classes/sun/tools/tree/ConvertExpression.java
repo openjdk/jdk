@@ -47,7 +47,7 @@ class ConvertExpression extends UnaryExpression {
     /**
      * Check the value
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         return right.checkValue(env, ctx, vset, exp);
     }
 

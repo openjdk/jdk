@@ -812,12 +812,12 @@ public class GTKLookAndFeel extends SynthLookAndFeel {
 
             "OptionPane.setButtonMargin", Boolean.FALSE,
             "OptionPane.sameSizeButtons", Boolean.TRUE,
-            "OptionPane.buttonOrientation", new Integer(SwingConstants.RIGHT),
+            "OptionPane.buttonOrientation", SwingConstants.RIGHT,
             "OptionPane.minimumSize", new DimensionUIResource(262, 90),
-            "OptionPane.buttonPadding", new Integer(10),
+            "OptionPane.buttonPadding", 10,
             "OptionPane.windowBindings", new Object[] {
                 "ESCAPE", "close" },
-            "OptionPane.buttonClickThreshhold", new Integer(500),
+            "OptionPane.buttonClickThreshhold", 500,
             "OptionPane.isYesLast", Boolean.TRUE,
             "OptionPane.font", new FontLazyValue(Region.OPTION_PANE),
 

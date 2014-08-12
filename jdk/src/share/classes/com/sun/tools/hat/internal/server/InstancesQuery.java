@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -73,11 +73,11 @@ class InstancesQuery extends QueryHandler {
             out.print("<strong>");
             printClass(clazz);
             out.print("</strong><br><br>");
-            Enumeration objects = clazz.getInstances(includeSubclasses);
+            Enumeration<JavaHeapObject> objects = clazz.getInstances(includeSubclasses);
             long totalSize = 0;
             long instances = 0;
             while (objects.hasMoreElements()) {
-                JavaHeapObject obj = (JavaHeapObject) objects.nextElement();
+                JavaHeapObject obj = objects.nextElement();
                 if (newObjects && !obj.isNew())
                     continue;
                 printThing(obj);

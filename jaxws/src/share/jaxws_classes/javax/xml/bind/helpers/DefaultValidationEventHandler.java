@@ -52,7 +52,7 @@ import java.net.URL;
  * @see javax.xml.bind.Unmarshaller
  * @see javax.xml.bind.Validator
  * @see javax.xml.bind.ValidationEventHandler
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public class DefaultValidationEventHandler implements ValidationEventHandler {
 

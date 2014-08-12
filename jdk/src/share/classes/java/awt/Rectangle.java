@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -41,14 +41,13 @@ import java.beans.Transient;
  * <p>
  * <a name="Empty">
  * A {@code Rectangle} whose width or height is exactly zero has location
- * along those axes with zero dimension, but is otherwise considered empty.
+ * along those axes with zero dimension, but is otherwise considered empty.</a>
  * The {@link #isEmpty} method will return true for such a {@code Rectangle}.
  * Methods which test if an empty {@code Rectangle} contains or intersects
  * a point or rectangle will always return false if either dimension is zero.
  * Methods which combine such a {@code Rectangle} with a point or rectangle
  * will include the location of the {@code Rectangle} on that axis in the
  * result as if the {@link #add(Point)} method were being called.
- * </a>
  * <p>
  * <a name="NonExistant">
  * A {@code Rectangle} whose width or height is negative has neither
@@ -422,7 +421,7 @@ public class Rectangle extends Rectangle2D
      * <code>Rectangle</code> to the specified
      * <code>x</code>, <code>y</code>, <code>width</code>,
      * and <code>height</code>.
-     * <p>
+     *
      * @param x the new X coordinate for the upper-left
      *                    corner of this <code>Rectangle</code>
      * @param y the new Y coordinate for the upper-left
@@ -488,7 +487,7 @@ public class Rectangle extends Rectangle2D
 
     /**
      * Moves this <code>Rectangle</code> to the specified location.
-     * <p>
+     *
      * @param x the X coordinate of the new location
      * @param y the Y coordinate of the new location
      * @deprecated As of JDK version 1.1,
@@ -629,7 +628,7 @@ public class Rectangle extends Rectangle2D
     /**
      * Sets the size of this <code>Rectangle</code> to the specified
      * width and height.
-     * <p>
+     *
      * @param width the new width for this <code>Rectangle</code>
      * @param height the new height for this <code>Rectangle</code>
      * @deprecated As of JDK version 1.1,

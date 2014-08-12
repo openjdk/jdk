@@ -909,7 +909,8 @@ void MarkSweepPolicy::initialize_alignments() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, 0, AllocFailStrategy::RETURN_NULL);
+  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, CURRENT_PC,
+    AllocFailStrategy::RETURN_NULL);
   if (_generations == NULL) {
     vm_exit_during_initialization("Unable to allocate gen spec");
   }

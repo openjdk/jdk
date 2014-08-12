@@ -341,7 +341,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
         if (accessibleContext != null) {
             accessibleContext.firePropertyChange(
                     AccessibleContext.ACCESSIBLE_VALUE_PROPERTY,
-                    oldValue, new Integer(model.getValue()));
+                    oldValue, model.getValue());
         }
     }
 
@@ -952,7 +952,7 @@ public class JScrollBar extends JComponent implements Adjustable, Accessible
          */
         public Number getMaximumAccessibleValue() {
             // TIGER - 4422362
-            return new Integer(model.getMaximum() - model.getExtent());
+            return model.getMaximum() - model.getExtent();
         }
 
     } // AccessibleJScrollBar
