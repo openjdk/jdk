@@ -107,7 +107,7 @@ public final class OptimisticTypesPersistence {
      */
     @SuppressWarnings("resource")
     public static void store(final Object locationDescriptor, final Map<Integer, Type> optimisticTypes) {
-        if(locationDescriptor == null) {
+        if(locationDescriptor == null || optimisticTypes.isEmpty()) {
             return;
         }
         final File file = ((LocationDescriptor)locationDescriptor).file;
