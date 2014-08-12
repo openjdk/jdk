@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,9 +52,9 @@ class VectorNode : public TypeNode {
 
   virtual uint ideal_reg() const { return Matcher::vector_ideal_reg(vect_type()->length_in_bytes()); }
 
-  static VectorNode* scalar2vector(Compile* C, Node* s, uint vlen, const Type* opd_t);
-  static VectorNode* shift_count(Compile* C, Node* shift, Node* cnt, uint vlen, BasicType bt);
-  static VectorNode* make(Compile* C, int opc, Node* n1, Node* n2, uint vlen, BasicType bt);
+  static VectorNode* scalar2vector(Node* s, uint vlen, const Type* opd_t);
+  static VectorNode* shift_count(Node* shift, Node* cnt, uint vlen, BasicType bt);
+  static VectorNode* make(int opc, Node* n1, Node* n2, uint vlen, BasicType bt);
 
   static int  opcode(int opc, BasicType bt);
   static bool implemented(int opc, uint vlen, BasicType bt);
@@ -371,7 +371,7 @@ class LoadVectorNode : public LoadNode {
 
   virtual int store_Opcode() const { return Op_StoreVector; }
 
-  static LoadVectorNode* make(Compile* C, int opc, Node* ctl, Node* mem,
+  static LoadVectorNode* make(int opc, Node* ctl, Node* mem,
                               Node* adr, const TypePtr* atyp, uint vlen, BasicType bt);
 };
 
@@ -394,7 +394,7 @@ class StoreVectorNode : public StoreNode {
   virtual BasicType memory_type() const { return T_VOID; }
   virtual int memory_size() const { return vect_type()->length_in_bytes(); }
 
-  static StoreVectorNode* make(Compile* C, int opc, Node* ctl, Node* mem,
+  static StoreVectorNode* make(int opc, Node* ctl, Node* mem,
                                Node* adr, const TypePtr* atyp, Node* val,
                                uint vlen);
 };
@@ -465,9 +465,9 @@ class PackNode : public VectorNode {
   }
 
   // Create a binary tree form for Packs. [lo, hi) (half-open) range
-  PackNode* binary_tree_pack(Compile* C, int lo, int hi);
+  PackNode* binary_tree_pack(int lo, int hi);
 
-  static PackNode* make(Compile* C, Node* s, uint vlen, BasicType bt);
+  static PackNode* make(Node* s, uint vlen, BasicType bt);
 };
 
 //------------------------------PackBNode--------------------------------------
@@ -552,7 +552,7 @@ class ExtractNode : public Node {
   virtual int Opcode() const;
   uint  pos() const { return in(2)->get_int(); }
 
-  static Node* make(Compile* C, Node* v, uint position, BasicType bt);
+  static Node* make(Node* v, uint position, BasicType bt);
 };
 
 //------------------------------ExtractBNode-----------------------------------

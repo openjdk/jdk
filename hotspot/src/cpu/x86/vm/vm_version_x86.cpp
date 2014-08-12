@@ -559,7 +559,7 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCLMUL, false);
   }
 
-  if (UseCLMUL && (UseAVX > 0) && (UseSSE > 2)) {
+  if (UseCLMUL && (UseSSE > 2)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       UseCRC32Intrinsics = true;
     }
@@ -805,6 +805,21 @@ void VM_Version::get_processor_features() {
         }
       }
     }
+    if ((cpu_family() == 0x06) &&
+        ((extended_cpu_model() == 0x36) || // Centerton
+         (extended_cpu_model() == 0x37) || // Silvermont
+         (extended_cpu_model() == 0x4D))) {
+#ifdef COMPILER2
+      if (FLAG_IS_DEFAULT(OptoScheduling)) {
+        OptoScheduling = true;
+      }
+#endif
+      if (supports_sse4_2()) { // Silvermont
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+          UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
+        }
+      }
+    }
   }
 
   // Use count leading zeros count instruction if available.
@@ -892,23 +907,25 @@ void VM_Version::get_processor_features() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  if( is_intel() && cpu_family() == 6 && supports_sse3() ) {
-    if( AllocatePrefetchStyle == 2 ) { // watermark prefetching on Core
+  if (is_intel() && cpu_family() == 6 && supports_sse3()) {
+    if (AllocatePrefetchStyle == 2) { // watermark prefetching on Core
 #ifdef _LP64
       AllocatePrefetchDistance = 384;
 #else
       AllocatePrefetchDistance = 320;
 #endif
     }
-    if( supports_sse4_2() && supports_ht() ) { // Nehalem based cpus
+    if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       AllocatePrefetchDistance = 192;
       AllocatePrefetchLines = 4;
+    }
 #ifdef COMPILER2
-      if (AggressiveOpts && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+    if (supports_sse4_2()) {
+      if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
         FLAG_SET_DEFAULT(UseFPUForSpilling, true);
       }
-#endif
     }
+#endif
   }
   assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
 
