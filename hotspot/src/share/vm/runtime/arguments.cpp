@@ -301,6 +301,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "AutoShutdownNMT",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#ifndef ZERO
+  { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#endif // ZERO
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1070,16 +1074,6 @@ void Arguments::set_mode_flags(Mode mode) {
   UseInterpreter             = true;
   UseCompiler                = true;
   UseLoopCounter             = true;
-
-#ifndef ZERO
-  // Turn these off for mixed and comp.  Leave them on for Zero.
-  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
-    UseFastAccessorMethods = (mode == _int);
-  }
-  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
-    UseFastEmptyMethods = (mode == _int);
-  }
-#endif
 
   // Default values may be platform/compiler dependent -
   // use the saved values
