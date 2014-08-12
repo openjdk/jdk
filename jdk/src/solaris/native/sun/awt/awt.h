@@ -75,6 +75,12 @@ extern void awt_output_flush();
     AWT_NOFLUSH_UNLOCK();                       \
 } while (0)
 
+#define AWT_UNLOCK_CHECK_EXCEPTION(env) \
+    do { \
+      AWT_UNLOCK(); \
+      JNU_CHECK_EXCEPTION(env); \
+    } while (0)
+
 #define AWT_LOCK_IMPL() \
     (*env)->CallStaticVoidMethod(env, tkClass, awtLockMID)
 
