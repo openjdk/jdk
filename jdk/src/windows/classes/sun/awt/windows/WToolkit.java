@@ -844,6 +844,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
+        if (f != null) {
+            return f.createDragSourceContextPeer(dge);
+        }
+
         return WDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
@@ -854,6 +859,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
                                     DragSource ds, Component c, int srcActions,
                                     DragGestureListener dgl)
     {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(c);
+        if (f != null) {
+            return f.createDragGestureRecognizer(abstractRecognizerClass, ds, c, srcActions, dgl);
+        }
+
         if (MouseDragGestureRecognizer.class.equals(abstractRecognizerClass))
             return (T)new WMouseDragGestureRecognizer(ds, c, srcActions, dgl);
         else

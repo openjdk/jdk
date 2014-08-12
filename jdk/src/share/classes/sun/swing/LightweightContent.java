@@ -26,7 +26,15 @@
 package sun.swing;
 
 import javax.swing.JComponent;
+import java.awt.Component;
 import java.awt.Cursor;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.InvalidDnDOperationException;
+import java.awt.dnd.peer.DragSourceContextPeer;
 
 /**
  * The interface by means of which the {@link JLightweightFrame} class
@@ -209,4 +217,33 @@ public interface LightweightContent {
      * @param cursor a cursor to set
      */
     default public void setCursor(Cursor cursor) { }
+
+    /**
+     * Create a drag gesture recognizer for the lightweight frame.
+     */
+    default public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
+            Class<T> abstractRecognizerClass,
+            DragSource ds, Component c, int srcActions,
+            DragGestureListener dgl)
+    {
+        return null;
+    }
+
+    /**
+     * Create a drag source context peer for the lightweight frame.
+     */
+    default public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException
+    {
+        return null;
+    }
+
+    /**
+     * Adds a drop target to the lightweight frame.
+     */
+    default public void addDropTarget(DropTarget dt) {}
+
+    /**
+     * Removes a drop target from the lightweight frame.
+     */
+    default public void removeDropTarget(DropTarget dt) {}
 }
