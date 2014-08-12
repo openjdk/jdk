@@ -1,17 +1,14 @@
 <!-- importing.xml -->
 <project name="langtools" basedir="..">
+
+    <script language="javascript" classpath=".idea/classes">
+        var ideaListener = project.getBuildListeners().firstElement();            
+        var LangtoolsLogger = Java.type("idea.LangtoolsIdeaAntLogger");
+        project.removeBuildListener(ideaListener)
+        project.addBuildListener(new LangtoolsLogger(ideaListener))
+    </script>
+
     <import file="../make/build.xml"/>
-
-    <target name="jtreg-debug" depends="build-all-tools,-def-jtreg">
-        <exec-target target="jtreg-debug-internal"/>
-    </target>
-
-    <target name="jtreg-debug-internal" depends="build-all-tools,-def-jtreg">
-        <sequential>
-            <sleep seconds="2"/>
-            <jtreg-tool name="all" tests="${jtreg.tests}" jpda.jvmargs="${jtreg.jpda.jvmargs}"/>
-        </sequential>
-    </target>
 
     <macrodef name="exec-target">
         <attribute name="antfile" default="${ant.file}" />
@@ -32,5 +29,15 @@
             </java>
         </sequential>
     </macrodef>
+
+    <target name="post-make" depends="build-all-tools"/>
+
+    <target name="jtreg-debug" depends="build-all-tools,-def-jtreg">
+        <exec-target target="jtreg-debug-internal"/>
+    </target>
+
+    <target name="jtreg-debug-internal" depends="-def-jtreg">
+        <jtreg-tool name="all" tests="${jtreg.tests}" jpda.jvmargs="${jtreg.jpda.jvmargs}"/>
+    </target>
 </project>
 

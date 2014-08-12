@@ -945,11 +945,6 @@ class CommandLineFlags {
   diagnostic(bool, PrintNMTStatistics, false,                               \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
-  diagnostic(bool, AutoShutdownNMT, true,                                   \
-          "Automatically shutdown native memory tracking under stress "     \
-          "situations. When set to false, native memory tracking tries to " \
-          "stay alive at the expense of JVM performance")                   \
-                                                                            \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to LogFile")                  \
                                                                             \
@@ -1077,6 +1072,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
+                                                                            \
+  product(bool, ClassUnloadingWithConcurrentMark, true,                     \
+          "Do unloading of classes with a concurrent marking cycle")        \
                                                                             \
   develop(bool, DisableStartThread, false,                                  \
           "Disable starting of additional Java threads "                    \
@@ -2786,12 +2784,6 @@ class CommandLineFlags {
   product(bool, UseLoopCounter, true,                                       \
           "Increment invocation counter on backward branch")                \
                                                                             \
-  product(bool, UseFastEmptyMethods, true,                                  \
-          "Use fast method entry code for empty methods")                   \
-                                                                            \
-  product(bool, UseFastAccessorMethods, true,                               \
-          "Use fast method entry code for accessor methods")                \
-                                                                            \
   product_pd(bool, UseOnStackReplacement,                                   \
           "Use on stack replacement, calls runtime if invoc. counter "      \
           "overflows in loop")                                              \
@@ -3870,6 +3862,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintGCCause, true,                                         \
           "Include GC cause in GC logging")                                 \
+                                                                            \
+  experimental(intx, SurvivorAlignmentInBytes, 0,                           \
+           "Default survivor space alignment in bytes")                     \
                                                                             \
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \

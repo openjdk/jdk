@@ -35,7 +35,7 @@ import javax.xml.transform.dom.DOMResult;
  *
  * @author XWS-Security Development Team
  *
- * @since SAAJ 1.3
+ * @since 1.6, SAAJ 1.3
  */
 public class SAAJResult extends DOMResult {
 
@@ -53,7 +53,7 @@ public class SAAJResult extends DOMResult {
      *
      * @throws SOAPException if there is a problem creating a <code>SOAPMessage</code>
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SAAJResult() throws SOAPException {
         this(MessageFactory.newInstance().createMessage());
@@ -79,7 +79,7 @@ public class SAAJResult extends DOMResult {
      * @throws SOAPException if a <code>SOAPMessage</code> supporting the
      *             specified protocol cannot be created
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SAAJResult(String protocol) throws SOAPException {
         this(MessageFactory.newInstance(protocol).createMessage());
@@ -99,7 +99,7 @@ public class SAAJResult extends DOMResult {
      *                  populated as a result of some transformation or
      *                  marshalling operation
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SAAJResult(SOAPMessage message) {
         super(message.getSOAPPart());
@@ -116,7 +116,7 @@ public class SAAJResult extends DOMResult {
      *
      * @param rootNode - the root to which the results will be appended
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public SAAJResult(SOAPElement rootNode) {
         super(rootNode);
@@ -125,7 +125,7 @@ public class SAAJResult extends DOMResult {
 
     /**
      * @return the resulting Tree that was created under the specified root Node.
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public javax.xml.soap.Node getResult() {
         return (javax.xml.soap.Node)super.getNode().getFirstChild();

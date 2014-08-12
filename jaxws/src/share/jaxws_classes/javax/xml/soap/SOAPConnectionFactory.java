@@ -32,6 +32,8 @@ package javax.xml.soap;
  * SAAJ communication infrastructure. Otherwise {@link SOAPConnection} objects
  * can be created by calling <code>createConnection()</code> on the newly
  * created <code>SOAPConnectionFactory</code> object.
+ *
+ * @since 1.6
  */
 public abstract class SOAPConnectionFactory {
     /**

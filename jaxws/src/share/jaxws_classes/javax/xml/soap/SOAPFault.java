@@ -42,6 +42,8 @@ import javax.xml.namespace.QName;
  * Depending on the <code>protocol</code> specified while creating the
  * <code>MessageFactory</code> instance,  a <code>SOAPFault</code> has
  * sub-elements as defined in the SOAP 1.1/SOAP 1.2 specification.
+ *
+ * @since 1.6
  */
 public interface SOAPFault extends SOAPBodyElement {
 
@@ -72,7 +74,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception SOAPException if there was an error in adding the
      *            <i>faultcode</i> element to the underlying XML tree.
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public void setFaultCode(Name faultCodeQName) throws SOAPException;
 
@@ -91,7 +93,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @see #setFaultCode(Name)
      * @see #getFaultCodeAsQName()
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void setFaultCode(QName faultCodeQName) throws SOAPException;
 
@@ -128,7 +130,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @return a <code>Name</code> representing the faultcode
      * @see #setFaultCode(Name)
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Name getFaultCodeAsName();
 
@@ -141,7 +143,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *
      * @see #setFaultCode(QName)
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public QName getFaultCodeAsQName();
 
@@ -158,7 +160,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Subcode.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public Iterator getFaultSubcodes();
 
@@ -171,7 +173,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Subcode.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void removeAllFaultSubcodes();
 
@@ -187,7 +189,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Subcode.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void appendFaultSubcode(QName subcode) throws SOAPException;
 
@@ -270,7 +272,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception SOAPException if there was an error in adding the
      *            <code>faultString</code> to the underlying XML tree.
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public void setFaultString(String faultString, Locale locale)
         throws SOAPException;
@@ -315,7 +317,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *          the fault string or <code>null</code> if no locale was specified
      * @see #setFaultString(String, Locale)
      *
-     * @since SAAJ 1.2
+     * @since 1.6, SAAJ 1.2
      */
     public Locale getFaultStringLocale();
 
@@ -327,7 +329,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @return true if this <code>SOAPFault</code> has a <code>Detail</code>
      * subelement and false otherwise.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public boolean hasDetail();
 
@@ -377,7 +379,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Reason.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public Iterator getFaultReasonLocales() throws SOAPException;
 
@@ -393,7 +395,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Reason.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public Iterator getFaultReasonTexts() throws SOAPException;
 
@@ -414,7 +416,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Reason.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public String getFaultReasonText(Locale locale) throws SOAPException;
 
@@ -441,7 +443,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Reason.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void addFaultReasonText(String text, java.util.Locale locale)
         throws SOAPException;
@@ -457,7 +459,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Node.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public String getFaultNode();
 
@@ -472,7 +474,7 @@ public interface SOAPFault extends SOAPBodyElement {
      *      support the SOAP 1.2 concept of Fault Node.
      *
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void setFaultNode(String uri) throws SOAPException;
 
@@ -487,7 +489,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Role.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public String getFaultRole();
 
@@ -504,7 +506,7 @@ public interface SOAPFault extends SOAPBodyElement {
      * @exception UnsupportedOperationException if this message does not
      *      support the SOAP 1.2 concept of Fault Role.
      *
-     * @since SAAJ 1.3
+     * @since 1.6, SAAJ 1.3
      */
     public void setFaultRole(String uri) throws SOAPException;
 

@@ -49,7 +49,7 @@ class CaseStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         if (expr != null) {
             expr.checkValue(env, ctx, vset, exp);
             expr = convert(env, ctx, Type.tInt, expr);

@@ -38,7 +38,7 @@ package javax.xml.soap;
 * class.
 *
 * @author SAAJ RI Development Team
-* @since SAAJ 1.3
+* @since 1.6, SAAJ 1.3
 */
 
 public abstract class SAAJMetaFactory {

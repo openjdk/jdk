@@ -41,7 +41,7 @@ import java.lang.annotation.RetentionPolicy;
  *  determined based on the value of the <code>WebServiceClient</code>
  *  annotation on the generated service interface itself.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
  *
  *  @see javax.xml.ws.WebServiceClient
 **/

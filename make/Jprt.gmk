@@ -46,6 +46,10 @@ ifndef JPRT_ARCHIVE_INSTALL_BUNDLE
   JPRT_ARCHIVE_INSTALL_BUNDLE=/tmp/jprt_bundles/product-install.zip
 endif
 
+ifeq ($(SKIP_BOOT_CYCLE), false)
+  jprt_bundle: bootcycle-images
+endif
+
 # This target must be called in the context of a SPEC file
 jprt_bundle: $(JPRT_ARCHIVE_BUNDLE)
 	@$(call CheckIfMakeAtEnd)

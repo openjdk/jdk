@@ -132,16 +132,24 @@ public abstract class MenuComponent implements java.io.Serializable {
     static {
         AWTAccessor.setMenuComponentAccessor(
             new AWTAccessor.MenuComponentAccessor() {
+                @Override
                 public AppContext getAppContext(MenuComponent menuComp) {
                     return menuComp.appContext;
                 }
+                @Override
                 public void setAppContext(MenuComponent menuComp,
                                           AppContext appContext) {
                     menuComp.appContext = appContext;
                 }
+                @Override
                 public MenuContainer getParent(MenuComponent menuComp) {
                     return menuComp.parent;
                 }
+                @Override
+                public void setParent(MenuComponent menuComp, MenuContainer menuContainer) {
+                    menuComp.parent = menuContainer;
+                }
+                @Override
                 public Font getFont_NoClientCode(MenuComponent menuComp) {
                     return menuComp.getFont_NoClientCode();
                 }

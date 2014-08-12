@@ -39,6 +39,7 @@ import java.util.Vector;
  * API.
  * @see SOAPMessage#getAttachments
  * @see AttachmentPart
+ * @since 1.6
  */
 public class MimeHeaders {
     private Vector headers;

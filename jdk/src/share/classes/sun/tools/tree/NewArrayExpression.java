@@ -55,7 +55,7 @@ class NewArrayExpression extends NaryExpression {
     /**
      * Check
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         type = right.toType(env, ctx);
 
         boolean flag = (init != null);  // flag says that dims are forbidden

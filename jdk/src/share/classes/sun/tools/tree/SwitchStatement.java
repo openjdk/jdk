@@ -54,7 +54,7 @@ class SwitchStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         checkLabel(env, ctx);
         CheckContext newctx = new CheckContext(ctx, this);
         vset = expr.checkValue(env, newctx, reach(env, vset), exp);
@@ -62,7 +62,7 @@ class SwitchStatement extends Statement {
 
         expr = convert(env, newctx, Type.tInt, expr);
 
-        Hashtable tab = new Hashtable();
+        Hashtable<Expression, Statement> tab = new Hashtable<>();
         boolean hasDefault = false;
         // Note that vs is reset to vset.copy() on every case label.
         // If the first substatement is not a case label, it is unreached.

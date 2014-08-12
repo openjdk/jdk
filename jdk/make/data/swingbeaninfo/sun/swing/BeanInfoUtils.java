@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -122,7 +122,7 @@ public class BeanInfoUtils
      * @see java.beans#PropertyDescriptor
      * @see java.beans#FeatureDescriptor
      */
-    public static PropertyDescriptor createPropertyDescriptor(Class cls, String name, Object[] args)
+    public static PropertyDescriptor createPropertyDescriptor(Class<?> cls, String name, Object[] args)
     {
         PropertyDescriptor pd = null;
         try {
@@ -156,7 +156,7 @@ public class BeanInfoUtils
                 String methodName = (String)value;
                 Method method;
                 try {
-                    method = cls.getMethod(methodName, new Class[0]);
+                    method = cls.getMethod(methodName, new Class<?>[0]);
                     pd.setReadMethod(method);
                 }
                 catch(Exception e) {
@@ -168,8 +168,8 @@ public class BeanInfoUtils
                 String methodName = (String)value;
                 Method method;
                 try {
-                    Class type = pd.getPropertyType();
-                    method = cls.getMethod(methodName, new Class[]{type});
+                    Class<?> type = pd.getPropertyType();
+                    method = cls.getMethod(methodName, new Class<?>[]{type});
                     pd.setWriteMethod(method);
                 }
                 catch(Exception e) {
@@ -215,9 +215,9 @@ public class BeanInfoUtils
      * @see java.beans#BeanInfo
      * @see java.beans#PropertyDescriptor
      */
-    public static BeanDescriptor createBeanDescriptor(Class cls, Object[] args)
+    public static BeanDescriptor createBeanDescriptor(Class<?> cls, Object[] args)
     {
-        Class customizerClass = null;
+        Class<?> customizerClass = null;
 
         /* For reasons I don't understand, customizerClass is a
          * readOnly property.  So we have to find it and pass it
@@ -242,11 +242,11 @@ public class BeanInfoUtils
     }
 
     static private PropertyDescriptor createReadOnlyPropertyDescriptor(
-        String name, Class cls) throws IntrospectionException {
+        String name, Class<?> cls) throws IntrospectionException {
 
         Method readMethod = null;
         String base = capitalize(name);
-        Class[] parameters = new Class[0];
+        Class<?>[] parameters = new Class<?>[0];
 
         // Is it a boolean?
         try {
@@ -264,7 +264,7 @@ public class BeanInfoUtils
 
         try {
             // Try indexed accessor pattern.
-            parameters = new Class[1];
+            parameters = new Class<?>[1];
             parameters[0] = int.class;
             readMethod = cls.getMethod("get" + base, parameters);
         } catch (NoSuchMethodException nsme) {

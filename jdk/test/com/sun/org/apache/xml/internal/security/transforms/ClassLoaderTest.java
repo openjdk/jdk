@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,9 +24,9 @@
 /**
  * @test
  * @author Sean Mullan
- * @bug 6461674 8009217
+ * @bug 6461674 8009217 7147060
  * @compile -XDignore.symbol.file ClassLoaderTest.java MyTransform.java
- * @run main ClassLoaderTest
+ * @run main/othervm ClassLoaderTest
  * @summary Ensure Transform.register works with transform implementations
  *   loaded by class loader other than system/boot class loader
  */

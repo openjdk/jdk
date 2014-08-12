@@ -238,7 +238,7 @@ class Assembler implements Constants {
         // if a local variable table is generated
         if ((field != null) && env.debug_vars()) {
             @SuppressWarnings("unchecked")
-            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            Vector<MemberDefinition> v = field.getArguments();
             if (v != null) {
                 for (Enumeration<MemberDefinition> e = v.elements() ; e.hasMoreElements() ;) {
                     MemberDefinition f = e.nextElement();
@@ -386,7 +386,7 @@ class Assembler implements Constants {
         if ((field != null) && field.getArguments() != null) {
               int sum = 0;
               @SuppressWarnings("unchecked")
-              Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+              Vector<MemberDefinition> v = field.getArguments();
               for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
                   MemberDefinition f = e.nextElement();
                   sum += f.getType().stackSize();
@@ -858,7 +858,7 @@ public void GenJCov(Environment env) {
         if ((field != null) && (field.getArguments() != null)) {
             int reg = 0;
             @SuppressWarnings("unchecked")
-            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            Vector<MemberDefinition> v = field.getArguments();
             for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
                 MemberDefinition f = e.nextElement();
                 locals[reg] = f;
@@ -875,7 +875,7 @@ public void GenJCov(Environment env) {
         if ((field != null) && (field.getArguments() != null)) {
             int reg = 0;
             @SuppressWarnings("unchecked")
-            Vector<MemberDefinition> v = (Vector<MemberDefinition>)field.getArguments();
+            Vector<MemberDefinition> v = field.getArguments();
             for (Enumeration<MemberDefinition> e = v.elements(); e.hasMoreElements(); ) {
                 MemberDefinition f = e.nextElement();
                 locals[reg] = f;

@@ -112,7 +112,7 @@ import javax.xml.ws.Service;
  * for more information on WS-Addressing.
  *
  * @see Addressing
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 
 public final class AddressingFeature extends WebServiceFeature {
@@ -151,7 +151,7 @@ public final class AddressingFeature extends WebServiceFeature {
      * <a href="http://www.w3.org/TR/ws-addr-metadata/#wspolicynonanonresponses">
      * 3.1.3 NonAnonymousResponses Assertion</a> in the generated WSDL.
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public enum Responses {
         /**
@@ -229,7 +229,7 @@ public final class AddressingFeature extends WebServiceFeature {
      * @param required true means requires the use of ws-addressing .
      * @param responses specifies what type of responses are required
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public AddressingFeature(boolean enabled, boolean required, Responses responses) {
         this.enabled = enabled;
@@ -268,7 +268,7 @@ public final class AddressingFeature extends WebServiceFeature {
      *         {@link Responses#NON_ANONYMOUS} when endpoint requires the use
      * of only non-anonymous responses
      *
-     * @since JAX-WS 2.2
+     * @since 1.7, JAX-WS 2.2
      */
     public Responses getResponses() {
         return responses;

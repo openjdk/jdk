@@ -2580,7 +2580,8 @@ public final class String
         }
         for (int i = first; i < len; i++) {
             int cp = (int)value[i];
-            if (cp == '\u03A3') {                       // GREEK CAPITAL LETTER SIGMA
+            if (cp == '\u03A3' ||                       // GREEK CAPITAL LETTER SIGMA
+                Character.isSurrogate((char)cp)) {
                 return toLowerCaseEx(result, i, locale, false);
             }
             if (cp == '\u0130') {                       // LATIN CAPITAL LETTER I WITH DOT ABOVE
@@ -2742,7 +2743,11 @@ public final class String
             return toUpperCaseEx(result, first, locale, false);
         }
         for (int i = first; i < len; i++) {
-            int cp = Character.toUpperCaseEx((int)value[i]);
+            int cp = (int)value[i];
+            if (Character.isSurrogate((char)cp)) {
+                return toUpperCaseEx(result, i, locale, false);
+            }
+            cp = Character.toUpperCaseEx(cp);
             if (!Character.isBmpCodePoint(cp)) {    // Character.ERROR is not bmp
                 return toUpperCaseEx(result, i, locale, false);
             }

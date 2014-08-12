@@ -43,7 +43,6 @@ import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
@@ -334,15 +333,15 @@ enum CompilationPhase {
                     sb.append("$restOf");
                 }
                 newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
-                log.info("Creating new compile unit ", oldUnit, " => ", newUnit);
+                log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
                 assert newUnit != null;
                 newUnits.add(newUnit);
             }
 
-            log.info("Replacing compile units in Compiler...");
+            log.fine("Replacing compile units in Compiler...");
             compiler.replaceCompileUnits(newUnits);
-            log.info("Done");
+            log.fine("Done");
 
             //replace old compile units in function nodes, if any are assigned,
             //for example by running the splitter on this function node in a previous
@@ -564,7 +563,7 @@ enum CompilationPhase {
                     append(compiler.getCompileUnits().size()).
                     append(" compile unit(s)]");
 
-                log.info(sb.toString());
+                log.fine(sb.toString());
             }
 
             return setStates(fn.setRootClass(null, rootClass), BYTECODE_INSTALLED);

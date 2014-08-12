@@ -67,7 +67,7 @@ class CatchStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = reach(env, vset);
         ctx = new Context(ctx, this);
         Type type = texpr.toType(env, ctx);

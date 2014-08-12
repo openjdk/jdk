@@ -41,6 +41,7 @@ import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
 import java.util.TreeMap;
+
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
@@ -111,6 +112,7 @@ public final class OptimisticTypesPersistence {
             return;
         }
         final File file = ((LocationDescriptor)locationDescriptor).file;
+
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
             @Override
             public Void run() {
@@ -119,7 +121,7 @@ public final class OptimisticTypesPersistence {
                         out.getChannel().lock(); // lock exclusive
                         final DataOutputStream dout = new DataOutputStream(new BufferedOutputStream(out));
                         dout.writeInt(optimisticTypes.size());
-                        for(Map.Entry<Integer, Type> e: optimisticTypes.entrySet()) {
+                        for(final Map.Entry<Integer, Type> e: optimisticTypes.entrySet()) {
                             dout.writeInt(e.getKey());
                             final byte typeChar;
                             final Type type = e.getValue();
@@ -156,7 +158,6 @@ public final class OptimisticTypesPersistence {
             return null;
         }
         final File file = ((LocationDescriptor)locationDescriptor).file;
-
         return AccessController.doPrivileged(new PrivilegedAction<Map<Integer, Type>>() {
             @Override
             public Map<Integer, Type> run() {
@@ -229,7 +230,7 @@ public final class OptimisticTypesPersistence {
                 final String versionDirName;
                 try {
                     versionDirName = getVersionDirName();
-                } catch(Exception e) {
+                } catch(final Exception e) {
                     getLogger().warning("Failed to calculate version dir name", e);
                     return null;
                 }
@@ -306,7 +307,7 @@ public final class OptimisticTypesPersistence {
 
     private static long getLastModifiedClassFile(final File dir, final long max) {
         long currentMax = max;
-        for(File f: dir.listFiles()) {
+        for(final File f: dir.listFiles()) {
             if(f.getName().endsWith(".class")) {
                 final long lastModified = f.lastModified();
                 if(lastModified > currentMax) {

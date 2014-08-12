@@ -183,15 +183,6 @@ typedef unsigned short     jushort;
 typedef unsigned int       juint;
 typedef unsigned long long julong;
 
-//----------------------------------------------------------------------------------------------------
-// Special (possibly not-portable) casts
-// Cast floats into same-size integers and vice-versa w/o changing bit-pattern
-
-inline jint    jint_cast   (jfloat  x)           { return *(jint*   )&x; }
-inline jlong   jlong_cast  (jdouble x)           { return *(jlong*  )&x; }
-
-inline jfloat  jfloat_cast (jint    x)           { return *(jfloat* )&x; }
-inline jdouble jdouble_cast(jlong   x)           { return *(jdouble*)&x; }
 
 //----------------------------------------------------------------------------------------------------
 // Constant for jlong (specifying an long long constant is C++ compiler specific)

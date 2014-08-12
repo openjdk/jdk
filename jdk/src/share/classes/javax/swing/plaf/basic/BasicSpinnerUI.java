@@ -400,6 +400,8 @@ public class BasicSpinnerUI extends SpinnerUI
      * The implementation of <code>replaceEditor</code> should be coordinated
      * with the <code>createEditor</code> method.
      *
+     * @param oldEditor an old instance of editor
+     * @param newEditor a new instance of editor
      * @see #createEditor
      * @see #createPropertyChangeListener
      */

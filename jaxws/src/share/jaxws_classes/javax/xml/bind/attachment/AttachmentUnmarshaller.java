@@ -56,7 +56,7 @@ import javax.activation.DataHandler;
  * @author Kohsuke Kawaguchi
  * @author Joseph Fialli
  *
- * @since JAXB 2.0
+ * @since 1.6, JAXB 2.0
  *
  * @see javax.xml.bind.Unmarshaller#setAttachmentUnmarshaller(AttachmentUnmarshaller)
  *

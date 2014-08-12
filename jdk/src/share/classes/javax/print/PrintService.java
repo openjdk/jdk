@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -327,7 +327,6 @@ public interface PrintService {
      * that indicates bounds on the legal values -- used, for example, by an
      * integer-valued attribute that must lie within a certain range.
      * </UL>
-     * <P>
      *
      * @param  category    Printing attribute category to test. It must be a
      *                        {@link java.lang.Class Class} that implements

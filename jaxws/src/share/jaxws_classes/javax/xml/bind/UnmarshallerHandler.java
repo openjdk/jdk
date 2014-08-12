@@ -57,7 +57,7 @@ import org.xml.sax.ContentHandler;
  *
  * @author <ul><li>Kohsuke KAWAGUCHI, Sun Microsystems, Inc.</li></ul>
  * @see Unmarshaller#getUnmarshallerHandler()
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public interface UnmarshallerHandler extends ContentHandler
 {

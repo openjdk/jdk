@@ -157,8 +157,11 @@ public class JApplet extends Applet implements Accessible,
         enableEvents(AWTEvent.KEY_EVENT_MASK);
     }
 
-
-    /** Called by the constructor methods to create the default rootPane. */
+    /**
+     * Called by the constructor methods to create the default rootPane.
+     *
+     * @return  a new {@code JRootPane}
+     */
     protected JRootPane createRootPane() {
         JRootPane rp = new JRootPane();
         // NOTE: this uses setOpaque vs LookAndFeel.installProperty as there
@@ -247,6 +250,7 @@ public class JApplet extends Applet implements Accessible,
    /**
     * Returns the menubar set on this applet.
     *
+    * @return the menubar set on this applet
     * @see #setJMenuBar
     */
     public JMenuBar getJMenuBar() {
@@ -542,6 +546,9 @@ public class JApplet extends Applet implements Accessible,
 // Accessibility support
 ////////////////
 
+    /**
+     * {@code AccessibleContext} associated with this {@code JApplet}
+     */
     protected AccessibleContext accessibleContext = null;
 
     /**

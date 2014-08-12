@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -69,8 +69,10 @@ import static javax.lang.model.SourceVersion.*;
  *
  * @see AbstractElementVisitor6
  * @see AbstractElementVisitor8
+ * @see AbstractElementVisitor9
  * @since 1.7
  */
+@SuppressWarnings("deprecation") // Superclass deprecated
 @SupportedSourceVersion(RELEASE_7)
 public abstract class AbstractElementVisitor7<R, P> extends AbstractElementVisitor6<R, P> {
     /**

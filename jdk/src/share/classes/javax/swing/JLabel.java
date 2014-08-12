@@ -128,6 +128,10 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
     private int horizontalTextPosition = TRAILING;
     private int iconTextGap = 4;
 
+    /**
+     * The Component this label is for; null if the label
+     * is not the label for a component
+     */
     protected Component labelFor = null;
 
     /**
@@ -310,6 +314,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * <p>
      * This is a JavaBeans bound property.
      *
+     * @param text  the single line of text this component will display
      * @see #setVerticalTextPosition
      * @see #setHorizontalTextPosition
      * @see #setIcon
@@ -366,6 +371,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * <p>
      * This is a JavaBeans bound property.
      *
+     * @param icon  the default icon this component will display
      * @see #setVerticalTextPosition
      * @see #setHorizontalTextPosition
      * @see #getIcon
@@ -476,6 +482,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * call the requestFocus method of the component specified by the
      * labelFor property when the mnemonic is activated.
      *
+     * @param key  a keycode that indicates a mnemonic key
      * @see #getLabelFor
      * @see #setLabelFor
      * @beaninfo
@@ -592,6 +599,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *
      * @param key the property value to check
      * @param message the IllegalArgumentException detail message
+     * @return the key value if {@code key} is a a legal value for the
+     *         horizontalAlignment properties
      * @exception IllegalArgumentException if key isn't LEFT, CENTER, RIGHT,
      * LEADING or TRAILING.
      * @see #setHorizontalTextPosition
@@ -617,6 +626,8 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      *
      * @param key the property value to check
      * @param message the IllegalArgumentException detail message
+     * @return the key value if {@code key} is a legal value for the
+     *         verticalAlignment or verticalTextPosition properties
      * @exception IllegalArgumentException if key isn't TOP, CENTER, or BOTTOM.
      * @see #setVerticalAlignment
      * @see #setVerticalTextPosition
@@ -652,6 +663,7 @@ public class JLabel extends JComponent implements SwingConstants, Accessible
      * <p>
      * This is a JavaBeans bound property.
      *
+     * @param iconTextGap  the space between the icon and text properties
      * @see #getIconTextGap
      * @beaninfo
      *        bound: true

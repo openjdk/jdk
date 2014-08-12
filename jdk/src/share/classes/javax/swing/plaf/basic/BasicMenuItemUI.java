@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -47,11 +47,29 @@ import sun.swing.*;
  */
 public class BasicMenuItemUI extends MenuItemUI
 {
+    /**
+     * The instance of {@code JMenuItem}.
+     */
     protected JMenuItem menuItem = null;
+    /**
+     * The color of the selection background.
+     */
     protected Color selectionBackground;
+    /**
+     * The color of the selection foreground.
+     */
     protected Color selectionForeground;
+    /**
+     * The color of the disabled foreground.
+     */
     protected Color disabledForeground;
+    /**
+     * The color of the accelerator foreground.
+     */
     protected Color acceleratorForeground;
+    /**
+     * The color of the accelerator selection.
+     */
     protected Color acceleratorSelectionForeground;
 
     /**
@@ -60,18 +78,33 @@ public class BasicMenuItemUI extends MenuItemUI
      */
     protected String acceleratorDelimiter;
 
+    /**
+     * The gap between the text and the icon.
+     */
     protected int defaultTextIconGap;
+    /**
+     * The accelerator font.
+     */
     protected Font acceleratorFont;
 
+    /**
+     * The instance of {@code MouseInputListener}.
+     */
     protected MouseInputListener mouseInputListener;
+    /**
+     * The instance of {@code MenuDragMouseListener}.
+     */
     protected MenuDragMouseListener menuDragMouseListener;
+    /**
+     * The instance of {@code MenuKeyListener}.
+     */
     protected MenuKeyListener menuKeyListener;
     /**
-     * <code>PropertyChangeListener</code> returned from
-     * <code>createPropertyChangeListener</code>. You should not
+     * {@code PropertyChangeListener} returned from
+     * {@code createPropertyChangeListener}. You should not
      * need to access this field, rather if you want to customize the
-     * <code>PropertyChangeListener</code> override
-     * <code>createPropertyChangeListener</code>.
+     * {@code PropertyChangeListener} override
+     * {@code createPropertyChangeListener}.
      *
      * @since 1.6
      * @see #createPropertyChangeListener
@@ -79,10 +112,17 @@ public class BasicMenuItemUI extends MenuItemUI
     protected PropertyChangeListener propertyChangeListener;
     // BasicMenuUI also uses this.
     Handler handler;
-
+    /**
+     * The arrow icon.
+     */
     protected Icon arrowIcon = null;
+    /**
+     * The check icon.
+     */
     protected Icon checkIcon = null;
-
+    /**
+     * The value represents if the old border is painted.
+     */
     protected boolean oldBorderPainted;
 
     /* diagnostic aids -- should be false for production builds. */
@@ -97,6 +137,12 @@ public class BasicMenuItemUI extends MenuItemUI
         BasicLookAndFeel.installAudioActionMap(map);
     }
 
+    /**
+     * Returns a new instance of {@code BasicMenuItemUI}.
+     *
+     * @param c a component
+     * @return a new instance of {@code BasicMenuItemUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         return new BasicMenuItemUI();
     }
@@ -110,7 +156,9 @@ public class BasicMenuItemUI extends MenuItemUI
         installKeyboardActions();
     }
 
-
+    /**
+     * Installs default properties.
+     */
     protected void installDefaults() {
         String prefix = getPropertyPrefix();
 
@@ -202,16 +250,26 @@ public class BasicMenuItemUI extends MenuItemUI
     }
 
     /**
+     *
+     * @param menuItem a menu item
      * @since 1.3
      */
     protected void installComponents(JMenuItem menuItem){
         BasicHTML.updateRenderer(menuItem, menuItem.getText());
     }
 
+    /**
+     * Returns a property prefix.
+     *
+     * @return a property prefix
+     */
     protected String getPropertyPrefix() {
         return "MenuItem";
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         if ((mouseInputListener = createMouseInputListener(menuItem)) != null) {
             menuItem.addMouseListener(mouseInputListener);
@@ -228,6 +286,9 @@ public class BasicMenuItemUI extends MenuItemUI
         }
     }
 
+    /**
+     * Registers keyboard action.
+     */
     protected void installKeyboardActions() {
         installLazyActionMap();
         updateAcceleratorBinding();
@@ -248,7 +309,9 @@ public class BasicMenuItemUI extends MenuItemUI
         menuItem = null;
     }
 
-
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(menuItem);
         LookAndFeel.installProperty(menuItem, "borderPainted", oldBorderPainted);
@@ -261,12 +324,18 @@ public class BasicMenuItemUI extends MenuItemUI
     }
 
     /**
+     * Unregisters components.
+     *
+     * @param menuItem a menu item
      * @since 1.3
      */
     protected void uninstallComponents(JMenuItem menuItem){
         BasicHTML.updateRenderer(menuItem, "");
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         if (mouseInputListener != null) {
             menuItem.removeMouseListener(mouseInputListener);
@@ -289,30 +358,52 @@ public class BasicMenuItemUI extends MenuItemUI
         handler = null;
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIActionMap(menuItem, null);
         SwingUtilities.replaceUIInputMap(menuItem, JComponent.
                                          WHEN_IN_FOCUSED_WINDOW, null);
     }
 
+    /**
+     * Returns an instance of {@code MouseInputListener}.
+     *
+     * @param c a component
+     * @return an instance of {@code MouseInputListener}
+     */
     protected MouseInputListener createMouseInputListener(JComponent c) {
         return getHandler();
     }
 
+    /**
+     * Returns an instance of {@code MenuDragMouseListener}.
+     *
+     * @param c a component
+     * @return an instance of {@code MenuDragMouseListener}
+     */
     protected MenuDragMouseListener createMenuDragMouseListener(JComponent c) {
         return getHandler();
     }
 
+    /**
+     * Returns an instance of {@code MenuKeyListener}.
+     *
+     * @param c a component
+     * @return an instance of {@code MenuKeyListener}
+     */
     protected MenuKeyListener createMenuKeyListener(JComponent c) {
         return null;
     }
 
     /**
-     * Creates a <code>PropertyChangeListener</code> which will be added to
+     * Creates a {@code PropertyChangeListener} which will be added to
      * the menu item.
      * If this method returns null then it will not be added to the menu item.
      *
-     * @return an instance of a <code>PropertyChangeListener</code> or null
+     * @param c a component
+     * @return an instance of a {@code PropertyChangeListener} or null
      * @since 1.6
      */
     protected PropertyChangeListener
@@ -380,6 +471,15 @@ public class BasicMenuItemUI extends MenuItemUI
         return d;
     }
 
+    /**
+     * Returns the preferred size of a menu item.
+     *
+     * @param c a component
+     * @param checkIcon a check icon
+     * @param arrowIcon an arrow icon
+     * @param defaultTextIconGap a gap between a text and an icon
+     * @return the preferred size of a menu item
+     */
     protected Dimension getPreferredMenuItemSize(JComponent c,
                                                  Icon checkIcon,
                                                  Icon arrowIcon,
@@ -477,6 +577,17 @@ public class BasicMenuItemUI extends MenuItemUI
                       defaultTextIconGap);
     }
 
+    /**
+     * Paints a menu item.
+     *
+     * @param g an instance of {@code Graphics}
+     * @param c a component
+     * @param checkIcon a check icon
+     * @param arrowIcon an arrow icon
+     * @param background a background color
+     * @param foreground a foreground color
+     * @param defaultTextIconGap a gap between a text and an icon
+     */
     protected void paintMenuItem(Graphics g, JComponent c,
                                      Icon checkIcon, Icon arrowIcon,
                                      Color background, Color foreground,
@@ -701,6 +812,11 @@ public class BasicMenuItemUI extends MenuItemUI
         }
     }
 
+    /**
+     * Returns a menu element path.
+     *
+     * @return a menu element path
+     */
     public MenuElement[] getPath() {
         MenuSelectionManager m = MenuSelectionManager.defaultManager();
         MenuElement oldPath[] = m.getSelectedPath();

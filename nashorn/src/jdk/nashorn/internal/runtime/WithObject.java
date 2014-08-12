@@ -31,12 +31,13 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
-import jdk.nashorn.api.scripting.AbstractJSObject;
-import jdk.nashorn.api.scripting.ScriptObjectMirror;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.CallSiteDescriptorFactory;
+import jdk.nashorn.api.scripting.AbstractJSObject;
+import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 import jdk.nashorn.internal.runtime.linker.NashornGuards;
 
@@ -322,6 +323,7 @@ public final class WithObject extends ScriptObject implements Scope {
                 // We need to make sure correct 'this' is used for calls with Ident call
                 // expressions. We do so here using an AbstractJSObject instance.
                 return new AbstractJSObject() {
+                    @Override
                     public Object call(final Object thiz, final Object... args) {
                         return mirror.call(withFilterExpression(receiver), args);
                     }

@@ -177,7 +177,6 @@ FULL_JRE_LIB_FILES := \
     ext/dnsns.jar \
     ext/nashorn.jar \
     ext/zipfs.jar \
-    flavormap.properties \
     fontconfig.RedHat.5.bfc \
     fontconfig.RedHat.5.properties.src \
     fontconfig.RedHat.6.bfc \

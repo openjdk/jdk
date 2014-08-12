@@ -105,9 +105,9 @@ class AppletProps extends Frame {
         String proxyPortValue = proxyPort.getText().trim();
 
         // Get properties
-        final Properties props = (Properties) AccessController.doPrivileged(
-             new PrivilegedAction() {
-                 public Object run() {
+        final Properties props = AccessController.doPrivileged(
+             new PrivilegedAction<Properties>() {
+                 public Properties run() {
                      return System.getProperties();
                  }
         });
@@ -148,7 +148,7 @@ class AppletProps extends Frame {
         // Save properties
         try {
             reset();
-            AccessController.doPrivileged(new PrivilegedExceptionAction() {
+            AccessController.doPrivileged(new PrivilegedExceptionAction<Object>() {
                 public Object run() throws IOException {
                     File dotAV = Main.theUserPropertiesFile;
                     FileOutputStream out = new FileOutputStream(dotAV);

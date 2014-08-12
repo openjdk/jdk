@@ -1263,6 +1263,12 @@ public final class System {
             public void invokeFinalize(Object o) throws Throwable {
                 o.finalize();
             }
+            public void formatUnsignedLong(long val, int shift, char[] buf, int offset, int len) {
+                Long.formatUnsignedLong(val, shift, buf, offset, len);
+            }
+            public void formatUnsignedInt(int val, int shift, char[] buf, int offset, int len) {
+                Integer.formatUnsignedInt(val, shift, buf, offset, len);
+            }
         });
     }
 }

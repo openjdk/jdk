@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,12 +34,13 @@ package com.sun.tools.hat.internal.util;
 
 import java.util.Enumeration;
 import java.util.NoSuchElementException;
+import com.sun.tools.hat.internal.model.JavaHeapObject;
 
-public class CompositeEnumeration implements Enumeration {
-    Enumeration e1;
-    Enumeration e2;
+public class CompositeEnumeration implements Enumeration<JavaHeapObject> {
+    Enumeration<JavaHeapObject> e1;
+    Enumeration<JavaHeapObject> e2;
 
-    public CompositeEnumeration(Enumeration e1, Enumeration e2) {
+    public CompositeEnumeration(Enumeration<JavaHeapObject> e1, Enumeration<JavaHeapObject> e2) {
         this.e1 = e1;
         this.e2 = e2;
     }
@@ -48,7 +49,7 @@ public class CompositeEnumeration implements Enumeration {
         return e1.hasMoreElements() || e2.hasMoreElements();
     }
 
-    public Object nextElement() {
+    public JavaHeapObject nextElement() {
         if (e1.hasMoreElements()) {
             return e1.nextElement();
         }

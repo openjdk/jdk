@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -200,6 +202,93 @@ public class SerializerMessages_it extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Avvertenza: la codifica ''{0}'' non \u00E8 supportata da Java Runtime." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Il parametro ''{0}'' non \u00e8 riconosciuto."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Il parametro ''{0}'' \u00e8 riconosciuto ma non \u00e8 possibile impostare il valore richiesto."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "La stringa risultante \u00e8 troppo lunga per essere inserita in DOMString: ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "Il tipo di valore per questo nome di parametro non \u00e8 compatibile con il tipo di valore previsto."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "La destinazione di output in cui scrivere i dati era nulla."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "\u00c8 stata rilevata una codifica non supportata."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Impossibile serializzare il nodo."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "La Sezione CDATA contiene uno o pi\u00f9 markers di termine ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Impossibile creare un'istanza del controllore Well-Formedness.  Il parametro well-formed \u00e8 stato impostato su true ma non \u00e8 possibile eseguire i controlli well-formedness."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Il nodo ''{0}'' contiene caratteri XML non validi."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Trovato un carattere XML non valido (Unicode: 0x{0}) nel commento."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nell''elaborazione di instructiondata."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nel contenuto di CDATASection."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Carattere XML non valido (Unicode: 0x{0}) rilevato nel contenuto dati di caratteri del nodo. "
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Carattere XML non valido rilevato nel nodo {0} denominato ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "La stringa \"--\" non \u00e8 consentita nei commenti."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "Il valore dell''''attributo \"{1}\" associato con un tipo di elemento \"{0}\" non deve contenere il carattere ''<''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "Il riferimento entit\u00e0 non analizzata \"&{0};\" non \u00e8 permesso."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "Il riferimento all''''entit\u00e0 esterna \"&{0};\" non \u00e8 permesso in un valore attributo."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Il prefisso \"{0}\" non pu\u00f2 essere associato allo spazio nome \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Il nome locale dell''''elemento \"{0}\" \u00e8 null."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Il nome locale dell''''attributo \"{0}\" \u00e8  null."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "Il testo di sostituzione del nodo di entit\u00e0 \"{0}\" contiene un nodo di elemento \"{1}\" con un prefisso non associato \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Il testo di sostituzione del nodo di entit\u00e0 \"{0}\" contiene un nodo di attributo \"{1}\" con un prefisso non associato \"{2}\"."
+             },
 
         };
 

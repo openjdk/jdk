@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 7124089 7131021
+ * @bug 7124089 7131021 8042469
  * @summary Checks for MacOSX specific flags are accepted or rejected, and
  *          MacOSX platforms specific environment is consistent.
  * @compile -XDignore.symbol.file TestSpecialArgs.java EnvironmentVariables.java
@@ -69,6 +69,137 @@ public class TestSpecialArgs extends TestHelper {
                 throw new RuntimeException("Error: argument was accepted ????");
             }
         }
+
+        /*
+         * test argument : -XX:NativeMemoryTracking=value
+         * A JVM flag, comsumed by the JVM, but requiring launcher
+         * to set an environmental variable if and only if value is supplied.
+         * Test and order:
+         * 1) execute with valid parameter: -XX:NativeMemoryTracking=MyValue
+         *    a) check for correct env variable name: "NMT_LEVEL_" + pid
+         *    b) check that "MyValue" was found in local env.
+         * 2) execute with invalid parameter: -XX:NativeMemoryTracking=
+         *    !) Won't find "NativeMemoryTracking:"
+         *       Code to create env variable not executed.
+         * 3) execute with invalid parameter: -XX:NativeMemoryTracking
+         *    !) Won't find "NativeMemoryTracking:"
+         *       Code to create env variable not executed.
+         * 4) give and invalid value and check to make sure JVM commented
+         */
+        { // NativeMemoryTracking
+            String launcherPidString = "launcher.pid=";
+            String envVarPidString = "TRACER_MARKER: NativeMemoryTracking: env var is NMT_LEVEL_";
+            String NMT_Option_Value = "off";
+            String myClassName = "helloworld";
+            boolean haveLauncherPid = false;
+
+            // === Run the tests ===
+
+            // ---Test 1a
+            tr = doExec(envMap,javaCmd, "-XX:NativeMemoryTracking=" + NMT_Option_Value,
+                        "-version");
+
+            // get the PID from the env var we set for the JVM
+            String envVarPid = null;
+            for (String line : tr.testOutput) {
+                if (line.contains(envVarPidString)) {
+                    int sindex = envVarPidString.length();
+                    envVarPid = line.substring(sindex);
+                    break;
+                }
+            }
+            // did we find envVarPid?
+            if (envVarPid == null) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: failed to find env Var Pid in tracking info");
+            }
+            // we think we found the pid string.  min test, not "".
+            if (envVarPid.length() < 1) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: env Var Pid in tracking info is empty string");
+            }
+
+            /*
+             * On Linux, Launcher Tracking will print the PID.  Use this info
+             * to validate what we got as the PID in the Launcher itself.
+             * Linux is the only one that prints this, and trying to get it
+             * here for win is awful.  So let the linux test make sure we get
+             * the valid pid, and for non-linux, just make sure pid string is
+             * non-zero.
+             */
+            if (isLinux) {
+                // get what the test says is the launcher pid
+                String launcherPid = null;
+                for (String line : tr.testOutput) {
+                    int index = line.indexOf(launcherPidString);
+                    if (index >= 0) {
+                        int sindex = index + launcherPidString.length();
+                        int tindex = sindex + line.substring(sindex).indexOf("'");
+                        System.out.println("DEBUG INFO: sindex = " + sindex);
+                        System.out.println("DEBUG INFO: searching substring: " + line.substring(sindex));
+                        System.out.println("DEBUG INFO: tindex = " + tindex);
+                        // DEBUG INFO
+                        System.out.println(tr);
+                        launcherPid = line.substring(sindex, tindex);
+                        break;
+                    }
+                }
+                if (launcherPid == null) {
+                    System.out.println(tr);
+                    throw new RuntimeException("Error: failed to find launcher Pid in launcher tracking info");
+                }
+
+                // did we create the env var with the correct pid?
+                if (!launcherPid.equals(envVarPid)) {
+                    System.out.println(tr);
+                    System.out.println("Error: wrong pid in creating env var");
+                    System.out.println("Error Info: launcherPid = " + launcherPid);
+                    System.out.println("Error Info: envVarPid   = " + envVarPid);
+                    throw new RuntimeException("Error: wrong pid in creating env var");
+                }
+            }
+
+
+            // --- Test 1b
+            if (!tr.contains("NativeMemoryTracking: got value " + NMT_Option_Value)) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: Valid param failed to set env variable");
+            }
+
+            // --- Test 2
+            tr = doExec(envMap,javaCmd, "-XX:NativeMemoryTracking=",
+                        "-version");
+            if (tr.contains("NativeMemoryTracking:")) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: invalid param caused env variable to be erroneously created");
+            }
+            if (!tr.contains("Syntax error, expecting -XX:NativeMemoryTracking=")) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: invalid param not checked by JVM");
+            }
+
+            // --- Test 3
+            tr = doExec(envMap,javaCmd, "-XX:NativeMemoryTracking",
+                        "-version");
+            if (tr.contains("NativeMemoryTracking:")) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: invalid param caused env variable to be erroneously created");
+            }
+            if (!tr.contains("Syntax error, expecting -XX:NativeMemoryTracking=")) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: invalid param not checked by JVM");
+            }
+            // --- Test 4
+            tr = doExec(envMap,javaCmd, "-XX:NativeMemoryTracking=BADVALUE",
+                        "-version");
+            if (!tr.contains("expecting -XX:NativeMemoryTracking")) {
+                System.out.println(tr);
+                throw new RuntimeException("Error: invalid param did not get JVM Syntax error message");
+            }
+
+        } // NativeMemoryTracking
+
+
         // MacOSX specific tests ensue......
         if (!isMacOSX)
             return;

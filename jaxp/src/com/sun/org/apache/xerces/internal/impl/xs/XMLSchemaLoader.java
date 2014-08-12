@@ -54,6 +54,7 @@ import com.sun.org.apache.xerces.internal.util.Status;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
 import com.sun.org.apache.xerces.internal.util.XMLSymbols;
 import com.sun.org.apache.xerces.internal.utils.SecuritySupport;
+import com.sun.org.apache.xerces.internal.utils.XMLSecurityManager;
 import com.sun.org.apache.xerces.internal.utils.XMLSecurityPropertyManager;
 import com.sun.org.apache.xerces.internal.xni.XNIException;
 import com.sun.org.apache.xerces.internal.xni.grammars.Grammar;
@@ -982,6 +983,18 @@ XSLoader, DOMConfiguration {
      */
     public void reset(XMLComponentManager componentManager) throws XMLConfigurationException {
 
+        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
+        if (spm == null) {
+            spm = new XMLSecurityPropertyManager();
+            setProperty(XML_SECURITY_PROPERTY_MANAGER, spm);
+        }
+
+        XMLSecurityManager sm = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER);
+        if (sm == null)
+            setProperty(SECURITY_MANAGER,new XMLSecurityManager(true));
+
+        faccessExternalSchema = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
+
         fGrammarBucket.reset();
 
         fSubGroupHandler.reset();
@@ -1065,9 +1078,6 @@ XSLoader, DOMConfiguration {
         // get generate-synthetic-annotations feature
         fSchemaHandler.setGenerateSyntheticAnnotations(componentManager.getFeature(GENERATE_SYNTHETIC_ANNOTATIONS, false));
         fSchemaHandler.reset(componentManager);
-
-        XMLSecurityPropertyManager spm = (XMLSecurityPropertyManager)componentManager.getProperty(XML_SECURITY_PROPERTY_MANAGER);
-        faccessExternalSchema = spm.getValue(XMLSecurityPropertyManager.Property.ACCESS_EXTERNAL_SCHEMA);
     }
 
     private void initGrammarBucket(){

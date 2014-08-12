@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,7 +54,7 @@ public class ReachableExcludesImpl implements ReachableExcludes {
 
     private File excludesFile;
     private long lastModified;
-    private Hashtable methods;  // Hashtable<String, String>, used as a bag
+    private Hashtable<String, String> methods;  // Used as a bag
 
     /**
      * Create a new ReachableExcludesImpl over the given file.  The file will be

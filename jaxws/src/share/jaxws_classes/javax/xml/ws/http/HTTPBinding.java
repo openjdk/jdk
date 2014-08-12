@@ -31,7 +31,7 @@ import javax.xml.ws.Binding;
 /** The <code>HTTPBinding</code> interface is an
  *  abstraction for the XML/HTTP binding.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface HTTPBinding extends Binding {
 

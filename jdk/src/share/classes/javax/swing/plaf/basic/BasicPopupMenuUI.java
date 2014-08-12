@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,6 +66,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
     static final StringBuilder MENU_KEYBOARD_HELPER_KEY = new StringBuilder(
                    "javax.swing.plaf.basic.BasicPopupMenuUI.MenuKeyboardHelper");
 
+    /**
+     * The instance of {@code JPopupMenu}.
+     */
     protected JPopupMenu popupMenu = null;
     private transient PopupMenuListener popupMenuListener = null;
     private MenuKeyListener menuKeyListener = null;
@@ -73,10 +76,19 @@ public class BasicPopupMenuUI extends PopupMenuUI {
     private static boolean checkedUnpostPopup;
     private static boolean unpostPopup;
 
+    /**
+     * Constructs a new instance of {@code BasicPopupMenuUI}.
+     *
+     * @param x a component
+     * @return a new instance of {@code BasicPopupMenuUI}
+     */
     public static ComponentUI createUI(JComponent x) {
         return new BasicPopupMenuUI();
     }
 
+    /**
+     * Constructs a new instance of {@code BasicPopupMenuUI}.
+     */
     public BasicPopupMenuUI() {
         BasicLookAndFeel.needsEventHelper = true;
         LookAndFeel laf = UIManager.getLookAndFeel();
@@ -93,6 +105,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         installKeyboardActions();
     }
 
+    /**
+     * Installs default properties.
+     */
     public void installDefaults() {
         if (popupMenu.getLayout() == null ||
             popupMenu.getLayout() instanceof UIResource)
@@ -101,11 +116,14 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         LookAndFeel.installProperty(popupMenu, "opaque", Boolean.TRUE);
         LookAndFeel.installBorder(popupMenu, "PopupMenu.border");
         LookAndFeel.installColorsAndFont(popupMenu,
-                                         "PopupMenu.background",
-                                         "PopupMenu.foreground",
-                                         "PopupMenu.font");
+                "PopupMenu.background",
+                "PopupMenu.foreground",
+                "PopupMenu.font");
     }
 
+    /**
+     * Registers listeners.
+     */
     protected void installListeners() {
         if (popupMenuListener == null) {
             popupMenuListener = new BasicPopupMenuListener();
@@ -138,6 +156,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         }
     }
 
+    /**
+     * Registers keyboard actions.
+     */
     protected void installKeyboardActions() {
     }
 
@@ -181,10 +202,16 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         popupMenu = null;
     }
 
+    /**
+     * Uninstalls default properties.
+     */
     protected void uninstallDefaults() {
         LookAndFeel.uninstallBorder(popupMenu);
     }
 
+    /**
+     * Unregisters listeners.
+     */
     protected void uninstallListeners() {
         if (popupMenuListener != null) {
             popupMenu.removePopupMenuListener(popupMenuListener);
@@ -194,6 +221,9 @@ public class BasicPopupMenuUI extends PopupMenuUI {
         }
     }
 
+    /**
+     * Unregisters keyboard actions.
+     */
     protected void uninstallKeyboardActions() {
         SwingUtilities.replaceUIActionMap(popupMenu, null);
         SwingUtilities.replaceUIInputMap(popupMenu,

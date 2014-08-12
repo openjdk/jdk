@@ -69,7 +69,7 @@ import static java.lang.annotation.RetentionPolicy.*;
  * </code></pre>
  *
  * @see WebServiceRef
- * @since 2.0
+ * @since 1.6, JAX-WS 2.0
  */
 
 @Documented

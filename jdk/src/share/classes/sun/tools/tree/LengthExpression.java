@@ -46,7 +46,7 @@ class LengthExpression extends UnaryExpression {
     /**
      * Select the type of the expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         vset = right.checkValue(env, ctx, vset, exp);
         if (!right.type.isType(TC_ARRAY)) {
             env.error(where, "invalid.length", right.type);

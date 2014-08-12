@@ -137,7 +137,7 @@ public class AppletClassLoader extends URLClassLoader {
      * Override loadClass so that class loading errors can be caught in
      * order to print better error messages.
      */
-    public synchronized Class loadClass(String name, boolean resolve)
+    public synchronized Class<?> loadClass(String name, boolean resolve)
         throws ClassNotFoundException
     {
         // First check if we have permission to access the package. This
@@ -166,7 +166,7 @@ public class AppletClassLoader extends URLClassLoader {
      * Finds the applet class with the specified name. First searches
      * loaded JAR files then the applet code base for the class.
      */
-    protected Class findClass(String name) throws ClassNotFoundException {
+    protected Class<?> findClass(String name) throws ClassNotFoundException {
 
         int index = name.indexOf(';');
         String cookie = "";
@@ -192,9 +192,9 @@ public class AppletClassLoader extends URLClassLoader {
         String encodedName = ParseUtil.encodePath(name.replace('.', '/'), false);
         final String path = (new StringBuffer(encodedName)).append(".class").append(cookie).toString();
         try {
-            byte[] b = (byte[]) AccessController.doPrivileged(
-                               new PrivilegedExceptionAction() {
-                public Object run() throws IOException {
+            byte[] b = AccessController.doPrivileged(
+                               new PrivilegedExceptionAction<byte[]>() {
+                public byte[] run() throws IOException {
                    try {
                         URL finalURL = new URL(base, path);
 
@@ -556,9 +556,10 @@ public class AppletClassLoader extends URLClassLoader {
      * name. First checks loaded JAR files then the applet code base for all
      * available resources.
      */
-    public Enumeration findResources(String name) throws IOException {
+    @Override
+    public Enumeration<URL> findResources(String name) throws IOException {
 
-        final Enumeration e = super.findResources(name);
+        final Enumeration<URL> e = super.findResources(name);
 
         // 6215746:  Disable META-INF/* lookup from codebase in
         // applet/plugin classloader. [stanley.ho]
@@ -576,9 +577,9 @@ public class AppletClassLoader extends URLClassLoader {
         }
 
         final URL url = u;
-        return new Enumeration() {
+        return new Enumeration<URL>() {
             private boolean done;
-            public Object nextElement() {
+            public URL nextElement() {
                 if (!done) {
                     if (e.hasMoreElements()) {
                         return e.nextElement();
@@ -601,7 +602,7 @@ public class AppletClassLoader extends URLClassLoader {
      * attribute. The argument can either be the relative path
      * of the class file itself or just the name of the class.
      */
-    Class loadCode(String name) throws ClassNotFoundException {
+    Class<?> loadCode(String name) throws ClassNotFoundException {
         // first convert any '/' or native file separator to .
         name = name.replace('/', '.');
         name = name.replace(File.separatorChar, '.');
@@ -646,7 +647,7 @@ public class AppletClassLoader extends URLClassLoader {
     public ThreadGroup getThreadGroup() {
       synchronized (threadGroupSynchronizer) {
         if (threadGroup == null || threadGroup.isDestroyed()) {
-            AccessController.doPrivileged(new PrivilegedAction() {
+            AccessController.doPrivileged(new PrivilegedAction<Object>() {
                 public Object run() {
                     threadGroup = new AppletThreadGroup(base + "-threadGroup");
                     // threadGroup.setDaemon(true);
@@ -770,8 +771,8 @@ public     void grab() {
 
 
     // Hash map to store applet compatibility info
-    private HashMap jdk11AppletInfo = new HashMap();
-    private HashMap jdk12AppletInfo = new HashMap();
+    private HashMap<String, Boolean> jdk11AppletInfo = new HashMap<>();
+    private HashMap<String, Boolean> jdk12AppletInfo = new HashMap<>();
 
     /**
      * Set applet target level as JDK 1.1.
@@ -780,7 +781,7 @@ public     void grab() {
      * @param bool true if JDK is targeted for JDK 1.1;
      *             false otherwise.
      */
-    void setJDK11Target(Class clazz, boolean bool)
+    void setJDK11Target(Class<?> clazz, boolean bool)
     {
          jdk11AppletInfo.put(clazz.toString(), Boolean.valueOf(bool));
     }
@@ -792,7 +793,7 @@ public     void grab() {
      * @param bool true if JDK is targeted for JDK 1.2;
      *             false otherwise.
      */
-    void setJDK12Target(Class clazz, boolean bool)
+    void setJDK12Target(Class<?> clazz, boolean bool)
     {
         jdk12AppletInfo.put(clazz.toString(), Boolean.valueOf(bool));
     }
@@ -805,9 +806,9 @@ public     void grab() {
      *         FALSE if applet is not;
      *         null if applet is unknown.
      */
-    Boolean isJDK11Target(Class clazz)
+    Boolean isJDK11Target(Class<?> clazz)
     {
-        return (Boolean) jdk11AppletInfo.get(clazz.toString());
+        return jdk11AppletInfo.get(clazz.toString());
     }
 
     /**
@@ -818,9 +819,9 @@ public     void grab() {
      *         FALSE if applet is not;
      *         null if applet is unknown.
      */
-    Boolean isJDK12Target(Class clazz)
+    Boolean isJDK12Target(Class<?> clazz)
     {
-        return (Boolean) jdk12AppletInfo.get(clazz.toString());
+        return jdk12AppletInfo.get(clazz.toString());
     }
 
     private static AppletMessageHandler mh =

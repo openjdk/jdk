@@ -47,11 +47,11 @@ class ArrayExpression extends NaryExpression {
     /**
      * Check expression type
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         env.error(where, "invalid.array.expr");
         return vset;
     }
-    public Vset checkInitializer(Environment env, Context ctx, Vset vset, Type t, Hashtable exp) {
+    public Vset checkInitializer(Environment env, Context ctx, Vset vset, Type t, Hashtable<Object, Object> exp) {
         if (!t.isType(TC_ARRAY)) {
             if (!t.isType(TC_ERROR)) {
                 env.error(where, "invalid.array.init", t);

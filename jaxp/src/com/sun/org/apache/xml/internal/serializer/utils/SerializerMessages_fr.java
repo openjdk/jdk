@@ -3,9 +3,11 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
+ * Licensed to the Apache Software Foundation (ASF) under one
+ * or more contributor license agreements. See the NOTICE file
+ * distributed with this work for additional information
+ * regarding copyright ownership. The ASF licenses this file
+ * to you under the Apache License, Version 2.0 (the  "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
  *
@@ -200,6 +202,93 @@ public class SerializerMessages_fr extends ListResourceBundle {
             {   MsgKey.ER_ENCODING_NOT_SUPPORTED,
                 "Avertissement : l''encodage ''{0}'' n''est pas pris en charge par l''ex\u00E9cution Java." },
 
+             {MsgKey.ER_FEATURE_NOT_FOUND,
+             "Le param\u00e8tre ''{0}'' n''est pas reconnu."},
+
+             {MsgKey.ER_FEATURE_NOT_SUPPORTED,
+             "Le param\u00e8tre ''{0}'' est reconnu mas la valeur demand\u00e9e ne peut pas \u00eatre d\u00e9finie."},
+
+             {MsgKey.ER_STRING_TOO_LONG,
+             "La cha\u00eene obtenue est trop longue pour un DOMString : ''{0}''."},
+
+             {MsgKey.ER_TYPE_MISMATCH_ERR,
+             "Le type de valeur de ce param\u00e8tre est incompatible avec le type de valeur attendu."},
+
+             {MsgKey.ER_NO_OUTPUT_SPECIFIED,
+             "La sortie de destination des donn\u00e9es \u00e0 \u00e9crire \u00e9tait vide."},
+
+             {MsgKey.ER_UNSUPPORTED_ENCODING,
+             "Codage non pris en charge."},
+
+             {MsgKey.ER_UNABLE_TO_SERIALIZE_NODE,
+             "Le noeud ne peut pas \u00eatre s\u00e9rialis\u00e9."},
+
+             {MsgKey.ER_CDATA_SECTIONS_SPLIT,
+             "La section CDATA contient un ou plusieurs marqueurs de fin ']]>'."},
+
+             {MsgKey.ER_WARNING_WF_NOT_CHECKED,
+                 "Aucune instance du programme de v\u00e9rification de la formation n'a pu \u00eatre cr\u00e9\u00e9e.  La valeur true a \u00e9t\u00e9 attribu\u00e9e au param\u00e8tre well-formed mais la v\u00e9rification de la formation n'a pas pu \u00eatre effectu\u00e9e."
+             },
+
+             {MsgKey.ER_WF_INVALID_CHARACTER,
+                 "Le noeud ''{0}'' contient des caract\u00e8res XML non valides."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_COMMENT,
+                 "Un caract\u00e8re XML non valide (Unicode : 0x{0}) a \u00e9t\u00e9 trouv\u00e9 dans le commentaire."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_PI,
+                 "Un caract\u00e8re XML non valide (Unicode : 0x{0}) a \u00e9t\u00e9 trouv\u00e9 dans les donn\u00e9es de l''instruction de traitement."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_CDATA,
+                 "Un caract\u00e8re XML non valide (Unicode: 0x{0}) a \u00e9t\u00e9 trouv\u00e9 dans le contenu de la CDATASection"
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_TEXT,
+                 "Un caract\u00e8re XML non valide (Unicode : 0x{0}) a \u00e9t\u00e9 trouv\u00e9 dans le contenu des donn\u00e9es de type caract\u00e8res du noeud."
+             },
+
+             { MsgKey.ER_WF_INVALID_CHARACTER_IN_NODE_NAME,
+                 "Un ou plusieurs caract\u00e8res non valides ont \u00e9t\u00e9 trouv\u00e9s dans le noeud {0} nomm\u00e9 ''{1}''."
+             },
+
+             { MsgKey.ER_WF_DASH_IN_COMMENT,
+                 "La cha\u00eene \"--\" est interdite dans des commentaires."
+             },
+
+             {MsgKey.ER_WF_LT_IN_ATTVAL,
+                 "La valeur de l''attribut \"{1}\" associ\u00e9 \u00e0 un type d''\u00e9l\u00e9ment \"{0}\" ne doit pas contenir le caract\u00e8re ''<''."
+             },
+
+             {MsgKey.ER_WF_REF_TO_UNPARSED_ENT,
+                 "La r\u00e9f\u00e9rence d''entit\u00e9 non analys\u00e9e \"&{0};\" n''est pas admise."
+             },
+
+             {MsgKey.ER_WF_REF_TO_EXTERNAL_ENT,
+                 "La r\u00e9f\u00e9rence d''entit\u00e9 externe \"&{0};\" n''est pas admise dans une valeur d''attribut."
+             },
+
+             {MsgKey.ER_NS_PREFIX_CANNOT_BE_BOUND,
+                 "Le pr\u00e9fixe \"{0}\" ne peut pas \u00eatre li\u00e9 \u00e0 l''espace de noms \"{1}\"."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ELEMENT_NAME,
+                 "Le nom local de l''\u00e9l\u00e9ment \"{0}\" a une valeur null."
+             },
+
+             {MsgKey.ER_NULL_LOCAL_ATTR_NAME,
+                 "Le nom local de l''attribut \"{0}\" a une valeur null."
+             },
+
+             { MsgKey.ER_ELEM_UNBOUND_PREFIX_IN_ENTREF,
+                 "le texte de remplacement du noeud de l''entit\u00e9 \"{0}\" contaient un noeud d''\u00e9l\u00e9ment \"{1}\" avec un pr\u00e9fixe non li\u00e9 \"{2}\"."
+             },
+
+             { MsgKey.ER_ATTR_UNBOUND_PREFIX_IN_ENTREF,
+                 "Le texte de remplacement du noeud de l''entit\u00e9 \"{0}\" contient un noeud d''attribut \"{1}\" avec un pr\u00e9fixe non li\u00e9 \"{2}\"."
+             },
 
         };
 

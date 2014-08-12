@@ -537,7 +537,7 @@ abstract public class ToStream extends SerializerBase
                 if (OutputPropertiesFactory.S_KEY_INDENT_AMOUNT.equals(name)) {
                     setIndentAmount(Integer.parseInt(val));
                 } else if (OutputKeys.INDENT.equals(name)) {
-                    boolean b = "yes".equals(val) ? true : false;
+                    boolean b = val.endsWith("yes") ? true : false;
                     m_doIndent = b;
                 }
 
@@ -556,7 +556,7 @@ abstract public class ToStream extends SerializerBase
                 break;
             case 'o':
                 if (OutputKeys.OMIT_XML_DECLARATION.equals(name)) {
-                    boolean b = "yes".equals(val) ? true : false;
+                    boolean b = val.endsWith("yes") ? true : false;
                     this.m_shouldNotWriteXMLHeader = b;
                 }
                 break;

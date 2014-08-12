@@ -156,7 +156,7 @@ final class LdapSearchEnumeration
             String[] reqAttrs;
             if ((reqAttrs = searchArgs.reqAttrs) != null) {
                 // create an attribute set for those requested
-                Attributes rattrs = new BasicAttributes(true); // caseignore
+                Attributes rattrs = new BasicAttributes(true); // ignore case
                 for (int i = 0; i < reqAttrs.length; i++) {
                     rattrs.put(reqAttrs[i], null);
                 }
@@ -213,8 +213,6 @@ final class LdapSearchEnumeration
         // Update search-specific variables
         LdapSearchEnumeration se = (LdapSearchEnumeration)ne;
         startName = se.startName;
-//VR - keep original args, don't overwite with current args
-//      searchArgs = se.searchArgs;
     }
 
     void setStartName(Name nm) {

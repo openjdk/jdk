@@ -62,7 +62,7 @@ import java.io.IOException;
  *
  * @author <ul><li>Kohsuke Kawaguchi, Sun Microsystems, Inc.</li></ul>
  * @see javax.xml.bind.Marshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public abstract class AbstractMarshallerImpl implements Marshaller
 {

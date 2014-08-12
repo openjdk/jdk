@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -166,11 +166,11 @@ public abstract class JavaHeapObject extends JavaThing {
      *
      * @return an Enumeration of JavaHeapObject instances
      */
-    public Enumeration getReferers() {
+    public Enumeration<JavaThing> getReferers() {
         if (referersLen != -1) {
             throw new RuntimeException("not resolved: " + getIdString());
         }
-        return new Enumeration() {
+        return new Enumeration<JavaThing>() {
 
             private int num = 0;
 
@@ -178,7 +178,7 @@ public abstract class JavaHeapObject extends JavaThing {
                 return referers != null && num < referers.length;
             }
 
-            public Object nextElement() {
+            public JavaThing nextElement() {
                 return referers[num++];
             }
         };

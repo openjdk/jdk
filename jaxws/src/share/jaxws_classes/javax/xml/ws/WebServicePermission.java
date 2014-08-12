@@ -55,6 +55,7 @@ import java.security.BasicPermission;
  * @see java.security.Permissions
  * @see java.lang.SecurityManager
  * @see java.net.SocketPermission
+ * @since 1.6
  */
 public final class WebServicePermission extends BasicPermission {
 

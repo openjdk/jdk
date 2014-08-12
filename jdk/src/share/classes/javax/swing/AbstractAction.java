@@ -269,6 +269,10 @@ public abstract class AbstractAction implements Action, Cloneable, Serializable
      * when a bound property has changed and it will send the appropriate
      * <code>PropertyChangeEvent</code> to any registered
      * <code>PropertyChangeListeners</code>.
+     *
+     * @param propertyName  the name of the property that has changed
+     * @param oldValue  the old value of the property
+     * @param newValue  the new value of the property
      */
     protected void firePropertyChange(String propertyName, Object oldValue, Object newValue) {
         if (changeSupport == null ||

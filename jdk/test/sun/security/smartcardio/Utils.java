@@ -24,10 +24,16 @@
 
 // common utility functions for the PC/SC tests
 
-import javax.smartcardio.*;
-
-import java.io.*;
-import java.util.*;
+import java.io.StringReader;
+import java.io.ByteArrayOutputStream;
+import java.io.IOException;
+import java.util.Arrays;
+import java.util.List;
+import javax.smartcardio.CardTerminal;
+import javax.smartcardio.CardChannel;
+import javax.smartcardio.ResponseAPDU;
+import javax.smartcardio.CommandAPDU;
+import javax.smartcardio.TerminalFactory;
 
 public class Utils {
 

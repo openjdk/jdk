@@ -82,7 +82,8 @@ final class AquaUtils {
             @Override
             public Creator run() {
                 try {
-                    final Method getCreatorMethod = CImage.class.getDeclaredMethod("getCreator", new Class[] {});
+                    final Method getCreatorMethod = CImage.class.getDeclaredMethod(
+                                "getCreator", new Class<?>[] {});
                     getCreatorMethod.setAccessible(true);
                     return (Creator)getCreatorMethod.invoke(null, new Object[] {});
                 } catch (final Exception ignored) {
@@ -383,7 +384,8 @@ final class AquaUtils {
                     @Override
                     public Method run() {
                         try {
-                            final Method method = JComponent.class.getDeclaredMethod("getFlag", new Class[] { int.class });
+                            final Method method = JComponent.class.getDeclaredMethod(
+                                    "getFlag", new Class<?>[] { int.class });
                             method.setAccessible(true);
                             return method;
                         } catch (final Throwable ignored) {

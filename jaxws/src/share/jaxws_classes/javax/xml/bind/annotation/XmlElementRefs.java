@@ -50,7 +50,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  *
  * @see XmlElementWrapper
  * @see XmlElementRef
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD})

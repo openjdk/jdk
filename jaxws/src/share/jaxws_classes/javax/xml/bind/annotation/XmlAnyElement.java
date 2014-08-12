@@ -243,7 +243,7 @@ import static java.lang.annotation.RetentionPolicy.RUNTIME;
  * </pre>
  *
  * @author Kohsuke Kawaguchi
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD})

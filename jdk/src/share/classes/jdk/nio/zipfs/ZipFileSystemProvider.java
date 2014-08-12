@@ -271,6 +271,7 @@ public class ZipFileSystemProvider extends FileSystemProvider {
     }
 
     @Override
+    @SuppressWarnings("unchecked") // Cast to A
     public <A extends BasicFileAttributes> A
         readAttributes(Path path, Class<A> type, LinkOption... options)
         throws IOException

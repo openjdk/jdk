@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -203,9 +203,7 @@ import java.util.Hashtable;
  * <h2>Application Resource Files</h2>
  *
  * When an application is deployed, it will generally have several
- * codebase directories and JARs in its classpath.  Similarly, when an
- * applet is deployed, it will have a codebase and archives specifying
- * where to find the applet's classes.  JNDI locates (using
+ * codebase directories and JARs in its classpath. JNDI locates (using
  * {@link ClassLoader#getResources <tt>ClassLoader.getResources()</tt>})
  * all <em>application resource files</em> named <tt>jndi.properties</tt>
  * in the classpath.
@@ -236,7 +234,7 @@ import java.util.Hashtable;
  *
  * When JNDI constructs an initial context, the context's environment
  * is initialized with properties defined in the environment parameter
- * passed to the constructor, the system properties, the applet parameters,
+ * passed to the constructor, the system properties,
  * and the application resource files.  See
  * <a href=InitialContext.html#ENVIRONMENT><tt>InitialContext</tt></a>
  * for details.
@@ -268,8 +266,8 @@ import java.util.Hashtable;
  * <p>
  * In this way, each service provider developer can specify a list of
  * factories to use with that service provider. These can be modified by
- * the application resources specified by the deployer of the application
- * or applet, which in turn can be modified by the user.
+ * the application resources specified by the deployer of the application,
+ * which in turn can be modified by the user.
  *
  * @author Rosanna Lee
  * @author Scott Seligman
@@ -822,7 +820,7 @@ public interface Context {
      * of the property should be the fully qualified class name
      * of the factory class that will create an initial context.
      * This property may be specified in the environment parameter
-     * passed to the initial context constructor, an applet parameter,
+     * passed to the initial context constructor,
      * a system property, or an application resource file.
      * If it is not specified in any of these sources,
      * <tt>NoInitialContextException</tt> is thrown when an initial
@@ -837,7 +835,6 @@ public interface Context {
      * @see NoInitialContextException
      * @see #addToEnvironment(String, Object)
      * @see #removeFromEnvironment(String)
-     * @see #APPLET
      */
     String INITIAL_CONTEXT_FACTORY = "java.naming.factory.initial";
 
@@ -847,8 +844,8 @@ public interface Context {
      * of the property should be a colon-separated list of the fully
      * qualified class names of factory classes that will create an object
      * given information about the object.
-     * This property may be specified in the environment, an applet
-     * parameter, a system property, or one or more resource files.
+     * This property may be specified in the environment, a system property,
+     * or one or more resource files.
      *
      * <p> The value of this constant is "java.naming.factory.object".
      *
@@ -856,7 +853,6 @@ public interface Context {
      * @see javax.naming.spi.ObjectFactory
      * @see #addToEnvironment(String, Object)
      * @see #removeFromEnvironment(String)
-     * @see #APPLET
      */
     String OBJECT_FACTORIES = "java.naming.factory.object";
 
@@ -866,8 +862,8 @@ public interface Context {
      * of the property should be a colon-separated list of the fully
      * qualified class names of state factory classes that will be used
      * to get an object's state given the object itself.
-     * This property may be specified in the environment, an applet
-     * parameter, a system property, or one or more resource files.
+     * This property may be specified in the environment, a system property,
+     * or one or more resource files.
      *
      * <p> The value of this constant is "java.naming.factory.state".
      *
@@ -875,7 +871,6 @@ public interface Context {
      * @see javax.naming.spi.StateFactory
      * @see #addToEnvironment(String, Object)
      * @see #removeFromEnvironment(String)
-     * @see #APPLET
      * @since 1.3
      */
     String STATE_FACTORIES = "java.naming.factory.state";
@@ -887,9 +882,8 @@ public interface Context {
      * of the property should be a colon-separated list of package
      * prefixes for the class name of the factory class that will create
      * a URL context factory.
-     * This property may be specified in the environment,
-     * an applet parameter, a system property, or one or more
-     * resource files.
+     * This property may be specified in the environment, a system property,
+     * or one or more resource files.
      * The prefix <tt>com.sun.jndi.url</tt> is always appended to
      * the possibly empty list of package prefixes.
      *
@@ -900,8 +894,7 @@ public interface Context {
      * @see javax.naming.spi.ObjectFactory
      * @see #addToEnvironment(String, Object)
      * @see #removeFromEnvironment(String)
-     * @see #APPLET
-      */
+     */
     String URL_PKG_PREFIXES = "java.naming.factory.url.pkgs";
 
     /**
@@ -909,8 +902,8 @@ public interface Context {
      * for specifying configuration information for the service provider
      * to use. The value of the property should contain a URL string
      * (e.g. "ldap://somehost:389").
-     * This property may be specified in the environment,
-     * an applet parameter, a system property, or a resource file.
+     * This property may be specified in the environment, a system property,
+     * or a resource file.
      * If it is not specified in any of these sources,
      * the default configuration is determined by the service provider.
      *
@@ -918,7 +911,6 @@ public interface Context {
      *
      * @see #addToEnvironment(String, Object)
      * @see #removeFromEnvironment(String)
-     * @see #APPLET
      */
     String PROVIDER_URL = "java.naming.provider.url";
 
@@ -926,8 +918,8 @@ public interface Context {
      * Constant that holds the name of the environment property
      * for specifying the DNS host and domain names to use for the
      * JNDI URL context (for example, "dns://somehost/wiz.com").
-     * This property may be specified in the environment,
-     * an applet parameter, a system property, or a resource file.
+     * This property may be specified in the environment, a system property,
+     * or a resource file.
      * If it is not specified in any of these sources
      * and the program attempts to use a JNDI URL containing a DNS name,
      * a <tt>ConfigurationException</tt> will be thrown.
@@ -1073,27 +1065,25 @@ public interface Context {
     String LANGUAGE = "java.naming.language";
 
     /**
-     * Constant that holds the name of the environment property for
-     * specifying an applet for the initial context constructor to use
-     * when searching for other properties.
-     * The value of this property is the
-     * <tt>java.applet.Applet</tt> instance that is being executed.
-     * This property may be specified in the environment parameter
-     * passed to the initial context constructor.
-     * When this property is set, each property that the initial context
-     * constructor looks for in the system properties is first looked for
-     * in the applet's parameter list.
-     * If this property is unspecified, the initial context constructor
-     * will search for properties only in the environment parameter
-     * passed to it, the system properties, and application resource files.
+     * @deprecated An environment property with this name is ignored
+     *             while constructing an initial context.
+     * This constant was originally used as a property name to specify an
+     * {@code Applet} to retrieve parameters from, when creating an initial
+     * context. Currently any applet properties that need to be passed to an
+     * initial context should be copied into the environment hashtable:
+     * <pre>{@code
+     *     Hashtable env = new Hashtable();
+     *     env.put(Context.INITIAL_CONTEXT_FACTORY,
+     *       ((Applet) this).getParameter(Context.INITIAL_CONTEXT_FACTORY));
+     *     env.put(Context.PROVIDER_URL,
+     *       ((Applet) this).getParameter(Context.PROVIDER_URL));
+     *     // ... other properties ...
      *
-     * <p> The value of this constant is "java.naming.applet".
-     *
-     * @see #addToEnvironment(String, Object)
-     * @see #removeFromEnvironment(String)
-     * @see InitialContext
+     *     Context ctx = new InitialContext(env);
+     * }</pre>
      *
      * @since 1.3
      */
+    @Deprecated
     String APPLET = "java.naming.applet";
 };

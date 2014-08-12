@@ -25,6 +25,10 @@
 
 package com.sun.tools.javac.util;
 
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Properties;
+
 /** <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
@@ -33,25 +37,65 @@ package com.sun.tools.javac.util;
 public class GraphUtils {
 
     /**
-     * Basic interface for defining various dependency kinds. All dependency kinds
-     * must at least support basic capabilities to tell the DOT engine how to render them.
+     * Basic interface for defining various dependency kinds.
      */
-    public interface DependencyKind {
+    public interface DependencyKind { }
+
+    /**
+     * Common superinterfaces to all graph nodes.
+     */
+    public interface Node<D, N extends Node<D, N>> {
         /**
-         * Returns the DOT representation (to be used in a {@code style} attribute
-         * that's most suited for this dependency kind.
+         * visitor method.
          */
-        String getDotStyle();
+        <A> void accept(NodeVisitor<D, N, A> visitor, A arg);
+    }
+
+    /**
+     * Visitor for graph nodes.
+     */
+    static abstract class NodeVisitor<D, N extends Node<D, N>, A> {
+        /**
+         * Visitor action for nodes.
+         */
+        public abstract void visitNode(N node, A arg);
+        /**
+         * Visitor action for a dependency between 'from' and 'to' with given kind.
+         */
+        public abstract void visitDependency(DependencyKind dk, N from, N to, A arg);
+
+        /**
+         * Visitor entry point.
+         */
+        public void visit(Collection<? extends N> nodes, A arg) {
+            for (N n : new ArrayList<>(nodes)) {
+                n.accept(this, arg);
+            }
+        }
+    }
+
+    /**
+     * Optional interface for nodes supporting dot-based representation.
+     */
+    public interface DottableNode<D, N extends DottableNode<D, N>> extends Node<D, N> {
+        /**
+         * Retrieves the set of dot attributes associated with the node.
+         */
+        Properties nodeAttributes();
+        /**
+         * Retrieves the set of dot attributes associated with a given dependency.
+         */
+        Properties dependencyAttributes(N to, DependencyKind dk);
     }
 
     /**
      * This class is a basic abstract class for representing a node.
      * A node is associated with a given data.
      */
-    public static abstract class Node<D> {
+    public static abstract class AbstractNode<D, N extends AbstractNode<D, N>> implements Node<D, N> {
         public final D data;
 
-        public Node(D data) {
+        public AbstractNode(D data) {
             this.data = data;
         }
 
@@ -61,18 +105,23 @@ public class GraphUtils {
         public abstract DependencyKind[] getSupportedDependencyKinds();
 
         /**
-         * Get all dependencies, regardless of their kind.
+         * Get all dependencies of a given kind
          */
-        public abstract Iterable<? extends Node<D>> getAllDependencies();
-
-        /**
-         * Get a name for the dependency (of given kind) linking this node to a given node
-         */
-        public abstract String getDependencyName(Node<D> to, DependencyKind dk);
+        public abstract Collection<? extends N> getDependenciesByKind(DependencyKind dk);
 
         @Override
         public String toString() {
             return data.toString();
+        }
+
+        @SuppressWarnings("unchecked")
+        public <A> void accept(NodeVisitor<D, N, A> visitor, A arg) {
+            visitor.visitNode((N)this, arg);
+            for (DependencyKind dk : getSupportedDependencyKinds()) {
+                for (N dep : new ArrayList<>(getDependenciesByKind(dk))) {
+                    visitor.visitDependency(dk, (N)this, dep, arg);
+                }
+            }
         }
     }
 
@@ -80,7 +129,8 @@ public class GraphUtils {
      * This class specialized Node, by adding elements that are required in order
      * to perform Tarjan computation of strongly connected components.
      */
-    public static abstract class TarjanNode<D> extends Node<D> implements Comparable<TarjanNode<D>> {
+    public static abstract class TarjanNode<D, N extends TarjanNode<D, N>> extends AbstractNode<D, N>
+            implements Comparable<N> {
         int index = -1;
         int lowlink;
         boolean active;
@@ -89,11 +139,9 @@ public class GraphUtils {
             super(data);
         }
 
-        public abstract Iterable<? extends TarjanNode<D>> getAllDependencies();
+        public abstract Iterable<? extends N> getAllDependencies();
 
-        public abstract Iterable<? extends TarjanNode<D>> getDependenciesByKind(DependencyKind dk);
-
-        public int compareTo(TarjanNode<D> o) {
+        public int compareTo(N o) {
             return (index < o.index) ? -1 : (index == o.index) ? 0 : 1;
         }
     }
@@ -102,7 +150,7 @@ public class GraphUtils {
      * Tarjan's algorithm to determine strongly connected components of a
      * directed graph in linear time. Works on TarjanNode.
      */
-    public static <D, N extends TarjanNode<D>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
+    public static <D, N extends TarjanNode<D, N>> List<? extends List<? extends N>> tarjan(Iterable<? extends N> nodes) {
         ListBuffer<List<N>> cycles = new ListBuffer<>();
         ListBuffer<N> stack = new ListBuffer<>();
         int index = 0;
@@ -114,15 +162,13 @@ public class GraphUtils {
         return cycles.toList();
     }
 
-    private static <D, N extends TarjanNode<D>> int tarjan(N v, int index, ListBuffer<N> stack, ListBuffer<List<N>> cycles) {
+    private static <D, N extends TarjanNode<D, N>> int tarjan(N v, int index, ListBuffer<N> stack, ListBuffer<List<N>> cycles) {
         v.index = index;
         v.lowlink = index;
         index++;
         stack.prepend(v);
         v.active = true;
-        for (TarjanNode<D> nd: v.getAllDependencies()) {
-            @SuppressWarnings("unchecked")
-            N n = (N)nd;
+        for (N n: v.getAllDependencies()) {
             if (n.index == -1) {
                 tarjan(n, index, stack, cycles);
                 v.lowlink = Math.min(v.lowlink, n.lowlink);
@@ -149,24 +195,45 @@ public class GraphUtils {
      * and {@code Node.printDependency} to display edge labels. The resulting
      * representation is also customizable with a graph name and a header.
      */
-    public static <D> String toDot(Iterable<? extends TarjanNode<D>> nodes, String name, String header) {
+    public static <D, N extends DottableNode<D, N>> String toDot(Collection<? extends N> nodes, String name, String header) {
         StringBuilder buf = new StringBuilder();
         buf.append(String.format("digraph %s {\n", name));
-        buf.append(String.format("label = \"%s\";\n", header));
-        //dump nodes
-        for (TarjanNode<D> n : nodes) {
-            buf.append(String.format("%s [label = \"%s\"];\n", n.hashCode(), n.toString()));
-        }
-        //dump arcs
-        for (TarjanNode<D> from : nodes) {
-            for (DependencyKind dk : from.getSupportedDependencyKinds()) {
-                for (TarjanNode<D> to : from.getDependenciesByKind(dk)) {
-                    buf.append(String.format("%s -> %s [label = \" %s \" style = %s ];\n",
-                            from.hashCode(), to.hashCode(), from.getDependencyName(to, dk), dk.getDotStyle()));
-                }
-            }
-        }
+        buf.append(String.format("label = %s;\n", DotVisitor.wrap(header)));
+        DotVisitor<D, N> dotVisitor = new DotVisitor<>();
+        dotVisitor.visit(nodes, buf);
         buf.append("}\n");
         return buf.toString();
+    }
+
+    /**
+     * This visitor is used to dump the contents of a set of nodes of type {@link DottableNode}
+     * onto a string builder.
+     */
+    public static class DotVisitor<D, N extends DottableNode<D, N>> extends NodeVisitor<D, N, StringBuilder> {
+
+        @Override
+        public void visitDependency(DependencyKind dk, N from, N to, StringBuilder buf) {
+            buf.append(String.format("%s -> %s", from.hashCode(), to.hashCode()));
+            buf.append(formatProperties(from.dependencyAttributes(to, dk)));
+            buf.append('\n');
+        }
+
+        @Override
+        public void visitNode(N node, StringBuilder buf) {
+            buf.append(String.format("%s ", node.hashCode()));
+            buf.append(formatProperties(node.nodeAttributes()));
+            buf.append('\n');
+        }
+
+        protected String formatProperties(Properties p) {
+            return p.toString().replaceAll(",", " ")
+                .replaceAll("\\{", "[")
+                .replaceAll("\\}", "]");
+        }
+
+        protected static String wrap(String s) {
+            String res = "\"" + s + "\"";
+            return res.replaceAll("\n", "");
+        }
     }
 }

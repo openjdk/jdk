@@ -34,7 +34,7 @@ import javax.naming.directory.*;
 /**
   * This subclass is used by LDAP to implement the schema calls.
   * Basically, it keeps track of which context it is an attribute of
-  * so it can get the schema for that cotnext.
+  * so it can get the schema for that context.
   *
   * @author Jon Ruiz
   */
@@ -134,7 +134,7 @@ final class LdapAttribute extends BasicAttribute {
         // setup internal state
         this.setBaseCtxInfo();
 
-        // let the ObjectOutpurStream do the real work of serialization
+        // let the ObjectOutputStream do the real work of serialization
         out.defaultWriteObject();
     }
 

@@ -295,7 +295,7 @@ public class PrintingStatus {
         private void updateStatusOnEDT(int pageIndex) {
             assert SwingUtilities.isEventDispatchThread();
             Object[] pageNumber = new Object[]{
-                new Integer(pageIndex + 1)};
+                pageIndex + 1};
             statusLabel.setText(statusFormat.format(pageNumber));
         }
     }

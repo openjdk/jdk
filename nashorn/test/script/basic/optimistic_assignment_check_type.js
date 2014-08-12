@@ -25,6 +25,7 @@
  * @test
  * @bug 8036987, 8037572
  * @summary Implement tests that checks static types in the compiled code
+ * @option --optimistic-types=true
  * @run
  */
 

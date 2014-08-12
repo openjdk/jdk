@@ -10,7 +10,7 @@
         <property name="javac.debuglevel" value="source,lines,vars" />
         <property name="jtreg.jpda.jvmargs" value="-agentlib:jdwp=transport=dt_socket,server=n,address=localhost:5900,suspend=y" />
       </properties>
-      <executeOn event="afterCompilation" target="build-all-classes" />
+      <executeOn event="afterCompilation" target="post-make" />
     </buildFile>
   </component>
 </project>

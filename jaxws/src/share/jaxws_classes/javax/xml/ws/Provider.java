@@ -38,7 +38,7 @@ package javax.xml.ws;
  *  the <code>Provider</code> instance will receive entire protocol messages
  *  or just message payloads.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
  *
  *  @see javax.xml.transform.Source
  *  @see javax.xml.soap.SOAPMessage

@@ -30,7 +30,7 @@ package javax.xml.ws;
  *  are used to communicate protocol level fault information to clients and may
  *  be used on the server to control the protocol specific fault representation.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public class ProtocolException extends WebServiceException {
     /**

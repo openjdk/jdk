@@ -96,6 +96,23 @@ public class UUIDTest {
             if (!u1.equals(u2))
                 throw new Exception("UUID -> string -> UUID failed");
         }
+
+        testFromStringError("-0");
+        testFromStringError("x");
+        testFromStringError("----");
+        testFromStringError("-0-0-0-0");
+        testFromStringError("0-0-0-0-");
+        testFromStringError("0-0-0-0-0-");
+        testFromStringError("0-0-0-0-x");
+    }
+
+    private static void testFromStringError(String str) {
+        try {
+            UUID test = UUID.fromString(str);
+            throw new RuntimeException("Should have thrown IAE");
+        } catch (IllegalArgumentException iae) {
+            // pass
+        }
     }
 
     private static void versionTest() throws Exception {

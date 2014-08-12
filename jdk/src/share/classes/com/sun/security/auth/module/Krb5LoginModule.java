@@ -33,7 +33,10 @@ import java.text.MessageFormat;
 import java.util.*;
 
 import javax.security.auth.*;
-import javax.security.auth.kerberos.*;
+import javax.security.auth.kerberos.KerberosTicket;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosKey;
+import javax.security.auth.kerberos.KeyTab;
 import javax.security.auth.callback.*;
 import javax.security.auth.login.*;
 import javax.security.auth.spi.*;

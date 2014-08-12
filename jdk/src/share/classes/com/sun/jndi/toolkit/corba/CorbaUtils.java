@@ -55,7 +55,6 @@ public class CorbaUtils {
       * Returns the CORBA object reference associated with a Remote
       * object by using the javax.rmi.CORBA package.
       *<p>
-      * Use reflection to avoid hard dependencies on javax.rmi.CORBA package.
       * This method effective does the following:
       *<blockquote><pre>
       * java.lang.Object stub;
@@ -166,6 +165,7 @@ public class CorbaUtils {
 
         // Get Applet from environment
         if (env != null) {
+            @SuppressWarnings("deprecation")
             Applet applet = (Applet) env.get(Context.APPLET);
             if (applet != null) {
             // Create ORBs using applet and orbProp

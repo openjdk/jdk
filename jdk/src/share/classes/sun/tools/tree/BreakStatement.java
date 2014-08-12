@@ -51,7 +51,7 @@ class BreakStatement extends Statement {
     /**
      * Check statement
      */
-    Vset check(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    Vset check(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         reach(env, vset);
         checkLabel(env, ctx);
         CheckContext destctx = (CheckContext)new CheckContext(ctx, this).getBreakContext(lbl);

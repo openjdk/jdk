@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,7 @@ import static javax.lang.model.SourceVersion.*;
  * appropriate for the {@link SourceVersion#RELEASE_8 RELEASE_8}
  * source version.
  *
- * Visit methods corresponding to {@code RELEASE_7} and earlier
+ * Visit methods corresponding to {@code RELEASE_8} and earlier
  * language constructs call {@link #defaultAction defaultAction},
  * passing their arguments to {@code defaultAction}'s corresponding
  * parameters.
@@ -77,6 +77,7 @@ import static javax.lang.model.SourceVersion.*;
  *
  * @see SimpleElementVisitor6
  * @see SimpleElementVisitor7
+ * @see SimpleElementVisitor9
  * @since 1.8
  */
 @SupportedSourceVersion(RELEASE_8)

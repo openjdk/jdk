@@ -488,6 +488,10 @@ public class Main {
                 }
             }
 
+            if (options.isSet("completionDeps")) {
+                Dependencies.GraphDependencies.preRegister(context);
+            }
+
             comp = JavaCompiler.instance(context);
 
             // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate

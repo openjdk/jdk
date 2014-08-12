@@ -54,7 +54,7 @@ import javax.xml.ws.spi.WebServiceFeatureAnnotation;
  *
  * @see RespectBindingFeature
  *
- * @since JAX-WS 2.1
+ * @since 1.6, JAX-WS 2.1
  */
 @Target({ElementType.TYPE, ElementType.METHOD, ElementType.FIELD})
 @Retention(RetentionPolicy.RUNTIME)

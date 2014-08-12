@@ -74,19 +74,19 @@ public final class KeychainStore extends KeyStoreSpi {
      * Entries that have been deleted.  When something calls engineStore we'll
      * remove them from the keychain.
      */
-    private Hashtable deletedEntries = new Hashtable();
+    private Hashtable<String, Object> deletedEntries = new Hashtable<>();
 
     /**
      * Entries that have been added.  When something calls engineStore we'll
      * add them to the keychain.
      */
-    private Hashtable addedEntries = new Hashtable();
+    private Hashtable<String, Object> addedEntries = new Hashtable<>();
 
     /**
      * Private keys and certificates are stored in a hashtable.
      * Hash entries are keyed by alias names.
      */
-    private Hashtable entries = new Hashtable();
+    private Hashtable<String, Object> entries = new Hashtable<>();
 
     /**
      * Algorithm identifiers and corresponding OIDs for the contents of the PKCS12 bag we get from the Keychain.
@@ -471,7 +471,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
             // This will be slow, but necessary.  Enumerate the values and then see if the cert matches the one in the trusted cert entry.
             // Security framework doesn't support the same certificate twice in a keychain.
-            Collection allValues = entries.values();
+            Collection<Object> allValues = entries.values();
 
             for (Object value : allValues) {
                 if (value instanceof TrustedCertEntry) {
@@ -517,7 +517,7 @@ public final class KeychainStore extends KeyStoreSpi {
      *
      * @return enumeration of the alias names
      */
-    public Enumeration engineAliases() {
+    public Enumeration<String> engineAliases() {
         permissionCheck();
         return entries.keys();
     }
@@ -598,8 +598,8 @@ public final class KeychainStore extends KeyStoreSpi {
         permissionCheck();
         Certificate certElem;
 
-        for (Enumeration e = entries.keys(); e.hasMoreElements(); ) {
-            String alias = (String)e.nextElement();
+        for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
+            String alias = e.nextElement();
             Object entry = entries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 certElem = ((TrustedCertEntry)entry).cert;
@@ -634,8 +634,8 @@ public final class KeychainStore extends KeyStoreSpi {
         permissionCheck();
 
         // Delete items that do have a keychain item ref.
-        for (Enumeration e = deletedEntries.keys(); e.hasMoreElements(); ) {
-            String alias = (String)e.nextElement();
+        for (Enumeration<String> e = deletedEntries.keys(); e.hasMoreElements(); ) {
+            String alias = e.nextElement();
             Object entry = deletedEntries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 if (((TrustedCertEntry)entry).certRef != 0) {
@@ -664,8 +664,8 @@ public final class KeychainStore extends KeyStoreSpi {
 
         // Add all of the certs or keys in the added entries.
         // No need to check for 0 refs, as they are in the added list.
-        for (Enumeration e = addedEntries.keys(); e.hasMoreElements(); ) {
-            String alias = (String)e.nextElement();
+        for (Enumeration<String> e = addedEntries.keys(); e.hasMoreElements(); ) {
+            String alias = e.nextElement();
             Object entry = addedEntries.get(alias);
             if (entry instanceof TrustedCertEntry) {
                 TrustedCertEntry tce = (TrustedCertEntry)entry;
@@ -730,8 +730,8 @@ public final class KeychainStore extends KeyStoreSpi {
 
         // Release any stray keychain references before clearing out the entries.
         synchronized(entries) {
-            for (Enumeration e = entries.keys(); e.hasMoreElements(); ) {
-                String alias = (String)e.nextElement();
+            for (Enumeration<String> e = entries.keys(); e.hasMoreElements(); ) {
+                String alias = e.nextElement();
                 Object entry = entries.get(alias);
                 if (entry instanceof TrustedCertEntry) {
                     if (((TrustedCertEntry)entry).certRef != 0) {
@@ -816,7 +816,7 @@ public final class KeychainStore extends KeyStoreSpi {
 
         // Next, create X.509 Certificate objects from the raw data.  This is complicated
         // because a certificate's public key may be too long for Java's default encryption strength.
-        List createdCerts = new ArrayList();
+        List<CertKeychainItemPair> createdCerts = new ArrayList<>();
 
         try {
             CertificateFactory cf = CertificateFactory.getInstance("X.509");
@@ -842,12 +842,12 @@ public final class KeychainStore extends KeyStoreSpi {
 
         // We have our certificates in the List, so now extract them into an array of
         // Certificates and SecCertificateRefs.
-        Object[] objArray = createdCerts.toArray();
+        CertKeychainItemPair[] objArray = createdCerts.toArray(new CertKeychainItemPair[0]);
         Certificate[] certArray = new Certificate[objArray.length];
         long[] certRefArray = new long[objArray.length];
 
         for (int i = 0; i < objArray.length; i++) {
-            CertKeychainItemPair addedItem = (CertKeychainItemPair)objArray[i];
+            CertKeychainItemPair addedItem = objArray[i];
             certArray[i] = addedItem.mCert;
             certRefArray[i] = addedItem.mCertificateRef;
         }

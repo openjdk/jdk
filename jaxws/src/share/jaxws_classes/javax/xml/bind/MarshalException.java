@@ -38,7 +38,7 @@ package javax.xml.bind;
  * @author <ul><li>Ryan Shoemaker, Sun Microsystems, Inc.</li></ul>
  * @see JAXBException
  * @see Marshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public class MarshalException extends JAXBException {
 

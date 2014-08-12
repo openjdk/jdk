@@ -481,9 +481,14 @@ public final class AWTAccessor {
         void setAppContext(MenuComponent menuComp, AppContext appContext);
 
         /**
-         * Returns the menu container of the menu component
+         * Returns the menu container of the menu component.
          */
         MenuContainer getParent(MenuComponent menuComp);
+
+        /**
+         * Sets the menu container of the menu component.
+         */
+        void  setParent(MenuComponent menuComp, MenuContainer menuContainer);
 
         /**
          * Gets the font used for this menu component.

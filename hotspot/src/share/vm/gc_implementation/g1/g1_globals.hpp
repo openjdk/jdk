@@ -220,14 +220,6 @@
   product(uintx, G1HeapRegionSize, 0,                                       \
           "Size of the G1 regions.")                                        \
                                                                             \
-  experimental(bool, G1UseParallelRSetUpdating, true,                       \
-          "Enables the parallelization of remembered set updating "         \
-          "during evacuation pauses")                                       \
-                                                                            \
-  experimental(bool, G1UseParallelRSetScanning, true,                       \
-          "Enables the parallelization of remembered set scanning "         \
-          "during evacuation pauses")                                       \
-                                                                            \
   product(uintx, G1ConcRefinementThreads, 0,                                \
           "If non-0 is the number of parallel rem set update threads, "     \
           "otherwise the value is determined ergonomically.")               \

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -39,7 +39,7 @@ import java.util.*;
 // Warnings from List filters and List[] requestLists is  hard to fix.
 // Remove SuppressWarning when we fix the warnings from List filters
 // and List[] requestLists. The generic array is not supported.
-@SuppressWarnings("unchecked")
+@SuppressWarnings({"unchecked", "rawtypes"})
 class EventRequestManagerImpl extends MirrorImpl
                                        implements EventRequestManager
 {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,7 +34,6 @@ package javax.print.attribute;
  * PrintRequestAttribute PrintRequestAttribute} as well as PrintJobAttribute,
  * the client may include the attribute in a attribute set to
  * specify the attribute's value for the Print Job.
- * <P>
  *
  * @see PrintRequestAttributeSet
  * @see PrintJobAttributeSet

@@ -84,7 +84,7 @@ public class Main {
     /**
      * The list of valid URLs passed in to AppletViewer.
      */
-    private static Vector urlList = new Vector(1);
+    private static Vector<URL> urlList = new Vector<>(1);
 
     // This is used in init().  Getting rid of this is desirable but depends
     // on whether the property that uses it is necessary/standard.
@@ -153,7 +153,7 @@ public class Main {
                 // XXX 5/17 this parsing method should be changed/fixed so that
                 // it doesn't do both parsing of the html file and launching of
                 // the AppletPanel
-                AppletViewer.parse((URL) urlList.elementAt(i), encoding);
+                AppletViewer.parse(urlList.elementAt(i), encoding);
             } catch (IOException e) {
                 System.err.println(lookup("main.err.io", e.getMessage()));
                 return 1;
@@ -307,10 +307,10 @@ public class Main {
         // 2) Reflection removes any build dependency between appletviewer
         // and jdb.
         try {
-            Class c = Class.forName("com.sun.tools.example.debug.tty.TTY", true,
+            Class<?> c = Class.forName("com.sun.tools.example.debug.tty.TTY", true,
                                     ClassLoader.getSystemClassLoader());
             Method m = c.getDeclaredMethod("main",
-                                           new Class[] { String[].class });
+                                           new Class<?>[] { String[].class });
             m.invoke(null, new Object[] { newArgs });
         } catch (ClassNotFoundException cnfe) {
             System.err.println(lookup("main.debug.cantfinddebug"));
@@ -367,7 +367,7 @@ public class Main {
         // Read in the System properties.  If something is going to be
         // over-written, warn about it.
         Properties sysProps = System.getProperties();
-        for (Enumeration e = sysProps.propertyNames(); e.hasMoreElements(); ) {
+        for (Enumeration<?> e = sysProps.propertyNames(); e.hasMoreElements(); ) {
             String key = (String) e.nextElement();
             String val = sysProps.getProperty(key);
             String oldVal;

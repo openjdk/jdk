@@ -40,11 +40,13 @@ import java.security.Provider;
 import java.security.AccessController;
 import java.security.AccessControlContext;
 import java.security.Key;
-import java.security.PrivilegedExceptionAction;
 import java.security.PrivilegedActionException;
-import javax.crypto.Cipher;
+import java.security.PrivilegedExceptionAction;
 import javax.security.auth.Subject;
-import javax.security.auth.kerberos.*;
+import javax.security.auth.kerberos.ServicePermission;
+import javax.security.auth.kerberos.KerberosCredMessage;
+import javax.security.auth.kerberos.KerberosPrincipal;
+import javax.security.auth.kerberos.KerberosTicket;
 import sun.security.krb5.internal.Ticket;
 
 /**
@@ -118,6 +120,7 @@ class Krb5Context implements GSSContextSpi {
 
     // XXX See if the required info from these can be extracted and
     // stored elsewhere
+    private Credentials tgt;
     private Credentials serviceCreds;
     private KrbApReq apReq;
     Ticket serviceTicket;
@@ -616,7 +619,6 @@ class Krb5Context implements GSSContextSpi {
                                            "No TGT available");
                     }
                     myName = (Krb5NameElement) myCred.getName();
-                    Credentials tgt;
                     final Krb5ProxyCredential second;
                     if (myCred instanceof Krb5InitCredential) {
                         second = null;
@@ -750,7 +752,6 @@ class Krb5Context implements GSSContextSpi {
                     // No need to write anything;
                     // just validate the incoming token
                     new AcceptSecContextToken(this, serviceCreds, apReq, is);
-                    serviceCreds = null;
                     apReq = null;
                     state = STATE_DONE;
                 } else {
@@ -1304,6 +1305,9 @@ class Krb5Context implements GSSContextSpi {
     public final void dispose() throws GSSException {
         state = STATE_DELETED;
         delegatedCred = null;
+        tgt = null;
+        serviceCreds = null;
+        key = null;
     }
 
     public final Provider getProvider() {
@@ -1424,6 +1428,9 @@ class Krb5Context implements GSSContextSpi {
         switch (type) {
             case KRB5_GET_SESSION_KEY:
                 return new KerberosSessionKey(key);
+            case KRB5_GET_SESSION_KEY_EX:
+                return new javax.security.auth.kerberos.EncryptionKey(
+                        key.getBytes(), key.getEType());
             case KRB5_GET_TKT_FLAGS:
                 return tktFlags.clone();
             case KRB5_GET_AUTHZ_DATA:
@@ -1435,6 +1442,26 @@ class Krb5Context implements GSSContextSpi {
                 }
             case KRB5_GET_AUTHTIME:
                 return authTime;
+            case KRB5_GET_KRB_CRED:
+                if (!isInitiator()) {
+                    throw new GSSException(GSSException.UNAVAILABLE, -1,
+                            "KRB_CRED not available on acceptor side.");
+                }
+                KerberosPrincipal sender = new KerberosPrincipal(
+                        myName.getKrb5PrincipalName().getName());
+                KerberosPrincipal recipient = new KerberosPrincipal(
+                        peerName.getKrb5PrincipalName().getName());
+                try {
+                    byte[] krbCred = new KrbCred(tgt, serviceCreds, key)
+                            .getMessage();
+                    return new KerberosCredMessage(
+                            sender, recipient, krbCred);
+                } catch (KrbException | IOException e) {
+                    GSSException gsse = new GSSException(GSSException.UNAVAILABLE, -1,
+                            "KRB_CRED not generated correctly.");
+                    gsse.initCause(e);
+                    throw gsse;
+                }
         }
         throw new GSSException(GSSException.UNAVAILABLE, -1,
                 "Inquire type not supported.");
@@ -1456,4 +1483,5 @@ class Krb5Context implements GSSContextSpi {
     public void setAuthzData(com.sun.security.jgss.AuthorizationDataEntry[] authzData) {
         this.authzData = authzData;
     }
+
 }

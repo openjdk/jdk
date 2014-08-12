@@ -176,7 +176,7 @@ final class SupportedEllipticCurvesExtension extends HelloExtension {
     private final static int ARBITRARY_PRIME = 0xff01;
     private final static int ARBITRARY_CHAR2 = 0xff02;
 
-    // See sun.security.ec.NamedCurve for the OIDs
+    // See sun.security.util.NamedCurve for the OIDs
     private final static String[] NAMED_CURVE_OID_TABLE = new String[] {
         null,                   //  (0) unused
         "1.3.132.0.1",          //  (1) sect163k1, NIST K-163

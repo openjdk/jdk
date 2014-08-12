@@ -64,6 +64,8 @@ import javax.xml.transform.Source;
  * The <code>SOAPPart</code> method <code>getEnvelope</code> can be used
  * to retrieve the <code>SOAPEnvelope</code> object.
  * <P>
+ *
+ * @since 1.6
  */
 public abstract class SOAPPart implements org.w3c.dom.Document, Node {
 

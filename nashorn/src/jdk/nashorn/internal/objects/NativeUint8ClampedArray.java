@@ -80,7 +80,8 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
 
         private static final MethodHandle GET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "getElem", int.class, int.class).methodHandle();
         private static final MethodHandle SET_ELEM = specialCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "setElem", void.class, int.class, int.class).methodHandle();
-        private static final MethodHandle RINT     = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", double.class, double.class).methodHandle();
+        private static final MethodHandle RINT_D   = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", double.class, double.class).methodHandle();
+        private static final MethodHandle RINT_O   = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "rint", Object.class, Object.class).methodHandle();
         private static final MethodHandle CLAMP_LONG = staticCall(MethodHandles.lookup(), Uint8ClampedArrayData.class, "clampLong", long.class, long.class).methodHandle();
 
         private Uint8ClampedArrayData(final ByteBuffer nb, final int start, final int end) {
@@ -109,8 +110,10 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
         public MethodHandle getElementSetter(final Class<?> elementType) {
             final MethodHandle setter = super.getElementSetter(elementType); //getContinuousElementSetter(getClass(), setElem(), elementType);
             if (setter != null) {
-                if (elementType == double.class) {
-                    return MH.filterArguments(setter, 2, RINT);
+                if (elementType == Object.class) {
+                    return MH.filterArguments(setter, 2, RINT_O);
+                } else if (elementType == double.class) {
+                    return MH.filterArguments(setter, 2, RINT_D);
                 } else if (elementType == long.class) {
                     return MH.filterArguments(setter, 2, CLAMP_LONG);
                 }
@@ -188,6 +191,11 @@ public final class NativeUint8ClampedArray extends ArrayBufferView {
 
         private static double rint(final double rint) {
             return (int)Math.rint(rint);
+        }
+
+        @SuppressWarnings("unused")
+        private static Object rint(final Object rint) {
+            return rint(JSType.toNumber(rint));
         }
 
         @SuppressWarnings("unused")

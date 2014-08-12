@@ -72,6 +72,7 @@ import javax.print.attribute.Attribute;
 import javax.print.attribute.AttributeSet;
 import javax.print.attribute.HashPrintRequestAttributeSet;
 import javax.print.attribute.PrintRequestAttributeSet;
+import javax.print.attribute.ResolutionSyntax;
 import javax.print.attribute.Size2DSyntax;
 import javax.print.attribute.standard.Chromaticity;
 import javax.print.attribute.standard.Copies;
@@ -86,6 +87,7 @@ import javax.print.attribute.standard.MediaSize;
 import javax.print.attribute.standard.MediaSizeName;
 import javax.print.attribute.standard.OrientationRequested;
 import javax.print.attribute.standard.PageRanges;
+import javax.print.attribute.standard.PrinterResolution;
 import javax.print.attribute.standard.PrinterState;
 import javax.print.attribute.standard.PrinterStateReason;
 import javax.print.attribute.standard.PrinterStateReasons;
@@ -283,6 +285,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
     private String jobNameAttr;
     private String userNameAttr;
     private PageRanges pageRangesAttr;
+    protected PrinterResolution printerResAttr;
     protected Sides sidesAttr;
     protected String destinationAttr;
     protected boolean noJobSheet = false;
@@ -1064,6 +1067,14 @@ public abstract class RasterPrinterJob extends PrinterJob {
                                           attrset));
     }
 
+    /**
+     * Set the device resolution.
+     * Overridden and used only by the postscript code.
+     * Windows code pulls the information from the attribute set itself.
+     */
+    protected void setXYRes(double x, double y) {
+    }
+
     /* subclasses may need to pull extra information out of the attribute set
      * They can override this method & call super.setAttributes()
      */
@@ -1072,6 +1083,7 @@ public abstract class RasterPrinterJob extends PrinterJob {
         /*  reset all values to defaults */
         setCollated(false);
         sidesAttr = null;
+        printerResAttr = null;
         pageRangesAttr = null;
         copiesAttr = 0;
         jobNameAttr = null;
@@ -1115,6 +1127,18 @@ public abstract class RasterPrinterJob extends PrinterJob {
         sidesAttr = (Sides)attributes.get(Sides.class);
         if (!isSupportedValue(sidesAttr,  attributes)) {
             sidesAttr = Sides.ONE_SIDED;
+        }
+
+        printerResAttr = (PrinterResolution)attributes.get(PrinterResolution.class);
+        if (service.isAttributeCategorySupported(PrinterResolution.class)) {
+            if (!isSupportedValue(printerResAttr,  attributes)) {
+               printerResAttr = (PrinterResolution)
+                   service.getDefaultAttributeValue(PrinterResolution.class);
+            }
+            double xr =
+               printerResAttr.getCrossFeedResolution(ResolutionSyntax.DPI);
+            double yr = printerResAttr.getFeedResolution(ResolutionSyntax.DPI);
+            setXYRes(xr, yr);
         }
 
         pageRangesAttr =  (PageRanges)attributes.get(PageRanges.class);

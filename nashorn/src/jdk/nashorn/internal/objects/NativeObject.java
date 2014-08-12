@@ -39,6 +39,7 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 import java.util.concurrent.Callable;
+
 import jdk.internal.dynalink.beans.BeansLinker;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.GuardedInvocation;
@@ -716,7 +717,7 @@ public final class NativeObject {
         return target;
     }
 
-    /*
+    /**
      * Binds the source mirror object's properties to the target object. Binding
      * properties allows two-way read/write for the properties of the source object.
      * All inherited, enumerable properties are also bound. This method is used to
@@ -731,7 +732,7 @@ public final class NativeObject {
         // make accessor properties using dynamic invoker getters and setters
         final AccessorProperty[] props = new AccessorProperty[keys.size()];
         int idx = 0;
-        for (String name : keys) {
+        for (final String name : keys) {
             final MethodHandle getter = Bootstrap.createDynamicInvoker("dyn:getMethod|getProp|getElem:" + name, MIRROR_GETTER_TYPE);
             final MethodHandle setter = Bootstrap.createDynamicInvoker("dyn:setProp|setElem:" + name, MIRROR_SETTER_TYPE);
             props[idx] = AccessorProperty.create(name, 0, getter, setter);

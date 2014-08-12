@@ -1322,7 +1322,7 @@ public final class SunGraphics2D
             return SunHints.Value.get(SunHints.INTKEY_FRACTIONALMETRICS,
                                       fractionalMetricsHint);
         case SunHints.INTKEY_AATEXT_LCD_CONTRAST:
-            return new Integer(lcdTextContrast);
+            return lcdTextContrast;
         case SunHints.INTKEY_INTERPOLATION:
             switch (interpolationHint) {
             case SunHints.INTVAL_INTERPOLATION_NEAREST_NEIGHBOR:

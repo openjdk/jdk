@@ -636,6 +636,9 @@ OGLBufImgOps_EnableLookupOp(OGLContext *oglc, jlong pSrcOps,
                 "OGLBufImgOps_EnableLookupOp: short=%d num=%d len=%d off=%d",
                 shortData, numBands, bandLength, offset);
 
+    for (i = 0; i < 4; i++) {
+        bands[i] = NULL;
+    }
     RETURN_IF_NULL(oglc);
     RETURN_IF_NULL(srcOps);
     RESET_PREVIOUS_OP();

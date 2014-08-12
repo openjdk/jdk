@@ -92,7 +92,7 @@ import java.net.URLConnection;
  * a non-null value.
  *
  * @author Kohsuke Kawaguchi
- * @since 2.1
+ * @since 1.6, JAXB 2.1
  */
 public final class JAXB {
     /**

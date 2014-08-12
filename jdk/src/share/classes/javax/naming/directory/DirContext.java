@@ -723,7 +723,7 @@ public interface DirContext extends Context {
      * specified set of attributes.
      * This method returns all the attributes of such objects.
      * It is equivalent to supplying null as
-     * the <tt>atributesToReturn</tt> parameter to the method
+     * the <tt>attributesToReturn</tt> parameter to the method
      * <code>search(Name, Attributes, String[])</code>.
      * <br>
      * See {@link #search(Name, Attributes, String[])} for a full description.

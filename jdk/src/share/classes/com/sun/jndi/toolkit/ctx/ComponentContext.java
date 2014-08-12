@@ -137,7 +137,7 @@ public abstract class ComponentContext extends PartialCompositeContext {
       * as an intermediate context.
       *
       * For a system that supports only junctions, this would be
-      * equilvalent to
+      * equivalent to
       *         c_lookup(name, cont);
       * because for junctions, an intermediate slash simply signifies
       * a syntactic separator.

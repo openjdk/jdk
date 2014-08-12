@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2003, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -33,7 +33,6 @@ import java.io.Serializable;
  * which inherits its implementation from class {@link HashAttributeSet
  * HashAttributeSet} and enforces the semantic restrictions of interface
  * {@link PrintJobAttributeSet PrintJobAttributeSet}.
- * <P>
  *
  * @author  Alan Kaminsky
  */

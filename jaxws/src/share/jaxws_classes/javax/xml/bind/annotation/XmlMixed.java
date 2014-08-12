@@ -124,7 +124,7 @@ import javax.xml.bind.JAXBElement;
  * <p>See "Package Specification" in javax.xml.bind.package javadoc for
  * additional common information.</p>
  * @author Kohsuke Kawaguchi
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME)
 @Target({FIELD,METHOD})

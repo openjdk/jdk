@@ -33,7 +33,7 @@ package javax.xml.bind;
  * @see ValidationEvent
  * @see ValidationEventHandler
  * @see Marshaller
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 public interface PrintConversionEvent extends ValidationEvent {
 

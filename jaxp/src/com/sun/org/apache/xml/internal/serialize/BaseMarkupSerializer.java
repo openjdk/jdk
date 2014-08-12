@@ -123,6 +123,11 @@ import org.xml.sax.ext.LexicalHandler;
  * @author Sunitha Reddy, Sun Microsystems
  * @see Serializer
  * @see org.w3c.dom.ls.LSSerializer
+ *
+ * @deprecated As of JDK 1.9, Xerces 2.9.0, Xerces DOM L3 Serializer implementation
+ * is replaced by that of Xalan. Main class
+ * {@link com.sun.org.apache.xml.internal.serialize.DOMSerializerImpl} is replaced
+ * by {@link com.sun.org.apache.xml.internal.serializer.dom3.LSSerializerImpl}.
  */
 public abstract class BaseMarkupSerializer
     implements ContentHandler, DocumentHandler, LexicalHandler,

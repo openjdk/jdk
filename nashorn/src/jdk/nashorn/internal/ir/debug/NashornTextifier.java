@@ -39,6 +39,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import jdk.internal.org.objectweb.asm.Attribute;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.Label;
@@ -1082,11 +1083,15 @@ public final class NashornTextifier extends Printer {
             contents.put(node, sb);
         }
 
+        private static String dottyFriendly(final String name) {
+            return name.replace(':', '_');
+        }
+
         @Override
         public String toString() {
 
             final StringBuilder sb = new StringBuilder();
-            sb.append("digraph " + name + " {");
+            sb.append("digraph " + dottyFriendly(name) + " {");
             sb.append("\n");
             sb.append("\tgraph [fontname=courier]\n");
             sb.append("\tnode [style=filled,color="+COLOR_DEFAULT+",fontname=courier]\n");

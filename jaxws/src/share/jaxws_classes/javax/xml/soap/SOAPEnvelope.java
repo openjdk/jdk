@@ -93,6 +93,8 @@ package javax.xml.soap;
  *     Name name = se.createName("GetLastTradePrice", "WOMBAT",
  *                                "http://www.wombat.org/trader");
  * </PRE>
+ *
+ * @since 1.6
  */
 public interface SOAPEnvelope extends SOAPElement {
 

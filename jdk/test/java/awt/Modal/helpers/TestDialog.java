@@ -332,35 +332,47 @@ public class TestDialog extends Dialog implements ActionListener,
             "button did not gain focus. " + message);
     }
 
-    public void checkCloseButtonFocusGained() {
-        checkCloseButtonFocusGained(Flag.ATTEMPTS);
+    public void checkCloseButtonFocusGained(boolean refState) {
+        checkCloseButtonFocusGained(refState, Flag.ATTEMPTS);
     }
 
-    public void checkCloseButtonFocusGained(int attempts) {
+    public void checkCloseButtonFocusGained(boolean refState, int attempts) {
         try {
             closeGained.waitForFlagTriggered(attempts);
         } catch (InterruptedException e) {}
-        assertTrue(closeGained.flag(),
-            "dialog Close button did not gain focus");
+
+        String msg = "dialog Close button ";
+        msg += (refState ? "did not gain focus" :
+                "gained focus when it should not");
+
+        assertTrue(closeGained.flag() == refState, msg);
     }
 
-    public void checkOpenButtonFocusGained() {
+    public void checkOpenButtonFocusGained(boolean refState) {
         try {
             openGained.waitForFlagTriggered();
         } catch (InterruptedException e) {}
-        assertTrue(openGained.flag(),
-            "dialog Open button did not gain focus");
+
+        String msg = "dialog Open button ";
+        msg += (refState ? "did not gain focus" :
+                "gained focus when it should not");
+
+        assertTrue(openGained.flag() == refState, msg);
     }
 
-    public void checkOpenButtonFocusLost() {
-        checkOpenButtonFocusLost(Flag.ATTEMPTS);
+    public void checkOpenButtonFocusLost(boolean refState) {
+        checkOpenButtonFocusLost(refState, Flag.ATTEMPTS);
     }
 
-    public void checkOpenButtonFocusLost(int attempts) {
+    public void checkOpenButtonFocusLost(boolean refState, int attempts) {
         try {
             openLost.waitForFlagTriggered(attempts);
         } catch (InterruptedException e) {}
-        assertTrue(openLost.flag(),
-            "dialog Open button did not lose focus");
+
+        String msg = "dialog Open button ";
+        msg += (refState ? "did not lose focus" :
+                "lost focus when it should not");
+
+        assertTrue(openLost.flag() == refState, msg);
     }
 }

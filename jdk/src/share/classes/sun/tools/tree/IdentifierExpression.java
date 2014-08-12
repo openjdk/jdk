@@ -231,7 +231,7 @@ class IdentifierExpression extends Expression {
     /**
      * Check expression
      */
-    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable exp) {
+    public Vset checkValue(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp) {
         if (field != null) {
             // An internally pre-set field, such as an argument copying
             // an uplevel value.  Do not re-check it.
@@ -250,7 +250,7 @@ class IdentifierExpression extends Expression {
      * Check the expression if it appears on the LHS of an assignment
      */
     public Vset checkLHS(Environment env, Context ctx,
-                         Vset vset, Hashtable exp) {
+                         Vset vset, Hashtable<Object, Object> exp) {
         if (!bind(env, ctx))
             return vset;
         vset = assign(env, ctx, vset);
@@ -263,7 +263,7 @@ class IdentifierExpression extends Expression {
      * Check the expression if it appears on the LHS of an op= expression
      */
     public Vset checkAssignOp(Environment env, Context ctx,
-                              Vset vset, Hashtable exp, Expression outside) {
+                              Vset vset, Hashtable<Object, Object> exp, Expression outside) {
         if (!bind(env, ctx))
             return vset;
         vset = assign(env, ctx, get(env, ctx, vset));
@@ -293,7 +293,7 @@ class IdentifierExpression extends Expression {
     /**
      * Check if the present name is part of a scoping prefix.
      */
-    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable exp,
+    public Vset checkAmbigName(Environment env, Context ctx, Vset vset, Hashtable<Object, Object> exp,
                                UnaryExpression loc) {
         try {
             if (ctx.getField(env, id) != null) {

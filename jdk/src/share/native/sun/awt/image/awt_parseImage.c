@@ -508,6 +508,7 @@ int awt_parseColorModel (JNIEnv *env, jobject jcmodel, int imageType,
     cmP->csType = (*env)->GetIntField(env, cmP->jcmodel, g_CMcsTypeID);
 
     cmP->cmType = getColorModelType(env, jcmodel);
+    JNU_CHECK_EXCEPTION_RETURN(env, -1);
 
     cmP->isDefaultCM = FALSE;
     cmP->isDefaultCompatCM = FALSE;

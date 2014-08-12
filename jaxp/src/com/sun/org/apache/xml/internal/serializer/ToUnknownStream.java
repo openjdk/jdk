@@ -1335,4 +1335,12 @@ public final class ToUnknownStream extends SerializerBase
                 ch.length);
         }
     }
+
+    /**
+     * @see org.apache.xml.serializer.Serializer#asDOM3Serializer()
+     */
+    public Object asDOM3Serializer() throws IOException
+    {
+        return m_handler.asDOM3Serializer();
+    }
 }

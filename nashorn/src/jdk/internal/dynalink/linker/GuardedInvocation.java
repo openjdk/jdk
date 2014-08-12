@@ -193,7 +193,7 @@ public class GuardedInvocation {
         invocation.getClass(); // NPE check
         this.invocation = invocation;
         this.guard = guard;
-        this.switchPoints = switchPoints;
+        this.switchPoints = switchPoints == null ? null : switchPoints.clone();
         this.exception = exception;
     }
 

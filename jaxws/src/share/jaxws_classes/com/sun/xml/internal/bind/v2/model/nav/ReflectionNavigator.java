@@ -35,6 +35,8 @@ import java.lang.reflect.ParameterizedType;
 import java.lang.reflect.Type;
 import java.lang.reflect.TypeVariable;
 import java.lang.reflect.WildcardType;
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.Arrays;
 import java.util.Collection;
 
@@ -264,20 +266,38 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
         return clazz.getSimpleName();
     }
 
-    public Collection<? extends Field> getDeclaredFields(Class clazz) {
-        return Arrays.asList(clazz.getDeclaredFields());
+    public Collection<? extends Field> getDeclaredFields(final Class clazz) {
+        Field[] fields = AccessController.doPrivileged(new PrivilegedAction<Field[]>() {
+            @Override
+            public Field[] run() {
+                return clazz.getDeclaredFields();
+            }
+        });
+        return Arrays.asList(fields);
     }
 
-    public Field getDeclaredField(Class clazz, String fieldName) {
-        try {
-            return clazz.getDeclaredField(fieldName);
-        } catch (NoSuchFieldException e) {
-            return null;
-        }
+    public Field getDeclaredField(final Class clazz, final String fieldName) {
+        return AccessController.doPrivileged(new PrivilegedAction<Field>() {
+            @Override
+            public Field run() {
+                try {
+                    return clazz.getDeclaredField(fieldName);
+                } catch (NoSuchFieldException e) {
+                    return null;
+                }
+            }
+        });
     }
 
-    public Collection<? extends Method> getDeclaredMethods(Class clazz) {
-        return Arrays.asList(clazz.getDeclaredMethods());
+    public Collection<? extends Method> getDeclaredMethods(final Class clazz) {
+        Method[] methods =
+            AccessController.doPrivileged(new PrivilegedAction<Method[]>() {
+                @Override
+                public Method[] run() {
+                    return clazz.getDeclaredMethods();
+                }
+            });
+        return Arrays.asList(methods);
     }
 
     public Class getDeclaringClassForField(Field field) {
@@ -565,7 +585,7 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
         return method.isBridge();
     }
 
-    public boolean isOverriding(Method method, Class base) {
+    public boolean isOverriding(Method method, final Class base) {
         // this isn't actually correct,
         // as the JLS considers
         // class Derived extends Base<Integer> {
@@ -576,22 +596,30 @@ import com.sun.xml.internal.bind.v2.runtime.Location;
         // }
         // to be overrided. Handling this correctly needs a careful implementation
 
-        String name = method.getName();
-        Class[] params = method.getParameterTypes();
+        final String name = method.getName();
+        final Class[] params = method.getParameterTypes();
 
-        while (base != null) {
-            try {
-                if (base.getDeclaredMethod(name, params) != null) {
-                    return true;
+        return AccessController.doPrivileged(
+                new PrivilegedAction<Boolean>() {
+
+                    @Override
+                    public Boolean run() {
+                        Class clazz = base;
+                        while (clazz != null) {
+                            try {
+                                Method m = clazz.getDeclaredMethod(name, params);
+                                if (m != null) {
+                                    return Boolean.TRUE;
+                                }
+                            } catch (NoSuchMethodException ignored) {
+                                // recursively go into the base class
+                            }
+                            clazz = clazz.getSuperclass();
+                        }
+                        return Boolean.FALSE;
+                    }
                 }
-            } catch (NoSuchMethodException e) {
-                // recursively go into the base class
-            }
-
-            base = base.getSuperclass();
-        }
-
-        return false;
+        );
     }
 
     public boolean isInterface(Class clazz) {

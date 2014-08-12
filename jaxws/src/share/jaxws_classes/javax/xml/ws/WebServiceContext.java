@@ -41,7 +41,7 @@ import org.w3c.dom.Element;
  *  into an endpoint implementation class using the
  *  <code>Resource</code> annotation.
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
  *
  *  @see javax.annotation.Resource
  **/
@@ -120,7 +120,7 @@ public interface WebServiceContext {
      *
      * @see W3CEndpointReference
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      */
     public EndpointReference getEndpointReference(Element... referenceParameters);
 
@@ -144,7 +144,7 @@ public interface WebServiceContext {
      * @throws WebServiceException If the <code>clazz</code> type of
      * <code>EndpointReference</code> is not supported.
      *
-     * @since JAX-WS 2.1
+     * @since 1.6, JAX-WS 2.1
      **/
     public <T extends EndpointReference> T getEndpointReference(Class<T> clazz,
             Element... referenceParameters);

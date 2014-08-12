@@ -39,7 +39,7 @@ import java.util.concurrent.Future;
  *  {@link WebServiceException} that represents the error that occured during the
  *  asynchronous method invocation.</p>
  *
- *  @since JAX-WS 2.0
+ *  @since 1.6, JAX-WS 2.0
 **/
 public interface Response<T> extends Future<T> {
     /** Gets the contained response context.

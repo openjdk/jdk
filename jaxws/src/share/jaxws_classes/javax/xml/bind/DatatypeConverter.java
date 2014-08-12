@@ -88,7 +88,7 @@ import javax.xml.namespace.NamespaceContext;
  * @see DatatypeConverterInterface
  * @see ParseConversionEvent
  * @see PrintConversionEvent
- * @since JAXB1.0
+ * @since 1.6, JAXB 1.0
  */
 
 final public class DatatypeConverter {

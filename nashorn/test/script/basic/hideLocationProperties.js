@@ -46,7 +46,7 @@ function z(__FILE__) {
     (function() { print(__FILE__) })()
 }
 
-print(__FILE__)
+print(__FILE__.replace(/\\/g, "/"))
 
 var o = { __FILE__: "woot" }
 with(o) { print(__FILE__) }

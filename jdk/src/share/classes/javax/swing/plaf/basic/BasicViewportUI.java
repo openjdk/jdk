@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -43,6 +43,12 @@ public class BasicViewportUI extends ViewportUI {
     // Shared UI object
     private static ViewportUI viewportUI;
 
+    /**
+     * Returns an instance of {@code BasicViewportUI}.
+     *
+     * @param c a component
+     * @return an instance of {@code BasicViewportUI}
+     */
     public static ComponentUI createUI(JComponent c) {
         if(viewportUI == null) {
             viewportUI = new BasicViewportUI();
@@ -60,6 +66,11 @@ public class BasicViewportUI extends ViewportUI {
         super.uninstallUI(c);
     }
 
+    /**
+     * Installs view port properties.
+     *
+     * @param c a component
+     */
     protected void installDefaults(JComponent c) {
         LookAndFeel.installColorsAndFont(c,
                                          "Viewport.background",
@@ -68,6 +79,11 @@ public class BasicViewportUI extends ViewportUI {
         LookAndFeel.installProperty(c, "opaque", Boolean.TRUE);
     }
 
+    /**
+     * Uninstall view port properties.
+     *
+     * @param c a component
+     */
     protected void uninstallDefaults(JComponent c) {
     }
 }

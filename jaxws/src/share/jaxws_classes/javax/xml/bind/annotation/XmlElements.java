@@ -166,7 +166,7 @@ import java.lang.annotation.Target;
  * @see XmlElementRef
  * @see XmlElementRefs
  * @see XmlJavaTypeAdapter
- * @since JAXB2.0
+ * @since 1.6, JAXB 2.0
  */
 @Retention(RUNTIME) @Target({FIELD,METHOD})
 public @interface XmlElements {

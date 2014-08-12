@@ -39,9 +39,9 @@ public final
 class SwitchData {
     int minValue, maxValue;
     Label defaultLabel = new Label();
-    Hashtable<Integer,Label> tab = new Hashtable<>();
+    Hashtable<Integer, Label> tab = new Hashtable<>();
 // JCOV
-    Hashtable<Integer,Long> whereCaseTab = null;
+    Hashtable<Integer, Long> whereCaseTab = null;
 // end JCOV
 
     /**
@@ -92,13 +92,13 @@ class SwitchData {
 
 // JCOV
     public void initTableCase() {
-        whereCaseTab = new Hashtable<Integer,Long>();
+        whereCaseTab = new Hashtable<Integer, Long>();
     }
     public void addTableCase(int index, long where) {
         if (whereCaseTab != null)
             whereCaseTab.put(Integer.valueOf(index), Long.valueOf(where));
     }
-    // this puts String key into Hashtable<Integer,Long>
+    // this puts String key into Hashtable<Integer, Long>
     @SuppressWarnings("unchecked")
     public void addTableDefault(long where) {
         if (whereCaseTab != null)
@@ -123,7 +123,7 @@ class SwitchDataEnumeration implements Enumeration<Integer> {
      * hash table will be an Integer, with the value being a label.  The
      * enumeration returns the keys in sorted order.
      */
-    SwitchDataEnumeration(Hashtable<Integer,Label> tab) {
+    SwitchDataEnumeration(Hashtable<Integer, Label> tab) {
         table = new Integer[tab.size()];
         int i = 0;
         for (Enumeration<Integer> e = tab.keys() ; e.hasMoreElements() ; ) {
