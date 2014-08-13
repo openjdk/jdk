@@ -442,19 +442,16 @@ public class Shell {
                     continue;
                 }
 
-                Object res;
                 try {
-                    res = context.eval(global, source, global, "<shell>", env._strict);
+                    final Object res = context.eval(global, source, global, "<shell>", env._strict);
+                    if (res != ScriptRuntime.UNDEFINED) {
+                        err.println(JSType.toString(res));
+                    }
                 } catch (final Exception e) {
                     err.println(e);
                     if (env._dump_on_error) {
                         e.printStackTrace(err);
                     }
-                    continue;
-                }
-
-                if (res != ScriptRuntime.UNDEFINED) {
-                    err.println(JSType.toString(res));
                 }
             }
         } finally {
