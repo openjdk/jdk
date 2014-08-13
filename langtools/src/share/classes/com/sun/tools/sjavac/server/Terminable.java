@@ -22,23 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package com.sun.tools.sjavac.server;
 
-import java.io.File;
-import java.net.URI;
-import java.util.List;
-import java.util.Set;
-
-public interface JavacService {
-
-    SysInfo getSysInfo();
-
-    CompilationResult compile(String protocolId,
-                              String invocationId,
-                              String[] args,
-                              List<File> explicitSources,
-                              Set<URI> sourcesToCompile,
-                              Set<URI> visibleSources);
-    String serverSettings();
+/**
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ */
+public interface Terminable {
+    void shutdown(String quitMsg);
 }

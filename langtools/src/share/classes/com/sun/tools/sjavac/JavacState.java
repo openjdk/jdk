@@ -26,7 +26,6 @@
 package com.sun.tools.sjavac;
 
 import java.io.*;
-import java.nio.file.Path;
 import java.util.Collections;
 import java.util.Date;
 import java.util.Set;
@@ -39,20 +38,18 @@ import java.net.URI;
 import java.util.*;
 
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.options.SourceLocation;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * The javac state class maintains the previous (prev) and the current (now)
  * build states and everything else that goes into the javac_state file.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-public class JavacState
-{
+public class JavacState {
     // The arguments to the compile. If not identical, then it cannot
     // be an incremental build!
     String theArgs;
@@ -655,7 +652,7 @@ public class JavacState
     /**
      * Compile all the java sources. Return true, if it needs to be called again!
      */
-    public boolean performJavaCompilations(JavacService javacService,
+    public boolean performJavaCompilations(Sjavac sjavac,
                                            Options args,
                                            Set<String> recentlyCompiled,
                                            boolean[] rcValue) {
@@ -663,7 +660,7 @@ public class JavacState
         suffixRules.put(".java", compileJavaPackages);
         compileJavaPackages.setExtra(args);
 
-        rcValue[0] = perform(javacService, binDir, suffixRules);
+        rcValue[0] = perform(sjavac, binDir, suffixRules);
         recentlyCompiled.addAll(taintedPackages());
         clearTaintedPackages();
         boolean again = !packagesWithChangedPublicApis.isEmpty();
@@ -693,10 +690,9 @@ public class JavacState
      * For all packages, find all sources belonging to the package, group the sources
      * based on their transformers and apply the transformers on each source code group.
      */
-    private boolean perform(JavacService javacService,
+    private boolean perform(Sjavac sjavac,
                             File outputDir,
-                            Map<String,Transformer> suffixRules)
-    {
+                            Map<String,Transformer> suffixRules) {
         boolean rc = true;
         // Group sources based on transforms. A source file can only belong to a single transform.
         Map<Transformer,Map<String,Set<URI>>> groupedSources = new HashMap<>();
@@ -720,7 +716,7 @@ public class JavacState
             Map<String,String> packagePublicApis =
                     Collections.synchronizedMap(new HashMap<String, String>());
 
-            boolean  r = t.transform(javacService,
+            boolean  r = t.transform(sjavac,
                                      srcs,
                                      visibleSrcs,
                                      visibleClasses,
@@ -798,9 +794,7 @@ public class JavacState
      * Used to detect bugs where the makefile and sjavac have different opinions on which files
      * should be compiled.
      */
-    public void compareWithMakefileList(File makefileSourceList)
-            throws ProblemException
-    {
+    public void compareWithMakefileList(File makefileSourceList) throws ProblemException {
         // If we are building on win32 using for example cygwin the paths in the makefile source list
         // might be /cygdrive/c/.... which does not match c:\....
         // We need to adjust our calculated sources to be identical, if necessary.

@@ -26,7 +26,6 @@
 package com.sun.tools.sjavac.options;
 
 import java.io.IOException;
-import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
@@ -38,6 +37,11 @@ import com.sun.tools.sjavac.Transformer;
 /**
  * This class is used to decode sjavac options.
  * See com.sun.tools.sjavac.options.Options for example usage.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public abstract class OptionHelper {
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,46 +22,33 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-package com.sun.tools.sjavac.comp;
+package com.sun.tools.sjavac.server;
 
-import com.sun.tools.javac.comp.Resolve;
-import com.sun.tools.javac.util.Context;
-import com.sun.tools.javac.code.Symbol;
+import java.io.File;
+import java.net.URI;
+import java.util.List;
+import java.util.Set;
 
-/** Subclass to Resolve that overrides collect.
+/**
+ * Interface of the SjavacImpl, the sjavac client and all wrappers such as
+ * PooledSjavac etc.
  *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class ResolveWithDeps extends Resolve {
+public interface Sjavac {
 
-    /** The dependency database
-     */
-    protected Dependencies deps;
+    SysInfo getSysInfo();
 
-    protected ResolveWithDeps(Context context) {
-        super(context);
-        deps = Dependencies.instance(context);
-    }
+    CompilationResult compile(String protocolId,
+                              String invocationId,
+                              String[] args,
+                              List<File> explicitSources,
+                              Set<URI> sourcesToCompile,
+                              Set<URI> visibleSources);
 
-    public static void preRegister(Context context) {
-        context.put(resolveKey, new Context.Factory<Resolve>() {
-            public Resolve make(Context c) {
-                Resolve instance = new ResolveWithDeps(c);
-                c.put(Resolve.class, instance);
-                return instance;
-            }
-        });
-    }
-    /** Collect dependencies in the enclosing class
-     * @param from The enclosing class sym
-     * @param to   The enclosing classes references this sym.
-     * */
-    @Override
-    public void reportDependence(Symbol from, Symbol to) {
-        // Capture dependencies between the packages.
-        deps.collect(from.packge().fullname, to.packge().fullname);
-    }
+    void shutdown();
+    String serverSettings();
 }
