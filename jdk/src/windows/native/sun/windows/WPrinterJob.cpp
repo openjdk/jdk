@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -995,14 +995,7 @@ Java_sun_print_Win32PrintService_getJobStatus(JNIEnv *env,
     if (type == GETJOBCOUNT) {
         ret = pPrinterInfo->cJobs;
     } else if (type == ACCEPTJOB) {
-        if (pPrinterInfo->Status &
-            (PRINTER_STATUS_ERROR |
-             PRINTER_STATUS_NOT_AVAILABLE |
-             PRINTER_STATUS_NO_TONER |
-             PRINTER_STATUS_OUT_OF_MEMORY |
-             PRINTER_STATUS_OFFLINE |
-             PRINTER_STATUS_USER_INTERVENTION |
-             PRINTER_STATUS_DOOR_OPEN)) {
+        if (pPrinterInfo->Status & PRINTER_STATUS_PENDING_DELETION) {
             ret = 0;
         }
         else {
