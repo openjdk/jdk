@@ -25,7 +25,7 @@
  * @test
  * @bug 8042251
  * @summary Testing InnerClasses_attribute of inner enums in inner interface.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build InnerClassesInInnerClassTestBase InnerClassesTestBase TestBase TestResult InMemoryFileManager ToolBox
  * @run main InnerEnumInInnerInterfaceTest
  */

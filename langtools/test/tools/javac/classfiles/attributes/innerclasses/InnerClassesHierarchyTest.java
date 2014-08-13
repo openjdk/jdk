@@ -25,7 +25,7 @@
  * @test
  * @bug 8042251
  * @summary Test that inner classes have in its inner classes attribute enclosing classes and its immediate members.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build TestResult TestBase InMemoryFileManager ToolBox
  * @run main InnerClassesHierarchyTest
  */

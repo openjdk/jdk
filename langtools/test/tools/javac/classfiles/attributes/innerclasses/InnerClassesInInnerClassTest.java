@@ -25,7 +25,7 @@
  * @test
  * @bug 8034854 8042251
  * @summary Testing InnerClasses_attribute of inner classes in inner class.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build InnerClassesInInnerClassTestBase InnerClassesTestBase TestResult TestBase InMemoryFileManager ToolBox
  * @run main InnerClassesInInnerClassTest
  */
