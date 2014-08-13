@@ -29,6 +29,7 @@
  * forever, so make this test future safe, we specify them explicitly
  *
  * @test
+ * @fork
  * @runif external.octane
  * @option -scripting
  * @option -Dnashorn.typeInfo.disabled=true
