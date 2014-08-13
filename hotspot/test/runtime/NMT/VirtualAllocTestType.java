@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
  * @summary Test Reserve/Commit/Uncommit/Release of virtual memory and that we track it correctly
  * @key nmt jcmd
  * @library /testlibrary /testlibrary/whitebox
+ * @ignore
  * @build VirtualAllocTestType
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocTestType
@@ -54,7 +55,6 @@ public class VirtualAllocTestType {
     }
 
     addr = wb.NMTReserveMemory(reserveSize);
-    mergeData();
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail"});
 
     output = new OutputAnalyzer(pb.start());
@@ -65,7 +65,6 @@ public class VirtualAllocTestType {
 
     wb.NMTCommitMemory(addr, commitSize);
 
-    mergeData();
 
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Test (reserved=256KB, committed=128KB)");
@@ -75,24 +74,15 @@ public class VirtualAllocTestType {
 
     wb.NMTUncommitMemory(addr, commitSize);
 
-    mergeData();
 
     output = new OutputAnalyzer(pb.start());
     output.shouldContain("Test (reserved=256KB, committed=0KB)");
     output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + commitSize) + "\\] committed");
 
     wb.NMTReleaseMemory(addr, reserveSize);
-    mergeData();
 
     output = new OutputAnalyzer(pb.start());
     output.shouldNotContain("Test (reserved=");
     output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*" + Long.toHexString(addr + reserveSize) + "\\] reserved");
   }
-
-  public static void mergeData() throws Exception {
-    // Use WB API to ensure that all data has been merged before we continue
-    if (!wb.NMTWaitForDataMerge()) {
-      throw new Exception("Call to WB API NMTWaitForDataMerge() failed");
     }
-  }
-}
