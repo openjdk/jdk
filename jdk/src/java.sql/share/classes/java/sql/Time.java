@@ -90,22 +90,19 @@ public class Time extends java.util.Date {
      * @return a corresponding <code>Time</code> object
      */
     public static Time valueOf(String s) {
+        if (s == null) throw new java.lang.IllegalArgumentException();
+
         int hour;
         int minute;
         int second;
-        int firstColon;
-        int secondColon;
-
-        if (s == null) throw new java.lang.IllegalArgumentException();
-
-        firstColon = s.indexOf(':');
-        secondColon = s.indexOf(':', firstColon+1);
-        if ((firstColon > 0) & (secondColon > 0) &
-            (secondColon < s.length()-1)) {
-            hour = Integer.parseInt(s.substring(0, firstColon));
-            minute =
-                Integer.parseInt(s.substring(firstColon+1, secondColon));
-            second = Integer.parseInt(s.substring(secondColon+1));
+        int firstColon = s.indexOf(':');
+        int secondColon = s.indexOf(':', firstColon + 1);
+        int len = s.length();
+        if (firstColon > 0 && secondColon > 0 &&
+                secondColon < len - 1) {
+            hour = Integer.parseInt(s, 0, firstColon, 10);
+            minute = Integer.parseInt(s, firstColon + 1, secondColon, 10);
+            second = Integer.parseInt(s, secondColon + 1, len, 10);
         } else {
             throw new java.lang.IllegalArgumentException();
         }
