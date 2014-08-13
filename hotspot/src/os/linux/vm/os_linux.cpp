@@ -2246,7 +2246,7 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
   const siginfo_t* si = (const siginfo_t*)siginfo;
 
   os::Posix::print_siginfo_brief(st, si);
-
+#if INCLUDE_CDS
   if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
       UseSharedSpaces) {
     FileMapInfo* mapinfo = FileMapInfo::current_info();
@@ -2256,6 +2256,7 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
                 " possible disk/network problem.");
     }
   }
+#endif
   st->cr();
 }
 
