@@ -300,6 +300,11 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "UseNewReflection",              JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "AutoShutdownNMT",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#ifndef ZERO
+  { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#endif // ZERO
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -799,7 +804,7 @@ void Arguments::add_string(char*** bldarray, int* count, const char* arg) {
   } else {
     *bldarray = REALLOC_C_HEAP_ARRAY(char*, *bldarray, new_count, mtInternal);
   }
-  (*bldarray)[*count] = strdup(arg);
+  (*bldarray)[*count] = os::strdup_check_oom(arg);
   *count = new_count;
 }
 
@@ -1069,16 +1074,6 @@ void Arguments::set_mode_flags(Mode mode) {
   UseInterpreter             = true;
   UseCompiler                = true;
   UseLoopCounter             = true;
-
-#ifndef ZERO
-  // Turn these off for mixed and comp.  Leave them on for Zero.
-  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
-    UseFastAccessorMethods = (mode == _int);
-  }
-  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
-    UseFastEmptyMethods = (mode == _int);
-  }
-#endif
 
   // Default values may be platform/compiler dependent -
   // use the saved values
@@ -1885,7 +1880,7 @@ void Arguments::process_java_compiler_argument(char* arg) {
 }
 
 void Arguments::process_java_launcher_argument(const char* launcher, void* extra_info) {
-  _sun_java_launcher = strdup(launcher);
+  _sun_java_launcher = os::strdup_check_oom(launcher);
 }
 
 bool Arguments::created_by_java_launcher() {
@@ -2388,7 +2383,7 @@ bool Arguments::check_vm_args_consistency() {
 
   if (PrintNMTStatistics) {
 #if INCLUDE_NMT
-    if (MemTracker::tracking_level() == MemTracker::NMT_off) {
+    if (MemTracker::tracking_level() == NMT_off) {
 #endif // INCLUDE_NMT
       warning("PrintNMTStatistics is disabled, because native memory tracking is not enabled");
       PrintNMTStatistics = false;
@@ -2995,7 +2990,7 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
       // Redirect GC output to the file. -Xloggc:<filename>
       // ostream_init_log(), when called will use this filename
       // to initialize a fileStream.
-      _gc_log_filename = strdup(tail);
+      _gc_log_filename = os::strdup_check_oom(tail);
      if (!is_filename_valid(_gc_log_filename)) {
        jio_fprintf(defaultStream::output_stream(),
                   "Invalid file name for use with -Xloggc: Filename can only contain the "
@@ -3598,15 +3593,24 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       CommandLineFlags::printFlags(tty, false);
       vm_exit(0);
     }
-    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
 #if INCLUDE_NMT
-      MemTracker::init_tracking_options(tail);
-#else
-      jio_fprintf(defaultStream::error_stream(),
-        "Native Memory Tracking is not supported in this VM\n");
-      return JNI_ERR;
-#endif
+    if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
+      // The launcher did not setup nmt environment variable properly.
+//      if (!MemTracker::check_launcher_nmt_support(tail)) {
+//        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
+//      }
+
+      // Verify if nmt option is valid.
+      if (MemTracker::verify_nmt_option()) {
+        // Late initialization, still in single-threaded mode.
+        if (MemTracker::tracking_level() >= NMT_summary) {
+          MemTracker::init();
+        }
+      } else {
+        vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
+      }
     }
+#endif
 
 
 #ifndef PRODUCT
