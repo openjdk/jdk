@@ -26,7 +26,7 @@
  * @bug 8038455
  * @summary Verify that annotation processor can overwrite source and class files it generated
  *          during previous compilations, and that the Symbols are updated appropriatelly.
- * @library /tools/javac/lib/
+ * @library /tools/lib /tools/javac/lib/
  * @clean *
  * @build OverwriteBetweenCompilations ToolBox JavacTestingAbstractProcessor
  * @compile/ref=OverwriteBetweenCompilations_1.out -processor OverwriteBetweenCompilations -Apass=1 -parameters -XDrawDiagnostics OverwriteBetweenCompilationsSource.java
@@ -49,6 +49,7 @@ import com.sun.tools.javac.util.Log.WriterKind;
 @SupportedOptions("pass")
 public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor {
     int round = 1;
+    @Override
     public boolean process(Set<? extends TypeElement> annotations,
                            RoundEnvironment roundEnv) {
         Log log = Log.instance(((JavacProcessingEnvironment) processingEnv).getContext());
@@ -85,11 +86,17 @@ public class OverwriteBetweenCompilations extends JavacTestingAbstractProcessor 
             try (OutputStream out = filer.createClassFile("GeneratedClass").openOutputStream()) {
                 String code = pass != 2 ? GENERATED_INIT : GENERATED_UPDATE;
                 code = code.replace("NAME", "GeneratedClass");
-                ToolBox.JavaToolArgs args =
-                        new ToolBox.JavaToolArgs().appendArgs("-parameters").setSources(code);
-                Map<String, byte[]> codeMap = ToolBox.compile(args);
-                out.write(codeMap.get("GeneratedClass"));
-            } catch (IOException | ToolBox.CommandExecutionException e) {
+
+                ToolBox tb = new ToolBox();
+                ToolBox.MemoryFileManager mfm = new ToolBox.MemoryFileManager();
+                tb.new JavacTask()
+                        .fileManager(mfm)
+                        .options("-parameters")
+                        .sources(code)
+                        .run();
+
+                out.write(mfm.getFileBytes(StandardLocation.CLASS_OUTPUT, "GeneratedClass"));
+            } catch (IOException e) {
                 processingEnv.getMessager().printMessage(Diagnostic.Kind.ERROR, e.toString());
             }
         }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,13 @@
  * @test
  * @bug 4087314 4800342 4307565
  * @summary Verify allowed access to protected class from another package
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ProtectedInnerClassesTest
  */
 
-//original tests: test/tools/javac/ProtectedInnerClass/ProtectedInnerClass.sh
-//and test/tools/javac/ProtectedInnerClass/ProtectedInnerClass_2.java
+// Original tests: test/tools/javac/ProtectedInnerClass/ProtectedInnerClass.sh
+// and test/tools/javac/ProtectedInnerClass/ProtectedInnerClass_2.java
 public class ProtectedInnerClassesTest {
 
     private static final String protectedInnerClass1Src =
@@ -74,45 +74,36 @@ public class ProtectedInnerClassesTest {
         new ProtectedInnerClassesTest().run();
     }
 
+    ToolBox tb = new ToolBox();
+
     void run() throws Exception {
         compileAndExecute();
         compileOnly();
     }
 
     void compileAndExecute() throws Exception {
-//"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d "${TESTCLASSES}" "${TESTSRC}${FS}p1${FS}ProtectedInnerClass1.java" "${TESTSRC}${FS}p2${FS}ProtectedInnerClass2.java"
-        ToolBox.JavaToolArgs javacParams =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-d", ".")
-                .setSources(protectedInnerClass1Src, protectedInnerClass2Src);
+        tb.new JavacTask()
+                .outdir(".")
+                .sources(protectedInnerClass1Src, protectedInnerClass2Src)
+                .run();
 
-        ToolBox.javac(javacParams);
-
-//"${TESTJAVA}${FS}bin${FS}java" ${TESTVMOPTS} -classpath "${CLASSPATH}${PS}${TESTCLASSES}" p2.ProtectedInnerClass2
-        ToolBox.AnyToolArgs javaParams =
-                new ToolBox.AnyToolArgs()
-                .appendArgs(ToolBox.javaBinary)
-                .appendArgs(ToolBox.testVMOpts)
-                .appendArgs("-classpath", System.getProperty("user.dir"),
-                    "p2.ProtectedInnerClass2");
-        ToolBox.executeCommand(javaParams);
+        tb.new JavaTask()
+                .classpath(System.getProperty("user.dir"))
+                .className("p2.ProtectedInnerClass2")
+                .run();
     }
 
 //from test/tools/javac/ProtectedInnerClass/ProtectedInnerClass_2.java
     void compileOnly() throws Exception {
-//@run compile p1/ProtectedInnerClass1.java
-        ToolBox.JavaToolArgs javacParams =
-                new ToolBox.JavaToolArgs()
-                .appendArgs("-d", ".")
-                .setSources(protectedInnerClass1Src);
+        tb.new JavacTask()
+                .outdir(".")
+                .sources(protectedInnerClass1Src)
+                .run();
 
-        ToolBox.javac(javacParams);
-
-//@run compile/fail p2/ProtectedInnerClass3.java
-        javacParams = new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs("-d", ".")
-                .setSources(protectedInnerClass3Src);
-        ToolBox.javac(javacParams);
+        tb.new JavacTask()
+                .outdir(".")
+                .sources(protectedInnerClass3Src)
+                .run(ToolBox.Expect.FAIL);
     }
 
 }

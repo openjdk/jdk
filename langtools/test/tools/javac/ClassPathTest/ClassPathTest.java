@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,14 @@
  * @test
  * @bug 4241229 4785453
  * @summary Test -classpath option and classpath defaults.
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ClassPathTest
  */
 
 import java.nio.file.Paths;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.TreeMap;
 
-//original test: test/tools/javac/ClassPathTest/ClassPathTest.sh
+// Original test: test/tools/javac/ClassPathTest/ClassPathTest.sh
 public class ClassPathTest {
 
     private static final String ClassPathTest1Src =
@@ -70,11 +65,11 @@ public class ClassPathTest {
         "package pkg;\n" +
         "public class ClassPathTestAux3 {}";
 
-    ProcessBuilder pb = null;
-
     public static void main(String[] args) throws Exception {
         new ClassPathTest().test();
     }
+
+    ToolBox tb = new ToolBox();
 
     public void test() throws Exception {
         createOutputDirAndSourceFiles();
@@ -83,14 +78,16 @@ public class ClassPathTest {
 
     void createOutputDirAndSourceFiles() throws Exception {
         //dirs and files creation
-        ToolBox.createJavaFileFromSource(ClassPathTest1Src);
-        ToolBox.createJavaFileFromSource(ClassPathTest2Src);
-        ToolBox.createJavaFileFromSource(ClassPathTest3Src);
-        ToolBox.createJavaFileFromSource(Paths.get("foo"),
+        tb.writeJavaFiles(Paths.get("."),
+                ClassPathTest1Src,
+                ClassPathTest2Src,
+                ClassPathTest3Src);
+        tb.writeJavaFiles(Paths.get("foo"),
                 fooPkgClassPathTestAux1Src);
-        ToolBox.createJavaFileFromSource(Paths.get("bar"),
+        tb.writeJavaFiles(Paths.get("bar"),
                 barPkgClassPathTestAux2Src);
-        ToolBox.createJavaFileFromSource(pkgClassPathTestAux3Src);
+        tb.writeJavaFiles(Paths.get("."),
+                pkgClassPathTestAux3Src);
     }
 
     void checkCompileCommands() throws Exception {
@@ -99,80 +96,55 @@ public class ClassPathTest {
 //        automatically but this is not happening when called using ProcessBuilder
 
 //        testJavac success ClassPathTest3.java
-        List<String> mainArgs = new ArrayList<>();
-        mainArgs.add(ToolBox.javacBinary.toString());
-        if (ToolBox.testToolVMOpts != null) {
-            mainArgs.addAll(ToolBox.testToolVMOpts);
-        }
-
-        List<String> commonArgs = new ArrayList<>();
-        commonArgs.addAll(mainArgs);
-        commonArgs.addAll(Arrays.asList("-cp", "."));
-
-        ToolBox.AnyToolArgs successParams = new ToolBox.AnyToolArgs()
-                .appendArgs(commonArgs)
-                .appendArgs("ClassPathTest3.java");
-        ToolBox.executeCommand(successParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .classpath(".")
+                .files("ClassPathTest3.java")
+                .run();
 
 //        testJavac failure ClassPathTest1.java
-        ToolBox.AnyToolArgs failParams =
-                new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(commonArgs)
-                .appendArgs("ClassPathTest1.java");
-        ToolBox.executeCommand(failParams);
-
-//        This is done inside the executeCommand method
-//        CLASSPATH=bar; export CLASSPATH
-
-        Map<String, String> extVars = new TreeMap<>();
-        extVars.put("CLASSPATH", "bar");
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .classpath(".")
+                .files("ClassPathTest1.java")
+                .run(ToolBox.Expect.FAIL);
 
 //        testJavac success ClassPathTest2.java
-        successParams = new ToolBox.AnyToolArgs()
-                .appendArgs(mainArgs)
-                .appendArgs("ClassPathTest2.java")
-                .set(extVars);
-        ToolBox.executeCommand(successParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .files("ClassPathTest2.java")
+                .run();
 
 //        testJavac failure ClassPathTest1.java
-        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(mainArgs)
-                .appendArgs("ClassPathTest1.java")
-                .set(extVars);
-        ToolBox.executeCommand(failParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .files("ClassPathTest1.java")
+                .run(ToolBox.Expect.FAIL);
 
 //        testJavac failure ClassPathTest3.java
-        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(mainArgs)
-                .appendArgs("ClassPathTest3.java")
-                .set(extVars);
-        ToolBox.executeCommand(failParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .files("ClassPathTest3.java")
+                .run(ToolBox.Expect.FAIL);
 
 //        testJavac success -classpath foo ClassPathTest1.java
-
-        commonArgs.clear();
-        commonArgs.addAll(mainArgs);
-        commonArgs.addAll(Arrays.asList("-cp", "foo"));
-
-        successParams = new ToolBox.AnyToolArgs()
-                .appendArgs(commonArgs)
-                .appendArgs("ClassPathTest1.java")
-                .set(extVars);
-        ToolBox.executeCommand(successParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .classpath("foo")
+                .files("ClassPathTest1.java")
+                .run();
 
 //        testJavac failure -classpath foo ClassPathTest2.java
-        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(commonArgs)
-                .appendArgs("ClassPathTest2.java")
-                .set(extVars);
-        ToolBox.executeCommand(failParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .classpath("foo")
+                .files("ClassPathTest2.java")
+                .run(ToolBox.Expect.FAIL);
 
 //        testJavac failure -classpath foo ClassPathTest3.java
-        failParams = new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(commonArgs)
-                .appendArgs("ClassPathTest3.java")
-                .set(extVars);
-        ToolBox.executeCommand(failParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .envVar("CLASSPATH", "bar")
+                .classpath("foo")
+                .files("ClassPathTest3.java")
+                .run(ToolBox.Expect.FAIL);
     }
 
 }
