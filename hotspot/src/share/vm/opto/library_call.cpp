@@ -2595,7 +2595,8 @@ bool LibraryCallKit::inline_unsafe_access(bool is_native_ptr, bool is_store, Bas
   if (need_mem_bar) insert_mem_bar(Op_MemBarCPUOrder);
 
   if (!is_store) {
-    Node* p = make_load(control(), adr, value_type, type, adr_type, MemNode::unordered, is_volatile);
+    MemNode::MemOrd mo = is_volatile ? MemNode::acquire : MemNode::unordered;
+    Node* p = make_load(control(), adr, value_type, type, adr_type, mo, is_volatile);
     // load value
     switch (type) {
     case T_BOOLEAN:
@@ -5096,8 +5097,19 @@ Node * LibraryCallKit::load_field_from_object(Node * fromObj, const char * field
     type = Type::get_const_basic_type(bt);
   }
 
+  if (support_IRIW_for_not_multiple_copy_atomic_cpu && is_vol) {
+    insert_mem_bar(Op_MemBarVolatile);   // StoreLoad barrier
+  }
   // Build the load.
-  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, MemNode::unordered, is_vol);
+  MemNode::MemOrd mo = is_vol ? MemNode::acquire : MemNode::unordered;
+  Node* loadedField = make_load(NULL, adr, type, bt, adr_type, mo, is_vol);
+  // If reference is volatile, prevent following memory ops from
+  // floating up past the volatile read.  Also prevents commoning
+  // another volatile read.
+  if (is_vol) {
+    // Memory barrier includes bogus read of value to force load BEFORE membar
+    insert_mem_bar(Op_MemBarAcquire, loadedField);
+  }
   return loadedField;
 }
 
