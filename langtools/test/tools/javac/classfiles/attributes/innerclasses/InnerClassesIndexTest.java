@@ -25,7 +25,7 @@
  * @test
  * @bug 8042251
  * @summary Test that outer_class_info_index of local and anonymous class is zero.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build TestBase TestResult InMemoryFileManager ToolBox
  * @run main InnerClassesIndexTest
  */

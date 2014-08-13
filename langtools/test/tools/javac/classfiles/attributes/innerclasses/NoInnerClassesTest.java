@@ -25,7 +25,7 @@
  * @test
  * @bug 8042251
  * @summary Test that there are no inner classes attributes in case of there are no inner classes.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build TestBase InMemoryFileManager ToolBox
  * @run main NoInnerClassesTest
  */

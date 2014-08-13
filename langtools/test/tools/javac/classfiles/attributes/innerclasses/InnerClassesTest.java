@@ -26,7 +26,7 @@
  * @test
  * @bug 8034854 8042251
  * @summary Testing inner classes attributes.
- * @library /tools/javac/lib ../lib
+ * @library /tools/lib /tools/javac/lib ../lib
  * @build InnerClassesTestBase TestBase TestResult InMemoryFileManager ToolBox
  * @run main InnerClassesTest
  */
