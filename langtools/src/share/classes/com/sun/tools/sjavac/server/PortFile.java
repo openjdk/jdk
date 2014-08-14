@@ -33,6 +33,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.Log;
 
 /**
@@ -130,7 +131,7 @@ public class PortFile {
      * If so, then we can acquire the tcp/ip port on localhost.
      */
     public int getPort() {
-        assert(containsPortInfo);
+        Assert.check(containsPortInfo);
         return serverPort;
     }
 
@@ -138,7 +139,7 @@ public class PortFile {
      * If so, then we can acquire the server cookie.
      */
     public long getCookie() {
-        assert(containsPortInfo);
+        Assert.check(containsPortInfo);
         return serverCookie;
     }
 
@@ -146,7 +147,7 @@ public class PortFile {
      * Store the values into the locked port file.
      */
     public void setValues(int port, long cookie) throws IOException {
-        assert(lock != null);
+        Assert.check(lock != null);
         rwfile.seek(0);
         // Write the magic nr that identifes a port file.
         rwfile.writeInt(magicNr);
@@ -191,7 +192,7 @@ public class PortFile {
      * Unlock the port file.
      */
     public void unlock() throws IOException {
-        assert(lock != null);
+        Assert.check(lock != null);
         lock.release();
         lock = null;
     }

@@ -62,7 +62,8 @@ public class Util {
 
     public static String justPackageName(String pkgName) {
         int c = pkgName.indexOf(":");
-        assert(c != -1);
+        if (c == -1)
+            throw new IllegalArgumentException("Expected ':' in package name (" + pkgName + ")");
         return pkgName.substring(c+1);
     }
 

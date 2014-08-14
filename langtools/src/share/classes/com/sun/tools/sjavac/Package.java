@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.sun.tools.javac.util.Assert;
 
 /**
  * The Package class maintains meta information about a package.
@@ -83,9 +84,9 @@ public class Package implements Comparable<Package> {
 
     public Package(Module m, String n) {
         int c = n.indexOf(":");
-        assert(c != -1);
+        Assert.check(c != -1);
         String mn = n.substring(0,c);
-        assert(m.name().equals(m.name()));
+        Assert.check(m.name().equals(m.name()));
         name = n;
         dirname = n.replace('.', File.separatorChar);
         if (m.name().length() > 0) {
@@ -256,7 +257,7 @@ public class Package implements Comparable<Package> {
     }
 
     public void setArtifacts(Set<URI> as) {
-        assert(!artifacts.isEmpty());
+        Assert.check(!artifacts.isEmpty());
         artifacts = new HashMap<>();
         addArtifacts(as);
     }
