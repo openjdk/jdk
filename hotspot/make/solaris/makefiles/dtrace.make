@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -58,8 +58,6 @@ DTRACE_SRCDIR = $(GAMMADIR)/src/os/$(Platform_os_family)/dtrace
 DTRACE_COMMON_SRCDIR = $(GAMMADIR)/src/os/posix/dtrace
 DTRACE = dtrace
 DTRACE.o = $(DTRACE).o
-DTRACE_JHELPER = dtrace_jhelper
-DTRACE_JHELPER.o = $(DTRACE_JHELPER).o
 
 # to remove '-g' option which causes link problems
 # also '-z nodefs' is used as workaround
@@ -257,10 +255,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 $(DTRACE).d: $(DTRACE_COMMON_SRCDIR)/hotspot.d $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d \
-             $(DTRACE_COMMON_SRCDIR)/hs_private.d
-	$(QUIETLY) cat $^ > $@
-
-$(DTRACE_JHELPER).d: $(DTRACE_SRCDIR)/jhelper.d
+             $(DTRACE_COMMON_SRCDIR)/hs_private.d $(DTRACE_SRCDIR)/jhelper.d
 	$(QUIETLY) cat $^ > $@
 
 DTraced_Files = ciEnv.o \
@@ -285,7 +280,7 @@ DTraced_Files = ciEnv.o \
                 vmGCOperations.o \
 
 # Dtrace is available, so we build $(DTRACE.o)  
-$(DTRACE.o): $(DTRACE).d $(DTraced_Files)
+$(DTRACE.o): $(DTRACE).d $(JVMOFFS).h $(JVMOFFS)Index.h $(DTraced_Files)
 	@echo Compiling $(DTRACE).d
 
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -xlazyload -o $@ -s $(DTRACE).d \
@@ -338,22 +333,17 @@ $(DTRACE.o): $(DTRACE).d $(DTraced_Files)
 $(DtraceOutDir):
 	mkdir $(DtraceOutDir)
 
-$(DtraceOutDir)/hotspot.h: $(DTRACE_COMMON_SRCDIR)/hotspot.d | $(DtraceOutDir)
+$(DtraceOutDir)/hotspot.h: $(DTRACE_COMMON_SRCDIR)/hotspot.d
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot.d
 
-$(DtraceOutDir)/hotspot_jni.h: $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d | $(DtraceOutDir)
+$(DtraceOutDir)/hotspot_jni.h: $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hotspot_jni.d
 
-$(DtraceOutDir)/hs_private.h: $(DTRACE_COMMON_SRCDIR)/hs_private.d | $(DtraceOutDir)
+$(DtraceOutDir)/hs_private.h: $(DTRACE_COMMON_SRCDIR)/hs_private.d
 	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -h -o $@ -s $(DTRACE_COMMON_SRCDIR)/hs_private.d
 
-dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h
+dtrace_gen_headers: $(DtraceOutDir) $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h
 
-# The jhelper.d and hotspot probes are separated into two different SUNW_dof sections.
-# Now the jhelper.d is built without the -Xlazyload flag.
-$(DTRACE_JHELPER.o) : $(DTRACE_JHELPER).d $(JVMOFFS).h $(JVMOFFS)Index.h
-	@echo Compiling $(DTRACE_JHELPER).d
-	$(QUIETLY) $(DTRACE_PROG) $(DTRACE_OPTS) -C -I. -G -o $@ -s $(DTRACE_JHELPER).d
 
 .PHONY: dtraceCheck
 
@@ -382,7 +372,7 @@ endif # ifneq ("$(patchDtraceFound)", "")
 ifneq ("${DTRACE_PROG}", "")
 ifeq ("${HOTSPOT_DISABLE_DTRACE_PROBES}", "")
 
-DTRACE_OBJS = $(DTRACE.o) $(JVMOFFS.o) $(DTRACE_JHELPER.o)
+DTRACE_OBJS = $(DTRACE.o) $(JVMOFFS.o)
 CFLAGS += $(DTRACE_INCL) -DDTRACE_ENABLED
 MAPFILE_DTRACE_OPT = $(MAPFILE_DTRACE)
 
