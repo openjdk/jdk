@@ -602,48 +602,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call, Regist
 
 // End of helpers
 
-// ============================================================================
-// Various method entries
-//
-
-// Empty method, generate a very fast return. We must skip this entry if
-// someone's debugging, indicated by the flag
-// "interp_mode" in the Thread obj.
-// Note: empty methods are generated mostly methods that do assertions, which are
-// disabled in the "java opt build".
-address TemplateInterpreterGenerator::generate_empty_entry(void) {
-  if (!UseFastEmptyMethods) {
-    NOT_PRODUCT(__ should_not_reach_here();)
-    return Interpreter::entry_for_kind(Interpreter::zerolocals);
-  }
-
-  Label Lslow_path;
-  const Register Rjvmti_mode = R11_scratch1;
-  address entry = __ pc();
-
-  __ lwz(Rjvmti_mode, thread_(interp_only_mode));
-  __ cmpwi(CCR0, Rjvmti_mode, 0);
-  __ bne(CCR0, Lslow_path); // jvmti_mode!=0
-
-  // Noone's debuggin: Simply return.
-  // Pop c2i arguments (if any) off when we return.
-#ifdef ASSERT
-    __ ld(R9_ARG7, 0, R1_SP);
-    __ ld(R10_ARG8, 0, R21_sender_SP);
-    __ cmpd(CCR0, R9_ARG7, R10_ARG8);
-    __ asm_assert_eq("backlink", 0x545);
-#endif // ASSERT
-  __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
-
-  // And we're done.
-  __ blr();
-
-  __ bind(Lslow_path);
-  __ branch_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals), R11_scratch1);
-  __ flush();
-
-  return entry;
-}
 
 // Support abs and sqrt like in compiler.
 // For others we can use a normal (native) entry.
@@ -1289,45 +1247,6 @@ address TemplateInterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry;
 }
 
-// =============================================================================
-// Entry points
-
-address AbstractInterpreterGenerator::generate_method_entry(
-                                        AbstractInterpreter::MethodKind kind) {
-  // Determine code generation flags.
-  bool synchronized = false;
-  address entry_point = NULL;
-
-  switch (kind) {
-  case Interpreter::zerolocals             :                                                                             break;
-  case Interpreter::zerolocals_synchronized: synchronized = true;                                                        break;
-  case Interpreter::native                 : entry_point = ((InterpreterGenerator*) this)->generate_native_entry(false); break;
-  case Interpreter::native_synchronized    : entry_point = ((InterpreterGenerator*) this)->generate_native_entry(true);  break;
-  case Interpreter::empty                  : entry_point = ((InterpreterGenerator*) this)->generate_empty_entry();       break;
-  case Interpreter::accessor               : entry_point = ((InterpreterGenerator*) this)->generate_accessor_entry();    break;
-  case Interpreter::abstract               : entry_point = ((InterpreterGenerator*) this)->generate_abstract_entry();    break;
-
-  case Interpreter::java_lang_math_sin     : // fall thru
-  case Interpreter::java_lang_math_cos     : // fall thru
-  case Interpreter::java_lang_math_tan     : // fall thru
-  case Interpreter::java_lang_math_abs     : // fall thru
-  case Interpreter::java_lang_math_log     : // fall thru
-  case Interpreter::java_lang_math_log10   : // fall thru
-  case Interpreter::java_lang_math_sqrt    : // fall thru
-  case Interpreter::java_lang_math_pow     : // fall thru
-  case Interpreter::java_lang_math_exp     : entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);    break;
-  case Interpreter::java_lang_ref_reference_get
-                                           : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-  default                                  : ShouldNotReachHere();                                                       break;
-  }
-
-  if (entry_point) {
-    return entry_point;
-  }
-
-  return ((InterpreterGenerator*) this)->generate_normal_entry(synchronized);
-}
-
 // These should never be compiled since the interpreter will prefer
 // the compiled version to the intrinsic version.
 bool AbstractInterpreter::can_be_compiled(methodHandle m) {
@@ -1355,7 +1274,7 @@ int AbstractInterpreter::size_activation(int max_stack,
                                          int callee_locals,
                                          bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
-  // in AbstractInterpreterGenerator::generate_method_entry.
+  // in InterpreterGenerator::generate_fixed_frame.
   assert(Interpreter::stackElementWords == 1, "sanity");
   const int max_alignment_space = StackAlignmentInBytes / Interpreter::stackElementSize;
   const int abi_scratch = is_top_frame ? (frame::abi_reg_args_size / Interpreter::stackElementSize) :
