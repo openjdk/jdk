@@ -1104,11 +1104,11 @@ public final class Context {
                 return null;
             }
 
-            if (env._print_ast) {
+            if (env._print_ast || functionNode.getFlag(FunctionNode.IS_PRINT_AST)) {
                 getErr().println(new ASTWriter(functionNode));
             }
 
-            if (env._print_parse) {
+            if (env._print_parse || functionNode.getFlag(FunctionNode.IS_PRINT_PARSE)) {
                 getErr().println(new PrintVisitor(functionNode, true, false));
             }
         }

@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.*;
+
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
@@ -228,6 +230,37 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Is this declared in a dynamic context */
     public static final int IN_DYNAMIC_CONTEXT = 1 << 17;
 
+    /**
+     * The following flags are derived from directive comments within this function.
+     * Note that even IS_STRICT is one such flag but that requires special handling.
+     */
+
+    // parser, lower debugging this function
+    public static final int IS_PRINT_PARSE       = 1 << 18;
+    public static final int IS_PRINT_LOWER_PARSE = 1 << 19;
+    public static final int IS_PRINT_AST         = 1 << 20;
+    public static final int IS_PRINT_LOWER_AST   = 1 << 21;
+    public static final int IS_PRINT_SYMBOLS     = 1 << 22;
+
+    /** profile callsites in this function? */
+    public static final int IS_PROFILE         = 1 << 23;
+
+    // callsite tracing, profiling within this function
+    /** trace callsite enterexit in this function? */
+    public static final int IS_TRACE_ENTEREXIT = 1 << 24;
+
+    /** trace callsite misses in this function? */
+    public static final int IS_TRACE_MISSES    = 1 << 25;
+
+    /** trace callsite values in this function? */
+    public static final int IS_TRACE_VALUES    = 1 << 26;
+
+    /** extension callsite flags mask */
+    public static final int EXTENSION_CALLSITE_FLAGS = IS_PRINT_PARSE |
+        IS_PRINT_LOWER_PARSE | IS_PRINT_AST | IS_PRINT_LOWER_AST |
+        IS_PRINT_SYMBOLS | IS_PROFILE | IS_TRACE_ENTEREXIT |
+        IS_TRACE_MISSES | IS_TRACE_VALUES;
+
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
@@ -354,6 +387,41 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
+     * Get additional callsite flags to be used specific to this function.
+     *
+     * @return callsite flags
+     */
+    public int getCallSiteFlags() {
+        int callsiteFlags = 0;
+        if (getFlag(IS_STRICT)) {
+            callsiteFlags |= CALLSITE_STRICT;
+        }
+
+        // quick check for extension callsite flags turned on by directives.
+        if ((flags & EXTENSION_CALLSITE_FLAGS) == 0) {
+            return callsiteFlags;
+        }
+
+        if (getFlag(IS_PROFILE)) {
+            callsiteFlags |= CALLSITE_PROFILE;
+        }
+
+        if (getFlag(IS_TRACE_MISSES)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_MISSES;
+        }
+
+        if (getFlag(IS_TRACE_VALUES)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_ENTEREXIT | CALLSITE_TRACE_VALUES;
+        }
+
+        if (getFlag(IS_TRACE_ENTEREXIT)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_ENTEREXIT;
+        }
+
+        return callsiteFlags;
+    }
+
+    /**
      * Get the source for this function
      * @return the source
      */
@@ -387,6 +455,38 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     public static String getSourceName(final Source source) {
         final String explicitURL = source.getExplicitURL();
         return explicitURL != null ? explicitURL : source.getName();
+    }
+
+    /**
+     * Function to parse nashorn per-function extension directive comments.
+     *
+     * @param directive nashorn extension directive string
+     * @return integer flag for the given directive.
+     */
+    public static int getDirectiveFlag(final String directive) {
+        switch (directive) {
+            case "nashorn callsite trace enterexit":
+                return IS_TRACE_ENTEREXIT;
+            case "nashorn callsite trace misses":
+                return IS_TRACE_MISSES;
+            case "nashorn callsite trace objects":
+                return IS_TRACE_VALUES;
+            case "nashorn callsite profile":
+                return IS_PROFILE;
+            case "nashorn print parse":
+                return IS_PRINT_PARSE;
+            case "nashorn print lower parse":
+                return IS_PRINT_LOWER_PARSE;
+            case "nashorn print ast":
+                return IS_PRINT_AST;
+            case "nashorn print lower ast":
+                return IS_PRINT_LOWER_AST;
+            case "nashorn print symbols":
+                return IS_PRINT_SYMBOLS;
+            default:
+                // unknown/unsupported directive
+                return 0;
+        }
     }
 
     /**

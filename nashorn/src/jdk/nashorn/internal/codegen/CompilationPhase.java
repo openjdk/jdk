@@ -280,12 +280,12 @@ enum CompilationPhase {
             final PrintWriter       err  = senv.getErr();
 
             //TODO separate phase for the debug printouts for abstraction and clarity
-            if (senv._print_lower_ast) {
+            if (senv._print_lower_ast || fn.getFlag(FunctionNode.IS_PRINT_LOWER_AST)) {
                 err.println("Lower AST for: " + quote(newFunctionNode.getName()));
                 err.println(new ASTWriter(newFunctionNode));
             }
 
-            if (senv._print_lower_parse) {
+            if (senv._print_lower_parse || fn.getFlag(FunctionNode.IS_PRINT_LOWER_PARSE)) {
                 err.println("Lower AST for: " + quote(newFunctionNode.getName()));
                 err.println(new PrintVisitor(newFunctionNode));
             }
