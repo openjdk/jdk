@@ -184,6 +184,7 @@ Klass::Klass() {
   // The klass doesn't have any references at this point.
   clear_modified_oops();
   clear_accumulated_modified_oops();
+  _shared_class_path_index = -1;
 }
 
 jint Klass::array_layout_helper(BasicType etype) {
@@ -500,13 +501,12 @@ void Klass::remove_unshareable_info() {
   set_class_loader_data(NULL);
 }
 
-void Klass::restore_unshareable_info(TRAPS) {
+void Klass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
   TRACE_INIT_ID(this);
   // If an exception happened during CDS restore, some of these fields may already be
   // set.  We leave the class on the CLD list, even if incomplete so that we don't
   // modify the CLD list outside a safepoint.
   if (class_loader_data() == NULL) {
-    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     // Restore class_loader_data to the null class loader data
     set_class_loader_data(loader_data);
 
@@ -515,12 +515,12 @@ void Klass::restore_unshareable_info(TRAPS) {
     loader_data->add_class(this);
   }
 
-  // Recreate the class mirror.  The protection_domain is always null for
-  // boot loader, for now.
+  // Recreate the class mirror.
   // Only recreate it if not present.  A previous attempt to restore may have
   // gotten an OOM later but keep the mirror if it was created.
   if (java_mirror() == NULL) {
-    java_lang_Class::create_mirror(this, Handle(NULL), Handle(NULL), CHECK);
+    Handle loader = loader_data->class_loader();
+    java_lang_Class::create_mirror(this, loader, protection_domain, CHECK);
   }
 }
 

@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/classLoader.hpp"
 #include "classfile/javaAssertions.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/symbolTable.hpp"
@@ -43,6 +44,7 @@
 #include "services/memTracker.hpp"
 #include "utilities/defaultStream.hpp"
 #include "utilities/macros.hpp"
+#include "utilities/stringUtils.hpp"
 #include "utilities/taskqueue.hpp"
 #if INCLUDE_ALL_GCS
 #include "gc_implementation/concurrentMarkSweep/compactibleFreeListSpace.hpp"
@@ -301,6 +303,10 @@ static ObsoleteFlag obsolete_jvm_flags[] = {
   { "ReflectionWrapResolutionErrors",JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "VerifyReflectionBytecodes",     JDK_Version::jdk(9), JDK_Version::jdk(10) },
   { "AutoShutdownNMT",               JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#ifndef ZERO
+  { "UseFastAccessorMethods",        JDK_Version::jdk(9), JDK_Version::jdk(10) },
+  { "UseFastEmptyMethods",           JDK_Version::jdk(9), JDK_Version::jdk(10) },
+#endif // ZERO
   { NULL, JDK_Version(0), JDK_Version(0) }
 };
 
@@ -1071,16 +1077,6 @@ void Arguments::set_mode_flags(Mode mode) {
   UseCompiler                = true;
   UseLoopCounter             = true;
 
-#ifndef ZERO
-  // Turn these off for mixed and comp.  Leave them on for Zero.
-  if (FLAG_IS_DEFAULT(UseFastAccessorMethods)) {
-    UseFastAccessorMethods = (mode == _int);
-  }
-  if (FLAG_IS_DEFAULT(UseFastEmptyMethods)) {
-    UseFastEmptyMethods = (mode == _int);
-  }
-#endif
-
   // Default values may be platform/compiler dependent -
   // use the saved values
   ClipInlining               = Arguments::_ClipInlining;
@@ -1121,11 +1117,11 @@ void Arguments::set_mode_flags(Mode mode) {
 // Conflict: required to use shared spaces (-Xshare:on), but
 // incompatible command line options were chosen.
 
-static void no_shared_spaces() {
+static void no_shared_spaces(const char* message) {
   if (RequireSharedSpaces) {
     jio_fprintf(defaultStream::error_stream(),
       "Class data sharing is inconsistent with other specified options.\n");
-    vm_exit_during_initialization("Unable to use shared archive.", NULL);
+    vm_exit_during_initialization("Unable to use shared archive.", message);
   } else {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
   }
@@ -1587,7 +1583,7 @@ void Arguments::set_ergonomics_flags() {
   // at link time, or rewrite bytecodes in non-shared methods.
   if (!DumpSharedSpaces && !RequireSharedSpaces &&
       (FLAG_IS_DEFAULT(UseSharedSpaces) || !UseSharedSpaces)) {
-    no_shared_spaces();
+    no_shared_spaces("COMPILER2 default: -Xshare:auto | off, have to manually setup to on.");
   }
 #endif
 
@@ -3308,6 +3304,15 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     }
   }
 
+  // PrintSharedArchiveAndExit will turn on
+  //   -Xshare:on
+  //   -XX:+TraceClassPaths
+  if (PrintSharedArchiveAndExit) {
+    FLAG_SET_CMDLINE(bool, UseSharedSpaces, true);
+    FLAG_SET_CMDLINE(bool, RequireSharedSpaces, true);
+    FLAG_SET_CMDLINE(bool, TraceClassPaths, true);
+  }
+
   // Change the default value for flags  which have different default values
   // when working with older JDKs.
 #ifdef LINUX
@@ -3316,7 +3321,53 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
     FLAG_SET_DEFAULT(UseLinuxPosixThreadCPUClocks, false);
   }
 #endif // LINUX
+  fix_appclasspath();
   return JNI_OK;
+}
+
+// Remove all empty paths from the app classpath (if IgnoreEmptyClassPaths is enabled)
+//
+// This is necessary because some apps like to specify classpath like -cp foo.jar:${XYZ}:bar.jar
+// in their start-up scripts. If XYZ is empty, the classpath will look like "-cp foo.jar::bar.jar".
+// Java treats such empty paths as if the user specified "-cp foo.jar:.:bar.jar". I.e., an empty
+// path is treated as the current directory.
+//
+// This causes problems with CDS, which requires that all directories specified in the classpath
+// must be empty. In most cases, applications do NOT want to load classes from the current
+// directory anyway. Adding -XX:+IgnoreEmptyClassPaths will make these applications' start-up
+// scripts compatible with CDS.
+void Arguments::fix_appclasspath() {
+  if (IgnoreEmptyClassPaths) {
+    const char separator = *os::path_separator();
+    const char* src = _java_class_path->value();
+
+    // skip over all the leading empty paths
+    while (*src == separator) {
+      src ++;
+    }
+
+    char* copy = AllocateHeap(strlen(src) + 1, mtInternal);
+    strncpy(copy, src, strlen(src) + 1);
+
+    // trim all trailing empty paths
+    for (char* tail = copy + strlen(copy) - 1; tail >= copy && *tail == separator; tail--) {
+      *tail = '\0';
+    }
+
+    char from[3] = {separator, separator, '\0'};
+    char to  [2] = {separator, '\0'};
+    while (StringUtils::replace_no_expand(copy, from, to) > 0) {
+      // Keep replacing "::" -> ":" until we have no more "::" (non-windows)
+      // Keep replacing ";;" -> ";" until we have no more ";;" (windows)
+    }
+
+    _java_class_path->set_value(copy);
+    FreeHeap(copy); // a copy was made by set_value, so don't need this anymore
+  }
+
+  if (!PrintSharedArchiveAndExit) {
+    ClassLoader::trace_class_path("[classpath: ", _java_class_path->value());
+  }
 }
 
 jint Arguments::finalize_vm_init_args(SysClassPath* scp_p, bool scp_assembly_required) {
@@ -3489,9 +3540,8 @@ void Arguments::set_shared_spaces_flags() {
         "Cannot dump shared archive when UseCompressedOops or UseCompressedClassPointers is off.", NULL);
     }
   } else {
-    // UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.
     if (!UseCompressedOops || !UseCompressedClassPointers) {
-      no_shared_spaces();
+      no_shared_spaces("UseCompressedOops and UseCompressedClassPointers must be on for UseSharedSpaces.");
     }
 #endif
   }
@@ -3731,7 +3781,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     FLAG_SET_DEFAULT(UseSharedSpaces, false);
     FLAG_SET_DEFAULT(PrintSharedSpaces, false);
   }
-  no_shared_spaces();
+  no_shared_spaces("CDS Disabled");
 #endif // INCLUDE_CDS
 
   return JNI_OK;
