@@ -246,6 +246,8 @@ public class CompileJavaPackages implements Transformer {
                     requests[ii].run();
                     // If there was an error, then stop early when running single threaded.
                     if (rn[i].returnCode != 0) {
+                        Log.info(rn[i].stdout);
+                        Log.error(rn[i].stderr);
                         return false;
                     }
                 }
@@ -262,6 +264,8 @@ public class CompileJavaPackages implements Transformer {
         for (int i=0; i<numCompiles; ++i) {
             if (compileChunks[i].srcs.size() > 0) {
                 if (rn[i].returnCode != 0) {
+                    Log.info(rn[i].stdout);
+                    Log.error(rn[i].stderr);
                     rc = false;
                 }
             }
