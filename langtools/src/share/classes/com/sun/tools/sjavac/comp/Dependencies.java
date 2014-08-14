@@ -34,6 +34,7 @@ import java.util.Map;
 import java.util.Set;
 
 import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.Name;
@@ -154,7 +155,7 @@ public class Dependencies {
         Name n = ((ClassSymbol)e).fullname;
         Name p = ((ClassSymbol)e).packge().fullname;
         StringBuffer sb = publicApiPerClass.get(n);
-        assert(sb == null);
+        Assert.check(sb == null);
         sb = new StringBuffer();
         PubapiVisitor v = new PubapiVisitor(sb);
         v.visit(e);
