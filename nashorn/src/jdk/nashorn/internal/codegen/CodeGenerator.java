@@ -289,7 +289,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the correct flags for a call site in the current function
      */
     int getCallSiteFlags() {
-        return lc.getCurrentFunction().isStrict() ? callSiteFlags | CALLSITE_STRICT : callSiteFlags;
+        return lc.getCurrentFunction().getCallSiteFlags() | callSiteFlags;
     }
 
     /**
@@ -1764,7 +1764,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         // Debugging: print symbols? @see --print-symbols flag
-        printSymbols(block, (isFunctionBody ? "Function " : "Block in ") + (function.getIdent() == null ? "<anonymous>" : function.getIdent().getName()));
+        printSymbols(block, function, (isFunctionBody ? "Function " : "Block in ") + (function.getIdent() == null ? "<anonymous>" : function.getIdent().getName()));
     }
 
     /**
@@ -4106,19 +4106,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * Debug code used to print symbols
      *
      * @param block the block we are in
+     * @param function the function we are in
      * @param ident identifier for block or function where applicable
      */
-    private void printSymbols(final Block block, final String ident) {
-        if (!compiler.getScriptEnvironment()._print_symbols) {
-            return;
+    private void printSymbols(final Block block, final FunctionNode function, final String ident) {
+        if (compiler.getScriptEnvironment()._print_symbols || function.getFlag(FunctionNode.IS_PRINT_SYMBOLS)) {
+            final PrintWriter out = compiler.getScriptEnvironment().getErr();
+            out.println("[BLOCK in '" + ident + "']");
+            if (!block.printSymbols(out)) {
+                out.println("<no symbols>");
+            }
+            out.println();
         }
-
-        final PrintWriter out = compiler.getScriptEnvironment().getErr();
-        out.println("[BLOCK in '" + ident + "']");
-        if (!block.printSymbols(out)) {
-            out.println("<no symbols>");
-        }
-        out.println();
     }
 
 
