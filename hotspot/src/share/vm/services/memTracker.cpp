@@ -77,7 +77,12 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
 }
 
 void MemTracker::init() {
-  if (tracking_level() >= NMT_summary) {
+  NMT_TrackingLevel level = tracking_level();
+  if (level >= NMT_summary) {
+    if (!VirtualMemoryTracker::late_initialize(level)) {
+      shutdown();
+      return;
+    }
     _query_lock = new (std::nothrow) Mutex(Monitor::max_nonleaf, "NMT_queryLock");
     // Already OOM. It is unlikely, but still have to handle it.
     if (_query_lock == NULL) {
