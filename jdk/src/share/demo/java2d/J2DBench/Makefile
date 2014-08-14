@@ -72,6 +72,7 @@ J2DANALYZER_CLASSES = \
 
 J2DBENCH_RESOURCES = \
 	$(CLASSES)/j2dbench/tests/iio/images \
+	$(CLASSES)/j2dbench/tests/cmm/images \
 	$(CLASSES)/j2dbench/tests/text/textdata
 
 SCM_DIRs = .hg .svn CVS RCS SCCS Codemgr_wsdata deleted_files
@@ -101,6 +102,10 @@ $(CLASSES)/j2dbench/tests/text/textdata: $(RESOURCES)/textdata
 	cp -r $< $@
 	cd $@ && rm -rf $(SCM_DIRs)
 
+$(CLASSES)/j2dbench/tests/cmm/images: $(RESOURCES)/cmm_images
+	cp -r $< $@
+	cd $@ && rm -rf $(SCM_DIRs)
+
 $(CLASSES)/j2dbench.manifest:
 	echo "Main-Class: j2dbench.J2DBench" > $@
 
@@ -115,7 +120,7 @@ $(CLASSES):
 mkdirs: $(DIST) $(CLASSES)
 
 $(CLASSES)/j2dbench/%.class: $(SOURCEPATH)/j2dbench/%.java
-	javac -source 1.2 -target 1.2 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
+	javac -g:none -source 1.6 -target 1.6 -d $(CLASSES) -sourcepath $(SOURCEPATH) $<
 
 clean:
 	rm -rf $(CLASSES)
