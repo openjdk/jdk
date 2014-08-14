@@ -3596,9 +3596,9 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
 #if INCLUDE_NMT
     if (match_option(option, "-XX:NativeMemoryTracking", &tail)) {
       // The launcher did not setup nmt environment variable properly.
-//      if (!MemTracker::check_launcher_nmt_support(tail)) {
-//        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
-//      }
+      if (!MemTracker::check_launcher_nmt_support(tail)) {
+        warning("Native Memory Tracking did not setup properly, using wrong launcher?");
+      }
 
       // Verify if nmt option is valid.
       if (MemTracker::verify_nmt_option()) {
