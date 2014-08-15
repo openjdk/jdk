@@ -186,8 +186,9 @@ void ArrayKlass::remove_unshareable_info() {
   set_component_mirror(NULL);
 }
 
-void ArrayKlass::restore_unshareable_info(TRAPS) {
-  Klass::restore_unshareable_info(CHECK);
+void ArrayKlass::restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS) {
+  assert(loader_data == ClassLoaderData::the_null_class_loader_data(), "array classes belong to null loader");
+  Klass::restore_unshareable_info(loader_data, protection_domain, CHECK);
   // Klass recreates the component mirror also
 }
 
