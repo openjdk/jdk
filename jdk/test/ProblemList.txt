@@ -295,4 +295,7 @@ sun/tools/jstatd/TestJstatdPort.java                    generic-all
 # 8046355
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
+# 6456333
+sun/tools/jps/TestJpsJarRelative.java				generic-all
+
 ############################################################################
