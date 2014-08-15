@@ -392,7 +392,7 @@ public class SynthSliderUI extends BasicSliderUI
                 trackRect.x = insetCache.left;
                 trackRect.width = contentRect.width;
 
-                Dictionary<Integer, JComponent> dictionary = slider.getLabelTable();
+                Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
                 if (dictionary != null) {
                     int minValue = slider.getMinimum();
                     int maxValue = slider.getMaximum();

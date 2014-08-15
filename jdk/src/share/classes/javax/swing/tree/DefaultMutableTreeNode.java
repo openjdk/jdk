@@ -1317,7 +1317,7 @@ public class DefaultMutableTreeNode implements Cloneable,
     }
 
     private final class PreorderEnumeration implements Enumeration<TreeNode> {
-        private final Stack<Enumeration<TreeNode>> stack = new Stack<>();
+        private final Stack<Enumeration<? extends TreeNode>> stack = new Stack<>();
 
         public PreorderEnumeration(TreeNode rootNode) {
             super();
@@ -1331,10 +1331,9 @@ public class DefaultMutableTreeNode implements Cloneable,
         }
 
         public TreeNode nextElement() {
-            Enumeration<TreeNode> enumer = stack.peek();
+            Enumeration<? extends TreeNode> enumer = stack.peek();
             TreeNode    node = enumer.nextElement();
-            @SuppressWarnings("unchecked")
-            Enumeration<TreeNode> children = node.children();
+            Enumeration<? extends TreeNode> children = node.children();
 
             if (!enumer.hasMoreElements()) {
                 stack.pop();
@@ -1351,7 +1350,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
     final class PostorderEnumeration implements Enumeration<TreeNode> {
         protected TreeNode root;
-        protected Enumeration<TreeNode> children;
+        protected Enumeration<? extends TreeNode> children;
         protected Enumeration<TreeNode> subtree;
 
         public PostorderEnumeration(TreeNode rootNode) {
