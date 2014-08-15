@@ -74,6 +74,7 @@
 #include "runtime/signature.hpp"
 #include "runtime/thread.inline.hpp"
 #include "runtime/vm_operations.hpp"
+#include "services/memTracker.hpp"
 #include "services/runtimeService.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/defaultStream.hpp"
@@ -2697,6 +2698,7 @@ static char* get_bad_address() {
     if (bad_address != NULL) {
       os::protect_memory(bad_address, size, os::MEM_PROT_READ,
                          /*is_committed*/false);
+      MemTracker::record_virtual_memory_type((void*)bad_address, mtInternal);
     }
   }
   return bad_address;
@@ -3857,6 +3859,7 @@ void TestOldSize_test();
 void TestKlass_test();
 void TestBitMap_test();
 void TestAsUtf8();
+void Test_linked_list();
 #if INCLUDE_ALL_GCS
 void TestOldFreeSpaceCalculation_test();
 void TestG1BiasedArray_test();
@@ -3887,6 +3890,7 @@ void execute_internal_vm_tests() {
     run_unit_test(TestBitMap_test());
     run_unit_test(TestAsUtf8());
     run_unit_test(ObjectMonitor::sanity_checks());
+    run_unit_test(Test_linked_list());
 #if INCLUDE_VM_STRUCTS
     run_unit_test(VMStructs::test());
 #endif

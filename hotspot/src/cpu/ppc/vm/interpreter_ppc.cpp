@@ -428,6 +428,19 @@ address AbstractInterpreterGenerator::generate_result_handler_for(BasicType type
   return entry;
 }
 
+
+// Call an accessor method (assuming it is resolved, otherwise drop into
+// vanilla (slow path) entry.
+address InterpreterGenerator::generate_jump_to_normal_entry(void) {
+  address entry = __ pc();
+  address normal_entry = Interpreter::entry_for_kind(Interpreter::zerolocals);
+  assert(normal_entry != NULL, "should already be generated.");
+  __ branch_to_entry(normal_entry, R11_scratch1);
+  __ flush();
+
+  return entry;
+}
+
 // Abstract method entry.
 //
 address InterpreterGenerator::generate_abstract_entry(void) {
@@ -485,203 +498,6 @@ address InterpreterGenerator::generate_abstract_entry(void) {
   return entry;
 }
 
-// Call an accessor method (assuming it is resolved, otherwise drop into
-// vanilla (slow path) entry.
-address InterpreterGenerator::generate_accessor_entry(void) {
-  if (!UseFastAccessorMethods && (!FLAG_IS_ERGO(UseFastAccessorMethods))) {
-    return NULL;
-  }
-
-  Label Lslow_path, Lacquire;
-
-  const Register
-         Rclass_or_obj = R3_ARG1,
-         Rconst_method = R4_ARG2,
-         Rcodes        = Rconst_method,
-         Rcpool_cache  = R5_ARG3,
-         Rscratch      = R11_scratch1,
-         Rjvmti_mode   = Rscratch,
-         Roffset       = R12_scratch2,
-         Rflags        = R6_ARG4,
-         Rbtable       = R7_ARG5;
-
-  static address branch_table[number_of_states];
-
-  address entry = __ pc();
-
-  // Check for safepoint:
-  // Ditch this, real man don't need safepoint checks.
-
-  // Also check for JVMTI mode
-  // Check for null obj, take slow path if so.
-  __ ld(Rclass_or_obj, Interpreter::stackElementSize, CC_INTERP_ONLY(R17_tos) NOT_CC_INTERP(R15_esp));
-  __ lwz(Rjvmti_mode, thread_(interp_only_mode));
-  __ cmpdi(CCR1, Rclass_or_obj, 0);
-  __ cmpwi(CCR0, Rjvmti_mode, 0);
-  __ crorc(/*CCR0 eq*/2, /*CCR1 eq*/4+2, /*CCR0 eq*/2);
-  __ beq(CCR0, Lslow_path); // this==null or jvmti_mode!=0
-
-  // Do 2 things in parallel:
-  // 1. Load the index out of the first instruction word, which looks like this:
-  //    <0x2a><0xb4><index (2 byte, native endianess)>.
-  // 2. Load constant pool cache base.
-  __ ld(Rconst_method, in_bytes(Method::const_offset()), R19_method);
-  __ ld(Rcpool_cache, in_bytes(ConstMethod::constants_offset()), Rconst_method);
-
-  __ lhz(Rcodes, in_bytes(ConstMethod::codes_offset()) + 2, Rconst_method); // Lower half of 32 bit field.
-  __ ld(Rcpool_cache, ConstantPool::cache_offset_in_bytes(), Rcpool_cache);
-
-  // Get the const pool entry by means of <index>.
-  const int codes_shift = exact_log2(in_words(ConstantPoolCacheEntry::size()) * BytesPerWord);
-  __ slwi(Rscratch, Rcodes, codes_shift); // (codes&0xFFFF)<<codes_shift
-  __ add(Rcpool_cache, Rscratch, Rcpool_cache);
-
-  // Check if cpool cache entry is resolved.
-  // We are resolved if the indices offset contains the current bytecode.
-  ByteSize cp_base_offset = ConstantPoolCache::base_offset();
-  // Big Endian:
-  __ lbz(Rscratch, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::indices_offset()) + 7 - 2, Rcpool_cache);
-  __ cmpwi(CCR0, Rscratch, Bytecodes::_getfield);
-  __ bne(CCR0, Lslow_path);
-  __ isync(); // Order succeeding loads wrt. load of _indices field from cpool_cache.
-
-  // Finally, start loading the value: Get cp cache entry into regs.
-  __ ld(Rflags, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::flags_offset()), Rcpool_cache);
-  __ ld(Roffset, in_bytes(cp_base_offset) + in_bytes(ConstantPoolCacheEntry::f2_offset()), Rcpool_cache);
-
-  // Following code is from templateTable::getfield_or_static
-  // Load pointer to branch table
-  __ load_const_optimized(Rbtable, (address)branch_table, Rscratch);
-
-  // Get volatile flag
-  __ rldicl(Rscratch, Rflags, 64-ConstantPoolCacheEntry::is_volatile_shift, 63); // extract volatile bit
-  // note: sync is needed before volatile load on PPC64
-
-  // Check field type
-  __ rldicl(Rflags, Rflags, 64-ConstantPoolCacheEntry::tos_state_shift, 64-ConstantPoolCacheEntry::tos_state_bits);
-
-#ifdef ASSERT
-  Label LFlagInvalid;
-  __ cmpldi(CCR0, Rflags, number_of_states);
-  __ bge(CCR0, LFlagInvalid);
-
-  __ ld(R9_ARG7, 0, R1_SP);
-  __ ld(R10_ARG8, 0, R21_sender_SP);
-  __ cmpd(CCR0, R9_ARG7, R10_ARG8);
-  __ asm_assert_eq("backlink", 0x543);
-#endif // ASSERT
-  __ mr(R1_SP, R21_sender_SP); // Cut the stack back to where the caller started.
-
-  // Load from branch table and dispatch (volatile case: one instruction ahead)
-  __ sldi(Rflags, Rflags, LogBytesPerWord);
-  __ cmpwi(CCR6, Rscratch, 1); // volatile?
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ sldi(Rscratch, Rscratch, exact_log2(BytesPerInstWord)); // volatile ? size of 1 instruction : 0
-  }
-  __ ldx(Rbtable, Rbtable, Rflags);
-
-  if (support_IRIW_for_not_multiple_copy_atomic_cpu) {
-    __ subf(Rbtable, Rscratch, Rbtable); // point to volatile/non-volatile entry point
-  }
-  __ mtctr(Rbtable);
-  __ bctr();
-
-#ifdef ASSERT
-  __ bind(LFlagInvalid);
-  __ stop("got invalid flag", 0x6541);
-
-  bool all_uninitialized = true,
-       all_initialized   = true;
-  for (int i = 0; i<number_of_states; ++i) {
-    all_uninitialized = all_uninitialized && (branch_table[i] == NULL);
-    all_initialized   = all_initialized   && (branch_table[i] != NULL);
-  }
-  assert(all_uninitialized != all_initialized, "consistency"); // either or
-
-  __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-  if (branch_table[vtos] == 0) branch_table[vtos] = __ pc(); // non-volatile_entry point
-  if (branch_table[dtos] == 0) branch_table[dtos] = __ pc(); // non-volatile_entry point
-  if (branch_table[ftos] == 0) branch_table[ftos] = __ pc(); // non-volatile_entry point
-  __ stop("unexpected type", 0x6551);
-#endif
-
-  if (branch_table[itos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[itos] = __ pc(); // non-volatile_entry point
-    __ lwax(R3_RET, Rclass_or_obj, Roffset);
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  if (branch_table[ltos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[ltos] = __ pc(); // non-volatile_entry point
-    __ ldx(R3_RET, Rclass_or_obj, Roffset);
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  if (branch_table[btos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[btos] = __ pc(); // non-volatile_entry point
-    __ lbzx(R3_RET, Rclass_or_obj, Roffset);
-    __ extsb(R3_RET, R3_RET);
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  if (branch_table[ctos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[ctos] = __ pc(); // non-volatile_entry point
-    __ lhzx(R3_RET, Rclass_or_obj, Roffset);
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  if (branch_table[stos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[stos] = __ pc(); // non-volatile_entry point
-    __ lhax(R3_RET, Rclass_or_obj, Roffset);
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  if (branch_table[atos] == 0) { // generate only once
-    __ align(32, 28, 28); // align load
-    __ fence(); // volatile entry point (one instruction before non-volatile_entry point)
-    branch_table[atos] = __ pc(); // non-volatile_entry point
-    __ load_heap_oop(R3_RET, (RegisterOrConstant)Roffset, Rclass_or_obj);
-    __ verify_oop(R3_RET);
-    //__ dcbt(R3_RET); // prefetch
-    __ beq(CCR6, Lacquire);
-    __ blr();
-  }
-
-  __ align(32, 12);
-  __ bind(Lacquire);
-  __ twi_0(R3_RET);
-  __ isync(); // acquire
-  __ blr();
-
-#ifdef ASSERT
-  for (int i = 0; i<number_of_states; ++i) {
-    assert(branch_table[i], "accessor_entry initialization");
-    //tty->print_cr("accessor_entry: branch_table[%d] = 0x%llx (opcode 0x%llx)", i, branch_table[i], *((unsigned int*)branch_table[i]));
-  }
-#endif
-
-  __ bind(Lslow_path);
-  __ branch_to_entry(Interpreter::entry_for_kind(Interpreter::zerolocals), Rscratch);
-  __ flush();
-
-  return entry;
-}
-
 // Interpreter intrinsic for WeakReference.get().
 // 1. Don't push a full blown frame and go on dispatching, but fetch the value
 //    into R8 and return quickly
@@ -713,7 +529,6 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
   //   and so we don't need to call the G1 pre-barrier. Thus we can use the
   //   regular method entry code to generate the NPE.
   //
-  // This code is based on generate_accessor_enty.
 
   address entry = __ pc();
 
@@ -768,7 +583,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
     return entry;
   } else {
-    return generate_accessor_entry();
+    return generate_jump_to_normal_entry();
   }
 }
 

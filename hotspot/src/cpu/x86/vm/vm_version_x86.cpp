@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_x86.hpp"
 
@@ -514,7 +515,7 @@ void VM_Version::get_processor_features() {
                (supports_tscinv() ? ", tscinv": ""),
                (supports_bmi1() ? ", bmi1" : ""),
                (supports_bmi2() ? ", bmi2" : ""));
-  _features_str = strdup(buf);
+  _features_str = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
