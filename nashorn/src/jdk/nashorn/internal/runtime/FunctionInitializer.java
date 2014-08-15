@@ -25,18 +25,16 @@
 
 package jdk.nashorn.internal.runtime;
 
-import jdk.nashorn.internal.codegen.CompileUnit;
-import jdk.nashorn.internal.codegen.FunctionSignature;
-import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.ir.FunctionNode;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
 import java.io.Serializable;
 import java.lang.invoke.MethodType;
 import java.util.Map;
-import java.util.TreeMap;
+import jdk.nashorn.internal.codegen.CompileUnit;
+import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.FunctionNode;
 
 /**
  * Class that contains information allowing us to look up a method handle implementing a JavaScript function
@@ -121,7 +119,7 @@ public final class FunctionInitializer implements Serializable {
      * Set the class implementing the function
      * @param code the class
      */
-    public void setCode(Class<?> code) {
+    public void setCode(final Class<?> code) {
         // Make sure code has not been set and has expected class name
         if (this.code != null) {
             throw new IllegalStateException("code already set");

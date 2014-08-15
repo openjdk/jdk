@@ -56,7 +56,6 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_SCOPE;
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.io.PrintWriter;
 import java.util.ArrayDeque;

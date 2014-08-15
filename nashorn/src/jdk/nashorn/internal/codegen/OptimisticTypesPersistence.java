@@ -40,8 +40,6 @@ import java.text.SimpleDateFormat;
 import java.util.Base64;
 import java.util.Date;
 import java.util.Map;
-import java.util.TreeMap;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;

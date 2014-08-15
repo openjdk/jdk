@@ -333,7 +333,7 @@ enum CompilationPhase {
                 if (phases.isRestOfCompilation()) {
                     sb.append("$restOf");
                 }
-                CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
+                final CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
                 assert newUnit != null;

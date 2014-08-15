@@ -37,7 +37,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -489,7 +488,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         assert initializers.size() == 1;
         final FunctionInitializer initializer = initializers.values().iterator().next();
 
-        Object[] constants = script.getConstants();
+        final Object[] constants = script.getConstants();
         for (int i = 0; i < constants.length; i++) {
             if (constants[i] instanceof RecompilableScriptFunctionData) {
                 // replace deserialized function data with the ones we already have

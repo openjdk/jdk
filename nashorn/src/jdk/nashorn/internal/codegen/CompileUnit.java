@@ -25,12 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
-import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
 /**
  * Used to track split class compilation.

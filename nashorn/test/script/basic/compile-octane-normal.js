@@ -38,5 +38,5 @@
  */
 
 var fn  = __DIR__ + 'compile-octane.js';
-var url = "file://" + fn; 
+var url = "file://" + fn;
 loadWithNewGlobal(new java.net.URL(url));

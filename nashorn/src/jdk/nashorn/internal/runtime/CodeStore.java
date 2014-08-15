@@ -25,11 +25,6 @@
 
 package jdk.nashorn.internal.runtime;
 
-import jdk.nashorn.internal.codegen.types.Type;
-import jdk.nashorn.internal.runtime.logging.DebugLogger;
-import jdk.nashorn.internal.runtime.logging.Loggable;
-import jdk.nashorn.internal.runtime.logging.Logger;
-
 import java.io.BufferedInputStream;
 import java.io.BufferedOutputStream;
 import java.io.File;
@@ -43,6 +38,10 @@ import java.security.AccessController;
 import java.security.PrivilegedActionException;
 import java.security.PrivilegedExceptionAction;
 import java.util.Map;
+import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
+import jdk.nashorn.internal.runtime.logging.Loggable;
+import jdk.nashorn.internal.runtime.logging.Logger;
 
 /**
  * A code cache for persistent caching of compiled scripts.
@@ -78,7 +77,7 @@ final class CodeStore implements Loggable {
     }
 
     @Override
-    public DebugLogger initLogger(Context context) {
+    public DebugLogger initLogger(final Context context) {
          return context.getLogger(getClass());
     }
 
