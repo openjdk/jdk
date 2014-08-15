@@ -397,10 +397,10 @@ public class BasicSliderUI extends SliderUI{
     protected boolean labelsHaveSameBaselines() {
         if (!checkedLabelBaselines) {
             checkedLabelBaselines = true;
-            Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+            Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
             if (dictionary != null) {
                 sameLabelBaselines = true;
-                Enumeration<JComponent> elements = dictionary.elements();
+                Enumeration<? extends JComponent> elements = dictionary.elements();
                 int baseline = -1;
                 while (elements.hasMoreElements()) {
                     JComponent label = elements.nextElement();
@@ -758,7 +758,7 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getWidthOfWidestLabel() {
-        Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+        Dictionary<?, ? extends JComponent> dictionary = slider.getLabelTable();
         int widest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
@@ -771,7 +771,7 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getHeightOfTallestLabel() {
-        Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+        Dictionary<?, ? extends JComponent> dictionary = slider.getLabelTable();
         int tallest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
@@ -876,7 +876,7 @@ public class BasicSliderUI extends SliderUI{
      * @since 1.6
      */
     protected Integer getLowestValue() {
-        Dictionary<Integer, JComponent> dictionary = slider.getLabelTable();
+        Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
 
         if (dictionary == null) {
             return null;
@@ -1134,7 +1134,7 @@ public class BasicSliderUI extends SliderUI{
     public void paintLabels( Graphics g ) {
         Rectangle labelBounds = labelRect;
 
-        Dictionary<Integer, JComponent> dictionary = slider.getLabelTable();
+        Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
         if ( dictionary != null ) {
             Enumeration<Integer> keys = dictionary.keys();
             int minValue = slider.getMinimum();

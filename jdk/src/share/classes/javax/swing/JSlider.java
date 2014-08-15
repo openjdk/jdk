@@ -138,7 +138,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     /**
      * {@code Dictionary} of what labels to draw at which values
      */
-    private Dictionary<Integer, JComponent> labelTable;
+    private Dictionary<Integer, ? extends JComponent> labelTable;
 
 
     /**
@@ -773,7 +773,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
         }
 
         // Check that there is a label with such image
-        Enumeration<JComponent> elements = labelTable.elements();
+        Enumeration<? extends JComponent> elements = labelTable.elements();
 
         while (elements.hasMoreElements()) {
             JComponent component = elements.nextElement();
@@ -797,7 +797,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @return the <code>Dictionary</code> containing labels and
      *    where to draw them
      */
-    public Dictionary<Integer, JComponent> getLabelTable() {
+    public Dictionary<Integer, ? extends JComponent> getLabelTable() {
 /*
         if ( labelTable == null && getMajorTickSpacing() > 0 ) {
             setLabelTable( createStandardLabels( getMajorTickSpacing() ) );
@@ -830,8 +830,8 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      *    attribute: visualUpdate true
      *  description: Specifies what labels will be drawn for any given value.
      */
-    public void setLabelTable( Dictionary<Integer, JComponent> labels ) {
-        Dictionary<Integer, JComponent> oldTable = labelTable;
+    public void setLabelTable( Dictionary<Integer, ? extends JComponent> labels ) {
+        Dictionary<Integer, ? extends JComponent> oldTable = labelTable;
         labelTable = labels;
         updateLabelUIs();
         firePropertyChange("labelTable", oldTable, labelTable );
@@ -852,7 +852,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
      * @see JComponent#updateUI
      */
     protected void updateLabelUIs() {
-        Dictionary<Integer, JComponent> labelTable = getLabelTable();
+        Dictionary<Integer, ? extends JComponent> labelTable = getLabelTable();
 
         if (labelTable == null) {
             return;
@@ -866,9 +866,9 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
     }
 
     private void updateLabelSizes() {
-        Dictionary<Integer, JComponent> labelTable = getLabelTable();
+        Dictionary<Integer, ? extends JComponent> labelTable = getLabelTable();
         if (labelTable != null) {
-            Enumeration<JComponent> labels = labelTable.elements();
+            Enumeration<? extends JComponent> labels = labelTable.elements();
             while (labels.hasMoreElements()) {
                 JComponent component = labels.nextElement();
                 component.setSize(component.getPreferredSize());
@@ -1017,7 +1017,7 @@ public class JSlider extends JComponent implements SwingConstants, Accessible {
 
         SmartHashtable table = new SmartHashtable( increment, start );
 
-        Dictionary<Integer, JComponent> labelTable = getLabelTable();
+        Dictionary<Integer, ? extends JComponent> labelTable = getLabelTable();
 
         if (labelTable != null && (labelTable instanceof PropertyChangeListener)) {
             removePropertyChangeListener((PropertyChangeListener) labelTable);
