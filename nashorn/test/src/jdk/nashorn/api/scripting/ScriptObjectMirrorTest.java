@@ -31,10 +31,10 @@ import static org.testng.Assert.assertTrue;
 import static org.testng.Assert.fail;
 
 import java.nio.ByteBuffer;
-import java.util.function.Function;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.function.Function;
 import javax.script.Bindings;
 import javax.script.Invocable;
 import javax.script.ScriptContext;
@@ -358,7 +358,7 @@ public class ScriptObjectMirrorTest {
         engine.eval("function apply(obj) { " +
             " return obj instanceof Packages.jdk.nashorn.api.scripting.ScriptObjectMirror; " +
             "}");
-        Function<Object,Object> func = invocable.getInterface(Function.class);
+        final Function<Object,Object> func = invocable.getInterface(Function.class);
         assertFalse((boolean)func.apply(engine.eval("({ x: 2 })")));
     }
 }

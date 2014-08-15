@@ -301,12 +301,12 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @param output data output
      * @throws IOException
      */
-    public static void writeTypeMap(Map<Integer, Type> typeMap, final DataOutput output) throws IOException {
+    public static void writeTypeMap(final Map<Integer, Type> typeMap, final DataOutput output) throws IOException {
         if (typeMap == null) {
             output.writeInt(0);
         } else {
             output.writeInt(typeMap.size());
-            for(Map.Entry<Integer, Type> e: typeMap.entrySet()) {
+            for(final Map.Entry<Integer, Type> e: typeMap.entrySet()) {
                 output.writeInt(e.getKey());
                 final byte typeChar;
                 final Type type = e.getValue();
@@ -331,7 +331,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @return type map
      * @throws IOException
      */
-    public static Map<Integer, Type> readTypeMap(DataInput input) throws IOException {
+    public static Map<Integer, Type> readTypeMap(final DataInput input) throws IOException {
         final int size = input.readInt();
         if (size == 0) {
             return null;

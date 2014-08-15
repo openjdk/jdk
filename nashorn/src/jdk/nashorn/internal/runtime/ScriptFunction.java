@@ -738,7 +738,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final Object[] varArgs = (Object[])args[paramCount - 1];
         // -1 'cause we're not passing the vararg array itself
         final int copiedArgCount = args.length - 1;
-        int varArgCount = varArgs.length;
+        final int varArgCount = varArgs.length;
 
         // Spread arguments for the delegate createApplyOrCallCall invocation.
         final Object[] spreadArgs = new Object[copiedArgCount + varArgCount];

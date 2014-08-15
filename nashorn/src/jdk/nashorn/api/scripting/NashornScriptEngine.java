@@ -40,7 +40,6 @@ import java.security.ProtectionDomain;
 import java.text.MessageFormat;
 import java.util.Locale;
 import java.util.ResourceBundle;
-
 import javax.script.AbstractScriptEngine;
 import javax.script.Bindings;
 import javax.script.Compilable;
@@ -51,7 +50,6 @@ import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
 import javax.script.ScriptException;
 import javax.script.SimpleBindings;
-
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;

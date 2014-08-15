@@ -611,7 +611,7 @@ public final class Source implements Loggable {
      * Set explicit source URL.
      * @param explicitURL URL set via sourceURL directive
      */
-    public void setExplicitURL(String explicitURL) {
+    public void setExplicitURL(final String explicitURL) {
         this.explicitURL = explicitURL;
     }
 

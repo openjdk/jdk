@@ -25,7 +25,12 @@
 
 package jdk.nashorn.internal.ir;
 
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.*;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROFILE;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_ENTEREXIT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_MISSES;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_VALUES;
 
 import java.util.Collections;
 import java.util.EnumSet;

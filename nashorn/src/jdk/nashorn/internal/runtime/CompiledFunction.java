@@ -532,7 +532,7 @@ final class CompiledFunction {
                 // after we grabbed it here, in which case we'll indeed do one busy relink immediately.
                 try {
                     wait();
-                } catch (InterruptedException e) {
+                } catch (final InterruptedException e) {
                     // Intentionally ignored. There's nothing meaningful we can do if we're interrupted
                 }
             } else {
