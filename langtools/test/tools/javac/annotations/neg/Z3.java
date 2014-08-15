@@ -1,6 +1,6 @@
 /*
  * @test /nodynamiccopyright/
- * @bug 4865660
+ * @bug 4865660 8054556
  * @summary implement "metadata" (attribute interfaces and program annotations)
  * @author gafter
  *
