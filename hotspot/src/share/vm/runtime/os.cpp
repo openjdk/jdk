@@ -1143,36 +1143,110 @@ char* os::format_boot_path(const char* format_string,
     return formatted_path;
 }
 
+// returns a PATH of all entries in the given directory that do not start with a '.'
+static char* expand_entries_to_path(char* directory, char fileSep, char pathSep) {
+  DIR* dir = os::opendir(directory);
+  if (dir == NULL) return NULL;
+
+  char* path = NULL;
+  size_t path_len = 0;  // path length including \0 terminator
+
+  size_t directory_len = strlen(directory);
+  struct dirent *entry;
+  char* dbuf = NEW_C_HEAP_ARRAY(char, os::readdir_buf_size(directory), mtInternal);
+  while ((entry = os::readdir(dir, (dirent *) dbuf)) != NULL) {
+    const char* name = entry->d_name;
+    if (name[0] == '.') continue;
+
+    size_t name_len = strlen(name);
+    size_t needed = directory_len + name_len + 2;
+    size_t new_len = path_len + needed;
+    if (path == NULL) {
+      path = NEW_C_HEAP_ARRAY(char, new_len, mtInternal);
+    } else {
+      path = REALLOC_C_HEAP_ARRAY(char, path, new_len, mtInternal);
+    }
+    if (path == NULL)
+      break;
+
+    // append <pathSep>directory<fileSep>name
+    char* p = path;
+    if (path_len > 0) {
+      p += (path_len -1);
+      *p = pathSep;
+      p++;
+    }
+
+    strcpy(p, directory);
+    p += directory_len;
+
+    *p = fileSep;
+    p++;
+
+    strcpy(p, name);
+    p += name_len;
+
+    path_len = new_len;
+  }
+
+  FREE_C_HEAP_ARRAY(char, dbuf, mtInternal);
+  os::closedir(dir);
+
+  return path;
+}
 
 bool os::set_boot_path(char fileSep, char pathSep) {
-    const char* home = Arguments::get_java_home();
-    int home_len = (int)strlen(home);
+  const char* home = Arguments::get_java_home();
+  int home_len = (int)strlen(home);
 
-    static const char* meta_index_dir_format = "%/lib/";
-    static const char* meta_index_format = "%/lib/meta-index";
-    char* meta_index = format_boot_path(meta_index_format, home, home_len, fileSep, pathSep);
-    if (meta_index == NULL) return false;
-    char* meta_index_dir = format_boot_path(meta_index_dir_format, home, home_len, fileSep, pathSep);
-    if (meta_index_dir == NULL) return false;
-    Arguments::set_meta_index_path(meta_index, meta_index_dir);
+  static const char* meta_index_dir_format = "%/lib/";
+  static const char* meta_index_format = "%/lib/meta-index";
+  char* meta_index = format_boot_path(meta_index_format, home, home_len, fileSep, pathSep);
+  if (meta_index == NULL) return false;
+  char* meta_index_dir = format_boot_path(meta_index_dir_format, home, home_len, fileSep, pathSep);
+  if (meta_index_dir == NULL) return false;
+  Arguments::set_meta_index_path(meta_index, meta_index_dir);
 
+  char* sysclasspath = NULL;
+
+  // images build if rt.jar exists
+  char* rt_jar = format_boot_path("%/lib/rt.jar", home, home_len, fileSep, pathSep);
+  if (rt_jar == NULL) return false;
+  struct stat st;
+  bool has_rt_jar = (os::stat(rt_jar, &st) == 0);
+  FREE_C_HEAP_ARRAY(char, rt_jar, mtInternal);
+
+  if (has_rt_jar) {
     // Any modification to the JAR-file list, for the boot classpath must be
     // aligned with install/install/make/common/Pack.gmk. Note: boot class
     // path class JARs, are stripped for StackMapTable to reduce download size.
     static const char classpath_format[] =
-        "%/lib/resources.jar:"
-        "%/lib/rt.jar:"
-        "%/lib/sunrsasign.jar:"
-        "%/lib/jsse.jar:"
-        "%/lib/jce.jar:"
-        "%/lib/charsets.jar:"
-        "%/lib/jfr.jar:"
-        "%/classes";
-    char* sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
-    if (sysclasspath == NULL) return false;
-    Arguments::set_sysclasspath(sysclasspath);
+      "%/lib/resources.jar:"
+      "%/lib/rt.jar:"
+      "%/lib/jsse.jar:"
+      "%/lib/jce.jar:"
+      "%/lib/charsets.jar:"
+      "%/lib/jfr.jar:"
+      "%/classes";
+    sysclasspath = format_boot_path(classpath_format, home, home_len, fileSep, pathSep);
+  } else {
+    // no rt.jar, check if developer build with exploded modules
+    char* modules_dir = format_boot_path("%/modules", home, home_len, fileSep, pathSep);
+    if (os::stat(modules_dir, &st) == 0) {
+      if ((st.st_mode & S_IFDIR) == S_IFDIR) {
+        sysclasspath = expand_entries_to_path(modules_dir, fileSep, pathSep);
+      }
+    }
 
-    return true;
+    // fallback to classes
+    if (sysclasspath == NULL)
+      sysclasspath = format_boot_path("%/classes", home, home_len, fileSep, pathSep);
+  }
+
+  if (sysclasspath == NULL) return false;
+  Arguments::set_sysclasspath(sysclasspath);
+
+  return true;
 }
 
 /*
