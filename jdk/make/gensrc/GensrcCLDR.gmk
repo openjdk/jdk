@@ -24,16 +24,29 @@
 #
 
 CLDRVERSION := 21.0.1
-CLDRSRCDIR := $(JDK_TOPDIR)/src/share/classes/sun/util/cldr/resources/$(subst .,_,$(CLDRVERSION))
+CLDRSRCDIR := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/$(subst .,_,$(CLDRVERSION))
 
-GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc
+GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc/jdk.localedata
+BASE_GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc/java.base
 
-CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/cldr/CLDRLocaleDataMetaInfo.java
+CLDR_METAINFO_FILE := $(BASE_GENSRC_DIR)/sun/util/cldr/CLDRLocaleDataMetaInfo.java
 
 $(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
     $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
-    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml)
-	$(MKDIR) -p $(@D)
+    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
+    $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(GENSRC_DIR)
 	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -o $(GENSRC_DIR)
+	$(MKDIR) -p $(BASE_GENSRC_DIR)/sun/text/resources/cldr
+	$(MKDIR) -p $(BASE_GENSRC_DIR)/sun/util/resources/cldr
+	$(RM) -r $(BASE_GENSRC_DIR)/sun/text/resources/cldr/en \
+	    $(BASE_GENSRC_DIR)/sun/util/resources/cldr/en
+	$(MV) $(GENSRC_DIR)/sun/text/resources/cldr/en $(BASE_GENSRC_DIR)/sun/text/resources/cldr/en
+	$(MV) $(GENSRC_DIR)/sun/util/resources/cldr/en $(BASE_GENSRC_DIR)/sun/util/resources/cldr/en
+	$(MV) $(GENSRC_DIR)/sun/text/resources/cldr/*.java $(BASE_GENSRC_DIR)/sun/text/resources/cldr
+	$(MV) $(GENSRC_DIR)/sun/util/resources/cldr/*.java $(BASE_GENSRC_DIR)/sun/util/resources/cldr
+	$(MKDIR) -p $(@D)
+	$(MV) $(GENSRC_DIR)/sun/util/cldr/CLDRLocaleDataMetaInfo.java $@
 
 GENSRC_CLDR := $(CLDR_METAINFO_FILE)
+GENSRC_JAVA_BASE += $(GENSRC_CLDR)

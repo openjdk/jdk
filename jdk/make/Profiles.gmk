@@ -265,11 +265,11 @@ NOT_JRE_LIB_FILES += $(CUSTOM_JARS)
 include profile-rtjar-includes.txt
 
 # Function to expand foo/*.class into the set of classes
-# NOTE: Classfiles with $ in their name are problematic as that is the
-# meta-character for both make and the shell! Hence the \$$$$ substitution.
+# NOTE: Files found by wildcard are stipped of extra $, so call DoubleDollar
+# to keep the file names compatible with make.
 # But note that if you echo these values they will NOT display as expected.
-class_list = $(patsubst $(JDK_OUTPUTDIR)/classes/%,%, \
-    $(foreach i, $(1), $(subst $$,\$$$$, $(wildcard $(JDK_OUTPUTDIR)/classes/$i))))
+class_list = $(foreach dir, $(JDK_OUT_CLASSES), $(patsubst $(dir)/%,%, \
+    $(foreach i, $(1), $(call DoubleDollar, $(wildcard $(dir)/$i)))))
 
 ifeq ($(PROFILE), profile_1)
   RT_JAR_EXCLUDES += \

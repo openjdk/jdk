@@ -30,9 +30,9 @@ include ProfileNames.gmk
 # string and the runtime name into the Version.java file.
 # To be printed by java -version
 
-$(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java \
+$(JDK_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java \
 $(PROFILE_VERSION_JAVA_TARGETS): \
-    $(JDK_TOPDIR)/src/share/classes/sun/misc/Version.java.template
+    $(JDK_TOPDIR)/src/java.base/share/classes/sun/misc/Version.java.template
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	$(ECHO) Generating sun/misc/Version.java $(call profile_version_name, $@)
@@ -44,25 +44,12 @@ $(PROFILE_VERSION_JAVA_TARGETS): \
 	    $< > $@.tmp
 	$(MV) $@.tmp $@
 
-GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/misc/Version.java \
+GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/misc/Version.java \
     $(PROFILE_VERSION_JAVA_TARGETS)
 
 ##########################################################################################
-# Version file for jconsole
 
-$(JDK_OUTPUTDIR)/gensrc/sun/tools/jconsole/Version.java: \
-    $(JDK_TOPDIR)/src/share/classes/sun/tools/jconsole/Version.java.template
-	$(MKDIR) -p $(@D)
-	$(RM) $@ $@.tmp
-	$(ECHO) $(LOG_INFO) Generating sun/tools/jconsole/Version.java
-	$(SED) -e 's/@@jconsole_version@@/$(FULL_VERSION)/g' $< > $@.tmp
-	$(MV) $@.tmp $@
-
-GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/tools/jconsole/Version.java
-
-##########################################################################################
-
-GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java
+GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java
 
 GENSRC_SOR_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/ch
 GENSRC_SOR_SRC_FILE := genSocketOptionRegistry.c
@@ -81,17 +68,17 @@ $(eval $(call SetupNativeCompilation,BUILD_GENSRC_SOR_EXE, \
     OUTPUT_DIR := $(GENSRC_SOR_BIN), \
     PROGRAM := genSocketOptionRegistry))
 
-SOR_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
+SOR_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/ch/SocketOptionRegistry-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
 ifeq ($(wildcard $(SOR_PREGEN_FILE)), )
-  $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE)
+  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(BUILD_GENSRC_SOR_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOR_COPYRIGHT_YEARS)" > $@.tmp
 	$(BUILD_GENSRC_SOR_EXE) >> $@.tmp
 	$(MV) $@.tmp $@
 else
-  $(JDK_OUTPUTDIR)/gensrc/sun/nio/ch/SocketOptionRegistry.java: $(SOR_PREGEN_FILE)
+  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/ch/SocketOptionRegistry.java: $(SOR_PREGEN_FILE)
 	$(call install-file)
 endif
 
@@ -99,7 +86,7 @@ endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
 
-  GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/UnixConstants.java
+  GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java
 
   GENSRC_UC_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/fs
   GENSRC_UC_SRC_FILE := genUnixConstants.c
@@ -119,17 +106,17 @@ ifneq ($(OPENJDK_TARGET_OS), windows)
       OUTPUT_DIR := $(GENSRC_UC_BIN), \
       PROGRAM := genUnixConstants))
 
-  UC_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/solaris/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
+  UC_PREGEN_FILE := $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/classes/sun/nio/fs/UnixConstants-$(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH).java.template
 
   ifeq ($(wildcard $(UC_PREGEN_FILE)), )
-    $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE)
+    $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(BUILD_GENSRC_UC_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(UC_COPYRIGHT_YEARS)" > $@.tmp
 	$(BUILD_GENSRC_UC_EXE) >> $@.tmp
 	$(MV) $@.tmp $@
   else
-    $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/UnixConstants.java: $(UC_PREGEN_FILE)
+    $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/UnixConstants.java: $(UC_PREGEN_FILE)
 	$(call install-file)
   endif
 
@@ -139,7 +126,7 @@ endif
 
 ifeq ($(OPENJDK_TARGET_OS), solaris)
 
-  GENSRC_MISC += $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/SolarisConstants.java
+  GENSRC_JAVA_BASE += $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java
 
   GENSRC_SOL_SRC := $(JDK_TOPDIR)/make/src/native/genconstants/fs
   GENSRC_SOL_SRC_FILE := genSolarisConstants.c
@@ -158,7 +145,7 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
       OUTPUT_DIR := $(GENSRC_SOL_BIN), \
       PROGRAM := genSolarisConstants))
 
-  $(JDK_OUTPUTDIR)/gensrc/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE)
+  $(JDK_OUTPUTDIR)/gensrc/java.base/sun/nio/fs/SolarisConstants.java: $(BUILD_GENSRC_SOL_EXE)
 	$(MKDIR) -p $(@D)
 	$(RM) $@ $@.tmp
 	NAWK="$(NAWK)" SH="$(SH)" $(SH) -e $(JDK_TOPDIR)/make/scripts/addNotices.sh "$(SOL_COPYRIGHT_YEARS)" > $@.tmp
@@ -166,52 +153,6 @@ ifeq ($(OPENJDK_TARGET_OS), solaris)
 	$(MV) $@.tmp $@
 
 
-endif
-
-##########################################################################################
-
-ifndef OPENJDK
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-
-    AB_GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc_ab
-    AB_SRC_DIR := $(JDK_TOPDIR)/src/closed/windows/classes/com/sun/java/accessibility
-
-    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
-      $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridgeLoader.java: \
-          $(AB_SRC_DIR)/32bit/AccessBridgeLoader.java
-		$(install-file)
-
-      $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java: \
-          $(AB_SRC_DIR)/AccessBridge.java
-		$(install-file)
-
-      $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridgeLoader.java: \
-          $(AB_SRC_DIR)/legacy/AccessBridgeLoader.java
-		$(install-file)
-
-      $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java: \
-          $(AB_SRC_DIR)/AccessBridge.java
-		$(install-file)
-
-      GENSRC_MISC += $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridgeLoader.java \
-          $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridgeLoader.java \
-          $(AB_GENSRC_DIR)/32bit/com/sun/java/accessibility/AccessBridge.java \
-          $(AB_GENSRC_DIR)/legacy/com/sun/java/accessibility/AccessBridge.java
-
-    else
-      $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridgeLoader.java: \
-          $(AB_SRC_DIR)/64bit/AccessBridgeLoader.java
-		$(install-file)
-
-      $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java: \
-          $(AB_SRC_DIR)/AccessBridge.java
-		$(install-file)
-
-      GENSRC_MISC += $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridgeLoader.java \
-          $(AB_GENSRC_DIR)/64bit/com/sun/java/accessibility/AccessBridge.java
-
-    endif
-  endif
 endif
 
 ##########################################################################################
