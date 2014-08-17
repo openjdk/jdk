@@ -57,9 +57,29 @@
                     <location>${root}/make</location>
                 </source-folder>
                 <source-folder>
-                    <label>Source files</label>
+                    <label>Source files - java.base</label>
                     <type>java</type>
-                    <location>${root}/src/share/classes</location>
+                    <location>${root}/src/java.base/share/classes</location>
+                </source-folder>
+                <source-folder>
+                    <label>Source files - java.compiler</label>
+                    <type>java</type>
+                    <location>${root}/src/java.compiler/share/classes</location>
+                </source-folder>
+                <source-folder>
+                    <label>Source files - jdk.compiler</label>
+                    <type>java</type>
+                    <location>${root}/src/jdk.compiler/share/classes</location>
+                </source-folder>
+                <source-folder>
+                    <label>Source files - jdk.dev</label>
+                    <type>java</type>
+                    <location>${root}/src/jdk.dev/share/classes</location>
+                </source-folder>
+                <source-folder>
+                    <label>Source files - jdk.javadoc</label>
+                    <type>java</type>
+                    <location>${root}/src/jdk.javadoc/share/classes</location>
                 </source-folder>
                 <build-file>
                     <location>${root}/build/classes</location>
@@ -87,10 +107,62 @@
                 </action>
                 <action name="compile.single">
                     <target>compile-single</target>
-                    <property name="srcdir">${root}/src/share/classes</property>
+                    <property name="srcdir">src/java.base/share/classes</property>
                     <context>
                         <property>includes</property>
-                        <folder>${root}/src/share/classes</folder>
+                        <folder>${root}/src/java.base/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path</format>
+                        <arity>
+                            <separated-files>,</separated-files>
+                        </arity>
+                    </context>
+                </action>
+                <action name="compile.single">
+                    <target>compile-single</target>
+                    <property name="srcdir">src/java.compiler/share/classes</property>
+                    <context>
+                        <property>includes</property>
+                        <folder>${root}/src/java.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path</format>
+                        <arity>
+                            <separated-files>,</separated-files>
+                        </arity>
+                    </context>
+                </action>
+                <action name="compile.single">
+                    <target>compile-single</target>
+                    <property name="srcdir">src/jdk.compiler/share/classes</property>
+                    <context>
+                        <property>includes</property>
+                        <folder>${root}/src/jdk.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path</format>
+                        <arity>
+                            <separated-files>,</separated-files>
+                        </arity>
+                    </context>
+                </action>
+                <action name="compile.single">
+                    <target>compile-single</target>
+                    <property name="srcdir">src/jdk.dev/share/classes</property>
+                    <context>
+                        <property>includes</property>
+                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path</format>
+                        <arity>
+                            <separated-files>,</separated-files>
+                        </arity>
+                    </context>
+                </action>
+                <action name="compile.single">
+                    <target>compile-single</target>
+                    <property name="srcdir">src/jdk.javadoc/share/classes</property>
+                    <context>
+                        <property>includes</property>
+                        <folder>${root}/src/jdk.javadoc/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>relative-path</format>
                         <arity>
@@ -105,7 +177,55 @@
                     <target>run-single</target>
                     <context>
                         <property>run.classname</property>
-                        <folder>${root}/src/share/classes</folder>
+                        <folder>${root}/src/jdk.base/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <target>run-single</target>
+                    <context>
+                        <property>run.classname</property>
+                        <folder>${root}/src/java.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <target>run-single</target>
+                    <context>
+                        <property>run.classname</property>
+                        <folder>${root}/src/jdk.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <target>run-single</target>
+                    <context>
+                        <property>run.classname</property>
+                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="run.single">
+                    <target>run-single</target>
+                    <context>
+                        <property>run.classname</property>
+                        <folder>${root}/src/jdk.javadoc/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>java-name</format>
                         <arity>
@@ -139,7 +259,55 @@
                     <target>debug-single</target>
                     <context>
                         <property>debug.classname</property>
-                        <folder>${root}/src/share/classes</folder>
+                        <folder>${root}/src/java.base/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <target>debug-single</target>
+                    <context>
+                        <property>debug.classname</property>
+                        <folder>${root}/src/java.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <target>debug-single</target>
+                    <context>
+                        <property>debug.classname</property>
+                        <folder>${root}/src/jdk.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <target>debug-single</target>
+                    <context>
+                        <property>debug.classname</property>
+                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>java-name</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.single">
+                    <target>debug-single</target>
+                    <context>
+                        <property>debug.classname</property>
+                        <folder>${root}/src/jdk.javadoc/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>java-name</format>
                         <arity>
@@ -165,10 +333,62 @@
                 </action>
                 <action name="debug.fix">
                     <target>debug-fix</target>
-                    <property name="srcdir">${root}/src/share/classes</property>
+                    <property name="srcdir">src/java.base/share/classes</property>
                     <context>
                         <property>class</property>
-                        <folder>${root}/src/share/classes</folder>
+                        <folder>${root}/src/java.base/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path-noext</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.fix">
+                    <target>debug-fix</target>
+                    <property name="srcdir">src/java.compiler/share/classes</property>
+                    <context>
+                        <property>class</property>
+                        <folder>${root}/src/java.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path-noext</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.fix">
+                    <target>debug-fix</target>
+                    <property name="srcdir">src/jdk.compiler/share/classes</property>
+                    <context>
+                        <property>class</property>
+                        <folder>${root}/src/jdk.compiler/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path-noext</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.fix">
+                    <target>debug-fix</target>
+                    <property name="srcdir">src/jdk.dev/share/classes</property>
+                    <context>
+                        <property>class</property>
+                        <folder>${root}/src/jdk.dev/share/classes</folder>
+                        <pattern>\.java$</pattern>
+                        <format>relative-path-noext</format>
+                        <arity>
+                            <one-file-only/>
+                        </arity>
+                    </context>
+                </action>
+                <action name="debug.fix">
+                    <target>debug-fix</target>
+                    <property name="srcdir">src/jdk.dev/share/classes</property>
+                    <context>
+                        <property>class</property>
+                        <folder>${root}/src/jdk.javadoc/share/classes</folder>
                         <pattern>\.java$</pattern>
                         <format>relative-path-noext</format>
                         <arity>
@@ -197,8 +417,24 @@
             <view>
                 <items>
                     <source-folder style="tree">
-                        <label>Source files</label>
-                        <location>${root}/src/share/classes</location>
+                        <label>Source files - java.base</label>
+                        <location>${root}/src/java.base/share/classes</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Source files - java.compiler</label>
+                        <location>${root}/src/java.compiler/share/classes</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Source files - jdk.compiler</label>
+                        <location>${root}/src/jdk.compiler/share/classes</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Source files - jdk.dev</label>
+                        <location>${root}/src/jdk.dev/share/classes</location>
+                    </source-folder>
+                    <source-folder style="tree">
+                        <label>Source files - jdk.javadoc</label>
+                        <location>${root}/src/jdk.javadoc/share/classes</location>
                     </source-folder>
                     <source-folder style="tree">
                         <label>Test files</label>
@@ -239,11 +475,15 @@
             </view>
             <subprojects/>
         </general-data>
-        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/3">
+        <java-data xmlns="http://www.netbeans.org/ns/freeform-project-java/4">
             <compilation-unit>
-                <package-root>${root}/src/share/classes</package-root>
+                <package-root>${root}/src/java.base/share/classes</package-root>
+                <package-root>${root}/src/java.compiler/share/classes</package-root>
+                <package-root>${root}/src/jdk.compiler/share/classes</package-root>
+                <package-root>${root}/src/jdk.dev/share/classes</package-root>
+                <package-root>${root}/src/jdk.javadoc/share/classes</package-root>
                 <built-to>${root}/build/classes</built-to>
-                <source-level>1.7</source-level>
+                <source-level>1.8</source-level>
             </compilation-unit>
         </java-data>
     </configuration>

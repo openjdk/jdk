@@ -350,8 +350,11 @@ public class CompileProperties {
         int i = inEnd;
         int j = outEnd;
         while (i >= 0 && j >= 0) {
+            // If a dir contains a dot, it's not a valid package and most likely
+            // a module name.
             if (!inputs[i].equals(outputs[j]) ||
-                    (inputs[i].equals("gensrc") && inputs[j].equals("gensrc"))) {
+                    (inputs[i].equals("gensrc") && outputs[j].equals("gensrc")) ||
+                    (inputs[i].contains("."))) {
                 ++i;
                 ++j;
                 break;
@@ -363,9 +366,6 @@ public class CompileProperties {
         if (i < 0 || j < 0 || i >= inEnd || j >= outEnd) {
             result = "";
         } else {
-            if (inputs[i].equals("classes") && outputs[j].equals("classes")) {
-                ++i;
-            }
             inStart = i;
             StringBuffer buf = new StringBuffer();
             for (i = inStart; i <= inEnd; i++) {

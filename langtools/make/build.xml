@@ -138,8 +138,17 @@
     <property name="make.tools.dir" location="${make.dir}/tools"/>
     <property name="src.dir" location="src"/>
     <property name="src.bin.dir" location="${src.dir}/share/bin"/>
-    <property name="src.classes.dir" location="${src.dir}/share/classes"/>
     <property name="test.dir" location="test"/>
+
+    <path id="src.dirs">
+      <pathelement path="${src.dir}/java.base/share/classes"/>
+      <pathelement path="${src.dir}/java.compiler/share/classes"/>
+      <pathelement path="${src.dir}/jdk.compiler/share/classes"/>
+      <pathelement path="${src.dir}/jdk.dev/share/classes"/>
+      <pathelement path="${src.dir}/jdk.javadoc/share/classes"/>
+    </path>
+
+    <pathconvert pathsep="," property="src.dirs.property" refid="src.dirs" />
 
     <!-- java.marker is set to a marker file to check for within a Java install dir.
          The best file to check for across Solaris/Linux/Windows/MacOS is one of the
@@ -237,7 +246,9 @@
         </chmod>
         <mkdir dir="${dist.lib.dir}"/>
         <jar file="${dist.lib.dir}/classes.jar" basedir="${build.classes.dir}"/>
-        <zip file="${dist.lib.dir}/src.zip" basedir="${src.classes.dir}"/>
+        <zip file="${dist.lib.dir}/src.zip">
+            <multirootfileset basedirs="${src.dirs.property}" />
+        </zip>
     </target>
 
     <target name="build-bootstrap-tools"
@@ -316,7 +327,7 @@
             jvmargs="-Xmx512M">
             <class location="${build.classes.dir}"/>
             <sourcePath>
-                <pathelement location="${src.classes.dir}"/>
+                <path refid="src.dirs"/>
             </sourcePath>
         </findbugs>
         <exec executable="sh">
@@ -350,14 +361,24 @@
     <target name="coverage-report" depends="-def-cobertura">
         <mkdir dir="${dist.coverage.dir}"/>
         <cobertura-report
-            srcdir="${src.classes.dir}"
             destdir="${dist.coverage.dir}"
-            datafile="${build.coverage.dir}/cobertura.ser"/>
+            datafile="${build.coverage.dir}/cobertura.ser">
+            <fileset dir="${src.dir}/java.base/share/classes"/>
+            <fileset dir="${src.dir}/java.compiler/share/classes"/>
+            <fileset dir="${src.dir}/jdk.compiler/share/classes"/>
+            <fileset dir="${src.dir}/jdk.dev/share/classes"/>
+            <fileset dir="${src.dir}/jdk.javadoc/share/classes"/>
+        </cobertura-report>
         <cobertura-report
             format="xml"
-            srcdir="${src.classes.dir}"
             destdir="${dist.coverage.dir}"
-            datafile="${build.coverage.dir}/cobertura.ser"/>
+            datafile="${build.coverage.dir}/cobertura.ser">
+            <fileset dir="${src.dir}/java.base/share/classes"/>
+            <fileset dir="${src.dir}/java.compiler/share/classes"/>
+            <fileset dir="${src.dir}/jdk.compiler/share/classes"/>
+            <fileset dir="${src.dir}/jdk.dev/share/classes"/>
+            <fileset dir="${src.dir}/jdk.javadoc/share/classes"/>
+        </cobertura-report>
     </target>
 
     <target name="diags-examples" depends="build-javac,build-javap">
@@ -437,7 +458,6 @@
         <mkdir dir="${build.dir}/doclint/classes"/>
         <javac fork="true"
                executable="${boot.javac}"
-               srcdir="${src.classes.dir}:${build.gensrc.dir}"
                destdir="${build.dir}/doclint/classes"
                includes="javax/lang/model/** com/sun/javadoc/** com/sun/source/**"
                excludes=""
@@ -454,6 +474,10 @@
             <compilerarg line="${javac.no.jdk.warnings}"/>
             <compilerarg line="${javac.version.opt}"/>
             <compilerarg line="-Xdoclint:all/protected,-missing"/>
+            <src>
+                <path refid="src.dirs"/>
+                <path location="${build.gensrc.dir}"/>
+            </src>
         </javac>
     </target>
 
@@ -864,7 +888,7 @@
             <attribute name="java" default="${launcher.java}"/>
             <sequential>
                 <mkdir dir="@{bin.dir}"/>
-                <copy file="${src.bin.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
+                <copy file="${make.dir}/launcher.sh-template" tofile="@{bin.dir}/@{name}">
                     <filterset begintoken="#" endtoken="#">
                         <filter token="PROGRAM" value="@{name}"/>
                         <filter token="TARGET_JAVA" value="@{java}"/>
@@ -946,11 +970,14 @@
                 <echo level="verbose" message="build-classes: sourcepath=@{sourcepath}"/>
                 <mkdir dir="@{gensrc.dir}"/>
                 <mkdir dir="@{classes.dir}"/>
-                <pcompile srcdir="${src.classes.dir}"
-                          destdir="@{gensrc.dir}"
-                          includes="@{includes}"/>
+                <pcompile destdir="@{gensrc.dir}"
+                          includes="@{includes}">
+                    <src>
+                        <path refid="src.dirs"/>
+                    </src>
+                </pcompile>
                 <copy todir="@{gensrc.dir}">
-                    <fileset dir="${src.classes.dir}" includes="@{includes}"/>
+                    <multirootfileset basedirs="${src.dirs.property}" includes="@{includes}" />
                     <globmapper from="*.properties-template" to="*.properties"/>
                     <filterset begintoken="$(" endtoken=")">
                         <filter token="JDK_VERSION" value="${jdk.version}"/>
@@ -958,12 +985,14 @@
                         <filter token="FULL_VERSION" value="@{full.version}"/>
                     </filterset>
                 </copy>
-                <pcompile srcdir="@{gensrc.dir}"
-                          destdir="@{gensrc.dir}"
-                          includes="**/*.properties"/>
+                <pcompile destdir="@{gensrc.dir}"
+                          includes="**/*.properties">
+                    <src>
+                        <pathelement location="@{gensrc.dir}"/>
+                    </src>
+                </pcompile>
                 <javac fork="true"
                        executable="@{java.home}/bin/javac"
-                       srcdir="${src.classes.dir}:@{gensrc.dir}"
                        destdir="@{classes.dir}"
                        includes="@{includes}"
                        excludes="@{excludes}"
@@ -982,9 +1011,13 @@
                     <compilerarg line="${javac.version.opt}"/>
                     <compilerarg line="${javac.lint.opts}"/>
                     <compilerarg line="@{plugin.options}"/>
+                    <src>
+                        <path refid="src.dirs"/>
+                        <path location="@{gensrc.dir}"/>
+                    </src>
                 </javac>
                 <copy todir="@{classes.dir}" includeemptydirs="false">
-                    <fileset dir="${src.classes.dir}" includes="@{includes}" excludes="@{excludes}">
+                    <multirootfileset basedirs="${src.dirs.property}" includes="@{includes}" excludes="@{excludes}">
                         <exclude name="**/*.java"/>
                         <exclude name="**/*.properties"/>
                         <exclude name="**/*-template"/>
@@ -992,7 +1025,7 @@
                         <exclude name="**/*.orig"/>
                         <exclude name="**/overview.html"/>
                         <exclude name="**/package.html"/>
-                    </fileset>
+                    </multirootfileset>
                 </copy>
             </sequential>
         </macrodef>
@@ -1037,7 +1070,7 @@
                target="${boot.javac.target}"
                executable="${boot.java.home}/bin/javac"
                srcdir="${make.tools.dir}"
-               includes="compileproperties/* anttasks/CompileProperties*"
+               includes="compileproperties/* anttasks/CompileProperties* anttasks/PathFileSet*"
                destdir="${build.toolclasses.dir}/"
                classpath="${ant.core.lib}"
                bootclasspath="${boot.java.home}/jre/lib/rt.jar"
@@ -1099,11 +1132,11 @@
             <attribute name="name"/>
             <attribute name="includes"/>
             <attribute name="options" default=""/>
-            <attribute name="source" default="1.5"/> <!-- FIXME -->
+            <attribute name="source" default="${javac.source}"/>
             <sequential>
                 <property name="javadoc.options" value=""/> <!-- default, can be overridden per user or per project -->
                 <!-- Note: even with this default value, includes
-                from src.classes.dir get javadoc'd; see packageset below -->
+                from source directories get javadoc'd; see packageset below -->
                 <property name="javadoc.packagenames" value="none"/> <!-- default, can be overridden per user or per project -->
                 <javadoc
                     executable="${target.java.home}/bin/javadoc"
@@ -1117,18 +1150,52 @@
                     packagenames="${javadoc.packagenames}" >
                     <header><![CDATA[<strong>Unofficial Javadoc</strong> generated from developer sources for preview purposes only]]></header>
                     <arg line="@{options}"/>
+                    <arg value="-tag" />
+                    <arg value="implNote:a:Implementation Note:"/>
                     <bootclasspath>
                         <path location="${build.classes.dir}"/>
                         <path location="${target.java.home}/jre/lib/rt.jar"/>
                     </bootclasspath>
                     <sourcepath>
-                        <pathelement location="${src.classes.dir}"/>
+                        <path refid="src.dirs"/>
                     </sourcepath>
                     <!-- XXX just <fileset> (restricted further to **/*.java) and no <packageset> -->
                     <!-- means that {@link some.package} will not work, which is no good. -->
                     <!-- (It correctly skips excluded single classes, but not if packageset is also included, -->
                     <!-- which also causes duplicates in the class index for included files.) -->
-                    <packageset dir="${src.classes.dir}" includes="@{includes}">
+                    <packageset dir="${src.dir}/java.base/share/classes" includes="@{includes}">
+                        <or>
+                            <filename name="java/"/>
+                            <filename name="javax/"/>
+                            <filename name="com/sun/javadoc/"/>
+                            <filename name="com/sun/source/"/>
+                        </or>
+                    </packageset>
+                    <packageset dir="${src.dir}/java.compiler/share/classes" includes="@{includes}">
+                        <or>
+                            <filename name="java/"/>
+                            <filename name="javax/"/>
+                            <filename name="com/sun/javadoc/"/>
+                            <filename name="com/sun/source/"/>
+                        </or>
+                    </packageset>
+                    <packageset dir="${src.dir}/jdk.compiler/share/classes" includes="@{includes}">
+                        <or>
+                            <filename name="java/"/>
+                            <filename name="javax/"/>
+                            <filename name="com/sun/javadoc/"/>
+                            <filename name="com/sun/source/"/>
+                        </or>
+                    </packageset>
+                    <packageset dir="${src.dir}/jdk.dev/share/classes" includes="@{includes}">
+                        <or>
+                            <filename name="java/"/>
+                            <filename name="javax/"/>
+                            <filename name="com/sun/javadoc/"/>
+                            <filename name="com/sun/source/"/>
+                        </or>
+                    </packageset>
+                    <packageset dir="${src.dir}/jdk.javadoc/share/classes" includes="@{includes}">
                         <or>
                             <filename name="java/"/>
                             <filename name="javax/"/>
@@ -1235,7 +1302,7 @@
                         <pathelement location="${build.classes.dir}"/>
                     </auxClasspath>
                     <sourcePath>
-                        <pathelement location="${src.classes.dir}"/>
+                        <path refid="src.dirs"/>
                     </sourcePath>
                 </findbugs>
             </sequential>
