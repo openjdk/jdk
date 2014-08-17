@@ -31,7 +31,6 @@ import com.sun.tools.classfile.Dependencies;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 import com.sun.tools.classfile.Dependency;
 import com.sun.tools.classfile.Dependency.Location;
-import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
 import static com.sun.tools.jdeps.Analyzer.Type.*;
 import java.io.*;
 import java.nio.file.DirectoryStream;
@@ -194,9 +193,13 @@ class JdepsTask {
         new Option(false, "-P", "-profile") {
             void process(JdepsTask task, String opt, String arg) throws BadArgs {
                 task.options.showProfile = true;
-                if (Profile.getProfileCount() == 0) {
-                    throw new BadArgs("err.option.unsupported", opt, getMessage("err.profiles.msg"));
-                }
+                task.options.showModule = false;
+            }
+        },
+        new Option(false, "-M", "-module") {
+            void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                task.options.showModule = true;
+                task.options.showProfile = false;
             }
         },
         new Option(false, "-apionly") {
@@ -221,6 +224,25 @@ class JdepsTask {
                 }
             }
         },
+            new HiddenOption(false, "-verify:access") {
+                void process(JdepsTask task, String opt, String arg) {
+                    task.options.verifyAccess = true;
+                    task.options.verbose = VERBOSE;
+                    task.options.filterSameArchive = false;
+                    task.options.filterSamePackage = false;
+                }
+            },
+            new HiddenOption(true, "-mp") {
+                void process(JdepsTask task, String opt, String arg) throws BadArgs {
+                    task.options.mpath = Paths.get(arg);
+                    if (!Files.isDirectory(task.options.mpath)) {
+                        throw new BadArgs("err.invalid.path", arg);
+                    }
+                    if (task.options.includePattern == null) {
+                        task.options.includePattern = Pattern.compile(".*");
+                    }
+                }
+            },
         new Option(false, "-version") {
             void process(JdepsTask task, String opt, String arg) {
                 task.options.version = true;
@@ -294,7 +316,7 @@ class JdepsTask {
                 showHelp();
                 return EXIT_CMDERR;
             }
-            if (options.findJDKInternals &&
+            if ((options.findJDKInternals || options.verifyAccess) &&
                    (options.regex != null || options.packageNames.size() > 0 || options.showSummary)) {
                 showHelp();
                 return EXIT_CMDERR;
@@ -303,6 +325,7 @@ class JdepsTask {
                 showHelp();
                 return EXIT_CMDERR;
             }
+
             boolean ok = run();
             return ok ? EXIT_OK : EXIT_ERROR;
         } catch (BadArgs e) {
@@ -319,10 +342,19 @@ class JdepsTask {
     }
 
     private final List<Archive> sourceLocations = new ArrayList<>();
+    private final List<Archive> classpaths = new ArrayList<>();
+    private final List<Archive> initialArchives = new ArrayList<>();
     private boolean run() throws IOException {
-        // parse classfiles and find all dependencies
-        findDependencies();
+        buildArchives();
 
+        if (options.verifyAccess) {
+            return verifyModuleAccess();
+        } else {
+            return analyzeDeps();
+        }
+    }
+
+    private boolean analyzeDeps() throws IOException {
         Analyzer analyzer = new Analyzer(options.verbose, new Analyzer.Filter() {
             @Override
             public boolean accepts(Location origin, Archive originArchive,
@@ -330,8 +362,8 @@ class JdepsTask {
             {
                 if (options.findJDKInternals) {
                     // accepts target that is JDK class but not exported
-                    return isJDKArchive(targetArchive) &&
-                              !((JDKArchive) targetArchive).isExported(target.getClassName());
+                    return isJDKModule(targetArchive) &&
+                              !((Module) targetArchive).isExported(target.getClassName());
                 } else if (options.filterSameArchive) {
                     // accepts origin and target that from different archive
                     return originArchive != targetArchive;
@@ -339,6 +371,9 @@ class JdepsTask {
                 return true;
             }
         });
+
+        // parse classfiles and find all dependencies
+        findDependencies(options.apiOnly);
 
         // analyze the dependencies
         analyzer.run(sourceLocations);
@@ -356,6 +391,31 @@ class JdepsTask {
             showReplacements(analyzer);
         }
         return true;
+    }
+
+    private boolean verifyModuleAccess() throws IOException {
+        // two passes
+        // 1. check API dependences where the types of dependences must be re-exported
+        // 2. check all dependences where types must be accessible
+
+        // pass 1
+        findDependencies(true /* api only */);
+        Analyzer analyzer = Analyzer.getExportedAPIsAnalyzer();
+        boolean pass1 = analyzer.run(sourceLocations);
+        if (!pass1) {
+            System.out.println("ERROR: Failed API access verification");
+        }
+        // pass 2
+        findDependencies(false);
+        analyzer =  Analyzer.getModuleAccessAnalyzer();
+        boolean pass2 = analyzer.run(sourceLocations);
+        if (!pass2) {
+            System.out.println("ERROR: Failed module access verification");
+        }
+        if (pass1 & pass2) {
+            System.out.println("Access verification succeeded.");
+        }
+        return pass1 & pass2;
     }
 
     private void generateSummaryDotFile(Path dir, Analyzer analyzer) throws IOException {
@@ -469,31 +529,46 @@ class JdepsTask {
 
     /**
      * Tests if the given class matches the pattern given in the -include option
-     * or if it's a public class if -apionly option is specified
      */
-    private boolean matches(String classname, AccessFlags flags) {
-        if (options.apiOnly && !flags.is(AccessFlags.ACC_PUBLIC)) {
-            return false;
-        } else if (options.includePattern != null) {
+    private boolean matches(String classname) {
+        if (options.includePattern != null) {
             return options.includePattern.matcher(classname.replace('/', '.')).matches();
         } else {
             return true;
         }
     }
 
-    private void findDependencies() throws IOException {
-        Dependency.Finder finder =
-            options.apiOnly ? Dependencies.getAPIFinder(AccessFlags.ACC_PROTECTED)
-                            : Dependencies.getClassDependencyFinder();
-        Dependency.Filter filter = new DependencyFilter();
-
-        List<Archive> archives = new ArrayList<>();
-        Deque<String> roots = new LinkedList<>();
+    private void buildArchives() throws IOException {
         for (String s : classes) {
             Path p = Paths.get(s);
             if (Files.exists(p)) {
-                archives.add(Archive.getInstance(p));
-            } else {
+                initialArchives.add(Archive.getInstance(p));
+            }
+        }
+        sourceLocations.addAll(initialArchives);
+
+        classpaths.addAll(getClassPathArchives(options.classpath));
+        if (options.includePattern != null) {
+            initialArchives.addAll(classpaths);
+        }
+        classpaths.addAll(PlatformClassPath.getArchives(options.mpath));
+        if (options.mpath != null) {
+            initialArchives.addAll(PlatformClassPath.getArchives(options.mpath));
+        }
+        // add all classpath archives to the source locations for reporting
+        sourceLocations.addAll(classpaths);
+    }
+
+    private void findDependencies(boolean apiOnly) throws IOException {
+        Dependency.Finder finder =
+            apiOnly ? Dependencies.getAPIFinder(AccessFlags.ACC_PROTECTED)
+                    : Dependencies.getClassDependencyFinder();
+        Dependency.Filter filter = new DependencyFilter();
+
+        Deque<String> roots = new LinkedList<>();
+        for (String s : classes) {
+            Path p = Paths.get(s);
+            if (!Files.exists(p)) {
                 if (isValidClassName(s)) {
                     roots.add(s);
                 } else {
@@ -501,17 +576,6 @@ class JdepsTask {
                 }
             }
         }
-        sourceLocations.addAll(archives);
-
-        List<Archive> classpaths = new ArrayList<>(); // for class file lookup
-        classpaths.addAll(getClassPathArchives(options.classpath));
-        if (options.includePattern != null) {
-            archives.addAll(classpaths);
-        }
-        classpaths.addAll(PlatformClassPath.getArchives());
-
-        // add all classpath archives to the source locations for reporting
-        sourceLocations.addAll(classpaths);
 
         // Work queue of names of classfiles to be searched.
         // Entries will be unique, and for classes that do not yet have
@@ -520,7 +584,7 @@ class JdepsTask {
         Set<String> doneClasses = new HashSet<>();
 
         // get the immediate dependencies of the input files
-        for (Archive a : archives) {
+        for (Archive a : initialArchives) {
             for (ClassFile cf : a.reader().getClassFiles()) {
                 String classFileName;
                 try {
@@ -530,7 +594,7 @@ class JdepsTask {
                 }
 
                 // tests if this class matches the -include or -apiOnly option if specified
-                if (!matches(classFileName, cf.access_flags)) {
+                if (!matches(classFileName) || (apiOnly && !cf.access_flags.is(AccessFlags.ACC_PUBLIC))) {
                     continue;
                 }
 
@@ -577,10 +641,6 @@ class JdepsTask {
                             // if name is a fully-qualified class name specified
                             // from command-line, this class might already be parsed
                             doneClasses.add(classFileName);
-                            // process @jdk.Exported for JDK classes
-                            if (isJDKArchive(a)) {
-                                ((JDKArchive)a).processJdkExported(cf);
-                            }
                             for (Dependency d : finder.findDependencies(cf)) {
                                 if (depth == 0) {
                                     // ignore the dependency
@@ -700,6 +760,7 @@ class JdepsTask {
         boolean version;
         boolean fullVersion;
         boolean showProfile;
+        boolean showModule;
         boolean showSummary;
         boolean apiOnly;
         boolean showLabel;
@@ -717,6 +778,9 @@ class JdepsTask {
         Set<String> packageNames = new HashSet<>();
         String regex;             // apply to the dependences
         Pattern includePattern;   // apply to classes
+        // module boundary access check
+        boolean verifyAccess;
+        Path mpath;
     }
     private static class ResourceBundleHelper {
         static final ResourceBundle versionRB;
@@ -803,8 +867,12 @@ class JdepsTask {
         @Override
         public void visitDependence(String origin, Archive originArchive,
                                     String target, Archive targetArchive) {
-            writer.format("%s -> %s", originArchive.getName(), targetArchive.getPathName());
-            if (options.showProfile && JDKArchive.isProfileArchive(targetArchive)) {
+            String targetName =  targetArchive.getPathName();
+            if (options.showModule && isJDKModule(targetArchive)) {
+                targetName = ((Module)targetArchive).name();
+            }
+            writer.format("%s -> %s", originArchive.getName(), targetName);
+            if (options.showProfile && isJDKModule(targetArchive)) {
                 writer.format(" (%s)", target);
             }
             writer.format("%n");
@@ -856,12 +924,14 @@ class JdepsTask {
         public void visitDependence(String origin, Archive originArchive,
                                     String target, Archive targetArchive) {
             String targetName = type == PACKAGE ? target : targetArchive.getName();
-            if (type == PACKAGE) {
-                String tag = toTag(target, targetArchive, type);
-                if (!tag.isEmpty())
-                    targetName += " (" + tag + ")";
-            } else if (options.showProfile && JDKArchive.isProfileArchive(targetArchive)) {
-                targetName += " (" + target + ")";
+            if (isJDKModule(targetArchive)) {
+                Module m = (Module)targetArchive;
+                String n = showProfileOrModule(m);
+                if (!n.isEmpty()) {
+                    targetName += " (" + n + ")";
+                }
+            } else if (type == PACKAGE) {
+                targetName += " (" + targetArchive.getName() + ")";
             }
             String label = getLabel(originArchive, targetArchive);
             writer.format("  %-50s -> \"%s\"%s;%n",
@@ -884,7 +954,7 @@ class JdepsTask {
                     edges.putIfAbsent(originArchive, new HashMap<>());
                     edges.get(originArchive).putIfAbsent(targetArchive, new StringBuilder());
                     StringBuilder sb = edges.get(originArchive).get(targetArchive);
-                    String tag = toTag(target, targetArchive, PACKAGE);
+                    String tag = toTag(target, targetArchive);
                     addLabel(sb, origin, target, tag);
                 }
 
@@ -902,8 +972,8 @@ class JdepsTask {
     /**
      * Test if the given archive is part of the JDK
      */
-    private boolean isJDKArchive(Archive archive) {
-        return JDKArchive.class.isInstance(archive);
+    private boolean isJDKModule(Archive archive) {
+        return Module.class.isInstance(archive);
     }
 
     /**
@@ -913,34 +983,42 @@ class JdepsTask {
      *
      * For non-JDK archives, this method returns the file name of the archive.
      */
-    private String toTag(String name, Archive source, Analyzer.Type type) {
-        if (!isJDKArchive(source)) {
+    private String toTag(String name, Archive source) {
+        if (!isJDKModule(source)) {
             return source.getName();
         }
 
-        JDKArchive jdk = (JDKArchive)source;
+        Module module = (Module)source;
         boolean isExported = false;
-        if (type == CLASS || type == VERBOSE) {
-            isExported = jdk.isExported(name);
+        if (options.verbose == CLASS || options.verbose == VERBOSE) {
+            isExported = module.isExported(name);
         } else {
-            isExported = jdk.isExportedPackage(name);
+            isExported = module.isExportedPackage(name);
         }
-        Profile p = getProfile(name, type);
         if (isExported) {
             // exported API
-            return options.showProfile && p != null ? p.profileName() : "";
+            return showProfileOrModule(module);
         } else {
             return "JDK internal API (" + source.getName() + ")";
         }
     }
 
-    private String toTag(String name, Archive source) {
-        return toTag(name, source, options.verbose);
+    private String showProfileOrModule(Module m) {
+        String tag = "";
+        if (options.showProfile) {
+            Profile p = Profile.getProfile(m);
+            if (p != null) {
+                tag = p.profileName();
+            }
+        } else if (options.showModule) {
+            tag = m.name();
+        }
+        return tag;
     }
 
-    private Profile getProfile(String name, Analyzer.Type type) {
+    private Profile getProfile(String name) {
         String pn = name;
-        if (type == CLASS || type == VERBOSE) {
+        if (options.verbose == CLASS || options.verbose == VERBOSE) {
             int i = name.lastIndexOf('.');
             pn = i > 0 ? name.substring(0, i) : "";
         }

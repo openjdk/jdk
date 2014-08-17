@@ -24,6 +24,7 @@
  */
 package com.sun.tools.jdeps;
 
+import java.io.PrintStream;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
@@ -34,7 +35,6 @@ import java.util.Set;
 import java.util.stream.Collectors;
 
 import com.sun.tools.classfile.Dependency.Location;
-import com.sun.tools.jdeps.PlatformClassPath.JDKArchive;
 
 /**
  * Dependency Analyzer.
@@ -59,11 +59,11 @@ public class Analyzer {
         boolean accepts(Location origin, Archive originArchive, Location target, Archive targetArchive);
     }
 
-    private final Type type;
-    private final Filter filter;
-    private final Map<Archive, ArchiveDeps> results = new HashMap<>();
-    private final Map<Location, Archive> map = new HashMap<>();
-    private final Archive NOT_FOUND
+    protected final Type type;
+    protected final Filter filter;
+    protected final Map<Archive, ArchiveDeps> results = new HashMap<>();
+    protected final Map<Location, Archive> map = new HashMap<>();
+    private static final Archive NOT_FOUND
         = new Archive(JdepsTask.getMessage("artifact.not.found"));
 
     /**
@@ -80,7 +80,7 @@ public class Analyzer {
     /**
      * Performs the dependency analysis on the given archives.
      */
-    public void run(List<Archive> archives) {
+    public boolean run(List<Archive> archives) {
         // build a map from Location to Archive
         buildLocationArchiveMap(archives);
 
@@ -90,9 +90,10 @@ public class Analyzer {
             archive.visitDependences(deps);
             results.put(archive, deps);
         }
+        return true;
     }
 
-    private void buildLocationArchiveMap(List<Archive> archives) {
+    protected void buildLocationArchiveMap(List<Archive> archives) {
         // build a map from Location to Archive
         for (Archive archive: archives) {
             for (Location l: archive.getClasses()) {
@@ -187,7 +188,11 @@ public class Analyzer {
         }
 
         Profile getTargetProfile(Archive target) {
-            return JDKArchive.isProfileArchive(target) ? profile : null;
+            if (target instanceof Module) {
+                return Profile.getProfile((Module) target);
+            } else {
+                return null;
+            }
         }
 
         Archive findArchive(Location t) {
@@ -217,7 +222,7 @@ public class Analyzer {
                     requires.add(targetArchive);
                 }
             }
-            if (targetArchive instanceof JDKArchive) {
+            if (targetArchive instanceof Module) {
                 Profile p = Profile.getProfile(t.getPackageName());
                 if (profile == null || (p != null && p.compareTo(profile) > 0)) {
                     profile = p;
@@ -307,5 +312,131 @@ public class Analyzer {
                            + Objects.hashCode(this.targetArchive);
             return hash;
         }
+
+        public String toString() {
+            return String.format("%s (%s) -> %s (%s)%n",
+                    origin, originArchive.getName(),
+                    target, targetArchive.getName());
+        }
+    }
+
+    static Analyzer getExportedAPIsAnalyzer() {
+        return new ModuleAccessAnalyzer(ModuleAccessAnalyzer.reexportsFilter, true);
+    }
+
+    static Analyzer getModuleAccessAnalyzer() {
+        return new ModuleAccessAnalyzer(ModuleAccessAnalyzer.accessCheckFilter, false);
+    }
+
+    private static class ModuleAccessAnalyzer extends Analyzer {
+        private final boolean apionly;
+        ModuleAccessAnalyzer(Filter filter, boolean apionly) {
+            super(Type.VERBOSE, filter);
+            this.apionly = apionly;
+        }
+        /**
+         * Verify module access
+         */
+        public boolean run(List<Archive> archives) {
+            // build a map from Location to Archive
+            buildLocationArchiveMap(archives);
+
+            // traverse and analyze all dependencies
+            int count = 0;
+            for (Archive archive : archives) {
+                ArchiveDeps checker = new ArchiveDeps(archive, type);
+                archive.visitDependences(checker);
+                count += checker.dependencies().size();
+                // output if any error
+                Module m = (Module)archive;
+                printDependences(System.err, m, checker.dependencies());
+                results.put(archive, checker);
+            }
+            return count == 0;
+        }
+
+        private void printDependences(PrintStream out, Module m, Set<Dep> deps) {
+            if (deps.isEmpty())
+                return;
+
+            String msg = apionly ? "API reference:" : "inaccessible reference:";
+            deps.stream().sorted(Comparator.comparing(Dep::origin)
+                                           .thenComparing(Dep::target))
+                .forEach(d -> out.format("%s %s (%s) -> %s (%s)%n", msg,
+                                         d.origin(), d.originArchive().getName(),
+                                         d.target(), d.targetArchive().getName()));
+            if (apionly) {
+                out.format("Dependences missing re-exports=\"true\" attribute:%n");
+                deps.stream()
+                        .map(Dep::targetArchive)
+                        .map(Archive::getName)
+                        .distinct()
+                        .sorted()
+                        .forEach(d -> out.format("  %s -> %s%n", m.name(), d));
+            }
+        }
+
+        private static Module findModule(Archive archive) {
+            if (Module.class.isInstance(archive)) {
+                return (Module) archive;
+            } else {
+                return null;
+            }
+        }
+
+        // returns true if target is accessible by origin
+        private static boolean canAccess(Location o, Archive originArchive, Location t, Archive targetArchive) {
+            Module origin = findModule(originArchive);
+            Module target = findModule(targetArchive);
+
+            if (targetArchive == Analyzer.NOT_FOUND) {
+                return false;
+            }
+
+            // unnamed module
+            // ## should check public type?
+            if (target == null)
+                return true;
+
+            // module-private
+            if (origin == target)
+                return true;
+
+            return target.isAccessibleTo(t.getClassName(), origin);
+        }
+
+        static final Filter accessCheckFilter = new Filter() {
+            @Override
+            public boolean accepts(Location o, Archive originArchive, Location t, Archive targetArchive) {
+                return !canAccess(o, originArchive, t, targetArchive);
+            }
+        };
+
+        static final Filter reexportsFilter = new Filter() {
+            @Override
+            public boolean accepts(Location o, Archive originArchive, Location t, Archive targetArchive) {
+                Module origin = findModule(originArchive);
+                Module target = findModule(targetArchive);
+                if (!origin.isExportedPackage(o.getPackageName())) {
+                    // filter non-exported classes
+                    return false;
+                }
+
+                boolean accessible = canAccess(o, originArchive, t, targetArchive);
+                if (!accessible)
+                    return true;
+
+                String mn = target.name();
+                // skip checking re-exports for java.base
+                if (origin == target || "java.base".equals(mn))
+                    return false;
+
+                assert origin.requires().containsKey(mn);  // otherwise, should not be accessible
+                if (origin.requires().get(mn)) {
+                    return false;
+                }
+                return true;
+            }
+        };
     }
 }

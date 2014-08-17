@@ -24,6 +24,7 @@
  */
 package com.sun.tools.jdeps;
 
+import com.sun.tools.classfile.ClassFile;
 import com.sun.tools.classfile.Dependency.Location;
 
 import java.io.IOException;
@@ -47,11 +48,13 @@ public class Archive {
     protected Map<Location, Set<Location>> deps = new ConcurrentHashMap<>();
 
     protected Archive(String name) {
+        this(name, null);
+    }
+    protected Archive(String name, ClassFileReader reader) {
         this.path = null;
         this.filename = name;
-        this.reader = null;
+        this.reader = reader;
     }
-
     protected Archive(Path p, ClassFileReader reader) {
         this.path = p;
         this.filename = path.getFileName().toString();
