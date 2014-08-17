@@ -331,7 +331,7 @@ AC_DEFUN([PLATFORM_SETUP_LEGACY_VARS],
 
   # Setup OPENJDK_TARGET_OS_API_DIR, used in source paths.
   if test "x$OPENJDK_TARGET_OS_API" = xposix; then
-    OPENJDK_TARGET_OS_API_DIR="solaris"
+    OPENJDK_TARGET_OS_API_DIR="unix"
   fi
   if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
     OPENJDK_TARGET_OS_API_DIR="windows"

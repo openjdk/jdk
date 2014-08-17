@@ -1,0 +1,559 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+# This must be the first rule
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+include SetupJava.gmk
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, , CompileJavaModules.gmk))
+
+################################################################################
+# Module specific build settings
+
+java.activation_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+
+################################################################################
+
+java.base_COPY := .icu .dat .spp content-types.properties
+java.base_CLEAN := intrinsic.properties
+
+java.base_EXCLUDES += java/lang/doc-files
+
+# Exclude BreakIterator classes that are just used in compile process to generate
+# data files and shouldn't go in the product
+java.base_EXCLUDE_FILES += sun/text/resources/BreakIteratorRules.java
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  JAVA_BASE_UNIX_DIR := $(JDK_TOPDIR)/src/java.base/unix/classes
+  # TODO: make JavaCompilation handle overrides automatically instead of excluding here
+  # These files are overridden in macosx
+  java.base_EXCLUDE_FILES += \
+      $(JAVA_BASE_UNIX_DIR)/sun/util/locale/provider/HostLocaleProviderAdapterImpl.java \
+      $(JAVA_BASE_UNIX_DIR)/java/net/DefaultInterface.java \
+      $(JAVA_BASE_UNIX_DIR)/java/lang/ClassLoaderHelper.java \
+      $(JAVA_BASE_UNIX_DIR)/sun/nio/ch/DefaultSelectorProvider.java \
+      #
+  # This is just skipped on macosx
+  java.base_EXCLUDE_FILES += $(JAVA_BASE_UNIX_DIR)/sun/nio/fs/GnomeFileTypeDetector.java
+endif
+
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  java.base_EXCLUDE_FILES += \
+      SolarisLoginModule.java \
+      SolarisSystem.java \
+      #
+endif
+
+ifeq ($(filter $(OPENJDK_TARGET_OS), solaris macosx aix), )
+  #
+  # only solaris, macosx and aix
+  #
+  java.base_EXCLUDE_FILES += sun/nio/fs/PollingWatchService.java
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  java.base_EXCLUDE_FILES += \
+      sun/nio/ch/AbstractPollSelectorImpl.java \
+      sun/nio/ch/PollSelectorProvider.java \
+      sun/nio/ch/SimpleAsynchronousFileChannelImpl.java \
+      #
+endif
+
+################################################################################
+
+java.desktop_COPY := .gif .png .wav .txt .xml .css flavormap.properties
+java.desktop_CLEAN := iio-plugin.properties
+
+java.desktop_EXCLUDES += \
+    java/awt/doc-files \
+    javax/swing/doc-files \
+    javax/swing/text/doc-files \
+    javax/swing/plaf/synth/doc-files \
+    javax/swing/undo/doc-files \
+    sun/awt/X11/doc-files \
+    #
+
+# The exception handling of swing beaninfo
+# These resources violates the convention of having code and resources together under
+# $(JDK_TOPDIR)/src/.../classes directories
+$(eval $(call SetupCopyFiles,COPY_BEANINFO, \
+    SRC := $(JDK_TOPDIR)/make/data/swingbeaninfo/images, \
+    DEST := $(JDK_OUTPUTDIR)/modules/java.desktop/javax/swing/beaninfo/images, \
+    FILES := $(wildcard $(JDK_TOPDIR)/make/data/swingbeaninfo/images/*.gif)))
+
+java.desktop_COPY_EXTRA += $(COPY_BEANINFO)
+
+java.desktop_EXCLUDE_FILES += \
+    javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
+    javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+    javax/swing/plaf/nimbus/ScrollBarPainter.java \
+    javax/swing/plaf/nimbus/SliderPainter.java \
+    javax/swing/plaf/nimbus/SpinnerPainter.java \
+    javax/swing/plaf/nimbus/SplitPanePainter.java \
+    javax/swing/plaf/nimbus/TabbedPanePainter.java \
+    sun/awt/resources/security-icon-bw16.png \
+    sun/awt/resources/security-icon-bw24.png \
+    sun/awt/resources/security-icon-bw32.png \
+    sun/awt/resources/security-icon-bw48.png \
+    sun/awt/resources/security-icon-interim16.png \
+    sun/awt/resources/security-icon-interim24.png \
+    sun/awt/resources/security-icon-interim32.png \
+    sun/awt/resources/security-icon-interim48.png \
+    sun/awt/resources/security-icon-yellow16.png \
+    sun/awt/resources/security-icon-yellow24.png \
+    sun/awt/resources/security-icon-yellow32.png \
+    sun/awt/resources/security-icon-yellow48.png \
+    sun/awt/X11/java-icon16.png \
+    sun/awt/X11/java-icon24.png \
+    sun/awt/X11/java-icon32.png \
+    sun/awt/X11/java-icon48.png \
+    .template \
+    #
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # exclude all X11 on Mac.
+  java.desktop_EXCLUDES += sun/awt/X11
+  java.desktop_EXCLUDE_FILES += \
+      $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/BackBufferCapsProvider.java \
+      #
+else
+  # TBD: figure out how to eliminate this long list
+  java.desktop_EXCLUDE_FILES += \
+      sun/awt/X11/ScreenFormat.java \
+      sun/awt/X11/XArc.java \
+      sun/awt/X11/XChar2b.java \
+      sun/awt/X11/XCharStruct.java \
+      sun/awt/X11/XClassHint.java \
+      sun/awt/X11/XComposeStatus.java \
+      sun/awt/X11/XExtCodes.java \
+      sun/awt/X11/XFontProp.java \
+      sun/awt/X11/XFontSetExtents.java \
+      sun/awt/X11/XFontStruct.java \
+      sun/awt/X11/XGCValues.java \
+      sun/awt/X11/XHostAddress.java \
+      sun/awt/X11/XIMCallback.java \
+      sun/awt/X11/XIMHotKeyTrigger.java \
+      sun/awt/X11/XIMHotKeyTriggers.java \
+      sun/awt/X11/XIMPreeditCaretCallbackStruct.java \
+      sun/awt/X11/XIMPreeditDrawCallbackStruct.java \
+      sun/awt/X11/XIMPreeditStateNotifyCallbackStruct.java \
+      sun/awt/X11/XIMStatusDrawCallbackStruct.java \
+      sun/awt/X11/XIMStringConversionCallbackStruct.java \
+      sun/awt/X11/XIMStringConversionText.java \
+      sun/awt/X11/XIMStyles.java \
+      sun/awt/X11/XIMText.java \
+      sun/awt/X11/XIMValuesList.java \
+      sun/awt/X11/XImage.java \
+      sun/awt/X11/XKeyboardControl.java \
+      sun/awt/X11/XKeyboardState.java \
+      sun/awt/X11/XOMCharSetList.java \
+      sun/awt/X11/XOMFontInfo.java \
+      sun/awt/X11/XOMOrientation.java \
+      sun/awt/X11/XPoint.java \
+      sun/awt/X11/XRectangle.java \
+      sun/awt/X11/XSegment.java \
+      sun/awt/X11/XStandardColormap.java \
+      sun/awt/X11/XTextItem.java \
+      sun/awt/X11/XTextItem16.java \
+      sun/awt/X11/XTextProperty.java \
+      sun/awt/X11/XTimeCoord.java \
+      sun/awt/X11/XWindowChanges.java \
+      sun/awt/X11/XdbeSwapInfo.java \
+      sun/awt/X11/XmbTextItem.java \
+      sun/awt/X11/XwcTextItem.java
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  java.desktop_EXCLUDES += com/sun/java/swing/plaf/gtk
+endif
+
+ifdef BUILD_HEADLESS_ONLY
+  java.desktop_EXCLUDES += sun/applet
+endif
+
+# Why is this in the open source tree?
+ifdef OPENJDK
+  java.desktop_EXCLUDES += sun/dc
+endif
+
+# Used on windows and macosx
+ifeq ($(filter $(OPENJDK_TARGET_OS), windows macosx), )
+  java.desktop_EXCLUDE_FILES += sun/awt/AWTCharset.java
+endif
+
+# These files do not appear in the build result of the old build. This
+# is because they are generated sources, but the AUTO_JAVA_FILES won't
+# pick them up since they aren't generated when the source dirs are
+# searched and they aren't referenced by any other classes so they won't
+# be picked up by implicit compilation. On a rebuild, they are picked up
+# and compiled. Exclude them here to produce the same rt.jar as the old
+# build does when building just once.
+java.desktop_EXCLUDE_FILES += \
+    javax/swing/plaf/nimbus/InternalFrameTitlePanePainter.java \
+    javax/swing/plaf/nimbus/OptionPaneMessageAreaPainter.java \
+    javax/swing/plaf/nimbus/ScrollBarPainter.java \
+    javax/swing/plaf/nimbus/SliderPainter.java \
+    javax/swing/plaf/nimbus/SpinnerPainter.java \
+    javax/swing/plaf/nimbus/SplitPanePainter.java \
+    javax/swing/plaf/nimbus/TabbedPanePainter.java \
+    #
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  # These files are duplicated in MACOSX_SRC_DIRS
+  java.desktop_EXCLUDE_FILES += \
+      $(JDK_TOPDIR)/src/java.desktop/unix/classes/sun/java2d/BackBufferCapsProvider.java \
+      #
+endif
+
+################################################################################
+
+java.sql_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+
+################################################################################
+
+java.sql.rowset_CLEAN_FILES := $(wildcard \
+    $(JDK_TOPDIR)/src/java.sql.rowset/share/classes/com/sun/rowset/*.properties \
+    $(JDK_TOPDIR)/src/java.sql.rowset/share/classes/javax/sql/rowset/*.properties)
+
+################################################################################
+# Exclude building of IIOP transport for RMI Connector
+java.management_EXCLUDES := com/sun/jmx/remote/protocol/iiop
+
+# Why is this in the open source tree?
+ifdef OPENJDK
+  java.management_EXCLUDES := \
+      com/sun/jmx/snmp \
+      sun/management/snmp \
+      #
+endif
+
+ifeq ($(RMICONNECTOR_IIOP), false)
+  java.management_EXCLUDES += com/sun/jmx/remote/protocol/iiop
+endif
+
+################################################################################
+
+java.rmi_CLEAN_FILES := $(wildcard \
+    $(JDK_TOPDIR)/src/java.rmi/share/classes/sun/rmi/registry/resources/*.properties \
+    $(JDK_TOPDIR)/src/java.rmi/share/classes/sun/rmi/server/resources/*.properties)
+
+################################################################################
+
+java.corba_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+
+java.corba_COPY := .prp
+java.corba_CLEAN := .properties
+
+java.corba_EXCLUDES := \
+    com/sun/corba/se/PortableActivationIDL \
+    com/sun/tools/corba/se/logutil \
+    #
+java.corba_EXCLUDE_FILES := \
+    com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
+    com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
+    com/sun/org/omg/CORBA/IDLTypeOperations.java \
+    com/sun/org/omg/CORBA/IRObjectOperations.java \
+    org/omg/PortableInterceptor/UNKNOWN.java \
+    com/sun/tools/corba/se/idl/ResourceBundleUtil.java \
+    com/sun/corba/se/impl/presentation/rmi/jndi.properties \
+    #
+
+################################################################################
+
+java.xml_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+java.xml_CLEAN := .properties
+
+################################################################################
+
+java.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+java.xml.bind_CLEAN := .properties
+
+################################################################################
+
+java.xml.soap_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+java.xml.soap_CLEAN := .properties
+
+################################################################################
+
+java.xml.ws_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+java.xml.ws_COPY := .xml
+java.xml.ws_CLEAN := .properties
+
+################################################################################
+
+java.naming_CLEAN := jndiprovider.properties
+
+################################################################################
+
+java.security.saaj_CLEAN := .properties
+
+################################################################################
+
+java.xml.crypto_COPY := .dtd .xml
+java.xml.crypto_CLEAN := .properties
+
+################################################################################
+
+jdk.charsets_COPY := .dat
+
+################################################################################
+
+jdk.compiler_COPY := javax.tools.JavaCompilerTool
+
+################################################################################
+
+jdk.jcmd_COPY := _options 
+
+################################################################################
+
+jdk.javadoc_COPY := .xml .css .js
+
+################################################################################
+
+jdk.rmic_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+jdk.rmic_CLEAN := .properties
+
+################################################################################
+
+# No SCTP implementation on Mac OS X or AIX. These classes should be excluded.
+SCTP_IMPL_CLASSES = \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationChange.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/AssociationImpl.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/PeerAddrChange.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/ResultContainer.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpChannelImpl.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpMultiChannelImpl.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpNet.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpNotification.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SctpServerChannelImpl.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/SendFailed.java \
+    $(JDK_TOPDIR)/src/jdk.sctp/unix/classes/sun/nio/ch/sctp/Shutdown.java
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  jdk.sctp_EXCLUDE_FILES := $(SCTP_IMPL_CLASSES)
+endif
+
+ifeq ($(OPENJDK_TARGET_OS),aix)
+  # These files are duplicated in AIX_SRC_DIRS
+  jdk.sctp_EXCLUDE_FILES := $(SCTP_IMPL_CLASSES)
+endif
+
+################################################################################
+
+jdk.jconsole_COPY := .gif .png
+
+jdk.jconsole_CLEAN_FILES := $(wildcard \
+    $(JDK_TOPDIR)/src/jdk.jconsole/share/classes/sun/tools/jconsole/resources/*.properties)
+
+################################################################################
+
+jdk.compiler_CLEAN_FILES := $(wildcard \
+    $(patsubst %, $(JDK_TOPDIR)/src/jdk.compiler/share/classes/%/*.properties, \
+        sun/tools/serialver/resources))
+
+################################################################################
+
+jdk.jdi_EXCLUDES := \
+    com/sun/tools/example/debug/bdi \
+    com/sun/tools/example/debug/event \
+    com/sun/tools/example/debug/gui \
+    com/sun/jdi/doc-files \
+    #
+
+jdk.jdi_EXCLUDE_FILES += jdi-overview.html
+
+################################################################################
+
+jdk.dev_CLEAN_FILES := $(wildcard \
+    $(patsubst %, $(JDK_TOPDIR)/src/jdk.dev/share/classes/%/*.properties, \
+        com/sun/tools/script/shell))
+
+jdk.dev_COPY := .js oqlhelp.html .txt
+
+################################################################################
+
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  jdk.attach_EXCLUDE_FILES += \
+      sun/tools/attach/SolarisAttachProvider.java \
+      sun/tools/attach/SolarisVirtualMachine.java \
+      #
+endif
+
+ifneq ($(OPENJDK_TARGET_OS), linux)
+  jdk.attach_EXCLUDE_FILES += \
+      sun/tools/attach/LinuxAttachProvider.java \
+      sun/tools/attach/LinuxVirtualMachine.java \
+      #
+endif
+
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  jdk.attach_EXCLUDE_FILES += \
+      sun/tools/attach/BsdAttachProvider.java \
+      sun/tools/attach/BsdVirtualMachine.java \
+      #
+endif
+
+ifneq ($(OPENJDK_TARGET_OS),aix)
+  jdk.attach_EXCLUDE_FILES += \
+      sun/tools/attach/AixAttachProvider.java \
+      sun/tools/attach/AixVirtualMachine.java \
+      #
+endif
+
+################################################################################
+
+jdk.jvmstat_COPY := aliasmap
+
+################################################################################
+
+jdk.xml.bind_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+jdk.xml.bind_CLEAN := .properties
+jdk.xml.bind_COPY := .xsd JAXBContextFactory.java ZeroOneBooleanAdapter.java
+
+################################################################################
+
+jdk.xml.ws_SETUP := GENERATE_JDKBYTECODE_NOWARNINGS
+jdk.xml.ws_CLEAN := .properties
+
+################################################################################
+
+sun.charsets_COPY := .dat
+
+################################################################################
+
+jdk.localedata_COPY := _dict _th
+# Exclude BreakIterator classes that are just used in compile process to generate
+# data files and shouldn't go in the product
+jdk.localedata_EXCLUDE_FILES := sun/text/resources/th/BreakIteratorRules_th.java
+
+################################################################################
+# Setup the compilation of each module
+#
+# Do not include nashorn src here since it needs to be compiled separately due
+# to nasgen.
+#
+# Order src dirs in order of override with the most important first. Generated
+# source before static source and platform specific source before shared.
+#
+# To use this variable, use $(call ALL_SRC_DIRS,module) with no space.
+GENERATED_SRC_DIRS += \
+    $(JDK_OUTPUTDIR)/gensrc/$1 \
+    $(LANGTOOLS_OUTPUTDIR)/gensrc/$1 \
+    $(CORBA_OUTPUTDIR)/gensrc/$1 \
+    $(JDK_OUTPUTDIR)/gensrc_no_srczip/$1 \
+    #
+
+OS_SRC_DIRS += $(JDK_TOPDIR)/src/$1/$(OPENJDK_TARGET_OS)/classes
+ifneq ($(OPENJDK_TARGET_OS), $(OPENJDK_TARGET_OS_API_DIR))
+OS_API_SRC_DIRS += $(JDK_TOPDIR)/src/$1/$(OPENJDK_TARGET_OS_API_DIR)/classes
+endif
+
+SHARE_SRC_DIRS += \
+    $(JDK_TOPDIR)/src/$1/share/classes \
+    $(LANGTOOLS_TOPDIR)/src/$1/share/classes \
+    $(CORBA_TOPDIR)/src/$1/share/classes \
+    $(JAXP_TOPDIR)/src/$1/share/classes \
+    $(JAXWS_TOPDIR)/src/$1/share/classes \
+    #
+
+ALL_SRC_DIRS = \
+    $(GENERATED_SRC_DIRS) \
+    $(OS_SRC_DIRS) \
+    $(OS_API_SRC_DIRS) \
+    $(SHARE_SRC_DIRS) \
+    #
+
+# Find all modules with java sources. Filter out nashorn since it needs to be
+# compiled separately.
+ALL_JAVA_MODULES := $(filter-out jdk.scripting.nashorn, $(call FindJavaModules))
+JAVA_MODULES := $(ALL_JAVA_MODULES)
+
+# The JDK_USER_DEFINED_FILTER is a poor man's incremental build: by specifying
+# JDK_FILTER at the make command line, only a subset of the JDK java files will
+# be recompiled. If multiple paths are separated by comma, convert that into a
+# space separated list.
+JDK_USER_DEFINED_FILTER := $(strip $(subst $(COMMA),$(SPACE), $(JDK_FILTER)))
+
+# This macro sets up compilation of a module and declares dependencies for it.
+# Param 1 - module name
+define SetupModuleCompilation
+  # Find the module dependencies by parsing modules.list file
+  $1_DEPS := $$(call FindDepsForModule, $1)
+
+  $1_CLASSPATH := $$(addprefix $(JDK_OUTPUTDIR)/modules/,$$($1_DEPS))
+  ifeq ($1, jdk.hotspot.agent)
+    ## The source of this module is compiled elsewhere, hotspot, and imported.
+    ## Service types are required in the classpath when compiing module-info
+    $1_CLASSPATH := $$($1_CLASSPATH) $$(addprefix $(JDK_OUTPUTDIR)/modules/,jdk.hotspot.agent)
+  endif
+  $1_CLASSPATH := $$(subst $$(SPACE),$$(PATH_SEP),$$($1_CLASSPATH))
+  $1_JAVAC_FLAGS := -bootclasspath "$$($1_CLASSPATH)"
+
+  $$(eval $$(call SetupJavaCompilation,$1, \
+      SETUP := $$(if $$($1_SETUP), $$($1_SETUP), GENERATE_JDKBYTECODE), \
+      SRC := $$(wildcard $$(call ALL_SRC_DIRS,$1)), \
+      INCLUDES:=$(JDK_USER_DEFINED_FILTER),\
+      BIN := $(JDK_OUTPUTDIR)/modules/$1, \
+      HEADERS := $(JDK_OUTPUTDIR)/gensrc_headers/$1, \
+      ADD_JAVAC_FLAGS := $$($1_JAVAC_FLAGS)))
+
+  $1: $$($1) $$($1_COPY_EXTRA)
+
+  # Declare dependencies between java compilation of different modules.
+  # Since not all modules have been declared yet, or might be declared
+  # in different invocations of this file, use the macro to find the 
+  # correct target file to depend on.
+  # Only the javac compilation actually depends on other modules so limit
+  # dependency declaration to that by using the *_COMPILE_TARGET variable.
+  $$($1_COMPILE_TARGETS): $$(foreach d,$$($1_DEPS), \
+      $$(call SetupJavaCompilationCompileTarget, $$d, $(JDK_OUTPUTDIR)/modules/$$d))
+endef
+
+# Setup compilation for each module
+$(foreach m,$(JAVA_MODULES),$(eval $(call SetupModuleCompilation,$m)))
+
+################################################################################
+# Copy zh_HK properties files from zh_TW
+
+$(JDK_OUTPUTDIR)/modules/%_zh_HK.properties: $(JDK_OUTPUTDIR)/modules/%_zh_TW.properties
+	$(install-file)
+
+define CreateHkTargets
+  $(patsubst $(JDK_TOPDIR)/src/%, $(JDK_OUTPUTDIR)/modules/%, \
+    $(subst /share/classes,, \
+      $(subst _zh_TW,_zh_HK, $(filter %_zh_TW.properties, $1))))
+endef
+
+java.sql.rowset: $(call CreateHkTargets, $(java.sql.rowset_CLEAN_FILES))
+java.rmi: $(call CreateHkTargets, $(java.rmi_CLEAN_FILES))
+
+all: $(JAVA_MODULES)
+
+.PHONY: all $(JAVA_MODULES)
