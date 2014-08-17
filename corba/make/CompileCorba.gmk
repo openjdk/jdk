@@ -34,53 +34,31 @@ include CommonCorba.gmk
 
 ################################################################################
 
-$(eval $(call SetupJavaCompilation,BUILD_CORBA, \
-    SETUP := GENERATE_NEWBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc, \
+$(eval $(call SetupJavaCompilation,BUILD_INTERIM_CORBA, \
+    SETUP := GENERATE_OLDBYTECODE, \
+    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes \
+      $(CORBA_TOPDIR)/src/jdk.rmic/share/classes \
+      $(CORBA_OUTPUTDIR)/gensrc/java.corba, \
     EXCLUDES := com/sun/corba/se/PortableActivationIDL, \
     EXCLUDE_FILES := com/sun/corba/se/impl/presentation/rmi/JNDIStateFactoryImpl.java \
         com/sun/corba/se/spi/presentation/rmi/StubWrapper.java \
-        com/sun/org/omg/CORBA/IDLTypeOperations.java \
-        com/sun/org/omg/CORBA/IRObjectOperations.java \
         org/omg/PortableInterceptor/UNKNOWN.java \
         com/sun/tools/corba/se/idl/ResourceBundleUtil.java \
         com/sun/corba/se/impl/presentation/rmi/jndi.properties, \
     COPY := .prp, \
     CLEAN := .properties, \
-    BIN := $(CORBA_OUTPUTDIR)/classes, \
-    JAR := $(CORBA_OUTPUTDIR)/dist/lib/classes.jar))
-
-# For the interim version, don't bother cleaning the properties.
-$(eval $(call SetupJavaCompilation,BUILD_INTERIM_CORBA, \
-    SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(BUILD_CORBA_SRC), \
-    EXCLUDES := $(BUILD_CORBA_EXCLUDES), \
-    EXCLUDE_FILES := $(BUILD_CORBA_EXCLUDE_FILES), \
-    COPY := $(BUILD_CORBA_COPY) $(BUILD_CORBA_CLEAN), \
     BIN := $(CORBA_OUTPUTDIR)/interim_classes, \
     JAR := $(INTERIM_CORBA_JAR)))
 
-# Separate src.zip call to include sources that were excluded in the build to
-# mimic behavior in old build system.
-$(eval $(call SetupZipArchive,ARCHIVE_CORBA_SRC, \
-    SRC := $(CORBA_TOPDIR)/src/share/classes $(CORBA_OUTPUTDIR)/gensrc, \
-    ZIP := $(CORBA_OUTPUTDIR)/dist/lib/src.zip))
-
 ################################################################################
-# Create bin.zip containing the corba specific binaries: orb.idl, ir.idl
-BIN_FILES := $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/orb.idl \
-    $(CORBA_TOPDIR)/src/share/classes/com/sun/tools/corba/se/idl/ir.idl
+# Copy idl files straight to jdk/lib. Not sure if this is the right way to do
+# it, but we are moving away from the one repo at a time build. Perhaps we should
+# scrap the 'jdk' prefix to bin, lib etc?
+$(JDK_OUTPUTDIR)/lib/%: $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/tools/corba/se/idl/%
+	$(install-file)
 
-$(CORBA_OUTPUTDIR)/dist/lib/bin.zip: $(BIN_FILES)
-	$(MKDIR) -p $(CORBA_OUTPUTDIR)/dist/lib
-	$(MKDIR) -p $(CORBA_OUTPUTDIR)/lib
-	$(RM) -f $@
-	$(ECHO) Creating `basename $@`
-	$(CP) $(BIN_FILES) $(CORBA_OUTPUTDIR)/lib
-	$(CHMOD) ug+w $(CORBA_OUTPUTDIR)/lib/*
-	(cd $(CORBA_OUTPUTDIR); $(ZIP) -q $@ lib/orb.idl lib/ir.idl)
+IDL_TARGET_FILES := $(JDK_OUTPUTDIR)/lib/orb.idl $(JDK_OUTPUTDIR)/lib/ir.idl
 
 ################################################################################
 
-all: $(BUILD_CORBA) $(BUILD_INTERIM_CORBA) $(ARCHIVE_CORBA_SRC) \
-    $(CORBA_OUTPUTDIR)/dist/lib/bin.zip
+all: $(BUILD_INTERIM_CORBA) $(IDL_TARGET_FILES)
