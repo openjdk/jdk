@@ -369,6 +369,9 @@ public class CompileProperties {
             if (inputs[i].equals("classes") && outputs[j].equals("classes")) {
                 ++i;
             }
+            if (i > 0 && inputs[i-1].equals("modules")) {
+                ++i;
+            }
             inStart = i;
             StringBuffer buf = new StringBuffer();
             for (i = inStart; i <= inEnd; i++) {

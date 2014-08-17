@@ -1,0 +1,93 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include GendataCommon.gmk
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, gendata/Gendata-java.base.gmk))
+
+include GendataBreakIterator.gmk
+GENDATA += $(BREAK_ITERATOR)
+
+include GendataTZDB.gmk
+GENDATA += $(GENDATA_TZDB)
+
+include GendataBlacklistedCerts.gmk
+GENDATA += $(GENDATA_BLACKLISTED_CERTS)
+
+##########################################################################################
+
+GENDATA_UNINAME := $(JDK_OUTPUTDIR)/modules/java.base/java/lang/uniName.dat
+
+$(GENDATA_UNINAME): $(JDK_TOPDIR)/make/data/unicodedata/UnicodeData.txt $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(@D)
+	$(TOOL_CHARACTERNAME) $< $@
+
+GENDATA += $(GENDATA_UNINAME)
+
+##########################################################################################
+
+GENDATA_CURDATA := $(JDK_OUTPUTDIR)/modules/java.base/java/util/currency.data
+
+$(GENDATA_CURDATA): $(JDK_TOPDIR)/make/data/currency/CurrencyData.properties $(BUILD_TOOLS_JDK)
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(TOOL_GENERATECURRENCYDATA) -o $@.tmp < $<
+	$(MV) $@.tmp $@
+	$(CHMOD) 444 $@
+
+GENDATA += $(GENDATA_CURDATA)
+
+##########################################################################################
+
+PROPS_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security-$(OPENJDK_TARGET_OS)
+PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
+
+# Optionally set this variable to a file to add extra restricted packages.
+ifneq ($(RESTRICTED_PKGS_SRC), )
+
+  $(PROPS_DST): $(PROPS_SRC) $(RESTRICTED_PKGS_SRC)
+	$(MKDIR) -p $(@D)
+	$(TOOL_ADDTORESTRICTEDPKGS) $(PROPS_SRC) $@.tmp `$(CAT) $(RESTRICTED_PKGS_SRC) | $(TR) "\n" " "`
+	$(MV) $@.tmp $@
+
+else
+
+  $(PROPS_DST): $(PROPS_SRC)
+	$(call install-file)
+
+endif
+
+GENDATA += $(PROPS_DST)
+
+##########################################################################################
+
+$(GENDATA): $(BUILD_TOOLS_JDK)
+
+java.base: $(GENDATA)
+
+all: java.base
+
+.PHONY: all java.base

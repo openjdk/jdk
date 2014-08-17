@@ -1,0 +1,92 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+BUILD_LIBMANAGEMENT_SRC := $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
+    $(JDK_TOPDIR)/src/java.management/$(OPENJDK_TARGET_OS_API_DIR)/native/libmanagement
+BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
+    $(addprefix -I,$(BUILD_LIBMANAGEMENT_SRC)) \
+    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.management \
+    $(LIBJAVA_HEADER_FLAGS) \
+    #
+
+BUILD_LIBMANAGEMENT_EXCLUDES :=
+
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  BUILD_LIBMANAGEMENT_EXCLUDES += SolarisOperatingSystem.c
+endif
+
+ifneq ($(OPENJDK_TARGET_OS), linux)
+  BUILD_LIBMANAGEMENT_EXCLUDES += LinuxOperatingSystem.c
+endif
+
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  BUILD_LIBMANAGEMENT_EXCLUDES += MacosxOperatingSystem.c
+endif
+
+LIBMANAGEMENT_OPTIMIZATION := HIGH
+ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
+  ifeq ($(ENABLE_DEBUG_SYMBOLS), true)
+    LIBMANAGEMENT_OPTIMIZATION := LOW
+  endif
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
+    LIBRARY := management, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(BUILD_LIBMANAGEMENT_SRC), \
+    EXCLUDE_FILES := $(BUILD_LIBMANAGEMENT_EXCLUDES), \
+    LANG := C, \
+    OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(BUILD_LIBMANAGEMENT_CFLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_solaris := -lkstat, \
+    LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
+    LDFLAGS_SUFFIX_windows := jvm.lib psapi.lib $(WIN_JAVA_LIB) advapi32.lib, \
+    LDFLAGS_SUFFIX_aix := -lperfstat,\
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=management.dll" \
+        -D "JDK_INTERNAL_NAME=management" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libmanagement, \
+    DEBUG_SYMBOLS := true))
+
+$(BUILD_LIBMANAGEMENT): $(BUILD_LIBJAVA)
+
+MANAGEMENT_LIBRARIES += $(BUILD_LIBMANAGEMENT)
+
+################################################################################
+
+java.management: $(MANAGEMENT_LIBRARIES)
+
+all: java.management
+
+.PHONY: all java.management

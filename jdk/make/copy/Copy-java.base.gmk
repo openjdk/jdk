@@ -1,0 +1,245 @@
+#
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include CopyCommon.gmk
+
+$(eval $(call IncludeCustomExtension, jdk, copy/Copy-java.base.gmk))
+
+################################################################################
+#
+# Copy exported header files to outputdir.
+#
+JAVA_BASE_HEADERS := \
+    $(INCLUDEDIR)/jni.h \
+    $(INCLUDEDIR)/jvmti.h \
+    $(INCLUDEDIR)/jvmticmlr.h \
+    $(INCLUDEDIR)/classfile_constants.h \
+    $(OPENJDK_TARGET_OS_INCLUDE)/jni_md.h \
+    #
+
+$(INCLUDEDIR)/%.h: $(JDK_TOPDIR)/src/java.base/share/native/include/%.h
+	$(call install-file)
+
+$(OPENJDK_TARGET_OS_INCLUDE)/%.h: \
+    $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_EXPORT_DIR)/native/include/%.h
+	$(call install-file)
+
+################################################################################
+
+CALENDARS_SRC := $(JDK_TOPDIR)/src/java.base/share/conf
+
+$(LIBDIR)/calendars.properties: $(CALENDARS_SRC)/calendars.properties
+	$(call install-file)
+
+BASE_CONF_FILES += $(LIBDIR)/calendars.properties
+
+$(LIBDIR)/hijrah-config-umalqura.properties: $(CALENDARS_SRC)/hijrah-config-umalqura.properties
+	$(MKDIR) -p $(@D)
+	$(RM) $@
+	$(CP) $< $@
+
+BASE_CONF_FILES += $(LIBDIR)/hijrah-config-umalqura.properties
+
+################################################################################
+
+ifneq ($(findstring $(OPENJDK_TARGET_OS), windows aix),)
+
+  TZMAPPINGS_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf
+
+  $(LIBDIR)/tzmappings: $(TZMAPPINGS_SRC)/tzmappings
+	$(call install-file)
+
+  BASE_CONF_FILES += $(LIBDIR)/tzmappings
+
+endif
+
+################################################################################
+# Copy msvcrXX.dll on windows
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  MSVCR_TARGET := $(JDK_OUTPUTDIR)/bin/$(notdir $(MSVCR_DLL))
+  # Chmod to avoid permission issues if bundles are unpacked on unix platforms.
+  $(MSVCR_TARGET): $(MSVCR_DLL)
+	$(call install-file)
+	$(CHMOD) a+rx $@
+endif
+
+################################################################################
+#
+# How to install jvm.cfg.
+#
+ifeq ($(JVM_VARIANT_ZERO), true)
+  JVMCFG_ARCH := zero
+else
+  JVMCFG_ARCH := $(OPENJDK_TARGET_CPU_LEGACY)
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/macosx/conf/$(JVMCFG_ARCH)/jvm.cfg
+else
+  JVMCFG_SRC := $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/conf/$(JVMCFG_ARCH)/jvm.cfg
+endif
+JVMCFG_DIR := $(JDK_OUTPUTDIR)/lib$(OPENJDK_TARGET_CPU_LIBDIR)
+JVMCFG := $(JVMCFG_DIR)/jvm.cfg
+
+# To do: should this also support -zeroshark?
+
+ifeq ($(OPENJDK_TARGET_CPU_BITS), 64)
+  COPY_JVM_CFG_FILE := true
+else
+  # On 32-bit machines we have three potential VMs: client, server and minimal.
+  # Historically we usually have both client and server and so that is what the
+  # committed jvm.cfg expects (including platform specific ergonomics switches
+  # to decide whether to use client or server by default). So when we have anything
+  # other than client and server we need to define a new jvm.cfg file.
+  # The main problem is deciding whether to use aliases for the VMs that are not
+  # present and the current position is that we add aliases for client and server, but
+  # not for minimal.
+  CLIENT_AND_SERVER := $(and $(findstring true, $(JVM_VARIANT_SERVER)), $(findstring true, $(JVM_VARIANT_CLIENT)))
+  ifeq ($(CLIENT_AND_SERVER), true)
+    COPY_JVM_CFG_FILE := true
+  else
+    # For zero, the default jvm.cfg file is sufficient
+    ifeq ($(JVM_VARIANT_ZERO), true)
+      COPY_JVM_CFG_FILE := true
+    endif
+  endif
+endif
+
+ifeq ($(COPY_JVM_CFG_FILE), true)
+  $(JVMCFG): $(JVMCFG_SRC)
+	$(call install-file)
+else
+  $(JVMCFG):
+	$(MKDIR) -p $(@D)
+	$(RM) $(@)
+        # Now check for other permutations
+        ifeq ($(JVM_VARIANT_SERVER), true)
+	  $(PRINTF) "-server KNOWN\n">>$(@)
+	  $(PRINTF) "-client ALIASED_TO -server\n">>$(@)
+          ifeq ($(JVM_VARIANT_MINIMAL1), true)
+	    $(PRINTF) "-minimal KNOWN\n">>$(@)
+          endif
+        else
+          ifeq ($(JVM_VARIANT_CLIENT), true)
+	    $(PRINTF) "-client KNOWN\n">>$(@)
+	    $(PRINTF) "-server ALIASED_TO -client\n">>$(@)
+            ifeq ($(JVM_VARIANT_MINIMAL1), true)
+	      $(PRINTF) "-minimal KNOWN\n">>$(@)
+            endif
+          else
+            ifeq ($(JVM_VARIANT_MINIMAL1), true)
+	      $(PRINTF) "-minimal KNOWN\n">>$(@)
+	      $(PRINTF) "-server ALIASED_TO -minimal\n">>$(@)
+	      $(PRINTF) "-client ALIASED_TO -minimal\n">>$(@)
+            endif
+          endif
+        endif
+endif
+
+BASE_CONF_FILES += $(JVMCFG)
+
+################################################################################
+
+POLICY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.policy
+POLICY_DST := $(JDK_OUTPUTDIR)/lib/security/java.policy
+
+POLICY_SRC_LIST :=
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  POLICY_SRC_LIST += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
+endif
+ifndef OPENJDK
+  ifeq ($(OPENJDK_TARGET_OS), windows)
+    ifeq ($(OPENJDK_TARGET_CPU_BITS), 32)
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy-win32
+    else
+      POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy-win64
+    endif
+  endif
+  ifeq ($(OPENJDK_TARGET_OS), solaris)
+    POLICY_SRC_LIST += $(JDK_TOPDIR)/src/closed/java.base/$(OPENJDK_TARGET_OS)/conf/security/java.policy
+  endif
+endif
+
+POLICY_SRC_LIST += $(POLICY_SRC)
+
+$(POLICY_DST): $(POLICY_SRC_LIST)
+	$(MKDIR) -p $(@D)
+	$(RM) $@ $@.tmp
+	$(foreach f,$(POLICY_SRC_LIST),$(CAT) $(f) >> $@.tmp;)
+	$(MV) $@.tmp $@
+
+BASE_CONF_FILES += $(POLICY_DST)
+
+################################################################################
+
+ifeq ($(CACERTS_FILE), )
+  CACERTS_FILE := $(JDK_TOPDIR)/src/java.base/share/conf/security/cacerts
+endif
+CACERTS_DST := $(JDK_OUTPUTDIR)/lib/security/cacerts
+
+$(CACERTS_DST): $(CACERTS_FILE)
+	$(call install-file)
+
+BASE_CONF_FILES += $(CACERTS_DST)
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+
+  SUNPKCS11_CFG_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/sunpkcs11-solaris.cfg
+  SUNPKCS11_CFG_DST := $(JDK_OUTPUTDIR)/lib/security/sunpkcs11-solaris.cfg
+
+  $(SUNPKCS11_CFG_DST): $(SUNPKCS11_CFG_SRC)
+	$(call install-file)
+
+  BASE_CONF_FILES += $(SUNPKCS11_CFG_DST)
+
+endif
+
+################################################################################
+
+$(JDK_OUTPUTDIR)/lib/net.properties: $(JDK_TOPDIR)/src/java.base/share/conf/net.properties
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(call install-file)
+
+NET_CONF_FILES += $(JDK_OUTPUTDIR)/lib/net.properties
+
+ifeq ($(OPENJDK_TARGET_OS), solaris)
+  $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template: $(JDK_TOPDIR)/src/java.base/${OPENJDK_TARGET_OS_API_DIR}/conf/sdp/sdp.conf.template
+	$(ECHO) $(LOG_INFO) Copying $(@F)
+	$(call install-file)
+
+  NET_CONF_FILES += $(JDK_OUTPUTDIR)/lib/sdp/sdp.conf.template
+endif
+
+################################################################################
+
+java.base: $(BASE_CONF_FILES) $(NET_CONF_FILES) $(JAVA_BASE_HEADERS) $(MSVCR_TARGET)
+
+all: java.base
+
+.PHONY: all java.base
