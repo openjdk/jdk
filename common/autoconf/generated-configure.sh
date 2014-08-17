@@ -805,6 +805,7 @@ JAXWS_TOPDIR
 JAXP_TOPDIR
 CORBA_TOPDIR
 LANGTOOLS_TOPDIR
+JAVA_TOOL_FLAGS_SMALL
 JAVA_FLAGS_SMALL
 JAVA_FLAGS_BIG
 JAVA_FLAGS
@@ -865,6 +866,8 @@ LDD
 ZIP
 UNZIP
 FIND_DELETE
+OUTPUT_SYNC
+OUTPUT_SYNC_SUPPORTED
 MAKE
 CHECK_TOOLSDIR_MAKE
 CHECK_TOOLSDIR_GMAKE
@@ -1044,6 +1047,7 @@ with_toolchain_path
 with_extra_path
 with_sdk_name
 with_conf_name
+with_output_sync
 with_builddeps_conf
 with_builddeps_server
 with_builddeps_dir
@@ -1881,6 +1885,8 @@ Optional Packages:
   --with-sdk-name         use the platform SDK of the given name. [macosx]
   --with-conf-name        use this as the name of the configuration [generated
                           from important configuration options]
+  --with-output-sync      set make output sync type if supported by make.
+                          [recurse]
   --with-builddeps-conf   use this configuration file for the builddeps
   --with-builddeps-server download and use build dependencies from this server
                           url
@@ -3487,6 +3493,8 @@ ac_configure="$SHELL $ac_aux_dir/configure"  # Please don't use this var.
 # $2: the description on how we found this
 
 
+
+
 # Goes looking for a usable version of GNU make.
 
 
@@ -4311,7 +4319,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1405336663
+DATE_WHEN_GENERATED=1407143049
 
 ###############################################################################
 #
@@ -13924,7 +13932,7 @@ $as_echo "$COMPILE_TYPE" >&6; }
 
   # Setup OPENJDK_TARGET_OS_API_DIR, used in source paths.
   if test "x$OPENJDK_TARGET_OS_API" = xposix; then
-    OPENJDK_TARGET_OS_API_DIR="solaris"
+    OPENJDK_TARGET_OS_API_DIR="unix"
   fi
   if test "x$OPENJDK_TARGET_OS_API" = xwinapi; then
     OPENJDK_TARGET_OS_API_DIR="windows"
@@ -17147,6 +17155,39 @@ $as_echo "$as_me: Rewriting FOUND_MAKE to \"$new_complete\"" >&6;}
 $as_echo "$as_me: Using GNU make 3.81 (or later) at $FOUND_MAKE (version: $MAKE_VERSION_STRING)" >&6;}
 
 
+  # Check if make supports the output sync option and if so, setup using it.
+  { $as_echo "$as_me:${as_lineno-$LINENO}: checking if make --output-sync is supported" >&5
+$as_echo_n "checking if make --output-sync is supported... " >&6; }
+  if $MAKE --version -O > /dev/null 2>&1; then
+    OUTPUT_SYNC_SUPPORTED=true
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
+$as_echo "yes" >&6; }
+    { $as_echo "$as_me:${as_lineno-$LINENO}: checking for output-sync value" >&5
+$as_echo_n "checking for output-sync value... " >&6; }
+
+# Check whether --with-output-sync was given.
+if test "${with_output_sync+set}" = set; then :
+  withval=$with_output_sync; OUTPUT_SYNC=$with_output_sync
+fi
+
+    if test "x$OUTPUT_SYNC" = "x"; then
+      OUTPUT_SYNC=none
+    fi
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: $OUTPUT_SYNC" >&5
+$as_echo "$OUTPUT_SYNC" >&6; }
+    if ! $MAKE --version -O$OUTPUT_SYNC > /dev/null 2>&1; then
+      as_fn_error $? "Make did not the support the value $OUTPUT_SYNC as output sync type." "$LINENO" 5
+    fi
+  else
+    OUTPUT_SYNC_SUPPORTED=false
+    { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
+$as_echo "no" >&6; }
+  fi
+
+
+
+
+
 
   # Test if find supports -delete
   { $as_echo "$as_me:${as_lineno-$LINENO}: checking if find supports -delete" >&5
@@ -19866,8 +19907,6 @@ fi
 
   if test "x$with_cacerts_file" != x; then
     CACERTS_FILE=$with_cacerts_file
-  else
-    CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
   fi
 
 
@@ -26376,6 +26415,12 @@ $as_echo_n "checking flags for boot jdk java command for small workloads... " >&
 $as_echo "$boot_jdk_jvmargs_small" >&6; }
 
   JAVA_FLAGS_SMALL=$boot_jdk_jvmargs_small
+
+
+  JAVA_TOOL_FLAGS_SMALL=""
+  for f in $JAVA_FLAGS_SMALL; do
+    JAVA_TOOL_FLAGS_SMALL="$JAVA_TOOL_FLAGS_SMALL -J$f"
+  done
 
 
 
@@ -42285,12 +42330,9 @@ fi
 
   # Setup some hard coded includes
   COMMON_CCXXFLAGS_JDK="$COMMON_CCXXFLAGS_JDK \
-      -I${JDK_OUTPUTDIR}/include \
-      -I${JDK_OUTPUTDIR}/include/$OPENJDK_TARGET_OS \
-      -I${JDK_TOPDIR}/src/share/javavm/export \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_EXPORT_DIR/javavm/export \
-      -I${JDK_TOPDIR}/src/share/native/common \
-      -I${JDK_TOPDIR}/src/$OPENJDK_TARGET_OS_API_DIR/native/common"
+      -I${JDK_TOPDIR}/src/java.base/share/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS/native/include \
+      -I${JDK_TOPDIR}/src/java.base/$OPENJDK_TARGET_OS_API_DIR/native/include"
 
   # The shared libraries are compiled using the picflag.
   CFLAGS_JDKLIB="$COMMON_CCXXFLAGS_JDK $CFLAGS_JDK $PICFLAG $CFLAGS_JDKLIB_EXTRA"
@@ -49120,7 +49162,7 @@ fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: checking if elliptic curve crypto implementation is present" >&5
 $as_echo_n "checking if elliptic curve crypto implementation is present... " >&6; }
 
-    if test -d "${SRC_ROOT}/jdk/src/share/native/sun/security/ec/impl"; then
+    if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
       ENABLE_INTREE_EC=yes
       { $as_echo "$as_me:${as_lineno-$LINENO}: result: yes" >&5
 $as_echo "yes" >&6; }

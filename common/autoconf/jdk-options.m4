@@ -414,8 +414,6 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
       [specify alternative cacerts file])])
   if test "x$with_cacerts_file" != x; then
     CACERTS_FILE=$with_cacerts_file
-  else
-    CACERTS_FILE=${SRC_ROOT}/jdk/src/share/lib/security/cacerts
   fi
   AC_SUBST(CACERTS_FILE)
 
@@ -441,7 +439,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_JDK_OPTIONS],
   [
     AC_MSG_CHECKING([if elliptic curve crypto implementation is present])
 
-    if test -d "${SRC_ROOT}/jdk/src/share/native/sun/security/ec/impl"; then
+    if test -d "${SRC_ROOT}/jdk/src/jdk.crypto.ec/share/native/libsunec/impl"; then
       ENABLE_INTREE_EC=yes
       AC_MSG_RESULT([yes])
     else
