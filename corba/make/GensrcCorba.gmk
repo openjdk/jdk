@@ -34,7 +34,7 @@ include CommonCorba.gmk
 
 ################################################################################
 
-$(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS_CORBA, \
     SETUP := GENERATE_OLDBYTECODE, \
     SRC := $(CORBA_TOPDIR)/make/src/classes, \
     BIN := $(CORBA_OUTPUTDIR)/tools_classes))
@@ -44,7 +44,7 @@ TOOL_LOGUTIL_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/tools_classes \
 
 $(eval $(call SetupJavaCompilation,BUILD_IDLJ, \
     SETUP := GENERATE_OLDBYTECODE, \
-    SRC := $(CORBA_TOPDIR)/src/share/classes, \
+    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes, \
     BIN := $(CORBA_OUTPUTDIR)/idlj_classes, \
     COPY := .prp, \
     INCLUDES := com/sun/tools/corba/se/idl, \
@@ -56,16 +56,16 @@ TOOL_IDLJ_CMD := $(JAVA) -cp $(CORBA_OUTPUTDIR)/idlj_classes \
 ################################################################################
 
 # Generate LogWrapper classes
-$(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/%SystemException.java: \
-    $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
-    $(BUILD_TOOLS)
+$(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/%SystemException.java: \
+    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
+    $(BUILD_TOOLS_CORBA)
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
 	$(ECHO) $(LOG_INFO) Generating class file from $*.mc
 	$(TOOL_LOGUTIL_CMD) make-class $< $(@D)
 
 # Generate LogWrapper properties file by concatening resource files
-$(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/LogStrings.properties: \
+$(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/LogStrings.properties: \
     $(CORBA_OUTPUTDIR)/logwrappers/ActivationSystemException.resource \
     $(CORBA_OUTPUTDIR)/logwrappers/IORSystemException.resource \
     $(CORBA_OUTPUTDIR)/logwrappers/InterceptorsSystemException.resource \
@@ -80,8 +80,8 @@ $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/LogStrings.properties: \
 
 # The resources files are generated from lisp-like .mc files.
 $(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource: \
-    $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
-    $(BUILD_TOOLS)
+    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/spi/logging/data/%.mc \
+    $(BUILD_TOOLS_CORBA)
 	$(MKDIR) -p $(@D)
 	$(RM) -f $(@D)/_the_wrappers.d
 	$(ECHO) $(LOG_INFO) Generating resource file from $*.mc
@@ -89,15 +89,15 @@ $(CORBA_OUTPUTDIR)/logwrappers/%SystemException.resource: \
 
 
 LOGWRAPPER_TARGETS := \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/ActivationSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/IORSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/InterceptorsSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/NamingSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/OMGSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/ORBUtilSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/POASystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/UtilSystemException.java \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/logging/LogStrings.properties
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/ActivationSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/IORSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/InterceptorsSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/NamingSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/OMGSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/ORBUtilSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/POASystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/UtilSystemException.java \
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/logging/LogStrings.properties
 
 ################################################################################
 # Build the IDLs.
@@ -213,8 +213,8 @@ IDL_DELETES := \
 
 $(eval $(call SetupIdlCompilation,BUILD_IDLS, \
     IDLJ := $(TOOL_IDLJ_CMD), \
-    SRC := $(CORBA_TOPDIR)/src/share/classes, \
-    BIN := $(CORBA_OUTPUTDIR)/gensrc, \
+    SRC := $(CORBA_TOPDIR)/src/java.corba/share/classes, \
+    BIN := $(CORBA_OUTPUTDIR)/gensrc/java.corba, \
     EXCLUDES := com/sun/tools/corba/se/idl/% \
         org/omg/CORBA/% \
         com/sun/corba/se/GiopIDL/% \
@@ -229,12 +229,12 @@ $(BUILD_IDLS): $(BUILD_IDLJ)
 ################################################################################
 # zh_HK is just a copy of zh_TW
 
-$(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties: \
-    $(CORBA_TOPDIR)/src/share/classes/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_TW.properties
+$(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties: \
+    $(CORBA_TOPDIR)/src/java.corba/share/classes/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_TW.properties
 	$(install-file)
 
 ################################################################################
 
 all: $(BUILD_IDLS) $(LOGWRAPPER_TARGETS) \
-    $(CORBA_OUTPUTDIR)/gensrc/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties
+    $(CORBA_OUTPUTDIR)/gensrc/java.corba/com/sun/corba/se/impl/orbutil/resources/sunorb_zh_HK.properties
 
