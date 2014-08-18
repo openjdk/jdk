@@ -40,11 +40,19 @@ inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
 }
 
 inline HeapRegion* HeapRegionSeq::at(uint index) const {
-  assert(index < length(), "pre-condition");
+  assert(is_available(index), "pre-condition");
   HeapRegion* hr = _regions.get_by_index(index);
   assert(hr != NULL, "sanity");
   assert(hr->hrs_index() == index, "sanity");
   return hr;
+}
+
+inline void HeapRegionSeq::insert_into_free_list(HeapRegion* hr) {
+  _free_list.add_ordered(hr);
+}
+
+inline void HeapRegionSeq::allocate_free_regions_starting_at(uint first, uint num_regions) {
+  _free_list.remove_starting_at(at(first), num_regions);
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGIONSEQ_INLINE_HPP

@@ -798,7 +798,7 @@ public:
   // that CM is notified of where the new end of the heap is. It
   // doesn't do anything if concurrent_marking_in_progress() is false,
   // unless the force parameter is true.
-  void update_g1_committed(bool force = false);
+  void update_heap_boundaries(MemRegion bounds, bool force = false);
 
   bool isMarked(oop p) const {
     assert(p != NULL && p->is_oop(), "expected an oop");

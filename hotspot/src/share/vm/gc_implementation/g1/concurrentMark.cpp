@@ -729,14 +729,13 @@ ConcurrentMark::ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs) :
   _completed_initialization = true;
 }
 
-void ConcurrentMark::update_g1_committed(bool force) {
+void ConcurrentMark::update_heap_boundaries(MemRegion bounds, bool force) {
   // If concurrent marking is not in progress, then we do not need to
   // update _heap_end.
   if (!concurrent_marking_in_progress() && !force) return;
 
-  MemRegion committed = _g1h->g1_committed();
-  assert(committed.start() == _heap_start, "start shouldn't change");
-  HeapWord* new_end = committed.end();
+  assert(bounds.start() == _heap_start, "start shouldn't change");
+  HeapWord* new_end = bounds.end();
   if (new_end > _heap_end) {
     // The heap has been expanded.
 
@@ -827,7 +826,7 @@ void ConcurrentMark::set_concurrency_and_phase(uint active_tasks, bool concurren
     assert(out_of_regions(),
            err_msg("only way to get here: _finger: "PTR_FORMAT", _heap_end: "PTR_FORMAT,
                    p2i(_finger), p2i(_heap_end)));
-    update_g1_committed(true);
+    update_heap_boundaries(_g1h->g1_committed(), true);
   }
 }
 
@@ -2196,7 +2195,7 @@ void ConcurrentMark::completeCleanup() {
   // Noone else should be accessing the _cleanup_list at this point,
   // so it's not necessary to take any locks
   while (!_cleanup_list.is_empty()) {
-    HeapRegion* hr = _cleanup_list.remove_head();
+    HeapRegion* hr = _cleanup_list.remove_region(true /* from_head */);
     assert(hr != NULL, "Got NULL from a non-empty list");
     hr->par_clear();
     tmp_free_list.add_ordered(hr);
