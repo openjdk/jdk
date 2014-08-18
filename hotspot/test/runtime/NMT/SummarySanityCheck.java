@@ -27,7 +27,6 @@
  * @summary Sanity check the output of NMT
  * @library /testlibrary /testlibrary/whitebox
  * @build SummarySanityCheck
- * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:NativeMemoryTracking=summary -XX:+WhiteBoxAPI SummarySanityCheck
  */
