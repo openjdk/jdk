@@ -237,19 +237,9 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // Storage for the G1 heap.
-  VirtualSpace _g1_storage;
-  MemRegion    _g1_reserved;
-
-  // The part of _g1_storage that is currently committed.
-  MemRegion _g1_committed;
-
-  // The master free list. It will satisfy all new region allocations.
-  FreeRegionList _free_list;
-
   // The secondary free list which contains regions that have been
-  // freed up during the cleanup process. This will be appended to the
-  // master free list when appropriate.
+  // freed up during the cleanup process. This will be appended to
+  // the master free list when appropriate.
   FreeRegionList _secondary_free_list;
 
   // It keeps track of the old regions.
@@ -512,14 +502,6 @@ protected:
   // request. If the region is to be used as an old region or for a
   // humongous object, set is_old to true. If not, to false.
   HeapRegion* new_region(size_t word_size, bool is_old, bool do_expand);
-
-  // Attempt to satisfy a humongous allocation request of the given
-  // size by finding a contiguous set of free regions of num_regions
-  // length and remove them from the master free list. Return the
-  // index of the first region or G1_NULL_HRS_INDEX if the search
-  // was unsuccessful.
-  uint humongous_obj_allocate_find_first(uint num_regions,
-                                         size_t word_size);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
@@ -1177,27 +1159,20 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   virtual bool is_maximal_no_gc() const {
-    return _g1_storage.uncommitted_size() == 0;
+    return _hrs.available() == 0;
   }
 
-  // The total number of regions in the heap.
-  uint n_regions() const { return _hrs.length(); }
+  // The current number of regions in the heap.
+  uint num_regions() const { return _hrs.length(); }
 
   // The max number of regions in the heap.
   uint max_regions() const { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  uint free_regions() const { return _free_list.length(); }
+  uint num_free_regions() const { return _hrs.num_free_regions(); }
 
   // The number of regions that are not completely free.
-  uint used_regions() const { return n_regions() - free_regions(); }
-
-  // The number of regions available for "regular" expansion.
-  uint expansion_regions() const { return _expansion_regions; }
-
-  // Factory method for HeapRegion instances. It will return NULL if
-  // the allocation fails.
-  HeapRegion* new_heap_region(uint hrs_index, HeapWord* bottom);
+  uint num_used_regions() const { return num_regions() - num_free_regions(); }
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
@@ -1246,7 +1221,7 @@ public:
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
-    return hr->containing_set() == &_free_list;
+    return _hrs.is_free(hr);
   }
 #endif // ASSERT
 
@@ -1258,7 +1233,7 @@ public:
   }
 
   void append_secondary_free_list() {
-    _free_list.add_ordered(&_secondary_free_list);
+    _hrs.insert_list_into_free_list(&_secondary_free_list);
   }
 
   void append_secondary_free_list_if_not_empty_with_lock() {
@@ -1364,19 +1339,19 @@ public:
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
   bool is_in_g1_reserved(const void* p) const {
-    return _g1_reserved.contains(p);
+    return _hrs.reserved().contains(p);
   }
 
   // Returns a MemRegion that corresponds to the space that has been
   // reserved for the heap
-  MemRegion g1_reserved() {
-    return _g1_reserved;
+  MemRegion g1_reserved() const {
+    return _hrs.reserved();
   }
 
   // Returns a MemRegion that corresponds to the space that has been
   // committed in the heap
   MemRegion g1_committed() {
-    return _g1_committed;
+    return _hrs.committed();
   }
 
   virtual bool is_in_closed_subset(const void* p) const;
@@ -1416,6 +1391,8 @@ public:
   // within the heap.
   inline uint addr_to_region(HeapWord* addr) const;
 
+  inline HeapWord* bottom_addr_for_region(uint index) const;
+
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
   // overpartition factor, currently 4).  Assumes that this will be called
@@ -1429,10 +1406,10 @@ public:
   // setting the claim value of the second and subsequent regions of the
   // chunk.)  For now requires that "doHeapRegion" always returns "false",
   // i.e., that a closure never attempt to abort a traversal.
-  void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
-                                       uint worker,
-                                       uint no_of_par_workers,
-                                       jint claim_value);
+  void heap_region_par_iterate_chunked(HeapRegionClosure* cl,
+                                       uint worker_id,
+                                       uint num_workers,
+                                       jint claim_value) const;
 
   // It resets all the region claim values to the default.
   void reset_heap_region_claim_values();
@@ -1456,11 +1433,6 @@ public:
   // Given the id of a worker, obtain or calculate a suitable
   // starting region for iterating over the current collection set.
   HeapRegion* start_cset_region_for_worker(uint worker_i);
-
-  // This is a convenience method that is used by the
-  // HeapRegionIterator classes to calculate the starting region for
-  // each worker so that they do not all start from the same region.
-  HeapRegion* start_region_for_worker(uint worker_i, uint no_of_par_workers);
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);
