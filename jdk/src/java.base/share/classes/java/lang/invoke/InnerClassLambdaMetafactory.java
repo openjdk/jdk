@@ -98,7 +98,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.*;
     private final String implMethodClassName;        // Name of type containing implementation "CC"
     private final String implMethodName;             // Name of implementation method "impl"
     private final String implMethodDesc;             // Type descriptor for implementation methods "(I)Ljava/lang/String;"
-    private final Class<?> implMethodReturnClass;    // class for implementaion method return type "Ljava/lang/String;"
+    private final Class<?> implMethodReturnClass;    // class for implementation method return type "Ljava/lang/String;"
     private final MethodType constructorType;        // Generated class constructor type "(CC)void"
     private final ClassWriter cw;                    // ASM class writer
     private final String[] argNames;                 // Generated names for the constructor arguments

@@ -599,9 +599,9 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
      */
     assert(prog != NULL && argBlock != NULL);
     if ((phelperpath = getBytes(env, helperpath))   == NULL) goto Catch;
-    if ((pprog     = getBytes(env, prog))       == NULL) goto Catch;
-    if ((pargBlock = getBytes(env, argBlock))   == NULL) goto Catch;
-    if ((c->argv = NEW(const char *, argc + 3)) == NULL) goto Catch;
+    if ((pprog       = getBytes(env, prog))         == NULL) goto Catch;
+    if ((pargBlock   = getBytes(env, argBlock))     == NULL) goto Catch;
+    if ((c->argv     = NEW(const char *, argc + 3)) == NULL) goto Catch;
     c->argv[0] = pprog;
     c->argc = argc + 2;
     initVectorFromBlock(c->argv+1, pargBlock, argc);
@@ -690,10 +690,11 @@ Java_java_lang_UNIXProcess_forkAndExec(JNIEnv *env,
     closeSafely(childenv[0]);
     closeSafely(childenv[1]);
 
-    releaseBytes(env, prog,     pprog);
-    releaseBytes(env, argBlock, pargBlock);
-    releaseBytes(env, envBlock, penvBlock);
-    releaseBytes(env, dir,      c->pdir);
+    releaseBytes(env, helperpath, phelperpath);
+    releaseBytes(env, prog,       pprog);
+    releaseBytes(env, argBlock,   pargBlock);
+    releaseBytes(env, envBlock,   penvBlock);
+    releaseBytes(env, dir,        c->pdir);
 
     free(c->argv);
     free(c->envv);
