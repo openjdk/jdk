@@ -128,10 +128,10 @@ public class ParsingTest {
     }
 
     private static void checkNumberFormatException(String val, int radix, int start) {
-        int n = 0;
+        long n = 0;
         try {
-            n = Integer.parseInt(val, radix, start);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+            n = Long.parseLong(val, radix, start);
+            System.err.println("parseLong(" + val + ", " + radix + ", " + start +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (NumberFormatException nfe) {
@@ -143,7 +143,7 @@ public class ParsingTest {
         long n = 0;
         try {
             n = Long.parseLong(val, radix, start, end);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
+            System.err.println("parseLong(" + val + ", " + radix + ", " + start + ", " + end +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (NumberFormatException nfe) {
@@ -152,10 +152,10 @@ public class ParsingTest {
     }
 
     private static void checkIndexOutOfBoundsException(String val, int radix, int start) {
-        int n = 0;
+        long n = 0;
         try {
-            n = Integer.parseInt(val, radix, start);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+            n = Long.parseLong(val, radix, start);
+            System.err.println("parseLong(" + val + ", " + radix + ", " + start +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (IndexOutOfBoundsException ioob) {
@@ -167,7 +167,7 @@ public class ParsingTest {
         long n = 0;
         try {
             n = Long.parseLong(val, radix, start, end);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
+            System.err.println("parseLong(" + val + ", " + radix + ", " + start + ", " + end +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (IndexOutOfBoundsException ioob) {
@@ -179,7 +179,7 @@ public class ParsingTest {
         long n = 0;
         try {
             n = Long.parseLong(null, 10, start, end);
-            System.err.println("parseInt(null, " + radix + ", " + start + ", " + end +
+            System.err.println("parseLong(null, " + radix + ", " + start + ", " + end +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (NullPointerException npe) {

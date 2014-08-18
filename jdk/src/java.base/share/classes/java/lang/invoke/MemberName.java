@@ -59,7 +59,7 @@ import java.util.Objects;
  * and properly use the named member.
  * <p>
  * When resolved, a member name's internal implementation may include references to JVM metadata.
- * This representation is stateless and only decriptive.
+ * This representation is stateless and only descriptive.
  * It provides no private information and no capability to use the member.
  * <p>
  * By contrast, a {@linkplain java.lang.reflect.Method} contains fuller information

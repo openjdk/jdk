@@ -65,15 +65,25 @@
 #
 # List of providers and their preference orders (see above):
 #
-security.provider.1=sun.security.provider.Sun
-security.provider.2=sun.security.rsa.SunRsaSign
-security.provider.3=sun.security.ec.SunEC
-security.provider.4=com.sun.net.ssl.internal.ssl.Provider
-security.provider.5=com.sun.crypto.provider.SunJCE
-security.provider.6=sun.security.jgss.SunProvider
-security.provider.7=com.sun.security.sasl.Provider
-security.provider.8=org.jcp.xml.dsig.internal.dom.XMLDSigRI
-security.provider.9=sun.security.smartcardio.SunPCSC
+#ifdef solaris
+security.provider.tbd=com.oracle.security.ucrypto.UcryptoProvider ${java.home}/lib/security/ucrypto-solaris.cfg
+security.provider.tbd=sun.security.pkcs11.SunPKCS11 ${java.home}/lib/security/sunpkcs11-solaris.cfg
+#endif
+security.provider.tbd=sun.security.provider.Sun
+security.provider.tbd=sun.security.rsa.SunRsaSign
+security.provider.tbd=sun.security.ec.SunEC
+security.provider.tbd=com.sun.net.ssl.internal.ssl.Provider
+security.provider.tbd=com.sun.crypto.provider.SunJCE
+security.provider.tbd=sun.security.jgss.SunProvider
+security.provider.tbd=com.sun.security.sasl.Provider
+security.provider.tbd=org.jcp.xml.dsig.internal.dom.XMLDSigRI
+security.provider.tbd=sun.security.smartcardio.SunPCSC
+#ifdef windows
+security.provider.tbd=sun.security.mscapi.SunMSCAPI
+#endif
+#ifdef macosx
+security.provider.tbd=apple.security.AppleProvider
+#endif
 
 #
 # Sun Provider SecureRandom seed source.
@@ -126,7 +136,12 @@ securerandom.source=file:/dev/random
 # This is a comma-separated list of algorithm and/or algorithm:provider
 # entries.
 #
+#ifdef windows
+securerandom.strongAlgorithms=Windows-PRNG:SunMSCAPI,SHA1PRNG:SUN
+#endif
+#ifndef windows
 securerandom.strongAlgorithms=NativePRNGBlocking:SUN
+#endif
 
 #
 # Class to instantiate as the javax.security.auth.login.Configuration
@@ -210,7 +225,10 @@ package.access=sun.,\
                jdk.internal.,\
                jdk.nashorn.internal.,\
                jdk.nashorn.tools.,\
-               com.sun.activation.registries.
+               com.sun.activation.registries.,\
+#ifdef macosx
+               apple.,\
+#endif
 
 #
 # List of comma-separated packages that start with or equal this string
@@ -256,7 +274,10 @@ package.definition=sun.,\
                    jdk.internal.,\
                    jdk.nashorn.internal.,\
                    jdk.nashorn.tools.,\
-                   com.sun.activation.registries.
+                   com.sun.activation.registries.,\
+#ifdef macosx
+                   apple.,\
+#endif
 
 #
 # Determines whether this properties file can be appended to

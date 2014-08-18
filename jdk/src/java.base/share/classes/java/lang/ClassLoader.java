@@ -205,7 +205,7 @@ public abstract class ClassLoader {
         }
 
         /**
-         * Registers the given class loader type as parallel capabale.
+         * Registers the given class loader type as parallel capable.
          * Returns {@code true} is successfully registered; {@code false} if
          * loader's super class is not registered.
          */
@@ -832,7 +832,7 @@ public abstract class ClassLoader {
     {
         int len = b.remaining();
 
-        // Use byte[] if not a direct ByteBufer:
+        // Use byte[] if not a direct ByteBuffer:
         if (!b.isDirect()) {
             if (b.hasArray()) {
                 return defineClass(name, b.array(),
