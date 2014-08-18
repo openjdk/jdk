@@ -231,10 +231,6 @@ public:
 
   void set_bottom(HeapWord* new_bottom);
 
-  // Updates all the BlockOffsetArray's sharing this shared array to
-  // reflect the current "top"'s of their spaces.
-  void update_offset_arrays();
-
   // Return the appropriate index into "_offset_array" for "p".
   inline size_t index_for(const void* p) const;
 
@@ -480,6 +476,8 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
                       blk_start, blk_end);
   }
 
+  // Zero out the entry for _bottom (offset will be zero).
+  void zero_bottom_entry();
  public:
   G1BlockOffsetArrayContigSpace(G1BlockOffsetSharedArray* array, MemRegion mr);
 
@@ -487,8 +485,10 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   // bottom of the covered region.
   HeapWord* initialize_threshold();
 
-  // Zero out the entry for _bottom (offset will be zero).
-  void      zero_bottom_entry();
+  void reset_bot() {
+    zero_bottom_entry();
+    initialize_threshold();
+  }
 
   // Return the next threshold, the point at which the table should be
   // updated.

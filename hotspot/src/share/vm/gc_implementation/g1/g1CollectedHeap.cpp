@@ -50,7 +50,7 @@
 #include "gc_implementation/g1/g1YCTypes.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/g1/vm_operations_g1.hpp"
 #include "gc_implementation/shared/gcHeapSummary.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
@@ -523,9 +523,9 @@ G1CollectedHeap::new_region_try_secondary_free_list(bool is_old) {
       // again to allocate from it.
       append_secondary_free_list();
 
-      assert(!_free_list.is_empty(), "if the secondary_free_list was not "
+      assert(_hrs.num_free_regions() > 0, "if the secondary_free_list was not "
              "empty we should have moved at least one entry to the free_list");
-      HeapRegion* res = _free_list.remove_region(is_old);
+      HeapRegion* res = _hrs.allocate_free_region(is_old);
       if (G1ConcRegionFreeingVerbose) {
         gclog_or_tty->print_cr("G1ConcRegionFreeing [region alloc] : "
                                "allocated "HR_FORMAT" from secondary_free_list",
@@ -566,7 +566,7 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_e
     }
   }
 
-  res = _free_list.remove_region(is_old);
+  res = _hrs.allocate_free_region(is_old);
 
   if (res == NULL) {
     if (G1ConcRegionFreeingVerbose) {
@@ -591,8 +591,8 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_e
       // Given that expand() succeeded in expanding the heap, and we
       // always expand the heap by an amount aligned to the heap
       // region size, the free list should in theory not be empty.
-      // In either case remove_region() will check for NULL.
-      res = _free_list.remove_region(is_old);
+      // In either case allocate_free_region() will check for NULL.
+      res = _hrs.allocate_free_region(is_old);
     } else {
       _expand_heap_after_alloc_failure = false;
     }
@@ -600,55 +600,11 @@ HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_e
   return res;
 }
 
-uint G1CollectedHeap::humongous_obj_allocate_find_first(uint num_regions,
-                                                        size_t word_size) {
-  assert(isHumongous(word_size), "word_size should be humongous");
-  assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
-
-  uint first = G1_NULL_HRS_INDEX;
-  if (num_regions == 1) {
-    // Only one region to allocate, no need to go through the slower
-    // path. The caller will attempt the expansion if this fails, so
-    // let's not try to expand here too.
-    HeapRegion* hr = new_region(word_size, true /* is_old */, false /* do_expand */);
-    if (hr != NULL) {
-      first = hr->hrs_index();
-    } else {
-      first = G1_NULL_HRS_INDEX;
-    }
-  } else {
-    // We can't allocate humongous regions while cleanupComplete() is
-    // running, since some of the regions we find to be empty might not
-    // yet be added to the free list and it is not straightforward to
-    // know which list they are on so that we can remove them. Note
-    // that we only need to do this if we need to allocate more than
-    // one region to satisfy the current humongous allocation
-    // request. If we are only allocating one region we use the common
-    // region allocation code (see above).
-    wait_while_free_regions_coming();
-    append_secondary_free_list_if_not_empty_with_lock();
-
-    if (free_regions() >= num_regions) {
-      first = _hrs.find_contiguous(num_regions);
-      if (first != G1_NULL_HRS_INDEX) {
-        for (uint i = first; i < first + num_regions; ++i) {
-          HeapRegion* hr = region_at(i);
-          assert(hr->is_empty(), "sanity");
-          assert(is_on_master_free_list(hr), "sanity");
-          hr->set_pending_removal(true);
-        }
-        _free_list.remove_all_pending(num_regions);
-      }
-    }
-  }
-  return first;
-}
-
 HeapWord*
 G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
                                                            uint num_regions,
                                                            size_t word_size) {
-  assert(first != G1_NULL_HRS_INDEX, "pre-condition");
+  assert(first != G1_NO_HRS_INDEX, "pre-condition");
   assert(isHumongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
@@ -786,42 +742,69 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 
   verify_region_sets_optional();
 
-  size_t word_size_rounded = round_to(word_size, HeapRegion::GrainWords);
-  uint num_regions = (uint) (word_size_rounded / HeapRegion::GrainWords);
-  uint x_num = expansion_regions();
-  uint fs = _hrs.free_suffix();
-  uint first = humongous_obj_allocate_find_first(num_regions, word_size);
-  if (first == G1_NULL_HRS_INDEX) {
-    // The only thing we can do now is attempt expansion.
-    if (fs + x_num >= num_regions) {
-      // If the number of regions we're trying to allocate for this
-      // object is at most the number of regions in the free suffix,
-      // then the call to humongous_obj_allocate_find_first() above
-      // should have succeeded and we wouldn't be here.
-      //
-      // We should only be trying to expand when the free suffix is
-      // not sufficient for the object _and_ we have some expansion
-      // room available.
-      assert(num_regions > fs, "earlier allocation should have succeeded");
+  uint first = G1_NO_HRS_INDEX;
+  uint obj_regions = (uint)(align_size_up_(word_size, HeapRegion::GrainWords) / HeapRegion::GrainWords);
 
+  if (obj_regions == 1) {
+    // Only one region to allocate, try to use a fast path by directly allocating
+    // from the free lists. Do not try to expand here, we will potentially do that
+    // later.
+    HeapRegion* hr = new_region(word_size, true /* is_old */, false /* do_expand */);
+    if (hr != NULL) {
+      first = hr->hrs_index();
+    }
+  } else {
+    // We can't allocate humongous regions spanning more than one region while
+    // cleanupComplete() is running, since some of the regions we find to be
+    // empty might not yet be added to the free list. It is not straightforward
+    // to know in which list they are on so that we can remove them. We only
+    // need to do this if we need to allocate more than one region to satisfy the
+    // current humongous allocation request. If we are only allocating one region
+    // we use the one-region region allocation code (see above), or end up here.
+    wait_while_free_regions_coming();
+    append_secondary_free_list_if_not_empty_with_lock();
+
+    // Policy: Try only empty regions (i.e. already committed first). Maybe we
+    // are lucky enough to find some.
+    first = _hrs.find_contiguous(obj_regions, true);
+    if (first != G1_NO_HRS_INDEX) {
+      _hrs.allocate_free_regions_starting_at(first, obj_regions);
+    }
+  }
+
+  if (first == G1_NO_HRS_INDEX) {
+    // Policy: We could not find enough regions for the humongous object in the
+    // free list. Look through the heap to find a mix of free and uncommitted regions.
+    // If so, try expansion.
+    first = _hrs.find_contiguous(obj_regions, false);
+    if (first != G1_NO_HRS_INDEX) {
+      // We found something. Make sure these regions are committed, i.e. expand
+      // the heap. Alternatively we could do a defragmentation GC.
       ergo_verbose1(ErgoHeapSizing,
                     "attempt heap expansion",
                     ergo_format_reason("humongous allocation request failed")
                     ergo_format_byte("allocation request"),
                     word_size * HeapWordSize);
-      if (expand((num_regions - fs) * HeapRegion::GrainBytes)) {
-        // Even though the heap was expanded, it might not have
-        // reached the desired size. So, we cannot assume that the
-        // allocation will succeed.
-        first = humongous_obj_allocate_find_first(num_regions, word_size);
+
+      _hrs.expand_at(first, obj_regions);
+      g1_policy()->record_new_heap_size(num_regions());
+
+#ifdef ASSERT
+      for (uint i = first; i < first + obj_regions; ++i) {
+        HeapRegion* hr = region_at(i);
+        assert(hr->is_empty(), "sanity");
+        assert(is_on_master_free_list(hr), "sanity");
       }
+#endif
+      _hrs.allocate_free_regions_starting_at(first, obj_regions);
+    } else {
+      // Policy: Potentially trigger a defragmentation GC.
     }
   }
 
   HeapWord* result = NULL;
-  if (first != G1_NULL_HRS_INDEX) {
-    result =
-      humongous_obj_allocate_initialize_regions(first, num_regions, word_size);
+  if (first != G1_NO_HRS_INDEX) {
+    result = humongous_obj_allocate_initialize_regions(first, obj_regions, word_size);
     assert(result != NULL, "it should always return a valid result");
 
     // A successful humongous object allocation changes the used space
@@ -1384,7 +1367,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         G1MarkSweep::invoke_at_safepoint(ref_processor_stw(), do_clear_all_soft_refs);
       }
 
-      assert(free_regions() == 0, "we should not have added any free regions");
+      assert(num_free_regions() == 0, "we should not have added any free regions");
       rebuild_region_sets(false /* free_list_only */);
 
       // Enqueue any discovered reference objects that have
@@ -1749,21 +1732,6 @@ HeapWord* G1CollectedHeap::expand_and_allocate(size_t word_size) {
   return NULL;
 }
 
-void G1CollectedHeap::update_committed_space(HeapWord* old_end,
-                                             HeapWord* new_end) {
-  assert(old_end != new_end, "don't call this otherwise");
-  assert((HeapWord*) _g1_storage.high() == new_end, "invariant");
-
-  // Update the committed mem region.
-  _g1_committed.set_end(new_end);
-  // Tell the card table about the update.
-  Universe::heap()->barrier_set()->resize_covered_region(_g1_committed);
-  // Tell the BOT about the update.
-  _bot_shared->resize(_g1_committed.word_size());
-  // Tell the hot card cache about the update
-  _cg1r->hot_card_cache()->resize_card_counts(capacity());
-}
-
 bool G1CollectedHeap::expand(size_t expand_bytes) {
   size_t aligned_expand_bytes = ReservedSpace::page_align_size_up(expand_bytes);
   aligned_expand_bytes = align_size_up(aligned_expand_bytes,
@@ -1774,55 +1742,22 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
                 ergo_format_byte("attempted expansion amount"),
                 expand_bytes, aligned_expand_bytes);
 
-  if (_g1_storage.uncommitted_size() == 0) {
+  if (is_maximal_no_gc()) {
     ergo_verbose0(ErgoHeapSizing,
                       "did not expand the heap",
                       ergo_format_reason("heap already fully expanded"));
     return false;
   }
 
-  // First commit the memory.
-  HeapWord* old_end = (HeapWord*) _g1_storage.high();
-  bool successful = _g1_storage.expand_by(aligned_expand_bytes);
-  if (successful) {
-    // Then propagate this update to the necessary data structures.
-    HeapWord* new_end = (HeapWord*) _g1_storage.high();
-    update_committed_space(old_end, new_end);
+  uint regions_to_expand = (uint)(aligned_expand_bytes / HeapRegion::GrainBytes);
+  assert(regions_to_expand > 0, "Must expand by at least one region");
 
-    FreeRegionList expansion_list("Local Expansion List");
-    MemRegion mr = _hrs.expand_by(old_end, new_end, &expansion_list);
-    assert(mr.start() == old_end, "post-condition");
-    // mr might be a smaller region than what was requested if
-    // expand_by() was unable to allocate the HeapRegion instances
-    assert(mr.end() <= new_end, "post-condition");
+  uint expanded_by = _hrs.expand_by(regions_to_expand);
 
-    size_t actual_expand_bytes = mr.byte_size();
+  if (expanded_by > 0) {
+    size_t actual_expand_bytes = expanded_by * HeapRegion::GrainBytes;
     assert(actual_expand_bytes <= aligned_expand_bytes, "post-condition");
-    assert(actual_expand_bytes == expansion_list.total_capacity_bytes(),
-           "post-condition");
-    if (actual_expand_bytes < aligned_expand_bytes) {
-      // We could not expand _hrs to the desired size. In this case we
-      // need to shrink the committed space accordingly.
-      assert(mr.end() < new_end, "invariant");
-
-      size_t diff_bytes = aligned_expand_bytes - actual_expand_bytes;
-      // First uncommit the memory.
-      _g1_storage.shrink_by(diff_bytes);
-      // Then propagate this update to the necessary data structures.
-      update_committed_space(new_end, mr.end());
-    }
-    _free_list.add_as_tail(&expansion_list);
-
-    if (_hr_printer.is_active()) {
-      HeapWord* curr = mr.start();
-      while (curr < mr.end()) {
-        HeapWord* curr_end = curr + HeapRegion::GrainWords;
-        _hr_printer.commit(curr, curr_end);
-        curr = curr_end;
-      }
-      assert(curr == mr.end(), "post-condition");
-    }
-    g1_policy()->record_new_heap_size(n_regions());
+    g1_policy()->record_new_heap_size(num_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not expand the heap",
@@ -1830,12 +1765,12 @@ bool G1CollectedHeap::expand(size_t expand_bytes) {
     // The expansion of the virtual storage space was unsuccessful.
     // Let's see if it was because we ran out of swap.
     if (G1ExitOnExpansionFailure &&
-        _g1_storage.uncommitted_size() >= aligned_expand_bytes) {
+        _hrs.available() >= regions_to_expand) {
       // We had head room...
       vm_exit_out_of_memory(aligned_expand_bytes, OOM_MMAP_ERROR, "G1 heap expansion");
     }
   }
-  return successful;
+  return regions_to_expand > 0;
 }
 
 void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
@@ -1846,7 +1781,6 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
   uint num_regions_to_remove = (uint)(shrink_bytes / HeapRegion::GrainBytes);
 
   uint num_regions_removed = _hrs.shrink_by(num_regions_to_remove);
-  HeapWord* old_end = (HeapWord*) _g1_storage.high();
   size_t shrunk_bytes = num_regions_removed * HeapRegion::GrainBytes;
 
   ergo_verbose3(ErgoHeapSizing,
@@ -1856,22 +1790,7 @@ void G1CollectedHeap::shrink_helper(size_t shrink_bytes) {
                 ergo_format_byte("attempted shrinking amount"),
                 shrink_bytes, aligned_shrink_bytes, shrunk_bytes);
   if (num_regions_removed > 0) {
-    _g1_storage.shrink_by(shrunk_bytes);
-    HeapWord* new_end = (HeapWord*) _g1_storage.high();
-
-    if (_hr_printer.is_active()) {
-      HeapWord* curr = old_end;
-      while (curr > new_end) {
-        HeapWord* curr_end = curr;
-        curr -= HeapRegion::GrainWords;
-        _hr_printer.uncommit(curr, curr_end);
-      }
-    }
-
-    _expansion_regions += num_regions_removed;
-    update_committed_space(old_end, new_end);
-    HeapRegionRemSet::shrink_heap(n_regions());
-    g1_policy()->record_new_heap_size(n_regions());
+    g1_policy()->record_new_heap_size(num_regions());
   } else {
     ergo_verbose0(ErgoHeapSizing,
                   "did not shrink the heap",
@@ -1922,7 +1841,6 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _g1mm(NULL),
   _refine_cte_cl(NULL),
   _full_collection(false),
-  _free_list("Master Free List", new MasterFreeRegionListMtSafeChecker()),
   _secondary_free_list("Secondary Free List", new SecondaryFreeRegionListMtSafeChecker()),
   _old_set("Old Set", false /* humongous */, new OldRegionSetMtSafeChecker()),
   _humongous_set("Master Humongous Set", true /* humongous */, new HumongousRegionSetMtSafeChecker()),
@@ -2051,14 +1969,9 @@ jint G1CollectedHeap::initialize() {
 
   // Carve out the G1 part of the heap.
 
-  ReservedSpace g1_rs   = heap_rs.first_part(max_byte_size);
-  _g1_reserved = MemRegion((HeapWord*)g1_rs.base(),
-                           g1_rs.size()/HeapWordSize);
+  ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
+  _hrs.initialize(g1_rs);
 
-  _g1_storage.initialize(g1_rs, 0);
-  _g1_committed = MemRegion((HeapWord*)_g1_storage.low(), (size_t) 0);
-  _hrs.initialize((HeapWord*) _g1_reserved.start(),
-                  (HeapWord*) _g1_reserved.end());
   assert(_hrs.max_length() == _expansion_regions,
          err_msg("max length: %u expansion regions: %u",
                  _hrs.max_length(), _expansion_regions));
@@ -2083,8 +1996,8 @@ jint G1CollectedHeap::initialize() {
 
   _g1h = this;
 
-  _in_cset_fast_test.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
-  _humongous_is_live.initialize(_g1_reserved.start(), _g1_reserved.end(), HeapRegion::GrainBytes);
+  _in_cset_fast_test.initialize(_hrs.reserved().start(), _hrs.reserved().end(), HeapRegion::GrainBytes);
+  _humongous_is_live.initialize(_hrs.reserved().start(), _hrs.reserved().end(), HeapRegion::GrainBytes);
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
@@ -2143,12 +2056,10 @@ jint G1CollectedHeap::initialize() {
   // counts and that mechanism.
   SpecializationStats::clear();
 
-  // Here we allocate the dummy full region that is required by the
-  // G1AllocRegion class. If we don't pass an address in the reserved
-  // space here, lots of asserts fire.
+  // Here we allocate the dummy HeapRegion that is required by the
+  // G1AllocRegion class.
 
-  HeapRegion* dummy_region = new_heap_region(0 /* index of bottom region */,
-                                             _g1_reserved.start());
+  HeapRegion* dummy_region = _hrs.get_dummy_region();
   // We'll re-use the same region whether the alloc region will
   // require BOT updates or not and, if it doesn't, then a non-young
   // region will complain that it cannot support allocations without
@@ -2264,7 +2175,7 @@ void G1CollectedHeap::ref_processing_init() {
 }
 
 size_t G1CollectedHeap::capacity() const {
-  return _g1_committed.byte_size();
+  return _hrs.length() * HeapRegion::GrainBytes;
 }
 
 void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
@@ -2569,7 +2480,7 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  if (_g1_committed.contains(p)) {
+  if (_hrs.committed().contains(p)) {
     // Given that we know that p is in the committed space,
     // heap_region_containing_raw() should successfully
     // return the containing region.
@@ -2644,83 +2555,9 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
 void
 G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
                                                  uint worker_id,
-                                                 uint no_of_par_workers,
-                                                 jint claim_value) {
-  const uint regions = n_regions();
-  const uint max_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
-                             no_of_par_workers :
-                             1);
-  assert(UseDynamicNumberOfGCThreads ||
-         no_of_par_workers == workers()->total_workers(),
-         "Non dynamic should use fixed number of workers");
-  // try to spread out the starting points of the workers
-  const HeapRegion* start_hr =
-                        start_region_for_worker(worker_id, no_of_par_workers);
-  const uint start_index = start_hr->hrs_index();
-
-  // each worker will actually look at all regions
-  for (uint count = 0; count < regions; ++count) {
-    const uint index = (start_index + count) % regions;
-    assert(0 <= index && index < regions, "sanity");
-    HeapRegion* r = region_at(index);
-    // we'll ignore "continues humongous" regions (we'll process them
-    // when we come across their corresponding "start humongous"
-    // region) and regions already claimed
-    if (r->claim_value() == claim_value || r->continuesHumongous()) {
-      continue;
-    }
-    // OK, try to claim it
-    if (r->claimHeapRegion(claim_value)) {
-      // success!
-      assert(!r->continuesHumongous(), "sanity");
-      if (r->startsHumongous()) {
-        // If the region is "starts humongous" we'll iterate over its
-        // "continues humongous" first; in fact we'll do them
-        // first. The order is important. In on case, calling the
-        // closure on the "starts humongous" region might de-allocate
-        // and clear all its "continues humongous" regions and, as a
-        // result, we might end up processing them twice. So, we'll do
-        // them first (notice: most closures will ignore them anyway) and
-        // then we'll do the "starts humongous" region.
-        for (uint ch_index = index + 1; ch_index < regions; ++ch_index) {
-          HeapRegion* chr = region_at(ch_index);
-
-          // if the region has already been claimed or it's not
-          // "continues humongous" we're done
-          if (chr->claim_value() == claim_value ||
-              !chr->continuesHumongous()) {
-            break;
-          }
-
-          // No one should have claimed it directly. We can given
-          // that we claimed its "starts humongous" region.
-          assert(chr->claim_value() != claim_value, "sanity");
-          assert(chr->humongous_start_region() == r, "sanity");
-
-          if (chr->claimHeapRegion(claim_value)) {
-            // we should always be able to claim it; no one else should
-            // be trying to claim this region
-
-            bool res2 = cl->doHeapRegion(chr);
-            assert(!res2, "Should not abort");
-
-            // Right now, this holds (i.e., no closure that actually
-            // does something with "continues humongous" regions
-            // clears them). We might have to weaken it in the future,
-            // but let's leave these two asserts here for extra safety.
-            assert(chr->continuesHumongous(), "should still be the case");
-            assert(chr->humongous_start_region() == r, "sanity");
-          } else {
-            guarantee(false, "we should not reach here");
-          }
-        }
-      }
-
-      assert(!r->continuesHumongous(), "sanity");
-      bool res = cl->doHeapRegion(r);
-      assert(!res, "Should not abort");
-    }
-  }
+                                                 uint num_workers,
+                                                 jint claim_value) const {
+  _hrs.par_iterate(cl, worker_id, num_workers, claim_value);
 }
 
 class ResetClaimValuesClosure: public HeapRegionClosure {
@@ -2898,17 +2735,6 @@ HeapRegion* G1CollectedHeap::start_cset_region_for_worker(uint worker_i) {
   return result;
 }
 
-HeapRegion* G1CollectedHeap::start_region_for_worker(uint worker_i,
-                                                     uint no_of_par_workers) {
-  uint worker_num =
-           G1CollectedHeap::use_parallel_gc_threads() ? no_of_par_workers : 1U;
-  assert(UseDynamicNumberOfGCThreads ||
-         no_of_par_workers == workers()->total_workers(),
-         "Non dynamic should use fixed number of workers");
-  const uint start_index = n_regions() * worker_i / worker_num;
-  return region_at(start_index);
-}
-
 void G1CollectedHeap::collection_set_iterate(HeapRegionClosure* cl) {
   HeapRegion* r = g1_policy()->collection_set();
   while (r != NULL) {
@@ -2951,15 +2777,11 @@ void G1CollectedHeap::collection_set_iterate_from(HeapRegion* r,
 }
 
 HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) const {
-  // We're not using an iterator given that it will wrap around when
-  // it reaches the last region and this is not what we want here.
-  for (uint index = from->hrs_index() + 1; index < n_regions(); index++) {
-    HeapRegion* hr = region_at(index);
-    if (!hr->isHumongous()) {
-      return hr;
-    }
+  HeapRegion* result = _hrs.next_region_in_heap(from);
+  while (result != NULL && result->isHumongous()) {
+    result = _hrs.next_region_in_heap(result);
   }
-  return NULL;
+  return result;
 }
 
 Space* G1CollectedHeap::space_containing(const void* addr) const {
@@ -3017,7 +2839,7 @@ size_t G1CollectedHeap::unsafe_max_tlab_alloc(Thread* ignored) const {
 }
 
 size_t G1CollectedHeap::max_capacity() const {
-  return _g1_reserved.byte_size();
+  return _hrs.reserved().byte_size();
 }
 
 jlong G1CollectedHeap::millis_since_last_gc() {
@@ -3546,9 +3368,9 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
             capacity()/K, used_unlocked()/K);
   st->print(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-            _g1_storage.low_boundary(),
-            _g1_storage.high(),
-            _g1_storage.high_boundary());
+            _hrs.committed().start(),
+            _hrs.committed().end(),
+            _hrs.reserved().end());
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
   uint young_regions = _young_list->length();
@@ -4239,10 +4061,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
             // No need for an ergo verbose message here,
             // expansion_amount() does this when it returns a value > 0.
             if (!expand(expand_bytes)) {
-              // We failed to expand the heap so let's verify that
-              // committed/uncommitted amount match the backing store
-              assert(capacity() == _g1_storage.committed_size(), "committed size mismatch");
-              assert(max_capacity() == _g1_storage.reserved_size(), "reserved size mismatch");
+              // We failed to expand the heap. Cannot do anything about it.
             }
           }
         }
@@ -4303,7 +4122,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       _hr_printer.end_gc(false /* full */, (size_t) total_collections());
 
       if (mark_in_progress()) {
-        concurrent_mark()->update_g1_committed();
+        concurrent_mark()->update_heap_boundaries(_hrs.committed());
       }
 
 #ifdef TRACESPINNING
@@ -6140,6 +5959,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
                                   bool locked) {
   assert(!hr->isHumongous(), "this is only for non-humongous regions");
   assert(!hr->is_empty(), "the region should not be empty");
+  assert(_hrs.is_available(hr->hrs_index()), "region should be committed");
   assert(free_list != NULL, "pre-condition");
 
   if (G1VerifyBitmaps) {
@@ -6194,7 +6014,7 @@ void G1CollectedHeap::prepend_to_freelist(FreeRegionList* list) {
   assert(list != NULL, "list can't be null");
   if (!list->is_empty()) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    _free_list.add_ordered(list);
+    _hrs.insert_list_into_free_list(list);
   }
 }
 
@@ -6802,22 +6622,22 @@ void G1CollectedHeap::tear_down_region_sets(bool free_list_only) {
     // this is that during a full GC string deduplication needs to know if
     // a collected region was young or old when the full GC was initiated.
   }
-  _free_list.remove_all();
+  _hrs.remove_all_free_regions();
 }
 
 class RebuildRegionSetsClosure : public HeapRegionClosure {
 private:
   bool            _free_list_only;
   HeapRegionSet*   _old_set;
-  FreeRegionList* _free_list;
+  HeapRegionSeq*   _hrs;
   size_t          _total_used;
 
 public:
   RebuildRegionSetsClosure(bool free_list_only,
-                           HeapRegionSet* old_set, FreeRegionList* free_list) :
+                           HeapRegionSet* old_set, HeapRegionSeq* hrs) :
     _free_list_only(free_list_only),
-    _old_set(old_set), _free_list(free_list), _total_used(0) {
-    assert(_free_list->is_empty(), "pre-condition");
+    _old_set(old_set), _hrs(hrs), _total_used(0) {
+    assert(_hrs->num_free_regions() == 0, "pre-condition");
     if (!free_list_only) {
       assert(_old_set->is_empty(), "pre-condition");
     }
@@ -6830,7 +6650,7 @@ public:
 
     if (r->is_empty()) {
       // Add free regions to the free list
-      _free_list->add_as_tail(r);
+      _hrs->insert_into_free_list(r);
     } else if (!_free_list_only) {
       assert(!r->is_young(), "we should not come across young regions");
 
@@ -6858,7 +6678,7 @@ void G1CollectedHeap::rebuild_region_sets(bool free_list_only) {
     _young_list->empty_list();
   }
 
-  RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_free_list);
+  RebuildRegionSetsClosure cl(free_list_only, &_old_set, &_hrs);
   heap_region_iterate(&cl);
 
   if (!free_list_only) {
@@ -7019,7 +6839,7 @@ class VerifyRegionListsClosure : public HeapRegionClosure {
 private:
   HeapRegionSet*   _old_set;
   HeapRegionSet*   _humongous_set;
-  FreeRegionList*  _free_list;
+  HeapRegionSeq*   _hrs;
 
 public:
   HeapRegionSetCount _old_count;
@@ -7028,8 +6848,8 @@ public:
 
   VerifyRegionListsClosure(HeapRegionSet* old_set,
                            HeapRegionSet* humongous_set,
-                           FreeRegionList* free_list) :
-    _old_set(old_set), _humongous_set(humongous_set), _free_list(free_list),
+                           HeapRegionSeq* hrs) :
+    _old_set(old_set), _humongous_set(humongous_set), _hrs(hrs),
     _old_count(), _humongous_count(), _free_count(){ }
 
   bool doHeapRegion(HeapRegion* hr) {
@@ -7043,7 +6863,7 @@ public:
       assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->hrs_index()));
       _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
-      assert(hr->containing_set() == _free_list, err_msg("Heap region %u is empty but not on the free list.", hr->hrs_index()));
+      assert(_hrs->is_free(hr), err_msg("Heap region %u is empty but not on the free list.", hr->hrs_index()));
       _free_count.increment(1u, hr->capacity());
     } else {
       assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrs_index()));
@@ -7052,7 +6872,7 @@ public:
     return false;
   }
 
-  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, FreeRegionList* free_list) {
+  void verify_counts(HeapRegionSet* old_set, HeapRegionSet* humongous_set, HeapRegionSeq* free_list) {
     guarantee(old_set->length() == _old_count.length(), err_msg("Old set count mismatch. Expected %u, actual %u.", old_set->length(), _old_count.length()));
     guarantee(old_set->total_capacity_bytes() == _old_count.capacity(), err_msg("Old set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
         old_set->total_capacity_bytes(), _old_count.capacity()));
@@ -7061,26 +6881,17 @@ public:
     guarantee(humongous_set->total_capacity_bytes() == _humongous_count.capacity(), err_msg("Hum set capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
         humongous_set->total_capacity_bytes(), _humongous_count.capacity()));
 
-    guarantee(free_list->length() == _free_count.length(), err_msg("Free list count mismatch. Expected %u, actual %u.", free_list->length(), _free_count.length()));
+    guarantee(free_list->num_free_regions() == _free_count.length(), err_msg("Free list count mismatch. Expected %u, actual %u.", free_list->num_free_regions(), _free_count.length()));
     guarantee(free_list->total_capacity_bytes() == _free_count.capacity(), err_msg("Free list capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
         free_list->total_capacity_bytes(), _free_count.capacity()));
   }
 };
 
-HeapRegion* G1CollectedHeap::new_heap_region(uint hrs_index,
-                                             HeapWord* bottom) {
-  HeapWord* end = bottom + HeapRegion::GrainWords;
-  MemRegion mr(bottom, end);
-  assert(_g1_reserved.contains(mr), "invariant");
-  // This might return NULL if the allocation fails
-  return new HeapRegion(hrs_index, _bot_shared, mr);
-}
-
 void G1CollectedHeap::verify_region_sets() {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
 
   // First, check the explicit lists.
-  _free_list.verify_list();
+  _hrs.verify();
   {
     // Given that a concurrent operation might be adding regions to
     // the secondary free list we have to take the lock before
@@ -7111,9 +6922,9 @@ void G1CollectedHeap::verify_region_sets() {
   // Finally, make sure that the region accounting in the lists is
   // consistent with what we see in the heap.
 
-  VerifyRegionListsClosure cl(&_old_set, &_humongous_set, &_free_list);
+  VerifyRegionListsClosure cl(&_old_set, &_humongous_set, &_hrs);
   heap_region_iterate(&cl);
-  cl.verify_counts(&_old_set, &_humongous_set, &_free_list);
+  cl.verify_counts(&_old_set, &_humongous_set, &_hrs);
 }
 
 // Optimized nmethod scanning

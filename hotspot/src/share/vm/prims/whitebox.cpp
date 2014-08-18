@@ -237,7 +237,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->free_regions();
+  size_t nr = g1->num_free_regions();
   return (jlong)nr;
 WB_END
 
