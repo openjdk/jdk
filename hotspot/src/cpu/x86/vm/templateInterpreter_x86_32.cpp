@@ -468,10 +468,10 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // rax,
 
   // NOTE:  since the additional locals are also always pushed (wasn't obvious in
-  // generate_method_entry) so the guard should work for them too.
+  // generate_fixed_frame) so the guard should work for them too.
   //
 
-  // monitor entry size: see picture of stack set (generate_method_entry) and frame_x86.hpp
+  // monitor entry size: see picture of stack in frame_x86.hpp
   const int entry_size    = frame::interpreter_frame_monitor_size() * wordSize;
 
   // total overhead size: entry_size + (saved rbp, thru expr stack bottom).
@@ -633,145 +633,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   __ movptr(Address(rsp, 0), rsp);                    // set expression stack bottom
 }
 
-// End of helpers
-
-//
-// Various method entries
-//------------------------------------------------------------------------------------------------------------------------
-//
-//
-
-// Call an accessor method (assuming it is resolved, otherwise drop into vanilla (slow path) entry
-
-address InterpreterGenerator::generate_accessor_entry(void) {
-
-  // rbx,: Method*
-  // rcx: receiver (preserve for slow entry into asm interpreter)
-
-  // rsi: senderSP must preserved for slow path, set SP to it on fast path
-
-  address entry_point = __ pc();
-  Label xreturn_path;
-
-  // do fastpath for resolved accessor methods
-  if (UseFastAccessorMethods) {
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-
-    __ jcc(Assembler::notEqual, slow_path);
-    // ASM/C++ Interpreter
-    // Code: _aload_0, _(i|a)getfield, _(i|a)return or any rewrites thereof; parameter size = 1
-    // Note: We can only use this code if the getfield has been resolved
-    //       and if we don't have a null-pointer exception => check for
-    //       these conditions first and use slow path if necessary.
-    // rbx,: method
-    // rcx: receiver
-    __ movptr(rax, Address(rsp, wordSize));
-
-    // check if local 0 != NULL and read field
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, slow_path);
-
-    // read first instruction word and extract bytecode @ 1 and index @ 2
-    __ movptr(rdx, Address(rbx, Method::const_offset()));
-    __ movptr(rdi, Address(rdx, ConstMethod::constants_offset()));
-    __ movl(rdx, Address(rdx, ConstMethod::codes_offset()));
-    // Shift codes right to get the index on the right.
-    // The bytecode fetched looks like <index><0xb4><0x2a>
-    __ shrl(rdx, 2*BitsPerByte);
-    __ shll(rdx, exact_log2(in_words(ConstantPoolCacheEntry::size())));
-    __ movptr(rdi, Address(rdi, ConstantPool::cache_offset_in_bytes()));
-
-    // rax,: local 0
-    // rbx,: method
-    // rcx: receiver - do not destroy since it is needed for slow path!
-    // rcx: scratch
-    // rdx: constant pool cache index
-    // rdi: constant pool cache
-    // rsi: sender sp
-
-    // check if getfield has been resolved and read constant pool cache entry
-    // check the validity of the cache entry by testing whether _indices field
-    // contains Bytecode::_getfield in b1 byte.
-    assert(in_words(ConstantPoolCacheEntry::size()) == 4, "adjust shift below");
-    __ movl(rcx,
-            Address(rdi,
-                    rdx,
-                    Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()));
-    __ shrl(rcx, 2*BitsPerByte);
-    __ andl(rcx, 0xFF);
-    __ cmpl(rcx, Bytecodes::_getfield);
-    __ jcc(Assembler::notEqual, slow_path);
-
-    // Note: constant pool entry is not valid before bytecode is resolved
-    __ movptr(rcx,
-              Address(rdi,
-                      rdx,
-                      Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::f2_offset()));
-    __ movl(rdx,
-            Address(rdi,
-                    rdx,
-                    Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-
-    Label notByte, notShort, notChar;
-    const Address field_address (rax, rcx, Address::times_1);
-
-    // Need to differentiate between igetfield, agetfield, bgetfield etc.
-    // because they are different sizes.
-    // Use the type from the constant pool cache
-    __ shrl(rdx, ConstantPoolCacheEntry::tos_state_shift);
-    // Make sure we don't need to mask rdx after the above shift
-    ConstantPoolCacheEntry::verify_tos_state_shift();
-    __ cmpl(rdx, btos);
-    __ jcc(Assembler::notEqual, notByte);
-    __ load_signed_byte(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notByte);
-    __ cmpl(rdx, stos);
-    __ jcc(Assembler::notEqual, notShort);
-    __ load_signed_short(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notShort);
-    __ cmpl(rdx, ctos);
-    __ jcc(Assembler::notEqual, notChar);
-    __ load_unsigned_short(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notChar);
-#ifdef ASSERT
-    Label okay;
-    __ cmpl(rdx, atos);
-    __ jcc(Assembler::equal, okay);
-    __ cmpl(rdx, itos);
-    __ jcc(Assembler::equal, okay);
-    __ stop("what type is this?");
-    __ bind(okay);
-#endif // ASSERT
-    // All the rest are a 32 bit wordsize
-    // This is ok for now. Since fast accessors should be going away
-    __ movptr(rax, field_address);
-
-    __ bind(xreturn_path);
-
-    // _ireturn/_areturn
-    __ pop(rdi);                               // get return address
-    __ mov(rsp, rsi);                          // set sp to sender sp
-    __ jmp(rdi);
-
-    // generate a vanilla interpreter entry as the slow path
-    __ bind(slow_path);
-
-    (void) generate_normal_entry(false);
-    return entry_point;
-  }
-  return NULL;
-
-}
 
 // Method entry for java.lang.ref.Reference.get.
 address InterpreterGenerator::generate_Reference_get_entry(void) {
@@ -862,7 +723,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_accessor_entry();
+  return generate_jump_to_normal_entry();
 }
 
 /**
@@ -1557,100 +1418,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
-//------------------------------------------------------------------------------------------------------------------------
-// Entry points
-//
-// Here we generate the various kind of entries into the interpreter.
-// The two main entry type are generic bytecode methods and native call method.
-// These both come in synchronized and non-synchronized versions but the
-// frame layout they create is very similar. The other method entry
-// types are really just special purpose entries that are really entry
-// and interpretation all in one. These are for trivial methods like
-// accessor, empty, or special math methods.
-//
-// When control flow reaches any of the entry types for the interpreter
-// the following holds ->
-//
-// Arguments:
-//
-// rbx,: Method*
-// rcx: receiver
-//
-//
-// Stack layout immediately at entry
-//
-// [ return address     ] <--- rsp
-// [ parameter n        ]
-//   ...
-// [ parameter 1        ]
-// [ expression stack   ] (caller's java expression stack)
-
-// Assuming that we don't go to one of the trivial specialized
-// entries the stack will look like below when we are ready to execute
-// the first bytecode (or call the native routine). The register usage
-// will be as the template based interpreter expects (see interpreter_x86.hpp).
-//
-// local variables follow incoming parameters immediately; i.e.
-// the return address is moved to the end of the locals).
-//
-// [ monitor entry      ] <--- rsp
-//   ...
-// [ monitor entry      ]
-// [ expr. stack bottom ]
-// [ saved rsi          ]
-// [ current rdi        ]
-// [ Method*            ]
-// [ saved rbp,          ] <--- rbp,
-// [ return address     ]
-// [ local variable m   ]
-//   ...
-// [ local variable 1   ]
-// [ parameter n        ]
-//   ...
-// [ parameter 1        ] <--- rdi
-
-address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter::MethodKind kind) {
-  // determine code generation flags
-  bool synchronized = false;
-  address entry_point = NULL;
-  InterpreterGenerator* ig_this = (InterpreterGenerator*)this;
-
-  switch (kind) {
-    case Interpreter::zerolocals             :                                                       break;
-    case Interpreter::zerolocals_synchronized: synchronized = true;                                  break;
-    case Interpreter::native                 : entry_point = ig_this->generate_native_entry(false);  break;
-    case Interpreter::native_synchronized    : entry_point = ig_this->generate_native_entry(true);   break;
-    case Interpreter::empty                  : entry_point = ig_this->generate_empty_entry();        break;
-    case Interpreter::accessor               : entry_point = ig_this->generate_accessor_entry();     break;
-    case Interpreter::abstract               : entry_point = ig_this->generate_abstract_entry();     break;
-
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : // fall thru
-    case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     : entry_point = ig_this->generate_math_entry(kind);      break;
-    case Interpreter::java_lang_ref_reference_get
-                                             : entry_point = ig_this->generate_Reference_get_entry(); break;
-    case Interpreter::java_util_zip_CRC32_update
-                                             : entry_point = ig_this->generate_CRC32_update_entry();  break;
-    case Interpreter::java_util_zip_CRC32_updateBytes
-                                             : // fall thru
-    case Interpreter::java_util_zip_CRC32_updateByteBuffer
-                                             : entry_point = ig_this->generate_CRC32_updateBytes_entry(kind); break;
-    default:
-      fatal(err_msg("unexpected method kind: %d", kind));
-      break;
-  }
-
-  if (entry_point) return entry_point;
-
-  return ig_this->generate_normal_entry(synchronized);
-
-}
 
 // These should never be compiled since the interpreter will prefer
 // the compiled version to the intrinsic version.

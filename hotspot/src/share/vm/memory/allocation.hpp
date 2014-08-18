@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -133,51 +133,34 @@ class AllocatedObj {
 
 
 /*
- * MemoryType bitmap layout:
- * | 16 15 14 13 12 11 10 09 | 08 07 06 05 | 04 03 02 01 |
- * |      memory type        |   object    | reserved    |
- * |                         |     type    |             |
+ * Memory types
  */
 enum MemoryType {
   // Memory type by sub systems. It occupies lower byte.
-  mtNone              = 0x0000,  // undefined
-  mtClass             = 0x0100,  // memory class for Java classes
-  mtThread            = 0x0200,  // memory for thread objects
-  mtThreadStack       = 0x0300,
-  mtCode              = 0x0400,  // memory for generated code
-  mtGC                = 0x0500,  // memory for GC
-  mtCompiler          = 0x0600,  // memory for compiler
-  mtInternal          = 0x0700,  // memory used by VM, but does not belong to
+  mtJavaHeap          = 0x00,  // Java heap
+  mtClass             = 0x01,  // memory class for Java classes
+  mtThread            = 0x02,  // memory for thread objects
+  mtThreadStack       = 0x03,
+  mtCode              = 0x04,  // memory for generated code
+  mtGC                = 0x05,  // memory for GC
+  mtCompiler          = 0x06,  // memory for compiler
+  mtInternal          = 0x07,  // memory used by VM, but does not belong to
                                  // any of above categories, and not used for
                                  // native memory tracking
-  mtOther             = 0x0800,  // memory not used by VM
-  mtSymbol            = 0x0900,  // symbol
-  mtNMT               = 0x0A00,  // memory used by native memory tracking
-  mtChunk             = 0x0B00,  // chunk that holds content of arenas
-  mtJavaHeap          = 0x0C00,  // Java heap
-  mtClassShared       = 0x0D00,  // class data sharing
-  mtTest              = 0x0E00,  // Test type for verifying NMT
-  mtTracing           = 0x0F00,  // memory used for Tracing
-  mt_number_of_types  = 0x000F,  // number of memory types (mtDontTrack
+  mtOther             = 0x08,  // memory not used by VM
+  mtSymbol            = 0x09,  // symbol
+  mtNMT               = 0x0A,  // memory used by native memory tracking
+  mtClassShared       = 0x0B,  // class data sharing
+  mtChunk             = 0x0C,  // chunk that holds content of arenas
+  mtTest              = 0x0D,  // Test type for verifying NMT
+  mtTracing           = 0x0E,  // memory used for Tracing
+  mtNone              = 0x0F,  // undefined
+  mt_number_of_types  = 0x10   // number of memory types (mtDontTrack
                                  // is not included as validate type)
-  mtDontTrack         = 0x0F00,  // memory we do not or cannot track
-  mt_masks            = 0x7F00,
-
-  // object type mask
-  otArena             = 0x0010, // an arena object
-  otNMTRecorder       = 0x0020, // memory recorder object
-  ot_masks            = 0x00F0
 };
 
-#define IS_MEMORY_TYPE(flags, type) ((flags & mt_masks) == type)
-#define HAS_VALID_MEMORY_TYPE(flags)((flags & mt_masks) != mtNone)
-#define FLAGS_TO_MEMORY_TYPE(flags) (flags & mt_masks)
+typedef MemoryType MEMFLAGS;
 
-#define IS_ARENA_OBJ(flags)         ((flags & ot_masks) == otArena)
-#define IS_NMT_RECORDER(flags)      ((flags & ot_masks) == otNMTRecorder)
-#define NMT_CAN_TRACK(flags)        (!IS_NMT_RECORDER(flags) && !(IS_MEMORY_TYPE(flags, mtDontTrack)))
-
-typedef unsigned short MEMFLAGS;
 
 #if INCLUDE_NMT
 
@@ -189,27 +172,23 @@ const bool NMT_track_callsite = false;
 
 #endif // INCLUDE_NMT
 
-// debug build does not inline
-#if defined(_NMT_NOINLINE_)
-  #define CURRENT_PC       (NMT_track_callsite ? os::get_caller_pc(1) : 0)
-  #define CALLER_PC        (NMT_track_callsite ? os::get_caller_pc(2) : 0)
-  #define CALLER_CALLER_PC (NMT_track_callsite ? os::get_caller_pc(3) : 0)
-#else
-  #define CURRENT_PC      (NMT_track_callsite? os::get_caller_pc(0) : 0)
-  #define CALLER_PC       (NMT_track_callsite ? os::get_caller_pc(1) : 0)
-  #define CALLER_CALLER_PC (NMT_track_callsite ? os::get_caller_pc(2) : 0)
-#endif
-
+class NativeCallStack;
 
 
 template <MEMFLAGS F> class CHeapObj ALLOCATION_SUPER_CLASS_SPEC {
  public:
-  _NOINLINE_ void* operator new(size_t size, address caller_pc = 0) throw();
+  _NOINLINE_ void* operator new(size_t size, const NativeCallStack& stack) throw();
+  _NOINLINE_ void* operator new(size_t size) throw();
   _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant,
-                               address caller_pc = 0) throw();
-  _NOINLINE_ void* operator new [](size_t size, address caller_pc = 0) throw();
+                               const NativeCallStack& stack) throw();
+  _NOINLINE_ void* operator new (size_t size, const std::nothrow_t&  nothrow_constant)
+                               throw();
+  _NOINLINE_ void* operator new [](size_t size, const NativeCallStack& stack) throw();
+  _NOINLINE_ void* operator new [](size_t size) throw();
   _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant,
-                               address caller_pc = 0) throw();
+                               const NativeCallStack& stack) throw();
+  _NOINLINE_ void* operator new [](size_t size, const std::nothrow_t&  nothrow_constant)
+                               throw();
   void  operator delete(void* p);
   void  operator delete [] (void* p);
 };
@@ -384,12 +363,14 @@ class Chunk: CHeapObj<mtChunk> {
 
 //------------------------------Arena------------------------------------------
 // Fast allocation of memory
-class Arena : public CHeapObj<mtNone|otArena> {
+class Arena : public CHeapObj<mtNone> {
 protected:
   friend class ResourceMark;
   friend class HandleMark;
   friend class NoHandleMark;
   friend class VMStructs;
+
+  MEMFLAGS    _flags;           // Memory tracking flags
 
   Chunk *_first;                // First chunk
   Chunk *_chunk;                // current chunk
@@ -418,8 +399,8 @@ protected:
  }
 
  public:
-  Arena();
-  Arena(size_t init_size);
+  Arena(MEMFLAGS memflag);
+  Arena(MEMFLAGS memflag, size_t init_size);
   ~Arena();
   void  destruct_contents();
   char* hwm() const             { return _hwm; }
@@ -518,8 +499,6 @@ protected:
   static void free_malloced_objects(Chunk* chunk, char* hwm, char* max, char* hwm2)  PRODUCT_RETURN;
   static void free_all(char** start, char** end)                                     PRODUCT_RETURN;
 
-  // how many arena instances
-  NOT_PRODUCT(static volatile jint _instance_count;)
 private:
   // Reset this Arena to empty, access will trigger grow if necessary
   void   reset(void) {
@@ -681,7 +660,7 @@ class ResourceObj ALLOCATION_SUPER_CLASS_SPEC {
   NEW_C_HEAP_ARRAY3(type, (size), memflags, pc, AllocFailStrategy::RETURN_NULL)
 
 #define NEW_C_HEAP_ARRAY_RETURN_NULL(type, size, memflags)\
-  NEW_C_HEAP_ARRAY3(type, (size), memflags, (address)0, AllocFailStrategy::RETURN_NULL)
+  NEW_C_HEAP_ARRAY3(type, (size), memflags, CURRENT_PC, AllocFailStrategy::RETURN_NULL)
 
 #define REALLOC_C_HEAP_ARRAY(type, old, size, memflags)\
   (type*) (ReallocateHeap((char*)(old), (size) * sizeof(type), memflags))
