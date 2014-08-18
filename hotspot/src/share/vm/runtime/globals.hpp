@@ -1078,6 +1078,9 @@ class CommandLineFlags {
   product(bool, ClassUnloading, true,                                       \
           "Do unloading of classes")                                        \
                                                                             \
+  product(bool, ClassUnloadingWithConcurrentMark, true,                     \
+          "Do unloading of classes with a concurrent marking cycle")        \
+                                                                            \
   develop(bool, DisableStartThread, false,                                  \
           "Disable starting of additional Java threads "                    \
           "(for debugging only)")                                           \
@@ -3870,6 +3873,9 @@ class CommandLineFlags {
                                                                             \
   product(bool, PrintGCCause, true,                                         \
           "Include GC cause in GC logging")                                 \
+                                                                            \
+  experimental(intx, SurvivorAlignmentInBytes, 0,                           \
+           "Default survivor space alignment in bytes")                     \
                                                                             \
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \

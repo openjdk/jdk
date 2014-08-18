@@ -176,8 +176,12 @@ address TemplateInterpreterGenerator::generate_return_entry_for(TosState state, 
   const Register size  = R12_scratch2;
   __ get_cache_and_index_at_bcp(cache, 1, index_size);
 
-  // Big Endian (get least significant byte of 64 bit value):
+  // Get least significant byte of 64 bit value:
+#if defined(VM_LITTLE_ENDIAN)
+  __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()), cache);
+#else
   __ lbz(size, in_bytes(ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()) + 7, cache);
+#endif
   __ sldi(size, size, Interpreter::logStackElementSize);
   __ add(R15_esp, R15_esp, size);
   __ dispatch_next(state, step);
@@ -858,7 +862,9 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // Our signature handlers copy required arguments to the C stack
   // (outgoing C args), R3_ARG1 to R10_ARG8, and FARG1 to FARG13.
   __ mr(R3_ARG1, R18_locals);
+#if !defined(ABI_ELFv2)
   __ ld(signature_handler_fd, 0, signature_handler_fd);
+#endif
 
   __ call_stub(signature_handler_fd);
 
@@ -1020,8 +1026,13 @@ address TemplateInterpreterGenerator::generate_native_entry(bool synchronized) {
   // native result across the call. No oop is present.
 
   __ mr(R3_ARG1, R16_thread);
+#if defined(ABI_ELFv2)
+  __ call_c(CAST_FROM_FN_PTR(address, JavaThread::check_special_condition_for_native_trans),
+            relocInfo::none);
+#else
   __ call_c(CAST_FROM_FN_PTR(FunctionDescriptor*, JavaThread::check_special_condition_for_native_trans),
             relocInfo::none);
+#endif
 
   __ bind(sync_check_done);
 
