@@ -28,7 +28,6 @@
  * @summary Make sure PrintNMTStatistics works on normal JVM exit
  * @library /testlibrary /testlibrary/whitebox
  * @build PrintNMTStatistics
- * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main PrintNMTStatistics
  */
