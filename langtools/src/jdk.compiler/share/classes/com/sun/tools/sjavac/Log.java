@@ -31,10 +31,10 @@ import java.io.PrintStream;
  * Utility class only for sjavac logging.
  * The log level can be set using for example --log=DEBUG on the sjavac command line.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class Log {
     private static PrintStream out, err;

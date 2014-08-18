@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @test
  * @bug 8024437
  * @summary Inferring the exception thrown by a lambda: sometimes fails to compile
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ExceptionInferenceFromClassFileTest
  */
@@ -56,19 +56,19 @@ public class ExceptionInferenceFromClassFileTest {
             "}";
 
     public static void main(String[] args) throws Exception {
-        Files.createDirectory(Paths.get("out"));
+        ToolBox tb = new ToolBox();
+        tb.createDirectories("out");
 
-        ToolBox.JavaToolArgs compileABParams =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-d", "out")
-                .setSources(ABSrc);
-        ToolBox.javac(compileABParams);
+        tb.new JavacTask()
+                .outdir("out")
+                .sources(ABSrc)
+                .run();
 
-        ToolBox.JavaToolArgs compileCParams =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-d", "out", "-cp", "out")
-                .setSources(CSrc);
-        ToolBox.javac(compileCParams);
+        tb.new JavacTask()
+                .outdir("out")
+                .classpath("out")
+                .sources(CSrc)
+                .run();
     }
 
 }

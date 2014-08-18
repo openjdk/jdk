@@ -919,14 +919,14 @@ public class Attr extends JCTree.Visitor {
                 // Empty bodies are only allowed for
                 // abstract, native, or interface methods, or for methods
                 // in a retrofit signature class.
-                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
-                    !relax)
-                    log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
                 if (tree.defaultValue != null) {
                     if ((owner.flags() & ANNOTATION) == 0)
                         log.error(tree.pos(),
                                   "default.allowed.in.intf.annotation.member");
                 }
+                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
+                    !relax)
+                    log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
             } else if ((tree.sym.flags() & ABSTRACT) != 0 && !isDefaultMethod) {
                 if ((owner.flags() & INTERFACE) != 0) {
                     log.error(tree.body.pos(), "intf.meth.cant.have.body");

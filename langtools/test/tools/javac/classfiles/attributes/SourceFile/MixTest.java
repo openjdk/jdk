@@ -25,8 +25,8 @@
  * @test
  * @summary sourcefile attribute test for complex structure of nested classes and other types.
  * @bug 8040129
- * @library /tools/javac/lib ../lib
- * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build ToolBox SourceFileTestBase TestBase InMemoryFileManager
  * @run main MixTest
  */
 

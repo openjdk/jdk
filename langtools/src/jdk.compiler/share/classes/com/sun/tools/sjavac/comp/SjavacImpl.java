@@ -22,7 +22,6 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
 package com.sun.tools.sjavac.comp;
 
 import java.io.File;
@@ -32,6 +31,7 @@ import java.net.URI;
 import java.util.Arrays;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
@@ -41,26 +41,21 @@ import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
-import com.sun.tools.sjavac.Util;
+import com.sun.tools.javac.util.Options;
 import com.sun.tools.sjavac.server.CompilationResult;
-import com.sun.tools.sjavac.server.JavacServer;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SysInfo;
 
-public class JavacServiceImpl implements JavacService {
-
-    JavacServer javacServer;
-    private ThreadLocal<Boolean> forcedExit;
-
-    public JavacServiceImpl(JavacServer javacServer) {
-        this.javacServer = javacServer;
-
-    }
-
-    public void logError(String msg) {
-//        stderr.println(msg);
-        forcedExit.set(true);
-    }
+/**
+ * The sjavac implementation that interacts with javac and performs the actual
+ * compilation.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
+ */
+public class SjavacImpl implements Sjavac {
 
     @Override
     public SysInfo getSysInfo() {
@@ -75,6 +70,7 @@ public class JavacServiceImpl implements JavacService {
                                      List<File> explicitSources,
                                      Set<URI> sourcesToCompile,
                                      Set<URI> visibleSources) {
+        final AtomicBoolean forcedExit = new AtomicBoolean();
 
         JavacTool compiler = JavacTool.create();
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
@@ -82,7 +78,12 @@ public class JavacServiceImpl implements JavacService {
         Context context = new Context();
         ResolveWithDeps.preRegister(context);
         AttrWithDeps.preRegister(context);
-        JavaCompilerWithDeps.preRegister(context, this);
+        JavaCompilerWithDeps.preRegister(context, new SjavacErrorHandler() {
+            @Override
+            public void logError(String msg) {
+                forcedExit.set(true);
+            }
+        });
 
         // Now setup the actual compilation....
         CompilationResult compilationResult = new CompilationResult(0);
@@ -100,13 +101,6 @@ public class JavacServiceImpl implements JavacService {
         for (JavaFileObject i : fileManager.getJavaFileObjectsFromFiles(sourcesToCompileFiles)) {
             compilationUnits.append(i);
         }
-        // Log the options to be used.
-        StringBuilder options = new StringBuilder();
-        for (String s : args) {
-            options.append(">").append(s).append("< ");
-        }
-        javacServer.log(protocolId+" <"+invocationId+"> options "+options.toString());
-
         forcedExit.set(false);
         // Create a new logger.
         StringWriter stdoutLog = new StringWriter();
@@ -120,14 +114,20 @@ public class JavacServiceImpl implements JavacService {
                 smartFileManager.cleanArtifacts();
                 smartFileManager.setLog(stdout);
 
-
                 // Do the compilation!
-                CompilationTask task = compiler.getTask(stderr, smartFileManager, null, Arrays.asList(args), null, compilationUnits, context);
+                CompilationTask task = compiler.getTask(stderr,
+                                                        smartFileManager,
+                                                        null,
+                                                        Arrays.asList(args),
+                                                        null,
+                                                        compilationUnits,
+                                                        context);
+                smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
                 rc = ((JavacTaskImpl) task).doCall();
                 smartFileManager.flush();
             }
         } catch (Exception e) {
-            stderr.println(e.getMessage());
+            stderrLog.append(e.getMessage());
             forcedExit.set(true);
         }
 
@@ -139,8 +139,22 @@ public class JavacServiceImpl implements JavacService {
 
         compilationResult.stdout = stdoutLog.toString();
         compilationResult.stderr = stderrLog.toString();
+
         compilationResult.returnCode = rc.exitCode == 0 && forcedExit.get() ? -1 : rc.exitCode;
 
         return compilationResult;
     }
+
+    @Override
+    public void shutdown() {
+        // Nothing to clean up
+        // ... maybe we should wait for any current request to finish?
+    }
+
+
+    @Override
+    public String serverSettings() {
+        return "";
+    }
+
 }
