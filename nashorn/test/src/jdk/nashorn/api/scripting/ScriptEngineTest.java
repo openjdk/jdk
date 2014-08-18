@@ -623,7 +623,7 @@ public class ScriptEngineTest {
         final ScriptEngine e = m.getEngineByName("nashorn");
 
         e.put(ScriptEngine.FILENAME, "test");
-        Object enumerable = e.eval(
+        final Object enumerable = e.eval(
             "Object.getOwnPropertyDescriptor(this, " +
             " 'javax.script.filename').enumerable");
         assertEquals(enumerable, Boolean.FALSE);

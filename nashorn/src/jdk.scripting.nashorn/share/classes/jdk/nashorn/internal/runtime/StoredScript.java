@@ -30,9 +30,12 @@ import java.util.Arrays;
 import java.util.Map;
 
 /**
- * Class representing a compiled script.
+ * Class representing a persistent compiled script.
  */
-final class CompiledScript implements Serializable {
+public final class StoredScript implements Serializable {
+
+    /** Compilation id */
+    private final int compilationId;
 
     /** Main class name. */
     private final String mainClassName;
@@ -43,8 +46,8 @@ final class CompiledScript implements Serializable {
     /** Constants array. */
     private final Object[] constants;
 
-    /** The source */
-    private transient Source source;
+    /** Function initializers */
+    private final Map<Integer, FunctionInitializer> initializers;
 
     private static final long serialVersionUID = 2958227232195298340L;
 
@@ -55,11 +58,16 @@ final class CompiledScript implements Serializable {
      * @param classBytes map of class names to class bytes
      * @param constants constants array
      */
-    CompiledScript(final Source source, final String mainClassName, final Map<String, byte[]> classBytes, final Object[] constants) {
-        this.source = source;
+    public StoredScript(final int compilationId, final String mainClassName, final Map<String, byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers, final Object[] constants) {
+        this.compilationId = compilationId;
         this.mainClassName = mainClassName;
         this.classBytes = classBytes;
         this.constants = constants;
+        this.initializers = initializers;
+    }
+
+    public int getCompilationId() {
+        return compilationId;
     }
 
     /**
@@ -86,20 +94,8 @@ final class CompiledScript implements Serializable {
         return constants;
     }
 
-    /**
-     * Returns the source of this cached script.
-     * @return the source
-     */
-    public Source getSource() {
-        return source;
-    }
-
-    /**
-     * Sets the source of this cached script.
-     * @param source the source
-     */
-    void setSource(final Source source) {
-        this.source = source;
+    Map<Integer, FunctionInitializer> getInitializers() {
+        return initializers;
     }
 
     @Override
@@ -115,11 +111,11 @@ final class CompiledScript implements Serializable {
         if (obj == this) {
             return true;
         }
-        if (!(obj instanceof CompiledScript)) {
+        if (!(obj instanceof StoredScript)) {
             return false;
         }
 
-        final CompiledScript cs = (CompiledScript) obj;
+        final StoredScript cs = (StoredScript) obj;
         return mainClassName.equals(cs.mainClassName)
                 && classBytes.equals(cs.classBytes)
                 && Arrays.equals(constants, cs.constants);

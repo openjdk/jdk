@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 import java.io.File;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
-
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.Source;
 
