@@ -674,8 +674,7 @@ G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_top) {
   assert(new_top <= _end, "_end should have already been updated");
 
   // The first BOT entry should have offset 0.
-  zero_bottom_entry();
-  initialize_threshold();
+  reset_bot();
   alloc_block(_bottom, new_top);
  }
 
