@@ -269,7 +269,7 @@ public class SynthSliderUI extends BasicSliderUI
                 centerY += valueHeight + 2;
                 centerY += trackHeight + trackInsets.top + trackInsets.bottom;
                 centerY += tickHeight + 2;
-                JComponent label = slider.getLabelTable().elements().nextElement();
+                JComponent label = (JComponent) slider.getLabelTable().elements().nextElement();
                 Dimension pref = label.getPreferredSize();
                 return centerY + label.getBaseline(pref.width, pref.height);
             }
@@ -291,7 +291,7 @@ public class SynthSliderUI extends BasicSliderUI
                     int trackHeight = contentHeight - valueHeight;
                     int yPosition = yPositionForValue(value.intValue(), trackY,
                                                       trackHeight);
-                    JComponent label = slider.getLabelTable().get(value);
+                    JComponent label = (JComponent) slider.getLabelTable().get(value);
                     Dimension pref = label.getPreferredSize();
                     return yPosition - pref.height / 2 +
                             label.getBaseline(pref.width, pref.height);
@@ -392,7 +392,8 @@ public class SynthSliderUI extends BasicSliderUI
                 trackRect.x = insetCache.left;
                 trackRect.width = contentRect.width;
 
-                Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
+                @SuppressWarnings("rawtypes")
+                Dictionary dictionary = slider.getLabelTable();
                 if (dictionary != null) {
                     int minValue = slider.getMinimum();
                     int maxValue = slider.getMaximum();
@@ -402,9 +403,9 @@ public class SynthSliderUI extends BasicSliderUI
                     // slider range.
                     int firstLblIdx = Integer.MAX_VALUE;
                     int lastLblIdx = Integer.MIN_VALUE;
-                    for (Enumeration<Integer> keys = dictionary.keys();
+                    for (Enumeration<?> keys = dictionary.keys();
                             keys.hasMoreElements(); ) {
-                        int keyInt = keys.nextElement().intValue();
+                        int keyInt = ((Integer)keys.nextElement()).intValue();
                         if (keyInt >= minValue && keyInt < firstLblIdx) {
                             firstLblIdx = keyInt;
                         }
@@ -517,7 +518,7 @@ public class SynthSliderUI extends BasicSliderUI
     private int getPadForLabel(int i) {
         int pad = 0;
 
-        JComponent c = slider.getLabelTable().get(i);
+        JComponent c = (JComponent) slider.getLabelTable().get(i);
         if (c != null) {
             int centerX = xPositionForValue(i);
             int cHalfWidth = c.getPreferredSize().width / 2;

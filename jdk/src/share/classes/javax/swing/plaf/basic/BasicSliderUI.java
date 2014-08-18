@@ -397,13 +397,14 @@ public class BasicSliderUI extends SliderUI{
     protected boolean labelsHaveSameBaselines() {
         if (!checkedLabelBaselines) {
             checkedLabelBaselines = true;
-            Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
+            @SuppressWarnings("rawtypes")
+            Dictionary dictionary = slider.getLabelTable();
             if (dictionary != null) {
                 sameLabelBaselines = true;
-                Enumeration<? extends JComponent> elements = dictionary.elements();
+                Enumeration<?> elements = dictionary.elements();
                 int baseline = -1;
                 while (elements.hasMoreElements()) {
-                    JComponent label = elements.nextElement();
+                    JComponent label = (JComponent) elements.nextElement();
                     Dimension pref = label.getPreferredSize();
                     int labelBaseline = label.getBaseline(pref.width,
                                                           pref.height);
@@ -758,12 +759,13 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getWidthOfWidestLabel() {
-        Dictionary<?, ? extends JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         int widest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
             while ( keys.hasMoreElements() ) {
-                JComponent label = dictionary.get(keys.nextElement());
+                JComponent label = (JComponent) dictionary.get(keys.nextElement());
                 widest = Math.max( label.getPreferredSize().width, widest );
             }
         }
@@ -771,12 +773,13 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getHeightOfTallestLabel() {
-        Dictionary<?, ? extends JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         int tallest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
             while ( keys.hasMoreElements() ) {
-                JComponent label = dictionary.get(keys.nextElement());
+                JComponent label = (JComponent) dictionary.get(keys.nextElement());
                 tallest = Math.max( label.getPreferredSize().height, tallest );
             }
         }
@@ -847,18 +850,19 @@ public class BasicSliderUI extends SliderUI{
      * @since 1.6
      */
     protected Integer getHighestValue() {
-        Dictionary<Integer, ?> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
 
         if (dictionary == null) {
             return null;
         }
 
-        Enumeration<Integer> keys = dictionary.keys();
+        Enumeration<?> keys = dictionary.keys();
 
         Integer max = null;
 
         while (keys.hasMoreElements()) {
-            Integer i = keys.nextElement();
+            Integer i = (Integer) keys.nextElement();
 
             if (max == null || i > max) {
                 max = i;
@@ -876,18 +880,19 @@ public class BasicSliderUI extends SliderUI{
      * @since 1.6
      */
     protected Integer getLowestValue() {
-        Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
 
         if (dictionary == null) {
             return null;
         }
 
-        Enumeration<Integer> keys = dictionary.keys();
+        Enumeration<?> keys = dictionary.keys();
 
         Integer min = null;
 
         while (keys.hasMoreElements()) {
-            Integer i = keys.nextElement();
+            Integer i = (Integer) keys.nextElement();
 
             if (min == null || i < min) {
                 min = i;
@@ -1134,17 +1139,18 @@ public class BasicSliderUI extends SliderUI{
     public void paintLabels( Graphics g ) {
         Rectangle labelBounds = labelRect;
 
-        Dictionary<Integer, ? extends JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         if ( dictionary != null ) {
-            Enumeration<Integer> keys = dictionary.keys();
+            Enumeration<?> keys = dictionary.keys();
             int minValue = slider.getMinimum();
             int maxValue = slider.getMaximum();
             boolean enabled = slider.isEnabled();
             while ( keys.hasMoreElements() ) {
-                Integer key = keys.nextElement();
+                Integer key = (Integer)keys.nextElement();
                 int value = key.intValue();
                 if (value >= minValue && value <= maxValue) {
-                    JComponent label = dictionary.get(key);
+                    JComponent label = (JComponent) dictionary.get(key);
                     label.setEnabled(enabled);
 
                     if (label instanceof JLabel) {
