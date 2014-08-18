@@ -1,5 +1,5 @@
 #
-#  Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+#  Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
 #  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 #  This code is free software; you can redistribute it and/or modify it
@@ -45,14 +45,14 @@ JAVA=${TESTJAVA}${FS}bin${FS}java
 #
 OPTION=this_is_not_an_option
 
-${JAVA} ${TESTVMOPTS} -showversion -XX:${OPTION} 2>&1 | grep "Unrecognized VM option" 
+${JAVA} -showversion -XX:${OPTION} 2>&1 | grep "Unrecognized VM option" 
 if [ "$?" != "0" ]
 then
   printf "FAILED: option not flagged as unrecognized.\n"
   exit 1
 fi
 
-${JAVA} ${TESTVMOPTS} -showversion -XX:${OPTION} 2>&1 | grep ${OPTION}
+${JAVA} -showversion -XX:${OPTION} 2>&1 | grep ${OPTION}
 if [ "$?" != "0" ]
 then
   printf "FAILED: bad option not named as being bad.\n"

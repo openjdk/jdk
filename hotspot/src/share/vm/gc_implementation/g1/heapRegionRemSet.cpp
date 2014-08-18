@@ -695,6 +695,9 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
   clear_fcc();
 }
 
+bool OtherRegionsTable::is_empty() const {
+  return occ_sparse() == 0 && occ_coarse() == 0 && _first_all_fine_prts == NULL;
+}
 
 size_t OtherRegionsTable::occupied() const {
   size_t sum = occ_fine();
