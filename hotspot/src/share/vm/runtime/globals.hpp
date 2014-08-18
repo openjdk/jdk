@@ -961,11 +961,6 @@ class CommandLineFlags {
   diagnostic(bool, PrintNMTStatistics, false,                               \
           "Print native memory tracking summary data if it is on")          \
                                                                             \
-  diagnostic(bool, AutoShutdownNMT, true,                                   \
-          "Automatically shutdown native memory tracking under stress "     \
-          "situations. When set to false, native memory tracking tries to " \
-          "stay alive at the expense of JVM performance")                   \
-                                                                            \
   diagnostic(bool, LogCompilation, false,                                   \
           "Log compilation activity in detail to LogFile")                  \
                                                                             \
@@ -2804,12 +2799,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseLoopCounter, true,                                       \
           "Increment invocation counter on backward branch")                \
-                                                                            \
-  product(bool, UseFastEmptyMethods, true,                                  \
-          "Use fast method entry code for empty methods")                   \
-                                                                            \
-  product(bool, UseFastAccessorMethods, true,                               \
-          "Use fast method entry code for accessor methods")                \
                                                                             \
   product_pd(bool, UseOnStackReplacement,                                   \
           "Use on stack replacement, calls runtime if invoc. counter "      \
