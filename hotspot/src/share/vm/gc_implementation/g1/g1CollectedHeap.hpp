@@ -206,6 +206,13 @@ public:
 
 class RefineCardTableEntryClosure;
 
+class G1RegionMappingChangedListener : public G1MappingChangedListener {
+ private:
+  void reset_from_card_cache(uint start_idx, size_t num_regions);
+ public:
+  virtual void on_commit(uint start_idx, size_t num_regions);
+};
+
 class G1CollectedHeap : public SharedHeap {
   friend class VM_CollectForMetadataAllocation;
   friend class VM_G1CollectForAllocation;
@@ -279,6 +286,9 @@ private:
   // list. It is called after a Full GC (free_list_only == false) or
   // after heap shrinking (free_list_only == true).
   void rebuild_region_sets(bool free_list_only);
+
+  // Callback for region mapping changed events.
+  G1RegionMappingChangedListener _listener;
 
   // The sequence of all heap regions in the heap.
   HeapRegionSeq _hrs;
@@ -851,11 +861,6 @@ protected:
                         CodeBlobClosure* scan_strong_code,
                         uint worker_i);
 
-  // Notifies all the necessary spaces that the committed space has
-  // been updated (either expanded or shrunk). It should be called
-  // after _g1_storage is updated.
-  void update_committed_space(HeapWord* old_end, HeapWord* new_end);
-
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
   ConcurrentMarkThread* _cmThread;
@@ -1286,6 +1291,11 @@ public:
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
+#ifdef ASSERT
+  // Returns whether p is in one of the available areas of the heap. Slow but
+  // extensive version.
+  bool is_in_exact(const void* p) const;
+#endif
 
   // Return "TRUE" iff the given object address is within the collection
   // set. Slow implementation.
@@ -1355,16 +1365,10 @@ public:
     return _hrs.reserved();
   }
 
-  // Returns a MemRegion that corresponds to the space that has been
-  // committed in the heap
-  MemRegion g1_committed() {
-    return _hrs.committed();
-  }
-
   virtual bool is_in_closed_subset(const void* p) const;
 
-  G1SATBCardTableModRefBS* g1_barrier_set() {
-    return (G1SATBCardTableModRefBS*) barrier_set();
+  G1SATBCardTableLoggingModRefBS* g1_barrier_set() {
+    return (G1SATBCardTableLoggingModRefBS*) barrier_set();
   }
 
   // This resets the card table to all zeros.  It is used after

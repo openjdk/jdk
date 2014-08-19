@@ -45,6 +45,7 @@
 #include "gc_implementation/g1/g1MarkSweep.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1ParScanThreadState.inline.hpp"
+#include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
 #include "gc_implementation/g1/g1StringDedup.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"
@@ -379,6 +380,14 @@ void YoungList::print() {
   }
 
   gclog_or_tty->cr();
+}
+
+void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_t num_regions) {
+  OtherRegionsTable::invalidate(start_idx, num_regions);
+}
+
+void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions) {
+  reset_from_card_cache(start_idx, num_regions);
 }
 
 void G1CollectedHeap::push_dirty_cards_region(HeapRegion* hr)
@@ -760,13 +769,14 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // to know in which list they are on so that we can remove them. We only
     // need to do this if we need to allocate more than one region to satisfy the
     // current humongous allocation request. If we are only allocating one region
-    // we use the one-region region allocation code (see above), or end up here.
+    // we use the one-region region allocation code (see above), that already
+    // potentially waits for regions from the secondary free list.
     wait_while_free_regions_coming();
     append_secondary_free_list_if_not_empty_with_lock();
 
     // Policy: Try only empty regions (i.e. already committed first). Maybe we
     // are lucky enough to find some.
-    first = _hrs.find_contiguous(obj_regions, true);
+    first = _hrs.find_contiguous_only_empty(obj_regions);
     if (first != G1_NO_HRS_INDEX) {
       _hrs.allocate_free_regions_starting_at(first, obj_regions);
     }
@@ -776,7 +786,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
     // Policy: We could not find enough regions for the humongous object in the
     // free list. Look through the heap to find a mix of free and uncommitted regions.
     // If so, try expansion.
-    first = _hrs.find_contiguous(obj_regions, false);
+    first = _hrs.find_contiguous_empty_or_unavailable(obj_regions);
     if (first != G1_NO_HRS_INDEX) {
       // We found something. Make sure these regions are committed, i.e. expand
       // the heap. Alternatively we could do a defragmentation GC.
@@ -1954,8 +1964,6 @@ jint G1CollectedHeap::initialize() {
   _reserved.set_start((HeapWord*)heap_rs.base());
   _reserved.set_end((HeapWord*)(heap_rs.base() + heap_rs.size()));
 
-  _expansion_regions = (uint) (max_byte_size / HeapRegion::GrainBytes);
-
   // Create the gen rem set (and barrier set) for the entire reserved region.
   _rem_set = collector_policy()->create_rem_set(_reserved, 2);
   set_barrier_set(rem_set()->bs());
@@ -1970,14 +1978,64 @@ jint G1CollectedHeap::initialize() {
   // Carve out the G1 part of the heap.
 
   ReservedSpace g1_rs = heap_rs.first_part(max_byte_size);
-  _hrs.initialize(g1_rs);
+  G1RegionToSpaceMapper* heap_storage =
+    G1RegionToSpaceMapper::create_mapper(g1_rs,
+                                         UseLargePages ? os::large_page_size() : os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         1,
+                                         mtJavaHeap);
+  heap_storage->set_mapping_changed_listener(&_listener);
 
-  assert(_hrs.max_length() == _expansion_regions,
-         err_msg("max length: %u expansion regions: %u",
-                 _hrs.max_length(), _expansion_regions));
+  // Reserve space for the block offset table. We do not support automatic uncommit
+  // for the card table at this time. BOT only.
+  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
+  G1RegionToSpaceMapper* bot_storage =
+    G1RegionToSpaceMapper::create_mapper(bot_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         G1BlockOffsetSharedArray::N_bytes,
+                                         mtGC);
 
-  // Do later initialization work for concurrent refinement.
-  _cg1r->init();
+  ReservedSpace cardtable_rs(G1SATBCardTableLoggingModRefBS::compute_size(g1_rs.size() / HeapWordSize));
+  G1RegionToSpaceMapper* cardtable_storage =
+    G1RegionToSpaceMapper::create_mapper(cardtable_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         G1BlockOffsetSharedArray::N_bytes,
+                                         mtGC);
+
+  // Reserve space for the card counts table.
+  ReservedSpace card_counts_rs(G1BlockOffsetSharedArray::compute_size(g1_rs.size() / HeapWordSize));
+  G1RegionToSpaceMapper* card_counts_storage =
+    G1RegionToSpaceMapper::create_mapper(card_counts_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         G1BlockOffsetSharedArray::N_bytes,
+                                         mtGC);
+
+  // Reserve space for prev and next bitmap.
+  size_t bitmap_size = CMBitMap::compute_size(g1_rs.size());
+
+  ReservedSpace prev_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
+  G1RegionToSpaceMapper* prev_bitmap_storage =
+    G1RegionToSpaceMapper::create_mapper(prev_bitmap_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         CMBitMap::mark_distance(),
+                                         mtGC);
+
+  ReservedSpace next_bitmap_rs(ReservedSpace::allocation_align_size_up(bitmap_size));
+  G1RegionToSpaceMapper* next_bitmap_storage =
+    G1RegionToSpaceMapper::create_mapper(next_bitmap_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         CMBitMap::mark_distance(),
+                                         mtGC);
+
+  _hrs.initialize(heap_storage, prev_bitmap_storage, next_bitmap_storage, bot_storage, cardtable_storage, card_counts_storage);
+  g1_barrier_set()->initialize(cardtable_storage);
+   // Do later initialization work for concurrent refinement.
+  _cg1r->init(card_counts_storage);
 
   // 6843694 - ensure that the maximum region index can fit
   // in the remembered set structures.
@@ -1991,8 +2049,7 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  _bot_shared = new G1BlockOffsetSharedArray(_reserved,
-                                             heap_word_size(init_byte_size));
+  _bot_shared = new G1BlockOffsetSharedArray(_reserved, bot_storage);
 
   _g1h = this;
 
@@ -2001,7 +2058,7 @@ jint G1CollectedHeap::initialize() {
 
   // Create the ConcurrentMark data structure and thread.
   // (Must do this late, so that "max_regions" is defined.)
-  _cm = new ConcurrentMark(this, heap_rs);
+  _cm = new ConcurrentMark(this, prev_bitmap_storage, next_bitmap_storage);
   if (_cm == NULL || !_cm->completed_initialization()) {
     vm_shutdown_during_initialization("Could not create/initialize ConcurrentMark");
     return JNI_ENOMEM;
@@ -2058,8 +2115,8 @@ jint G1CollectedHeap::initialize() {
 
   // Here we allocate the dummy HeapRegion that is required by the
   // G1AllocRegion class.
-
   HeapRegion* dummy_region = _hrs.get_dummy_region();
+
   // We'll re-use the same region whether the alloc region will
   // require BOT updates or not and, if it doesn't, then a non-young
   // region will complain that it cannot support allocations without
@@ -2480,8 +2537,8 @@ void G1CollectedHeap::collect(GCCause::Cause cause) {
 }
 
 bool G1CollectedHeap::is_in(const void* p) const {
-  if (_hrs.committed().contains(p)) {
-    // Given that we know that p is in the committed space,
+  if (_hrs.reserved().contains(p)) {
+    // Given that we know that p is in the reserved space,
     // heap_region_containing_raw() should successfully
     // return the containing region.
     HeapRegion* hr = heap_region_containing_raw(p);
@@ -2490,6 +2547,18 @@ bool G1CollectedHeap::is_in(const void* p) const {
     return false;
   }
 }
+
+#ifdef ASSERT
+bool G1CollectedHeap::is_in_exact(const void* p) const {
+  bool contains = reserved_region().contains(p);
+  bool available = _hrs.is_available(addr_to_region((HeapWord*)p));
+  if (contains && available) {
+    return true;
+  } else {
+    return false;
+  }
+}
+#endif
 
 // Iteration functions.
 
@@ -3368,8 +3437,8 @@ void G1CollectedHeap::print_on(outputStream* st) const {
   st->print(" total " SIZE_FORMAT "K, used " SIZE_FORMAT "K",
             capacity()/K, used_unlocked()/K);
   st->print(" [" INTPTR_FORMAT ", " INTPTR_FORMAT ", " INTPTR_FORMAT ")",
-            _hrs.committed().start(),
-            _hrs.committed().end(),
+            _hrs.reserved().start(),
+            _hrs.reserved().start() + _hrs.length() + HeapRegion::GrainWords,
             _hrs.reserved().end());
   st->cr();
   st->print("  region size " SIZE_FORMAT "K, ", HeapRegion::GrainBytes / K);
@@ -4120,10 +4189,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
       // event, and after we retire the GC alloc regions so that all
       // RETIRE events are generated before the end GC event.
       _hr_printer.end_gc(false /* full */, (size_t) total_collections());
-
-      if (mark_in_progress()) {
-        concurrent_mark()->update_heap_boundaries(_hrs.committed());
-      }
 
 #ifdef TRACESPINNING
       ParallelTaskTerminator::print_termination_counts();
