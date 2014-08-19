@@ -403,3 +403,41 @@ void HumongousRegionSetMtSafeChecker::check() {
               "master humongous set MT safety protocol outside a safepoint");
   }
 }
+
+void FreeRegionList_test() {
+  FreeRegionList l("test");
+
+  const uint num_regions_in_test = 5;
+  // Create a fake heap. It does not need to be valid, as the HeapRegion constructor
+  // does not access it.
+  MemRegion heap(NULL, num_regions_in_test * HeapRegion::GrainWords);
+  // Allocate a fake BOT because the HeapRegion constructor initializes
+  // the BOT.
+  size_t bot_size = G1BlockOffsetSharedArray::compute_size(heap.word_size());
+  HeapWord* bot_data = NEW_C_HEAP_ARRAY(HeapWord, bot_size, mtGC);
+  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(heap.word_size()));
+  G1RegionToSpaceMapper* bot_storage =
+    G1RegionToSpaceMapper::create_mapper(bot_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         G1BlockOffsetSharedArray::N_bytes,
+                                         mtGC);
+  G1BlockOffsetSharedArray oa(heap, bot_storage);
+  bot_storage->commit_regions(0, num_regions_in_test);
+  HeapRegion hr0(0, &oa, heap);
+  HeapRegion hr1(1, &oa, heap);
+  HeapRegion hr2(2, &oa, heap);
+  HeapRegion hr3(3, &oa, heap);
+  HeapRegion hr4(4, &oa, heap);
+  l.add_ordered(&hr1);
+  l.add_ordered(&hr0);
+  l.add_ordered(&hr3);
+  l.add_ordered(&hr4);
+  l.add_ordered(&hr2);
+  assert(l.length() == num_regions_in_test, "wrong length");
+  l.verify_list();
+
+  bot_storage->uncommit_regions(0, num_regions_in_test);
+  delete bot_storage;
+  FREE_C_HEAP_ARRAY(HeapWord, bot_data, mtGC);
+}

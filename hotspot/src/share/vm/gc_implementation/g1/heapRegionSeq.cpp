@@ -30,19 +30,33 @@
 #include "gc_implementation/g1/concurrentG1Refine.hpp"
 #include "memory/allocation.hpp"
 
-void HeapRegionSeq::initialize(ReservedSpace reserved) {
-  _reserved = reserved;
-  _storage.initialize(reserved, 0);
-
-  _num_committed = 0;
-
+void HeapRegionSeq::initialize(G1RegionToSpaceMapper* heap_storage,
+                               G1RegionToSpaceMapper* prev_bitmap,
+                               G1RegionToSpaceMapper* next_bitmap,
+                               G1RegionToSpaceMapper* bot,
+                               G1RegionToSpaceMapper* cardtable,
+                               G1RegionToSpaceMapper* card_counts) {
   _allocated_heapregions_length = 0;
 
-  _regions.initialize((HeapWord*)_storage.low_boundary(), (HeapWord*)_storage.high_boundary(), HeapRegion::GrainBytes);
+  _heap_mapper = heap_storage;
+
+  _prev_bitmap_mapper = prev_bitmap;
+  _next_bitmap_mapper = next_bitmap;
+
+  _bot_mapper = bot;
+  _cardtable_mapper = cardtable;
+
+  _card_counts_mapper = card_counts;
+
+  MemRegion reserved = heap_storage->reserved();
+  _regions.initialize(reserved.start(), reserved.end(), HeapRegion::GrainBytes);
+
+  _available_map.resize(_regions.length(), false);
+  _available_map.clear();
 }
 
 bool HeapRegionSeq::is_available(uint region) const {
-  return region <  _num_committed;
+  return _available_map.at(region);
 }
 
 #ifdef ASSERT
@@ -58,29 +72,26 @@ HeapRegion* HeapRegionSeq::new_heap_region(uint hrs_index) {
   return new HeapRegion(hrs_index, G1CollectedHeap::heap()->bot_shared(), mr);
 }
 
-void HeapRegionSeq::update_committed_space(HeapWord* old_end,
-                                           HeapWord* new_end) {
-  assert(old_end != new_end, "don't call this otherwise");
-  // We may not have officially committed the area. So construct and use a separate one.
-  MemRegion new_committed(heap_bottom(), new_end);
-  // Tell the card table about the update.
-  Universe::heap()->barrier_set()->resize_covered_region(new_committed);
-  // Tell the BOT about the update.
-  G1CollectedHeap::heap()->bot_shared()->resize(new_committed.word_size());
-  // Tell the hot card cache about the update
-  G1CollectedHeap::heap()->concurrent_g1_refine()->hot_card_cache()->resize_card_counts(new_committed.byte_size());
-}
-
 void HeapRegionSeq::commit_regions(uint index, size_t num_regions) {
   guarantee(num_regions > 0, "Must commit more than zero regions");
   guarantee(_num_committed + num_regions <= max_length(), "Cannot commit more than the maximum amount of regions");
 
-  _storage.expand_by(num_regions * HeapRegion::GrainBytes);
-  update_committed_space(heap_top(), heap_top() + num_regions * HeapRegion::GrainWords);
+  _num_committed += (uint)num_regions;
+
+  _heap_mapper->commit_regions(index, num_regions);
+
+  // Also commit auxiliary data
+  _prev_bitmap_mapper->commit_regions(index, num_regions);
+  _next_bitmap_mapper->commit_regions(index, num_regions);
+
+  _bot_mapper->commit_regions(index, num_regions);
+  _cardtable_mapper->commit_regions(index, num_regions);
+
+  _card_counts_mapper->commit_regions(index, num_regions);
 }
 
 void HeapRegionSeq::uncommit_regions(uint start, size_t num_regions) {
-  guarantee(num_regions >= 1, "Need to specify at least one region to uncommit");
+  guarantee(num_regions >= 1, err_msg("Need to specify at least one region to uncommit, tried to uncommit zero regions at %u", start));
   guarantee(_num_committed >= num_regions, "pre-condition");
 
   // Print before uncommitting.
@@ -91,12 +102,19 @@ void HeapRegionSeq::uncommit_regions(uint start, size_t num_regions) {
     }
   }
 
-  HeapWord* old_end = heap_top();
   _num_committed -= (uint)num_regions;
-  OrderAccess::fence();
 
-  _storage.shrink_by(num_regions * HeapRegion::GrainBytes);
-  update_committed_space(old_end, heap_top());
+  _available_map.par_clear_range(start, start + num_regions, BitMap::unknown_range);
+  _heap_mapper->uncommit_regions(start, num_regions);
+
+  // Also uncommit auxiliary data
+  _prev_bitmap_mapper->uncommit_regions(start, num_regions);
+  _next_bitmap_mapper->uncommit_regions(start, num_regions);
+
+  _bot_mapper->uncommit_regions(start, num_regions);
+  _cardtable_mapper->uncommit_regions(start, num_regions);
+
+  _card_counts_mapper->uncommit_regions(start, num_regions);
 }
 
 void HeapRegionSeq::make_regions_available(uint start, uint num_regions) {
@@ -110,9 +128,7 @@ void HeapRegionSeq::make_regions_available(uint start, uint num_regions) {
     }
   }
 
-  _num_committed += (size_t)num_regions;
-
-  OrderAccess::fence();
+  _available_map.par_set_range(start, start + num_regions, BitMap::unknown_range);
 
   for (uint i = start; i < start + num_regions; i++) {
     assert(is_available(i), err_msg("Just made region %u available but is apparently not.", i));
@@ -129,8 +145,7 @@ void HeapRegionSeq::make_regions_available(uint start, uint num_regions) {
 }
 
 uint HeapRegionSeq::expand_by(uint num_regions) {
-  // Only ever expand from the end of the heap.
-  return expand_at(_num_committed, num_regions);
+  return expand_at(0, num_regions);
 }
 
 uint HeapRegionSeq::expand_at(uint start, uint num_regions) {
@@ -334,7 +349,8 @@ uint HeapRegionSeq::shrink_by(uint num_regions_to_remove) {
   uint idx_last_found = 0;
   uint num_last_found = 0;
 
-  if ((num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
+  while ((removed < num_regions_to_remove) &&
+      (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
     // Only allow uncommit from the end of the heap.
     if ((idx_last_found + num_last_found) != _allocated_heapregions_length) {
       return 0;

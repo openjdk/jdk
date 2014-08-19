@@ -27,6 +27,7 @@
 
 #include "gc_implementation/g1/heapRegion.hpp"
 #include "gc_implementation/g1/heapRegionSeq.hpp"
+#include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
 inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
   assert(addr < heap_end(),
@@ -35,7 +36,6 @@ inline HeapRegion* HeapRegionSeq::addr_to_region(HeapWord* addr) const {
         err_msg("addr: "PTR_FORMAT" bottom: "PTR_FORMAT, p2i(addr), p2i(heap_bottom())));
 
   HeapRegion* hr = _regions.get_by_address(addr);
-  assert(hr != NULL, "invariant");
   return hr;
 }
 

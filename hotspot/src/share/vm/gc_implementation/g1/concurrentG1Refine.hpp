@@ -34,6 +34,7 @@
 class ConcurrentG1RefineThread;
 class G1CollectedHeap;
 class G1HotCardCache;
+class G1RegionToSpaceMapper;
 class G1RemSet;
 class DirtyCardQueue;
 
@@ -74,7 +75,7 @@ class ConcurrentG1Refine: public CHeapObj<mtGC> {
   ConcurrentG1Refine(G1CollectedHeap* g1h, CardTableEntryClosure* refine_closure);
   ~ConcurrentG1Refine();
 
-  void init(); // Accomplish some initialization that has to wait.
+  void init(G1RegionToSpaceMapper* card_counts_storage);
   void stop();
 
   void reinitialize_threads();
