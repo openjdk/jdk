@@ -41,6 +41,8 @@ class defaultStream : public xmlTextStream {
 
   void init();
   void init_log();
+  fileStream* open_file(const char* log_name);
+  void start_log();
   void finish_log();
   void finish_log_on_error(char *buf, int buflen);
  public:
