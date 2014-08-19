@@ -183,6 +183,13 @@ protected:
 public:
   OldGCAllocRegion()
   : G1AllocRegion("Old GC Alloc Region", true /* bot_updates */) { }
+
+  // This specialization of release() makes sure that the last card that has been
+  // allocated into has been completely filled by a dummy object.
+  // This avoids races when remembered set scanning wants to update the BOT of the
+  // last card in the retained old gc alloc region, and allocation threads
+  // allocating into that card at the same time.
+  virtual HeapRegion* release();
 };
 
 // The G1 STW is alive closure.
