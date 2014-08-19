@@ -237,8 +237,10 @@ void G1GCPhaseTimes::note_gc_end() {
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();
 
-  _last_redirty_logged_cards_time_ms.verify();
-  _last_redirty_logged_cards_processed_cards.verify();
+  if (G1DeferredRSUpdate) {
+    _last_redirty_logged_cards_time_ms.verify();
+    _last_redirty_logged_cards_processed_cards.verify();
+  }
 }
 
 void G1GCPhaseTimes::note_string_dedup_fixup_start() {
