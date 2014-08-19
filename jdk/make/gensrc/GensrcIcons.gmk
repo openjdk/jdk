@@ -26,12 +26,12 @@
 GENSRC_AWT_ICONS :=
 GENSRC_AWT_ICONS_SRC :=
 GENSRC_AWT_ICONS_TMP := $(JDK_OUTPUTDIR)/gensrc
-GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/sun/awt/
+GENSRC_AWT_ICONS_DST := $(GENSRC_AWT_ICONS_TMP)/java.desktop/sun/awt/
 
 ifdef OPENJDK
-  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)
+  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)
 else
-  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/solaris
+  X11_ICONS_PATH_PREFIX := $(JDK_TOPDIR)/src/closed/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)
 endif
 
 GENSRC_AWT_ICONS_SRC += \
@@ -41,7 +41,7 @@ GENSRC_AWT_ICONS_SRC += \
     $(X11_ICONS_PATH_PREFIX)/classes/sun/awt/X11/java-icon48.png
 
 
-AWT_ICONPATH := $(JDK_TOPDIR)/src/share/classes/sun/awt/resources
+AWT_ICONPATH := $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/awt/resources
 
 GENSRC_AWT_ICONS_SRC += \
     $(AWT_ICONPATH)/security-icon-bw16.png \
@@ -80,7 +80,7 @@ define SetupGensrcAWTIcon
   $1_NAME64 := $(call GENSRC_AWT_ICONS_DST_NAME,$1,64)
   $1_TARGET64 := $(GENSRC_AWT_ICONS_DST)/$$($1_NAME64).java
 
-  $$($1_TARGET32): $2/$1 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir
+  $$($1_TARGET32): $2/$1 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir $(BUILD_TOOLS_JDK)
 	$(RM) $$@ $$@.tmp
 	$(ECHO) "package sun.awt;" > $$@.tmp
 	$(ECHO) "public class $$($1_NAME32) {" >> $$@.tmp
@@ -91,7 +91,7 @@ define SetupGensrcAWTIcon
 
   GENSRC_AWT_ICONS += $$($1_TARGET32)
 
-  $$($1_TARGET64): $2/$1 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir
+  $$($1_TARGET64): $2/$1 $(GENSRC_AWT_ICONS_TMP)/_the.icons.dir $(BUILD_TOOLS_JDK)
 	$(RM) $$@ $$@.tmp
 	$(ECHO) "package sun.awt;" > $$@.tmp
 	$(ECHO) "public class $$($1_NAME64) {" >> $$@.tmp
@@ -104,6 +104,8 @@ define SetupGensrcAWTIcon
 endef
 
 $(foreach I, $(GENSRC_AWT_ICONS_SRC), $(eval $(call SetupGensrcAWTIcon,$(notdir $(I)),$(dir $(I)))))
+
+GENSRC_JAVA_DESKTOP += $(GENSRC_AWT_ICONS)
 
 ###
 
@@ -118,7 +120,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
     GENSRC_OSX_ICONS_SRC := $(JDK_TOPDIR)/make/closed/data/macosxicons/JavaApp.icns
   endif
 
-  $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC)
+  $(GENSRC_OSX_ICONS): $(GENSRC_OSX_ICONS_SRC) $(BUILD_TOOLS_JDK)
 	$(RM) $@ $@.tmp
 	$(MKDIR) -p $(dir $@)
 	$(ECHO) "static unsigned char sAWTIconData[] = { " >> $@.tmp
@@ -126,4 +128,5 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 	$(ECHO) "};" >> $@.tmp
 	$(MV) $@.tmp $@
 
+  GENSRC_JAVA_DESKTOP += $(GENSRC_OSX_ICONS)
 endif

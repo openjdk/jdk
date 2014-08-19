@@ -50,6 +50,7 @@ public class LowMemoryTest {
     private static boolean testFailed = false;
     private static final int NUM_TRIGGERS = 5;
     private static final int NUM_CHUNKS = 2;
+    private static final int YOUNG_GEN_SIZE = 8 * 1024 * 1024;
     private static long chunkSize;
 
     /**
@@ -59,11 +60,14 @@ public class LowMemoryTest {
      */
     public static void main(String a[]) throws Throwable {
         final String main = "LowMemoryTest$TestMain";
-        RunUtil.runTestKeepGcOpts(main);
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+        // Use a low young gen size to ensure that the
+        // allocated objects are put in the old gen.
+        final String nmFlag = "-Xmn" + YOUNG_GEN_SIZE;
+        RunUtil.runTestKeepGcOpts(main, nmFlag);
+        RunUtil.runTestClearGcOpts(main, nmFlag, "-XX:+UseSerialGC");
+        RunUtil.runTestClearGcOpts(main, nmFlag, "-XX:+UseParallelGC");
+        RunUtil.runTestClearGcOpts(main, nmFlag, "-XX:+UseG1GC");
+        RunUtil.runTestClearGcOpts(main, nmFlag, "-XX:+UseConcMarkSweepGC");
     }
 
     private static volatile boolean listenerInvoked = false;
@@ -155,6 +159,16 @@ public class LowMemoryTest {
             MemoryUsage mu = mpool.getUsage();
             chunkSize = (mu.getMax() - mu.getUsed()) / 20;
             newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
+
+            // Sanity check. Make sure the chunkSize is large than the YOUNG_GEN_SIZE
+            // If the chunkSize are lower than the YOUNG_GEN_SIZE, we will get intermittent
+            // failures when objects end up in the young gen instead of the old gen.
+            // Tweak the test if this fails.
+            if (chunkSize < YOUNG_GEN_SIZE) {
+                throw new RuntimeException("TEST FAILED: " +
+                        " chunkSize: " + chunkSize + " is less than YOUNG_GEN_SIZE: " + YOUNG_GEN_SIZE +
+                        " max: " + mu.getMax() + " used: " + mu.getUsed() + " newThreshold: " + newThreshold);
+            }
 
             System.out.println("Setting threshold for " + mpool.getName() +
                 " from " + mpool.getUsageThreshold() + " to " + newThreshold +

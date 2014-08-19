@@ -41,18 +41,11 @@ include NON_CORE_PKGS.gmk
 .SUFFIXES: .java
 
 #
-# Definitions for $(DOCSDIR), $(MKDIR), $(BINDIR), etc.
+# Definitions for directories
 #
 
-DOCSDIR=$(OUTPUT_ROOT)/docs
-TEMPDIR=$(OUTPUT_ROOT)/docstemp
-
-JDK_SHARE_SRC=$(JDK_TOPDIR)/src/share
-JDK_SHARE_CLASSES=$(JDK_SHARE_SRC)/classes
-
-JDK_IMPSRC = $(JDK_OUTPUTDIR)/impsrc
-
-JDK_GENSRC = $(JDK_OUTPUTDIR)/gensrc
+DOCSDIR := $(OUTPUT_ROOT)/docs
+TEMPDIR := $(OUTPUT_ROOT)/docstemp
 
 HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
 
@@ -143,16 +136,19 @@ $(FULL_COMPANY_NAME) in the US and other countries.
 # Otherwise, you get "No packages or classes specified." due
 # to $(PATH_SEP) being interpreted as an end of
 # command (newline or shell ; character)
-ALL_SOURCE_DIRS = $(JDK_SHARE_CLASSES) \
-    $(JDK_IMPSRC) \
-    $(JDK_GENSRC) \
-    $(JDK_OUTPUTDIR)/gendocsrc_rmic \
-    $(JDK_TOPDIR)/src/solaris/classes \
-    $(JDK_TOPDIR)/src/windows/classes \
-    $(JDK_SHARE_SRC)/doc/stub
-
-# List of directories that actually exist
-ALL_EXISTING_SOURCE_DIRS := $(wildcard $(ALL_SOURCE_DIRS))
+ALL_SOURCE_DIRS := $(wildcard \
+      $(JDK_TOPDIR)/src/*/share/classes \
+      $(JDK_TOPDIR)/src/*/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+      $(LANGTOOLS_TOPDIR)/src/*/share/classes \
+      $(CORBA_TOPDIR)/src/*/share/classes \
+      $(JAXP_TOPDIR)/src/*/share/classes \
+      $(JAXWS_TOPDIR)/src/*/share/classes \
+      $(JDK_OUTPUTDIR)/gensrc/j* \
+      $(JDK_OUTPUTDIR)/gendocsrc_rmic \
+      $(CORBA_OUTPUTDIR)/gensrc/j* \
+      $(JDK_TOPDIR)/src/*/share/doc/stub \
+      ) \
+      #
 
 # List with classpath separator between them
 EMPTY:=
@@ -176,7 +172,7 @@ endef
 
 $(eval $(call FillCacheFind, $(ALL_SOURCE_DIRS)))
 define PackageDependencies
-  $(call CacheFind, $(foreach p, $(subst .,/,$1), $(addsuffix /$p, $(ALL_SOURCE_DIRS))))
+  $(call CacheFind, $(wildcard $(foreach p, $(subst .,/,$1), $(addsuffix /$p, $(ALL_SOURCE_DIRS)))))
 endef
 
 # Given a list of packages, add packages that exist to $@, print summary
@@ -382,7 +378,7 @@ COREAPI_HEADER = \
 <strong>Java$(TRADEMARK)&nbsp;Platform<br>Standard&nbsp;Ed.&nbsp;$(JDK_MINOR_VERSION)</strong>
 
 # Overview file for core apis
-COREAPI_OVERVIEW = $(JDK_SHARE_CLASSES)/overview-core.html
+COREAPI_OVERVIEW = $(JDK_TOPDIR)/src/java.base/share/classes/overview-core.html
 
 # The index.html, options, and packages files
 COREAPI_INDEX_FILE = $(COREAPI_DOCSDIR)/index.html
@@ -534,7 +530,7 @@ $(TAGLETAPI_OPTIONS_FILE):
 # Create a file with the package names in it
 $(TAGLETAPI_PACKAGES_FILE): $(call PackageDependencies,$(TAGLETAPI_PKGS))
 	$(prep-target)
-	@($(ECHO) "$(JDK_IMPSRC)/$(TAGLETAPI_FILE)" ) > $@
+	@($(ECHO) "$(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes/$(TAGLETAPI_FILE)" ) > $@
 
 #############################################################
 #
@@ -614,7 +610,7 @@ JDI_DOCTITLE := Java$(TRADEMARK) Debug Interface
 JDI_WINDOWTITLE := Java Debug Interface
 JDI_HEADER := <strong>Java Debug Interface</strong>
 JDI_BOTTOM := $(call CommonBottom,$(JDI_FIRST_COPYRIGHT_YEAR))
-JDI_OVERVIEW := $(JDK_SHARE_CLASSES)/jdi-overview.html
+JDI_OVERVIEW := $(JDK_TOPDIR)/src/jdk.jdi/share/classes/jdi-overview.html
 # JDI_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files
@@ -703,7 +699,7 @@ JAAS_WINDOWTITLE := Java Authentication and Authorization Service
 JAAS_HEADER := <strong>Java Authentication and Authorization Service</strong>
 JAAS_BOTTOM := $(call CommonBottom,$(JAAS_FIRST_COPYRIGHT_YEAR))
 # JAAS_PKGS is located in NON_CORE_PKGS.gmk
-JAAS_OVERVIEW := $(JDK_SHARE_CLASSES)/com/sun/security/auth/jaas-overview.html
+JAAS_OVERVIEW := $(JDK_TOPDIR)/src/jdk.security.auth/share/classes/jaas-overview.html
 
 # The index.html, options, and packages files
 JAAS_INDEX_FILE = $(JAAS_DOCDIR)/index.html
@@ -756,7 +752,7 @@ JGSS_DOCTITLE := Java$(TRADEMARK) GSS-API Utilities
 JGSS_WINDOWTITLE := Java GSS-API Utilities
 JGSS_HEADER := <strong>Java GSS-API Utilities</strong>
 JGSS_BOTTOM := $(call CommonBottom,$(JGSS_FIRST_COPYRIGHT_YEAR))
-JGSS_OVERVIEW := $(JDK_SHARE_CLASSES)/com/sun/security/jgss/jgss-overview.html
+JGSS_OVERVIEW := $(JDK_TOPDIR)/src/java.security.jgss/share/classes/jgss-overview.html
 # JGSS_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files
@@ -913,12 +909,12 @@ ALL_OTHER_TARGETS += mgmtdocs
 MGMT_DOCDIR := $(JRE_API_DOCSDIR)/management/extension
 MGMT2COREAPI := ../../$(JDKJRE2COREAPI)
 JVM_MIB_NAME := JVM-MANAGEMENT-MIB.mib
-JVM_MIB_SRC := $(JDK_TOPDIR)/src/closed/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
+JVM_MIB_SRC := $(JDK_TOPDIR)/src/closed/jdk.snmp/share/classes/sun/management/snmp/$(JVM_MIB_NAME)
 MGMT_DOCTITLE := Monitoring and Management Interface for the Java$(TRADEMARK) Platform
 MGMT_WINDOWTITLE := Monitoring and Management Interface for the Java Platform
 MGMT_HEADER := <strong>Monitoring and Management Interface for the Java Platform</strong>
 MGMT_BOTTOM := $(call CommonBottom,$(MGMT_FIRST_COPYRIGHT_YEAR))
-MGMT_OVERVIEW := $(JDK_SHARE_CLASSES)/com/sun/management/mgmt-overview.html
+MGMT_OVERVIEW := $(JDK_TOPDIR)/src/java.management/share/classes/mgmt-overview.html
 # MGMT_PKGS is located in NON_CORE_PKGS.gmk
 
 # The index.html, options, and packages files

@@ -27,6 +27,9 @@
 # of removing duplicates. It is actually this side effect that is
 # desired whenever sort is used below!
 
+ifndef _NATIVE_COMPILATION_GMK
+_NATIVE_COMPILATION_GMK := 1
+
 ifeq (,$(_MAKEBASE_GMK))
   $(error You must include MakeBase.gmk prior to including NativeCompilation.gmk)
 endif
@@ -284,7 +287,8 @@ define SetupNativeCompilation
     $1_SRCS := $$(filter $$($1_SRC_INCLUDES),$$($1_SRCS))
   endif
   ifneq ($$($1_EXCLUDES),)
-    $1_SRC_EXCLUDES := $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
+    $1_SRC_EXCLUDES := $$(addsuffix /%,$$($1_EXCLUDES))
+    $1_SRC_EXCLUDES += $$(foreach i,$$($1_SRC),$$(addprefix $$i/,$$(addsuffix /%,$$($1_EXCLUDES))))
     $1_SRCS := $$(filter-out $$($1_SRC_EXCLUDES),$$($1_SRCS))
   endif
 
@@ -549,3 +553,5 @@ define SetupNativeCompilation
 
   endif
 endef
+
+endif # _NATIVE_COMPILATION_GMK

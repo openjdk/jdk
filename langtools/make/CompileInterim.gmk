@@ -39,9 +39,12 @@ include CommonLangtools.gmk
 $(eval $(call SetupJavaCompilation,BUILD_INTERIM_LANGTOOLS, \
     SETUP := BOOT_JAVAC, \
     DISABLE_SJAVAC := true, \
-    SRC := $(LANGTOOLS_TOPDIR)/src/share/classes \
-        $(LANGTOOLS_OUTPUTDIR)/gensrc \
-        $(LANGTOOLS_TOPDIR)/make/tools, \
+    SRC := $(LANGTOOLS_TOPDIR)/src/java.compiler/share/classes \
+      $(LANGTOOLS_TOPDIR)/src/jdk.compiler/share/classes \
+      $(LANGTOOLS_TOPDIR)/src/jdk.javadoc/share/classes \
+      $(LANGTOOLS_TOPDIR)/src/java.base/share/classes \
+      $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler \
+      $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.javadoc, \
     EXCLUDES := com/sun/tools/javac/nio compileproperties anttasks crules, \
     COPY := $(RESOURCE_SUFFIXES), \
     BIN := $(LANGTOOLS_OUTPUTDIR)/interim_classes, \

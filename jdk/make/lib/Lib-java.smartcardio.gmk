@@ -1,0 +1,66 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+LIBJ2PCSC_SRC := $(JDK_TOPDIR)/src/java.smartcardio/share/native/libj2pcsc \
+    $(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_API_DIR)/native/libj2pcsc
+LIBJ2PCSC_CPPFLAGS := $(addprefix -I,$(LIBJ2PCSC_SRC)) \
+    -I$(JDK_TOPDIR)/src/java.smartcardio/$(OPENJDK_TARGET_OS_API_DIR)/native/libj2pcsc/MUSCLE \
+    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.smartcardio
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBJ2PCSC, \
+    LIBRARY := j2pcsc, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBJ2PCSC_SRC), \
+    LANG := C, \
+    CFLAGS_posix := -D__sun_jdk, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(LIBJ2PCSC_CPPFLAGS), \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libj2pcsc/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_SUFFIX_posix := $(LIBDL), \
+    LDFLAGS_SUFFIX_windows := winscard.lib, \
+    LDFLAGS_SUFFIX_solaris := -lc, \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=j2pcsc.dll" \
+        -D "JDK_INTERNAL_NAME=j2pcsc" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libj2pcsc, \
+    DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
+
+SECURITY_SMARTCARDIO_LIBRARIES += $(BUILD_LIBJ2PCSC)
+
+################################################################################
+
+java.smartcardio: $(SECURITY_SMARTCARDIO_LIBRARIES)
+
+all: java.smartcardio
+
+.PHONY: all java.smartcardio

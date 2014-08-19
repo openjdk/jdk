@@ -79,11 +79,12 @@
     <target name="compile-single" depends="build-bootstrap-javac">
         <fail unless="includes">Must set property 'includes'</fail>
         <javac fork="true" executable="${build.bootstrap.dir}/bin/javac"
-               srcdir="${src.classes.dir}"
+               srcdir="${srcdir}"
                destdir="${build.classes.dir}"
                includes="${includes}"
                sourcepath=""
                includeAntRuntime="no"
+               source="${javac.source}"
                target="${javac.target}"
                debug="${javac.debug}"
                debuglevel="${javac.debuglevel}"/>
@@ -174,7 +175,7 @@
     <target name="debug-single" depends="-check-target.java.home,-def-start-debugger,-def-run">
         <fail unless="debug.classname">Must set property 'debug.classname'</fail>
         <start-debugger/>
-        <run mainclass="${debug.classname}" default.args="" jpda.jvmargs="${jpda.jvmargs}"/>
+        <run mainclass="${debug.classname}" args="" jpda.jvmargs="${jpda.jvmargs}"/>
     </target>
 
     <!-- Debug a jtreg test. -->
@@ -186,7 +187,7 @@
 
     <!-- Update a class being debugged. -->
 
-    <target name="debug-fix" if="langtools.tool.name">
+    <target name="debug-fix">
         <fail unless="class">Must set property 'class'
         </fail>
         <antcall target="compile-single">
@@ -281,7 +282,7 @@
                         <pathelement location="${target.java.home}/jre/lib/rt.jar"/>
                     </bootclasspath>
                     <sourcepath>
-                        <pathelement location="${src.classes.dir}"/>
+                        <path refid="src.dirs"/>
                     </sourcepath>
                 </nbjpdastart>
                 <property

@@ -28,16 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 
-#######
-
-IMPORT_TARGET_FILES :=
-
-IMPORT_CLASSES := CORBA JAXP JAXWS LANGTOOLS
-IMPORT_SOURCES := CORBA JAXP JAXWS LANGTOOLS
-# Only Corba has binaries
-IMPORT_BINARIES := CORBA
-
-#######
+################################################################################
 
 # Put the libraries here. Different locations for different target apis.
 ifeq ($(OPENJDK_TARGET_OS_API), posix)
@@ -48,68 +39,18 @@ else
   HOTSPOT_LIB_DIR := $(HOTSPOT_DIST)/jre/bin
 endif
 
-#######
-
-#
-# jar xf/unzip fails when executing them all in parallel
-# introduce artificial dependency (_DEP) buuhhh
-
-define ImportClasses
-  $1_CLASSES_DEP := $$(IMPORT_TARGET_CLASSES)
-  IMPORT_TARGET_CLASSES += $(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported
-
-  $(JDK_OUTPUTDIR)/classes/_the.$1.classes.imported: $$($1_DIST)/lib/classes.jar $$($1_CLASSES_DEP)
-	$(ECHO) Importing $1 classes.jar
-	$(MKDIR) -p $$(@D)
-	$(RM) $$@ $$@.tmp
-	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
-	$(MV) $$@.tmp $$@
-endef
-
-define ImportSources
-  $1_SOURCES_DEP := $$(IMPORT_TARGET_SOURCES)
-  IMPORT_TARGET_SOURCES += $(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported
-
-  $(JDK_OUTPUTDIR)/impsrc/_the.$1.src.imported: $$($1_DIST)/lib/src.zip $$($1_SOURCES_DEP)
-	$(ECHO) Importing $1 src.zip
-	$(MKDIR) -p $$(@D)
-	$(RM) $$@ $$@.tmp
-	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
-	$(MV) $$@.tmp $$@
-endef
-
-define ImportBinaries
-  $1_BINARIES_DEP := $$(IMPORT_TARGET_BINARIES)
-  IMPORT_TARGET_BINARIES += $(JDK_OUTPUTDIR)/_the.$1.binaries.imported
-
-  $(JDK_OUTPUTDIR)/_the.$1.binaries.imported: $$($1_DIST)/lib/bin.zip $$($1_BINARIES_DEP)
-	$(ECHO) Importing $1 bin.zip
-	$(MKDIR) -p $$(@D)
-	$(RM) $$@ $$@.tmp
-	($(CD) $$(@D) && $(JAR) xvf $$< > $$@.tmp)
-	$(MV) $$@.tmp $$@
-endef
-
-#######
-
-$(foreach I, $(IMPORT_CLASSES), $(eval $(call ImportClasses,$I)))
-$(foreach I, $(IMPORT_SOURCES), $(eval $(call ImportSources,$I)))
-$(foreach I, $(IMPORT_BINARIES), $(eval $(call ImportBinaries,$I)))
-
-IMPORT_TARGET_FILES += $(IMPORT_TARGET_CLASSES) $(IMPORT_TARGET_SOURCES) $(IMPORT_TARGET_BINARIES)
-
-#######
+################################################################################
 
 define CopyDir
   $1_SRC_FILES := $(shell $(FIND) $2 -type f -a \( -name DUMMY $(addprefix -o$(SPACE)-name$(SPACE),$4) \))
   $1_DST_FILES := $$(patsubst $2/%,$3/%,$$($1_SRC_FILES))
-  IMPORT_TARGET_FILES += $$($1_DST_FILES)
+  HOTSPOT_IMPORT_TARGET_FILES += $$($1_DST_FILES)
   $3/%: $2/%
 	$(ECHO) $(LOG_INFO) Copying $$(@F)
 	$$(install-file)
 endef
 
-#######
+################################################################################
 
 #
 # Import hotspot
@@ -129,22 +70,22 @@ endif
 
 ifneq ($(OPENJDK_TARGET_OS), windows)
   ifeq ($(JVM_VARIANT_SERVER), true)
-    IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+    HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
     ifneq (, $(JSIG_DEBUGINFO))
-      IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/server/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
     endif
   endif
   ifeq ($(JVM_VARIANT_CLIENT), true)
-    IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+    HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
     ifneq (, $(JSIG_DEBUGINFO))
-      IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/client/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
     endif
   endif
   ifneq ($(OPENJDK_TARGET_OS), macosx)
     ifeq ($(JVM_VARIANT_MINIMAL1), true)
-      IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
+      HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(LIBRARY_PREFIX)jsig$(SHARED_LIBRARY_SUFFIX)
       ifneq (,$(JSIG_DEBUGINFO))
-        IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
+        HOTSPOT_IMPORT_TARGET_FILES += $(INSTALL_LIBRARIES_HERE)/minimal/$(foreach I,$(JSIG_DEBUGINFO),$(notdir $I))
       endif
     endif
   endif
@@ -242,45 +183,9 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ##########################################################################################
-# Unpack the binary distributions of the crypto classes if they exist.
-SEC_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-bin.zip
-SEC_FILES_WIN_ZIP := $(JDK_TOPDIR)/make/tools/crypto/sec-windows-bin.zip
-JGSS_WIN32_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-i586-bin.zip
-JGSS_WIN64_FILES_ZIP := $(JDK_TOPDIR)/make/tools/crypto/jgss-windows-x64-bin.zip
 
-define unzip-sec-file
-	$(ECHO) Unzipping $(<F)
-	$(MKDIR) -p $(@D)
-	$(RM) $@
-	($(CD) $(JDK_OUTPUTDIR) && $(UNZIP) -q -o $< > $@.tmp)
-	$(MV) $@.tmp $@
-endef
+hotspot: $(HOTSPOT_IMPORT_TARGET_FILES)
 
-$(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped: $(SEC_FILES_ZIP)
-	$(call unzip-sec-file)
+all: hotspot
 
-$(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped: $(SEC_FILES_WIN_ZIP)
-	$(call unzip-sec-file)
-
-$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped: $(JGSS_WIN32_FILES_ZIP)
-	$(call unzip-sec-file)
-
-$(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped: $(JGSS_WIN64_FILES_ZIP)
-	$(call unzip-sec-file)
-
-ifneq ($(wildcard $(SEC_FILES_ZIP)), )
-  IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-bin.unzipped
-  ifeq ($(OPENJDK_TARGET_OS), windows)
-    IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.sec-windows-bin.unzipped
-    ifeq ($(OPENJDK_TARGET_CPU), x86)
-      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-i586-bin.unzipped
-    endif
-    ifeq ($(OPENJDK_TARGET_CPU), x86_64)
-      IMPORT_TARGET_FILES += $(JDK_OUTPUTDIR)/classes/_the.jgss-windows-x64-bin.unzipped
-    endif
-  endif
-endif
-
-##########################################################################################
-
-all: $(IMPORT_TARGET_FILES)
+.PHONY: hotspot all

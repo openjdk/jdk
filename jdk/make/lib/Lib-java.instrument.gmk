@@ -1,0 +1,101 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+LIBINSTRUMENT_SRC := $(JDK_TOPDIR)/src/java.instrument/share/native/libinstrument \
+    $(JDK_TOPDIR)/src/java.instrument/$(OPENJDK_TARGET_OS_API_DIR)/native/libinstrument \
+    #
+LIBINSTRUMENT_CFLAGS := $(CFLAGS_JDKLIB) \
+    $(addprefix -I, $(LIBINSTRUMENT_SRC)) \
+    -I$(JDK_OUTPUTDIR)/gensrc_headers/java.instrument \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjli \
+    -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
+    #
+
+LIBINSTRUMENT_LDFLAGS :=
+LIBINSTRUMENT_LDFLAGS_SUFFIX :=
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  LIBINSTRUMENT_LDFLAGS += $(JDK_OUTPUTDIR)/objs/jli_static.lib $(WIN_JAVA_LIB) \
+      -export:Agent_OnAttach advapi32.lib
+  # Statically link the C runtime so that there are not dependencies on modules
+  # not on the search patch when invoked from the Windows system directory
+  # (or elsewhere).
+  LIBINSTRUMENT_CFLAGS := $(filter-out -MD, $(LIBINSTRUMENT_CFLAGS))
+  # equivalent of strcasecmp is stricmp on Windows
+  LIBINSTRUMENT_CFLAGS += -Dstrcasecmp=stricmp
+else
+  LIBINSTRUMENT_LDFLAGS_SUFFIX := -ljava
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBINSTRUMENT, \
+    LIBRARY := instrument, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBINSTRUMENT_SRC), \
+    LANG := C, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(LIBINSTRUMENT_CFLAGS) $(CFLAGS_WARNINGS_ARE_ERRORS), \
+    CFLAGS_debug := -DJPLIS_LOGGING, \
+    CFLAGS_release := -DNO_JPLIS_LOGGING, \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libinstrument/mapfile-vers, \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN) \
+        $(LIBINSTRUMENT_LDFLAGS), \
+    LDFLAGS_linux := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
+    LDFLAGS_solaris := $(call SET_SHARED_LIBRARY_ORIGIN,/jli), \
+    LDFLAGS_macosx := -Xlinker -all_load $(JDK_OUTPUTDIR)/objs/libjli_static.a \
+        -framework Cocoa -framework Security -framework ApplicationServices, \
+    LDFLAGS_SUFFIX := $(LIBINSTRUMENT_LDFLAGS_SUFFIX), \
+    LDFLAGS_SUFFIX_macosx := -liconv $(LIBZ), \
+    LDFLAGS_SUFFIX_solaris := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL) -lc, \
+    LDFLAGS_SUFFIX_linux := $(LIBZ) -L $(INSTALL_LIBRARIES_HERE)/jli -ljli $(LIBDL), \
+    LDFLAGS_SUFFIX_aix := $(LIBZ) -L$(JDK_OUTPUTDIR)/objs -ljli_static $(LIBDL),\
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=instrument.dll" \
+        -D "JDK_INTERNAL_NAME=instrument" \
+        -D "JDK_FTYPE=0x2L", \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libinstrument, \
+    DEBUG_SYMBOLS := true))
+
+ifneq (, $(findstring $(OPENJDK_TARGET_OS), macosx windows aix))
+  $(BUILD_LIBINSTRUMENT): $(JDK_OUTPUTDIR)/objs/$(LIBRARY_PREFIX)jli_static$(STATIC_LIBRARY_SUFFIX)
+else
+  $(BUILD_LIBINSTRUMENT): $(INSTALL_LIBRARIES_HERE)/jli/$(LIBRARY_PREFIX)jli$(SHARED_LIBRARY_SUFFIX)
+endif
+$(BUILD_LIBINSTRUMENT): $(BUILD_LIBJAVA)
+
+INSTRUMENT_LIBRARIES += $(BUILD_LIBINSTRUMENT)
+
+################################################################################
+
+java.instrument: $(INSTRUMENT_LIBRARIES)
+
+all: java.instrument
+
+.PHONY: all java.instrument
