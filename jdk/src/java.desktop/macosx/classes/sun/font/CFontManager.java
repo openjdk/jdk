@@ -43,7 +43,7 @@ import sun.awt.HeadlessToolkit;
 import sun.awt.util.ThreadGroupUtils;
 import sun.lwawt.macosx.*;
 
-public class CFontManager extends SunFontManager {
+public final class CFontManager extends SunFontManager {
     private FontConfigManager fcManager = null;
     private static Hashtable<String, Font2D> genericFonts = new Hashtable<String, Font2D>();
 
@@ -61,20 +61,14 @@ public class CFontManager extends SunFontManager {
         return new CFontConfiguration(this, preferLocaleFonts, preferPropFonts);
     }
 
-    private static String[] defaultPlatformFont = null;
-
     /*
      * Returns an array of two strings. The first element is the
      * name of the font. The second element is the file name.
      */
     @Override
-    public synchronized String[] getDefaultPlatformFont() {
-        if (defaultPlatformFont == null) {
-            defaultPlatformFont = new String[2];
-            defaultPlatformFont[0] = "Lucida Grande";
-            defaultPlatformFont[1] = "/System/Library/Fonts/LucidaGrande.ttc";
-        }
-        return defaultPlatformFont;
+    protected String[] getDefaultPlatformFont() {
+        return new String[]{"Lucida Grande",
+                            "/System/Library/Fonts/LucidaGrande.ttc"};
     }
 
     // This is a way to register any kind of Font2D, not just files and composites.
