@@ -25,6 +25,8 @@
 
 package sun.awt;
 
+import sun.awt.datatransfer.DataTransferer;
+
 import java.awt.*;
 import java.awt.dnd.*;
 import java.awt.dnd.peer.DragSourceContextPeer;
@@ -399,6 +401,11 @@ public class HeadlessToolkit extends Toolkit
         if (componentFactory != null) {
             return componentFactory.getFontPeer(name, style);
         }
+        return null;
+    }
+
+    @Override
+    public DataTransferer getDataTransferer() {
         return null;
     }
 
