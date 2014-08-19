@@ -22,27 +22,29 @@
  */
 
 /*
- * @test DoubleTest
- * @bug 8028756
+ * @test SizeTTest
+ * @bug 8054823
  * @library /testlibrary /testlibrary/whitebox
- * @build DoubleTest
+ * @build SizeTTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI DoubleTest
- * @summary testing of WB::set/getDoubleVMFlag()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:+UnlockExperimentalVMOptions SizeTTest
+ * @summary testing of WB::set/getSizeTVMFlag()
  */
+import com.oracle.java.testlibrary.Platform;
 
-public class DoubleTest {
-    private static final String FLAG_NAME = null;
-    private static final Double[] TESTS = {0d, -0d, -1d, 1d,
-            Double.MAX_VALUE, Double.MIN_VALUE, Double.NaN,
-            Double.NEGATIVE_INFINITY, Double.POSITIVE_INFINITY};
+public class SizeTTest {
+    private static final String FLAG_NAME = "ArrayAllocatorMallocLimit";
+    private static final Long[] TESTS = {0L, 100L, (long) Integer.MAX_VALUE,
+        (1L << 32L) - 1L, 1L << 32L};
+    private static final Long[] EXPECTED_64 = TESTS;
+    private static final Long[] EXPECTED_32 = {0L, 100L,
+        (long) Integer.MAX_VALUE, (1L << 32L) - 1L, 0L};
 
     public static void main(String[] args) throws Exception {
         VmFlagTest.runTest(FLAG_NAME, TESTS,
-            VmFlagTest.WHITE_BOX::setDoubleVMFlag,
-            VmFlagTest.WHITE_BOX::getDoubleVMFlag);
+            Platform.is64bit() ? EXPECTED_64 : EXPECTED_32,
+            VmFlagTest.WHITE_BOX::setSizeTVMFlag,
+            VmFlagTest.WHITE_BOX::getSizeTVMFlag);
     }
 }
-

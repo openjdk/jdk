@@ -50,9 +50,6 @@ enum NMT_TrackingLevel {
 // build time decision.
 const int NMT_TrackingStackDepth = 4;
 
-class NativeCallStack;
-extern NativeCallStack emptyStack;
-
 // A few common utilities for native memory tracking
 class NMTUtil : AllStatic {
  public:

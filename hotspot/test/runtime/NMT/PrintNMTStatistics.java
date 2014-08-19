@@ -29,6 +29,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build PrintNMTStatistics
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main PrintNMTStatistics
  */
 
