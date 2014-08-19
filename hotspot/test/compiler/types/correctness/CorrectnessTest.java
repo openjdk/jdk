@@ -29,6 +29,7 @@
  *          execution/MethodHandleDelegate.java
  * @build CorrectnessTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+IgnoreUnrecognizedVMOptions -XX:+UnlockExperimentalVMOptions
  *                   -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI
  *                   -XX:TypeProfileLevel=222 -XX:+UseTypeSpeculation

@@ -1083,6 +1083,9 @@ bool Node::has_special_unique_user() const {
   if( this->is_Store() ) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
+  } else if (this->is_Load()) {
+    // Condition for removing an unused LoadNode from the MemBarAcquire precedence input
+    return n->Opcode() == Op_MemBarAcquire;
   } else if( op == Op_AddL ) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
