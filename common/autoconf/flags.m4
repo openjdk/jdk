@@ -900,7 +900,7 @@ AC_DEFUN_ONCE([FLAGS_SETUP_COMPILER_FLAGS_MISC],
 
   case "${TOOLCHAIN_TYPE}" in
     microsoft)
-      CFLAGS_WARNINGS_ARE_ERRORS="/WX"
+      CFLAGS_WARNINGS_ARE_ERRORS="-WX"
       ;;
     solstudio)
       CFLAGS_WARNINGS_ARE_ERRORS="-errtags -errwarn=%all"
