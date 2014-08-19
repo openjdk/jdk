@@ -1696,6 +1696,9 @@ bool add_global_entry(JNIEnv* env, Handle name, jmmVMGlobal *global, Flag *flag,
   } else if (flag->is_uint64_t()) {
     global->value.j = (jlong)flag->get_uint64_t();
     global->type = JMM_VMGLOBAL_TYPE_JLONG;
+  } else if (flag->is_size_t()) {
+    global->value.j = (jlong)flag->get_size_t();
+    global->type = JMM_VMGLOBAL_TYPE_JLONG;
   } else if (flag->is_ccstr()) {
     Handle str = java_lang_String::create_from_str(flag->get_ccstr(), CHECK_false);
     global->value.l = (jobject)JNIHandles::make_local(env, str());
@@ -1851,6 +1854,9 @@ JVM_ENTRY(void, jmm_SetVMGlobal(JNIEnv *env, jstring flag_name, jvalue new_value
   } else if (flag->is_uint64_t()) {
     uint64_t uvalue = (uint64_t)new_value.j;
     succeed = CommandLineFlags::uint64_tAtPut(name, &uvalue, Flag::MANAGEMENT);
+  } else if (flag->is_size_t()) {
+    size_t svalue = (size_t)new_value.j;
+    succeed = CommandLineFlags::size_tAtPut(name, &svalue, Flag::MANAGEMENT);
   } else if (flag->is_ccstr()) {
     oop str = JNIHandles::resolve_external_guard(new_value.l);
     if (str == NULL) {

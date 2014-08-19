@@ -28,6 +28,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestG1ClassUnloadingHWM AllocateBeyondMetaspaceSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver TestG1ClassUnloadingHWM
  * @summary Test that -XX:-ClassUnloadingWithConcurrentMark will trigger a Full GC when more than MetaspaceSize metadata is allocated.
  */

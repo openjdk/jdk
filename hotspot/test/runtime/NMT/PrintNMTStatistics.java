@@ -30,6 +30,7 @@
  * @build PrintNMTStatistics
  * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main PrintNMTStatistics
  */
 
