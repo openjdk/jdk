@@ -34,10 +34,10 @@ include CommonLangtools.gmk
 
 ################################################################################
 # Setup the compilation of the properties compilation tool. You can depend
-# upon $(BUILD_TOOLS) to trigger a compilation of the tools. Note that we
-# add src/share/classes to the sourcepath. This is necessary since the GenStubs
-# program needs to be linked and run with the new javac sources.
-$(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
+# upon $(BUILD_TOOLS_LANGTOOLS) to trigger a compilation of the tools. Note that 
+# we add src/share/classes to the sourcepath. This is necessary since the 
+# GenStubs program needs to be linked and run with the new javac sources.
+$(eval $(call SetupJavaCompilation,BUILD_TOOLS_LANGTOOLS, \
     SETUP := BOOT_JAVAC, \
     DISABLE_SJAVAC := true, \
     ADD_JAVAC_FLAGS := -Xprefer:source, \
@@ -51,17 +51,19 @@ TOOL_COMPILEPROPS_CMD := $(JAVA) -cp $(LANGTOOLS_OUTPUTDIR)/buildtools_classes \
     compileproperties.CompileProperties -quiet
 
 # Lookup the properties that need to be compiled into resource bundles.
-PROPSOURCES := $(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/share/classes -name "*.properties")
+PROPSOURCES := $(shell $(FIND) $(LANGTOOLS_TOPDIR)/src/*/share/classes -name "*.properties")
 
+# Convert .../src/<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN.properties
+# to .../langtools/gensrc/<module>/com/sun/tools/javac/resources/javac_zh_CN.java
 # Strip away prefix and suffix, leaving for example only: 
-# "com/sun/tools/javac/resources/javac_zh_CN"
-PROPPATHS := $(patsubst $(LANGTOOLS_TOPDIR)/src/share/classes/%.properties, %, $(PROPSOURCES))
+# "<module>/share/classes/com/sun/tools/javac/resources/javac_zh_CN"
+PROPJAVAS := $(patsubst $(LANGTOOLS_TOPDIR)/src/%.properties, \
+    $(LANGTOOLS_OUTPUTDIR)/gensrc/%.java, \
+    $(subst /share/classes,,$(PROPSOURCES)))
 
-# Generate the list of java files to be created.
-PROPJAVAS := $(patsubst %, $(LANGTOOLS_OUTPUTDIR)/gensrc/%.java, $(PROPPATHS))
-
-# Generate the package dirs for the tobe generated java files.
-PROPDIRS := $(dir $(PROPJAVAS))
+# Generate the package dirs for the tobe generated java files. Sort to remove
+# duplicates.
+PROPDIRS := $(sort $(dir $(PROPJAVAS)))
 
 # Now generate a sequence of:
 # "-compile ...javac_zh_CN.properties ...javac_zh_CN.java java.util.ListResourceBundle"
@@ -69,40 +71,38 @@ PROPDIRS := $(dir $(PROPJAVAS))
 PROPCMDLINE := $(subst _SPACE_, $(SPACE), \
     $(join $(addprefix -compile_SPACE_, $(PROPSOURCES)), \
     $(addsuffix _SPACE_java.util.ListResourceBundle, \
-    $(addprefix _SPACE_$(LANGTOOLS_OUTPUTDIR)/gensrc/, \
-    $(addsuffix .java, $(PROPPATHS))))))
+    $(addprefix _SPACE_, $(PROPJAVAS)))))
 
 # Now setup the rule for the generation of the resource bundles.
-$(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props: $(PROPSOURCES) $(BUILD_TOOLS)
+$(LANGTOOLS_OUTPUTDIR)/gensrc/_the_props: $(PROPSOURCES) $(BUILD_TOOLS_LANGTOOLS)
 	$(RM) -r $(@D)/*
 	$(MKDIR) -p $(@D) $(PROPDIRS)
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
-	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javah/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
-	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javap/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
-	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javac/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
-	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.dev/com/sun/tools/jdeps/resources/version.properties
 	$(PRINTF) "jdk=$(JDK_VERSION)\nfull=$(FULL_VERSION)\nrelease=$(RELEASE)\n" \
-	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties
-	$(ECHO) Compiling $(words $(PROPSOURCES) javah javap javac jdeps javadoc) \
-	    properties into resource bundles
+	    > $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.javadoc/com/sun/tools/javadoc/resources/version.properties
+	$(ECHO) Compiling $(words $(PROPSOURCES) v1 v2 v3) properties into resource bundles
 	$(TOOL_COMPILEPROPS_CMD) $(PROPCMDLINE) \
-	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.properties \
-	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javah/resources/version.java \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javah/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javah/resources/version.java \
 	        java.util.ListResourceBundle \
-	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.properties \
-	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javap/resources/version.java \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javap/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javap/resources/version.java \
 	        java.util.ListResourceBundle \
-	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.properties \
-	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javac/resources/version.java \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javac/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.compiler/com/sun/tools/javac/resources/version.java \
 	        java.util.ListResourceBundle \
-	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.properties \
-	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/jdeps/resources/version.java \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.dev/com/sun/tools/jdeps/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.dev/com/sun/tools/jdeps/resources/version.java \
 	        java.util.ListResourceBundle \
-	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.properties \
-	        $(LANGTOOLS_OUTPUTDIR)/gensrc/com/sun/tools/javadoc/resources/version.java \
+	    -compile $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.javadoc/com/sun/tools/javadoc/resources/version.properties \
+	        $(LANGTOOLS_OUTPUTDIR)/gensrc/jdk.javadoc/com/sun/tools/javadoc/resources/version.java \
 	        java.util.ListResourceBundle
 	$(TOUCH) $@
 

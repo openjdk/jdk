@@ -51,7 +51,10 @@ public class JarReorder {
     private void usage() {
         String help;
         help =
-                "Usage:  jar JarReorder [-o <outputfile>] <order_list> <exclude_list> <file> ...\n"
+                "Usage:  jar JarReorder [-m] [-o <outputfile>] <order_list> <exclude_list> <file> ...\n"
+                + "   -m            activate module mode, where every direct sub\n"
+                + "                 directory of the current working directory\n"
+                + "                 will be assumed to be a separate source root\n"
                 + "   order_list    is a file containing names of files to load\n"
                 + "                 in order at the end of a jar file unless\n"
                 + "                 excluded in the exclude list.\n"
@@ -74,6 +77,7 @@ public class JarReorder {
      * files and directories to be excluded.
      *
      * Command path arguments are
+     *    - optional -m for module mode.
      *    - optional -o outputfile
      *    - name of a file containing a set of files to be included in a jar file.
      *    - name of a file containing a set of files (or directories) to be
@@ -91,11 +95,19 @@ public class JarReorder {
         int arglen = args.length;
         int argpos = 0;
 
-        // Look for "-o outputfilename" option
+        boolean moduleMode = false;
+
         if (arglen > 0) {
-            if (arglen >= 2 && args[0].equals("-o")) {
+            // Check for module mode
+            if (args[argpos].equals("-m")) {
+                moduleMode = true;
+                argpos++;
+                arglen--;
+            }
+            // Look for "-o outputfilename" option
+            if (arglen >= 2 && args[argpos].equals("-o")) {
                 try {
-                    out = new PrintStream(new FileOutputStream(args[1]));
+                    out = new PrintStream(new FileOutputStream(args[argpos+1]));
                 } catch (FileNotFoundException e) {
                     System.err.println("Error: " + e.getMessage());
                     e.printStackTrace(System.err);
@@ -124,9 +136,14 @@ public class JarReorder {
         argpos += 2;
         arglen -= 2;
 
+        // If we run module mode, this will contain the list of subdirs to use
+        // as source roots. Otherwise it will just contain the current working
+        // dir.
+        List<File> moduleDirs = findModuleDirs(moduleMode);
+
         // Create 2 lists and a set of processed files
-        List<String> orderList = readListFromFile(classListFile, true);
-        List<String> excludeList = readListFromFile(excludeListFile, false);
+        List<String> orderList = readListFromFile(classListFile, true, moduleDirs);
+        List<String> excludeList = readListFromFile(excludeListFile, false, moduleDirs);
         Set<String> processed = new HashSet<String>();
 
         // Create set of all files and directories excluded, then expand
@@ -142,9 +159,11 @@ public class JarReorder {
         Set<String> inputSet = new HashSet<String>();
         for (int i = 0; i < arglen; ++i) {
             String name = args[argpos + i];
-            name = cleanPath(new File(name));
-            if ( name != null && name.length() > 0 && !inputSet.contains(name) ) {
-                inputSet.add(name);
+            for (File dir : moduleDirs) {
+                String cleanName = cleanPath(new File(dir, name));
+                if ( cleanName != null && cleanName.length() > 0 && !inputSet.contains(cleanName) ) {
+                    inputSet.add(cleanName);
+                }
             }
         }
 
@@ -175,7 +194,22 @@ public class JarReorder {
 
         // Print final results.
         for (String str : allFiles) {
-            out.println(str);
+            // If running in module mode, each line must be prepended with a
+            // '-C dir ' which points to the source root where that file is
+            // found.
+            if (moduleMode) {
+                int firstPathSep = str.indexOf(File.separator);
+                String moduleDir;
+                if (firstPathSep < 0) {
+                    moduleDir = ".";
+                } else {
+                    moduleDir = str.substring(0, firstPathSep);
+                }
+                String filePath = str.substring(firstPathSep + 1);
+                out.println("-C " + moduleDir + " " + filePath);
+            } else {
+                out.println(str);
+            }
         }
         out.flush();
         out.close();
@@ -185,7 +219,7 @@ public class JarReorder {
      * Read a file containing a list of files and directories into a List.
      */
     private List<String> readListFromFile(String fileName,
-            boolean addClassSuffix) {
+            boolean addClassSuffix, List<File> moduleDirs) {
 
         BufferedReader br = null;
         List<String> list = new ArrayList<String>();
@@ -211,11 +245,22 @@ public class JarReorder {
                 if (addClassSuffix && !path.endsWith(".class")) {
                     path = path + ".class";
                 }
-                // Normalize the path
-                path = cleanPath(new File(path));
-                // Add to list
-                if (path != null && path.length() > 0 && !list.contains(path)) {
-                    list.add(path);
+                // Look for file in each module source root
+                boolean pathFound = false;
+                for (File dir : moduleDirs) {
+                    File file = new File(dir, path);
+                    if (file.exists()) {
+                        pathFound = true;
+                        // Normalize the path
+                        String cleanPath = cleanPath(new File(dir, path));
+                        // Add to list
+                        if (cleanPath != null && cleanPath.length() > 0 && !list.contains(cleanPath)) {
+                            list.add(cleanPath);
+                        }
+                    }
+                }
+                if (!pathFound) {
+                    System.err.println("WARNING: Path does not exist as file or directory: " + path);
                 }
             }
             br.close();
@@ -273,6 +318,27 @@ public class JarReorder {
         return includedFiles;
     }
 
+    /**
+     * Find all module sub directories to be used as source roots.
+     * @param moduleMode If true, assume sub directories are modules, otherwise
+     *                   just use current working directory.
+     * @return List of all found source roots
+     */
+    private List<File> findModuleDirs(boolean moduleMode) {
+        File cwd = new File(".");
+        List<File> moduleDirs = new ArrayList<File>();
+        if (moduleMode) {
+            for (File f : cwd.listFiles()) {
+                if (f.isDirectory()) {
+                    moduleDirs.add(f);
+                }
+            }
+        } else {
+            moduleDirs.add(cwd);
+        }
+        return moduleDirs;
+    }
+
     private String cleanPath(File f) {
         String path = f.getPath();
         if (f.isFile()) {
@@ -296,7 +362,7 @@ public class JarReorder {
             path = path.replace('/', '\\');
         }
         // Remove leading ./
-        if (path.startsWith("." + File.separator)) {
+        while (path.startsWith("." + File.separator)) {
             path = path.substring(2);
         }
         return path;
@@ -307,6 +373,10 @@ public class JarReorder {
         // Make sure it ends with a file separator
         if (!path.endsWith(File.separator)) {
             path = path + File.separator;
+        }
+        // Remove any /./ in the path.
+        if (path.endsWith(File.separator + "." + File.separator)) {
+            path = path.substring(0, path.length() - 2);
         }
         return path;
     }

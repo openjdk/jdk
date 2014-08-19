@@ -23,29 +23,40 @@
 # questions.
 #
 
+ifndef _TOOLS_GMK
+_TOOLS_GMK := 1
+
+default: all
+
+include $(SPEC)
+include MakeBase.gmk
+include JavaCompilation.gmk
+include NativeCompilation.gmk
+include SetupJava.gmk
+
 # Cache all finds needed for this file.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
 
 # The exception handling of swing beaninfo which have the own tool directory
-ifeq (, $(BUILD_TOOLS))
-  $(eval $(call SetupJavaCompilation,BUILD_TOOLS, \
+ifeq (, $(BUILD_TOOLS_JDK))
+  $(eval $(call SetupJavaCompilation,BUILD_TOOLS_JDK, \
       SETUP := GENERATE_OLDBYTECODE, \
       SRC := $(JDK_TOPDIR)/make/src/classes, \
       BIN := $(JDK_OUTPUTDIR)/btclasses))
 endif
 
 $(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/%.template: \
-    $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/%.template
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/%.template
 	$(call install-file)
 
-BUILD_TOOLS += $(foreach i, $(wildcard $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/*.template), $(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/$(notdir $i))
+BUILD_TOOLS_JDK += $(foreach i, $(wildcard $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/*.template), $(JDK_OUTPUTDIR)/btclasses/build/tools/generatenimbus/resources/$(notdir $i))
 
 # Resource used by CheckDeps tool
 $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed: \
     $(JDK_TOPDIR)/make/data/checkdeps/refs.allowed
 	$(call install-file)
 
-BUILD_TOOLS += $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed
+BUILD_TOOLS_JDK += $(JDK_OUTPUTDIR)/btclasses/build/tools/deps/refs.allowed
 
 # Add a checksum ("jsum") to the end of a text file. Prevents trivial tampering with class lists.
 TOOL_ADDJSUM = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
@@ -90,6 +101,9 @@ TOOL_TZDB = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.blacklistedcertsconverter.BlacklistedCertsConverter
 
+TOOL_MAKEJAVASECURITY = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+    build.tools.makejavasecurity.MakeJavaSecurity
+
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
@@ -118,11 +132,12 @@ TOOL_CLDRCONVERTER = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.cldrconverter.CLDRConverter
 
 TOOL_CHECKDEPS = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
-    -cp $(JDK_OUTPUTDIR)/btclasses:$(JDK_OUTPUTDIR) \
+    -cp "$(JDK_OUTPUTDIR)/btclasses$(PATH_SEP)$(JDK_OUTPUTDIR)" \
     build.tools.deps.CheckDeps
 
-TOOL_ADDTORESTRICTEDPKGS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
-    build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
+TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
+    -cp "$(JDK_OUTPUTDIR)/btclasses$(PATH_SEP)$(JDK_OUTPUTDIR)" \
+    build.tools.module.GenerateModulesXml
 
 ##########################################################################################
 
@@ -149,3 +164,10 @@ $(eval $(call SetupNativeCompilation,FIX_EMPTY_SEC_HDR_FLAGS, \
     OUTPUT_DIR := $(JDK_OUTPUTDIR)/btbin, \
     PROGRAM := fix_empty_sec_hdr_flags))
 endif
+
+java-tools: $(BUILD_TOOLS_JDK)
+
+all: java-tools
+
+endif # _TOOLS_GMK
+

@@ -27,14 +27,14 @@
 # Generate java files for javax.swing.plaf package
 #
 NIMBUS_PACKAGE = javax.swing.plaf
-NIMBUS_GENSRC_DIR = $(JDK_OUTPUTDIR)/gensrc/javax/swing/plaf/nimbus
-NIMBUS_SKIN_FILE = $(JDK_TOPDIR)/src/share/classes/javax/swing/plaf/nimbus/skin.laf
+NIMBUS_GENSRC_DIR = $(JDK_OUTPUTDIR)/gensrc/java.desktop/javax/swing/plaf/nimbus
+NIMBUS_SKIN_FILE = $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/plaf/nimbus/skin.laf
 
-$(JDK_OUTPUTDIR)/gensrc/_the.generated_nimbus: $(NIMBUS_SKIN_FILE) $(BUILD_TOOLS)
+$(JDK_OUTPUTDIR)/gensrc/_the.generated_nimbus: $(NIMBUS_SKIN_FILE) $(BUILD_TOOLS_JDK)
 	$(MKDIR) -p $(@D)
 	$(ECHO) "Generating Nimbus source files"
 	$(TOOL_GENERATENIMBUS) $(LOG_INFO) \
-	    -skinFile $(NIMBUS_SKIN_FILE) -buildDir $(JDK_OUTPUTDIR)/gensrc \
+	    -skinFile $(NIMBUS_SKIN_FILE) -buildDir $(JDK_OUTPUTDIR)/gensrc/java.desktop \
 	    -packagePrefix $(NIMBUS_PACKAGE).nimbus -lafName Nimbus
 	$(ECHO) $(LOG_INFO) "Finished generating Nimbus source files"
 	$(TOUCH) $@
@@ -62,8 +62,8 @@ BEANS = AbstractButton Box JComponent JApplet JButton \
 # javax.swing.text package
 BEANS_TEXT = JTextComponent
 
-BEANS_SRC = $(BEANS:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/%.java) \
-    $(BEANS_TEXT:%=$(JDK_TOPDIR)/src/share/classes/javax/swing/text/%.java)
+BEANS_SRC = $(BEANS:%=$(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/%.java) \
+    $(BEANS_TEXT:%=$(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing/text/%.java)
 
 # Dummy variable so far, in the old build system it was false by default
 SWINGBEAN_DEBUG_FLAG = false
@@ -71,33 +71,40 @@ SWINGBEAN_DEBUG_FLAG = false
 # LocaleDataMetaInfo needs to be generated before running this to avoid confusing errors
 # in the build log.
 $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) \
-    $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java \
-    $(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS) \
+    $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing/SwingBeanInfoBase.java \
+    $(JDK_OUTPUTDIR)/gensrc/java.desktop/sun/swing/BeanInfoUtils.java $(BUILD_TOOLS_JDK) \
     | $(GENSRC_LOCALEDATAMETAINFO)
 	$(ECHO) Generating beaninfo
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing
 	$(JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) \
-	    -sourcepath "$(JDK_TOPDIR)/src/share/classes$(PATH_SEP)$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes$(PATH_SEP)$(JDK_OUTPUTDIR)/gensrc" \
+	    -sourcepath "$(subst $(SPACE),$(PATH_SEP),\
+	        $(if $(SHUFFLED),$(wildcard $(JDK_TOPDIR)/src/*/*/classes) \
+	        $(JDK_OUTPUTDIR)/gensrc/java.base, \
+	        $(JDK_TOPDIR)/src/share/classes \
+                $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
+	        $(JDK_OUTPUTDIR)/gensrc))" \
 	    -doclet build.tools.swingbeaninfo.GenDocletBeanInfo \
-	    -x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing \
+	    -x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing \
 	    -t $(DOCLET_DATA_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \
 	    -XDignore.symbol.file=true \
 	    -classpath $(JDK_OUTPUTDIR)/btclasses $(BEANS_SRC) $(LOG_INFO)
         # Move the JTextComponent into its proper package directory.
-	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text
-	$(MV) $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/JTextComponentBeanInfo.java $(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/text/JTextComponentBeanInfo.java
+	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing/text
+	$(MV) $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing/JTextComponentBeanInfo.java $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing/text/JTextComponentBeanInfo.java
 	$(TOUCH) $@
 
 # This file is the part of dt.jar
 # For some reason it is under $(JDK_TOPDIR)/make/data/swingbeaninfo
-# Should it be moved under $(JDK_TOPDIR)/src/share/classes/javax/swing instead?
-$(JDK_OUTPUTDIR)/gensrc_no_srczip/javax/swing/SwingBeanInfoBase.java: $(DOCLET_DATA_DIR)/javax/swing/SwingBeanInfoBase.java
+# Should it be moved under $(JDK_TOPDIR)/src/java.desktop/share/classes/javax/swing instead?
+$(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing/SwingBeanInfoBase.java: $(DOCLET_DATA_DIR)/javax/swing/SwingBeanInfoBase.java
 	$(call install-file)
 
 # This file is the part of dt.jar
 # For some reason it is under $(JDK_TOPDIR)/make/data/swingbeaninfo
-# Should it be moved under $(JDK_TOPDIR)/src/share/classes/sun/swing instead?
-$(JDK_OUTPUTDIR)/gensrc/sun/swing/BeanInfoUtils.java: $(DOCLET_DATA_DIR)/sun/swing/BeanInfoUtils.java
+# Should it be moved under $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/swing instead?
+$(JDK_OUTPUTDIR)/gensrc/java.desktop/sun/swing/BeanInfoUtils.java: $(DOCLET_DATA_DIR)/sun/swing/BeanInfoUtils.java
 	$(call install-file)
 
 GENSRC_SWING_BEANINFO = $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo
+
+GENSRC_JAVA_DESKTOP += $(GENSRC_SWING_BEANINFO) $(GENSRC_SWING_NIMBUS)

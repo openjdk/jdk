@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,20 +25,24 @@
 
 package anttasks;
 
-import compileproperties.CompileProperties;
-
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
+import compileproperties.CompileProperties;
 import org.apache.tools.ant.BuildException;
 import org.apache.tools.ant.DirectoryScanner;
 import org.apache.tools.ant.Project;
 import org.apache.tools.ant.taskdefs.MatchingTask;
+import org.apache.tools.ant.types.Path;
+import org.apache.tools.ant.types.Resource;
 
 public class CompilePropertiesTask extends MatchingTask {
-    public void setSrcDir(File srcDir) {
-        this.srcDir = srcDir;
+    public void addSrc(Path src) {
+        if (srcDirs == null)
+            srcDirs = new Path(getProject());
+        srcDirs.add(src);
     }
 
     public void setDestDir(File destDir) {
@@ -64,25 +68,28 @@ public class CompilePropertiesTask extends MatchingTask {
         };
         List<String> mainOpts = new ArrayList<String>();
         int count = 0;
-        DirectoryScanner s = getDirectoryScanner(srcDir);
-        for (String path: s.getIncludedFiles()) {
-            if (path.endsWith(".properties")) {
-                String destPath =
-                        path.substring(0, path.length() - ".properties".length()) +
-                        ".java";
-                File srcFile = new File(srcDir, path);
-                File destFile = new File(destDir, destPath);
-                // Arguably, the comparison in the next line should be ">", not ">="
-                // but that assumes the resolution of the last modified time is fine
-                // grained enough; in practice, it is better to use ">=".
-                if (destFile.exists() && destFile.lastModified() >= srcFile.lastModified())
-                    continue;
-                destFile.getParentFile().mkdirs();
-                mainOpts.add("-compile");
-                mainOpts.add(srcFile.getPath());
-                mainOpts.add(destFile.getPath());
-                mainOpts.add(superclass);
-                count++;
+        for (String dir : srcDirs.list()) {
+            File baseDir = getProject().resolveFile(dir);
+            DirectoryScanner s = getDirectoryScanner(baseDir);
+            for (String path: s.getIncludedFiles()) {
+                if (path.endsWith(".properties")) {
+                    String destPath =
+                            path.substring(0, path.length() - ".properties".length()) +
+                            ".java";
+                    File srcFile = new File(baseDir, path);
+                    File destFile = new File(destDir, destPath);
+                    // Arguably, the comparison in the next line should be ">", not ">="
+                    // but that assumes the resolution of the last modified time is fine
+                    // grained enough; in practice, it is better to use ">=".
+                    if (destFile.exists() && destFile.lastModified() >= srcFile.lastModified())
+                        continue;
+                    destFile.getParentFile().mkdirs();
+                    mainOpts.add("-compile");
+                    mainOpts.add(srcFile.getPath());
+                    mainOpts.add(destFile.getPath());
+                    mainOpts.add(superclass);
+                    count++;
+                }
             }
         }
         if (mainOpts.size() > 0) {
@@ -95,7 +102,7 @@ public class CompilePropertiesTask extends MatchingTask {
         }
     }
 
-    private File srcDir;
+    private Path srcDirs;
     private File destDir;
     private String superclass = "java.util.ListResourceBundle";
 }

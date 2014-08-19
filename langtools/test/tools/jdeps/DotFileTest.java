@@ -124,7 +124,7 @@ public class DotFileTest {
              new String[] {"-v", "-classpath", testDir.getPath()});
 
         testSummary(new File(testDir, "Test.class"),
-             new String[] {"rt.jar", testDir.getName()},
+             new String[] {"java.base", testDir.getName()},
              new String[] {"compact1", ""},
              new String[] {"-classpath", testDir.getPath()});
         testSummary(new File(testDir, "Test.class"),

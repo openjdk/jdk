@@ -25,7 +25,7 @@
 /* @test
  * @summary Test chat server chatserver test
  *
- * @library ../../../src/share/sample/nio/chatserver
+ * @library ../../../src/sample/share/nio/chatserver
  * @build ChatTest ChatServer Client ClientReader DataReader MessageReader NameReader
  * @run main ChatTest
  */

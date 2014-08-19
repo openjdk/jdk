@@ -1,0 +1,88 @@
+#
+# Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
+# DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+#
+# This code is free software; you can redistribute it and/or modify it
+# under the terms of the GNU General Public License version 2 only, as
+# published by the Free Software Foundation.  Oracle designates this
+# particular file as subject to the "Classpath" exception as provided
+# by Oracle in the LICENSE file that accompanied this code.
+#
+# This code is distributed in the hope that it will be useful, but WITHOUT
+# ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+# FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+# version 2 for more details (a copy is included in the LICENSE file that
+# accompanied this code).
+#
+# You should have received a copy of the GNU General Public License version
+# 2 along with this work; if not, write to the Free Software Foundation,
+# Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+#
+# Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+# or visit www.oracle.com if you need additional information or have any
+# questions.
+#
+
+include LibCommon.gmk
+
+################################################################################
+
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBATTACH_OS_API_DIR := aix
+else
+  LIBATTACH_OS_API_DIR := $(OPENJDK_TARGET_OS_API_DIR)
+endif
+
+LIBATTACH_SRC := $(JDK_TOPDIR)/src/jdk.attach/$(LIBATTACH_OS_API_DIR)/native/libattach
+
+LIBATTACH_EXCLUDE_FILES :=
+ifneq ($(OPENJDK_TARGET_OS), solaris)
+  LIBATTACH_EXCLUDE_FILES += SolarisVirtualMachine.c
+endif
+ifneq ($(OPENJDK_TARGET_OS), linux)
+  LIBATTACH_EXCLUDE_FILES += LinuxVirtualMachine.c
+endif
+ifneq ($(OPENJDK_TARGET_OS), macosx)
+  LIBATTACH_EXCLUDE_FILES += BsdVirtualMachine.c
+endif
+ifneq ($(OPENJDK_TARGET_OS),aix)
+  LIBATTACH_EXCLUDE_FILES += AixVirtualMachine.c
+endif
+
+$(eval $(call SetupNativeCompilation,BUILD_LIBATTACH, \
+    LIBRARY := attach, \
+    OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
+    SRC := $(LIBATTACH_SRC), \
+    EXCLUDE_FILES := $(LIBATTACH_EXCLUDE_FILES), \
+    LANG := C, \
+    OPTIMIZATION := LOW, \
+    CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) \
+        -I$(JDK_OUTPUTDIR)/gensrc_headers/jdk.attach \
+        $(LIBJAVA_HEADER_FLAGS), \
+    CFLAGS_windows := /Gy, \
+    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libattach/mapfile-$(OPENJDK_TARGET_OS), \
+    VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
+    RC_FLAGS := $(RC_FLAGS) \
+        -D "JDK_FNAME=attach.dll" \
+        -D "JDK_INTERNAL_NAME=attach" \
+        -D "JDK_FTYPE=0x2L", \
+    LDFLAGS := $(LDFLAGS_JDKLIB) \
+        $(call SET_SHARED_LIBRARY_ORIGIN), \
+    LDFLAGS_solaris := -ldoor, \
+    LDFLAGS_windows := /ORDER:@$(JDK_TOPDIR)/make/mapfiles/libattach/reorder-windows-$(OPENJDK_TARGET_CPU), \
+    LDFLAGS_SUFFIX := $(LDFLAGS_JDKLIB_SUFFIX), \
+    LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib psapi.lib, \
+    OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libattach, \
+    DEBUG_SYMBOLS := true))
+
+$(BUILD_LIBATTACH): $(BUILD_LIBJAVA)
+
+ATTACH_LIBRARIES += $(BUILD_LIBATTACH)
+
+################################################################################
+
+jdk.attach: $(ATTACH_LIBRARIES)
+
+all: jdk.attach
+
+.PHONY: all jdk.attach

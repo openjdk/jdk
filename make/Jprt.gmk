@@ -52,7 +52,6 @@ endif
 
 # This target must be called in the context of a SPEC file
 jprt_bundle: $(JPRT_ARCHIVE_BUNDLE)
-	@$(call CheckIfMakeAtEnd)
 
 # This target must be called in the context of a SPEC file
 $(JPRT_ARCHIVE_BUNDLE): bundles
@@ -66,8 +65,7 @@ SRC_JDK_BUNDLE_DIR := $(JDK_BUNDLE_DIR)
 SRC_JRE_BUNDLE_DIR := $(JRE_BUNDLE_DIR)
 
 # Bundle up the images
-bundles: all bundles-only
-bundles-only: start-make
+bundles: all
 	@$(call TargetEnter)
 	$(MKDIR) -p $(BUILD_OUTPUT)/bundles
 	$(CD) $(SRC_JDK_IMAGE_DIR) && $(ZIP) -y -q -r $(BUILD_OUTPUT)/bundles/$(JDK_IMAGE_SUBDIR).zip .
@@ -78,8 +76,7 @@ bundles-only: start-make
 	@$(call TargetExit)
 
 # Copy images to one unified location regardless of platform etc.
-final-images: all final-images-only
-final-images-only: start-make
+final-images: all
 	@$(call TargetEnter)
 	$(RM) -r $(BUILD_OUTPUT)/final-images
 	$(MKDIR) -p $(BUILD_OUTPUT)/final-images/$(JDK_IMAGE_SUBDIR)
@@ -97,4 +94,4 @@ final-images-only: start-make
 
 ###########################################################################
 # Phony targets
-.PHONY: jprt_bundle bundles bundles-only final-images final-images-only
+.PHONY: jprt_bundle bundles final-images
