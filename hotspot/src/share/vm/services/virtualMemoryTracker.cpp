@@ -167,7 +167,7 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
           // higher part
           address high_base = addr + sz;
           size_t  high_size = top - high_base;
-          CommittedMemoryRegion high_rgn(high_base, high_size, emptyStack);
+          CommittedMemoryRegion high_rgn(high_base, high_size, NativeCallStack::EMPTY_STACK);
           return add_committed_region(high_rgn);
         } else {
           return false;
