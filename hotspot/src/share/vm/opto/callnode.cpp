@@ -1826,17 +1826,25 @@ ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled)
 uint ArrayCopyNode::size_of() const { return sizeof(*this); }
 
 ArrayCopyNode* ArrayCopyNode::make(GraphKit* kit, bool may_throw,
-                                   Node* src, Node* src_offset, Node* dest, Node* dest_offset, Node* length,
-                                   bool alloc_tightly_coupled) {
+                                   Node* src, Node* src_offset,
+                                   Node* dest, Node* dest_offset,
+                                   Node* length,
+                                   bool alloc_tightly_coupled,
+                                   Node* src_length, Node* dest_length,
+                                   Node* src_klass, Node* dest_klass) {
 
   ArrayCopyNode* ac = new ArrayCopyNode(kit->C, alloc_tightly_coupled);
   Node* prev_mem = kit->set_predefined_input_for_runtime_call(ac);
 
-  ac->init_req( ArrayCopyNode::Src, src);
-  ac->init_req( ArrayCopyNode::SrcPos, src_offset);
-  ac->init_req( ArrayCopyNode::Dest, dest);
-  ac->init_req( ArrayCopyNode::DestPos, dest_offset);
-  ac->init_req( ArrayCopyNode::Length, length);
+  ac->init_req(ArrayCopyNode::Src, src);
+  ac->init_req(ArrayCopyNode::SrcPos, src_offset);
+  ac->init_req(ArrayCopyNode::Dest, dest);
+  ac->init_req(ArrayCopyNode::DestPos, dest_offset);
+  ac->init_req(ArrayCopyNode::Length, length);
+  ac->init_req(ArrayCopyNode::SrcLen, src_length);
+  ac->init_req(ArrayCopyNode::DestLen, dest_length);
+  ac->init_req(ArrayCopyNode::SrcKlass, src_klass);
+  ac->init_req(ArrayCopyNode::DestKlass, dest_klass);
 
   if (may_throw) {
     ac->set_req(TypeFunc::I_O , kit->i_o());

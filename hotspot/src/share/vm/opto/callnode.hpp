@@ -1097,11 +1097,15 @@ private:
 
   static const TypeFunc* arraycopy_type() {
     const Type** fields = TypeTuple::fields(ParmLimit - TypeFunc::Parms);
-    fields[Src]     = TypeInstPtr::BOTTOM;
-    fields[SrcPos]  = TypeInt::INT;
-    fields[Dest]    = TypeInstPtr::BOTTOM;
-    fields[DestPos] = TypeInt::INT;
-    fields[Length]  = TypeInt::INT;
+    fields[Src]       = TypeInstPtr::BOTTOM;
+    fields[SrcPos]    = TypeInt::INT;
+    fields[Dest]      = TypeInstPtr::BOTTOM;
+    fields[DestPos]   = TypeInt::INT;
+    fields[Length]    = TypeInt::INT;
+    fields[SrcLen]    = TypeInt::INT;
+    fields[DestLen]   = TypeInt::INT;
+    fields[SrcKlass]  = TypeKlassPtr::BOTTOM;
+    fields[DestKlass] = TypeKlassPtr::BOTTOM;
     const TypeTuple *domain = TypeTuple::make(ParmLimit, fields);
 
     // create result type (range)
@@ -1122,12 +1126,20 @@ public:
     Dest,
     DestPos,
     Length,
+    SrcLen,
+    DestLen,
+    SrcKlass,
+    DestKlass,
     ParmLimit
   };
 
   static ArrayCopyNode* make(GraphKit* kit, bool may_throw,
-                             Node* src, Node* src_offset, Node* dest, Node* dest_offset, Node* length,
-                             bool alloc_tightly_coupled);
+                             Node* src, Node* src_offset,
+                             Node* dest,  Node* dest_offset,
+                             Node* length,
+                             bool alloc_tightly_coupled,
+                             Node* src_length = NULL, Node* dest_length = NULL,
+                             Node* src_klass = NULL, Node* dest_klass = NULL);
 
   void connect_outputs(GraphKit* kit);
 

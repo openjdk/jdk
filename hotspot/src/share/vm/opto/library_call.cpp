@@ -4788,7 +4788,12 @@ bool LibraryCallKit::inline_arraycopy() {
   }
 
   AllocateArrayNode* alloc = tightly_coupled_allocation(dest, NULL);
-  ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL);
+  ArrayCopyNode* ac = ArrayCopyNode::make(this, true, src, src_offset, dest, dest_offset, length, alloc != NULL,
+                                          // Create LoadRange and LoadKlass nodes for use during macro expansion here
+                                          // so the compiler has a chance to eliminate them: during macro expansion,
+                                          // we have to set their control (CastPP nodes are eliminated).
+                                          load_array_length(src), load_array_length(dest),
+                                          load_object_klass(src), load_object_klass(dest));
 
   if (notest) {
     ac->set_arraycopy_notest();
