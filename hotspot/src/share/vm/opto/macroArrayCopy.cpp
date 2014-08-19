@@ -503,14 +503,8 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     // (Actually, we don't move raw bits only; the GC requires card marks.)
 
     // Get the klass* for both src and dest
-    Node* k_adr =  new AddPNode(src, src, MakeConX(oopDesc::klass_offset_in_bytes()));
-    transform_later(k_adr);
-    Node* src_klass  = LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS);
-    transform_later(src_klass);
-    k_adr =  new AddPNode(dest, dest, MakeConX(oopDesc::klass_offset_in_bytes()));
-    transform_later(k_adr);
-    Node* dest_klass  = LoadKlassNode::make(_igvn, C->immutable_memory(), k_adr, TypeInstPtr::KLASS);
-    transform_later(dest_klass);
+    Node* src_klass  = ac->in(ArrayCopyNode::SrcKlass);
+    Node* dest_klass = ac->in(ArrayCopyNode::DestKlass);
 
     // Generate the subtype check.
     // This might fold up statically, or then again it might not.
@@ -1214,20 +1208,14 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
     // generate_negative_guard(length, slow_region);
 
     // (7) src_offset + length must not exceed length of src.
-    Node* r_adr =  new AddPNode(src, src, MakeConX(arrayOopDesc::length_offset_in_bytes()));
-    transform_later(r_adr);
-    Node* alen = new LoadRangeNode(0, C->immutable_memory(), r_adr, TypeInt::POS);
-    transform_later(alen);
+    Node* alen = ac->in(ArrayCopyNode::SrcLen);
     generate_limit_guard(&ctrl,
                          src_offset, length,
                          alen,
                          slow_region);
 
     // (8) dest_offset + length must not exceed length of dest.
-    r_adr =  new AddPNode(dest, dest, MakeConX(arrayOopDesc::length_offset_in_bytes()));
-    transform_later(r_adr);
-    alen = new LoadRangeNode(0, C->immutable_memory(), r_adr, TypeInt::POS);
-    transform_later(alen);
+    alen = ac->in(ArrayCopyNode::DestLen);
     generate_limit_guard(&ctrl,
                          dest_offset, length,
                          alen,
