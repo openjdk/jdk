@@ -23,6 +23,7 @@
 
 /*
  * @test
+ * @ignore 8055500 [javac] fix for 8030046 is incorrect
  * @bug 8030046
  * @summary javac incorrectly handles absolute paths in manifest classpath
  * @author govereau
