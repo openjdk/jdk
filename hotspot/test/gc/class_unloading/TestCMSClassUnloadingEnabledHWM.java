@@ -28,6 +28,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestCMSClassUnloadingEnabledHWM AllocateBeyondMetaspaceSize
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver TestCMSClassUnloadingEnabledHWM
  * @summary Test that -XX:-CMSClassUnloadingEnabled will trigger a Full GC when more than MetaspaceSize metadata is allocated.
  */

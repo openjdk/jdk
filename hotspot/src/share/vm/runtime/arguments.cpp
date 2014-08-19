@@ -693,6 +693,10 @@ static bool set_numeric_flag(char* name, char* value, Flag::Flags origin) {
   if (!is_neg && CommandLineFlags::uint64_tAtPut(name, &uint64_t_v, origin)) {
     return true;
   }
+  size_t size_t_v = (size_t) v;
+  if (!is_neg && CommandLineFlags::size_tAtPut(name, &size_t_v, origin)) {
+    return true;
+  }
   return false;
 }
 

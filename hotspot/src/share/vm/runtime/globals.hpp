@@ -275,6 +275,10 @@ struct Flag {
   uint64_t get_uint64_t() const;
   void set_uint64_t(uint64_t value);
 
+  bool is_size_t() const;
+  size_t get_size_t() const;
+  void set_size_t(size_t value);
+
   bool is_double() const;
   double get_double() const;
   void set_double(double value);
@@ -350,13 +354,20 @@ class UIntFlagSetting {
   ~UIntFlagSetting()                         { *flag = val; }
 };
 
-
 class DoubleFlagSetting {
   double val;
   double* flag;
  public:
   DoubleFlagSetting(double& fl, double newValue) { flag = &fl; val = fl; fl = newValue; }
   ~DoubleFlagSetting()                           { *flag = val; }
+};
+
+class SizeTFlagSetting {
+  size_t val;
+  size_t* flag;
+ public:
+  SizeTFlagSetting(size_t& fl, size_t newValue) { flag = &fl; val = fl; fl = newValue; }
+  ~SizeTFlagSetting()                           { *flag = val; }
 };
 
 
@@ -376,6 +387,11 @@ class CommandLineFlags {
   static bool uintxAt(const char* name, uintx* value)    { return uintxAt(name, strlen(name), value); }
   static bool uintxAtPut(const char* name, size_t len, uintx* value, Flag::Flags origin);
   static bool uintxAtPut(const char* name, uintx* value, Flag::Flags origin) { return uintxAtPut(name, strlen(name), value, origin); }
+
+  static bool size_tAt(const char* name, size_t len, size_t* value);
+  static bool size_tAt(const char* name, size_t* value)    { return size_tAt(name, strlen(name), value); }
+  static bool size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin);
+  static bool size_tAtPut(const char* name, size_t* value, Flag::Flags origin) { return size_tAtPut(name, strlen(name), value, origin); }
 
   static bool uint64_tAt(const char* name, size_t len, uint64_t* value);
   static bool uint64_tAt(const char* name, uint64_t* value) { return uint64_tAt(name, strlen(name), value); }
@@ -3899,8 +3915,8 @@ class CommandLineFlags {
   product(ccstr, ExtraSharedClassListFile, NULL,                            \
           "Extra classlist for building the CDS archive file")              \
                                                                             \
-  experimental(uintx, ArrayAllocatorMallocLimit,                            \
-          SOLARIS_ONLY(64*K) NOT_SOLARIS(max_uintx),                        \
+  experimental(size_t, ArrayAllocatorMallocLimit,                           \
+          SOLARIS_ONLY(64*K) NOT_SOLARIS((size_t)-1),                       \
           "Allocation less than this value will be allocated "              \
           "using malloc. Larger allocations will use mmap.")                \
                                                                             \

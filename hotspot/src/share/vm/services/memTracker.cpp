@@ -39,8 +39,6 @@
 volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
 
-NativeCallStack emptyStack(0, false);
-
 MemBaseline MemTracker::_baseline;
 Mutex*      MemTracker::_query_lock = NULL;
 bool MemTracker::_is_nmt_env_valid = true;
@@ -68,6 +66,10 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
     // Remove the environment variable to avoid leaking to child processes
     os::unsetenv(buf);
   }
+
+  // Construct NativeCallStack::EMPTY_STACK. It may get constructed twice,
+  // but it is benign, the results are the same.
+  ::new ((void*)&NativeCallStack::EMPTY_STACK) NativeCallStack(0, false);
 
   if (!MallocTracker::initialize(level) ||
       !VirtualMemoryTracker::initialize(level)) {
