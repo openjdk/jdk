@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,11 @@
 class InterpreterGenerator: public CC_INTERP_ONLY(CppInterpreterGenerator)
                                    NOT_CC_INTERP(TemplateInterpreterGenerator) {
 
-public:
+ public:
 
-InterpreterGenerator(StubQueue* _code);
+  InterpreterGenerator(StubQueue* _code);
+  // entry point generator
+  address generate_method_entry(AbstractInterpreter::MethodKind kind);
 
 #ifdef TARGET_ARCH_x86
 # include "interpreterGenerator_x86.hpp"
