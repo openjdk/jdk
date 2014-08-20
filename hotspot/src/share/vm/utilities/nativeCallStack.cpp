@@ -27,6 +27,7 @@
 #include "utilities/globalDefinitions.hpp"
 #include "utilities/nativeCallStack.hpp"
 
+const NativeCallStack NativeCallStack::EMPTY_STACK(0, false);
 
 NativeCallStack::NativeCallStack(int toSkip, bool fillStack) :
   _hash_value(0) {

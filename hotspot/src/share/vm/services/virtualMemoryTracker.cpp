@@ -167,7 +167,7 @@ bool ReservedMemoryRegion::remove_uncommitted_region(address addr, size_t sz) {
           // higher part
           address high_base = addr + sz;
           size_t  high_size = top - high_base;
-          CommittedMemoryRegion high_rgn(high_base, high_size, emptyStack);
+          CommittedMemoryRegion high_rgn(high_base, high_size, NativeCallStack::EMPTY_STACK);
           return add_committed_region(high_rgn);
         } else {
           return false;
@@ -337,10 +337,18 @@ bool VirtualMemoryTracker::add_reserved_region(address base_addr, size_t size,
 
         *reserved_rgn = rgn;
         return true;
-      } else {
-        ShouldNotReachHere();
-        return false;
       }
+
+      // CDS mapping region.
+      // CDS reserves the whole region for mapping CDS archive, then maps each section into the region.
+      // NMT reports CDS as a whole.
+      if (reserved_rgn->flag() == mtClassShared) {
+        assert(reserved_rgn->contain_region(base_addr, size), "Reserved CDS region should contain this mapping region");
+        return true;
+      }
+
+      ShouldNotReachHere();
+      return false;
     }
   }
 }
