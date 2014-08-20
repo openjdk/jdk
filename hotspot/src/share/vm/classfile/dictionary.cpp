@@ -220,6 +220,29 @@ void Dictionary::roots_oops_do(OopClosure* strong, OopClosure* weak) {
   _pd_cache_table->roots_oops_do(strong, weak);
 }
 
+void Dictionary::remove_classes_in_error_state() {
+  assert(DumpSharedSpaces, "supported only when dumping");
+  DictionaryEntry* probe = NULL;
+  for (int index = 0; index < table_size(); index++) {
+    for (DictionaryEntry** p = bucket_addr(index); *p != NULL; ) {
+      probe = *p;
+      InstanceKlass* ik = InstanceKlass::cast(probe->klass());
+      if (ik->is_in_error_state()) { // purge this entry
+        *p = probe->next();
+        if (probe == _current_class_entry) {
+          _current_class_entry = NULL;
+        }
+        free_entry(probe);
+        ResourceMark rm;
+        tty->print_cr("Removed error class: %s", ik->external_name());
+        continue;
+      }
+
+      p = probe->next_addr();
+    }
+  }
+}
+
 void Dictionary::always_strong_oops_do(OopClosure* blk) {
   // Follow all system classes and temporary placeholders in dictionary; only
   // protection domain oops contain references into the heap. In a first
@@ -693,16 +716,17 @@ void SymbolPropertyTable::methods_do(void f(Method*)) {
 
 
 // ----------------------------------------------------------------------------
-#ifndef PRODUCT
 
-void Dictionary::print() {
+void Dictionary::print(bool details) {
   ResourceMark rm;
   HandleMark   hm;
 
-  tty->print_cr("Java system dictionary (table_size=%d, classes=%d)",
-                 table_size(), number_of_entries());
-  tty->print_cr("^ indicates that initiating loader is different from "
-                "defining loader");
+  if (details) {
+    tty->print_cr("Java system dictionary (table_size=%d, classes=%d)",
+                   table_size(), number_of_entries());
+    tty->print_cr("^ indicates that initiating loader is different from "
+                  "defining loader");
+  }
 
   for (int index = 0; index < table_size(); index++) {
     for (DictionaryEntry* probe = bucket(index);
@@ -713,20 +737,27 @@ void Dictionary::print() {
       ClassLoaderData* loader_data =  probe->loader_data();
       bool is_defining_class =
          (loader_data == InstanceKlass::cast(e)->class_loader_data());
-      tty->print("%s%s", is_defining_class ? " " : "^",
+      tty->print("%s%s", ((!details) || is_defining_class) ? " " : "^",
                    e->external_name());
 
+      if (details) {
         tty->print(", loader ");
-      loader_data->print_value();
+        if (loader_data != NULL) {
+          loader_data->print_value();
+        } else {
+          tty->print("NULL");
+        }
+      }
       tty->cr();
     }
   }
-  tty->cr();
-  _pd_cache_table->print();
+
+  if (details) {
+    tty->cr();
+    _pd_cache_table->print();
+  }
   tty->cr();
 }
-
-#endif
 
 void Dictionary::verify() {
   guarantee(number_of_entries() >= 0, "Verify of system dictionary failed");

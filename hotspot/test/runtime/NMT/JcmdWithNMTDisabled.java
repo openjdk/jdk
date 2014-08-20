@@ -26,7 +26,6 @@
  * @key nmt jcmd
  * @summary Verify that jcmd correctly reports that NMT is not enabled
  * @library /testlibrary
- * @ignore
  * @run main JcmdWithNMTDisabled 1
  */
 

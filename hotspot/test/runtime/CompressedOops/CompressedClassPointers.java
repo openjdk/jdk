@@ -26,6 +26,7 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @library /testlibrary
+ * @ignore 8055164
  */
 
 import com.oracle.java.testlibrary.*;
