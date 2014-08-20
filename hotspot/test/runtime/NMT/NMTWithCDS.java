@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -21,24 +21,35 @@
  * questions.
  */
 
- /*
+/*
  * @test
+ * @bug 8055061
  * @key nmt
- * @summary Running with NMT detail should not result in an error
  * @library /testlibrary
+ * @run main NMTWithCDS
  */
-
 import com.oracle.java.testlibrary.*;
 
-public class CommandLineDetail {
+public class NMTWithCDS {
 
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
+  public static void main(String[] args) throws Exception {
+    ProcessBuilder pb;
+    pb = ProcessTools.createJavaProcessBuilder("-XX:SharedArchiveFile=./sample.jsa", "-Xshare:dump");
     OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
+    try {
+      output.shouldContain("Loading classes to share");
+      output.shouldHaveExitValue(0);
+
+      pb = ProcessTools.createJavaProcessBuilder(
+        "-XX:NativeMemoryTracking=detail", "-XX:SharedArchiveFile=./sample.jsa", "-Xshare:on", "-version");
+      output = new OutputAnalyzer(pb.start());
+      output.shouldContain("sharing");
+      output.shouldHaveExitValue(0);
+
+    } catch (RuntimeException e) {
+      // Report 'passed' if CDS was turned off.
+      output.shouldContain("Unable to use shared archive");
+      output.shouldHaveExitValue(1);
+    }
   }
 }

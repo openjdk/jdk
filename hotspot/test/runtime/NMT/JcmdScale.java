@@ -26,7 +26,6 @@
  * @key nmt jcmd
  * @summary Test the NMT scale parameter
  * @library /testlibrary
- * @ignore
  * @run main/othervm -XX:NativeMemoryTracking=summary JcmdScale
  */
 

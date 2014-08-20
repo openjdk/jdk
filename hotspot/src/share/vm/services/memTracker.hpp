@@ -26,14 +26,13 @@
 #define SHARE_VM_SERVICES_MEM_TRACKER_HPP
 
 #include "services/nmtCommon.hpp"
+#include "utilities/nativeCallStack.hpp"
 
-class NativeCallStack;
-extern NativeCallStack emptyStack;
 
 #if !INCLUDE_NMT
 
-#define CURRENT_PC   emptyStack
-#define CALLER_PC    emptyStack
+#define CURRENT_PC   NativeCallStack::EMPTY_STACK
+#define CALLER_PC    NativeCallStack::EMPTY_STACK
 
 class Tracker : public StackObj {
  public:
@@ -83,9 +82,9 @@ class MemTracker : AllStatic {
 extern volatile bool NMT_stack_walkable;
 
 #define CURRENT_PC ((MemTracker::tracking_level() == NMT_detail && NMT_stack_walkable) ? \
-                    NativeCallStack(0, true) : emptyStack)
+                    NativeCallStack(0, true) : NativeCallStack::EMPTY_STACK)
 #define CALLER_PC  ((MemTracker::tracking_level() == NMT_detail && NMT_stack_walkable) ?  \
-                    NativeCallStack(1, true) : emptyStack)
+                    NativeCallStack(1, true) : NativeCallStack::EMPTY_STACK)
 
 class MemBaseline;
 class Mutex;
