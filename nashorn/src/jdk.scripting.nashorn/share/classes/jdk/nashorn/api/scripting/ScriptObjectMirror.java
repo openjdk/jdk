@@ -164,7 +164,7 @@ public final class ScriptObjectMirror extends AbstractJSObject implements Bindin
                                 return Context.getContext();
                             }
                         }, GET_CONTEXT_ACC_CTXT);
-                return wrap(context.eval(global, s, null, null, false), global);
+                return wrap(context.eval(global, s, sobj, null, false), global);
             }
         });
     }

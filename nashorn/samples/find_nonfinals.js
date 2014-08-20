@@ -45,7 +45,7 @@ var Modifier = Java.type("java.lang.reflect.Modifier");
 
 // locate nashorn.jar from java.ext.dirs
 function findNashorn() {
-    var paths = System.getProperty("java.ext.dirs").split(':');
+    var paths = System.getProperty("java.ext.dirs").split(File.pathSeparator);
     for each (var p in paths) {
         var nashorn = p + File.separator + "nashorn.jar";
         if (new File(nashorn).exists()) {
