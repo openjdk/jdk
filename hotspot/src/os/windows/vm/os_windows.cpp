@@ -135,11 +135,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
       if (ForceTimeHighResolution)
         timeEndPeriod(1L);
 
-      // Workaround for issue when a custom launcher doesn't call
-      // DestroyJavaVM and NMT is trying to track memory when free is
-      // called from a static destructor
-      MemTracker::shutdown();
-
       break;
     default:
       break;
