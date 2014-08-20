@@ -361,4 +361,17 @@ public class ScriptObjectMirrorTest {
         final Function<Object,Object> func = invocable.getInterface(Function.class);
         assertFalse((boolean)func.apply(engine.eval("({ x: 2 })")));
     }
+
+    // @bug 8055687: Wrong "this" passed to JSObject.eval call
+    @Test
+    public void checkThisForJSObjectEval() throws Exception {
+        final ScriptEngineManager engineManager = new ScriptEngineManager();
+        final ScriptEngine e = engineManager.getEngineByName("nashorn");
+        final JSObject jsobj = (JSObject)e.eval("({foo: 23, bar: 'hello' })");
+        assertEquals(((Number)jsobj.eval("this.foo")).intValue(), 23);
+        assertEquals(jsobj.eval("this.bar"), "hello");
+        assertEquals(jsobj.eval("String(this)"), "[object Object]");
+        final Object global = e.eval("this");
+        assertFalse(global.equals(jsobj.eval("this")));
+    }
 }
