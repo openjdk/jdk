@@ -100,14 +100,14 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 # Make a private copy of the jdk so we can write to the properties file location
 # without disturbing other users, including concurrently executing tests.
 WRITABLEJDK=.${FS}testjava
-cp -Hr $TESTJAVA $WRITABLEJDK
+cp -H -R $TESTJAVA $WRITABLEJDK || exit 1
 if [ -d ${TESTJAVA}${FS}jre ]; then
   PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
 else
   PROPLOCATION=${WRITABLEJDK}${FS}lib
 fi
-chmod -R +w $WRITABLEJDK
-cp ${PROPS} $PROPLOCATION
+chmod -R +w $WRITABLEJDK || exit 1
+cp ${PROPS} $PROPLOCATION || exit 1
 echo "Properties location: ${PROPLOCATION}"
 
 # run
