@@ -67,10 +67,6 @@ bool G1PageBasedVirtualSpace::initialize_with_granularity(ReservedSpace rs, size
   uintx size_in_bits = rs.size() / page_size;
   _committed.resize(size_in_bits, /* in_resource_area */ false);
 
-  if (_special) {
-    _committed.set_range(0, size_in_bits);
-  }
-
   return true;
 }
 
