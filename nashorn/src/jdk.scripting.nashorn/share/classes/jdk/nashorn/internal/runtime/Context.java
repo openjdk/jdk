@@ -65,6 +65,7 @@ import java.util.logging.Level;
 import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -349,6 +350,9 @@ public final class Context {
     /** Unique id for 'eval' */
     private final AtomicLong uniqueEvalId;
 
+    /** Optional class filter to use for Java classes. Can be null. */
+    private final ClassFilter classFilter;
+
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
@@ -403,7 +407,19 @@ public final class Context {
      * @param appLoader application class loader
      */
     public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader) {
-        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true), appLoader);
+        this(options, errors, appLoader, (ClassFilter)null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param options options from command line or Context creator
+     * @param errors  error manger
+     * @param appLoader application class loader
+     * @param classFilter class filter to use
+     */
+    public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader, final ClassFilter classFilter) {
+        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true), appLoader, classFilter);
     }
 
     /**
@@ -416,11 +432,26 @@ public final class Context {
      * @param appLoader application class loader
      */
     public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader) {
+        this(options, errors, out, err, appLoader, (ClassFilter)null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param options options from command line or Context creator
+     * @param errors  error manger
+     * @param out     output writer for this Context
+     * @param err     error writer for this Context
+     * @param appLoader application class loader
+     * @param classFilter class filter to use
+     */
+    public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader, final ClassFilter classFilter) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(NASHORN_CREATE_CONTEXT));
         }
 
+        this.classFilter = classFilter;
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
@@ -471,6 +502,15 @@ public final class Context {
         }
 
         initLoggers();
+    }
+
+
+    /**
+     * Get the class filter for this context
+     * @return class filter
+     */
+    public ClassFilter getClassFilter() {
+        return classFilter;
     }
 
     /**
@@ -887,6 +927,11 @@ public final class Context {
     public Class<?> findClass(final String fullName) throws ClassNotFoundException {
         if (fullName.indexOf('[') != -1 || fullName.indexOf('/') != -1) {
             // don't allow array class names or internal names.
+            throw new ClassNotFoundException(fullName);
+        }
+
+        // give chance to ClassFilter to filter out, if present
+        if (classFilter != null && !classFilter.exposeToScripts(fullName)) {
             throw new ClassNotFoundException(fullName);
         }
 

@@ -50,6 +50,7 @@ import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -541,6 +542,14 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     // Runtime interface to Global
+
+    /**
+     * Is there a class filter in the current Context?
+     * @return class filter
+     */
+    public ClassFilter getClassFilter() {
+        return context.getClassFilter();
+    }
 
     /**
      * Is this global of the given Context?

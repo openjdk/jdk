@@ -629,6 +629,34 @@ public class ScriptEngineTest {
         assertEquals(enumerable, Boolean.FALSE);
     }
 
+    @Test
+    public void nashornConfigSecurityTest() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(new ClassFilter() {
+               @Override
+               public boolean exposeToScripts(final String name) {
+                   return true;
+               }
+            });
+            fail("SecurityException should have been thrown");
+        } catch (final SecurityException exp) {}
+    }
+
+    @Test
+    public void nashornConfigSecurityTest2() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(new String[0], null, new ClassFilter() {
+               @Override
+               public boolean exposeToScripts(final String name) {
+                   return true;
+               }
+            });
+            fail("SecurityException should have been thrown");
+        } catch (final SecurityException exp) {}
+    }
+
     private static void checkProperty(final ScriptEngine e, final String name)
         throws ScriptException {
         final String value = System.getProperty(name);
