@@ -1395,9 +1395,6 @@ public:
   // "cl.do_oop" on each.
   virtual void oop_iterate(ExtendedOopClosure* cl);
 
-  // Same as above, restricted to a memory region.
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
-
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
 
