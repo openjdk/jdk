@@ -93,9 +93,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     // This is used as "shared" global if above option is true.
     private final Global              global;
 
-    // default options passed to Nashorn Options object
-    private static final String[] DEFAULT_OPTIONS = new String[] { "-doe" };
-
     // Nashorn script engine error message management
     private static final String MESSAGES_RESOURCE = "jdk.nashorn.api.scripting.resources.Messages";
 
@@ -113,11 +110,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
         }
     }
 
-    NashornScriptEngine(final NashornScriptEngineFactory factory, final ClassLoader appLoader) {
-        this(factory, DEFAULT_OPTIONS, appLoader);
-    }
-
-    NashornScriptEngine(final NashornScriptEngineFactory factory, final String[] args, final ClassLoader appLoader) {
+    NashornScriptEngine(final NashornScriptEngineFactory factory, final String[] args, final ClassLoader appLoader, final ClassFilter classFilter) {
+        assert args != null : "null argument array";
         this.factory = factory;
         final Options options = new Options("nashorn");
         options.process(args);
@@ -129,7 +123,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             @Override
             public Context run() {
                 try {
-                    return new Context(options, errMgr, appLoader);
+                    return new Context(options, errMgr, appLoader, classFilter);
                 } catch (final RuntimeException e) {
                     if (Context.DEBUG) {
                         e.printStackTrace();
