@@ -25,6 +25,7 @@
 #include "precompiled.hpp"
 #include "gc_implementation/g1/g1BiasedArray.hpp"
 #include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
+#include "memory/allocation.inline.hpp"
 #include "runtime/virtualspace.hpp"
 #include "services/memTracker.hpp"
 #include "utilities/bitMap.inline.hpp"
