@@ -26,6 +26,7 @@
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1REGIONTOSPACEMAPPER_HPP
 
 #include "gc_implementation/g1/g1PageBasedVirtualSpace.hpp"
+#include "memory/allocation.hpp"
 #include "utilities/debug.hpp"
 
 class G1MappingChangedListener VALUE_OBJ_CLASS_SPEC {
