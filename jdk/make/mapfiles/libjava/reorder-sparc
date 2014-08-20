@@ -44,7 +44,7 @@ text: .text%Java_java_io_UnixFileSystem_initIDs;
 text: .text%Java_java_io_UnixFileSystem_canonicalize;
 text: .text%JNU_GetStringPlatformChars;
 text: .text%JNU_ReleaseStringPlatformChars;
-text: .text%Java_java_io_FileInputStream_open;
+text: .text%Java_java_io_FileInputStream_open0;
 text: .text%fileOpen;
 text: .text%Java_java_io_FileInputStream_readBytes;
 text: .text%readBytes;
