@@ -96,6 +96,7 @@ public final class Bootstrap {
             new BoundDynamicMethodLinker(),
             new JavaSuperAdapterLinker(),
             jsObjectLinker,
+            new BrowserJSObjectLinker(),
             new ReflectionCheckLinker());
         factory.setFallbackLinkers(nashornBeansLinker, new NashornBottomLinker());
         factory.setSyncOnRelink(true);

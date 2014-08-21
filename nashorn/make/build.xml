@@ -34,6 +34,7 @@
     <loadproperties srcFile="make/project.properties"/>
     <path id="nashorn.ext.path">
       <pathelement location="${dist.dir}"/>
+      <pathelement location="${java.ext.dirs}"/>
     </path>
     <property name="ext.class.path" value="-Djava.ext.dirs=&quot;${toString:nashorn.ext.path}&quot;"/>
     <condition property="svn.executable" value="/usr/local/bin/svn" else="svn">
