@@ -482,6 +482,7 @@ JNIEXPORT jobjectArray JNICALL Java_sun_awt_windows_WInputMethodDescriptor_getNa
         for (current = 0; current < destIndex; current++) {
             if (strcmp(javaLocaleNames[current], srcLocaleName) == 0) {
                 // duplicated. ignore this HKL
+                free((void *)srcLocaleName);
                 break;
             }
         }
