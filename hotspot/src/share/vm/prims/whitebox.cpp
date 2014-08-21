@@ -47,6 +47,7 @@
 #include "utilities/exceptions.hpp"
 
 #if INCLUDE_ALL_GCS
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
@@ -225,6 +226,30 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
 
   return wb_stress_virtual_space_resize((size_t) reserved_space_size,
                                         (size_t) magnitude, (size_t) iterations);
+WB_END
+
+WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
+  oop p = JNIHandles::resolve(obj);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing(p);
+    if (hr == NULL) {
+      return false;
+    }
+    return !(hr->is_young());
+  } else if (UseParallelGC) {
+    ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
+    return !psh->is_in_young(p);
+  }
+#endif // INCLUDE_ALL_GCS
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  return !gch->is_in_young(p);
+WB_END
+
+WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
+  oop p = JNIHandles::resolve(obj);
+  return p->size() * HeapWordSize;
 WB_END
 
 #if INCLUDE_ALL_GCS
@@ -690,6 +715,9 @@ WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collect(GCCause::_last_ditch_collection);
 WB_END
 
+WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
+  Universe::heap()->collect(GCCause::_wb_young_gc);
+WB_END
 
 WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   // static+volatile in order to force the read to happen
@@ -841,6 +869,8 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 
 static JNINativeMethod methods[] = {
   {CC"getObjectAddress",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
+  {CC"getObjectSize",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
+  {CC"isObjectInOldGen",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
   {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine",
@@ -919,6 +949,7 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetStringVMFlag},
   {CC"isInStringTable",    CC"(Ljava/lang/String;)Z", (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
+  {CC"youngGC",  CC"()V",                             (void*)&WB_YoungGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"allocateMetaspace",
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
