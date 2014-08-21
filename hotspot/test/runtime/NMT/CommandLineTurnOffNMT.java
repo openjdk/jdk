@@ -26,7 +26,6 @@
  * @key nmt
  * @summary Turning off NMT should not result in an error
  * @library /testlibrary
- * @ignore
  */
 
 import com.oracle.java.testlibrary.*;

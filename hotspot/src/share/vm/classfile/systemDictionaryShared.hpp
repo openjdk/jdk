@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,29 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
- /*
- * @test
- * @key nmt
- * @summary Running with NMT detail should not result in an error
- * @library /testlibrary
- */
 
-import com.oracle.java.testlibrary.*;
+#ifndef SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
+#define SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP
 
-public class CommandLineDetail {
+#include "classfile/systemDictionary.hpp"
 
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
+class SystemDictionaryShared: public SystemDictionary {
+public:
+  static void initialize(TRAPS) {}
+  static instanceKlassHandle find_or_load_shared_class(Symbol* class_name,
+                                                       Handle class_loader,
+                                                       TRAPS) {
+    return instanceKlassHandle();
   }
-}
+  static void roots_oops_do(OopClosure* blk) {}
+  static void oops_do(OopClosure* f) {}
+  static bool is_sharing_possible(ClassLoaderData* loader_data) {
+    oop class_loader = loader_data->class_loader();
+    return (class_loader == NULL);
+  }
+};
+
+#endif // SHARE_VM_CLASSFILE_SYSTEMDICTIONARYSHARED_HPP

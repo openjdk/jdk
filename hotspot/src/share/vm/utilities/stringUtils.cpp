@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,25 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
- /*
- * @test
- * @key nmt
- * @summary Running with NMT detail should not result in an error
- * @library /testlibrary
- */
+#include "precompiled.hpp"
+#include "utilities/stringUtils.hpp"
 
-import com.oracle.java.testlibrary.*;
+int StringUtils::replace_no_expand(char* string, const char* from, const char* to) {
+  int replace_count = 0;
+  size_t from_len = strlen(from);
+  size_t to_len = strlen(to);
+  assert(from_len >= to_len, "must not expand input");
 
-public class CommandLineDetail {
-
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
+  for (char* dst = string; *dst && (dst = strstr(dst, from)) != NULL;) {
+    char* left_over = dst + from_len;
+    memmove(dst, to, to_len);                       // does not copy trailing 0 of <to>
+    dst += to_len;                                  // skip over the replacement.
+    memmove(dst, left_over, strlen(left_over) + 1); // copies the trailing 0 of <left_over>
+    ++ replace_count;
   }
+
+  return replace_count;
 }
