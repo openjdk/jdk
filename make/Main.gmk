@@ -37,6 +37,7 @@ include $(SRC_ROOT)/make/MakeHelpers.gmk
 
 # Load the vital tools for all the makefiles.
 include $(SRC_ROOT)/make/common/MakeBase.gmk
+include $(SRC_ROOT)/make/common/Modules.gmk
 
 # Load common profile names definitions
 include $(JDK_TOPDIR)/make/ProfileNames.gmk
