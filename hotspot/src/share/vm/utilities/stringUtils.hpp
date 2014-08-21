@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,26 +19,24 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
+ *
  */
 
- /*
- * @test
- * @key nmt
- * @summary Running with NMT detail should not result in an error
- * @library /testlibrary
- */
+#ifndef SHARE_VM_UTILITIES_STRINGUTILS_HPP
+#define SHARE_VM_UTILITIES_STRINGUTILS_HPP
 
-import com.oracle.java.testlibrary.*;
+#include "memory/allocation.hpp"
 
-public class CommandLineDetail {
+class StringUtils : AllStatic {
+public:
+  // Replace the substring <from> with another string <to>. <to> must be
+  // no longer than <from>. The input string is modified in-place.
+  //
+  // Replacement is done in a single pass left-to-right. So replace_no_expand("aaa", "aa", "a")
+  // will result in "aa", not "a".
+  //
+  // Returns the count of substrings that have been replaced.
+  static int replace_no_expand(char* string, const char* from, const char* to);
+};
 
-  public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
-}
+#endif // SHARE_VM_UTILITIES_STRINGUTILS_HPP

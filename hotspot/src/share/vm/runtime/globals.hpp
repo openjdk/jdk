@@ -2345,6 +2345,12 @@ class CommandLineFlags {
   notproduct(bool, TraceScavenge, false,                                    \
           "Trace scavenge")                                                 \
                                                                             \
+  product(bool, IgnoreEmptyClassPaths, false,                               \
+          "Ignore empty path elements in -classpath")                       \
+                                                                            \
+  product(bool, TraceClassPaths, false,                                     \
+          "Trace processing of class paths")                                \
+                                                                            \
   product_rw(bool, TraceClassLoading, false,                                \
           "Trace all classes loaded")                                       \
                                                                             \
@@ -3779,6 +3785,13 @@ class CommandLineFlags {
   product(bool, PrintSharedSpaces, false,                                   \
           "Print usage of shared spaces")                                   \
                                                                             \
+  product(bool, PrintSharedArchiveAndExit, false,                           \
+          "Print shared archive file contents")                             \
+                                                                            \
+  product(bool, PrintSharedDictionary, false,                               \
+          "If PrintSharedArchiveAndExit is true, also print the shared "    \
+          "dictionary")                                                     \
+                                                                            \
   product(uintx, SharedReadWriteSize,  NOT_LP64(12*M) LP64_ONLY(16*M),      \
           "Size of read-write space for metadata (in bytes)")               \
                                                                             \
@@ -3794,6 +3807,10 @@ class CommandLineFlags {
   product(uintx, SharedBaseAddress, LP64_ONLY(32*G)                         \
           NOT_LP64(LINUX_ONLY(2*G) NOT_LINUX(0)),                           \
           "Address to allocate shared memory region for class data")        \
+                                                                            \
+  diagnostic(bool, IgnoreUnverifiableClassesDuringDump, false,              \
+          "Do not quit -Xshare:dump even if we encounter unverifiable "     \
+          "classes. Just exclude them from the shared dictionary.")         \
                                                                             \
   diagnostic(bool, PrintMethodHandleStubs, false,                           \
           "Print generated stub code for method handles")                   \
@@ -3885,8 +3902,18 @@ class CommandLineFlags {
   product(bool , AllowNonVirtualCalls, false,                               \
           "Obey the ACC_SUPER flag and allow invokenonvirtual calls")       \
                                                                             \
+  product(ccstr, DumpLoadedClassList, NULL,                                 \
+          "Dump the names all loaded classes, that could be stored into "   \
+          "the CDS archive, in the specified file")                         \
+                                                                            \
+  product(ccstr, SharedClassListFile, NULL,                                 \
+          "Override the default CDS class list")                            \
+                                                                            \
   diagnostic(ccstr, SharedArchiveFile, NULL,                                \
           "Override the default location of the CDS archive file")          \
+                                                                            \
+  product(ccstr, ExtraSharedClassListFile, NULL,                            \
+          "Extra classlist for building the CDS archive file")              \
                                                                             \
   experimental(size_t, ArrayAllocatorMallocLimit,                           \
           SOLARIS_ONLY(64*K) NOT_SOLARIS((size_t)-1),                       \

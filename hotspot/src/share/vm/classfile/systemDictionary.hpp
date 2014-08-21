@@ -111,6 +111,7 @@ class Ticks;
   do_klass(SecurityManager_klass,                       java_lang_SecurityManager,                 Pre                 ) \
   do_klass(ProtectionDomain_klass,                      java_security_ProtectionDomain,            Pre                 ) \
   do_klass(AccessControlContext_klass,                  java_security_AccessControlContext,        Pre                 ) \
+  do_klass(SecureClassLoader_klass,                     java_security_SecureClassLoader,           Pre                 ) \
   do_klass(ClassNotFoundException_klass,                java_lang_ClassNotFoundException,          Pre                 ) \
   do_klass(NoClassDefFoundError_klass,                  java_lang_NoClassDefFoundError,            Pre                 ) \
   do_klass(LinkageError_klass,                          java_lang_LinkageError,                    Pre                 ) \
@@ -165,6 +166,15 @@ class Ticks;
   do_klass(StringBuffer_klass,                          java_lang_StringBuffer,                    Pre                 ) \
   do_klass(StringBuilder_klass,                         java_lang_StringBuilder,                   Pre                 ) \
   do_klass(misc_Unsafe_klass,                           sun_misc_Unsafe,                           Pre                 ) \
+                                                                                                                         \
+  /* support for CDS */                                                                                                  \
+  do_klass(ByteArrayInputStream_klass,                  java_io_ByteArrayInputStream,              Pre                 ) \
+  do_klass(File_klass,                                  java_io_File,                              Pre                 ) \
+  do_klass(URLClassLoader_klass,                        java_net_URLClassLoader,                   Pre                 ) \
+  do_klass(URL_klass,                                   java_net_URL,                              Pre                 ) \
+  do_klass(Jar_Manifest_klass,                          java_util_jar_Manifest,                    Pre                 ) \
+  do_klass(sun_misc_Launcher_klass,                     sun_misc_Launcher,                         Pre                 ) \
+  do_klass(CodeSource_klass,                            java_security_CodeSource,                  Pre                 ) \
                                                                                                                          \
   /* It's NULL in non-1.4 JDKs. */                                                                                       \
   do_klass(StackTraceElement_klass,                     java_lang_StackTraceElement,               Opt                 ) \
@@ -221,7 +231,7 @@ class SystemDictionary : AllStatic {
   static Klass* resolve_or_fail(Symbol* class_name, Handle class_loader, Handle protection_domain, bool throw_error, TRAPS);
   // Convenient call for null loader and protection domain.
   static Klass* resolve_or_fail(Symbol* class_name, bool throw_error, TRAPS);
-private:
+protected:
   // handle error translation for resolve_or_null results
   static Klass* handle_resolution_exception(Symbol* class_name, bool throw_error, KlassHandle klass_h, TRAPS);
 
@@ -326,6 +336,9 @@ public:
   // loaders.  Returns "true" iff something was unloaded.
   static bool do_unloading(BoolObjectClosure* is_alive);
 
+  // Used by DumpSharedSpaces only to remove classes that failed verification
+  static void remove_classes_in_error_state();
+
   static int calculate_systemdictionary_size(int loadedclasses);
 
   // Applies "f->do_oop" to all root oops in the system dictionary.
@@ -335,7 +348,7 @@ public:
   // System loader lock
   static oop system_loader_lock()           { return _system_loader_lock_obj; }
 
-private:
+protected:
   // Extended Redefine classes support (tbi)
   static void preloaded_classes_do(KlassClosure* f);
   static void lazily_loaded_classes_do(KlassClosure* f);
@@ -348,7 +361,8 @@ public:
   static void set_shared_dictionary(HashtableBucket<mtClass>* t, int length,
                                     int number_of_entries);
   // Printing
-  static void print()                   PRODUCT_RETURN;
+  static void print(bool details = true);
+  static void print_shared(bool details = true);
   static void print_class_statistics()  PRODUCT_RETURN;
   static void print_method_statistics() PRODUCT_RETURN;
 
@@ -424,7 +438,7 @@ public:
 
   static void load_abstract_ownable_synchronizer_klass(TRAPS);
 
-private:
+protected:
   // Tells whether ClassLoader.loadClassInternal is present
   static bool has_loadClassInternal()       { return _has_loadClassInternal; }
 
@@ -452,7 +466,7 @@ public:
 
   // Register a new class loader
   static ClassLoaderData* register_loader(Handle class_loader, TRAPS);
-private:
+protected:
   // Mirrors for primitive classes (created eagerly)
   static oop check_mirror(oop m) {
     assert(m != NULL, "mirror not initialized");
@@ -523,7 +537,7 @@ public:
   static Symbol* find_resolution_error(constantPoolHandle pool, int which,
                                        Symbol** message);
 
- private:
+ protected:
 
   enum Constants {
     _loader_constraint_size = 107,                     // number of entries in constraint table
@@ -574,7 +588,7 @@ public:
   friend class CounterDecay;
   static Klass* try_get_next_class();
 
-private:
+protected:
   static void validate_protection_domain(instanceKlassHandle klass,
                                          Handle class_loader,
                                          Handle protection_domain, TRAPS);
@@ -601,10 +615,10 @@ private:
   static instanceKlassHandle find_or_define_instance_class(Symbol* class_name,
                                                 Handle class_loader,
                                                 instanceKlassHandle k, TRAPS);
-  static instanceKlassHandle load_shared_class(Symbol* class_name,
-                                               Handle class_loader, TRAPS);
   static instanceKlassHandle load_shared_class(instanceKlassHandle ik,
-                                               Handle class_loader, TRAPS);
+                                               Handle class_loader,
+                                               Handle protection_domain,
+                                               TRAPS);
   static instanceKlassHandle load_instance_class(Symbol* class_name, Handle class_loader, TRAPS);
   static Handle compute_loader_lock_object(Handle class_loader, TRAPS);
   static void check_loader_lock_contention(Handle loader_lock, TRAPS);
@@ -612,9 +626,12 @@ private:
   static bool is_parallelDefine(Handle class_loader);
 
 public:
+  static instanceKlassHandle load_shared_class(Symbol* class_name,
+                                               Handle class_loader,
+                                               TRAPS);
   static bool is_ext_class_loader(Handle class_loader);
 
-private:
+protected:
   static Klass* find_shared_class(Symbol* class_name);
 
   // Setup link to hierarchy
