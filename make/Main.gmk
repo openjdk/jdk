@@ -234,8 +234,7 @@ nashorn-jar:
 	+($(CD) $(NASHORN_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f BuildNashorn.gmk all)
 
 # Creates the jar files (rt.jar resources.jar etc)
-# this depends on all modules built
-main-jars: exploded-image
+main-jars:
 	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJars.gmk)
 
 # Creates the images (j2sdk-image j2re-image etc)
@@ -355,6 +354,9 @@ else
 
   $(LAUNCHER_TARGETS): java.base-libs
 
+  # The demos are currently linking to libjvm and libjava, just like all other
+  # jdk libs, even though they don't need to. To avoid warnings, make sure they
+  # aren't built until after libjava and libjvm are available to link to.
   demos: $(JAVA_TARGETS)
 
   # Declare dependency from <module>-java to <module>-gensrc
@@ -381,7 +383,7 @@ else
 
   # This dependency needs to be explicitly declared. jdk.jdi-gensrc generates a 
   # header file used by jdk.jdwp libs.
-  jdk.jdwp-libs: jdk.jdi-gensrc
+  jdk.jdwp.agent-libs: jdk.jdi-gensrc
 
   # Explicitly add dependencies for special targets
   java.base-java: unpack-sec
@@ -390,7 +392,7 @@ else
 
   nashorn-jar: jdk.scripting.nashorn-java
 
-  main-jars: java rmic security-jars nashorn-jar policy-jars import-hotspot
+  main-jars: java rmic security-jars nashorn-jar policy-jars import-hotspot gendata
 
   # On windows, the jars target needs to wait for jgss libs to be built.
   # Should ideally split out the sec-bin zip file generation to avoid

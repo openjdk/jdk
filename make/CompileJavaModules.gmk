@@ -29,7 +29,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-include SetupJava.gmk
+include SetupJavaCompilers.gmk
 
 # Hook to include the corresponding custom file, if present.
 $(eval $(call IncludeCustomExtension, , CompileJavaModules.gmk))
