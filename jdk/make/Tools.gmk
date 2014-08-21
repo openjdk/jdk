@@ -32,7 +32,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include NativeCompilation.gmk
-include SetupJava.gmk
+include SetupJavaCompilers.gmk
 
 # Cache all finds needed for this file.
 $(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
