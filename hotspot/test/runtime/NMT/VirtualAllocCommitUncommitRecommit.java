@@ -42,8 +42,8 @@ public class VirtualAllocCommitUncommitRecommit {
 
     public static void main(String args[]) throws Exception {
         OutputAnalyzer output;
-        long commitSize = 4 * 1024; // 4KB
-        long reserveSize = 1024 * 1024; // 1024KB
+        long commitSize = 128 * 1024; // 128KB
+        long reserveSize = 4 * 1024 * 1024; // 4096KB
         long addr;
 
         String pid = Integer.toString(ProcessTools.getProcessId());
@@ -62,11 +62,11 @@ public class VirtualAllocCommitUncommitRecommit {
                 "VM.native_memory", "detail" });
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=0KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=0KB)");
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         long addrA = addr;
@@ -83,24 +83,24 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrD, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=16KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=512KB)");
 
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
         // uncommit BC
         wb.NMTUncommitMemory(addrB, commitSize);
         wb.NMTUncommitMemory(addrC, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=8KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=256KB)");
 
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         // commit EF
@@ -108,22 +108,22 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrF, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=16KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=512KB)");
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         // uncommit A
         wb.NMTUncommitMemory(addrA, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=12KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=384KB)");
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         // commit ABC
@@ -132,11 +132,11 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTCommitMemory(addrC, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=24KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=768KB)");
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         // uncommit ABCDEF
@@ -148,11 +148,11 @@ public class VirtualAllocCommitUncommitRecommit {
         wb.NMTUncommitMemory(addrF, commitSize);
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("Test (reserved=1024KB, committed=0KB)");
+        output.shouldContain("Test (reserved=4096KB, committed=0KB)");
         if (has_nmt_detail) {
             output.shouldMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
                     + Long.toHexString(addr + reserveSize)
-                    + "\\] reserved 1024KB for Test");
+                    + "\\] reserved 4096KB for Test");
         }
 
         // release
@@ -160,6 +160,6 @@ public class VirtualAllocCommitUncommitRecommit {
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Test (reserved=");
         output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                + Long.toHexString(addr + reserveSize) + "\\] reserved 1024KB for Test");
+                + Long.toHexString(addr + reserveSize) + "\\] reserved 4096KB for Test");
     }
 }
