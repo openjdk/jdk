@@ -310,7 +310,7 @@ public class SjavacServer implements Terminable {
 
     @Override
     public void shutdown(String quitMsg) {
-        if (!keepAcceptingRequests.compareAndSet(false, true)) {
+        if (!keepAcceptingRequests.compareAndSet(true, false)) {
             // Already stopped, no need to shut down again
             return;
         }
