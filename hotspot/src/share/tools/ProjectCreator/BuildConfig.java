@@ -504,7 +504,7 @@ abstract class GenericDebugConfig extends BuildConfig {
 
         super.init(includes, defines);
 
-        getV("CompilerFlags").addAll(getCI().getDebugCompilerFlags(getOptFlag()));
+        getV("CompilerFlags").addAll(getCI().getDebugCompilerFlags(getOptFlag(), get("PlatformName")));
         getV("LinkerFlags").addAll(getCI().getDebugLinkerFlags());
    }
 }
@@ -619,7 +619,7 @@ class TieredProductConfig extends ProductConfig {
 abstract class CompilerInterface {
     abstract Vector getBaseCompilerFlags(Vector defines, Vector includes, String outDir);
     abstract Vector getBaseLinkerFlags(String outDir, String outDll, String platformName);
-    abstract Vector getDebugCompilerFlags(String opt);
+    abstract Vector getDebugCompilerFlags(String opt, String platformName);
     abstract Vector getDebugLinkerFlags();
     abstract void   getAdditionalNonKernelLinkerFlags(Vector rv);
     abstract Vector getProductCompilerFlags();
