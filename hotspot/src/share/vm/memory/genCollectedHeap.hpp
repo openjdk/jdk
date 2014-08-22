@@ -33,7 +33,7 @@
 class SubTasksDone;
 
 // A "GenCollectedHeap" is a SharedHeap that uses generational
-// collection.  It is represented with a sequence of Generation's.
+// collection.  It has two generations, young and old.
 class GenCollectedHeap : public SharedHeap {
   friend class GenCollectorPolicy;
   friend class Generation;
@@ -63,7 +63,10 @@ public:
 
  private:
   int _n_gens;
-  Generation* _gens[max_gens];
+
+  Generation* _young_gen;
+  Generation* _old_gen;
+
   GenerationSpec** _gen_specs;
 
   // The generational collector policy.
@@ -81,6 +84,9 @@ public:
   // (gen-specific) roots processing.
   SubTasksDone* _gen_process_roots_tasks;
   SubTasksDone* gen_process_roots_tasks() { return _gen_process_roots_tasks; }
+
+  void collect_generation(Generation* gen, bool full, size_t size, bool is_tlab,
+                          bool run_verification, bool clear_soft_refs);
 
   // In block contents verification, the number of header words to skip
   NOT_PRODUCT(static size_t _skip_header_HeapWords;)
@@ -121,6 +127,7 @@ public:
 
   // Returns JNI_OK on success
   virtual jint initialize();
+
   char* allocate(size_t alignment,
                  size_t* _total_reserved, int* _n_covered_regions,
                  ReservedSpace* heap_rs);
@@ -135,8 +142,12 @@ public:
     return CollectedHeap::GenCollectedHeap;
   }
 
+  Generation* young_gen() { return _young_gen; }
+  Generation* old_gen()   { return _old_gen; }
+
   // The generational collector policy.
   GenCollectorPolicy* gen_policy() const { return _gen_policy; }
+
   virtual CollectorPolicy* collector_policy() const { return (CollectorPolicy*) gen_policy(); }
 
   // Adaptive size policy
@@ -306,20 +317,17 @@ public:
   // Update above counter, as appropriate, at the end of a concurrent GC cycle
   unsigned int update_full_collections_completed(unsigned int count);
 
-  // Update "time of last gc" for all constituent generations
-  // to "now".
+  // Update "time of last gc" for all generations to "now".
   void update_time_of_last_gc(jlong now) {
-    for (int i = 0; i < _n_gens; i++) {
-      _gens[i]->update_time_of_last_gc(now);
-    }
+    _young_gen->update_time_of_last_gc(now);
+    _old_gen->update_time_of_last_gc(now);
   }
 
   // Update the gc statistics for each generation.
   // "level" is the level of the latest collection.
   void update_gc_stats(int current_level, bool full) {
-    for (int i = 0; i < _n_gens; i++) {
-      _gens[i]->update_gc_stats(current_level, full);
-    }
+    _young_gen->update_gc_stats(current_level, full);
+    _old_gen->update_gc_stats(current_level, full);
   }
 
   // Override.
@@ -364,20 +372,21 @@ public:
   // Return the generation before "gen".
   Generation* prev_gen(Generation* gen) const {
     int l = gen->level();
-    guarantee(l > 0, "Out of bounds");
-    return _gens[l-1];
+    guarantee(l == 1, "Out of bounds");
+    return _young_gen;
   }
 
   // Return the generation after "gen".
   Generation* next_gen(Generation* gen) const {
     int l = gen->level() + 1;
-    guarantee(l < _n_gens, "Out of bounds");
-    return _gens[l];
+    guarantee(l == 1, "Out of bounds");
+    return _old_gen;
   }
 
   Generation* get_gen(int i) const {
     guarantee(i >= 0 && i < _n_gens, "Out of bounds");
-    return _gens[i];
+    if (i == 0) return _young_gen;
+    else return _old_gen;
   }
 
   int n_gens() const {

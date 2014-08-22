@@ -955,7 +955,7 @@ void ConcurrentMarkSweepGeneration::compute_new_size_free_list() {
       if (prev_level >= 0) {
         size_t prev_size = 0;
         GenCollectedHeap* gch = GenCollectedHeap::heap();
-        Generation* prev_gen = gch->_gens[prev_level];
+        Generation* prev_gen = gch->get_gen(prev_level);
         prev_size = prev_gen->capacity();
           gclog_or_tty->print_cr("  Younger gen size "SIZE_FORMAT,
                                  prev_size/1000);

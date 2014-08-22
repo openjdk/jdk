@@ -163,7 +163,7 @@ Generation* Generation::next_gen() const {
   GenCollectedHeap* gch = GenCollectedHeap::heap();
   int next = level() + 1;
   if (next < gch->_n_gens) {
-    return gch->_gens[next];
+    return gch->get_gen(next);
   } else {
     return NULL;
   }
