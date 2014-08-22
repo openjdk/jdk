@@ -256,8 +256,19 @@ class FileOutputStream extends OutputStream
      * @param name name of file to be opened
      * @param append whether the file is to be opened in append mode
      */
-    private native void open(String name, boolean append)
+    private native void open0(String name, boolean append)
         throws FileNotFoundException;
+
+    // wrap native call to allow instrumentation
+    /**
+     * Opens a file, with the specified name, for overwriting or appending.
+     * @param name name of file to be opened
+     * @param append whether the file is to be opened in append mode
+     */
+    private void open(String name, boolean append)
+        throws FileNotFoundException {
+        open0(name, append);
+    }
 
     /**
      * Writes the specified byte to this file output stream.

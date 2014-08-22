@@ -29,10 +29,10 @@ include CopyCommon.gmk
 
 HPROF_SRC := $(JDK_TOPDIR)/src/demo/share/jvmti/hprof/jvm.hprof.txt
 
-$(LIBDIR)/jvm.hprof.txt: $(HPROF_SRC)
+$(LIB_DST_DIR)/jvm.hprof.txt: $(HPROF_SRC)
 	$(call install-file)
 
-HPROF_CONF_FILES := $(LIBDIR)/jvm.hprof.txt
+HPROF_CONF_FILES := $(LIB_DST_DIR)/jvm.hprof.txt
 
 ################################################################################
 

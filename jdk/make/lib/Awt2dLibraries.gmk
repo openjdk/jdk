@@ -23,12 +23,9 @@
 # questions.
 #
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, lib/Awt2dLibraries.gmk))
-
 WIN_AWT_LIB := $(JDK_OUTPUTDIR)/objs/libawt/awt.lib
 
-##########################################################################################
+################################################################################
 
 BUILD_LIBMLIB_SRC := $(JDK_TOPDIR)/src/java.desktop/share/native/libmlib_image \
     $(JDK_TOPDIR)/src/java.desktop/share/native/common/sun/awt/medialib
@@ -76,7 +73,7 @@ $(BUILD_LIBMLIB_IMAGE): $(BUILD_LIBJAVA)
 
 DESKTOP_LIBRARIES += $(BUILD_LIBMLIB_IMAGE)
 
-##########################################################################################
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
 
@@ -144,7 +141,7 @@ ifeq ($(OPENJDK_TARGET_OS)-$(OPENJDK_TARGET_CPU_ARCH), solaris-sparc)
 
 endif
 
-##########################################################################################
+################################################################################
 
 LIBAWT_DIRS := $(JDK_TOPDIR)/src/java.desktop/share/native/libawt \
     $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libawt \
@@ -296,7 +293,7 @@ endif
 
 DESKTOP_LIBRARIES += $(BUILD_LIBAWT)
 
-##########################################################################################
+################################################################################
 
 ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
   ifndef BUILD_HEADLESS_ONLY
@@ -388,7 +385,7 @@ ifeq ($(findstring $(OPENJDK_TARGET_OS),windows macosx),)
   endif
 endif
 
-##########################################################################################
+################################################################################
 
 LIBLCMS_SRC := $(JDK_TOPDIR)/src/java.desktop/share/native/liblcms
 LIBLCMS_CPPFLAGS += -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
@@ -441,7 +438,7 @@ DESKTOP_LIBRARIES += $(BUILD_LIBLCMS)
 
 $(BUILD_LIBLCMS): $(BUILD_LIBAWT)
 
-##########################################################################################
+################################################################################
 
 ifdef OPENJDK
   BUILD_LIBJAVAJPEG_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjpeg/mapfile-vers
@@ -515,7 +512,7 @@ $(BUILD_LIBJAVAJPEG): $(BUILD_LIBJAVA)
 
 DESKTOP_LIBRARIES += $(BUILD_LIBJAVAJPEG)
 
-##########################################################################################
+################################################################################
 
 LIBFONTMANAGER_SRC := $(JDK_TOPDIR)/src/java.desktop/share/native/libfontmanager \
     $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libfontmanager
@@ -607,54 +604,7 @@ endif
 
 DESKTOP_LIBRARIES += $(BUILD_LIBFONTMANAGER)
 
-##########################################################################################
-
-ifndef OPENJDK
-
-  LIBT2K_SRC := $(JDK_TOPDIR)/src/closed/java.desktop/share/native/libt2k
-  LIBT2K_CFLAGS := $(addprefix -I, $(LIBT2K_SRC)) \
-      -I$(JDK_TOPDIR)/src/closed/java.desktop/share/native/libt2k/t2k \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/libfontmanager \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/sun/java2d \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/sun/java2d/loops \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/common/sun/font \
-      -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
-  #
-
-  $(eval $(call SetupNativeCompilation,BUILD_LIBT2K, \
-      LIBRARY := t2k, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(LIBT2K_SRC), \
-      EXCLUDE_FILES := t2k/orion.c, \
-      LANG := C++, \
-      OPTIMIZATION := HIGH, \
-      CFLAGS := $(CFLAGS_JDKLIB) $(LIBT2K_CFLAGS), \
-      CXXFLAGS := $(CXXFLAGS_JDKLIB) $(LIBT2K_CFLAGS), \
-      CFLAGS_windows = -DCC_NOEX, \
-      CXXFLAGS_windows = -DCC_NOEX, \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libt2k/mapfile-vers, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) $(LDFLAGS_CXX_JDK) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_windows := user32.lib $(JDK_OUTPUTDIR)/objs/libfontmanager/fontmanager.lib, \
-      LDFLAGS_SUFFIX_posix := $(LIBM) $(LIBCXX) -lfontmanager -ljava -ljvm -lc, \
-      LDFLAGS_SUFFIX_solaris := -lawt -lawt_xawt, \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=t2k.dll" \
-          -D "JDK_INTERNAL_NAME=t2k" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libt2k, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-  # t2k is linked against fontmanager
-  $(BUILD_LIBT2K): $(BUILD_LIBFONTMANAGER)
-
-  DESKTOP_LIBRARIES += $(BUILD_LIBT2K)
-endif
-
-##########################################################################################
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBJAWT_SRC := $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libjawt
@@ -768,99 +718,7 @@ endif # OPENJDK_TARGET_OS
 
 DESKTOP_LIBRARIES += $(BUILD_LIBJAWT)
 
-##########################################################################################
-
-ifndef OPENJDK
-
-  LIBKCMS_SRC := $(JDK_TOPDIR)/src/closed/java.desktop/share/native/libkcms \
-      $(JDK_TOPDIR)/src/closed/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libkcms \
-      #
-  LIBKCMS_CFLAGS += $(addprefix -I, $(LIBKCMS_SRC)) \
-      -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
-      #
-  LIBKCMS_VERSIONINFO_RESOURCE := $(JDK_TOPDIR)/src/closed/java.desktop/windows/native/libkcms/cmm.rc
-
-  LIBKCMS_CFLAGS += $(CFLAGS_JDKLIB)
-
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
-    # This particular library uses a feature called PIC_CODE_SMALL (on solaris)
-    # implement it like this...since it's only used here
-    LIBKCMS_CFLAGS := $(patsubst -KPIC, -Kpic, $(LIBKCMS_CFLAGS))
-  else ifeq ($(OPENJDK_TARGET_CPU_ARCH), ppc)
-    LIBKCMS_CFLAGS := $(patsubst -fPIC, -fpic, $(LIBKCMS_CFLAGS))
-  endif
-
-  $(eval $(call SetupNativeCompilation,BUILD_LIBKCMS, \
-      LIBRARY := kcms, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(LIBKCMS_SRC), \
-      LANG := C, \
-      EXCLUDE_FILES := $(BUILD_LIBKCMS_EXCLUDE_FILES), \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(LIBKCMS_CFLAGS) \
-          -DJAVACMM -DFUT_CALC_EX -DNO_FUT_GCONST, \
-      CFLAGS_linux := -Wno-missing-field-initializers, \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libkcms/mapfile-vers, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX_linux := -lc -lpthread, \
-      LDFLAGS_SUFFIX_solaris := -lc, \
-      LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB) advapi32.lib user32.lib version.lib, \
-      LDFLAGS_SUFFIX_posix := -lm -ljava -ljvm, \
-      VERSIONINFO_RESOURCE := $(LIBKCMS_VERSIONINFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=kcms.dll" \
-          -D "JDK_INTERNAL_NAME=kcms" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libkcms, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-  $(BUILD_LIBKCMS): $(BUILD_LIBJAVA)
-
-  DESKTOP_LIBRARIES += $(BUILD_LIBKCMS)
-
-endif
-
-##########################################################################################
-
-ifndef OPENJDK
-  ifeq ($(OPENJDK_TARGET_OS), solaris)
-    ifneq ($(OPENJDK_TARGET_CPU), x86_64)
-
-      ifeq ($(shell if test "$(OS_VERSION_MAJOR)" -eq 5 -a "$(OS_VERSION_MINOR)" -le 10; then $(ECHO) ok; fi), ok)
-
-        SUNWJDGA_MAPFILE :=
-        ifeq ($(OPENJDK_TARGET_CPU_ARCH), sparc)
-          SUNWJDGA_MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libjdga/mapfile-vers
-        endif
-
-        $(eval $(call SetupNativeCompilation,BUILD_LIBSUNWJDGA, \
-            LIBRARY := sunwjdga, \
-            OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-            SRC := $(JDK_TOPDIR)/src/java.desktop/unix/native/libsunwjdga, \
-            LANG := C, \
-            OPTIMIZATION := LOW, \
-            CFLAGS := $(CFLAGS_JDKLIB) \
-                -I$(JDK_TOPDIR)/src/share/javavm/export \
-                -I$(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/javavm/export \
-                $(X_CFLAGS), \
-            MAPFILE := $(SUNWJDGA_MAPFILE), \
-            LDFLAGS := $(LDFLAGS_JDKLIB) \
-                $(call SET_SHARED_LIBRARY_ORIGIN), \
-            LDFLAGS_SUFFIX := $(X_LIBS) -ldga -lX11 $(LIBDL) -lc, \
-            OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libsunwjdga, \
-            DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-        DESKTOP_LIBRARIES += $(BUILD_LIBSUNWJDGA)
-
-      endif
-    endif
-  endif
-endif
-
-##########################################################################################
+################################################################################
 
 ifeq ($(BUILD_HEADLESS), true)
   # Mac and Windows only use the native AWT lib, do not build libawt_headless
@@ -932,7 +790,7 @@ ifeq ($(BUILD_HEADLESS), true)
   endif
 endif
 
-##########################################################################################
+################################################################################
 
 ifndef BUILD_HEADLESS_ONLY
 
@@ -1041,47 +899,7 @@ ifndef BUILD_HEADLESS_ONLY
 
 endif
 
-##########################################################################################
-
-ifndef OPENJDK
-
-  LIBDCPR_SRC_DIRS := $(JDK_TOPDIR)/src/closed/java.desktop/share/native/libdcpr
-  LIBDCPR_CFLAGS := $(addprefix -I, $(shell $(FIND) $(LIBDCPR_SRC_DIRS) -type d)) \
-      -I$(JDK_TOPDIR)/src/java.desktop/share/native/libawt/sun/java2d/pipe \
-      -I$(JDK_TOPDIR)/src/java.base/share/native/libjava \
-      -I$(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS_API_DIR)/native/libjava \
-      -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
-      #
-
-  $(eval $(call SetupNativeCompilation,BUILD_LIBDCPR, \
-      LIBRARY := dcpr, \
-      OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
-      SRC := $(LIBDCPR_SRC_DIRS), \
-      LANG := C, \
-      OPTIMIZATION := LOW, \
-      CFLAGS := $(CFLAGS_JDKLIB) \
-          $(LIBDCPR_CFLAGS), \
-      MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libdcpr/mapfile-vers, \
-      LDFLAGS := $(LDFLAGS_JDKLIB) \
-          $(call SET_SHARED_LIBRARY_ORIGIN), \
-      LDFLAGS_SUFFIX := $(LIBM) $(LDFLAGS_JDKLIB_SUFFIX), \
-      LDFLAGS_SUFFIX_windows := $(WIN_JAVA_LIB), \
-      LDFLAGS_SUFFIX_posix := -lm, \
-      VERSIONINFO_RESOURCE := $(GLOBAL_VERSION_INFO_RESOURCE), \
-      RC_FLAGS := $(RC_FLAGS) \
-          -D "JDK_FNAME=dcpr.dll" \
-          -D "JDK_INTERNAL_NAME=dcpr" \
-          -D "JDK_FTYPE=0x2L", \
-      OBJECT_DIR := $(JDK_OUTPUTDIR)/objs/libdcpr, \
-      DEBUG_SYMBOLS := $(DEBUG_ALL_BINARIES)))
-
-  $(BUILD_LIBDCPR): $(BUILD_LIBJAVA)
-
-  DESKTOP_LIBRARIES += $(BUILD_LIBDCPR)
-
-endif
-
-##########################################################################################
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
@@ -1158,7 +976,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
 
 endif
 
-##########################################################################################
+################################################################################
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 
@@ -1199,3 +1017,8 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
   #$(BUILD_LIBOSXUI): $(BUILD_LIBJAVA)
 
 endif
+
+################################################################################
+
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/Awt2dLibraries.gmk))
