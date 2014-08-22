@@ -968,20 +968,22 @@ public class ICC_Profile implements Serializable {
      */
     public static ICC_Profile getInstance(String fileName) throws IOException {
         ICC_Profile thisProfile;
-        FileInputStream fis = null;
+        InputStream is = null;
 
 
         File f = getProfileFile(fileName);
         if (f != null) {
-            fis = new FileInputStream(f);
+            is = new FileInputStream(f);
+        } else {
+            is = getStandardProfileInputStream(fileName);
         }
-        if (fis == null) {
+        if (is == null) {
             throw new IOException("Cannot open file " + fileName);
         }
 
-        thisProfile = getInstance(fis);
+        thisProfile = getInstance(is);
 
-        fis.close();    /* close the file */
+        is.close();    /* close the file */
 
         return thisProfile;
     }
@@ -1086,28 +1088,17 @@ public class ICC_Profile implements Serializable {
 
     void activateDeferredProfile() throws ProfileDataException {
         byte profileData[];
-        FileInputStream fis;
         final String fileName = deferralInfo.filename;
 
         profileActivator = null;
         deferralInfo = null;
-        PrivilegedAction<FileInputStream> pa = new PrivilegedAction<FileInputStream>() {
-            public FileInputStream run() {
-                File f = getStandardProfileFile(fileName);
-                if (f != null) {
-                    try {
-                        return new FileInputStream(f);
-                    } catch (FileNotFoundException e) {}
-                }
-                return null;
-            }
-        };
-        if ((fis = AccessController.doPrivileged(pa)) == null) {
+        InputStream is = getStandardProfileInputStream(fileName);
+        if (is == null) {
             throw new ProfileDataException("Cannot open file " + fileName);
         }
         try {
-            profileData = getProfileDataFromStream(fis);
-            fis.close();    /* close the file */
+            profileData = getProfileDataFromStream(is);
+            is.close();    /* close the file */
         }
         catch (IOException e) {
             ProfileDataException pde = new
@@ -1810,10 +1801,12 @@ public class ICC_Profile implements Serializable {
      * fileName may be an absolute or a relative file specification.
      * Relative file names are looked for in several places: first, relative
      * to any directories specified by the java.iccprofile.path property;
-     * second, relative to any directories specified by the java.class.path
-     * property; finally, in a directory used to store profiles always
-     * available, such as a profile for sRGB.  Built-in profiles use .pf as
-     * the file name extension for profiles, e.g. sRGB.pf.
+     * second, relative to any directories specified by the java.class.path.
+     * The built-in profile files are now loaded as resources, since they
+     * may not be individual disk files, and so this method will not find
+     * these and on a null return, the caller needs to try as resources.
+     * Built-in profiles use .pf as the file name extension for profiles,
+     * e.g. sRGB.pf.
      */
     private static File getProfileFile(String fileName) {
         String path, dir, fullPath;
@@ -1849,30 +1842,22 @@ public class ICC_Profile implements Serializable {
                         fullPath = dir + File.separatorChar + fileName;
                     f = new File(fullPath);
                 }
-            }
+        }
 
-        if ((f == null) || (!f.isFile())) {
-            /* try the directory of built-in profiles */
-            f = getStandardProfileFile(fileName);
+        if (f != null && !f.isFile()) {
+            f = null;
         }
-        if (f != null && f.isFile()) {
-            return f;
-        }
-        return null;
+        return f;
     }
 
     /**
-     * Returns a file object corresponding to a built-in profile
+     * Returns a stream corresponding to a built-in profile
      * specified by fileName.
      * If there is no built-in profile with such name, then the method
      * returns null.
      */
-    private static File getStandardProfileFile(String fileName) {
-        String dir = System.getProperty("java.home") +
-            File.separatorChar + "lib" + File.separatorChar + "cmm";
-        String fullPath = dir + File.separatorChar + fileName;
-        File f = new File(fullPath);
-        return (f.isFile() && isChildOf(f, dir)) ? f : null;
+    private static InputStream getStandardProfileInputStream(String fileName) {
+        return PCMM.class.getResourceAsStream("profiles/" + fileName);
     }
 
     /**
@@ -1901,7 +1886,7 @@ public class ICC_Profile implements Serializable {
     private static boolean standardProfileExists(final String fileName) {
         return AccessController.doPrivileged(new PrivilegedAction<Boolean>() {
                 public Boolean run() {
-                    return getStandardProfileFile(fileName) != null;
+                    return PCMM.class.getResource("profiles/"+fileName) != null;
                 }
             });
     }
