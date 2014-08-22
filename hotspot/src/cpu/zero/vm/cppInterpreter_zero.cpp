@@ -731,7 +731,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
     if (method->is_static())
       object = method->constants()->pool_holder()->java_mirror();
     else
-      object = (oop) locals[0];
+      object = (oop) (void*)locals[0];
     monitor->set_obj(object);
   }
 

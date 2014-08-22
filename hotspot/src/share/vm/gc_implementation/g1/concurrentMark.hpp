@@ -27,10 +27,12 @@
 
 #include "classfile/javaClasses.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
+#include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "gc_implementation/shared/gcId.hpp"
 #include "utilities/taskqueue.hpp"
 
 class G1CollectedHeap;
+class CMBitMap;
 class CMTask;
 typedef GenericTaskQueue<oop, mtGC>            CMTaskQueue;
 typedef GenericTaskQueueSet<CMTaskQueue, mtGC> CMTaskQueueSet;
@@ -57,7 +59,6 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   HeapWord* _bmStartWord;      // base address of range covered by map
   size_t    _bmWordSize;       // map size (in #HeapWords covered)
   const int _shifter;          // map to char or bit
-  VirtualSpace _virtual_space; // underlying the bit map
   BitMap    _bm;               // the bit map itself
 
  public:
@@ -115,42 +116,41 @@ class CMBitMapRO VALUE_OBJ_CLASS_SPEC {
   void print_on_error(outputStream* st, const char* prefix) const;
 
   // debugging
-  NOT_PRODUCT(bool covers(ReservedSpace rs) const;)
+  NOT_PRODUCT(bool covers(MemRegion rs) const;)
+};
+
+class CMBitMapMappingChangedListener : public G1MappingChangedListener {
+ private:
+  CMBitMap* _bm;
+ public:
+  CMBitMapMappingChangedListener() : _bm(NULL) {}
+
+  void set_bitmap(CMBitMap* bm) { _bm = bm; }
+
+  virtual void on_commit(uint start_idx, size_t num_regions);
 };
 
 class CMBitMap : public CMBitMapRO {
+ private:
+  CMBitMapMappingChangedListener _listener;
 
  public:
-  // constructor
-  CMBitMap(int shifter) :
-    CMBitMapRO(shifter) {}
+  static size_t compute_size(size_t heap_size);
+  // Returns the amount of bytes on the heap between two marks in the bitmap.
+  static size_t mark_distance();
 
-  // Allocates the back store for the marking bitmap
-  bool allocate(ReservedSpace heap_rs);
+  CMBitMap() : CMBitMapRO(LogMinObjAlignment), _listener() { _listener.set_bitmap(this); }
 
-  // write marks
-  void mark(HeapWord* addr) {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    _bm.set_bit(heapWordToOffset(addr));
-  }
-  void clear(HeapWord* addr) {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    _bm.clear_bit(heapWordToOffset(addr));
-  }
-  bool parMark(HeapWord* addr) {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    return _bm.par_set_bit(heapWordToOffset(addr));
-  }
-  bool parClear(HeapWord* addr) {
-    assert(_bmStartWord <= addr && addr < (_bmStartWord + _bmWordSize),
-           "outside underlying space?");
-    return _bm.par_clear_bit(heapWordToOffset(addr));
-  }
+  // Initializes the underlying BitMap to cover the given area.
+  void initialize(MemRegion heap, G1RegionToSpaceMapper* storage);
+
+  // Write marks.
+  inline void mark(HeapWord* addr);
+  inline void clear(HeapWord* addr);
+  inline bool parMark(HeapWord* addr);
+  inline bool parClear(HeapWord* addr);
+
   void markRange(MemRegion mr);
-  void clearAll();
   void clearRange(MemRegion mr);
 
   // Starting at the bit corresponding to "addr" (inclusive), find the next
@@ -161,6 +161,9 @@ class CMBitMap : public CMBitMapRO {
   // the run.  If there is no "1" bit at or after "addr", return an empty
   // MemRegion.
   MemRegion getAndClearMarkedRegion(HeapWord* addr, HeapWord* end_addr);
+
+  // Clear the whole mark bitmap.
+  void clearAll();
 };
 
 // Represents a marking stack used by ConcurrentMarking in the G1 collector.
@@ -680,7 +683,7 @@ public:
     return _task_queues->steal(worker_id, hash_seed, obj);
   }
 
-  ConcurrentMark(G1CollectedHeap* g1h, ReservedSpace heap_rs);
+  ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev_bitmap_storage, G1RegionToSpaceMapper* next_bitmap_storage);
   ~ConcurrentMark();
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
@@ -736,7 +739,8 @@ public:
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
 
-  // Return whether the next mark bitmap has no marks set.
+  // Return whether the next mark bitmap has no marks set. To be used for assertions
+  // only. Will not yield to pause requests.
   bool nextMarkBitmapIsClear();
 
   // These two do the work that needs to be done before and after the
@@ -793,12 +797,6 @@ public:
                            bool verify_enqueued_buffers,
                            bool verify_thread_buffers,
                            bool verify_fingers) PRODUCT_RETURN;
-
-  // It is called at the end of an evacuation pause during marking so
-  // that CM is notified of where the new end of the heap is. It
-  // doesn't do anything if concurrent_marking_in_progress() is false,
-  // unless the force parameter is true.
-  void update_g1_committed(bool force = false);
 
   bool isMarked(oop p) const {
     assert(p != NULL && p->is_oop(), "expected an oop");

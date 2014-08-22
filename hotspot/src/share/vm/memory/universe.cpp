@@ -26,6 +26,9 @@
 #include "classfile/classLoader.hpp"
 #include "classfile/classLoaderData.hpp"
 #include "classfile/javaClasses.hpp"
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#endif
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -34,6 +37,7 @@
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/cardTableModRefBS.hpp"
+#include "memory/filemap.hpp"
 #include "memory/gcLocker.inline.hpp"
 #include "memory/genCollectedHeap.hpp"
 #include "memory/genRemSet.hpp"
@@ -239,8 +243,9 @@ void Universe::check_alignment(uintx size, uintx alignment, const char* name) {
 void initialize_basic_type_klass(Klass* k, TRAPS) {
   Klass* ok = SystemDictionary::Object_klass();
   if (UseSharedSpaces) {
+    ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
     assert(k->super() == ok, "u3");
-    k->restore_unshareable_info(CHECK);
+    k->restore_unshareable_info(loader_data, Handle(), CHECK);
   } else {
     k->initialize_supers(ok, CHECK);
   }
@@ -666,6 +671,10 @@ jint universe_init() {
     SymbolTable::create_table();
     StringTable::create_table();
     ClassLoader::create_package_info_table();
+
+    if (DumpSharedSpaces) {
+      MetaspaceShared::prepare_for_dumping();
+    }
   }
 
   return JNI_OK;
@@ -1155,6 +1164,11 @@ bool universe_post_init() {
   MemoryService::add_metaspace_memory_pools();
 
   MemoryService::set_universe_heap(Universe::_collectedHeap);
+#if INCLUDE_CDS
+  if (UseSharedSpaces) {
+    SharedClassUtil::initialize(CHECK_false);
+  }
+#endif
   return true;
 }
 

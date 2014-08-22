@@ -320,7 +320,7 @@ class ReservedMemoryRegion : public VirtualMemoryRegion {
 
 
   ReservedMemoryRegion(address base, size_t size) :
-    VirtualMemoryRegion(base, size), _stack(emptyStack), _flag(mtNone),
+    VirtualMemoryRegion(base, size), _stack(NativeCallStack::EMPTY_STACK), _flag(mtNone),
     _all_committed(false) { }
 
   // Copy constructor
@@ -414,6 +414,9 @@ class VirtualMemoryTracker : AllStatic {
  public:
   static bool initialize(NMT_TrackingLevel level);
 
+  // Late phase initialization
+  static bool late_initialize(NMT_TrackingLevel level);
+
   static bool add_reserved_region (address base_addr, size_t size, const NativeCallStack& stack,
     MEMFLAGS flag = mtNone, bool all_committed = false);
 
@@ -428,7 +431,7 @@ class VirtualMemoryTracker : AllStatic {
   static bool transition(NMT_TrackingLevel from, NMT_TrackingLevel to);
 
  private:
-  static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base> _reserved_regions;
+  static SortedLinkedList<ReservedMemoryRegion, compare_reserved_region_base>* _reserved_regions;
 };
 
 

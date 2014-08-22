@@ -54,6 +54,7 @@ CardTableRS::CardTableRS(MemRegion whole_heap,
 #else
   _ct_bs = new CardTableModRefBSForCTRS(whole_heap, max_covered_regions);
 #endif
+  _ct_bs->initialize();
   set_bs(_ct_bs);
   _last_cur_val_in_gen = NEW_C_HEAP_ARRAY3(jbyte, GenCollectedHeap::max_gens + 1,
                          mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);

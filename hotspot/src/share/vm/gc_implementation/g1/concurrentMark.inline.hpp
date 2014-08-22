@@ -268,6 +268,36 @@ inline bool CMBitMapRO::iterate(BitMapClosure* cl) {
   return iterate(cl, mr);
 }
 
+#define check_mark(addr)                                                       \
+  assert(_bmStartWord <= (addr) && (addr) < (_bmStartWord + _bmWordSize),      \
+         "outside underlying space?");                                         \
+  assert(G1CollectedHeap::heap()->is_in_exact(addr),                           \
+         err_msg("Trying to access not available bitmap "PTR_FORMAT            \
+                 " corresponding to "PTR_FORMAT" (%u)",                        \
+                 p2i(this), p2i(addr), G1CollectedHeap::heap()->addr_to_region(addr)));
+
+inline void CMBitMap::mark(HeapWord* addr) {
+  check_mark(addr);
+  _bm.set_bit(heapWordToOffset(addr));
+}
+
+inline void CMBitMap::clear(HeapWord* addr) {
+  check_mark(addr);
+  _bm.clear_bit(heapWordToOffset(addr));
+}
+
+inline bool CMBitMap::parMark(HeapWord* addr) {
+  check_mark(addr);
+  return _bm.par_set_bit(heapWordToOffset(addr));
+}
+
+inline bool CMBitMap::parClear(HeapWord* addr) {
+  check_mark(addr);
+  return _bm.par_clear_bit(heapWordToOffset(addr));
+}
+
+#undef check_mark
+
 inline void CMTask::push(oop obj) {
   HeapWord* objAddr = (HeapWord*) obj;
   assert(_g1h->is_in_g1_reserved(objAddr), "invariant");

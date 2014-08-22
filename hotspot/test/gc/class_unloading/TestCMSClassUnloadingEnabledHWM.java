@@ -46,6 +46,7 @@ public class TestCMSClassUnloadingEnabledHWM {
   private static OutputAnalyzer run(boolean enableUnloading) throws Exception {
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
       "-Xbootclasspath/a:.",
+      "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+WhiteBoxAPI",
       "-XX:MetaspaceSize=" + MetaspaceSize,
       "-Xmn" + YoungGenSize,
