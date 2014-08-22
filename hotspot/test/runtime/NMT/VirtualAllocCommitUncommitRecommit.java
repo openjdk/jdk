@@ -26,7 +26,6 @@
  * @summary Test reserve/commit/uncommit/release of virtual memory and that we track it correctly
  * @key nmt jcmd
  * @library /testlibrary /testlibrary/whitebox
- * @ignore
  * @build VirtualAllocCommitUncommitRecommit
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail VirtualAllocCommitUncommitRecommit
@@ -161,6 +160,6 @@ public class VirtualAllocCommitUncommitRecommit {
         output = new OutputAnalyzer(pb.start());
         output.shouldNotContain("Test (reserved=");
         output.shouldNotMatch("\\[0x[0]*" + Long.toHexString(addr) + " - 0x[0]*"
-                + Long.toHexString(addr + reserveSize) + "\\] reserved");
+                + Long.toHexString(addr + reserveSize) + "\\] reserved 1024KB for Test");
     }
 }
