@@ -43,25 +43,6 @@ $(INCLUDE_DST_OS_DIR)/%.h: \
 
 ################################################################################
 
-ICCPROFILE_DEST_DIR := $(LIB_DST_DIR)/cmm
-
-ifdef OPENJDK
-  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/java.desktop/share/conf/cmm/lcms
-else
-  ICCPROFILE_SRC_DIR := $(JDK_TOPDIR)/src/closed/java.desktop/share/conf/cmm/kcms
-endif
-
-ICCPROFILE_SRCS := $(wildcard $(ICCPROFILE_SRC_DIR)/*.pf)
-ICCPROFILE_TARGET_FILES := $(subst $(ICCPROFILE_SRC_DIR),$(ICCPROFILE_DEST_DIR),$(ICCPROFILE_SRCS))
-
-$(ICCPROFILE_DEST_DIR)%.pf: $(ICCPROFILE_SRC_DIR)%.pf
-	$(call install-file)
-	$(CHMOD) 444 $@
-
-DESKTOP_CONF_FILES += $(ICCPROFILE_TARGET_FILES)
-
-################################################################################
-
 ifneq ($(FREETYPE_BUNDLE_LIB_PATH), )
   # We need to bundle the freetype library, so it will be available at runtime as well as link time.
   #

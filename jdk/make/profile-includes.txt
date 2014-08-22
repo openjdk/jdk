@@ -168,11 +168,6 @@ FULL_JRE_LIB_FILES := \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)t2k$(SHARED_LIBRARY_SUFFIX) \
     $(OPENJDK_TARGET_CPU_LEGACY_LIB)/$(LIBRARY_PREFIX)unpack$(SHARED_LIBRARY_SUFFIX) \
     charsets.jar \
-    cmm/CIEXYZ.pf \
-    cmm/GRAY.pf \
-    cmm/LINEAR_RGB.pf \
-    cmm/PYCC.pf \
-    cmm/sRGB.pf \
     ext/cldrdata.jar \
     ext/dnsns.jar \
     ext/nashorn.jar \
