@@ -25,9 +25,10 @@
 
 package com.sun.tools.javac.api;
 
-import java.io.IOException;
 import java.util.Collection;
+import java.util.LinkedHashSet;
 import java.util.Locale;
+import java.util.Set;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
@@ -39,11 +40,19 @@ import javax.tools.JavaFileObject;
 import com.sun.source.tree.CompilationUnitTree;
 import com.sun.source.tree.Tree;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.Plugin;
 import com.sun.source.util.TaskListener;
+import com.sun.tools.doclint.DocLint;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.model.JavacTypes;
+import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log;
+import com.sun.tools.javac.util.PropagatedException;
+import com.sun.tools.javac.util.ServiceLoader;
 
 /**
  * Provides basic functionality for implementations of JavacTask.
@@ -71,17 +80,17 @@ public class BasicJavacTask extends JavacTask {
     }
 
     @Override
-    public Iterable<? extends CompilationUnitTree> parse() throws IOException {
+    public Iterable<? extends CompilationUnitTree> parse() {
         throw new IllegalStateException();
     }
 
     @Override
-    public Iterable<? extends Element> analyze() throws IOException {
+    public Iterable<? extends Element> analyze() {
         throw new IllegalStateException();
     }
 
     @Override
-    public Iterable<? extends JavaFileObject> generate() throws IOException {
+    public Iterable<? extends JavaFileObject> generate() {
         throw new IllegalStateException();
     }
 
@@ -123,32 +132,72 @@ public class BasicJavacTask extends JavacTask {
 
     @Override
     public Elements getElements() {
+        if (context == null)
+            throw new IllegalStateException();
         return JavacElements.instance(context);
     }
 
     @Override
     public Types getTypes() {
+        if (context == null)
+            throw new IllegalStateException();
         return JavacTypes.instance(context);
     }
 
+    @Override
     public void setProcessors(Iterable<? extends Processor> processors) {
         throw new IllegalStateException();
     }
 
+    @Override
     public void setLocale(Locale locale) {
         throw new IllegalStateException();
     }
 
+    @Override
     public Boolean call() {
         throw new IllegalStateException();
     }
 
     /**
-     * For internal use only.  This method will be
-     * removed without warning.
+     * For internal use only.
+     * This method will be removed without warning.
+     * @return the context
      */
     public Context getContext() {
         return context;
     }
 
+    public void initPlugins(Set<List<String>> pluginOpts) {
+        if (pluginOpts.isEmpty())
+            return;
+
+        Set<List<String>> pluginsToCall = new LinkedHashSet<>(pluginOpts);
+        JavacProcessingEnvironment pEnv = JavacProcessingEnvironment.instance(context);
+        ClassLoader cl = pEnv.getProcessorClassLoader();
+        ServiceLoader<Plugin> sl = ServiceLoader.load(Plugin.class, cl);
+        for (Plugin plugin : sl) {
+            for (List<String> p : pluginsToCall) {
+                if (plugin.getName().equals(p.head)) {
+                    pluginsToCall.remove(p);
+                    try {
+                        plugin.init(this, p.tail.toArray(new String[p.tail.size()]));
+                    } catch (RuntimeException ex) {
+                        throw new PropagatedException(ex);
+                    }
+                }
+            }
+        }
+        for (List<String> p: pluginsToCall) {
+            Log.instance(context).error("msg.plugin.not.found", p.head);
+        }
+    }
+
+    public void initDocLint(List<String> docLintOpts) {
+        if (docLintOpts.isEmpty())
+            return;
+
+        new DocLint().init(this, docLintOpts.toArray(new String[docLintOpts.size()]));
+        JavaCompiler.instance(context).keepComments = true;
+    }
 }
