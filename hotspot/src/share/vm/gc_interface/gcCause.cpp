@@ -51,6 +51,9 @@ const char* GCCause::to_string(GCCause::Cause cause) {
     case _heap_dump:
       return "Heap Dump Initiated GC";
 
+    case _wb_young_gc:
+      return "WhiteBox Initiated Young GC";
+
     case _no_gc:
       return "No GC";
 
