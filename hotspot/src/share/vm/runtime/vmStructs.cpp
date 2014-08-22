@@ -547,7 +547,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
                                                                                                                                      \
     static_field(GenCollectedHeap,             _gch,                                          GenCollectedHeap*)                     \
  nonstatic_field(GenCollectedHeap,             _n_gens,                                       int)                                   \
- unchecked_nonstatic_field(GenCollectedHeap,   _gens,                                         sizeof(GenCollectedHeap::_gens)) /* NOTE: no type */ \
   nonstatic_field(GenCollectedHeap,            _gen_specs,                                    GenerationSpec**)                      \
                                                                                                                                      \
   nonstatic_field(HeapWord,                    i,                                             char*)                                 \

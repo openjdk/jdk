@@ -35,7 +35,8 @@ import sun.jvm.hotspot.utilities.*;
 
 public class GenCollectedHeap extends SharedHeap {
   private static CIntegerField nGensField;
-  private static long gensOffset;
+  private static AddressField youngGenField;
+  private static AddressField oldGenField;
   private static AddressField genSpecsField;
 
   private static GenerationFactory genFactory;
@@ -52,7 +53,8 @@ public class GenCollectedHeap extends SharedHeap {
     Type type = db.lookupType("GenCollectedHeap");
 
     nGensField = type.getCIntegerField("_n_gens");
-    gensOffset = type.getField("_gens").getOffset();
+    youngGenField = type.getAddressField("_young_gen");
+    oldGenField = type.getAddressField("_old_gen");
     genSpecsField = type.getAddressField("_gen_specs");
 
     genFactory = new GenerationFactory();
@@ -72,14 +74,15 @@ public class GenCollectedHeap extends SharedHeap {
                   " out of range (should be between 0 and " + nGens() + ")");
     }
 
-    if ((i < 0) || (i >= nGens())) {
+    switch (i) {
+    case 0:
+      return genFactory.newObject(youngGenField.getAddress());
+    case 1:
+      return genFactory.newObject(oldGenField.getAddress());
+    default:
+      // no generation for i, and assertions disabled.
       return null;
     }
-
-    Address genAddr = addr.getAddressAt(gensOffset +
-                                        (i * VM.getVM().getAddressSize()));
-    return genFactory.newObject(addr.getAddressAt(gensOffset +
-                                                  (i * VM.getVM().getAddressSize())));
   }
 
   public boolean isIn(Address a) {

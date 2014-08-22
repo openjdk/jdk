@@ -387,7 +387,7 @@ void DefNewGeneration::compute_new_size() {
   assert(next_level < gch->_n_gens,
          "DefNewGeneration cannot be an oldest gen");
 
-  Generation* next_gen = gch->_gens[next_level];
+  Generation* next_gen = gch->get_gen(next_level);
   size_t old_size = next_gen->capacity();
   size_t new_size_before = _virtual_space.committed_size();
   size_t min_new_size = spec()->init_size();
