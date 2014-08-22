@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 public class HyperbolicTests {
     private HyperbolicTests(){}
 
@@ -342,7 +340,7 @@ public class HyperbolicTests {
 
         // sinh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
-        for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 10; i <= Double.MAX_EXPONENT; i++) {
             double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
@@ -701,7 +699,7 @@ public class HyperbolicTests {
 
         // cosh(x) overflows for values greater than 710; in
         // particular, it overflows for all 2^i, i > 10.
-        for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 10; i <= Double.MAX_EXPONENT; i++) {
             double d = Math.scalb(2.0, i);
 
             // Result and expected are the same.
@@ -996,7 +994,7 @@ public class HyperbolicTests {
             failures += testTanhCaseWithUlpDiff(i, 1.0, 2.5);
         }
 
-        for(int i = 5; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 5; i <= Double.MAX_EXPONENT; i++) {
             double d = Math.scalb(2.0, i);
 
             failures += testTanhCaseWithUlpDiff(d, 1.0, 2.5);

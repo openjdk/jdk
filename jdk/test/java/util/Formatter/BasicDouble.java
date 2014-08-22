@@ -36,9 +36,6 @@ import java.math.BigInteger;
 import java.text.DateFormatSymbols;
 import java.util.*;
 
-import sun.misc.DoubleConsts;
-
-
 import static java.util.Calendar.*;
 
 
@@ -1313,12 +1310,12 @@ public class BasicDouble extends Basic {
         test("%.1a", "-0x1.0p0", -1.0);
         test("%.11a", "0x1.80000000000p1", 3.0);
         test("%.1a", "0x1.8p1", 3.0);
-        test("%.11a", "0x1.00000000000p-1022", DoubleConsts.MIN_NORMAL);
-        test("%.1a", "0x1.0p-1022", DoubleConsts.MIN_NORMAL);
+        test("%.11a", "0x1.00000000000p-1022", Double.MIN_NORMAL);
+        test("%.1a", "0x1.0p-1022", Double.MIN_NORMAL);
         test("%.11a", "0x1.00000000000p-1022",
-             Math.nextDown(DoubleConsts.MIN_NORMAL));
+             Math.nextDown(Double.MIN_NORMAL));
         test("%.1a", "0x1.0p-1022",
-             Math.nextDown(DoubleConsts.MIN_NORMAL));
+             Math.nextDown(Double.MIN_NORMAL));
         test("%.11a", "0x1.ffffffffffep-1023", 0x0.fffffffffffp-1022);
         test("%.1a", "0x1.0p-1022", 0x0.fffffffffffp-1022);
         test("%.30a", "0x0.000000000000100000000000000000p-1022", Double.MIN_VALUE);
