@@ -604,6 +604,17 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
+    if (is_intel_family_core()) {
+      if ((_model == CPU_MODEL_HASWELL_E3) ||
+          (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
+          (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
+        if (!UnlockExperimentalVMOptions) {
+          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
+        } else {
+          warning("UseRTMLocking is only available as experimental option on this platform.");
+        }
+      }
+    }
     if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
       // RTM locking should be used only for applications with
       // high lock contention. For now we do not use it by default.
