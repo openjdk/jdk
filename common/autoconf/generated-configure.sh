@@ -4321,7 +4321,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1408448519
+DATE_WHEN_GENERATED=1408660646
 
 ###############################################################################
 #
@@ -42515,17 +42515,15 @@ $as_echo "$ac_cv_c_bigendian" >&6; }
       # no adjustment
       ;;
     fastdebug )
-      # Add compile time bounds checks.
-      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
-      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1"
+      # no adjustment
       ;;
     slowdebug )
-      # Add runtime bounds checks and symbol info.
-      CFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
-      CXXFLAGS_DEBUG_OPTIONS="-U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1"
+      # Add runtime stack smashing and undefined behavior checks
+      CFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
+      CXXFLAGS_DEBUG_OPTIONS="-fstack-protector-all --param ssp-buffer-size=1"
       if test "x$HAS_CFLAG_DETECT_UNDEFINED_BEHAVIOR" = "xtrue"; then
         CFLAGS_DEBUG_OPTIONS="$CFLAGS_DEBUG_OPTIONS  $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
-        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIOR_FLAG"
+        CXXFLAGS_DEBUG_OPTIONS="$CXXFLAGS_DEBUG_OPTIONS $CFLAG_DETECT_UNDEFINED_BEHAVIsOR_FLAG"
       fi
       ;;
     esac
