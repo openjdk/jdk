@@ -52,7 +52,6 @@ HOTSPOT_DOCS_IMPORT_PATH=$(HOTSPOT_OUTPUTDIR)/docs
 BUILD_NUMBER=$(JDK_BUILD_NUMBER)
 
 JAVADOC_CMD = $(JAVA) \
-    -Xmx1024m \
     -Djava.awt.headless=true \
     $(NEW_JAVADOC) \
     -bootclasspath $(JDK_OUTPUTDIR)/classes
