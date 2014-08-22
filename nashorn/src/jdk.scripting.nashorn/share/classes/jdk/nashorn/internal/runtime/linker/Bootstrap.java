@@ -88,15 +88,14 @@ public final class Bootstrap {
     static {
         final DynamicLinkerFactory factory = new DynamicLinkerFactory();
         final NashornBeansLinker nashornBeansLinker = new NashornBeansLinker();
-        final JSObjectLinker jsObjectLinker = new JSObjectLinker(nashornBeansLinker);
         factory.setPrioritizedLinkers(
             new NashornLinker(),
             new NashornPrimitiveLinker(),
             new NashornStaticClassLinker(),
             new BoundDynamicMethodLinker(),
             new JavaSuperAdapterLinker(),
-            jsObjectLinker,
-            new BrowserJSObjectLinker(),
+            new JSObjectLinker(nashornBeansLinker),
+            new BrowserJSObjectLinker(nashornBeansLinker),
             new ReflectionCheckLinker());
         factory.setFallbackLinkers(nashornBeansLinker, new NashornBottomLinker());
         factory.setSyncOnRelink(true);
