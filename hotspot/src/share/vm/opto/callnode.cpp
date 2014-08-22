@@ -1815,3 +1815,57 @@ Node *UnlockNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   }
   return result;
 }
+
+ArrayCopyNode::ArrayCopyNode(Compile* C, bool alloc_tightly_coupled)
+  : CallNode(arraycopy_type(), NULL, TypeRawPtr::BOTTOM), _alloc_tightly_coupled(alloc_tightly_coupled), _kind(ArrayCopy) {
+  init_class_id(Class_ArrayCopy);
+  init_flags(Flag_is_macro);
+  C->add_macro_node(this);
+}
+
+uint ArrayCopyNode::size_of() const { return sizeof(*this); }
+
+ArrayCopyNode* ArrayCopyNode::make(GraphKit* kit, bool may_throw,
+                                   Node* src, Node* src_offset,
+                                   Node* dest, Node* dest_offset,
+                                   Node* length,
+                                   bool alloc_tightly_coupled,
+                                   Node* src_length, Node* dest_length,
+                                   Node* src_klass, Node* dest_klass) {
+
+  ArrayCopyNode* ac = new ArrayCopyNode(kit->C, alloc_tightly_coupled);
+  Node* prev_mem = kit->set_predefined_input_for_runtime_call(ac);
+
+  ac->init_req(ArrayCopyNode::Src, src);
+  ac->init_req(ArrayCopyNode::SrcPos, src_offset);
+  ac->init_req(ArrayCopyNode::Dest, dest);
+  ac->init_req(ArrayCopyNode::DestPos, dest_offset);
+  ac->init_req(ArrayCopyNode::Length, length);
+  ac->init_req(ArrayCopyNode::SrcLen, src_length);
+  ac->init_req(ArrayCopyNode::DestLen, dest_length);
+  ac->init_req(ArrayCopyNode::SrcKlass, src_klass);
+  ac->init_req(ArrayCopyNode::DestKlass, dest_klass);
+
+  if (may_throw) {
+    ac->set_req(TypeFunc::I_O , kit->i_o());
+    kit->add_safepoint_edges(ac, false);
+  }
+
+  return ac;
+}
+
+void ArrayCopyNode::connect_outputs(GraphKit* kit) {
+  kit->set_all_memory_call(this, true);
+  kit->set_control(kit->gvn().transform(new ProjNode(this,TypeFunc::Control)));
+  kit->set_i_o(kit->gvn().transform(new ProjNode(this, TypeFunc::I_O)));
+  kit->make_slow_call_ex(this, kit->env()->Throwable_klass(), true);
+  kit->set_all_memory_call(this);
+}
+
+#ifndef PRODUCT
+const char* ArrayCopyNode::_kind_names[] = {"arraycopy", "arraycopy, validated arguments", "clone", "oop array clone", "CopyOf", "CopyOfRange"};
+void ArrayCopyNode::dump_spec(outputStream *st) const {
+  CallNode::dump_spec(st);
+  st->print(" (%s%s)", _kind_names[_kind], _alloc_tightly_coupled ? ", tightly coupled allocation" : "");
+}
+#endif

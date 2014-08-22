@@ -26,7 +26,6 @@
  * @key nmt jcmd
  * @summary Run shutdown twice
  * @library /testlibrary
- * @ignore
  * @run main/othervm -XX:NativeMemoryTracking=detail ShutdownTwice
  */
 

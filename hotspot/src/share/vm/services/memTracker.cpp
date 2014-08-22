@@ -39,8 +39,6 @@
 volatile NMT_TrackingLevel MemTracker::_tracking_level = NMT_unknown;
 NMT_TrackingLevel MemTracker::_cmdline_tracking_level = NMT_unknown;
 
-NativeCallStack emptyStack(0, false);
-
 MemBaseline MemTracker::_baseline;
 Mutex*      MemTracker::_query_lock = NULL;
 bool MemTracker::_is_nmt_env_valid = true;
@@ -69,6 +67,10 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
     os::unsetenv(buf);
   }
 
+  // Construct NativeCallStack::EMPTY_STACK. It may get constructed twice,
+  // but it is benign, the results are the same.
+  ::new ((void*)&NativeCallStack::EMPTY_STACK) NativeCallStack(0, false);
+
   if (!MallocTracker::initialize(level) ||
       !VirtualMemoryTracker::initialize(level)) {
     level = NMT_off;
@@ -77,7 +79,12 @@ NMT_TrackingLevel MemTracker::init_tracking_level() {
 }
 
 void MemTracker::init() {
-  if (tracking_level() >= NMT_summary) {
+  NMT_TrackingLevel level = tracking_level();
+  if (level >= NMT_summary) {
+    if (!VirtualMemoryTracker::late_initialize(level)) {
+      shutdown();
+      return;
+    }
     _query_lock = new (std::nothrow) Mutex(Monitor::max_nonleaf, "NMT_queryLock");
     // Already OOM. It is unlikely, but still have to handle it.
     if (_query_lock == NULL) {

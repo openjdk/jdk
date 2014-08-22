@@ -37,30 +37,55 @@
 //  misc data (block offset table, string table, symbols, dictionary, etc.)
 //  tag(666)
 
-static const int JVM_SHARED_JARS_MAX = 128;
-static const int JVM_SPACENAME_MAX = 128;
 static const int JVM_IDENT_MAX = 256;
-static const int JVM_ARCH_MAX = 12;
-
 
 class Metaspace;
 
+class SharedClassPathEntry VALUE_OBJ_CLASS_SPEC {
+public:
+  const char *_name;
+  time_t _timestamp;          // jar timestamp,  0 if is directory
+  long   _filesize;           // jar file size, -1 if is directory
+  bool is_dir() {
+    return _filesize == -1;
+  }
+};
+
 class FileMapInfo : public CHeapObj<mtInternal> {
 private:
+  friend class ManifestStream;
   enum {
     _invalid_version = -1,
-    _current_version = 1
+    _current_version = 2
   };
 
   bool  _file_open;
   int   _fd;
   long  _file_offset;
 
+private:
+  static SharedClassPathEntry* _classpath_entry_table;
+  static int                   _classpath_entry_table_size;
+  static size_t                _classpath_entry_size;
+  static bool                  _validating_classpath_entry_table;
+
   // FileMapHeader describes the shared space data in the file to be
   // mapped.  This structure gets written to a file.  It is not a class, so
   // that the compilers don't add any compiler-private data to it.
 
-  struct FileMapHeader {
+public:
+  struct FileMapHeaderBase : public CHeapObj<mtClass> {
+    virtual bool validate() = 0;
+    virtual void populate(FileMapInfo* info, size_t alignment) = 0;
+  };
+  struct FileMapHeader : FileMapHeaderBase {
+    // Use data() and data_size() to memcopy to/from the FileMapHeader. We need to
+    // avoid read/writing the C++ vtable pointer.
+    static size_t data_size();
+    char* data() {
+      return ((char*)this) + sizeof(FileMapHeaderBase);
+    }
+
     int    _magic;                    // identify file type.
     int    _version;                  // (from enum, above.)
     size_t _alignment;                // how shared archive should be aligned
@@ -78,44 +103,64 @@ private:
     // The following fields are all sanity checks for whether this archive
     // will function correctly with this JVM and the bootclasspath it's
     // invoked with.
-    char  _arch[JVM_ARCH_MAX];            // architecture
     char  _jvm_ident[JVM_IDENT_MAX];      // identifier for jvm
-    int   _num_jars;              // Number of jars in bootclasspath
 
-    // Per jar file data:  timestamp, size.
+    // The _paths_misc_info is a variable-size structure that records "miscellaneous"
+    // information during dumping. It is generated and validated by the
+    // SharedPathsMiscInfo class. See SharedPathsMiscInfo.hpp and sharedClassUtil.hpp for
+    // detailed description.
+    //
+    // The _paths_misc_info data is stored as a byte array in the archive file header,
+    // immediately after the _header field. This information is used only when
+    // checking the validity of the archive and is deallocated after the archive is loaded.
+    //
+    // Note that the _paths_misc_info does NOT include information for JAR files
+    // that existed during dump time. Their information is stored in _classpath_entry_table.
+    int _paths_misc_info_size;
 
-    struct {
-      time_t _timestamp;          // jar timestamp.
-      long   _filesize;           // jar file size.
-    } _jar[JVM_SHARED_JARS_MAX];
-  } _header;
+    // The following is a table of all the class path entries that were used
+    // during dumping. At run time, we require these files to exist and have the same
+    // size/modification time, or else the archive will refuse to load.
+    //
+    // All of these entries must be JAR files. The dumping process would fail if a non-empty
+    // directory was specified in the classpaths. If an empty directory was specified
+    // it is checked by the _paths_misc_info as described above.
+    //
+    // FIXME -- if JAR files in the tail of the list were specified but not used during dumping,
+    // they should be removed from this table, to save space and to avoid spurious
+    // loading failures during runtime.
+    int _classpath_entry_table_size;
+    size_t _classpath_entry_size;
+    SharedClassPathEntry* _classpath_entry_table;
+
+    virtual bool validate();
+    virtual void populate(FileMapInfo* info, size_t alignment);
+  };
+
+  FileMapHeader * _header;
+
   const char* _full_path;
+  char* _paths_misc_info;
 
   static FileMapInfo* _current_info;
 
   bool  init_from_file(int fd);
   void  align_file_position();
+  bool  validate_header_impl();
 
 public:
-  FileMapInfo() {
-    _file_offset = 0;
-    _file_open = false;
-    _header._version = _invalid_version;
-  }
+  FileMapInfo();
+  ~FileMapInfo();
 
   static int current_version()        { return _current_version; }
   void   populate_header(size_t alignment);
-  bool   validate();
+  bool   validate_header();
   void   invalidate();
-  int    version()                    { return _header._version; }
-  size_t alignment()                  { return _header._alignment; }
-  size_t space_capacity(int i)        { return _header._space[i]._capacity; }
-  char*  region_base(int i)           { return _header._space[i]._base; }
-  struct FileMapHeader* header()      { return &_header; }
-
-  static void set_current_info(FileMapInfo* info) {
-    CDS_ONLY(_current_info = info;)
-  }
+  int    version()                    { return _header->_version; }
+  size_t alignment()                  { return _header->_alignment; }
+  size_t space_capacity(int i)        { return _header->_space[i]._capacity; }
+  char*  region_base(int i)           { return _header->_space[i]._base; }
+  struct FileMapHeader* header()      { return _header; }
 
   static FileMapInfo* current_info() {
     CDS_ONLY(return _current_info;)
@@ -146,7 +191,7 @@ public:
 
   // Errors.
   static void fail_stop(const char *msg, ...);
-  void fail_continue(const char *msg, ...);
+  static void fail_continue(const char *msg, ...);
 
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
@@ -160,6 +205,22 @@ public:
 
   // Stop CDS sharing and unmap CDS regions.
   static void stop_sharing_and_unmap(const char* msg);
+
+  static void allocate_classpath_entry_table();
+  bool validate_classpath_entry_table();
+
+  static SharedClassPathEntry* shared_classpath(int index) {
+    char* p = (char*)_classpath_entry_table;
+    p += _classpath_entry_size * index;
+    return (SharedClassPathEntry*)p;
+  }
+  static const char* shared_classpath_name(int index) {
+    return shared_classpath(index)->_name;
+  }
+
+  static int get_number_of_share_classpaths() {
+    return _classpath_entry_table_size;
+  }
 };
 
 #endif // SHARE_VM_MEMORY_FILEMAP_HPP

@@ -73,6 +73,8 @@ public class WhiteBox {
   // Memory
   public native long getObjectAddress(Object o);
   public native int  getHeapOopSize();
+  public native boolean isObjectInOldGen(Object o);
+  public native long getObjectSize(Object o);
 
   // Runtime
   // Make sure class name is in the correct format
@@ -149,6 +151,9 @@ public class WhiteBox {
   public native void readReservedMemory();
   public native long allocateMetaspace(ClassLoader classLoader, long size);
   public native void freeMetaspace(ClassLoader classLoader, long addr, long size);
+
+  // force Young GC
+  public native void youngGC();
 
   // force Full GC
   public native void fullGC();
