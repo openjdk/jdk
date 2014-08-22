@@ -25,33 +25,32 @@
 
 package com.sun.tools.javac.api;
 
-import java.io.File;
-import java.io.IOException;
 import java.nio.CharBuffer;
 import java.util.*;
+import java.util.concurrent.Callable;
 import java.util.concurrent.atomic.AtomicBoolean;
 
 import javax.annotation.processing.Processor;
 import javax.lang.model.element.Element;
 import javax.lang.model.element.TypeElement;
-import javax.lang.model.type.TypeMirror;
 import javax.tools.*;
 
 import com.sun.source.tree.*;
-import com.sun.source.util.*;
 import com.sun.tools.javac.code.*;
-import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
 import com.sun.tools.javac.comp.*;
-import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.*;
 import com.sun.tools.javac.main.JavaCompiler;
-import com.sun.tools.javac.model.*;
 import com.sun.tools.javac.parser.Parser;
 import com.sun.tools.javac.parser.ParserFactory;
+import com.sun.tools.javac.processing.AnnotationProcessingError;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.List;
+import com.sun.tools.javac.util.Log.PrefixKind;
+import com.sun.tools.javac.util.Log.WriterKind;
 
 /**
  * Provides access to functionality specific to the JDK Java Compiler, javac.
@@ -65,82 +64,45 @@ import com.sun.tools.javac.util.List;
  * @author Jonathan Gibbons
  */
 public class JavacTaskImpl extends BasicJavacTask {
-    private Main compilerMain;
+    private final Arguments args;
     private JavaCompiler compiler;
     private Locale locale;
-    private String[] args;
-    private String[] classNames;
-    private List<JavaFileObject> fileObjects;
     private Map<JavaFileObject, JCCompilationUnit> notYetEntered;
     private ListBuffer<Env<AttrContext>> genList;
     private final AtomicBoolean used = new AtomicBoolean();
     private Iterable<? extends Processor> processors;
 
-    private Main.Result result = null;
-
-    JavacTaskImpl(Main compilerMain,
-                String[] args,
-                String[] classNames,
-                Context context,
-                List<JavaFileObject> fileObjects) {
-        super(null, false);
-        this.compilerMain = compilerMain;
-        this.args = args;
-        this.classNames = classNames;
-        this.context = context;
-        this.fileObjects = fileObjects;
-        setLocale(Locale.getDefault());
-        // null checks
-        compilerMain.getClass();
-        args.getClass();
-        fileObjects.getClass();
+    JavacTaskImpl(Context context) {
+        super(context, true);
+        args = Arguments.instance(context);
     }
 
-    JavacTaskImpl(Main compilerMain,
-                Iterable<String> args,
-                Context context,
-                Iterable<String> classes,
-                Iterable<? extends JavaFileObject> fileObjects) {
-        this(compilerMain, toArray(args), toArray(classes), context, toList(fileObjects));
-    }
-
-    static private String[] toArray(Iterable<String> iter) {
-        ListBuffer<String> result = new ListBuffer<>();
-        if (iter != null)
-            for (String s : iter)
-                result.append(s);
-        return result.toArray(new String[result.length()]);
-    }
-
-    static private List<JavaFileObject> toList(Iterable<? extends JavaFileObject> fileObjects) {
-        if (fileObjects == null)
-            return List.nil();
-        ListBuffer<JavaFileObject> result = new ListBuffer<>();
-        for (JavaFileObject fo : fileObjects)
-            result.append(fo);
-        return result.toList();
-    }
-
-    public Main.Result doCall() {
-        if (!used.getAndSet(true)) {
-            initContext();
-            notYetEntered = new HashMap<>();
-            compilerMain.setAPIMode(true);
-            compiler = JavaCompiler.instance(context);
-            compiler.keepComments = true;
-            compiler.genEndPos = true;
-            result = compilerMain.compile(args, classNames, context, fileObjects, processors);
-            cleanup();
-            return result;
-        } else {
-            throw new IllegalStateException("multiple calls to method 'call'");
-        }
-    }
-
+    @Override // @DefinedBy(COMPILER_API)
     public Boolean call() {
         return doCall().isOK();
     }
 
+    /* Internal version of call exposing Main.Result. */
+    public Main.Result doCall() {
+        try {
+            return handleExceptions(new Callable<Main.Result>() {
+                @Override
+                public Main.Result call() throws Exception {
+                    prepareCompiler(false);
+                    compiler.compile(args.getFileObjects(), args.getClassNames(), processors);
+                    return (compiler.errorCount() > 0) ? Main.Result.ERROR : Main.Result.OK; // FIXME?
+                }
+            }, Main.Result.SYSERR, Main.Result.ABNORMAL);
+        } finally {
+            try {
+                cleanup();
+            } catch (ClientCodeException e) {
+                throw new RuntimeException(e.getCause());
+            }
+        }
+    }
+
+    @Override // @DefinedBy(COMPILER_API)
     public void setProcessors(Iterable<? extends Processor> processors) {
         processors.getClass(); // null check
         // not mt-safe
@@ -149,46 +111,79 @@ public class JavacTaskImpl extends BasicJavacTask {
         this.processors = processors;
     }
 
+    @Override // @DefinedBy(COMPILER_API)
     public void setLocale(Locale locale) {
         if (used.get())
             throw new IllegalStateException();
         this.locale = locale;
     }
 
-    private void prepareCompiler() throws IOException {
+    private <T> T handleExceptions(Callable<T> c, T sysErrorResult, T abnormalErrorResult) {
+        try {
+            return c.call();
+        } catch (FatalError ex) {
+            Log log = Log.instance(context);
+            Options options = Options.instance(context);
+            log.printRawLines(ex.getMessage());
+            if (ex.getCause() != null && options.isSet("dev")) {
+                ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
+            }
+            return sysErrorResult;
+        } catch (AnnotationProcessingError | ClientCodeException e) {
+            // AnnotationProcessingError is thrown from JavacProcessingEnvironment,
+            // to forward errors thrown from an annotation processor
+            // ClientCodeException is thrown from ClientCodeWrapper,
+            // to forward errors thrown from user-supplied code for Compiler API
+            // as specified by javax.tools.JavaCompiler#getTask
+            // and javax.tools.JavaCompiler.CompilationTask#call
+            throw new RuntimeException(e.getCause());
+        } catch (PropagatedException e) {
+            throw e.getCause();
+        } catch (IllegalStateException e) {
+            throw e;
+        } catch (Exception | Error ex) {
+            // Nasty.  If we've already reported an error, compensate
+            // for buggy compiler error recovery by swallowing thrown
+            // exceptions.
+            if (compiler == null || compiler.errorCount() == 0
+                    || Options.instance(context).isSet("dev")) {
+                Log log = Log.instance(context);
+                log.printLines(PrefixKind.JAVAC, "msg.bug", JavaCompiler.version());
+                ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
+            }
+            return abnormalErrorResult;
+        }
+    }
+
+    private void prepareCompiler(boolean forParse) {
         if (used.getAndSet(true)) {
             if (compiler == null)
-                throw new IllegalStateException();
+                throw new PropagatedException(new IllegalStateException());
         } else {
-            initContext();
-            compilerMain.log = Log.instance(context);
-            compilerMain.setOptions(Options.instance(context));
-            compilerMain.filenames = new LinkedHashSet<>();
-            compilerMain.deferredFileManagerOptions = new LinkedHashMap<>();
-            // The following line is conceptually wrong. It should not refer to args
-            // which may include inappropriate file manager options.
-            // (Ideally, args should not even be passed into JavacTaskImpl at all.)
-            // The "no filenames in args" check should have been handled by the use of
-            // the GrumpyHelper in JavacTool.getTask, but processArgs also has some
-            // additional checking, which should be factored out and called separately.
-            // If we fix this, then filenames and deferredFileManagerOptions in Main
-            // can revert to being protected or private, not public.
-            Collection<File> filenames = compilerMain.processArgs(CommandLine.parse(args), classNames);
-            if (filenames != null && !filenames.isEmpty())
-                throw new IllegalArgumentException("Malformed arguments " + toString(filenames, " "));
+            args.validate();
+
+            //initialize compiler's default locale
+            context.put(Locale.class, locale);
+
+            // hack
+            JavacMessages messages = context.get(JavacMessages.messagesKey);
+            if (messages != null && !messages.getCurrentLocale().equals(locale))
+                messages.setCurrentLocale(locale);
+
+            initPlugins(args.getPluginOpts());
+            initDocLint(args.getDocLintOpts());
+
+            // init JavaCompiler and queues
             compiler = JavaCompiler.instance(context);
             compiler.keepComments = true;
             compiler.genEndPos = true;
-            // NOTE: this value will be updated after annotation processing
-            compiler.initProcessAnnotations(processors);
             notYetEntered = new HashMap<>();
-            for (JavaFileObject file: fileObjects)
-                notYetEntered.put(file, null);
-            genList = new ListBuffer<>();
-            // endContext will be called when all classes have been generated
-            // TODO: should handle the case after each phase if errors have occurred
-            args = null;
-            classNames = null;
+            if (forParse) {
+                compiler.initProcessAnnotations(processors);
+                for (JavaFileObject file: args.getFileObjects())
+                    notYetEntered.put(file, null);
+                genList = new ListBuffer<>();
+            }
         }
     }
 
@@ -203,47 +198,28 @@ public class JavacTaskImpl extends BasicJavacTask {
         return sb.toString();
     }
 
-    private void initContext() {
-        context.put(JavacTask.class, this);
-        //initialize compiler's default locale
-        context.put(Locale.class, locale);
-    }
-
     void cleanup() {
         if (compiler != null)
             compiler.close();
         compiler = null;
-        compilerMain = null;
-        args = null;
-        classNames = null;
         context = null;
-        fileObjects = null;
         notYetEntered = null;
     }
 
-    /**
-     * Construct a JavaFileObject from the given file.
-     *
-     * <p><b>TODO: this method is useless here</b></p>
-     *
-     * @param file a file
-     * @return a JavaFileObject from the standard file manager.
-     */
-    public JavaFileObject asJavaFileObject(File file) {
-        JavacFileManager fm = (JavacFileManager)context.get(JavaFileManager.class);
-        return fm.getRegularFile(file);
+    @Override // @DefinedBy(TREE_API)
+    public Iterable<? extends CompilationUnitTree> parse() {
+        return handleExceptions(new Callable<Iterable<? extends CompilationUnitTree>>() {
+            @Override
+            public Iterable<? extends CompilationUnitTree> call() {
+                return parseInternal();
+            }
+        }, List.<CompilationUnitTree>nil(), List.<CompilationUnitTree>nil());
     }
 
-    /**
-     * Parse the specified files returning a list of abstract syntax trees.
-     *
-     * @throws java.io.IOException TODO
-     * @return a list of abstract syntax trees
-     */
-    public Iterable<? extends CompilationUnitTree> parse() throws IOException {
+    private Iterable<? extends CompilationUnitTree> parseInternal() {
         try {
-            prepareCompiler();
-            List<JCCompilationUnit> units = compiler.parseFiles(fileObjects);
+            prepareCompiler(true);
+            List<JCCompilationUnit> units = compiler.parseFiles(args.getFileObjects());
             for (JCCompilationUnit unit: units) {
                 JavaFileObject file = unit.getSourceFile();
                 if (notYetEntered.containsKey(file))
@@ -263,11 +239,10 @@ public class JavacTaskImpl extends BasicJavacTask {
     /**
      * Translate all the abstract syntax trees to elements.
      *
-     * @throws IOException TODO
      * @return a list of elements corresponding to the top level
      * classes in the abstract syntax trees
      */
-    public Iterable<? extends TypeElement> enter() throws IOException {
+    public Iterable<? extends TypeElement> enter() {
         return enter(null);
     }
 
@@ -275,17 +250,15 @@ public class JavacTaskImpl extends BasicJavacTask {
      * Translate the given abstract syntax trees to elements.
      *
      * @param trees a list of abstract syntax trees.
-     * @throws java.io.IOException TODO
      * @return a list of elements corresponding to the top level
      * classes in the abstract syntax trees
      */
     public Iterable<? extends TypeElement> enter(Iterable<? extends CompilationUnitTree> trees)
-        throws IOException
     {
         if (trees == null && notYetEntered != null && notYetEntered.isEmpty())
             return List.nil();
 
-        prepareCompiler();
+        prepareCompiler(true);
 
         ListBuffer<JCCompilationUnit> roots = null;
 
@@ -296,8 +269,8 @@ public class JavacTaskImpl extends BasicJavacTask {
             // list to be entered.
             if (notYetEntered.size() > 0) {
                 if (!parsed)
-                    parse(); // TODO would be nice to specify files needed to be parsed
-                for (JavaFileObject file: fileObjects) {
+                    parseInternal(); // TODO would be nice to specify files needed to be parsed
+                for (JavaFileObject file: args.getFileObjects()) {
                     JCCompilationUnit unit = notYetEntered.remove(file);
                     if (unit != null) {
                         if (roots == null)
@@ -347,13 +320,14 @@ public class JavacTaskImpl extends BasicJavacTask {
         }
     }
 
-    /**
-     * Complete all analysis.
-     * @throws IOException TODO
-     */
-    @Override
-    public Iterable<? extends Element> analyze() throws IOException {
-        return analyze(null);
+    @Override // @DefinedBy(TREE_API)
+    public Iterable<? extends Element> analyze() {
+        return handleExceptions(new Callable<Iterable<? extends Element>>() {
+            @Override
+            public Iterable<? extends Element> call() {
+                return analyze(null);
+            }
+        }, List.<Element>nil(), List.<Element>nil());
     }
 
     /**
@@ -363,11 +337,12 @@ public class JavacTaskImpl extends BasicJavacTask {
      * If null is specified, all outstanding classes will be analyzed.
      *
      * @param classes a list of class elements
+     * @return the elements that were analyzed
      */
     // This implementation requires that we open up privileges on JavaCompiler.
     // An alternative implementation would be to move this code to JavaCompiler and
     // wrap it here
-    public Iterable<? extends Element> analyze(Iterable<? extends TypeElement> classes) throws IOException {
+    public Iterable<? extends Element> analyze(Iterable<? extends TypeElement> classes) {
         enter(null);  // ensure all classes have been entered
 
         final ListBuffer<Element> results = new ListBuffer<>();
@@ -376,6 +351,7 @@ public class JavacTaskImpl extends BasicJavacTask {
                 handleFlowResults(compiler.flow(compiler.attribute(compiler.todo)), results);
             } else {
                 Filter f = new Filter() {
+                    @Override
                     public void process(Env<AttrContext> env) {
                         handleFlowResults(compiler.flow(compiler.attribute(env)), results);
                     }
@@ -406,14 +382,14 @@ public class JavacTaskImpl extends BasicJavacTask {
             genList.addAll(queue);
         }
 
-
-    /**
-     * Generate code.
-     * @throws IOException TODO
-     */
-    @Override
-    public Iterable<? extends JavaFileObject> generate() throws IOException {
-        return generate(null);
+    @Override // @DefinedBy(TREE_API)
+    public Iterable<? extends JavaFileObject> generate() {
+        return handleExceptions(new Callable<Iterable<? extends JavaFileObject>>() {
+            @Override
+            public Iterable<? extends JavaFileObject> call() {
+                return generate(null);
+            }
+        }, List.<JavaFileObject>nil(), List.<JavaFileObject>nil());
     }
 
     /**
@@ -424,8 +400,9 @@ public class JavacTaskImpl extends BasicJavacTask {
      * If null is specified, code will be generated for all outstanding classes.
      *
      * @param classes a list of class elements
+     * @return the files that were generated
      */
-    public Iterable<? extends JavaFileObject> generate(Iterable<? extends TypeElement> classes) throws IOException {
+    public Iterable<? extends JavaFileObject> generate(Iterable<? extends TypeElement> classes) {
         final ListBuffer<JavaFileObject> results = new ListBuffer<>();
         try {
             analyze(null);  // ensure all classes have been parsed, entered, and analyzed
@@ -436,6 +413,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             }
             else {
                 Filter f = new Filter() {
+                        @Override
                         public void process(Env<AttrContext> env) {
                             compiler.generate(compiler.desugar(ListBuffer.of(env)), results);
                         }
@@ -452,26 +430,6 @@ public class JavacTaskImpl extends BasicJavacTask {
                 compiler.log.flush();
         }
         return results;
-    }
-
-    public TypeMirror getTypeMirror(Iterable<? extends Tree> path) {
-        // TODO: Should complete attribution if necessary
-        Tree last = null;
-        for (Tree node : path)
-            last = node;
-        return ((JCTree)last).type;
-    }
-
-    public JavacElements getElements() {
-        if (context == null)
-            throw new IllegalStateException();
-        return JavacElements.instance(context);
-    }
-
-    public JavacTypes getTypes() {
-        if (context == null)
-            throw new IllegalStateException();
-        return JavacTypes.instance(context);
     }
 
     public Iterable<? extends Tree> pathFor(CompilationUnitTree unit, Tree node) {
@@ -503,6 +461,10 @@ public class JavacTaskImpl extends BasicJavacTask {
     /**
      * For internal use only.  This method will be
      * removed without warning.
+     * @param expr the type expression to be analyzed
+     * @param scope the scope in which to analyze the type expression
+     * @return the type
+     * @throws IllegalArgumentException if the type expression of null or empty
      */
     public Type parseType(String expr, TypeElement scope) {
         if (expr == null || expr.equals(""))

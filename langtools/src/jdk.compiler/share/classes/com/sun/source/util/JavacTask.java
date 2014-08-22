@@ -141,6 +141,7 @@ public abstract class JavacTask implements CompilationTask {
      * Returns a type mirror of the tree node determined by the specified path.
      * This method has been superceded by methods on
      * {@link com.sun.source.util.Trees Trees}.
+     *
      * @param path the path
      * @return the type mirror
      * @see com.sun.source.util.Trees#getTypeMirror
@@ -149,12 +150,14 @@ public abstract class JavacTask implements CompilationTask {
 
     /**
      * Returns a utility object for dealing with program elements.
-     * @return the utility object for dealing with program elements
+     *
+     * @return a utility object for dealing with program elements
      */
     public abstract Elements getElements();
 
     /**
      * Returns a utility object for dealing with type mirrors.
+     *
      * @return the utility object for dealing with type mirrors
      */
     public abstract Types getTypes();

@@ -735,11 +735,7 @@ public class JavacTrees extends DocTrees {
         // if we're being invoked from JSR 199 or JSR 269, then the classes
         // will already have been entered.
         if (javacTaskImpl != null) {
-            try {
-                javacTaskImpl.enter(null);
-            } catch (IOException e) {
-                throw new Error("unexpected error while entering symbols: " + e);
-            }
+            javacTaskImpl.enter(null);
         }
 
 

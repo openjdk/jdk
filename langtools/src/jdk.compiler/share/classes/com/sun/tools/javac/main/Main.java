@@ -25,40 +25,25 @@
 
 package com.sun.tools.javac.main;
 
-import java.io.File;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.net.URL;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
-import java.util.Arrays;
-import java.util.Collection;
-import java.util.LinkedHashMap;
-import java.util.LinkedHashSet;
-import java.util.Map;
+import java.security.NoSuchAlgorithmException;
+
 import java.util.Set;
 
-import javax.annotation.processing.Processor;
 import javax.tools.JavaFileManager;
-import javax.tools.JavaFileObject;
 
-import com.sun.source.util.JavacTask;
-import com.sun.source.util.Plugin;
-import com.sun.tools.doclint.DocLint;
 import com.sun.tools.javac.api.BasicJavacTask;
-import com.sun.tools.javac.code.Source;
 import com.sun.tools.javac.file.CacheFSInfo;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.jvm.Profile;
-import com.sun.tools.javac.jvm.Target;
 import com.sun.tools.javac.processing.AnnotationProcessingError;
-import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
-import com.sun.tools.javac.util.ServiceLoader;
-
-import static com.sun.tools.javac.main.Option.*;
 
 /** This class provides a command line interface to the javac compiler.
  *
@@ -108,61 +93,9 @@ public class Main {
         public final int exitCode;
     }
 
-    private Option[] recognizedOptions =
-            Option.getJavaCompilerOptions().toArray(new Option[0]);
-
-    private OptionHelper optionHelper = new OptionHelper() {
-        @Override
-        public String get(Option option) {
-            return options.get(option);
-        }
-
-        @Override
-        public void put(String name, String value) {
-            options.put(name, value);
-        }
-
-        @Override
-        public boolean handleFileManagerOption(Option option, String value) {
-            options.put(option.getText(), value);
-            deferredFileManagerOptions.put(option, value);
-            return true;
-        }
-
-        @Override
-        public void remove(String name) {
-            options.remove(name);
-        }
-
-        @Override
-        public Log getLog() {
-            return log;
-        }
-
-        @Override
-        public String getOwnName() {
-            return ownName;
-        }
-
-        @Override
-        public void error(String key, Object... args) {
-            Main.this.error(key, args);
-        }
-
-        @Override
-        public void addFile(File f) {
-            filenames.add(f);
-        }
-
-        @Override
-        public void addClassName(String s) {
-            classnames.append(s);
-        }
-
-    };
-
     /**
      * Construct a compiler instance.
+     * @param name the name of this tool
      */
     public Main(String name) {
         this(name, new PrintWriter(System.err, true));
@@ -170,24 +103,13 @@ public class Main {
 
     /**
      * Construct a compiler instance.
+     * @param name the name of this tool
+     * @param out a stream to which to write messages
      */
     public Main(String name, PrintWriter out) {
         this.ownName = name;
         this.out = out;
     }
-
-    /** A table of all options that's passed to the JavaCompiler constructor.  */
-    private Options options = null;
-
-    /** The list of source files to process
-     */
-    public Set<File> filenames = null; // XXX should be protected or private
-
-    /** List of class files names passed on the command line
-     */
-    protected ListBuffer<String> classnames = null;
-
-    public Map<Option, String> deferredFileManagerOptions; // XXX should be protected or private
 
     /** Report a usage error.
      */
@@ -206,156 +128,11 @@ public class Main {
         log.printRawLines(ownName + ": " + log.localize(PrefixKind.JAVAC, key, args));
     }
 
-    public Option getOption(String flag) {
-        for (Option option : recognizedOptions) {
-            if (option.matches(flag))
-                return option;
-        }
-        return null;
-    }
 
-    public void setOptions(Options options) {
-        if (options == null)
-            throw new NullPointerException();
-        this.options = options;
-    }
-
-    public void setAPIMode(boolean apiMode) {
-        this.apiMode = apiMode;
-    }
-
-    /** Process command line arguments: store all command line options
-     *  in `options' table and return all source filenames.
-     *  @param flags    The array of command line arguments.
-     */
-    public Collection<File> processArgs(String[] flags) { // XXX sb protected
-        return processArgs(flags, null);
-    }
-
-    public Collection<File> processArgs(String[] flags, String[] classNames) { // XXX sb protected
-        int ac = 0;
-        while (ac < flags.length) {
-            String flag = flags[ac];
-            ac++;
-
-            Option option = null;
-
-            if (flag.length() > 0) {
-                // quick hack to speed up file processing:
-                // if the option does not begin with '-', there is no need to check
-                // most of the compiler options.
-                int firstOptionToCheck = flag.charAt(0) == '-' ? 0 : recognizedOptions.length-1;
-                for (int j=firstOptionToCheck; j<recognizedOptions.length; j++) {
-                    if (recognizedOptions[j].matches(flag)) {
-                        option = recognizedOptions[j];
-                        break;
-                    }
-                }
-            }
-
-            if (option == null) {
-                error("err.invalid.flag", flag);
-                return null;
-            }
-
-            if (option.hasArg()) {
-                if (ac == flags.length) {
-                    error("err.req.arg", flag);
-                    return null;
-                }
-                String operand = flags[ac];
-                ac++;
-                if (option.process(optionHelper, flag, operand))
-                    return null;
-            } else {
-                if (option.process(optionHelper, flag))
-                    return null;
-            }
-        }
-
-        if (options.get(PROFILE) != null && options.get(BOOTCLASSPATH) != null) {
-            error("err.profile.bootclasspath.conflict");
-            return null;
-        }
-
-        if (this.classnames != null && classNames != null) {
-            this.classnames.addAll(Arrays.asList(classNames));
-        }
-
-        if (!checkDirectory(D))
-            return null;
-        if (!checkDirectory(S))
-            return null;
-
-        String sourceString = options.get(SOURCE);
-        Source source = (sourceString != null)
-            ? Source.lookup(sourceString)
-            : Source.DEFAULT;
-        String targetString = options.get(TARGET);
-        Target target = (targetString != null)
-            ? Target.lookup(targetString)
-            : Target.DEFAULT;
-
-        if (Character.isDigit(target.name.charAt(0))) {
-            if (target.compareTo(source.requiredTarget()) < 0) {
-                if (targetString != null) {
-                    if (sourceString == null) {
-                        warning("warn.target.default.source.conflict",
-                                targetString,
-                                source.requiredTarget().name);
-                    } else {
-                        warning("warn.source.target.conflict",
-                                sourceString,
-                                source.requiredTarget().name);
-                    }
-                    return null;
-                } else {
-                    target = source.requiredTarget();
-                    options.put("-target", target.name);
-                }
-            }
-        }
-
-        String profileString = options.get(PROFILE);
-        if (profileString != null) {
-            Profile profile = Profile.lookup(profileString);
-            if (!profile.isValid(target)) {
-                warning("warn.profile.target.conflict", profileString, target.name);
-                return null;
-            }
-        }
-
-        // handle this here so it works even if no other options given
-        String showClass = options.get("showClass");
-        if (showClass != null) {
-            if (showClass.equals("showClass")) // no value given for option
-                showClass = "com.sun.tools.javac.Main";
-            showClass(showClass);
-        }
-
-        options.notifyListeners();
-
-        return filenames;
-    }
-    // where
-        private boolean checkDirectory(Option option) {
-            String value = options.get(option);
-            if (value == null)
-                return true;
-            File file = new File(value);
-            if (!file.exists()) {
-                error("err.dir.not.found", value);
-                return false;
-            }
-            if (!file.isDirectory()) {
-                error("err.file.not.directory", value);
-                return false;
-            }
-            return true;
-        }
-
-    /** Programmatic interface for main function.
-     * @param args    The command line parameters.
+    /**
+     * Programmatic interface for main function.
+     * @param args  the command line parameters
+     * @return the result of the compilation
      */
     public Result compile(String[] args) {
         Context context = new Context();
@@ -368,174 +145,108 @@ public class Main {
         return result;
     }
 
-    public Result compile(String[] args, Context context) {
-        return compile(args, context, List.<JavaFileObject>nil(), null);
-    }
-
-    /** Programmatic interface for main function.
-     * @param args    The command line parameters.
+    /**
+     * Internal version of compile, allowing context to be provided.
+     * Note that the context needs to have a file manager set up.
+     * @param argv  the command line parameters
+     * @param context the context
+     * @return the result of the compilation
      */
-    protected Result compile(String[] args,
-                       Context context,
-                       List<JavaFileObject> fileObjects,
-                       Iterable<? extends Processor> processors)
-    {
-        return compile(args,  null, context, fileObjects, processors);
-    }
-
-    public Result compile(String[] args,
-                          String[] classNames,
-                          Context context,
-                          List<JavaFileObject> fileObjects,
-                          Iterable<? extends Processor> processors)
-    {
+    public Result compile(String[] argv, Context context) {
         context.put(Log.outKey, out);
         log = Log.instance(context);
 
-        if (options == null)
-            options = Options.instance(context); // creates a new one
+        if (argv.length == 0) {
+            Option.HELP.process(new OptionHelper.GrumpyHelper(log) {
+                @Override
+                public String getOwnName() { return ownName; }
+            }, "-help");
+            return Result.CMDERR;
+        }
 
-        filenames = new LinkedHashSet<>();
-        classnames = new ListBuffer<>();
-        deferredFileManagerOptions = new LinkedHashMap<>();
-        JavaCompiler comp = null;
-        /*
-         * TODO: Logic below about what is an acceptable command line
-         * should be updated to take annotation processing semantics
-         * into account.
-         */
         try {
-            if (args.length == 0
-                    && (classNames == null || classNames.length == 0)
-                    && fileObjects.isEmpty()) {
-                Option.HELP.process(optionHelper, "-help");
-                return Result.CMDERR;
-            }
+            argv = CommandLine.parse(argv);
+        } catch (FileNotFoundException e) {
+            warning("err.file.not.found", e.getMessage());
+            return Result.SYSERR;
+        } catch (IOException ex) {
+            log.printLines(PrefixKind.JAVAC, "msg.io");
+            ex.printStackTrace(log.getWriter(WriterKind.NOTICE));
+            return Result.SYSERR;
+        }
 
-            Collection<File> files;
-            try {
-                files = processArgs(CommandLine.parse(args), classNames);
-                if (files == null) {
-                    // null signals an error in options, abort
-                    return Result.CMDERR;
-                } else if (files.isEmpty() && fileObjects.isEmpty() && classnames.isEmpty()) {
-                    // it is allowed to compile nothing if just asking for help or version info
-                    if (options.isSet(HELP)
-                        || options.isSet(X)
-                        || options.isSet(VERSION)
-                        || options.isSet(FULLVERSION))
-                        return Result.OK;
-                    if (JavaCompiler.explicitAnnotationProcessingRequested(options)) {
-                        error("err.no.source.files.classes");
-                    } else {
-                        error("err.no.source.files");
-                    }
-                    return Result.CMDERR;
-                }
-            } catch (java.io.FileNotFoundException e) {
-                warning("err.file.not.found", e.getMessage());
-                return Result.SYSERR;
-            }
+        Arguments args = Arguments.instance(context);
+        args.init(ownName, argv);
 
-            boolean forceStdOut = options.isSet("stdout");
-            if (forceStdOut) {
-                log.flush();
-                log.setWriters(new PrintWriter(System.out, true));
-            }
+        if (log.nerrors > 0)
+            return Result.CMDERR;
 
-            // allow System property in following line as a Mustang legacy
-            boolean batchMode = (options.isUnset("nonBatchMode")
-                        && System.getProperty("nonBatchMode") == null);
-            if (batchMode)
-                CacheFSInfo.preRegister(context);
+        Options options = Options.instance(context);
 
-            fileManager = context.get(JavaFileManager.class);
-            if (fileManager instanceof BaseFileManager) {
-                ((BaseFileManager) fileManager).handleOptions(deferredFileManagerOptions);
-            }
+        // init Log
+        boolean forceStdOut = options.isSet("stdout");
+        if (forceStdOut) {
+            log.flush();
+            log.setWriters(new PrintWriter(System.out, true));
+        }
 
-            // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate
-            // invoke any available plugins
-            String plugins = options.get(PLUGIN);
-            if (plugins != null) {
-                JavacProcessingEnvironment pEnv = JavacProcessingEnvironment.instance(context);
-                ClassLoader cl = pEnv.getProcessorClassLoader();
-                ServiceLoader<Plugin> sl = ServiceLoader.load(Plugin.class, cl);
-                Set<List<String>> pluginsToCall = new LinkedHashSet<>();
-                for (String plugin: plugins.split("\\x00")) {
-                    pluginsToCall.add(List.from(plugin.split("\\s+")));
-                }
-                JavacTask task = null;
-                for (Plugin plugin : sl) {
-                    for (List<String> p : pluginsToCall) {
-                        if (plugin.getName().equals(p.head)) {
-                            pluginsToCall.remove(p);
-                            try {
-                                if (task == null)
-                                    task = JavacTask.instance(pEnv);
-                                plugin.init(task, p.tail.toArray(new String[p.tail.size()]));
-                            } catch (Throwable ex) {
-                                if (apiMode)
-                                    throw new RuntimeException(ex);
-                                pluginMessage(ex);
-                                return Result.SYSERR;
-                            }
-                        }
-                    }
-                }
-                for (List<String> p: pluginsToCall) {
-                    log.printLines(PrefixKind.JAVAC, "msg.plugin.not.found", p.head);
-                }
-            }
+        // init CacheFSInfo
+        // allow System property in following line as a Mustang legacy
+        boolean batchMode = (options.isUnset("nonBatchMode")
+                    && System.getProperty("nonBatchMode") == null);
+        if (batchMode)
+            CacheFSInfo.preRegister(context);
 
-            if (options.isSet("completionDeps")) {
-                Dependencies.GraphDependencies.preRegister(context);
-            }
+        // init file manager
+        fileManager = context.get(JavaFileManager.class);
+        if (fileManager instanceof BaseFileManager) {
+            ((BaseFileManager) fileManager).setContext(context); // reinit with options
+            ((BaseFileManager) fileManager).handleOptions(args.getDeferredFileManagerOptions());
+        }
 
-            comp = JavaCompiler.instance(context);
+        // handle this here so it works even if no other options given
+        String showClass = options.get("showClass");
+        if (showClass != null) {
+            if (showClass.equals("showClass")) // no value given for option
+                showClass = "com.sun.tools.javac.Main";
+            showClass(showClass);
+        }
 
-            // FIXME: this code will not be invoked if using JavacTask.parse/analyze/generate
-            String xdoclint = options.get(XDOCLINT);
-            String xdoclintCustom = options.get(XDOCLINT_CUSTOM);
-            if (xdoclint != null || xdoclintCustom != null) {
-                Set<String> doclintOpts = new LinkedHashSet<>();
-                if (xdoclint != null)
-                    doclintOpts.add(DocLint.XMSGS_OPTION);
-                if (xdoclintCustom != null) {
-                    for (String s: xdoclintCustom.split("\\s+")) {
-                        if (s.isEmpty())
-                            continue;
-                        doclintOpts.add(s.replace(XDOCLINT_CUSTOM.text, DocLint.XMSGS_CUSTOM_PREFIX));
-                    }
-                }
-                if (!(doclintOpts.size() == 1
-                        && doclintOpts.iterator().next().equals(DocLint.XMSGS_CUSTOM_PREFIX + "none"))) {
-                    JavacTask t = BasicJavacTask.instance(context);
-                    // standard doclet normally generates H1, H2
-                    doclintOpts.add(DocLint.XIMPLICIT_HEADERS + "2");
-                    new DocLint().init(t, doclintOpts.toArray(new String[doclintOpts.size()]));
-                    comp.keepComments = true;
-                }
-            }
+        boolean ok = args.validate();
+        if (!ok || log.nerrors > 0)
+            return Result.CMDERR;
 
-            if (options.get(XSTDOUT) != null) {
-                // Stdout reassigned - ask compiler to close it when it is done
-                comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));
-            }
+        if (args.isEmpty())
+            return Result.OK;
 
-            if (!files.isEmpty()) {
-                // add filenames to fileObjects
-                comp = JavaCompiler.instance(context);
-                List<JavaFileObject> otherFiles = List.nil();
-                JavacFileManager dfm = (JavacFileManager)fileManager;
-                for (JavaFileObject fo : dfm.getJavaFileObjectsFromFiles(files))
-                    otherFiles = otherFiles.prepend(fo);
-                for (JavaFileObject fo : otherFiles)
-                    fileObjects = fileObjects.prepend(fo);
-            }
-            comp.compile(fileObjects,
-                         classnames.toList(),
-                         processors);
+        // init plugins
+        Set<List<String>> pluginOpts = args.getPluginOpts();
+        if (!pluginOpts.isEmpty()) {
+            BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
+            t.initPlugins(pluginOpts);
+        }
+
+        // init doclint
+        List<String> docLintOpts = args.getDocLintOpts();
+        if (!docLintOpts.isEmpty()) {
+            BasicJavacTask t = (BasicJavacTask) BasicJavacTask.instance(context);
+            t.initDocLint(docLintOpts);
+        }
+
+        // init Depeendencies
+        if (options.isSet("completionDeps")) {
+            Dependencies.GraphDependencies.preRegister(context);
+        }
+
+        // init JavaCompiler
+        JavaCompiler comp = JavaCompiler.instance(context);
+        if (options.get(Option.XSTDOUT) != null) {
+            // Stdout reassigned - ask compiler to close it when it is done
+            comp.closeables = comp.closeables.prepend(log.getWriter(WriterKind.NOTICE));
+        }
+
+        try {
+            comp.compile(args.getFileObjects(), args.getClassNames(), null);
 
             if (log.expectDiagKeys != null) {
                 if (log.expectDiagKeys.isEmpty()) {
@@ -547,37 +258,25 @@ public class Main {
                 }
             }
 
-            if (comp.errorCount() != 0)
-                return Result.ERROR;
-        } catch (IOException ex) {
-            ioMessage(ex);
-            return Result.SYSERR;
-        } catch (OutOfMemoryError ex) {
-            resourceMessage(ex);
-            return Result.SYSERR;
-        } catch (StackOverflowError ex) {
+            return (comp.errorCount() == 0) ? Result.OK : Result.ERROR;
+
+        } catch (OutOfMemoryError | StackOverflowError ex) {
             resourceMessage(ex);
             return Result.SYSERR;
         } catch (FatalError ex) {
-            feMessage(ex);
+            feMessage(ex, options);
             return Result.SYSERR;
         } catch (AnnotationProcessingError ex) {
-            if (apiMode)
-                throw new RuntimeException(ex.getCause());
             apMessage(ex);
             return Result.SYSERR;
-        } catch (ClientCodeException ex) {
-            // as specified by javax.tools.JavaCompiler#getTask
-            // and javax.tools.JavaCompiler.CompilationTask#call
-            throw new RuntimeException(ex.getCause());
         } catch (PropagatedException ex) {
+            // TODO: what about errors from plugins?   should not simply rethrow the error here
             throw ex.getCause();
         } catch (Throwable ex) {
             // Nasty.  If we've already reported an error, compensate
             // for buggy compiler error recovery by swallowing thrown
             // exceptions.
-            if (comp == null || comp.errorCount() == 0 ||
-                options == null || options.isSet("dev"))
+            if (comp == null || comp.errorCount() == 0 || options.isSet("dev"))
                 bugMessage(ex);
             return Result.ABNORMAL;
         } finally {
@@ -588,10 +287,7 @@ public class Main {
                     throw new RuntimeException(ex.getCause());
                 }
             }
-            filenames = null;
-            options = null;
         }
-        return Result.OK;
     }
 
     /** Print a message reporting an internal error.
@@ -603,7 +299,7 @@ public class Main {
 
     /** Print a message reporting a fatal error.
      */
-    void feMessage(Throwable ex) {
+    void feMessage(Throwable ex, Options options) {
         log.printRawLines(ex.getMessage());
         if (ex.getCause() != null && options.isSet("dev")) {
             ex.getCause().printStackTrace(log.getWriter(WriterKind.NOTICE));
@@ -663,47 +359,19 @@ public class Main {
                 for (byte b: digest)
                     sb.append(String.format("%02x", b));
                 pw.println("  " + algorithm + " checksum: " + sb);
-            } catch (Exception e) {
+            } catch (NoSuchAlgorithmException | IOException e) {
                 pw.println("  cannot compute digest: " + e);
             }
         }
     }
 
+    // TODO: update this to JavacFileManager
     private JavaFileManager fileManager;
 
     /* ************************************************************************
      * Internationalization
      *************************************************************************/
 
-//    /** Find a localized string in the resource bundle.
-//     *  @param key     The key for the localized string.
-//     */
-//    public static String getLocalizedString(String key, Object... args) { // FIXME sb private
-//        try {
-//            if (messages == null)
-//                messages = new JavacMessages(javacBundleName);
-//            return messages.getLocalizedString("javac." + key, args);
-//        }
-//        catch (MissingResourceException e) {
-//            throw new Error("Fatal Error: Resource for javac is missing", e);
-//        }
-//    }
-//
-//    public static void useRawMessages(boolean enable) {
-//        if (enable) {
-//            messages = new JavacMessages(javacBundleName) {
-//                    @Override
-//                    public String getLocalizedString(String key, Object... args) {
-//                        return key;
-//                    }
-//                };
-//        } else {
-//            messages = new JavacMessages(javacBundleName);
-//        }
-//    }
-
     public static final String javacBundleName =
         "com.sun.tools.javac.resources.javac";
-//
-//    private static JavacMessages messages;
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,14 +29,11 @@ import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.LinkedList;
 import java.util.List;
 import java.util.Queue;
-import java.util.Set;
 
 import javax.lang.model.element.Name;
-import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
 import com.sun.source.doctree.DocCommentTree;
@@ -114,6 +111,9 @@ public class DocLint implements Plugin {
 
     /**
      * Simple API entry point.
+     * @param args Options and operands for doclint
+     * @throws BadArgs if an error is detected in any args
+     * @throws IOException if there are problems with any of the file arguments
      */
     public void run(String... args) throws BadArgs, IOException {
         PrintWriter out = new PrintWriter(System.out);
@@ -128,12 +128,14 @@ public class DocLint implements Plugin {
         env = new Env();
         processArgs(args);
 
-        if (needHelp)
+        boolean noFiles = javacFiles.isEmpty();
+        if (needHelp) {
             showHelp(out);
-
-        if (javacFiles.isEmpty()) {
-            if (!needHelp)
-                out.println(localize("dc.main.no.files.given"));
+            if (noFiles)
+                return;
+        } else if (noFiles) {
+            out.println(localize("dc.main.no.files.given"));
+            return;
         }
 
         JavacTool tool = JavacTool.create();

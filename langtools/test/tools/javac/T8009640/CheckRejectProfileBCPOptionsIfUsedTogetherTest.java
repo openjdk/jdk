@@ -44,12 +44,14 @@ public class CheckRejectProfileBCPOptionsIfUsedTogetherTest {
 
     public static void main(String args[]) throws Exception {
         ToolBox tb = new ToolBox();
+        tb.writeFile("Test.java", TestSrc);
 
         ToolBox.Result result = tb.new JavacTask(ToolBox.Mode.CMDLINE)
                 .options("-profile", "compact1",
                         "-bootclasspath", Paths.get(ToolBox.testJDK, "jre/lib/rt.jar").toString())
-                .sources(TestSrc)
-                .run(ToolBox.Expect.FAIL);
+                .files("Test.java")
+                .run(ToolBox.Expect.FAIL)
+                .writeAll();
 
         String out = result.getOutput(ToolBox.OutputKind.DIRECT);
         Assert.check(out.startsWith(
