@@ -32,10 +32,7 @@ include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
 include NativeCompilation.gmk
-include SetupJava.gmk
-
-# Cache all finds needed for this file.
-$(eval $(call FillCacheFind, $(JDK_TOPDIR)/make/src/classes))
+include SetupJavaCompilers.gmk
 
 # The exception handling of swing beaninfo which have the own tool directory
 ifeq (, $(BUILD_TOOLS_JDK))

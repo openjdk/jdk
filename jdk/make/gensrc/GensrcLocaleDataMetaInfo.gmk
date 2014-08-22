@@ -28,7 +28,8 @@
 # into LocaleDataMetaInfo.java
 
 # First go look for all locale files
-LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/*/share/classes \
+LOCALE_FILES := $(shell $(FIND) $(JDK_TOPDIR)/src/java.base/share/classes \
+    $(JDK_TOPDIR)/src/jdk.localedata/share/classes \
     -name "FormatData_*.java" -o -name "FormatData_*.properties" -o \
     -name "CollationData_*.java" -o -name "CollationData_*.properties" -o \
     -name "TimeZoneNames_*.java" -o -name "TimeZoneNames_*.properties" -o \
