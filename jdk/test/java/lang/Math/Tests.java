@@ -30,9 +30,6 @@
  * and finally the expected result.
  */
 
-import sun.misc.FloatConsts;
-import sun.misc.DoubleConsts;
-
 public class Tests {
     private Tests(){}; // do not instantiate
 
@@ -81,13 +78,13 @@ public class Tests {
         int exponent = Math.getExponent(d);
 
         switch (exponent) {
-        case DoubleConsts.MAX_EXPONENT+1:       // NaN or infinity
+        case Double.MAX_EXPONENT+1:       // NaN or infinity
             if( Double.isNaN(d) )
                 return (1<<30);         // 2^30
             else // infinite value
                 return (1<<28);         // 2^28
 
-        case DoubleConsts.MIN_EXPONENT-1:       // zero or subnormal
+        case Double.MIN_EXPONENT-1:       // zero or subnormal
             if(d == 0.0) {
                 return -(1<<28);        // -(2^28)
             }
@@ -117,14 +114,14 @@ public class Tests {
                 }
                 exponent++;
                 assert( exponent >=
-                        DoubleConsts.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1) &&
-                        exponent < DoubleConsts.MIN_EXPONENT);
+                        Double.MIN_EXPONENT - (DoubleConsts.SIGNIFICAND_WIDTH-1) &&
+                        exponent < Double.MIN_EXPONENT);
                 return exponent;
             }
 
         default:
-            assert( exponent >= DoubleConsts.MIN_EXPONENT &&
-                    exponent <= DoubleConsts.MAX_EXPONENT);
+            assert( exponent >= Double.MIN_EXPONENT &&
+                    exponent <= Double.MAX_EXPONENT);
             return exponent;
         }
     }
@@ -150,13 +147,13 @@ public class Tests {
         int exponent = Math.getExponent(f);
 
         switch (exponent) {
-        case FloatConsts.MAX_EXPONENT+1:        // NaN or infinity
+        case Float.MAX_EXPONENT+1:        // NaN or infinity
             if( Float.isNaN(f) )
                 return (1<<30);         // 2^30
             else // infinite value
                 return (1<<28);         // 2^28
 
-        case FloatConsts.MIN_EXPONENT-1:        // zero or subnormal
+        case Float.MIN_EXPONENT-1:        // zero or subnormal
             if(f == 0.0f) {
                 return -(1<<28);        // -(2^28)
             }
@@ -186,14 +183,14 @@ public class Tests {
                 }
                 exponent++;
                 assert( exponent >=
-                        FloatConsts.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1) &&
-                        exponent < FloatConsts.MIN_EXPONENT);
+                        Float.MIN_EXPONENT - (FloatConsts.SIGNIFICAND_WIDTH-1) &&
+                        exponent < Float.MIN_EXPONENT);
                 return exponent;
             }
 
         default:
-            assert( exponent >= FloatConsts.MIN_EXPONENT &&
-                    exponent <= FloatConsts.MAX_EXPONENT);
+            assert( exponent >= Float.MIN_EXPONENT &&
+                    exponent <= Float.MAX_EXPONENT);
             return exponent;
         }
     }
