@@ -415,6 +415,7 @@ private:
   volatile unsigned int _old_marking_cycles_completed;
 
   bool _concurrent_cycle_started;
+  bool _heap_summary_sent;
 
   // This is a non-product method that is helpful for testing. It is
   // called at the end of a GC and artificially expands the heap by
