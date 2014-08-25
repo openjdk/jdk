@@ -1,7 +1,3 @@
 foo = 33
 eval = 86
 valueOf function? = true
-getMember('foo') = FOO
-getSlot(6) = 36
-bar set to hello
-[10] set to 42

@@ -22,16 +22,12 @@
  */
 
 /**
- * JDK-8055762: Nashorn misses linker for netscape.javascript.JSObject instances
+ * JDK-8055796: JSObject and browser JSObject linkers should provide fallback to call underlying Java methods directly
  *
  * @test
  * @option -scripting
  * @run
  */
-
-// basic checks for special linkage for netscape.javascript.JSObject
-// instances. For this test, we just subclass that class rather than
-// involve actual browser script engine or javafx webkit objects.
 
 function main() {
     var JSObject;
@@ -40,18 +36,18 @@ function main() {
     } catch (e) {
         if (e instanceof java.lang.ClassNotFoundException) {
             // pass vacuously by emitting the .EXPECTED file content
-            var str = readFully(__DIR__ + "JDK-8055762.js.EXPECTED");
+            var str = readFully(__DIR__ + "JDK-8055796_2.js.EXPECTED");
             print(str.substring(0, str.length - 1));
             return;
-        } else{
-            fail("unexpected exception for JSObject", e);
+        } else {
+            fail("unexpected exception on JSObject", e);
         }
     }
     test(JSObject);
 }
 
 function test(JSObject) {
-    var obj = new (Java.extend(JSObject))() {
+    var bjsobj = new (Java.extend(JSObject))() {
         getMember: function(name) {
             if (name == "func") {
                 return function(arg) {
@@ -62,7 +58,7 @@ function test(JSObject) {
         },
 
         getSlot: function(index) {
-            return index^2;
+            return index*index;
         },
 
         setMember: function(name, value) {
@@ -74,11 +70,10 @@ function test(JSObject) {
         }
     };
 
-    print(obj["foo"]);
-    print(obj[2]);
-    obj.bar = 23;
-    obj[3] = 23;
-    obj.func("hello");
+    print("getMember('foo') =", bjsobj['getMember(String)']('foo'));
+    print("getSlot(6) =", bjsobj['getSlot(int)'](6));
+    bjsobj['setMember(String, Object)']('bar', 'hello');
+    bjsobj['setSlot(int, Object)'](10, 42);
 }
 
 main();
