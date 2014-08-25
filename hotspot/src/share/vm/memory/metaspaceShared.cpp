@@ -816,6 +816,7 @@ int MetaspaceShared::preload_and_dump(const char * class_list_path,
         //tty->print_cr("Preload failed: %s", class_name);
       }
     }
+    fclose(file);
   } else {
     char errmsg[JVM_MAXPATHLEN];
     os::lasterror(errmsg, JVM_MAXPATHLEN);
@@ -1085,4 +1086,50 @@ bool MetaspaceShared::remap_shared_readonly_as_readwrite() {
     }
   }
   return true;
+}
+
+int MetaspaceShared::count_class(const char* classlist_file) {
+  if (classlist_file == NULL) {
+    return 0;
+  }
+  char class_name[256];
+  int class_count = 0;
+  FILE* file = fopen(classlist_file, "r");
+  if (file != NULL) {
+    while ((fgets(class_name, sizeof class_name, file)) != NULL) {
+      if (*class_name == '#') { // comment
+        continue;
+      }
+      class_count++;
+    }
+    fclose(file);
+  } else {
+    char errmsg[JVM_MAXPATHLEN];
+    os::lasterror(errmsg, JVM_MAXPATHLEN);
+    tty->print_cr("Loading classlist failed: %s", errmsg);
+    exit(1);
+  }
+
+  return class_count;
+}
+
+// the sizes are good for typical large applications that have a lot of shared
+// classes
+void MetaspaceShared::estimate_regions_size() {
+  int class_count = count_class(SharedClassListFile);
+  class_count += count_class(ExtraSharedClassListFile);
+
+  if (class_count > LargeThresholdClassCount) {
+    if (class_count < HugeThresholdClassCount) {
+      SET_ESTIMATED_SIZE(Large, ReadOnly);
+      SET_ESTIMATED_SIZE(Large, ReadWrite);
+      SET_ESTIMATED_SIZE(Large, MiscData);
+      SET_ESTIMATED_SIZE(Large, MiscCode);
+    } else {
+      SET_ESTIMATED_SIZE(Huge,  ReadOnly);
+      SET_ESTIMATED_SIZE(Huge,  ReadWrite);
+      SET_ESTIMATED_SIZE(Huge,  MiscData);
+      SET_ESTIMATED_SIZE(Huge,  MiscCode);
+    }
+  }
 }
