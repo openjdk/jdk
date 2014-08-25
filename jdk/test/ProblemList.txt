@@ -274,9 +274,6 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 
 # jdk_instrument
 
-# 8037082
-java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
-
 ############################################################################
 
 # svc_tools
