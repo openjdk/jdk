@@ -4316,7 +4316,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         }
                     } else {
                         final Type storeType = assignNode.getType();
-                        method.convert(storeType);
+                        if (symbol.hasSlotFor(storeType)) {
+                            // Only emit a convert for a store known to be live; converts for dead stores can
+                            // give us an unnecessary ClassCastException.
+                            method.convert(storeType);
+                        }
                         storeIdentWithCatchConversion(node, storeType);
                     }
                     return false;
