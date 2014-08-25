@@ -25,21 +25,23 @@
  * @test
  * @bug 5037596
  * @summary Verify bitwise conversion works for non-canonical NaN values
+ * @library ../Math
+ * @build DoubleConsts
+ * @run main BitwiseConversion
  * @author Joseph D. Darcy
  */
 
 import static java.lang.Double.*;
-import static sun.misc.DoubleConsts.*;
 
 public class BitwiseConversion {
     static int testNanCase(long x) {
         int errors  = 0;
         // Strip out sign and exponent bits
-        long y = x & SIGNIF_BIT_MASK;
+        long y = x & DoubleConsts.SIGNIF_BIT_MASK;
 
         double values[] = {
-            longBitsToDouble(EXP_BIT_MASK | y),
-            longBitsToDouble(SIGN_BIT_MASK | EXP_BIT_MASK | y)
+            longBitsToDouble(DoubleConsts.EXP_BIT_MASK | y),
+            longBitsToDouble(DoubleConsts.SIGN_BIT_MASK | DoubleConsts.EXP_BIT_MASK | y)
         };
 
         for(double value: values) {
@@ -60,7 +62,7 @@ public class BitwiseConversion {
     public static void main(String... argv) {
         int errors = 0;
 
-        for (int i = 0; i < SIGNIFICAND_WIDTH-1; i++) {
+        for (int i = 0; i < DoubleConsts.SIGNIFICAND_WIDTH-1; i++) {
             errors += testNanCase(1L<<i);
         }
 

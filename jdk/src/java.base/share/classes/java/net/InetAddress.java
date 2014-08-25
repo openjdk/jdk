@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,11 +25,8 @@
 
 package java.net;
 
-import java.util.HashMap;
-import java.util.LinkedHashMap;
-import java.util.Random;
+import java.util.NavigableSet;
 import java.util.Iterator;
-import java.util.LinkedList;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.ServiceLoader;
@@ -41,6 +38,11 @@ import java.io.ObjectInputStream;
 import java.io.ObjectInputStream.GetField;
 import java.io.ObjectOutputStream;
 import java.io.ObjectOutputStream.PutField;
+import java.util.concurrent.ConcurrentHashMap;
+import java.util.concurrent.ConcurrentMap;
+import java.util.concurrent.ConcurrentSkipListSet;
+import java.util.concurrent.atomic.AtomicLong;
+
 import sun.security.action.*;
 import sun.net.InetAddressCachePolicy;
 import sun.net.util.IPAddressUtil;
@@ -705,194 +707,129 @@ class InetAddress implements java.io.Serializable {
             + "/" + getHostAddress();
     }
 
-    /*
-     * Cached addresses - our own litle nis, not!
-     */
-    private static Cache addressCache = new Cache(Cache.Type.Positive);
+    // mapping from host name to Addresses - either NameServiceAddresses (while
+    // still being looked-up by NameService(s)) or CachedAddresses when cached
+    private static final ConcurrentMap<String, Addresses> cache =
+        new ConcurrentHashMap<>();
 
-    private static Cache negativeCache = new Cache(Cache.Type.Negative);
+    // CachedAddresses that have to expire are kept ordered in this NavigableSet
+    // which is scanned on each access
+    private static final NavigableSet<CachedAddresses> expirySet =
+        new ConcurrentSkipListSet<>();
 
-    private static boolean addressCacheInit = false;
+    // common interface
+    private interface Addresses {
+        InetAddress[] get() throws UnknownHostException;
+    }
 
-    static InetAddress[]    unknown_array; // put THIS in cache
+    // a holder for cached addresses with required metadata
+    private static final class CachedAddresses  implements Addresses, Comparable<CachedAddresses> {
+        private static final AtomicLong seq = new AtomicLong();
+        final String host;
+        final InetAddress[] inetAddresses;
+        final long expiryTime; // time of expiry (in terms of System.nanoTime())
+        final long id = seq.incrementAndGet(); // each instance is unique
+
+        CachedAddresses(String host, InetAddress[] inetAddresses, long expiryTime) {
+            this.host = host;
+            this.inetAddresses = inetAddresses;
+            this.expiryTime = expiryTime;
+        }
+
+        @Override
+        public InetAddress[] get() throws UnknownHostException {
+            if (inetAddresses == null) {
+                throw new UnknownHostException(host);
+            }
+            return inetAddresses;
+        }
+
+        @Override
+        public int compareTo(CachedAddresses other) {
+            // natural order is expiry time -
+            // compare difference of expiry times rather than
+            // expiry times directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            long diff = this.expiryTime - other.expiryTime;
+            if (diff < 0L) return -1;
+            if (diff > 0L) return 1;
+            // ties are broken using unique id
+            return Long.compare(this.id, other.id);
+        }
+    }
+
+    // a name service lookup based Addresses implementation which replaces itself
+    // in cache when the result is obtained
+    private static final class NameServiceAddresses implements Addresses {
+        private final String host;
+        private final InetAddress reqAddr;
+
+        NameServiceAddresses(String host, InetAddress reqAddr) {
+            this.host = host;
+            this.reqAddr = reqAddr;
+        }
+
+        @Override
+        public InetAddress[] get() throws UnknownHostException {
+            Addresses addresses;
+            // only one thread is doing lookup to name service
+            // for particular host at any time.
+            synchronized (this) {
+                // re-check that we are still us + re-install us if slot empty
+                addresses = cache.putIfAbsent(host, this);
+                if (addresses == null) {
+                    // this can happen when we were replaced by CachedAddresses in
+                    // some other thread, then CachedAddresses expired and were
+                    // removed from cache while we were waiting for lock...
+                    addresses = this;
+                }
+                // still us ?
+                if (addresses == this) {
+                    // lookup name services
+                    InetAddress[] inetAddresses;
+                    UnknownHostException ex;
+                    int cachePolicy;
+                    try {
+                        inetAddresses = getAddressesFromNameService(host, reqAddr);
+                        ex = null;
+                        cachePolicy = InetAddressCachePolicy.get();
+                    } catch (UnknownHostException uhe) {
+                        inetAddresses = null;
+                        ex = uhe;
+                        cachePolicy = InetAddressCachePolicy.getNegative();
+                    }
+                    // remove or replace us with cached addresses according to cachePolicy
+                    if (cachePolicy == InetAddressCachePolicy.NEVER) {
+                        cache.remove(host, this);
+                    } else {
+                        CachedAddresses cachedAddresses = new CachedAddresses(
+                            host,
+                            inetAddresses,
+                            cachePolicy == InetAddressCachePolicy.FOREVER
+                            ? 0L
+                            // cachePolicy is in [s] - we need [ns]
+                            : System.nanoTime() + 1000_000_000L * cachePolicy
+                        );
+                        if (cache.replace(host, this, cachedAddresses) &&
+                            cachePolicy != InetAddressCachePolicy.FOREVER) {
+                            // schedule expiry
+                            expirySet.add(cachedAddresses);
+                        }
+                    }
+                    if (inetAddresses == null) {
+                        throw ex == null ? new UnknownHostException(host) : ex;
+                    }
+                    return inetAddresses;
+                }
+                // else addresses != this
+            }
+            // delegate to different addresses when we are already replaced
+            // but outside of synchronized block to avoid any chance of dead-locking
+            return addresses.get();
+        }
+    }
 
     static InetAddressImpl  impl;
-
-    private static final HashMap<String, Void> lookupTable = new HashMap<>();
-
-    /**
-     * Represents a cache entry
-     */
-    static final class CacheEntry {
-
-        CacheEntry(InetAddress[] addresses, long expiration) {
-            this.addresses = addresses;
-            this.expiration = expiration;
-        }
-
-        InetAddress[] addresses;
-        long expiration;
-    }
-
-    /**
-     * A cache that manages entries based on a policy specified
-     * at creation time.
-     */
-    static final class Cache {
-        private LinkedHashMap<String, CacheEntry> cache;
-        private Type type;
-
-        enum Type {Positive, Negative};
-
-        /**
-         * Create cache
-         */
-        public Cache(Type type) {
-            this.type = type;
-            cache = new LinkedHashMap<String, CacheEntry>();
-        }
-
-        private int getPolicy() {
-            if (type == Type.Positive) {
-                return InetAddressCachePolicy.get();
-            } else {
-                return InetAddressCachePolicy.getNegative();
-            }
-        }
-
-        /**
-         * Add an entry to the cache. If there's already an
-         * entry then for this host then the entry will be
-         * replaced.
-         */
-        public Cache put(String host, InetAddress[] addresses) {
-            int policy = getPolicy();
-            if (policy == InetAddressCachePolicy.NEVER) {
-                return this;
-            }
-
-            // purge any expired entries
-
-            if (policy != InetAddressCachePolicy.FOREVER) {
-
-                // As we iterate in insertion order we can
-                // terminate when a non-expired entry is found.
-                LinkedList<String> expired = new LinkedList<>();
-                long now = System.currentTimeMillis();
-                for (String key : cache.keySet()) {
-                    CacheEntry entry = cache.get(key);
-
-                    if (entry.expiration >= 0 && entry.expiration < now) {
-                        expired.add(key);
-                    } else {
-                        break;
-                    }
-                }
-
-                for (String key : expired) {
-                    cache.remove(key);
-                }
-            }
-
-            // create new entry and add it to the cache
-            // -- as a HashMap replaces existing entries we
-            //    don't need to explicitly check if there is
-            //    already an entry for this host.
-            long expiration;
-            if (policy == InetAddressCachePolicy.FOREVER) {
-                expiration = -1;
-            } else {
-                expiration = System.currentTimeMillis() + (policy * 1000);
-            }
-            CacheEntry entry = new CacheEntry(addresses, expiration);
-            cache.put(host, entry);
-            return this;
-        }
-
-        /**
-         * Query the cache for the specific host. If found then
-         * return its CacheEntry, or null if not found.
-         */
-        public CacheEntry get(String host) {
-            int policy = getPolicy();
-            if (policy == InetAddressCachePolicy.NEVER) {
-                return null;
-            }
-            CacheEntry entry = cache.get(host);
-
-            // check if entry has expired
-            if (entry != null && policy != InetAddressCachePolicy.FOREVER) {
-                if (entry.expiration >= 0 &&
-                    entry.expiration < System.currentTimeMillis()) {
-                    cache.remove(host);
-                    entry = null;
-                }
-            }
-
-            return entry;
-        }
-    }
-
-    /*
-     * Initialize cache and insert anyLocalAddress into the
-     * unknown array with no expiry.
-     */
-    private static void cacheInitIfNeeded() {
-        assert Thread.holdsLock(addressCache);
-        if (addressCacheInit) {
-            return;
-        }
-        unknown_array = new InetAddress[1];
-        unknown_array[0] = impl.anyLocalAddress();
-
-        addressCache.put(impl.anyLocalAddress().getHostName(),
-                         unknown_array);
-
-        addressCacheInit = true;
-    }
-
-    /*
-     * Cache the given hostname and addresses.
-     */
-    private static void cacheAddresses(String hostname,
-                                       InetAddress[] addresses,
-                                       boolean success) {
-        hostname = hostname.toLowerCase();
-        synchronized (addressCache) {
-            cacheInitIfNeeded();
-            if (success) {
-                addressCache.put(hostname, addresses);
-            } else {
-                negativeCache.put(hostname, addresses);
-            }
-        }
-    }
-
-    /*
-     * Lookup hostname in cache (positive & negative cache). If
-     * found return addresses, null if not found.
-     */
-    private static InetAddress[] getCachedAddresses(String hostname) {
-        hostname = hostname.toLowerCase();
-
-        // search both positive & negative caches
-
-        synchronized (addressCache) {
-            cacheInitIfNeeded();
-
-            CacheEntry entry = addressCache.get(hostname);
-            if (entry == null) {
-                entry = negativeCache.get(hostname);
-            }
-
-            if (entry != null) {
-                return entry.addresses;
-            }
-        }
-
-        // not found
-        return null;
-    }
 
     private static NameService createNSProvider(String provider) {
         if (provider == null)
@@ -1168,7 +1105,7 @@ class InetAddress implements java.io.Serializable {
             // We were expecting an IPv6 Litteral, but got something else
             throw new UnknownHostException("["+host+"]");
         }
-        return getAllByName0(host, reqAddr, true);
+        return getAllByName0(host, reqAddr, true, true);
     }
 
     /**
@@ -1229,14 +1166,27 @@ class InetAddress implements java.io.Serializable {
      */
     static InetAddress[] getAllByName0 (String host, boolean check)
         throws UnknownHostException  {
-        return getAllByName0 (host, null, check);
+        return getAllByName0 (host, null, check, true);
     }
 
-    private static InetAddress[] getAllByName0 (String host, InetAddress reqAddr, boolean check)
+    /**
+     * Designated lookup method.
+     *
+     * @param host host name to look up
+     * @param reqAddr requested address to be the 1st in returned array
+     * @param check perform security check
+     * @param useCache use cached value if not expired else always
+     *                 perform name service lookup (and cache the result)
+     * @return array of InetAddress(es)
+     * @throws UnknownHostException if host name is not found
+     */
+    private static InetAddress[] getAllByName0(String host,
+                                               InetAddress reqAddr,
+                                               boolean check,
+                                               boolean useCache)
         throws UnknownHostException  {
 
         /* If it gets here it is presumed to be a hostname */
-        /* Cache.get can return: null, unknownAddress, or InetAddress[] */
 
         /* make sure the connection to the host is allowed, before we
          * give out a hostname
@@ -1248,153 +1198,104 @@ class InetAddress implements java.io.Serializable {
             }
         }
 
-        InetAddress[] addresses = getCachedAddresses(host);
-
-        /* If no entry in cache, then do the host lookup */
-        if (addresses == null) {
-            addresses = getAddressesFromNameService(host, reqAddr);
+        // remove expired addresses from cache - expirySet keeps them ordered
+        // by expiry time so we only need to iterate the prefix of the NavigableSet...
+        long now = System.nanoTime();
+        for (CachedAddresses caddrs : expirySet) {
+            // compare difference of time instants rather than
+            // time instants directly, to avoid possible overflow.
+            // (see System.nanoTime() recommendations...)
+            if ((caddrs.expiryTime - now) < 0L) {
+                // ConcurrentSkipListSet uses weakly consistent iterator,
+                // so removing while iterating is OK...
+                if (expirySet.remove(caddrs)) {
+                    // ... remove from cache
+                    cache.remove(caddrs.host, caddrs);
+                }
+            } else {
+                // we encountered 1st element that expires in future
+                break;
+            }
         }
 
-        if (addresses == unknown_array)
-            throw new UnknownHostException(host);
+        // look-up or remove from cache
+        Addresses addrs;
+        if (useCache) {
+            addrs = cache.get(host);
+        } else {
+            addrs = cache.remove(host);
+            if (addrs != null) {
+                if (addrs instanceof CachedAddresses) {
+                    // try removing from expirySet too if CachedAddresses
+                    expirySet.remove(addrs);
+                }
+                addrs = null;
+            }
+        }
 
-        return addresses.clone();
+        if (addrs == null) {
+            // create a NameServiceAddresses instance which will look up
+            // the name service and install it within cache...
+            Addresses oldAddrs = cache.putIfAbsent(
+                host,
+                addrs = new NameServiceAddresses(host, reqAddr)
+            );
+            if (oldAddrs != null) { // lost putIfAbsent race
+                addrs = oldAddrs;
+            }
+        }
+
+        // ask Addresses to get an array of InetAddress(es) and clone it
+        return addrs.get().clone();
     }
 
-    private static InetAddress[] getAddressesFromNameService(String host, InetAddress reqAddr)
+    static InetAddress[] getAddressesFromNameService(String host, InetAddress reqAddr)
         throws UnknownHostException
     {
         InetAddress[] addresses = null;
-        boolean success = false;
         UnknownHostException ex = null;
 
-        // Check whether the host is in the lookupTable.
-        // 1) If the host isn't in the lookupTable when
-        //    checkLookupTable() is called, checkLookupTable()
-        //    would add the host in the lookupTable and
-        //    return null. So we will do the lookup.
-        // 2) If the host is in the lookupTable when
-        //    checkLookupTable() is called, the current thread
-        //    would be blocked until the host is removed
-        //    from the lookupTable. Then this thread
-        //    should try to look up the addressCache.
-        //     i) if it found the addresses in the
-        //        addressCache, checkLookupTable()  would
-        //        return the addresses.
-        //     ii) if it didn't find the addresses in the
-        //         addressCache for any reason,
-        //         it should add the host in the
-        //         lookupTable and return null so the
-        //         following code would do  a lookup itself.
-        if ((addresses = checkLookupTable(host)) == null) {
+        for (NameService nameService : nameServices) {
             try {
-                // This is the first thread which looks up the addresses
-                // this host or the cache entry for this host has been
-                // expired so this thread should do the lookup.
-                for (NameService nameService : nameServices) {
-                    try {
-                        /*
-                         * Do not put the call to lookup() inside the
-                         * constructor.  if you do you will still be
-                         * allocating space when the lookup fails.
-                         */
-
-                        addresses = nameService.lookupAllHostAddr(host);
-                        success = true;
-                        break;
-                    } catch (UnknownHostException uhe) {
-                        if (host.equalsIgnoreCase("localhost")) {
-                            InetAddress[] local = new InetAddress[] { impl.loopbackAddress() };
-                            addresses = local;
-                            success = true;
-                            break;
-                        }
-                        else {
-                            addresses = unknown_array;
-                            success = false;
-                            ex = uhe;
-                        }
-                    }
+                addresses = nameService.lookupAllHostAddr(host);
+                break;
+            } catch (UnknownHostException uhe) {
+                if (host.equalsIgnoreCase("localhost")) {
+                    addresses = new InetAddress[] { impl.loopbackAddress() };
+                    break;
                 }
-
-                // More to do?
-                if (reqAddr != null && addresses.length > 1 && !addresses[0].equals(reqAddr)) {
-                    // Find it?
-                    int i = 1;
-                    for (; i < addresses.length; i++) {
-                        if (addresses[i].equals(reqAddr)) {
-                            break;
-                        }
-                    }
-                    // Rotate
-                    if (i < addresses.length) {
-                        InetAddress tmp, tmp2 = reqAddr;
-                        for (int j = 0; j < i; j++) {
-                            tmp = addresses[j];
-                            addresses[j] = tmp2;
-                            tmp2 = tmp;
-                        }
-                        addresses[i] = tmp2;
-                    }
-                }
-                // Cache the address.
-                cacheAddresses(host, addresses, success);
-
-                if (!success && ex != null)
-                    throw ex;
-
-            } finally {
-                // Delete host from the lookupTable and notify
-                // all threads waiting on the lookupTable monitor.
-                updateLookupTable(host);
-            }
-        }
-
-        return addresses;
-    }
-
-
-    private static InetAddress[] checkLookupTable(String host) {
-        synchronized (lookupTable) {
-            // If the host isn't in the lookupTable, add it in the
-            // lookuptable and return null. The caller should do
-            // the lookup.
-            if (lookupTable.containsKey(host) == false) {
-                lookupTable.put(host, null);
-                return null;
-            }
-
-            // If the host is in the lookupTable, it means that another
-            // thread is trying to look up the addresses of this host.
-            // This thread should wait.
-            while (lookupTable.containsKey(host)) {
-                try {
-                    lookupTable.wait();
-                } catch (InterruptedException e) {
+                else {
+                    ex = uhe;
                 }
             }
         }
 
-        // The other thread has finished looking up the addresses of
-        // the host. This thread should retry to get the addresses
-        // from the addressCache. If it doesn't get the addresses from
-        // the cache, it will try to look up the addresses itself.
-        InetAddress[] addresses = getCachedAddresses(host);
         if (addresses == null) {
-            synchronized (lookupTable) {
-                lookupTable.put(host, null);
-                return null;
+            throw ex == null ? new UnknownHostException(host) : ex;
+        }
+
+        // More to do?
+        if (reqAddr != null && addresses.length > 1 && !addresses[0].equals(reqAddr)) {
+            // Find it?
+            int i = 1;
+            for (; i < addresses.length; i++) {
+                if (addresses[i].equals(reqAddr)) {
+                    break;
+                }
+            }
+            // Rotate
+            if (i < addresses.length) {
+                InetAddress tmp, tmp2 = reqAddr;
+                for (int j = 0; j < i; j++) {
+                    tmp = addresses[j];
+                    addresses[j] = tmp2;
+                    tmp2 = tmp;
+                }
+                addresses[i] = tmp2;
             }
         }
 
         return addresses;
-    }
-
-    private static void updateLookupTable(String host) {
-        synchronized (lookupTable) {
-            lookupTable.remove(host);
-            lookupTable.notifyAll();
-        }
     }
 
     /**
@@ -1418,10 +1319,18 @@ class InetAddress implements java.io.Serializable {
         return getByAddress(null, addr);
     }
 
-    private static InetAddress cachedLocalHost = null;
-    private static long cacheTime = 0;
-    private static final long maxCacheTime = 5000L;
-    private static final Object cacheLock = new Object();
+    private static final class CachedLocalHost {
+        final String host;
+        final InetAddress addr;
+        final long expiryTime = System.nanoTime() + 5000_000_000L; // now + 5s;
+
+        CachedLocalHost(String host, InetAddress addr) {
+            this.host = host;
+            this.addr = addr;
+        }
+    }
+
+    private static volatile CachedLocalHost cachedLocalHost;
 
     /**
      * Returns the address of the local host. This is achieved by retrieving
@@ -1450,47 +1359,41 @@ class InetAddress implements java.io.Serializable {
 
         SecurityManager security = System.getSecurityManager();
         try {
+            // is cached data still valid?
+            CachedLocalHost clh = cachedLocalHost;
+            if (clh != null && (clh.expiryTime - System.nanoTime()) >= 0L) {
+                if (security != null) {
+                    security.checkConnect(clh.host, -1);
+                }
+                return clh.addr;
+            }
+
             String local = impl.getLocalHostName();
 
             if (security != null) {
                 security.checkConnect(local, -1);
             }
 
+            InetAddress localAddr;
             if (local.equals("localhost")) {
-                return impl.loopbackAddress();
-            }
-
-            InetAddress ret = null;
-            synchronized (cacheLock) {
-                long now = System.currentTimeMillis();
-                if (cachedLocalHost != null) {
-                    if ((now - cacheTime) < maxCacheTime) // Less than 5s old?
-                        ret = cachedLocalHost;
-                    else
-                        cachedLocalHost = null;
-                }
-
-                // we are calling getAddressesFromNameService directly
-                // to avoid getting localHost from cache
-                if (ret == null) {
-                    InetAddress[] localAddrs;
-                    try {
-                        localAddrs =
-                            InetAddress.getAddressesFromNameService(local, null);
-                    } catch (UnknownHostException uhe) {
-                        // Rethrow with a more informative error message.
-                        UnknownHostException uhe2 =
-                            new UnknownHostException(local + ": " +
-                                                     uhe.getMessage());
-                        uhe2.initCause(uhe);
-                        throw uhe2;
-                    }
-                    cachedLocalHost = localAddrs[0];
-                    cacheTime = now;
-                    ret = localAddrs[0];
+                // shortcut for "localhost" host name
+                localAddr = impl.loopbackAddress();
+            } else {
+                // call getAllByName0 without security checks and
+                // without using cached data
+                try {
+                    localAddr = getAllByName0(local, null, false, false)[0];
+                } catch (UnknownHostException uhe) {
+                    // Rethrow with a more informative error message.
+                    UnknownHostException uhe2 =
+                        new UnknownHostException(local + ": " +
+                                                 uhe.getMessage());
+                    uhe2.initCause(uhe);
+                    throw uhe2;
                 }
             }
-            return ret;
+            cachedLocalHost = new CachedLocalHost(local, localAddr);
+            return localAddr;
         } catch (java.lang.SecurityException e) {
             return impl.loopbackAddress();
         }
