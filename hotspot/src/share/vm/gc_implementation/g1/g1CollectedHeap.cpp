@@ -1867,6 +1867,7 @@ G1CollectedHeap::G1CollectedHeap(G1CollectorPolicy* policy_) :
   _old_marking_cycles_started(0),
   _old_marking_cycles_completed(0),
   _concurrent_cycle_started(false),
+  _heap_summary_sent(false),
   _in_cset_fast_test(),
   _dirty_cards_region_list(NULL),
   _worker_cset_start_region(NULL),
@@ -2445,13 +2446,24 @@ void G1CollectedHeap::register_concurrent_cycle_end() {
     _gc_timer_cm->register_gc_end();
     _gc_tracer_cm->report_gc_end(_gc_timer_cm->gc_end(), _gc_timer_cm->time_partitions());
 
+    // Clear state variables to prepare for the next concurrent cycle.
     _concurrent_cycle_started = false;
+    _heap_summary_sent = false;
   }
 }
 
 void G1CollectedHeap::trace_heap_after_concurrent_cycle() {
   if (_concurrent_cycle_started) {
-    trace_heap_after_gc(_gc_tracer_cm);
+    // This function can be called when:
+    //  the cleanup pause is run
+    //  the concurrent cycle is aborted before the cleanup pause.
+    //  the concurrent cycle is aborted after the cleanup pause,
+    //   but before the concurrent cycle end has been registered.
+    // Make sure that we only send the heap information once.
+    if (!_heap_summary_sent) {
+      trace_heap_after_gc(_gc_tracer_cm);
+      _heap_summary_sent = true;
+    }
   }
 }
 
