@@ -30,7 +30,7 @@
 #include "runtime/java.hpp"
 #include "services/memTracker.hpp"
 
-PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
+
 
 void G1BlockOffsetSharedArrayMappingChangedListener::on_commit(uint start_idx, size_t num_regions) {
   // Nothing to do. The BOT is hard-wired to be part of the HeapRegion, and we cannot
@@ -59,10 +59,10 @@ G1BlockOffsetSharedArray::G1BlockOffsetSharedArray(MemRegion heap, G1RegionToSpa
   if (TraceBlockOffsetTable) {
     gclog_or_tty->print_cr("G1BlockOffsetSharedArray::G1BlockOffsetSharedArray: ");
     gclog_or_tty->print_cr("  "
-                  "  rs.base(): " INTPTR_FORMAT
-                  "  rs.size(): " INTPTR_FORMAT
-                  "  rs end(): " INTPTR_FORMAT,
-                  bot_reserved.start(), bot_reserved.byte_size(), bot_reserved.end());
+                  "  rs.base(): " PTR_FORMAT
+                  "  rs.size(): " SIZE_FORMAT
+                  "  rs end(): " PTR_FORMAT,
+                  p2i(bot_reserved.start()), bot_reserved.byte_size(), p2i(bot_reserved.end()));
   }
 }
 
@@ -381,7 +381,7 @@ G1BlockOffsetArray::forward_to_block_containing_addr_slow(HeapWord* q,
   assert(next_boundary <= _array->_end,
          err_msg("next_boundary is beyond the end of the covered region "
                  " next_boundary " PTR_FORMAT " _array->_end " PTR_FORMAT,
-                 next_boundary, _array->_end));
+                 p2i(next_boundary), p2i(_array->_end)));
   if (addr >= gsp()->top()) return gsp()->top();
   while (next_boundary < addr) {
     while (n <= next_boundary) {
@@ -522,7 +522,7 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
                   "blk_start: " PTR_FORMAT ", "
                   "boundary: " PTR_FORMAT,
                   (uint)_array->offset_array(orig_index),
-                  blk_start, boundary));
+                  p2i(blk_start), p2i(boundary)));
   for (size_t j = orig_index + 1; j <= end_index; j++) {
     assert(_array->offset_array(j) > 0 &&
            _array->offset_array(j) <=
@@ -556,9 +556,9 @@ G1BlockOffsetArray::verify_for_object(HeapWord* obj_start,
                              "card addr: "PTR_FORMAT" BOT entry: %u "
                              "obj: "PTR_FORMAT" word size: "SIZE_FORMAT" "
                              "cards: ["SIZE_FORMAT","SIZE_FORMAT"]",
-                             block_start, card, card_addr,
+                             p2i(block_start), card, p2i(card_addr),
                              _array->offset_array(card),
-                             obj_start, word_size, first_card, last_card);
+                             p2i(obj_start), word_size, first_card, last_card);
       return false;
     }
   }
@@ -572,10 +572,10 @@ G1BlockOffsetArray::print_on(outputStream* out) {
   size_t to_index = _array->index_for(_end);
   out->print_cr(">> BOT for area ["PTR_FORMAT","PTR_FORMAT") "
                 "cards ["SIZE_FORMAT","SIZE_FORMAT")",
-                _bottom, _end, from_index, to_index);
+                p2i(_bottom), p2i(_end), from_index, to_index);
   for (size_t i = from_index; i < to_index; ++i) {
     out->print_cr("  entry "SIZE_FORMAT_W(8)" | "PTR_FORMAT" : %3u",
-                  i, _array->address_for_index(i),
+                  i, p2i(_array->address_for_index(i)),
                   (uint) _array->offset_array(i));
   }
 }
@@ -663,7 +663,7 @@ G1BlockOffsetArrayContigSpace::set_for_starts_humongous(HeapWord* new_top) {
 void
 G1BlockOffsetArrayContigSpace::print_on(outputStream* out) {
   G1BlockOffsetArray::print_on(out);
-  out->print_cr("  next offset threshold: "PTR_FORMAT, _next_offset_threshold);
+  out->print_cr("  next offset threshold: "PTR_FORMAT, p2i(_next_offset_threshold));
   out->print_cr("  next offset index:     "SIZE_FORMAT, _next_offset_index);
 }
 #endif // !PRODUCT
