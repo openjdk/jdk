@@ -35,33 +35,3 @@ var jsobj = e.eval("({ foo: 33, valueOf: function() 42 })");
 print("foo =", jsobj['getMember(java.lang.String)']("foo"));
 print("eval =", jsobj['eval(String)']("this + 44"));
 print("valueOf function? =", (jsobj.valueOf)['isFunction()']());
-
-var JSObject = Java.type("netscape.javascript.JSObject");
-var bjsobj = new (Java.extend(JSObject))() {
-    getMember: function(name) {
-        if (name == "func") {
-            return function(arg) {
-                print("func called with " + arg);
-            }
-        }
-        return name.toUpperCase();
-    },
-
-    getSlot: function(index) {
-        return index*index;
-    },
-
-    setMember: function(name, value) {
-        print(name + " set to " + value);
-    },
-
-    setSlot: function(index, value) {
-        print("[" + index + "] set to " + value);
-    }
-};
-
-print("getMember('foo') =", bjsobj['getMember(String)']('foo'));
-print("getSlot(6) =", bjsobj['getSlot(int)'](6));
-bjsobj['setMember(String, Object)']('bar', 'hello');
-bjsobj['setSlot(int, Object)'](10, 42);
-
