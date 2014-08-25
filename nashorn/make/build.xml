@@ -32,6 +32,9 @@
     <property file="${user.home}/.nashorn.project.local.properties"/>
 
     <loadproperties srcFile="make/project.properties"/>
+    <path id="dist.path">
+         <pathelement location="${dist.dir}"/>
+    </path>
     <path id="nashorn.ext.path">
       <pathelement location="${dist.dir}"/>
       <pathelement location="${java.ext.dirs}"/>
@@ -295,7 +298,7 @@
   <target name="generate-policy-file" depends="prepare">
     <echo file="${build.dir}/nashorn.policy">
 
-grant codeBase "file:/${toString:nashorn.ext.path}/nashorn.jar" {
+grant codeBase "file:/${toString:dist.path}/nashorn.jar" {
     permission java.security.AllPermission;
 };
 
