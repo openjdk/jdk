@@ -34,8 +34,8 @@
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 #include "gc_implementation/shared/vmGCOperations.hpp"
 #include "gc_implementation/shared/gcTimer.hpp"
@@ -1409,7 +1409,7 @@ protected:
   void set_bit_for_region(HeapRegion* hr) {
     assert(!hr->continuesHumongous(), "should have filtered those out");
 
-    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
+    BitMap::idx_t index = (BitMap::idx_t) hr->hrm_index();
     if (!hr->startsHumongous()) {
       // Normal (non-humongous) case: just set the bit.
       _region_bm->par_at_put(index, true);
@@ -1597,7 +1597,7 @@ public:
       if (_verbose) {
         gclog_or_tty->print_cr("Region %u: marked bytes mismatch: "
                                "expected: " SIZE_FORMAT ", actual: " SIZE_FORMAT,
-                               hr->hrs_index(), exp_marked_bytes, act_marked_bytes);
+                               hr->hrm_index(), exp_marked_bytes, act_marked_bytes);
       }
       failures += 1;
     }
@@ -1606,7 +1606,7 @@ public:
     // (which was just calculated) region bit maps.
     // We're not OK if the bit in the calculated expected region
     // bitmap is set and the bit in the actual region bitmap is not.
-    BitMap::idx_t index = (BitMap::idx_t) hr->hrs_index();
+    BitMap::idx_t index = (BitMap::idx_t) hr->hrm_index();
 
     bool expected = _exp_region_bm->at(index);
     bool actual = _region_bm->at(index);
@@ -1614,7 +1614,7 @@ public:
       if (_verbose) {
         gclog_or_tty->print_cr("Region %u: region bitmap mismatch: "
                                "expected: %s, actual: %s",
-                               hr->hrs_index(),
+                               hr->hrm_index(),
                                BOOL_TO_STR(expected), BOOL_TO_STR(actual));
       }
       failures += 1;
@@ -1635,7 +1635,7 @@ public:
         if (_verbose) {
           gclog_or_tty->print_cr("Region %u: card bitmap mismatch at " SIZE_FORMAT ": "
                                  "expected: %s, actual: %s",
-                                 hr->hrs_index(), i,
+                                 hr->hrm_index(), i,
                                  BOOL_TO_STR(expected), BOOL_TO_STR(actual));
         }
         failures += 1;
@@ -3256,7 +3256,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     assert(limit_idx <= end_idx, "or else use atomics");
 
     // Aggregate the "stripe" in the count data associated with hr.
-    uint hrs_index = hr->hrs_index();
+    uint hrm_index = hr->hrm_index();
     size_t marked_bytes = 0;
 
     for (uint i = 0; i < _max_worker_id; i += 1) {
@@ -3265,7 +3265,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
 
       // Fetch the marked_bytes in this region for task i and
       // add it to the running total for this region.
-      marked_bytes += marked_bytes_array[hrs_index];
+      marked_bytes += marked_bytes_array[hrm_index];
 
       // Now union the bitmaps[0,max_worker_id)[start_idx..limit_idx)
       // into the global card bitmap.
