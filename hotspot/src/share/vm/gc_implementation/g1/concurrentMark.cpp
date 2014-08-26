@@ -434,10 +434,6 @@ void CMMarkStack::oops_do(OopClosure* f) {
   }
 }
 
-bool ConcurrentMark::not_yet_marked(oop obj) const {
-  return _g1h->is_obj_ill(obj);
-}
-
 CMRootRegions::CMRootRegions() :
   _young_list(NULL), _cm(NULL), _scan_in_progress(false),
   _should_abort(false),  _next_survivor(NULL) { }
@@ -1117,20 +1113,17 @@ public:
     if (!_cm->has_aborted()) {
       do {
         double start_vtime_sec = os::elapsedVTime();
-        double start_time_sec = os::elapsedTime();
         double mark_step_duration_ms = G1ConcMarkStepDurationMillis;
 
         the_task->do_marking_step(mark_step_duration_ms,
                                   true  /* do_termination */,
                                   false /* is_serial*/);
 
-        double end_time_sec = os::elapsedTime();
         double end_vtime_sec = os::elapsedVTime();
         double elapsed_vtime_sec = end_vtime_sec - start_vtime_sec;
-        double elapsed_time_sec = end_time_sec - start_time_sec;
         _cm->clear_has_overflown();
 
-        bool ret = _cm->do_yield_check(worker_id);
+        _cm->do_yield_check(worker_id);
 
         jlong sleep_time_ms;
         if (!_cm->has_aborted() && the_task->has_aborted()) {
@@ -1140,17 +1133,6 @@ public:
           os::sleep(Thread::current(), sleep_time_ms, false);
           SuspendibleThreadSet::join();
         }
-        double end_time2_sec = os::elapsedTime();
-        double elapsed_time2_sec = end_time2_sec - start_time_sec;
-
-#if 0
-          gclog_or_tty->print_cr("CM: elapsed %1.4lf ms, sleep %1.4lf ms, "
-                                 "overhead %1.4lf",
-                                 elapsed_vtime_sec * 1000.0, (double) sleep_time_ms,
-                                 the_task->conc_overhead(os::elapsedTime()) * 8.0);
-          gclog_or_tty->print_cr("elapsed time %1.4lf ms, time 2: %1.4lf ms",
-                                 elapsed_time_sec * 1000.0, elapsed_time2_sec * 1000.0);
-#endif
       } while (!_cm->has_aborted() && the_task->has_aborted());
     }
     the_task->record_end_time();
@@ -2949,11 +2931,6 @@ void ConcurrentMark::clearRangeNextBitmap(MemRegion mr) {
   _nextMarkBitMap->clearRange(mr);
 }
 
-void ConcurrentMark::clearRangeBothBitmaps(MemRegion mr) {
-  clearRangePrevBitmap(mr);
-  clearRangeNextBitmap(mr);
-}
-
 HeapRegion*
 ConcurrentMark::claim_region(uint worker_id) {
   // "checkpoint" the finger
@@ -3499,17 +3476,6 @@ bool ConcurrentMark::do_yield_check(uint worker_id) {
   }
 }
 
-bool ConcurrentMark::containing_card_is_marked(void* p) {
-  size_t offset = pointer_delta(p, _g1h->reserved_region().start(), 1);
-  return _card_bm.at(offset >> CardTableModRefBS::card_shift);
-}
-
-bool ConcurrentMark::containing_cards_are_marked(void* start,
-                                                 void* last) {
-  return containing_card_is_marked(start) &&
-         containing_card_is_marked(last);
-}
-
 #ifndef PRODUCT
 // for debugging purposes
 void ConcurrentMark::print_finger() {
@@ -3762,7 +3728,7 @@ void CMTask::regular_clock_call() {
 
   if (_cm->verbose_medium()) {
       gclog_or_tty->print_cr("[%u] regular clock, interval = %1.2lfms, "
-                        "scanned = %d%s, refs reached = %d%s",
+                        "scanned = "SIZE_FORMAT"%s, refs reached = "SIZE_FORMAT"%s",
                         _worker_id, last_interval_ms,
                         _words_scanned,
                         (_words_scanned >= _words_scanned_limit) ? " (*)" : "",
