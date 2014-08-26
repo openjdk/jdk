@@ -178,12 +178,15 @@ public abstract class Node implements Cloneable {
 
     @Override
     public final boolean equals(final Object other) {
-        return super.equals(other);
+        return this == other;
     }
 
     @Override
     public final int hashCode() {
-        return super.hashCode();
+        // NOTE: we aren't delegating to Object.hashCode as it still requires trip to the VM for initializing,
+        // it touches the object header and/or stores the identity hashcode somewhere, etc. There's several
+        // places in the compiler pipeline that store nodes in maps, so this can get hot.
+        return Long.hashCode(token);
     }
 
     /**
