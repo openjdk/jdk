@@ -631,7 +631,7 @@ enum CompilationPhase {
             throw new CompilationException(sb.toString());
          }
 
-         startTime = System.currentTimeMillis();
+         startTime = System.nanoTime();
 
          return functionNode;
      }
@@ -644,7 +644,7 @@ enum CompilationPhase {
      */
     protected FunctionNode end(final Compiler compiler, final FunctionNode functionNode) {
         compiler.getLogger().unindent();
-        endTime = System.currentTimeMillis();
+        endTime = System.nanoTime();
         compiler.getScriptEnvironment()._timing.accumulateTime(toString(), endTime - startTime);
 
         isFinished = true;
