@@ -314,19 +314,6 @@ $(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util))
 $(eval $(call SetupJVMTIDemo,gctest, agent_util))
 $(eval $(call SetupJVMTIDemo,heapTracker, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,heapViewer, agent_util))
-
-# On AIX, hprof requires 'dladdr' from src/aix/porting/porting_aix.cpp
-BUILD_LIBHPROF_AIX_EXTRA_SRC :=
-BUILD_LIBHPROF_AIX_EXTRA_CFLAGS :=
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBHPROF_AIX_EXTRA_SRC += $(JDK_TOPDIR)/src/aix/porting
-  BUILD_LIBHPROF_AIX_EXTRA_CFLAGS += -I$(JDK_TOPDIR)/src/aix/porting
-endif
-
-$(eval $(call SetupJVMTIDemo,hprof, java_crw_demo, \
-    $(BUILD_LIBHPROF_AIX_EXTRA_CFLAGS), C, \
-    -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread, $(BUILD_LIBHPROF_AIX_EXTRA_SRC)))
-
 $(eval $(call SetupJVMTIDemo,minst, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,mtrace, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,waiters, agent_util, , C++))
