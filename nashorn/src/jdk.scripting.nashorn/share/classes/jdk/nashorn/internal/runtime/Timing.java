@@ -31,6 +31,7 @@ import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.function.Supplier;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -57,7 +58,7 @@ public final class Timing implements Loggable {
      */
     public Timing(final boolean isEnabled) {
         this.isEnabled = isEnabled;
-        this.startTime = System.currentTimeMillis();
+        this.startTime = System.nanoTime();
     }
 
     /**
@@ -91,12 +92,12 @@ public final class Timing implements Loggable {
      * or add to its accumulated time
      *
      * @param module   module name
-     * @param duration duration to add to accumulated time for module
+     * @param durationNano duration to add to accumulated time for module, in nanoseconds.
      */
-    public void accumulateTime(final String module, final long duration) {
+    public void accumulateTime(final String module, final long durationNano) {
         if (isEnabled()) {
             ensureInitialized(Context.getContextTrusted());
-            timeSupplier.accumulateTime(module, duration);
+            timeSupplier.accumulateTime(module, durationNano);
         }
     }
 
@@ -143,6 +144,15 @@ public final class Timing implements Loggable {
         return log;
     }
 
+    /**
+     * Takes a duration in nanoseconds, and returns a string representation of it rounded to milliseconds.
+     * @param durationNano duration in nanoseconds
+     * @return the string representing the duration in milliseconds.
+     */
+    public static String toMillisPrint(final long durationNano) {
+        return Long.toString(TimeUnit.NANOSECONDS.toMillis(durationNano));
+    }
+
     final class TimeSupplier implements Supplier<String> {
         private final Map<String, Long> timings;
 
@@ -166,7 +176,7 @@ public final class Timing implements Loggable {
 
         @Override
         public String get() {
-            final long t = System.currentTimeMillis();
+            final long t = System.nanoTime();
 
             long knownTime = 0L;
             int  maxKeyLength = 0;
@@ -174,7 +184,7 @@ public final class Timing implements Loggable {
 
             for (final Map.Entry<String, Long> entry : timings.entrySet()) {
                 maxKeyLength   = Math.max(maxKeyLength, entry.getKey().length());
-                maxValueLength = Math.max(maxValueLength, entry.getValue().toString().length());
+                maxValueLength = Math.max(maxValueLength, toMillisPrint(entry.getValue()).length());
             }
             maxKeyLength++;
 
@@ -192,12 +202,13 @@ public final class Timing implements Loggable {
                 }
 
                 final Long duration = entry.getValue();
-                len = duration.toString().length();
+                final String strDuration = toMillisPrint(duration);
+                len = strDuration.length();
                 for (int i = 0; i < maxValueLength - len; i++) {
                     sb.append(' ');
                 }
 
-                sb.append(duration).
+                sb.append(strDuration).
                     append(" ms\n");
 
                 knownTime += duration;
@@ -206,9 +217,9 @@ public final class Timing implements Loggable {
             final long total = t - startTime;
             sb.append('\n');
             sb.append("Total runtime: ").
-                append(total).
+                append(toMillisPrint(total)).
                 append(" ms (Non-runtime: ").
-                append(knownTime).
+                append(toMillisPrint(knownTime)).
                 append(" ms [").
                 append((int)(knownTime * 100.0 / total)).
                 append("%])");
