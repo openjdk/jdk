@@ -76,7 +76,7 @@ public class HtmlDoclet extends AbstractDoclet {
         } else {
             doclet = new HtmlDoclet();
         }
-        return doclet.start(doclet, root);
+        return doclet.startDoclet(root);
     }
 
     /**
