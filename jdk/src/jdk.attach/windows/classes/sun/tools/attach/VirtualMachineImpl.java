@@ -35,14 +35,14 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.Random;
 
-public class WindowsVirtualMachine extends HotSpotVirtualMachine {
+public class VirtualMachineImpl extends HotSpotVirtualMachine {
 
     // the enqueue code stub (copied into each target VM)
     private static byte[] stub;
 
     private volatile long hProcess;     // handle to the process
 
-    WindowsVirtualMachine(AttachProvider provider, String id)
+    VirtualMachineImpl(AttachProvider provider, String id)
         throws AttachNotSupportedException, IOException
     {
         super(provider, id);
@@ -154,12 +154,12 @@ public class WindowsVirtualMachine extends HotSpotVirtualMachine {
             } else if (len == 0)
                 return 0;
 
-            return WindowsVirtualMachine.readPipe(hPipe, bs, off, len);
+            return VirtualMachineImpl.readPipe(hPipe, bs, off, len);
         }
 
         public void close() throws IOException {
             if (hPipe != -1) {
-                WindowsVirtualMachine.closePipe(hPipe);
+                VirtualMachineImpl.closePipe(hPipe);
                 hPipe = -1;
            }
         }

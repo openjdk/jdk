@@ -34,9 +34,9 @@ import java.io.IOException;
 import java.net.InetAddress;
 import java.net.UnknownHostException;
 
-public class WindowsAttachProvider extends HotSpotAttachProvider {
+public class AttachProviderImpl extends HotSpotAttachProvider {
 
-    public WindowsAttachProvider() {
+    public AttachProviderImpl() {
         String os = System.getProperty("os.name");
         if (os.startsWith("Windows 9") || os.equals("Windows Me")) {
             throw new RuntimeException(
@@ -66,7 +66,7 @@ public class WindowsAttachProvider extends HotSpotAttachProvider {
         // to be not attachable.
         testAttachable(vmid);
 
-        return new WindowsVirtualMachine(this, vmid);
+        return new VirtualMachineImpl(this, vmid);
     }
 
     public List<VirtualMachineDescriptor> listVirtualMachines() {
@@ -84,7 +84,7 @@ public class WindowsAttachProvider extends HotSpotAttachProvider {
      */
     private static boolean isTempPathSecure() {
         if (!wasTempPathChecked) {
-            synchronized (WindowsAttachProvider.class) {
+            synchronized (AttachProviderImpl.class) {
                 if (!wasTempPathChecked) {
                     // get the value of TMP/TEMP, ignoring UNC, and paths that
                     // aren't absolute
@@ -146,7 +146,7 @@ public class WindowsAttachProvider extends HotSpotAttachProvider {
             if (isLibraryLoadedByProcess("jvm.dll", processes[i])) {
                 String pid = Integer.toString(processes[i]);
                 try {
-                    new WindowsVirtualMachine(this, pid).detach();
+                    new VirtualMachineImpl(this, pid).detach();
 
                     // FIXME - for now we don't have an appropriate display
                     // name so we use pid@hostname

@@ -36,7 +36,7 @@ import java.io.File;
 /*
  * Linux implementation of HotSpotVirtualMachine
  */
-public class LinuxVirtualMachine extends HotSpotVirtualMachine {
+public class VirtualMachineImpl extends HotSpotVirtualMachine {
     // "/tmp" is used as a global well-known location for the files
     // .java_pid<pid>. and .attach_pid<pid>. It is important that this
     // location is the same for all processes, otherwise the tools
@@ -53,7 +53,7 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
     /**
      * Attaches to the target VM
      */
-    LinuxVirtualMachine(AttachProvider provider, String vmid)
+    VirtualMachineImpl(AttachProvider provider, String vmid)
         throws AttachNotSupportedException, IOException
     {
         super(provider, vmid);
@@ -262,11 +262,11 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
             } else if (len == 0)
                 return 0;
 
-            return LinuxVirtualMachine.read(s, bs, off, len);
+            return VirtualMachineImpl.read(s, bs, off, len);
         }
 
         public void close() throws IOException {
-            LinuxVirtualMachine.close(s);
+            VirtualMachineImpl.close(s);
         }
     }
 
@@ -308,7 +308,7 @@ public class LinuxVirtualMachine extends HotSpotVirtualMachine {
             } catch (java.io.UnsupportedEncodingException x) {
                 throw new InternalError(x);
             }
-            LinuxVirtualMachine.write(fd, b, 0, b.length);
+            VirtualMachineImpl.write(fd, b, 0, b.length);
         }
         byte b[] = new byte[1];
         b[0] = 0;

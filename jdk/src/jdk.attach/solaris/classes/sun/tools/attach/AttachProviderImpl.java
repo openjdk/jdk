@@ -28,19 +28,15 @@ import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
 import com.sun.tools.attach.spi.AttachProvider;
-
 import java.io.IOException;
 
 /*
- * An AttachProvider implementation for Linux that uses a UNIX domain
- * socket.
+ * An AttachProvider implementation for Solaris that use the doors
+ * interface to the VM.
  */
-public class LinuxAttachProvider extends HotSpotAttachProvider {
+public class AttachProviderImpl extends HotSpotAttachProvider {
 
-    // perf counter for the JVM version
-    private static final String JVM_VERSION = "java.property.java.vm.version";
-
-    public LinuxAttachProvider() {
+    public AttachProviderImpl() {
     }
 
     public String name() {
@@ -48,7 +44,7 @@ public class LinuxAttachProvider extends HotSpotAttachProvider {
     }
 
     public String type() {
-        return "socket";
+        return "doors";
     }
 
     public VirtualMachine attachVirtualMachine(String vmid)
@@ -60,7 +56,7 @@ public class LinuxAttachProvider extends HotSpotAttachProvider {
         // to be not attachable.
         testAttachable(vmid);
 
-        return new LinuxVirtualMachine(this, vmid);
+        return new VirtualMachineImpl(this, vmid);
     }
 
     public VirtualMachine attachVirtualMachine(VirtualMachineDescriptor vmd)
@@ -75,7 +71,7 @@ public class LinuxAttachProvider extends HotSpotAttachProvider {
         if (vmd instanceof HotSpotVirtualMachineDescriptor) {
             assert ((HotSpotVirtualMachineDescriptor)vmd).isAttachable();
             checkAttachPermission();
-            return new LinuxVirtualMachine(this, vmd.id());
+            return new VirtualMachineImpl(this, vmd.id());
         } else {
             return attachVirtualMachine(vmd.id());
         }
