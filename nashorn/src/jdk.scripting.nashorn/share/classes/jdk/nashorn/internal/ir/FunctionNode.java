@@ -39,6 +39,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Set;
 import java.util.function.Function;
+import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants;
@@ -57,7 +58,6 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 @Immutable
 public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode> {
-
     /** Type used for all FunctionNodes */
     public static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
 
@@ -517,27 +517,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return true of the node is in the given state
      */
     public boolean hasState(final EnumSet<CompilationState> state) {
-        //this.compilationState >= state, or we fail
-        for (final CompilationState cs : state) {
-            if (!hasState(cs)) {
-                return false;
-            }
-        }
-        return true;
-    }
-
-    /**
-     * Check whether the state of this FunctionNode contains a given compilation
-     * state.
-     *
-     * A node can be in many states at once, e.g. both lowered and initialized.
-     * To check for an exact state, use {@link #hasState(EnumSet)}
-     *
-     * @param state state to check for
-     * @return true if state is present in the total compilation state of this FunctionNode
-     */
-    public boolean hasState(final CompilationState state) {
-        return compilationState.contains(state);
+        return !AssertsEnabled.assertsEnabled() || compilationState.containsAll(state);
     }
 
     /**
@@ -550,7 +530,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return function node or a new one if state was changed
      */
     public FunctionNode setState(final LexicalContext lc, final CompilationState state) {
-        if (this.compilationState.contains(state)) {
+        if (!AssertsEnabled.assertsEnabled() || this.compilationState.contains(state)) {
             return this;
         }
         final EnumSet<CompilationState> newState = EnumSet.copyOf(this.compilationState);
