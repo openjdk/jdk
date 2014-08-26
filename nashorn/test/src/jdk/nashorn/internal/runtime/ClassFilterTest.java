@@ -38,10 +38,15 @@ import java.io.File;
 import static org.testng.Assert.fail;
 
 public class ClassFilterTest {
+    private static final String NASHORN_CODE_CACHE = "nashorn.persistent.code.cache";
+    private static final String CLASSFILTER_CODE_CACHE = "build/classfilter_nashorn_code_cache";
 
-    private final String codeCache = "build/nashorn_code_cache";
-
-    @Test
+    // @Test
+    // This test takes too much time for basic "ant clean test" run.
+    // Given that "allow-all-java-classes" is equivalent to no java class
+    // filter and external tests don't access any java, not sure if this
+    // test contributes much. We need faster "ant clean test" cycle for
+    // developers.
     public void runExternalJsTest() {
         String[] paths = new String[]{
                 "test/script/basic/compile-octane.js",
@@ -107,7 +112,18 @@ public class ClassFilterTest {
 
     @Test
     public void persistentCacheTest() {
-        System.setProperty("nashorn.persistent.code.cache", codeCache);
+        final String oldCodeCache = System.getProperty(NASHORN_CODE_CACHE);
+        System.setProperty(NASHORN_CODE_CACHE, CLASSFILTER_CODE_CACHE);
+        try {
+            persistentCacheTestImpl();
+        } finally {
+            if (oldCodeCache != null) {
+                System.setProperty(NASHORN_CODE_CACHE, oldCodeCache);
+            }
+        }
+    }
+
+    private void persistentCacheTestImpl() {
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
         ScriptEngine engine = factory.getScriptEngine(
                 new String[]{"--persistent-code-cache"},
