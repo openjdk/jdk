@@ -30,15 +30,15 @@
 #include "gc_implementation/g1/g1AllocRegion.inline.hpp"
 #include "gc_implementation/g1/g1CollectorPolicy.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
 #include "runtime/orderAccess.inline.hpp"
 #include "utilities/taskqueue.hpp"
 
 // Inline functions for G1CollectedHeap
 
 // Return the region with the given index. It assumes the index is valid.
-inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrs.at(index); }
+inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
@@ -48,7 +48,7 @@ inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
-  return _hrs.reserved().start() + index * HeapRegion::GrainWords;
+  return _hrm.reserved().start() + index * HeapRegion::GrainWords;
 }
 
 template <class T>
@@ -57,7 +57,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing_raw(const T addr) con
   assert(is_in_g1_reserved((const void*) addr),
       err_msg("Address "PTR_FORMAT" is outside of the heap ranging from ["PTR_FORMAT" to "PTR_FORMAT")",
           p2i((void*)addr), p2i(g1_reserved().start()), p2i(g1_reserved().end())));
-  return _hrs.addr_to_region((HeapWord*) addr);
+  return _hrm.addr_to_region((HeapWord*) addr);
 }
 
 template <class T>
@@ -87,7 +87,7 @@ inline void G1CollectedHeap::old_set_remove(HeapRegion* hr) {
 }
 
 inline bool G1CollectedHeap::obj_in_cs(oop obj) {
-  HeapRegion* r = _hrs.addr_to_region((HeapWord*) obj);
+  HeapRegion* r = _hrm.addr_to_region((HeapWord*) obj);
   return r != NULL && r->in_collection_set();
 }
 
