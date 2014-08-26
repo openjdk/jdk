@@ -163,39 +163,26 @@ public final class Context {
 
         @Override
         public void initialize(final Collection<Class<?>> classes, final Source source, final Object[] constants) {
-            // do these in parallel, this significantly reduces class installation overhead
-            // however - it still means that every thread needs a separate doPrivileged
-            final Global global = currentGlobal.get();
-            classes.parallelStream().forEach(
-                new Consumer<Class<?>>() {
+            try {
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     @Override
-                    public void accept(final Class<?> clazz) {
-                        // Global threadlocal may be needed by StructureLoader during in field lookup.
-                        currentGlobal.set(global);
-                        try {
-                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                                @Override
-                                public Void run() {
-                                    try {
-                                        //use reflection to write source and constants table to installed classes
-                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
-                                        sourceField.setAccessible(true);
-                                        sourceField.set(null, source);
+                    public Void run() throws Exception {
+                        for (final Class<?> clazz : classes) {
+                            //use reflection to write source and constants table to installed classes
+                            final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                            sourceField.setAccessible(true);
+                            sourceField.set(null, source);
 
-                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                                        constantsField.setAccessible(true);
-                                        constantsField.set(null, constants);
-                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                    return null;
-                                }
-                            });
-                        } catch (final PrivilegedActionException e) {
-                            throw new RuntimeException(e);
+                            final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                            constantsField.setAccessible(true);
+                            constantsField.set(null, constants);
                         }
+                        return null;
                     }
                 });
+            } catch (final PrivilegedActionException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
