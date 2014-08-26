@@ -21,6 +21,8 @@
  * questions.
  */
 
+package jdk.testlibrary;
+
 import com.sun.net.httpserver.*;
 
 import java.util.*;
@@ -31,16 +33,64 @@ import java.security.*;
 import java.security.cert.*;
 import javax.net.ssl.*;
 
+/**
+ * Creates a simple usable SSLContext for SSLSocketFactory
+ * or a HttpsServer using either a given keystore or a default
+ * one in the test tree.
+ *
+ * Using this class with a security manager requires the following
+ * permissions to be granted:
+ *
+ * permission "java.util.PropertyPermission" "test.src.path", "read";
+ * permission java.io.FilePermission
+ *    "${test.src}/../../../lib/testlibrary/jdk/testlibrary/testkeys", "read";
+ * The exact path above depends on the location of the test.
+ */
 public class SimpleSSLContext {
 
     SSLContext ssl;
 
-    SimpleSSLContext (String dir) throws IOException {
+    /**
+     * loads default keystore from SimpleSSLContext
+     * source directory
+     */
+    public SimpleSSLContext () throws IOException {
+        String paths = System.getProperty("test.src.path");
+        StringTokenizer st = new StringTokenizer(paths,":");
+        boolean securityExceptions = false;
+        while (st.hasMoreTokens()) {
+            String path = st.nextToken();
+            try {
+                File f = new File(path, "jdk/testlibrary/testkeys");
+                if (f.exists()) {
+                    init (new FileInputStream(f));
+                    return;
+                }
+            } catch (SecurityException e) {
+                // catch and ignore because permission only required
+                // for one entry on path (at most)
+                securityExceptions = true;
+            }
+        }
+        if (securityExceptions) {
+            System.err.println("SecurityExceptions thrown on loading testkeys");
+        }
+    }
+
+    /**
+     * loads default keystore from given directory
+     */
+    public SimpleSSLContext (String dir) throws IOException {
+        String file = dir+"/testkeys";
+        FileInputStream fis = new FileInputStream(file);
+        init(fis);
+    }
+
+    private void init (InputStream i) throws IOException {
         try {
-            String file = dir+"/testkeys";
             char[] passphrase = "passphrase".toCharArray();
             KeyStore ks = KeyStore.getInstance("JKS");
-            ks.load(new FileInputStream(file), passphrase);
+            ks.load(i, passphrase);
 
             KeyManagerFactory kmf = KeyManagerFactory.getInstance("SunX509");
             kmf.init(ks, passphrase);
@@ -63,7 +113,7 @@ public class SimpleSSLContext {
         }
     }
 
-    SSLContext get () {
+    public SSLContext get () {
         return ssl;
     }
 }
