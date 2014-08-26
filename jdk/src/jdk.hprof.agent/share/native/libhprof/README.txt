@@ -106,12 +106,8 @@ Design and Implementation:
 
     * Sources in the JDK workspace
         The sources and Makefiles live in:
-                src/share/classes/com/sun/demo/jvmti/hprof/*
-                src/share/demo/jvmti/hprof/*
+                src/jdk.hprof.agent/*
                 src/share/demo/jvmti/java_crw_demo/*
-                src/solaris/demo/jvmti/hprof/*
-                src/windows/demo/jvmti/hprof/*
-                make/java/java_hprof_demo/*
-                make/java/java_crw_demo/*
+                make/lib/Lib-jdk.hprof.agent.gmk
    
 --------
