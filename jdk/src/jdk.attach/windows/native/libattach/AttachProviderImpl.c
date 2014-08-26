@@ -30,15 +30,15 @@
 #include "jni.h"
 #include "jni_util.h"
 
-#include "sun_tools_attach_WindowsAttachProvider.h"
+#include "sun_tools_attach_AttachProviderImpl.h"
 
 /*
- * Class:     sun_tools_attach_WindowsAttachProvider
+ * Class:     sun_tools_attach_AttachProviderImpl
  * Method:    tempPath
  * Signature: ()Ljava/lang/String;
  */
 JNIEXPORT jstring JNICALL
-Java_sun_tools_attach_WindowsAttachProvider_tempPath(JNIEnv *env, jclass cls)
+Java_sun_tools_attach_AttachProviderImpl_tempPath(JNIEnv *env, jclass cls)
 {
     char buf[256];
     DWORD bufLen, actualLen;
@@ -64,12 +64,12 @@ Java_sun_tools_attach_WindowsAttachProvider_tempPath(JNIEnv *env, jclass cls)
 }
 
 /*
- * Class:     sun_tools_attach_WindowsAttachProvider
+ * Class:     sun_tools_attach_AttachProviderImpl
  * Method:    volumeFlags
  * Signature: ()J
  */
 JNIEXPORT jlong JNICALL
-Java_sun_tools_attach_WindowsAttachProvider_volumeFlags(JNIEnv *env, jclass cls, jstring str)
+Java_sun_tools_attach_AttachProviderImpl_volumeFlags(JNIEnv *env, jclass cls, jstring str)
 {
     jboolean isCopy;
     const char* volume;
@@ -98,13 +98,13 @@ Java_sun_tools_attach_WindowsAttachProvider_volumeFlags(JNIEnv *env, jclass cls,
 
 
 /*
- * Class:     sun_tools_attach_WindowsAttachProvider
+ * Class:     sun_tools_attach_AttachProviderImpl
  * Method:    enumProcesses
  * Signature: ([JI)I
  */
 JNIEXPORT jint JNICALL
-Java_sun_tools_attach_WindowsAttachProvider_enumProcesses(JNIEnv *env, jclass cls,
-                                                          jintArray arr, jint max)
+Java_sun_tools_attach_AttachProviderImpl_enumProcesses(JNIEnv *env, jclass cls,
+                                                       jintArray arr, jint max)
 {
     DWORD size, bytesReturned;
     DWORD* ptr;
@@ -124,13 +124,13 @@ Java_sun_tools_attach_WindowsAttachProvider_enumProcesses(JNIEnv *env, jclass cl
 }
 
 /*
- * Class:     sun_tools_attach_WindowsAttachProvider
+ * Class:     sun_tools_attach_AttachProviderImpl
  * Method:    isLibraryLoadedByProcess
  * Signature: (I[Ljava/lang/String;)Z
  */
 JNIEXPORT jboolean JNICALL
-Java_sun_tools_attach_WindowsAttachProvider_isLibraryLoadedByProcess(JNIEnv *env, jclass cls,
-                                                                     jstring str, jint processId)
+Java_sun_tools_attach_AttachProviderImpl_isLibraryLoadedByProcess(JNIEnv *env, jclass cls,
+                                                                  jstring str, jint processId)
 {
     HANDLE hProcess;
     jboolean isCopy;

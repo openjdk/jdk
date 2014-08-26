@@ -40,7 +40,7 @@
 #include <sys/stat.h>
 #include <sys/un.h>
 
-#include "sun_tools_attach_LinuxVirtualMachine.h"
+#include "sun_tools_attach_VirtualMachineImpl.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -128,11 +128,11 @@ static pid_t getParent(pid_t pid) {
 
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    socket
  * Signature: ()I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_LinuxVirtualMachine_socket
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_socket
   (JNIEnv *env, jclass cls)
 {
     int fd = socket(PF_UNIX, SOCK_STREAM, 0);
@@ -143,11 +143,11 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_LinuxVirtualMachine_socket
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    connect
  * Signature: (ILjava/lang/String;)I
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_connect
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connect
   (JNIEnv *env, jclass cls, jint fd, jstring path)
 {
     jboolean isCopy;
@@ -189,11 +189,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_connect
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    isLinuxThreads
  * Signature: ()V
  */
-JNIEXPORT jboolean JNICALL Java_sun_tools_attach_LinuxVirtualMachine_isLinuxThreads
+JNIEXPORT jboolean JNICALL Java_sun_tools_attach_VirtualMachineImpl_isLinuxThreads
   (JNIEnv *env, jclass cls)
 {
 # ifndef _CS_GNU_LIBPTHREAD_VERSION
@@ -250,11 +250,11 @@ static void ChildCountCallback(const pid_t pid, void* user_data) {
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    getLinuxThreadsManager
  * Signature: (I)I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_LinuxVirtualMachine_getLinuxThreadsManager
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_getLinuxThreadsManager
   (JNIEnv *env, jclass cls, jint pid)
 {
     ChildCountContext context;
@@ -312,11 +312,11 @@ static void SendQuitCallback(const pid_t pid, void* user_data) {
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    sendQuitToChildrenOf
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_sendQuitToChildrenOf
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sendQuitToChildrenOf
   (JNIEnv *env, jclass cls, jint pid)
 {
     SendQuitContext context;
@@ -329,11 +329,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_sendQuitToChild
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    sendQuitTo
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_sendQuitTo
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo
   (JNIEnv *env, jclass cls, jint pid)
 {
     if (kill((pid_t)pid, SIGQUIT)) {
@@ -342,11 +342,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_sendQuitTo
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    checkPermissions
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_checkPermissions
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
   (JNIEnv *env, jclass cls, jstring path)
 {
     jboolean isCopy;
@@ -390,11 +390,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_checkPermission
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    close
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_close
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
     int res;
@@ -402,11 +402,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_close
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    read
  * Signature: (I[BI)I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_LinuxVirtualMachine_read
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_read
   (JNIEnv *env, jclass cls, jint fd, jbyteArray ba, jint off, jint baLen)
 {
     unsigned char buf[128];
@@ -432,11 +432,11 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_LinuxVirtualMachine_read
 }
 
 /*
- * Class:     sun_tools_attach_LinuxVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    write
  * Signature: (I[B)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_LinuxVirtualMachine_write
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_write
   (JNIEnv *env, jclass cls, jint fd, jbyteArray ba, jint off, jint bufLen)
 {
     size_t remaining = bufLen;

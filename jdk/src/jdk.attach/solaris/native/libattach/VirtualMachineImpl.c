@@ -36,7 +36,7 @@
 #include "jni.h"
 #include "jni_util.h"
 
-#include "sun_tools_attach_SolarisVirtualMachine.h"
+#include "sun_tools_attach_VirtualMachineImpl.h"
 
 #define RESTARTABLE(_cmd, _result) do { \
   do { \
@@ -45,11 +45,11 @@
 } while(0)
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    open
  * Signature: (Ljava/lang/String;)I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_open
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_open
   (JNIEnv *env, jclass cls, jstring path)
 {
     jboolean isCopy;
@@ -85,11 +85,11 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_open
 }
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    checkPermissions
  * Signature: (Ljava/lang/String;)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_SolarisVirtualMachine_checkPermissions
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_checkPermissions
   (JNIEnv *env, jclass cls, jstring path)
 {
     jboolean isCopy;
@@ -133,11 +133,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_SolarisVirtualMachine_checkPermissi
 }
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    close
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_SolarisVirtualMachine_close
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_close
   (JNIEnv *env, jclass cls, jint fd)
 {
     int ret;
@@ -145,11 +145,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_SolarisVirtualMachine_close
 }
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    read
  * Signature: (I[BI)I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_read
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_read
   (JNIEnv *env, jclass cls, jint fd, jbyteArray ba, jint off, jint baLen)
 {
     unsigned char buf[128];
@@ -175,11 +175,11 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_read
 }
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    sigquit
  * Signature: (I)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_SolarisVirtualMachine_sigquit
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_sigquit
   (JNIEnv *env, jclass cls, jint pid)
 {
     if (kill((pid_t)pid, SIGQUIT) == -1) {
@@ -224,11 +224,11 @@ static const char* translate_error(jint err) {
 static const char* PROTOCOL_VERSION = "1";
 
 /*
- * Class:     sun_tools_attach_SolarisVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    enqueue
  * Signature: (JILjava/lang/String;[Ljava/lang/Object;)V
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_SolarisVirtualMachine_enqueue
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
   (JNIEnv *env, jclass cls, jint fd, jstring cmd, jobjectArray args)
 {
     jint arg_count, i;

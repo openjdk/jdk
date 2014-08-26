@@ -28,7 +28,7 @@
 #include "jni.h"
 #include "jni_util.h"
 
-#include "sun_tools_attach_WindowsVirtualMachine.h"
+#include "sun_tools_attach_VirtualMachineImpl.h"
 
 
 /* kernel32 */
@@ -124,11 +124,11 @@ void jvm_attach_thread_func_end (void) {
 
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    init
  * Signature: ()V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_init
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_init
   (JNIEnv *env, jclass cls)
 {
     // All following APIs exist on Windows XP with SP2/Windows Server 2008
@@ -139,11 +139,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_init
 
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    generateStub
  * Signature: ()[B
  */
-JNIEXPORT jbyteArray JNICALL Java_sun_tools_attach_WindowsVirtualMachine_generateStub
+JNIEXPORT jbyteArray JNICALL Java_sun_tools_attach_VirtualMachineImpl_generateStub
   (JNIEnv *env, jclass cls)
 {
     /*
@@ -161,11 +161,11 @@ JNIEXPORT jbyteArray JNICALL Java_sun_tools_attach_WindowsVirtualMachine_generat
 }
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    openProcess
  * Signature: (I)J
  */
-JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_openProcess
+JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_openProcess
   (JNIEnv *env, jclass cls, jint pid)
 {
     HANDLE hProcess = NULL;
@@ -236,11 +236,11 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_openProcess
 
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    closeProcess
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_closeProcess
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_closeProcess
   (JNIEnv *env, jclass cls, jlong hProcess)
 {
     CloseHandle((HANDLE)hProcess);
@@ -248,11 +248,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_closeProcess
 
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    createPipe
  * Signature: (Ljava/lang/String;)J
  */
-JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_createPipe
+JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
   (JNIEnv *env, jclass cls, jstring pipename)
 {
     HANDLE hPipe;
@@ -281,22 +281,22 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_WindowsVirtualMachine_createPipe
 }
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    closePipe
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_closePipe
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_closePipe
   (JNIEnv *env, jclass cls, jlong hPipe)
 {
     CloseHandle( (HANDLE)hPipe );
 }
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    connectPipe
  * Signature: (J)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_connectPipe
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_connectPipe
   (JNIEnv *env, jclass cls, jlong hPipe)
 {
     BOOL fConnected;
@@ -309,11 +309,11 @@ JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_connectPipe
 }
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    readPipe
  * Signature: (J[BII)I
  */
-JNIEXPORT jint JNICALL Java_sun_tools_attach_WindowsVirtualMachine_readPipe
+JNIEXPORT jint JNICALL Java_sun_tools_attach_VirtualMachineImpl_readPipe
   (JNIEnv *env, jclass cls, jlong hPipe, jbyteArray ba, jint off, jint baLen)
 {
     unsigned char buf[128];
@@ -352,11 +352,11 @@ JNIEXPORT jint JNICALL Java_sun_tools_attach_WindowsVirtualMachine_readPipe
 
 
 /*
- * Class:     sun_tools_attach_WindowsVirtualMachine
+ * Class:     sun_tools_attach_VirtualMachineImpl
  * Method:    enqueue
  * Signature: (JZLjava/lang/String;[Ljava/lang/Object;)V
  */
-JNIEXPORT void JNICALL Java_sun_tools_attach_WindowsVirtualMachine_enqueue
+JNIEXPORT void JNICALL Java_sun_tools_attach_VirtualMachineImpl_enqueue
   (JNIEnv *env, jclass cls, jlong handle, jbyteArray stub, jstring cmd,
    jstring pipename, jobjectArray args)
 {

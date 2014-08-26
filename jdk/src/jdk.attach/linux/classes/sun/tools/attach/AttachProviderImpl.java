@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,15 +32,15 @@ import com.sun.tools.attach.spi.AttachProvider;
 import java.io.IOException;
 
 /*
- * An AttachProvider implementation for Bsd that uses a UNIX domain
+ * An AttachProvider implementation for Linux that uses a UNIX domain
  * socket.
  */
-public class BsdAttachProvider extends HotSpotAttachProvider {
+public class AttachProviderImpl extends HotSpotAttachProvider {
 
     // perf counter for the JVM version
     private static final String JVM_VERSION = "java.property.java.vm.version";
 
-    public BsdAttachProvider() {
+    public AttachProviderImpl() {
     }
 
     public String name() {
@@ -60,7 +60,7 @@ public class BsdAttachProvider extends HotSpotAttachProvider {
         // to be not attachable.
         testAttachable(vmid);
 
-        return new BsdVirtualMachine(this, vmid);
+        return new VirtualMachineImpl(this, vmid);
     }
 
     public VirtualMachine attachVirtualMachine(VirtualMachineDescriptor vmd)
@@ -75,7 +75,7 @@ public class BsdAttachProvider extends HotSpotAttachProvider {
         if (vmd instanceof HotSpotVirtualMachineDescriptor) {
             assert ((HotSpotVirtualMachineDescriptor)vmd).isAttachable();
             checkAttachPermission();
-            return new BsdVirtualMachine(this, vmd.id());
+            return new VirtualMachineImpl(this, vmd.id());
         } else {
             return attachVirtualMachine(vmd.id());
         }

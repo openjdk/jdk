@@ -32,19 +32,18 @@ import com.sun.tools.attach.spi.AttachProvider;
 
 import java.io.IOException;
 
-// Based on 'LinuxAttachProvider.java'. All occurrences of the string
-// "Linux" have been textually replaced by "Aix" to avoid confusion.
+// Based on linux/classes/sun/tools/attach/AttachProviderImpl.java.
 
 /*
  * An AttachProvider implementation for Aix that uses a UNIX domain
  * socket.
  */
-public class AixAttachProvider extends HotSpotAttachProvider {
+public class AttachProviderImpl extends HotSpotAttachProvider {
 
     // perf counter for the JVM version
     private static final String JVM_VERSION = "java.property.java.vm.version";
 
-    public AixAttachProvider() {
+    public AttachProviderImpl() {
     }
 
     public String name() {
@@ -64,7 +63,7 @@ public class AixAttachProvider extends HotSpotAttachProvider {
         // to be not attachable.
         testAttachable(vmid);
 
-        return new AixVirtualMachine(this, vmid);
+        return new VirtualMachineImpl(this, vmid);
     }
 
     public VirtualMachine attachVirtualMachine(VirtualMachineDescriptor vmd)
@@ -79,7 +78,7 @@ public class AixAttachProvider extends HotSpotAttachProvider {
         if (vmd instanceof HotSpotVirtualMachineDescriptor) {
             assert ((HotSpotVirtualMachineDescriptor)vmd).isAttachable();
             checkAttachPermission();
-            return new AixVirtualMachine(this, vmd.id());
+            return new VirtualMachineImpl(this, vmd.id());
         } else {
             return attachVirtualMachine(vmd.id());
         }
