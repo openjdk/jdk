@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -593,12 +594,10 @@ enum CompilationPhase {
         this.pre = pre;
     }
 
-    boolean isApplicable(final FunctionNode functionNode) {
-        //this means that all in pre are present in state. state can be larger
-        return functionNode.hasState(pre);
-    }
-
     private static FunctionNode setStates(final FunctionNode functionNode, final CompilationState state) {
+        if (!AssertsEnabled.assertsEnabled()) {
+            return functionNode;
+        }
         return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveFunctionNode(final FunctionNode fn) {
@@ -618,7 +617,7 @@ enum CompilationPhase {
 
         assert pre != null;
 
-        if (!isApplicable(functionNode)) {
+        if (!functionNode.hasState(pre)) {
             final StringBuilder sb = new StringBuilder("Compilation phase ");
             sb.append(this).
                 append(" is not applicable to ").
