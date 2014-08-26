@@ -222,7 +222,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @param name the name for the first parsed function.
      */
     public void setFunctionName(final String name) {
-        defaultNames.push(new IdentNode(0, 0, name));
+        defaultNames.push(createIdentNode(0, 0, name));
     }
 
     /**
@@ -2243,7 +2243,7 @@ loop:
                 }
             }
 
-            propertyName =  new IdentNode(propertyToken, finish, ident).setIsPropertyName();
+            propertyName =  createIdentNode(propertyToken, finish, ident).setIsPropertyName();
         } else {
             propertyName = propertyName();
         }
@@ -2261,7 +2261,7 @@ loop:
     private PropertyFunction propertyGetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey getIdent = propertyName();
         final String getterName = getIdent.getPropertyName();
-        final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
+        final IdentNode getNameNode = createIdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
         expect(LPAREN);
         expect(RPAREN);
         final FunctionNode functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER, functionLine);
@@ -2272,7 +2272,7 @@ loop:
     private PropertyFunction propertySetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey setIdent = propertyName();
         final String setterName = setIdent.getPropertyName();
-        final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
+        final IdentNode setNameNode = createIdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
         expect(LPAREN);
         // be sloppy and allow missing setter parameter even though
         // spec does not permit it!
