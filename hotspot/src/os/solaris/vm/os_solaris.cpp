@@ -4729,27 +4729,6 @@ void os::make_polling_page_readable(void) {
 
 bool os::check_heap(bool force) { return true; }
 
-typedef int (*vsnprintf_t)(char* buf, size_t count, const char* fmt, va_list argptr);
-static vsnprintf_t sol_vsnprintf = NULL;
-
-int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
-  if (!sol_vsnprintf) {
-    //search  for the named symbol in the objects that were loaded after libjvm
-    void* where = RTLD_NEXT;
-    if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL)
-        sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
-    if (!sol_vsnprintf){
-      //search  for the named symbol in the objects that were loaded before libjvm
-      where = RTLD_DEFAULT;
-      if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL)
-        sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
-      assert(sol_vsnprintf != NULL, "vsnprintf not found");
-    }
-  }
-  return (*sol_vsnprintf)(buf, count, fmt, argptr);
-}
-
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
