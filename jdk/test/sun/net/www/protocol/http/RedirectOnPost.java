@@ -23,7 +23,9 @@
 
 /**
  * @test
- * @compile ../../../../../com/sun/net/httpserver/SimpleSSLContext.java RedirectOnPost.java
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
+ * @compile RedirectOnPost.java
  * @run main/othervm RedirectOnPost
  * @bug 8029127
  * @summary A redirect POST request does not work and illegalStateException on HttpURLConnection.getInputStream
@@ -35,17 +37,16 @@ import java.util.*;
 import com.sun.net.httpserver.*;
 import java.util.concurrent.*;
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 public class RedirectOnPost {
 
 
     public static void main(String[] args) throws Exception {
-            ExecutorService e= Executors.newFixedThreadPool(5);
-        String keysdir = System.getProperty("test.src")
-                  + "/../../../../../com/sun/net/httpserver/";
-        SSLContext ctx = new SimpleSSLContext(keysdir).get();
-            HttpServer httpServer = getHttpServer(e);
-            HttpsServer httpsServer = getHttpsServer(e, ctx);
+        ExecutorService e= Executors.newFixedThreadPool(5);
+        SSLContext ctx = new SimpleSSLContext().get();
+        HttpServer httpServer = getHttpServer(e);
+        HttpsServer httpsServer = getHttpsServer(e, ctx);
 
         try {
             // take the keystore from elsewhere in test hierarchy
