@@ -374,4 +374,13 @@ public class ScriptObjectMirrorTest {
         final Object global = e.eval("this");
         assertFalse(global.equals(jsobj.eval("this")));
     }
+
+    @Test
+    public void topLevelAnonFuncStatement() throws Exception {
+        final ScriptEngineManager engineManager = new ScriptEngineManager();
+        final ScriptEngine e = engineManager.getEngineByName("nashorn");
+        final JSObject func = (JSObject)e.eval("function(x) { return x + ' world' }");
+        assertTrue(func.isFunction());
+        assertEquals(func.call(e.eval("this"), "hello"), "hello world");
+    }
 }
