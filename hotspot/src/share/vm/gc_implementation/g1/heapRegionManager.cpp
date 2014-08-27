@@ -351,10 +351,6 @@ uint HeapRegionManager::shrink_by(uint num_regions_to_remove) {
 
   while ((removed < num_regions_to_remove) &&
       (num_last_found = find_empty_from_idx_reverse(cur, &idx_last_found)) > 0) {
-    // Only allow uncommit from the end of the heap.
-    if ((idx_last_found + num_last_found) != _allocated_heapregions_length) {
-      return 0;
-    }
     uint to_remove = MIN2(num_regions_to_remove - removed, num_last_found);
 
     uncommit_regions(idx_last_found + num_last_found - to_remove, to_remove);
