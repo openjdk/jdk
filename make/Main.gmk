@@ -461,6 +461,9 @@ ALL_MODULE_TARGETS := $(sort $(GENSRC_MODULES) $(JAVA_MODULES) \
     $(GENDATA_MODULES) $(LIB_MODULES) $(LAUNCHER_MODULES) $(COPY_MODULES))
 
 exploded-image: $(ALL_MODULE_TARGETS) modules-xml
+# The old 'jdk' target most closely matches the new exploded-image. Keep an
+# alias for ease of use.
+jdk: exploded-image
 
 jars: main-jars nashorn-jar security-jars policy-jars
 
@@ -472,7 +475,7 @@ profiles: $(ALL_PROFILES)
 docs: docs-javadoc docs-jvmtidoc
 
 ALL_TARGETS += gensrc gendata copy java rmic libs launchers \
-    $(ALL_MODULE_TARGETS) exploded-image jars \
+    $(ALL_MODULE_TARGETS) exploded-image jdk jars \
     $(ALL_PROFILES) profiles docs
 
 ################################################################################
@@ -492,6 +495,12 @@ ALL_TARGETS += default all
 # If running a clean target, disable parallel execution
 ifneq ($(findstring clean, $(MAKECMDGOALS)), )
   .NOTPARALLEL:
+  # It's not recommended to run additional targets to clean on the same make
+  # command line. Try to detect this and issue a warning.
+  ifneq ($(filter-out clean%, $(MAKECMDGOALS)), )
+    $(warning Mixing clean targets with normal build targets will not work well \
+        and is not recommended.)
+  endif
 endif
 
 CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
