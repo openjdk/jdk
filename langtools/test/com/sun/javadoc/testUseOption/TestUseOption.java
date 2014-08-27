@@ -23,8 +23,8 @@
 
 /*
  * @test
- * @bug 4496290 4985072 7006178 7068595 8016328
- * @summary A simple test to determine if -use works.
+ * @bug 4496290 4985072 7006178 7068595 8016328 8050031
+ * @summary A simple test to ensure class-use files are correct.
  * @author jamieh
  * @library ../lib
  * @build JavadocTester
@@ -138,5 +138,19 @@ public class TestUseOption extends JavadocTester {
                 "<td class=\"colOne\">"
                 + "<a href=\"class-use/UsedInC.html#%3CUnnamed%3E\">UsedInC</a>&nbsp;</td>"
         );
+    }
+
+    @Test
+    void test3() {
+        javadoc("-d", "out-3",
+                "-sourcepath", testSrc,
+                "-use",
+                "-package", "unique");
+        checkExit(Exit.OK);
+        checkUnique("unique/class-use/UseMe.html",
+                "<a href=\"../../unique/C1.html#umethod1-unique.UseMe-unique.UseMe:A-\">",
+                "<a href=\"../../unique/C1.html#umethod2-unique.UseMe-unique.UseMe-\">",
+                "<a href=\"../../unique/C1.html#umethod3-unique.UseMe-unique.UseMe-\">",
+                "<a href=\"../../unique/C1.html#C1-unique.UseMe-unique.UseMe-\">");
     }
 }
