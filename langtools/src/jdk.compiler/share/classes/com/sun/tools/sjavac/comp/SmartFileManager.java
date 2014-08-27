@@ -37,6 +37,8 @@ import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 
 import com.sun.tools.javac.file.JavacFileManager;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
@@ -92,7 +94,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return packageArtifacts;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Iterable<JavaFileObject> list(Location location,
                                          String packageName,
                                          Set<Kind> kinds,
@@ -116,12 +118,12 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return filteredFiles;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean hasLocation(Location location) {
         return super.hasLocation(location);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
                                               String className,
                                               Kind kind) throws IOException {
@@ -136,7 +138,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForOutput(Location location,
                                                String className,
                                                Kind kind,
@@ -154,7 +156,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return file;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForInput(Location location,
                                       String packageName,
                                       String relativeName) throws IOException {
@@ -169,7 +171,7 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForOutput(Location location,
                                        String packageName,
                                        String relativeName,
@@ -201,12 +203,12 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return sb.toString();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void flush() throws IOException {
         super.flush();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void close() throws IOException {
         super.close();
     }

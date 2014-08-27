@@ -49,6 +49,8 @@ import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.PropagatedException;
@@ -79,22 +81,22 @@ public class BasicJavacTask extends JavacTask {
             context.put(JavacTask.class, this);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends CompilationUnitTree> parse() {
         throw new IllegalStateException();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends Element> analyze() {
         throw new IllegalStateException();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends JavaFileObject> generate() {
         throw new IllegalStateException();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void setTaskListener(TaskListener tl) {
         MultiTaskListener mtl = MultiTaskListener.instance(context);
         if (taskListener != null)
@@ -104,13 +106,13 @@ public class BasicJavacTask extends JavacTask {
         taskListener = tl;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void addTaskListener(TaskListener taskListener) {
         MultiTaskListener mtl = MultiTaskListener.instance(context);
         mtl.add(taskListener);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void removeTaskListener(TaskListener taskListener) {
         MultiTaskListener mtl = MultiTaskListener.instance(context);
         mtl.remove(taskListener);
@@ -121,7 +123,7 @@ public class BasicJavacTask extends JavacTask {
         return mtl.getTaskListeners();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getTypeMirror(Iterable<? extends Tree> path) {
         // TODO: Should complete attribution if necessary
         Tree last = null;
@@ -130,31 +132,31 @@ public class BasicJavacTask extends JavacTask {
         return ((JCTree)last).type;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Elements getElements() {
         if (context == null)
             throw new IllegalStateException();
         return JavacElements.instance(context);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Types getTypes() {
         if (context == null)
             throw new IllegalStateException();
         return JavacTypes.instance(context);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void setProcessors(Iterable<? extends Processor> processors) {
         throw new IllegalStateException();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void setLocale(Locale locale) {
         throw new IllegalStateException();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Boolean call() {
         throw new IllegalStateException();
     }

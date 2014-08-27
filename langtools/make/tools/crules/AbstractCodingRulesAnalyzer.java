@@ -30,6 +30,8 @@ import java.util.ResourceBundle;
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.code.Symtab;
+import com.sun.tools.javac.model.JavacElements;
+import com.sun.tools.javac.model.JavacTypes;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.Context;
@@ -49,6 +51,8 @@ public abstract class AbstractCodingRulesAnalyzer {
     private   final Options options;
     protected final Messages messages;
     protected final Symtab syms;
+    protected final JavacElements elements;
+    protected final JavacTypes types;
     protected TreeScanner treeVisitor;
     protected Kind eventKind;
 
@@ -61,6 +65,8 @@ public abstract class AbstractCodingRulesAnalyzer {
         diags = JCDiagnostic.Factory.instance(context);
         messages = new Messages();
         syms = Symtab.instance(context);
+        elements = JavacElements.instance(context);
+        types = JavacTypes.instance(context);
     }
 
     protected class Messages {

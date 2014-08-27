@@ -27,6 +27,8 @@ package com.sun.tools.javac.tree;
 
 import com.sun.source.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -71,6 +73,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return lb.toList();
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitAnnotatedType(AnnotatedTypeTree node, P p) {
         JCAnnotatedType t = (JCAnnotatedType) node;
         List<JCAnnotation> annotations = copy(t.annotations, p);
@@ -78,6 +81,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).AnnotatedType(annotations, underlyingType);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitAnnotation(AnnotationTree node, P p) {
         JCAnnotation t = (JCAnnotation) node;
         JCTree annotationType = copy(t.annotationType, p);
@@ -93,6 +97,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         }
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitAssert(AssertTree node, P p) {
         JCAssert t = (JCAssert) node;
         JCExpression cond = copy(t.cond, p);
@@ -100,6 +105,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Assert(cond, detail);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitAssignment(AssignmentTree node, P p) {
         JCAssign t = (JCAssign) node;
         JCExpression lhs = copy(t.lhs, p);
@@ -107,6 +113,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Assign(lhs, rhs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitCompoundAssignment(CompoundAssignmentTree node, P p) {
         JCAssignOp t = (JCAssignOp) node;
         JCTree lhs = copy(t.lhs, p);
@@ -114,6 +121,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Assignop(t.getTag(), lhs, rhs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBinary(BinaryTree node, P p) {
         JCBinary t = (JCBinary) node;
         JCExpression lhs = copy(t.lhs, p);
@@ -121,17 +129,20 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Binary(t.getTag(), lhs, rhs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBlock(BlockTree node, P p) {
         JCBlock t = (JCBlock) node;
         List<JCStatement> stats = copy(t.stats, p);
         return M.at(t.pos).Block(t.flags, stats);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitBreak(BreakTree node, P p) {
         JCBreak t = (JCBreak) node;
         return M.at(t.pos).Break(t.label);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitCase(CaseTree node, P p) {
         JCCase t = (JCCase) node;
         JCExpression pat = copy(t.pat, p);
@@ -139,6 +150,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Case(pat, stats);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitCatch(CatchTree node, P p) {
         JCCatch t = (JCCatch) node;
         JCVariableDecl param = copy(t.param, p);
@@ -146,6 +158,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Catch(param, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitClass(ClassTree node, P p) {
         JCClassDecl t = (JCClassDecl) node;
         JCModifiers mods = copy(t.mods, p);
@@ -156,6 +169,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).ClassDef(mods, t.name, typarams, extending, implementing, defs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitConditionalExpression(ConditionalExpressionTree node, P p) {
         JCConditional t = (JCConditional) node;
         JCExpression cond = copy(t.cond, p);
@@ -164,11 +178,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Conditional(cond, truepart, falsepart);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitContinue(ContinueTree node, P p) {
         JCContinue t = (JCContinue) node;
         return M.at(t.pos).Continue(t.label);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitDoWhileLoop(DoWhileLoopTree node, P p) {
         JCDoWhileLoop t = (JCDoWhileLoop) node;
         JCStatement body = copy(t.body, p);
@@ -176,18 +192,21 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).DoLoop(body, cond);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitErroneous(ErroneousTree node, P p) {
         JCErroneous t = (JCErroneous) node;
         List<? extends JCTree> errs = copy(t.errs, p);
         return M.at(t.pos).Erroneous(errs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitExpressionStatement(ExpressionStatementTree node, P p) {
         JCExpressionStatement t = (JCExpressionStatement) node;
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Exec(expr);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitEnhancedForLoop(EnhancedForLoopTree node, P p) {
         JCEnhancedForLoop t = (JCEnhancedForLoop) node;
         JCVariableDecl var = copy(t.var, p);
@@ -196,6 +215,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).ForeachLoop(var, expr, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitForLoop(ForLoopTree node, P p) {
         JCForLoop t = (JCForLoop) node;
         List<JCStatement> init = copy(t.init, p);
@@ -205,11 +225,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).ForLoop(init, cond, step, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitIdentifier(IdentifierTree node, P p) {
         JCIdent t = (JCIdent) node;
         return M.at(t.pos).Ident(t.name);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitIf(IfTree node, P p) {
         JCIf t = (JCIf) node;
         JCExpression cond = copy(t.cond, p);
@@ -218,12 +240,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).If(cond, thenpart, elsepart);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitImport(ImportTree node, P p) {
         JCImport t = (JCImport) node;
         JCTree qualid = copy(t.qualid, p);
         return M.at(t.pos).Import(qualid, t.staticImport);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitArrayAccess(ArrayAccessTree node, P p) {
         JCArrayAccess t = (JCArrayAccess) node;
         JCExpression indexed = copy(t.indexed, p);
@@ -231,17 +255,20 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Indexed(indexed, index);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitLabeledStatement(LabeledStatementTree node, P p) {
         JCLabeledStatement t = (JCLabeledStatement) node;
         JCStatement body = copy(t.body, p);
         return M.at(t.pos).Labelled(t.label, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitLiteral(LiteralTree node, P p) {
         JCLiteral t = (JCLiteral) node;
         return M.at(t.pos).Literal(t.typetag, t.value);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitMethod(MethodTree node, P p) {
         JCMethodDecl t  = (JCMethodDecl) node;
         JCModifiers mods = copy(t.mods, p);
@@ -255,6 +282,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).MethodDef(mods, t.name, restype, typarams, recvparam, params, thrown, body, defaultValue);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitMethodInvocation(MethodInvocationTree node, P p) {
         JCMethodInvocation t = (JCMethodInvocation) node;
         List<JCExpression> typeargs = copy(t.typeargs, p);
@@ -263,12 +291,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Apply(typeargs, meth, args);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitModifiers(ModifiersTree node, P p) {
         JCModifiers t = (JCModifiers) node;
         List<JCAnnotation> annotations = copy(t.annotations, p);
         return M.at(t.pos).Modifiers(t.flags, annotations);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitNewArray(NewArrayTree node, P p) {
         JCNewArray t = (JCNewArray) node;
         JCExpression elemtype = copy(t.elemtype, p);
@@ -277,6 +307,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).NewArray(elemtype, dims, elems);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitNewClass(NewClassTree node, P p) {
         JCNewClass t = (JCNewClass) node;
         JCExpression encl = copy(t.encl, p);
@@ -287,6 +318,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).NewClass(encl, typeargs, clazz, args, def);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitLambdaExpression(LambdaExpressionTree node, P p) {
         JCLambda t = (JCLambda) node;
         List<JCVariableDecl> params = copy(t.params, p);
@@ -294,24 +326,28 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Lambda(params, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitParenthesized(ParenthesizedTree node, P p) {
         JCParens t = (JCParens) node;
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Parens(expr);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitReturn(ReturnTree node, P p) {
         JCReturn t = (JCReturn) node;
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Return(expr);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitMemberSelect(MemberSelectTree node, P p) {
         JCFieldAccess t = (JCFieldAccess) node;
         JCExpression selected = copy(t.selected, p);
         return M.at(t.pos).Select(selected, t.name);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitMemberReference(MemberReferenceTree node, P p) {
         JCMemberReference t = (JCMemberReference) node;
         JCExpression expr = copy(t.expr, p);
@@ -319,11 +355,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Reference(t.mode, t.name, expr, typeargs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitEmptyStatement(EmptyStatementTree node, P p) {
         JCSkip t = (JCSkip) node;
         return M.at(t.pos).Skip();
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitSwitch(SwitchTree node, P p) {
         JCSwitch t = (JCSwitch) node;
         JCExpression selector = copy(t.selector, p);
@@ -331,6 +369,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Switch(selector, cases);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitSynchronized(SynchronizedTree node, P p) {
         JCSynchronized t = (JCSynchronized) node;
         JCExpression lock = copy(t.lock, p);
@@ -338,18 +377,21 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Synchronized(lock, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitThrow(ThrowTree node, P p) {
         JCThrow t = (JCThrow) node;
         JCExpression expr = copy(t.expr, p);
         return M.at(t.pos).Throw(expr);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitCompilationUnit(CompilationUnitTree node, P p) {
         JCCompilationUnit t = (JCCompilationUnit) node;
         List<JCTree> defs = copy(t.defs, p);
         return M.at(t.pos).TopLevel(defs);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitPackage(PackageTree node, P p) {
         JCPackageDecl t = (JCPackageDecl) node;
         List<JCAnnotation> annotations = copy(t.annotations, p);
@@ -357,6 +399,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).PackageDecl(annotations, pid);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitTry(TryTree node, P p) {
         JCTry t = (JCTry) node;
         List<JCTree> resources = copy(t.resources, p);
@@ -366,6 +409,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Try(resources, body, catchers, finalizer);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitParameterizedType(ParameterizedTypeTree node, P p) {
         JCTypeApply t = (JCTypeApply) node;
         JCExpression clazz = copy(t.clazz, p);
@@ -373,24 +417,28 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeApply(clazz, arguments);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitUnionType(UnionTypeTree node, P p) {
         JCTypeUnion t = (JCTypeUnion) node;
         List<JCExpression> components = copy(t.alternatives, p);
         return M.at(t.pos).TypeUnion(components);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitIntersectionType(IntersectionTypeTree node, P p) {
         JCTypeIntersection t = (JCTypeIntersection) node;
         List<JCExpression> bounds = copy(t.bounds, p);
         return M.at(t.pos).TypeIntersection(bounds);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitArrayType(ArrayTypeTree node, P p) {
         JCArrayTypeTree t = (JCArrayTypeTree) node;
         JCExpression elemtype = copy(t.elemtype, p);
         return M.at(t.pos).TypeArray(elemtype);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitTypeCast(TypeCastTree node, P p) {
         JCTypeCast t = (JCTypeCast) node;
         JCTree clazz = copy(t.clazz, p);
@@ -398,11 +446,13 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeCast(clazz, expr);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitPrimitiveType(PrimitiveTypeTree node, P p) {
         JCPrimitiveTypeTree t = (JCPrimitiveTypeTree) node;
         return M.at(t.pos).TypeIdent(t.typetag);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitTypeParameter(TypeParameterTree node, P p) {
         JCTypeParameter t = (JCTypeParameter) node;
         List<JCAnnotation> annos = copy(t.annotations, p);
@@ -410,6 +460,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeParameter(t.name, bounds, annos);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitInstanceOf(InstanceOfTree node, P p) {
         JCInstanceOf t = (JCInstanceOf) node;
         JCExpression expr = copy(t.expr, p);
@@ -417,12 +468,14 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).TypeTest(expr, clazz);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitUnary(UnaryTree node, P p) {
         JCUnary t = (JCUnary) node;
         JCExpression arg = copy(t.arg, p);
         return M.at(t.pos).Unary(t.getTag(), arg);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitVariable(VariableTree node, P p) {
         JCVariableDecl t = (JCVariableDecl) node;
         JCModifiers mods = copy(t.mods, p);
@@ -436,6 +489,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         }
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitWhileLoop(WhileLoopTree node, P p) {
         JCWhileLoop t = (JCWhileLoop) node;
         JCStatement body = copy(t.body, p);
@@ -443,6 +497,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).WhileLoop(cond, body);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitWildcard(WildcardTree node, P p) {
         JCWildcard t = (JCWildcard) node;
         TypeBoundKind kind = M.at(t.kind.pos).TypeBoundKind(t.kind.kind);
@@ -450,6 +505,7 @@ public class TreeCopier<P> implements TreeVisitor<JCTree,P> {
         return M.at(t.pos).Wildcard(kind, inner);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree visitOther(Tree node, P p) {
         JCTree tree = (JCTree) node;
         switch (tree.getTag()) {

@@ -41,6 +41,8 @@ import com.sun.source.util.Trees;
 import com.sun.tools.javac.api.BasicJavacTask;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
 
 public class CodingRulesAnalyzerPlugin implements Plugin {
@@ -48,6 +50,7 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
     protected Log log;
     protected Trees trees;
 
+    @DefinedBy(Api.COMPILER_TREE)
     public void init(JavacTask task, String... args) {
         BasicJavacTask impl = (BasicJavacTask)task;
         Context context = impl.getContext();
@@ -55,7 +58,8 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
         trees = Trees.instance(task);
         task.addTaskListener(new PostAnalyzeTaskListener(
                 new MutableFieldsAnalyzer(task),
-                new AssertCheckAnalyzer(task)
+                new AssertCheckAnalyzer(task),
+                new DefinedByAnalyzer(task)
         ));
     }
 
@@ -74,10 +78,10 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public void started(TaskEvent taskEvent) {}
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public void finished(TaskEvent taskEvent) {
             List<AbstractCodingRulesAnalyzer> currentAnalyzers = this.analyzers.get(taskEvent.getKind());
 
@@ -99,7 +103,7 @@ public class CodingRulesAnalyzerPlugin implements Plugin {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public String getName() {
         return "coding_rules";
     }
