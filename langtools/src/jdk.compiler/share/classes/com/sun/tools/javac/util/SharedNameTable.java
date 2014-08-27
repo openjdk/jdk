@@ -27,6 +27,8 @@ package com.sun.tools.javac.util;
 
 import java.lang.ref.SoftReference;
 
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Implementation of Name.Table that stores all names in a single shared
  * byte array, expanding it as needed. This avoids the overhead incurred
@@ -192,12 +194,14 @@ public class SharedNameTable extends Name.Table {
 
         /** Return the hash value of this name.
          */
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
             return index;
         }
 
         /** Is this name equal to other?
          */
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object other) {
             if (other instanceof Name)
                 return

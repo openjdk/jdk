@@ -30,6 +30,8 @@ import java.io.Writer;
 import com.sun.source.doctree.*;
 import com.sun.source.doctree.AttributeTree.ValueKind;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import java.io.IOException;
 import java.util.List;
 
@@ -128,6 +130,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
     }
 
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitAttribute(AttributeTree node, Void p) {
         try {
             print(node.getName());
@@ -159,6 +162,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitAuthor(AuthorTree node, Void p) {
         try {
             printTagName(node);
@@ -170,6 +174,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitComment(CommentTree node, Void p) {
         try {
             print(node.getBody());
@@ -179,6 +184,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitDeprecated(DeprecatedTree node, Void p) {
         try {
             printTagName(node);
@@ -192,6 +198,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree node, Void p) {
         try {
             List<? extends DocTree> fs = node.getFirstSentence();
@@ -210,6 +217,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocRoot(DocRootTree node, Void p) {
         try {
             print("{");
@@ -221,6 +229,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitEndElement(EndElementTree node, Void p) {
         try {
             print("</");
@@ -232,6 +241,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree node, Void p) {
         try {
             print("&");
@@ -243,6 +253,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitErroneous(ErroneousTree node, Void p) {
         try {
             print(node.getBody());
@@ -252,6 +263,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitIdentifier(IdentifierTree node, Void p) {
         try {
             print(node.getName());
@@ -261,6 +273,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitInheritDoc(InheritDocTree node, Void p) {
         try {
             print("{");
@@ -272,6 +285,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitLink(LinkTree node, Void p) {
         try {
             print("{");
@@ -289,6 +303,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitLiteral(LiteralTree node, Void p) {
         try {
             print("{");
@@ -302,6 +317,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitParam(ParamTree node, Void p) {
         try {
             printTagName(node);
@@ -319,6 +335,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree node, Void p) {
         try {
             print(node.getSignature());
@@ -328,6 +345,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree node, Void p) {
         try {
             printTagName(node);
@@ -339,6 +357,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitSee(SeeTree node, Void p) {
         try {
             printTagName(node);
@@ -356,6 +375,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitSerial(SerialTree node, Void p) {
         try {
             printTagName(node);
@@ -369,6 +389,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitSerialData(SerialDataTree node, Void p) {
         try {
             printTagName(node);
@@ -382,6 +403,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitSerialField(SerialFieldTree node, Void p) {
         try {
             printTagName(node);
@@ -399,6 +421,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitSince(SinceTree node, Void p) {
         try {
             printTagName(node);
@@ -410,6 +433,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree node, Void p) {
         try {
             print("<");
@@ -432,6 +456,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitText(TextTree node, Void p) {
         try {
             print(node.getBody());
@@ -441,6 +466,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitThrows(ThrowsTree node, Void p) {
         try {
             printTagName(node);
@@ -456,6 +482,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitUnknownBlockTag(UnknownBlockTagTree node, Void p) {
         try {
             print("@");
@@ -468,6 +495,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitUnknownInlineTag(UnknownInlineTagTree node, Void p) {
         try {
             print("{");
@@ -482,6 +510,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitValue(ValueTree node, Void p) {
         try {
             print("{");
@@ -497,6 +526,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitVersion(VersionTree node, Void p) {
         try {
             printTagName(node);
@@ -508,6 +538,7 @@ public class DocPretty implements DocTreeVisitor<Void,Void> {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Void visitOther(DocTree node, Void p) {
         try {
             print("(UNKNOWN: " + node + ")");

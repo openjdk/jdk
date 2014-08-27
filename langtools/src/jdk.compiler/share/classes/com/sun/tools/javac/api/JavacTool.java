@@ -45,6 +45,8 @@ import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javac.util.PropagatedException;
 
@@ -78,7 +80,7 @@ public final class JavacTool implements JavaCompiler {
         return new JavacTool();
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public JavacFileManager getStandardFileManager(
         DiagnosticListener<? super JavaFileObject> diagnosticListener,
         Locale locale,
@@ -94,7 +96,7 @@ public final class JavacTool implements JavaCompiler {
         return new JavacFileManager(context, true, charset);
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public JavacTask getTask(Writer out,
                              JavaFileManager fileManager,
                              DiagnosticListener<? super JavaFileObject> diagnosticListener,
@@ -165,7 +167,7 @@ public final class JavacTool implements JavaCompiler {
         }
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
         if (err == null)
             err = System.err;
@@ -174,13 +176,13 @@ public final class JavacTool implements JavaCompiler {
         return com.sun.tools.javac.Main.compile(arguments, new PrintWriter(err, true));
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public Set<SourceVersion> getSourceVersions() {
         return Collections.unmodifiableSet(EnumSet.range(SourceVersion.RELEASE_3,
                                                          SourceVersion.latest()));
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public int isSupportedOption(String option) {
         Set<Option> recognizedOptions = Option.getJavacToolOptions();
         for (Option o : recognizedOptions) {

@@ -40,6 +40,7 @@ import com.sun.tools.javac.code.Scope.WriteableScope;
 import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -1325,7 +1326,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
                     synthesizeTyparams((ClassSymbol) clazzType.tsym, tree.arguments.size());
                 final List<Type> actuals = visit(tree.arguments);
                 result = new ErrorType(tree.type, clazzType.tsym) {
-                    @Override
+                    @Override @DefinedBy(Api.LANGUAGE_MODEL)
                     public List<Type> getTypeArguments() {
                         return actuals;
                     }
@@ -1338,7 +1339,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ClassSymbol c = new ClassSymbol(flags, name, owner);
             c.members_field = new Scope.ErrorScope(c);
             c.type = new ErrorType(originalType, c) {
-                @Override
+                @Override @DefinedBy(Api.LANGUAGE_MODEL)
                 public List<Type> getTypeArguments() {
                     return typarams_field;
                 }

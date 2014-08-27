@@ -54,6 +54,8 @@ import com.sun.tools.javac.api.JavacTool;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  * Multi-function entry point for the doc check utility.
@@ -244,12 +246,12 @@ public class DocLint implements Plugin {
 
     // <editor-fold defaultstate="collapsed" desc="javac Plugin">
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public String getName() {
         return "doclint";
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void init(JavacTask task, String... args) {
         init(task, args, true);
     }
@@ -289,7 +291,7 @@ public class DocLint implements Plugin {
             };
 
             TaskListener tl = new TaskListener() {
-                @Override
+                @Override @DefinedBy(Api.COMPILER_TREE)
                 public void started(TaskEvent e) {
                     switch (e.getKind()) {
                         case ANALYZE:
@@ -300,7 +302,7 @@ public class DocLint implements Plugin {
                     }
                 }
 
-                @Override
+                @Override @DefinedBy(Api.COMPILER_TREE)
                 public void finished(TaskEvent e) {
                     switch (e.getKind()) {
                         case PARSE:
@@ -348,25 +350,25 @@ public class DocLint implements Plugin {
     static abstract class DeclScanner extends TreePathScanner<Void, Void> {
         abstract void visitDecl(Tree tree, Name name);
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitPackage(PackageTree tree, Void ignore) {
             visitDecl(tree, null);
             return super.visitPackage(tree, ignore);
         }
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitClass(ClassTree tree, Void ignore) {
             visitDecl(tree, tree.getSimpleName());
             return super.visitClass(tree, ignore);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitMethod(MethodTree tree, Void ignore) {
             visitDecl(tree, tree.getName());
             //return super.visitMethod(tree, ignore);
             return null;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Void visitVariable(VariableTree tree, Void ignore) {
             visitDecl(tree, tree.getName());
             return super.visitVariable(tree, ignore);

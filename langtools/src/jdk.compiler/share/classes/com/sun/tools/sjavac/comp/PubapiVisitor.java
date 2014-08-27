@@ -34,6 +34,9 @@ import javax.lang.model.element.VariableElement;
 import javax.lang.model.type.TypeMirror;
 import javax.lang.model.util.ElementScanner9;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /** Utility class that constructs a textual representation
  * of the public api of a class.
  *
@@ -57,7 +60,7 @@ public class PubapiVisitor extends ElementScanner9<Void, Void> {
         return "                                              ".substring(0, l);
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitType(TypeElement e, Void p) {
         if (e.getModifiers().contains(Modifier.PUBLIC)
             || e.getModifiers().contains(Modifier.PROTECTED))
@@ -71,7 +74,7 @@ public class PubapiVisitor extends ElementScanner9<Void, Void> {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitVariable(VariableElement e, Void p) {
         if (e.getModifiers().contains(Modifier.PUBLIC)
             || e.getModifiers().contains(Modifier.PROTECTED)) {
@@ -86,7 +89,7 @@ public class PubapiVisitor extends ElementScanner9<Void, Void> {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public Void visitExecutable(ExecutableElement e, Void p) {
         if (e.getModifiers().contains(Modifier.PUBLIC)
             || e.getModifiers().contains(Modifier.PROTECTED)) {

@@ -31,9 +31,12 @@ import java.util.Collection;
 import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
- * TODO.
+ * A collection of currently registered {@link TaskListener}s. Events passed to this TaskListener
+ * will be forwarded to all the registered TaskListeners.
  *
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own risk.
@@ -94,7 +97,7 @@ public class MultiTaskListener implements TaskListener {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void started(TaskEvent e) {
         // guard against listeners being updated by a listener
         TaskListener[] ll = this.listeners;
@@ -102,7 +105,7 @@ public class MultiTaskListener implements TaskListener {
             l.started(e);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public void finished(TaskEvent e) {
         // guard against listeners being updated by a listener
         TaskListener[] ll = this.listeners;

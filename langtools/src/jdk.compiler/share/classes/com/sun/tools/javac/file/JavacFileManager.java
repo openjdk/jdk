@@ -58,6 +58,8 @@ import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -174,6 +176,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return getJavaFileForOutput(CLASS_OUTPUT, classname, kind, sibling);
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjectsFromStrings(Iterable<String> names) {
         ListBuffer<File> files = new ListBuffer<>();
         for (String name : names)
@@ -181,6 +184,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return getJavaFileObjectsFromFiles(files.toList());
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjects(String... names) {
         return getJavaFileObjectsFromStrings(Arrays.asList(nullCheck(names)));
     }
@@ -556,6 +560,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     /** Flush any output resources.
      */
+    @DefinedBy(Api.COMPILER)
     public void flush() {
         contentCache.clear();
     }
@@ -563,6 +568,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
     /**
      * Close the JavaFileManager, releasing resources.
      */
+    @DefinedBy(Api.COMPILER)
     public void close() {
         for (Iterator<Archive> i = archives.values().iterator(); i.hasNext(); ) {
             Archive a = i.next();
@@ -574,6 +580,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         }
     }
 
+    @DefinedBy(Api.COMPILER)
     public ClassLoader getClassLoader(Location location) {
         nullCheck(location);
         Iterable<? extends File> path = getLocation(location);
@@ -591,6 +598,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return getClassLoader(lb.toArray(new URL[lb.size()]));
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<JavaFileObject> list(Location location,
                                          String packageName,
                                          Set<JavaFileObject.Kind> kinds,
@@ -612,6 +620,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return results.toList();
     }
 
+    @DefinedBy(Api.COMPILER)
     public String inferBinaryName(Location location, JavaFileObject file) {
         file.getClass(); // null check
         location.getClass(); // null check
@@ -627,6 +636,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
             throw new IllegalArgumentException(file.getClass().getName());
     }
 
+    @DefinedBy(Api.COMPILER)
     public boolean isSameFile(FileObject a, FileObject b) {
         nullCheck(a);
         nullCheck(b);
@@ -637,10 +647,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return a.equals(b);
     }
 
+    @DefinedBy(Api.COMPILER)
     public boolean hasLocation(Location location) {
         return getLocation(location) != null;
     }
 
+    @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
                                               String className,
                                               JavaFileObject.Kind kind)
@@ -655,6 +667,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return getFileForInput(location, RelativeFile.forClass(className, kind));
     }
 
+    @DefinedBy(Api.COMPILER)
     public FileObject getFileForInput(Location location,
                                       String packageName,
                                       String relativeName)
@@ -696,6 +709,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return null;
     }
 
+    @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForOutput(Location location,
                                                String className,
                                                JavaFileObject.Kind kind,
@@ -711,6 +725,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return getFileForOutput(location, RelativeFile.forClass(className, kind), sibling);
     }
 
+    @DefinedBy(Api.COMPILER)
     public FileObject getFileForOutput(Location location,
                                        String packageName,
                                        String relativeName,
@@ -760,6 +775,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
 
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjectsFromFiles(
         Iterable<? extends File> files)
     {
@@ -773,10 +789,12 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         return result;
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<? extends JavaFileObject> getJavaFileObjects(File... files) {
         return getJavaFileObjectsFromFiles(Arrays.asList(nullCheck(files)));
     }
 
+    @DefinedBy(Api.COMPILER)
     public void setLocation(Location location,
                             Iterable<? extends File> path)
         throws IOException
@@ -785,6 +803,7 @@ public class JavacFileManager extends BaseFileManager implements StandardJavaFil
         locations.setLocation(location, path);
     }
 
+    @DefinedBy(Api.COMPILER)
     public Iterable<? extends File> getLocation(Location location) {
         nullCheck(location);
         return locations.getLocation(location);

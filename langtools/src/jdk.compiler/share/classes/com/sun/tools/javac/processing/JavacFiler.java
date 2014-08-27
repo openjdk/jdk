@@ -52,6 +52,7 @@ import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import com.sun.tools.javac.code.Lint;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static com.sun.tools.javac.code.Lint.LintCategory.PROCESSING;
 
@@ -120,7 +121,7 @@ public class JavacFiler implements Filer, Closeable {
             this.name = name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public synchronized OutputStream openOutputStream() throws IOException {
             if (opened)
                 throw new IOException(ALREADY_OPENED);
@@ -128,7 +129,7 @@ public class JavacFiler implements Filer, Closeable {
             return new FilerOutputStream(name, fileObject);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public synchronized Writer openWriter() throws IOException {
             if (opened)
                 throw new IOException(ALREADY_OPENED);
@@ -137,22 +138,22 @@ public class JavacFiler implements Filer, Closeable {
         }
 
         // Three anti-literacy methods
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public InputStream openInputStream() throws IOException {
             throw new IllegalStateException(NOT_FOR_READING);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
             throw new IllegalStateException(NOT_FOR_READING);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
             throw new IllegalStateException(NOT_FOR_READING);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean delete() {
             return false;
         }
@@ -165,19 +166,23 @@ public class JavacFiler implements Filer, Closeable {
             this.javaFileObject = javaFileObject;
         }
 
+        @DefinedBy(Api.COMPILER)
         public JavaFileObject.Kind getKind() {
             return javaFileObject.getKind();
         }
 
+        @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String simpleName,
                                         JavaFileObject.Kind kind) {
             return javaFileObject.isNameCompatible(simpleName, kind);
         }
 
+        @DefinedBy(Api.COMPILER)
         public NestingKind getNestingKind() {
             return javaFileObject.getNestingKind();
         }
 
+        @DefinedBy(Api.COMPILER)
         public Modifier getAccessLevel() {
             return javaFileObject.getAccessLevel();
         }
@@ -191,17 +196,17 @@ public class JavacFiler implements Filer, Closeable {
             super(fileObject);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public OutputStream openOutputStream() throws IOException {
             throw new IllegalStateException(NOT_FOR_WRITING);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Writer openWriter() throws IOException {
             throw new IllegalStateException(NOT_FOR_WRITING);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean delete() {
             return false;
         }
@@ -214,19 +219,23 @@ public class JavacFiler implements Filer, Closeable {
             this.javaFileObject = javaFileObject;
         }
 
+        @DefinedBy(Api.COMPILER)
         public JavaFileObject.Kind getKind() {
             return javaFileObject.getKind();
         }
 
+        @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String simpleName,
                                         JavaFileObject.Kind kind) {
             return javaFileObject.isNameCompatible(simpleName, kind);
         }
 
+        @DefinedBy(Api.COMPILER)
         public NestingKind getNestingKind() {
             return javaFileObject.getNestingKind();
         }
 
+        @DefinedBy(Api.COMPILER)
         public Modifier getAccessLevel() {
             return javaFileObject.getAccessLevel();
         }
@@ -373,11 +382,13 @@ public class JavacFiler implements Filer, Closeable {
         lint = (Lint.instance(context)).isEnabled(PROCESSING);
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public JavaFileObject createSourceFile(CharSequence name,
                                            Element... originatingElements) throws IOException {
         return createSourceOrClassFile(true, name.toString());
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public JavaFileObject createClassFile(CharSequence name,
                                            Element... originatingElements) throws IOException {
         return createSourceOrClassFile(false, name.toString());
@@ -415,6 +426,7 @@ public class JavacFiler implements Filer, Closeable {
         return new FilerOutputJavaFileObject(name, fileObject);
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public FileObject createResource(JavaFileManager.Location location,
                                      CharSequence pkg,
                                      CharSequence relativeName,
@@ -445,6 +457,7 @@ public class JavacFiler implements Filer, Closeable {
         }
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public FileObject getResource(JavaFileManager.Location location,
                                   CharSequence pkg,
                                   CharSequence relativeName) throws IOException {

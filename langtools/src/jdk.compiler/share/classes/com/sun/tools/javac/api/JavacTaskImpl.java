@@ -48,6 +48,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.JCClassDecl;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Log.PrefixKind;
 import com.sun.tools.javac.util.Log.WriterKind;
@@ -77,7 +78,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         args = Arguments.instance(context);
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public Boolean call() {
         return doCall().isOK();
     }
@@ -102,7 +103,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         }
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public void setProcessors(Iterable<? extends Processor> processors) {
         processors.getClass(); // null check
         // not mt-safe
@@ -111,7 +112,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         this.processors = processors;
     }
 
-    @Override // @DefinedBy(COMPILER_API)
+    @Override @DefinedBy(Api.COMPILER)
     public void setLocale(Locale locale) {
         if (used.get())
             throw new IllegalStateException();
@@ -206,7 +207,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         notYetEntered = null;
     }
 
-    @Override // @DefinedBy(TREE_API)
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends CompilationUnitTree> parse() {
         return handleExceptions(new Callable<Iterable<? extends CompilationUnitTree>>() {
             @Override
@@ -320,7 +321,7 @@ public class JavacTaskImpl extends BasicJavacTask {
         }
     }
 
-    @Override // @DefinedBy(TREE_API)
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends Element> analyze() {
         return handleExceptions(new Callable<Iterable<? extends Element>>() {
             @Override
@@ -382,7 +383,7 @@ public class JavacTaskImpl extends BasicJavacTask {
             genList.addAll(queue);
         }
 
-    @Override // @DefinedBy(TREE_API)
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends JavaFileObject> generate() {
         return handleExceptions(new Callable<Iterable<? extends JavaFileObject>>() {
             @Override
