@@ -467,6 +467,31 @@ public abstract class JavadocTester {
     }
 
     /**
+     * Ensures that a series of strings appear only once, in the generated output,
+     * noting that, this test does not exhaustively check for all other possible
+     * duplicates once one is found.
+     * @param path the file to check
+     * @param strings ensure each are unique
+     */
+    public void checkUnique(String path, String... strings) {
+        String fileString = readOutputFile(path);
+        for (String s : strings) {
+            int currentIndex = fileString.indexOf(s);
+            checking(s + " at index " + currentIndex);
+            if (currentIndex == -1) {
+                failed(s + " not found.");
+                continue;
+            }
+            int nextindex = fileString.indexOf(s, currentIndex + s.length());
+            if (nextindex == -1) {
+                passed(s + " is unique");
+            } else {
+                failed(s + " is not unique, found at " + nextindex);
+            }
+        }
+    }
+
+    /**
      * Compare a set of files in each of two directories.
      *
      * @param baseDir1 the directory containing the first set of files
