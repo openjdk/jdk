@@ -91,13 +91,6 @@ void G1BlockOffsetSharedArray::set_offset_array(size_t left, size_t right, u_cha
   }
 }
 
-void G1BlockOffsetSharedArray::check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
-  check_index(index, "index out of range");
-  assert(high >= low, "addresses out of order");
-  check_offset(pointer_delta(high, low), "offset too large");
-  assert(_offset_array[index] == pointer_delta(high, low), "Wrong offset");
-}
-
 // Variant of index_for that does not check the index for validity.
 inline size_t G1BlockOffsetSharedArray::index_for_raw(const void* p) const {
   return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> LogN;
@@ -191,30 +184,6 @@ G1BlockOffsetArray::forward_to_block_containing_addr(HeapWord* q,
   }
   assert(q <= addr, "wrong order for current and arg");
   return q;
-}
-
-//////////////////////////////////////////////////////////////////////////
-// BlockOffsetArrayNonContigSpace inlines
-//////////////////////////////////////////////////////////////////////////
-inline void G1BlockOffsetArray::freed(HeapWord* blk_start, HeapWord* blk_end) {
-  // Verify that the BOT shows [blk_start, blk_end) to be one block.
-  verify_single_block(blk_start, blk_end);
-  // adjust _unallocated_block upward or downward
-  // as appropriate
-  if (BlockOffsetArrayUseUnallocatedBlock) {
-    assert(_unallocated_block <= _end,
-           "Inconsistent value for _unallocated_block");
-    if (blk_end >= _unallocated_block && blk_start <= _unallocated_block) {
-      // CMS-specific note: a block abutting _unallocated_block to
-      // its left is being freed, a new block is being added or
-      // we are resetting following a compaction
-      _unallocated_block = blk_start;
-    }
-  }
-}
-
-inline void G1BlockOffsetArray::freed(HeapWord* blk, size_t size) {
-  freed(blk, blk + size);
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_INLINE_HPP
