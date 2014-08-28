@@ -70,9 +70,9 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
 void SymbolTable::initialize_symbols(int arena_alloc_size) {
   // Initialize the arena for global symbols, size passed in depends on CDS.
   if (arena_alloc_size == 0) {
-    _arena = new (mtSymbol) Arena();
+    _arena = new (mtSymbol) Arena(mtSymbol);
   } else {
-    _arena = new (mtSymbol) Arena(arena_alloc_size);
+    _arena = new (mtSymbol) Arena(mtSymbol, arena_alloc_size);
   }
 }
 

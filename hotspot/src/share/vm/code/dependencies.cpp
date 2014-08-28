@@ -407,56 +407,66 @@ void Dependencies::check_valid_dependency_type(DepType dept) {
 // for the sake of the compiler log, print out current dependencies:
 void Dependencies::log_all_dependencies() {
   if (log() == NULL)  return;
-  ciBaseObject* args[max_arg_count];
+  ResourceMark rm;
   for (int deptv = (int)FIRST_TYPE; deptv < (int)TYPE_LIMIT; deptv++) {
     DepType dept = (DepType)deptv;
     GrowableArray<ciBaseObject*>* deps = _deps[dept];
-    if (deps->length() == 0)  continue;
+    int deplen = deps->length();
+    if (deplen == 0) {
+      continue;
+    }
     int stride = dep_args(dept);
+    GrowableArray<ciBaseObject*>* ciargs = new GrowableArray<ciBaseObject*>(stride);
     for (int i = 0; i < deps->length(); i += stride) {
       for (int j = 0; j < stride; j++) {
         // flush out the identities before printing
-        args[j] = deps->at(i+j);
+        ciargs->push(deps->at(i+j));
       }
-      write_dependency_to(log(), dept, stride, args);
+      write_dependency_to(log(), dept, ciargs);
+      ciargs->clear();
     }
+    guarantee(deplen == deps->length(), "deps array cannot grow inside nested ResoureMark scope");
   }
 }
 
 void Dependencies::write_dependency_to(CompileLog* log,
                                        DepType dept,
-                                       int nargs, DepArgument args[],
+                                       GrowableArray<DepArgument>* args,
                                        Klass* witness) {
   if (log == NULL) {
     return;
   }
+  ResourceMark rm;
   ciEnv* env = ciEnv::current();
-  ciBaseObject* ciargs[max_arg_count];
-  assert(nargs <= max_arg_count, "oob");
-  for (int j = 0; j < nargs; j++) {
-    if (args[j].is_oop()) {
-      ciargs[j] = env->get_object(args[j].oop_value());
+  GrowableArray<ciBaseObject*>* ciargs = new GrowableArray<ciBaseObject*>(args->length());
+  for (GrowableArrayIterator<DepArgument> it = args->begin(); it != args->end(); ++it) {
+    DepArgument arg = *it;
+    if (arg.is_oop()) {
+      ciargs->push(env->get_object(arg.oop_value()));
     } else {
-      ciargs[j] = env->get_metadata(args[j].metadata_value());
+      ciargs->push(env->get_metadata(arg.metadata_value()));
     }
   }
-  Dependencies::write_dependency_to(log, dept, nargs, ciargs, witness);
+  int argslen = ciargs->length();
+  Dependencies::write_dependency_to(log, dept, ciargs, witness);
+  guarantee(argslen == ciargs->length(), "ciargs array cannot grow inside nested ResoureMark scope");
 }
 
 void Dependencies::write_dependency_to(CompileLog* log,
                                        DepType dept,
-                                       int nargs, ciBaseObject* args[],
+                                       GrowableArray<ciBaseObject*>* args,
                                        Klass* witness) {
-  if (log == NULL)  return;
-  assert(nargs <= max_arg_count, "oob");
-  int argids[max_arg_count];
-  int ctxkj = dep_context_arg(dept);  // -1 if no context arg
-  int j;
-  for (j = 0; j < nargs; j++) {
-    if (args[j]->is_object()) {
-      argids[j] = log->identify(args[j]->as_object());
+  if (log == NULL) {
+    return;
+  }
+  ResourceMark rm;
+  GrowableArray<int>* argids = new GrowableArray<int>(args->length());
+  for (GrowableArrayIterator<ciBaseObject*> it = args->begin(); it != args->end(); ++it) {
+    ciBaseObject* obj = *it;
+    if (obj->is_object()) {
+      argids->push(log->identify(obj->as_object()));
     } else {
-      argids[j] = log->identify(args[j]->as_metadata());
+      argids->push(log->identify(obj->as_metadata()));
     }
   }
   if (witness != NULL) {
@@ -465,16 +475,17 @@ void Dependencies::write_dependency_to(CompileLog* log,
     log->begin_elem("dependency");
   }
   log->print(" type='%s'", dep_name(dept));
-  if (ctxkj >= 0) {
-    log->print(" ctxk='%d'", argids[ctxkj]);
+  const int ctxkj = dep_context_arg(dept);  // -1 if no context arg
+  if (ctxkj >= 0 && ctxkj < argids->length()) {
+    log->print(" ctxk='%d'", argids->at(ctxkj));
   }
   // write remaining arguments, if any.
-  for (j = 0; j < nargs; j++) {
+  for (int j = 0; j < argids->length(); j++) {
     if (j == ctxkj)  continue;  // already logged
     if (j == 1) {
-      log->print(  " x='%d'",    argids[j]);
+      log->print(  " x='%d'",    argids->at(j));
     } else {
-      log->print(" x%d='%d'", j, argids[j]);
+      log->print(" x%d='%d'", j, argids->at(j));
     }
   }
   if (witness != NULL) {
@@ -486,9 +497,12 @@ void Dependencies::write_dependency_to(CompileLog* log,
 
 void Dependencies::write_dependency_to(xmlStream* xtty,
                                        DepType dept,
-                                       int nargs, DepArgument args[],
+                                       GrowableArray<DepArgument>* args,
                                        Klass* witness) {
-  if (xtty == NULL)  return;
+  if (xtty == NULL) {
+    return;
+  }
+  ResourceMark rm;
   ttyLocker ttyl;
   int ctxkj = dep_context_arg(dept);  // -1 if no context arg
   if (witness != NULL) {
@@ -498,23 +512,24 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
   }
   xtty->print(" type='%s'", dep_name(dept));
   if (ctxkj >= 0) {
-    xtty->object("ctxk", args[ctxkj].metadata_value());
+    xtty->object("ctxk", args->at(ctxkj).metadata_value());
   }
   // write remaining arguments, if any.
-  for (int j = 0; j < nargs; j++) {
+  for (int j = 0; j < args->length(); j++) {
     if (j == ctxkj)  continue;  // already logged
+    DepArgument arg = args->at(j);
     if (j == 1) {
-      if (args[j].is_oop()) {
-        xtty->object("x", args[j].oop_value());
+      if (arg.is_oop()) {
+        xtty->object("x", arg.oop_value());
       } else {
-        xtty->object("x", args[j].metadata_value());
+        xtty->object("x", arg.metadata_value());
       }
     } else {
       char xn[10]; sprintf(xn, "x%d", j);
-      if (args[j].is_oop()) {
-        xtty->object(xn, args[j].oop_value());
+      if (arg.is_oop()) {
+        xtty->object(xn, arg.oop_value());
       } else {
-        xtty->object(xn, args[j].metadata_value());
+        xtty->object(xn, arg.metadata_value());
       }
     }
   }
@@ -525,7 +540,7 @@ void Dependencies::write_dependency_to(xmlStream* xtty,
   xtty->end_elem();
 }
 
-void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
+void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* args,
                                     Klass* witness) {
   ResourceMark rm;
   ttyLocker ttyl;   // keep the following output all in one block
@@ -534,8 +549,8 @@ void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
                 dep_name(dept));
   // print arguments
   int ctxkj = dep_context_arg(dept);  // -1 if no context arg
-  for (int j = 0; j < nargs; j++) {
-    DepArgument arg = args[j];
+  for (int j = 0; j < args->length(); j++) {
+    DepArgument arg = args->at(j);
     bool put_star = false;
     if (arg.is_null())  continue;
     const char* what;
@@ -571,31 +586,33 @@ void Dependencies::print_dependency(DepType dept, int nargs, DepArgument args[],
 void Dependencies::DepStream::log_dependency(Klass* witness) {
   if (_deps == NULL && xtty == NULL)  return;  // fast cutout for runtime
   ResourceMark rm;
-  int nargs = argument_count();
-  DepArgument args[max_arg_count];
+  const int nargs = argument_count();
+  GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
   for (int j = 0; j < nargs; j++) {
     if (type() == call_site_target_value) {
-      args[j] = argument_oop(j);
+      args->push(argument_oop(j));
     } else {
-      args[j] = argument(j);
+      args->push(argument(j));
     }
   }
+  int argslen = args->length();
   if (_deps != NULL && _deps->log() != NULL) {
-    Dependencies::write_dependency_to(_deps->log(),
-                                      type(), nargs, args, witness);
+    Dependencies::write_dependency_to(_deps->log(), type(), args, witness);
   } else {
-    Dependencies::write_dependency_to(xtty,
-                                      type(), nargs, args, witness);
+    Dependencies::write_dependency_to(xtty, type(), args, witness);
   }
+  guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");
 }
 
 void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose) {
+  ResourceMark rm;
   int nargs = argument_count();
-  DepArgument args[max_arg_count];
+  GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
   for (int j = 0; j < nargs; j++) {
-    args[j] = argument(j);
+    args->push(argument(j));
   }
-  Dependencies::print_dependency(type(), nargs, args, witness);
+  int argslen = args->length();
+  Dependencies::print_dependency(type(), args, witness);
   if (verbose) {
     if (_code != NULL) {
       tty->print("  code: ");
@@ -603,6 +620,7 @@ void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose) {
       tty->cr();
     }
   }
+  guarantee(argslen == args->length(), "args array cannot grow inside nested ResoureMark scope");
 }
 
 

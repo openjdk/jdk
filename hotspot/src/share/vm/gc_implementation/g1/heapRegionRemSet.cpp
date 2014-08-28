@@ -289,7 +289,7 @@ OtherRegionsTable::OtherRegionsTable(HeapRegion* hr, Mutex* m) :
   }
 
   _fine_grain_regions = NEW_C_HEAP_ARRAY3(PerRegionTablePtr, _max_fine_entries,
-                        mtGC, 0, AllocFailStrategy::RETURN_NULL);
+                        mtGC, CURRENT_PC, AllocFailStrategy::RETURN_NULL);
 
   if (_fine_grain_regions == NULL) {
     vm_exit_out_of_memory(sizeof(void*)*_max_fine_entries, OOM_MALLOC_ERROR,
@@ -695,6 +695,9 @@ void OtherRegionsTable::scrub(CardTableModRefBS* ctbs,
   clear_fcc();
 }
 
+bool OtherRegionsTable::is_empty() const {
+  return occ_sparse() == 0 && occ_coarse() == 0 && _first_all_fine_prts == NULL;
+}
 
 size_t OtherRegionsTable::occupied() const {
   size_t sum = occ_fine();
