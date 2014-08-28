@@ -333,17 +333,4 @@ public class SjavacServer implements Terminable {
             e.printStackTrace(theLog);
         }
     }
-
-    public static void cleanup(String... args) {
-        String settings = Util.findServerSettings(args);
-        if (settings == null) return;
-        String portfile = Util.extractStringOption("portfile", settings);
-        String background = Util.extractStringOption("background", settings);
-        if (background != null && background.equals("false")) {
-            // If the server runs within this jvm, then delete the portfile,
-            // since this jvm is about to exit soon.
-            File f = new File(portfile);
-            f.delete();
-        }
-    }
 }

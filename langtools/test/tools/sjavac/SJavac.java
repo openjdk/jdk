@@ -67,9 +67,6 @@ public class SJavac {
     // Where to put c-header files.
     Path headers;
 
-    // The sjavac compiler.
-    Main main = new Main();
-
     // Remember the previous bin and headers state here.
     Map<String,Long> previous_bin_state;
     Map<String,Long> previous_headers_state;
@@ -607,7 +604,7 @@ public class SJavac {
     }
 
     void compile(String... args) throws Exception {
-        int rc = main.go(args, System.out, System.err);
+        int rc = Main.go(args);
         if (rc != 0) throw new Exception("Error during compile!");
 
         // Wait a second, to get around the (temporary) problem with
@@ -623,7 +620,7 @@ public class SJavac {
     }
 
     void compileExpectFailure(String... args) throws Exception {
-        int rc = main.go(args, System.out, System.err);
+        int rc = Main.go(args);
         if (rc == 0) throw new Exception("Expected error during compile! Did not fail!");
     }
 

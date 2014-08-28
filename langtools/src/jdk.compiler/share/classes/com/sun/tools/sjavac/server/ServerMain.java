@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,36 +23,34 @@
  * questions.
  */
 
-package com.sun.tools.sjavac;
+package com.sun.tools.sjavac.server;
 
-import static com.sun.tools.sjavac.options.Option.STARTSERVER;
-
-import java.util.Arrays;
-
-import com.sun.tools.sjavac.client.ClientMain;
-import com.sun.tools.sjavac.server.ServerMain;
+import java.io.IOException;
 
 /**
- * The application entry point of the smart javac wrapper tool.
- *
  *  <p><b>This is NOT part of any supported API.
  *  If you write code that depends on this, you do so at your own risk.
  *  This code and its internal interfaces are subject to change or
  *  deletion without notice.</b>
  */
-public class Main {
+public class ServerMain {
+    public static int run(String[] args) {
 
-    public static void main(String... args)  {
-        System.exit(go(args));
-    }
+        // Any options other than --startserver?
+        if (args.length > 1) {
+            System.err.println("When spawning a background server, only a single --startserver argument is allowed.");
+            return 1;
+        }
 
-    public static int go(String[] args) {
+        int exitCode;
+        try {
+            SjavacServer server = new SjavacServer(args[0], System.err);
+            exitCode = server.startServer();
+        } catch (IOException ioex) {
+            ioex.printStackTrace();
+            exitCode = -1;
+        }
 
-        // Server or client mode?
-        boolean serverMode = Arrays.asList(args)
-                                   .stream()
-                                   .anyMatch(arg -> arg.startsWith(STARTSERVER.arg));
-
-        return serverMode ? ServerMain.run(args) : ClientMain.run(args);
+        return exitCode;
     }
 }
