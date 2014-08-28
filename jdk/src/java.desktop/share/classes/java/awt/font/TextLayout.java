@@ -1811,7 +1811,7 @@ public final class TextLayout implements Cloneable {
      * should be logical or visual counterparts.  They are not
      * checked for validity.
      */
-    private final TextHitInfo getStrongHit(TextHitInfo hit1, TextHitInfo hit2) {
+    private TextHitInfo getStrongHit(TextHitInfo hit1, TextHitInfo hit2) {
 
         // right now we're using the following rule for strong hits:
         // A hit on a character with a lower level

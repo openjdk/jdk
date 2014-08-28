@@ -92,8 +92,6 @@ public class CheckPackageAccess {
         String osName = System.getProperty("os.name");
         if (osName.contains("OS X")) {
             pkgs.add("apple.");  // add apple package for OS X
-        } else if (osName.startsWith("Windows")) {
-            pkgs.add("com.sun.java.accessibility.");
         }
 
         List<String> jspkgs =
