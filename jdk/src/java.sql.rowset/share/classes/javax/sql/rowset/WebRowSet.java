@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,7 +52,7 @@ import org.xml.sax.*;
  * of the {@code WebRowSet} interface to ensure interoperability. In addition,
  * the {@code WebRowSet} schema uses specific SQL/XML Schema annotations,
  * thus ensuring greater cross
- * platform inter-operability. This is an effort currently under way at the ISO
+ * platform interoperability. This is an effort currently under way at the ISO
  * organization. The SQL/XML definition is available at the following URI:
  * <ul>
  * <li>
@@ -109,7 +109,7 @@ import org.xml.sax.*;
  *      <max-rows>0</max-rows>
  *      <query-timeout>0</query-timeout>
  *      <read-only>false</read-only>
- *      <rowset-type>TRANSACTION_READ_UNCOMMITED</rowset-type>
+ *      <rowset-type>TRANSACTION_READ_UNCOMMITTED</rowset-type>
  *      <show-deleted>false</show-deleted>
  *      <table-name/>
  *      <url>jdbc:thin:oracle</url>

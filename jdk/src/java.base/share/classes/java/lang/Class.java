@@ -1322,7 +1322,7 @@ public final class Class<T> implements java.io.Serializable,
         // (for anonymous classes): 1 or more digits.
 
         // Since getSimpleBinaryName() will strip the binary name of
-        // the immediatly enclosing class, we are now looking at a
+        // the immediately enclosing class, we are now looking at a
         // string that matches the regular expression "\$[0-9]*"
         // followed by a simple name (considering the simple of an
         // anonymous class to be the empty string).
