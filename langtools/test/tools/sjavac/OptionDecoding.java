@@ -50,6 +50,7 @@ import com.sun.tools.sjavac.CopyFile;
 import com.sun.tools.sjavac.Main;
 import com.sun.tools.sjavac.Module;
 import com.sun.tools.sjavac.Source;
+import com.sun.tools.sjavac.client.ClientMain;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
 
@@ -131,7 +132,7 @@ public class OptionDecoding {
             Options options = Options.parseArgs("-if", "root/pkg1/ClassA1.java", "root");
 
             Map<String, Source> foundFiles = new HashMap<>();
-            Main.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
+            ClientMain.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
                     new HashMap<String, Module>(), new Module("", ""), false, true);
 
             checkFilesFound(foundFiles.keySet(), a1);
@@ -143,7 +144,7 @@ public class OptionDecoding {
             Options options = Options.parseArgs("-i", "pkg1/*", "root");
 
             Map<String, Source> foundFiles = new HashMap<>();
-            Main.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
+            ClientMain.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
                     new HashMap<String, Module>(), new Module("", ""), false, true);
 
             checkFilesFound(foundFiles.keySet(), a1, a2, b1, b2);
@@ -155,7 +156,7 @@ public class OptionDecoding {
             Options options = Options.parseArgs("-xf", "root/pkg1/ClassA1.java", "root");
 
             Map<String, Source> foundFiles = new HashMap<>();
-            Main.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
+            ClientMain.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
                     new HashMap<String, Module>(), new Module("", ""), false, true);
 
             checkFilesFound(foundFiles.keySet(), a2, b1, b2, c1, c2);
@@ -166,7 +167,7 @@ public class OptionDecoding {
             Options options = Options.parseArgs("-i", "pkg1/*", "root");
 
             Map<String, Source> foundFiles = new HashMap<>();
-            Main.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
+            ClientMain.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
                     new HashMap<String, Module>(), new Module("", ""), false, true);
 
             checkFilesFound(foundFiles.keySet(), a1, a2, b1, b2);
@@ -177,7 +178,7 @@ public class OptionDecoding {
             Options options = Options.parseArgs("-i", "pkg1/*", "-x", "pkg1/pkg2/*", "root");
 
             Map<String, Source> foundFiles = new HashMap<>();
-            Main.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
+            ClientMain.findSourceFiles(options.getSources(), Collections.singleton(".java"), foundFiles,
                     new HashMap<String, Module>(), new Module("", ""), false, true);
 
             checkFilesFound(foundFiles.keySet(), a1, a2);

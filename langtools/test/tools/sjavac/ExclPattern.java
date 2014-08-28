@@ -68,7 +68,7 @@ public class ExclPattern {
                 "--log=debug"
         };
 
-        int rc = new com.sun.tools.sjavac.Main().go(args, System.out, System.err);
+        int rc = com.sun.tools.sjavac.Main.go(args);
         if (rc != 0) throw new RuntimeException("Error during compile!");
 
         if (!Files.exists(Paths.get("dest/" + toBeIncluded)))
