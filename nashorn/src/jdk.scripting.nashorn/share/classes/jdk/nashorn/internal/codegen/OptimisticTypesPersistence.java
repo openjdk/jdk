@@ -33,6 +33,7 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.InputStream;
 import java.net.URL;
+import java.nio.file.Files;
 import java.security.AccessController;
 import java.security.MessageDigest;
 import java.security.PrivilegedAction;
@@ -54,6 +55,9 @@ import jdk.nashorn.internal.runtime.options.Options;
  * type info persistence altogether by specifying the {@code nashorn.typeInfo.disabled} system property.
  */
 public final class OptimisticTypesPersistence {
+    // The name of the default subdirectory within the system cache directory where we store type info.
+    private static final String DEFAULT_CACHE_SUBDIR_NAME = "com.oracle.java.NashornTypeInfo";
+    // The directory where we cache type info
     private static final File cacheDir = createCacheDir();
     // In-process locks to make sure we don't have a cross-thread race condition manipulating any file.
     private static final Object[] locks = cacheDir == null ? null : createLockArray();
@@ -193,7 +197,11 @@ public final class OptimisticTypesPersistence {
                 } else {
                     // When no directory is explicitly specified, get an operating system specific cache directory,
                     // and create "com.oracle.java.NashornTypeInfo" in it.
-                    dir = new File(getCacheDirBase(), "com.oracle.java.NashornTypeInfo");
+                    final File systemCacheDir = getSystemCacheDir();
+                    dir = new File(systemCacheDir, DEFAULT_CACHE_SUBDIR_NAME);
+                    if (isSymbolicLink(dir)) {
+                        return null;
+                    }
                 }
                 final String versionDirName;
                 try {
@@ -203,6 +211,9 @@ public final class OptimisticTypesPersistence {
                     return null;
                 }
                 final File versionDir = new File(dir, versionDirName);
+                if (isSymbolicLink(versionDir)) {
+                    return null;
+                }
                 versionDir.mkdirs();
                 if(versionDir.isDirectory()) {
                     getLogger().info("Optimistic type persistence directory is " + versionDir);
@@ -218,7 +229,7 @@ public final class OptimisticTypesPersistence {
      * Returns an operating system specific root directory for cache files.
      * @return an operating system specific root directory for cache files.
      */
-    private static File getCacheDirBase() {
+    private static File getSystemCacheDir() {
         final String os = System.getProperty("os.name", "generic");
         if("Mac OS X".equals(os)) {
             // Mac OS X stores caches in ~/Library/Caches
@@ -289,6 +300,19 @@ public final class OptimisticTypesPersistence {
             }
         }
         return currentMax;
+    }
+
+    /**
+     * Returns true if the specified file is a symbolic link, and also logs a warning if it is.
+     * @param file the file
+     * @return true if file is a symbolic link, false otherwise.
+     */
+    private static boolean isSymbolicLink(final File file) {
+        if (Files.isSymbolicLink(file.toPath())) {
+            getLogger().warning("Directory " + file + " is a symlink");
+            return true;
+        }
+        return false;
     }
 
     private static Object[] createLockArray() {
