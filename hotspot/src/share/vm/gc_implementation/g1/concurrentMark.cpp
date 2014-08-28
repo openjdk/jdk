@@ -888,7 +888,16 @@ class CheckBitmapClearHRClosure : public HeapRegionClosure {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
-    return _bitmap->getNextMarkedWordAddress(r->bottom(), r->end()) != r->end();
+    // This closure can be called concurrently to the mutator, so we must make sure
+    // that the result of the getNextMarkedWordAddress() call is compared to the
+    // value passed to it as limit to detect any found bits.
+    // We can use the region's orig_end() for the limit and the comparison value
+    // as it always contains the "real" end of the region that never changes and
+    // has no side effects.
+    // Due to the latter, there can also be no problem with the compiler generating
+    // reloads of the orig_end() call.
+    HeapWord* end = r->orig_end();
+    return _bitmap->getNextMarkedWordAddress(r->bottom(), end) != end;
   }
 };
 
