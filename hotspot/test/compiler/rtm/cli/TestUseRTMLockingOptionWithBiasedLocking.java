@@ -54,18 +54,22 @@ public class TestUseRTMLockingOptionWithBiasedLocking
         // verify that we will not get a warning
         CommandLineOptionTest.verifySameJVMStartup(null,
                 new String[] { warningMessage }, ExitCode.OK,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", "-XX:-UseBiasedLocking");
         // verify that we will get a warning
         CommandLineOptionTest.verifySameJVMStartup(
                 new String[] { warningMessage }, null, ExitCode.OK,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
         // verify that UseBiasedLocking is false when we use rtm locking
         CommandLineOptionTest.verifyOptionValueForSameVM("UseBiasedLocking",
-                "false", "-XX:+UseRTMLocking");
+                "false", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:+UseRTMLocking");
         // verify that we can't turn on biased locking when
         // using rtm locking
         CommandLineOptionTest.verifyOptionValueForSameVM("UseBiasedLocking",
-                "false", "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
+                "false", CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:+UseRTMLocking", "-XX:+UseBiasedLocking");
     }
 
     public static void main(String args[]) throws Throwable {

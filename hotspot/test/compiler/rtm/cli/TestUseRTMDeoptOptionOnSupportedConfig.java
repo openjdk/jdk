@@ -63,13 +63,16 @@ public class TestUseRTMDeoptOptionOnSupportedConfig
         // verify default value
         CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
                 TestUseRTMDeoptOptionOnSupportedConfig.DEFAULT_VALUE,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
         // verify that option is off when UseRTMLocking is off
-        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
-                "false", "-XX:-UseRTMLocking", "-XX:+UseRTMDeopt");
+        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt", "false",
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:-UseRTMLocking", "-XX:+UseRTMDeopt");
         // verify that option could be turned on
-        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt",
-                "true", "-XX:+UseRTMLocking", "-XX:+UseRTMDeopt");
+        CommandLineOptionTest.verifyOptionValueForSameVM("UseRTMDeopt", "true",
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
+                "-XX:+UseRTMLocking", "-XX:+UseRTMDeopt");
     }
 
     public static void main(String args[]) throws Throwable {
