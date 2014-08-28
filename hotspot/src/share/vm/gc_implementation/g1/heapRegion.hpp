@@ -206,10 +206,6 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
     _offsets.reset_bot();
   }
 
-  void update_bot_for_object(HeapWord* start, size_t word_size) {
-    _offsets.alloc_block(start, word_size);
-  }
-
   void print_bot_on(outputStream* out) {
     _offsets.print_on(out);
   }
@@ -736,18 +732,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                    FilterOutOfRegionClosure* cl,
                                    bool filter_young,
                                    jbyte* card_ptr);
-
-  // A version of block start that is guaranteed to find *some* block
-  // boundary at or before "p", but does not object iteration, and may
-  // therefore be used safely when the heap is unparseable.
-  HeapWord* block_start_careful(const void* p) const {
-    return _offsets.block_start_careful(p);
-  }
-
-  // Requires that "addr" is within the region.  Returns the start of the
-  // first ("careful") block that starts at or after "addr", or else the
-  // "end" of the region if there is no such block.
-  HeapWord* next_block_start_careful(HeapWord* addr);
 
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }

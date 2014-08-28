@@ -149,8 +149,8 @@ void PSOldGen::initialize_work(const char* perf_data_name, int level) {
 
 void PSOldGen::initialize_performance_counters(const char* perf_data_name, int level) {
   // Generation Counters, generation 'level', 1 subspace
-  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1,
-                                           virtual_space());
+  _gen_counters = new PSGenerationCounters(perf_data_name, level, 1, _min_gen_size,
+                                           _max_gen_size, virtual_space());
   _space_counters = new SpaceCounters(perf_data_name, 0,
                                       virtual_space()->reserved_size(),
                                       _object_space, _gen_counters);
