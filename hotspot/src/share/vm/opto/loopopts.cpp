@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -625,7 +625,7 @@ Node *PhaseIdealLoop::conditional_move( Node *region ) {
         set_ctrl(inp, cmov_ctrl);
       }
     }
-    Node *cmov = CMoveNode::make( C, cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi) );
+    Node *cmov = CMoveNode::make(cmov_ctrl, iff->in(1), phi->in(1+flip), phi->in(2-flip), _igvn.type(phi));
     register_new_node( cmov, cmov_ctrl );
     _igvn.replace_node( phi, cmov );
 #ifndef PRODUCT
@@ -2574,7 +2574,7 @@ bool PhaseIdealLoop::partial_peel( IdealLoopTree *loop, Node_List &old_new ) {
   new_head->set_unswitch_count(head->unswitch_count()); // Preserve
   _igvn.register_new_node_with_optimizer(new_head);
   assert(first_not_peeled->in(0) == last_peel, "last_peel <- first_not_peeled");
-  first_not_peeled->set_req(0, new_head);
+  _igvn.replace_input_of(first_not_peeled, 0, new_head);
   set_loop(new_head, loop);
   loop->_body.push(new_head);
   not_peel.set(new_head->_idx);
