@@ -25,7 +25,7 @@
  * @test
  * @bug 8034924
  * @summary Incorrect inheritance of inaccessible static method
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main IncorrectInheritanceTest
  */
@@ -59,10 +59,11 @@ public class IncorrectInheritanceTest {
     }
 
     public void test() throws Exception {
-        ToolBox.JavaToolArgs javacParams =
-                new ToolBox.JavaToolArgs()
-                .setSources(ASrc, BSrc, CSrc);
-        ToolBox.javac(javacParams);
+        ToolBox tb = new ToolBox();
+
+        tb.new JavacTask()
+                .sources(ASrc, BSrc, CSrc)
+                .run();
     }
 
 }
