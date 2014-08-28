@@ -570,7 +570,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
-  HeapWord* orig_end() { return _orig_end; }
+  HeapWord* orig_end() const { return _orig_end; }
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);
