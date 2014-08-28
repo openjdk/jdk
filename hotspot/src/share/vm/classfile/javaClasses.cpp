@@ -620,7 +620,6 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
       // Two-way link between the array klass and its component mirror:
       // (array_klass) k -> mirror -> component_mirror -> array_klass -> k
       set_component_mirror(mirror(), comp_mirror());
-      ArrayKlass::cast(k())->set_component_mirror(comp_mirror());
       set_array_klass(comp_mirror(), k());
     } else {
       assert(k->oop_is_instance(), "Must be");
@@ -682,10 +681,9 @@ void java_lang_Class::set_protection_domain(oop java_class, oop pd) {
 }
 
 void java_lang_Class::set_component_mirror(oop java_class, oop comp_mirror) {
-  if (_component_mirror_offset != 0) {
+  assert(_component_mirror_offset != 0, "must be set");
     java_class->obj_field_put(_component_mirror_offset, comp_mirror);
   }
-}
 oop java_lang_Class::component_mirror(oop java_class) {
   assert(_component_mirror_offset != 0, "must be set");
   return java_class->obj_field(_component_mirror_offset);
@@ -875,21 +873,26 @@ void java_lang_Class::compute_offsets() {
   assert(!offsets_computed, "offsets should be initialized only once");
   offsets_computed = true;
 
-  Klass* klass_oop = SystemDictionary::Class_klass();
+  Klass* k = SystemDictionary::Class_klass();
   // The classRedefinedCount field is only present starting in 1.5,
   // so don't go fatal.
   compute_optional_offset(classRedefinedCount_offset,
-                          klass_oop, vmSymbols::classRedefinedCount_name(), vmSymbols::int_signature());
+                          k, vmSymbols::classRedefinedCount_name(), vmSymbols::int_signature());
 
   // Needs to be optional because the old build runs Queens during bootstrapping
   // and jdk8-9 doesn't have coordinated pushes yet.
   compute_optional_offset(_class_loader_offset,
-                 klass_oop, vmSymbols::classLoader_name(),
+                 k, vmSymbols::classLoader_name(),
                  vmSymbols::classloader_signature());
 
-  compute_optional_offset(_component_mirror_offset,
-                 klass_oop, vmSymbols::componentType_name(),
+  compute_offset(_component_mirror_offset,
+                 k, vmSymbols::componentType_name(),
                  vmSymbols::class_signature());
+
+  // Init lock is a C union with component_mirror.  Only instanceKlass mirrors have
+  // init_lock and only ArrayKlass mirrors have component_mirror.  Since both are oops
+  // GC treats them the same.
+  _init_lock_offset = _component_mirror_offset;
 
   CLASS_INJECTED_FIELDS(INJECTED_FIELD_COMPUTE_OFFSET);
 }
