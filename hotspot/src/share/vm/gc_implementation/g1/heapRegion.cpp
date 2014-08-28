@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.hpp"
@@ -345,11 +345,11 @@ HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
   return low;
 }
 
-HeapRegion::HeapRegion(uint hrs_index,
+HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
                        MemRegion mr) :
     G1OffsetTableContigSpace(sharedOffsetArray, mr),
-    _hrs_index(hrs_index),
+    _hrm_index(hrm_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),

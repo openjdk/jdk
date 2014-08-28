@@ -33,7 +33,7 @@
 #include "gc_implementation/g1/g1MonitoringSupport.hpp"
 #include "gc_implementation/g1/g1SATBCardTableModRefBS.hpp"
 #include "gc_implementation/g1/g1YCTypes.hpp"
-#include "gc_implementation/g1/heapRegionSeq.hpp"
+#include "gc_implementation/g1/heapRegionManager.hpp"
 #include "gc_implementation/g1/heapRegionSet.hpp"
 #include "gc_implementation/shared/hSpaceCounters.hpp"
 #include "gc_implementation/shared/parGCAllocBuffer.hpp"
@@ -291,7 +291,7 @@ private:
   G1RegionMappingChangedListener _listener;
 
   // The sequence of all heap regions in the heap.
-  HeapRegionSeq _hrs;
+  HeapRegionManager _hrm;
 
   // Alloc region used to satisfy mutator allocation requests.
   MutatorAllocRegion _mutator_alloc_region;
@@ -415,6 +415,7 @@ private:
   volatile unsigned int _old_marking_cycles_completed;
 
   bool _concurrent_cycle_started;
+  bool _heap_summary_sent;
 
   // This is a non-product method that is helpful for testing. It is
   // called at the end of a GC and artificially expands the heap by
@@ -429,7 +430,7 @@ private:
 
   // If the HR printer is active, dump the state of the regions in the
   // heap after a compaction.
-  void print_hrs_post_compaction();
+  void print_hrm_post_compaction();
 
   double verify(bool guard, const char* msg);
   void verify_before_gc();
@@ -715,7 +716,7 @@ public:
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
-    _in_cset_fast_test.set_in_cset(r->hrs_index());
+    _in_cset_fast_test.set_in_cset(r->hrm_index());
   }
 
   // This is a fast test on whether a reference points into the
@@ -1171,17 +1172,17 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   virtual bool is_maximal_no_gc() const {
-    return _hrs.available() == 0;
+    return _hrm.available() == 0;
   }
 
   // The current number of regions in the heap.
-  uint num_regions() const { return _hrs.length(); }
+  uint num_regions() const { return _hrm.length(); }
 
   // The max number of regions in the heap.
-  uint max_regions() const { return _hrs.max_length(); }
+  uint max_regions() const { return _hrm.max_length(); }
 
   // The number of regions that are completely free.
-  uint num_free_regions() const { return _hrs.num_free_regions(); }
+  uint num_free_regions() const { return _hrm.num_free_regions(); }
 
   // The number of regions that are not completely free.
   uint num_used_regions() const { return num_regions() - num_free_regions(); }
@@ -1233,7 +1234,7 @@ public:
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
-    return _hrs.is_free(hr);
+    return _hrm.is_free(hr);
   }
 #endif // ASSERT
 
@@ -1245,7 +1246,7 @@ public:
   }
 
   void append_secondary_free_list() {
-    _hrs.insert_list_into_free_list(&_secondary_free_list);
+    _hrm.insert_list_into_free_list(&_secondary_free_list);
   }
 
   void append_secondary_free_list_if_not_empty_with_lock() {
@@ -1356,13 +1357,13 @@ public:
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
   bool is_in_g1_reserved(const void* p) const {
-    return _hrs.reserved().contains(p);
+    return _hrm.reserved().contains(p);
   }
 
   // Returns a MemRegion that corresponds to the space that has been
   // reserved for the heap
   MemRegion g1_reserved() const {
-    return _hrs.reserved();
+    return _hrm.reserved();
   }
 
   virtual bool is_in_closed_subset(const void* p) const;
