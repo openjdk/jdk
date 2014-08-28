@@ -106,6 +106,8 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
+import jdk.nashorn.internal.ir.debug.ASTWriter;
+import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
@@ -346,9 +348,10 @@ public class Parser extends AbstractParser implements Loggable {
             expect(EOF);
 
             function.setFinish(source.getLength() - 1);
-
             function = restoreFunctionNode(function, token); //commit code
             function = function.setBody(lc, function.getBody().setNeedsScope(lc));
+
+            printAST(function);
             return function;
         } catch (final Exception e) {
             handleParseException(e);
@@ -477,8 +480,7 @@ loop:
                 name,
                 parameters,
                 kind,
-                flags,
-                sourceURL);
+                flags);
 
         lc.push(functionNode);
         // Create new block, and just put it on the context stack, restoreFunctionNode() will associate it with the
@@ -702,10 +704,6 @@ loop:
 
         script = restoreFunctionNode(script, token); //commit code
         script = script.setBody(lc, script.getBody().setNeedsScope(lc));
-        // user may have directive comment to set sourceURL
-        if (sourceURL != null) {
-            script = script.setSourceURL(lc, sourceURL);
-        }
 
         return script;
     }
@@ -804,6 +802,12 @@ loop:
                                     for (final IdentNode param : function.getParameters()) {
                                         verifyStrictIdent(param, "function parameter");
                                     }
+                                }
+                            } else if (Context.DEBUG) {
+                                final int flag = FunctionNode.getDirectiveFlag(directive);
+                                if (flag != 0) {
+                                    final FunctionNode function = lc.getCurrentFunction();
+                                    lc.setFlag(function, flag);
                                 }
                             }
                         }
@@ -2814,12 +2818,22 @@ loop:
                 lastToken = token;
                 expect(RBRACE);
                 functionNode.setFinish(finish);
-
             }
         } finally {
             functionNode = restoreFunctionNode(functionNode, lastToken);
         }
+        printAST(functionNode);
         return functionNode;
+    }
+
+    private void printAST(final FunctionNode functionNode) {
+        if (functionNode.getFlag(FunctionNode.IS_PRINT_AST)) {
+            env.getErr().println(new ASTWriter(functionNode));
+        }
+
+        if (functionNode.getFlag(FunctionNode.IS_PRINT_PARSE)) {
+            env.getErr().println(new PrintVisitor(functionNode, true, false));
+        }
     }
 
     private void addFunctionDeclarations(final FunctionNode functionNode) {
