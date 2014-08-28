@@ -61,28 +61,22 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   };
 
  private:
-  // All baseline data is stored in this arena
-  Arena*                  _arena;
-
   // Summary information
-  MallocMemorySnapshot*   _malloc_memory_snapshot;
-  VirtualMemorySnapshot*  _virtual_memory_snapshot;
+  MallocMemorySnapshot   _malloc_memory_snapshot;
+  VirtualMemorySnapshot  _virtual_memory_snapshot;
 
   size_t               _class_count;
 
   // Allocation sites information
   // Malloc allocation sites
-  LinkedListImpl<MallocSite, ResourceObj::ARENA>
-                       _malloc_sites;
+  LinkedListImpl<MallocSite>                  _malloc_sites;
 
   // All virtual memory allocations
-  LinkedListImpl<ReservedMemoryRegion, ResourceObj::ARENA>
-                       _virtual_memory_allocations;
+  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
 
   // Virtual memory allocations by allocation sites, always in by_address
   // order
-  LinkedListImpl<VirtualMemoryAllocationSite, ResourceObj::ARENA>
-                       _virtual_memory_sites;
+  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
 
   SortingOrder         _malloc_sites_order;
   SortingOrder         _virtual_memory_sites_order;
@@ -93,30 +87,23 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // create a memory baseline
   MemBaseline():
     _baseline_type(Not_baselined),
-    _class_count(0),
-    _arena(NULL),
-    _malloc_memory_snapshot(NULL),
-    _virtual_memory_snapshot(NULL),
-    _malloc_sites(NULL) {
+    _class_count(0) {
   }
 
   ~MemBaseline() {
     reset();
-    if (_arena != NULL) {
-      delete _arena;
-    }
   }
 
   bool baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
 
-  MallocMemorySnapshot* malloc_memory_snapshot() const {
-    return _malloc_memory_snapshot;
+  MallocMemorySnapshot* malloc_memory_snapshot() {
+    return &_malloc_memory_snapshot;
   }
 
-  VirtualMemorySnapshot* virtual_memory_snapshot() const {
-    return _virtual_memory_snapshot;
+  VirtualMemorySnapshot* virtual_memory_snapshot() {
+    return &_virtual_memory_snapshot;
   }
 
   MallocSiteIterator malloc_sites(SortingOrder order);
@@ -133,10 +120,8 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // memory
   size_t total_reserved_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    assert(_virtual_memory_snapshot != NULL, "No virtual memory snapshot");
-    assert(_malloc_memory_snapshot != NULL,  "No malloc memory snapshot");
-    size_t amount = _malloc_memory_snapshot->total() +
-           _virtual_memory_snapshot->total_reserved();
+    size_t amount = _malloc_memory_snapshot.total() +
+           _virtual_memory_snapshot.total_reserved();
     return amount;
   }
 
@@ -144,32 +129,30 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // virtual memory
   size_t total_committed_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    assert(_virtual_memory_snapshot != NULL,
-      "Not a snapshot");
-    size_t amount = _malloc_memory_snapshot->total() +
-           _virtual_memory_snapshot->total_committed();
+    size_t amount = _malloc_memory_snapshot.total() +
+           _virtual_memory_snapshot.total_committed();
     return amount;
   }
 
   size_t total_arena_memory() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    assert(_malloc_memory_snapshot != NULL, "Not yet baselined");
-    return _malloc_memory_snapshot->total_arena();
+    return _malloc_memory_snapshot.total_arena();
   }
 
   size_t malloc_tracking_overhead() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    return _malloc_memory_snapshot->malloc_overhead()->size();
+    MemBaseline* bl = const_cast<MemBaseline*>(this);
+    return bl->_malloc_memory_snapshot.malloc_overhead()->size();
   }
 
-  const MallocMemory* malloc_memory(MEMFLAGS flag) const {
-    assert(_malloc_memory_snapshot != NULL, "Not a snapshot");
-    return _malloc_memory_snapshot->by_type(flag);
+  MallocMemory* malloc_memory(MEMFLAGS flag) {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _malloc_memory_snapshot.by_type(flag);
   }
 
-  const VirtualMemory* virtual_memory(MEMFLAGS flag) const {
-    assert(_virtual_memory_snapshot != NULL, "Not a snapshot");
-    return _virtual_memory_snapshot->by_type(flag);
+  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _virtual_memory_snapshot.by_type(flag);
   }
 
 
@@ -180,24 +163,19 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
 
   size_t thread_count() const {
     assert(baseline_type() != Not_baselined, "Not yet baselined");
-    assert(_malloc_memory_snapshot != NULL, "Baselined?");
-    return _malloc_memory_snapshot->thread_count();
+    return _malloc_memory_snapshot.thread_count();
   }
 
   // reset the baseline for reuse
   void reset() {
     _baseline_type = Not_baselined;
-    _malloc_memory_snapshot = NULL;
-    _virtual_memory_snapshot = NULL;
+    _malloc_memory_snapshot.reset();
+    _virtual_memory_snapshot.reset();
     _class_count  = 0;
 
-    _malloc_sites = NULL;
-    _virtual_memory_sites = NULL;
-    _virtual_memory_allocations = NULL;
-
-    if (_arena != NULL) {
-      _arena->destruct_contents();
-    }
+    _malloc_sites.clear();
+    _virtual_memory_sites.clear();
+    _virtual_memory_allocations.clear();
   }
 
  private:
@@ -209,8 +187,6 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
 
   // Aggregate virtual memory allocation by allocation sites
   bool aggregate_virtual_memory_allocation_sites();
-
-  Arena* arena() { return _arena; }
 
   // Sorting allocation sites in different orders
   // Sort allocation sites in size order

@@ -190,8 +190,8 @@ public:
   bool  remap_shared_readonly_as_readwrite();
 
   // Errors.
-  static void fail_stop(const char *msg, ...);
-  static void fail_continue(const char *msg, ...);
+  static void fail_stop(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
+  static void fail_continue(const char *msg, ...) ATTRIBUTE_PRINTF(1, 2);
 
   // Return true if given address is in the mapped shared space.
   bool is_in_shared_space(const void* p) NOT_CDS_RETURN_(false);
