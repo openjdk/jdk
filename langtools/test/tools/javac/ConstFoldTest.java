@@ -25,7 +25,7 @@
  * @test
  * @bug 8025505
  * @summary Constant folding deficiency
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ConstFoldTest
  */
@@ -45,23 +45,23 @@ public class ConstFoldTest {
             int x;
             if (1 != 2)       x=1; else x=0;
             if (1 == 2)       x=1; else x=0;
-            if ("" != null) x=1; else x=0;
-            if ("" == null) x=1; else x=0;
+            if ("" != null)   x=1; else x=0;
+            if ("" == null)   x=1; else x=0;
             if (null == null) x=1; else x=0;
             if (null != null) x=1; else x=0;
 
             x = 1 != 2        ? 1 : 0;
             x = 1 == 2        ? 1 : 0;
-            x = "" != null  ? 1 : 0;
-            x = "" == null  ? 1 : 0;
+            x = "" != null    ? 1 : 0;
+            x = "" == null    ? 1 : 0;
             x = null == null  ? 1 : 0;
             x = null != null  ? 1 : 0;
 
             boolean b;
             b = 1 != 2         && true;
             b = 1 == 2         || true;
-            b = ("" != null) && true;
-            b = ("" == null) || true;
+            b = ("" != null)   && true;
+            b = ("" == null)   || true;
             b = (null == null) && true;
             b = (null != null) || true;
         }
@@ -72,11 +72,17 @@ public class ConstFoldTest {
     final String regex = "\\sif(?:null|nonnull|eq|ne){1}\\s";
 
     void run() throws Exception {
-        URL url = ConstFoldTest.class.getResource("ConstFoldTest$CFTest.class");
-        String result = ToolBox.javap(new ToolBox.JavaToolArgs().setAllArgs("-c", url.getFile()));
-        System.out.println(result);
+        ToolBox tb = new ToolBox();
 
-        List<String> bad_codes = ToolBox.grep(regex, result, "\n");
+        URL url = ConstFoldTest.class.getResource("ConstFoldTest$CFTest.class");
+        List<String> result = tb.new JavapTask()
+                .options("-c")
+                .classes(url.getFile())
+                .run()
+                .write(ToolBox.OutputKind.DIRECT)
+                .getOutputLines(ToolBox.OutputKind.DIRECT);
+
+        List<String> bad_codes = tb.grep(regex, result);
         if (!bad_codes.isEmpty()) {
             for (String code : bad_codes)
                 System.out.println("Bad OpCode Found: " + code);

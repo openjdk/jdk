@@ -32,8 +32,8 @@ public class NMTHelper
         executeDcmd("vmNativeMemory", "baseline");
     }
 
-    // Total:  reserved=3484685KB  +293KB, committed=266629KB +293KB
-    private static Pattern totalLine = Pattern.compile("^Total:  reserved=\\d+KB  .*KB, committed=\\d+KB (.*)KB$");
+    // Total: reserved=3484685KB +293KB, committed=266629KB +293KB
+    private static Pattern totalLine = Pattern.compile("^Total: reserved=\\d+KB .*KB, committed=\\d+KB (.*)KB$");
 
     public static long committedDiff() throws Exception {
         String res = (String) executeDcmd("vmNativeMemory", "detail.diff");

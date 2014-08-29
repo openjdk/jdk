@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,17 @@
  * @test
  * @bug 4846262
  * @summary check that javac operates correctly in EBCDIC locale
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main CheckEBCDICLocaleTest
  */
 
 import java.io.File;
 import java.nio.file.Files;
+import java.nio.file.Path;
 import java.nio.file.Paths;
 import java.util.Arrays;
+import java.util.List;
 
 public class CheckEBCDICLocaleTest {
 
@@ -58,39 +60,32 @@ public class CheckEBCDICLocaleTest {
     }
 
     public void test() throws Exception {
-        String native2asciiBinary = Paths.get(
-                System.getProperty("test.jdk"),"bin", "native2ascii").toString();
+        ToolBox tb = new ToolBox();
+        Path native2asciiBinary = tb.getJDKTool("native2ascii");
 
-        ToolBox.createJavaFileFromSource(TestSrc);
-        Files.createDirectory(Paths.get("output"));
+        tb.writeFile("Test.java", TestSrc);
+        tb.createDirectories("output");
 
-        ToolBox.AnyToolArgs nativeCmdParams =
-                new ToolBox.AnyToolArgs()
-                .appendArgs(native2asciiBinary)
-                .appendArgs(ToolBox.testToolVMOpts)
-                .appendArgs("-reverse", "-encoding", "IBM1047", "Test.java",
-                "output/Test.java");
-        ToolBox.executeCommand(nativeCmdParams);
+        tb.new ExecTask(native2asciiBinary)
+                .args("-reverse", "-encoding", "IBM1047", "Test.java", "output/Test.java")
+                .run();
 
-        ToolBox.AnyToolArgs javacParams =
-                new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(ToolBox.javacBinary)
-                .appendArgs(ToolBox.testToolVMOpts)
-                .appendArgs("-J-Duser.language=en",
-                "-J-Duser.region=US", "-J-Dfile.encoding=IBM1047",
-                "output/Test.java")
-                .setErrOutput(new File("Test.tmp"));
-        ToolBox.executeCommand(javacParams);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .redirect(ToolBox.OutputKind.STDERR, "Test.tmp")
+                .options("-J-Duser.language=en",
+                        "-J-Duser.region=US",
+                        "-J-Dfile.encoding=IBM1047")
+                .files("output/Test.java")
+                .run(ToolBox.Expect.FAIL);
 
-        nativeCmdParams = new ToolBox.AnyToolArgs()
-                .appendArgs(native2asciiBinary)
-                .appendArgs(ToolBox.testToolVMOpts)
-                .appendArgs("-encoding", "IBM1047", "Test.tmp", "Test.out");
-        ToolBox.executeCommand(nativeCmdParams);
+        tb.new ExecTask(native2asciiBinary)
+                .args("-encoding", "IBM1047", "Test.tmp", "Test.out")
+                .run();
 
-        String goldenFile = String.format(TestOutTemplate, File.separator);
-        ToolBox.compareLines(Paths.get("Test.out"),
-                Arrays.asList(goldenFile.split("\n")), null, true);
+        List<String> expectLines = Arrays.asList(
+                String.format(TestOutTemplate, File.separator).split("\n"));
+        List<String> actualLines = Files.readAllLines(Paths.get("Test.out"));
+        tb.checkEqual(expectLines, actualLines);
     }
 
 }

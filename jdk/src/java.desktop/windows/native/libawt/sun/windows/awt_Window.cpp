@@ -1552,7 +1552,7 @@ void AwtWindow::SendWindowEvent(jint id, HWND opposite,
         }
     }
     jobject event = env->NewObject(wClassEvent, wEventInitMID, target, id,
-                                   jOpposite, oldState, newState, TimeHelper::getMessageTimeUTC());
+                                   jOpposite, oldState, newState, ::JVM_CurrentTimeMillis(NULL, 0));
     DASSERT(!safe_ExceptionOccurred(env));
     DASSERT(event != NULL);
     if (jOpposite != NULL) {

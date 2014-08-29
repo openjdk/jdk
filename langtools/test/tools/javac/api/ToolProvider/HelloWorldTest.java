@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,21 +25,19 @@
  * @test
  * @bug 6604599
  * @summary ToolProvider should be less compiler-specific
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main HelloWorldTest
  */
 
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.List;
 
 // verify that running a simple program, such as this one, does not trigger
 // the loading of ToolProvider or any com.sun.tools.javac class
 public class HelloWorldTest {
     public static void main(String... args) throws Exception {
         if (args.length > 0) {
-            System.err.println(Arrays.asList(args));
+            System.err.println(Arrays.toString(args));
             return;
         }
 
@@ -47,27 +45,26 @@ public class HelloWorldTest {
     }
 
     void run() throws Exception {
+        ToolBox tb = new ToolBox();
+
         String classpath = System.getProperty("java.class.path");
 
-        List<String> output = new ArrayList<>();
-        ToolBox.AnyToolArgs javaParams =
-                new ToolBox.AnyToolArgs()
-                        .appendArgs(ToolBox.javaBinary)
-                        .appendArgs(ToolBox.testVMOpts)
-                        .appendArgs(ToolBox.testJavaOpts)
-                        .appendArgs("-verbose:class",
-                                "-classpath", classpath,
-                                HelloWorldTest.class.getName(),
-                                "Hello", "World")
-                        .setErrOutput(output)
-                        .setStdOutput(output);
+        ToolBox.Result tr = tb.new JavaTask()
+                .vmOptions("-verbose:class")
+                .classpath(classpath)
+                .className(HelloWorldTest.class.getName())
+                .classArgs("Hello", "World")
+                .run();
 
-       ToolBox.executeCommand(javaParams);
-
-        for (String line : output) {
-            System.err.println(line);
-            if (line.contains("javax.tools.ToolProvider") || line.contains("com.sun.tools.javac."))
-                error(">>> " + line);
+        if (tr.getOutput(ToolBox.OutputKind.STDOUT).contains("java.lang.Object")) {
+            for (String line : tr.getOutputLines(ToolBox.OutputKind.STDOUT)) {
+                System.err.println(line);
+                if (line.contains("javax.tools.ToolProvider") || line.contains("com.sun.tools.javac."))
+                    error(">>> " + line);
+            }
+        } else {
+            tr.writeAll();
+            error("verbose output not as expected");
         }
 
         if (errors > 0)

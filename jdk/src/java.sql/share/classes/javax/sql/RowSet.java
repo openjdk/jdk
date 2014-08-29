@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -66,9 +66,9 @@ import java.util.*;
  * changes to its data while it is disconnected and then send the changes back
  * to the original source of the data, but it must reestablish a connection to do so.
  * <P>
- * A disconnected rowset may have a reader (a <code>RowSetReader</code> object)
+ * A disconnected rowset may have a {@code Reader} (a <code>RowSetReader</code> object)
  * and a writer (a <code>RowSetWriter</code> object) associated with it.
- * The reader may be implemented in many different ways to populate a rowset
+ * The {@code Reader} may be implemented in many different ways to populate a rowset
  * with data, including getting data from a non-relational data source. The
  * writer can also be implemented in many different ways to propagate changes
  * made to the rowset's data back to the underlying data source.
@@ -727,7 +727,7 @@ public interface RowSet extends ResultSet {
 
   /**
    * Sets the designated parameter in this <code>RowSet</code> object's command
-   * to the given <code>java.math.BigDeciaml</code> value.
+   * to the given {@code java.math.BigDecimal} value.
    * The driver converts this to
    * an SQL <code>NUMERIC</code> value before sending it to the database.
    *
@@ -974,7 +974,7 @@ public interface RowSet extends ResultSet {
    * standard interface.
    *
    * @param parameterIndex the first parameter is 1, the second is 2, ...
-   * @param reader the <code>Reader</code> object that contains the UNICODE data
+   * @param reader the {@code Reader} object that contains the UNICODE data
    *        to be set
    * @param length the number of characters in the stream
    * @exception SQLException if a database access error occurs
@@ -984,7 +984,7 @@ public interface RowSet extends ResultSet {
                           int length) throws SQLException;
 
   /**
-     * Sets the designated parameter to the given <code>Reader</code>
+     * Sets the designated parameter to the given {@code Reader}
      * object, which is the given number of characters long.
      * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
      * parameter, it may be more practical to send it via a
@@ -1112,7 +1112,7 @@ public interface RowSet extends ResultSet {
 
   /**
    * Sets the designated parameter in this <code>RowSet</code> object's command
-   * to the given <code>Reader</code>
+   * to the given {@code Reader}
    * object.
    * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
    * parameter, it may be more practical to send it via a
@@ -1139,7 +1139,7 @@ public interface RowSet extends ResultSet {
                           java.io.Reader reader) throws SQLException;
 
   /**
-     * Sets the designated parameter to the given <code>Reader</code>
+     * Sets the designated parameter to the given {@code Reader}
      * object.
      * When a very large UNICODE value is input to a <code>LONGVARCHAR</code>
      * parameter, it may be more practical to send it via a
@@ -1167,8 +1167,8 @@ public interface RowSet extends ResultSet {
 
   /**
    * Sets the designated parameter in this <code>RowSet</code> object's command
-   * to a <code>Reader</code> object. The
-   * <code>Reader</code> reads the data till end-of-file is reached. The
+   * to a {@code Reader} object. The
+   * {@code Reader} reads the data till end-of-file is reached. The
    * driver does the necessary conversion from Java character format to
    * the national character set in the database.
 
@@ -1200,7 +1200,8 @@ public interface RowSet extends ResultSet {
    *
    * If the second argument is an <code>InputStream</code> then the stream must contain
    * the number of bytes specified by scaleOrLength.  If the second argument is a
-   * <code>Reader</code> then the reader must contain the number of characters specified    * by scaleOrLength. If these conditions are not true the driver will generate a
+   * {@code Reader} then the {@code Reader} must contain the number of characters specified
+   * by scaleOrLength. If these conditions are not true the driver will generate a
    * <code>SQLException</code> when the prepared statement is executed.
    *
    * <p>The given Java object will be converted to the targetSqlType
@@ -1216,7 +1217,7 @@ public interface RowSet extends ResultSet {
    * value of the corresponding SQL type.
    *
    *
-   * <p>Note that this method may be used to pass datatabase-specific
+   * <p>Note that this method may be used to pass database-specific
    * abstract data types.
    *
    * @param parameterIndex the first parameter is 1, the second is 2, ...
@@ -1227,9 +1228,9 @@ public interface RowSet extends ResultSet {
    * @param scaleOrLength for <code>java.sql.Types.DECIMAL</code>
    *          or <code>java.sql.Types.NUMERIC types</code>,
    *          this is the number of digits after the decimal point. For
-   *          Java Object types <code>InputStream</code> and <code>Reader</code>,
+   *          Java Object types <code>InputStream</code> and {@code Reader},
    *          this is the length
-   *          of the data in the stream or reader.  For all other types,
+   *          of the data in the stream or {@code Reader}.  For all other types,
    *          this value will be ignored.
    * @exception SQLException if a database access error occurs
    * @see java.sql.Types
@@ -1255,7 +1256,7 @@ public interface RowSet extends ResultSet {
      * or <code>Array</code>, the driver should pass it to the database as a
      * value of the corresponding SQL type.
      * <P>
-     * Note that this method may be used to pass datatabase-
+     * Note that this method may be used to pass database-
      * specific abstract data types.
      *
      * @param parameterName the name of the parameter
@@ -1335,7 +1336,7 @@ public interface RowSet extends ResultSet {
      * will be converted to the corresponding SQL type before being
      * sent to the database.
      *
-     * <p>Note that this method may be used to pass datatabase-
+     * <p>Note that this method may be used to pass database-
      * specific abstract data types, by using a driver-specific Java
      * type.
      *
@@ -1373,7 +1374,7 @@ public interface RowSet extends ResultSet {
    * given Java object to its standard SQL mapping before sending it
    * to the database.
    *
-   * <p>Note that this method may be used to pass datatabase-specific
+   * <p>Note that this method may be used to pass database-specific
    * abstract data types by using a driver-specific Java type.
    *
    * If the object is of a class implementing <code>SQLData</code>,
@@ -1420,7 +1421,8 @@ public interface RowSet extends ResultSet {
   void setBlob (int i, Blob x) throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>InputStream</code> object.  The inputstream must contain  the number
+     * Sets the designated parameter to a <code>InputStream</code> object.
+     * The <code>InputStream</code> must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>PreparedStatement</code> is executed.
      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
@@ -1437,7 +1439,7 @@ public interface RowSet extends ResultSet {
      * this method is called on a closed <code>PreparedStatement</code>,
      * if parameterIndex does not correspond
      * to a parameter marker in the SQL statement,  if the length specified
-     * is less than zero or if the number of bytes in the inputstream does not match
+     * is less than zero or if the number of bytes in the <code>InputStream</code> does not match
      * the specified length.
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      *
@@ -1474,7 +1476,8 @@ public interface RowSet extends ResultSet {
         throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>InputStream</code> object.  The <code>inputstream</code> must contain  the number
+     * Sets the designated parameter to a <code>InputStream</code> object.
+     * The "{@code InputStream} must contain  the number
      * of characters specified by length, otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
@@ -1491,7 +1494,7 @@ public interface RowSet extends ResultSet {
      * @param length the number of bytes in the parameter data.
      * @throws SQLException  if parameterIndex does not correspond
      * to a parameter marker in the SQL statement,  or if the length specified
-     * is less than zero; if the number of bytes in the inputstream does not match
+     * is less than zero; if the number of bytes in the <code>InputStream</code> does not match
      * the specified length; if a database access error occurs or
      * this method is called on a closed <code>CallableStatement</code>
      * @exception SQLFeatureNotSupportedException if the JDBC driver does not support
@@ -1554,7 +1557,8 @@ public interface RowSet extends ResultSet {
   void setClob (int i, Clob x) throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>Reader</code> object.  The reader must contain  the number
+     * Sets the designated parameter to a {@code Reader} object.
+     * The {@code Reader} must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>PreparedStatement</code> is executed.
      *This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
@@ -1576,7 +1580,7 @@ public interface RowSet extends ResultSet {
        throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>Reader</code> object.
+     * Sets the designated parameter to a {@code Reader} object.
      * This method differs from the <code>setCharacterStream (int, Reader)</code> method
      * because it informs the driver that the parameter value should be sent to
      * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
@@ -1600,7 +1604,8 @@ public interface RowSet extends ResultSet {
        throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>Reader</code> object.  The <code>reader</code> must contain  the number
+     * Sets the designated parameter to a {@code Reader} object.  The
+     * {@code Reader} must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
      * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
@@ -1639,7 +1644,7 @@ public interface RowSet extends ResultSet {
     void setClob (String parameterName, Clob x) throws SQLException;
 
   /**
-     * Sets the designated parameter to a <code>Reader</code> object.
+     * Sets the designated parameter to a {@code Reader} object.
      * This method differs from the <code>setCharacterStream (int, Reader)</code> method
      * because it informs the driver that the parameter value should be sent to
      * the server as a <code>CLOB</code>.  When the <code>setCharacterStream</code> method is used, the
@@ -1859,10 +1864,10 @@ public interface RowSet extends ResultSet {
    * outstanding updates, they are ignored.
    * <P>
    * If this <code>RowSet</code> object does not maintain a continuous connection
-   * with its source of data, it may use a reader (a <code>RowSetReader</code>
-   * object) to fill itself with data.  In this case, a reader will have been
+   * with its source of data, it may use a {@code Reader} (a <code>RowSetReader</code>
+   * object) to fill itself with data.  In this case, a {@code Reader} will have been
    * registered with this <code>RowSet</code> object, and the method
-   * <code>execute</code> will call on the reader's <code>readData</code>
+   * <code>execute</code> will call on the {@code Reader}'s <code>readData</code>
    * method as part of its implementation.
    *
    * @exception SQLException if a database access error occurs or any of the
@@ -1987,8 +1992,8 @@ public interface RowSet extends ResultSet {
             throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object. The
-     * <code>Reader</code> reads the data till end-of-file is reached. The
+     * Sets the designated parameter to a {@code Reader} object. The
+     * {@code Reader} reads the data till end-of-file is reached. The
      * driver does the necessary conversion from Java character format to
      * the national character set in the database.
      * @param parameterIndex of the first parameter is 1, the second is 2, ...
@@ -2002,8 +2007,8 @@ public interface RowSet extends ResultSet {
      void setNCharacterStream(int parameterIndex, Reader value, long length) throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object. The
-     * <code>Reader</code> reads the data till end-of-file is reached. The
+     * Sets the designated parameter to a {@code Reader} object. The
+     * {@code Reader} reads the data till end-of-file is reached. The
      * driver does the necessary conversion from Java character format to
      * the national character set in the database.
      * @param parameterName the name of the column to be set
@@ -2018,8 +2023,8 @@ public interface RowSet extends ResultSet {
             throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object. The
-     * <code>Reader</code> reads the data till end-of-file is reached. The
+     * Sets the designated parameter to a {@code Reader} object. The
+     * {@code Reader} reads the data till end-of-file is reached. The
      * driver does the necessary conversion from Java character format to
      * the national character set in the database.
 
@@ -2055,7 +2060,8 @@ public interface RowSet extends ResultSet {
     void setNClob(String parameterName, NClob value) throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object.  The <code>reader</code> must contain  the number
+     * Sets the designated parameter to a {@code Reader} object.
+     * The {@code Reader} must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>CallableStatement</code> is executed.
      * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
@@ -2081,7 +2087,7 @@ public interface RowSet extends ResultSet {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object.
+     * Sets the designated parameter to a {@code Reader} object.
      * This method differs from the <code>setCharacterStream (int, Reader)</code> method
      * because it informs the driver that the parameter value should be sent to
      * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the
@@ -2105,7 +2111,8 @@ public interface RowSet extends ResultSet {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object.  The reader must contain  the number
+     * Sets the designated parameter to a {@code Reader} object.
+     * The {@code Reader} must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>PreparedStatement</code> is executed.
      * This method differs from the <code>setCharacterStream (int, Reader, int)</code> method
@@ -2142,7 +2149,7 @@ public interface RowSet extends ResultSet {
      void setNClob(int parameterIndex, NClob value) throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>Reader</code> object.
+     * Sets the designated parameter to a {@code Reader} object.
      * This method differs from the <code>setCharacterStream (int, Reader)</code> method
      * because it informs the driver that the parameter value should be sent to
      * the server as a <code>NCLOB</code>.  When the <code>setCharacterStream</code> method is used, the

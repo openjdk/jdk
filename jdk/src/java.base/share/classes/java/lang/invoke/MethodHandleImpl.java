@@ -621,7 +621,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     /**
-     * The LambaForm shape for catchException combinator is the following:
+     * The LambdaForm shape for catchException combinator is the following:
      * <blockquote><pre>{@code
      *  guardWithCatch=Lambda(a0:L,a1:L,a2:L)=>{
      *    t3:L=BoundMethodHandle$Species_LLLLL.argL0(a0:L);
@@ -702,7 +702,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodType type = target.type();
         LambdaForm form = makeGuardWithCatchForm(type.basicType());
 
-        // Prepare auxiliary method handles used during LambdaForm interpreation.
+        // Prepare auxiliary method handles used during LambdaForm interpretation.
         // Box arguments and wrap them into Object[]: ValueConversions.array().
         MethodType varargsType = type.changeReturnType(Object[].class);
         MethodHandle collectArgs = ValueConversions.varargsArray(type.parameterCount())

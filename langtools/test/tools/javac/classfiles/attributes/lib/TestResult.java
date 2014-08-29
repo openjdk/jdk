@@ -23,13 +23,15 @@
 
 import java.io.PrintWriter;
 import java.io.StringWriter;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
+import java.util.*;
+import java.util.stream.Stream;
 
 import static java.lang.String.format;
 import static java.util.stream.Collectors.joining;
 
+/**
+ * This class accumulates test results. Test results can be checked with method @{code checkStatus}.
+ */
 public class TestResult extends TestBase {
 
     private final List<Info> testCases;
@@ -39,15 +41,18 @@ public class TestResult extends TestBase {
         testCases.add(new Info("Global test info"));
     }
 
-    public void addTestCase(String src) {
-        testCases.add(new Info(src));
+    /**
+     * Adds new test case info.
+     *
+     * @param info the information about test case
+     */
+    public void addTestCase(String info) {
+        testCases.add(new Info(info));
     }
 
-    public String errorMessage() {
+    private String errorMessage() {
         return testCases.stream().filter(Info::isFailed)
-                .map(tc -> format("Failure in test case:\n%s\n%s", tc.info(),
-                        (tc.asserts.size() > 0 ? tc.getAssertMessage() + "\n" : "")
-                                + tc.getErrorMessage()))
+                .map(tc -> format("Failure in test case:\n%s\n%s", tc.info(), tc.getMessage()))
                 .collect(joining("\n"));
     }
 
@@ -76,8 +81,14 @@ public class TestResult extends TestBase {
         getLastTestCase().assertEquals(actual, true, message);
     }
 
+    public void assertContains(Set<?> found, Set<?> expected, String message) {
+        Set<?> copy = new HashSet<>(expected);
+        copy.removeAll(found);
+        assertTrue(found.containsAll(expected), message + " : " + copy);
+    }
+
     public void addFailure(Throwable th) {
-        getLastTestCase().addFailure(th);
+        testCases.get(testCases.size() - 1).addFailure(th);
     }
 
     private Info getLastTestCase() {
@@ -87,6 +98,13 @@ public class TestResult extends TestBase {
         return testCases.get(testCases.size() - 1);
     }
 
+    /**
+     * Throws {@code TestFailedException} if one of the asserts are failed
+     * or an exception occurs. Prints error message of failed test cases.
+     *
+     * @throws TestFailedException if one of the asserts are failed
+     *                             or an exception occurs
+     */
     public void checkStatus() throws TestFailedException {
         if (testCases.stream().anyMatch(Info::isFailed)) {
             echo(errorMessage());
@@ -120,7 +138,13 @@ public class TestResult extends TestBase {
         }
 
         public void addFailure(String message) {
-            asserts.add(message);
+            String stackTrace = Stream.of(Thread.currentThread().getStackTrace())
+                    // just to get stack trace without TestResult and Thread
+                    .filter(e -> !"TestResult.java".equals(e.getFileName()) &&
+                            !"java.lang.Thread".equals(e.getClassName()))
+                    .map(e -> "\tat " + e)
+                    .collect(joining("\n"));
+            asserts.add(format("%s\n%s", message, stackTrace));
             printf("[ASSERT] : %s\n", message);
         }
 
@@ -138,6 +162,10 @@ public class TestResult extends TestBase {
             }
         }
 
+        public String getMessage() {
+            return (asserts.size() > 0 ? getAssertMessage() + "\n" : "") + getErrorMessage();
+        }
+
         public String getAssertMessage() {
             return asserts.stream()
                     .map(failure -> "[ASSERT] : " + failure)
@@ -146,8 +174,7 @@ public class TestResult extends TestBase {
 
         public String getErrorMessage() {
             return errors.stream()
-                    .map(throwable ->
-                            format("[ERROR] : %s", getStackTrace(throwable)))
+                    .map(throwable -> format("[ERROR] : %s", getStackTrace(throwable)))
                     .collect(joining("\n"));
         }
 

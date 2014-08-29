@@ -160,7 +160,7 @@ final class SetMethodCreator {
     }
 
     private SetMethod createNewPropertySetter() {
-        final SetMethod sm = map.getFieldCount() < map.getFieldMaximum() ? createNewFieldSetter() : createNewSpillPropertySetter();
+        final SetMethod sm = map.getFreeFieldSlot() > -1 ? createNewFieldSetter() : createNewSpillPropertySetter();
         final PropertyListeners listeners = map.getListeners();
         if (listeners != null) {
             listeners.propertyAdded(sm.property);
@@ -205,11 +205,11 @@ final class SetMethodCreator {
     }
 
     private SetMethod createNewFieldSetter() {
-        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFieldCount(), type));
+        return createNewSetter(new AccessorProperty(getName(), 0, sobj.getClass(), getMap().getFreeFieldSlot(), type));
     }
 
     private SetMethod createNewSpillPropertySetter() {
-        return createNewSetter(new SpillProperty(getName(), 0, getMap().getSpillLength(), type));
+        return createNewSetter(new SpillProperty(getName(), 0, getMap().getFreeSpillSlot(), type));
     }
 
     private PropertyMap getNewMap(final Property property) {
