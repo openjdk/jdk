@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 7008643
  * @summary inlined finally clauses confuse debuggers
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main InlinedFinallyConfuseDebuggersTest
  */
@@ -73,6 +73,8 @@ public class InlinedFinallyConfuseDebuggersTest {
         new InlinedFinallyConfuseDebuggersTest().run();
     }
 
+    ToolBox tb = new ToolBox();
+
     void run() throws Exception {
         compileTestClass();
         checkClassFile(new File(Paths.get(System.getProperty("user.dir"),
@@ -80,9 +82,9 @@ public class InlinedFinallyConfuseDebuggersTest {
     }
 
     void compileTestClass() throws Exception {
-        ToolBox.JavaToolArgs javacSuccessArgs =
-                new ToolBox.JavaToolArgs().setSources(testSource);
-        ToolBox.javac(javacSuccessArgs);
+        tb.new JavacTask()
+                .sources(testSource)
+                .run();
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {

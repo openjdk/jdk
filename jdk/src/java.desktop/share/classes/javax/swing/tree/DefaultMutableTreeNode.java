@@ -1297,10 +1297,19 @@ public class DefaultMutableTreeNode implements Cloneable,
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
+
+        ObjectInputStream.GetField f = s.readFields();
+        parent = (MutableTreeNode) f.get("parent", null);
+        @SuppressWarnings("unchecked")
+        Vector<TreeNode> newChildren = (Vector<TreeNode>) f.get("children", null);
+        boolean newAllowsChildren = f.get("allowsChildren", false);
+        if (!newAllowsChildren && newChildren != null && newChildren.size() > 0) {
+            throw new IllegalStateException("node does not allow children");
+        }
+        children = newChildren;
+        allowsChildren = newAllowsChildren;
+
         Object[]      tValues;
-
-        s.defaultReadObject();
-
         tValues = (Object[])s.readObject();
 
         if(tValues.length > 0 && tValues[0].equals("userObject"))

@@ -31,19 +31,21 @@ import java.util.*;
 import java.nio.file.Path;
 import java.nio.file.Files;
 
+import com.sun.tools.sjavac.client.SjavacClient;
+import com.sun.tools.sjavac.comp.SjavacImpl;
+import com.sun.tools.sjavac.comp.PooledSjavac;
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.options.SourceLocation;
-import com.sun.tools.sjavac.server.JavacService;
-import com.sun.tools.sjavac.server.JavacServer;
-import com.sun.tools.sjavac.server.JavacServiceClient;
+import com.sun.tools.sjavac.server.Sjavac;
+import com.sun.tools.sjavac.server.SjavacServer;
 
 /**
  * The main class of the smart javac wrapper tool.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class Main {
 
@@ -163,13 +165,19 @@ public class Main {
                 return;
             }
             // Spawn a background server.
-            int rc = JavacServer.startServer(args[0], System.err);
-            System.exit(rc);
+            try {
+                SjavacServer server = new SjavacServer(args[0], System.err);
+                int rc = server.startServer();
+                System.exit(rc);
+            } catch (IOException ioex) {
+                Log.error("IOException caught: " + ioex);
+                System.exit(-1);
+            }
         }
         Main main = new Main();
         int rc = main.go(args, System.out, System.err);
         // Remove the portfile, but only if this background=false was used.
-        JavacServer.cleanup(args);
+        SjavacServer.cleanup(args);
         System.exit(rc);
     }
 
@@ -203,6 +211,9 @@ public class Main {
             return -1;
 
         if (!createIfMissing(options.getDestDir()))
+            return -1;
+
+        if (!createIfMissing(options.getStateDir()))
             return -1;
 
         Path gensrc = options.getGenSrcDir();
@@ -302,7 +313,7 @@ public class Main {
         // For examples, files that have been manually copied into these dirs.
         // Artifacts with bad timestamps (ie the on disk timestamp does not match the timestamp
         // in javac_state) have already been removed when the javac_state was loaded.
-        if (!options.isUnidentifiedArtifactPermitted()) {
+        if (!options.areUnidentifiedArtifactsPermitted()) {
             javac_state.removeUnidentifiedArtifacts();
         }
         // Go through all sources and taint all packages that miss artifacts.
@@ -338,15 +349,22 @@ public class Main {
             // Collect the name of all compiled packages.
             Set<String> recently_compiled = new HashSet<>();
             boolean[] rc = new boolean[1];
+            Sjavac sjavac;
+            boolean background = Util.extractBooleanOption("background", options.getServerConf(), true);
             do {
                 // Clean out artifacts in tainted packages.
                 javac_state.deleteClassArtifactsInTaintedPackages();
-                // Create a JavacService to delegate the actual compilation to.
-                // Currently sjavac always connects to a server through a socket
-                // regardless if sjavac runs as a background service or not.
-                // This will most likely change in the future.
-                JavacService javacService = new JavacServiceClient(options.getServerConf());
-                again = javac_state.performJavaCompilations(javacService, options, recently_compiled, rc);
+                // Create an sjavac implementation to be used for compilation
+                if (background) {
+                    sjavac = new SjavacClient(options);
+                } else {
+                    int poolsize = Util.extractIntOption("poolsize", options.getServerConf());
+                    if (poolsize <= 0)
+                        poolsize = Runtime.getRuntime().availableProcessors();
+                    sjavac = new PooledSjavac(new SjavacImpl(), poolsize);
+                }
+
+                again = javac_state.performJavaCompilations(sjavac, options, recently_compiled, rc);
                 if (!rc[0]) break;
             } while (again);
             // Only update the state if the compile went well.
@@ -357,6 +375,8 @@ public class Main {
                 // Remove artifacts that were generated during the last compile, but not this one.
                 javac_state.removeSuperfluousArtifacts(recently_compiled);
             }
+            if (!background)
+                sjavac.shutdown();
             return rc[0] ? 0 : -1;
         } catch (ProblemException e) {
             Log.error(e.getMessage());
@@ -375,8 +395,6 @@ public class Main {
             err = "Please specify output directory.";
         } else if (options.isJavaFilesAmongJavacArgs()) {
             err = "Sjavac does not handle explicit compilation of single .java files.";
-        } else if (options.isAtFilePresent()) {
-            err = "Sjavac does not handle @-files.";
         } else if (options.getServerConf() == null) {
             err = "No server configuration provided.";
         } else if (!options.getImplicitPolicy().equals("none")) {

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,6 +34,7 @@ import java.text.spi.DateFormatProvider;
 import java.text.spi.DateFormatSymbolsProvider;
 import java.text.spi.DecimalFormatSymbolsProvider;
 import java.text.spi.NumberFormatProvider;
+import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
 import java.util.Set;
@@ -356,6 +357,9 @@ public class JRELocaleProviderAdapter extends LocaleProviderAdapter implements R
 
     protected Set<String> createLanguageTagSet(String category) {
         String supportedLocaleString = LocaleDataMetaInfo.getSupportedLocaleString(category);
+        if (supportedLocaleString == null) {
+            return Collections.emptySet();
+        }
         Set<String> tagset = new HashSet<>();
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
         while (tokens.hasMoreTokens()) {

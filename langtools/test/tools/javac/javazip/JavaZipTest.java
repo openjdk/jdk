@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,16 @@
  * @test
  * @bug 4098712 6304984 6388453
  * @summary check that source files inside zip files on the class path are ignored
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main JavaZipTest
  */
 
-import java.io.File;
+import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.util.Arrays;
 
-//original test: test/tools/javac/javazip/Test.sh
+// Original test: test/tools/javac/javazip/Test.sh
 public class JavaZipTest {
 
     private static final String ASrc =
@@ -62,7 +63,7 @@ public class JavaZipTest {
         {"-d", "output", "-cp", "good.jar", "A.java"},
     };
 
-    private static final String[][] unSuccessfulCompilationArgs = {
+    private static final String[][] unsuccessfulCompilationArgs = {
         {"-d", "output", "A.java", "bad/B.java"},
         {"-d", "output", "-cp", "bad", "A.java"},
         {"-d", "output", "-sourcepath", "bad", "A.java"},
@@ -74,53 +75,57 @@ public class JavaZipTest {
         new JavaZipTest().test();
     }
 
+    private final ToolBox tb = new ToolBox();
+
     public void test() throws Exception {
         createOutputDirAndSourceFiles();
         createZipsAndJars();
         check(ToolBox.Expect.SUCCESS, successfulCompilationArgs);
-        check(ToolBox.Expect.FAIL, unSuccessfulCompilationArgs);
+        check(ToolBox.Expect.FAIL, unsuccessfulCompilationArgs);
     }
 
     void createOutputDirAndSourceFiles() throws Exception {
         //create output dir
-        new File("output").mkdir();
+        Files.createDirectory(Paths.get("output"));
 
         //source file creation
-        ToolBox.createJavaFileFromSource(Paths.get("good"), BGoodSrc);
-        ToolBox.createJavaFileFromSource(Paths.get("bad"), BBadSrc);
-        ToolBox.createJavaFileFromSource(ASrc);
+        tb.writeJavaFiles(Paths.get("good"), BGoodSrc);
+        tb.writeJavaFiles(Paths.get("bad"), BBadSrc);
+        tb.writeJavaFiles(ToolBox.currDir, ASrc);
     }
 
     void createZipsAndJars() throws Exception {
         //jar and zip creation
-//        check ok   "${TESTJAVA}${FS}bin${FS}jar" cf "${SCR}${FS}good.jar" -C "${TESTSRC}${FS}good" B.java
-//        check ok   "${TESTJAVA}${FS}bin${FS}jar" cf "${SCR}${FS}good.zip" -C "${TESTSRC}${FS}good" B.java
-//        check ok   "${TESTJAVA}${FS}bin${FS}jar" cf "${SCR}${FS}bad.jar"  -C "${TESTSRC}${FS}bad" B.java
-//        check ok   "${TESTJAVA}${FS}bin${FS}jar" cf "${SCR}${FS}bad.zip"  -C "${TESTSRC}${FS}bad" B.java
         for (String[] args: jarArgs) {
-            ToolBox.jar(args);
+            tb.new JarTask().run(args).writeAll();
         }
     }
 
-    void check(ToolBox.Expect whatToExpect, String[][] theArgs) throws Exception {
-//        check ok   "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} "${TESTSRC}${FS}A.java" "${TESTSRC}${FS}good${FS}B.java"
-//        check ok   "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -classpath "${TESTSRC}${FS}good"   "${TESTSRC}${FS}A.java"
-//        check ok   "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -sourcepath "${TESTSRC}${FS}good"  "${TESTSRC}${FS}A.java"
-//        check ok   "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -classpath "${SCR}${FS}good.zip"   "${TESTSRC}${FS}A.java"
-//        check ok   "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -classpath "${SCR}${FS}good.jar"   "${TESTSRC}${FS}A.java"
+    void check(ToolBox.Expect expectedStatus, String[][] theArgs) throws Exception {
 
-//        check err  "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} "${TESTSRC}${FS}A.java" "${TESTSRC}${FS}bad${FS}B.java"
-//        check err  "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -classpath "${TESTSRC}${FS}bad"    "${TESTSRC}${FS}A.java"
-//        check err  "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -sourcepath "${TESTSRC}${FS}bad"   "${TESTSRC}${FS}A.java"
-//        check err  "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -sourcepath "${SCR}${FS}bad.zip"   "${TESTSRC}${FS}A.java"
-//        check err  "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -sourcepath "${SCR}${FS}bad.jar"   "${TESTSRC}${FS}A.java"
-        ToolBox.JavaToolArgs args =
-                new ToolBox.JavaToolArgs(whatToExpect);
 
         for (String[] allArgs: theArgs) {
-            args.setAllArgs(allArgs);
-            ToolBox.javac(args);
+            tb.new JavacTask()
+                    .options(opts(allArgs))
+                    .files(files(allArgs))
+                    .run(expectedStatus)
+                    .writeAll();
+
         }
+    }
+
+    private String[] opts(String... allArgs) {
+        int i = allArgs.length;
+        while (allArgs[i - 1].endsWith(".java"))
+            i--;
+        return Arrays.copyOfRange(allArgs, 0, i);
+    }
+
+    private String[] files(String... allArgs) {
+        int i = allArgs.length;
+        while (allArgs[i - 1].endsWith(".java"))
+            i--;
+        return Arrays.copyOfRange(allArgs, i, allArgs.length);
     }
 
 }

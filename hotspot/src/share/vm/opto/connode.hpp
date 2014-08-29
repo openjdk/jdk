@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -46,7 +46,7 @@ public:
   virtual const RegMask &in_RegMask(uint) const { return RegMask::Empty; }
 
   // Polymorphic factory method:
-  static ConNode* make( Compile* C, const Type *t );
+  static ConNode* make(const Type *t);
 };
 
 //------------------------------ConINode---------------------------------------
@@ -57,7 +57,7 @@ public:
   virtual int Opcode() const;
 
   // Factory method:
-  static ConINode* make( Compile* C, int con ) {
+  static ConINode* make(int con) {
     return new ConINode( TypeInt::make(con) );
   }
 
@@ -71,7 +71,7 @@ public:
   virtual int Opcode() const;
 
   // Factory methods:
-  static ConPNode* make( Compile *C ,address con ) {
+  static ConPNode* make(address con) {
     if (con == NULL)
       return new ConPNode( TypePtr::NULL_PTR ) ;
     else
@@ -105,7 +105,7 @@ public:
   virtual int Opcode() const;
 
   // Factory method:
-  static ConLNode* make( Compile *C ,jlong con ) {
+  static ConLNode* make(jlong con) {
     return new ConLNode( TypeLong::make(con) );
   }
 
@@ -119,7 +119,7 @@ public:
   virtual int Opcode() const;
 
   // Factory method:
-  static ConFNode* make( Compile *C, float con  ) {
+  static ConFNode* make(float con) {
     return new ConFNode( TypeF::make(con) );
   }
 
@@ -133,7 +133,7 @@ public:
   virtual int Opcode() const;
 
   // Factory method:
-  static ConDNode* make( Compile *C, double con ) {
+  static ConDNode* make(double con) {
     return new ConDNode( TypeD::make(con) );
   }
 

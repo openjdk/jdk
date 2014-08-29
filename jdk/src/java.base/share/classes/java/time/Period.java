@@ -329,17 +329,17 @@ public final class Period
         Objects.requireNonNull(text, "text");
         Matcher matcher = PATTERN.matcher(text);
         if (matcher.matches()) {
-            int negate = ("-".equals(matcher.group(1)) ? -1 : 1);
-            String yearMatch = matcher.group(2);
-            String monthMatch = matcher.group(3);
-            String weekMatch = matcher.group(4);
-            String dayMatch = matcher.group(5);
-            if (yearMatch != null || monthMatch != null || dayMatch != null || weekMatch != null) {
+            int negate = (charMatch(text, matcher.start(1), matcher.end(1), '-') ? -1 : 1);
+            int yearStart = matcher.start(2), yearEnd = matcher.end(2);
+            int monthStart = matcher.start(3), monthEnd = matcher.end(3);
+            int weekStart = matcher.start(4), weekEnd = matcher.end(4);
+            int dayStart = matcher.start(5), dayEnd = matcher.end(5);
+            if (yearStart >= 0 || monthStart >= 0 || weekStart >= 0 || dayStart >= 0) {
                 try {
-                    int years = parseNumber(text, yearMatch, negate);
-                    int months = parseNumber(text, monthMatch, negate);
-                    int weeks = parseNumber(text, weekMatch, negate);
-                    int days = parseNumber(text, dayMatch, negate);
+                    int years = parseNumber(text, yearStart, yearEnd, negate);
+                    int months = parseNumber(text, monthStart, monthEnd, negate);
+                    int weeks = parseNumber(text, weekStart, weekEnd, negate);
+                    int days = parseNumber(text, dayStart, dayEnd, negate);
                     days = Math.addExact(days, Math.multiplyExact(weeks, 7));
                     return create(years, months, days);
                 } catch (NumberFormatException ex) {
@@ -350,11 +350,15 @@ public final class Period
         throw new DateTimeParseException("Text cannot be parsed to a Period", text, 0);
     }
 
-    private static int parseNumber(CharSequence text, String str, int negate) {
-        if (str == null) {
+    private static boolean charMatch(CharSequence text, int start, int end, char c) {
+        return (start >= 0 && end == start + 1 && text.charAt(start) == c);
+    }
+
+    private static int parseNumber(CharSequence text, int start, int end, int negate) {
+        if (start < 0 || end < 0) {
             return 0;
         }
-        int val = Integer.parseInt(str);
+        int val = Integer.parseInt(text, 10, start, end);
         try {
             return Math.multiplyExact(val, negate);
         } catch (ArithmeticException ex) {

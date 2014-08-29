@@ -97,25 +97,16 @@ run PropertiesTest -c dump1 dump2 ${PROPS}
 # Dump built-in currency data + overrides in properties file copied into
 # JRE image.
 
-# Copy the test properties file. If testjava is not a typical jdk-image
-# or testjava is not writable, make a private copy of it.
-COPIED=0
-if [ -w ${TESTJAVA}${FS}jre${FS}lib ]
-then
-  WRITABLEJDK=$TESTJAVA
+# Make a private copy of the jdk so we can write to the properties file location
+# without disturbing other users, including concurrently executing tests.
+WRITABLEJDK=.${FS}testjava
+cp -Hr $TESTJAVA $WRITABLEJDK
+if [ -d ${TESTJAVA}${FS}jre ]; then
   PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
 else
-  WRITABLEJDK=.${FS}testjava
-  if [ -d ${TESTJAVA}${FS}jre ]
-  then
-    PROPLOCATION=${WRITABLEJDK}${FS}jre${FS}lib
-  else
-    PROPLOCATION=${WRITABLEJDK}${FS}lib
-  fi
-  cp -r $TESTJAVA $WRITABLEJDK
-  chmod -R +w $WRITABLEJDK
-  COPIED=1
+  PROPLOCATION=${WRITABLEJDK}${FS}lib
 fi
+chmod -R +w $WRITABLEJDK
 cp ${PROPS} $PROPLOCATION
 echo "Properties location: ${PROPLOCATION}"
 
@@ -125,11 +116,7 @@ sh -xc "${WRITABLEJDK}${FS}bin${FS}java ${TESTVMOPTS} -cp ${TESTCLASSES} Propert
 if [ $? != 0 ]; then failures=`expr $failures + 1`; fi
 
 # Cleanup
-rm -f ${PROPLOCATION}${FS}currency.properties
-if [ $COPIED -eq 1 ]
-then
-  rm -rf $WRITABLEJDK
-fi
+rm -rf $WRITABLEJDK
 
 # compare the two dump files
 run PropertiesTest -c dump1 dump3 ${PROPS}

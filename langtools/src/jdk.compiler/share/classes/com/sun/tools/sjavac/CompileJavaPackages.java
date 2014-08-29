@@ -30,13 +30,12 @@ import java.io.PrintStream;
 import java.net.URI;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.Random;
 import java.util.Set;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
 import com.sun.tools.sjavac.server.CompilationResult;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SysInfo;
 
 /**
@@ -67,7 +66,7 @@ public class CompileJavaPackages implements Transformer {
         args = a;
     }
 
-    public boolean transform(final JavacService javacService,
+    public boolean transform(final Sjavac sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              final Set<URI>             visibleSources,
                              final Map<URI,Set<String>> visibleClasses,
@@ -86,18 +85,12 @@ public class CompileJavaPackages implements Transformer {
         boolean concurrentCompiles = true;
 
         // Fetch the id.
-        String idOpt = Util.extractStringOption("id", args.getServerConf());
-        if (idOpt == null || idOpt.equals("")) {
-            // No explicit id set. Create a random id so that the requests can be
-            // grouped properly in the server.
-            idOpt = "id"+(((new Random()).nextLong())&Long.MAX_VALUE);
-        }
-        final String id = idOpt;
+        final String id = Util.extractStringOption("id", sjavac.serverSettings());
         // Only keep portfile and sjavac settings..
-        String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), args.getServerConf());
+        String psServerSettings = Util.cleanSubOptions(Util.set("portfile","sjavac","background","keepalive"), sjavac.serverSettings());
 
         // Get maximum heap size from the server!
-        SysInfo sysinfo = javacService.getSysInfo();
+        SysInfo sysinfo = sjavac.getSysInfo();
         if (sysinfo.numCores == -1) {
             Log.error("Could not query server for sysinfo!");
             return false;
@@ -222,7 +215,7 @@ public class CompileJavaPackages implements Transformer {
             requests[i] = new Thread() {
                 @Override
                 public void run() {
-                    rn[ii] = javacService.compile("n/a",
+                    rn[ii] = sjavac.compile("n/a",
                                                   id + "-" + ii,
                                                   args.prepJavacArgs(),
                                                   Collections.<File>emptyList(),
@@ -253,6 +246,8 @@ public class CompileJavaPackages implements Transformer {
                     requests[ii].run();
                     // If there was an error, then stop early when running single threaded.
                     if (rn[i].returnCode != 0) {
+                        Log.info(rn[i].stdout);
+                        Log.error(rn[i].stderr);
                         return false;
                     }
                 }
@@ -269,6 +264,8 @@ public class CompileJavaPackages implements Transformer {
         for (int i=0; i<numCompiles; ++i) {
             if (compileChunks[i].srcs.size() > 0) {
                 if (rn[i].returnCode != 0) {
+                    Log.info(rn[i].stdout);
+                    Log.error(rn[i].stderr);
                     rc = false;
                 }
             }

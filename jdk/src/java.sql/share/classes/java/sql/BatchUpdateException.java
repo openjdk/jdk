@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -479,14 +479,14 @@ public class BatchUpdateException extends SQLException {
    * to BatchUpdateException:
    * <ul>
    * <li>Add field longUpdateCounts</li>
-   * <li>Add Constructorr which takes long[] for update counts</li>
+   * <li>Add Constructor which takes long[] for update counts</li>
    * <li>Add getLargeUpdateCounts method</li>
    * </ul>
    * When any of the constructors are called, the int[] and long[] updateCount
    * fields are populated by copying the one array to each other.
    *
    * As the JDBC driver passes in the updateCounts, there has always been the
-   * possiblity for overflow and BatchUpdateException does not need to account
+   * possibility for overflow and BatchUpdateException does not need to account
    * for that, it simply copies the arrays.
    *
    * JDBC drivers should always use the constructor that specifies long[] and
