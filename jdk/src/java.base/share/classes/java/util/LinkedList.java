@@ -314,7 +314,7 @@ public class LinkedList<E>
      * @return {@code true} if this list contains the specified element
      */
     public boolean contains(Object o) {
-        return indexOf(o) != -1;
+        return indexOf(o) >= 0;
     }
 
     /**
