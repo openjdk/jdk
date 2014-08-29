@@ -149,13 +149,17 @@ LIBAWT_DIRS := $(JDK_TOPDIR)/src/java.desktop/share/native/libawt \
     $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/common/sun/awt \
     #
 
+ifeq ($(OPENJDK_TARGET_OS), aix)
+  LIBAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS)/native/libawt
+endif
+
 ifeq ($(OPENJDK_TARGET_OS), windows)
   LIBAWT_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/native/common/sun/awt/utility
 else
   LIBAWT_EXFILES := sun/java2d/ShaderList.c
 endif
 
-ifneq ($(filter $(OPENJDK_TARGET_OS), solaris linux macosx), )
+ifneq ($(filter $(OPENJDK_TARGET_OS), solaris linux macosx aix), )
   LIBAWT_EXFILES += awt_Font.c CUPSfuncs.c fontpath.c X11Color.c
 endif
 
@@ -165,14 +169,11 @@ endif
 
 LIBAWT_CFLAGS += -I$(JDK_OUTPUTDIR)/gensrc_headers/java.desktop \
     $(addprefix -I, $(shell find $(LIBAWT_DIRS) -type d)) \
-    -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/common/sun/awt \
     $(LIBJAVA_HEADER_FLAGS) \
     $(addprefix -I, $(BUILD_LIBMLIB_IMAGE_SRC)) \
     #
 
-LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES \
-    $(X_CFLAGS) \
-    $(foreach dir, $(LIBAWT_DIRS), -I$(dir))
+LIBAWT_CFLAGS += -D__MEDIALIB_OLD_NAMES -D__USE_J2D_NAMES $(X_CFLAGS)
 
 ifeq ($(OPENJDK_TARGET_OS), macosx)
 endif
