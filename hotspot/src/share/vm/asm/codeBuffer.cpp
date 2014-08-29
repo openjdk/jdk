@@ -134,6 +134,10 @@ CodeBuffer::~CodeBuffer() {
   // free any overflow storage
   delete _overflow_arena;
 
+  // Claim is that stack allocation ensures resources are cleaned up.
+  // This is resource clean up, let's hope that all were properly copied out.
+  free_strings();
+
 #ifdef ASSERT
   // Save allocation type to execute assert in ~ResourceObj()
   // which is called after this destructor.
@@ -705,7 +709,7 @@ void CodeBuffer::copy_code_to(CodeBlob* dest_blob) {
   relocate_code_to(&dest);
 
   // transfer strings and comments from buffer to blob
-  dest_blob->set_strings(_strings);
+  dest_blob->set_strings(_code_strings);
 
   // Done moving code bytes; were they the right size?
   assert(round_to(dest.total_content_size(), oopSize) == dest_blob->content_size(), "sanity");
@@ -1005,11 +1009,11 @@ void CodeSection::decode() {
 
 
 void CodeBuffer::block_comment(intptr_t offset, const char * comment) {
-  _strings.add_comment(offset, comment);
+  _code_strings.add_comment(offset, comment);
 }
 
 const char* CodeBuffer::code_string(const char* str) {
-  return _strings.add_string(str);
+  return _code_strings.add_string(str);
 }
 
 class CodeString: public CHeapObj<mtCode> {
@@ -1075,6 +1079,7 @@ CodeString* CodeStrings::find_last(intptr_t offset) const {
 }
 
 void CodeStrings::add_comment(intptr_t offset, const char * comment) {
+  check_valid();
   CodeString* c      = new CodeString(comment, offset);
   CodeString* inspos = (_strings == NULL) ? NULL : find_last(offset);
 
@@ -1090,11 +1095,32 @@ void CodeStrings::add_comment(intptr_t offset, const char * comment) {
 }
 
 void CodeStrings::assign(CodeStrings& other) {
+  other.check_valid();
+  // Cannot do following because CodeStrings constructor is not alway run!
+  assert(is_null(), "Cannot assign onto non-empty CodeStrings");
   _strings = other._strings;
+  other.set_null_and_invalidate();
+}
+
+// Deep copy of CodeStrings for consistent memory management.
+// Only used for actual disassembly so this is cheaper than reference counting
+// for the "normal" fastdebug case.
+void CodeStrings::copy(CodeStrings& other) {
+  other.check_valid();
+  check_valid();
+  assert(is_null(), "Cannot copy onto non-empty CodeStrings");
+  CodeString* n = other._strings;
+  CodeString** ps = &_strings;
+  while (n != NULL) {
+    *ps = new CodeString(n->string(),n->offset());
+    ps = &((*ps)->_next);
+    n = n->next();
+  }
 }
 
 void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) const {
-  if (_strings != NULL) {
+    check_valid();
+    if (_strings != NULL) {
     CodeString* c = find(offset);
     while (c && c->offset() == offset) {
       stream->bol();
@@ -1105,7 +1131,7 @@ void CodeStrings::print_block_comment(outputStream* stream, intptr_t offset) con
   }
 }
 
-
+// Also sets isNull()
 void CodeStrings::free() {
   CodeString* n = _strings;
   while (n) {
@@ -1115,10 +1141,11 @@ void CodeStrings::free() {
     delete n;
     n = p;
   }
-  _strings = NULL;
+  set_null_and_invalidate();
 }
 
 const char* CodeStrings::add_string(const char * string) {
+  check_valid();
   CodeString* s = new CodeString(string);
   s->set_next(_strings);
   _strings = s;
