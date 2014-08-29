@@ -2799,9 +2799,10 @@ bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* p
   assert(n->is_ClearArray(), "sanity");
   intptr_t offset;
   AllocateNode* alloc = AllocateNode::Ideal_allocation(n->in(3), phase, offset);
-  // This method is called only before Allocate nodes are expanded during
-  // macro nodes expansion. Before that ClearArray nodes are only generated
-  // in LibraryCallKit::generate_arraycopy() which follows allocations.
+  // This method is called only before Allocate nodes are expanded
+  // during macro nodes expansion. Before that ClearArray nodes are
+  // only generated in PhaseMacroExpand::generate_arraycopy() (before
+  // Allocate nodes are expanded) which follows allocations.
   assert(alloc != NULL, "should have allocation");
   if (alloc->_idx == instance_id) {
     // Can not bypass initialization of the instance we are looking for.

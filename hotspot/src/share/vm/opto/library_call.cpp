@@ -3871,7 +3871,7 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
       Node* orig_tail = _gvn.transform(new SubINode(orig_length, start));
       Node* moved = generate_min_max(vmIntrinsics::_min, orig_tail, length);
 
-      newcopy = new_array(klass_node, length, 0);  // no argments to push
+      newcopy = new_array(klass_node, length, 0);  // no arguments to push
 
       // Generate a direct call to the right arraycopy function(s).
       // We know the copy is disjoint but we might not know if the
@@ -3881,7 +3881,8 @@ bool LibraryCallKit::inline_array_copyOf(bool is_copyOfRange) {
 
       Node* alloc = tightly_coupled_allocation(newcopy, NULL);
 
-      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL);
+      ArrayCopyNode* ac = ArrayCopyNode::make(this, true, original, start, newcopy, intcon(0), moved, alloc != NULL,
+                                              load_object_klass(original), klass_node);
       if (!is_copyOfRange) {
         ac->set_copyof();
       } else {
@@ -4804,8 +4805,8 @@ bool LibraryCallKit::inline_arraycopy() {
                                           // Create LoadRange and LoadKlass nodes for use during macro expansion here
                                           // so the compiler has a chance to eliminate them: during macro expansion,
                                           // we have to set their control (CastPP nodes are eliminated).
-                                          load_array_length(src), load_array_length(dest),
-                                          load_object_klass(src), load_object_klass(dest));
+                                          load_object_klass(src), load_object_klass(dest),
+                                          load_array_length(src), load_array_length(dest));
 
   if (notest) {
     ac->set_arraycopy_notest();

@@ -1138,8 +1138,8 @@ public:
                              Node* dest,  Node* dest_offset,
                              Node* length,
                              bool alloc_tightly_coupled,
-                             Node* src_length = NULL, Node* dest_length = NULL,
-                             Node* src_klass = NULL, Node* dest_klass = NULL);
+                             Node* src_klass = NULL, Node* dest_klass = NULL,
+                             Node* src_length = NULL, Node* dest_length = NULL);
 
   void connect_outputs(GraphKit* kit);
 
