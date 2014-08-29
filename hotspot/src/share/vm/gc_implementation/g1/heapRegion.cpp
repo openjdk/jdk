@@ -322,29 +322,6 @@ bool HeapRegion::claimHeapRegion(jint claimValue) {
   return false;
 }
 
-HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
-  HeapWord* low = addr;
-  HeapWord* high = end();
-  while (low < high) {
-    size_t diff = pointer_delta(high, low);
-    // Must add one below to bias toward the high amount.  Otherwise, if
-  // "high" were at the desired value, and "low" were one less, we
-    // would not converge on "high".  This is not symmetric, because
-    // we set "high" to a block start, which might be the right one,
-    // which we don't do for "low".
-    HeapWord* middle = low + (diff+1)/2;
-    if (middle == high) return high;
-    HeapWord* mid_bs = block_start_careful(middle);
-    if (mid_bs < addr) {
-      low = middle;
-    } else {
-      high = mid_bs;
-    }
-  }
-  assert(low == high && low >= addr, "Didn't work.");
-  return low;
-}
-
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
                        MemRegion mr) :

@@ -34,6 +34,9 @@ ALTSRC=$(WorkSpace)\src\closed
 CXX_FLAGS=$(CXX_FLAGS) /D "PRODUCT"
 !else
 CXX_FLAGS=$(CXX_FLAGS) /D "ASSERT"
+!if "$(BUILDARCH)" == "amd64"
+CXX_FLAGS=$(CXX_FLAGS) /homeparams
+!endif
 !endif
 
 !if "$(Variant)" == "compiler1"
