@@ -107,8 +107,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     rgn = new RegionNode(1);
     rgn->add_req(uncommon_proj);
     register_control(rgn, loop, uncommon_proj);
-    _igvn.hash_delete(call);
-    call->set_req(0, rgn);
+    _igvn.replace_input_of(call, 0, rgn);
     // When called from beautify_loops() idom is not constructed yet.
     if (_idom != NULL) {
       set_idom(call, rgn, dom_depth(rgn));
@@ -166,8 +165,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 
   if (new_entry == NULL) {
     // Attach if_cont to iff
-    _igvn.hash_delete(iff);
-    iff->set_req(0, if_cont);
+    _igvn.replace_input_of(iff, 0, if_cont);
     if (_idom != NULL) {
       set_idom(iff, if_cont, dom_depth(iff));
     }
@@ -194,8 +192,7 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
     rgn = new RegionNode(1);
     register_new_node_with_optimizer(rgn);
     rgn->add_req(uncommon_proj);
-    hash_delete(call);
-    call->set_req(0, rgn);
+    replace_input_of(call, 0, rgn);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < rgn->req(); proj_index++)

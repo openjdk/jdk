@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -191,7 +191,7 @@ struct IdealHelper {
       NativeType val1 = TypeClass::as_self(type1)->get_con();
       NativeType val2 = TypeClass::as_self(type2)->get_con();
       if (node->will_overflow(val1, val2) == false) {
-        Node* con_result = ConINode::make(phase->C, 0);
+        Node* con_result = ConINode::make(0);
         return con_result;
       }
       return NULL;
