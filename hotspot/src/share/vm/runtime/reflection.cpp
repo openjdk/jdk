@@ -390,7 +390,7 @@ oop Reflection::array_component_type(oop mirror, TRAPS) {
     return NULL;
   }
 
-  oop result = ArrayKlass::cast(klass)->component_mirror();
+  oop result = java_lang_Class::component_mirror(mirror);
 #ifdef ASSERT
   oop result2 = NULL;
   if (ArrayKlass::cast(klass)->dimension() == 1) {
