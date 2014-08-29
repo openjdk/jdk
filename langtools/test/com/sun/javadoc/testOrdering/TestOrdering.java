@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393
+ * @bug 8039410 8042601 8042829 8049393 8050031
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
