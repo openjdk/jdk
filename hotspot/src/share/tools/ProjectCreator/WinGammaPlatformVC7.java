@@ -284,7 +284,7 @@ class CompilerInterfaceVC7 extends CompilerInterface {
 
    }
 
-   Vector getDebugCompilerFlags(String opt) {
+   Vector getDebugCompilerFlags(String opt, String platformName) {
       Vector rv = new Vector();
 
       getDebugCompilerFlags_common(opt, rv);
