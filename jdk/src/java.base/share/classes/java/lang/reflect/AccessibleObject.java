@@ -78,7 +78,7 @@ public class AccessibleObject implements AnnotatedElement {
      * object is a {@link Constructor} object for the class {@link
      * java.lang.Class}).  In the event of such a SecurityException, the
      * accessibility of objects is set to {@code flag} for array elements
-     * upto (and excluding) the element for which the exception occurred; the
+     * up to (and excluding) the element for which the exception occurred; the
      * accessibility of elements beyond (and including) the element for which
      * the exception occurred is unchanged.
      *

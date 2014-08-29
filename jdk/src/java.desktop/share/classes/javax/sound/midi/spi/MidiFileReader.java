@@ -26,13 +26,13 @@
 package javax.sound.midi.spi;
 
 import java.io.File;
-import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 
+import javax.sound.midi.InvalidMidiDataException;
 import javax.sound.midi.MidiFileFormat;
 import javax.sound.midi.Sequence;
-import javax.sound.midi.InvalidMidiDataException;
 
 /**
  * A {@code MidiFileReader} supplies MIDI file-reading services. Classes
@@ -106,7 +106,7 @@ public abstract class MidiFileReader {
      * @param  stream the input stream from which the {@code Sequence} should
      *         be constructed
      * @return a {@code Sequence} object based on the MIDI file data contained
-     *         in the input stream.
+     *         in the input stream
      * @throws InvalidMidiDataException if the stream does not point to valid
      *         MIDI file data recognized by the system
      * @throws IOException if an I/O exception occurs

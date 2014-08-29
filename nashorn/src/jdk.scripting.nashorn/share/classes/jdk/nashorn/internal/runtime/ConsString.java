@@ -91,14 +91,14 @@ public final class ConsString implements CharSequence {
         return new CharSequence[] { left, right };
     }
 
-    private CharSequence flattened(boolean flattenNested) {
+    private CharSequence flattened(final boolean flattenNested) {
         if (state != STATE_FLATTENED) {
             flatten(flattenNested);
         }
         return left;
     }
 
-    private synchronized void flatten(boolean flattenNested) {
+    private synchronized void flatten(final boolean flattenNested) {
         // We use iterative traversal as recursion may exceed the stack size limit.
         final char[] chars = new char[length];
         int pos = length;

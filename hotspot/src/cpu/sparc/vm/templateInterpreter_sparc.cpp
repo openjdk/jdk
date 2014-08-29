@@ -456,6 +456,115 @@ void TemplateInterpreterGenerator::generate_stack_overflow_check(Register Rframe
 // Generate a fixed interpreter frame. This is identical setup for interpreted
 // methods and for native methods hence the shared code.
 
+
+//----------------------------------------------------------------------------------------------------
+// Stack frame layout
+//
+// When control flow reaches any of the entry types for the interpreter
+// the following holds ->
+//
+// C2 Calling Conventions:
+//
+// The entry code below assumes that the following registers are set
+// when coming in:
+//    G5_method: holds the Method* of the method to call
+//    Lesp:    points to the TOS of the callers expression stack
+//             after having pushed all the parameters
+//
+// The entry code does the following to setup an interpreter frame
+//   pop parameters from the callers stack by adjusting Lesp
+//   set O0 to Lesp
+//   compute X = (max_locals - num_parameters)
+//   bump SP up by X to accomadate the extra locals
+//   compute X = max_expression_stack
+//               + vm_local_words
+//               + 16 words of register save area
+//   save frame doing a save sp, -X, sp growing towards lower addresses
+//   set Lbcp, Lmethod, LcpoolCache
+//   set Llocals to i0
+//   set Lmonitors to FP - rounded_vm_local_words
+//   set Lesp to Lmonitors - 4
+//
+//  The frame has now been setup to do the rest of the entry code
+
+// Try this optimization:  Most method entries could live in a
+// "one size fits all" stack frame without all the dynamic size
+// calculations.  It might be profitable to do all this calculation
+// statically and approximately for "small enough" methods.
+
+//-----------------------------------------------------------------------------------------------
+
+// C1 Calling conventions
+//
+// Upon method entry, the following registers are setup:
+//
+// g2 G2_thread: current thread
+// g5 G5_method: method to activate
+// g4 Gargs  : pointer to last argument
+//
+//
+// Stack:
+//
+// +---------------+ <--- sp
+// |               |
+// : reg save area :
+// |               |
+// +---------------+ <--- sp + 0x40
+// |               |
+// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
+// |               |
+// +---------------+ <--- sp + 0x5c
+// |               |
+// :     free      :
+// |               |
+// +---------------+ <--- Gargs
+// |               |
+// :   arguments   :
+// |               |
+// +---------------+
+// |               |
+//
+//
+//
+// AFTER FRAME HAS BEEN SETUP for method interpretation the stack looks like:
+//
+// +---------------+ <--- sp
+// |               |
+// : reg save area :
+// |               |
+// +---------------+ <--- sp + 0x40
+// |               |
+// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
+// |               |
+// +---------------+ <--- sp + 0x5c
+// |               |
+// :               :
+// |               | <--- Lesp
+// +---------------+ <--- Lmonitors (fp - 0x18)
+// |   VM locals   |
+// +---------------+ <--- fp
+// |               |
+// : reg save area :
+// |               |
+// +---------------+ <--- fp + 0x40
+// |               |
+// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
+// |               |
+// +---------------+ <--- fp + 0x5c
+// |               |
+// :     free      :
+// |               |
+// +---------------+
+// |               |
+// : nonarg locals :
+// |               |
+// +---------------+
+// |               |
+// :   arguments   :
+// |               | <--- Llocals
+// +---------------+ <--- Gargs
+// |               |
+
 void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
   //
   //
@@ -599,136 +708,6 @@ void TemplateInterpreterGenerator::generate_fixed_frame(bool native_call) {
 
 }
 
-// Empty method, generate a very fast return.
-
-address InterpreterGenerator::generate_empty_entry(void) {
-
-  // A method that does nother but return...
-
-  address entry = __ pc();
-  Label slow_path;
-
-  // do nothing for empty methods (do not even increment invocation counter)
-  if ( UseFastEmptyMethods) {
-    // If we need a safepoint check, generate full interpreter entry.
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
-    __ set(sync_state, G3_scratch);
-    __ cmp_and_br_short(G3_scratch, SafepointSynchronize::_not_synchronized, Assembler::notEqual, Assembler::pn, slow_path);
-
-    // Code: _return
-    __ retl();
-    __ delayed()->mov(O5_savedSP, SP);
-
-    __ bind(slow_path);
-    (void) generate_normal_entry(false);
-
-    return entry;
-  }
-  return NULL;
-}
-
-// Call an accessor method (assuming it is resolved, otherwise drop into
-// vanilla (slow path) entry
-
-// Generates code to elide accessor methods
-// Uses G3_scratch and G1_scratch as scratch
-address InterpreterGenerator::generate_accessor_entry(void) {
-
-  // Code: _aload_0, _(i|a)getfield, _(i|a)return or any rewrites thereof;
-  // parameter size = 1
-  // Note: We can only use this code if the getfield has been resolved
-  //       and if we don't have a null-pointer exception => check for
-  //       these conditions first and use slow path if necessary.
-  address entry = __ pc();
-  Label slow_path;
-
-
-  // XXX: for compressed oops pointer loading and decoding doesn't fit in
-  // delay slot and damages G1
-  if ( UseFastAccessorMethods && !UseCompressedOops ) {
-    // Check if we need to reach a safepoint and generate full interpreter
-    // frame if so.
-    AddressLiteral sync_state(SafepointSynchronize::address_of_state());
-    __ load_contents(sync_state, G3_scratch);
-    __ cmp(G3_scratch, SafepointSynchronize::_not_synchronized);
-    __ cmp_and_br_short(G3_scratch, SafepointSynchronize::_not_synchronized, Assembler::notEqual, Assembler::pn, slow_path);
-
-    // Check if local 0 != NULL
-    __ ld_ptr(Gargs, G0, Otos_i ); // get local 0
-    // check if local 0 == NULL and go the slow path
-    __ br_null_short(Otos_i, Assembler::pn, slow_path);
-
-
-    // read first instruction word and extract bytecode @ 1 and index @ 2
-    // get first 4 bytes of the bytecodes (big endian!)
-    __ ld_ptr(G5_method, Method::const_offset(), G1_scratch);
-    __ ld(G1_scratch, ConstMethod::codes_offset(), G1_scratch);
-
-    // move index @ 2 far left then to the right most two bytes.
-    __ sll(G1_scratch, 2*BitsPerByte, G1_scratch);
-    __ srl(G1_scratch, 2*BitsPerByte - exact_log2(in_words(
-                      ConstantPoolCacheEntry::size()) * BytesPerWord), G1_scratch);
-
-    // get constant pool cache
-    __ ld_ptr(G5_method, Method::const_offset(), G3_scratch);
-    __ ld_ptr(G3_scratch, ConstMethod::constants_offset(), G3_scratch);
-    __ ld_ptr(G3_scratch, ConstantPool::cache_offset_in_bytes(), G3_scratch);
-
-    // get specific constant pool cache entry
-    __ add(G3_scratch, G1_scratch, G3_scratch);
-
-    // Check the constant Pool cache entry to see if it has been resolved.
-    // If not, need the slow path.
-    ByteSize cp_base_offset = ConstantPoolCache::base_offset();
-    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::indices_offset(), G1_scratch);
-    __ srl(G1_scratch, 2*BitsPerByte, G1_scratch);
-    __ and3(G1_scratch, 0xFF, G1_scratch);
-    __ cmp_and_br_short(G1_scratch, Bytecodes::_getfield, Assembler::notEqual, Assembler::pn, slow_path);
-
-    // Get the type and return field offset from the constant pool cache
-    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::flags_offset(), G1_scratch);
-    __ ld_ptr(G3_scratch, cp_base_offset + ConstantPoolCacheEntry::f2_offset(), G3_scratch);
-
-    Label xreturn_path;
-    // Need to differentiate between igetfield, agetfield, bgetfield etc.
-    // because they are different sizes.
-    // Get the type from the constant pool cache
-    __ srl(G1_scratch, ConstantPoolCacheEntry::tos_state_shift, G1_scratch);
-    // Make sure we don't need to mask G1_scratch after the above shift
-    ConstantPoolCacheEntry::verify_tos_state_shift();
-    __ cmp(G1_scratch, atos );
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ld_ptr(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, itos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ld(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, stos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ldsh(Otos_i, G3_scratch, Otos_i);
-    __ cmp(G1_scratch, ctos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->lduh(Otos_i, G3_scratch, Otos_i);
-#ifdef ASSERT
-    __ cmp(G1_scratch, btos);
-    __ br(Assembler::equal, true, Assembler::pt, xreturn_path);
-    __ delayed()->ldsb(Otos_i, G3_scratch, Otos_i);
-    __ should_not_reach_here();
-#endif
-    __ ldsb(Otos_i, G3_scratch, Otos_i);
-    __ bind(xreturn_path);
-
-    // _ireturn/_areturn
-    __ retl();                      // return from leaf routine
-    __ delayed()->mov(O5_savedSP, SP);
-
-    // Generate regular method entry
-    __ bind(slow_path);
-    (void) generate_normal_entry(false);
-    return entry;
-  }
-  return NULL;
-}
-
 // Method entry for java.lang.ref.Reference.get.
 address InterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
@@ -806,7 +785,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_accessor_entry();
+  return generate_jump_to_normal_entry();
 }
 
 //
@@ -1242,8 +1221,6 @@ address InterpreterGenerator::generate_native_entry(bool synchronized) {
 
 
 // Generic method entry to (asm) interpreter
-//------------------------------------------------------------------------------------------------------------------------
-//
 address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   address entry = __ pc();
 
@@ -1409,123 +1386,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   return entry;
 }
-
-
-//----------------------------------------------------------------------------------------------------
-// Entry points & stack frame layout
-//
-// Here we generate the various kind of entries into the interpreter.
-// The two main entry type are generic bytecode methods and native call method.
-// These both come in synchronized and non-synchronized versions but the
-// frame layout they create is very similar. The other method entry
-// types are really just special purpose entries that are really entry
-// and interpretation all in one. These are for trivial methods like
-// accessor, empty, or special math methods.
-//
-// When control flow reaches any of the entry types for the interpreter
-// the following holds ->
-//
-// C2 Calling Conventions:
-//
-// The entry code below assumes that the following registers are set
-// when coming in:
-//    G5_method: holds the Method* of the method to call
-//    Lesp:    points to the TOS of the callers expression stack
-//             after having pushed all the parameters
-//
-// The entry code does the following to setup an interpreter frame
-//   pop parameters from the callers stack by adjusting Lesp
-//   set O0 to Lesp
-//   compute X = (max_locals - num_parameters)
-//   bump SP up by X to accomadate the extra locals
-//   compute X = max_expression_stack
-//               + vm_local_words
-//               + 16 words of register save area
-//   save frame doing a save sp, -X, sp growing towards lower addresses
-//   set Lbcp, Lmethod, LcpoolCache
-//   set Llocals to i0
-//   set Lmonitors to FP - rounded_vm_local_words
-//   set Lesp to Lmonitors - 4
-//
-//  The frame has now been setup to do the rest of the entry code
-
-// Try this optimization:  Most method entries could live in a
-// "one size fits all" stack frame without all the dynamic size
-// calculations.  It might be profitable to do all this calculation
-// statically and approximately for "small enough" methods.
-
-//-----------------------------------------------------------------------------------------------
-
-// C1 Calling conventions
-//
-// Upon method entry, the following registers are setup:
-//
-// g2 G2_thread: current thread
-// g5 G5_method: method to activate
-// g4 Gargs  : pointer to last argument
-//
-//
-// Stack:
-//
-// +---------------+ <--- sp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- sp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- sp + 0x5c
-// |               |
-// :     free      :
-// |               |
-// +---------------+ <--- Gargs
-// |               |
-// :   arguments   :
-// |               |
-// +---------------+
-// |               |
-//
-//
-//
-// AFTER FRAME HAS BEEN SETUP for method interpretation the stack looks like:
-//
-// +---------------+ <--- sp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- sp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- sp + 0x5c
-// |               |
-// :               :
-// |               | <--- Lesp
-// +---------------+ <--- Lmonitors (fp - 0x18)
-// |   VM locals   |
-// +---------------+ <--- fp
-// |               |
-// : reg save area :
-// |               |
-// +---------------+ <--- fp + 0x40
-// |               |
-// : extra 7 slots :      note: these slots are not really needed for the interpreter (fix later)
-// |               |
-// +---------------+ <--- fp + 0x5c
-// |               |
-// :     free      :
-// |               |
-// +---------------+
-// |               |
-// : nonarg locals :
-// |               |
-// +---------------+
-// |               |
-// :   arguments   :
-// |               | <--- Llocals
-// +---------------+ <--- Gargs
-// |               |
 
 static int size_activation_helper(int callee_extra_locals, int max_stack, int monitor_size) {
 

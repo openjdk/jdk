@@ -36,19 +36,18 @@ import java.util.Map;
 import java.util.Properties;
 
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * The clean properties transform should not be necessary.
  * Eventually we will cleanup the property file sources in the OpenJDK instead.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-public class CleanProperties implements Transformer
-{
+public class CleanProperties implements Transformer {
     public void setExtra(String e) {
         // Any extra information is ignored for clean properties.
     }
@@ -57,7 +56,7 @@ public class CleanProperties implements Transformer
         // Any extra information is ignored for clean properties.
     }
 
-    public boolean transform(JavacService javacService,
+    public boolean transform(Sjavac sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,
@@ -70,8 +69,7 @@ public class CleanProperties implements Transformer
                              boolean incremental,
                              int numCores,
                              PrintStream out,
-                             PrintStream err)
-    {
+                             PrintStream err) {
         boolean rc = true;
         for (String pkgName : pkgSrcs.keySet()) {
             String pkgNameF = pkgName.replace('.',File.separatorChar);
@@ -87,9 +85,12 @@ public class CleanProperties implements Transformer
         return rc;
     }
 
-    boolean clean(String pkgName, String pkgNameF, File src, File destRoot, int debugLevel,
-                  Map<String,Set<URI>> packageArtifacts)
-    {
+    boolean clean(String pkgName,
+                  String pkgNameF,
+                  File src,
+                  File destRoot,
+                  int debugLevel,
+                  Map<String,Set<URI>> packageArtifacts) {
         // Load the properties file.
         Properties p = new Properties();
         try {

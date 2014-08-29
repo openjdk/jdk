@@ -273,11 +273,15 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
 }
 
 LazyClassPathEntry::LazyClassPathEntry(char* path, const struct stat* st) : ClassPathEntry() {
-  _path = strdup(path);
+  _path = os::strdup_check_oom(path);
   _st = *st;
   _meta_index = NULL;
   _resolved_entry = NULL;
   _has_error = false;
+}
+
+LazyClassPathEntry::~LazyClassPathEntry() {
+  os::free(_path);
 }
 
 bool LazyClassPathEntry::is_jar_file() {
@@ -416,7 +420,7 @@ void ClassLoader::setup_meta_index() {
         default:
         {
           if (!skipCurrentJar && cur_entry != NULL) {
-            char* new_name = strdup(package_name);
+            char* new_name = os::strdup_check_oom(package_name);
             boot_class_path_packages.append(new_name);
           }
         }
@@ -438,7 +442,7 @@ void ClassLoader::setup_meta_index() {
 
 void ClassLoader::setup_bootstrap_search_path() {
   assert(_first_entry == NULL, "should not setup bootstrap class search path twice");
-  char* sys_class_path = os::strdup(Arguments::get_sysclasspath());
+  char* sys_class_path = os::strdup_check_oom(Arguments::get_sysclasspath());
   if (TraceClassLoading && Verbose) {
     tty->print_cr("[Bootstrap loader class path=%s]", sys_class_path);
   }
@@ -460,6 +464,7 @@ void ClassLoader::setup_bootstrap_search_path() {
       end++;
     }
   }
+  os::free(sys_class_path);
 }
 
 ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct stat* st, bool lazy, TRAPS) {

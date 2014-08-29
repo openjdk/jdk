@@ -114,8 +114,6 @@ public class TestBase64 {
         testDecodeIgnoredAfterPadding();
     }
 
-    private static sun.misc.BASE64Encoder sunmisc = new sun.misc.BASE64Encoder();
-
     private static void test(Base64.Encoder enc, Base64.Decoder dec,
                              int numRuns, int numBytes) throws Throwable {
         Random rnd = new java.util.Random();
@@ -143,21 +141,6 @@ public class TestBase64 {
                             throw new RuntimeException(
                                "Base64 enc.encode().withoutPadding() has padding!");
                     }
-                    // compare to sun.misc.BASE64Encoder
-
-                    byte[] encoded2 = sunmisc.encode(orig).getBytes("ASCII");
-                    if (!withoutPadding) {    // don't test for withoutPadding()
-                        checkEqual(normalize(encoded), normalize(encoded2),
-                                   "Base64 enc.encode() does not match sun.misc.base64!");
-                    }
-                    // remove padding '=' to test non-padding decoding case
-                    if (encoded[encoded.length -2] == '=')
-                        encoded2 = Arrays.copyOf(encoded,  encoded.length -2);
-                    else if (encoded[encoded.length -1] == '=')
-                        encoded2 = Arrays.copyOf(encoded, encoded.length -1);
-                    else
-                        encoded2 = null;
-
                     // --------testing encodetoString(byte[])/decode(String)--------
                     String str = enc.encodeToString(orig);
                     if (!Arrays.equals(str.getBytes("ASCII"), encoded)) {
@@ -166,11 +149,6 @@ public class TestBase64 {
                     }
                     byte[] buf = dec.decode(new String(encoded, "ASCII"));
                     checkEqual(buf, orig, "Base64 decoding(String) failed!");
-
-                    if (encoded2 != null) {
-                        buf = dec.decode(new String(encoded2, "ASCII"));
-                        checkEqual(buf, orig, "Base64 decoding(String) failed!");
-                    }
 
                     //-------- testing encode/decode(Buffer)--------
                     testEncode(enc, ByteBuffer.wrap(orig), encoded);
@@ -182,9 +160,6 @@ public class TestBase64 {
                     bin = ByteBuffer.allocateDirect(encoded.length);
                     bin.put(encoded).flip();
                     testDecode(dec, bin, orig);
-
-                    if (encoded2 != null)
-                        testDecode(dec, ByteBuffer.wrap(encoded2), orig);
 
                     // --------testing decode.wrap(input stream)--------
                     // 1) random buf length
