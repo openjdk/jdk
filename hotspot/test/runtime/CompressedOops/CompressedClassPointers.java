@@ -26,7 +26,6 @@
  * @bug 8024927
  * @summary Testing address of compressed class pointer space as best as possible.
  * @library /testlibrary
- * @ignore 8055164
  */
 
 import com.oracle.java.testlibrary.*;
@@ -89,7 +88,6 @@ public class CompressedClassPointers {
             "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("HeapBaseMinAddress must be at least");
-        output.shouldContain("HotSpot");
         output.shouldHaveExitValue(0);
     }
 

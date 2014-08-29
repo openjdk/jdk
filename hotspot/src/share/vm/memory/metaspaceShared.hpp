@@ -30,6 +30,19 @@
 #include "utilities/exceptions.hpp"
 #include "utilities/macros.hpp"
 
+#define LargeSharedArchiveSize    (300*M)
+#define HugeSharedArchiveSize     (800*M)
+#define ReadOnlyRegionPercentage  0.4
+#define ReadWriteRegionPercentage 0.55
+#define MiscDataRegionPercentage  0.03
+#define MiscCodeRegionPercentage  0.02
+#define LargeThresholdClassCount  5000
+#define HugeThresholdClassCount   40000
+
+#define SET_ESTIMATED_SIZE(type, region)                              \
+  Shared ##region## Size  = FLAG_IS_DEFAULT(Shared ##region## Size) ? \
+    (type ## SharedArchiveSize *  region ## RegionPercentage) : Shared ## region ## Size
+
 class FileMapInfo;
 
 // Class Data Sharing Support
@@ -112,5 +125,8 @@ class MetaspaceShared : AllStatic {
   static void link_one_shared_class(Klass* obj, TRAPS);
   static void check_one_shared_class(Klass* obj);
   static void link_and_cleanup_shared_classes(TRAPS);
+
+  static int count_class(const char* classlist_file);
+  static void estimate_regions_size() NOT_CDS_RETURN;
 };
 #endif // SHARE_VM_MEMORY_METASPACE_SHARED_HPP

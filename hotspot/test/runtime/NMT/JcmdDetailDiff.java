@@ -62,21 +62,18 @@ public class JcmdDetailDiff {
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=256KB +256KB, committed=0KB)");
-        output.shouldContain("WB_NMTReserveMemory");
 
         wb.NMTCommitMemory(addr, commitSize);
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=256KB +256KB, committed=128KB +128KB)");
-        output.shouldContain("WB_NMTReserveMemory");
 
         wb.NMTUncommitMemory(addr, commitSize);
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
 
         output = new OutputAnalyzer(pb.start());
         output.shouldContain("Test (reserved=256KB +256KB, committed=0KB)");
-        output.shouldContain("WB_NMTReserveMemory");
 
         wb.NMTReleaseMemory(addr, reserveSize);
         pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "detail.diff", "scale=KB"});
