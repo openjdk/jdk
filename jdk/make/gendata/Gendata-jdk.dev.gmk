@@ -23,47 +23,24 @@
 # questions.
 #
 
-# Default target declared first
-default: all
+include GendataCommon.gmk
 
-include $(SPEC)
-include MakeBase.gmk
-include Tools.gmk
+$(eval $(call IncludeCustomExtension, jdk, gendata/Gendata-jdk.dev.gmk))
+
+GENDATA := $(JDK_OUTPUTDIR)/modules/jdk.dev/com/sun/tools/jdeps/resources/jdeps-modules.xml
+METADATA_FILES += $(TOPDIR)/modules.xml
 
 #
 # Generate modules.xml for jdeps to use
 # It augments $(TOPDIR)/modules.xml to include module membership
 #
-JDEPS_MODULES_XML := $(JDK_OUTPUTDIR)/modules/jdk.dev/com/sun/tools/jdeps/resources/modules.xml
-
-METADATA := $(JDK_OUTPUTDIR)/btclasses/build/tools/module/modules.xml
-$(METADATA): $(TOPDIR)/modules.xml
-	$(call install-file)
-
-METADATA_FILES := $(METADATA)
-
-ifndef OPENJDK
-  CLOSED_METADATA := $(JDK_OUTPUTDIR)/btclasses/build/tools/module/closed/modules.xml
-  $(CLOSED_METADATA): $(TOPDIR)/closed/modules.xml
-	$(call install-file)
-
-  METADATA_FILES += $(CLOSED_METADATA)
-endif
-
-$(JDEPS_MODULES_XML): $(BUILD_TOOLS_JDK) $(METADATA_FILES)
+$(GENDATA): $(BUILD_TOOLS_JDK) $(METADATA_FILES)
 	$(MKDIR) -p $(@D)
 	$(RM) $@
-	$(TOOL_GENMODULESXML) $@ $(JDK_OUTPUTDIR)/modules
+	$(TOOL_GENMODULESXML) -o $@ -mp $(JDK_OUTPUTDIR)/modules $(METADATA_FILES)
 
-#
-# Verify access across module boundaries
-#
-checkdeps: $(JDEPS_MODULES_XML)
-	$(ECHO) "Checking dependencies across JDK modules"
-	$(FIXPATH) $(JDK_OUTPUTDIR)/bin/jdeps -verify:access -mp $(JDK_OUTPUTDIR)/modules
+jdk.dev: $(GENDATA)
 
-gen-modules-xml: $(JDEPS_MODULES_XML)
+all: $(GENDATA)
 
-all: checkdeps
-
-.PHONY: all
+.PHONY: all jdk.dev

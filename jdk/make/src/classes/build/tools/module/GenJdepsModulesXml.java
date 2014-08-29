@@ -25,6 +25,7 @@
 
 package build.tools.module;
 
+import java.io.BufferedInputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -49,47 +50,56 @@ import javax.xml.stream.events.Attribute;
 import javax.xml.stream.events.XMLEvent;
 
 /**
- * This tool is used to generate com/sun/tools/jdeps/resources/modules.xml
- * for jdeps to analyze dependencies and enforce module boundaries.
+ * GenJdepsModulesXml augments the input modules.xml file(s)
+ * to include the module membership from the given path to
+ * the JDK exploded image.  The output file is used by jdeps
+ * to analyze dependencies and enforce module boundaries.
  *
- * $ java build.tools.module.GenerateModulesXml \
- *        com/sun/tools/jdeps/resources/modules.xml $OUTPUTDIR/modules
+ * The input modules.xml file defines the modular structure of
+ * the JDK as described in JEP 200: The Modular JDK
+ * (http://openjdk.java.net/jeps/200).
  *
- * This will generate modules.xml as jdeps resources that extend
- * the metadata to include module membership (jdeps needs the
- * membership information to determine which module a type belongs to.)
+ * $ java build.tools.module.GenJdepsModulesXml \
+ *        -o com/sun/tools/jdeps/resources/modules.xml \
+ *        -mp $OUTPUTDIR/modules \
+ *        top/modules.xml
  */
-public final class GenerateModulesXml {
+public final class GenJdepsModulesXml {
     private final static String USAGE =
-        "Usage: GenerateModulesXml <output file> build/modules";
+        "Usage: GenJdepsModulesXml -o <output file> -mp build/modules path-to-modules-xml";
 
     public static void main(String[] args) throws Exception {
-        if (args.length < 2) {
+        Path outfile = null;
+        Path modulepath = null;
+        int i = 0;
+        while (i < args.length) {
+            String arg = args[i];
+            if (arg.equals("-o")) {
+                outfile = Paths.get(args[i+1]);
+                i = i+2;
+            } else if (arg.equals("-mp")) {
+                modulepath = Paths.get(args[i+1]);
+                i = i+2;
+                if (!Files.isDirectory(modulepath)) {
+                    System.err.println(modulepath + " is not a directory");
+                    System.exit(1);
+                }
+            } else {
+                break;
+            }
+        }
+        if (outfile == null || modulepath == null || i >= args.length) {
             System.err.println(USAGE);
             System.exit(-1);
         }
 
-        Path outfile = Paths.get(args[0]);
-        Path modulepath = Paths.get(args[1]);
-
-        if (!Files.isDirectory(modulepath)) {
-            System.err.println(modulepath + " is not a directory");
-            System.exit(1);
-        }
-        GenerateModulesXml gentool =
-            new GenerateModulesXml(modulepath);
-        Set<Module> modules;
-        try (InputStream in = GenerateModulesXml.class.getResourceAsStream("modules.xml")) {
-            modules = gentool.load(in);
-        }
-
-        InputStream in = GenerateModulesXml.class.getResourceAsStream("closed/modules.xml");
-        if (in != null) {
-            try {
+        GenJdepsModulesXml gentool = new GenJdepsModulesXml(modulepath);
+        Set<Module> modules = new HashSet<>();
+        for (; i < args.length; i++) {
+            Path p = Paths.get(args[i]);
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(p))) {
                 Set<Module> mods = gentool.load(in);
                 modules.addAll(mods);
-            } finally {
-                in.close();
             }
         }
 
@@ -98,7 +108,7 @@ public final class GenerateModulesXml {
     }
 
     final Path modulepath;
-    public GenerateModulesXml(Path modulepath) {
+    public GenJdepsModulesXml(Path modulepath) {
         this.modulepath = modulepath;
     }
 
@@ -275,7 +285,7 @@ public final class GenerateModulesXml {
             m.exports().keySet().stream()
                        .filter(pn -> m.exports().get(pn).isEmpty())
                        .sorted()
-                       .forEach(pn -> GenerateModulesXml.this.writeExportElement(xtw, pn, depth+1));
+                       .forEach(pn -> writeExportElement(xtw, pn, depth+1));
             m.exports().entrySet().stream()
                        .filter(e -> !e.getValue().isEmpty())
                        .sorted(Map.Entry.comparingByKey())
