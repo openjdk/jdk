@@ -4321,7 +4321,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1408660646
+DATE_WHEN_GENERATED=1409306485
 
 ###############################################################################
 #
@@ -17284,7 +17284,12 @@ $as_echo_n "checking if find supports -delete... " >&6; }
   if test -f $DELETEDIR/TestIfFindSupportsDelete; then
     # No, it does not.
     rm $DELETEDIR/TestIfFindSupportsDelete
-    FIND_DELETE="-exec rm \{\} \+"
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      # AIX 'find' is buggy if called with '-exec {} \+' and an empty file list
+      FIND_DELETE="-print | xargs rm"
+    else
+      FIND_DELETE="-exec rm \{\} \+"
+    fi
     { $as_echo "$as_me:${as_lineno-$LINENO}: result: no" >&5
 $as_echo "no" >&6; }
   else
