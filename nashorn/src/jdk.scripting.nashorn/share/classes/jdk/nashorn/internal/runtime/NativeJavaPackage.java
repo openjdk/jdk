@@ -25,8 +25,8 @@
 
 package jdk.nashorn.internal.runtime;
 
-import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,6 +25,8 @@
 
 package com.sun.media.sound;
 
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -176,11 +178,11 @@ public final class JDK13Services {
                 && !Sequencer.class.equals(typeClass)) {
             return null;
         }
-        String value;
-        String propertyName = typeClass.getName();
-        value = JSSecurityManager.getProperty(propertyName);
+        String name = typeClass.getName();
+        String value = AccessController.doPrivileged(
+                (PrivilegedAction<String>) () -> System.getProperty(name));
         if (value == null) {
-            value = getProperties().getProperty(propertyName);
+            value = getProperties().getProperty(name);
         }
         if ("".equals(value)) {
             value = null;

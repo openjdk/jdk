@@ -973,7 +973,6 @@ ifndef BUILD_HEADLESS_ONLY
       #
 
   ifeq ($(OPENJDK_TARGET_OS), macosx)
-    LIBSPLASHSCREEN_CFLAGS += -F/System/Library/Frameworks/JavaVM.framework/Frameworks
     LIBSPLASHSCREEN_CFLAGS += -DWITH_MACOSX
     LIBSPLASHSCREEN_CFLAGS += -I$(JDK_TOPDIR)/src/java.desktop/macosx/native/libosxapp
 
