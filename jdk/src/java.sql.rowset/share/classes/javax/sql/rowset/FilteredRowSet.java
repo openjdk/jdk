@@ -108,7 +108,7 @@ import java.math.*;
  * The <code>FilteredRowSet</code> range criterion can be modified by applying
  * a new <code>Predicate</code> object to the <code>FilteredRowSet</code>
  * instance at any time. This is  possible if no additional references to the
- * <code>FilteredRowSet</code> object are detected. A new filter has has an
+ * <code>FilteredRowSet</code> object are detected. A new filter has an
  * immediate effect on criterion enforcement within the
  * <code>FilteredRowSet</code> object, and all subsequent views and updates will be
  * subject to similar enforcement.

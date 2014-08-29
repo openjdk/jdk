@@ -349,23 +349,8 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
 
   assert((ParallelGCThreads > 0) || worker_i == 0, "invariant");
 
-  // The two flags below were introduced temporarily to serialize
-  // the updating and scanning of remembered sets. There are some
-  // race conditions when these two operations are done in parallel
-  // and they are causing failures. When we resolve said race
-  // conditions, we'll revert back to parallel remembered set
-  // updating and scanning. See CRs 6677707 and 6677708.
-  if (G1UseParallelRSetUpdating || (worker_i == 0)) {
-    updateRS(&into_cset_dcq, worker_i);
-  } else {
-    _g1p->phase_times()->record_update_rs_processed_buffers(worker_i, 0);
-    _g1p->phase_times()->record_update_rs_time(worker_i, 0.0);
-  }
-  if (G1UseParallelRSetScanning || (worker_i == 0)) {
-    scanRS(oc, code_root_cl, worker_i);
-  } else {
-    _g1p->phase_times()->record_scan_rs_time(worker_i, 0.0);
-  }
+  updateRS(&into_cset_dcq, worker_i);
+  scanRS(oc, code_root_cl, worker_i);
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
   _cset_rs_update_cl[worker_i] = NULL;

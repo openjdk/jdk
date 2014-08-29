@@ -131,6 +131,19 @@ void Flag::set_uint64_t(uint64_t value) {
   *((uint64_t*) _addr) = value;
 }
 
+bool Flag::is_size_t() const {
+  return strcmp(_type, "size_t") == 0;
+}
+
+size_t Flag::get_size_t() const {
+  return *((size_t*) _addr);
+}
+
+void Flag::set_size_t(size_t value) {
+  check_writable();
+  *((size_t*) _addr) = value;
+}
+
 bool Flag::is_double() const {
   return strcmp(_type, "double") == 0;
 }
@@ -306,6 +319,9 @@ void Flag::print_on(outputStream* st, bool withComments) {
   if (is_uint64_t()) {
     st->print("%-16lu", get_uint64_t());
   }
+  if (is_size_t()) {
+    st->print(SIZE_FORMAT_W(-16), get_size_t());
+  }
   if (is_double()) {
     st->print("%-16f", get_double());
   }
@@ -395,6 +411,8 @@ void Flag::print_as_flag(outputStream* st) {
     st->print("-XX:%s=" UINTX_FORMAT, _name, get_uintx());
   } else if (is_uint64_t()) {
     st->print("-XX:%s=" UINT64_FORMAT, _name, get_uint64_t());
+  } else if (is_size_t()) {
+    st->print("-XX:%s=" SIZE_FORMAT, _name, get_size_t());
   } else if (is_double()) {
     st->print("-XX:%s=%f", _name, get_double());
   } else if (is_ccstr()) {
@@ -720,6 +738,34 @@ void CommandLineFlagsEx::uint64_tAtPut(CommandLineFlagWithType flag, uint64_t va
   guarantee(faddr != NULL && faddr->is_uint64_t(), "wrong flag type");
   trace_flag_changed<EventUnsignedLongFlagChanged, u8>(faddr->_name, faddr->get_uint64_t(), value, origin);
   faddr->set_uint64_t(value);
+  faddr->set_origin(origin);
+}
+
+bool CommandLineFlags::size_tAt(const char* name, size_t len, size_t* value) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_size_t()) return false;
+  *value = result->get_size_t();
+  return true;
+}
+
+bool CommandLineFlags::size_tAtPut(const char* name, size_t len, size_t* value, Flag::Flags origin) {
+  Flag* result = Flag::find_flag(name, len);
+  if (result == NULL) return false;
+  if (!result->is_size_t()) return false;
+  size_t old_value = result->get_size_t();
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(name, old_value, *value, origin);
+  result->set_size_t(*value);
+  *value = old_value;
+  result->set_origin(origin);
+  return true;
+}
+
+void CommandLineFlagsEx::size_tAtPut(CommandLineFlagWithType flag, size_t value, Flag::Flags origin) {
+  Flag* faddr = address_of_flag(flag);
+  guarantee(faddr != NULL && faddr->is_size_t(), "wrong flag type");
+  trace_flag_changed<EventUnsignedLongFlagChanged, u8>(faddr->_name, faddr->get_size_t(), value, origin);
+  faddr->set_size_t(value);
   faddr->set_origin(origin);
 }
 

@@ -62,25 +62,18 @@ GENDATA += $(GENDATA_CURDATA)
 
 ##########################################################################################
 
-PROPS_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security-$(OPENJDK_TARGET_OS)
-PROPS_DST := $(JDK_OUTPUTDIR)/lib/security/java.security
-
-# Optionally set this variable to a file to add extra restricted packages.
-ifneq ($(RESTRICTED_PKGS_SRC), )
-
-  $(PROPS_DST): $(PROPS_SRC) $(RESTRICTED_PKGS_SRC)
+GENDATA_JAVA_SECURITY_SRC := $(JDK_TOPDIR)/src/java.base/share/conf/security/java.security
+GENDATA_JAVA_SECURITY := $(JDK_OUTPUTDIR)/lib/security/java.security
+ 
+# RESTRICTED_PKGS_SRC is optionally set in custom extension for this makefile
+ 
+$(GENDATA_JAVA_SECURITY): $(BUILD_TOOLS) $(GENDATA_JAVA_SECURITY_SRC) $(RESTRICTED_PKGS_SRC)
+	$(ECHO) "Generating java.security"
 	$(MKDIR) -p $(@D)
-	$(TOOL_ADDTORESTRICTEDPKGS) $(PROPS_SRC) $@.tmp `$(CAT) $(RESTRICTED_PKGS_SRC) | $(TR) "\n" " "`
-	$(MV) $@.tmp $@
-
-else
-
-  $(PROPS_DST): $(PROPS_SRC)
-	$(call install-file)
-
-endif
-
-GENDATA += $(PROPS_DST)
+	$(TOOL_MAKEJAVASECURITY) $(GENDATA_JAVA_SECURITY_SRC) $@ $(OPENJDK_TARGET_OS) \
+		$(RESTRICTED_PKGS_SRC) || exit 1
+ 
+GENDATA += $(GENDATA_JAVA_SECURITY)
 
 ##########################################################################################
 

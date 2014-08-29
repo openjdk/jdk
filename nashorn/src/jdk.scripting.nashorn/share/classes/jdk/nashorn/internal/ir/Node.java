@@ -27,7 +27,6 @@ package jdk.nashorn.internal.ir;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;

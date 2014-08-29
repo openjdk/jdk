@@ -25,8 +25,8 @@
  * @test
  * @summary sourcefile attribute test for file compiled without debug information.
  * @bug 8040129
- * @library /tools/javac/lib ../lib
- * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build ToolBox SourceFileTestBase TestBase InMemoryFileManager
  * @compile -g:none NoSourceFileAttribute.java
  * @run main NoSourceFileAttribute
  */

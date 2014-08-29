@@ -276,6 +276,9 @@ public final class SF2Soundbank implements Soundbank {
                     count--;
                 }
 
+                if (presets_bagNdx.isEmpty()) {
+                    throw new RIFFInvalidDataException();
+                }
                 int offset = presets_bagNdx.get(0);
                 // Offset should be 0 (but just case)
                 for (int i = 0; i < offset; i++) {
@@ -360,6 +363,9 @@ public final class SF2Soundbank implements Soundbank {
                     count--;
                 }
 
+                if (instruments_bagNdx.isEmpty()) {
+                    throw new RIFFInvalidDataException();
+                }
                 int offset = instruments_bagNdx.get(0);
                 // Offset should be 0 (but just case)
                 for (int i = 0; i < offset; i++) {
@@ -401,6 +407,9 @@ public final class SF2Soundbank implements Soundbank {
                     modulator.amount = chunk.readShort();
                     modulator.amountSourceOperator = chunk.readUnsignedShort();
                     modulator.transportOperator = chunk.readUnsignedShort();
+                    if (i < 0 || i >= instruments_splits_gen.size()) {
+                        throw new RIFFInvalidDataException();
+                    }
                     SF2LayerRegion split = instruments_splits_gen.get(i);
                     if (split != null)
                         split.modulators.add(modulator);
@@ -424,7 +433,8 @@ public final class SF2Soundbank implements Soundbank {
                     sample.name = chunk.readString(20);
                     long start = chunk.readUnsignedInt();
                     long end = chunk.readUnsignedInt();
-                    sample.data = sampleData.subbuffer(start * 2, end * 2, true);
+                    if (sampleData != null)
+                        sample.data = sampleData.subbuffer(start * 2, end * 2, true);
                     if (sampleData24 != null)
                         sample.data24 = sampleData24.subbuffer(start, end, true);
                     /*
@@ -462,6 +472,9 @@ public final class SF2Soundbank implements Soundbank {
                     int sampleid = split.generators.get(
                             SF2LayerRegion.GENERATOR_SAMPLEID);
                     split.generators.remove(SF2LayerRegion.GENERATOR_SAMPLEID);
+                    if (sampleid < 0 || sampleid >= samples.size()) {
+                        throw new RIFFInvalidDataException();
+                    }
                     split.sample = samples.get(sampleid);
                 } else {
                     globalsplit = split;
@@ -488,6 +501,9 @@ public final class SF2Soundbank implements Soundbank {
                     int instrumentid = split.generators.get(
                             SF2InstrumentRegion.GENERATOR_INSTRUMENT);
                     split.generators.remove(SF2LayerRegion.GENERATOR_INSTRUMENT);
+                    if (instrumentid < 0 || instrumentid >= layers.size()) {
+                        throw new RIFFInvalidDataException();
+                    }
                     split.layer = layers.get(instrumentid);
                 } else {
                     globalsplit = split;
