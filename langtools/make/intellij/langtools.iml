@@ -6,10 +6,14 @@
     <content url="file://$MODULE_DIR$">
       <sourceFolder url="file://$MODULE_DIR$/build/bootstrap/gensrc" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/build/genstubs" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/src/share/classes" isTestSource="false" />
-      <sourceFolder url="file://$MODULE_DIR$/test" type="java-test-resource" />
+      <sourceFolder url="file://$MODULE_DIR$/src/java.base" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/java.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.compiler" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.dev" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/src/jdk.javadoc" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/test" isTestSource="true" />
     </content>
-    <orderEntry type="sourceFolder" forTests="false" />    
+    <orderEntry type="sourceFolder" forTests="false" />
     <orderEntry type="inheritedJdk" />
   </component>
 </module>

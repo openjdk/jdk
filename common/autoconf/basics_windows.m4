@@ -266,6 +266,14 @@ AC_DEFUN([BASIC_FIXUP_EXECUTABLE_MSYS],
     BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(new_path)
 
     new_path=`$WHICH "$new_path" 2> /dev/null`
+    # bat and cmd files are not always considered executable in MSYS causing which
+    # to not find them
+    if test "x$new_path" = x \
+        && test "x`$ECHO \"$path\" | $GREP -i -e \"\\.bat$\" -e \"\\.cmd$\"`" != x \
+        && test "x`$LS \"$path\" 2>/dev/null`" != x; then
+      new_path="$path"
+      BASIC_WINDOWS_REWRITE_AS_UNIX_PATH(new_path)
+    fi
 
     if test "x$new_path" = x; then
       # It's still not found. Now this is an unrecoverable error.

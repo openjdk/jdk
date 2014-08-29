@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,13 +25,12 @@
  * @test
  * @bug 6604599
  * @summary ToolProvider should be less compiler-specific
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ToolProviderTest2
  */
 
 import javax.tools.ToolProvider;
-import java.util.ArrayList;
 import java.util.List;
 
 // control for ToolProviderTest1 -- verify that using ToolProvider to
@@ -47,25 +46,19 @@ public class ToolProviderTest2 {
     }
 
     void run() throws Exception {
+        ToolBox tb = new ToolBox();
         String classpath = System.getProperty("java.class.path");
 
-        List<String> output = new ArrayList<>();
-        ToolBox.AnyToolArgs javaParams =
-                new ToolBox.AnyToolArgs()
-                        .appendArgs(ToolBox.javaBinary)
-                        .appendArgs(ToolBox.testVMOpts)
-                        .appendArgs(ToolBox.testJavaOpts)
-                        .appendArgs( "-verbose:class",
-                                "-classpath", classpath,
-                                ToolProviderTest2.class.getName(),
-                                "javax.tools.ToolProvider")
-                        .setErrOutput(output)
-                        .setStdOutput(output);
-
-        ToolBox.executeCommand(javaParams);
+        List<String> lines = tb.new JavaTask()
+                .vmOptions("-verbose:class")
+                .classpath(classpath)
+                .className(getClass().getName())
+                .classArgs("javax.tools.ToolProvider")
+                .run()
+                .getOutputLines(ToolBox.OutputKind.STDOUT);
 
         boolean found = false;
-        for (String line : output) {
+        for (String line : lines) {
             System.err.println(line);
             if (line.contains("com.sun.tools.javac."))
                 found = true;
