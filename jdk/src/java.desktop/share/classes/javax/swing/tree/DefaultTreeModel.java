@@ -691,7 +691,13 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+        EventListenerList newListenerList = (EventListenerList) f.get("listenerList", null);
+        if (newListenerList == null) {
+            throw new InvalidObjectException("Null listenerList");
+        }
+        listenerList = newListenerList;
+        asksAllowsChildren = f.get("asksAllowsChildren", false);
 
         Vector<?>       values = (Vector)s.readObject();
         int             indexCounter = 0;
@@ -699,7 +705,11 @@ public class DefaultTreeModel implements Serializable, TreeModel {
 
         if(indexCounter < maxCounter && values.elementAt(indexCounter).
            equals("root")) {
-            root = (TreeNode)values.elementAt(++indexCounter);
+            TreeNode newRoot  = (TreeNode)values.elementAt(++indexCounter);
+            if (newRoot == null) {
+                throw new InvalidObjectException("Null root");
+            }
+            root = newRoot;
             indexCounter++;
         }
     }

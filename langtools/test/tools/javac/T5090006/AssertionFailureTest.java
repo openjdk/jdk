@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 5090006
  * @summary javac fails with assertion error
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main AssertionFailureTest
  */
@@ -33,7 +33,7 @@
 import java.io.File;
 import java.nio.file.Paths;
 
-//original test: test/tools/javac/T5090006/compiler.sh
+// Original test: test/tools/javac/T5090006/compiler.sh
 public class AssertionFailureTest {
 
     private static final String testSrc =
@@ -54,16 +54,14 @@ public class AssertionFailureTest {
         "}";
 
     public static void main(String args[]) throws Exception {
-        String classpath = Paths.get(System.getProperty("test.src"), "broken.jar")
-                .toString();
-        classpath = new StringBuilder(classpath)
-                .append(File.pathSeparator).append(".").toString();
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -verbose -d "${TESTCLASSES}" -cp "${TESTSRC}${FS}broken.jar" "${TESTSRC}${FS}$1"
-        ToolBox.JavaToolArgs params =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-cp", classpath)
-                .setSources(testSrc);
-        ToolBox.javac(params);
+        ToolBox tb = new ToolBox();
+        String classpath = Paths.get(tb.testSrc, "broken.jar")
+                + File.pathSeparator
+                + ".";
+        tb.new JavacTask()
+                .classpath(classpath)
+                .sources(testSrc)
+                .run();
     }
 
 }

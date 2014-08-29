@@ -2,22 +2,22 @@
 
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   - Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   - Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in the
  *     documentation and/or other materials provided with the distribution.
- * 
+ *
  *   - Neither the name of Oracle nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -30,7 +30,7 @@
  * NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
- 
+
 // This example demonstrates Java subclassing by Java.extend
 // and javac Compiler and Tree API. This example counts number
 // of variables called "foo" in the given java source files!
@@ -38,7 +38,7 @@ if (arguments.length == 0) {
     print("Usage: jjs javafoovars.js -- <directory>");
     exit(1);
 }
- 
+
 // Java types used
 var File = Java.type("java.io.File");
 var Files = Java.type("java.nio.file.Files");
@@ -48,7 +48,7 @@ var ToolProvider = Java.type("javax.tools.ToolProvider");
 var Tree = Java.type("com.sun.source.tree.Tree");
 var TreeScanner = Java.type("com.sun.source.util.TreeScanner");
 var VariableTree = Java.type("com.sun.source.tree.VariableTree");
- 
+
 // count "foo"-s in the given .java files
 function countFoo() {
     // get the system compiler tool
@@ -63,7 +63,7 @@ function countFoo() {
     // subclass SimpleTreeVisitor - to count variables called "foo"
     var FooCounterVisitor = Java.extend(TreeScanner);
     var fooCount = 0;
- 
+
     var visitor = new FooCounterVisitor() {
         visitVariable: function (node, p) {
             if (node.name.toString() == "foo") {
@@ -71,13 +71,13 @@ function countFoo() {
             }
         }
     }
- 
+
     for each (var cu in task.parse()) {
         cu.accept(visitor, null);
     }
     return fooCount;
 }
- 
+
 // for each ".java" file in directory (recursively) count "foo".
 function main(dir) {
     var totalCount = 0;
@@ -99,5 +99,5 @@ function main(dir) {
       });
     print("Total foo count: " + totalCount);
 }
- 
+
 main(new File(arguments[0]));

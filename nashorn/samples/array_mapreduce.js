@@ -1,21 +1,21 @@
 /*
  * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
- * 
+ *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
  * are met:
- * 
+ *
  *   - Redistributions of source code must retain the above copyright
  *     notice, this list of conditions and the following disclaimer.
- * 
+ *
  *   - Redistributions in binary form must reproduce the above copyright
  *     notice, this list of conditions and the following disclaimer in the
  *     documentation and/or other materials provided with the distribution.
- * 
+ *
  *   - Neither the name of Oracle nor the names of its
  *     contributors may be used to endorse or promote products derived
  *     from this software without specific prior written permission.
- * 
+ *
  * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS
  * IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO,
  * THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR
@@ -31,9 +31,9 @@
 
 // Usage: jjs array_mapreduce.js
 
-// Many Array.prototype functions such as map, 
+// Many Array.prototype functions such as map,
 // filter, reduce, reduceRight, every, some are generic.
-// These functions accept ECMAScript array as well as 
+// These functions accept ECMAScript array as well as
 // many array-like objects including java arrays.
 // So, you can do map/filter/reduce with Java streams or
 // you can also use Array.prototype functions as below.
@@ -73,6 +73,6 @@ forEach.call(jarr, function(x) print(x));
 // print sum of squares of the random numbers
 print("Square sum:",
     reduce.call(
-        map.call(jarr, function(x) x*x), 
+        map.call(jarr, function(x) x*x),
         function(x, y) x + y)
 );

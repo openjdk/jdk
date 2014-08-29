@@ -152,7 +152,7 @@ public:
   virtual uint  cmp( const MachOper &oper ) const;
 
   // Virtual clone, since I do not know how big the MachOper is.
-  virtual MachOper *clone(Compile* C) const = 0;
+  virtual MachOper *clone() const = 0;
 
   // Return ideal Type from simple operands.  Fail for complex operands.
   virtual const Type *type() const;
@@ -202,10 +202,10 @@ public:
   // Copy inputs and operands to new node of instruction.
   // Called from cisc_version() and short_branch_version().
   // !!!! The method's body is defined in ad_<arch>.cpp file.
-  void fill_new_machnode(MachNode *n, Compile* C) const;
+  void fill_new_machnode(MachNode *n) const;
 
   // Return an equivalent instruction using memory for cisc_operand position
-  virtual MachNode *cisc_version(int offset, Compile* C);
+  virtual MachNode *cisc_version(int offset);
   // Modify this instruction's register mask to use stack version for cisc_operand
   virtual void use_cisc_RegMask();
 
@@ -317,7 +317,7 @@ public:
   virtual const class TypePtr *adr_type() const;
 
   // Apply peephole rule(s) to this instruction
-  virtual MachNode *peephole( Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile* C );
+  virtual MachNode *peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted);
 
   // Top-level ideal Opcode matched
   virtual int ideal_Opcode()     const { return Op_Node; }
@@ -627,7 +627,7 @@ public:
   virtual void save_label(Label** label, uint* block_num) = 0;
 
   // Support for short branches
-  virtual MachNode *short_branch_version(Compile* C) { return NULL; }
+  virtual MachNode *short_branch_version() { return NULL; }
 
   virtual bool pinned() const { return true; };
 };
@@ -985,7 +985,7 @@ public:
 
   labelOper(labelOper* l) : _label(l->_label) , _block_num(l->_block_num) {}
 
-  virtual MachOper *clone(Compile* C) const;
+  virtual MachOper *clone() const;
 
   virtual Label *label() const { assert(_label != NULL, "need Label"); return _label; }
 
@@ -1012,7 +1012,7 @@ public:
   methodOper() :   _method(0) {}
   methodOper(intptr_t method) : _method(method)  {}
 
-  virtual MachOper *clone(Compile* C) const;
+  virtual MachOper *clone() const;
 
   virtual intptr_t method() const { return _method; }
 

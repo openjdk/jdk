@@ -1573,7 +1573,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
     //** BEGIN Functions called by native code for querying/updating attributes
 
-    private final String getPrinterAttrib() {
+    private String getPrinterAttrib() {
         // getPrintService will get current print service or default if none
         PrintService service = this.getPrintService();
         String name = (service != null) ? service.getName() : null;
@@ -1581,7 +1581,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* SheetCollate */
-    private final int getCollateAttrib() {
+    private int getCollateAttrib() {
         // -1 means unset, 0 uncollated, 1 collated.
         return mAttCollate;
     }
@@ -1602,7 +1602,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
     /* Orientation */
 
-    private final int getOrientAttrib() {
+    private int getOrientAttrib() {
         int orient = PageFormat.PORTRAIT;
         OrientationRequested orientReq = (attributes == null) ? null :
             (OrientationRequested)attributes.get(OrientationRequested.class);
@@ -1629,7 +1629,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Copies and Page Range. */
-    private final int getCopiesAttrib() {
+    private int getCopiesAttrib() {
         if (defaultCopies) {
             return 0;
         } else {
@@ -1637,9 +1637,8 @@ public final class WPrinterJob extends RasterPrinterJob
         }
      }
 
-    private final void setRangeCopiesAttribute(int from, int to,
-                                               boolean isRangeSet,
-                                               int copies) {
+    private void setRangeCopiesAttribute(int from, int to, boolean isRangeSet,
+                                         int copies) {
         if (attributes != null) {
             if (isRangeSet) {
                 attributes.add(new PageRanges(from, to));
@@ -1658,12 +1657,12 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
 
-    private final boolean getDestAttrib() {
+    private boolean getDestAttrib() {
         return (mDestination != null);
     }
 
     /* Quality */
-    private final int getQualityAttrib() {
+    private int getQualityAttrib() {
         return mAttQuality;
     }
 
@@ -1684,7 +1683,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Color/Chromaticity */
-    private final int getColorAttrib() {
+    private int getColorAttrib() {
         return mAttChromaticity;
     }
 
@@ -1703,7 +1702,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Sides */
-    private final int getSidesAttrib() {
+    private int getSidesAttrib() {
         return mAttSides;
     }
 
@@ -1724,7 +1723,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /** MediaSizeName / dmPaper */
-    private final int[] getWin32MediaAttrib() {
+    private int[] getWin32MediaAttrib() {
         int wid_ht[] = {0, 0};
         if (attributes != null) {
             Media media = (Media)attributes.get(Media.class);
@@ -1810,7 +1809,7 @@ public final class WPrinterJob extends RasterPrinterJob
 
 
 
-    private final boolean getPrintToFileEnabled() {
+    private boolean getPrintToFileEnabled() {
         SecurityManager security = System.getSecurityManager();
         if (security != null) {
             FilePermission printToFilePermission =
@@ -1824,7 +1823,7 @@ public final class WPrinterJob extends RasterPrinterJob
         return true;
     }
 
-    private final void setNativeAttributes(int flags, int fields, int values) {
+    private void setNativeAttributes(int flags, int fields, int values) {
         if (attributes == null) {
             return;
         }
@@ -2016,7 +2015,7 @@ public final class WPrinterJob extends RasterPrinterJob
      * The attribute set here is a temporary one installed whilst this
      * happens,
      */
-    private final void setJobAttributes(PrintRequestAttributeSet attributes,
+    private void setJobAttributes(PrintRequestAttributeSet attributes,
                                         int fields, int values,
                                         short copies,
                                         short dmPaperSize,
@@ -2152,7 +2151,7 @@ public final class WPrinterJob extends RasterPrinterJob
     }
 
     /* Printer Resolution. See also getXRes() and getYRes() */
-    private final void setResolutionDPI(int xres, int yres) {
+    private void setResolutionDPI(int xres, int yres) {
         if (attributes != null) {
             PrinterResolution res =
                 new PrinterResolution(xres, yres, PrinterResolution.DPI);

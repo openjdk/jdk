@@ -47,7 +47,7 @@ class CMoveNode : public TypeNode {
   virtual Node *Ideal(PhaseGVN *phase, bool can_reshape);
   virtual const Type *Value( PhaseTransform *phase ) const;
   virtual Node *Identity( PhaseTransform *phase );
-  static CMoveNode *make( Compile *C, Node *c, Node *bol, Node *left, Node *right, const Type *t );
+  static CMoveNode *make(Node *c, Node *bol, Node *left, Node *right, const Type *t);
   // Helper function to spot cmove graph shapes
   static Node *is_cmove_id( PhaseTransform *phase, Node *cmp, Node *t, Node *f, BoolNode *b );
 };

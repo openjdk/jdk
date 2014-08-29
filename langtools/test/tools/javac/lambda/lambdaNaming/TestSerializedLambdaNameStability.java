@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 8023668
  * @summary Desugar serializable lambda bodies using more robust naming scheme
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main TestSerializedLambdaNameStability
  */
@@ -125,6 +125,7 @@ public class TestSerializedLambdaNameStability {
         static final String compiledDir = System.getProperty("user.dir");
         static final String sourceBaseDir = System.getProperty("test.src");
 
+        final ToolBox tb = new ToolBox();
         final String context;
 
         public TestClassLoader(String context) {
@@ -154,10 +155,10 @@ public class TestSerializedLambdaNameStability {
             else
                 throw new Exception("Did not expect to load " + name);
             Path srcFile = Paths.get(sourceBaseDir, context, srcName + ".java");
-            String testSource = new String(Files.readAllBytes(srcFile));
-            ToolBox.JavaToolArgs javacSuccessArgs =
-                    new ToolBox.JavaToolArgs().setSources(testSource);
-            ToolBox.javac(javacSuccessArgs);
+            tb.new JavacTask()
+                    .outdir(compiledDir)
+                    .files(srcFile)
+                    .run();
             Path cfFile = Paths.get(compiledDir, name + ".class");
             byte[] bytes = Files.readAllBytes(cfFile);
             return bytes;
