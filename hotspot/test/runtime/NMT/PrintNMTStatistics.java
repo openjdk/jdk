@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,7 +28,9 @@
  * @summary Make sure PrintNMTStatistics works on normal JVM exit
  * @library /testlibrary /testlibrary/whitebox
  * @build PrintNMTStatistics
+ * @ignore
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main PrintNMTStatistics
  */
 
@@ -45,10 +47,6 @@ public class PrintNMTStatistics {
     // We start a new java process running with an argument and use WB API to ensure
     // we have data for NMT on VM exit
     if (args.length > 0) {
-      // Use WB API to ensure that all data has been merged before we continue
-      if (!WhiteBox.getWhiteBox().NMTWaitForDataMerge()) {
-        throw new Exception("Call to WB API NMTWaitForDataMerge() failed");
-      }
       return;
     }
 

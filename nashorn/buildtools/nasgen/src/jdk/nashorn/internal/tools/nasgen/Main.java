@@ -32,6 +32,7 @@ import java.io.IOException;
 import java.io.PrintWriter;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.ClassWriter;
+import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 
 /**
@@ -39,6 +40,11 @@ import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
  *
  */
 public class Main {
+    /**
+     * ASM version to be used by nasgen tool.
+     */
+    public static final int ASM_VERSION = Opcodes.ASM5;
+
     private static final boolean DEBUG = Boolean.getBoolean("nasgen.debug");
 
     private interface ErrorReporter {

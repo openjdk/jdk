@@ -59,7 +59,7 @@ print("/foo/ is script object? " + Java.isScriptObject(/foo/));
 // (c) FunctionalInterface objects (d) JSObjects that are 'functions'
 
 print("java.awt.Color is java function? " + Java.isJavaFunction(java.awt.Color));
-print("java.lang.Runnable instance is java function? " 
+print("java.lang.Runnable instance is java function? "
     + Java.isJavaFunction(new java.lang.Runnable(function() {})));
 print("eval is java function? " + Java.isJavaFunction(eval));
 print("println is java function? " + Java.isJavaFunction(println));

@@ -422,26 +422,23 @@ void Chunk::start_chunk_pool_cleaner_task() {
 }
 
 //------------------------------Arena------------------------------------------
-NOT_PRODUCT(volatile jint Arena::_instance_count = 0;)
 
-Arena::Arena(size_t init_size) {
+Arena::Arena(MEMFLAGS flag, size_t init_size) : _flags(flag), _size_in_bytes(0)  {
   size_t round_size = (sizeof (char *)) - 1;
   init_size = (init_size+round_size) & ~round_size;
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, init_size) Chunk(init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  _size_in_bytes = 0;
+  MemTracker::record_new_arena(flag);
   set_size_in_bytes(init_size);
-  NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
-Arena::Arena() {
+Arena::Arena(MEMFLAGS flag) : _flags(flag), _size_in_bytes(0) {
   _first = _chunk = new (AllocFailStrategy::EXIT_OOM, Chunk::init_size) Chunk(Chunk::init_size);
   _hwm = _chunk->bottom();      // Save the cached hwm, max
   _max = _chunk->top();
-  _size_in_bytes = 0;
+  MemTracker::record_new_arena(flag);
   set_size_in_bytes(Chunk::init_size);
-  NOT_PRODUCT(Atomic::inc(&_instance_count);)
 }
 
 Arena *Arena::move_contents(Arena *copy) {
@@ -463,7 +460,7 @@ Arena *Arena::move_contents(Arena *copy) {
 
 Arena::~Arena() {
   destruct_contents();
-  NOT_PRODUCT(Atomic::dec(&_instance_count);)
+  MemTracker::record_arena_free(_flags);
 }
 
 void* Arena::operator new(size_t size) throw() {
@@ -479,21 +476,21 @@ void* Arena::operator new (size_t size, const std::nothrow_t&  nothrow_constant)
   // dynamic memory type binding
 void* Arena::operator new(size_t size, MEMFLAGS flags) throw() {
 #ifdef ASSERT
-  void* p = (void*)AllocateHeap(size, flags|otArena, CALLER_PC);
+  void* p = (void*)AllocateHeap(size, flags, CALLER_PC);
   if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
   return p;
 #else
-  return (void *) AllocateHeap(size, flags|otArena, CALLER_PC);
+  return (void *) AllocateHeap(size, flags, CALLER_PC);
 #endif
 }
 
 void* Arena::operator new(size_t size, const std::nothrow_t& nothrow_constant, MEMFLAGS flags) throw() {
 #ifdef ASSERT
-  void* p = os::malloc(size, flags|otArena, CALLER_PC);
+  void* p = os::malloc(size, flags, CALLER_PC);
   if (PrintMallocFree) trace_heap_malloc(size, "Arena-new", p);
   return p;
 #else
-  return os::malloc(size, flags|otArena, CALLER_PC);
+  return os::malloc(size, flags, CALLER_PC);
 #endif
 }
 
@@ -518,8 +515,9 @@ void Arena::destruct_contents() {
 // change the size
 void Arena::set_size_in_bytes(size_t size) {
   if (_size_in_bytes != size) {
+    long delta = (long)(size - size_in_bytes());
     _size_in_bytes = size;
-    MemTracker::record_arena_size((address)this, size);
+    MemTracker::record_arena_size_change(delta, _flags);
   }
 }
 
