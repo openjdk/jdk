@@ -29,7 +29,6 @@ import java.awt.Image;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
-import java.awt.datatransfer.UnsupportedFlavorException;
 
 import java.awt.image.BufferedImage;
 import java.awt.image.ColorModel;
@@ -46,7 +45,6 @@ import java.net.URISyntaxException;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.LinkedHashSet;
-import java.util.List;
 
 import javax.imageio.ImageIO;
 import javax.imageio.ImageReader;
@@ -54,11 +52,11 @@ import javax.imageio.ImageTypeSpecifier;
 import javax.imageio.ImageWriter;
 import javax.imageio.spi.ImageWriterSpi;
 
+import sun.datatransfer.DataFlavorUtil;
 import sun.awt.datatransfer.DataTransferer;
 import sun.awt.datatransfer.ToolkitThreadBlockedHandler;
 
 import java.io.ByteArrayOutputStream;
-import java.util.stream.Stream;
 
 /**
  * Platform-specific support for the data transfer subsystem.
@@ -87,27 +85,30 @@ public class XDataTransferer extends DataTransferer {
         return transferer;
     }
 
+    @Override
     public String getDefaultUnicodeEncoding() {
         return "iso-10646-ucs-2";
     }
 
+    @Override
     public boolean isLocaleDependentTextFormat(long format) {
         return false;
     }
 
+    @Override
     public boolean isTextFormat(long format) {
         return super.isTextFormat(format)
             || isMimeFormat(format, "text");
     }
 
+    @Override
     protected String getCharsetForTextFormat(Long lFormat) {
-        long format = lFormat.longValue();
-        if (isMimeFormat(format, "text")) {
-            String nat = getNativeForFormat(format);
+        if (isMimeFormat(lFormat, "text")) {
+            String nat = getNativeForFormat(lFormat);
             DataFlavor df = new DataFlavor(nat, null);
             // Ignore the charset parameter of the MIME type if the subtype
             // doesn't support charset.
-            if (!DataTransferer.doesSubtypeSupportCharset(df)) {
+            if (!DataFlavorUtil.doesSubtypeSupportCharset(df)) {
                 return null;
             }
             String charset = df.getParameter("charset");
@@ -118,6 +119,7 @@ public class XDataTransferer extends DataTransferer {
         return super.getCharsetForTextFormat(lFormat);
     }
 
+    @Override
     protected boolean isURIListFormat(long format) {
         String nat = getNativeForFormat(format);
         if (nat == null) {
@@ -134,24 +136,27 @@ public class XDataTransferer extends DataTransferer {
         return false;
     }
 
+    @Override
     public boolean isFileFormat(long format) {
         return format == FILE_NAME_ATOM.getAtom() ||
             format == DT_NET_FILE_ATOM.getAtom();
     }
 
+    @Override
     public boolean isImageFormat(long format) {
         return format == PNG_ATOM.getAtom() ||
             format == JFIF_ATOM.getAtom() ||
             isMimeFormat(format, "image");
     }
 
+    @Override
     protected Long getFormatForNativeAsLong(String str) {
         // Just get the atom. If it has already been retrived
         // once, we'll get a copy so this should be very fast.
-        long atom = XAtom.get(str).getAtom();
-        return Long.valueOf(atom);
+        return XAtom.get(str).getAtom();
     }
 
+    @Override
     protected String getNativeForFormat(long format) {
         return getTargetNameForAtom(format);
     }
@@ -167,6 +172,7 @@ public class XDataTransferer extends DataTransferer {
         return XAtom.get(atom).getName();
     }
 
+    @Override
     protected byte[] imageToPlatformBytes(Image image, long format)
       throws IOException {
         String mimeType = null;
@@ -196,6 +202,7 @@ public class XDataTransferer extends DataTransferer {
         }
     }
 
+    @Override
     protected ByteArrayOutputStream convertFileListToBytes(ArrayList<String> fileList)
         throws IOException
     {
@@ -213,6 +220,7 @@ public class XDataTransferer extends DataTransferer {
      * Translates either a byte array or an input stream which contain
      * platform-specific image data in the given format into an Image.
      */
+    @Override
     protected Image platformImageBytesToImage(
         byte[] bytes, long format) throws IOException
     {
@@ -317,8 +325,7 @@ public class XDataTransferer extends DataTransferer {
             return flavors;
         }
 
-        DataFlavor df = null;
-
+        DataFlavor df;
         try {
             df = new DataFlavor(nat);
         } catch (Exception e) {
@@ -383,7 +390,7 @@ public class XDataTransferer extends DataTransferer {
         String baseType = df.getPrimaryType() + "/" + df.getSubType();
         String mimeType = baseType;
 
-        if (charset != null && DataTransferer.isFlavorCharsetTextType(df)) {
+        if (charset != null && DataFlavorUtil.isFlavorCharsetTextType(df)) {
             mimeType += ";charset=" + charset;
         }
 
@@ -413,14 +420,14 @@ public class XDataTransferer extends DataTransferer {
                     }
                 }
             }
-        } else if (DataTransferer.isFlavorCharsetTextType(df)) {
+        } else if (DataFlavorUtil.isFlavorCharsetTextType(df)) {
             // stringFlavor is semantically equivalent to the standard
             // "text/plain" MIME type.
             if (DataFlavor.stringFlavor.equals(df)) {
                 baseType = "text/plain";
             }
 
-            for (String encoding : DataTransferer.standardEncodings()) {
+            for (String encoding : DataFlavorUtil.standardEncodings()) {
                 if (!encoding.equals(charset)) {
                     natives.add(baseType + ";charset=" + encoding);
                 }

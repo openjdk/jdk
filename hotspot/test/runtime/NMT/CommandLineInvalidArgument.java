@@ -26,6 +26,7 @@
  * @key nmt
  * @summary Invalid argument to NMT should result in an informative error message
  * @library /testlibrary
+ * @ignore
  */
 
 import com.oracle.java.testlibrary.*;

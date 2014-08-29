@@ -1516,7 +1516,30 @@ public class DefaultCaret extends Rectangle implements Caret, FocusListener, Mou
     private void readObject(ObjectInputStream s)
       throws ClassNotFoundException, IOException
     {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        EventListenerList newListenerList = (EventListenerList) f.get("listenerList", null);
+        if (newListenerList == null) {
+            throw new InvalidObjectException("Null listenerList");
+        }
+        listenerList = newListenerList;
+        component = (JTextComponent) f.get("component", null);
+        updatePolicy = f.get("updatePolicy", 0);
+        visible = f.get("visible", false);
+        active = f.get("active", false);
+        dot = f.get("dot", 0);
+        mark = f.get("mark", 0);
+        selectionTag = f.get("selectionTag", null);
+        selectionVisible = f.get("selectionVisible", false);
+        flasher = (Timer) f.get("flasher", null);
+        magicCaretPosition = (Point) f.get("magicCaretPosition", null);
+        dotLTR = f.get("dotLTR", false);
+        markLTR = f.get("markLTR", false);
+        ownsSelection = f.get("ownsSelection", false);
+        forceCaretPositionChange = f.get("forceCaretPositionChange", false);
+        caretWidth = f.get("caretWidth", 0);
+        aspectRatio = f.get("aspectRatio", 0.0f);
+
         handler = new Handler();
         if (!s.readBoolean()) {
             dotBias = Position.Bias.Forward;

@@ -24,6 +24,8 @@
 
 #include "asm/assembler.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
+#include "runtime/os.hpp"
 #include "loadlib_aix.hpp"
 #include "porting_aix.hpp"
 #include "utilities/debug.hpp"
@@ -83,7 +85,7 @@ class fixed_strings {
     while (n) {
       node* p = n;
       n = n->next;
-      free(p->v);
+      os::free(p->v);
       delete p;
     }
   }
@@ -95,7 +97,7 @@ class fixed_strings {
       }
     }
     node* p = new node;
-    p->v = strdup(s);
+    p->v = os::strdup_check_oom(s);
     p->next = first;
     first = p;
     return p->v;

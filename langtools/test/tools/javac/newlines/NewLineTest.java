@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4110560 4785453
  * @summary portability : javac.properties
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main NewLineTest
  */
@@ -39,18 +39,13 @@ import java.util.List;
 public class NewLineTest {
 
     public static void main(String args[]) throws Exception {
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -J-Dline.separator='@' > ${TMP1} 2>&1
+        ToolBox tb = new ToolBox();
         File javacErrOutput = new File("output.txt");
-        ToolBox.AnyToolArgs cmdArgs =
-                new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(ToolBox.javacBinary)
-                .appendArgs(ToolBox.testToolVMOpts)
-                .appendArgs("-J-Dline.separator='@'")
-                .setErrOutput(javacErrOutput);
-        ToolBox.executeCommand(cmdArgs);
+        tb.new JavacTask(ToolBox.Mode.EXEC)
+                .redirect(ToolBox.OutputKind.STDERR, javacErrOutput.getPath())
+                .options("-J-Dline.separator='@'")
+                .run(ToolBox.Expect.FAIL);
 
-//        result=`cat ${TMP1} | wc -l`
-//        if [ "$result" -eq 0 ] passed
         List<String> lines = Files.readAllLines(javacErrOutput.toPath(),
                 Charset.defaultCharset());
         if (lines.size() != 1) {

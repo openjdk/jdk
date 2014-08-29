@@ -558,6 +558,27 @@ inline double fabsd(double value) {
   return fabs(value);
 }
 
+//----------------------------------------------------------------------------------------------------
+// Special casts
+// Cast floats into same-size integers and vice-versa w/o changing bit-pattern
+typedef union {
+  jfloat f;
+  jint i;
+} FloatIntConv;
+
+typedef union {
+  jdouble d;
+  jlong l;
+  julong ul;
+} DoubleLongConv;
+
+inline jint    jint_cast    (jfloat  x)  { return ((FloatIntConv*)&x)->i; }
+inline jfloat  jfloat_cast  (jint    x)  { return ((FloatIntConv*)&x)->f; }
+
+inline jlong   jlong_cast   (jdouble x)  { return ((DoubleLongConv*)&x)->l;  }
+inline julong  julong_cast  (jdouble x)  { return ((DoubleLongConv*)&x)->ul; }
+inline jdouble jdouble_cast (jlong   x)  { return ((DoubleLongConv*)&x)->d;  }
+
 inline jint low (jlong value)                    { return jint(value); }
 inline jint high(jlong value)                    { return jint(value >> 32); }
 

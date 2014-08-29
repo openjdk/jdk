@@ -567,7 +567,7 @@ class TestBitMap : public AllStatic {
   }
 
   static void testResizeNonResource() {
-    const uintx bitmap_bytes = BITMAP_SIZE / BitsPerByte;
+    const size_t bitmap_bytes = BITMAP_SIZE / BitsPerByte;
 
     // Test the default behavior
     testResize(false);
@@ -575,13 +575,13 @@ class TestBitMap : public AllStatic {
     {
       // Make sure that AllocatorMallocLimit is larger than our allocation request
       // forcing it to call standard malloc()
-      UIntFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes * 4);
+      SizeTFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes * 4);
       testResize(false);
     }
     {
       // Make sure that AllocatorMallocLimit is smaller than our allocation request
       // forcing it to call mmap() (or equivalent)
-      UIntFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes / 4);
+      SizeTFlagSetting fs(ArrayAllocatorMallocLimit, bitmap_bytes / 4);
       testResize(false);
     }
   }

@@ -185,6 +185,9 @@ public:
   // objects.
   void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
 
+  // Returns whether this remembered set (and all sub-sets) contain no entries.
+  bool is_empty() const;
+
   size_t occupied() const;
   size_t occ_fine() const;
   size_t occ_coarse() const;
@@ -267,6 +270,10 @@ public:
 
   HeapRegion* hr() const {
     return _other_regions.hr();
+  }
+
+  bool is_empty() const {
+    return (strong_code_roots_list_length() == 0) && _other_regions.is_empty();
   }
 
   size_t occupied() {
@@ -371,7 +378,7 @@ public:
   void strong_code_roots_do(CodeBlobClosure* blk) const;
 
   // Returns the number of elements in the strong code roots list
-  size_t strong_code_roots_list_length() {
+  size_t strong_code_roots_list_length() const {
     return _code_roots.length();
   }
 

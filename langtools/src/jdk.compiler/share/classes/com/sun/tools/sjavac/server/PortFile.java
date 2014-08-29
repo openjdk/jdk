@@ -33,6 +33,7 @@ import java.nio.channels.ClosedChannelException;
 import java.nio.channels.FileChannel;
 import java.nio.channels.FileLock;
 import java.nio.channels.FileLockInterruptionException;
+import com.sun.tools.javac.util.Assert;
 import com.sun.tools.sjavac.Log;
 
 /**
@@ -41,12 +42,12 @@ import com.sun.tools.sjavac.Log;
  * primitives to avoid race conditions when several javac clients are started at the same. Note that file
  * system locking is not always supported on a all operating systems and/or file systems.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-class PortFile {
+public class PortFile {
 
     // Port file format:
     // byte ordering: high byte first = big endian
@@ -72,8 +73,7 @@ class PortFile {
      * Create a new portfile.
      * @param filename is the path to the file.
      */
-    public PortFile(String fn) throws FileNotFoundException
-    {
+    public PortFile(String fn) throws FileNotFoundException {
         filename = fn;
         file = new File(filename);
         stopFile = new File(filename+".stop");
@@ -88,7 +88,7 @@ class PortFile {
     /**
      * Lock the port file.
      */
-    void lock() throws IOException {
+    public void lock() throws IOException {
         lock = channel.lock();
     }
 
@@ -115,7 +115,7 @@ class PortFile {
                     containsPortInfo = false;
                 }
             }
-        } catch (Exception e) {
+        } catch (IOException e) {
             containsPortInfo = false;
         }
     }
@@ -131,7 +131,7 @@ class PortFile {
      * If so, then we can acquire the tcp/ip port on localhost.
      */
     public int getPort() {
-        assert(containsPortInfo);
+        Assert.check(containsPortInfo);
         return serverPort;
     }
 
@@ -139,7 +139,7 @@ class PortFile {
      * If so, then we can acquire the server cookie.
      */
     public long getCookie() {
-        assert(containsPortInfo);
+        Assert.check(containsPortInfo);
         return serverCookie;
     }
 
@@ -147,7 +147,7 @@ class PortFile {
      * Store the values into the locked port file.
      */
     public void setValues(int port, long cookie) throws IOException {
-        assert(lock != null);
+        Assert.check(lock != null);
         rwfile.seek(0);
         // Write the magic nr that identifes a port file.
         rwfile.writeInt(magicNr);
@@ -192,7 +192,7 @@ class PortFile {
      * Unlock the port file.
      */
     public void unlock() throws IOException {
-        assert(lock != null);
+        Assert.check(lock != null);
         lock.release();
         lock = null;
     }
