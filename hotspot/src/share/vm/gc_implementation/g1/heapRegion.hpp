@@ -756,13 +756,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Routines for managing a list of code roots (attached to the
   // this region's RSet) that point into this heap region.
   void add_strong_code_root(nmethod* nm);
+  void add_strong_code_root_locked(nmethod* nm);
   void remove_strong_code_root(nmethod* nm);
-
-  // During a collection, migrate the successfully evacuated
-  // strong code roots that referenced into this region to the
-  // new regions that they now point into. Unsuccessfully
-  // evacuated code roots are not migrated.
-  void migrate_strong_code_roots();
 
   // Applies blk->do_code_blob() to each of the entries in
   // the strong code roots list for this region
