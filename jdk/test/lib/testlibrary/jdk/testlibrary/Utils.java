@@ -126,7 +126,10 @@ public final class Utils {
      * GC specified by the framework must first be removed.
      * @return A copy of given opts with all GC options removed.
      */
-    private static final Pattern useGcPattern = Pattern.compile("\\-XX\\:[\\+\\-]Use.+GC");
+    private static final Pattern useGcPattern = Pattern.compile(
+            "(?:\\-XX\\:[\\+\\-]Use.+GC)"
+            + "|(?:\\-Xconcgc)"
+            + "|(?:\\-Xincgc)");
     public static List<String> removeGcOpts(List<String> opts) {
         List<String> optsWithoutGC = new ArrayList<String>();
         for (String opt : opts) {

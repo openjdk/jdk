@@ -31,7 +31,7 @@ import java.util.Set;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * The transform interface is used to transform content inside a package, from one form to another.
@@ -39,13 +39,12 @@ import com.sun.tools.sjavac.server.JavacService;
  * but can also be an unpredictable number of generated source files (eg idl2java)
  * or a single predictable output file (eg when copying,cleaning or compiling a properties file).
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-public interface Transformer
-{
+public interface Transformer {
     /**
      * The transform method takes a set of package names, mapped to their source files and to the
      * pubapis of the packages.
@@ -83,7 +82,7 @@ public interface Transformer
      * If num_cores is set to a non-zero value. The transform should attempt to use no more than these
      * number of threads for heavy work.
      */
-    boolean transform(JavacService javacService,
+    boolean transform(Sjavac sjavac,
                       Map<String,Set<URI>> pkgSrcs,
                       Set<URI>             visibleSources,
                       Map<URI,Set<String>> visibleClasses,
