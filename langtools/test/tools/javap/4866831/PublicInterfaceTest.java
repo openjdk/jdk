@@ -1,9 +1,5 @@
-
-import java.nio.file.Path;
-import java.nio.file.Paths;
-
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,23 +25,29 @@ import java.nio.file.Paths;
  * @test
  * @bug 4866831
  * @summary Verify that javap marks public interfaces as public
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main PublicInterfaceTest
  */
 
-//original test: test/tools/javap/PublicInterfaceTest.sh
+import java.nio.file.Path;
+import java.nio.file.Paths;
+
+// Original test: test/tools/javap/PublicInterfaceTest.sh
 public class PublicInterfaceTest {
     public interface Test {}
 
     public static void main(String[] args) throws Exception {
-//        "$JAVAP" ${TESTTOOLVMOPTS} -classpath "${TESTCLASSES}" NotPackagePrivateInterface | grep public
-        Path pathToClass = Paths.get(System.getProperty("test.classes"),
-                "PublicInterfaceTest$Test.class");
-        ToolBox.JavaToolArgs javapParams =
-                new ToolBox.JavaToolArgs()
-                .setAllArgs(pathToClass.toString());
-        if (!ToolBox.javap(javapParams).contains("public"))
+        ToolBox tb = new ToolBox();
+
+        Path pathToClass = Paths.get(ToolBox.testClasses, "PublicInterfaceTest$Test.class");
+
+        String out = tb.new JavapTask()
+                .classes(pathToClass.toString())
+                .run()
+                .getOutput(ToolBox.OutputKind.DIRECT);
+
+        if (!out.contains("public"))
             throw new AssertionError("The javap output does not contain \"public\"");
     }
 

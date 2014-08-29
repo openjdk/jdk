@@ -649,7 +649,15 @@ public class MaskFormatter extends DefaultFormatter {
      */
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
-        s.defaultReadObject();
+        ObjectInputStream.GetField f = s.readFields();
+
+        validCharacters = (String) f.get("validCharacters", null);
+        invalidCharacters = (String) f.get("invalidCharacters", null);
+        placeholderString = (String) f.get("placeholderString", null);
+        placeholder = f.get("placeholder", '\0');
+        containsLiteralChars = f.get("containsLiteralChars", false);
+        mask = (String) f.get("mask", null);
+
         try {
             updateInternalMask();
         } catch (ParseException pe) {

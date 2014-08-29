@@ -23,36 +23,49 @@
 
 /*
  * @test
+ * @ignore 8055500 [javac] fix for 8030046 is incorrect
  * @bug 8030046
  * @summary javac incorrectly handles absolute paths in manifest classpath
  * @author govereau
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main AbsolutePathTest
  */
 
 import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Paths;
 
 public class AbsolutePathTest {
     public static void main(String... cmdline) throws Exception {
+        ToolBox tb = new ToolBox();
+
         // compile test.Test
-        ToolBox.JavaToolArgs args = new ToolBox.JavaToolArgs();
-        args.appendArgs("-d", "."); // this is needed to get the classfiles in test
-        ToolBox.javac(args.setSources("package test; public class Test{}"));
+        tb.new JavacTask()
+                .outdir(".") // this is needed to get the classfiles in test
+                .sources("package test; public class Test{}")
+                .run();
 
         // build test.jar containing test.Test
         // we need the jars in a directory different from the working
-        // directory to trigger the bug. I will reuse test/
-        ToolBox.jar("cf", "test/test.jar", "test/Test.class");
+        // directory to trigger the bug.
+        Files.createDirectory(Paths.get("jars"));
+        tb.new JarTask("jars/test.jar")
+                .files("test/Test.class")
+                .run();
 
-        // build second jar in test directory using
+        // build second jar in jars directory using
         // an absolute path reference to the first jar
-        String path = new File("test/test.jar").getAbsolutePath();
-        ToolBox.mkManifestWithClassPath(null, path);
-        ToolBox.jar("cfm", "test/test2.jar", "MANIFEST.MF");
+        tb.new JarTask("jars/test2.jar")
+                .classpath(new File("jars/test.jar").getAbsolutePath())
+                .run();
 
         // this should not fail
-        args.appendArgs("-cp", ".");
-        ToolBox.javac(args.setSources("import test.Test; class Test2 {}"));
+        tb.new JavacTask()
+                .outdir(".")
+                .classpath("jars/test2.jar")
+                .sources("import test.Test; class Test2 {}")
+                .run()
+                .writeAll();
     }
 }

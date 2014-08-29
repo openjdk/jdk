@@ -615,7 +615,7 @@ ConNode* PhaseTransform::makecon(const Type *t) {
 // Make an idealized constant - one of ConINode, ConPNode, etc.
 ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
-  ConNode* x = ConNode::make(C, t);
+  ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
   if (k == NULL) {
     set_type(x, t);             // Missed, provide type mapping
@@ -933,9 +933,32 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
   for (int i = 0; i < _verify_window_size; i++) {
     _verify_window[i] = NULL;
   }
+#ifdef ASSERT
+  // Verify that all modified nodes are on _worklist
+  Unique_Node_List* modified_list = C->modified_nodes();
+  while (modified_list != NULL && modified_list->size()) {
+    Node* n = modified_list->pop();
+    if (n->outcnt() != 0 && !n->is_Con() && !_worklist.member(n)) {
+      n->dump();
+      assert(false, "modified node is not on IGVN._worklist");
+    }
+  }
+#endif
 }
 
 void PhaseIterGVN::verify_PhaseIterGVN() {
+#ifdef ASSERT
+  // Verify nodes with changed inputs.
+  Unique_Node_List* modified_list = C->modified_nodes();
+  while (modified_list != NULL && modified_list->size()) {
+    Node* n = modified_list->pop();
+    if (n->outcnt() != 0 && !n->is_Con()) { // skip dead and Con nodes
+      n->dump();
+      assert(false, "modified node was not processed by IGVN.transform_old()");
+    }
+  }
+#endif
+
   C->verify_graph_edges();
   if( VerifyOpto && allow_progress() ) {
     // Must turn off allow_progress to enable assert and break recursion
@@ -964,6 +987,14 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
                   (int) _verify_counter, (int) _verify_full_passes);
     }
   }
+
+#ifdef ASSERT
+  while (modified_list->size()) {
+    Node* n = modified_list->pop();
+    n->dump();
+    assert(false, "VerifyIterativeGVN: new modified node was added");
+  }
+#endif
 }
 #endif /* PRODUCT */
 
@@ -1066,6 +1097,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   Node* k = n;
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
+  C->remove_modified_node(k);
   Node* i = k->Ideal(this, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
@@ -1107,6 +1139,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     DEBUG_ONLY(dead_loop_check(k);)
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
+    C->remove_modified_node(k);
     i = k->Ideal(this, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
@@ -1259,6 +1292,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       _stack.pop();
       // Remove dead node from iterative worklist
       _worklist.remove(dead);
+      C->remove_modified_node(dead);
       // Constant node that has no out-edges and has only one in-edge from
       // root is usually dead. However, sometimes reshaping walk makes
       // it reachable by adding use edges. So, we will NOT count Con nodes
@@ -1288,7 +1322,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   for (DUIterator_Last imin, i = old->last_outs(imin); i >= imin; ) {
     Node* use = old->last_out(i);  // for each use...
     // use might need re-hashing (but it won't if it's a new node)
-    bool is_in_table = _table.hash_delete( use );
+    rehash_node_delayed(use);
     // Update use-def info as well
     // We remove all occurrences of old within use->in,
     // so as to avoid rehashing any node more than once.
@@ -1299,11 +1333,6 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
         use->set_req(j, nn);
         ++num_edges;
       }
-    }
-    // Insert into GVN hash table if unique
-    // If a duplicate, 'use' will be cleaned up when pulled off worklist
-    if( is_in_table ) {
-      hash_find_insert(use);
     }
     i -= num_edges;    // we deleted 1 or more copies of this edge
   }
@@ -1599,7 +1628,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     if( t == Type::TOP ) {
       // cache my top node on the Compile instance
       if( C->cached_top_node() == NULL || C->cached_top_node()->in(0) == NULL ) {
-        C->set_cached_top_node( ConNode::make(C, Type::TOP) );
+        C->set_cached_top_node(ConNode::make(Type::TOP));
         set_type(C->top(), Type::TOP);
       }
       nn = C->top();
@@ -1725,7 +1754,7 @@ void PhasePeephole::do_transform() {
         MachNode *m = n->as_Mach();
         int deleted_count = 0;
         // check for peephole opportunities
-        MachNode *m2 = m->peephole( block, instruction_index, _regalloc, deleted_count, C );
+        MachNode *m2 = m->peephole(block, instruction_index, _regalloc, deleted_count);
         if( m2 != NULL ) {
 #ifndef PRODUCT
           if( PrintOptoPeephole ) {

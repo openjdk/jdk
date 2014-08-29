@@ -37,7 +37,7 @@ import static java.lang.invoke.LambdaForm.*;
  * @author jrose
  */
 class Invokers {
-    // exact type (sans leading taget MH) for the outgoing call
+    // exact type (sans leading target MH) for the outgoing call
     private final MethodType targetType;
 
     // FIXME: Get rid of the invokers that are not useful.

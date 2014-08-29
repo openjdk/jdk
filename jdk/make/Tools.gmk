@@ -101,6 +101,9 @@ TOOL_TZDB = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
 TOOL_BLACKLISTED_CERTS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
     build.tools.blacklistedcertsconverter.BlacklistedCertsConverter
 
+TOOL_MAKEJAVASECURITY = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
+    build.tools.makejavasecurity.MakeJavaSecurity
+
 
 # TODO: There are references to the jdwpgen.jar in jdk/make/netbeans/jdwpgen/build.xml
 # and nbproject/project.properties in the same dir. Needs to be looked at.
@@ -135,9 +138,6 @@ TOOL_CHECKDEPS = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
 TOOL_GENMODULESXML = $(JAVA_SMALL) -Xbootclasspath/p:$(INTERIM_LANGTOOLS_JAR) \
     -cp "$(JDK_OUTPUTDIR)/btclasses$(PATH_SEP)$(JDK_OUTPUTDIR)" \
     build.tools.module.GenerateModulesXml
-
-TOOL_ADDTORESTRICTEDPKGS = $(JAVA_SMALL) -cp $(JDK_OUTPUTDIR)/btclasses \
-    build.tools.addtorestrictedpkgs.AddToRestrictedPkgs
 
 ##########################################################################################
 
