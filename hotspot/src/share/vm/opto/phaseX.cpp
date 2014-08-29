@@ -42,10 +42,14 @@ NodeHash::NodeHash(uint est_max_size) :
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(Thread::current()->resource_area()),
   _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ), // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _inserts(0), _insert_limit( insert_limit() )
+#ifndef PRODUCT
+  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _delete_probes(0), _delete_hits(0), _delete_misses(0),
   _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0) {
+  _insert_probes(0), _grows(0)
+#endif
+{
   // _sentinel must be in the current node space
   _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
@@ -56,11 +60,14 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(arena),
   _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _inserts(0), _insert_limit( insert_limit() )
+#ifndef PRODUCT
+  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
   _delete_probes(0), _delete_hits(0), _delete_misses(0),
   _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0) {
+  _insert_probes(0), _grows(0)
+#endif
+{
   // _sentinel must be in the current node space
   _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
@@ -87,15 +94,15 @@ Node *NodeHash::hash_find( const Node *n ) {
   // ((Node*)n)->set_hash( n->hash() );
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
-  debug_only( _look_probes++ );
+  NOT_PRODUCT( _look_probes++ );
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;                // Miss!
   }
 
@@ -108,16 +115,16 @@ Node *NodeHash::hash_find( const Node *n ) {
         if( n->in(i)!=k->in(i)) // Different inputs?
           goto collision;       // "goto" is a speed hack...
       if( n->cmp(*k) ) {        // Check for any special bits
-        debug_only( _lookup_hits++ );
+        NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
   collision:
-    debug_only( _look_probes++ );
+    NOT_PRODUCT( _look_probes++ );
     key = (key + stride/*7*/) & (_max-1); // Stride through table with relative prime
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
-      debug_only( _lookup_misses++ );
+      NOT_PRODUCT( _lookup_misses++ );
       return NULL;              // Miss!
     }
   }
@@ -132,16 +139,16 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   // n->set_hash( );
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;     // stride must be relatively prime to table siz
   uint first_sentinel = 0;      // replace a sentinel if seen.
-  debug_only( _look_probes++ );
+  NOT_PRODUCT( _look_probes++ );
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     _table[key] = n;            // Insert into table!
     debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
     check_grow();               // Grow table if insert hit limit
@@ -160,16 +167,16 @@ Node *NodeHash::hash_find_insert( Node *n ) {
         if( n->in(i)!=k->in(i)) // Different inputs?
           goto collision;       // "goto" is a speed hack...
       if( n->cmp(*k) ) {        // Check for any special bits
-        debug_only( _lookup_hits++ );
+        NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
   collision:
-    debug_only( _look_probes++ );
+    NOT_PRODUCT( _look_probes++ );
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
-      debug_only( _lookup_misses++ );
+      NOT_PRODUCT( _lookup_misses++ );
       key = (first_sentinel == 0) ? key : first_sentinel; // ?saw sentinel?
       _table[key] = n;          // Insert into table!
       debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
@@ -200,7 +207,7 @@ void NodeHash::hash_insert( Node *n ) {
   uint stride = key | 0x01;
 
   while( 1 ) {                  // While probing hash table
-    debug_only( _insert_probes++ );
+    NOT_PRODUCT( _insert_probes++ );
     Node *k = _table[key];      // Get hashed value
     if( !k || (k == _sentinel) ) break;       // Found a slot
     assert( k != n, "already inserted" );
@@ -218,7 +225,7 @@ bool NodeHash::hash_delete( const Node *n ) {
   Node *k;
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _delete_misses++ );
+    NOT_PRODUCT( _delete_misses++ );
     return false;
   }
   uint key = hash & (_max-1);
@@ -226,10 +233,10 @@ bool NodeHash::hash_delete( const Node *n ) {
   debug_only( uint counter = 0; );
   for( ; /* (k != NULL) && (k != _sentinel) */; ) {
     debug_only( counter++ );
-    debug_only( _delete_probes++ );
+    NOT_PRODUCT( _delete_probes++ );
     k = _table[key];            // Get hashed value
     if( !k ) {                  // Miss?
-      debug_only( _delete_misses++ );
+      NOT_PRODUCT( _delete_misses++ );
 #ifdef ASSERT
       if( VerifyOpto ) {
         for( uint i=0; i < _max; i++ )
@@ -239,7 +246,7 @@ bool NodeHash::hash_delete( const Node *n ) {
       return false;             // Miss! Not in chain
     }
     else if( n == k ) {
-      debug_only( _delete_hits++ );
+      NOT_PRODUCT( _delete_hits++ );
       _table[key] = _sentinel;  // Hit! Label as deleted entry
       debug_only(((Node*)n)->exit_hash_lock()); // Unlock the node upon removal from table.
       return true;
@@ -271,11 +278,13 @@ void  NodeHash::grow() {
   uint   old_max   = _max;
   Node **old_table = _table;
   // Construct new table with twice the space
+#ifndef PRODUCT
   _grows++;
   _total_inserts       += _inserts;
   _total_insert_probes += _insert_probes;
-  _inserts         = 0;
   _insert_probes   = 0;
+#endif
+  _inserts         = 0;
   _max     = _max << 1;
   _table   = NEW_ARENA_ARRAY( _a , Node* , _max ); // (Node**)_a->Amalloc( _max * sizeof(Node*) );
   memset(_table,0,sizeof(Node*)*_max);
