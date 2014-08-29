@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -243,7 +243,7 @@ public class Types {
         public final static int REF                 = 2006;
 
     /**
-     * The constant in the Java programming language, somtimes referred to
+     * The constant in the Java programming language, sometimes referred to
      * as a type code, that identifies the generic SQL type <code>DATALINK</code>.
      *
      * @since 1.4
@@ -251,7 +251,7 @@ public class Types {
     public final static int DATALINK = 70;
 
     /**
-     * The constant in the Java programming language, somtimes referred to
+     * The constant in the Java programming language, sometimes referred to
      * as a type code, that identifies the generic SQL type <code>BOOLEAN</code>.
      *
      * @since 1.4

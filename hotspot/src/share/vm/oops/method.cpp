@@ -283,6 +283,13 @@ address Method::bcp_from(int bci) const {
   return bcp;
 }
 
+address Method::bcp_from(address bcp) const {
+  if (is_native() && bcp == NULL) {
+    return code_base();
+  } else {
+    return bcp;
+  }
+}
 
 int Method::size(bool is_native) {
   // If native, then include pointers for native_function and signature_handler
