@@ -849,7 +849,12 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
   if test -f $DELETEDIR/TestIfFindSupportsDelete; then
     # No, it does not.
     rm $DELETEDIR/TestIfFindSupportsDelete
-    FIND_DELETE="-exec rm \{\} \+"
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      # AIX 'find' is buggy if called with '-exec {} \+' and an empty file list
+      FIND_DELETE="-print | xargs rm"
+    else
+      FIND_DELETE="-exec rm \{\} \+"
+    fi
     AC_MSG_RESULT([no])
   else
     AC_MSG_RESULT([yes])
