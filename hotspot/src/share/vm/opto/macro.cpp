@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -702,6 +702,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
   ciType* elem_type;
 
   Node* res = alloc->result_cast();
+  assert(res == NULL || res->is_CheckCastPP(), "unexpected AllocateNode result");
   const TypeOopPtr* res_type = NULL;
   if (res != NULL) { // Could be NULL when there are no users
     res_type = _igvn.type(res)->isa_oopptr();
@@ -791,6 +792,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
         for (int k = 0;  k < j; k++) {
           sfpt->del_req(last--);
         }
+        _igvn._worklist.push(sfpt);
         // rollback processed safepoints
         while (safepoints_done.length() > 0) {
           SafePointNode* sfpt_done = safepoints_done.pop();
@@ -815,6 +817,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
               }
             }
           }
+          _igvn._worklist.push(sfpt_done);
         }
 #ifndef PRODUCT
         if (PrintEliminateAllocations) {
@@ -855,6 +858,7 @@ bool PhaseMacroExpand::scalar_replacement(AllocateNode *alloc, GrowableArray <Sa
     int start = jvms->debug_start();
     int end   = jvms->debug_end();
     sfpt->replace_edges_in_range(res, sobj, start, end);
+    _igvn._worklist.push(sfpt);
     safepoints_done.append_if_missing(sfpt); // keep it for rollback
   }
   return true;
@@ -1033,6 +1037,8 @@ bool PhaseMacroExpand::eliminate_boxing_node(CallStaticJavaNode *boxing) {
   if (!C->eliminate_boxing() || boxing->proj_out(TypeFunc::Parms) != NULL) {
     return false;
   }
+
+  assert(boxing->result_cast() == NULL, "unexpected boxing node result");
 
   extract_call_projections(boxing);
 
@@ -1775,6 +1781,7 @@ Node* PhaseMacroExpand::prefetch_allocation(Node* i_o, Node*& needgc_false,
       Node *pf_region = new RegionNode(3);
       Node *pf_phi_rawmem = new PhiNode( pf_region, Type::MEMORY,
                                              TypeRawPtr::BOTTOM );
+      transform_later(pf_region);
 
       // Generate several prefetch instructions.
       uint lines = (length != NULL) ? AllocatePrefetchLines : AllocateInstancePrefetchLines;

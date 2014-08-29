@@ -37,6 +37,24 @@ e.eval(<<EOF
 'use strict';
 
 try {
+    context = 444;
+    print("FAILED!! context write should have thrown error");
+} catch (e) {
+    if (! (e instanceof TypeError)) {
+        print("TypeError expected but got " + e);
+    }
+}
+
+try {
+    engine = "hello";
+    print("FAILED!! engine write should have thrown error");
+} catch (e) {
+    if (! (e instanceof TypeError)) {
+        print("TypeError expected but got " + e);
+    }
+}
+
+try {
     delete context;
     print("FAILED!! context delete should have thrown error");
 } catch (e) {

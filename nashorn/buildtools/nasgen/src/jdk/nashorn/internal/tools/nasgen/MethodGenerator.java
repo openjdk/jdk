@@ -32,7 +32,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.ACONST_NULL;
 import static jdk.internal.org.objectweb.asm.Opcodes.ALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.ANEWARRAY;
 import static jdk.internal.org.objectweb.asm.Opcodes.ARETURN;
-import static jdk.internal.org.objectweb.asm.Opcodes.ASM4;
 import static jdk.internal.org.objectweb.asm.Opcodes.ASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.BALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.BASTORE;
@@ -96,7 +95,7 @@ public class MethodGenerator extends MethodVisitor {
     private final Type[] argumentTypes;
 
     MethodGenerator(final MethodVisitor mv, final int access, final String name, final String descriptor) {
-        super(ASM4, mv);
+        super(Main.ASM_VERSION, mv);
         this.access        = access;
         this.name          = name;
         this.descriptor    = descriptor;

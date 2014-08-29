@@ -24,7 +24,7 @@
 
 #ifndef SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_PARNEW_PARGCALLOCBUFFER_HPP
-
+#include "gc_interface/collectedHeap.hpp"
 #include "memory/allocation.hpp"
 #include "memory/blockOffsetTable.hpp"
 #include "memory/threadLocalAllocBuffer.hpp"
@@ -83,6 +83,9 @@ public:
       return NULL;
     }
   }
+
+  // Allocate the object aligned to "alignment_in_bytes".
+  HeapWord* allocate_aligned(size_t word_sz, unsigned short alignment_in_bytes);
 
   // Undo the last allocation in the buffer, which is required to be of the
   // "obj" of the given "word_sz".

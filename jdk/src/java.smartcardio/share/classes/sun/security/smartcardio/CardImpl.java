@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,9 +26,9 @@
 package sun.security.smartcardio;
 
 import java.nio.ByteBuffer;
-
+import java.security.AccessController;
+import java.security.PrivilegedAction;
 import javax.smartcardio.*;
-
 import static sun.security.smartcardio.PCSC.*;
 
 /**
@@ -62,6 +62,15 @@ final class CardImpl extends Card {
     // thread holding exclusive access to the card, or null
     private volatile Thread exclusiveThread;
 
+    // used for platform specific logic
+    private static final boolean isWindows;
+
+    static {
+        final String osName = AccessController.doPrivileged(
+            (PrivilegedAction<String>) () -> System.getProperty("os.name"));
+        isWindows = osName.startsWith("Windows");
+    }
+
     CardImpl(TerminalImpl terminal, String protocol) throws PCSCException {
         this.terminal = terminal;
         int sharingMode = SCARD_SHARE_SHARED;
@@ -74,7 +83,12 @@ final class CardImpl extends Card {
             connectProtocol = SCARD_PROTOCOL_T1;
         } else if (protocol.equalsIgnoreCase("direct")) {
             // testing
-            connectProtocol = 0;
+
+            // MSDN states that the preferred protocol can be zero, but doesn't
+            //     specify whether other values are allowed.
+            // pcsc-lite implementation expects the preferred protocol to be non zero.
+            connectProtocol = isWindows ? 0 : SCARD_PROTOCOL_RAW;
+
             sharingMode = SCARD_SHARE_DIRECT;
         } else {
             throw new IllegalArgumentException("Unsupported protocol " + protocol);

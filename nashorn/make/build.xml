@@ -128,6 +128,7 @@
       <compilerarg value="-Xlint:all"/>
       <compilerarg value="-XDignore.symbol.file"/>
       <compilerarg value="-Xdiags:verbose"/>
+      <compilerarg value="-parameters"/>
     </javac>
     <copy todir="${build.classes.dir}/META-INF/services">
        <fileset dir="${meta.inf.dir}/services/"/>
@@ -519,6 +520,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <java classname="${parallel.test.runner}" dir="${basedir}" fork="true">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
+      <!-- avoid too many typeinfo cache files. Each script is run only once anyway -->
+      <jvmarg line="-Dnashorn.typeInfo.disabled=true"/>
       <classpath>
           <pathelement path="${run.test.classpath}"/>
       </classpath>
@@ -582,6 +585,8 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <!-- clone test262 git repo -->
     <exec executable="${git.executable}">
        <arg value="clone"/>
+       <arg value="--branch"/>
+       <arg value="es5-tests"/>
        <arg value="https://github.com/tc39/test262"/>
        <arg value="${test.external.dir}/test262"/>
     </exec>

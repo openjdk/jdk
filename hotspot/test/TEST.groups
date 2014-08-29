@@ -70,21 +70,29 @@ needs_jdk = \
   runtime/7194254/Test7194254.java \
   runtime/Metaspace/FragmentMetaspace.java \
   runtime/NMT/BaselineWithParameter.java \
+  runtime/NMT/JcmdBaselineDetail.java \
+  runtime/NMT/JcmdDetailDiff.java \
+  runtime/NMT/JcmdScaleDetail.java \
   runtime/NMT/JcmdScale.java \
+  runtime/NMT/JcmdSummaryDiff.java \
   runtime/NMT/JcmdWithNMTDisabled.java \
+  runtime/NMT/MallocRoundingReportTest.java \
+  runtime/NMT/MallocSiteHashOverflow.java \
+  runtime/NMT/MallocStressTest.java \
   runtime/NMT/MallocTestType.java \
   runtime/NMT/ReleaseCommittedMemory.java \
+  runtime/NMT/ReleaseNoCommit.java \
   runtime/NMT/ShutdownTwice.java \
   runtime/NMT/SummaryAfterShutdown.java \
   runtime/NMT/SummarySanityCheck.java \
   runtime/NMT/ThreadedMallocTestType.java \
   runtime/NMT/ThreadedVirtualAllocTestType.java \
+  runtime/NMT/VirtualAllocCommitUncommitRecommit.java \
   runtime/NMT/VirtualAllocTestType.java \
   runtime/RedefineObject/TestRedefineObject.java \
   runtime/Thread/TestThreadDumpMonitorContention.java \
   runtime/XCheckJniJsig/XCheckJSig.java \
   serviceability/attach/AttachWithStalePidFile.java \
-  serviceability/jvmti/8036666/GetObjectLockCount.java \
   serviceability/sa/jmap-hprof/JMapHProfLargeHeapTest.java \
   serviceability/dcmd/DynLibDcmdTest.java
 
@@ -120,16 +128,12 @@ needs_compact3 = \
   gc/6581734/Test6581734.java \
   gc/7072527/TestFullGCCount.java \
   gc/g1/TestHumongousAllocInitialMark.java \
-  gc/g1/TestHumongousShrinkHeap.java \
   gc/arguments/TestG1HeapRegionSize.java \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/arguments/TestDynMinHeapFreeRatio.java \
   gc/arguments/TestDynMaxHeapFreeRatio.java \
-  gc/parallelScavenge/TestDynShrinkHeap.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
-  serviceability/jvmti/GetObjectSizeOverflow.java \
-  serviceability/jvmti/TestRedefineWithUnresolvedClass.java
 
 # Compact 2 adds full VM tests
 compact2 = \
@@ -217,6 +221,7 @@ needs_g1gc = \
   gc/arguments/TestMaxHeapSizeTools.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
+  gc/class_unloading/TestG1ClassUnloadingHWM.java \
   gc/g1/ \
   gc/metaspace/G1AddMetaspaceDependency.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
@@ -257,7 +262,7 @@ needs_cmsgc = \
   gc/arguments/TestCMSHeapSizeFlags.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
-  gc/class_unloading/TestCMSClassUnloadingDisabledHWM.java \
+  gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
   gc/concurrentMarkSweep/ \
   gc/startup_warnings/TestCMS.java \
   gc/startup_warnings/TestCMSIncrementalMode.java \

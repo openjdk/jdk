@@ -25,12 +25,18 @@
 
 package jdk.nashorn.internal.ir;
 
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROFILE;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_ENTEREXIT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_MISSES;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_VALUES;
+
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Objects;
 import java.util.Set;
 import java.util.function.Function;
 import jdk.nashorn.internal.codegen.CompileUnit;
@@ -81,7 +87,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         LOWERED,
         /** program points have been assigned to unique locations */
         PROGRAM_POINTS_ASSIGNED,
-        /** any transformations of builtins have taken place, e.g. apply=>call */
+        /** any transformations of builtins have taken place, e.g. apply=&gt;call */
         BUILTINS_TRANSFORMED,
         /** method has been split */
         SPLIT,
@@ -149,9 +155,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
     /** Function flags. */
     private final int flags;
-
-    /** //@ sourceURL or //# sourceURL for program function nodes */
-    private final String sourceURL;
 
     /** Line number of function start */
     private final int lineNumber;
@@ -232,6 +235,37 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Is this declared in a dynamic context */
     public static final int IN_DYNAMIC_CONTEXT = 1 << 17;
 
+    /**
+     * The following flags are derived from directive comments within this function.
+     * Note that even IS_STRICT is one such flag but that requires special handling.
+     */
+
+    // parser, lower debugging this function
+    public static final int IS_PRINT_PARSE       = 1 << 18;
+    public static final int IS_PRINT_LOWER_PARSE = 1 << 19;
+    public static final int IS_PRINT_AST         = 1 << 20;
+    public static final int IS_PRINT_LOWER_AST   = 1 << 21;
+    public static final int IS_PRINT_SYMBOLS     = 1 << 22;
+
+    /** profile callsites in this function? */
+    public static final int IS_PROFILE         = 1 << 23;
+
+    // callsite tracing, profiling within this function
+    /** trace callsite enterexit in this function? */
+    public static final int IS_TRACE_ENTEREXIT = 1 << 24;
+
+    /** trace callsite misses in this function? */
+    public static final int IS_TRACE_MISSES    = 1 << 25;
+
+    /** trace callsite values in this function? */
+    public static final int IS_TRACE_VALUES    = 1 << 26;
+
+    /** extension callsite flags mask */
+    public static final int EXTENSION_CALLSITE_FLAGS = IS_PRINT_PARSE |
+        IS_PRINT_LOWER_PARSE | IS_PRINT_AST | IS_PRINT_LOWER_AST |
+        IS_PRINT_SYMBOLS | IS_PROFILE | IS_TRACE_ENTEREXIT |
+        IS_TRACE_MISSES | IS_TRACE_VALUES;
+
     /** Does this function or any nested functions contain an eval? */
     private static final int HAS_DEEP_EVAL = HAS_EVAL | HAS_NESTED_EVAL;
 
@@ -269,7 +303,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @param parameters parameter list
      * @param kind       kind of function as in {@link FunctionNode.Kind}
      * @param flags      initial flags
-     * @param sourceURL  sourceURL specified in script (optional)
      */
     public FunctionNode(
         final Source source,
@@ -283,8 +316,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final String name,
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
-        final int flags,
-        final String sourceURL) {
+        final int flags) {
         super(token, finish);
 
         this.source           = source;
@@ -300,7 +332,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.compilationState = EnumSet.of(CompilationState.INITIALIZED);
         this.declaredSymbols  = new HashSet<>();
         this.flags            = flags;
-        this.sourceURL        = sourceURL;
         this.compileUnit      = null;
         this.body             = null;
         this.thisProperties   = 0;
@@ -311,7 +342,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final FunctionNode functionNode,
         final long lastToken,
         final int flags,
-        final String sourceURL,
         final String name,
         final Type returnType,
         final CompileUnit compileUnit,
@@ -324,7 +354,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
 
         this.lineNumber       = functionNode.lineNumber;
         this.flags            = flags;
-        this.sourceURL        = sourceURL;
         this.name             = name;
         this.returnType       = returnType;
         this.compileUnit      = compileUnit;
@@ -363,6 +392,41 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
+     * Get additional callsite flags to be used specific to this function.
+     *
+     * @return callsite flags
+     */
+    public int getCallSiteFlags() {
+        int callsiteFlags = 0;
+        if (getFlag(IS_STRICT)) {
+            callsiteFlags |= CALLSITE_STRICT;
+        }
+
+        // quick check for extension callsite flags turned on by directives.
+        if ((flags & EXTENSION_CALLSITE_FLAGS) == 0) {
+            return callsiteFlags;
+        }
+
+        if (getFlag(IS_PROFILE)) {
+            callsiteFlags |= CALLSITE_PROFILE;
+        }
+
+        if (getFlag(IS_TRACE_MISSES)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_MISSES;
+        }
+
+        if (getFlag(IS_TRACE_VALUES)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_ENTEREXIT | CALLSITE_TRACE_VALUES;
+        }
+
+        if (getFlag(IS_TRACE_ENTEREXIT)) {
+            callsiteFlags |= CALLSITE_TRACE | CALLSITE_TRACE_ENTEREXIT;
+        }
+
+        return callsiteFlags;
+    }
+
+    /**
      * Get the source for this function
      * @return the source
      */
@@ -384,56 +448,50 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return name for the script source
      */
     public String getSourceName() {
-        return getSourceName(source, sourceURL);
+        return getSourceName(source);
     }
 
     /**
      * Static source name getter
      *
-     * @param source
-     * @param sourceURL
+     * @param source the source
      * @return source name
      */
-    public static String getSourceName(final Source source, final String sourceURL) {
-        return sourceURL != null ? sourceURL : source.getName();
+    public static String getSourceName(final Source source) {
+        final String explicitURL = source.getExplicitURL();
+        return explicitURL != null ? explicitURL : source.getName();
     }
 
     /**
-     * get the sourceURL
-     * @return the sourceURL
-     */
-    public String getSourceURL() {
-        return sourceURL;
-    }
-
-    /**
-     * Set the sourceURL
+     * Function to parse nashorn per-function extension directive comments.
      *
-     * @param lc lexical context
-     * @param newSourceURL source url string to set
-     * @return function node or a new one if state was changed
+     * @param directive nashorn extension directive string
+     * @return integer flag for the given directive.
      */
-    public FunctionNode setSourceURL(final LexicalContext lc, final String newSourceURL) {
-        if (Objects.equals(sourceURL, newSourceURL)) {
-            return this;
+    public static int getDirectiveFlag(final String directive) {
+        switch (directive) {
+            case "nashorn callsite trace enterexit":
+                return IS_TRACE_ENTEREXIT;
+            case "nashorn callsite trace misses":
+                return IS_TRACE_MISSES;
+            case "nashorn callsite trace objects":
+                return IS_TRACE_VALUES;
+            case "nashorn callsite profile":
+                return IS_PROFILE;
+            case "nashorn print parse":
+                return IS_PRINT_PARSE;
+            case "nashorn print lower parse":
+                return IS_PRINT_LOWER_PARSE;
+            case "nashorn print ast":
+                return IS_PRINT_AST;
+            case "nashorn print lower ast":
+                return IS_PRINT_LOWER_AST;
+            case "nashorn print symbols":
+                return IS_PRINT_SYMBOLS;
+            default:
+                // unknown/unsupported directive
+                return 0;
         }
-
-        return Node.replaceInLexicalContext(
-                lc,
-                this,
-                new FunctionNode(
-                        this,
-                        lastToken,
-                        flags,
-                        newSourceURL,
-                        name,
-                        returnType,
-                        compileUnit,
-                        compilationState,
-                        body,
-                        parameters,
-                        thisProperties,
-                        rootClass));
     }
 
     /**
@@ -469,11 +527,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Check whether the state of this FunctionNode contains a given compilation<
+     * Check whether the state of this FunctionNode contains a given compilation
      * state.
      *
      * A node can be in many states at once, e.g. both lowered and initialized.
-     * To check for an exact state, use {FunctionNode{@link #hasState(EnumSet)}
+     * To check for an exact state, use {@link #hasState(EnumSet)}
      *
      * @param state state to check for
      * @return true if state is present in the total compilation state of this FunctionNode
@@ -504,7 +562,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -576,7 +633,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -733,7 +789,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                             (body.needsScope() ?
                                     FunctionNode.HAS_SCOPE_BLOCK :
                                     0),
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -829,7 +884,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -890,7 +944,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -926,7 +979,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -992,7 +1044,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -1071,7 +1122,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                 this,
                 lastToken,
                 flags,
-                sourceURL,
                 name,
                 type,
                 compileUnit,
@@ -1118,7 +1168,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,
@@ -1174,7 +1223,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
                         this,
                         lastToken,
                         flags,
-                        sourceURL,
                         name,
                         returnType,
                         compileUnit,

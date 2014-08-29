@@ -311,6 +311,9 @@ public:
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
 
+  // Delayed node rehash if this is an IGVN phase
+  virtual void igvn_rehash_node_delayed(Node* n) {}
+
 #ifndef PRODUCT
   void dump_old2new_map() const;
   void dump_new( uint new_lidx ) const;
@@ -486,6 +489,10 @@ public:
   void rehash_node_delayed(Node* n) {
     hash_delete(n);
     _worklist.push(n);
+  }
+
+  void igvn_rehash_node_delayed(Node* n) {
+    rehash_node_delayed(n);
   }
 
   // Replace ith edge of "n" with "in"
