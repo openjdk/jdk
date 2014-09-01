@@ -132,7 +132,7 @@ for (var j in tests) {
         str2 += " processing file: " + file + "...";
         print_if_verbose(str2);
         }
-        newGlobal.load("file://" + path + file);
+        newGlobal.load(new java.io.File(path + file).toURL());
     }
     }
     print("Done.");
