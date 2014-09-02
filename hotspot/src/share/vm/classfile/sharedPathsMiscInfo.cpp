@@ -139,7 +139,7 @@ bool SharedPathsMiscInfo::check(jint type, const char* path) {
         if (timestamp != st.st_mtime) {
           return fail("Timestamp mismatch");
         }
-        if (filesize  != st.st_size) {
+        if (filesize != st.st_size) {
           return fail("File size mismatch");
         }
       }
