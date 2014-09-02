@@ -601,6 +601,10 @@ class Compile : public Phase {
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);
   }
+  template<typename T>
+  bool          method_has_option_value(const char * option, T& value) {
+    return method() != NULL && method()->has_option_value(option, value);
+  }
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }

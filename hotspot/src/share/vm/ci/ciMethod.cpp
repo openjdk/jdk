@@ -1102,6 +1102,22 @@ bool ciMethod::has_option(const char* option) {
 }
 
 // ------------------------------------------------------------------
+// ciMethod::has_option_value
+//
+template<typename T>
+bool ciMethod::has_option_value(const char* option, T& value) {
+  check_is_loaded();
+  VM_ENTRY_MARK;
+  methodHandle mh(THREAD, get_Method());
+  return CompilerOracle::has_option_value(mh, option, value);
+}
+// Explicit instantiation for all OptionTypes supported.
+template bool ciMethod::has_option_value<intx>(const char* option, intx& value);
+template bool ciMethod::has_option_value<uintx>(const char* option, uintx& value);
+template bool ciMethod::has_option_value<bool>(const char* option, bool& value);
+template bool ciMethod::has_option_value<ccstr>(const char* option, ccstr& value);
+
+// ------------------------------------------------------------------
 // ciMethod::can_be_compiled
 //
 // Have previous compilations of this method succeeded?
