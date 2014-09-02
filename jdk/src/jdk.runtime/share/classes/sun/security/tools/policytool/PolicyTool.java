@@ -1695,6 +1695,7 @@ class ToolDialog extends JDialog {
         PERM_ARRAY.add(new MBeanSvrPerm());
         PERM_ARRAY.add(new MBeanTrustPerm());
         PERM_ARRAY.add(new NetPerm());
+        PERM_ARRAY.add(new NetworkPerm());
         PERM_ARRAY.add(new PrivCredPerm());
         PERM_ARRAY.add(new PropPerm());
         PERM_ARRAY.add(new ReflectPerm());
@@ -4321,15 +4322,29 @@ class NetPerm extends Perm {
     super("NetPermission",
         "java.net.NetPermission",
         new String[]    {
+                "allowHttpTrace",
                 "setDefaultAuthenticator",
                 "requestPasswordAuthentication",
                 "specifyStreamHandler",
+                "getNetworkInformation",
                 "setProxySelector",
                 "getProxySelector",
                 "setCookieHandler",
                 "getCookieHandler",
                 "setResponseCache",
                 "getResponseCache"
+                },
+        null);
+    }
+}
+
+class NetworkPerm extends Perm {
+    public NetworkPerm() {
+    super("NetworkPermission",
+        "jdk.net.NetworkPermission",
+        new String[]    {
+                "setOption.SO_FLOW_SLA",
+                "getOption.SO_FLOW_SLA"
                 },
         null);
     }

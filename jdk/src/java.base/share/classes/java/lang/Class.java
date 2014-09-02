@@ -54,6 +54,7 @@ import java.util.Set;
 import java.util.Map;
 import java.util.HashMap;
 import java.util.Objects;
+import java.util.StringJoiner;
 import sun.misc.Unsafe;
 import sun.reflect.CallerSensitive;
 import sun.reflect.ConstantPool;
@@ -3141,19 +3142,14 @@ public final class Class<T> implements java.io.Serializable,
     private native Class<?>[]   getDeclaredClasses0();
 
     private static String        argumentTypesToString(Class<?>[] argTypes) {
-        StringBuilder buf = new StringBuilder();
-        buf.append("(");
+        StringJoiner sj = new StringJoiner(", ", "(", ")");
         if (argTypes != null) {
             for (int i = 0; i < argTypes.length; i++) {
-                if (i > 0) {
-                    buf.append(", ");
-                }
                 Class<?> c = argTypes[i];
-                buf.append((c == null) ? "null" : c.getName());
+                sj.add((c == null) ? "null" : c.getName());
             }
         }
-        buf.append(")");
-        return buf.toString();
+        return sj.toString();
     }
 
     /** use serialVersionUID from JDK 1.1 for interoperability */

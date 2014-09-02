@@ -314,51 +314,10 @@ $(eval $(call SetupJVMTIDemo,compiledMethodLoad, agent_util))
 $(eval $(call SetupJVMTIDemo,gctest, agent_util))
 $(eval $(call SetupJVMTIDemo,heapTracker, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,heapViewer, agent_util))
-
-# On AIX, hprof requires 'dladdr' from src/aix/porting/porting_aix.cpp
-BUILD_LIBHPROF_AIX_EXTRA_SRC :=
-BUILD_LIBHPROF_AIX_EXTRA_CFLAGS :=
-ifeq ($(OPENJDK_TARGET_OS), aix)
-  BUILD_LIBHPROF_AIX_EXTRA_SRC += $(JDK_TOPDIR)/src/aix/porting
-  BUILD_LIBHPROF_AIX_EXTRA_CFLAGS += -I$(JDK_TOPDIR)/src/aix/porting
-endif
-
-$(eval $(call SetupJVMTIDemo,hprof, java_crw_demo, \
-    $(BUILD_LIBHPROF_AIX_EXTRA_CFLAGS), C, \
-    -ldl, ws2_32.lib winmm.lib, -lsocket -lnsl, -lpthread, $(BUILD_LIBHPROF_AIX_EXTRA_SRC)))
-
 $(eval $(call SetupJVMTIDemo,minst, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,mtrace, agent_util java_crw_demo))
 $(eval $(call SetupJVMTIDemo,waiters, agent_util, , C++))
 $(eval $(call SetupJVMTIDemo,versionCheck, agent_util))
-
-##################################################################################################
-
-$(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README: \
-    $(JDK_TOPDIR)/src/demo/share/jpda/com/sun/tools/example/README
-	$(call install-file)
-	$(CHMOD) -f ug+w $@
-
-$(eval $(call SetupArchive,JPDA_JAR, \
-    $(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example/README, \
-    SRCS := $(JDK_TOPDIR)/src/demo/share/jpda \
-        $(JDK_TOPDIR)/src/jdk.jdi/share/classes \
-        $(JDK_OUTPUTDIR)/demo/jpda/com/sun/tools/example, \
-    INCLUDES := com/sun/tools/example README, \
-    SUFFIXES := .java .html .jj README, \
-    JAR := $(JDK_OUTPUTDIR)/demo/jpda/examples.jar, \
-    MANIFEST := $(JDK_TOPDIR)/make/data/mainmanifest/manifest.mf, \
-    EXTRA_MANIFEST_ATTR := Main-Class:$$(SPACE), \
-    SKIP_METAINF := true))
-
-$(eval $(call SetupZipArchive,JPDA_ZIP, \
-    SRC := $(JDK_TOPDIR)/src/demo/share/jpda \
-        $(JDK_TOPDIR)/src/jdk.jdi/share/classes, \
-    INCLUDES := com/sun/tools/example, \
-    SUFFIXES := .java .html .jj README, \
-    ZIP := $(JDK_OUTPUTDIR)/demo/jpda/src.zip))
-
-BUILD_DEMOS += $(JPDA_JAR) $(JPDA_ZIP)
 
 ##################################################################################################
 
