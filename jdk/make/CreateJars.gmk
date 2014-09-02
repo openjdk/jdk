@@ -76,13 +76,24 @@ LOCALEDATA_INCLUDE_LOCALES := ar be bg ca cs da de el es et fi fr ga hi hr hu in
     iw ja ko lt lv mk ms mt nl no pl pt ro ru sk sl sq sr sv \
     th tr uk vi zh
 
-LOCALEDATA_INCLUDES := $(addprefix sun/text/resources/, $(LOCALEDATA_INCLUDE_LOCALES)) \
+LOCALEDATA_INCLUDES := sun/util/resources/provider/NonEnLocaleDataMetaInfo.class
+LOCALEDATA_INCLUDES += $(addprefix sun/text/resources/, $(LOCALEDATA_INCLUDE_LOCALES)) \
     $(addprefix sun/util/resources/, $(LOCALEDATA_INCLUDE_LOCALES))
 
-$(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR, , \
-    SRCS := $(JDK_OUTPUTDIR)/modules/jdk.localedata, \
+LOCALEDATA_SERVICES_DIR := $(IMAGES_OUTPUTDIR)/localemetainfo
+
+LOCALEDATA_METAINF_SERVICES := $(LOCALEDATA_SERVICES_DIR)/META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo
+
+$(LOCALEDATA_METAINF_SERVICES): $(JDK_TOPDIR)/src/jdk.localedata/META-INF/localedata-services/sun.util.locale.provider.LocaleDataMetaInfo
+	$(install-file)
+
+$(eval $(call SetupArchive,BUILD_LOCALEDATA_JAR, \
+    $(LOCALEDATA_METAINF_SERVICES), \
+    SRCS := $(JDK_OUTPUTDIR)/modules/jdk.localedata \
+        $(LOCALEDATA_SERVICES_DIR), \
     SUFFIXES := .class _dict _th, \
     INCLUDES := $(LOCALEDATA_INCLUDES), \
+    EXTRA_FILES := META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo, \
     JAR := $(IMAGES_OUTPUTDIR)/lib/ext/localedata.jar, \
     SKIP_METAINF := true))
 
@@ -210,6 +221,8 @@ RT_JAR_EXCLUDES += \
     sun/tools/tree \
     sun/tools/util \
     sun/util/cldr/CLDRLocaleDataMetaInfo.class \
+    sun/util/resources/provider/NonEnLocaleDataMetaInfo.class \
+    META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo \
     sun/util/resources/cldr \
     $(LOCALEDATA_INCLUDES) \
     com/oracle/jrockit/jfr \
@@ -429,13 +442,23 @@ include gensrc/GensrcCLDR.gmk
 
 CLDRDATA_JAR_DST := $(IMAGES_OUTPUTDIR)/lib/ext/cldrdata.jar
 
-$(eval $(call SetupArchive,BUILD_CLDRDATA_JAR, , \
+CLDR_SERVICES_DIR := $(IMAGES_OUTPUTDIR)/cldrmetainfo
+
+CLDR_METAINF_SERVICES := $(CLDR_SERVICES_DIR)/META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo
+
+$(CLDR_METAINF_SERVICES): $(JDK_TOPDIR)/src/jdk.localedata/META-INF/cldrdata-services/sun.util.locale.provider.LocaleDataMetaInfo
+	$(install-file)
+
+$(eval $(call SetupArchive,BUILD_CLDRDATA_JAR, \
+    $(CLDR_METAINF_SERVICES), \
     SRCS := $(JDK_OUTPUTDIR)/modules/jdk.localedata \
-        $(JDK_OUTPUTDIR)/modules/java.base, \
+        $(JDK_OUTPUTDIR)/modules/java.base \
+        $(CLDR_SERVICES_DIR), \
     SUFFIXES := .class, \
     INCLUDES := sun/text/resources/cldr \
         sun/util/cldr/CLDRLocaleDataMetaInfo.class \
         sun/util/resources/cldr, \
+    EXTRA_FILES := META-INF/services/sun.util.locale.provider.LocaleDataMetaInfo, \
     JAR := $(CLDRDATA_JAR_DST), \
     EXTRA_MANIFEST_ATTR := CLDR-Version: $(CLDRVERSION), \
     SKIP_METAINF := true))
