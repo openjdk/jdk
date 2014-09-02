@@ -485,7 +485,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -514,7 +514,8 @@ void VM_Version::get_processor_features() {
                (supports_tscinv_bit() ? ", tscinvbit": ""),
                (supports_tscinv() ? ", tscinv": ""),
                (supports_bmi1() ? ", bmi1" : ""),
-               (supports_bmi2() ? ", bmi2" : ""));
+               (supports_bmi2() ? ", bmi2" : ""),
+               (supports_adx() ? ", adx" : ""));
   _features_str = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
@@ -566,7 +567,7 @@ void VM_Version::get_processor_features() {
     }
   } else if (UseCRC32Intrinsics) {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
-      warning("CRC32 Intrinsics requires AVX and CLMUL instructions (not available on this CPU)");
+      warning("CRC32 Intrinsics requires CLMUL instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
@@ -689,7 +690,20 @@ void VM_Version::get_processor_features() {
     }
 #endif
   }
+
+#ifdef _LP64
+  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+    UseMultiplyToLenIntrinsic = true;
+  }
+#else
+  if (UseMultiplyToLenIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+      warning("multiplyToLen intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
+  }
 #endif
+#endif // COMPILER2
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
@@ -832,6 +846,9 @@ void VM_Version::get_processor_features() {
         }
       }
     }
+    if(FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+      AllocatePrefetchInstr = 3;
+    }
   }
 
   // Use count leading zeros count instruction if available.
@@ -844,23 +861,35 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCountLeadingZerosInstruction, false);
   }
 
-  if (supports_bmi1()) {
-    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
-      UseBMI1Instructions = true;
-    }
-  } else if (UseBMI1Instructions) {
-    warning("BMI1 instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
-  }
-
   // Use count trailing zeros instruction if available
   if (supports_bmi1()) {
+    // tzcnt does not require VEX prefix
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      UseCountTrailingZerosInstruction = UseBMI1Instructions;
+      UseCountTrailingZerosInstruction = true;
     }
   } else if (UseCountTrailingZerosInstruction) {
     warning("tzcnt instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
+  }
+
+  // BMI instructions use an encoding with VEX prefix.
+  // VEX prefix is generated only when AVX > 0.
+  if (supports_bmi1() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
+      UseBMI1Instructions = true;
+    }
+  } else if (UseBMI1Instructions) {
+    warning("BMI1 instructions are not available on this CPU (AVX is also required)");
+    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
+  }
+
+  if (supports_bmi2() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+      UseBMI2Instructions = true;
+    }
+  } else if (UseBMI2Instructions) {
+    warning("BMI2 instructions are not available on this CPU (AVX is also required)");
+    FLAG_SET_DEFAULT(UseBMI2Instructions, false);
   }
 
   // Use population count instruction if available.

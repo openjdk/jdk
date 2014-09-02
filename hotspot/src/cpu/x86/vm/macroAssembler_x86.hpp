@@ -1221,6 +1221,28 @@ public:
                         XMMRegister tmp1, XMMRegister tmp2, XMMRegister tmp3,
                         XMMRegister tmp4, Register tmp5, Register result);
 
+#ifdef _LP64
+  void add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2);
+  void multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
+                             Register y, Register y_idx, Register z,
+                             Register carry, Register product,
+                             Register idx, Register kdx);
+  void multiply_add_128_x_128(Register x_xstart, Register y, Register z,
+                              Register yz_idx, Register idx,
+                              Register carry, Register product, int offset);
+  void multiply_128_x_128_bmi2_loop(Register y, Register z,
+                                    Register carry, Register carry2,
+                                    Register idx, Register jdx,
+                                    Register yz_idx1, Register yz_idx2,
+                                    Register tmp, Register tmp3, Register tmp4);
+  void multiply_128_x_128_loop(Register x_xstart, Register y, Register z,
+                               Register yz_idx, Register idx, Register jdx,
+                               Register carry, Register product,
+                               Register carry2);
+  void multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+                       Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5);
+#endif
+
   // CRC32 code for java.util.zip.CRC32::updateBytes() instrinsic.
   void update_byte_crc32(Register crc, Register val, Register table);
   void kernel_crc32(Register crc, Register buf, Register len, Register table, Register tmp);

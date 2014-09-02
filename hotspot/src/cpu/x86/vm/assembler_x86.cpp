@@ -4937,6 +4937,26 @@ void Assembler::addq(Register dst, Register src) {
   emit_arith(0x03, 0xC0, dst, src);
 }
 
+void Assembler::adcxq(Register dst, Register src) {
+  //assert(VM_Version::supports_adx(), "adx instructions not supported");
+  emit_int8((unsigned char)0x66);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8(0x38);
+  emit_int8((unsigned char)0xF6);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
+void Assembler::adoxq(Register dst, Register src) {
+  //assert(VM_Version::supports_adx(), "adx instructions not supported");
+  emit_int8((unsigned char)0xF3);
+  int encode = prefixq_and_encode(dst->encoding(), src->encoding());
+  emit_int8(0x0F);
+  emit_int8(0x38);
+  emit_int8((unsigned char)0xF6);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::andq(Address dst, int32_t imm32) {
   InstructionMark im(this);
   prefixq(dst);
@@ -5444,6 +5464,26 @@ void Assembler::movzwq(Register dst, Register src) {
   emit_int8((unsigned char)(0xC0 | encode));
 }
 
+void Assembler::mulq(Address src) {
+  InstructionMark im(this);
+  prefixq(src);
+  emit_int8((unsigned char)0xF7);
+  emit_operand(rsp, src);
+}
+
+void Assembler::mulq(Register src) {
+  int encode = prefixq_and_encode(src->encoding());
+  emit_int8((unsigned char)0xF7);
+  emit_int8((unsigned char)(0xE0 | encode));
+}
+
+void Assembler::mulxq(Register dst1, Register dst2, Register src) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_and_encode(dst1->encoding(), dst2->encoding(), src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_38, true, false);
+  emit_int8((unsigned char)0xF6);
+  emit_int8((unsigned char)(0xC0 | encode));
+}
+
 void Assembler::negq(Register dst) {
   int encode = prefixq_and_encode(dst->encoding());
   emit_int8((unsigned char)0xF7);
@@ -5572,6 +5612,28 @@ void Assembler::rclq(Register dst, int imm8) {
     emit_int8(imm8);
   }
 }
+
+void Assembler::rorq(Register dst, int imm8) {
+  assert(isShiftCount(imm8 >> 1), "illegal shift count");
+  int encode = prefixq_and_encode(dst->encoding());
+  if (imm8 == 1) {
+    emit_int8((unsigned char)0xD1);
+    emit_int8((unsigned char)(0xC8 | encode));
+  } else {
+    emit_int8((unsigned char)0xC1);
+    emit_int8((unsigned char)(0xc8 | encode));
+    emit_int8(imm8);
+  }
+}
+
+void Assembler::rorxq(Register dst, Register src, int imm8) {
+  assert(VM_Version::supports_bmi2(), "bit manipulation instructions not supported");
+  int encode = vex_prefix_and_encode(dst->encoding(), 0, src->encoding(), VEX_SIMD_F2, VEX_OPCODE_0F_3A, true, false);
+  emit_int8((unsigned char)0xF0);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8(imm8);
+}
+
 void Assembler::sarq(Register dst, int imm8) {
   assert(isShiftCount(imm8 >> 1), "illegal shift count");
   int encode = prefixq_and_encode(dst->encoding());
