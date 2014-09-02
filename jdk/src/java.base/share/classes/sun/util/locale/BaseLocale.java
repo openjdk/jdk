@@ -32,6 +32,7 @@
 
 package sun.util.locale;
 
+import java.util.StringJoiner;
 
 public final class BaseLocale {
 
@@ -120,33 +121,20 @@ public final class BaseLocale {
 
     @Override
     public String toString() {
-        StringBuilder buf = new StringBuilder();
+        StringJoiner sj = new StringJoiner(", ");
         if (language.length() > 0) {
-            buf.append("language=");
-            buf.append(language);
+            sj.add("language=" + language);
         }
         if (script.length() > 0) {
-            if (buf.length() > 0) {
-                buf.append(", ");
-            }
-            buf.append("script=");
-            buf.append(script);
+            sj.add("script=" + script);
         }
         if (region.length() > 0) {
-            if (buf.length() > 0) {
-                buf.append(", ");
-            }
-            buf.append("region=");
-            buf.append(region);
+            sj.add("region=" + region);
         }
         if (variant.length() > 0) {
-            if (buf.length() > 0) {
-                buf.append(", ");
-            }
-            buf.append("variant=");
-            buf.append(variant);
+            sj.add("variant=" + variant);
         }
-        return buf.toString();
+        return sj.toString();
     }
 
     @Override

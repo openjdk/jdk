@@ -24,6 +24,8 @@
 /**
  * @test
  * @bug 6270015
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm Test8a
  * @summary  Light weight HTTP server
  */
@@ -34,6 +36,7 @@ import java.util.concurrent.*;
 import java.io.*;
 import java.net.*;
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 /**
  * Test POST large file via fixed len encoding
@@ -55,7 +58,7 @@ public class Test8a extends Test {
             server = HttpsServer.create (addr, 0);
             HttpContext ctx = server.createContext ("/test", handler);
             executor = Executors.newCachedThreadPool();
-            SSLContext ssl = new SimpleSSLContext(System.getProperty("test.src")).get();
+            SSLContext ssl = new SimpleSSLContext().get();
             server.setHttpsConfigurator(new HttpsConfigurator (ssl));
             server.setExecutor (executor);
             server.start ();

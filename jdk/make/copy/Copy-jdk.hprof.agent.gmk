@@ -27,7 +27,7 @@ include CopyCommon.gmk
 
 ################################################################################
 
-HPROF_SRC := $(JDK_TOPDIR)/src/demo/share/jvmti/hprof/jvm.hprof.txt
+HPROF_SRC := $(JDK_TOPDIR)/src/jdk.hprof.agent/share/native/libhprof/jvm.hprof.txt
 
 $(LIB_DST_DIR)/jvm.hprof.txt: $(HPROF_SRC)
 	$(call install-file)
