@@ -431,7 +431,7 @@ public class CLDRConverter {
             allLocales.addAll(metaInfo.get("LocaleNames"));
             allLocales.addAll(metaInfo.get("CalendarData"));
             allLocales.addAll(metaInfo.get("FormatData"));
-            metaInfo.put("All", allLocales);
+            metaInfo.put("AvailableLocales", allLocales);
         }
 
         bundleGenerator.generateMetaInfo(metaInfo);
