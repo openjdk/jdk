@@ -173,7 +173,6 @@ enum OptionType {
   UintxType,
   BoolType,
   CcstrType,
-  CcstrListType,
   UnknownType
 };
 
@@ -195,6 +194,19 @@ template<> OptionType get_type_for<bool>() {
   return BoolType;
 }
 
+template<> OptionType get_type_for<ccstr>() {
+  return CcstrType;
+}
+
+template<typename T>
+static const T copy_value(const T value) {
+  return value;
+}
+
+template<> const ccstr copy_value<ccstr>(const ccstr value) {
+  return (const ccstr)os::strdup_check_oom(value);
+}
+
 template <typename T>
 class TypedMethodOptionMatcher : public MethodMatcher {
   const char* _option;
@@ -207,7 +219,7 @@ public:
                            Symbol* signature, const char* opt,
                            const T value,  MethodMatcher* next) :
     MethodMatcher(class_name, class_mode, method_name, method_mode, signature, next),
-                  _type(get_type_for<T>()), _value(value) {
+                  _type(get_type_for<T>()), _value(copy_value<T>(value)) {
     _option = os::strdup_check_oom(opt);
   }
 
@@ -253,8 +265,8 @@ template<>
 void TypedMethodOptionMatcher<intx>::print() {
   ttyLocker ttyl;
   print_base();
-  tty->print(" %s", _option);
-  tty->print(" " INTX_FORMAT, _value);
+  tty->print(" intx %s", _option);
+  tty->print(" = " INTX_FORMAT, _value);
   tty->cr();
 };
 
@@ -262,8 +274,8 @@ template<>
 void TypedMethodOptionMatcher<uintx>::print() {
   ttyLocker ttyl;
   print_base();
-  tty->print(" %s", _option);
-  tty->print(" " UINTX_FORMAT, _value);
+  tty->print(" uintx %s", _option);
+  tty->print(" = " UINTX_FORMAT, _value);
   tty->cr();
 };
 
@@ -271,8 +283,17 @@ template<>
 void TypedMethodOptionMatcher<bool>::print() {
   ttyLocker ttyl;
   print_base();
-  tty->print(" %s", _option);
-  tty->print(" %s", _value ? "true" : "false");
+  tty->print(" bool %s", _option);
+  tty->print(" = %s", _value ? "true" : "false");
+  tty->cr();
+};
+
+template<>
+void TypedMethodOptionMatcher<ccstr>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" const char* %s", _option);
+  tty->print(" = '%s'", _value);
   tty->cr();
 };
 
@@ -368,6 +389,7 @@ bool CompilerOracle::has_option_value(methodHandle method, const char* option, T
 template bool CompilerOracle::has_option_value<intx>(methodHandle method, const char* option, intx& value);
 template bool CompilerOracle::has_option_value<uintx>(methodHandle method, const char* option, uintx& value);
 template bool CompilerOracle::has_option_value<bool>(methodHandle method, const char* option, bool& value);
+template bool CompilerOracle::has_option_value<ccstr>(methodHandle method, const char* option, ccstr& value);
 
 bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
   quietly = true;
@@ -543,12 +565,45 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
       } else {
         jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
       }
+    } else if (strcmp(type, "ccstr") == 0) {
+      ResourceMark rm;
+      char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
+      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, (ccstr)value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
+    } else if (strcmp(type, "ccstrlist") == 0) {
+      // Accumulates several strings into one. The internal type is ccstr.
+      ResourceMark rm;
+      char* value = NEW_RESOURCE_ARRAY(char, strlen(line) + 1);
+      char* next_value = value;
+      if (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+        total_bytes_read += bytes_read;
+        line += bytes_read;
+        next_value += bytes_read;
+        char* end_value = next_value-1;
+        while (sscanf(line, "%*[ \t]%255[_a-zA-Z0-9]%n", next_value, &bytes_read) == 1) {
+          total_bytes_read += bytes_read;
+          line += bytes_read;
+          *end_value = ' '; // override '\0'
+          next_value += bytes_read;
+          end_value = next_value-1;
+        }
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, (ccstr)value);
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
     } else if (strcmp(type, "bool") == 0) {
       char value[256];
       if (sscanf(line, "%*[ \t]%255[a-zA-Z]%n", value, &bytes_read) == 1) {
         if (strcmp(value, "true") == 0) {
           total_bytes_read += bytes_read;
           return add_option_string(c_name, c_match, m_name, m_match, signature, flag, true);
+        } else if (strcmp(value, "false") == 0) {
+          total_bytes_read += bytes_read;
+          return add_option_string(c_name, c_match, m_name, m_match, signature, flag, false);
         } else {
           jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
         }
@@ -649,8 +704,7 @@ void CompilerOracle::parse_from_line(char* line) {
       // (i.e., to check if a flag "someflag" is enabled for a method).
       //
       // Type (2) is used to support options with a value. Values can have the
-      // the following types: intx, uintx, bool, ccstr, and ccstrlist. Currently,
-      // values of type intx, uintx, and bool are supported.
+      // the following types: intx, uintx, bool, ccstr, and ccstrlist.
       //
       // For future extensions: extend scan_flag_and_value()
       char option[256]; // stores flag for Type (1) and type of Type (2)
