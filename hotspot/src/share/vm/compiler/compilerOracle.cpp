@@ -382,7 +382,7 @@ bool CompilerOracle::has_option_string(methodHandle method, const char* option) 
 
 template<typename T>
 bool CompilerOracle::has_option_value(methodHandle method, const char* option, T& value) {
-  return get_option_value(method, option, value);
+  return ::get_option_value(method, option, value);
 }
 
 // Explicit instantiation for all OptionTypes supported.
