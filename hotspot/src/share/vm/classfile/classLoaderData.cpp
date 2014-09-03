@@ -332,27 +332,6 @@ void ClassLoaderData::unload() {
   }
 }
 
-#ifdef ASSERT
-class AllAliveClosure : public OopClosure {
-  BoolObjectClosure* _is_alive_closure;
-  bool _found_dead;
- public:
-  AllAliveClosure(BoolObjectClosure* is_alive_closure) : _is_alive_closure(is_alive_closure), _found_dead(false) {}
-  template <typename T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if (!_is_alive_closure->do_object_b(obj)) {
-        _found_dead = true;
-      }
-    }
-  }
-  void do_oop(oop* p)       { do_oop_work<oop>(p); }
-  void do_oop(narrowOop* p) { do_oop_work<narrowOop>(p); }
-  bool found_dead()         { return _found_dead; }
-};
-#endif
-
 oop ClassLoaderData::keep_alive_object() const {
   assert(!keep_alive(), "Don't use with CLDs that are artificially kept alive");
   return is_anonymous() ? _klasses->java_mirror() : class_loader();
@@ -361,15 +340,6 @@ oop ClassLoaderData::keep_alive_object() const {
 bool ClassLoaderData::is_alive(BoolObjectClosure* is_alive_closure) const {
   bool alive = keep_alive() // null class loader and incomplete anonymous klasses.
       || is_alive_closure->do_object_b(keep_alive_object());
-
-#ifdef ASSERT
-  if (alive) {
-    AllAliveClosure all_alive_closure(is_alive_closure);
-    KlassToOopClosure klass_closure(&all_alive_closure);
-    const_cast<ClassLoaderData*>(this)->oops_do(&all_alive_closure, &klass_closure, false);
-    assert(!all_alive_closure.found_dead(), err_msg("Found dead oop in alive cld: " PTR_FORMAT, p2i(this)));
-  }
-#endif
 
   return alive;
 }
