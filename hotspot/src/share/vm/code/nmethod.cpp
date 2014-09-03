@@ -2062,7 +2062,7 @@ void nmethod::metadata_do(void f(Metadata*)) {
                "metadata must be found in exactly one place");
         if (r->metadata_is_immediate() && r->metadata_value() != NULL) {
           Metadata* md = r->metadata_value();
-          f(md);
+          if (md != _method) f(md);
         }
       } else if (iter.type() == relocInfo::virtual_call_type) {
         // Check compiledIC holders associated with this nmethod
@@ -2087,9 +2087,6 @@ void nmethod::metadata_do(void f(Metadata*)) {
     Metadata* md = *p;
     f(md);
   }
-
-  // Call function Method*, not embedded in these other places.
-  if (_method != NULL) f(_method);
 }
 
 void nmethod::oops_do(OopClosure* f, bool allow_zombie) {
