@@ -2439,16 +2439,6 @@ void InstanceKlass::release_C_heap_structures() {
     assert(breakpoints() == 0x0, "should have cleared breakpoints");
   }
 
-  // deallocate information about previous versions
-  if (_previous_versions != NULL) {
-    for (int i = _previous_versions->length() - 1; i >= 0; i--) {
-      PreviousVersionNode * pv_node = _previous_versions->at(i);
-      delete pv_node;
-    }
-    delete _previous_versions;
-    _previous_versions = NULL;
-  }
-
   // deallocate the cached class file
   if (_cached_class_file != NULL) {
     os::free(_cached_class_file, mtClass);
@@ -3022,16 +3012,17 @@ void InstanceKlass::print_on(outputStream* st) const {
   st->print(BULLET"field type annotations:  "); fields_type_annotations()->print_value_on(st); st->cr();
   {
     bool have_pv = false;
-    PreviousVersionWalker pvw(Thread::current(), (InstanceKlass*)this);
-    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
-         pv_node != NULL; pv_node = pvw.next_previous_version()) {
+    // previous versions are linked together through the InstanceKlass
+    for (InstanceKlass* pv_node = _previous_versions;
+         pv_node != NULL;
+         pv_node = pv_node->previous_versions()) {
       if (!have_pv)
         st->print(BULLET"previous version:  ");
       have_pv = true;
-      pv_node->prev_constant_pool()->print_value_on(st);
+      pv_node->constants()->print_value_on(st);
     }
     if (have_pv) st->cr();
-  } // pvw is cleaned up
+  }
 
   if (generic_signature() != NULL) {
     st->print(BULLET"generic signature: ");
@@ -3445,92 +3436,92 @@ void InstanceKlass::set_init_state(ClassState state) {
 // RedefineClasses() support for previous versions:
 
 // Purge previous versions
-static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_count) {
+void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
   if (ik->previous_versions() != NULL) {
     // This klass has previous versions so see what we can cleanup
     // while it is safe to do so.
 
     int deleted_count = 0;    // leave debugging breadcrumbs
     int live_count = 0;
-    ClassLoaderData* loader_data = ik->class_loader_data() == NULL ?
-                       ClassLoaderData::the_null_class_loader_data() :
-                       ik->class_loader_data();
+    ClassLoaderData* loader_data = ik->class_loader_data();
+    assert(loader_data != NULL, "should never be null");
 
     // RC_TRACE macro has an embedded ResourceMark
-    RC_TRACE(0x00000200, ("purge: %s: previous version length=%d",
-      ik->external_name(), ik->previous_versions()->length()));
+    RC_TRACE(0x00000200, ("purge: %s: previous versions", ik->external_name()));
 
-    for (int i = ik->previous_versions()->length() - 1; i >= 0; i--) {
-      // check the previous versions array
-      PreviousVersionNode * pv_node = ik->previous_versions()->at(i);
-      ConstantPool* cp_ref = pv_node->prev_constant_pool();
-      assert(cp_ref != NULL, "cp ref was unexpectedly cleared");
+    // previous versions are linked together through the InstanceKlass
+    InstanceKlass* pv_node = ik->previous_versions();
+    InstanceKlass* last = ik;
+    int version = 0;
 
-      ConstantPool* pvcp = cp_ref;
+    // check the previous versions list
+    for (; pv_node != NULL; ) {
+
+      ConstantPool* pvcp = pv_node->constants();
+      assert(pvcp != NULL, "cp ref was unexpectedly cleared");
+
       if (!pvcp->on_stack()) {
         // If the constant pool isn't on stack, none of the methods
-        // are executing.  Delete all the methods, the constant pool and
-        // and this previous version node.
-        GrowableArray<Method*>* method_refs = pv_node->prev_EMCP_methods();
-        if (method_refs != NULL) {
-          for (int j = method_refs->length() - 1; j >= 0; j--) {
-            Method* method = method_refs->at(j);
-            assert(method != NULL, "method ref was unexpectedly cleared");
-            method_refs->remove_at(j);
-            // method will be freed with associated class.
-          }
-        }
-        // Remove the constant pool
-        delete pv_node;
-        // Since we are traversing the array backwards, we don't have to
-        // do anything special with the index.
-        ik->previous_versions()->remove_at(i);
+        // are executing.  Unlink this previous_version.
+        // The previous version InstanceKlass is on the ClassLoaderData deallocate list
+        // so will be deallocated during the next phase of class unloading.
+        pv_node = pv_node->previous_versions();
+        last->link_previous_versions(pv_node);
         deleted_count++;
+        version++;
         continue;
       } else {
-        RC_TRACE(0x00000200, ("purge: previous version @%d is alive", i));
+        RC_TRACE(0x00000200, ("purge: previous version " INTPTR_FORMAT " is alive",
+                              pv_node));
         assert(pvcp->pool_holder() != NULL, "Constant pool with no holder");
         guarantee (!loader_data->is_unloading(), "unloaded classes can't be on the stack");
         live_count++;
       }
 
-      // At least one method is live in this previous version, clean out
-      // the others or mark them as obsolete.
-      GrowableArray<Method*>* method_refs = pv_node->prev_EMCP_methods();
+      // At least one method is live in this previous version so clean its MethodData.
+      // Reset dead EMCP methods not to get breakpoints.
+      // All methods are deallocated when all of the methods for this class are no
+      // longer running.
+      Array<Method*>* method_refs = pv_node->methods();
       if (method_refs != NULL) {
         RC_TRACE(0x00000200, ("purge: previous methods length=%d",
           method_refs->length()));
-        for (int j = method_refs->length() - 1; j >= 0; j--) {
+        for (int j = 0; j < method_refs->length(); j++) {
           Method* method = method_refs->at(j);
-          assert(method != NULL, "method ref was unexpectedly cleared");
 
-          // Remove the emcp method if it's not executing
-          // If it's been made obsolete by a redefinition of a non-emcp
-          // method, mark it as obsolete but leave it to clean up later.
           if (!method->on_stack()) {
-            method_refs->remove_at(j);
-          } else if (emcp_method_count == 0) {
-            method->set_is_obsolete();
+            // no breakpoints for non-running methods
+            if (method->is_running_emcp()) {
+              method->set_running_emcp(false);
+            }
           } else {
+            assert (method->is_obsolete() || method->is_running_emcp(),
+                    "emcp method cannot run after emcp bit is cleared");
             // RC_TRACE macro has an embedded ResourceMark
             RC_TRACE(0x00000200,
               ("purge: %s(%s): prev method @%d in version @%d is alive",
               method->name()->as_C_string(),
-              method->signature()->as_C_string(), j, i));
+              method->signature()->as_C_string(), j, version));
             if (method->method_data() != NULL) {
-              // Clean out any weak method links
+              // Clean out any weak method links for running methods
+              // (also should include not EMCP methods)
               method->method_data()->clean_weak_method_links();
             }
           }
         }
       }
+      // next previous version
+      last = pv_node;
+      pv_node = pv_node->previous_versions();
+      version++;
     }
-    assert(ik->previous_versions()->length() == live_count, "sanity check");
     RC_TRACE(0x00000200,
       ("purge: previous version stats: live=%d, deleted=%d", live_count,
       deleted_count));
   }
 
+  // Clean MethodData of this class's methods so they don't refer to
+  // old methods that are no longer running.
   Array<Method*>* methods = ik->methods();
   int num_methods = methods->length();
   for (int index2 = 0; index2 < num_methods; ++index2) {
@@ -3540,122 +3531,30 @@ static void purge_previous_versions_internal(InstanceKlass* ik, int emcp_method_
   }
 }
 
-// External interface for use during class unloading.
-void InstanceKlass::purge_previous_versions(InstanceKlass* ik) {
-  // Call with >0 emcp methods since they are not currently being redefined.
-  purge_previous_versions_internal(ik, 1);
-}
-
-
-// Potentially add an information node that contains pointers to the
-// interesting parts of the previous version of the_class.
-// This is also where we clean out any unused references.
-// Note that while we delete nodes from the _previous_versions
-// array, we never delete the array itself until the klass is
-// unloaded. The has_been_redefined() query depends on that fact.
-//
-void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
-       BitMap* emcp_methods, int emcp_method_count) {
-  assert(Thread::current()->is_VM_thread(),
-         "only VMThread can add previous versions");
-
-  if (_previous_versions == NULL) {
-    // This is the first previous version so make some space.
-    // Start with 2 elements under the assumption that the class
-    // won't be redefined much.
-    _previous_versions =  new (ResourceObj::C_HEAP, mtClass)
-                            GrowableArray<PreviousVersionNode *>(2, true);
-  }
-
-  ConstantPool* cp_ref = ikh->constants();
-
-  // RC_TRACE macro has an embedded ResourceMark
-  RC_TRACE(0x00000400, ("adding previous version ref for %s @%d, EMCP_cnt=%d "
-                        "on_stack=%d",
-    ikh->external_name(), _previous_versions->length(), emcp_method_count,
-    cp_ref->on_stack()));
-
-  // If the constant pool for this previous version of the class
-  // is not marked as being on the stack, then none of the methods
-  // in this previous version of the class are on the stack so
-  // we don't need to create a new PreviousVersionNode. However,
-  // we still need to examine older previous versions below.
-  Array<Method*>* old_methods = ikh->methods();
-
-  if (cp_ref->on_stack()) {
-    PreviousVersionNode * pv_node = NULL;
-    if (emcp_method_count == 0) {
-      // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, NULL);
-      RC_TRACE(0x00000400,
-          ("add: all methods are obsolete; flushing any EMCP refs"));
-    } else {
-      int local_count = 0;
-      GrowableArray<Method*>* method_refs = new (ResourceObj::C_HEAP, mtClass)
-          GrowableArray<Method*>(emcp_method_count, true);
-      for (int i = 0; i < old_methods->length(); i++) {
-        if (emcp_methods->at(i)) {
-            // this old method is EMCP. Save it only if it's on the stack
-            Method* old_method = old_methods->at(i);
-            if (old_method->on_stack()) {
-              method_refs->append(old_method);
-            }
-          if (++local_count >= emcp_method_count) {
-            // no more EMCP methods so bail out now
-            break;
-          }
-        }
-      }
-      // non-shared ConstantPool gets a reference
-      pv_node = new PreviousVersionNode(cp_ref, method_refs);
-    }
-    // append new previous version.
-    _previous_versions->append(pv_node);
-  }
-
-  // Since the caller is the VMThread and we are at a safepoint, this
-  // is a good time to clear out unused references.
-
-  RC_TRACE(0x00000400, ("add: previous version length=%d",
-    _previous_versions->length()));
-
-  // Purge previous versions not executing on the stack
-  purge_previous_versions_internal(this, emcp_method_count);
-
+void InstanceKlass::mark_newly_obsolete_methods(Array<Method*>* old_methods,
+                                                int emcp_method_count) {
   int obsolete_method_count = old_methods->length() - emcp_method_count;
 
   if (emcp_method_count != 0 && obsolete_method_count != 0 &&
-      _previous_versions->length() > 0) {
+      _previous_versions != NULL) {
     // We have a mix of obsolete and EMCP methods so we have to
     // clear out any matching EMCP method entries the hard way.
     int local_count = 0;
     for (int i = 0; i < old_methods->length(); i++) {
-      if (!emcp_methods->at(i)) {
+      Method* old_method = old_methods->at(i);
+      if (old_method->is_obsolete()) {
         // only obsolete methods are interesting
-        Method* old_method = old_methods->at(i);
         Symbol* m_name = old_method->name();
         Symbol* m_signature = old_method->signature();
 
-        // we might not have added the last entry
-        for (int j = _previous_versions->length() - 1; j >= 0; j--) {
-          // check the previous versions array for non executing obsolete methods
-          PreviousVersionNode * pv_node = _previous_versions->at(j);
+        // previous versions are linked together through the InstanceKlass
+        int j = 0;
+        for (InstanceKlass* prev_version = _previous_versions;
+             prev_version != NULL;
+             prev_version = prev_version->previous_versions(), j++) {
 
-          GrowableArray<Method*>* method_refs = pv_node->prev_EMCP_methods();
-          if (method_refs == NULL) {
-            // We have run into a PreviousVersion generation where
-            // all methods were made obsolete during that generation's
-            // RedefineClasses() operation. At the time of that
-            // operation, all EMCP methods were flushed so we don't
-            // have to go back any further.
-            //
-            // A NULL method_refs is different than an empty method_refs.
-            // We cannot infer any optimizations about older generations
-            // from an empty method_refs for the current generation.
-            break;
-          }
-
-          for (int k = method_refs->length() - 1; k >= 0; k--) {
+          Array<Method*>* method_refs = prev_version->methods();
+          for (int k = 0; k < method_refs->length(); k++) {
             Method* method = method_refs->at(k);
 
             if (!method->is_obsolete() &&
@@ -3663,14 +3562,11 @@ void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
                 method->signature() == m_signature) {
               // The current RedefineClasses() call has made all EMCP
               // versions of this method obsolete so mark it as obsolete
-              // and remove the reference.
               RC_TRACE(0x00000400,
                 ("add: %s(%s): flush obsolete method @%d in version @%d",
                 m_name->as_C_string(), m_signature->as_C_string(), k, j));
 
               method->set_is_obsolete();
-              // Leave obsolete methods on the previous version list to
-              // clean up later.
               break;
             }
           }
@@ -3678,9 +3574,9 @@ void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
           // The previous loop may not find a matching EMCP method, but
           // that doesn't mean that we can optimize and not go any
           // further back in the PreviousVersion generations. The EMCP
-          // method for this generation could have already been deleted,
+          // method for this generation could have already been made obsolete,
           // but there still may be an older EMCP method that has not
-          // been deleted.
+          // been made obsolete.
         }
 
         if (++local_count >= obsolete_method_count) {
@@ -3690,13 +3586,67 @@ void InstanceKlass::add_previous_version(instanceKlassHandle ikh,
       }
     }
   }
+}
+
+// Save the scratch_class as the previous version if any of the methods are running.
+// The previous_versions are used to set breakpoints in EMCP methods and they are
+// also used to clean MethodData links to redefined methods that are no longer running.
+void InstanceKlass::add_previous_version(instanceKlassHandle scratch_class,
+                                         int emcp_method_count) {
+  assert(Thread::current()->is_VM_thread(),
+         "only VMThread can add previous versions");
+
+  // RC_TRACE macro has an embedded ResourceMark
+  RC_TRACE(0x00000400, ("adding previous version ref for %s, EMCP_cnt=%d",
+    scratch_class->external_name(), emcp_method_count));
+
+  // Clean out old previous versions
+  purge_previous_versions(this);
+
+  // Mark newly obsolete methods in remaining previous versions.  An EMCP method from
+  // a previous redefinition may be made obsolete by this redefinition.
+  Array<Method*>* old_methods = scratch_class->methods();
+  mark_newly_obsolete_methods(old_methods, emcp_method_count);
+
+  // If the constant pool for this previous version of the class
+  // is not marked as being on the stack, then none of the methods
+  // in this previous version of the class are on the stack so
+  // we don't need to add this as a previous version.
+  ConstantPool* cp_ref = scratch_class->constants();
+  if (!cp_ref->on_stack()) {
+    RC_TRACE(0x00000400, ("add: scratch class not added; no methods are running"));
+    return;
+  }
+
+  if (emcp_method_count != 0) {
+    // At least one method is still running, check for EMCP methods
+    for (int i = 0; i < old_methods->length(); i++) {
+      Method* old_method = old_methods->at(i);
+      if (!old_method->is_obsolete() && old_method->on_stack()) {
+        // if EMCP method (not obsolete) is on the stack, mark as EMCP so that
+        // we can add breakpoints for it.
+
+        // We set the method->on_stack bit during safepoints for class redefinition and
+        // class unloading and use this bit to set the is_running_emcp bit.
+        // After the safepoint, the on_stack bit is cleared and the running emcp
+        // method may exit.   If so, we would set a breakpoint in a method that
+        // is never reached, but this won't be noticeable to the programmer.
+        old_method->set_running_emcp(true);
+        RC_TRACE(0x00000400, ("add: EMCP method %s is on_stack " INTPTR_FORMAT,
+                              old_method->name_and_sig_as_C_string(), old_method));
+      } else if (!old_method->is_obsolete()) {
+        RC_TRACE(0x00000400, ("add: EMCP method %s is NOT on_stack " INTPTR_FORMAT,
+                              old_method->name_and_sig_as_C_string(), old_method));
+      }
+    }
+  }
+
+  // Add previous version if any methods are still running.
+  RC_TRACE(0x00000400, ("add: scratch class added; one of its methods is on_stack"));
+  assert(scratch_class->previous_versions() == NULL, "shouldn't have a previous version");
+  scratch_class->link_previous_versions(previous_versions());
+  link_previous_versions(scratch_class());
 } // end add_previous_version()
-
-
-// Determine if InstanceKlass has a previous version.
-bool InstanceKlass::has_previous_version() const {
-  return (_previous_versions != NULL && _previous_versions->length() > 0);
-} // end has_previous_version()
 
 
 Method* InstanceKlass::method_with_idnum(int idnum) {
@@ -3724,61 +3674,3 @@ jint InstanceKlass::get_cached_class_file_len() {
 unsigned char * InstanceKlass::get_cached_class_file_bytes() {
   return VM_RedefineClasses::get_cached_class_file_bytes(_cached_class_file);
 }
-
-
-// Construct a PreviousVersionNode entry for the array hung off
-// the InstanceKlass.
-PreviousVersionNode::PreviousVersionNode(ConstantPool* prev_constant_pool,
-  GrowableArray<Method*>* prev_EMCP_methods) {
-
-  _prev_constant_pool = prev_constant_pool;
-  _prev_EMCP_methods = prev_EMCP_methods;
-}
-
-
-// Destroy a PreviousVersionNode
-PreviousVersionNode::~PreviousVersionNode() {
-  if (_prev_constant_pool != NULL) {
-    _prev_constant_pool = NULL;
-  }
-
-  if (_prev_EMCP_methods != NULL) {
-    delete _prev_EMCP_methods;
-  }
-}
-
-// Construct a helper for walking the previous versions array
-PreviousVersionWalker::PreviousVersionWalker(Thread* thread, InstanceKlass *ik) {
-  _thread = thread;
-  _previous_versions = ik->previous_versions();
-  _current_index = 0;
-  _current_p = NULL;
-  _current_constant_pool_handle = constantPoolHandle(thread, ik->constants());
-}
-
-
-// Return the interesting information for the next previous version
-// of the klass. Returns NULL if there are no more previous versions.
-PreviousVersionNode* PreviousVersionWalker::next_previous_version() {
-  if (_previous_versions == NULL) {
-    // no previous versions so nothing to return
-    return NULL;
-  }
-
-  _current_p = NULL;  // reset to NULL
-  _current_constant_pool_handle = NULL;
-
-  int length = _previous_versions->length();
-
-  while (_current_index < length) {
-    PreviousVersionNode * pv_node = _previous_versions->at(_current_index++);
-
-    // Save a handle to the constant pool for this previous version,
-    // which keeps all the methods from being deallocated.
-    _current_constant_pool_handle = constantPoolHandle(_thread, pv_node->prev_constant_pool());
-    _current_p = pv_node;
-    return pv_node;
-  }
-
-  return NULL;
-} // end next_previous_version()

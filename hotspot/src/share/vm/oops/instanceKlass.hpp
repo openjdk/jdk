@@ -59,7 +59,6 @@ class BreakpointInfo;
 class fieldDescriptor;
 class DepChange;
 class nmethodBucket;
-class PreviousVersionNode;
 class JvmtiCachedClassFieldMap;
 class MemberNameTable;
 
@@ -205,7 +204,8 @@ class InstanceKlass: public Klass {
     _misc_should_verify_class  = 1 << 2, // allow caching of preverification
     _misc_is_anonymous         = 1 << 3, // has embedded _host_klass field
     _misc_is_contended         = 1 << 4, // marked with contended annotation
-    _misc_has_default_methods  = 1 << 5  // class/superclass/implemented interfaces has default methods
+    _misc_has_default_methods  = 1 << 5, // class/superclass/implemented interfaces has default methods
+    _misc_has_been_redefined   = 1 << 6  // class has been redefined
   };
   u2              _misc_flags;
   u2              _minor_version;        // minor version number of class file
@@ -220,9 +220,8 @@ class InstanceKlass: public Klass {
   nmethodBucket*  _dependencies;         // list of dependent nmethods
   nmethod*        _osr_nmethods_head;    // Head of list of on-stack replacement nmethods for this class
   BreakpointInfo* _breakpoints;          // bpt lists, managed by Method*
-  // Array of interesting part(s) of the previous version(s) of this
-  // InstanceKlass. See PreviousVersionWalker below.
-  GrowableArray<PreviousVersionNode *>* _previous_versions;
+  // Linked instanceKlasses of previous versions
+  InstanceKlass* _previous_versions;
   // JVMTI fields can be moved to their own structure - see 6315920
   // JVMTI: cached class file, before retransformable agent modified it in CFLH
   JvmtiCachedClassFileData* _cached_class_file;
@@ -608,18 +607,19 @@ class InstanceKlass: public Klass {
   }
 
   // RedefineClasses() support for previous versions:
-  void add_previous_version(instanceKlassHandle ikh, BitMap *emcp_methods,
-         int emcp_method_count);
-  // If the _previous_versions array is non-NULL, then this klass
-  // has been redefined at least once even if we aren't currently
-  // tracking a previous version.
-  bool has_been_redefined() const { return _previous_versions != NULL; }
-  bool has_previous_version() const;
+  void add_previous_version(instanceKlassHandle ikh, int emcp_method_count);
+
+  InstanceKlass* previous_versions() const { return _previous_versions; }
+
+  bool has_been_redefined() const {
+    return (_misc_flags & _misc_has_been_redefined) != 0;
+  }
+  void set_has_been_redefined() {
+    _misc_flags |= _misc_has_been_redefined;
+  }
+
   void init_previous_versions() {
     _previous_versions = NULL;
-  }
-  GrowableArray<PreviousVersionNode *>* previous_versions() const {
-    return _previous_versions;
   }
 
   static void purge_previous_versions(InstanceKlass* ik);
@@ -1042,6 +1042,10 @@ private:
 
   // Free CHeap allocated fields.
   void release_C_heap_structures();
+
+  // RedefineClasses support
+  void link_previous_versions(InstanceKlass* pv) { _previous_versions = pv; }
+  void mark_newly_obsolete_methods(Array<Method*>* old_methods, int emcp_method_count);
 public:
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
@@ -1138,62 +1142,6 @@ class JNIid: public CHeapObj<mtClass> {
   void set_is_static_field_id()   { _is_static_field_id = true; }
 #endif
   void verify(Klass* holder);
-};
-
-
-// If breakpoints are more numerous than just JVMTI breakpoints,
-// consider compressing this data structure.
-// It is currently a simple linked list defined in method.hpp.
-
-class BreakpointInfo;
-
-
-// A collection point for interesting information about the previous
-// version(s) of an InstanceKlass.  A GrowableArray of PreviousVersionNodes
-// is attached to the InstanceKlass as needed. See PreviousVersionWalker below.
-class PreviousVersionNode : public CHeapObj<mtClass> {
- private:
-  ConstantPool*    _prev_constant_pool;
-
-  // If the previous version of the InstanceKlass doesn't have any
-  // EMCP methods, then _prev_EMCP_methods will be NULL. If all the
-  // EMCP methods have been collected, then _prev_EMCP_methods can
-  // have a length of zero.
-  GrowableArray<Method*>* _prev_EMCP_methods;
-
-public:
-  PreviousVersionNode(ConstantPool* prev_constant_pool,
-                      GrowableArray<Method*>* prev_EMCP_methods);
-  ~PreviousVersionNode();
-  ConstantPool* prev_constant_pool() const {
-    return _prev_constant_pool;
-  }
-  GrowableArray<Method*>* prev_EMCP_methods() const {
-    return _prev_EMCP_methods;
-  }
-};
-
-
-// Helper object for walking previous versions.
-class PreviousVersionWalker : public StackObj {
- private:
-  Thread*                               _thread;
-  GrowableArray<PreviousVersionNode *>* _previous_versions;
-  int                                   _current_index;
-
-  // A pointer to the current node object so we can handle the deletes.
-  PreviousVersionNode*                  _current_p;
-
-  // The constant pool handle keeps all the methods in this class from being
-  // deallocated from the metaspace during class unloading.
-  constantPoolHandle                    _current_constant_pool_handle;
-
- public:
-  PreviousVersionWalker(Thread* thread, InstanceKlass *ik);
-
-  // Return the interesting information for the next previous version
-  // of the klass. Returns NULL if there are no more previous versions.
-  PreviousVersionNode* next_previous_version();
 };
 
 
