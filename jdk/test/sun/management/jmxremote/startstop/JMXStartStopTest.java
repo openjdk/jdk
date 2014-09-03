@@ -617,7 +617,10 @@ public class JMXStartStopTest {
                 busyPort = ss.getLocalPort();
                 jcmd(
                     line -> {
-                        if (line.contains("Port already in use: " + busyPort)) {
+                        boolean match = line.contains("Port already in use: " +
+                                                      busyPort);
+                        System.out.println("[match] " + line + " => "  + match);
+                        if (match) {
                             checks.getAndUpdate((op) -> op | 4);
                         }
                     },
