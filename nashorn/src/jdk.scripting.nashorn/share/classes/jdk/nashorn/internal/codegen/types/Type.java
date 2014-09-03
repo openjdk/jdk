@@ -333,7 +333,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      */
     public static Map<Integer, Type> readTypeMap(final DataInput input) throws IOException {
         final int size = input.readInt();
-        if (size == 0) {
+        if (size <= 0) {
             return null;
         }
         final Map<Integer, Type> map = new TreeMap<>();
@@ -345,7 +345,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
                 case 'L': type = Type.OBJECT; break;
                 case 'D': type = Type.NUMBER; break;
                 case 'J': type = Type.LONG; break;
-                default: throw new AssertionError();
+                default: continue;
             }
             map.put(pp, type);
         }
