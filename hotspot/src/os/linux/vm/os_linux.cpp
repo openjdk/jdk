@@ -2120,6 +2120,40 @@ void os::print_dll_info(outputStream *st) {
    }
 }
 
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  FILE *procmapsFile = NULL;
+
+  // Open the procfs maps file for the current process
+  if ((procmapsFile = fopen("/proc/self/maps", "r")) != NULL) {
+    // Allocate PATH_MAX for file name plus a reasonable size for other fields.
+    char line[PATH_MAX + 100];
+
+    // Read line by line from 'file'
+    while (fgets(line, sizeof(line), procmapsFile) != NULL) {
+      u8 base, top, offset, inode;
+      char permissions[5];
+      char device[6];
+      char name[PATH_MAX + 1];
+
+      // Parse fields from line
+      sscanf(line, "%lx-%lx %4s %lx %5s %ld %s", &base, &top, permissions, &offset, device, &inode, name);
+
+      // Filter by device id '00:00' so that we only get file system mapped files.
+      if (strcmp(device, "00:00") != 0) {
+
+        // Call callback with the fields of interest
+        if(callback(name, (address)base, (address)top, param)) {
+          // Oops abort, callback aborted
+          fclose(procmapsFile);
+          return 1;
+        }
+      }
+    }
+    fclose(procmapsFile);
+  }
+  return 0;
+}
+
 void os::print_os_info_brief(outputStream* st) {
   os::Linux::print_distro_info(st);
 
