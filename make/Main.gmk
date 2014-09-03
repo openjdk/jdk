@@ -236,11 +236,11 @@ nashorn-jar:
 
 # Creates the jar files (rt.jar resources.jar etc)
 main-jars:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f CreateJars.gmk)
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE="" -f CreateJars.gmk)
 
 # Creates the images (j2sdk-image j2re-image etc)
 images:
-	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Images.gmk)
+	+($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) PROFILE="" -f Images.gmk)
         ifeq ($(OPENJDK_TARGET_OS), macosx)
 	  +($(CD) $(JDK_TOPDIR)/make && $(MAKE) $(MAKE_ARGS) -f Bundles.gmk)
         endif
