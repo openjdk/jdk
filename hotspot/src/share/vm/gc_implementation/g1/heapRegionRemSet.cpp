@@ -448,10 +448,10 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 
   // Note that this may be a continued H region.
   HeapRegion* from_hr = _g1h->heap_region_containing_raw(from);
-  RegionIdx_t from_hrs_ind = (RegionIdx_t) from_hr->hrm_index();
+  RegionIdx_t from_hrm_ind = (RegionIdx_t) from_hr->hrm_index();
 
   // If the region is already coarsened, return.
-  if (_coarse_map.at(from_hrs_ind)) {
+  if (_coarse_map.at(from_hrm_ind)) {
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print_cr("  coarse map hit.");
     }
@@ -460,7 +460,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
   }
 
   // Otherwise find a per-region table to add it to.
-  size_t ind = from_hrs_ind & _mod_max_fine_entries_mask;
+  size_t ind = from_hrm_ind & _mod_max_fine_entries_mask;
   PerRegionTable* prt = find_region_table(ind, from_hr);
   if (prt == NULL) {
     MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
@@ -475,7 +475,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
       assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
-          _sparse_table.add_card(from_hrs_ind, card_index)) {
+          _sparse_table.add_card(from_hrm_ind, card_index)) {
         if (G1RecordHRRSOops) {
           HeapRegionRemSet::record(hr(), from);
           if (G1TraceHeapRegionRememberedSet) {
@@ -495,7 +495,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         if (G1TraceHeapRegionRememberedSet) {
           gclog_or_tty->print_cr("   [tid %d] sparse table entry "
                         "overflow(f: %d, t: %u)",
-                        tid, from_hrs_ind, cur_hrm_ind);
+                        tid, from_hrm_ind, cur_hrm_ind);
         }
       }
 
@@ -516,7 +516,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 
       if (G1HRRSUseSparseTable) {
         // Transfer from sparse to fine-grain.
-        SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrs_ind);
+        SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrm_ind);
         assert(sprt_entry != NULL, "There should have been an entry");
         for (int i = 0; i < SparsePRTEntry::cards_num(); i++) {
           CardIdx_t c = sprt_entry->card(i);
@@ -525,7 +525,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
           }
         }
         // Now we can delete the sparse entry.
-        bool res = _sparse_table.delete_entry(from_hrs_ind);
+        bool res = _sparse_table.delete_entry(from_hrm_ind);
         assert(res, "It should have been there.");
       }
     }
