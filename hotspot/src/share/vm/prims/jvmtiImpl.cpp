@@ -282,39 +282,22 @@ address JvmtiBreakpoint::getBcp() {
 void JvmtiBreakpoint::each_method_version_do(method_action meth_act) {
   ((Method*)_method->*meth_act)(_bci);
 
-  // add/remove breakpoint to/from versions of the method that
-  // are EMCP. Directly or transitively obsolete methods are
-  // not saved in the PreviousVersionNodes.
+  // add/remove breakpoint to/from versions of the method that are EMCP.
   Thread *thread = Thread::current();
   instanceKlassHandle ikh = instanceKlassHandle(thread, _method->method_holder());
   Symbol* m_name = _method->name();
   Symbol* m_signature = _method->signature();
 
   // search previous versions if they exist
-  PreviousVersionWalker pvw(thread, (InstanceKlass *)ikh());
-  for (PreviousVersionNode * pv_node = pvw.next_previous_version();
-       pv_node != NULL; pv_node = pvw.next_previous_version()) {
-    GrowableArray<Method*>* methods = pv_node->prev_EMCP_methods();
-
-    if (methods == NULL) {
-      // We have run into a PreviousVersion generation where
-      // all methods were made obsolete during that generation's
-      // RedefineClasses() operation. At the time of that
-      // operation, all EMCP methods were flushed so we don't
-      // have to go back any further.
-      //
-      // A NULL methods array is different than an empty methods
-      // array. We cannot infer any optimizations about older
-      // generations from an empty methods array for the current
-      // generation.
-      break;
-    }
+  for (InstanceKlass* pv_node = ikh->previous_versions();
+       pv_node != NULL;
+       pv_node = pv_node->previous_versions()) {
+    Array<Method*>* methods = pv_node->methods();
 
     for (int i = methods->length() - 1; i >= 0; i--) {
       Method* method = methods->at(i);
-      // obsolete methods that are running are not deleted from
-      // previous version array, but they are skipped here.
-      if (!method->is_obsolete() &&
+      // Only set breakpoints in running EMCP methods.
+      if (method->is_running_emcp() &&
           method->name() == m_name &&
           method->signature() == m_signature) {
         RC_TRACE(0x00000800, ("%sing breakpoint in %s(%s)",
