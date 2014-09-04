@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @test
  * @bug 8013394
  * @summary compile of iterator use fails with error "defined in an inaccessible class or interface"
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main CompileErrorWithIteratorTest
  */
@@ -71,15 +71,16 @@ public class CompileErrorWithIteratorTest {
         new CompileErrorWithIteratorTest().run();
     }
 
+    ToolBox tb = new ToolBox();
+
     void run() throws Exception {
         compile();
     }
 
     void compile() throws Exception {
-        ToolBox.JavaToolArgs javacParams =
-                new ToolBox.JavaToolArgs()
-                .setSources(TestCollectionSrc, TestSrc);
-        ToolBox.javac(javacParams);
+        tb.new JavacTask()
+                .sources(TestCollectionSrc, TestSrc)
+                .run();
     }
 
 }

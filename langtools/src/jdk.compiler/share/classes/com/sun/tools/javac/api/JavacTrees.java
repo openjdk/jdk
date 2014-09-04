@@ -96,6 +96,8 @@ import com.sun.tools.javac.tree.TreeMaker;
 import com.sun.tools.javac.util.Abort;
 import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
@@ -176,21 +178,25 @@ public class JavacTrees extends DocTrees {
             javacTaskImpl = (JavacTaskImpl) t;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public DocSourcePositions getSourcePositions() {
         return new DocSourcePositions() {
+                @DefinedBy(Api.COMPILER_TREE)
                 public long getStartPosition(CompilationUnitTree file, Tree tree) {
                     return TreeInfo.getStartPos((JCTree) tree);
                 }
 
+                @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, Tree tree) {
                     EndPosTable endPosTable = ((JCCompilationUnit) file).endPositions;
                     return TreeInfo.getEndPos((JCTree) tree, endPosTable);
                 }
 
+                @DefinedBy(Api.COMPILER_TREE)
                 public long getStartPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     return ((DCTree) tree).getSourcePosition((DCDocComment) comment);
                 }
-                @SuppressWarnings("fallthrough")
+                @SuppressWarnings("fallthrough") @DefinedBy(Api.COMPILER_TREE)
                 public long getEndPosition(CompilationUnitTree file, DocCommentTree comment, DocTree tree) {
                     DCDocComment dcComment = (DCDocComment) comment;
                     if (tree instanceof DCEndPosTree) {
@@ -251,7 +257,8 @@ public class JavacTrees extends DocTrees {
         final DocTree[] last = new DocTree[] {null};
 
         tree.accept(new DocTreeScanner<Void, Void>() {
-            @Override public Void scan(DocTree node, Void p) {
+            @Override @DefinedBy(Api.COMPILER_TREE)
+ public Void scan(DocTree node, Void p) {
                 if (node != null) last[0] = node;
                 return null;
             }
@@ -260,22 +267,27 @@ public class JavacTrees extends DocTrees {
         return last[0];
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCClassDecl getTree(TypeElement element) {
         return (JCClassDecl) getTree((Element) element);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCMethodDecl getTree(ExecutableElement method) {
         return (JCMethodDecl) getTree((Element) method);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree getTree(Element element) {
         return getTree(element, null);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree getTree(Element e, AnnotationMirror a) {
         return getTree(e, a, null);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JCTree getTree(Element e, AnnotationMirror a, AnnotationValue v) {
         Pair<JCTree, JCCompilationUnit> treeTopLevel = elements.getTreeAndTopLevel(e, a, v);
         if (treeTopLevel == null)
@@ -283,18 +295,22 @@ public class JavacTrees extends DocTrees {
         return treeTopLevel.fst;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TreePath getPath(CompilationUnitTree unit, Tree node) {
         return TreePath.getPath(unit, node);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TreePath getPath(Element e) {
         return getPath(e, null, null);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TreePath getPath(Element e, AnnotationMirror a) {
         return getPath(e, a, null);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TreePath getPath(Element e, AnnotationMirror a, AnnotationValue v) {
         final Pair<JCTree, JCCompilationUnit> treeTopLevel = elements.getTreeAndTopLevel(e, a, v);
         if (treeTopLevel == null)
@@ -302,6 +318,7 @@ public class JavacTrees extends DocTrees {
         return TreePath.getPath(treeTopLevel.snd, treeTopLevel.fst);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Symbol getElement(TreePath path) {
         JCTree tree = (JCTree) path.getLeaf();
         Symbol sym = TreeInfo.symbolFor(tree);
@@ -325,7 +342,7 @@ public class JavacTrees extends DocTrees {
         return sym;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Element getElement(DocTreePath path) {
         DocTree forTree = path.getLeaf();
         if (forTree instanceof DCReference)
@@ -675,15 +692,18 @@ public class JavacTrees extends DocTrees {
         }
     };
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getTypeMirror(TreePath path) {
         Tree t = path.getLeaf();
         return ((JCTree)t).type;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JavacScope getScope(TreePath path) {
         return JavacScope.create(getAttrContext(path));
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public String getDocComment(TreePath path) {
         CompilationUnitTree t = path.getCompilationUnit();
         Tree leaf = path.getLeaf();
@@ -696,6 +716,7 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public DocCommentTree getDocCommentTree(TreePath path) {
         CompilationUnitTree t = path.getCompilationUnit();
         Tree leaf = path.getLeaf();
@@ -708,6 +729,7 @@ public class JavacTrees extends DocTrees {
         return null;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public boolean isAccessible(Scope scope, TypeElement type) {
         if (scope instanceof JavacScope && type instanceof ClassSymbol) {
             Env<AttrContext> env = ((JavacScope) scope).env;
@@ -716,6 +738,7 @@ public class JavacTrees extends DocTrees {
             return false;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public boolean isAccessible(Scope scope, Element member, DeclaredType type) {
         if (scope instanceof JavacScope
                 && member instanceof Symbol
@@ -735,11 +758,7 @@ public class JavacTrees extends DocTrees {
         // if we're being invoked from JSR 199 or JSR 269, then the classes
         // will already have been entered.
         if (javacTaskImpl != null) {
-            try {
-                javacTaskImpl.enter(null);
-            } catch (IOException e) {
-                throw new Error("unexpected error while entering symbols: " + e);
-            }
+            javacTaskImpl.enter(null);
         }
 
 
@@ -856,6 +875,7 @@ public class JavacTrees extends DocTrees {
      * @returns TypeMirror corresponding to the original type, replaced by the ErrorType.
      *          noType (type.tag == NONE) is returned if there is no original type.
      */
+    @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getOriginalType(javax.lang.model.type.ErrorType errorType) {
         if (errorType instanceof com.sun.tools.javac.code.Type.ErrorType) {
             return ((com.sun.tools.javac.code.Type.ErrorType)errorType).getOriginalType();
@@ -873,12 +893,14 @@ public class JavacTrees extends DocTrees {
      * @param t    the tree to use as a position hint
      * @param root the compilation unit that contains tree
      */
+    @DefinedBy(Api.COMPILER_TREE)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
             com.sun.source.tree.Tree t,
             com.sun.source.tree.CompilationUnitTree root) {
         printMessage(kind, msg, ((JCTree) t).pos(), root);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
             com.sun.source.doctree.DocTree t,
             com.sun.source.doctree.DocCommentTree c,
@@ -927,7 +949,7 @@ public class JavacTrees extends DocTrees {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public TypeMirror getLub(CatchTree tree) {
         JCCatch ct = (JCCatch) tree;
         JCVariableDecl v = ct.param;

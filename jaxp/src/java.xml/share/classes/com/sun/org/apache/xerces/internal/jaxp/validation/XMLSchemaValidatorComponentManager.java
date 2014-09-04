@@ -1,13 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-/*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -69,13 +66,41 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
     private static final String VALIDATION =
         Constants.SAX_FEATURE_PREFIX + Constants.VALIDATION_FEATURE;
 
+    /** Feature identifier: use grammar pool only. */
+    private static final String USE_GRAMMAR_POOL_ONLY =
+        Constants.XERCES_FEATURE_PREFIX + Constants.USE_GRAMMAR_POOL_ONLY_FEATURE;
+
+    /** Feature identifier: whether to ignore xsi:type attributes until a global element declaration is encountered */
+    protected static final String IGNORE_XSI_TYPE =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IGNORE_XSI_TYPE_FEATURE;
+
+    /** Feature identifier: whether to ignore ID/IDREF errors */
+    protected static final String ID_IDREF_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.ID_IDREF_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore unparsed entity errors */
+    protected static final String UNPARSED_ENTITY_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.UNPARSED_ENTITY_CHECKING_FEATURE;
+
+    /** Feature identifier: whether to ignore identity constraint errors */
+    protected static final String IDENTITY_CONSTRAINT_CHECKING =
+        Constants.XERCES_FEATURE_PREFIX + Constants.IDC_CHECKING_FEATURE;
+
+    /** Feature identifier: disallow DOCTYPE declaration */
+    private static final String DISALLOW_DOCTYPE_DECL_FEATURE =
+        Constants.XERCES_FEATURE_PREFIX + Constants.DISALLOW_DOCTYPE_DECL_FEATURE;
+
+    /** Feature identifier: expose schema normalized value */
+    private static final String NORMALIZE_DATA =
+        Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_NORMALIZED_VALUE;
+
     /** Feature identifier: send element default value via characters() */
     private static final String SCHEMA_ELEMENT_DEFAULT =
         Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_ELEMENT_DEFAULT;
 
-    /** Feature identifier: use grammar pool only. */
-    private static final String USE_GRAMMAR_POOL_ONLY =
-        Constants.XERCES_FEATURE_PREFIX + Constants.USE_GRAMMAR_POOL_ONLY_FEATURE;
+    /** Feature identifier: augment PSVI */
+    private static final String SCHEMA_AUGMENT_PSVI =
+        Constants.XERCES_FEATURE_PREFIX + Constants.SCHEMA_AUGMENT_PSVI;
 
     // property identifiers
 
@@ -230,9 +255,31 @@ final class XMLSchemaValidatorComponentManager extends ParserConfigurationSettin
         fErrorReporter.putMessageFormatter(XSMessageFormatter.SCHEMA_DOMAIN, new XSMessageFormatter());
 
         // add all recognized features and properties and apply their defaults
+        final String [] recognizedFeatures = {
+                DISALLOW_DOCTYPE_DECL_FEATURE,
+                NORMALIZE_DATA,
+                SCHEMA_ELEMENT_DEFAULT,
+                SCHEMA_AUGMENT_PSVI
+        };
+        addRecognizedFeatures(recognizedFeatures);
+        fFeatures.put(DISALLOW_DOCTYPE_DECL_FEATURE, Boolean.FALSE);
+        fFeatures.put(NORMALIZE_DATA, Boolean.FALSE);
+        fFeatures.put(SCHEMA_ELEMENT_DEFAULT, Boolean.FALSE);
+        fFeatures.put(SCHEMA_AUGMENT_PSVI, Boolean.TRUE);
+
         addRecognizedParamsAndSetDefaults(fEntityManager, grammarContainer);
         addRecognizedParamsAndSetDefaults(fErrorReporter, grammarContainer);
         addRecognizedParamsAndSetDefaults(fSchemaValidator, grammarContainer);
+
+        /* TODO: are other XMLSchemaValidator default values never set?
+         * Initial investigation indicates that they aren't set, but
+         * that they all have default values of false, so it works out
+         * anyway -PM
+         */
+        fFeatures.put(IGNORE_XSI_TYPE, Boolean.FALSE);
+        fFeatures.put(ID_IDREF_CHECKING, Boolean.TRUE);
+        fFeatures.put(IDENTITY_CONSTRAINT_CHECKING, Boolean.TRUE);
+        fFeatures.put(UNPARSED_ENTITY_CHECKING, Boolean.TRUE);
 
         boolean secureProcessing = grammarContainer.getFeature(XMLConstants.FEATURE_SECURE_PROCESSING);
         if (System.getSecurityManager() != null) {

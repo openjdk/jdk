@@ -3198,7 +3198,7 @@ public abstract class SunFontManager implements FontSupport, FontManagerForSGE {
      * Returns an array of two strings. The first element is the
      * name of the font. The second element is the file name.
      */
-    public abstract String[] getDefaultPlatformFont();
+    protected abstract String[] getDefaultPlatformFont();
 
     // Begin: Refactored from SunGraphicsEnviroment.
 

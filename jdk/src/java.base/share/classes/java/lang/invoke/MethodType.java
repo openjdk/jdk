@@ -33,6 +33,7 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentMap;
 import java.util.concurrent.ConcurrentHashMap;
 import sun.invoke.util.BytecodeDescriptor;
@@ -717,15 +718,12 @@ class MethodType implements java.io.Serializable {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append("(");
+        StringJoiner sj = new StringJoiner(",", "(",
+                ")" + rtype.getSimpleName());
         for (int i = 0; i < ptypes.length; i++) {
-            if (i > 0)  sb.append(",");
-            sb.append(ptypes[i].getSimpleName());
+            sj.add(ptypes[i].getSimpleName());
         }
-        sb.append(")");
-        sb.append(rtype.getSimpleName());
-        return sb.toString();
+        return sj.toString();
     }
 
 

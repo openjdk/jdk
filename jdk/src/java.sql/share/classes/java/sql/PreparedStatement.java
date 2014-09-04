@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -415,7 +415,7 @@ public interface PreparedStatement extends Statement {
      * will be converted to the corresponding SQL type before being
      * sent to the database.
      *
-     * <p>Note that this method may be used to pass datatabase-
+     * <p>Note that this method may be used to pass database-
      * specific abstract data types, by using a driver-specific Java
      * type.
      *
@@ -838,7 +838,8 @@ public interface PreparedStatement extends Statement {
        throws SQLException;
 
     /**
-     * Sets the designated parameter to a <code>InputStream</code> object.  The inputstream must contain  the number
+     * Sets the designated parameter to a <code>InputStream</code> object.
+     * The {@code Inputstream} must contain  the number
      * of characters specified by length otherwise a <code>SQLException</code> will be
      * generated when the <code>PreparedStatement</code> is executed.
      * This method differs from the <code>setBinaryStream (int, InputStream, int)</code>
@@ -854,8 +855,8 @@ public interface PreparedStatement extends Statement {
      * @throws SQLException if parameterIndex does not correspond to a parameter
      * marker in the SQL statement; if a database access error occurs;
      * this method is called on a closed <code>PreparedStatement</code>;
-     *  if the length specified
-     * is less than zero or if the number of bytes in the inputstream does not match
+     * if the length specified
+     * is less than zero or if the number of bytes in the {@code InputStream} does not match
      * the specified length.
      * @throws SQLFeatureNotSupportedException  if the JDBC driver does not support this method
      *

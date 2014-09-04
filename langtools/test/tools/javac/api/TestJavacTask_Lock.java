@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -51,7 +51,7 @@ public class TestJavacTask_Lock {
             int test(CompilationTask t) {
                 try {
                     ((JavacTask) t).parse();
-                return 1;
+                    return 1;
                 } catch (IOException ex) {
                     throw new Error(ex);
                 }
@@ -94,6 +94,7 @@ public class TestJavacTask_Lock {
             second.test(t);
             error("No exception thrown");
         } catch (IllegalStateException e) {
+            e.printStackTrace();
             System.err.println("Expected exception caught: " + e);
         } catch (Exception e) {
             error("Unexpected exception caught: " + e);

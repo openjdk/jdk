@@ -27,17 +27,17 @@
 
 SUNWprivate_1.1 {
 	global:
-	    Java_sun_tools_attach_LinuxVirtualMachine_checkPermissions;
-	    Java_sun_tools_attach_LinuxVirtualMachine_close;
-	    Java_sun_tools_attach_LinuxVirtualMachine_connect;
-	    Java_sun_tools_attach_LinuxVirtualMachine_getLinuxThreadsManager;
-	    Java_sun_tools_attach_LinuxVirtualMachine_isLinuxThreads;
-	    Java_sun_tools_attach_LinuxVirtualMachine_open;
-	    Java_sun_tools_attach_LinuxVirtualMachine_sendQuitTo;
-            Java_sun_tools_attach_LinuxVirtualMachine_sendQuitToChildrenOf;
-	    Java_sun_tools_attach_LinuxVirtualMachine_socket;
-	    Java_sun_tools_attach_LinuxVirtualMachine_read;
-	    Java_sun_tools_attach_LinuxVirtualMachine_write;
+	    Java_sun_tools_attach_VirtualMachineImpl_checkPermissions;
+	    Java_sun_tools_attach_VirtualMachineImpl_close;
+	    Java_sun_tools_attach_VirtualMachineImpl_connect;
+	    Java_sun_tools_attach_VirtualMachineImpl_getLinuxThreadsManager;
+	    Java_sun_tools_attach_VirtualMachineImpl_isLinuxThreads;
+	    Java_sun_tools_attach_VirtualMachineImpl_open;
+	    Java_sun_tools_attach_VirtualMachineImpl_sendQuitTo;
+            Java_sun_tools_attach_VirtualMachineImpl_sendQuitToChildrenOf;
+	    Java_sun_tools_attach_VirtualMachineImpl_socket;
+	    Java_sun_tools_attach_VirtualMachineImpl_read;
+	    Java_sun_tools_attach_VirtualMachineImpl_write;
 	local:
 		*;
 };

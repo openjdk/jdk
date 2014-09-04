@@ -31,6 +31,8 @@ import javax.tools.Diagnostic;
 import com.sun.source.doctree.*;
 import com.sun.tools.javac.parser.Tokens.Comment;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.DiagnosticSource;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
@@ -114,22 +116,27 @@ public abstract class DCTree implements DocTree {
             this.tags = tags;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.DOC_COMMENT;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitDocComment(this, d);
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getFirstSentence() {
             return firstSentence;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getBody() {
             return body;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getBlockTags() {
             return tags;
         }
@@ -137,12 +144,14 @@ public abstract class DCTree implements DocTree {
     }
 
     public static abstract class DCBlockTag extends DCTree implements BlockTagTree {
+        @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;
         }
     }
 
     public static abstract class DCInlineTag extends DCEndPosTree<DCInlineTag> implements InlineTagTree {
+        @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return getKind().tagName;
         }
@@ -160,27 +169,27 @@ public abstract class DCTree implements DocTree {
             this.value = value;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.ATTRIBUTE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitAttribute(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Name getName() {
             return name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public ValueKind getValueKind() {
             return vkind;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<DCTree> getValue() {
             return value;
         }
@@ -193,17 +202,17 @@ public abstract class DCTree implements DocTree {
             this.name = name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.AUTHOR;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitAuthor(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getName() {
             return name;
         }
@@ -216,17 +225,17 @@ public abstract class DCTree implements DocTree {
             this.body = body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.COMMENT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitComment(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getBody() {
             return body;
         }
@@ -239,17 +248,17 @@ public abstract class DCTree implements DocTree {
             this.body = body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.DEPRECATED;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitDeprecated(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getBody() {
             return body;
         }
@@ -257,12 +266,12 @@ public abstract class DCTree implements DocTree {
 
     public static class DCDocRoot extends DCInlineTag implements DocRootTree {
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.DOC_ROOT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitDocRoot(this, d);
         }
@@ -275,17 +284,17 @@ public abstract class DCTree implements DocTree {
             this.name = name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.END_ELEMENT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitEndElement(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Name getName() {
             return name;
         }
@@ -298,17 +307,17 @@ public abstract class DCTree implements DocTree {
             this.name = name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.ENTITY;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitEntity(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Name getName() {
             return name;
         }
@@ -323,22 +332,22 @@ public abstract class DCTree implements DocTree {
             this.diag = diags.error(diagSource, this, code, args);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.ERRONEOUS;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitErroneous(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getBody() {
             return body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Diagnostic<JavaFileObject> getDiagnostic() {
             return diag;
         }
@@ -372,29 +381,29 @@ public abstract class DCTree implements DocTree {
             this.name = name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.IDENTIFIER;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitIdentifier(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Name getName() {
             return name;
         }
     }
 
     public static class DCInheritDoc extends DCInlineTag implements InheritDocTree {
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.INHERIT_DOC;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitInheritDoc(this, d);
         }
@@ -412,22 +421,22 @@ public abstract class DCTree implements DocTree {
             this.label = label;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return kind;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitLink(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public ReferenceTree getReference() {
             return ref;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getLabel() {
             return label;
         }
@@ -443,17 +452,17 @@ public abstract class DCTree implements DocTree {
             this.body = body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return kind;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitLiteral(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public DCText getBody() {
             return body;
         }
@@ -470,27 +479,27 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.PARAM;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitParam(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public boolean isTypeParameter() {
             return isTypeParameter;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public IdentifierTree getName() {
             return name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
@@ -513,17 +522,17 @@ public abstract class DCTree implements DocTree {
             this.paramTypes = paramTypes;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.REFERENCE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitReference(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getSignature() {
             return signature;
         }
@@ -536,17 +545,17 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.RETURN;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitReturn(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
@@ -559,17 +568,17 @@ public abstract class DCTree implements DocTree {
             this.reference = reference;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.SEE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitSee(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getReference() {
             return reference;
         }
@@ -582,17 +591,17 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.SERIAL;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitSerial(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
@@ -605,17 +614,17 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.SERIAL_DATA;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitSerialData(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
@@ -632,27 +641,27 @@ public abstract class DCTree implements DocTree {
             this.type = type;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.SERIAL_FIELD;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitSerialField(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public IdentifierTree getName() {
             return name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public ReferenceTree getType() {
             return type;
         }
@@ -665,17 +674,17 @@ public abstract class DCTree implements DocTree {
             this.body = body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.SINCE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitSince(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getBody() {
             return body;
         }
@@ -692,27 +701,27 @@ public abstract class DCTree implements DocTree {
             this.selfClosing = selfClosing;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.START_ELEMENT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitStartElement(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Name getName() {
             return name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getAttributes() {
             return attrs;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public boolean isSelfClosing() {
             return selfClosing;
         }
@@ -725,17 +734,17 @@ public abstract class DCTree implements DocTree {
             this.text = text;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.TEXT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitText(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getBody() {
             return text;
         }
@@ -753,22 +762,22 @@ public abstract class DCTree implements DocTree {
             this.description = description;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return kind;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitThrows(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public ReferenceTree getExceptionName() {
             return name;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getDescription() {
             return description;
         }
@@ -783,22 +792,22 @@ public abstract class DCTree implements DocTree {
             this.content = content;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.UNKNOWN_BLOCK_TAG;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitUnknownBlockTag(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return name.toString();
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getContent() {
             return content;
         }
@@ -813,22 +822,22 @@ public abstract class DCTree implements DocTree {
             this.content = content;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.UNKNOWN_INLINE_TAG;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitUnknownInlineTag(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public String getTagName() {
             return name.toString();
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getContent() {
             return content;
         }
@@ -841,17 +850,17 @@ public abstract class DCTree implements DocTree {
             this.ref = ref;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.VALUE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitValue(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public ReferenceTree getReference() {
             return ref;
         }
@@ -864,17 +873,17 @@ public abstract class DCTree implements DocTree {
             this.body = body;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public Kind getKind() {
             return Kind.VERSION;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public <R, D> R accept(DocTreeVisitor<R, D> v, D d) {
             return v.visitVersion(this, d);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public List<? extends DocTree> getBody() {
             return body;
         }

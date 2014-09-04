@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
 package javax.smartcardio;
 
 import java.io.*;
-
+import java.util.StringJoiner;
 import java.security.Permission;
 
 /**
@@ -180,20 +180,14 @@ public class CardPermission extends Permission {
         if (mask == A_ALL) {
             return S_ALL;
         }
-        boolean first = true;
-        StringBuilder sb = new StringBuilder();
+        StringJoiner sj = new StringJoiner(",");
         for (int i = 0; i < ARRAY_MASKS.length; i++) {
-            int action = ARRAY_MASKS[i];
+            final int action = ARRAY_MASKS[i];
             if ((mask & action) == action) {
-                if (first == false) {
-                    sb.append(",");
-                } else {
-                    first = false;
-                }
-                sb.append(ARRAY_STRINGS[i]);
+                sj.add(ARRAY_STRINGS[i]);
             }
         }
-        return sb.toString();
+        return sj.toString();
     }
 
 

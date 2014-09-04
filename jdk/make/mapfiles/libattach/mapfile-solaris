@@ -27,12 +27,12 @@
 
 SUNWprivate_1.1 {
 	global:
-            Java_sun_tools_attach_SolarisVirtualMachine_checkPermissions;
-            Java_sun_tools_attach_SolarisVirtualMachine_enqueue;
-            Java_sun_tools_attach_SolarisVirtualMachine_open;
-	    Java_sun_tools_attach_SolarisVirtualMachine_close;
-	    Java_sun_tools_attach_SolarisVirtualMachine_read;
-	    Java_sun_tools_attach_SolarisVirtualMachine_sigquit;
+            Java_sun_tools_attach_VirtualMachineImpl_checkPermissions;
+            Java_sun_tools_attach_VirtualMachineImpl_enqueue;
+            Java_sun_tools_attach_VirtualMachineImpl_open;
+	    Java_sun_tools_attach_VirtualMachineImpl_close;
+	    Java_sun_tools_attach_VirtualMachineImpl_read;
+	    Java_sun_tools_attach_VirtualMachineImpl_sigquit;
 	local:
 		*;
 };

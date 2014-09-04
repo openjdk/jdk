@@ -131,8 +131,8 @@ AC_DEFUN_ONCE([BPERF_SETUP_BUILD_JOBS],
   if test "x$with_jobs" = x; then
     # Number of jobs was not specified, calculate.
     AC_MSG_CHECKING([for appropriate number of jobs to run in parallel])
-    # Approximate memory in GB, rounding up a bit.
-    memory_gb=`expr $MEMORY_SIZE / 1100`
+    # Approximate memory in GB.
+    memory_gb=`expr $MEMORY_SIZE / 1024`
     # Pick the lowest of memory in gb and number of cores.
     if test "$memory_gb" -lt "$NUM_CORES"; then
       JOBS="$memory_gb"
@@ -291,16 +291,11 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
       AC_MSG_ERROR([Could not execute server java: $SJAVAC_SERVER_JAVA])
     fi
   else
-    SJAVAC_SERVER_JAVA=""
-    # Hotspot specific options.
-    ADD_JVM_ARG_IF_OK([-verbosegc],SJAVAC_SERVER_JAVA,[$JAVA])
-    # JRockit specific options.
-    ADD_JVM_ARG_IF_OK([-Xverbose:gc],SJAVAC_SERVER_JAVA,[$JAVA])
-    SJAVAC_SERVER_JAVA="$JAVA $SJAVAC_SERVER_JAVA"
+    SJAVAC_SERVER_JAVA="$JAVA"
   fi
   AC_SUBST(SJAVAC_SERVER_JAVA)
 
-  if test "$MEMORY_SIZE" -gt "2500"; then
+  if test "$MEMORY_SIZE" -gt "3000"; then
     ADD_JVM_ARG_IF_OK([-d64],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
     if test "$JVM_ARG_OK" = true; then
       JVM_64BIT=true
@@ -308,34 +303,33 @@ AC_DEFUN_ONCE([BPERF_SETUP_SMART_JAVAC],
     fi
   fi
 
+  MX_VALUE=`expr $MEMORY_SIZE / 2`
   if test "$JVM_64BIT" = true; then
-    if test "$MEMORY_SIZE" -gt "17000"; then
-      ADD_JVM_ARG_IF_OK([-Xms10G -Xmx10G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+    # Set ms lower than mx since more than one instance of the server might
+    # get launched at the same time before they figure out which instance won.
+    MS_VALUE=512
+    if test "$MX_VALUE" -gt "2048"; then
+      MX_VALUE=2048
     fi
-    if test "$MEMORY_SIZE" -gt "10000" && test "$JVM_ARG_OK" = false; then
-      ADD_JVM_ARG_IF_OK([-Xms6G -Xmx6G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    fi
-    if test "$MEMORY_SIZE" -gt "5000" && test "$JVM_ARG_OK" = false; then
-      ADD_JVM_ARG_IF_OK([-Xms1G -Xmx3G],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-    fi
-    if test "$MEMORY_SIZE" -gt "3800" && test "$JVM_ARG_OK" = false; then
-      ADD_JVM_ARG_IF_OK([-Xms1G -Xmx2500M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+  else
+    MS_VALUE=256
+    if test "$MX_VALUE" -gt "1500"; then
+      MX_VALUE=1500
     fi
   fi
-  if test "$MEMORY_SIZE" -gt "2500" && test "$JVM_ARG_OK" = false; then
-    ADD_JVM_ARG_IF_OK([-Xms1000M -Xmx1500M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
+  if test "$MX_VALUE" -lt "512"; then
+    MX_VALUE=512
   fi
-  if test "$MEMORY_SIZE" -gt "1000" && test "$JVM_ARG_OK" = false; then
-    ADD_JVM_ARG_IF_OK([-Xms400M -Xmx1100M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-  fi
-  if test "$JVM_ARG_OK" = false; then
-    ADD_JVM_ARG_IF_OK([-Xms256M -Xmx512M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
-  fi
+  ADD_JVM_ARG_IF_OK([-Xms${MS_VALUE}M -Xmx${MX_VALUE}M],SJAVAC_SERVER_JAVA,[$SJAVAC_SERVER_JAVA])
 
-  AC_MSG_CHECKING([whether to use sjavac])
   AC_ARG_ENABLE([sjavac], [AS_HELP_STRING([--enable-sjavac],
       [use sjavac to do fast incremental compiles @<:@disabled@:>@])],
       [ENABLE_SJAVAC="${enableval}"], [ENABLE_SJAVAC='no'])
+  if test "x$JVM_ARG_OK" = "xfalse"; then
+    AC_MSG_WARN([Could not set -Xms${MS_VALUE}M -Xmx${MX_VALUE}M, disabling sjavac])
+    ENABLE_SJAVAC=no;
+  fi
+  AC_MSG_CHECKING([whether to use sjavac])
   AC_MSG_RESULT([$ENABLE_SJAVAC])
   AC_SUBST(ENABLE_SJAVAC)
 

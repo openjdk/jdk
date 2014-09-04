@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,6 +29,7 @@ import java.util.Set;
 /*
  * @test
  * @bug 8025141
+ * @ignore 8047675 test fails if run with assertions enabled in jtreg
  * @summary Interfaces must not contain non-public fields, ensure $assertionsDisabled
  *          is not generated into an interface
  * @compile Assertions.java

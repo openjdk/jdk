@@ -66,6 +66,7 @@ import jdk.internal.org.objectweb.asm.Label;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
+import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptFunction;
@@ -134,10 +135,12 @@ import sun.reflect.CallerSensitive;
  * implemented securely.
  */
 final class JavaAdapterBytecodeGenerator {
+    private static final Type SCRIPTUTILS_TYPE = Type.getType(ScriptUtils.class);
     private static final Type OBJECT_TYPE = Type.getType(Object.class);
     private static final Type CLASS_TYPE  = Type.getType(Class.class);
 
     static final String OBJECT_TYPE_NAME  = OBJECT_TYPE.getInternalName();
+    static final String SCRIPTUTILS_TYPE_NAME  = SCRIPTUTILS_TYPE.getInternalName();
 
     static final String INIT = "<init>";
 
@@ -172,6 +175,7 @@ final class JavaAdapterBytecodeGenerator {
     private static final String GET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE);
     private static final String GET_CLASS_METHOD_DESCRIPTOR = Type.getMethodDescriptor(CLASS_TYPE);
     private static final String EXPORT_RETURN_VALUE_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE, OBJECT_TYPE);
+    private static final String UNWRAP_METHOD_DESCRIPTOR = Type.getMethodDescriptor(OBJECT_TYPE, OBJECT_TYPE);
     private static final String GET_CONVERTER_METHOD_DESCRIPTOR = Type.getMethodDescriptor(METHOD_HANDLE_TYPE, CLASS_TYPE);
     private static final String TO_CHAR_PRIMITIVE_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.CHAR_TYPE, OBJECT_TYPE);
     private static final String TO_STRING_METHOD_DESCRIPTOR = Type.getMethodDescriptor(STRING_TYPE, OBJECT_TYPE);
@@ -927,9 +931,13 @@ final class JavaAdapterBytecodeGenerator {
             invokeValueOf(mv, "Double", 'D');
             break;
         case Type.ARRAY:
-        case Type.OBJECT:
         case Type.METHOD:
             // Already boxed
+            break;
+        case Type.OBJECT:
+            if(t.equals(OBJECT_TYPE)) {
+                mv.invokestatic(SCRIPTUTILS_TYPE_NAME, "unwrap", UNWRAP_METHOD_DESCRIPTOR, false);
+            }
             break;
         default:
             // Not expecting anything else (e.g. VOID)

@@ -96,6 +96,26 @@ class SocketInputStream extends FileInputStream
                                    int timeout)
         throws IOException;
 
+    // wrap native call to allow instrumentation
+    /**
+     * Reads into an array of bytes at the specified offset using
+     * the received socket primitive.
+     * @param fd the FileDescriptor
+     * @param b the buffer into which the data is read
+     * @param off the start offset of the data
+     * @param len the maximum number of bytes read
+     * @param timeout the read timeout in ms
+     * @return the actual number of bytes read, -1 is
+     *          returned when the end of the stream is reached.
+     * @exception IOException If an I/O error has occurred.
+     */
+    private int socketRead(FileDescriptor fd,
+                           byte b[], int off, int len,
+                           int timeout)
+        throws IOException {
+        return socketRead0(fd, b, off, len, timeout);
+    }
+
     /**
      * Reads into a byte array data from the socket.
      * @param b the buffer into which the data is read
@@ -147,7 +167,7 @@ class SocketInputStream extends FileInputStream
         // acquire file descriptor and do the read
         FileDescriptor fd = impl.acquireFD();
         try {
-            n = socketRead0(fd, b, off, length, timeout);
+            n = socketRead(fd, b, off, length, timeout);
             if (n > 0) {
                 return n;
             }
@@ -165,7 +185,7 @@ class SocketInputStream extends FileInputStream
             impl.setConnectionResetPending();
             impl.acquireFD();
             try {
-                n = socketRead0(fd, b, off, length, timeout);
+                n = socketRead(fd, b, off, length, timeout);
                 if (n > 0) {
                     return n;
                 }

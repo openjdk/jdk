@@ -67,7 +67,7 @@ if [ "x$hgwhere" = "x" ]; then
   error "Could not locate Mercurial command"
 fi
 
-hgversion="`hg --version 2> /dev/null | sed -n -e 's@^Mercurial Distributed SCM (version \([^+]*\).*)\$@\1@p'`"
+hgversion="`LANGUAGE=en hg --version 2> /dev/null | sed -n -e 's@^Mercurial Distributed SCM (version \([^+]*\).*)\$@\1@p'`"
 if [ "x${hgversion}" = "x" ] ; then
   error "Could not determine Mercurial version of $hgwhere"
 fi
