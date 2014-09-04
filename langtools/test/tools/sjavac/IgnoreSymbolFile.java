@@ -73,9 +73,8 @@ public class IgnoreSymbolFile {
         // Use reflection to avoid a compile-time dependency on sjavac Main
         System.err.println("compile: " + Arrays.toString(args));
         Class<?> c = Class.forName("com.sun.tools.sjavac.Main");
-        Method m = c.getDeclaredMethod("go", String[].class, PrintStream.class, PrintStream.class);
-        Object sjavac = c.newInstance();
-        int rc = (Integer) m.invoke(sjavac, args, System.err, System.err);
+        Method m = c.getDeclaredMethod("go", String[].class);
+        int rc = (Integer) m.invoke(null, (Object) args);
         System.err.println("rc=" + rc);
         return rc;
     }

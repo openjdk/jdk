@@ -1,13 +1,10 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
- */
-
-/*
- * Copyright 2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -40,6 +37,9 @@ public final class Constants {
     // Schema Types:
     public static final String NS_XMLSCHEMA = "http://www.w3.org/2001/XMLSchema".intern();
     public static final String NS_DTD = "http://www.w3.org/TR/REC-xml".intern();
+
+    // Schema Versions:
+    public static final String W3C_XML_SCHEMA10_NS_URI = "http://www.w3.org/XML/XMLSchema/v1.0".intern();
 
     // Schema features
     public static final String SUN_SCHEMA_FEATURE_PREFIX = "http://java.sun.com/xml/schema/features/";
@@ -487,6 +487,40 @@ public final class Constants {
     /** XInclude fixup language feature ("xinclude/fixup-language"). */
     public static final String XINCLUDE_FIXUP_LANGUAGE_FEATURE = "xinclude/fixup-language";
 
+     /**
+     * Feature to ignore xsi:type attributes on elements during validation,
+     * until a global element declaration is found. ("validation/schema/ignore-xsi-type-until-elemdecl")
+     * If this feature is on when validating a document, then beginning at the validation root
+     * element, xsi:type attributes are ignored until a global element declaration is
+     * found for an element.  Once a global element declaration has been found, xsi:type
+     * attributes will start being processed for the sub-tree beginning at the element for
+     * which the declaration was found.
+     *
+     * Suppose an element A has two element children, B and C.
+     *
+     * If a global element declaration is found for A, xsi:type attributes on A, B and C,
+     * and all of B and C's descendents, will be processed.
+     *
+     * If no global element declaration is found for A or B, but one is found for C,
+     * then xsi:type attributes will be ignored on A and B (and any descendents of B,
+     * until a global element declaration is found), but xsi:type attributes will be
+     * processed for C and all of C's descendents.
+     *
+     * Once xsi:type attributes stop being ignored for a subtree, they do not start
+     * being ignored again, even if more elements are encountered for which no global
+     * element declaration can be found.
+     */
+    public static final String IGNORE_XSI_TYPE_FEATURE = "validation/schema/ignore-xsi-type-until-elemdecl";
+
+    /** Perform checking of ID/IDREFs ("validation/id-idref-checking") */
+    public static final String ID_IDREF_CHECKING_FEATURE = "validation/id-idref-checking";
+
+    /** Feature to ignore errors caused by identity constraints ("validation/identity-constraint-checking") */
+    public static final String IDC_CHECKING_FEATURE = "validation/identity-constraint-checking";
+
+    /** Feature to ignore errors caused by unparsed entities ("validation/unparsed-entity-checking") */
+    public static final String UNPARSED_ENTITY_CHECKING_FEATURE = "validation/unparsed-entity-checking";
+
     /**
      * Internal feature. When set to true the schema validator will only use
      * schema components from the grammar pool provided.
@@ -598,6 +632,8 @@ public final class Constants {
     /** Validation manager property ("internal/validation-manager"). */
     public static final String VALIDATION_MANAGER_PROPERTY = "internal/validation-manager";
 
+    /** Schema type of the root element in a document ("validation/schema/root-type-definition"). */
+    public static final String ROOT_TYPE_DEFINITION_PROPERTY = "validation/schema/root-type-definition";
 
     /** XPointer Schema property ("xpointer-schema"). */
     public static final String XPOINTER_SCHEMA_PROPERTY = "xpointer-schema";
@@ -739,6 +775,10 @@ public final class Constants {
         XINCLUDE_FEATURE,
         XINCLUDE_FIXUP_BASE_URIS_FEATURE,
         XINCLUDE_FIXUP_LANGUAGE_FEATURE,
+        IGNORE_XSI_TYPE_FEATURE,
+        ID_IDREF_CHECKING_FEATURE,
+        IDC_CHECKING_FEATURE,
+        UNPARSED_ENTITY_CHECKING_FEATURE,
         NAMESPACE_GROWTH_FEATURE,
         TOLERATE_DUPLICATES_FEATURE,
     };
@@ -762,6 +802,7 @@ public final class Constants {
             VALIDATION_MANAGER_PROPERTY,
             BUFFER_SIZE_PROPERTY,
             SECURITY_MANAGER_PROPERTY,
+            ROOT_TYPE_DEFINITION_PROPERTY,
             LOCALE_PROPERTY,
             SCHEMA_DV_FACTORY_PROPERTY,
     };

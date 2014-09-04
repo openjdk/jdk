@@ -117,9 +117,6 @@ public class SourceTest {
         assertEquals(str1, str2);
         assertEquals(source1.hashCode(), source2.hashCode());
         assertTrue(source1.equals(source2));
-        // Test for immutability
-        Arrays.fill(source1.getContent(), (char)0);
-        Arrays.fill(source2.getContent(), (char)1);
         assertTrue(Arrays.equals(source1.getContent(), str1.toCharArray()));
         assertTrue(Arrays.equals(source1.getContent(), chars1));
         assertTrue(Arrays.equals(source1.getContent(), source2.getContent()));

@@ -37,6 +37,8 @@ import com.sun.tools.javac.code.Types;
 import com.sun.tools.javac.jvm.ClassWriter;
 import com.sun.tools.javac.jvm.Pool;
 import com.sun.tools.javac.processing.JavacProcessingEnvironment;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.Names;
 import com.sun.tools.javac.util.Pair;
@@ -102,6 +104,7 @@ public class CreateSymbols extends AbstractProcessor {
         return keys;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public boolean process(Set<? extends TypeElement> tes, RoundEnvironment renv) {
         try {
             if (renv.processingOver())
@@ -271,6 +274,7 @@ public class CreateSymbols extends AbstractProcessor {
         }
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public SourceVersion getSupportedSourceVersion() {
         return SourceVersion.latest();
     }

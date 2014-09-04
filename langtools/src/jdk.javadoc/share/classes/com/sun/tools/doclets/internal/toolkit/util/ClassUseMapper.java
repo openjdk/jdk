@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -28,6 +28,7 @@ package com.sun.tools.doclets.internal.toolkit.util;
 import java.util.*;
 
 import com.sun.javadoc.*;
+import com.sun.tools.doclets.formats.html.ConfigurationImpl;
 
 /**
  * Map all class uses for a given class.
@@ -181,10 +182,11 @@ public class ClassUseMapper {
      */
     public Map<String,List<FieldDoc>> annotationToFieldDoc = new HashMap<>();
 
-
-    public ClassUseMapper(RootDoc root, ClassTree classtree) {
+    private final Utils utils;
+    public ClassUseMapper(ConfigurationImpl configuration, ClassTree classtree) {
+        RootDoc root = configuration.root;
         this.classtree = classtree;
-
+        utils = configuration.utils;
         // Map subclassing, subinterfacing implementing, ...
         for (ClassDoc doc : classtree.baseclasses()) {
             subclasses(doc);
@@ -234,8 +236,8 @@ public class ClassUseMapper {
     private Collection<ClassDoc> subclasses(ClassDoc cd) {
         Collection<ClassDoc> ret = classToSubclass.get(cd.qualifiedName());
         if (ret == null) {
-            ret = new TreeSet<>();
-            List<ClassDoc> subs = classtree.subclasses(cd);
+            ret = new TreeSet<>(utils.makeComparatorForClassUse());
+            SortedSet<ClassDoc> subs = classtree.subclasses(cd);
             if (subs != null) {
                 ret.addAll(subs);
                 for (ClassDoc sub : subs) {
@@ -253,8 +255,8 @@ public class ClassUseMapper {
     private Collection<ClassDoc> subinterfaces(ClassDoc cd) {
         Collection<ClassDoc> ret = classToSubinterface.get(cd.qualifiedName());
         if (ret == null) {
-            ret = new TreeSet<>();
-            List<ClassDoc> subs = classtree.subinterfaces(cd);
+            ret = new TreeSet<>(utils.makeComparatorForClassUse());
+            SortedSet<ClassDoc> subs = classtree.subinterfaces(cd);
             if (subs != null) {
                 ret.addAll(subs);
                 for (ClassDoc sub : subs) {
@@ -275,8 +277,8 @@ public class ClassUseMapper {
     private Collection<ClassDoc> implementingClasses(ClassDoc cd) {
         Collection<ClassDoc> ret = classToImplementingClass.get(cd.qualifiedName());
         if (ret == null) {
-            ret = new TreeSet<>();
-            List<ClassDoc> impl = classtree.implementingclasses(cd);
+            ret = new TreeSet<>(utils.makeComparatorForClassUse());
+            SortedSet<ClassDoc> impl = classtree.implementingclasses(cd);
             if (impl != null) {
                 ret.addAll(impl);
                 for (ClassDoc anImpl : impl) {
@@ -297,25 +299,26 @@ public class ClassUseMapper {
      */
     private void mapExecutable(ExecutableMemberDoc em) {
         boolean isConstructor = em.isConstructor();
-        List<Type> classArgs = new ArrayList<>();
+        Set<Type> classArgs = new TreeSet<>(utils.makeTypeComparator());
         for (Parameter param : em.parameters()) {
             Type pcd = param.type();
-            // primitives don't get mapped, also avoid dups
-            if ((!param.type().isPrimitive()) &&
-                !classArgs.contains(pcd) &&
-                !(pcd instanceof TypeVariable)) {
-                add(isConstructor ? classToConstructorArgs : classToMethodArgs,
-                    pcd.asClassDoc(), em);
-                classArgs.add(pcd);
-                mapTypeParameters(isConstructor ?
-                                  classToConstructorDocArgTypeParam : classToExecMemberDocArgTypeParam,
-                                  pcd, em);
+            // ignore primitives and typevars, typevars are handled elsewhere
+            if ((!param.type().isPrimitive()) && !(pcd instanceof TypeVariable)) {
+                 // avoid dups
+                if (classArgs.add(pcd)) {
+                    add(isConstructor ? classToConstructorArgs : classToMethodArgs,
+                            pcd.asClassDoc(), em);
+                    mapTypeParameters(isConstructor
+                                ? classToConstructorDocArgTypeParam
+                                : classToExecMemberDocArgTypeParam,
+                            pcd, em);
+                }
             }
-            mapAnnotations(
-                    isConstructor ?
-                    classToConstructorParamAnnotation :
-                    classToExecMemberDocParamAnnotation,
+            mapAnnotations(isConstructor
+                        ? classToConstructorParamAnnotation
+                        : classToExecMemberDocParamAnnotation,
                     param, em);
+
         }
         for (ClassDoc anException : em.thrownExceptions()) {
             add(isConstructor ? classToConstructorThrows : classToMethodThrows,

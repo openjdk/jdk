@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 4266026
  * @summary javac no longer follows symlinks
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main LinksTest
  */
@@ -33,7 +33,7 @@
 import java.nio.file.Files;
 import java.nio.file.Paths;
 
-//original test: test/tools/javac/links/links.sh
+// Original test: test/tools/javac/links/links.sh
 public class LinksTest {
 
     private static final String BSrc =
@@ -44,20 +44,18 @@ public class LinksTest {
     private static final String TSrc =
         "class T extends a.B {}";
 
-    public static void main(String args[])
-            throws Exception {
-//      mkdir tmp
-//      cp ${TESTSRC}/b/B.java tmp
-        ToolBox.writeFile(Paths.get("tmp", "B.java"), BSrc);
+    public static void main(String... args) throws Exception {
+        ToolBox tb = new ToolBox();
+        tb.writeFile("tmp/B.java", BSrc);
 
         try {
-//        ln -s `pwd`/tmp "${TESTCLASSES}/a"
             Files.createSymbolicLink(Paths.get("a"), Paths.get("tmp"));
-            ////"${TESTJAVA}/bin/javac" ${TESTTOOLVMOPTS} -sourcepath "${TESTCLASSES}" -d "${TESTCLASSES}/classes" "${TESTSRC}/T.java" 2>&1
-            ToolBox.JavaToolArgs javacArgs =
-                    new ToolBox.JavaToolArgs()
-                    .setOptions("-sourcepath", ".", "-d", ".").setSources(TSrc);
-            ToolBox.javac(javacArgs);
+
+            tb.new JavacTask()
+                    .sourcepath(".")
+                    .outdir(".")
+                    .sources(TSrc)
+                    .run();
         } catch (UnsupportedOperationException e) {
             System.err.println("Symbolic links not supported on this system. The test can't finish");
         }

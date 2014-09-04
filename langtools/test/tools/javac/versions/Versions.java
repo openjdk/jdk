@@ -279,7 +279,13 @@ public class Versions {
             options, // Iterable<String>
             null,    // Iterable<String> classes
             files);  // Iterable<? extends JavaFileObject>
-        return jctask.call();
+
+        try {
+            return jctask.call();
+        } catch (IllegalStateException e) {
+            System.err.println(e);
+            return false;
+        }
     }
 
 

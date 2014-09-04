@@ -355,11 +355,11 @@ public interface DataLine extends Line {
          * {@code true} for all formats returned by {@code getFormats()}.
          * <p>
          * Some fields in the AudioFormat instances can be set to
-         * {@link javax.sound.sampled.AudioSystem#NOT_SPECIFIED NOT_SPECIFIED}
-         * if that field does not apply to the format, or if the format supports
-         * a wide range of values for that field. For example, a multi-channel
-         * device supporting up to 64 channels, could set the channel field in
-         * the {@code AudioFormat} instances returned by this method to
+         * {@link AudioSystem#NOT_SPECIFIED NOT_SPECIFIED} if that field does
+         * not apply to the format, or if the format supports a wide range of
+         * values for that field. For example, a multi-channel device supporting
+         * up to 64 channels, could set the channel field in the
+         * {@code AudioFormat} instances returned by this method to
          * {@code NOT_SPECIFIED}.
          *
          * @return a set of supported audio formats

@@ -78,13 +78,13 @@ SUNWprivate_1.1 {
 		Java_java_io_FileInputStream_available;
 		Java_java_io_FileInputStream_close0;
 		Java_java_io_FileInputStream_initIDs;
-		Java_java_io_FileInputStream_open;
+		Java_java_io_FileInputStream_open0;
 		Java_java_io_FileInputStream_read0;
 		Java_java_io_FileInputStream_readBytes;
 		Java_java_io_FileInputStream_skip;
 		Java_java_io_FileOutputStream_close0;
 		Java_java_io_FileOutputStream_initIDs;
-		Java_java_io_FileOutputStream_open;
+		Java_java_io_FileOutputStream_open0;
 		Java_java_io_FileOutputStream_write;
 		Java_java_io_FileOutputStream_writeBytes;
 		Java_java_io_ObjectInputStream_bytesToDoubles;
@@ -97,7 +97,7 @@ SUNWprivate_1.1 {
 		Java_java_io_RandomAccessFile_getFilePointer;
 		Java_java_io_RandomAccessFile_initIDs;
 		Java_java_io_RandomAccessFile_length;
-		Java_java_io_RandomAccessFile_open;
+		Java_java_io_RandomAccessFile_open0;
 		Java_java_io_RandomAccessFile_read0;
 		Java_java_io_RandomAccessFile_readBytes;
 		Java_java_io_RandomAccessFile_seek0;

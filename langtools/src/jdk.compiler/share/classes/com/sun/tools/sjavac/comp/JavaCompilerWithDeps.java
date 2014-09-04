@@ -32,29 +32,29 @@ import com.sun.tools.javac.code.Symbol.ClassSymbol;
 
 /** Subclass to Resolve that overrides collect.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class JavaCompilerWithDeps extends JavaCompiler {
 
     /** The dependency database
      */
     protected Dependencies deps;
-    protected JavacServiceImpl javacService;
+    protected SjavacErrorHandler errorHandler;
 
-    public JavaCompilerWithDeps(Context context, JavacServiceImpl jsi) {
+    public JavaCompilerWithDeps(Context context, SjavacErrorHandler eh) {
         super(context);
         deps = Dependencies.instance(context);
-        javacService = jsi;
+        errorHandler = eh;
         needRootClasses = true;
     }
 
-    public static void preRegister(Context context, final JavacServiceImpl t) {
+    public static void preRegister(Context context, final SjavacErrorHandler eh) {
         context.put(compilerKey, new Context.Factory<JavaCompiler>() {
             public JavaCompiler make(Context c) {
-                JavaCompiler instance = new JavaCompilerWithDeps(c, t);
+                JavaCompiler instance = new JavaCompilerWithDeps(c, eh);
                 c.put(JavaCompiler.class, instance);
                 return instance;
             }
@@ -97,7 +97,7 @@ public class JavaCompilerWithDeps extends JavaCompiler {
 
             // Now check if the truncated uri ends with the path. (It does not == failure!)
             if (path.length() > 0 && !path.equals("/unnamed package/") && !pp.endsWith(path)) {
-                javacService.logError("Error: The source file "+sym.sourcefile.getName()+
+                errorHandler.logError("Error: The source file "+sym.sourcefile.getName()+
                                         " is located in the wrong package directory, because it contains the class "+
                                         sym.getQualifiedName());
             }

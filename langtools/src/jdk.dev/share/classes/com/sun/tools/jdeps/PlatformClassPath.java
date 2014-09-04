@@ -32,6 +32,7 @@ import com.sun.tools.classfile.RuntimeAnnotations_attribute;
 import com.sun.tools.classfile.Dependencies.ClassFileError;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.BufferedInputStream;
 import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -91,9 +92,17 @@ class PlatformClassPath {
     }
 
     private static List<Archive> initModules(Path mpath) throws IOException {
-        try (InputStream in = PlatformClassPath.class
-                .getResourceAsStream("resources/modules.xml")) {
-            return new ArrayList<Archive>(ModulesXmlReader.load(mpath, in));
+        String fn = System.getProperty("jdeps.modules.xml");
+        if (fn!= null) {
+            Path p = Paths.get(fn);
+            try (InputStream in = new BufferedInputStream(Files.newInputStream(p))) {
+                return new ArrayList<Archive>(ModulesXmlReader.load(mpath, in));
+            }
+        } else {
+            try (InputStream in = PlatformClassPath.class
+                    .getResourceAsStream("resources/jdeps-modules.xml")) {
+                return new ArrayList<Archive>(ModulesXmlReader.load(mpath, in));
+            }
         }
     }
 
@@ -101,7 +110,7 @@ class PlatformClassPath {
         LegacyImageHelper cfr = new LegacyImageHelper(home);
         List<Archive> archives = new ArrayList<>(cfr.nonPlatformArchives);
         try (InputStream in = PlatformClassPath.class
-                .getResourceAsStream("resources/modules.xml")) {
+                .getResourceAsStream("resources/jdeps-modules.xml")) {
             archives.addAll(ModulesXmlReader.loadFromImage(cfr, in));
             return archives;
         }

@@ -303,4 +303,32 @@ define CleanComponent
 	@$(PRINTF) " done\n"
 endef
 
+################################################################################
+
+MAKE_DIR_LIST := $(JDK_TOPDIR)/make
+
+# Find all modules that has a makefile for a certain build phase
+# Param 1: Make subdir to look in
+# Param 2: File prefix to look for
+FindModulesWithMakefileFor = $(sort $(foreach d, $(MAKE_DIR_LIST), \
+    $(patsubst $d/$(strip $1)/$(strip $2)-%.gmk,%, \
+    $(wildcard $d/$(strip $1)/$(strip $2)-*.gmk))))
+
+# Declare a recipe for calling such a makefile
+# Param 1: Module name
+# Param 2: Suffix for rule
+# Param 3: Make subdir
+# Param 4: Makefile prefix
+define DeclareRecipeForModuleMakefile
+  $$(strip $1)-$$(strip $2):
+	+($(CD) $$(dir $$(firstword $$(wildcard $$(addsuffix /$$(strip $3)/$$(strip $4)-$$(strip $1).gmk, \
+	        $(MAKE_DIR_LIST))))) \
+	    && $(MAKE) $(MAKE_ARGS) \
+	    -f $$(strip $4)-$$(strip $1).gmk \
+	    $$(addprefix -I, $$(wildcard $(MAKE_DIR_LIST) \
+	        $$(addsuffix /$$(strip $3), $(MAKE_DIR_LIST)))))
+endef
+
+################################################################################
+
 endif # _MAKEHELPERS_GMK

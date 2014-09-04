@@ -1082,8 +1082,9 @@ public class DefaultStyledDocument extends AbstractDocument implements StyledDoc
 
     private void readObject(ObjectInputStream s)
             throws ClassNotFoundException, IOException {
-        listeningStyles = new Vector<Style>();
-        s.defaultReadObject();
+        listeningStyles = new Vector<>();
+        ObjectInputStream.GetField f = s.readFields();
+        buffer = (ElementBuffer) f.get("buffer", null);
         // Reinstall style listeners.
         if (styleContextChangeListener == null &&
             listenerList.getListenerCount(DocumentListener.class) > 0) {

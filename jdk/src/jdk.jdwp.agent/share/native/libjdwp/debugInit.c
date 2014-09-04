@@ -993,7 +993,7 @@ static void
 atexit_finish_logging(void)
 {
     /* Normal exit(0) (not _exit()) may only reach here */
-    finish_logging(0);  /* Only first call matters */
+    finish_logging();  /* Only first call matters */
 }
 
 static jboolean
@@ -1281,43 +1281,49 @@ bad_option_no_msg:
 void
 debugInit_exit(jvmtiError error, const char *msg)
 {
-    int exit_code = 0;
+    enum exit_codes { EXIT_NO_ERRORS = 0, EXIT_JVMTI_ERROR = 1, EXIT_TRANSPORT_ERROR = 2 };
 
-    /* Pick an error code */
-    if ( error != JVMTI_ERROR_NONE ) {
-        exit_code = 1;
-        if ( docoredump ) {
-            LOG_MISC(("Dumping core as requested by command line"));
-            finish_logging(exit_code);
-            abort();
-        }
+    // Prepare to exit. Log error and finish logging
+    LOG_MISC(("Exiting with error %s(%d): %s", jvmtiErrorText(error), error,
+                                               ((msg == NULL) ? "" : msg)));
+
+    // coredump requested by command line. Keep JVMTI data dirty
+    if (error != JVMTI_ERROR_NONE && docoredump) {
+        LOG_MISC(("Dumping core as requested by command line"));
+        finish_logging();
+        abort();
     }
 
-    if ( msg==NULL ) {
-        msg = "";
-    }
+    finish_logging();
 
-    LOG_MISC(("Exiting with error %s(%d): %s", jvmtiErrorText(error), error, msg));
-
+    // Cleanup the JVMTI if we have one
     if (gdata != NULL) {
         gdata->vmDead = JNI_TRUE;
-
-        /* Let's try and cleanup the JVMTI, if we even have one */
-        if ( gdata->jvmti != NULL ) {
-            /* Dispose of jvmti (gdata->jvmti becomes NULL) */
+        if (gdata->jvmti != NULL) {
+            // Dispose of jvmti (gdata->jvmti becomes NULL)
             disposeEnvironment(gdata->jvmti);
         }
     }
 
-    /* Finish up logging. We reach here if JDWP is doing the exiting. */
-    finish_logging(exit_code);  /* Only first call matters */
-
-    /* Let's give the JNI a FatalError if non-exit 0, which is historic way */
-    if ( exit_code != 0 ) {
-        JNIEnv *env = NULL;
-        jniFatalError(env, msg, error, exit_code);
+    // We are here with no errors. Kill entire process and exit with zero exit code
+    if (error == JVMTI_ERROR_NONE) {
+        forceExit(EXIT_NO_ERRORS);
+        return;
     }
 
-    /* Last chance to die, this kills the entire process. */
-    forceExit(exit_code);
+    // No transport initilized.
+    // As we don't have any details here exiting with separate exit code
+    if (error == AGENT_ERROR_TRANSPORT_INIT) {
+        forceExit(EXIT_TRANSPORT_ERROR);
+        return;
+    }
+
+    // We have JVMTI error. Call hotspot jni_FatalError handler
+    jniFatalError(NULL, msg, error, EXIT_JVMTI_ERROR);
+
+    // hotspot calls os:abort() so we should never reach code below,
+    // but guard against possible hotspot changes
+
+    // Last chance to die, this kills the entire process.
+    forceExit(EXIT_JVMTI_ERROR);
 }

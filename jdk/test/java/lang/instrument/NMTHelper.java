@@ -21,8 +21,12 @@
  * questions.
  */
 
+import java.io.File;
+import java.io.FileWriter;
 import java.util.regex.Matcher;
 import java.util.regex.Pattern;
+import java.util.Arrays;
+import java.util.stream.Collectors;
 import sun.management.ManagementFactoryHelper;
 import com.sun.management.DiagnosticCommandMBean;
 
@@ -32,8 +36,8 @@ public class NMTHelper
         executeDcmd("vmNativeMemory", "baseline");
     }
 
-    // Total:  reserved=3484685KB  +293KB, committed=266629KB +293KB
-    private static Pattern totalLine = Pattern.compile("^Total:  reserved=\\d+KB  .*KB, committed=\\d+KB (.*)KB$");
+    // Total: reserved=3484685KB +293KB, committed=266629KB +293KB
+    private static Pattern totalLine = Pattern.compile("^Total: reserved=\\d+KB .*KB, committed=\\d+KB (.*)KB$");
 
     public static long committedDiff() throws Exception {
         String res = (String) executeDcmd("vmNativeMemory", "detail.diff");
@@ -53,14 +57,14 @@ public class NMTHelper
         Object[] dcmdArgs = {args};
         String[] signature = {String[].class.getName()};
 
-        try {
-            System.out.print("> " + cmd + " ");
-            for (String s : args) {
-                System.out.print(s + " ");
-            }
-            System.out.println(":");
+        String cmdString = cmd + " " +
+            Arrays.stream(args).collect(Collectors.joining(" "));
+        File f = new File("dcmdoutput-" + cmd + "-" + System.currentTimeMillis() + ".txt");
+        System.out.println("Output from Dcmd '" + cmdString + "' is being written to file " + f);
+        try (FileWriter fw = new FileWriter(f)) {
+            fw.write("> " + cmdString + ":");
             String result = (String) dcmd.invoke(cmd, dcmdArgs, signature);
-            System.out.println(result);
+            fw.write(result);
             return result;
         } catch(Exception ex) {
             ex.printStackTrace();

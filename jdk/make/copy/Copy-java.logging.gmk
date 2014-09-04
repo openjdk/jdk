@@ -29,10 +29,10 @@ include CopyCommon.gmk
 
 LOGGING_LIB_SRC := $(JDK_TOPDIR)/src/java.logging/share/conf
 
-$(LIBDIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
+$(LIB_DST_DIR)/logging.properties: $(LOGGING_LIB_SRC)/logging.properties
 	$(call install-file)
 
-LOGGING_CONF_FILES := $(LIBDIR)/logging.properties
+LOGGING_CONF_FILES := $(LIB_DST_DIR)/logging.properties
 
 ################################################################################
 

@@ -43,6 +43,8 @@ import com.sun.tools.javac.file.JavacFileManager.Archive;
 import com.sun.tools.javac.file.RelativePath.RelativeDirectory;
 import com.sun.tools.javac.file.RelativePath.RelativeFile;
 import com.sun.tools.javac.util.Assert;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 
 /**
@@ -120,12 +122,12 @@ public class ZipFileIndexArchive implements Archive {
             this.zipName = zipFileName;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public URI toUri() {
             return createJarUri(zipName, getPrefixedEntryName());
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public String getName() {
             return zipName + "(" + getPrefixedEntryName() + ")";
         }
@@ -135,23 +137,23 @@ public class ZipFileIndexArchive implements Archive {
             return zipName.getName() + "(" + entry.getName() + ")";
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public JavaFileObject.Kind getKind() {
             return getKind(entry.getName());
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public InputStream openInputStream() throws IOException {
             Assert.checkNonNull(entry); // see constructor
             return new ByteArrayInputStream(zfIndex.read(entry));
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public OutputStream openOutputStream() throws IOException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
             CharBuffer cb = fileManager.getCachedContent(this);
             if (cb == null) {
@@ -171,17 +173,17 @@ public class ZipFileIndexArchive implements Archive {
             return cb;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Writer openWriter() throws IOException {
             throw new UnsupportedOperationException();
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public long getLastModified() {
             return entry.getLastModified();
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean delete() {
             throw new UnsupportedOperationException();
         }
@@ -202,7 +204,7 @@ public class ZipFileIndexArchive implements Archive {
             return removeExtension(entryName).replace('/', '.');
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String cn, JavaFileObject.Kind k) {
             cn.getClass(); // null check
             if (k == Kind.OTHER && getKind() != k)
