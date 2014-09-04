@@ -75,11 +75,7 @@ public class TestJavacTaskScanner extends ToolTester {
 
     public void run() {
         Iterable<? extends TypeElement> toplevels;
-        try {
-            toplevels = task.enter(task.parse());
-        } catch (IOException ex) {
-            throw new AssertionError(ex);
-        }
+        toplevels = task.enter(task.parse());
         for (TypeElement clazz : toplevels) {
             System.out.format("Testing %s:%n%n", clazz.getSimpleName());
             testParseType(clazz);

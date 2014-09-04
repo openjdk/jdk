@@ -27,7 +27,8 @@ import java.net.URLPermission;
  *
  * @test
  * @bug 8010464
- * @compile ../../../com/sun/net/httpserver/SimpleSSLContext.java
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm/policy=policy.1 URLTest one
  * @run main/othervm URLTest one
  * @run main/othervm/policy=policy.2 URLTest two
@@ -43,6 +44,7 @@ import java.util.concurrent.*;
 import java.util.logging.*;
 import com.sun.net.httpserver.*;
 import javax.net.ssl.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 public class URLTest {
     static boolean failed = false;
@@ -209,10 +211,7 @@ public class URLTest {
         httpServer.setExecutor (e);
         httpsServer.setExecutor (es);
 
-        // take the keystore from elsewhere in test hierarchy
-        String keysdir = System.getProperty("test.src")
-                + "/../../../com/sun/net/httpserver/";
-        ctx = new SimpleSSLContext(keysdir).get();
+        ctx = new SimpleSSLContext().get();
         httpsServer.setHttpsConfigurator(new HttpsConfigurator (ctx));
 
         httpServer.start();

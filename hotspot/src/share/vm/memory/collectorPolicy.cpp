@@ -176,13 +176,9 @@ size_t CollectorPolicy::compute_heap_alignment() {
 
   size_t alignment = GenRemSet::max_alignment_constraint();
 
-  // Parallel GC does its own alignment of the generations to avoid requiring a
-  // large page (256M on some platforms) for the permanent generation.  The
-  // other collectors should also be updated to do their own alignment and then
-  // this use of lcm() should be removed.
-  if (UseLargePages && !UseParallelGC) {
+  if (UseLargePages) {
       // In presence of large pages we have to make sure that our
-      // alignment is large page aware
+      // alignment is large page aware.
       alignment = lcm(os::large_page_size(), alignment);
   }
 
@@ -909,7 +905,8 @@ void MarkSweepPolicy::initialize_alignments() {
 }
 
 void MarkSweepPolicy::initialize_generations() {
-  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, 0, AllocFailStrategy::RETURN_NULL);
+  _generations = NEW_C_HEAP_ARRAY3(GenerationSpecPtr, number_of_generations(), mtGC, CURRENT_PC,
+    AllocFailStrategy::RETURN_NULL);
   if (_generations == NULL) {
     vm_exit_during_initialization("Unable to allocate gen spec");
   }

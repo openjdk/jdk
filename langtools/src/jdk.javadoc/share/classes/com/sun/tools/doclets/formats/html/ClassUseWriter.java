@@ -158,7 +158,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     public static void generate(ConfigurationImpl configuration,
                                 ClassTree classtree)  {
-        ClassUseMapper mapper = new ClassUseMapper(configuration.root, classtree);
+        ClassUseMapper mapper = new ClassUseMapper(configuration, classtree);
         for (ClassDoc aClass : configuration.root.classes()) {
             // If -nodeprecated option is set and the containing package is marked
             // as deprecated, do not generate the class-use page. We will still generate

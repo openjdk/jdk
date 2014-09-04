@@ -30,6 +30,7 @@ import com.sun.source.tree.LambdaExpressionTree.BodyKind;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.code.Type.*;
@@ -156,7 +157,7 @@ public class DeferredAttr extends JCTree.Visitor {
             return DEFERRED;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "DeferredType";
         }

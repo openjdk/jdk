@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,6 +23,9 @@
  * questions.
  */
 package java.util;
+
+import sun.misc.JavaLangAccess;
+import sun.misc.SharedSecrets;
 
 /**
  * {@code StringJoiner} is used to construct a sequence of characters separated
@@ -67,21 +70,23 @@ public final class StringJoiner {
     private final String delimiter;
     private final String suffix;
 
-    /*
-     * StringBuilder value -- at any time, the characters constructed from the
-     * prefix, the added element separated by the delimiter, but without the
-     * suffix, so that we can more easily add elements without having to jigger
-     * the suffix each time.
-     */
-    private StringBuilder value;
+    /** Contains all the string components added so far. */
+    private String[] elts;
 
-    /*
-     * By default, the string consisting of prefix+suffix, returned by
-     * toString(), or properties of value, when no elements have yet been added,
-     * i.e. when it is empty.  This may be overridden by the user to be some
-     * other value including the empty String.
+    /** The number of string components added so far. */
+    private int size;
+
+    /** Total length in chars so far, excluding prefix and suffix. */
+    private int len;
+
+    /**
+     * When overriden by the user to be non-null via {@link setEmptyValue}, the
+     * string returned by toString() when no elements have yet been added.
+     * When null, prefix + suffix is used as the empty value.
      */
     private String emptyValue;
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a {@code StringJoiner} with no characters in it, with no
@@ -125,7 +130,6 @@ public final class StringJoiner {
         this.prefix = prefix.toString();
         this.delimiter = delimiter.toString();
         this.suffix = suffix.toString();
-        this.emptyValue = this.prefix + this.suffix;
     }
 
     /**
@@ -148,29 +152,44 @@ public final class StringJoiner {
         return this;
     }
 
+    private static int getChars(String s, char[] chars, int start) {
+        int len = s.length();
+        s.getChars(0, len, chars, start);
+        return len;
+    }
+
     /**
      * Returns the current value, consisting of the {@code prefix}, the values
      * added so far separated by the {@code delimiter}, and the {@code suffix},
      * unless no elements have been added in which case, the
-     * {@code prefix + suffix} or the {@code emptyValue} characters are returned
+     * {@code prefix + suffix} or the {@code emptyValue} characters are returned.
      *
      * @return the string representation of this {@code StringJoiner}
      */
     @Override
     public String toString() {
-        if (value == null) {
+        final String[] elts = this.elts;
+        if (elts == null && emptyValue != null) {
             return emptyValue;
-        } else {
-            if (suffix.equals("")) {
-                return value.toString();
-            } else {
-                int initialLength = value.length();
-                String result = value.append(suffix).toString();
-                // reset value to pre-append initialLength
-                value.setLength(initialLength);
-                return result;
+        }
+        final int size = this.size;
+        final int addLen = prefix.length() + suffix.length();
+        if (addLen == 0) {
+            compactElts();
+            return size == 0 ? "" : elts[0];
+        }
+        final String delimiter = this.delimiter;
+        final char[] chars = new char[len + addLen];
+        int k = getChars(prefix, chars, 0);
+        if (size > 0) {
+            k += getChars(elts[0], chars, k);
+            for (int i = 1; i < size; i++) {
+                k += getChars(delimiter, chars, k);
+                k += getChars(elts[i], chars, k);
             }
         }
+        k += getChars(suffix, chars, k);
+        return jla.newStringUnsafe(chars);
     }
 
     /**
@@ -182,7 +201,16 @@ public final class StringJoiner {
      * @return a reference to this {@code StringJoiner}
      */
     public StringJoiner add(CharSequence newElement) {
-        prepareBuilder().append(newElement);
+        final String elt = String.valueOf(newElement);
+        if (elts == null) {
+            elts = new String[8];
+        } else {
+            if (size == elts.length)
+                elts = Arrays.copyOf(elts, 2 * size);
+            len += delimiter.length();
+        }
+        len += elt.length();
+        elts[size++] = elt;
         return this;
     }
 
@@ -207,24 +235,25 @@ public final class StringJoiner {
      */
     public StringJoiner merge(StringJoiner other) {
         Objects.requireNonNull(other);
-        if (other.value != null) {
-            final int length = other.value.length();
-            // lock the length so that we can seize the data to be appended
-            // before initiate copying to avoid interference, especially when
-            // merge 'this'
-            StringBuilder builder = prepareBuilder();
-            builder.append(other.value, other.prefix.length(), length);
+        if (other.elts == null) {
+            return this;
         }
-        return this;
+        other.compactElts();
+        return add(other.elts[0]);
     }
 
-    private StringBuilder prepareBuilder() {
-        if (value != null) {
-            value.append(delimiter);
-        } else {
-            value = new StringBuilder().append(prefix);
+    private void compactElts() {
+        if (size > 1) {
+            final char[] chars = new char[len];
+            int i = 1, k = getChars(elts[0], chars, 0);
+            do {
+                k += getChars(delimiter, chars, k);
+                k += getChars(elts[i], chars, k);
+                elts[i] = null;
+            } while (++i < size);
+            size = 1;
+            elts[0] = jla.newStringUnsafe(chars);
         }
-        return value;
     }
 
     /**
@@ -238,10 +267,7 @@ public final class StringJoiner {
      * @return the length of the current value of {@code StringJoiner}
      */
     public int length() {
-        // Remember that we never actually append the suffix unless we return
-        // the full (present) value or some sub-string or length of it, so that
-        // we can add on more if we need to.
-        return (value != null ? value.length() + suffix.length() :
-                emptyValue.length());
+        return (size == 0 && emptyValue != null) ? emptyValue.length() :
+            len + prefix.length() + suffix.length();
     }
 }

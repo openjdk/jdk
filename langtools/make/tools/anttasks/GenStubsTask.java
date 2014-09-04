@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2009, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -82,6 +82,7 @@ public class GenStubsTask extends MatchingTask {
         createClasspath().setRefid(r);
     }
 
+    @Override
     public void setIncludes(String includes) {
         super.setIncludes(includes);
         this.includes = includes;
@@ -103,7 +104,7 @@ public class GenStubsTask extends MatchingTask {
             return;
         System.out.println("Generating " + files.length + " stub files to " + destDir);
 
-        List<String> classNames = new ArrayList<String>();
+        List<String> classNames = new ArrayList<>();
         for (String file: files) {
             classNames.add(file.replaceAll(".java$", "").replace('/', '.'));
         }
@@ -114,7 +115,7 @@ public class GenStubsTask extends MatchingTask {
             if (!ok)
                 throw new BuildException("genstubs failed");
         } else {
-            List<String> cmd = new ArrayList<String>();
+            List<String> cmd = new ArrayList<>();
             String java_home = System.getProperty("java.home");
             cmd.add(new File(new File(java_home, "bin"), "java").getPath());
             if (classpath != null)
@@ -130,20 +131,15 @@ public class GenStubsTask extends MatchingTask {
             pb.redirectErrorStream(true);
             try {
                 Process p = pb.start();
-                BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()));
-                try {
+                try (BufferedReader in = new BufferedReader(new InputStreamReader(p.getInputStream()))) {
                     String line;
                     while ((line = in.readLine()) != null)
                         System.out.println(line);
-                } finally {
-                    in.close();
                 }
                 int rc = p.waitFor();
                 if (rc != 0)
                     throw new BuildException("genstubs failed");
-            } catch (IOException e) {
-                throw new BuildException("genstubs failed", e);
-            } catch (InterruptedException e) {
+            } catch (IOException | InterruptedException e) {
                 throw new BuildException("genstubs failed", e);
             }
         }

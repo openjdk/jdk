@@ -38,20 +38,19 @@ import java.util.HashSet;
 import java.util.Map;
 
 import com.sun.tools.sjavac.options.Options;
-import com.sun.tools.sjavac.server.JavacService;
+import com.sun.tools.sjavac.server.Sjavac;
 
 /**
  * Compile properties transform a properties file into a Java source file.
  * Java has built in support for reading properties from either a text file
  * in the source or a compiled java source file.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
-public class CompileProperties implements Transformer
-{
+public class CompileProperties implements Transformer {
     // Any extra information passed from the command line, for example if:
     // -tr .proppp=com.sun.tools.javac.smart.CompileProperties,sun.util.resources.LocaleNamesBundle
     // then extra will be "sun.util.resources.LocaleNamesBundle"
@@ -64,7 +63,7 @@ public class CompileProperties implements Transformer
     public void setExtra(Options a) {
     }
 
-    public boolean transform(JavacService javacService,
+    public boolean transform(Sjavac sjavac,
                              Map<String,Set<URI>> pkgSrcs,
                              Set<URI>             visibleSrcs,
                              Map<URI,Set<String>> visibleClasses,

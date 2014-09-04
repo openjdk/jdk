@@ -55,7 +55,7 @@ import static com.sun.tools.javac.main.Option.OptionKind.*;
 
 /**
  * Options for javac. The specific Option to handle a command-line option
- * is identified by searching the members of this enum in order, looking
+ * is identified by searching the members of this enum in order, looking for
  * the first {@link #matches match}. The action for an Option is performed
  * by calling {@link #process process}, and by providing a suitable
  * {@link OptionHelper} to provide access the compiler state.

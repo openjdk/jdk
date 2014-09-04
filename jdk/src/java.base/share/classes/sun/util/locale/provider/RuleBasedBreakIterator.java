@@ -547,12 +547,7 @@ class RuleBasedBreakIterator extends BreakIterator {
      */
     @Override
     public String toString() {
-        StringBuilder sb = new StringBuilder();
-        sb.append('[');
-        sb.append("checksum=0x");
-        sb.append(Long.toHexString(checksum));
-        sb.append(']');
-        return sb.toString();
+        return "[checksum=0x" + Long.toHexString(checksum) + ']';
     }
 
     /**

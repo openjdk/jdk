@@ -139,7 +139,7 @@ public class Throwable implements Serializable {
          * {@linkplain #setStackTrace(StackTraceElement[]) Setting the
          * stack trace} to a one-element array containing this sentinel
          * value indicates future attempts to set the stack trace will be
-         * ignored.  The sentinal is equal to the result of calling:<br>
+         * ignored.  The sentinel is equal to the result of calling:<br>
          * {@code new StackTraceElement("", "", null, Integer.MIN_VALUE)}
          */
         public static final StackTraceElement STACK_TRACE_ELEMENT_SENTINEL =

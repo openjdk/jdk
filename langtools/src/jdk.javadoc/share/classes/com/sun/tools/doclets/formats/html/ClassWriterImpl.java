@@ -411,8 +411,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                     classDoc.qualifiedName().equals("org.omg.CORBA.Object")) {
                 return;    // Don't generate the list, too huge
             }
-            List<ClassDoc> subclasses = classtree.subs(classDoc, false);
-            if (subclasses.size() > 0) {
+            SortedSet<ClassDoc> subclasses = classtree.subs(classDoc, false);
+            if (!subclasses.isEmpty()) {
                 Content label = getResource(
                         "doclet.Subclasses");
                 Content dt = HtmlTree.DT(label);
@@ -429,8 +429,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      */
     public void addSubInterfacesInfo(Content classInfoTree) {
         if (classDoc.isInterface()) {
-            List<ClassDoc> subInterfaces = classtree.allSubs(classDoc, false);
-            if (subInterfaces.size() > 0) {
+            SortedSet<ClassDoc> subInterfaces = classtree.allSubs(classDoc, false);
+            if (!subInterfaces.isEmpty()) {
                 Content label = getResource(
                         "doclet.Subinterfaces");
                 Content dt = HtmlTree.DT(label);
@@ -453,8 +453,8 @@ public class ClassWriterImpl extends SubWriterHolderWriter
                 classDoc.qualifiedName().equals("java.io.Serializable")) {
             return;   // Don't generate the list, too big
         }
-        List<ClassDoc> implcl = classtree.implementingclasses(classDoc);
-        if (implcl.size() > 0) {
+        SortedSet<ClassDoc> implcl = classtree.implementingclasses(classDoc);
+        if (!implcl.isEmpty()) {
             Content label = getResource(
                     "doclet.Implementing_Classes");
             Content dt = HtmlTree.DT(label);
@@ -580,21 +580,23 @@ public class ClassWriterImpl extends SubWriterHolderWriter
      * @param list the list of classes
      * @return a content tree for the class list
      */
-    private Content getClassLinks(LinkInfoImpl.Kind context, List<?> list) {
+    private Content getClassLinks(LinkInfoImpl.Kind context, Collection<?> list) {
         Object[] typeList = list.toArray();
         Content dd = new HtmlTree(HtmlTag.DD);
-        for (int i = 0; i < list.size(); i++) {
-            if (i > 0) {
+        boolean isFirst = true;
+        for (Object item : typeList) {
+            if (!isFirst) {
                 Content separator = new StringContent(", ");
                 dd.addContent(separator);
+            } else {
+                isFirst = false;
             }
-            if (typeList[i] instanceof ClassDoc) {
-                Content link = getLink(
-                        new LinkInfoImpl(configuration, context, (ClassDoc)(typeList[i])));
+
+            if (item instanceof ClassDoc) {
+                Content link = getLink(new LinkInfoImpl(configuration, context, (ClassDoc)item));
                 dd.addContent(link);
             } else {
-                Content link = getLink(
-                        new LinkInfoImpl(configuration, context, (Type)(typeList[i])));
+                Content link = getLink(new LinkInfoImpl(configuration, context, (Type)item));
                 dd.addContent(link);
             }
         }

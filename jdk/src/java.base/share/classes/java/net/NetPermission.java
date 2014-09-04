@@ -72,10 +72,10 @@ import java.util.StringTokenizer;
  *   </tr>
  *
  * <tr>
- *  <td>getNetworkInformation</td>
- *  <td>The ability to retrieve all information about local network interfaces.</td>
- *  <td>Malicious code can read information about network hardware such as
- *  MAC addresses, which could be used to construct local IPv6 addresses.</td>
+ *   <td>getNetworkInformation</td>
+ *   <td>The ability to retrieve all information about local network interfaces.</td>
+ *   <td>Malicious code can read information about network hardware such as
+ *   MAC addresses, which could be used to construct local IPv6 addresses.</td>
  * </tr>
  *
  * <tr>
@@ -98,8 +98,8 @@ import java.util.StringTokenizer;
  * <tr>
  *   <td>requestPasswordAuthentication</td>
  *   <td>The ability
- * to ask the authenticator registered with the system for
- * a password</td>
+ *   to ask the authenticator registered with the system for
+ *   a password</td>
  *   <td>Malicious code may steal this password.</td>
  * </tr>
  *
@@ -116,11 +116,11 @@ import java.util.StringTokenizer;
  * <tr>
  *   <td>setDefaultAuthenticator</td>
  *   <td>The ability to set the
- * way authentication information is retrieved when
- * a proxy or HTTP server asks for authentication</td>
+ *   way authentication information is retrieved when
+ *   a proxy or HTTP server asks for authentication</td>
  *   <td>Malicious
- * code can set an authenticator that monitors and steals user
- * authentication input as it retrieves the input from the user.</td>
+ *   code can set an authenticator that monitors and steals user
+ *   authentication input as it retrieves the input from the user.</td>
  * </tr>
  *
  * <tr>
@@ -143,13 +143,13 @@ import java.util.StringTokenizer;
  * <tr>
  *   <td>specifyStreamHandler</td>
  *   <td>The ability
- * to specify a stream handler when constructing a URL</td>
+ *   to specify a stream handler when constructing a URL</td>
  *   <td>Malicious code may create a URL with resources that it would
-normally not have access to (like file:/foo/fum/), specifying a
-stream handler that gets the actual bytes from someplace it does
-have access to. Thus it might be able to trick the system into
-creating a ProtectionDomain/CodeSource for a class even though
-that class really didn't come from that location.</td>
+ *   normally not have access to (like file:/foo/fum/), specifying a
+ *   stream handler that gets the actual bytes from someplace it does
+ *   have access to. Thus it might be able to trick the system into
+ *   creating a ProtectionDomain/CodeSource for a class even though
+ *   that class really didn't come from that location.</td>
  * </tr>
  * </table>
  *

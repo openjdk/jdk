@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,12 +45,12 @@ public class ShutdownTwice {
     output = new OutputAnalyzer(pb.start());
 
     // Verify that jcmd reports that NMT is shutting down
-    output.shouldContain("Shutdown is in progress, it will take a few moments to completely shutdown");
+    output.shouldContain("Native memory tracking has been turned off");
 
     // Run shutdown again
     output = new OutputAnalyzer(pb.start());
 
     // Verify that jcmd reports that NMT has been shutdown already
-    output.shouldContain("Native memory tracking has been shutdown by user");
+    output.shouldContain("Native memory tracking has been shutdown");
   }
 }

@@ -38,7 +38,7 @@ int AbstractInterpreter::size_activation(int max_stack,
                                          int callee_locals,
                                          bool is_top_frame) {
   // Note: This calculation must exactly parallel the frame setup
-  // in AbstractInterpreterGenerator::generate_method_entry.
+  // in InterpreterGenerator::generate_fixed_frame.
 
   // fixed size of an interpreter frame:
   int overhead = frame::sender_sp_offset -

@@ -162,7 +162,7 @@ public:
 // diagnosing failures.
 class hrs_ext_msg : public hrs_err_msg {
 public:
-  hrs_ext_msg(HeapRegionSetBase* set, const char* message) : hrs_err_msg("%s","") {
+  hrs_ext_msg(HeapRegionSetBase* set, const char* message) : hrs_err_msg("%s", "") {
     set->fill_in_ext_msg(this, message);
   }
 };
@@ -192,13 +192,9 @@ public:
 };
 
 // A set that links all the regions added to it in a doubly-linked
-// list. We should try to avoid doing operations that iterate over
+// sorted list. We should try to avoid doing operations that iterate over
 // such lists in performance critical paths. Typically we should
-// add / remove one region at a time or concatenate two lists. There are
-// two ways to treat your lists, ordered and un-ordered. All un-ordered
-// operations are done in constant time. To keep a list ordered only use
-// add_ordered() to add elements to the list. If a list is not ordered
-// from start, there is no way to sort it later.
+// add / remove one region at a time or concatenate two lists.
 
 class FreeRegionListIterator;
 
@@ -210,13 +206,13 @@ private:
   HeapRegion* _tail;
 
   // _last is used to keep track of where we added an element the last
-  // time in ordered lists. It helps to improve performance when adding
-  // several ordered items in a row.
+  // time. It helps to improve performance when adding several ordered items in a row.
   HeapRegion* _last;
 
   static uint _unrealistically_long_length;
 
-  void add_as_head_or_tail(FreeRegionList* from_list, bool as_head);
+  inline HeapRegion* remove_from_head_impl();
+  inline HeapRegion* remove_from_tail_impl();
 
 protected:
   virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg);
@@ -232,8 +228,11 @@ public:
 
   void verify_list();
 
-  HeapRegion* head() { return _head; }
-  HeapRegion* tail() { return _tail; }
+#ifdef ASSERT
+  bool contains(HeapRegion* hr) const {
+    return hr->containing_set() == this;
+  }
+#endif
 
   static void set_unrealistically_long_length(uint len);
 
@@ -242,55 +241,20 @@ public:
   // is determined by hrs_index.
   inline void add_ordered(HeapRegion* hr);
 
-  // It adds hr to the list as the new head. The region should not be
-  // a member of another set.
-  inline void add_as_head(HeapRegion* hr);
-
-  // It adds hr to the list as the new tail. The region should not be
-  // a member of another set.
-  inline void add_as_tail(HeapRegion* hr);
-
-  // It removes and returns the head of the list. It assumes that the
-  // list is not empty so it will return a non-NULL value.
-  inline HeapRegion* remove_head();
-
-  // Convenience method.
-  inline HeapRegion* remove_head_or_null();
-
-  // Removes and returns the last element (_tail) of the list. It assumes
-  // that the list isn't empty so that it can return a non-NULL value.
-  inline HeapRegion* remove_tail();
-
-  // Convenience method
-  inline HeapRegion* remove_tail_or_null();
-
   // Removes from head or tail based on the given argument.
-  inline HeapRegion* remove_region(bool from_head);
+  HeapRegion* remove_region(bool from_head);
 
   // Merge two ordered lists. The result is also ordered. The order is
   // determined by hrs_index.
   void add_ordered(FreeRegionList* from_list);
 
-  // It moves the regions from from_list to this list and empties
-  // from_list. The new regions will appear in the same order as they
-  // were in from_list and be linked in the beginning of this list.
-  void add_as_head(FreeRegionList* from_list);
-
-  // It moves the regions from from_list to this list and empties
-  // from_list. The new regions will appear in the same order as they
-  // were in from_list and be linked in the end of this list.
-  void add_as_tail(FreeRegionList* from_list);
-
   // It empties the list by removing all regions from it.
   void remove_all();
 
-  // It removes all regions in the list that are pending for removal
-  // (i.e., they have been tagged with "pending_removal"). The list
-  // must not be empty, target_count should reflect the exact number
-  // of regions that are pending for removal in the list, and
-  // target_count should be > 1 (currently, we never need to remove a
-  // single region using this).
-  void remove_all_pending(uint target_count);
+  // Remove all (contiguous) regions from first to first + num_regions -1 from
+  // this list.
+  // Num_regions must be > 1.
+  void remove_starting_at(HeapRegion* first, uint num_regions);
 
   virtual void verify();
 
@@ -298,7 +262,7 @@ public:
 };
 
 // Iterator class that provides a convenient way to iterate over the
-// regions of a HeapRegionLinkedList instance.
+// regions of a FreeRegionList.
 
 class FreeRegionListIterator : public StackObj {
 private:
@@ -324,7 +288,7 @@ public:
   }
 
   FreeRegionListIterator(FreeRegionList* list) : _curr(NULL), _list(list) {
-    _curr = list->head();
+    _curr = list->_head;
   }
 };
 

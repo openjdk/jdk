@@ -31,6 +31,9 @@ import javax.lang.model.element.*;
 import javax.lang.model.util.*;
 import java.util.*;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Object providing state about a prior round of annotation processing.
  *
@@ -69,6 +72,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
                              processingOver);
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public boolean processingOver() {
         return processingOver;
     }
@@ -80,6 +84,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      * @return {@code true} if an error was raised in the prior round
      * of processing; returns {@code false} otherwise.
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public boolean errorRaised() {
         return errorRaised;
     }
@@ -90,6 +95,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      * @return the types elements specified by the prior round, or an
      * empty set if there were none
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getRootElements() {
         return rootElements;
     }
@@ -109,6 +115,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
      * @return the elements annotated with the given annotation type,
      * or an empty set if there are none
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getElementsAnnotatedWith(TypeElement a) {
         Set<Element> result = Collections.emptySet();
         if (a.getKind() != ElementKind.ANNOTATION_TYPE)
@@ -133,21 +140,21 @@ public class JavacRoundEnvironment implements RoundEnvironment {
             super(defaultSet);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Element> visitType(TypeElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
             return super.visitType(e, p);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Element> visitExecutable(ExecutableElement e, TypeElement p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
             return super.visitExecutable(e, p);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<Element> scan(Element e, TypeElement p) {
             java.util.List<? extends AnnotationMirror> annotationMirrors =
                 processingEnv.getElementUtils().getAllAnnotationMirrors(e);
@@ -163,6 +170,7 @@ public class JavacRoundEnvironment implements RoundEnvironment {
     /**
      * {@inheritdoc}
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Set<? extends Element> getElementsAnnotatedWith(Class<? extends Annotation> a) {
         if (!a.isAnnotation())
             throw new IllegalArgumentException(NOT_AN_ANNOTATION_TYPE + a);

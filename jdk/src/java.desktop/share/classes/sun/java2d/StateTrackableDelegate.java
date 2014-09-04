@@ -250,7 +250,7 @@ public final class StateTrackableDelegate implements StateTrackable {
      * {@code IMMUTABLE} delegate is never modified.
      * @since 1.7
      */
-    public final void markDirty() {
+    public void markDirty() {
         theTracker = null;
     }
 }

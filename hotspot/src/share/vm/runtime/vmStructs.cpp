@@ -52,6 +52,7 @@
 #include "interpreter/bytecodes.hpp"
 #include "interpreter/interpreter.hpp"
 #include "memory/allocation.hpp"
+#include "memory/allocation.inline.hpp"
 #include "memory/cardTableRS.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/freeBlockDictionary.hpp"
@@ -93,6 +94,7 @@
 #include "runtime/globals.hpp"
 #include "runtime/java.hpp"
 #include "runtime/javaCalls.hpp"
+#include "runtime/os.hpp"
 #include "runtime/perfMemory.hpp"
 #include "runtime/serviceThread.hpp"
 #include "runtime/sharedRuntime.hpp"
@@ -312,7 +314,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   nonstatic_field(InstanceKlass,               _jni_ids,                                      JNIid*)                                \
   nonstatic_field(InstanceKlass,               _osr_nmethods_head,                            nmethod*)                              \
   nonstatic_field(InstanceKlass,               _breakpoints,                                  BreakpointInfo*)                       \
-  nonstatic_field(InstanceKlass,               _generic_signature_index,                           u2)                               \
+  nonstatic_field(InstanceKlass,               _generic_signature_index,                      u2)                                    \
   nonstatic_field(InstanceKlass,               _methods_jmethod_ids,                          jmethodID*)                            \
   volatile_nonstatic_field(InstanceKlass,      _idnum_allocated_count,                        u2)                                    \
   nonstatic_field(InstanceKlass,               _annotations,                                  Annotations*)                          \
@@ -660,6 +662,7 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
       static_field(SystemDictionary,            WK_KLASS(StackOverflowError_klass),            Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(ProtectionDomain_klass),              Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(AccessControlContext_klass),          Klass*)                               \
+      static_field(SystemDictionary,            WK_KLASS(SecureClassLoader_klass),             Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(Reference_klass),                     Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(SoftReference_klass),                 Klass*)                               \
       static_field(SystemDictionary,            WK_KLASS(WeakReference_klass),                 Klass*)                               \
@@ -3296,14 +3299,14 @@ static int recursiveFindType(VMTypeEntry* origtypes, const char* typeName, bool 
     }
   }
   if (strstr(typeName, " const") == typeName + len - 6) {
-    char * s = strdup(typeName);
+    char * s = os::strdup_check_oom(typeName);
     s[len - 6] = '\0';
     // tty->print_cr("checking \"%s\" for \"%s\"", s, typeName);
     if (recursiveFindType(origtypes, s, true) == 1) {
-      free(s);
+      os::free(s);
       return 1;
     }
-    free(s);
+    os::free(s);
   }
   if (!isRecurse) {
     tty->print_cr("type \"%s\" not found", typeName);

@@ -44,7 +44,7 @@ ifneq ($(OPENJDK_TARGET_OS), macosx)
 endif
 
 ifeq ($(OPENJDK_TARGET_OS), aix)
-  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/aix/native/java/net/
+  LIBNET_SRC_DIRS += $(JDK_TOPDIR)/src/java.base/$(OPENJDK_TARGET_OS)/native/libnet/java/net/
 endif
 
 $(eval $(call SetupNativeCompilation,BUILD_LIBNET, \

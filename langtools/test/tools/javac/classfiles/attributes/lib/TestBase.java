@@ -22,22 +22,23 @@
  */
 
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 import java.util.function.Function;
-import java.util.stream.Stream;
+import java.util.stream.Collectors;
+
 import javax.tools.DiagnosticCollector;
 import javax.tools.JavaCompiler;
 import javax.tools.JavaFileObject;
 import javax.tools.ToolProvider;
 
-import static java.lang.String.format;
-import static java.lang.System.lineSeparator;
-import static java.util.Arrays.asList;
-import static java.util.Collections.emptyList;
-import static java.util.stream.Collectors.joining;
-import static java.util.stream.Collectors.toList;
+import com.sun.tools.classfile.ClassFile;
+import com.sun.tools.classfile.ConstantPoolException;
 
 /**
  * Base class for class file attribute tests.
@@ -46,7 +47,7 @@ import static java.util.stream.Collectors.toList;
  */
 public class TestBase {
 
-    public static final String LINE_SEPARATOR = lineSeparator();
+    public static final String LINE_SEPARATOR = System.lineSeparator();
 
     private <S> InMemoryFileManager compile(
             List<String> options,
@@ -57,7 +58,7 @@ public class TestBase {
         JavaCompiler compiler = ToolProvider.getSystemJavaCompiler();
         List<? extends JavaFileObject> src = sources.stream()
                 .map(src2JavaFileObject)
-                .collect(toList());
+                .collect(Collectors.toList());
 
         DiagnosticCollector<? super JavaFileObject> dc = new DiagnosticCollector<>();
         try (InMemoryFileManager fileManager
@@ -67,7 +68,7 @@ public class TestBase {
             if (!success) {
                 String errorMessage = dc.getDiagnostics().stream()
                         .map(Object::toString)
-                        .collect(joining("\n"));
+                        .collect(Collectors.joining("\n"));
                 throw new CompilationException("Compilation Error\n\n" + errorMessage);
             }
             return fileManager;
@@ -82,7 +83,7 @@ public class TestBase {
      */
     public InMemoryFileManager compile(String... sources)
             throws IOException, CompilationException {
-        return compile(emptyList(), sources);
+        return compile(Collections.emptyList(), sources);
     }
 
     /**
@@ -94,7 +95,7 @@ public class TestBase {
      */
     public InMemoryFileManager compile(List<String> options, String... sources)
             throws IOException, CompilationException {
-        return compile(options, ToolBox.JavaSource::new, asList(sources));
+        return compile(options, ToolBox.JavaSource::new, Arrays.asList(sources));
     }
 
     /**
@@ -105,7 +106,7 @@ public class TestBase {
      */
     public InMemoryFileManager compile(String[]... sources) throws IOException,
             CompilationException {
-        return compile(emptyList(), sources);
+        return compile(Collections.emptyList(), sources);
     }
 
     /**
@@ -117,12 +118,73 @@ public class TestBase {
      */
     public InMemoryFileManager compile(List<String> options, String[]... sources)
             throws IOException, CompilationException {
-        return compile(options, src -> new ToolBox.JavaSource(src[0], src[1]), asList(sources));
+        return compile(options, src -> new ToolBox.JavaSource(src[0], src[1]), Arrays.asList(sources));
+    }
+
+    /**
+     * Returns class file that is read from {@code is}.
+     *
+     * @param is an input stream
+     * @return class file that is read from {@code is}
+     * @throws IOException if I/O error occurs
+     * @throws ConstantPoolException if constant pool error occurs
+     */
+    public ClassFile readClassFile(InputStream is) throws IOException, ConstantPoolException {
+        return ClassFile.read(is);
+    }
+
+    /**
+     * Returns class file that is read from {@code fileObject}.
+     *
+     * @param fileObject a file object
+     * @return class file that is read from {@code fileObject}
+     * @throws IOException if I/O error occurs
+     * @throws ConstantPoolException if constant pool error occurs
+     */
+    public ClassFile readClassFile(JavaFileObject fileObject) throws IOException, ConstantPoolException {
+        return readClassFile(fileObject.openInputStream());
+    }
+
+    /**
+     * Returns class file that corresponds to {@code clazz}.
+     *
+     * @param clazz a class
+     * @return class file that is read from {@code clazz}
+     * @throws IOException if I/O error occurs
+     * @throws ConstantPoolException if constant pool error occurs
+     */
+    public ClassFile readClassFile(Class<?> clazz) throws IOException, ConstantPoolException {
+        return readClassFile(getClassFile(clazz));
+    }
+
+    /**
+     * Returns class file that corresponds to {@code className}.
+     *
+     * @param className a class name
+     * @return class file that is read from {@code className}
+     * @throws IOException if I/O error occurs
+     * @throws ConstantPoolException if constant pool error occurs
+     */
+    public ClassFile readClassFile(String className) throws IOException, ConstantPoolException {
+        return readClassFile(getClassFile(className + ".class"));
+    }
+
+    /**
+     * Returns class file that is read from {@code file}.
+     *
+     * @param file a file
+     * @return class file that is read from {@code file}
+     * @throws IOException if I/O error occurs
+     * @throws ConstantPoolException if constant pool error occurs
+     */
+    public ClassFile readClassFile(File file) throws IOException, ConstantPoolException {
+        return readClassFile(new FileInputStream(file));
     }
 
     public void assertEquals(Object actual, Object expected, String message) {
         if (!Objects.equals(actual, expected))
-            throw new AssertionFailedException(format("%s%nGot: %s, Expected: %s", message, actual, expected));
+            throw new AssertionFailedException(String.format("%s%nGot: %s, Expected: %s",
+                    message, actual, expected));
     }
 
     public void assertNull(Object actual, String message) {
@@ -169,22 +231,18 @@ public class TestBase {
      * @param message string to print.
      */
     public void echo(String message) {
-        System.err.println(message.replace("\n", LINE_SEPARATOR));
+        printf(message + "\n");
     }
 
     /**
-     * Substitutes args in template and prints result to standard error. New lines are converted to system dependent NL.
+     * Substitutes args in template and prints result to standard error.
+     * New lines are converted to system dependent NL.
      *
      * @param template template in standard String.format(...) format.
      * @param args arguments to substitute in template.
      */
     public void printf(String template, Object... args) {
-        System.err.printf(template, Stream.of(args)
-                .map(Objects::toString)
-                .map(m -> m.replace("\n", LINE_SEPARATOR))
-                .collect(toList())
-                .toArray());
-
+        System.err.printf(String.format(template, args).replace("\n", LINE_SEPARATOR));
     }
 
     public static class CompilationException extends Exception {

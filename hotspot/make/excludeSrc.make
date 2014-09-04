@@ -70,7 +70,8 @@ ifeq ($(INCLUDE_CDS), false)
       CXXFLAGS += -DINCLUDE_CDS=0
       CFLAGS += -DINCLUDE_CDS=0
 
-      Src_Files_EXCLUDE += filemap.cpp metaspaceShared.cpp
+      Src_Files_EXCLUDE += filemap.cpp metaspaceShared*.cpp sharedPathsMiscInfo.cpp \
+        systemDictionaryShared.cpp classLoaderExt.cpp sharedClassUtil.cpp
 endif
 
 ifeq ($(INCLUDE_ALL_GCS), false)
@@ -119,8 +120,8 @@ ifeq ($(INCLUDE_NMT), false)
       CFLAGS += -DINCLUDE_NMT=0
 
       Src_Files_EXCLUDE += \
-	 memBaseline.cpp memPtr.cpp memRecorder.cpp memReporter.cpp memSnapshot.cpp memTrackWorker.cpp \
-	 memTracker.cpp nmtDCmd.cpp
+	 memBaseline.cpp memReporter.cpp mallocTracker.cpp virtualMemoryTracker.cpp nmtCommon.cpp \
+	 memTracker.cpp nmtDCmd.cpp mallocSiteTable.cpp
 endif
 
 -include $(HS_ALT_MAKE)/excludeSrc.make

@@ -82,10 +82,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param isEnum true if we are generating a tree for enums
      * @param contentTree the content tree to which the level information will be added
      */
-    protected void addLevelInfo(ClassDoc parent, List<ClassDoc> list,
+    protected void addLevelInfo(ClassDoc parent, Collection<ClassDoc> list,
             boolean isEnum, Content contentTree) {
-        int size = list.size();
-        if (size > 0) {
+        if (!list.isEmpty()) {
             Content ul = new HtmlTree(HtmlTag.UL);
             for (ClassDoc local : list) {
                 HtmlTree li = new HtmlTree(HtmlTag.LI);
@@ -109,9 +108,9 @@ public abstract class AbstractTreeWriter extends HtmlDocletWriter {
      * @param heading heading for the tree
      * @param div the content tree to which the tree will be added
      */
-    protected void addTree(List<ClassDoc> list, String heading, Content div) {
-        if (list.size() > 0) {
-            ClassDoc firstClassDoc = list.get(0);
+    protected void addTree(SortedSet<ClassDoc> list, String heading, Content div) {
+        if (!list.isEmpty()) {
+            ClassDoc firstClassDoc = list.first();
             Content headingContent = getResource(heading);
             div.addContent(HtmlTree.HEADING(HtmlConstants.CONTENT_HEADING, true,
                     headingContent));

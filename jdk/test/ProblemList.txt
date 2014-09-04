@@ -127,6 +127,8 @@
 # 8046351
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
+# 8056143
+java/lang/management/MemoryMXBean/LowMemoryTest.java                                      generic-all
 
 ############################################################################
 
@@ -217,6 +219,9 @@ sun/security/pkcs11/sslecc/ClientJSSEServerJSSE.java            solaris-all
 java/security/KeyPairGenerator/SolarisShortDSA.java             solaris-all
 sun/security/tools/keytool/standard.sh                          solaris-all
 
+# 8049312
+com/sun/crypto/provider/Cipher/AES/CICO.java			generic-all
+
 ############################################################################
 
 # jdk_sound
@@ -257,7 +262,7 @@ com/sun/jdi/RedefineImplementor.sh                              generic-all
 # 8031555
 com/sun/jdi/JdbMethodExitTest.sh                                generic-all
 
-# 8041934
+# 8043571
 com/sun/jdi/RepStep.java                                        generic-all
 
 # 8044419
@@ -271,9 +276,6 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 
 # jdk_instrument
 
-# 8037082
-java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
-
 ############################################################################
 
 # svc_tools
@@ -284,13 +286,15 @@ sun/tools/jcmd/TestJcmdSanity.java				windows-all
 # 8033104
 sun/jvmstat/monitor/MonitoredVm/CR6672135.java			generic-all
 
-# 8041989
-sun/tools/jstatd/TestJstatdDefaults.java                        generic-all
-
-# 8037285
-sun/tools/jstatd/TestJstatdServer.java                          generic-all
+# 8027668
+sun/tools/jstatd/TestJstatdDefaults.java                generic-all
+sun/tools/jstatd/TestJstatdServer.java                  generic-all
+sun/tools/jstatd/TestJstatdPort.java                    generic-all
 
 # 8046355
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
+
+# 6456333
+sun/tools/jps/TestJpsJarRelative.java				generic-all
 
 ############################################################################

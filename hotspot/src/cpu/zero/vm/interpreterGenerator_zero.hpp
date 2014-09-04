@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -39,4 +39,7 @@
   address generate_accessor_entry();
   address generate_Reference_get_entry();
 
+  // Not supported
+  address generate_CRC32_update_entry() { return NULL; }
+  address generate_CRC32_updateBytes_entry(AbstractInterpreter::MethodKind kind) { return NULL; }
 #endif // CPU_ZERO_VM_INTERPRETERGENERATOR_ZERO_HPP

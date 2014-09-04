@@ -100,6 +100,7 @@ public:
   void methods_do(void f(Method*));
 
   void unlink(BoolObjectClosure* is_alive);
+  void remove_classes_in_error_state();
 
   // Classes loaded by the bootstrap loader are always strongly reachable.
   // If we're not doing class unloading, all classes are strongly reachable.
@@ -108,9 +109,8 @@ public:
     return (loader_data->is_the_null_class_loader_data() || !ClassUnloading);
   }
 
-  // Unload (that is, break root links to) all unmarked classes and
-  // loaders.  Returns "true" iff something was unloaded.
-  bool do_unloading();
+  // Unload (that is, break root links to) all unmarked classes and loaders.
+  void do_unloading();
 
   // Protection domains
   Klass* find(int index, unsigned int hash, Symbol* name,
@@ -127,9 +127,7 @@ public:
 
   ProtectionDomainCacheEntry* cache_get(oop protection_domain);
 
-#ifndef PRODUCT
-  void print();
-#endif
+  void print(bool details = true);
   void verify();
 };
 

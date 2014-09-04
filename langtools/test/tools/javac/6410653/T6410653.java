@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -45,6 +45,7 @@ public class T6410653 {
         useRawMessages.setBoolean(null, true);
         ByteArrayOutputStream out = new ByteArrayOutputStream();
         compiler.run(null, null, out, "-d", source, source);
+        System.err.println(">>>" + out + "<<<");
         useRawMessages.setBoolean(null, false);
         if (!out.toString().equals(String.format("%s%n%s%n",
                                                  "javac: javac.err.file.not.directory",
