@@ -33,6 +33,7 @@
 #include "oops/symbol.hpp"
 #include "runtime/handles.inline.hpp"
 #include "runtime/jniHandles.hpp"
+#include "runtime/os.hpp"
 
 class MethodMatcher : public CHeapObj<mtCompiler> {
  public:
@@ -175,7 +176,11 @@ class MethodOptionMatcher: public MethodMatcher {
                              Symbol* method_name, Mode method_mode,
                              Symbol* signature, const char * opt, MethodMatcher* next):
     MethodMatcher(class_name, class_mode, method_name, method_mode, signature, next) {
-    option = opt;
+    option = os::strdup_check_oom(opt);
+  }
+
+  virtual ~MethodOptionMatcher() {
+    os::free((void*)option);
   }
 
   bool match(methodHandle method, const char* opt) {
@@ -498,7 +503,7 @@ void CompilerOracle::parse_from_line(char* line) {
           tty->print("CompilerOracle: %s ", command_names[command]);
           match->print();
         }
-        match = add_option_string(c_name, c_match, m_name, m_match, signature, strdup(option));
+        match = add_option_string(c_name, c_match, m_name, m_match, signature, option);
         line += bytes_read;
       }
     } else {

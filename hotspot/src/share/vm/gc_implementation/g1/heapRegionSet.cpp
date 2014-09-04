@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionSet.inline.hpp"
 
@@ -67,7 +68,7 @@ void HeapRegionSetBase::verify_start() {
   // Do the basic verification first before we do the checks over the regions.
   HeapRegionSetBase::verify();
 
-  _verify_in_progress        = true;
+  _verify_in_progress = true;
 }
 
 void HeapRegionSetBase::verify_end() {
@@ -103,62 +104,7 @@ void FreeRegionList::set_unrealistically_long_length(uint len) {
 }
 
 void FreeRegionList::fill_in_ext_msg_extra(hrs_ext_msg* msg) {
-  msg->append(" hd: "PTR_FORMAT" tl: "PTR_FORMAT, head(), tail());
-}
-
-void FreeRegionList::add_as_head_or_tail(FreeRegionList* from_list, bool as_head) {
-  check_mt_safety();
-  from_list->check_mt_safety();
-
-  verify_optional();
-  from_list->verify_optional();
-
-  if (from_list->is_empty()) {
-    return;
-  }
-
-#ifdef ASSERT
-  FreeRegionListIterator iter(from_list);
-  while (iter.more_available()) {
-    HeapRegion* hr = iter.get_next();
-    // In set_containing_set() we check that we either set the value
-    // from NULL to non-NULL or vice versa to catch bugs. So, we have
-    // to NULL it first before setting it to the value.
-    hr->set_containing_set(NULL);
-    hr->set_containing_set(this);
-  }
-#endif // ASSERT
-
-  if (_head == NULL) {
-    assert(length() == 0 && _tail == NULL, hrs_ext_msg(this, "invariant"));
-    _head = from_list->_head;
-    _tail = from_list->_tail;
-  } else {
-    assert(length() > 0 && _tail != NULL, hrs_ext_msg(this, "invariant"));
-    if (as_head) {
-      from_list->_tail->set_next(_head);
-      _head->set_prev(from_list->_tail);
-      _head = from_list->_head;
-    } else {
-      _tail->set_next(from_list->_head);
-      from_list->_head->set_prev(_tail);
-      _tail = from_list->_tail;
-    }
-  }
-
-  _count.increment(from_list->length(), from_list->total_capacity_bytes());
-  from_list->clear();
-
-  verify_optional();
-  from_list->verify_optional();
-}
-
-void FreeRegionList::add_as_head(FreeRegionList* from_list) {
-  add_as_head_or_tail(from_list, true /* as_head */);
-}
-
-void FreeRegionList::add_as_tail(FreeRegionList* from_list) {
-  add_as_head_or_tail(from_list, false /* as_head */);
+  msg->append(" hd: "PTR_FORMAT" tl: "PTR_FORMAT, _head, _tail);
 }
 
 void FreeRegionList::remove_all() {
@@ -191,11 +137,6 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
     return;
   }
 
-  if (is_empty()) {
-    add_as_head(from_list);
-    return;
-  }
-
   #ifdef ASSERT
   FreeRegionListIterator iter(from_list);
   while (iter.more_available()) {
@@ -208,37 +149,43 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
   }
   #endif // ASSERT
 
-  HeapRegion* curr_to = _head;
-  HeapRegion* curr_from = from_list->_head;
-
-  while (curr_from != NULL) {
-    while (curr_to != NULL && curr_to->hrs_index() < curr_from->hrs_index()) {
-      curr_to = curr_to->next();
-    }
-
-    if (curr_to == NULL) {
-      // The rest of the from list should be added as tail
-      _tail->set_next(curr_from);
-      curr_from->set_prev(_tail);
-      curr_from = NULL;
-    } else {
-      HeapRegion* next_from = curr_from->next();
-
-      curr_from->set_next(curr_to);
-      curr_from->set_prev(curr_to->prev());
-      if (curr_to->prev() == NULL) {
-        _head = curr_from;
-      } else {
-        curr_to->prev()->set_next(curr_from);
-      }
-      curr_to->set_prev(curr_from);
-
-      curr_from = next_from;
-    }
-  }
-
-  if (_tail->hrs_index() < from_list->_tail->hrs_index()) {
+  if (is_empty()) {
+    assert(length() == 0 && _tail == NULL, hrs_ext_msg(this, "invariant"));
+    _head = from_list->_head;
     _tail = from_list->_tail;
+  } else {
+    HeapRegion* curr_to = _head;
+    HeapRegion* curr_from = from_list->_head;
+
+    while (curr_from != NULL) {
+      while (curr_to != NULL && curr_to->hrs_index() < curr_from->hrs_index()) {
+        curr_to = curr_to->next();
+      }
+
+      if (curr_to == NULL) {
+        // The rest of the from list should be added as tail
+        _tail->set_next(curr_from);
+        curr_from->set_prev(_tail);
+        curr_from = NULL;
+      } else {
+        HeapRegion* next_from = curr_from->next();
+
+        curr_from->set_next(curr_to);
+        curr_from->set_prev(curr_to->prev());
+        if (curr_to->prev() == NULL) {
+          _head = curr_from;
+        } else {
+          curr_to->prev()->set_next(curr_from);
+        }
+        curr_to->set_prev(curr_from);
+
+        curr_from = next_from;
+      }
+    }
+
+    if (_tail->hrs_index() < from_list->_tail->hrs_index()) {
+      _tail = from_list->_tail;
+    }
   }
 
   _count.increment(from_list->length(), from_list->total_capacity_bytes());
@@ -248,68 +195,59 @@ void FreeRegionList::add_ordered(FreeRegionList* from_list) {
   from_list->verify_optional();
 }
 
-void FreeRegionList::remove_all_pending(uint target_count) {
+void FreeRegionList::remove_starting_at(HeapRegion* first, uint num_regions) {
   check_mt_safety();
-  assert(target_count > 1, hrs_ext_msg(this, "pre-condition"));
+  assert(num_regions >= 1, hrs_ext_msg(this, "pre-condition"));
   assert(!is_empty(), hrs_ext_msg(this, "pre-condition"));
 
   verify_optional();
   DEBUG_ONLY(uint old_length = length();)
 
-  HeapRegion* curr = _head;
+  HeapRegion* curr = first;
   uint count = 0;
-  while (curr != NULL) {
+  while (count < num_regions) {
     verify_region(curr);
     HeapRegion* next = curr->next();
     HeapRegion* prev = curr->prev();
 
-    if (curr->pending_removal()) {
-      assert(count < target_count,
-             hrs_err_msg("[%s] should not come across more regions "
-                         "pending for removal than target_count: %u",
-                         name(), target_count));
+    assert(count < num_regions,
+           hrs_err_msg("[%s] should not come across more regions "
+                       "pending for removal than num_regions: %u",
+                       name(), num_regions));
 
-      if (prev == NULL) {
-        assert(_head == curr, hrs_ext_msg(this, "invariant"));
-        _head = next;
-      } else {
-        assert(_head != curr, hrs_ext_msg(this, "invariant"));
-        prev->set_next(next);
-      }
-      if (next == NULL) {
-        assert(_tail == curr, hrs_ext_msg(this, "invariant"));
-        _tail = prev;
-      } else {
-        assert(_tail != curr, hrs_ext_msg(this, "invariant"));
-        next->set_prev(prev);
-      }
-      if (_last = curr) {
-        _last = NULL;
-      }
-
-      curr->set_next(NULL);
-      curr->set_prev(NULL);
-      remove(curr);
-      curr->set_pending_removal(false);
-
-      count += 1;
-
-      // If we have come across the target number of regions we can
-      // just bail out. However, for debugging purposes, we can just
-      // carry on iterating to make sure there are not more regions
-      // tagged with pending removal.
-      DEBUG_ONLY(if (count == target_count) break;)
+    if (prev == NULL) {
+      assert(_head == curr, hrs_ext_msg(this, "invariant"));
+      _head = next;
+    } else {
+      assert(_head != curr, hrs_ext_msg(this, "invariant"));
+      prev->set_next(next);
     }
+    if (next == NULL) {
+      assert(_tail == curr, hrs_ext_msg(this, "invariant"));
+      _tail = prev;
+    } else {
+      assert(_tail != curr, hrs_ext_msg(this, "invariant"));
+      next->set_prev(prev);
+    }
+    if (_last = curr) {
+      _last = NULL;
+    }
+
+    curr->set_next(NULL);
+    curr->set_prev(NULL);
+    remove(curr);
+
+    count++;
     curr = next;
   }
 
-  assert(count == target_count,
-         hrs_err_msg("[%s] count: %u should be == target_count: %u",
-                     name(), count, target_count));
-  assert(length() + target_count == old_length,
+  assert(count == num_regions,
+         hrs_err_msg("[%s] count: %u should be == num_regions: %u",
+                     name(), count, num_regions));
+  assert(length() + num_regions == old_length,
          hrs_err_msg("[%s] new length should be consistent "
-                     "new length: %u old length: %u target_count: %u",
-                     name(), length(), old_length, target_count));
+                     "new length: %u old length: %u num_regions: %u",
+                     name(), length(), old_length, num_regions));
 
   verify_optional();
 }
@@ -348,10 +286,12 @@ void FreeRegionList::print_on(outputStream* out, bool print_contents) {
       hr->print_on(out);
     }
   }
+
+  out->cr();
 }
 
 void FreeRegionList::verify_list() {
-  HeapRegion* curr = head();
+  HeapRegion* curr = _head;
   HeapRegion* prev1 = NULL;
   HeapRegion* prev0 = NULL;
   uint count = 0;
@@ -379,7 +319,7 @@ void FreeRegionList::verify_list() {
     curr = curr->next();
   }
 
-  guarantee(tail() == prev0, err_msg("Expected %s to end with %u but it ended with %u.", name(), tail()->hrs_index(), prev0->hrs_index()));
+  guarantee(_tail == prev0, err_msg("Expected %s to end with %u but it ended with %u.", name(), _tail->hrs_index(), prev0->hrs_index()));
   guarantee(_tail == NULL || _tail->next() == NULL, "_tail should not have a next");
   guarantee(length() == count, err_msg("%s count mismatch. Expected %u, actual %u.", name(), length(), count));
   guarantee(total_capacity_bytes() == capacity, err_msg("%s capacity mismatch. Expected " SIZE_FORMAT ", actual " SIZE_FORMAT,
@@ -462,4 +402,42 @@ void HumongousRegionSetMtSafeChecker::check() {
     guarantee(Heap_lock->owned_by_self(),
               "master humongous set MT safety protocol outside a safepoint");
   }
+}
+
+void FreeRegionList_test() {
+  FreeRegionList l("test");
+
+  const uint num_regions_in_test = 5;
+  // Create a fake heap. It does not need to be valid, as the HeapRegion constructor
+  // does not access it.
+  MemRegion heap(NULL, num_regions_in_test * HeapRegion::GrainWords);
+  // Allocate a fake BOT because the HeapRegion constructor initializes
+  // the BOT.
+  size_t bot_size = G1BlockOffsetSharedArray::compute_size(heap.word_size());
+  HeapWord* bot_data = NEW_C_HEAP_ARRAY(HeapWord, bot_size, mtGC);
+  ReservedSpace bot_rs(G1BlockOffsetSharedArray::compute_size(heap.word_size()));
+  G1RegionToSpaceMapper* bot_storage =
+    G1RegionToSpaceMapper::create_mapper(bot_rs,
+                                         os::vm_page_size(),
+                                         HeapRegion::GrainBytes,
+                                         G1BlockOffsetSharedArray::N_bytes,
+                                         mtGC);
+  G1BlockOffsetSharedArray oa(heap, bot_storage);
+  bot_storage->commit_regions(0, num_regions_in_test);
+  HeapRegion hr0(0, &oa, heap);
+  HeapRegion hr1(1, &oa, heap);
+  HeapRegion hr2(2, &oa, heap);
+  HeapRegion hr3(3, &oa, heap);
+  HeapRegion hr4(4, &oa, heap);
+  l.add_ordered(&hr1);
+  l.add_ordered(&hr0);
+  l.add_ordered(&hr3);
+  l.add_ordered(&hr4);
+  l.add_ordered(&hr2);
+  assert(l.length() == num_regions_in_test, "wrong length");
+  l.verify_list();
+
+  bot_storage->uncommit_regions(0, num_regions_in_test);
+  delete bot_storage;
+  FREE_C_HEAP_ARRAY(HeapWord, bot_data, mtGC);
 }

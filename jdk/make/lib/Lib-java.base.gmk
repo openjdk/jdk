@@ -25,6 +25,10 @@
 
 include LibCommon.gmk
 
+# Prepare the find cache.
+$(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/java.base/*/native \
+    $(JDK_TOPDIR)/src/*/java.base/*/native)))
+
 include CoreLibraries.gmk
 include NetworkingLibraries.gmk
 include NioLibraries.gmk

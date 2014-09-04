@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,6 +31,7 @@ import java.util.List;
 import java.util.ArrayList;
 import java.util.Vector;
 import java.util.Collections;
+import java.util.StringJoiner;
 import sun.security.util.SecurityConstants;
 
 /**
@@ -556,39 +557,25 @@ public final class FilePermission extends Permission implements Serializable {
      * @return the canonical string representation of the actions.
      */
     private static String getActions(int mask) {
-        StringBuilder sb = new StringBuilder();
-        boolean comma = false;
+        StringJoiner sj = new StringJoiner(",");
 
         if ((mask & READ) == READ) {
-            comma = true;
-            sb.append("read");
+            sj.add("read");
         }
-
         if ((mask & WRITE) == WRITE) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("write");
+            sj.add("write");
         }
-
         if ((mask & EXECUTE) == EXECUTE) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("execute");
+            sj.add("execute");
         }
-
         if ((mask & DELETE) == DELETE) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("delete");
+            sj.add("delete");
         }
-
         if ((mask & READLINK) == READLINK) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("readlink");
+            sj.add("readlink");
         }
 
-        return sb.toString();
+        return sj.toString();
     }
 
     /**

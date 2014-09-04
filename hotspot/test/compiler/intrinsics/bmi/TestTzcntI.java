@@ -30,6 +30,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build TestTzcntI BMITestRunner Expr
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI TestTzcntI
  */

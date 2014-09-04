@@ -572,10 +572,10 @@ Java_java_io_WinNTFileSystem_createFileExclusively(JNIEnv *env, jclass cls,
                 SetLastError(error);
                 JNU_ThrowIOExceptionWithLastError(env, "Could not open file");
             }
-         }
-         free(pathbuf);
-         return JNI_FALSE;
         }
+        free(pathbuf);
+        return JNI_FALSE;
+    }
     free(pathbuf);
     CloseHandle(h);
     return JNI_TRUE;
@@ -636,7 +636,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
     if (search_path == 0) {
         free (pathbuf);
         errno = ENOMEM;
-        JNU_ThrowOutOfMemoryError(env, "native memory allocation faiuled");
+        JNU_ThrowOutOfMemoryError(env, "native memory allocation failed");
         return NULL;
     }
     wcscpy(search_path, pathbuf);
@@ -652,7 +652,7 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
 
     /* Remove trailing space chars from directory name */
     len = (int)wcslen(search_path);
-    while (search_path[len-1] == ' ') {
+    while (search_path[len-1] == L' ') {
         len--;
     }
     search_path[len] = 0;
@@ -713,13 +713,15 @@ Java_java_io_WinNTFileSystem_list(JNIEnv *env, jobject this, jobject file)
         return NULL; // error
     FindClose(handle);
 
-    /* Copy the final results into an appropriately-sized array */
-    old = rv;
-    rv = (*env)->NewObjectArray(env, len, str_class, NULL);
-    if (rv == NULL)
-        return NULL; /* error */
-    if (JNU_CopyObjectArray(env, rv, old, len) < 0)
-        return NULL; /* error */
+    if (len < maxlen) {
+        /* Copy the final results into an appropriately-sized array */
+        old = rv;
+        rv = (*env)->NewObjectArray(env, len, str_class, NULL);
+        if (rv == NULL)
+            return NULL; /* error */
+        if (JNU_CopyObjectArray(env, rv, old, len) < 0)
+            return NULL; /* error */
+    }
     return rv;
 }
 
@@ -753,9 +755,7 @@ Java_java_io_WinNTFileSystem_rename0(JNIEnv *env, jobject this, jobject from,
     jboolean rv = JNI_FALSE;
     WCHAR *frompath = fileToNTPath(env, from, ids.path);
     WCHAR *topath = fileToNTPath(env, to, ids.path);
-    if (frompath == NULL || topath == NULL)
-        return JNI_FALSE;
-    if (_wrename(frompath, topath) == 0) {
+    if (frompath != NULL && topath != NULL && _wrename(frompath, topath) == 0) {
         rv = JNI_TRUE;
     }
     free(frompath);

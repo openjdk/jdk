@@ -351,6 +351,12 @@ class CollectedHeap : public CHeapObj<mtInternal> {
     fill_with_object(start, pointer_delta(end, start), zap);
   }
 
+  // Return the address "addr" aligned by "alignment_in_bytes" if such
+  // an address is below "end".  Return NULL otherwise.
+  inline static HeapWord* align_allocation_or_fail(HeapWord* addr,
+                                                   HeapWord* end,
+                                                   unsigned short alignment_in_bytes);
+
   // Some heaps may offer a contiguous region for shared non-blocking
   // allocation, via inlined code (by exporting the address of the top and
   // end fields defining the extent of the contiguous allocation region.)

@@ -78,11 +78,8 @@ $(JDK_OUTPUTDIR)/gensrc_no_srczip/_the.generated_beaninfo: $(BEANS_SRC) \
 	$(MKDIR) -p $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing
 	$(JAVA) -Djava.awt.headless=true $(NEW_JAVADOC) \
 	    -sourcepath "$(subst $(SPACE),$(PATH_SEP),\
-	        $(if $(SHUFFLED),$(wildcard $(JDK_TOPDIR)/src/*/*/classes) \
-	        $(JDK_OUTPUTDIR)/gensrc/java.base, \
-	        $(JDK_TOPDIR)/src/share/classes \
-                $(JDK_TOPDIR)/src/$(OPENJDK_TARGET_OS_API_DIR)/classes \
-	        $(JDK_OUTPUTDIR)/gensrc))" \
+	        $(wildcard $(JDK_TOPDIR)/src/*/*/classes) \
+	        $(JDK_OUTPUTDIR)/gensrc/java.base)" \
 	    -doclet build.tools.swingbeaninfo.GenDocletBeanInfo \
 	    -x $(SWINGBEAN_DEBUG_FLAG) -d $(JDK_OUTPUTDIR)/gensrc_no_srczip/java.desktop/javax/swing \
 	    -t $(DOCLET_DATA_DIR)/SwingBeanInfo.template -docletpath $(JDK_OUTPUTDIR)/btclasses \

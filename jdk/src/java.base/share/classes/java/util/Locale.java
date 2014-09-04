@@ -2059,14 +2059,11 @@ public final class Locale implements Cloneable, Serializable {
         // If we have no list patterns, compose the list in a simple,
         // non-localized way.
         if (listPattern == null || listCompositionPattern == null) {
-            StringBuilder result = new StringBuilder();
+            StringJoiner sj = new StringJoiner(",");
             for (int i = 0; i < stringList.length; ++i) {
-                if (i > 0) {
-                    result.append(',');
-                }
-                result.append(stringList[i]);
+                sj.add(stringList[i]);
             }
-            return result.toString();
+            return sj.toString();
         }
 
         // Compose the list down to three elements if necessary

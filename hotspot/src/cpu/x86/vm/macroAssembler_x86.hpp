@@ -966,6 +966,16 @@ public:
   void mulss(XMMRegister dst, Address src)        { Assembler::mulss(dst, src); }
   void mulss(XMMRegister dst, AddressLiteral src);
 
+  // Carry-Less Multiplication Quadword
+  void pclmulldq(XMMRegister dst, XMMRegister src) {
+    // 0x00 - multiply lower 64 bits [0:63]
+    Assembler::pclmulqdq(dst, src, 0x00);
+  }
+  void pclmulhdq(XMMRegister dst, XMMRegister src) {
+    // 0x11 - multiply upper 64 bits [64:127]
+    Assembler::pclmulqdq(dst, src, 0x11);
+  }
+
   void sqrtsd(XMMRegister dst, XMMRegister src)    { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, Address src)        { Assembler::sqrtsd(dst, src); }
   void sqrtsd(XMMRegister dst, AddressLiteral src);

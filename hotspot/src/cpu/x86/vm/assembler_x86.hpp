@@ -1837,6 +1837,7 @@ private:
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
   // Carry-Less Multiplication Quadword
+  void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);
   void vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask);
 
   // AVX instruction which is used to clear upper 128 bits of YMM registers and

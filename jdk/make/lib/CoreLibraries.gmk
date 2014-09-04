@@ -26,6 +26,8 @@
 WIN_VERIFY_LIB := $(JDK_OUTPUTDIR)/objs/libverify/verify.lib
 
 ##########################################################################################
+# libfdlibm is statically linked with libjava below and not delivered into the 
+# product on its own.
 
 BUILD_LIBFDLIBM_OPTIMIZATION := HIGH
 

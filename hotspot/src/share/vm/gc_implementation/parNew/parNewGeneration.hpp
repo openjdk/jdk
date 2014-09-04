@@ -168,7 +168,7 @@ class ParScanThreadState {
   HeapWord* alloc_in_to_space_slow(size_t word_sz);
 
   HeapWord* alloc_in_to_space(size_t word_sz) {
-    HeapWord* obj = to_space_alloc_buffer()->allocate(word_sz);
+    HeapWord* obj = to_space_alloc_buffer()->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
     if (obj != NULL) return obj;
     else return alloc_in_to_space_slow(word_sz);
   }

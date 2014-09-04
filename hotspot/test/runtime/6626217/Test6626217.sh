@@ -69,7 +69,7 @@ ${MV} many_loader.class many_loader.impl2
 ${MV} many_loader.impl1 many_loader.class
 ${RM} many_loader.java
 
-${JAVA} ${TESTVMOPTS} -Xverify -Xint -cp . bug_21227 >test.out 2>&1
+${JAVA} ${TESTOPTS} -Xverify -Xint -cp . bug_21227 >test.out 2>&1
 grep "loader constraint" test.out
 exit $?
 

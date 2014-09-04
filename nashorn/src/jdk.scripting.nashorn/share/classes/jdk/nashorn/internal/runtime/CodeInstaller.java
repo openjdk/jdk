@@ -92,5 +92,14 @@ public interface CodeInstaller<T> {
      * @param classBytes map of class names to class bytes
      * @param constants constants array
      */
-    public void storeCompiledScript(Source source, String mainClassName, Map<String, byte[]> classBytes, Object[] constants);
+    public void storeScript(String cacheKey, Source source, String mainClassName, Map<String, byte[]> classBytes,
+                            Map<Integer, FunctionInitializer> initializers, Object[] constants, int compilationId);
+
+    /**
+     * Load a previously compiled script
+     * @param source the script source
+     * @param functionKey the function id and signature
+     * @return compiled script data
+     */
+    public StoredScript loadScript(Source source, String functionKey);
 }
