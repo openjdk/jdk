@@ -54,15 +54,15 @@ class nmethod;
 
 #define HR_FORMAT "%u:(%s)["PTR_FORMAT","PTR_FORMAT","PTR_FORMAT"]"
 #define HR_FORMAT_PARAMS(_hr_) \
-                (_hr_)->hrs_index(), \
+                (_hr_)->hrm_index(), \
                 (_hr_)->is_survivor() ? "S" : (_hr_)->is_young() ? "E" : \
                 (_hr_)->startsHumongous() ? "HS" : \
                 (_hr_)->continuesHumongous() ? "HC" : \
                 !(_hr_)->is_empty() ? "O" : "F", \
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
-// sentinel value for hrs_index
-#define G1_NO_HRS_INDEX ((uint) -1)
+// sentinel value for hrm_index
+#define G1_NO_HRM_INDEX ((uint) -1)
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -206,10 +206,6 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
     _offsets.reset_bot();
   }
 
-  void update_bot_for_object(HeapWord* start, size_t word_size) {
-    _offsets.alloc_block(start, word_size);
-  }
-
   void print_bot_on(outputStream* out) {
     _offsets.print_on(out);
   }
@@ -234,7 +230,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
  protected:
   // The index of this region in the heap region sequence.
-  uint  _hrs_index;
+  uint  _hrm_index;
 
   HumongousType _humongous_type;
   // For a humongous region, region in which it starts.
@@ -330,7 +326,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   size_t _predicted_bytes_to_copy;
 
  public:
-  HeapRegion(uint hrs_index,
+  HeapRegion(uint hrm_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr);
 
@@ -385,9 +381,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   inline HeapWord* par_allocate_no_bot_updates(size_t word_size);
   inline HeapWord* allocate_no_bot_updates(size_t word_size);
 
-  // If this region is a member of a HeapRegionSeq, the index in that
+  // If this region is a member of a HeapRegionManager, the index in that
   // sequence, otherwise -1.
-  uint hrs_index() const { return _hrs_index; }
+  uint hrm_index() const { return _hrm_index; }
 
   // The number of bytes marked live in the region in the last marking phase.
   size_t marked_bytes()    { return _prev_marked_bytes; }
@@ -458,7 +454,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // with this HS region.
   uint last_hc_index() const {
     assert(startsHumongous(), "don't call this otherwise");
-    return hrs_index() + region_num();
+    return hrm_index() + region_num();
   }
 
   // Same as Space::is_in_reserved, but will use the original size of the region.
@@ -570,7 +566,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
-  HeapWord* orig_end() { return _orig_end; }
+  HeapWord* orig_end() const { return _orig_end; }
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);
@@ -737,18 +733,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
                                    bool filter_young,
                                    jbyte* card_ptr);
 
-  // A version of block start that is guaranteed to find *some* block
-  // boundary at or before "p", but does not object iteration, and may
-  // therefore be used safely when the heap is unparseable.
-  HeapWord* block_start_careful(const void* p) const {
-    return _offsets.block_start_careful(p);
-  }
-
-  // Requires that "addr" is within the region.  Returns the start of the
-  // first ("careful") block that starts at or after "addr", or else the
-  // "end" of the region if there is no such block.
-  HeapWord* next_block_start_careful(HeapWord* addr);
-
   size_t recorded_rs_length() const        { return _recorded_rs_length; }
   double predicted_elapsed_time_ms() const { return _predicted_elapsed_time_ms; }
   size_t predicted_bytes_to_copy() const   { return _predicted_bytes_to_copy; }
@@ -813,7 +797,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
 // HeapRegionClosure is used for iterating over regions.
 // Terminates the iteration when the "doHeapRegion" method returns "true".
 class HeapRegionClosure : public StackObj {
-  friend class HeapRegionSeq;
+  friend class HeapRegionManager;
   friend class G1CollectedHeap;
 
   bool _complete;

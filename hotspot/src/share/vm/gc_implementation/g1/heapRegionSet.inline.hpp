@@ -60,14 +60,14 @@ inline void FreeRegionList::add_ordered(HeapRegion* hr) {
   if (_head != NULL) {
     HeapRegion* curr;
 
-    if (_last != NULL && _last->hrs_index() < hr->hrs_index()) {
+    if (_last != NULL && _last->hrm_index() < hr->hrm_index()) {
       curr = _last;
     } else {
       curr = _head;
     }
 
     // Find first entry with a Region Index larger than entry to insert.
-    while (curr != NULL && curr->hrs_index() < hr->hrs_index()) {
+    while (curr != NULL && curr->hrm_index() < hr->hrm_index()) {
       curr = curr->next();
     }
 
