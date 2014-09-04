@@ -495,3 +495,8 @@ extern "C" {
 void os::verify_stack_alignment() {
 }
 #endif
+
+int os::extra_bang_size_in_bytes() {
+  // Zero does not require an additional stack banging.
+  return 0;
+}
