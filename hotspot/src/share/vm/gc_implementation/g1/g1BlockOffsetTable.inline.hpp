@@ -47,14 +47,69 @@ G1BlockOffsetTable::block_start_const(const void* addr) const {
   }
 }
 
+#define check_index(index, msg)                                                \
+  assert((index) < (_reserved.word_size() >> LogN_words),                      \
+         err_msg("%s - index: "SIZE_FORMAT", _vs.committed_size: "SIZE_FORMAT, \
+                 msg, (index), (_reserved.word_size() >> LogN_words)));        \
+  assert(G1CollectedHeap::heap()->is_in_exact(address_for_index_raw(index)),   \
+         err_msg("Index "SIZE_FORMAT" corresponding to "PTR_FORMAT             \
+                 " (%u) is not in committed area.",                            \
+                 (index),                                                      \
+                 p2i(address_for_index_raw(index)),                            \
+                 G1CollectedHeap::heap()->addr_to_region(address_for_index_raw(index))));
+
+u_char G1BlockOffsetSharedArray::offset_array(size_t index) const {
+  check_index(index, "index out of range");
+  return _offset_array[index];
+}
+
+void G1BlockOffsetSharedArray::set_offset_array(size_t index, u_char offset) {
+  check_index(index, "index out of range");
+  set_offset_array_raw(index, offset);
+}
+
+void G1BlockOffsetSharedArray::set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
+  check_index(index, "index out of range");
+  assert(high >= low, "addresses out of order");
+  size_t offset = pointer_delta(high, low);
+  check_offset(offset, "offset too large");
+  set_offset_array(index, (u_char)offset);
+}
+
+void G1BlockOffsetSharedArray::set_offset_array(size_t left, size_t right, u_char offset) {
+  check_index(right, "right index out of range");
+  assert(left <= right, "indexes out of order");
+  size_t num_cards = right - left + 1;
+  if (UseMemSetInBOT) {
+    memset(&_offset_array[left], offset, num_cards);
+  } else {
+    size_t i = left;
+    const size_t end = i + num_cards;
+    for (; i < end; i++) {
+      _offset_array[i] = offset;
+    }
+  }
+}
+
+void G1BlockOffsetSharedArray::check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
+  check_index(index, "index out of range");
+  assert(high >= low, "addresses out of order");
+  check_offset(pointer_delta(high, low), "offset too large");
+  assert(_offset_array[index] == pointer_delta(high, low), "Wrong offset");
+}
+
+// Variant of index_for that does not check the index for validity.
+inline size_t G1BlockOffsetSharedArray::index_for_raw(const void* p) const {
+  return pointer_delta((char*)p, _reserved.start(), sizeof(char)) >> LogN;
+}
+
 inline size_t G1BlockOffsetSharedArray::index_for(const void* p) const {
   char* pc = (char*)p;
   assert(pc >= (char*)_reserved.start() &&
          pc <  (char*)_reserved.end(),
          err_msg("p (" PTR_FORMAT ") not in reserved [" PTR_FORMAT ", " PTR_FORMAT ")",
                  p2i(p), p2i(_reserved.start()), p2i(_reserved.end())));
-  size_t delta = pointer_delta(pc, _reserved.start(), sizeof(char));
-  size_t result = delta >> LogN;
+  size_t result = index_for_raw(p);
   check_index(result, "bad index from address");
   return result;
 }
@@ -62,7 +117,7 @@ inline size_t G1BlockOffsetSharedArray::index_for(const void* p) const {
 inline HeapWord*
 G1BlockOffsetSharedArray::address_for_index(size_t index) const {
   check_index(index, "index out of range");
-  HeapWord* result = _reserved.start() + (index << LogN_words);
+  HeapWord* result = address_for_index_raw(index);
   assert(result >= _reserved.start() && result < _reserved.end(),
          err_msg("bad address from index result " PTR_FORMAT
                  " _reserved.start() " PTR_FORMAT " _reserved.end() "
@@ -70,6 +125,8 @@ G1BlockOffsetSharedArray::address_for_index(size_t index) const {
                  p2i(result), p2i(_reserved.start()), p2i(_reserved.end())));
   return result;
 }
+
+#undef check_index
 
 inline size_t
 G1BlockOffsetArray::block_size(const HeapWord* p) const {

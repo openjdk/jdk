@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,7 @@
  * @bug 6302184 6350124 6357979
  * @summary javac hidden options that generate source should use the given
  * encoding, if available
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run compile -encoding iso-8859-1 -XD-printsource T6302184.java
  * @run main HiddenOptionsShouldUseGivenEncodingTest
@@ -34,16 +34,19 @@
 
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.util.List;
 
-//original test: test/tools/javac/6302184/T6302184.sh
+// Original test: test/tools/javac/6302184/T6302184.sh
 public class HiddenOptionsShouldUseGivenEncodingTest {
 
     public static void main(String[] args) throws Exception {
-//"${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d ${TC} -cp ${TC} -encoding iso-8859-1 -XD-printsource ${TS}${FS}T6302184.java 2>&1
-//diff ${DIFFOPTS} -c ${TC}${FS}T6302184.java ${TS}${FS}T6302184.out
-        Path path1 = Paths.get(System.getProperty("test.classes"), "T6302184.java");
-        Path path2 = Paths.get(System.getProperty("test.src"), "T6302184.out");
-        ToolBox.compareLines(path1, path2, "iso-8859-1");
+        ToolBox tb = new ToolBox();
+        String encoding = "iso-8859-1";
+        Path path1 = Paths.get(ToolBox.testClasses, "T6302184.java");
+        List<String> file1 = tb.readAllLines(path1, encoding);
+        Path path2 = Paths.get(ToolBox.testSrc, "T6302184.out");
+        List<String> file2 = tb.readAllLines(path2, encoding);
+        tb.checkEqual(file1, file2);
     }
 
 }

@@ -507,7 +507,7 @@ Node *Node::clone() const {
                                   (const void*)(&mthis->_opnds), 1));
     mach->_opnds = to;
     for ( uint i = 0; i < nopnds; ++i ) {
-      to[i] = from[i]->clone(C);
+      to[i] = from[i]->clone();
     }
   }
   // cloning CallNode may need to clone JVMState
@@ -620,6 +620,7 @@ void Node::destruct() {
   *(address*)this = badAddress;  // smash the C++ vtbl, probably
   _in = _out = (Node**) badAddress;
   _max = _cnt = _outmax = _outcnt = 0;
+  compile->remove_modified_node(this);
 #endif
 }
 
@@ -765,6 +766,7 @@ void Node::del_req( uint idx ) {
   if (n != NULL) n->del_out((Node *)this);
   _in[idx] = in(--_cnt);  // Compact the array
   _in[_cnt] = NULL;       // NULL out emptied slot
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------del_req_ordered--------------------------------
@@ -780,6 +782,7 @@ void Node::del_req_ordered( uint idx ) {
     Copy::conjoint_words_to_lower((HeapWord*)&_in[idx+1], (HeapWord*)&_in[idx], ((_cnt-idx-1)*sizeof(Node*)));
   }
   _in[--_cnt] = NULL;   // NULL out emptied slot
+  Compile::current()->record_modified_node(this);
 }
 
 //------------------------------ins_req----------------------------------------
@@ -1080,6 +1083,9 @@ bool Node::has_special_unique_user() const {
   if( this->is_Store() ) {
     // Condition for back-to-back stores folding.
     return n->Opcode() == op && n->in(MemNode::Memory) == this;
+  } else if (this->is_Load()) {
+    // Condition for removing an unused LoadNode from the MemBarAcquire precedence input
+    return n->Opcode() == Op_MemBarAcquire;
   } else if( op == Op_AddL ) {
     // Condition for convL2I(addL(x,y)) ==> addI(convL2I(x),convL2I(y))
     return n->Opcode() == Op_ConvL2I && n->in(1) == this;
@@ -1297,6 +1303,7 @@ static void kill_dead_code( Node *dead, PhaseIterGVN *igvn ) {
       // Done with outputs.
       igvn->hash_delete(dead);
       igvn->_worklist.remove(dead);
+      igvn->C->remove_modified_node(dead);
       igvn->set_type(dead, Type::TOP);
       if (dead->is_macro()) {
         igvn->C->remove_macro_node(dead);

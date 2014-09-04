@@ -27,6 +27,7 @@ package com.sun.tools.javac.processing;
 
 import com.sun.tools.javac.model.JavacElements;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.*;
 import javax.lang.model.element.*;
@@ -55,10 +56,12 @@ public class JavacMessager implements Messager {
 
     // processingEnv.getElementUtils()
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg) {
         printMessage(kind, msg, null, null, null);
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
                       Element e) {
         printMessage(kind, msg, e, null, null);
@@ -73,6 +76,7 @@ public class JavacMessager implements Messager {
      * @param e    the annotated element
      * @param a    the annotation to use as a position hint
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
                       Element e, AnnotationMirror a) {
         printMessage(kind, msg, e, a, null);
@@ -89,6 +93,7 @@ public class JavacMessager implements Messager {
      * @param a    the annotation containing the annotaiton value
      * @param v    the annotation value to use as a position hint
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public void printMessage(Diagnostic.Kind kind, CharSequence msg,
                       Element e, AnnotationMirror a, AnnotationValue v) {
         JavaFileObject oldSource = null;

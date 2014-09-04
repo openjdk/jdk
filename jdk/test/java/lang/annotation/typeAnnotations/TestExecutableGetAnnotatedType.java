@@ -73,13 +73,11 @@ public class TestExecutableGetAnnotatedType {
         testParameters(e.getParameters());
     }
 
-    // should test constructors as well, see JDK-8044629
     @Test(dataProvider = "genericMethodData")
     public void testGenericReceiverType(Executable e) throws Exception {
         testReceiverType0(e);
     }
 
-    // should test constructors as well, see JDK-8044629
     @Test(dataProvider = "methodData")
     public void testReceiverType(Executable e) throws Exception {
         testReceiverType0(e);

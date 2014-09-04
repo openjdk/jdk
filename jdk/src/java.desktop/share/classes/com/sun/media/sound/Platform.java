@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -74,17 +74,6 @@ final class Platform {
     // intel is little-endian.  sparc is big-endian.
     private static boolean bigEndian;
 
-    // this is the value of the "java.home" system property.  i am looking it up here
-    // for use when trying to load the soundbank, just so
-    // that all the privileged code is localized in this file....
-    private static String javahome;
-
-    // this is the value of the "java.class.path" system property
-    private static String classpath;
-
-
-
-
     static {
         if(Printer.trace)Printer.trace(">> Platform.java: static");
 
@@ -129,26 +118,6 @@ final class Platform {
         return signed8;
     }
 
-
-    /**
-     * Obtain javahome.
-     * $$kk: 04.16.99: this is *bad*!!
-     */
-    static String getJavahome() {
-
-        return javahome;
-    }
-
-    /**
-     * Obtain classpath.
-     * $$jb: 04.21.99: this is *bad* too!!
-     */
-    static String getClasspath() {
-
-        return classpath;
-    }
-
-
     // PRIVATE METHODS
 
     /**
@@ -157,21 +126,13 @@ final class Platform {
     private static void loadLibraries() {
         if(Printer.trace)Printer.trace(">>Platform.loadLibraries");
 
-        try {
-            // load the main library
-            AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    System.loadLibrary(libNameMain);
-                    return null;
-                }
-            });
-            // just for the heck of it...
-            loadedLibs |= LIB_MAIN;
-        } catch (SecurityException e) {
-            if(Printer.err)Printer.err("Security exception loading main native library.  JavaSound requires access to these resources.");
-            throw(e);
-        }
+        // load the main library
+        AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+            System.loadLibrary(libNameMain);
+            return null;
+        });
+        // just for the heck of it...
+        loadedLibs |= LIB_MAIN;
 
         // now try to load extra libs. They are defined at compile time in the Makefile
         // with the define EXTRA_SOUND_JNI_LIBS
@@ -181,12 +142,9 @@ final class Platform {
         while (st.hasMoreTokens()) {
             final String lib = st.nextToken();
             try {
-                AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                    @Override
-                    public Void run() {
-                        System.loadLibrary(lib);
-                        return null;
-                    }
+                AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
+                    System.loadLibrary(lib);
+                    return null;
                 });
 
                 if (lib.equals(libNameALSA)) {
@@ -239,7 +197,5 @@ final class Platform {
         // $$fb 2002-03-06: implement check for endianness in native. Facilitates porting !
         bigEndian = nIsBigEndian();
         signed8 = nIsSigned8(); // Solaris on Sparc: signed, all others unsigned
-        javahome = JSSecurityManager.getProperty("java.home");
-        classpath = JSSecurityManager.getProperty("java.class.path");
     }
 }

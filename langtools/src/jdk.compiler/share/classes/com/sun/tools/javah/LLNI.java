@@ -47,6 +47,9 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.ElementFilter;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /*
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
@@ -629,12 +632,15 @@ public class LLNI extends Gen {
 
     protected final boolean isLongOrDouble(TypeMirror t) {
         TypeVisitor<Boolean,Void> v = new SimpleTypeVisitor9<Boolean,Void>() {
+            @DefinedBy(Api.LANGUAGE_MODEL)
             public Boolean defaultAction(TypeMirror t, Void p){
                 return false;
             }
+            @DefinedBy(Api.LANGUAGE_MODEL)
             public Boolean visitArray(ArrayType t, Void p) {
                 return visit(t.getComponentType(), p);
             }
+            @DefinedBy(Api.LANGUAGE_MODEL)
             public Boolean visitPrimitive(PrimitiveType t, Void p) {
                 TypeKind tk = t.getKind();
                 return (tk == TypeKind.LONG || tk == TypeKind.DOUBLE);

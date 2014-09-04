@@ -23,9 +23,6 @@
 # questions.
 #
 
-# Prepare the find cache.
-$(eval $(call FillCacheFind, $(wildcard $(JDK_TOPDIR)/src/*/*/classes)))
-
 # All .properties files to be compiled are appended to this variable.
 ALL_COMPILED_PROPSOURCES :=
 # All generated .java files from compilation are appended to this variable.
@@ -76,7 +73,6 @@ COMPILE_PROP_SRC_FILES := \
         $(JDK_TOPDIR)/src/java.management/share/classes/sun/management/resources \
         $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/print/resources \
         $(JDK_TOPDIR)/src/jdk.dev/share/classes/sun/tools/jar/resources \
-        $(JDK_TOPDIR)/src/jdk.dev/share/classes/jdk/jigsaw/tools/jlink/resources \
         $(JDK_TOPDIR)/src/java.logging/share/classes/sun/util/logging/resources)) \
     #
 

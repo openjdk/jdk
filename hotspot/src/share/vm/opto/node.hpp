@@ -40,6 +40,7 @@ class AddPNode;
 class AliasInfo;
 class AllocateArrayNode;
 class AllocateNode;
+class ArrayCopyNode;
 class Block;
 class BoolNode;
 class BoxLockNode;
@@ -398,6 +399,7 @@ protected:
     if (*p != NULL)  (*p)->del_out((Node *)this);
     (*p) = n;
     if (n != NULL)      n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
   // Light version of set_req() to init inputs after node creation.
   void init_req( uint i, Node *n ) {
@@ -409,6 +411,7 @@ protected:
     assert( _in[i] == NULL, "sanity");
     _in[i] = n;
     if (n != NULL)      n->add_out((Node *)this);
+    Compile::current()->record_modified_node(this);
   }
   // Find first occurrence of n among my edges:
   int find_edge(Node* n);
@@ -559,6 +562,7 @@ public:
           DEFINE_CLASS_ID(AbstractLock,     Call, 3)
             DEFINE_CLASS_ID(Lock,             AbstractLock, 0)
             DEFINE_CLASS_ID(Unlock,           AbstractLock, 1)
+          DEFINE_CLASS_ID(ArrayCopy,        Call, 4)
       DEFINE_CLASS_ID(MultiBranch, Multi, 1)
         DEFINE_CLASS_ID(PCTable,     MultiBranch, 0)
           DEFINE_CLASS_ID(Catch,       PCTable, 0)
@@ -705,6 +709,7 @@ public:
   DEFINE_CLASS_QUERY(AddP)
   DEFINE_CLASS_QUERY(Allocate)
   DEFINE_CLASS_QUERY(AllocateArray)
+  DEFINE_CLASS_QUERY(ArrayCopy)
   DEFINE_CLASS_QUERY(Bool)
   DEFINE_CLASS_QUERY(BoxLock)
   DEFINE_CLASS_QUERY(Call)

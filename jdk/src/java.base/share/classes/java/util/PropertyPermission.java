@@ -324,20 +324,16 @@ public final class PropertyPermission extends BasicPermission {
      * @return the canonical string representation of the actions.
      */
     static String getActions(int mask) {
-        StringBuilder sb = new StringBuilder();
-        boolean comma = false;
-
-        if ((mask & READ) == READ) {
-            comma = true;
-            sb.append("read");
+        switch (mask & (READ|WRITE)) {
+            case READ:
+                return SecurityConstants.PROPERTY_READ_ACTION;
+            case WRITE:
+                return SecurityConstants.PROPERTY_WRITE_ACTION;
+            case READ|WRITE:
+                return SecurityConstants.PROPERTY_RW_ACTION;
+            default:
+                return "";
         }
-
-        if ((mask & WRITE) == WRITE) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("write");
-        }
-        return sb.toString();
     }
 
     /**

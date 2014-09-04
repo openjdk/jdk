@@ -44,11 +44,11 @@ public final class SunPageSelection implements PrintRequestAttribute {
         pages = value;
     }
 
-    public final Class<? extends Attribute> getCategory() {
+    public Class<? extends Attribute> getCategory() {
         return SunPageSelection.class;
     }
 
-    public final String getName() {
+    public String getName() {
         return "sun-page-selection";
     }
 

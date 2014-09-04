@@ -1193,7 +1193,7 @@ public final class System {
         // Setup Java signal handlers for HUP, TERM, and INT (where available).
         Terminator.setup();
 
-        // Initialize any miscellenous operating system settings that need to be
+        // Initialize any miscellaneous operating system settings that need to be
         // set for the class libraries. Currently this is no-op everywhere except
         // for Windows where the process-wide error mode is set before the java.io
         // classes are used.

@@ -305,9 +305,9 @@ public class StringJoinerTest {
         sj.add("2");
         assertEquals(sj.toString(), prefix + "1" + infix + "2" + suffix);
         sj.add("");
-        assertEquals(sj.toString(), prefix + "1" + infix + "2" +infix + suffix);
+        assertEquals(sj.toString(), prefix + "1" + infix + "2" + infix + suffix);
         sj.add("3");
-        assertEquals(sj.toString(), prefix + "1" + infix + "2" +infix + infix + "3" + suffix);
+        assertEquals(sj.toString(), prefix + "1" + infix + "2" + infix + infix + "3" + suffix);
     }
 
     public void testDelimiterCombinations() {

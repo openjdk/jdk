@@ -26,8 +26,8 @@
  * @bug 8038455
  * @summary Ensure that formatting diagnostics with an already closed JavaCompiler won't crash
  *          the compiler.
- * @library /tools/javac/lib
- * @build CompleteOnClosed ToolBox JavacTestingAbstractProcessor
+ * @library /tools/lib /tools/javac/lib
+ * @build ToolBox JavacTestingAbstractProcessor
  * @run main CompleteOnClosed
  */
 

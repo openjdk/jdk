@@ -35,10 +35,12 @@
 //------------------------------Ideal------------------------------------------
 // Remove dead inputs
 Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
+  bool modified = false;
   for( uint i = 1; i < req(); i++ ) { // For all inputs
     // Check for and remove dead inputs
     if( phase->type(in(i)) == Type::TOP ) {
       del_req(i--);             // Delete TOP inputs
+      modified = true;
     }
   }
 
@@ -56,7 +58,7 @@ Node *RootNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // If we want to get the rest of the win later, we should pattern match
   // simple recursive call trees to closed-form solutions.
 
-  return NULL;                  // No further opportunities exposed
+  return modified ? this : NULL;
 }
 
 //=============================================================================

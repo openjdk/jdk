@@ -27,7 +27,7 @@ include CopyCommon.gmk
 
 ################################################################################
 
-MGMT_LIBDIR := $(LIBDIR)/management
+MGMT_LIBDIR := $(LIB_DST_DIR)/management
 MGMT_LIB_SRC := $(JDK_TOPDIR)/src/java.management/share/conf
 MGMT_SRC_FILES := $(wildcard $(MGMT_LIB_SRC)/*)
 MGMT_TARGET_FILES := $(subst $(MGMT_LIB_SRC),$(MGMT_LIBDIR),$(MGMT_SRC_FILES))
