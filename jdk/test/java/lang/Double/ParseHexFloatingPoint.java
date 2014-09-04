@@ -30,7 +30,6 @@
 
 
 import java.util.regex.*;
-import sun.misc.DoubleConsts;
 
 public class ParseHexFloatingPoint {
     private ParseHexFloatingPoint(){}
@@ -158,8 +157,8 @@ public class ParseHexFloatingPoint {
         }
 
         long bigExponents [] = {
-            2*DoubleConsts.MAX_EXPONENT,
-            2*DoubleConsts.MIN_EXPONENT,
+            2*Double.MAX_EXPONENT,
+            2*Double.MIN_EXPONENT,
 
             (long)Integer.MAX_VALUE-1,
             (long)Integer.MAX_VALUE,
@@ -226,11 +225,11 @@ public class ParseHexFloatingPoint {
             new PairSD("0x1.000000000000001p-1075",     Double.MIN_VALUE),
 
             // More subnormal rounding tests
-            new PairSD("0x0.fffffffffffff7fffffp-1022", Math.nextDown(DoubleConsts.MIN_NORMAL)),
-            new PairSD("0x0.fffffffffffff8p-1022",      DoubleConsts.MIN_NORMAL),
-            new PairSD("0x0.fffffffffffff800000001p-1022",DoubleConsts.MIN_NORMAL),
-            new PairSD("0x0.fffffffffffff80000000000000001p-1022",DoubleConsts.MIN_NORMAL),
-            new PairSD("0x1.0p-1022",                   DoubleConsts.MIN_NORMAL),
+            new PairSD("0x0.fffffffffffff7fffffp-1022", Math.nextDown(Double.MIN_NORMAL)),
+            new PairSD("0x0.fffffffffffff8p-1022",      Double.MIN_NORMAL),
+            new PairSD("0x0.fffffffffffff800000001p-1022",Double.MIN_NORMAL),
+            new PairSD("0x0.fffffffffffff80000000000000001p-1022",Double.MIN_NORMAL),
+            new PairSD("0x1.0p-1022",                   Double.MIN_NORMAL),
 
 
             // Large value and overflow rounding tests

@@ -1168,7 +1168,6 @@ uint BoolNode::cmp( const Node &n ) const {
 Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
   if (test_value->is_Con())   return test_value;
   if (test_value->is_Bool())  return test_value;
-  Compile* C = phase->C;
   if (test_value->is_CMove() &&
       test_value->in(CMoveNode::Condition)->is_Bool()) {
     BoolNode*   bol   = test_value->in(CMoveNode::Condition)->as_Bool();
@@ -1191,7 +1190,7 @@ Node* BoolNode::make_predicate(Node* test_value, PhaseGVN* phase) {
 //--------------------------------as_int_value---------------------------------
 Node* BoolNode::as_int_value(PhaseGVN* phase) {
   // Inverse to make_predicate.  The CMove probably boils down to a Conv2B.
-  Node* cmov = CMoveNode::make(phase->C, NULL, this,
+  Node* cmov = CMoveNode::make(NULL, this,
                                phase->intcon(0), phase->intcon(1),
                                TypeInt::BOOL);
   return phase->transform(cmov);
@@ -1199,10 +1198,57 @@ Node* BoolNode::as_int_value(PhaseGVN* phase) {
 
 //----------------------------------negate-------------------------------------
 BoolNode* BoolNode::negate(PhaseGVN* phase) {
-  Compile* C = phase->C;
   return new BoolNode(in(1), _test.negate());
 }
 
+// Change "bool eq/ne (cmp (add/sub A B) C)" into false/true if add/sub
+// overflows and we can prove that C is not in the two resulting ranges.
+// This optimization is similar to the one performed by CmpUNode::Value().
+Node* BoolNode::fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
+                          int cmp1_op, const TypeInt* cmp2_type) {
+  // Only optimize eq/ne integer comparison of add/sub
+  if((_test._test == BoolTest::eq || _test._test == BoolTest::ne) &&
+     (cmp_op == Op_CmpI) && (cmp1_op == Op_AddI || cmp1_op == Op_SubI)) {
+    // Skip cases were inputs of add/sub are not integers or of bottom type
+    const TypeInt* r0 = phase->type(cmp1->in(1))->isa_int();
+    const TypeInt* r1 = phase->type(cmp1->in(2))->isa_int();
+    if ((r0 != NULL) && (r0 != TypeInt::INT) &&
+        (r1 != NULL) && (r1 != TypeInt::INT) &&
+        (cmp2_type != TypeInt::INT)) {
+      // Compute exact (long) type range of add/sub result
+      jlong lo_long = r0->_lo;
+      jlong hi_long = r0->_hi;
+      if (cmp1_op == Op_AddI) {
+        lo_long += r1->_lo;
+        hi_long += r1->_hi;
+      } else {
+        lo_long -= r1->_hi;
+        hi_long -= r1->_lo;
+      }
+      // Check for over-/underflow by casting to integer
+      int lo_int = (int)lo_long;
+      int hi_int = (int)hi_long;
+      bool underflow = lo_long != (jlong)lo_int;
+      bool overflow  = hi_long != (jlong)hi_int;
+      if ((underflow != overflow) && (hi_int < lo_int)) {
+        // Overflow on one boundary, compute resulting type ranges:
+        // tr1 [MIN_INT, hi_int] and tr2 [lo_int, MAX_INT]
+        int w = MAX2(r0->_widen, r1->_widen); // _widen does not matter here
+        const TypeInt* tr1 = TypeInt::make(min_jint, hi_int, w);
+        const TypeInt* tr2 = TypeInt::make(lo_int, max_jint, w);
+        // Compare second input of cmp to both type ranges
+        const Type* sub_tr1 = cmp->sub(tr1, cmp2_type);
+        const Type* sub_tr2 = cmp->sub(tr2, cmp2_type);
+        if (sub_tr1 == TypeInt::CC_LT && sub_tr2 == TypeInt::CC_GT) {
+          // The result of the add/sub will never equal cmp2. Replace BoolNode
+          // by false (0) if it tests for equality and by true (1) otherwise.
+          return ConINode::make((_test._test == BoolTest::eq) ? 0 : 1);
+        }
+      }
+    }
+  }
+  return NULL;
+}
 
 //------------------------------Ideal------------------------------------------
 Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
@@ -1296,6 +1342,9 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return new BoolNode( ncmp, _test.commute() );
   }
 
+  // Try to optimize signed integer comparison
+  return fold_cmpI(phase, cmp->as_Sub(), cmp1, cop, cmp1_op, cmp2_type);
+
   //  The transformation below is not valid for either signed or unsigned
   //  comparisons due to wraparound concerns at MAX_VALUE and MIN_VALUE.
   //  This transformation can be resurrected when we are able to
@@ -1340,8 +1389,6 @@ Node *BoolNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   //         phase->type( cmp2->in(2) ) == TypeInt::ONE )
   //        return clone_cmp( cmp, cmp1, cmp2->in(1), phase, BoolTest::le );
   //    }
-
-  return NULL;
 }
 
 //------------------------------Value------------------------------------------

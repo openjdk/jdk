@@ -62,7 +62,7 @@ class nmethod;
                 p2i((_hr_)->bottom()), p2i((_hr_)->top()), p2i((_hr_)->end())
 
 // sentinel value for hrs_index
-#define G1_NULL_HRS_INDEX ((uint) -1)
+#define G1_NO_HRS_INDEX ((uint) -1)
 
 // A dirty card to oop closure for heap regions. It
 // knows how to get the G1 heap and how to use the bitmap
@@ -146,6 +146,9 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   HeapWord* top() const { return _top; }
 
  protected:
+  // Reset the G1OffsetTableContigSpace.
+  virtual void initialize(MemRegion mr, bool clear_space, bool mangle_space);
+
   HeapWord** top_addr() { return &_top; }
   // Allocation helpers (return NULL if full).
   inline HeapWord* allocate_impl(size_t word_size, HeapWord* end_value);
@@ -200,8 +203,7 @@ class G1OffsetTableContigSpace: public CompactibleSpace {
   virtual void print() const;
 
   void reset_bot() {
-    _offsets.zero_bottom_entry();
-    _offsets.initialize_threshold();
+    _offsets.reset_bot();
   }
 
   void update_bot_for_object(HeapWord* start, size_t word_size) {
@@ -264,7 +266,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 #ifdef ASSERT
   HeapRegionSetBase* _containing_set;
 #endif // ASSERT
-  bool _pending_removal;
 
   // For parallel heapRegion traversal.
   jint _claimed;
@@ -332,6 +333,12 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapRegion(uint hrs_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
              MemRegion mr);
+
+  // Initializing the HeapRegion not only resets the data structure, but also
+  // resets the BOT for that heap region.
+  // The default values for clear_space means that we will do the clearing if
+  // there's clearing to be done ourselves. We also always mangle the space.
+  virtual void initialize(MemRegion mr, bool clear_space = false, bool mangle_space = SpaceDecorator::Mangle);
 
   static int    LogOfHRGrainBytes;
   static int    LogOfHRGrainWords;
@@ -552,26 +559,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // containing_set() is only used in asserts so there's no reason
   // to provide a dummy version of it.
 #endif // ASSERT
-
-  // If we want to remove regions from a list in bulk we can simply tag
-  // them with the pending_removal tag and call the
-  // remove_all_pending() method on the list.
-
-  bool pending_removal() { return _pending_removal; }
-
-  void set_pending_removal(bool pending_removal) {
-    if (pending_removal) {
-      assert(!_pending_removal && containing_set() != NULL,
-             "can only set pending removal to true if it's false and "
-             "the region belongs to a region set");
-    } else {
-      assert( _pending_removal && containing_set() == NULL,
-              "can only set pending removal to false if it's true and "
-              "the region does not belong to a region set");
-    }
-
-    _pending_removal = pending_removal;
-  }
 
   HeapRegion* get_next_young_region() { return _next_young_region; }
   void set_next_young_region(HeapRegion* hr) {

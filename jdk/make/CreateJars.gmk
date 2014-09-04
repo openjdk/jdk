@@ -524,7 +524,6 @@ $(eval $(call SetupArchive,BUILD_TOOLS_JAR, , \
     EXCLUDES := $(TOOLS_JAR_EXCLUDES), \
     EXTRA_FILES := \
         $(JDK_OUTPUTDIR)/modules/jdk.jdi/META-INF/services/com.sun.jdi.connect.Connector \
-        $(JDK_OUTPUTDIR)/classes/META-INF/services/com.sun.jdi.connect.Connector \
         META-INF/services/com.sun.jdi.connect.spi.TransportService \
         META-INF/services/com.sun.tools.attach.spi.AttachProvider \
         META-INF/services/com.sun.tools.internal.ws.wscompile.Plugin \

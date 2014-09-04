@@ -23,8 +23,6 @@
 
 //package sun.misc;
 
-import sun.misc.DoubleConsts;
-import sun.misc.FloatConsts;
 import java.util.regex.*;
 
 public class OldFloatingDecimalForTest{
@@ -2217,12 +2215,12 @@ public class OldFloatingDecimalForTest{
 
             // Check for overflow and update exponent accordingly.
 
-            if (exponent > DoubleConsts.MAX_EXPONENT) {         // Infinite result
+            if (exponent > Double.MAX_EXPONENT) {         // Infinite result
                 // overflow to properly signed infinity
                 return new OldFloatingDecimalForTest(sign * Double.POSITIVE_INFINITY);
             } else {  // Finite return value
-                if (exponent <= DoubleConsts.MAX_EXPONENT && // (Usually) normal result
-                    exponent >= DoubleConsts.MIN_EXPONENT) {
+                if (exponent <= Double.MAX_EXPONENT && // (Usually) normal result
+                    exponent >= Double.MIN_EXPONENT) {
 
                     // The result returned in this block cannot be a
                     // zero or subnormal; however after the
@@ -2242,7 +2240,7 @@ public class OldFloatingDecimalForTest{
                         (DoubleConsts.SIGNIF_BIT_MASK & significand);
 
                 }  else  {  // Subnormal or zero
-                    // (exponent < DoubleConsts.MIN_EXPONENT)
+                    // (exponent < Double.MIN_EXPONENT)
 
                     if (exponent < (DoubleConsts.MIN_SUB_EXPONENT -1 )) {
                         // No way to round back to nonzero value
@@ -2282,7 +2280,7 @@ public class OldFloatingDecimalForTest{
                         // Now, discard the bits
                         significand = significand >> bitsDiscarded;
 
-                        significand = (( ((long)(DoubleConsts.MIN_EXPONENT -1) + // subnorm exp.
+                        significand = (( ((long)(Double.MIN_EXPONENT -1) + // subnorm exp.
                                           (long)DoubleConsts.EXP_BIAS) <<
                                          (DoubleConsts.SIGNIFICAND_WIDTH-1))
                                        & DoubleConsts.EXP_BIT_MASK) |
@@ -2350,7 +2348,7 @@ public class OldFloatingDecimalForTest{
                  * information must be preserved (i.e. case 1).
                  */
                 if ((exponent >= FloatConsts.MIN_SUB_EXPONENT-1) &&
-                    (exponent <= FloatConsts.MAX_EXPONENT ) ){
+                    (exponent <= Float.MAX_EXPONENT ) ){
                     // Outside above exponent range, the float value
                     // will be zero or infinity.
 

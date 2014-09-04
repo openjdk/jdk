@@ -28,12 +28,13 @@ grant {
     // needed for HttpServer
     permission "java.net.SocketPermission" "localhost:1024-", "listen,resolve,accept";
     permission "java.util.PropertyPermission" "test.src", "read";
-    permission java.io.FilePermission "${test.src}/../../../com/sun/net/httpserver/testkeys", "read";
+    permission java.io.FilePermission "${test.src}/../../../lib/testlibrary/jdk/testlibrary/testkeys", "read";
 
     //permission "java.util.logging.LoggingPermission" "control";
     //permission "java.io.FilePermission" "/tmp/-", "read,write";
     permission "java.lang.RuntimePermission" "modifyThread";
     permission "java.lang.RuntimePermission" "setFactory";
+    permission "java.util.PropertyPermission" "test.src.path", "read";
 };
 
 // Normal permissions that aren't granted when run under jtreg

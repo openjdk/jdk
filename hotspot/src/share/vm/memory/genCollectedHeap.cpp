@@ -708,15 +708,18 @@ void GenCollectedHeap::collect(GCCause::Cause cause) {
 #else  // INCLUDE_ALL_GCS
     ShouldNotReachHere();
 #endif // INCLUDE_ALL_GCS
+  } else if (cause == GCCause::_wb_young_gc) {
+    // minor collection for WhiteBox API
+    collect(cause, 0);
   } else {
 #ifdef ASSERT
-    if (cause == GCCause::_scavenge_alot) {
-      // minor collection only
-      collect(cause, 0);
-    } else {
-      // Stop-the-world full collection
-      collect(cause, n_gens() - 1);
-    }
+  if (cause == GCCause::_scavenge_alot) {
+    // minor collection only
+    collect(cause, 0);
+  } else {
+    // Stop-the-world full collection
+    collect(cause, n_gens() - 1);
+  }
 #else
     // Stop-the-world full collection
     collect(cause, n_gens() - 1);

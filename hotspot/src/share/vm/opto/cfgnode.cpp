@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,6 +108,7 @@ static Node *merge_region(RegionNode *region, PhaseGVN *phase) {
 
         rreq++;                 // One more input to Region
       } // Found a region to merge into Region
+      igvn->_worklist.push(r);
       // Clobber pointer to the now dead 'r'
       region->set_req(i, phase->C->top());
     }
@@ -449,6 +450,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
   // Remove TOP or NULL input paths. If only 1 input path remains, this Region
   // degrades to a copy.
   bool add_to_worklist = false;
+  bool modified = false;
   int cnt = 0;                  // Count of values merging
   DEBUG_ONLY( int cnt_orig = req(); ) // Save original inputs count
   int del_it = 0;               // The last input path we delete
@@ -459,6 +461,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // Remove useless control copy inputs
       if( n->is_Region() && n->as_Region()->is_copy() ) {
         set_req(i, n->nonnull_req());
+        modified = true;
         i--;
         continue;
       }
@@ -466,12 +469,14 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         Node *call = n->in(0);
         if (call->is_Call() && call->as_Call()->entry_point() == OptoRuntime::rethrow_stub()) {
           set_req(i, call->in(0));
+          modified = true;
           i--;
           continue;
         }
       }
       if( phase->type(n) == Type::TOP ) {
         set_req(i, NULL);       // Ignore TOP inputs
+        modified = true;
         i--;
         continue;
       }
@@ -691,7 +696,7 @@ Node *RegionNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;
+  return modified ? this : NULL;
 }
 
 
@@ -1871,7 +1876,7 @@ Node *PhiNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           igvn->register_new_node_with_optimizer(new_base);
           hook->add_req(new_base);
         }
-        MergeMemNode* result = MergeMemNode::make(phase->C, new_base);
+        MergeMemNode* result = MergeMemNode::make(new_base);
         for (uint i = 1; i < req(); ++i) {
           Node *ii = in(i);
           if (ii->is_MergeMem()) {

@@ -29,7 +29,7 @@
 /* LOG: Must be called like:  LOG_category(("anything")) or LOG_category((format,args)) */
 
 void setup_logging(const char *, unsigned);
-void finish_logging(int);
+void finish_logging();
 
 #define LOG_NULL ((void)0)
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,24 +27,23 @@ package javax.sound.midi;
 
 import java.util.EventListener;
 
-
 /**
- * The <code>MetaEventListener</code> interface should be implemented
- * by classes whose instances need to be notified when a <code>{@link Sequencer}</code>
- * has processed a <code>{@link MetaMessage}</code>.
- * To register a <code>MetaEventListener</code> object to receive such
- * notifications, pass it as the argument to the
- * <code>{@link Sequencer#addMetaEventListener(MetaEventListener) addMetaEventListener}</code>
- * method of <code>Sequencer</code>.
+ * The {@code MetaEventListener} interface should be implemented by classes
+ * whose instances need to be notified when a {@link Sequencer} has processed a
+ * {@link MetaMessage}. To register a {@code MetaEventListener} object to
+ * receive such notifications, pass it as the argument to the
+ * {@link Sequencer#addMetaEventListener(MetaEventListener)
+ * addMetaEventListener} method of {@code Sequencer}.
  *
  * @author Kara Kytle
  */
 public interface MetaEventListener extends EventListener {
 
     /**
-     * Invoked when a <code>{@link Sequencer}</code> has encountered and processed
-     * a <code>MetaMessage</code> in the <code>{@link Sequence}</code> it is processing.
-     * @param meta the meta-message that the sequencer encountered
+     * Invoked when a {@link Sequencer} has encountered and processed a
+     * {@code MetaMessage} in the {@code Sequence} it is processing.
+     *
+     * @param  meta the meta-message that the sequencer encountered
      */
-    public void meta(MetaMessage meta);
+    void meta(MetaMessage meta);
 }

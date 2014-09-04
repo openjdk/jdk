@@ -31,6 +31,8 @@ import static jdk.nashorn.internal.parser.TokenType.EOF;
 import static jdk.nashorn.internal.parser.TokenType.EOL;
 import static jdk.nashorn.internal.parser.TokenType.IDENT;
 
+import java.util.HashMap;
+import java.util.Map;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.parser.Lexer.LexerToken;
@@ -91,8 +93,7 @@ public abstract class AbstractParser {
     /** What should line numbers be counted from? */
     protected final int lineOffset;
 
-    /** //@ sourceURL or //# sourceURL */
-    protected String sourceURL;
+    private final Map<String, String> canonicalNames = new HashMap<>();
 
     /**
      * Construct a parser.
@@ -182,7 +183,7 @@ public abstract class AbstractParser {
     // currently only @sourceURL=foo supported
     private void checkDirectiveComment() {
         // if already set, ignore this one
-        if (sourceURL != null) {
+        if (source.getExplicitURL() != null) {
             return;
         }
 
@@ -190,7 +191,7 @@ public abstract class AbstractParser {
         final int len = comment.length();
         // 4 characters for directive comment marker //@\s or //#\s
         if (len > 4 && comment.substring(4).startsWith(SOURCE_URL_PREFIX)) {
-            sourceURL = comment.substring(4 + SOURCE_URL_PREFIX.length());
+            source.setExplicitURL(comment.substring(4 + SOURCE_URL_PREFIX.length()));
         }
     }
 
@@ -412,7 +413,7 @@ public abstract class AbstractParser {
             next();
 
             // Create IDENT node.
-            return new IdentNode(identToken, finish, ident).setIsFutureStrictName();
+            return createIdentNode(identToken, finish, ident).setIsFutureStrictName();
         }
 
         // Get IDENT.
@@ -421,7 +422,22 @@ public abstract class AbstractParser {
             return null;
         }
         // Create IDENT node.
-        return new IdentNode(identToken, finish, ident);
+        return createIdentNode(identToken, finish, ident);
+    }
+
+    /**
+     * Creates a new {@link IdentNode} as if invoked with a {@link IdentNode#IdentNode(long, int, String)
+     * constructor} but making sure that the {@code name} is deduplicated within this parse job.
+     * @param identToken the token for the new {@code IdentNode}
+     * @param identFinish the finish for the new {@code IdentNode}
+     * @param name the name for the new {@code IdentNode}. It will be de-duplicated.
+     * @return a newly constructed {@code IdentNode} with the specified token, finish, and name; the name will
+     * be deduplicated.
+     */
+    protected IdentNode createIdentNode(final long identToken, final int identFinish, final String name) {
+        final String existingName = canonicalNames.putIfAbsent(name, name);
+        final String canonicalName = existingName != null ? existingName : name;
+        return new IdentNode(identToken, identFinish, canonicalName);
     }
 
     /**
@@ -456,7 +472,7 @@ public abstract class AbstractParser {
             final String ident = (String)getValue(identToken);
             next();
             // Create IDENT node.
-            return new IdentNode(identToken, finish, ident);
+            return createIdentNode(identToken, finish, ident);
         } else {
             expect(IDENT);
             return null;

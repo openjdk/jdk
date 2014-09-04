@@ -263,9 +263,13 @@ inline void Assembler::lwzu( Register d, int si16,    Register s1) { assert(d !=
 inline void Assembler::lwax( Register d, Register s1, Register s2) { emit_int32(LWAX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::lwa(  Register d, int si16,    Register s1) { emit_int32(LWA_OPCODE  | rt(d) | ds(si16)   | ra0mem(s1));}
 
+inline void Assembler::lwbrx( Register d, Register s1, Register s2) { emit_int32(LWBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
+
 inline void Assembler::lhzx( Register d, Register s1, Register s2) { emit_int32(LHZX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::lhz(  Register d, int si16,    Register s1) { emit_int32(LHZ_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
 inline void Assembler::lhzu( Register d, int si16,    Register s1) { assert(d != s1, "according to ibm manual"); emit_int32(LHZU_OPCODE | rt(d) | d1(si16) | rta0mem(s1));}
+
+inline void Assembler::lhbrx( Register d, Register s1, Register s2) { emit_int32(LHBRX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 
 inline void Assembler::lhax( Register d, Register s1, Register s2) { emit_int32(LHAX_OPCODE | rt(d) | ra0mem(s1) | rb(s2));}
 inline void Assembler::lha(  Register d, int si16,    Register s1) { emit_int32(LHA_OPCODE  | rt(d) | d1(si16)   | ra0mem(s1));}
@@ -736,10 +740,12 @@ inline void Assembler::lwzx( Register d, Register s2) { emit_int32( LWZX_OPCODE 
 inline void Assembler::lwz(  Register d, int si16   ) { emit_int32( LWZ_OPCODE  | rt(d) | d1(si16));}
 inline void Assembler::lwax( Register d, Register s2) { emit_int32( LWAX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lwa(  Register d, int si16   ) { emit_int32( LWA_OPCODE  | rt(d) | ds(si16));}
+inline void Assembler::lwbrx(Register d, Register s2) { emit_int32( LWBRX_OPCODE| rt(d) | rb(s2));}
 inline void Assembler::lhzx( Register d, Register s2) { emit_int32( LHZX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lhz(  Register d, int si16   ) { emit_int32( LHZ_OPCODE  | rt(d) | d1(si16));}
 inline void Assembler::lhax( Register d, Register s2) { emit_int32( LHAX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lha(  Register d, int si16   ) { emit_int32( LHA_OPCODE  | rt(d) | d1(si16));}
+inline void Assembler::lhbrx(Register d, Register s2) { emit_int32( LHBRX_OPCODE| rt(d) | rb(s2));}
 inline void Assembler::lbzx( Register d, Register s2) { emit_int32( LBZX_OPCODE | rt(d) | rb(s2));}
 inline void Assembler::lbz(  Register d, int si16   ) { emit_int32( LBZ_OPCODE  | rt(d) | d1(si16));}
 inline void Assembler::ld(   Register d, int si16   ) { emit_int32( LD_OPCODE   | rt(d) | ds(si16));}

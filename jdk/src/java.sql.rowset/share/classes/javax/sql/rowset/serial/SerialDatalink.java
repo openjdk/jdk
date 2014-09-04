@@ -61,7 +61,7 @@ public class SerialDatalink implements Serializable, Cloneable {
 
     /**
      * The SQL type of the elements in this <code>SerialDatalink</code>
-     * object.  The type is expressed as one of the contants from the
+     * object.  The type is expressed as one of the constants from the
      * class <code>java.sql.Types</code>.
      * @serial
      */

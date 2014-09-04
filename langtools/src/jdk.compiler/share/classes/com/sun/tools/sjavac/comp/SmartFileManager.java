@@ -37,7 +37,8 @@ import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.ListBuffer;
 
 /**
@@ -50,10 +51,10 @@ import com.sun.tools.javac.util.ListBuffer;
  * Can also blind out the filemanager from seeing certain files in the file system.
  * Necessary to prevent javac from seeing some sources where the source path points.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager> {
 
@@ -93,13 +94,11 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return packageArtifacts;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Iterable<JavaFileObject> list(Location location,
                                          String packageName,
                                          Set<Kind> kinds,
-                                         boolean recurse)
-        throws IOException
-    {
+                                         boolean recurse) throws IOException {
         // Acquire the list of files.
         Iterable<JavaFileObject> files = super.list(location, packageName, kinds, recurse);
         if (visibleSources.isEmpty()) {
@@ -112,25 +111,22 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
             String t = uri.toString();
             if (t.startsWith("jar:")
                 || t.endsWith(".class")
-                || visibleSources.contains(uri))
-            {
+                || visibleSources.contains(uri)) {
                 filteredFiles.add(f);
             }
         }
         return filteredFiles;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean hasLocation(Location location) {
         return super.hasLocation(location);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
                                               String className,
-                                              Kind kind)
-        throws IOException
-    {
+                                              Kind kind) throws IOException {
         JavaFileObject file = super.getJavaFileForInput(location, className, kind);
         if (file == null || visibleSources.isEmpty()) {
             return file;
@@ -142,13 +138,11 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForOutput(Location location,
                                                String className,
                                                Kind kind,
-                                               FileObject sibling)
-        throws IOException
-    {
+                                               FileObject sibling) throws IOException {
         JavaFileObject file = super.getJavaFileForOutput(location, className, kind, sibling);
         if (file == null) return file;
         int dp = className.lastIndexOf('.');
@@ -162,12 +156,10 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return file;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForInput(Location location,
                                       String packageName,
-                                      String relativeName)
-        throws IOException
-    {
+                                      String relativeName) throws IOException {
         FileObject file =  super.getFileForInput(location, packageName, relativeName);
         if (file == null || visibleSources.isEmpty()) {
             return file;
@@ -179,13 +171,11 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForOutput(Location location,
                                        String packageName,
                                        String relativeName,
-                                       FileObject sibling)
-        throws IOException
-    {
+                                       FileObject sibling) throws IOException {
         FileObject file = super.getFileForOutput(location, packageName, relativeName, sibling);
         if (file == null) return file;
         if (location.equals(StandardLocation.NATIVE_HEADER_OUTPUT) &&
@@ -213,12 +203,12 @@ public class SmartFileManager extends ForwardingJavaFileManager<JavaFileManager>
         return sb.toString();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void flush() throws IOException {
         super.flush();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void close() throws IOException {
         super.close();
     }

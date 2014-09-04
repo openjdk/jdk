@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -38,32 +38,49 @@ public abstract class SplitPaneUI extends ComponentUI
     /**
      * Messaged to relayout the JSplitPane based on the preferred size
      * of the children components.
+     *
+     * @param jc a {@code JSplitPane}
      */
     public abstract void resetToPreferredSizes(JSplitPane jc);
 
     /**
      * Sets the location of the divider to location.
+     *
+     * @param jc a {@code JSplitPane}
+     * @param location an integer specifying the location of the divider
      */
     public abstract void setDividerLocation(JSplitPane jc, int location);
 
     /**
      * Returns the location of the divider.
+     *
+     * @param jc a {@code JSplitPane}
+     * @return an integer specifying the location of the divider
      */
     public abstract int getDividerLocation(JSplitPane jc);
 
     /**
      * Returns the minimum possible location of the divider.
+     *
+     * @param jc a {@code JSplitPane}
+     * @return and integer specifying the minimum location of the divider
      */
     public abstract int getMinimumDividerLocation(JSplitPane jc);
 
     /**
      * Returns the maximum possible location of the divider.
+     *
+     * @param jc a {@code JSplitPane}
+     * @return an integer specifying the maximum location of the divider
      */
     public abstract int getMaximumDividerLocation(JSplitPane jc);
 
     /**
      * Messaged after the JSplitPane the receiver is providing the look
      * and feel for paints its children.
+     *
+     * @param jc a {@code JSplitPane}
+     * @param g the {@code Graphics} context
      */
     public abstract void finishedPaintingChildren(JSplitPane jc, Graphics g);
 }

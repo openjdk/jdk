@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -67,7 +67,7 @@ public class ProfileOptionTest {
     // ---------- Test cases, invoked reflectively via run. ----------
 
     @Test
-    void testInvalidProfile_CommandLine() throws Exception {
+    void testInvalidProfile_API() throws Exception {
         JavaFileObject fo = new StringJavaFileObject("Test.java", "class Test { }");
         String badName = "foo";
         List<String> opts = Arrays.asList("-profile", badName);
@@ -82,7 +82,7 @@ public class ProfileOptionTest {
     }
 
     @Test
-    void testInvalidProfile_API() throws Exception {
+    void testInvalidProfile_CommandLine() throws Exception {
         String badName = "foo";
         String[] opts = { "-profile", badName };
         StringWriter sw = new StringWriter();
@@ -115,10 +115,17 @@ public class ProfileOptionTest {
                 opts.add("-Xlint:-options"); // dont warn about no -bootclasspath
                 if (p != Profile.DEFAULT)
                     opts.addAll(Arrays.asList("-profile", p.name));
+
+                IllegalStateException ise;
                 StringWriter sw = new StringWriter();
-                JavacTask task = (JavacTask) javac.getTask(sw, fm, null, opts, null,
-                        Arrays.asList(fo));
-                task.analyze();
+                try {
+                    JavacTask task = (JavacTask) javac.getTask(sw, fm, null, opts, null,
+                            Arrays.asList(fo));
+                    task.analyze();
+                    ise = null;
+                } catch (IllegalStateException e) {
+                    ise = e;
+                }
 
                 // sadly, command line errors are not (yet?) reported to
                 // the diag listener
@@ -129,14 +136,17 @@ public class ProfileOptionTest {
                 switch (t) {
                     case JDK1_8:
                     case JDK1_9:
-                        if (!out.isEmpty())
-                            error("unexpected output from compiler");
+                        if (ise != null)
+                            error("unexpected exception from compiler: " + ise);
                         break;
                     default:
-                        if (p != Profile.DEFAULT
-                                && !out.contains("profile " + p.name
+                        if (p == Profile.DEFAULT)
+                            break;
+                        if (ise == null)
+                            error("IllegalStateException not thrown as expected");
+                        else if (!ise.getMessage().contains("profile " + p.name
                                     + " is not valid for target release " + t.name)) {
-                            error("expected message not found");
+                            error("exception not thrown as expected: " + ise);
                         }
                 }
             }

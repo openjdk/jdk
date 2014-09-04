@@ -81,6 +81,8 @@ import com.sun.source.util.DocTreePathScanner;
 import com.sun.source.util.TreePath;
 import com.sun.tools.doclint.HtmlTag.AttrKind;
 import com.sun.tools.javac.tree.DocPretty;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
 import static com.sun.tools.doclint.Messages.Group.*;
 
@@ -213,7 +215,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         env.messages.report(REFERENCE, Kind.WARNING, env.currPath.getLeaf(), code, args);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocComment(DocCommentTree tree, Void ignore) {
         super.visitDocComment(tree, ignore);
         for (TagStackItem tsi: tagStack) {
@@ -230,7 +232,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="Text and entities.">
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitText(TextTree tree, Void ignore) {
         if (hasNonWhitespace(tree)) {
             checkAllowsText(tree);
@@ -239,7 +241,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEntity(EntityTree tree, Void ignore) {
         checkAllowsText(tree);
         markEnclosingTag(Flag.HAS_TEXT);
@@ -273,7 +275,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="HTML elements">
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitStartElement(StartElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
         final HtmlTag t = HtmlTag.get(treeName);
@@ -437,7 +439,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitEndElement(EndElementTree tree, Void ignore) {
         final Name treeName = tree.getName();
         final HtmlTag t = HtmlTag.get(treeName);
@@ -509,7 +511,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="HTML attributes">
 
-    @Override @SuppressWarnings("fallthrough")
+    @Override @DefinedBy(Api.COMPILER_TREE) @SuppressWarnings("fallthrough")
     public Void visitAttribute(AttributeTree tree, Void ignore) {
         HtmlTag currTag = tagStack.peek().tag;
         if (currTag != null) {
@@ -654,19 +656,19 @@ public class Checker extends DocTreePathScanner<Void, Void> {
 
     // <editor-fold defaultstate="collapsed" desc="javadoc tags">
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitAuthor(AuthorTree tree, Void ignore) {
         warnIfEmpty(tree, tree.getName());
         return super.visitAuthor(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitDocRoot(DocRootTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         return super.visitDocRoot(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitInheritDoc(InheritDocTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         // TODO: verify on overridden method
@@ -674,7 +676,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitInheritDoc(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLink(LinkTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         // simulate inline context on tag stack
@@ -688,7 +690,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitLiteral(LiteralTree tree, Void ignore) {
         markEnclosingTag(Flag.HAS_INLINE_TAG);
         if (tree.getKind() == DocTree.Kind.CODE) {
@@ -702,7 +704,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitLiteral(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     @SuppressWarnings("fallthrough")
     public Void visitParam(ParamTree tree, Void ignore) {
         boolean typaram = tree.isTypeParameter();
@@ -748,7 +750,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReference(ReferenceTree tree, Void ignore) {
         String sig = tree.getSignature();
         if (sig.contains("<") || sig.contains(">"))
@@ -760,7 +762,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitReference(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitReturn(ReturnTree tree, Void ignore) {
         Element e = env.trees.getElement(env.currPath);
         if (e.getKind() != ElementKind.METHOD
@@ -771,25 +773,25 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         return super.visitReturn(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitSerialData(SerialDataTree tree, Void ignore) {
         warnIfEmpty(tree, tree.getDescription());
         return super.visitSerialData(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitSerialField(SerialFieldTree tree, Void ignore) {
         warnIfEmpty(tree, tree.getDescription());
         return super.visitSerialField(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitSince(SinceTree tree, Void ignore) {
         warnIfEmpty(tree, tree.getBody());
         return super.visitSince(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitThrows(ThrowsTree tree, Void ignore) {
         ReferenceTree exName = tree.getExceptionName();
         Element ex = env.trees.getElement(new DocTreePath(getCurrentPath(), exName));
@@ -845,13 +847,13 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitUnknownBlockTag(UnknownBlockTagTree tree, Void ignore) {
         checkUnknownTag(tree, tree.getTagName());
         return super.visitUnknownBlockTag(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitUnknownInlineTag(UnknownInlineTagTree tree, Void ignore) {
         checkUnknownTag(tree, tree.getTagName());
         return super.visitUnknownInlineTag(tree, ignore);
@@ -862,7 +864,7 @@ public class Checker extends DocTreePathScanner<Void, Void> {
             env.messages.error(SYNTAX, tree, "dc.tag.unknown", tagName);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitValue(ValueTree tree, Void ignore) {
         ReferenceTree ref = tree.getReference();
         if (ref == null || ref.getSignature().isEmpty()) {
@@ -891,13 +893,13 @@ public class Checker extends DocTreePathScanner<Void, Void> {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitVersion(VersionTree tree, Void ignore) {
         warnIfEmpty(tree, tree.getBody());
         return super.visitVersion(tree, ignore);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER_TREE)
     public Void visitErroneous(ErroneousTree tree, Void ignore) {
         env.messages.error(SYNTAX, tree, null, tree.getDiagnostic().getMessage(null));
         return null;

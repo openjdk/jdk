@@ -49,6 +49,7 @@ import com.sun.tools.javac.tree.*;
 import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.JCTree.JCPolyExpression.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Dependencies.AttributionKind;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.util.List;
@@ -337,7 +338,7 @@ public class Attr extends JCTree.Visitor {
     // where
         private TreeVisitor<Symbol,Env<AttrContext>> identAttributer = new IdentAttributer();
         private class IdentAttributer extends SimpleTreeVisitor<Symbol,Env<AttrContext>> {
-            @Override
+            @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitMemberSelect(MemberSelectTree node, Env<AttrContext> env) {
                 Symbol site = visit(node.getExpression(), env);
                 if (site.kind == ERR || site.kind == ABSENT_TYP)
@@ -352,7 +353,7 @@ public class Attr extends JCTree.Visitor {
                 }
             }
 
-            @Override
+            @Override @DefinedBy(Api.COMPILER_TREE)
             public Symbol visitIdentifier(IdentifierTree node, Env<AttrContext> env) {
                 return rs.findIdent(env, (Name)node.getName(), TYP | PCK);
             }
@@ -919,14 +920,14 @@ public class Attr extends JCTree.Visitor {
                 // Empty bodies are only allowed for
                 // abstract, native, or interface methods, or for methods
                 // in a retrofit signature class.
-                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
-                    !relax)
-                    log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
                 if (tree.defaultValue != null) {
                     if ((owner.flags() & ANNOTATION) == 0)
                         log.error(tree.pos(),
                                   "default.allowed.in.intf.annotation.member");
                 }
+                if (isDefaultMethod || (tree.sym.flags() & (ABSTRACT | NATIVE)) == 0 &&
+                    !relax)
+                    log.error(tree.pos(), "missing.meth.body.or.decl.abstract");
             } else if ((tree.sym.flags() & ABSTRACT) != 0 && !isDefaultMethod) {
                 if ((owner.flags() & INTERFACE) != 0) {
                     log.error(tree.body.pos(), "intf.meth.cant.have.body");

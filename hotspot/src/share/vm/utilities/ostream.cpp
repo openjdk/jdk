@@ -352,6 +352,7 @@ stringStream::~stringStream() {}
 xmlStream*   xtty;
 outputStream* tty;
 outputStream* gclog_or_tty;
+CDS_ONLY(fileStream* classlist_file;) // Only dump the classes that can be stored into the CDS archive
 extern Mutex* tty_lock;
 
 #define EXTRACHARLEN   32
@@ -463,7 +464,8 @@ static const char* make_log_name_internal(const char* log_name, const char* forc
   return buf;
 }
 
-// log_name comes from -XX:LogFile=log_name or -Xloggc:log_name
+// log_name comes from -XX:LogFile=log_name, -Xloggc:log_name or
+// -XX:DumpLoadedClassList=<file_name>
 // in log_name, %p => pid1234 and
 //              %t => YYYY-MM-DD_HH-MM-SS
 static const char* make_log_name(const char* log_name, const char* force_directory) {
@@ -1103,6 +1105,16 @@ void ostream_init_log() {
     gclog_or_tty = gclog;
   }
 
+#if INCLUDE_CDS
+  // For -XX:DumpLoadedClassList=<file> option
+  if (DumpLoadedClassList != NULL) {
+    const char* list_name = make_log_name(DumpLoadedClassList, NULL);
+    classlist_file = new(ResourceObj::C_HEAP, mtInternal)
+                         fileStream(list_name);
+    FREE_C_HEAP_ARRAY(char, list_name, mtInternal);
+  }
+#endif
+
   // If we haven't lazily initialized the logfile yet, do it now,
   // to avoid the possibility of lazy initialization during a VM
   // crash, which can affect the stability of the fatal error handler.
@@ -1115,6 +1127,11 @@ void ostream_exit() {
   static bool ostream_exit_called = false;
   if (ostream_exit_called)  return;
   ostream_exit_called = true;
+#if INCLUDE_CDS
+  if (classlist_file != NULL) {
+    delete classlist_file;
+  }
+#endif
   if (gclog_or_tty != tty) {
       delete gclog_or_tty;
   }
