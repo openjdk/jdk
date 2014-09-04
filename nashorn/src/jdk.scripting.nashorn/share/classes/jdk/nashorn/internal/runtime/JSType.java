@@ -938,11 +938,8 @@ public enum JSType {
      * @return double
      */
     public static int toInt32Optimistic(final Object obj, final int programPoint) {
-        if (obj != null) {
-            final Class<?> clz = obj.getClass();
-            if (clz == Integer.class) {
-                return ((Integer)obj).intValue();
-            }
+        if (obj != null && obj.getClass() == Integer.class) {
+            return ((Integer)obj).intValue();
         }
         throw new UnwarrantedOptimismException(obj, programPoint);
     }
