@@ -340,8 +340,10 @@ class Arguments : AllStatic {
   static void set_conservative_max_heap_alignment();
   static void set_use_compressed_oops();
   static void set_use_compressed_klass_ptrs();
+  static void select_gc();
   static void set_ergonomics_flags();
   static void set_shared_spaces_flags();
+  static void set_gc_specific_flags();
   // limits the given memory size by the maximum amount of memory this process is
   // currently allowed to allocate or reserve.
   static julong limit_by_allocatable_memory(julong size);
@@ -452,6 +454,9 @@ class Arguments : AllStatic {
   static jint apply_ergo();
   // Adjusts the arguments after the OS have adjusted the arguments
   static jint adjust_after_os();
+
+  static inline bool gc_selected(); // whether a gc has been selected
+  static void select_gc_ergonomically();
 
   // Verifies that the given value will fit as a MinHeapFreeRatio. If not, an error
   // message is returned in the provided buffer.
@@ -606,4 +611,8 @@ class Arguments : AllStatic {
   static bool copy_expand_pid(const char* src, size_t srclen, char* buf, size_t buflen);
 };
 
+bool Arguments::gc_selected() {
+  return UseConcMarkSweepGC || UseG1GC || UseParallelGC || UseParallelOldGC ||
+    UseParNewGC || UseSerialGC;
+}
 #endif // SHARE_VM_RUNTIME_ARGUMENTS_HPP

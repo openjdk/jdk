@@ -1563,24 +1563,25 @@ void Arguments::set_conservative_max_heap_alignment() {
                                           CollectorPolicy::compute_heap_alignment());
 }
 
-void Arguments::set_ergonomics_flags() {
-
+void Arguments::select_gc_ergonomically() {
   if (os::is_server_class_machine()) {
-    // If no other collector is requested explicitly,
-    // let the VM select the collector based on
-    // machine class and automatic selection policy.
-    if (!UseSerialGC &&
-        !UseConcMarkSweepGC &&
-        !UseG1GC &&
-        !UseParNewGC &&
-        FLAG_IS_DEFAULT(UseParallelGC)) {
-      if (should_auto_select_low_pause_collector()) {
-        FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
-      } else {
-        FLAG_SET_ERGO(bool, UseParallelGC, true);
-      }
+    if (should_auto_select_low_pause_collector()) {
+      FLAG_SET_ERGO(bool, UseConcMarkSweepGC, true);
+    } else {
+      FLAG_SET_ERGO(bool, UseParallelGC, true);
     }
   }
+}
+
+void Arguments::select_gc() {
+  if (!gc_selected()) {
+    select_gc_ergonomically();
+  }
+}
+
+void Arguments::set_ergonomics_flags() {
+  select_gc();
+
 #ifdef COMPILER2
   // Shared spaces work fine with other GCs but causes bytecode rewriting
   // to be disabled, which hurts interpreter performance and decreases
@@ -1698,6 +1699,46 @@ void Arguments::set_g1_gc_flags() {
       (unsigned int) (MarkStackSize / K), (uint) (MarkStackSizeMax / K));
     tty->print_cr("ConcGCThreads: %u", (uint) ConcGCThreads);
   }
+}
+
+#if !INCLUDE_ALL_GCS
+#ifdef ASSERT
+static bool verify_serial_gc_flags() {
+  return (UseSerialGC &&
+        !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
+          UseParallelGC || UseParallelOldGC));
+}
+#endif // ASSERT
+#endif // INCLUDE_ALL_GCS
+
+void Arguments::set_gc_specific_flags() {
+#if INCLUDE_ALL_GCS
+  // Set per-collector flags
+  if (UseParallelGC || UseParallelOldGC) {
+    set_parallel_gc_flags();
+  } else if (UseConcMarkSweepGC) { // Should be done before ParNew check below
+    set_cms_and_parnew_gc_flags();
+  } else if (UseParNewGC) {  // Skipped if CMS is set above
+    set_parnew_gc_flags();
+  } else if (UseG1GC) {
+    set_g1_gc_flags();
+  }
+  check_deprecated_gcs();
+  check_deprecated_gc_flags();
+  if (AssumeMP && !UseSerialGC) {
+    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
+      warning("If the number of processors is expected to increase from one, then"
+              " you should configure the number of parallel GC threads appropriately"
+              " using -XX:ParallelGCThreads=N");
+    }
+  }
+  if (MinHeapFreeRatio == 100) {
+    // Keeping the heap 100% free is hard ;-) so limit it to 99%.
+    FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
+  }
+#else // INCLUDE_ALL_GCS
+  assert(verify_serial_gc_flags(), "SerialGC unset");
+#endif // INCLUDE_ALL_GCS
 }
 
 julong Arguments::limit_by_allocatable_memory(julong limit) {
@@ -1940,16 +1981,6 @@ bool Arguments::verify_percentage(uintx value, const char* name) {
               name, value);
   return false;
 }
-
-#if !INCLUDE_ALL_GCS
-#ifdef ASSERT
-static bool verify_serial_gc_flags() {
-  return (UseSerialGC &&
-        !(UseParNewGC || (UseConcMarkSweepGC || CMSIncrementalMode) || UseG1GC ||
-          UseParallelGC || UseParallelOldGC));
-}
-#endif // ASSERT
-#endif // INCLUDE_ALL_GCS
 
 // check if do gclog rotation
 // +UseGCLogFileRotation is a must,
@@ -3829,33 +3860,7 @@ jint Arguments::apply_ergo() {
   // Set heap size based on available physical memory
   set_heap_size();
 
-#if INCLUDE_ALL_GCS
-  // Set per-collector flags
-  if (UseParallelGC || UseParallelOldGC) {
-    set_parallel_gc_flags();
-  } else if (UseConcMarkSweepGC) { // Should be done before ParNew check below
-    set_cms_and_parnew_gc_flags();
-  } else if (UseParNewGC) {  // Skipped if CMS is set above
-    set_parnew_gc_flags();
-  } else if (UseG1GC) {
-    set_g1_gc_flags();
-  }
-  check_deprecated_gcs();
-  check_deprecated_gc_flags();
-  if (AssumeMP && !UseSerialGC) {
-    if (FLAG_IS_DEFAULT(ParallelGCThreads) && ParallelGCThreads == 1) {
-      warning("If the number of processors is expected to increase from one, then"
-              " you should configure the number of parallel GC threads appropriately"
-              " using -XX:ParallelGCThreads=N");
-    }
-  }
-  if (MinHeapFreeRatio == 100) {
-    // Keeping the heap 100% free is hard ;-) so limit it to 99%.
-    FLAG_SET_ERGO(uintx, MinHeapFreeRatio, 99);
-  }
-#else // INCLUDE_ALL_GCS
-  assert(verify_serial_gc_flags(), "SerialGC unset");
-#endif // INCLUDE_ALL_GCS
+  set_gc_specific_flags();
 
   // Initialize Metaspace flags and alignments
   Metaspace::ergo_initialize();
