@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.util.Collections;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -44,6 +45,9 @@ import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
@@ -621,6 +625,23 @@ public abstract class ScriptFunction extends ScriptObject {
             appliedType = appliedType.changeParameterType(1, Object.class);
         }
 
+        /*
+         * dropArgs is a synthetic method handle that contains any args that we need to
+         * get rid of that come after the arguments array in the apply case. We adapt
+         * the callsite to ask for 3 args only and then dropArguments on the method handle
+         * to make it fit the extraneous args.
+         */
+        MethodType dropArgs = MH.type(void.class);
+        if (isApply && !isFailedApplyToCall) {
+            final int pc = appliedType.parameterCount();
+            for (int i = 3; i < pc; i++) {
+                dropArgs = dropArgs.appendParameterTypes(appliedType.parameterType(i));
+            }
+            if (pc > 3) {
+                appliedType = appliedType.dropParameterTypes(3, pc);
+            }
+        }
+
         if (isApply || isFailedApplyToCall) {
             if (passesArgs) {
                 // R(this, args) => R(this, Object[])
@@ -701,6 +722,15 @@ public abstract class ScriptFunction extends ScriptObject {
             inv = MH.filterArguments(inv, 1, WRAP_THIS);
         }
         inv = MH.dropArguments(inv, 0, applyFnType);
+
+        /*
+         * Dropargs can only be non-()V in the case of isApply && !isFailedApplyToCall, which
+         * is when we need to add arguments to the callsite to catch and ignore the synthetic
+         * extra args that someone has added to the command line.
+         */
+        for (int i = 0; i < dropArgs.parameterCount(); i++) {
+            inv = MH.dropArguments(inv, 4 + i, dropArgs.parameterType(i));
+        }
 
         MethodHandle guard = appliedInvocation.getGuard();
         // If the guard checks the value of "this" but we aren't passing thisArg, insert the default one
