@@ -168,7 +168,7 @@ public class MessageInfo {
             for (File d = testSrc; d != null; d = d.getParentFile()) {
                 if (new File(d, "TEST.ROOT").exists()) {
                     d = d.getParentFile();
-                    File f = new File(d, "src/share/classes/com/sun/tools/javac/resources/compiler.properties");
+                    File f = new File(d, "src/jdk.compiler/share/classes/com/sun/tools/javac/resources/compiler.properties");
                     if (f.exists()) {
                         msgFile = f;
                         break;
