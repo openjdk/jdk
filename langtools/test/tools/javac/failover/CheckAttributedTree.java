@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -54,10 +54,10 @@ import java.io.StringWriter;
 import java.lang.reflect.Field;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.concurrent.atomic.AtomicInteger;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.lang.model.element.Element;
 import javax.swing.DefaultComboBoxModel;
@@ -80,11 +80,13 @@ import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
 import com.sun.source.tree.CompilationUnitTree;
-import com.sun.source.util.TaskEvent;
 import com.sun.source.util.JavacTask;
+import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
+import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.code.Symbol;
 import com.sun.tools.javac.code.Type;
+import com.sun.tools.javac.main.JavaCompiler;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
 import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
@@ -256,6 +258,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
                     }
                 }
             });
+            return;
         }
 
         if (!quiet)
@@ -272,7 +275,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
      * @param file the file to be read
      * @return the tree for the content of the file
      * @throws IOException if any IO errors occur
-     * @throws TreePosTest.ParseException if any errors occur while parsing the file
+     * @throws AttributionException if any errors occur while analyzing the file
      */
     List<Pair<JCCompilationUnit, JCTree>> read(File file) throws IOException, AttributionException {
         r.errors = 0;
@@ -283,22 +286,28 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
         task.setTaskListener(new TaskListener() {
             public void started(TaskEvent e) {
                 if (e.getKind() == TaskEvent.Kind.ANALYZE)
-                        analyzedElems.add(e.getTypeElement());
+                    analyzedElems.add(e.getTypeElement());
             }
             public void finished(TaskEvent e) { }
         });
 
         try {
             Iterable<? extends CompilationUnitTree> trees = task.parse();
-            task.analyze();
+//            JavaCompiler c = JavaCompiler.instance(((JavacTaskImpl) task).getContext());
+//            System.err.println("verboseCompilePolicy: " + c.verboseCompilePolicy);
+//            System.err.println("shouldStopIfError: " + c.shouldStopPolicyIfError);
+//            System.err.println("shouldStopIfNoError: " + c.shouldStopPolicyIfNoError);
+            Iterable<? extends Element> elems = task.analyze();
+            if (!elems.iterator().hasNext())
+                throw new AttributionException("No results from analyze");
             List<Pair<JCCompilationUnit, JCTree>> res = new ArrayList<>();
-            //System.out.println("Try to add pairs. Elems are " + analyzedElems);
+            //System.err.println("Try to add pairs. Elems are " + analyzedElems);
             for (CompilationUnitTree t : trees) {
                JCCompilationUnit cu = (JCCompilationUnit)t;
                for (JCTree def : cu.defs) {
                    if (def.hasTag(CLASSDEF) &&
                            analyzedElems.contains(((JCTree.JCClassDecl)def).sym)) {
-                       //System.out.println("Adding pair...");
+                       //System.err.println("Adding pair..." + cu.sourcefile + " " + ((JCTree.JCClassDecl) def).name);
                        res.add(new Pair<>(cu, def));
                    }
                }
@@ -316,7 +325,9 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
      * @param msg the error message
      */
     void error(String msg) {
+        System.err.println();
         System.err.println(msg);
+        System.err.println();
         errCount.incrementAndGet();
     }
 
@@ -347,6 +358,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
     private class NPETester extends TreeScanner {
         void test(List<Pair<JCCompilationUnit, JCTree>> trees) {
             for (Pair<JCCompilationUnit, JCTree> p : trees) {
+//              System.err.println("checking " + p.fst.sourcefile);
                 sourcefile = p.fst.sourcefile;
                 endPosTable = p.fst.endPositions;
                 encl = new Info(p.snd, endPosTable);
@@ -366,7 +378,7 @@ public class CheckAttributedTree extends JavacTestingAbstractThreadedTest {
                 check(tree.type != null,
                         "'null' field 'type' found in tree ", self);
                 if (tree.type==null)
-                    new Throwable().printStackTrace();
+                    Thread.dumpStack();
             }
 
             Field errField = checkFields(tree);

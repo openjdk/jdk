@@ -42,6 +42,9 @@ import java.nio.charset.CharsetDecoder;
 import javax.tools.JavaFileObject;
 import java.text.Normalizer;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * A subclass of JavaFileObject representing regular files.
  *
@@ -75,12 +78,12 @@ class RegularFileObject extends BaseFileObject {
             fileManager.log.warning("file.from.future", f);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public URI toUri() {
         return file.toURI().normalize();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public String getName() {
         return file.getPath();
     }
@@ -90,24 +93,24 @@ class RegularFileObject extends BaseFileObject {
         return name;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject.Kind getKind() {
         return getKind(name);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public InputStream openInputStream() throws IOException {
         return new FileInputStream(file);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public OutputStream openOutputStream() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return new FileOutputStream(file);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public CharBuffer getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
@@ -128,19 +131,19 @@ class RegularFileObject extends BaseFileObject {
         return cb;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Writer openWriter() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return new OutputStreamWriter(new FileOutputStream(file), fileManager.getEncodingName());
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public long getLastModified() {
         return file.lastModified();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean delete() {
         return file.delete();
     }
@@ -170,7 +173,7 @@ class RegularFileObject extends BaseFileObject {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean isNameCompatible(String cn, JavaFileObject.Kind kind) {
         cn.getClass();
         // null check

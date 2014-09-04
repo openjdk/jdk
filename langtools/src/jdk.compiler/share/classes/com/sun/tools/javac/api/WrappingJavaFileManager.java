@@ -35,6 +35,9 @@ import java.util.Set;
 import javax.tools.*;
 import javax.tools.JavaFileObject.Kind;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Wraps all calls to a given file manager.  Subclasses of this class
  * might override some of these methods and might also provide
@@ -134,6 +137,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
     /**
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public Iterable<JavaFileObject> list(Location location,
                                          String packageName,
                                          Set<Kind> kinds,
@@ -146,6 +150,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
     /**
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public String inferBinaryName(Location location, JavaFileObject file) {
         return super.inferBinaryName(location, unwrap(file));
     }
@@ -155,6 +160,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
                                               String className,
                                               Kind kind)
@@ -168,6 +174,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
      * @throws UnsupportedOperationException {@inheritDoc}
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForOutput(Location location,
                                                String className,
                                                Kind kind,
@@ -181,6 +188,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
      * @throws IllegalArgumentException {@inheritDoc}
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public FileObject getFileForInput(Location location,
                                       String packageName,
                                       String relativeName)
@@ -193,6 +201,7 @@ public class WrappingJavaFileManager<M extends JavaFileManager> extends Forwardi
      * @throws IllegalArgumentException {@inheritDoc}
      * @throws IllegalStateException {@inheritDoc}
      */
+    @DefinedBy(Api.COMPILER)
     public FileObject getFileForOutput(Location location,
                                        String packageName,
                                        String relativeName,

@@ -382,10 +382,6 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             symbol.setFlags(flags);
         }
 
-        if((isVar || isParam) && compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
-            compiler.declareLocalSymbol(name);
-        }
-
         return symbol;
     }
 
@@ -489,7 +485,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         if (functionNode.isDeclared()) {
             final Iterator<Block> blocks = lc.getBlocks();
             if (blocks.hasNext()) {
-                defineSymbol(blocks.next(), functionNode.getIdent().getName(), IS_VAR);
+                defineSymbol(blocks.next(), functionNode.getIdent().getName(), IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
             }
         }
 
@@ -685,6 +681,22 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             }
         }
         return binaryNode;
+    }
+
+    @Override
+    public Node leaveBlock(final Block block) {
+        // It's not necessary to guard the marking of symbols as locals with this "if"condition for correctness, it's
+        // just an optimization -- runtime type calculation is not used when the compilation is not an on-demand
+        // optimistic compilation, so we can skip locals marking then.
+        if (compiler.useOptimisticTypes() && compiler.isOnDemandCompilation()) {
+            for (final Symbol symbol: block.getSymbols()) {
+                if (!symbol.isScope()) {
+                    assert symbol.isVar() || symbol.isParam();
+                    compiler.declareLocalSymbol(symbol.getName());
+                }
+            }
+        }
+        return block;
     }
 
     @Override

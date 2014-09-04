@@ -70,27 +70,29 @@ public class CompileEvent {
         }, new PrintWriter(out, true));
         if (mainResult != 0)
             throw new AssertionError("Compilation failed unexpectedly, exit code: " + mainResult);
-        assertOutput(out);
+        assertOutput(out.toString());
 
         JavaCompiler comp = ToolProvider.getSystemJavaCompiler();
         StandardJavaFileManager fm = comp.getStandardFileManager(null, null, null);
         Iterable<? extends JavaFileObject> testFileObjects = fm.getJavaFileObjects(test);
 
         //test events fired to listeners registered from plugins
-        //when starting compiler using JavaCompiler.getTak(...).call
+        //when starting compiler using JavaCompiler.getTask(...).call
         List<String> options =
                 Arrays.asList("-Xplugin:compile-event", "-processorpath", testClasses);
         out = new StringWriter();
         boolean compResult = comp.getTask(out, null, null, options, null, testFileObjects).call();
         if (!compResult)
             throw new AssertionError("Compilation failed unexpectedly.");
-        assertOutput(out);
+        assertOutput(out.toString());
     }
 
-    void assertOutput(StringWriter out) {
+    void assertOutput(String found) {
         String lineSeparator = System.getProperty("line.separator");
-        if (!out.toString().trim().replace(lineSeparator, "\n").equals(EXPECTED)) {
-            throw new AssertionError("Unexpected events: " + out.toString());
+        if (!found.trim().replace(lineSeparator, "\n").equals(EXPECTED)) {
+            System.err.println("Expected: " + EXPECTED);
+            System.err.println("Found:    " + found);
+            throw new AssertionError("Unexpected events: " + found);
         }
     }
 

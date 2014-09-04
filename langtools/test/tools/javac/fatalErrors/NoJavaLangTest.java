@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,15 +25,12 @@
  * @test
  * @bug 4263768 4785453
  * @summary Verify that the compiler does not crash when java.lang is not
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main NoJavaLangTest
  */
 
-import java.util.ArrayList;
-import java.util.List;
-
-//original test: test/tools/javac/fatalErrors/NoJavaLang.sh
+// Original test: test/tools/javac/fatalErrors/NoJavaLang.sh
 public class NoJavaLangTest {
 
     private static final String noJavaLangSrc =
@@ -49,26 +46,20 @@ public class NoJavaLangTest {
         "Fatal Error: Unable to find package java.lang in classpath or bootclasspath";
 
     public static void main(String[] args) throws Exception {
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} NoJavaLang.java 2> "${TMP1}"
-        ToolBox.JavaToolArgs javacSuccessArgs =
-                new ToolBox.JavaToolArgs().setSources(noJavaLangSrc);
-        ToolBox.javac(javacSuccessArgs);
+        ToolBox tb = new ToolBox();
 
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -bootclasspath . NoJavaLang.java 2> "${TMP1}"
-        List<String> output = new ArrayList<>();
-        ToolBox.JavaToolArgs javacFailArgs =
-                new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .setOptions("-bootclasspath", ".")
-                .setSources(noJavaLangSrc)
-                .setErrOutput(output);
+        tb.new JavacTask()
+                .sources(noJavaLangSrc)
+                .run();
 
-        int cr = ToolBox.javac(javacFailArgs);
-        if (cr != 3) {
-            throw new AssertionError("Compiler exit result should be 3");
-        }
+        String out = tb.new JavacTask()
+                .options("-bootclasspath", ".")
+                .sources(noJavaLangSrc)
+                .run(ToolBox.Expect.FAIL, 3)
+                .writeAll()
+                .getOutput(ToolBox.OutputKind.DIRECT);
 
-//        diff ${DIFFOPTS} -c "${TESTSRC}${FS}NoJavaLang.out" "${TMP1}"
-        if (!(output.size() == 1 && output.get(0).equals(compilerErrorMessage))) {
+        if (!out.trim().equals(compilerErrorMessage)) {
             throw new AssertionError("javac generated error output is not correct");
         }
     }

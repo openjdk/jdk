@@ -65,6 +65,7 @@ import java.util.logging.Level;
 import javax.script.ScriptEngine;
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
+import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -162,36 +163,26 @@ public final class Context {
 
         @Override
         public void initialize(final Collection<Class<?>> classes, final Source source, final Object[] constants) {
-            // do these in parallel, this significantly reduces class installation overhead
-            // however - it still means that every thread needs a separate doPrivileged
-            classes.parallelStream().forEach(
-                new Consumer<Class<?>>() {
+            try {
+                AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
                     @Override
-                    public void accept(final Class<?> clazz) {
-                        try {
-                            AccessController.doPrivileged(new PrivilegedExceptionAction<Void>() {
-                                @Override
-                                public Void run() {
-                                    try {
-                                        //use reflection to write source and constants table to installed classes
-                                        final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
-                                        sourceField.setAccessible(true);
-                                        sourceField.set(null, source);
+                    public Void run() throws Exception {
+                        for (final Class<?> clazz : classes) {
+                            //use reflection to write source and constants table to installed classes
+                            final Field sourceField = clazz.getDeclaredField(SOURCE.symbolName());
+                            sourceField.setAccessible(true);
+                            sourceField.set(null, source);
 
-                                        final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
-                                        constantsField.setAccessible(true);
-                                        constantsField.set(null, constants);
-                                    } catch (final IllegalAccessException | NoSuchFieldException e) {
-                                        throw new RuntimeException(e);
-                                    }
-                                    return null;
-                                }
-                            });
-                        } catch (final PrivilegedActionException e) {
-                            throw new RuntimeException(e);
+                            final Field constantsField = clazz.getDeclaredField(CONSTANTS.symbolName());
+                            constantsField.setAccessible(true);
+                            constantsField.set(null, constants);
                         }
+                        return null;
                     }
                 });
+            } catch (final PrivilegedActionException e) {
+                throw new RuntimeException(e);
+            }
         }
 
         @Override
@@ -210,15 +201,20 @@ public final class Context {
         }
 
         @Override
-        public void storeCompiledScript(final Source source, final String mainClassName,
-                                        final Map<String, byte[]> classBytes, final Object[] constants) {
+        public void storeScript(final String classInfoFile, final Source source, final String mainClassName,
+                                final Map<String,byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers,
+                                final Object[] constants, final int compilationId) {
             if (context.codeStore != null) {
-                try {
-                    context.codeStore.putScript(source, mainClassName, classBytes, constants);
-                } catch (final IOException e) {
-                    throw new RuntimeException(e);
-                }
+                context.codeStore.storeScript(classInfoFile, source, mainClassName, classBytes, initializers, constants, compilationId);
             }
+        }
+
+        @Override
+        public StoredScript loadScript(final Source source, final String functionKey) {
+            if (context.codeStore != null) {
+                return context.codeStore.loadScript(source, functionKey);
+            }
+            return null;
         }
     }
 
@@ -341,6 +337,9 @@ public final class Context {
     /** Unique id for 'eval' */
     private final AtomicLong uniqueEvalId;
 
+    /** Optional class filter to use for Java classes. Can be null. */
+    private final ClassFilter classFilter;
+
     private static final ClassLoader myLoader = Context.class.getClassLoader();
     private static final StructureLoader sharedLoader;
 
@@ -395,7 +394,19 @@ public final class Context {
      * @param appLoader application class loader
      */
     public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader) {
-        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true), appLoader);
+        this(options, errors, appLoader, (ClassFilter)null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param options options from command line or Context creator
+     * @param errors  error manger
+     * @param appLoader application class loader
+     * @param classFilter class filter to use
+     */
+    public Context(final Options options, final ErrorManager errors, final ClassLoader appLoader, final ClassFilter classFilter) {
+        this(options, errors, new PrintWriter(System.out, true), new PrintWriter(System.err, true), appLoader, classFilter);
     }
 
     /**
@@ -408,11 +419,26 @@ public final class Context {
      * @param appLoader application class loader
      */
     public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader) {
+        this(options, errors, out, err, appLoader, (ClassFilter)null);
+    }
+
+    /**
+     * Constructor
+     *
+     * @param options options from command line or Context creator
+     * @param errors  error manger
+     * @param out     output writer for this Context
+     * @param err     error writer for this Context
+     * @param appLoader application class loader
+     * @param classFilter class filter to use
+     */
+    public Context(final Options options, final ErrorManager errors, final PrintWriter out, final PrintWriter err, final ClassLoader appLoader, final ClassFilter classFilter) {
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
             sm.checkPermission(new RuntimePermission(NASHORN_CREATE_CONTEXT));
         }
 
+        this.classFilter = classFilter;
         this.env       = new ScriptEnvironment(options, out, err);
         this._strict   = env._strict;
         this.appLoader = appLoader;
@@ -447,7 +473,7 @@ public final class Context {
         if (env._persistent_cache) {
             try {
                 final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
-                codeStore = new CodeStore(cacheDir);
+                codeStore = new CodeStore(this, cacheDir);
             } catch (final IOException e) {
                 throw new RuntimeException("Error initializing code cache", e);
             }
@@ -463,6 +489,15 @@ public final class Context {
         }
 
         initLoggers();
+    }
+
+
+    /**
+     * Get the class filter for this context
+     * @return class filter
+     */
+    public ClassFilter getClassFilter() {
+        return classFilter;
     }
 
     /**
@@ -882,6 +917,11 @@ public final class Context {
             throw new ClassNotFoundException(fullName);
         }
 
+        // give chance to ClassFilter to filter out, if present
+        if (classFilter != null && !classFilter.exposeToScripts(fullName)) {
+            throw new ClassNotFoundException(fullName);
+        }
+
         // check package access as soon as possible!
         final SecurityManager sm = System.getSecurityManager();
         if (sm != null) {
@@ -1080,30 +1120,27 @@ public final class Context {
             return script;
         }
 
-        CompiledScript compiledScript = null;
+        StoredScript storedScript = null;
         FunctionNode functionNode = null;
+        final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
+        final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
-        if (!env._parse_only && codeStore != null) {
-            try {
-                compiledScript = codeStore.getScript(source);
-            } catch (IOException | ClassNotFoundException e) {
-                getLogger(Compiler.class).warning("Error loading ", source, " from cache: ", e);
-                // Fall back to normal compilation
-            }
+        if (useCodeStore) {
+            storedScript = codeStore.loadScript(source, cacheKey);
         }
 
-        if (compiledScript == null) {
+        if (storedScript == null) {
             functionNode = new Parser(env, source, errMan, strict, getLogger(Parser.class)).parse();
 
             if (errors.hasErrors()) {
                 return null;
             }
 
-            if (env._print_ast) {
+            if (env._print_ast || functionNode.getFlag(FunctionNode.IS_PRINT_AST)) {
                 getErr().println(new ASTWriter(functionNode));
             }
 
-            if (env._print_parse) {
+            if (env._print_parse || functionNode.getFlag(FunctionNode.IS_PRINT_PARSE)) {
                 getErr().println(new PrintVisitor(functionNode, true, false));
             }
         }
@@ -1117,7 +1154,7 @@ public final class Context {
         final CodeSource   cs     = new CodeSource(url, (CodeSigner[])null);
         final CodeInstaller<ScriptEnvironment> installer = new ContextCodeInstaller(this, loader, cs);
 
-        if (functionNode != null) {
+        if (storedScript == null) {
             final CompilationPhases phases = Compiler.CompilationPhases.COMPILE_ALL;
 
             final Compiler compiler = new Compiler(
@@ -1125,12 +1162,14 @@ public final class Context {
                     env,
                     installer,
                     source,
-                    functionNode.getSourceURL(),
                     strict | functionNode.isStrict());
 
-            script = compiler.compile(functionNode, phases).getRootClass();
+            final FunctionNode compiledFunction = compiler.compile(functionNode, phases);
+            script = compiledFunction.getRootClass();
+            compiler.persistClassInfo(cacheKey, compiledFunction);
         } else {
-            script = install(compiledScript, installer);
+            Compiler.updateCompilationId(storedScript.getCompilationId());
+            script = install(storedScript, source, installer);
         }
 
         cacheClass(source, script);
@@ -1155,27 +1194,26 @@ public final class Context {
         return uniqueScriptId.getAndIncrement();
     }
 
-
     /**
      * Install a previously compiled class from the code cache.
      *
-     * @param compiledScript cached script containing class bytes and constants
+     * @param storedScript cached script containing class bytes and constants
      * @return main script class
      */
-    private static Class<?> install(final CompiledScript compiledScript, final CodeInstaller<ScriptEnvironment> installer) {
+    private static Class<?> install(final StoredScript storedScript, final Source source, final CodeInstaller<ScriptEnvironment> installer) {
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
-        final Source   source        = compiledScript.getSource();
-        final Object[] constants     = compiledScript.getConstants();
-        final String   rootClassName = compiledScript.getMainClassName();
-        final byte[]   rootByteCode  = compiledScript.getClassBytes().get(rootClassName);
-        final Class<?> rootClass     = installer.install(rootClassName, rootByteCode);
+        final Object[] constants       = storedScript.getConstants();
+        final String   mainClassName   = storedScript.getMainClassName();
+        final byte[]   mainClassBytes  = storedScript.getClassBytes().get(mainClassName);
+        final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
+        final Map<Integer, FunctionInitializer> initialzers = storedScript.getInitializers();
 
-        installedClasses.put(rootClassName, rootClass);
+        installedClasses.put(mainClassName, mainClass);
 
-        for (final Map.Entry<String, byte[]> entry : compiledScript.getClassBytes().entrySet()) {
+        for (final Map.Entry<String, byte[]> entry : storedScript.getClassBytes().entrySet()) {
             final String className = entry.getKey();
-            if (className.equals(rootClassName)) {
+            if (className.equals(mainClassName)) {
                 continue;
             }
             final byte[] code = entry.getValue();
@@ -1187,11 +1225,17 @@ public final class Context {
 
         for (final Object constant : constants) {
             if (constant instanceof RecompilableScriptFunctionData) {
-                ((RecompilableScriptFunctionData) constant).initTransients(source, installer);
+                final RecompilableScriptFunctionData data = (RecompilableScriptFunctionData) constant;
+                data.initTransients(source, installer);
+                if (initialzers != null) {
+                    final FunctionInitializer initializer = initialzers.get(data.getFunctionNodeId());
+                    initializer.setCode(installedClasses.get(initializer.getClassName()));
+                    data.initializeCode(initializer);
+                }
             }
         }
 
-        return rootClass;
+        return mainClass;
     }
 
     /**

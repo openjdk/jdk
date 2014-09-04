@@ -3854,6 +3854,15 @@ void Assembler::vpbroadcastd(XMMRegister dst, XMMRegister src) {
 }
 
 // Carry-Less Multiplication Quadword
+void Assembler::pclmulqdq(XMMRegister dst, XMMRegister src, int mask) {
+  assert(VM_Version::supports_clmul(), "");
+  int encode = simd_prefix_and_encode(dst, dst, src, VEX_SIMD_66, VEX_OPCODE_0F_3A);
+  emit_int8(0x44);
+  emit_int8((unsigned char)(0xC0 | encode));
+  emit_int8((unsigned char)mask);
+}
+
+// Carry-Less Multiplication Quadword
 void Assembler::vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask) {
   assert(VM_Version::supports_avx() && VM_Version::supports_clmul(), "");
   bool vector256 = false;

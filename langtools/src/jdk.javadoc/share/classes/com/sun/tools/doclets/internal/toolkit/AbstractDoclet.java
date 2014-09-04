@@ -60,8 +60,8 @@ public abstract class AbstractDoclet {
      * Verify that the only doclet that is using this toolkit is
      * {@value #TOOLKIT_DOCLET_NAME}.
      */
-    private boolean isValidDoclet(AbstractDoclet doclet) {
-        if (! doclet.getClass().getName().equals(TOOLKIT_DOCLET_NAME)) {
+    private boolean isValidDoclet() {
+        if (!getClass().getName().equals(TOOLKIT_DOCLET_NAME)) {
             configuration.message.error("doclet.Toolkit_Usage_Violation",
                 TOOLKIT_DOCLET_NAME);
             return false;
@@ -72,19 +72,18 @@ public abstract class AbstractDoclet {
     /**
      * The method that starts the execution of the doclet.
      *
-     * @param doclet the doclet to start the execution for.
      * @param root   the {@link RootDoc} that points to the source to document.
      * @return true if the doclet executed without error.  False otherwise.
      */
-    public boolean start(AbstractDoclet doclet, RootDoc root) {
+    public boolean startDoclet(RootDoc root) {
         configuration = configuration();
         configuration.root = root;
         utils = configuration.utils;
-        if (! isValidDoclet(doclet)) {
+        if (!isValidDoclet()) {
             return false;
         }
         try {
-            doclet.startGeneration(root);
+            startGeneration(root);
         } catch (Configuration.Fault f) {
             root.printError(f.getMessage());
             return false;

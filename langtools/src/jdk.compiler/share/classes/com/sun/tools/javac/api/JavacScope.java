@@ -32,6 +32,8 @@ import javax.lang.model.element.TypeElement;
 
 import com.sun.tools.javac.comp.AttrContext;
 import com.sun.tools.javac.comp.Env;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 
 
@@ -52,7 +54,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
             //the "top-level" scope needs to return both imported and defined elements
             //see test CheckLocalElements
             return new JavacScope(env) {
-                @Override
+                @Override @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
                     return env.toplevel.namedImportScope.getSymbols();
                 }
@@ -69,6 +71,7 @@ public class JavacScope implements com.sun.source.tree.Scope {
         this.env = env;
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public JavacScope getEnclosingScope() {
         if (env.outer != null && env.outer != env) {
             return create(env.outer);
@@ -78,9 +81,11 @@ public class JavacScope implements com.sun.source.tree.Scope {
                 public boolean isStarImportScope() {
                     return true;
                 }
+                @DefinedBy(Api.COMPILER_TREE)
                 public JavacScope getEnclosingScope() {
                     return null;
                 }
+                @DefinedBy(Api.COMPILER_TREE)
                 public Iterable<? extends Element> getLocalElements() {
                     return env.toplevel.starImportScope.getSymbols();
                 }
@@ -88,15 +93,18 @@ public class JavacScope implements com.sun.source.tree.Scope {
         }
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public TypeElement getEnclosingClass() {
         // hide the dummy class that javac uses to enclose the top level declarations
         return (env.outer == null || env.outer == env ? null : env.enclClass.sym);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public ExecutableElement getEnclosingMethod() {
         return (env.enclMethod == null ? null : env.enclMethod.sym);
     }
 
+    @DefinedBy(Api.COMPILER_TREE)
     public Iterable<? extends Element> getLocalElements() {
         return env.info.getLocalElements();
     }

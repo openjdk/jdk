@@ -34,6 +34,7 @@ import javax.lang.model.type.TypeKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.DiagnosticPosition;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
@@ -243,7 +244,7 @@ public class Annotate {
             this.on = on;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "<placeholder: " + placeholderFor + " on: " + on + ">";
     }
