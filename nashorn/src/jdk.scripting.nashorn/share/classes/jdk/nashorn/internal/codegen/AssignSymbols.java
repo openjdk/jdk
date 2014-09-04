@@ -36,6 +36,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SWITCH_TAG_PREFIX;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 import static jdk.nashorn.internal.ir.Symbol.HAS_OBJECT_VALUE;
+import static jdk.nashorn.internal.ir.Symbol.IS_CONST;
 import static jdk.nashorn.internal.ir.Symbol.IS_FUNCTION_SELF;
 import static jdk.nashorn.internal.ir.Symbol.IS_GLOBAL;
 import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
@@ -83,11 +84,13 @@ import jdk.nashorn.internal.ir.TryNode;
 import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WithNode;
-import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.Property;
-import jdk.nashorn.internal.runtime.PropertyMap;
+import jdk.nashorn.internal.runtime.ECMAErrors;
+import jdk.nashorn.internal.runtime.ErrorManager;
+import jdk.nashorn.internal.runtime.JSErrorType;
+import jdk.nashorn.internal.runtime.ParserException;
+import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -101,7 +104,7 @@ import jdk.nashorn.internal.runtime.logging.Logger;
  * visitor.
  */
 @Logger(name="symbols")
-final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements Loggable {
+final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggable {
     private final DebugLogger log;
     private final boolean     debug;
 
@@ -190,8 +193,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
      * @param body the body of the FunctionNode we are entering
      */
     private void acceptDeclarations(final FunctionNode functionNode, final Block body) {
-        // This visitor will assign symbol to all declared variables, except function declarations (which are taken care
-        // in a separate step above) and "var" declarations in for loop initializers.
+        // This visitor will assign symbol to all declared variables, except "var" declarations in for loop initializers.
         //
         body.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
@@ -204,8 +206,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             public Node leaveVarNode(final VarNode varNode) {
                 if (varNode.isStatement()) {
                     final IdentNode ident  = varNode.getName();
-                    final Symbol    symbol = defineSymbol(body, ident.getName(), IS_VAR);
-                    functionNode.addDeclaredSymbol(symbol);
+                    final Block block = varNode.isBlockScoped() ? getLexicalContext().getCurrentBlock() : body;
+                    final Symbol symbol = defineSymbol(block, ident.getName(), ident, varNode.getSymbolFlags());
                     if (varNode.isFunctionDeclaration()) {
                         symbol.setIsFunctionDeclaration();
                     }
@@ -303,23 +305,31 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         return functionNode.setBody(lc, body.setStatements(lc, newStatements));
     }
 
-    private Symbol defineGlobalSymbol(final Block block, final String name) {
-        return defineSymbol(block, name, IS_GLOBAL);
-    }
-
     /**
      * Defines a new symbol in the given block.
      *
      * @param block        the block in which to define the symbol
      * @param name         name of symbol.
+     * @param origin       origin node
      * @param symbolFlags  Symbol flags.
      *
      * @return Symbol for given name or null for redefinition.
      */
-    private Symbol defineSymbol(final Block block, final String name, final int symbolFlags) {
+    private Symbol defineSymbol(final Block block, final String name, final Node origin, final int symbolFlags) {
         int    flags  = symbolFlags;
-        Symbol symbol = findSymbol(block, name); // Locate symbol.
-        final boolean isGlobal = (flags & KINDMASK) == IS_GLOBAL;
+        final boolean isBlockScope = (flags & IS_LET) != 0 || (flags & IS_CONST) != 0;
+        final boolean isGlobal     = (flags & KINDMASK) == IS_GLOBAL;
+
+        Symbol symbol;
+        final FunctionNode function;
+        if (isBlockScope) {
+            // block scoped variables always live in current block, no need to look for existing symbols in parent blocks.
+            symbol = block.getExistingSymbol(name);
+            function = lc.getCurrentFunction();
+        } else {
+            symbol = findSymbol(block, name);
+            function = lc.getFunction(block);
+        }
 
         // Global variables are implicitly always scope variables too.
         if (isGlobal) {
@@ -333,7 +343,6 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         final boolean isParam = (flags & KINDMASK) == IS_PARAM;
         final boolean isVar =   (flags & KINDMASK) == IS_VAR;
 
-        final FunctionNode function = lc.getFunction(block);
         if (symbol != null) {
             // Symbol was already defined. Check if it needs to be redefined.
             if (isParam) {
@@ -345,10 +354,21 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
                     throw new AssertionError("duplicate parameter");
                 }
             } else if (isVar) {
-                if ((flags & IS_INTERNAL) == IS_INTERNAL || (flags & IS_LET) == IS_LET) {
+                if (isBlockScope) {
+                    // Check redeclaration in same block
+                    if (symbol.hasBeenDeclared()) {
+                        throwParserException(ECMAErrors.getMessage("syntax.error.redeclare.variable", name), origin);
+                    } else {
+                        symbol.setHasBeenDeclared();
+                    }
+                } else if ((flags & IS_INTERNAL) != 0) {
                     // Always create a new definition.
                     symbol = null;
                 } else {
+                    // Found LET or CONST in parent scope of same function - s SyntaxError
+                    if (symbol.isBlockScoped() && isLocal(lc.getCurrentFunction(), symbol)) {
+                        throwParserException(ECMAErrors.getMessage("syntax.error.redeclare.variable", name), origin);
+                    }
                     // Not defined in this function. Create a new definition.
                     if (!isLocal(function, symbol) || symbol.less(IS_VAR)) {
                         symbol = null;
@@ -359,10 +379,10 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
 
         if (symbol == null) {
             // If not found, then create a new one.
-            Block symbolBlock;
+            final Block symbolBlock;
 
             // Determine where to create it.
-            if (isVar && ((flags & IS_INTERNAL) == IS_INTERNAL || (flags & IS_LET) == IS_LET)) {
+            if (isVar && ((flags & IS_INTERNAL) != 0 || isBlockScope)) {
                 symbolBlock = block; //internal vars are always defined in the block closest to them
             } else if (isGlobal) {
                 symbolBlock = lc.getOutermostFunction().getBody();
@@ -420,9 +440,9 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     @Override
     public boolean enterBlock(final Block block) {
         start(block);
-        block.clearSymbols();
 
         if (lc.isFunctionBody()) {
+            block.clearSymbols();
             enterFunctionBody();
         }
 
@@ -441,7 +461,10 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         // If the name of the exception starts with ":e", this is a synthetic catch block, likely a catch-all. Its
         // symbol is naturally internal, and should be treated as such.
         final boolean isInternal = exname.startsWith(EXCEPTION_PREFIX.symbolName());
-        defineSymbol(block, exname, IS_VAR | IS_LET | (isInternal ? IS_INTERNAL : 0) | HAS_OBJECT_VALUE);
+        // IS_LET flag is required to make sure symbol is not visible outside catch block. However, we need to
+        // clear the IS_LET flag after creation to allow redefinition of symbol inside the catch block.
+        final Symbol symbol = defineSymbol(block, exname, catchNode, IS_VAR | IS_LET | (isInternal ? IS_INTERNAL : 0) | HAS_OBJECT_VALUE);
+        symbol.clearFlag(IS_LET);
 
         return true;
     }
@@ -452,15 +475,13 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
 
         initFunctionWideVariables(functionNode, body);
 
-        if (functionNode.isProgram()) {
-            initGlobalSymbols(body);
-        } else if (!functionNode.isDeclared() && !functionNode.isAnonymous()) {
+        if (!functionNode.isProgram() && !functionNode.isDeclared() && !functionNode.isAnonymous()) {
             // It's neither declared nor program - it's a function expression then; assign it a self-symbol unless it's
             // anonymous.
             final String name = functionNode.getIdent().getName();
             assert name != null;
             assert body.getExistingSymbol(name) == null;
-            defineSymbol(body, name, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
+            defineSymbol(body, name, functionNode, IS_VAR | IS_FUNCTION_SELF | HAS_OBJECT_VALUE);
             if(functionNode.allVarsInScope()) { // basically, has deep eval
                 lc.setFlag(functionNode, FunctionNode.USES_SELF_SYMBOL);
             }
@@ -485,7 +506,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         if (functionNode.isDeclared()) {
             final Iterator<Block> blocks = lc.getBlocks();
             if (blocks.hasNext()) {
-                defineSymbol(blocks.next(), functionNode.getIdent().getName(), IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
+                final IdentNode ident = functionNode.getIdent();
+                defineSymbol(blocks.next(), ident.getName(), ident, IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
             }
         }
 
@@ -495,8 +517,14 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     @Override
     public boolean enterVarNode(final VarNode varNode) {
         start(varNode);
-        defineSymbol(lc.getCurrentBlock(), varNode.getName().getName(), IS_VAR | (lc.getCurrentFunction().isProgram() ? IS_SCOPE : 0));
         return true;
+    }
+
+    @Override
+    public Node leaveVarNode(final VarNode varNode) {
+        final IdentNode ident = varNode.getName();
+        defineSymbol(lc.getCurrentBlock(), ident.getName(), ident, varNode.getSymbolFlags() | (lc.getCurrentFunction().isProgram() ? IS_SCOPE : 0));
+        return super.leaveVarNode(varNode);
     }
 
     private Symbol exceptionSymbol() {
@@ -597,7 +625,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     }
 
     private void initCompileConstant(final CompilerConstants cc, final Block block, final int flags) {
-        defineSymbol(block, cc.symbolName(), flags).setNeedsSlot(true);
+        defineSymbol(block, cc.symbolName(), null, flags).setNeedsSlot(true);
     }
 
     private void initFunctionWideVariables(final FunctionNode functionNode, final Block body) {
@@ -608,27 +636,13 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             initCompileConstant(VARARGS, body, IS_PARAM | IS_INTERNAL | HAS_OBJECT_VALUE);
             if (functionNode.needsArguments()) {
                 initCompileConstant(ARGUMENTS, body, IS_VAR | IS_INTERNAL | HAS_OBJECT_VALUE);
-                defineSymbol(body, ARGUMENTS_VAR.symbolName(), IS_VAR | HAS_OBJECT_VALUE);
+                defineSymbol(body, ARGUMENTS_VAR.symbolName(), null, IS_VAR | HAS_OBJECT_VALUE);
             }
         }
 
         initParameters(functionNode, body);
         initCompileConstant(SCOPE, body, IS_VAR | IS_INTERNAL | HAS_OBJECT_VALUE);
         initCompileConstant(RETURN, body, IS_VAR | IS_INTERNAL);
-    }
-
-
-    /**
-     * Move any properties from the global map into the scope of this function (which must be a program function).
-     * @param block the function node body for which to init scope vars
-     */
-    private void initGlobalSymbols(final Block block) {
-        final PropertyMap map = Context.getGlobalMap();
-
-        for (final Property property : map.getProperties()) {
-            final Symbol symbol = defineGlobalSymbol(block, property.getKey());
-            log.info("Added global symbol from property map ", symbol);
-        }
     }
 
     /**
@@ -639,7 +653,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         final boolean isVarArg = functionNode.isVarArg();
         final boolean scopeParams = functionNode.allVarsInScope() || isVarArg;
         for (final IdentNode param : functionNode.getParameters()) {
-            final Symbol symbol = defineSymbol(body, param.getName(), IS_PARAM);
+            final Symbol symbol = defineSymbol(body, param.getName(), param, IS_PARAM);
             if(scopeParams) {
                 // NOTE: this "set is scope" is a poor substitute for clear expression of where the symbol is stored.
                 // It will force creation of scopes where they would otherwise not necessarily be needed (functions
@@ -665,10 +679,29 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         return definingFn == function;
     }
 
-    @Override
-    public Node leaveASSIGN(final BinaryNode binaryNode) {
-        // If we're assigning a property of the this object ("this.foo = ..."), record it.
+    private void checkConstAssignment(final IdentNode ident) {
+        // Check for reassignment of constant
+        final Symbol symbol = ident.getSymbol();
+        if (symbol.isConst()) {
+            throwParserException(ECMAErrors.getMessage("syntax.error.assign.constant", symbol.getName()), ident);
+        }
+    }
 
+    @Override
+    public Node leaveBinaryNode(final BinaryNode binaryNode) {
+        if (binaryNode.isAssignment() && binaryNode.lhs() instanceof IdentNode) {
+            checkConstAssignment((IdentNode) binaryNode.lhs());
+        }
+        switch (binaryNode.tokenType()) {
+        case ASSIGN:
+            return leaveASSIGN(binaryNode);
+        default:
+            return super.leaveBinaryNode(binaryNode);
+        }
+    }
+
+    private Node leaveASSIGN(final BinaryNode binaryNode) {
+        // If we're assigning a property of the this object ("this.foo = ..."), record it.
         final Expression lhs = binaryNode.lhs();
         if (lhs instanceof AccessNode) {
             final AccessNode accessNode = (AccessNode) lhs;
@@ -681,6 +714,21 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             }
         }
         return binaryNode;
+    }
+
+    @Override
+    public Node leaveUnaryNode(final UnaryNode unaryNode) {
+        if (unaryNode.isAssignment() && unaryNode.getExpression() instanceof IdentNode) {
+            checkConstAssignment((IdentNode) unaryNode.getExpression());
+        }
+        switch (unaryNode.tokenType()) {
+        case DELETE:
+            return leaveDELETE(unaryNode);
+        case TYPEOF:
+            return leaveTYPEOF(unaryNode);
+        default:
+            return super.leaveUnaryNode(unaryNode);
+        }
     }
 
     @Override
@@ -699,8 +747,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         return block;
     }
 
-    @Override
-    public Node leaveDELETE(final UnaryNode unaryNode) {
+    private Node leaveDELETE(final UnaryNode unaryNode) {
         final FunctionNode currentFunctionNode = lc.getCurrentFunction();
         final boolean      strictMode          = currentFunctionNode.isStrict();
         final Expression   rhs                 = unaryNode.getExpression();
@@ -799,9 +846,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             // if symbol is non-local or we're in a with block, we need to put symbol in scope (if it isn't already)
             maybeForceScope(symbol);
         } else {
-            log.info("No symbol exists. Declare as global: ", symbol);
-            symbol = defineGlobalSymbol(block, name);
-            Symbol.setSymbolIsScope(lc, symbol);
+            log.info("No symbol exists. Declare as global: ", name);
+            symbol = defineSymbol(block, name, identNode, IS_GLOBAL | IS_SCOPE);
         }
 
         functionUsesSymbol(symbol);
@@ -810,7 +856,15 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             symbol.increaseUseCount();
         }
 
-        return end(identNode.setSymbol(symbol));
+        IdentNode newIdentNode = identNode.setSymbol(symbol);
+
+        // If a block-scoped var is used before its declaration mark it as dead.
+        // We can only statically detect this for local vars, cross-function symbols require runtime checks.
+        if (symbol.isBlockScoped() && !symbol.hasBeenDeclared() && !identNode.isDeclaredHere() && isLocal(lc.getCurrentFunction(), symbol)) {
+            newIdentNode = newIdentNode.markDead();
+        }
+
+        return end(newIdentNode);
     }
 
     @Override
@@ -834,8 +888,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         return tryNode;
     }
 
-    @Override
-    public Node leaveTYPEOF(final UnaryNode unaryNode) {
+    private Node leaveTYPEOF(final UnaryNode unaryNode) {
         final Expression rhs = unaryNode.getExpression();
 
         final List<Expression> args = new ArrayList<>();
@@ -875,7 +928,7 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
     }
 
     private Symbol newInternal(final CompilerConstants cc, final int flags) {
-        return defineSymbol(lc.getCurrentBlock(), lc.getCurrentFunction().uniqueName(cc.symbolName()), IS_VAR | IS_INTERNAL | flags); //NASHORN-73
+        return defineSymbol(lc.getCurrentBlock(), lc.getCurrentFunction().uniqueName(cc.symbolName()), null, IS_VAR | IS_INTERNAL | flags); //NASHORN-73
     }
 
     private Symbol newObjectInternal(final CompilerConstants cc) {
@@ -915,7 +968,8 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
             return false;
         }
 
-        if (lc.getCurrentFunction().allVarsInScope()) {
+        final FunctionNode func = lc.getCurrentFunction();
+        if ( func.allVarsInScope() || (!symbol.isBlockScoped() && func.isProgram())) {
             return true;
         }
 
@@ -954,5 +1008,17 @@ final class AssignSymbols extends NodeOperatorVisitor<LexicalContext> implements
         }
         final List<ArrayUnit> units = ((ArrayLiteralNode)expr).getUnits();
         return !(units == null || units.isEmpty());
+    }
+
+    private void throwParserException(final String message, final Node origin) {
+        if (origin == null) {
+            throw new ParserException(message);
+        }
+        final Source source = compiler.getSource();
+        final long token = origin.getToken();
+        final int line = source.getLine(origin.getStart());
+        final int column = source.getColumn(origin.getStart());
+        final String formatted = ErrorManager.format(message, source, line, column, token);
+        throw new ParserException(JSErrorType.SYNTAX_ERROR, formatted, source, line, column, token);
     }
 }

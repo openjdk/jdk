@@ -394,6 +394,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
                 context.getEnv(),
                 installer,
                 functionNode.getSource(),  // source
+                context.getErrorManager(),
                 isStrict() | functionNode.isStrict(), // is strict
                 true,       // is on demand
                 this,       // compiledFunction, i.e. this RecompilableScriptFunctionData

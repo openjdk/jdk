@@ -58,6 +58,18 @@ public final class FindProperty {
     }
 
     /**
+     * Return a copy of this FindProperty with a different property.
+     *
+     * @param newProperty the new property
+     * @return the new FindProperty instance
+     */
+    public FindProperty replaceProperty(final Property newProperty) {
+        assert this.property.getKey().equals(newProperty.getKey());
+        assert this.property.getSlot() == newProperty.getSlot();
+        return new FindProperty(self, prototype, newProperty);
+    }
+
+    /**
      * Ask for a getter that returns the given type. The type has nothing to do with the
      * internal representation of the property. It may be an Object (boxing primitives) or
      * a primitive (primitive fields with -Dnashorn.fields.dual=true)
