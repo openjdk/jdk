@@ -30,7 +30,7 @@
 //---------------------------------------------------------------------------------
 //
 //  Little Color Management System
-//  Copyright (c) 1998-2011 Marti Maria Saguer
+//  Copyright (c) 1998-2014 Marti Maria Saguer
 //
 // Permission is hereby granted, free of charge, to any person obtaining
 // a copy of this software and associated documentation files (the "Software"),
@@ -58,43 +58,119 @@
 // Transformations stuff
 // -----------------------------------------------------------------------
 
-// Alarm codes for 16-bit transformations, because the fixed range of containers there are
-// no values left to mark out of gamut. volatile is C99 per 6.2.5
-static volatile cmsUInt16Number Alarm[cmsMAXCHANNELS] = { 0x7F00, 0x7F00, 0x7F00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
-static volatile cmsFloat64Number GlobalAdaptationState = 1;
+#define DEFAULT_OBSERVER_ADAPTATION_STATE 1.0
+
+// The Context0 observer adaptation state.
+_cmsAdaptationStateChunkType _cmsAdaptationStateChunk = { DEFAULT_OBSERVER_ADAPTATION_STATE };
+
+// Init and duplicate observer adaptation state
+void _cmsAllocAdaptationStateChunk(struct _cmsContext_struct* ctx,
+                                   const struct _cmsContext_struct* src)
+{
+    static _cmsAdaptationStateChunkType AdaptationStateChunk = { DEFAULT_OBSERVER_ADAPTATION_STATE };
+    void* from;
+
+    if (src != NULL) {
+        from = src ->chunks[AdaptationStateContext];
+    }
+    else {
+       from = &AdaptationStateChunk;
+    }
+
+    ctx ->chunks[AdaptationStateContext] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsAdaptationStateChunkType));
+}
+
+
+// Sets adaptation state for absolute colorimetric intent in the given context.  Adaptation state applies on all
+// but cmsCreateExtendedTransformTHR().  Little CMS can handle incomplete adaptation states.
+cmsFloat64Number CMSEXPORT cmsSetAdaptationStateTHR(cmsContext ContextID, cmsFloat64Number d)
+{
+    cmsFloat64Number prev;
+    _cmsAdaptationStateChunkType* ptr = (_cmsAdaptationStateChunkType*) _cmsContextGetClientChunk(ContextID, AdaptationStateContext);
+
+    // Get previous value for return
+    prev = ptr ->AdaptationState;
+
+    // Set the value if d is positive or zero
+    if (d >= 0.0) {
+
+        ptr ->AdaptationState = d;
+    }
+
+    // Always return previous value
+    return prev;
+}
+
 
 // The adaptation state may be defaulted by this function. If you don't like it, use the extended transform routine
 cmsFloat64Number CMSEXPORT cmsSetAdaptationState(cmsFloat64Number d)
 {
-    cmsFloat64Number OldVal = GlobalAdaptationState;
-
-    if (d >= 0)
-        GlobalAdaptationState = d;
-
-    return OldVal;
+    return cmsSetAdaptationStateTHR(NULL, d);
 }
 
-// Alarm codes are always global
-void CMSEXPORT cmsSetAlarmCodes(cmsUInt16Number NewAlarm[cmsMAXCHANNELS])
-{
-    int i;
+// -----------------------------------------------------------------------
 
+// Alarm codes for 16-bit transformations, because the fixed range of containers there are
+// no values left to mark out of gamut.
+
+#define DEFAULT_ALARM_CODES_VALUE {0x7F00, 0x7F00, 0x7F00, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0}
+
+_cmsAlarmCodesChunkType _cmsAlarmCodesChunk = { DEFAULT_ALARM_CODES_VALUE };
+
+// Sets the codes used to mark out-out-gamut on Proofing transforms for a given context. Values are meant to be
+// encoded in 16 bits.
+void CMSEXPORT cmsSetAlarmCodesTHR(cmsContext ContextID, const cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
+{
+    _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(ContextID, AlarmCodesContext);
+
+    _cmsAssert(ContextAlarmCodes != NULL); // Can't happen
+
+    memcpy(ContextAlarmCodes->AlarmCodes, AlarmCodesP, sizeof(ContextAlarmCodes->AlarmCodes));
+}
+
+// Gets the current codes used to mark out-out-gamut on Proofing transforms for the given context.
+// Values are meant to be encoded in 16 bits.
+void CMSEXPORT cmsGetAlarmCodesTHR(cmsContext ContextID, cmsUInt16Number AlarmCodesP[cmsMAXCHANNELS])
+{
+    _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(ContextID, AlarmCodesContext);
+
+    _cmsAssert(ContextAlarmCodes != NULL); // Can't happen
+
+    memcpy(AlarmCodesP, ContextAlarmCodes->AlarmCodes, sizeof(ContextAlarmCodes->AlarmCodes));
+}
+
+void CMSEXPORT cmsSetAlarmCodes(const cmsUInt16Number NewAlarm[cmsMAXCHANNELS])
+{
     _cmsAssert(NewAlarm != NULL);
 
-    for (i=0; i < cmsMAXCHANNELS; i++)
-        Alarm[i] = NewAlarm[i];
+    cmsSetAlarmCodesTHR(NULL, NewAlarm);
 }
 
-// You can get the codes cas well
 void CMSEXPORT cmsGetAlarmCodes(cmsUInt16Number OldAlarm[cmsMAXCHANNELS])
 {
-    int i;
-
     _cmsAssert(OldAlarm != NULL);
-
-    for (i=0; i < cmsMAXCHANNELS; i++)
-        OldAlarm[i] = Alarm[i];
+    cmsGetAlarmCodesTHR(NULL, OldAlarm);
 }
+
+
+// Init and duplicate alarm codes
+void _cmsAllocAlarmCodesChunk(struct _cmsContext_struct* ctx,
+                              const struct _cmsContext_struct* src)
+{
+    static _cmsAlarmCodesChunkType AlarmCodesChunk = { DEFAULT_ALARM_CODES_VALUE };
+    void* from;
+
+    if (src != NULL) {
+        from = src ->chunks[AlarmCodesContext];
+    }
+    else {
+       from = &AlarmCodesChunk;
+    }
+
+    ctx ->chunks[AlarmCodesContext] = _cmsSubAllocDup(ctx ->MemPool, from, sizeof(_cmsAlarmCodesChunkType));
+}
+
+// -----------------------------------------------------------------------
 
 // Get rid of transform resources
 void CMSEXPORT cmsDeleteTransform(cmsHTRANSFORM hTransform)
@@ -202,6 +278,30 @@ void FloatXFORM(_cmsTRANSFORM* p,
     }
 }
 
+
+static
+void NullFloatXFORM(_cmsTRANSFORM* p,
+                    const void* in,
+                    void* out,
+                    cmsUInt32Number Size,
+                    cmsUInt32Number Stride)
+{
+    cmsUInt8Number* accum;
+    cmsUInt8Number* output;
+    cmsFloat32Number fIn[cmsMAXCHANNELS];
+    cmsUInt32Number i, n;
+
+    accum  = (cmsUInt8Number*)  in;
+    output = (cmsUInt8Number*)  out;
+    n = Size;
+
+    for (i=0; i < n; i++) {
+
+        accum  = p -> FromInputFloat(p, fIn, accum, Stride);
+        output = p -> ToOutputFloat(p, fIn, output, Stride);
+    }
+}
+
 // 16 bit precision -----------------------------------------------------------------------------------------------------------
 
 // Null transformation, only applies formatters. No caché
@@ -252,7 +352,7 @@ void PrecalculatedXFORM(_cmsTRANSFORM* p,
 }
 
 
-// Auxiliar: Handle precalculated gamut check
+// Auxiliar: Handle precalculated gamut check. The retrieval of context may be alittle bit slow, but this function is not critical.
 static
 void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
                                      const cmsUInt16Number wIn[],
@@ -264,9 +364,12 @@ void TransformOnePixelWithGamutCheck(_cmsTRANSFORM* p,
     if (wOutOfGamut >= 1) {
 
         cmsUInt16Number i;
+        _cmsAlarmCodesChunkType* ContextAlarmCodes = (_cmsAlarmCodesChunkType*) _cmsContextGetClientChunk(p->ContextID, AlarmCodesContext);
 
-        for (i=0; i < p ->Lut->OutputChannels; i++)
-            wOut[i] = Alarm[i];
+        for (i=0; i < p ->Lut->OutputChannels; i++) {
+
+            wOut[i] = ContextAlarmCodes ->AlarmCodes[i];
+        }
     }
     else
         p ->Lut ->Eval16Fn(wIn, wOut, p -> Lut->Data);
@@ -393,34 +496,86 @@ typedef struct _cmsTransformCollection_st {
 } _cmsTransformCollection;
 
 // The linked list head
-static _cmsTransformCollection* TransformCollection = NULL;
+_cmsTransformPluginChunkType _cmsTransformPluginChunk = { NULL };
+
+
+// Duplicates the zone of memory used by the plug-in in the new context
+static
+void DupPluginTransformList(struct _cmsContext_struct* ctx,
+                                               const struct _cmsContext_struct* src)
+{
+   _cmsTransformPluginChunkType newHead = { NULL };
+   _cmsTransformCollection*  entry;
+   _cmsTransformCollection*  Anterior = NULL;
+   _cmsTransformPluginChunkType* head = (_cmsTransformPluginChunkType*) src->chunks[TransformPlugin];
+
+    // Walk the list copying all nodes
+   for (entry = head->TransformCollection;
+        entry != NULL;
+        entry = entry ->Next) {
+
+            _cmsTransformCollection *newEntry = ( _cmsTransformCollection *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(_cmsTransformCollection));
+
+            if (newEntry == NULL)
+                return;
+
+            // We want to keep the linked list order, so this is a little bit tricky
+            newEntry -> Next = NULL;
+            if (Anterior)
+                Anterior -> Next = newEntry;
+
+            Anterior = newEntry;
+
+            if (newHead.TransformCollection == NULL)
+                newHead.TransformCollection = newEntry;
+    }
+
+  ctx ->chunks[TransformPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsTransformPluginChunkType));
+}
+
+void _cmsAllocTransformPluginChunk(struct _cmsContext_struct* ctx,
+                                        const struct _cmsContext_struct* src)
+{
+    if (src != NULL) {
+
+        // Copy all linked list
+        DupPluginTransformList(ctx, src);
+    }
+    else {
+        static _cmsTransformPluginChunkType TransformPluginChunkType = { NULL };
+        ctx ->chunks[TransformPlugin] = _cmsSubAllocDup(ctx ->MemPool, &TransformPluginChunkType, sizeof(_cmsTransformPluginChunkType));
+    }
+}
+
+
 
 // Register new ways to transform
-cmsBool  _cmsRegisterTransformPlugin(cmsContext id, cmsPluginBase* Data)
+cmsBool  _cmsRegisterTransformPlugin(cmsContext ContextID, cmsPluginBase* Data)
 {
     cmsPluginTransform* Plugin = (cmsPluginTransform*) Data;
     _cmsTransformCollection* fl;
+    _cmsTransformPluginChunkType* ctx = ( _cmsTransformPluginChunkType*) _cmsContextGetClientChunk(ContextID,TransformPlugin);
 
-      if (Data == NULL) {
+    if (Data == NULL) {
 
         // Free the chain. Memory is safely freed at exit
-        TransformCollection = NULL;
+        ctx->TransformCollection = NULL;
         return TRUE;
     }
 
     // Factory callback is required
-   if (Plugin ->Factory == NULL) return FALSE;
+    if (Plugin ->Factory == NULL) return FALSE;
 
 
-    fl = (_cmsTransformCollection*) _cmsPluginMalloc(id, sizeof(_cmsTransformCollection));
+    fl = (_cmsTransformCollection*) _cmsPluginMalloc(ContextID, sizeof(_cmsTransformCollection));
     if (fl == NULL) return FALSE;
 
-      // Copy the parameters
+    // Copy the parameters
     fl ->Factory = Plugin ->Factory;
 
     // Keep linked list
-    fl ->Next = TransformCollection;
-    TransformCollection = fl;
+    fl ->Next = ctx->TransformCollection;
+    ctx->TransformCollection = fl;
 
     // All is ok
     return TRUE;
@@ -463,6 +618,7 @@ static
 _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                                                cmsUInt32Number Intent, cmsUInt32Number* InputFormat, cmsUInt32Number* OutputFormat, cmsUInt32Number* dwFlags)
 {
+     _cmsTransformPluginChunkType* ctx = ( _cmsTransformPluginChunkType*) _cmsContextGetClientChunk(ContextID, TransformPlugin);
      _cmsTransformCollection* Plugin;
 
     // Allocate needed memory
@@ -473,7 +629,7 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
     p ->Lut = lut;
 
     // Let's see if any plug-in want to do the transform by itself
-    for (Plugin = TransformCollection;
+    for (Plugin = ctx ->TransformCollection;
         Plugin != NULL;
         Plugin = Plugin ->Next) {
 
@@ -493,10 +649,10 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
                 // Fill the formatters just in case the optimized routine is interested.
                 // No error is thrown if the formatter doesn't exist. It is up to the optimization
                 // factory to decide what to do in those cases.
-                p ->FromInput      = _cmsGetFormatter(*InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
-                p ->ToOutput       = _cmsGetFormatter(*OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
-                p ->FromInputFloat = _cmsGetFormatter(*InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
-                p ->ToOutputFloat  = _cmsGetFormatter(*OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+                p ->FromInput      = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+                p ->ToOutput       = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
+                p ->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+                p ->ToOutputFloat  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
 
                 return p;
             }
@@ -504,14 +660,14 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
     // Not suitable for the transform plug-in, let's check  the pipeline plug-in
     if (p ->Lut != NULL)
-        _cmsOptimizePipeline(&p->Lut, Intent, InputFormat, OutputFormat, dwFlags);
+        _cmsOptimizePipeline(ContextID, &p->Lut, Intent, InputFormat, OutputFormat, dwFlags);
 
     // Check whatever this is a true floating point transform
     if (_cmsFormatterIsFloat(*InputFormat) && _cmsFormatterIsFloat(*OutputFormat)) {
 
         // Get formatter function always return a valid union, but the contents of this union may be NULL.
-        p ->FromInputFloat = _cmsGetFormatter(*InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
-        p ->ToOutputFloat  = _cmsGetFormatter(*OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+        p ->FromInputFloat = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
+        p ->ToOutputFloat  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_FLOAT).FmtFloat;
         *dwFlags |= cmsFLAGS_CAN_CHANGE_FORMATTER;
 
         if (p ->FromInputFloat == NULL || p ->ToOutputFloat == NULL) {
@@ -521,8 +677,15 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
             return NULL;
         }
 
-        // Float transforms don't use caché, always are non-NULL
-        p ->xform = FloatXFORM;
+        if (*dwFlags & cmsFLAGS_NULLTRANSFORM) {
+
+            p ->xform = NullFloatXFORM;
+        }
+        else {
+            // Float transforms don't use caché, always are non-NULL
+            p ->xform = FloatXFORM;
+        }
+
     }
     else {
 
@@ -534,8 +697,8 @@ _cmsTRANSFORM* AllocEmptyTransform(cmsContext ContextID, cmsPipeline* lut,
 
             int BytesPerPixelInput;
 
-            p ->FromInput = _cmsGetFormatter(*InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
-            p ->ToOutput  = _cmsGetFormatter(*OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
+            p ->FromInput = _cmsGetFormatter(ContextID, *InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+            p ->ToOutput  = _cmsGetFormatter(ContextID, *OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
 
             if (p ->FromInput == NULL || p ->ToOutput == NULL) {
 
@@ -727,6 +890,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateExtendedTransform(cmsContext ContextID,
     // Check channel count
     if ((cmsChannelsOf(EntryColorSpace) != cmsPipelineInputChannels(Lut)) ||
         (cmsChannelsOf(ExitColorSpace)  != cmsPipelineOutputChannels(Lut))) {
+        cmsPipelineFree(Lut);
         cmsSignalError(ContextID, cmsERROR_NOT_SUITABLE, "Channel count doesn't match. Profile is corrupted");
         return NULL;
     }
@@ -829,7 +993,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateMultiprofileTransformTHR(cmsContext ContextID,
     for (i=0; i < nProfiles; i++) {
         BPC[i] = dwFlags & cmsFLAGS_BLACKPOINTCOMPENSATION ? TRUE : FALSE;
         Intents[i] = Intent;
-        AdaptationStates[i] = GlobalAdaptationState;
+        AdaptationStates[i] = cmsSetAdaptationStateTHR(ContextID, -1);
     }
 
 
@@ -909,7 +1073,7 @@ cmsHTRANSFORM CMSEXPORT cmsCreateProofingTransformTHR(cmsContext ContextID,
     Intents[0] = nIntent;      Intents[1] = nIntent;        Intents[2] = INTENT_RELATIVE_COLORIMETRIC;  Intents[3] = ProofingIntent;
     BPC[0]     = DoBPC;        BPC[1] = DoBPC;              BPC[2] = 0;                                 BPC[3] = 0;
 
-    Adaptation[0] = Adaptation[1] = Adaptation[2] = Adaptation[3] = GlobalAdaptationState;
+    Adaptation[0] = Adaptation[1] = Adaptation[2] = Adaptation[3] = cmsSetAdaptationStateTHR(ContextID, -1);
 
     if (!(dwFlags & (cmsFLAGS_SOFTPROOFING|cmsFLAGS_GAMUTCHECK)))
         return cmsCreateTransformTHR(ContextID, InputProfile, InputFormat, OutputProfile, OutputFormat, nIntent, dwFlags);
@@ -984,8 +1148,8 @@ cmsBool CMSEXPORT cmsChangeBuffersFormat(cmsHTRANSFORM hTransform,
         return FALSE;
     }
 
-    FromInput = _cmsGetFormatter(InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
-    ToOutput  = _cmsGetFormatter(OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
+    FromInput = _cmsGetFormatter(xform->ContextID, InputFormat,  cmsFormatterInput, CMS_PACK_FLAGS_16BITS).Fmt16;
+    ToOutput  = _cmsGetFormatter(xform->ContextID, OutputFormat, cmsFormatterOutput, CMS_PACK_FLAGS_16BITS).Fmt16;
 
     if (FromInput == NULL || ToOutput == NULL) {
 

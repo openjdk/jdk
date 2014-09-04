@@ -942,7 +942,7 @@ int WriteInputLUT(cmsIOHANDLER* m, cmsHPROFILE hProfile, int Intent, cmsUInt32Nu
             if (DeviceLink == NULL) return 0;
 
             dwFlags |= cmsFLAGS_FORCE_CLUT;
-            _cmsOptimizePipeline(&DeviceLink, Intent, &InputFormat, &OutFrm, &dwFlags);
+            _cmsOptimizePipeline(m->ContextID, &DeviceLink, Intent, &InputFormat, &OutFrm, &dwFlags);
 
             rc = EmitCIEBasedDEF(m, DeviceLink, Intent, &BlackPointAdaptedToD50);
             cmsPipelineFree(DeviceLink);
@@ -1359,7 +1359,7 @@ int WriteOutputLUT(cmsIOHANDLER* m, cmsHPROFILE hProfile, int Intent, cmsUInt32N
 
     // We need a CLUT
     dwFlags |= cmsFLAGS_FORCE_CLUT;
-    _cmsOptimizePipeline(&DeviceLink, RelativeEncodingIntent, &InFrm, &OutputFormat, &dwFlags);
+    _cmsOptimizePipeline(m->ContextID, &DeviceLink, RelativeEncodingIntent, &InFrm, &OutputFormat, &dwFlags);
 
     _cmsIOPrintf(m, "<<\n");
     _cmsIOPrintf(m, "/ColorRenderingType 1\n");
