@@ -54,17 +54,16 @@ variable (Windows).
 This is system and platform specific.
 If you are using 64bit Solaris (e.g. 'java -d64'), 
 you should use LD_LIBRARY_PATH64.
-Some agents such as hprof (heap/cpu profiler) and jdwp (debugger backend)
+Some agents such as the jdwp (debugger backend)
 are located inside the primary JDK directories and will always be found
 in those locations.
 
 <p>
 The agents that instrument classfiles 
 (i.e. BCI, usually through the java_crw_demo library) 
-such as hprof, heapTracker, mtrace, and minst, 
+such as heapTracker, mtrace, and minst, 
 also need to have the Java classes they use available in the bootclasspath.
-The one used by hprof is already in the bootclasspath, and the
-other agents will make attempts at automatically adding their jar file
+The agents will make attempts at automatically adding their jar file
 (e.g. heapTracker.jar, mtrace.jar, or minst.jar) to the bootclasspath
 with AddToBootstrapClassLoaderSearch from JVM TI at startup
 (see the agent_util code).
@@ -148,19 +147,6 @@ It uses Bytecode Instrumentation (BCI) via the java_crw_demo library.
 <br>
 This is a small agent that gets information about threads
 waiting on monitors.
-</li>
-
-<li>
-<A HREF="hprof">hprof</A>
-<br>
-This is a large agent that does heap and cpu profiling.
-This demo agent is actually built into the 
-
-Java Runtime Environment (JRE).
-It uses Bytecode Instrumentation (BCI) via the java_crw_demo library.
-<br>
-<b>Note:</b> hprof is NOT a small or simple agent, the other smaller demos
-should be looked at first.
 </li>
 
 </ul>

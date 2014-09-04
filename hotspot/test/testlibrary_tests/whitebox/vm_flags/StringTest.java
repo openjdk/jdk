@@ -27,6 +27,7 @@
  * @library /testlibrary /testlibrary/whitebox
  * @build StringTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm/timeout=600 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI StringTest
  * @summary testing of WB::set/getStringVMFlag()
  * @author igor.ignatyev@oracle.com

@@ -1233,11 +1233,13 @@ public abstract class LWComponentPeer<T extends Component, D extends JComponent>
                     delegate, me.getID(), me.getWhen(),
                     me.getModifiers(),
                     me.getX(), me.getY(),
+                    me.getXOnScreen(), me.getYOnScreen(),
                     me.getClickCount(),
                     me.isPopupTrigger(),
                     me.getScrollType(),
                     me.getScrollAmount(),
-                    me.getWheelRotation());
+                    me.getWheelRotation(),
+                    me.getPreciseWheelRotation());
         } else if (e instanceof MouseEvent) {
             MouseEvent me = (MouseEvent) e;
 

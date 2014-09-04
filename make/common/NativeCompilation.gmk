@@ -46,6 +46,12 @@ else
   ARCHIVING_MSG=
 endif
 
+ifeq ($(OPENJDK_BUILD_OS_ENV), windows.cygwin)
+  UNIX_PATH_PREFIX := /cygdrive
+else ifeq ($(OPENJDK_BUILD_OS_ENV), windows.msys)
+  UNIX_PATH_PREFIX :=
+endif
+
 define add_native_source
   # param 1 = BUILD_MYPACKAGE
   # parma 2 = the source file name (..../alfa.c or .../beta.cpp)
@@ -120,7 +126,7 @@ define add_native_source
 	  && $(SED) -e '/^Note: including file:/!d' \
 	      -e 's|Note: including file: *||' \
 	      -e 's|\\|/|g' \
-	      -e 's|^\([a-zA-Z]\):|/cygdrive/\1|g' \
+	      -e 's|^\([a-zA-Z]\):|$(UNIX_PATH_PREFIX)/\1|g' \
 	      -e '/$(subst /,\/,$(TOPDIR))/!d' \
 	      -e 's|$$$$| \\|g' \
 	      $$($1_$2_DEP).raw) > $$($1_$2_DEP)

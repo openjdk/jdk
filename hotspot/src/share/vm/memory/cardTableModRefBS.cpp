@@ -44,13 +44,6 @@
 // enumerate ref fields that have been modified (since the last
 // enumeration.)
 
-size_t CardTableModRefBS::cards_required(size_t covered_words)
-{
-  // Add one for a guard card, used to detect errors.
-  const size_t words = align_size_up(covered_words, card_size_in_words);
-  return words / card_size_in_words + 1;
-}
-
 size_t CardTableModRefBS::compute_byte_map_size()
 {
   assert(_guard_index == cards_required(_whole_heap.word_size()) - 1,
@@ -64,27 +57,50 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
                                      int max_covered_regions):
   ModRefBarrierSet(max_covered_regions),
   _whole_heap(whole_heap),
-  _guard_index(cards_required(whole_heap.word_size()) - 1),
-  _last_valid_index(_guard_index - 1),
+  _guard_index(0),
+  _guard_region(),
+  _last_valid_index(0),
   _page_size(os::vm_page_size()),
-  _byte_map_size(compute_byte_map_size())
+  _byte_map_size(0),
+  _covered(NULL),
+  _committed(NULL),
+  _cur_covered_regions(0),
+  _byte_map(NULL),
+  byte_map_base(NULL),
+  // LNC functionality
+  _lowest_non_clean(NULL),
+  _lowest_non_clean_chunk_size(NULL),
+  _lowest_non_clean_base_chunk_index(NULL),
+  _last_LNC_resizing_collection(NULL)
 {
   _kind = BarrierSet::CardTableModRef;
 
-  HeapWord* low_bound  = _whole_heap.start();
-  HeapWord* high_bound = _whole_heap.end();
-  assert((uintptr_t(low_bound)  & (card_size - 1))  == 0, "heap must start at card boundary");
-  assert((uintptr_t(high_bound) & (card_size - 1))  == 0, "heap must end at card boundary");
+  assert((uintptr_t(_whole_heap.start())  & (card_size - 1))  == 0, "heap must start at card boundary");
+  assert((uintptr_t(_whole_heap.end()) & (card_size - 1))  == 0, "heap must end at card boundary");
 
   assert(card_size <= 512, "card_size must be less than 512"); // why?
 
-  _covered   = new MemRegion[max_covered_regions];
-  _committed = new MemRegion[max_covered_regions];
-  if (_covered == NULL || _committed == NULL) {
-    vm_exit_during_initialization("couldn't alloc card table covered region set.");
+  _covered   = new MemRegion[_max_covered_regions];
+  if (_covered == NULL) {
+    vm_exit_during_initialization("Could not allocate card table covered region set.");
   }
+}
+
+void CardTableModRefBS::initialize() {
+  _guard_index = cards_required(_whole_heap.word_size()) - 1;
+  _last_valid_index = _guard_index - 1;
+
+  _byte_map_size = compute_byte_map_size();
+
+  HeapWord* low_bound  = _whole_heap.start();
+  HeapWord* high_bound = _whole_heap.end();
 
   _cur_covered_regions = 0;
+  _committed = new MemRegion[_max_covered_regions];
+  if (_committed == NULL) {
+    vm_exit_during_initialization("Could not allocate card table committed region set.");
+  }
+
   const size_t rs_align = _page_size == (size_t) os::vm_page_size() ? 0 :
     MAX2(_page_size, (size_t) os::vm_allocation_granularity());
   ReservedSpace heap_rs(_byte_map_size, rs_align, false);
@@ -114,20 +130,20 @@ CardTableModRefBS::CardTableModRefBS(MemRegion whole_heap,
                             !ExecMem, "card table last card");
   *guard_card = last_card;
 
-   _lowest_non_clean =
-    NEW_C_HEAP_ARRAY(CardArr, max_covered_regions, mtGC);
+  _lowest_non_clean =
+    NEW_C_HEAP_ARRAY(CardArr, _max_covered_regions, mtGC);
   _lowest_non_clean_chunk_size =
-    NEW_C_HEAP_ARRAY(size_t, max_covered_regions, mtGC);
+    NEW_C_HEAP_ARRAY(size_t, _max_covered_regions, mtGC);
   _lowest_non_clean_base_chunk_index =
-    NEW_C_HEAP_ARRAY(uintptr_t, max_covered_regions, mtGC);
+    NEW_C_HEAP_ARRAY(uintptr_t, _max_covered_regions, mtGC);
   _last_LNC_resizing_collection =
-    NEW_C_HEAP_ARRAY(int, max_covered_regions, mtGC);
+    NEW_C_HEAP_ARRAY(int, _max_covered_regions, mtGC);
   if (_lowest_non_clean == NULL
       || _lowest_non_clean_chunk_size == NULL
       || _lowest_non_clean_base_chunk_index == NULL
       || _last_LNC_resizing_collection == NULL)
     vm_exit_during_initialization("couldn't allocate an LNC array.");
-  for (int i = 0; i < max_covered_regions; i++) {
+  for (int i = 0; i < _max_covered_regions; i++) {
     _lowest_non_clean[i] = NULL;
     _lowest_non_clean_chunk_size[i] = 0;
     _last_LNC_resizing_collection[i] = -1;
@@ -650,7 +666,7 @@ void CardTableModRefBS::verify_region(MemRegion mr,
                                       jbyte val, bool val_equals) {
   jbyte* start    = byte_for(mr.start());
   jbyte* end      = byte_for(mr.last());
-  bool   failures = false;
+  bool failures = false;
   for (jbyte* curr = start; curr <= end; ++curr) {
     jbyte curr_val = *curr;
     bool failed = (val_equals) ? (curr_val != val) : (curr_val == val);

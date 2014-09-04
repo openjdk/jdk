@@ -178,7 +178,7 @@ uint MachNode::cmp( const Node &node ) const {
 }
 
 // Return an equivalent instruction using memory for cisc_operand position
-MachNode *MachNode::cisc_version(int offset, Compile* C) {
+MachNode *MachNode::cisc_version(int offset) {
   ShouldNotCallThis();
   return NULL;
 }
@@ -411,7 +411,7 @@ int MachNode::operand_index(const MachOper *oper) const {
 
 //------------------------------peephole---------------------------------------
 // Apply peephole rule(s) to this instruction
-MachNode *MachNode::peephole( Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted, Compile* C ) {
+MachNode *MachNode::peephole(Block *block, int block_index, PhaseRegAlloc *ra_, int &deleted) {
   return NULL;
 }
 

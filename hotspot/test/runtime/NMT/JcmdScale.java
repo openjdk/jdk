@@ -41,15 +41,15 @@ public class JcmdScale {
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=KB"});
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("KB,  committed=");
+    output.shouldContain("KB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=MB"});
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("MB,  committed=");
+    output.shouldContain("MB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=GB"});
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("GB,  committed=");
+    output.shouldContain("GB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "scale=apa"});
     output = new OutputAnalyzer(pb.start());
@@ -57,7 +57,7 @@ public class JcmdScale {
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=GB"});
     output = new OutputAnalyzer(pb.start());
-    output.shouldContain("GB,  committed=");
+    output.shouldContain("GB, committed=");
 
     pb.command(new String[] { JDKToolFinder.getJDKTool("jcmd"), pid, "VM.native_memory", "summary", "scale=apa"});
     output = new OutputAnalyzer(pb.start());

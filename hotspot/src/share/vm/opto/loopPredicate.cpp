@@ -107,8 +107,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
     rgn = new RegionNode(1);
     rgn->add_req(uncommon_proj);
     register_control(rgn, loop, uncommon_proj);
-    _igvn.hash_delete(call);
-    call->set_req(0, rgn);
+    _igvn.replace_input_of(call, 0, rgn);
     // When called from beautify_loops() idom is not constructed yet.
     if (_idom != NULL) {
       set_idom(call, rgn, dom_depth(rgn));
@@ -166,8 +165,7 @@ ProjNode* PhaseIdealLoop::create_new_if_for_predicate(ProjNode* cont_proj, Node*
 
   if (new_entry == NULL) {
     // Attach if_cont to iff
-    _igvn.hash_delete(iff);
-    iff->set_req(0, if_cont);
+    _igvn.replace_input_of(iff, 0, if_cont);
     if (_idom != NULL) {
       set_idom(iff, if_cont, dom_depth(iff));
     }
@@ -194,8 +192,7 @@ ProjNode* PhaseIterGVN::create_new_if_for_predicate(ProjNode* cont_proj, Node* n
     rgn = new RegionNode(1);
     register_new_node_with_optimizer(rgn);
     rgn->add_req(uncommon_proj);
-    hash_delete(call);
-    call->set_req(0, rgn);
+    replace_input_of(call, 0, rgn);
   } else {
     // Find region's edge corresponding to uncommon_proj
     for (; proj_index < rgn->req(); proj_index++)
@@ -766,9 +763,7 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
         loop->dump_head();
       }
 #endif
-    } else if ((cl != NULL) && (proj->_con == predicate_proj->_con) &&
-               loop->is_range_check_if(iff, this, invar)) {
-
+    } else if (cl != NULL && loop->is_range_check_if(iff, this, invar)) {
       // Range check for counted loops
       const Node*    cmp    = bol->in(1)->as_Cmp();
       Node*          idx    = cmp->in(1);
@@ -803,18 +798,31 @@ bool PhaseIdealLoop::loop_predication_impl(IdealLoopTree *loop) {
       }
 
       // Test the lower bound
-      Node*  lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false);
+      BoolNode*  lower_bound_bol = rc_predicate(loop, ctrl, scale, offset, init, limit, stride, rng, false);
+      // Negate test if necessary
+      bool negated = false;
+      if (proj->_con != predicate_proj->_con) {
+        lower_bound_bol = new BoolNode(lower_bound_bol->in(1), lower_bound_bol->_test.negate());
+        register_new_node(lower_bound_bol, ctrl);
+        negated = true;
+      }
       IfNode* lower_bound_iff = lower_bound_proj->in(0)->as_If();
       _igvn.hash_delete(lower_bound_iff);
       lower_bound_iff->set_req(1, lower_bound_bol);
-      if (TraceLoopPredicate) tty->print_cr("lower bound check if: %d", lower_bound_iff->_idx);
+      if (TraceLoopPredicate) tty->print_cr("lower bound check if: %s %d ", negated ? " negated" : "", lower_bound_iff->_idx);
 
       // Test the upper bound
-      Node* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true);
+      BoolNode* upper_bound_bol = rc_predicate(loop, lower_bound_proj, scale, offset, init, limit, stride, rng, true);
+      negated = false;
+      if (proj->_con != predicate_proj->_con) {
+        upper_bound_bol = new BoolNode(upper_bound_bol->in(1), upper_bound_bol->_test.negate());
+        register_new_node(upper_bound_bol, ctrl);
+        negated = true;
+      }
       IfNode* upper_bound_iff = upper_bound_proj->in(0)->as_If();
       _igvn.hash_delete(upper_bound_iff);
       upper_bound_iff->set_req(1, upper_bound_bol);
-      if (TraceLoopPredicate) tty->print_cr("upper bound check if: %d", lower_bound_iff->_idx);
+      if (TraceLoopPredicate) tty->print_cr("upper bound check if: %s %d ", negated ? " negated" : "", lower_bound_iff->_idx);
 
       // Fall through into rest of the clean up code which will move
       // any dependent nodes onto the upper bound test.

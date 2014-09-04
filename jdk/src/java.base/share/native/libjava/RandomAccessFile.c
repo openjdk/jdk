@@ -47,8 +47,8 @@ Java_java_io_RandomAccessFile_initIDs(JNIEnv *env, jclass fdClass) {
 
 
 JNIEXPORT void JNICALL
-Java_java_io_RandomAccessFile_open(JNIEnv *env,
-                                   jobject this, jstring path, jint mode)
+Java_java_io_RandomAccessFile_open0(JNIEnv *env,
+                                    jobject this, jstring path, jint mode)
 {
     int flags = 0;
     if (mode & java_io_RandomAccessFile_O_RDONLY)

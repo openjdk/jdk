@@ -30,7 +30,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_
 import java.util.Collections;
 import java.util.List;
 import java.util.function.Function;
-
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;

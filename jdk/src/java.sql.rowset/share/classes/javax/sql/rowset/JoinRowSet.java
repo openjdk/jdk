@@ -111,7 +111,7 @@ import javax.sql.rowset.*;
  * and they do not have to store the exact same data type as long as the data types
  * can be compared.
  * <P>
- * A match column can be be set in two ways:
+ * A match column can be set in two ways:
  * <ul>
  *  <li>By calling the <code>Joinable</code> method <code>setMatchColumn</code><br>
  *  This is the only method that can set the match column before a <code>RowSet</code>
@@ -527,7 +527,7 @@ public interface JoinRowSet extends WebRowSet {
     public static int RIGHT_OUTER_JOIN = 3;
 
     /**
-     * An ANSI-style <code>JOIN</code> providing a a full JOIN. Specifies that all
+     * An ANSI-style <code>JOIN</code> providing a full JOIN. Specifies that all
      * rows from either table be returned regardless of matching
      * records on the other table.
      */

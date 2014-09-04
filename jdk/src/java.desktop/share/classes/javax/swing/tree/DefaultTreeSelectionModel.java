@@ -151,15 +151,18 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
     public void setSelectionMode(int mode) {
         int            oldMode = selectionMode;
 
-        selectionMode = mode;
-        if(selectionMode != TreeSelectionModel.SINGLE_TREE_SELECTION &&
-           selectionMode != TreeSelectionModel.CONTIGUOUS_TREE_SELECTION &&
-           selectionMode != TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION)
-            selectionMode = TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION;
+        selectionMode = validateSelectionMode(mode);
         if(oldMode != selectionMode && changeSupport != null)
             changeSupport.firePropertyChange(SELECTION_MODE_PROPERTY,
                                              Integer.valueOf(oldMode),
                                              Integer.valueOf(selectionMode));
+    }
+
+    private static int validateSelectionMode(int mode) {
+        return (mode != TreeSelectionModel.SINGLE_TREE_SELECTION
+                && mode != TreeSelectionModel.CONTIGUOUS_TREE_SELECTION
+                && mode != TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION)
+                ? TreeSelectionModel.DISCONTIGUOUS_TREE_SELECTION : mode;
     }
 
     /**
@@ -1219,14 +1222,40 @@ public class DefaultTreeSelectionModel implements Cloneable, Serializable, TreeS
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
+        ObjectInputStream.GetField f = s.readFields();
+
+        changeSupport = (SwingPropertyChangeSupport) f.get("changeSupport", null);
+        selection = (TreePath[]) f.get("selection", null);
+        EventListenerList newListenerList = (EventListenerList) f.get("listenerList", null);
+        if (newListenerList == null) {
+            throw new InvalidObjectException("Null listenerList");
+        }
+        listenerList = newListenerList;
+        listSelectionModel = (DefaultListSelectionModel) f.get("listSelectionModel", null);
+        selectionMode = validateSelectionMode(f.get("selectionMode", 0));
+        leadPath = (TreePath) f.get("leadPath", null);
+        leadIndex = f.get("leadIndex", 0);
+        leadRow = f.get("leadRow", 0);
+        @SuppressWarnings("unchecked")
+        Hashtable<TreePath, Boolean> newUniquePaths =
+                (Hashtable<TreePath, Boolean>) f.get("uniquePaths", null);
+        uniquePaths = newUniquePaths;
+        @SuppressWarnings("unchecked")
+        Hashtable<TreePath, Boolean> newLastPaths =
+                (Hashtable<TreePath, Boolean>) f.get("lastPaths", null);
+        lastPaths = newLastPaths;
+        tempPaths = (TreePath[]) f.get("tempPaths", null);
+
         Object[]      tValues;
-
-        s.defaultReadObject();
-
         tValues = (Object[])s.readObject();
 
-        if(tValues.length > 0 && tValues[0].equals("rowMapper"))
-            rowMapper = (RowMapper)tValues[1];
+        if (tValues.length > 0 && tValues[0].equals("rowMapper")) {
+            RowMapper newRowMapper = (RowMapper) tValues[1];
+            if (newRowMapper == null) {
+                throw new InvalidObjectException("Null newRowMapper");
+            }
+            rowMapper = newRowMapper;
+        }
     }
 }
 

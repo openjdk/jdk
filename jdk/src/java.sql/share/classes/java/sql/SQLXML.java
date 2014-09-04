@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -174,7 +174,7 @@ import javax.xml.transform.Source;
  * reading APIs are called: getBinaryStream(), getCharacterStream(), getSource(), and getString().
  * Implementations may also change the state to not writable when this occurs.
  * <p>
- * The state moves from writable to not writeable once free() or any of the
+ * The state moves from writable to not writable once free() or any of the
  * writing APIs are called: setBinaryStream(), setCharacterStream(), setResult(), and setString().
  * Implementations may also change the state to not readable when this occurs.
  *
@@ -192,7 +192,7 @@ public interface SQLXML
 {
   /**
    * This method closes this object and releases the resources that it held.
-   * The SQL XML object becomes invalid and neither readable or writeable
+   * The SQL XML object becomes invalid and neither readable or writable
    * when this method is called.
    *
    * After <code>free</code> has been called, any attempt to invoke a
@@ -231,7 +231,7 @@ public interface SQLXML
    * The behavior of this method is the same as ResultSet.updateBinaryStream()
    * when the designated column of the ResultSet has a type java.sql.Types of SQLXML.
    * <p>
-   * The SQL XML object becomes not writeable when this method is called and
+   * The SQL XML object becomes not writable when this method is called and
    * may also become not readable depending on implementation.
    *
    * @return a stream to which data can be written.
@@ -277,7 +277,7 @@ public interface SQLXML
    * The behavior of this method is the same as ResultSet.updateCharacterStream()
    * when the designated column of the ResultSet has a type java.sql.Types of SQLXML.
    * <p>
-   * The SQL XML object becomes not writeable when this method is called and
+   * The SQL XML object becomes not writable when this method is called and
    * may also become not readable depending on implementation.
    *
    * @return a stream to which data can be written.
@@ -325,7 +325,7 @@ public interface SQLXML
    * The behavior of this method is the same as ResultSet.updateString()
    * when the designated column of the ResultSet has a type java.sql.Types of SQLXML.
    * <p>
-   * The SQL XML object becomes not writeable when this method is called and
+   * The SQL XML object becomes not writable when this method is called and
    * may also become not readable depending on implementation.
    *
    * @param value the XML value
@@ -387,7 +387,7 @@ public interface SQLXML
    * <p>
    * The systemID of the Result is implementation dependent.
    * <p>
-   * The SQL XML object becomes not writeable when this method is called and
+   * The SQL XML object becomes not writable when this method is called and
    * may also become not readable depending on implementation.
    * <p>
    * Note that SAX is a callback architecture and the returned
