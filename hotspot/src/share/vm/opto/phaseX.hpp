@@ -311,6 +311,9 @@ public:
                                const Type* limit_type) const
   { ShouldNotCallThis(); return NULL; }
 
+  // Delayed node rehash if this is an IGVN phase
+  virtual void igvn_rehash_node_delayed(Node* n) {}
+
 #ifndef PRODUCT
   void dump_old2new_map() const;
   void dump_new( uint new_lidx ) const;
@@ -387,6 +390,9 @@ public:
   // in a faster or cheaper fashion.
   Node  *transform( Node *n );
   Node  *transform_no_reclaim( Node *n );
+  virtual void record_for_igvn(Node *n) {
+    C->record_for_igvn(n);
+  }
 
   void replace_with(PhaseGVN* gvn) {
     _table.replace_with(&gvn->_table);
@@ -415,9 +421,6 @@ class PhaseIterGVN : public PhaseGVN {
 
 protected:
 
-  // Idealize new Node 'n' with respect to its inputs and its value
-  virtual Node *transform( Node *a_node );
-
   // Warm up hash table, type table and initial worklist
   void init_worklist( Node *a_root );
 
@@ -430,6 +433,10 @@ public:
   PhaseIterGVN( PhaseIterGVN *igvn ); // Used by CCP constructor
   PhaseIterGVN( PhaseGVN *gvn ); // Used after Parser
   PhaseIterGVN( PhaseIterGVN *igvn, const char *dummy ); // Used after +VerifyOpto
+
+  // Idealize new Node 'n' with respect to its inputs and its value
+  virtual Node *transform( Node *a_node );
+  virtual void record_for_igvn(Node *n) { }
 
   virtual PhaseIterGVN *is_IterGVN() { return this; }
 
@@ -486,6 +493,10 @@ public:
   void rehash_node_delayed(Node* n) {
     hash_delete(n);
     _worklist.push(n);
+  }
+
+  void igvn_rehash_node_delayed(Node* n) {
+    rehash_node_delayed(n);
   }
 
   // Replace ith edge of "n" with "in"

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -32,6 +32,7 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.StringJoiner;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import static java.io.ObjectStreamClass.processQueue;
@@ -2465,15 +2466,11 @@ public class ObjectOutputStream
          * Returns a string representation of this object
          */
         public String toString() {
-            StringBuilder buffer = new StringBuilder();
-            if (!stack.isEmpty()) {
-                for(int i = stack.size(); i > 0; i-- ) {
-                    buffer.append(stack.get(i - 1));
-                    if (i != 1)
-                        buffer.append('\n');
-                }
+            StringJoiner sj = new StringJoiner("\n");
+            for (int i = stack.size() - 1; i >= 0; i--) {
+                sj.add(stack.get(i));
             }
-            return buffer.toString();
+            return sj.toString();
         }
     }
 

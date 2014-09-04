@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,15 +27,15 @@
  * @summary Validates rewritten javah handling of class defined constants and
  * ensures that the appropriate macro definitions are placed in the generated
  * header file.
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ConstMacroTest
  */
 
 import java.io.*;
-import java.nio.file.Paths;
+import java.util.List;
 
-//original test: test/tools/javah/ConstMacroTest.sh
+// Original test: test/tools/javah/ConstMacroTest.sh
 public class ConstMacroTest {
 
     private static final String subClassConstsGoldenFileTemplate =
@@ -71,27 +71,21 @@ public class ConstMacroTest {
         "#endif\n" +
         "#endif";
 
-    private static final String serialVersionUIDSuffix =
-            ToolBox.isWindows() ? "i64" : "LL"; ;
-
     public static void main(String[] args) throws Exception {
-        //first steps are now done by jtreg
-//        cp "${TESTSRC}${FS}SuperClassConsts.java" .
-//        cp "${TESTSRC}${FS}SubClassConsts.java" .
+        ToolBox tb = new ToolBox();
 
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . "${TESTSRC}${FS}SubClassConsts.java"
+        tb.new JavahTask()
+                .classpath(ToolBox.testClasses)
+                .classes("SubClassConsts")
+                .run();
 
-//        "${TESTJAVA}${FS}bin${FS}javah" ${TESTTOOLVMOPTS} SubClassConsts
-        ToolBox.JavaToolArgs successParams =
-                new ToolBox.JavaToolArgs()
-                .setAllArgs("-cp", System.getProperty("test.classes"), "SubClassConsts");
-        ToolBox.javah(successParams);
+        String longSuffix = tb.isWindows() ? "i64" : "LL";
+        List<String> subClassConstsGoldenFile = tb.split(
+                String.format(subClassConstsGoldenFileTemplate, longSuffix), "\n");
 
-//        diff ${DIFFOPTS} "${TESTSRC}${FS}${EXPECTED_JAVAH_OUT_FILE}" "${GENERATED_HEADER_FILE}"
-        String subClassConstGoldenFile = String.format(subClassConstsGoldenFileTemplate,
-                serialVersionUIDSuffix);
-        ToolBox.compareLines(Paths.get("SubClassConsts.h"),
-                ToolBox.splitLines(subClassConstGoldenFile, "\n"), null, true);
+        List<String> subClassConstsFile = tb.readAllLines("SubClassConsts.h");
+
+        tb.checkEqual(subClassConstsFile, subClassConstsGoldenFile);
     }
 
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,6 +30,7 @@ import java.util.Vector;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.StringJoiner;
 import java.util.StringTokenizer;
 import java.net.InetAddress;
 import java.security.Permission;
@@ -1112,36 +1113,21 @@ public final class SocketPermission extends Permission
      * @param mask a specific integer action mask to translate into a string
      * @return the canonical string representation of the actions
      */
-    private static String getActions(int mask)
-    {
-        StringBuilder sb = new StringBuilder();
-        boolean comma = false;
-
+    private static String getActions(int mask) {
+        StringJoiner sj = new StringJoiner(",");
         if ((mask & CONNECT) == CONNECT) {
-            comma = true;
-            sb.append("connect");
+            sj.add("connect");
         }
-
         if ((mask & LISTEN) == LISTEN) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("listen");
+            sj.add("listen");
         }
-
         if ((mask & ACCEPT) == ACCEPT) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("accept");
+            sj.add("accept");
         }
-
-
         if ((mask & RESOLVE) == RESOLVE) {
-            if (comma) sb.append(',');
-            else comma = true;
-            sb.append("resolve");
+            sj.add("resolve");
         }
-
-        return sb.toString();
+        return sj.toString();
     }
 
     /**

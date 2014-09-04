@@ -2196,16 +2196,6 @@ public class Types {
             }
 
             @Override
-            public Type visitWildcardType(WildcardType t, Boolean recurse) {
-                final List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();
-                Type erased = erasure(wildUpperBound(t), recurse);
-                if (!annos.isEmpty()) {
-                    erased = erased.annotatedType(annos);
-                }
-                return erased;
-            }
-
-            @Override
             public Type visitClassType(ClassType t, Boolean recurse) {
                 Type erased = t.tsym.erasure(Types.this);
                 List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();

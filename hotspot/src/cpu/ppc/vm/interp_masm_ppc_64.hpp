@@ -130,6 +130,7 @@ class InterpreterMacroAssembler: public MacroAssembler {
 
   void get_cache_and_index_at_bcp(Register cache, int bcp_offset, size_t index_size = sizeof(u2));
 
+  void get_u4(Register Rdst, Register Rsrc, int offset, signedOrNot is_signed);
 
   // common code
 

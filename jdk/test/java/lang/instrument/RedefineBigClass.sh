@@ -27,7 +27,7 @@
 # @author Daniel D. Daugherty
 #
 # @run shell MakeJAR3.sh RedefineBigClassAgent 'Can-Redefine-Classes: true'
-# @run build BigClass RedefineBigClassApp
+# @run build BigClass RedefineBigClassApp NMTHelper
 # @run shell/timeout=600 RedefineBigClass.sh
 #
 

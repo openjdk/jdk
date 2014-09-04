@@ -28,9 +28,7 @@ default: all
 include $(SPEC)
 include MakeBase.gmk
 include JavaCompilation.gmk
-
-# Setup the java compilers for the JDK build.
-include SetupJava.gmk
+include SetupJavaCompilers.gmk
 # We need the tools.
 include Tools.gmk
 

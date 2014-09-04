@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1994, 2002, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1994, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,6 +26,7 @@
 package sun.net.www;
 import java.net.URL;
 import java.io.*;
+import java.util.StringJoiner;
 import java.util.StringTokenizer;
 
 public class MimeEntry implements Cloneable {
@@ -281,52 +282,34 @@ public class MimeEntry implements Cloneable {
     }
 
     public synchronized String toProperty() {
-        StringBuilder sb = new StringBuilder();
-
-        String separator = "; ";
-        boolean needSeparator = false;
+        StringJoiner sj = new StringJoiner("; ");
 
         int action = getAction();
         if (action != MimeEntry.UNKNOWN) {
-            sb.append("action=" + actionKeywords[action]);
-            needSeparator = true;
+            sj.add("action=" + actionKeywords[action]);
         }
 
         String command = getLaunchString();
         if (command != null && command.length() > 0) {
-            if (needSeparator) {
-                sb.append(separator);
-            }
-            sb.append("application=" + command);
-            needSeparator = true;
+            sj.add("application=" + command);
         }
 
-        if (getImageFileName() != null) {
-            if (needSeparator) {
-                sb.append(separator);
-            }
-            sb.append("icon=" + getImageFileName());
-            needSeparator = true;
+        String image = getImageFileName();
+        if (image != null) {
+            sj.add("icon=" + image);
         }
 
         String extensions = getExtensionsAsList();
         if (extensions.length() > 0) {
-            if (needSeparator) {
-                sb.append(separator);
-            }
-            sb.append("file_extensions=" + extensions);
-            needSeparator = true;
+            sj.add("file_extensions=" + extensions);
         }
 
         String description = getDescription();
         if (description != null && !description.equals(getType())) {
-            if (needSeparator) {
-                sb.append(separator);
-            }
-            sb.append("description=" + description);
+            sj.add("description=" + description);
         }
 
-        return sb.toString();
+        return sj.toString();
     }
 
     public String toString() {

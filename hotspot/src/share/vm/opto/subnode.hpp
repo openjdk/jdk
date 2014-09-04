@@ -286,6 +286,10 @@ class BoolNode : public Node {
   virtual uint hash() const;
   virtual uint cmp( const Node &n ) const;
   virtual uint size_of() const;
+
+  // Try to optimize signed integer comparison
+  Node* fold_cmpI(PhaseGVN* phase, SubNode* cmp, Node* cmp1, int cmp_op,
+                  int cmp1_op, const TypeInt* cmp2_type);
 public:
   const BoolTest _test;
   BoolNode( Node *cc, BoolTest::mask t): _test(t), Node(0,cc) {

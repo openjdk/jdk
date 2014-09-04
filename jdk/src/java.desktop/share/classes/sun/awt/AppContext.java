@@ -259,7 +259,7 @@ public final class AppContext {
     private static final ThreadLocal<AppContext> threadAppContext =
             new ThreadLocal<AppContext>();
 
-    private final static void initMainAppContext() {
+    private static void initMainAppContext() {
         // On the main Thread, we get the ThreadGroup, make a corresponding
         // AppContext, and instantiate the Java EventQueue.  This way, legacy
         // code is unaffected by the move to multiple AppContext ability.
@@ -291,7 +291,7 @@ public final class AppContext {
      * @see     java.lang.ThreadGroup
      * @since   1.2
      */
-    public final static AppContext getAppContext() {
+    public static AppContext getAppContext() {
         // we are standalone app, return the main app context
         if (numAppContexts.get() == 1 && mainAppContext != null) {
             return mainAppContext;
@@ -375,11 +375,11 @@ public final class AppContext {
      * @return  true if the specified AppContext is the main AppContext.
      * @since   1.8
      */
-    public final static boolean isMainContext(AppContext ctx) {
+    public static boolean isMainContext(AppContext ctx) {
         return (ctx != null && ctx == mainAppContext);
     }
 
-    private final static AppContext getExecutionAppContext() {
+    private static AppContext getExecutionAppContext() {
         SecurityManager securityManager = System.getSecurityManager();
         if ((securityManager != null) &&
             (securityManager instanceof AWTSecurityManager))

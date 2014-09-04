@@ -76,6 +76,8 @@ import static javax.tools.Diagnostic.Kind.*;
 
 import com.sun.tools.javac.code.Symbol.CompletionFailure;
 import com.sun.tools.javac.main.CommandLine;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  * Javah generates support files for native methods.
@@ -313,6 +315,7 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
     private DiagnosticListener<JavaFileObject> getDiagnosticListenerForWriter(Writer w) {
         final PrintWriter pw = getPrintWriterForWriter(w);
         return new DiagnosticListener<JavaFileObject> () {
+            @DefinedBy(Api.COMPILER)
             public void report(Diagnostic<? extends JavaFileObject> diagnostic) {
                 if (diagnostic.getKind() == Diagnostic.Kind.ERROR) {
                     pw.print(getMessage("err.prefix"));
@@ -570,38 +573,47 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
     private Diagnostic<JavaFileObject> createDiagnostic(final String key, final Object... args) {
         return new Diagnostic<JavaFileObject>() {
+            @DefinedBy(Api.COMPILER)
             public Kind getKind() {
                 return Diagnostic.Kind.ERROR;
             }
 
+            @DefinedBy(Api.COMPILER)
             public JavaFileObject getSource() {
                 return null;
             }
 
+            @DefinedBy(Api.COMPILER)
             public long getPosition() {
                 return Diagnostic.NOPOS;
             }
 
+            @DefinedBy(Api.COMPILER)
             public long getStartPosition() {
                 return Diagnostic.NOPOS;
             }
 
+            @DefinedBy(Api.COMPILER)
             public long getEndPosition() {
                 return Diagnostic.NOPOS;
             }
 
+            @DefinedBy(Api.COMPILER)
             public long getLineNumber() {
                 return Diagnostic.NOPOS;
             }
 
+            @DefinedBy(Api.COMPILER)
             public long getColumnNumber() {
                 return Diagnostic.NOPOS;
             }
 
+            @DefinedBy(Api.COMPILER)
             public String getCode() {
                 return key;
             }
 
+            @DefinedBy(Api.COMPILER)
             public String getMessage(Locale locale) {
                 return JavahTask.this.getMessage(locale, key, args);
             }
@@ -675,19 +687,20 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
             this.g = g;
         }
 
-        @Override
+        @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
         public SourceVersion getSupportedSourceVersion() {
             // since this is co-bundled with javac, we can assume it supports
             // the latest source version
             return SourceVersion.latest();
         }
 
-        @Override
+        @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
         public void init(ProcessingEnvironment pEnv) {
             super.init(pEnv);
             messager  = processingEnv.getMessager();
         }
 
+        @DefinedBy(Api.ANNOTATION_PROCESSING)
         public boolean process(Set<? extends TypeElement> annotations, RoundEnvironment roundEnv) {
             try {
                 Set<TypeElement> classes = getAllClasses(ElementFilter.typesIn(roundEnv.getRootElements()));
@@ -739,12 +752,12 @@ public class JavahTask implements NativeHeaderTool.NativeHeaderTask {
 
         private TypeVisitor<Void,Types> checkMethodParametersVisitor =
                 new SimpleTypeVisitor9<Void,Types>() {
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitArray(ArrayType t, Types types) {
                 visit(t.getComponentType(), types);
                 return null;
             }
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Void visitDeclared(DeclaredType t, Types types) {
                 t.asElement().getKind(); // ensure class exists
                 for (TypeMirror st: types.directSupertypes(t))

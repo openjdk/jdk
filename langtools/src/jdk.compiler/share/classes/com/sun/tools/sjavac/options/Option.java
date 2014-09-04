@@ -47,6 +47,11 @@ import com.sun.tools.sjavac.Transformer;
  * This enum represents all options from (1) and (2). Note that instances of
  * this enum only entail static information about the option. For storage of
  * option values, refer to com.sun.tools.sjavac.options.Options.
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public enum Option {
 
@@ -231,7 +236,14 @@ public enum Option {
             helper.logLevel("info");
         }
     },
-    PERMIT_UNIDENTIFIED_ARTIFACTS("--permit-unidentified-artifacts", "Keep unidentified artifacts in destination directory") {
+    PERMIT_ARTIFACT("--permit-artifact=", "Allow this artifact in destination directory") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            String a = iter.current().substring(arg.length());
+            helper.permitArtifact(Paths.get(a).toFile().getAbsolutePath());
+        }
+    },
+    PERMIT_UNIDENTIFIED_ARTIFACTS("--permit-unidentified-artifacts", "Allow unidentified artifacts in destination directory") {
         @Override
         protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
             helper.permitUnidentifiedArtifacts();
@@ -274,7 +286,15 @@ public enum Option {
             if (dir != null)
                 helper.headerDir(dir);
         }
+    },
+    STATE_DIR("--state-dir=", "Directory used to store sjavac state and log files.") {
+        @Override
+        protected void processMatching(ArgumentIterator iter, OptionHelper helper) {
+            String p = iter.current().substring(arg.length());
+            helper.stateDir(Paths.get(p));
+        }
     };
+
 
     public final String arg;
 

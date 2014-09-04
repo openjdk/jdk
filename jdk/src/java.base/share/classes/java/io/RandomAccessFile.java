@@ -296,8 +296,25 @@ public class RandomAccessFile implements DataOutput, DataInput, Closeable {
      * @param mode the mode flags, a combination of the O_ constants
      *             defined above
      */
-    private native void open(String name, int mode)
+    private native void open0(String name, int mode)
         throws FileNotFoundException;
+
+    // wrap native call to allow instrumentation
+    /**
+     * Opens a file and returns the file descriptor.  The file is
+     * opened in read-write mode if the O_RDWR bit in {@code mode}
+     * is true, else the file is opened as read-only.
+     * If the {@code name} refers to a directory, an IOException
+     * is thrown.
+     *
+     * @param name the name of the file
+     * @param mode the mode flags, a combination of the O_ constants
+     *             defined above
+     */
+    private void open(String name, int mode)
+        throws FileNotFoundException {
+        open0(name, mode);
+    }
 
     // 'Read' primitives
 

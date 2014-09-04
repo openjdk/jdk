@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 /*
  * The Taylor expansion of expxm1(x) = exp(x) -1 is
  *
@@ -99,7 +97,7 @@ public class Expm1Tests {
         }
 
         // For x > 710, expm1(x) should be infinity
-        for(int i = 10; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 10; i <= Double.MAX_EXPONENT; i++) {
             double d = Math.scalb(2, i);
             failures += testExpm1Case(d, infinityD);
         }
@@ -116,7 +114,7 @@ public class Expm1Tests {
                                                  reachedLimit);
         }
 
-        for(int i = 7; i <= DoubleConsts.MAX_EXPONENT; i++) {
+        for(int i = 7; i <= Double.MAX_EXPONENT; i++) {
             double d = -Math.scalb(2, i);
             failures += testExpm1CaseWithUlpDiff(d, -1.0, 1, reachedLimit);
         }
