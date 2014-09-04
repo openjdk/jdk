@@ -448,10 +448,10 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 
   // Note that this may be a continued H region.
   HeapRegion* from_hr = _g1h->heap_region_containing_raw(from);
-  RegionIdx_t from_hrs_ind = (RegionIdx_t) from_hr->hrm_index();
+  RegionIdx_t from_hrm_ind = (RegionIdx_t) from_hr->hrm_index();
 
   // If the region is already coarsened, return.
-  if (_coarse_map.at(from_hrs_ind)) {
+  if (_coarse_map.at(from_hrm_ind)) {
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print_cr("  coarse map hit.");
     }
@@ -460,7 +460,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
   }
 
   // Otherwise find a per-region table to add it to.
-  size_t ind = from_hrs_ind & _mod_max_fine_entries_mask;
+  size_t ind = from_hrm_ind & _mod_max_fine_entries_mask;
   PerRegionTable* prt = find_region_table(ind, from_hr);
   if (prt == NULL) {
     MutexLockerEx x(_m, Mutex::_no_safepoint_check_flag);
@@ -475,7 +475,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
       assert(0 <= card_index && (size_t)card_index < HeapRegion::CardsPerRegion,
              "Must be in range.");
       if (G1HRRSUseSparseTable &&
-          _sparse_table.add_card(from_hrs_ind, card_index)) {
+          _sparse_table.add_card(from_hrm_ind, card_index)) {
         if (G1RecordHRRSOops) {
           HeapRegionRemSet::record(hr(), from);
           if (G1TraceHeapRegionRememberedSet) {
@@ -495,7 +495,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         if (G1TraceHeapRegionRememberedSet) {
           gclog_or_tty->print_cr("   [tid %d] sparse table entry "
                         "overflow(f: %d, t: %u)",
-                        tid, from_hrs_ind, cur_hrm_ind);
+                        tid, from_hrm_ind, cur_hrm_ind);
         }
       }
 
@@ -516,7 +516,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
 
       if (G1HRRSUseSparseTable) {
         // Transfer from sparse to fine-grain.
-        SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrs_ind);
+        SparsePRTEntry *sprt_entry = _sparse_table.get_entry(from_hrm_ind);
         assert(sprt_entry != NULL, "There should have been an entry");
         for (int i = 0; i < SparsePRTEntry::cards_num(); i++) {
           CardIdx_t c = sprt_entry->card(i);
@@ -525,7 +525,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
           }
         }
         // Now we can delete the sparse entry.
-        bool res = _sparse_table.delete_entry(from_hrs_ind);
+        bool res = _sparse_table.delete_entry(from_hrm_ind);
         assert(res, "It should have been there.");
       }
     }
@@ -926,8 +926,24 @@ void HeapRegionRemSet::scrub(CardTableModRefBS* ctbs,
 }
 
 // Code roots support
+//
+// The code root set is protected by two separate locking schemes
+// When at safepoint the per-hrrs lock must be held during modifications
+// except when doing a full gc.
+// When not at safepoint the CodeCache_lock must be held during modifications.
+// When concurrent readers access the contains() function
+// (during the evacuation phase) no removals are allowed.
 
 void HeapRegionRemSet::add_strong_code_root(nmethod* nm) {
+  assert(nm != NULL, "sanity");
+  // Optimistic unlocked contains-check
+  if (!_code_roots.contains(nm)) {
+    MutexLockerEx ml(&_m, Mutex::_no_safepoint_check_flag);
+    add_strong_code_root_locked(nm);
+  }
+}
+
+void HeapRegionRemSet::add_strong_code_root_locked(nmethod* nm) {
   assert(nm != NULL, "sanity");
   _code_roots.add(nm);
 }
@@ -936,96 +952,19 @@ void HeapRegionRemSet::remove_strong_code_root(nmethod* nm) {
   assert(nm != NULL, "sanity");
   assert_locked_or_safepoint(CodeCache_lock);
 
-  _code_roots.remove_lock_free(nm);
+  MutexLockerEx ml(CodeCache_lock->owned_by_self() ? NULL : &_m, Mutex::_no_safepoint_check_flag);
+  _code_roots.remove(nm);
 
   // Check that there were no duplicates
   guarantee(!_code_roots.contains(nm), "duplicate entry found");
 }
 
-class NMethodMigrationOopClosure : public OopClosure {
-  G1CollectedHeap* _g1h;
-  HeapRegion* _from;
-  nmethod* _nm;
-
-  uint _num_self_forwarded;
-
-  template <class T> void do_oop_work(T* p) {
-    T heap_oop = oopDesc::load_heap_oop(p);
-    if (!oopDesc::is_null(heap_oop)) {
-      oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
-      if (_from->is_in(obj)) {
-        // Reference still points into the source region.
-        // Since roots are immediately evacuated this means that
-        // we must have self forwarded the object
-        assert(obj->is_forwarded(),
-               err_msg("code roots should be immediately evacuated. "
-                       "Ref: "PTR_FORMAT", "
-                       "Obj: "PTR_FORMAT", "
-                       "Region: "HR_FORMAT,
-                       p, (void*) obj, HR_FORMAT_PARAMS(_from)));
-        assert(obj->forwardee() == obj,
-               err_msg("not self forwarded? obj = "PTR_FORMAT, (void*)obj));
-
-        // The object has been self forwarded.
-        // Note, if we're during an initial mark pause, there is
-        // no need to explicitly mark object. It will be marked
-        // during the regular evacuation failure handling code.
-        _num_self_forwarded++;
-      } else {
-        // The reference points into a promotion or to-space region
-        HeapRegion* to = _g1h->heap_region_containing(obj);
-        to->rem_set()->add_strong_code_root(_nm);
-      }
-    }
-  }
-
-public:
-  NMethodMigrationOopClosure(G1CollectedHeap* g1h, HeapRegion* from, nmethod* nm):
-    _g1h(g1h), _from(from), _nm(nm), _num_self_forwarded(0) {}
-
-  void do_oop(narrowOop* p) { do_oop_work(p); }
-  void do_oop(oop* p)       { do_oop_work(p); }
-
-  uint retain() { return _num_self_forwarded > 0; }
-};
-
-void HeapRegionRemSet::migrate_strong_code_roots() {
-  assert(hr()->in_collection_set(), "only collection set regions");
-  assert(!hr()->isHumongous(),
-         err_msg("humongous region "HR_FORMAT" should not have been added to the collection set",
-                 HR_FORMAT_PARAMS(hr())));
-
-  ResourceMark rm;
-
-  // List of code blobs to retain for this region
-  GrowableArray<nmethod*> to_be_retained(10);
-  G1CollectedHeap* g1h = G1CollectedHeap::heap();
-
-  while (!_code_roots.is_empty()) {
-    nmethod *nm = _code_roots.pop();
-    if (nm != NULL) {
-      NMethodMigrationOopClosure oop_cl(g1h, hr(), nm);
-      nm->oops_do(&oop_cl);
-      if (oop_cl.retain()) {
-        to_be_retained.push(nm);
-      }
-    }
-  }
-
-  // Now push any code roots we need to retain
-  assert(to_be_retained.is_empty() || hr()->evacuation_failed(),
-         "Retained nmethod list must be empty or "
-         "evacuation of this region failed");
-
-  while (to_be_retained.is_nonempty()) {
-    nmethod* nm = to_be_retained.pop();
-    assert(nm != NULL, "sanity");
-    add_strong_code_root(nm);
-  }
-}
-
 void HeapRegionRemSet::strong_code_roots_do(CodeBlobClosure* blk) const {
   _code_roots.nmethods_do(blk);
+}
+
+void HeapRegionRemSet::clean_strong_code_roots(HeapRegion* hr) {
+  _code_roots.clean(hr);
 }
 
 size_t HeapRegionRemSet::strong_code_roots_mem_size() {
