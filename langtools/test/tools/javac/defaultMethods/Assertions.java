@@ -26,20 +26,6 @@ import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
 
-/*
- * @test
- * @bug 8025141
- * @ignore 8047675 test fails if run with assertions enabled in jtreg
- * @summary Interfaces must not contain non-public fields, ensure $assertionsDisabled
- *          is not generated into an interface
- * @compile Assertions.java
- * @run main/othervm -da test.Assertions
- * @run main/othervm -ea:test.Assertions test.Assertions Inner
- * @run main/othervm -ea:test.Outer test.Assertions Outer
- * @run main/othervm -ea:test.Another test.Assertions Another.Inner
- * @run main/othervm -ea:test... test.Assertions Inner Outer Another.Inner
- */
-
 public class Assertions {
     interface Inner {
         default void testInner() {
