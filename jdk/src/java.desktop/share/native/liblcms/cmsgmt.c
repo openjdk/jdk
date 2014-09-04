@@ -191,7 +191,7 @@ cmsToneCurve* _cmsBuildKToneCurve(cmsContext        ContextID,
 
     out = ComputeKToLstar(ContextID, nPoints, 1,
                             Intents + (nProfiles - 1),
-                            hProfiles + (nProfiles - 1),
+                            &hProfiles [nProfiles - 1],
                             BPC + (nProfiles - 1),
                             AdaptationStates + (nProfiles - 1),
                             dwFlags);
