@@ -1301,120 +1301,6 @@ static bool _addr_in_ntdll( address addr )
 }
 #endif
 
-
-// Enumerate all modules for a given process ID
-//
-// Notice that Windows 95/98/Me and Windows NT/2000/XP have
-// different API for doing this. We use PSAPI.DLL on NT based
-// Windows and ToolHelp on 95/98/Me.
-
-// Callback function that is called by enumerate_modules() on
-// every DLL module.
-// Input parameters:
-//    int       pid,
-//    char*     module_file_name,
-//    address   module_base_addr,
-//    unsigned  module_size,
-//    void*     param
-typedef int (*EnumModulesCallbackFunc)(int, char *, address, unsigned, void *);
-
-// enumerate_modules for Windows NT, using PSAPI
-static int _enumerate_modules_winnt( int pid, EnumModulesCallbackFunc func, void * param)
-{
-  HANDLE   hProcess;
-
-# define MAX_NUM_MODULES 128
-  HMODULE     modules[MAX_NUM_MODULES];
-  static char filename[MAX_PATH];
-  int         result = 0;
-
-  if (!os::PSApiDll::PSApiAvailable()) {
-    return 0;
-  }
-
-  hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
-                         FALSE, pid);
-  if (hProcess == NULL) return 0;
-
-  DWORD size_needed;
-  if (!os::PSApiDll::EnumProcessModules(hProcess, modules,
-                           sizeof(modules), &size_needed)) {
-      CloseHandle(hProcess);
-      return 0;
-  }
-
-  // number of modules that are currently loaded
-  int num_modules = size_needed / sizeof(HMODULE);
-
-  for (int i = 0; i < MIN2(num_modules, MAX_NUM_MODULES); i++) {
-    // Get Full pathname:
-    if (!os::PSApiDll::GetModuleFileNameEx(hProcess, modules[i],
-                             filename, sizeof(filename))) {
-        filename[0] = '\0';
-    }
-
-    MODULEINFO modinfo;
-    if (!os::PSApiDll::GetModuleInformation(hProcess, modules[i],
-                               &modinfo, sizeof(modinfo))) {
-        modinfo.lpBaseOfDll = NULL;
-        modinfo.SizeOfImage = 0;
-    }
-
-    // Invoke callback function
-    result = func(pid, filename, (address)modinfo.lpBaseOfDll,
-                  modinfo.SizeOfImage, param);
-    if (result) break;
-  }
-
-  CloseHandle(hProcess);
-  return result;
-}
-
-
-// enumerate_modules for Windows 95/98/ME, using TOOLHELP
-static int _enumerate_modules_windows( int pid, EnumModulesCallbackFunc func, void *param)
-{
-  HANDLE                hSnapShot;
-  static MODULEENTRY32  modentry;
-  int                   result = 0;
-
-  if (!os::Kernel32Dll::HelpToolsAvailable()) {
-    return 0;
-  }
-
-  // Get a handle to a Toolhelp snapshot of the system
-  hSnapShot = os::Kernel32Dll::CreateToolhelp32Snapshot(TH32CS_SNAPMODULE, pid);
-  if (hSnapShot == INVALID_HANDLE_VALUE) {
-      return FALSE;
-  }
-
-  // iterate through all modules
-  modentry.dwSize = sizeof(MODULEENTRY32);
-  bool not_done = os::Kernel32Dll::Module32First( hSnapShot, &modentry ) != 0;
-
-  while (not_done) {
-    // invoke the callback
-    result=func(pid, modentry.szExePath, (address)modentry.modBaseAddr,
-                modentry.modBaseSize, param);
-    if (result) break;
-
-    modentry.dwSize = sizeof(MODULEENTRY32);
-    not_done = os::Kernel32Dll::Module32Next( hSnapShot, &modentry ) != 0;
-  }
-
-  CloseHandle(hSnapShot);
-  return result;
-}
-
-int enumerate_modules( int pid, EnumModulesCallbackFunc func, void * param )
-{
-  // Get current process ID if caller doesn't provide it.
-  if (!pid) pid = os::current_process_id();
-
-  if (os::win32::is_nt()) return _enumerate_modules_winnt  (pid, func, param);
-  else                    return _enumerate_modules_windows(pid, func, param);
-}
-
 struct _modinfo {
    address addr;
    char*   full_path;   // point to a char buffer
@@ -1422,13 +1308,13 @@ struct _modinfo {
    address base_addr;
 };
 
-static int _locate_module_by_addr(int pid, char * mod_fname, address base_addr,
-                                  unsigned size, void * param) {
+static int _locate_module_by_addr(const char * mod_fname, address base_addr,
+                                  address top_address, void * param) {
    struct _modinfo *pmod = (struct _modinfo *)param;
    if (!pmod) return -1;
 
-   if (base_addr     <= pmod->addr &&
-       base_addr+size > pmod->addr) {
+   if (base_addr   <= pmod->addr &&
+       top_address > pmod->addr) {
      // if a buffer is provided, copy path name to the buffer
      if (pmod->full_path) {
        jio_snprintf(pmod->full_path, pmod->buflen, "%s", mod_fname);
@@ -1453,8 +1339,7 @@ bool os::dll_address_to_library_name(address addr, char* buf,
   mi.addr      = addr;
   mi.full_path = buf;
   mi.buflen    = buflen;
-  int pid = os::current_process_id();
-  if (enumerate_modules(pid, _locate_module_by_addr, (void *)&mi)) {
+  if (get_loaded_modules_info(_locate_module_by_addr, (void *)&mi)) {
     // buf already contains path name
     if (offset) *offset = addr - mi.base_addr;
     return true;
@@ -1479,14 +1364,14 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 }
 
 // save the start and end address of jvm.dll into param[0] and param[1]
-static int _locate_jvm_dll(int pid, char* mod_fname, address base_addr,
-                    unsigned size, void * param) {
+static int _locate_jvm_dll(const char* mod_fname, address base_addr,
+                    address top_address, void * param) {
    if (!param) return -1;
 
-   if (base_addr     <= (address)_locate_jvm_dll &&
-       base_addr+size > (address)_locate_jvm_dll) {
+   if (base_addr   <= (address)_locate_jvm_dll &&
+       top_address > (address)_locate_jvm_dll) {
          ((address*)param)[0] = base_addr;
-         ((address*)param)[1] = base_addr + size;
+         ((address*)param)[1] = top_address;
          return 1;
    }
    return 0;
@@ -1497,8 +1382,7 @@ address vm_lib_location[2];    // start and end address of jvm.dll
 // check if addr is inside jvm.dll
 bool os::address_is_in_vm(address addr) {
   if (!vm_lib_location[0] || !vm_lib_location[1]) {
-    int pid = os::current_process_id();
-    if (!enumerate_modules(pid, _locate_jvm_dll, (void *)vm_lib_location)) {
+    if (!get_loaded_modules_info(_locate_jvm_dll, (void *)vm_lib_location)) {
       assert(false, "Can't find jvm module.");
       return false;
     }
@@ -1508,14 +1392,13 @@ bool os::address_is_in_vm(address addr) {
 }
 
 // print module info; param is outputStream*
-static int _print_module(int pid, char* fname, address base,
-                         unsigned size, void* param) {
+static int _print_module(const char* fname, address base_address,
+                         address top_address, void* param) {
    if (!param) return -1;
 
    outputStream* st = (outputStream*)param;
 
-   address end_addr = base + size;
-   st->print(PTR_FORMAT " - " PTR_FORMAT " \t%s\n", base, end_addr, fname);
+   st->print(PTR_FORMAT " - " PTR_FORMAT " \t%s\n", base_address, top_address, fname);
    return 0;
 }
 
@@ -1644,11 +1527,60 @@ void * os::dll_load(const char *name, char *ebuf, int ebuflen)
   return NULL;
 }
 
-
 void os::print_dll_info(outputStream *st) {
-   int pid = os::current_process_id();
    st->print_cr("Dynamic libraries:");
-   enumerate_modules(pid, _print_module, (void *)st);
+   get_loaded_modules_info(_print_module, (void *)st);
+}
+
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
+  HANDLE   hProcess;
+
+# define MAX_NUM_MODULES 128
+  HMODULE     modules[MAX_NUM_MODULES];
+  static char filename[MAX_PATH];
+  int         result = 0;
+
+  if (!os::PSApiDll::PSApiAvailable()) {
+    return 0;
+  }
+
+  int pid = os::current_process_id();
+  hProcess = OpenProcess(PROCESS_QUERY_INFORMATION | PROCESS_VM_READ,
+                         FALSE, pid);
+  if (hProcess == NULL) return 0;
+
+  DWORD size_needed;
+  if (!os::PSApiDll::EnumProcessModules(hProcess, modules,
+                           sizeof(modules), &size_needed)) {
+      CloseHandle(hProcess);
+      return 0;
+  }
+
+  // number of modules that are currently loaded
+  int num_modules = size_needed / sizeof(HMODULE);
+
+  for (int i = 0; i < MIN2(num_modules, MAX_NUM_MODULES); i++) {
+    // Get Full pathname:
+    if (!os::PSApiDll::GetModuleFileNameEx(hProcess, modules[i],
+                             filename, sizeof(filename))) {
+        filename[0] = '\0';
+    }
+
+    MODULEINFO modinfo;
+    if (!os::PSApiDll::GetModuleInformation(hProcess, modules[i],
+                               &modinfo, sizeof(modinfo))) {
+        modinfo.lpBaseOfDll = NULL;
+        modinfo.SizeOfImage = 0;
+    }
+
+    // Invoke callback function
+    result = callback(filename, (address)modinfo.lpBaseOfDll,
+                  (address)((u8)modinfo.lpBaseOfDll + (u8)modinfo.SizeOfImage), param);
+    if (result) break;
+  }
+
+  CloseHandle(hProcess);
+  return result;
 }
 
 void os::print_os_info_brief(outputStream* st) {
