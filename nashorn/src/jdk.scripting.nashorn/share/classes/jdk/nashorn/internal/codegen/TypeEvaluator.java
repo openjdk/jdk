@@ -108,7 +108,7 @@ final class TypeEvaluator {
 
         // Safely evaluate the property, and return the narrowest type for the actual value (e.g. Type.INT for a boxed
         // integer).
-        final Object value = property.getObjectValue(owner, owner);
+        final Object value = property.needsDeclaration() ? ScriptRuntime.UNDEFINED : property.getObjectValue(owner, owner);
         if (value == ScriptRuntime.UNDEFINED) {
             return null;
         }

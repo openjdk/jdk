@@ -549,6 +549,8 @@ public class AccessorProperty extends Property {
                 type == Object.class :
                 "invalid getter type " + type + " for " + getKey();
 
+        checkUndeclared();
+
         //all this does is add a return value filter for object fields only
         final MethodHandle[] getterCache = GETTER_CACHE;
         final MethodHandle cachedGetter = getterCache[i];
@@ -579,6 +581,8 @@ public class AccessorProperty extends Property {
             return getOptimisticPrimitiveGetter(type, programPoint);
         }
 
+        checkUndeclared();
+
         return debug(
             createGetter(
                 getCurrentType(),
@@ -608,6 +612,13 @@ public class AccessorProperty extends Property {
         return newMap;
     }
 
+    private void checkUndeclared() {
+        if ((getFlags() & NEEDS_DECLARATION) != 0) {
+            // a lexically defined variable that hasn't seen its declaration - throw ReferenceError
+            throw ECMAErrors.referenceError("not.defined", getKey());
+        }
+    }
+
     // the final three arguments are for debug printout purposes only
     @SuppressWarnings("unused")
     private static Object replaceMap(final Object sobj, final PropertyMap newMap) {
@@ -635,13 +646,14 @@ public class AccessorProperty extends Property {
 
     @Override
     public MethodHandle getSetter(final Class<?> type, final PropertyMap currentMap) {
-        final int      i       = getAccessorTypeIndex(type);
-        final int      ci      = isUndefined() ? -1 : getAccessorTypeIndex(getCurrentType());
-        final Class<?> forType = isUndefined() ? type : getCurrentType();
+        checkUndeclared();
+
+        final int typeIndex        = getAccessorTypeIndex(type);
+        final int currentTypeIndex = getAccessorTypeIndex(getCurrentType());
 
         //if we are asking for an object setter, but are still a primitive type, we might try to box it
         MethodHandle mh;
-        if (needsInvalidator(i, ci)) {
+        if (needsInvalidator(typeIndex, currentTypeIndex)) {
             final Property     newProperty = getWiderProperty(type);
             final PropertyMap  newMap      = getWiderMap(currentMap, newProperty);
 
@@ -652,6 +664,7 @@ public class AccessorProperty extends Property {
                  mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
             }
         } else {
+            final Class<?> forType = isUndefined() ? type : getCurrentType();
             mh = generateSetter(!forType.isPrimitive() ? Object.class : forType, type);
         }
 
@@ -692,11 +705,12 @@ public class AccessorProperty extends Property {
         if (OBJECT_FIELDS_ONLY) {
             return false;
         }
-        return getCurrentType() != Object.class && (isConfigurable() || isWritable());
+        // Return true for currently undefined even if non-writable/configurable to allow initialization of ES6 CONST.
+        return getCurrentType() == null || (getCurrentType() != Object.class && (isConfigurable() || isWritable()));
     }
 
-    private boolean needsInvalidator(final int ti, final int fti) {
-        return canChangeType() && ti > fti;
+    private boolean needsInvalidator(final int typeIndex, final int currentTypeIndex) {
+        return canChangeType() && typeIndex > currentTypeIndex;
     }
 
     @Override

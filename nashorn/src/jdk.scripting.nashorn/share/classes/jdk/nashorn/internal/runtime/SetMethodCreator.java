@@ -140,7 +140,29 @@ final class SetMethodCreator {
 
     private SetMethod createExistingPropertySetter() {
         final Property property = find.getProperty();
-        final MethodHandle methodHandle = find.getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
+        final MethodHandle methodHandle;
+
+        if (NashornCallSiteDescriptor.isDeclaration(desc)) {
+            assert property.needsDeclaration();
+            // This is a LET or CONST being declared. The property is already there but flagged as needing declaration.
+            // We create a new PropertyMap with the flag removed. The map is installed with a fast compare-and-set
+            // method if the pre-callsite map is stable (which should be the case for function scopes except for
+            // non-strict functions containing eval() with var). Otherwise we have to use a slow setter that creates
+            // a new PropertyMap on the fly.
+            final PropertyMap oldMap = getMap();
+            final Property newProperty = property.removeFlags(Property.NEEDS_DECLARATION);
+            final PropertyMap newMap = oldMap.replaceProperty(property, newProperty);
+            final MethodHandle fastSetter = find.replaceProperty(newProperty).getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
+            final MethodHandle slowSetter = MH.insertArguments(ScriptObject.DECLARE_AND_SET, 1, getName()).asType(fastSetter.type());
+
+            // cas map used as guard, if true that means we can do the set fast
+            MethodHandle casMap = MH.insertArguments(ScriptObject.CAS_MAP, 1, oldMap, newMap);
+            casMap = MH.dropArguments(casMap, 1, type);
+            casMap = MH.asType(casMap, casMap.type().changeParameterType(0, Object.class));
+            methodHandle = MH.guardWithTest(casMap, fastSetter, slowSetter);
+        } else {
+            methodHandle = find.getSetter(type, NashornCallSiteDescriptor.isStrict(desc));
+        }
 
         assert methodHandle != null;
         assert property     != null;

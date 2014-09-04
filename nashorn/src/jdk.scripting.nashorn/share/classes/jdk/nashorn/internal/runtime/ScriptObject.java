@@ -158,6 +158,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
     static final MethodHandle MEGAMORPHIC_GET    = findOwnMH_V("megamorphicGet", Object.class, String.class, boolean.class);
     static final MethodHandle GLOBALFILTER       = findOwnMH_S("globalFilter", Object.class, Object.class);
+    static final MethodHandle DECLARE_AND_SET    = findOwnMH_V("declareAndSet", void.class, String.class, Object.class);
 
     private static final MethodHandle TRUNCATINGFILTER   = findOwnMH_S("truncatingFilter", Object[].class, int.class, Object[].class);
     private static final MethodHandle KNOWNFUNCPROPGUARDSELF = findOwnMH_S("knownFunctionPropertyGuardSelf", boolean.class, Object.class, PropertyMap.class, MethodHandle.class, ScriptFunction.class);
@@ -2027,6 +2028,22 @@ public abstract class ScriptObject implements PropertyAccess {
         return isMethod ? getNoSuchMethod(key, INVALID_PROGRAM_POINT) : invokeNoSuchProperty(key, INVALID_PROGRAM_POINT);
     }
 
+    // Marks a property as declared and sets its value. Used as slow path for block-scoped LET and CONST
+    @SuppressWarnings("unused")
+    private void declareAndSet(final String key, final Object value) {
+        final PropertyMap map = getMap();
+        final FindProperty find = findProperty(key, false);
+        assert find != null;
+
+        final Property property = find.getProperty();
+        assert property != null;
+        assert property.needsDeclaration();
+
+        final PropertyMap newMap = map.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
+        setMap(newMap);
+        set(key, value, true);
+    }
+
     /**
      * Find the appropriate GETINDEX method for an invoke dynamic call.
      *
@@ -2140,7 +2157,7 @@ public abstract class ScriptObject implements PropertyAccess {
         }
 
         if (find != null) {
-            if (!find.getProperty().isWritable()) {
+            if (!find.getProperty().isWritable() && !NashornCallSiteDescriptor.isDeclaration(desc)) {
                 // Existing, non-writable property
                 return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
             }

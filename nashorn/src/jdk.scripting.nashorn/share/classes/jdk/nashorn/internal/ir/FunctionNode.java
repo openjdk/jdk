@@ -138,10 +138,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     /** Last token of function. **/
     private final long lastToken;
 
-    /** Declared symbols in this function node */
-    @Ignore
-    private final Set<Symbol> declaredSymbols;
-
     /** Method's namespace. */
     private final Namespace namespace;
 
@@ -330,7 +326,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.lastToken        = token;
         this.namespace        = namespace;
         this.compilationState = EnumSet.of(CompilationState.INITIALIZED);
-        this.declaredSymbols  = new HashSet<>();
         this.flags            = flags;
         this.compileUnit      = null;
         this.body             = null;
@@ -369,7 +364,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.id              = functionNode.id;
         this.ident           = functionNode.ident;
         this.namespace       = functionNode.namespace;
-        this.declaredSymbols = functionNode.declaredSymbols;
         this.kind            = functionNode.kind;
         this.firstToken      = functionNode.firstToken;
     }
@@ -724,24 +718,6 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Return a set of symbols declared in this function node. This
-     * is only relevant after Attr, otherwise it will be an empty
-     * set as no symbols have been introduced
-     * @return set of declared symbols in function
-     */
-    public Set<Symbol> getDeclaredSymbols() {
-        return Collections.unmodifiableSet(declaredSymbols);
-    }
-
-    /**
-     * Add a declared symbol to this function node
-     * @param symbol symbol that is declared
-     */
-    public void addDeclaredSymbol(final Symbol symbol) {
-        declaredSymbols.add(symbol);
-    }
-
-    /**
      * Get the function body
      * @return the function body
      */
@@ -970,13 +946,13 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Check if this function should have all its variables in its own scope. Scripts, split sub-functions, and
+     * Check if this function should have all its variables in its own scope. Split sub-functions, and
      * functions having with and/or eval blocks are such.
      *
      * @return true if all variables should be in scope
      */
     public boolean allVarsInScope() {
-        return isProgram() || getFlag(HAS_ALL_VARS_IN_SCOPE);
+        return getFlag(HAS_ALL_VARS_IN_SCOPE);
     }
 
     /**
