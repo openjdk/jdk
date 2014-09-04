@@ -25,8 +25,8 @@
  * @test
  * @summary local variable table attribute test.
  * @bug 8040097
- * @library /tools/javac/lib ../lib
- * @build LocalVariableTestBase TestBase InMemoryFileManager ToolBox
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build ToolBox LocalVariableTestBase TestBase InMemoryFileManager
  * @compile -g LocalVariableTableTest.java
  * @run main LocalVariableTableTest
  */

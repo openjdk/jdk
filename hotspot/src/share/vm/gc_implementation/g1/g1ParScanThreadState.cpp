@@ -288,7 +288,12 @@ void G1ParScanThreadState::undo_allocation(GCAllocPurpose purpose, HeapWord* obj
 }
 
 HeapWord* G1ParScanThreadState::allocate(GCAllocPurpose purpose, size_t word_sz) {
-  HeapWord* obj = alloc_buffer(purpose)->allocate(word_sz);
+  HeapWord* obj = NULL;
+  if (purpose == GCAllocForSurvived) {
+    obj = alloc_buffer(GCAllocForSurvived)->allocate_aligned(word_sz, SurvivorAlignmentInBytes);
+  } else {
+    obj = alloc_buffer(GCAllocForTenured)->allocate(word_sz);
+  }
   if (obj != NULL) {
     return obj;
   }

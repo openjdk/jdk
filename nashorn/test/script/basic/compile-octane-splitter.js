@@ -29,6 +29,7 @@
  * forever, so make this test future safe, we specify them explicitly
  *
  * @test
+ * @fork
  * @option -Dnashorn.compiler.splitter.threshold=1000
  * @fork
  * @runif external.octane
@@ -39,5 +40,5 @@
  */
 
 var fn  = __DIR__ + 'compile-octane.js';
-var url = "file://" + fn; 
+var url = "file://" + fn;
 loadWithNewGlobal(new java.net.URL(url));

@@ -36,6 +36,7 @@ import javax.lang.model.type.*;
 
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import static com.sun.tools.javac.code.BoundKind.*;
 import static com.sun.tools.javac.code.Flags.*;
 import static com.sun.tools.javac.code.Kinds.*;
@@ -73,7 +74,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType() {
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "none";
         }
@@ -81,7 +82,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Constant type: special type to be used during recovery of deferred expressions. */
     public static final JCNoType recoveryType = new JCNoType(){
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "recovery";
         }
@@ -89,7 +90,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Constant type: special type to be used for marking stuck trees. */
     public static final JCNoType stuckType = new JCNoType() {
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "stuck";
         }
@@ -258,19 +259,19 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return !annos.isEmpty();
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
         return annos;
     }
 
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public <A extends Annotation> A getAnnotation(Class<A> annotationType) {
         return null;
     }
 
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annotationType) {
         @SuppressWarnings("unchecked")
         A[] tmp = (A[]) java.lang.reflect.Array.newInstance(annotationType, 0);
@@ -306,6 +307,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** The Java source which this type represents.
      */
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public String toString() {
         StringBuilder sb = new StringBuilder();
         appendAnnotationsString(sb);
@@ -350,12 +352,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
      * never complete classes. Where isSameType would complete a
      * class, equals assumes that the two types are different.
      */
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean equals(Object t) {
         return super.equals(t);
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public int hashCode() {
         return super.hashCode();
     }
@@ -506,12 +508,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return tsym;
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeKind getKind() {
         return TypeKind.OTHER;
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public <R, P> R accept(TypeVisitor<R, P> v, P p) {
         throw new AssertionError();
     }
@@ -612,12 +614,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 ((Integer)constValue()).intValue() != 0;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitPrimitive(this, p);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             switch (tag) {
                 case BYTE:      return TypeKind.BYTE;
@@ -720,6 +722,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         boolean isPrintingBound = false;
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder s = new StringBuilder();
             appendAnnotationsString(s);
@@ -747,6 +750,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 return new WildcardType(t, kind, tsym, bound, annos);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getExtendsBound() {
             if (kind == EXTENDS)
                 return type;
@@ -754,6 +758,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 return null;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getSuperBound() {
             if (kind == SUPER)
                 return type;
@@ -761,10 +766,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 return null;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.WILDCARD;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitWildcard(this, p);
         }
@@ -858,6 +865,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         /** The Java source which this type represents.
          */
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder buf = new StringBuilder();
             appendAnnotationsString(buf);
@@ -906,6 +914,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 }
             }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getTypeArguments() {
             if (typarams_field == null) {
                 complete();
@@ -919,6 +928,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return isRaw();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getEnclosingType() {
             return outer_field;
         }
@@ -993,10 +1003,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             if (tsym.completer != null) tsym.complete();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.DECLARED;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitDeclared(this, p);
         }
@@ -1037,16 +1049,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return tsym.type;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<? extends TypeMirror> getAlternatives() {
             return Collections.unmodifiableList(alternatives_field);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.UNION;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitUnion(this, p);
         }
@@ -1073,6 +1086,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                     !supertype_field.isInterface(), supertype_field);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public java.util.List<? extends TypeMirror> getBounds() {
             return Collections.unmodifiableList(getExplicitComponents());
         }
@@ -1087,12 +1101,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                     getComponents();
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.INTERSECTION;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitIntersection(this, p);
         }
@@ -1127,6 +1141,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitArrayType(this, s);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
             sb.append(elemtype);
@@ -1135,6 +1150,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return sb.toString();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object obj) {
             return
                 this == obj ||
@@ -1142,6 +1158,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                  this.elemtype.equals(((ArrayType)obj).elemtype));
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
             return (ARRAY.ordinal() << 5) + elemtype.hashCode();
         }
@@ -1197,14 +1214,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             elemtype.complete();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getComponentType() {
             return elemtype;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.ARRAY;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitArray(this, p);
         }
@@ -1251,6 +1271,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
          *  XXX 06/09/99 iris This isn't correct Java syntax, but it probably
          *  should be.
          */
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
             appendAnnotationsString(sb);
@@ -1261,9 +1282,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return sb.toString();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type>        getParameterTypes() { return argtypes; }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type              getReturnType()     { return restype; }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type              getReceiverType()   { return recvtype; }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type>        getThrownTypes()    { return thrown; }
 
         public boolean isErroneous() {
@@ -1297,6 +1322,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                 l.head.complete();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<TypeVar> getTypeVariables() {
             return List.nil();
         }
@@ -1305,10 +1331,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return null;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.EXECUTABLE;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitExecutable(this, p);
         }
@@ -1336,14 +1364,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitPackageType(this, s);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return tsym.getQualifiedName().toString();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.PACKAGE;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
@@ -1403,7 +1434,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitTypeVar(this, s);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getUpperBound() {
             if ((bound == null || bound.hasTag(NONE)) && this != tsym.type) {
                 bound = tsym.type.getUpperBound();
@@ -1413,11 +1444,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         int rank_field = -1;
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getLowerBound() {
             return lower;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.TYPEVAR;
         }
@@ -1436,7 +1468,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return true;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitTypeVariable(this, p);
         }
@@ -1487,7 +1519,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return true;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
             appendAnnotationsString(sb);
@@ -1509,6 +1541,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             this.qtype = qtype;
         }
         public TypeTag getTag() { return tag; }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() { return qtype.toString(); }
         public List<Type> getTypeArguments() { return qtype.getTypeArguments(); }
         public Type getEnclosingType() { return qtype.getEnclosingType(); }
@@ -1544,6 +1577,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return v.visitForAll(this, s);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
             appendAnnotationsString(sb);
@@ -1579,14 +1613,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             qtype.complete();
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<TypeVar> getTypeVariables() {
             return List.convert(TypeVar.class, getTypeArguments());
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.EXECUTABLE;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitExecutable(this, p);
         }
@@ -1657,6 +1694,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             bounds.put(InferenceBound.EQ, List.<Type>nil());
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder sb = new StringBuilder();
             appendAnnotationsString(sb);
@@ -1857,12 +1895,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return NONE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.NONE;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
@@ -1890,7 +1928,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return VOID;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.VOID;
         }
@@ -1898,7 +1936,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public boolean isCompound() { return false; }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNoType(this, p);
         }
@@ -1925,7 +1963,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return BOT;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.NULL;
         }
@@ -1933,7 +1971,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public boolean isCompound() { return false; }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitNull(this, p);
         }
@@ -2013,6 +2051,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public Type constType(Object constValue) { return this; }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getEnclosingType()           { return this; }
         public Type getReturnType()              { return this; }
         public Type asSub(Symbol sym)            { return this; }
@@ -2024,8 +2063,10 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public boolean isInterface()             { return false; }
 
         public List<Type> allparams()            { return List.nil(); }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Type> getTypeArguments()     { return List.nil(); }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public TypeKind getKind() {
             return TypeKind.ERROR;
         }
@@ -2034,6 +2075,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return originalType;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitError(this, p);
         }
@@ -2057,7 +2099,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             return UNKNOWN;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(TypeVisitor<R, P> v, P p) {
             return v.visitUnknown(this, p);
         }

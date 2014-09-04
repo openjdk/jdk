@@ -183,6 +183,13 @@ protected:
 public:
   OldGCAllocRegion()
   : G1AllocRegion("Old GC Alloc Region", true /* bot_updates */) { }
+
+  // This specialization of release() makes sure that the last card that has been
+  // allocated into has been completely filled by a dummy object.
+  // This avoids races when remembered set scanning wants to update the BOT of the
+  // last card in the retained old gc alloc region, and allocation threads
+  // allocating into that card at the same time.
+  virtual HeapRegion* release();
 };
 
 // The G1 STW is alive closure.
@@ -197,17 +204,14 @@ public:
   bool do_object_b(oop p);
 };
 
-// Instances of this class are used for quick tests on whether a reference points
-// into the collection set. Each of the array's elements denotes whether the
-// corresponding region is in the collection set.
-class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<bool> {
- protected:
-  bool default_value() const { return false; }
- public:
-  void clear() { G1BiasedMappedArray<bool>::clear(); }
-};
-
 class RefineCardTableEntryClosure;
+
+class G1RegionMappingChangedListener : public G1MappingChangedListener {
+ private:
+  void reset_from_card_cache(uint start_idx, size_t num_regions);
+ public:
+  virtual void on_commit(uint start_idx, size_t num_regions);
+};
 
 class G1CollectedHeap : public SharedHeap {
   friend class VM_CollectForMetadataAllocation;
@@ -237,6 +241,7 @@ class G1CollectedHeap : public SharedHeap {
   friend class EvacPopObjClosure;
   friend class G1ParCleanupCTTask;
 
+  friend class G1FreeHumongousRegionClosure;
   // Other related classes.
   friend class G1MarkSweep;
 
@@ -246,19 +251,9 @@ private:
 
   static size_t _humongous_object_threshold_in_words;
 
-  // Storage for the G1 heap.
-  VirtualSpace _g1_storage;
-  MemRegion    _g1_reserved;
-
-  // The part of _g1_storage that is currently committed.
-  MemRegion _g1_committed;
-
-  // The master free list. It will satisfy all new region allocations.
-  FreeRegionList _free_list;
-
   // The secondary free list which contains regions that have been
-  // freed up during the cleanup process. This will be appended to the
-  // master free list when appropriate.
+  // freed up during the cleanup process. This will be appended to
+  // the master free list when appropriate.
   FreeRegionList _secondary_free_list;
 
   // It keeps track of the old regions.
@@ -266,6 +261,9 @@ private:
 
   // It keeps track of the humongous regions.
   HeapRegionSet _humongous_set;
+
+  void clear_humongous_is_live_table();
+  void eagerly_reclaim_humongous_regions();
 
   // The number of regions we could create by expansion.
   uint _expansion_regions;
@@ -288,6 +286,9 @@ private:
   // list. It is called after a Full GC (free_list_only == false) or
   // after heap shrinking (free_list_only == true).
   void rebuild_region_sets(bool free_list_only);
+
+  // Callback for region mapping changed events.
+  G1RegionMappingChangedListener _listener;
 
   // The sequence of all heap regions in the heap.
   HeapRegionSeq _hrs;
@@ -367,10 +368,25 @@ private:
   // than the current allocation region.
   size_t _summary_bytes_used;
 
-  // This array is used for a quick test on whether a reference points into
-  // the collection set or not. Each of the array's elements denotes whether the
-  // corresponding region is in the collection set or not.
-  G1FastCSetBiasedMappedArray _in_cset_fast_test;
+  // Records whether the region at the given index is kept live by roots or
+  // references from the young generation.
+  class HumongousIsLiveBiasedMappedArray : public G1BiasedMappedArray<bool> {
+   protected:
+    bool default_value() const { return false; }
+   public:
+    void clear() { G1BiasedMappedArray<bool>::clear(); }
+    void set_live(uint region) {
+      set_by_index(region, true);
+    }
+    bool is_live(uint region) {
+      return get_by_index(region);
+    }
+  };
+
+  HumongousIsLiveBiasedMappedArray _humongous_is_live;
+  // Stores whether during humongous object registration we found candidate regions.
+  // If not, we can skip a few steps.
+  bool _has_humongous_reclaim_candidates;
 
   volatile unsigned _gc_time_stamp;
 
@@ -503,14 +519,6 @@ protected:
   // request. If the region is to be used as an old region or for a
   // humongous object, set is_old to true. If not, to false.
   HeapRegion* new_region(size_t word_size, bool is_old, bool do_expand);
-
-  // Attempt to satisfy a humongous allocation request of the given
-  // size by finding a contiguous set of free regions of num_regions
-  // length and remove them from the master free list. Return the
-  // index of the first region or G1_NULL_HRS_INDEX if the search
-  // was unsuccessful.
-  uint humongous_obj_allocate_find_first(uint num_regions,
-                                         size_t word_size);
 
   // Initialize a contiguous set of free regions of length num_regions
   // and starting at index first so that they appear as a single
@@ -690,10 +698,24 @@ public:
   virtual void gc_prologue(bool full);
   virtual void gc_epilogue(bool full);
 
+  inline void set_humongous_is_live(oop obj);
+
+  bool humongous_is_live(uint region) {
+    return _humongous_is_live.is_live(region);
+  }
+
+  // Returns whether the given region (which must be a humongous (start) region)
+  // is to be considered conservatively live regardless of any other conditions.
+  bool humongous_region_is_always_live(uint index);
+  // Register the given region to be part of the collection set.
+  inline void register_humongous_region_with_in_cset_fast_test(uint index);
+  // Register regions with humongous objects (actually on the start region) in
+  // the in_cset_fast_test table.
+  void register_humongous_regions_with_in_cset_fast_test();
   // We register a region with the fast "in collection set" test. We
   // simply set to true the array slot corresponding to this region.
   void register_region_with_in_cset_fast_test(HeapRegion* r) {
-    _in_cset_fast_test.set_by_index(r->hrs_index(), true);
+    _in_cset_fast_test.set_in_cset(r->hrs_index());
   }
 
   // This is a fast test on whether a reference points into the
@@ -838,11 +860,6 @@ protected:
                         CLDClosure* scan_weak_clds,
                         CodeBlobClosure* scan_strong_code,
                         uint worker_i);
-
-  // Notifies all the necessary spaces that the committed space has
-  // been updated (either expanded or shrunk). It should be called
-  // after _g1_storage is updated.
-  void update_committed_space(HeapWord* old_end, HeapWord* new_end);
 
   // The concurrent marker (and the thread it runs in.)
   ConcurrentMark* _cm;
@@ -1154,27 +1171,20 @@ public:
   // But G1CollectedHeap doesn't yet support this.
 
   virtual bool is_maximal_no_gc() const {
-    return _g1_storage.uncommitted_size() == 0;
+    return _hrs.available() == 0;
   }
 
-  // The total number of regions in the heap.
-  uint n_regions() const { return _hrs.length(); }
+  // The current number of regions in the heap.
+  uint num_regions() const { return _hrs.length(); }
 
   // The max number of regions in the heap.
   uint max_regions() const { return _hrs.max_length(); }
 
   // The number of regions that are completely free.
-  uint free_regions() const { return _free_list.length(); }
+  uint num_free_regions() const { return _hrs.num_free_regions(); }
 
   // The number of regions that are not completely free.
-  uint used_regions() const { return n_regions() - free_regions(); }
-
-  // The number of regions available for "regular" expansion.
-  uint expansion_regions() const { return _expansion_regions; }
-
-  // Factory method for HeapRegion instances. It will return NULL if
-  // the allocation fails.
-  HeapRegion* new_heap_region(uint hrs_index, HeapWord* bottom);
+  uint num_used_regions() const { return num_regions() - num_free_regions(); }
 
   void verify_not_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
   void verify_dirty_region(HeapRegion* hr) PRODUCT_RETURN;
@@ -1223,7 +1233,7 @@ public:
 
 #ifdef ASSERT
   bool is_on_master_free_list(HeapRegion* hr) {
-    return hr->containing_set() == &_free_list;
+    return _hrs.is_free(hr);
   }
 #endif // ASSERT
 
@@ -1235,7 +1245,7 @@ public:
   }
 
   void append_secondary_free_list() {
-    _free_list.add_ordered(&_secondary_free_list);
+    _hrs.insert_list_into_free_list(&_secondary_free_list);
   }
 
   void append_secondary_free_list_if_not_empty_with_lock() {
@@ -1281,33 +1291,84 @@ public:
 
   // Returns "TRUE" iff "p" points into the committed areas of the heap.
   virtual bool is_in(const void* p) const;
+#ifdef ASSERT
+  // Returns whether p is in one of the available areas of the heap. Slow but
+  // extensive version.
+  bool is_in_exact(const void* p) const;
+#endif
 
   // Return "TRUE" iff the given object address is within the collection
-  // set.
+  // set. Slow implementation.
   inline bool obj_in_cs(oop obj);
+
+  inline bool is_in_cset(oop obj);
+
+  inline bool is_in_cset_or_humongous(const oop obj);
+
+  enum in_cset_state_t {
+   InNeither,           // neither in collection set nor humongous
+   InCSet,              // region is in collection set only
+   IsHumongous          // region is a humongous start region
+  };
+ private:
+  // Instances of this class are used for quick tests on whether a reference points
+  // into the collection set or is a humongous object (points into a humongous
+  // object).
+  // Each of the array's elements denotes whether the corresponding region is in
+  // the collection set or a humongous region.
+  // We use this to quickly reclaim humongous objects: by making a humongous region
+  // succeed this test, we sort-of add it to the collection set. During the reference
+  // iteration closures, when we see a humongous region, we simply mark it as
+  // referenced, i.e. live.
+  class G1FastCSetBiasedMappedArray : public G1BiasedMappedArray<char> {
+   protected:
+    char default_value() const { return G1CollectedHeap::InNeither; }
+   public:
+    void set_humongous(uintptr_t index) {
+      assert(get_by_index(index) != InCSet, "Should not overwrite InCSet values");
+      set_by_index(index, G1CollectedHeap::IsHumongous);
+    }
+
+    void clear_humongous(uintptr_t index) {
+      set_by_index(index, G1CollectedHeap::InNeither);
+    }
+
+    void set_in_cset(uintptr_t index) {
+      assert(get_by_index(index) != G1CollectedHeap::IsHumongous, "Should not overwrite IsHumongous value");
+      set_by_index(index, G1CollectedHeap::InCSet);
+    }
+
+    bool is_in_cset_or_humongous(HeapWord* addr) const { return get_by_address(addr) != G1CollectedHeap::InNeither; }
+    bool is_in_cset(HeapWord* addr) const { return get_by_address(addr) == G1CollectedHeap::InCSet; }
+    G1CollectedHeap::in_cset_state_t at(HeapWord* addr) const { return (G1CollectedHeap::in_cset_state_t)get_by_address(addr); }
+    void clear() { G1BiasedMappedArray<char>::clear(); }
+  };
+
+  // This array is used for a quick test on whether a reference points into
+  // the collection set or not. Each of the array's elements denotes whether the
+  // corresponding region is in the collection set or not.
+  G1FastCSetBiasedMappedArray _in_cset_fast_test;
+
+ public:
+
+  inline in_cset_state_t in_cset_state(const oop obj);
 
   // Return "TRUE" iff the given object address is in the reserved
   // region of g1.
   bool is_in_g1_reserved(const void* p) const {
-    return _g1_reserved.contains(p);
+    return _hrs.reserved().contains(p);
   }
 
   // Returns a MemRegion that corresponds to the space that has been
   // reserved for the heap
-  MemRegion g1_reserved() {
-    return _g1_reserved;
-  }
-
-  // Returns a MemRegion that corresponds to the space that has been
-  // committed in the heap
-  MemRegion g1_committed() {
-    return _g1_committed;
+  MemRegion g1_reserved() const {
+    return _hrs.reserved();
   }
 
   virtual bool is_in_closed_subset(const void* p) const;
 
-  G1SATBCardTableModRefBS* g1_barrier_set() {
-    return (G1SATBCardTableModRefBS*) barrier_set();
+  G1SATBCardTableLoggingModRefBS* g1_barrier_set() {
+    return (G1SATBCardTableLoggingModRefBS*) barrier_set();
   }
 
   // This resets the card table to all zeros.  It is used after
@@ -1319,9 +1380,6 @@ public:
   // Iterate over all the ref-containing fields of all objects, calling
   // "cl.do_oop" on each.
   virtual void oop_iterate(ExtendedOopClosure* cl);
-
-  // Same as above, restricted to a memory region.
-  void oop_iterate(MemRegion mr, ExtendedOopClosure* cl);
 
   // Iterate over all objects, calling "cl.do_object" on each.
   virtual void object_iterate(ObjectClosure* cl);
@@ -1340,6 +1398,12 @@ public:
   // Return the region with the given index. It assumes the index is valid.
   inline HeapRegion* region_at(uint index) const;
 
+  // Calculate the region index of the given address. Given address must be
+  // within the heap.
+  inline uint addr_to_region(HeapWord* addr) const;
+
+  inline HeapWord* bottom_addr_for_region(uint index) const;
+
   // Divide the heap region sequence into "chunks" of some size (the number
   // of regions divided by the number of parallel threads times some
   // overpartition factor, currently 4).  Assumes that this will be called
@@ -1353,10 +1417,10 @@ public:
   // setting the claim value of the second and subsequent regions of the
   // chunk.)  For now requires that "doHeapRegion" always returns "false",
   // i.e., that a closure never attempt to abort a traversal.
-  void heap_region_par_iterate_chunked(HeapRegionClosure* blk,
-                                       uint worker,
-                                       uint no_of_par_workers,
-                                       jint claim_value);
+  void heap_region_par_iterate_chunked(HeapRegionClosure* cl,
+                                       uint worker_id,
+                                       uint num_workers,
+                                       jint claim_value) const;
 
   // It resets all the region claim values to the default.
   void reset_heap_region_claim_values();
@@ -1380,11 +1444,6 @@ public:
   // Given the id of a worker, obtain or calculate a suitable
   // starting region for iterating over the current collection set.
   HeapRegion* start_cset_region_for_worker(uint worker_i);
-
-  // This is a convenience method that is used by the
-  // HeapRegionIterator classes to calculate the starting region for
-  // each worker so that they do not all start from the same region.
-  HeapRegion* start_region_for_worker(uint worker_i, uint no_of_par_workers);
 
   // Iterate over the regions (if any) in the current collection set.
   void collection_set_iterate(HeapRegionClosure* blk);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,18 +25,14 @@
  * @test
  * @bug 4204897 4256097 4785453 4863609
  * @summary Test that '.jar' files in -extdirs are found.
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ExtDirTest
  */
 
 import java.io.File;
-import java.nio.file.Files;
-import java.nio.file.Paths;
-import java.util.Arrays;
-import java.util.List;
 
-//original test: test/tools/javac/ExtDirs/ExtDirs.sh
+// Original test: test/tools/javac/ExtDirs/ExtDirs.sh
 public class ExtDirTest {
 
     private static final String ExtDirTestClass1Src =
@@ -100,11 +96,11 @@ public class ExtDirTest {
         "SHA-Digest: ILJOhwHg5US+yuw1Sc1d+Avu628=\n" +
         "MD5-Digest: j8wnz8wneEcuJ/gjXBBQNA==\n";
 
-    List<String> ouputDirParam = Arrays.asList("-d", ".");
-
     public static void main(String args[]) throws Exception {
         new ExtDirTest().run();
     }
+
+    private final ToolBox tb = new ToolBox();
 
     void run() throws Exception {
         createJars();
@@ -112,60 +108,61 @@ public class ExtDirTest {
     }
 
     void createJars() throws Exception {
-        sun.tools.jar.Main jarGenerator =
-                new sun.tools.jar.Main(System.out, System.err, "jar");
+        tb.new JavacTask()
+                .outdir(".")
+                .sources(ExtDirTestClass1Src)
+                .run();
 
-        ToolBox.JavaToolArgs javacParams =
-                new ToolBox.JavaToolArgs()
-                .setOptions(ouputDirParam)
-                .setSources(ExtDirTestClass1Src);
-        ToolBox.javac(javacParams);
+        tb.new JarTask("pkg1.jar")
+                .manifest(jar1Manifest)
+                .files("pkg1/ExtDirTestClass1.class")
+                .run();
 
-        ToolBox.writeFile(Paths.get("pkg1", "MANIFEST.MF"), jar1Manifest);
-        jarGenerator.run(new String[] {"cfm", "pkg1.jar", "pkg1/MANIFEST.MF",
-            "pkg1/ExtDirTestClass1.class"});
+        tb.new JavacTask()
+                .outdir(".")
+                .sources(ExtDirTestClass2Src)
+                .run();
 
-        javacParams.setSources(ExtDirTestClass2Src);
-        ToolBox.javac(javacParams);
+        tb.new JarTask("pkg2.jar")
+                .manifest(jar2Manifest)
+                .files("pkg2/ExtDirTestClass2.class")
+                .run();
 
-        ToolBox.writeFile(Paths.get("pkg2", "MANIFEST.MF"), jar2Manifest);
-        jarGenerator.run(new String[] {"cfm", "pkg2.jar", "pkg2/MANIFEST.MF",
-            "pkg2/ExtDirTestClass2.class"});
+        tb.createDirectories("ext1", "ext2", "ext3");
+        tb.copyFile("pkg1.jar", "ext1");
+        tb.copyFile("pkg2.jar", "ext2");
+        tb.copyFile("pkg1.jar", "ext3");
+        tb.copyFile("pkg2.jar", "ext3");
 
-        ToolBox.copyFile(Paths.get("ext1", "pkg1.jar"), Paths.get("pkg1.jar"));
-        ToolBox.copyFile(Paths.get("ext2", "pkg2.jar"), Paths.get("pkg2.jar"));
-        ToolBox.copyFile(Paths.get("ext3", "pkg1.jar"), Paths.get("pkg1.jar"));
-        ToolBox.copyFile(Paths.get("ext3", "pkg2.jar"), Paths.get("pkg2.jar"));
-
-        Files.delete(Paths.get("pkg1.jar"));
-        Files.delete(Paths.get("pkg2.jar"));
-
-        Files.delete(Paths.get("pkg1", "ExtDirTestClass1.class"));
-        Files.delete(Paths.get("pkg1", "MANIFEST.MF"));
-        Files.delete(Paths.get("pkg1"));
-        Files.delete(Paths.get("pkg2", "ExtDirTestClass2.class"));
-        Files.delete(Paths.get("pkg2", "MANIFEST.MF"));
-        Files.delete(Paths.get("pkg2"));
+        tb.deleteFiles(
+                "pkg1.jar",
+                "pkg2.jar",
+                "pkg1/ExtDirTestClass1.class",
+                "pkg1",
+                "pkg2/ExtDirTestClass2.class",
+                "pkg2"
+        );
     }
 
     void compileWithExtDirs() throws Exception {
+        tb.new JavacTask()
+                .outdir(".")
+                .options("-extdirs", "ext1")
+                .sources(ExtDirTest_1Src)
+                .run()
+                .writeAll();
 
-//javac -extdirs ext1 ExtDirTest_1.java
-        ToolBox.JavaToolArgs params =
-                new ToolBox.JavaToolArgs()
-                .setOptions("-d", ".", "-extdirs", "ext1")
-                .setSources(ExtDirTest_1Src);
-        ToolBox.javac(params);
+        tb.new JavacTask()
+                .outdir(".")
+                .options("-extdirs", "ext1" + File.pathSeparator + "ext2")
+                .sources(ExtDirTest_2Src)
+                .run();
 
-//javac -extdirs ext1:ext2 ExtDirTest_2.java
-        params.setOptions("-d", ".", "-extdirs", "ext1" + File.pathSeparator + "ext2")
-                .setSources(ExtDirTest_2Src);
-        ToolBox.javac(params);
-
-//javac -extdirs ext3 ExtDirTest_3.java
-        params.setOptions("-d", ".", "-extdirs", "ext3")
-                .setSources(ExtDirTest_3Src);
-        ToolBox.javac(params);
+        tb.new JavacTask()
+                .outdir(".")
+                .options("-extdirs", "ext3")
+                .sources(ExtDirTest_3Src)
+                .run();
     }
 
 }

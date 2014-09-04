@@ -36,6 +36,9 @@ import javax.tools.Diagnostic.Kind;
 import javax.tools.DiagnosticListener;
 import javax.tools.JavaFileObject;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Messages, verbose and error handling support.
  *
@@ -152,32 +155,41 @@ public class Util {
     private Diagnostic<JavaFileObject> createDiagnostic(
             final Diagnostic.Kind kind, final String code, final Object... args) {
         return new Diagnostic<JavaFileObject>() {
+            @DefinedBy(Api.COMPILER)
             public String getCode() {
                 return code;
             }
+            @DefinedBy(Api.COMPILER)
             public long getColumnNumber() {
                 return Diagnostic.NOPOS;
             }
+            @DefinedBy(Api.COMPILER)
             public long getEndPosition() {
                 return Diagnostic.NOPOS;
             }
+            @DefinedBy(Api.COMPILER)
             public Kind getKind() {
                 return kind;
             }
+            @DefinedBy(Api.COMPILER)
             public long getLineNumber() {
                 return Diagnostic.NOPOS;
             }
+            @DefinedBy(Api.COMPILER)
             public String getMessage(Locale locale) {
                 if (code.length() == 0)
                     return (String) args[0];
                 return getText(code, args); // FIXME locale
             }
+            @DefinedBy(Api.COMPILER)
             public long getPosition() {
                 return Diagnostic.NOPOS;
             }
+            @DefinedBy(Api.COMPILER)
             public JavaFileObject getSource() {
                 return null;
             }
+            @DefinedBy(Api.COMPILER)
             public long getStartPosition() {
                 return Diagnostic.NOPOS;
             }

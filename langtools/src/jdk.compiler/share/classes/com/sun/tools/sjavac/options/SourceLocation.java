@@ -37,6 +37,11 @@ import com.sun.tools.sjavac.Source;
 /**
  * Represents a directory to be used for input to sjavac. (For instance a
  * sourcepath or classpath.)
+ *
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class SourceLocation {
 

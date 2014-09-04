@@ -31,7 +31,7 @@
  * This means that if you use this subtest as a compilation test
  * harness, pass the arguments:
  *
- * -scripting -Dnashorn.typeInfo.disabled=true --class-cache-size=0 
+ * -scripting -Dnashorn.typeInfo.disabled=true --class-cache-size=0
  * --persistent-code-cache=false
  *
  * @subtest
@@ -40,7 +40,7 @@
 load(__DIR__ + 'octane-payload.js');
 
 var DEFAULT_ITERS = 1; //default is one iteration through each benchmark
-var iters = DEFAULT_ITERS; 
+var iters = DEFAULT_ITERS;
 var args = [];
 
 if (typeof $ARGS !== 'undefined') {
@@ -55,11 +55,11 @@ var verbose = false;
 for (var i = 0; i < args.length; ) {
     var arg = args[i];
     if (arg === '--iterations') {
-	iters = +args[++i];
+    iters = +args[++i];
     } else if (arg === '--verbose') {
-	verbose = true;
+    verbose = true;
     } else {
-	onlyTheseTests.push(arg);
+    onlyTheseTests.push(arg);
     }
     i++;
 }
@@ -74,7 +74,7 @@ if (iters != DEFAULT_ITERS) {
 
 function print_if_verbose(x) {
     if (verbose) {
-	print(x);
+    print(x);
     }
 }
 
@@ -94,46 +94,46 @@ for (var j in tests) {
     var files = tests[j].files;
 
     if (onlyTheseTests.length > 0 && !contains(onlyTheseTests, test_name)) {
-	print_if_verbose("Skipping " + test_name);
-	continue;
+    print_if_verbose("Skipping " + test_name);
+    continue;
     }
 
     if (!contains(testsCompiled, test_name)) {
-	testsCompiled.push(test_name);
+    testsCompiled.push(test_name);
     }
 
     var str = "Compiling '" + test_name + "'...";
     if (files.length > 1) {
-	str += " (" + files.length + " files)";
+    str += " (" + files.length + " files)";
     }
     if (iters != 1) {
-	str += " (" + iters + " times)";
+    str += " (" + iters + " times)";
     }
     str + "...";
     print(str);
 
     for (var iteration = 0; iteration < iters; iteration++) {
 
-	//get a new global to avoid symbol pollution and reloads of base
-	//in the same namespace
-	var newGlobal = loadWithNewGlobal({script:'this', name:'test'});
+    //get a new global to avoid symbol pollution and reloads of base
+    //in the same namespace
+    var newGlobal = loadWithNewGlobal({script:'this', name:'test'});
 
-	//load base into the new global so we get BenchmarkSuite etc
-	newGlobal.load(base); 
+    //load base into the new global so we get BenchmarkSuite etc
+    newGlobal.load(base);
 
-	//load all files in the single benchmark
-	for (var k in files) {	    
-	    var file = files[k];
-	    if (iteration >= 0) { //only display message on first iteration
-		var str2 = "\t";
-		if (iters > 1) {
-		    str2 += " [iteration " + (iteration + 1) + "]";
-		}
-		str2 += " processing file: " + file + "...";
-		print_if_verbose(str2);
-	    }
-	    newGlobal.load("file://" + path + file);
-	}
+    //load all files in the single benchmark
+    for (var k in files) {
+        var file = files[k];
+        if (iteration >= 0) { //only display message on first iteration
+        var str2 = "\t";
+        if (iters > 1) {
+            str2 += " [iteration " + (iteration + 1) + "]";
+        }
+        str2 += " processing file: " + file + "...";
+        print_if_verbose(str2);
+        }
+        newGlobal.load("file://" + path + file);
+    }
     }
     print("Done.");
 }

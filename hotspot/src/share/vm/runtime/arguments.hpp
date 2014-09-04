@@ -579,12 +579,15 @@ class Arguments : AllStatic {
     _meta_index_dir  = meta_index_dir;
   }
 
-  static char *get_java_home() { return _java_home->value(); }
-  static char *get_dll_dir() { return _sun_boot_library_path->value(); }
-  static char *get_endorsed_dir() { return _java_endorsed_dirs->value(); }
-  static char *get_sysclasspath() { return _sun_boot_class_path->value(); }
+  static char* get_java_home() { return _java_home->value(); }
+  static char* get_dll_dir() { return _sun_boot_library_path->value(); }
+  static char* get_endorsed_dir() { return _java_endorsed_dirs->value(); }
+  static char* get_sysclasspath() { return _sun_boot_class_path->value(); }
   static char* get_meta_index_path() { return _meta_index_path; }
   static char* get_meta_index_dir()  { return _meta_index_dir;  }
+  static char* get_ext_dirs() { return _java_ext_dirs->value(); }
+  static char* get_appclasspath() { return _java_class_path->value(); }
+  static void  fix_appclasspath();
 
   // Operation modi
   static Mode mode()                        { return _mode; }

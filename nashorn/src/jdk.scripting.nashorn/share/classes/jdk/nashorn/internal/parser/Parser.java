@@ -106,6 +106,8 @@ import jdk.nashorn.internal.ir.UnaryNode;
 import jdk.nashorn.internal.ir.VarNode;
 import jdk.nashorn.internal.ir.WhileNode;
 import jdk.nashorn.internal.ir.WithNode;
+import jdk.nashorn.internal.ir.debug.ASTWriter;
+import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ErrorManager;
 import jdk.nashorn.internal.runtime.JSErrorType;
@@ -114,6 +116,7 @@ import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
 import jdk.nashorn.internal.runtime.Source;
+import jdk.nashorn.internal.runtime.Timing;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
@@ -220,7 +223,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @param name the name for the first parsed function.
      */
     public void setFunctionName(final String name) {
-        defaultNames.push(new IdentNode(0, 0, name));
+        defaultNames.push(createIdentNode(0, 0, name));
     }
 
     /**
@@ -255,7 +258,7 @@ public class Parser extends AbstractParser implements Loggable {
      */
     public FunctionNode parse(final String scriptName, final int startPos, final int len, final boolean allowPropertyFunction) {
         final boolean isTimingEnabled = env.isTimingEnabled();
-        final long t0 = isTimingEnabled ? System.currentTimeMillis() : 0L;
+        final long t0 = isTimingEnabled ? System.nanoTime() : 0L;
         log.info(this, " begin for '", scriptName, "'");
 
         try {
@@ -276,8 +279,8 @@ public class Parser extends AbstractParser implements Loggable {
         } finally {
             final String end = this + " end '" + scriptName + "'";
             if (isTimingEnabled) {
-                env._timing.accumulateTime(toString(), System.currentTimeMillis() - t0);
-                log.info(end, "' in ", System.currentTimeMillis() - t0, " ms");
+                env._timing.accumulateTime(toString(), System.nanoTime() - t0);
+                log.info(end, "' in ", Timing.toMillisPrint(System.nanoTime() - t0), " ms");
             } else {
                 log.info(end);
             }
@@ -346,9 +349,10 @@ public class Parser extends AbstractParser implements Loggable {
             expect(EOF);
 
             function.setFinish(source.getLength() - 1);
-
             function = restoreFunctionNode(function, token); //commit code
             function = function.setBody(lc, function.getBody().setNeedsScope(lc));
+
+            printAST(function);
             return function;
         } catch (final Exception e) {
             handleParseException(e);
@@ -477,8 +481,7 @@ loop:
                 name,
                 parameters,
                 kind,
-                flags,
-                sourceURL);
+                flags);
 
         lc.push(functionNode);
         // Create new block, and just put it on the context stack, restoreFunctionNode() will associate it with the
@@ -702,10 +705,6 @@ loop:
 
         script = restoreFunctionNode(script, token); //commit code
         script = script.setBody(lc, script.getBody().setNeedsScope(lc));
-        // user may have directive comment to set sourceURL
-        if (sourceURL != null) {
-            script = script.setSourceURL(lc, sourceURL);
-        }
 
         return script;
     }
@@ -804,6 +803,12 @@ loop:
                                     for (final IdentNode param : function.getParameters()) {
                                         verifyStrictIdent(param, "function parameter");
                                     }
+                                }
+                            } else if (Context.DEBUG) {
+                                final int flag = FunctionNode.getDirectiveFlag(directive);
+                                if (flag != 0) {
+                                    final FunctionNode function = lc.getCurrentFunction();
+                                    lc.setFlag(function, flag);
                                 }
                             }
                         }
@@ -2239,7 +2244,7 @@ loop:
                 }
             }
 
-            propertyName =  new IdentNode(propertyToken, finish, ident).setIsPropertyName();
+            propertyName =  createIdentNode(propertyToken, finish, ident).setIsPropertyName();
         } else {
             propertyName = propertyName();
         }
@@ -2257,7 +2262,7 @@ loop:
     private PropertyFunction propertyGetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey getIdent = propertyName();
         final String getterName = getIdent.getPropertyName();
-        final IdentNode getNameNode = new IdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
+        final IdentNode getNameNode = createIdentNode(((Node)getIdent).getToken(), finish, NameCodec.encode("get " + getterName));
         expect(LPAREN);
         expect(RPAREN);
         final FunctionNode functionNode = functionBody(getSetToken, getNameNode, new ArrayList<IdentNode>(), FunctionNode.Kind.GETTER, functionLine);
@@ -2268,7 +2273,7 @@ loop:
     private PropertyFunction propertySetterFunction(final long getSetToken, final int functionLine) {
         final PropertyKey setIdent = propertyName();
         final String setterName = setIdent.getPropertyName();
-        final IdentNode setNameNode = new IdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
+        final IdentNode setNameNode = createIdentNode(((Node)setIdent).getToken(), finish, NameCodec.encode("set " + setterName));
         expect(LPAREN);
         // be sloppy and allow missing setter parameter even though
         // spec does not permit it!
@@ -2814,12 +2819,22 @@ loop:
                 lastToken = token;
                 expect(RBRACE);
                 functionNode.setFinish(finish);
-
             }
         } finally {
             functionNode = restoreFunctionNode(functionNode, lastToken);
         }
+        printAST(functionNode);
         return functionNode;
+    }
+
+    private void printAST(final FunctionNode functionNode) {
+        if (functionNode.getFlag(FunctionNode.IS_PRINT_AST)) {
+            env.getErr().println(new ASTWriter(functionNode));
+        }
+
+        if (functionNode.getFlag(FunctionNode.IS_PRINT_PARSE)) {
+            env.getErr().println(new PrintVisitor(functionNode, true, false));
+        }
     }
 
     private void addFunctionDeclarations(final FunctionNode functionNode) {

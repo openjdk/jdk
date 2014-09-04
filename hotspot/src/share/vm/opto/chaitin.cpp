@@ -1620,7 +1620,7 @@ void PhaseChaitin::fixup_spills() {
           C->check_node_count(0, "out of nodes fixing spills");
           if (C->failing())  return;
           // Transform node
-          MachNode *cisc = mach->cisc_version(stk_offset, C)->as_Mach();
+          MachNode *cisc = mach->cisc_version(stk_offset)->as_Mach();
           cisc->set_req(inp,fp);          // Base register is frame pointer
           if( cisc->oper_input_base() > 1 && mach->oper_input_base() <= 1 ) {
             assert( cisc->oper_input_base() == 2, "Only adding one edge");
