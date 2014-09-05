@@ -66,7 +66,7 @@ private:
 
  public:
   GenerationCounters(const char* name, int ordinal, int spaces,
-                     VirtualSpace* v);
+                     size_t min_capacity, size_t max_capacity, VirtualSpace* v);
 
   ~GenerationCounters() {
     if (_name_space != NULL) FREE_C_HEAP_ARRAY(char, _name_space, mtGC);
