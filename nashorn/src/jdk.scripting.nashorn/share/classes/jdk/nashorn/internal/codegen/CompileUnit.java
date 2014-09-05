@@ -42,6 +42,8 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     private Class<?> clazz;
 
+    private boolean isUsed;
+
     CompileUnit(final String className, final ClassEmitter classEmitter, final long initialWeight) {
         this.className    = className;
         this.weight       = initialWeight;
@@ -50,6 +52,21 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     static Set<CompileUnit> createCompileUnitSet() {
         return new TreeSet<>();
+    }
+
+    /**
+     * Check if this compile unit is used
+     * @return true if tagged as in use - i.e active code that needs to be generated
+     */
+    public boolean isUsed() {
+        return isUsed;
+    }
+
+    /**
+     * Tag this compile unit as used
+     */
+    public void setUsed() {
+        this.isUsed = true;
     }
 
     /**
