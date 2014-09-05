@@ -37,6 +37,17 @@ class WindowsNativeDispatcher {
     private WindowsNativeDispatcher() { }
 
     /**
+     * HANDLE CreateEvent(
+     *   LPSECURITY_ATTRIBUTES lpEventAttributes,
+     *   BOOL bManualReset,
+     *   BOOL bInitialState,
+     *   PCTSTR lpName
+     * );
+     */
+    static native long CreateEvent(boolean bManualReset, boolean bInitialState)
+        throws WindowsException;
+
+    /**
      * HANDLE CreateFile(
      *   LPCTSTR lpFileName,
      *   DWORD dwDesiredAccess,
@@ -1039,6 +1050,25 @@ class WindowsNativeDispatcher {
                                              int filter,
                                              long bytesReturnedAddress,
                                              long pOverlapped)
+        throws WindowsException;
+
+
+    /**
+     * CancelIo(
+     *   HANDLE hFile
+     * )
+     */
+    static native void CancelIo(long hFile) throws WindowsException;
+
+    /**
+     * GetOverlappedResult(
+     *   HANDLE hFile,
+     *   LPOVERLAPPED lpOverlapped,
+     *   LPDWORD lpNumberOfBytesTransferred,
+     *   BOOL bWait
+     * );
+     */
+    static native int GetOverlappedResult(long hFile, long lpOverlapped)
         throws WindowsException;
 
     /**
