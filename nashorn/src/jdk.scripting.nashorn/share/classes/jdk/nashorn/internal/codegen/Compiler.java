@@ -171,13 +171,14 @@ public final class Compiler implements Loggable {
                         CompilationPhase.SCOPE_DEPTH_COMPUTATION_PHASE,
                         CompilationPhase.OPTIMISTIC_TYPE_ASSIGNMENT_PHASE,
                         CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE,
+                        CompilationPhase.MARK_USED_COMPILE_UNITS,
                         CompilationPhase.BYTECODE_GENERATION_PHASE,
                         CompilationPhase.INSTALL_PHASE
                 });
 
         /** Compile all for a rest of method */
         public final static CompilationPhases COMPILE_ALL_RESTOF =
-                COMPILE_ALL.setDescription("Compile all, rest of").addAfter(CompilationPhase.LOCAL_VARIABLE_TYPE_CALCULATION_PHASE, CompilationPhase.REUSE_COMPILE_UNITS_PHASE);
+                COMPILE_ALL.setDescription("Compile all, rest of").replace(CompilationPhase.MARK_USED_COMPILE_UNITS, CompilationPhase.REUSE_COMPILE_UNITS_PHASE);
 
         /** Singleton that describes a standard eager compilation, but no installation, for example used by --compile-only */
         public final static CompilationPhases COMPILE_ALL_NO_INSTALL =
@@ -248,6 +249,15 @@ public final class Compiler implements Loggable {
             return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
         }
 
+        private CompilationPhases replace(final CompilationPhase phase, final CompilationPhase newPhase) {
+            final LinkedList<CompilationPhase> list = new LinkedList<>();
+            for (final CompilationPhase p : phases) {
+                list.add(p == phase ? newPhase : p);
+            }
+            return new CompilationPhases(desc, list.toArray(new CompilationPhase[list.size()]));
+        }
+
+        @SuppressWarnings("unused") //TODO I'll use this soon
         private CompilationPhases addAfter(final CompilationPhase phase, final CompilationPhase newPhase) {
             final LinkedList<CompilationPhase> list = new LinkedList<>();
             for (final CompilationPhase p : phases) {

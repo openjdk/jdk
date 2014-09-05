@@ -34,10 +34,8 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.function.Function;
 import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.CompileUnit;
@@ -57,7 +55,7 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  * IR representation for function (or script.)
  */
 @Immutable
-public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode> {
+public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode>, CompileUnitHolder {
     /** Type used for all FunctionNodes */
     public static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
 
@@ -1102,6 +1100,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @see Compiler
      * @return the compile unit
      */
+    @Override
     public CompileUnit getCompileUnit() {
         return compileUnit;
     }
