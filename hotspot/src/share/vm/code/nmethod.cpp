@@ -2087,6 +2087,9 @@ void nmethod::metadata_do(void f(Metadata*)) {
     Metadata* md = *p;
     f(md);
   }
+
+  // Call function Method*, not embedded in these other places.
+  if (_method != NULL) f(_method);
 }
 
 void nmethod::oops_do(OopClosure* f, bool allow_zombie) {

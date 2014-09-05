@@ -1256,8 +1256,8 @@ void Universe::flush_evol_dependents_on(instanceKlassHandle ev_k_h) {
     // Deoptimize all activations depending on marked nmethods
     Deoptimization::deoptimize_dependents();
 
-    // Make the dependent methods zombies (like VM_Deoptimize)
-    CodeCache::make_marked_nmethods_zombies();
+    // Make the dependent methods not entrant (in VM_Deoptimize they are made zombies)
+    CodeCache::make_marked_nmethods_not_entrant();
   }
 }
 #endif // HOTSWAP
