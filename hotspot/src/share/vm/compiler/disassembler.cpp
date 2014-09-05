@@ -246,12 +246,12 @@ class decode_env {
 };
 
 decode_env::decode_env(CodeBlob* code, outputStream* output, CodeStrings c) {
-  memset(this, 0, sizeof(*this));
+  memset(this, 0, sizeof(*this)); // Beware, this zeroes bits of fields.
   _output = output ? output : tty;
   _code = code;
   if (code != NULL && code->is_nmethod())
     _nm = (nmethod*) code;
-  _strings.assign(c);
+  _strings.copy(c);
 
   // by default, output pc but not bytes:
   _print_pc       = true;

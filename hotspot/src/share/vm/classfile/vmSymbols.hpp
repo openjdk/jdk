@@ -785,6 +785,11 @@
    do_name(     encodeISOArray_name,                             "encodeISOArray")                                      \
    do_signature(encodeISOArray_signature,                        "([CI[BII)I")                                          \
                                                                                                                         \
+  do_class(java_math_BigInteger,                      "java/math/BigInteger")                                           \
+  do_intrinsic(_multiplyToLen,      java_math_BigInteger, multiplyToLen_name, multiplyToLen_signature, F_R)             \
+   do_name(     multiplyToLen_name,                             "multiplyToLen")                                        \
+   do_signature(multiplyToLen_signature,                        "([II[II[I)[I")                                         \
+                                                                                                                        \
   /* java/lang/ref/Reference */                                                                                         \
   do_intrinsic(_Reference_get,            java_lang_ref_Reference, get_name,    void_object_signature, F_R)             \
                                                                                                                         \
