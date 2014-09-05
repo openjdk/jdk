@@ -269,6 +269,8 @@ class ciMethod : public ciMetadata {
   bool should_print_assembly();
   bool break_at_execute();
   bool has_option(const char *option);
+  template<typename T>
+  bool has_option_value(const char* option, T& value);
   bool can_be_compiled();
   bool can_be_osr_compiled(int entry_bci);
   void set_not_compilable(const char* reason = NULL);
