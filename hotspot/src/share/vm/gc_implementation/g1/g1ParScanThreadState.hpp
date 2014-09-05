@@ -46,9 +46,8 @@ class G1ParScanThreadState : public StackObj {
   G1SATBCardTableModRefBS* _ct_bs;
   G1RemSet* _g1_rem;
 
-  G1ParGCAllocBuffer  _surviving_alloc_buffer;
-  G1ParGCAllocBuffer  _tenured_alloc_buffer;
-  G1ParGCAllocBuffer* _alloc_buffers[GCAllocPurposeCount];
+  G1ParGCAllocator*   _g1_par_allocator;
+
   ageTable            _age_table;
 
   G1ParScanClosure    _scanner;
@@ -78,7 +77,6 @@ class G1ParScanThreadState : public StackObj {
 #define PADDING_ELEM_NUM (DEFAULT_CACHE_LINE_SIZE / sizeof(size_t))
 
   void   add_to_alloc_buffer_waste(size_t waste) { _alloc_buffer_waste += waste; }
-
   void   add_to_undo_waste(size_t waste)         { _undo_waste += waste; }
 
   DirtyCardQueue& dirty_card_queue()             { return _dcq;  }
@@ -89,13 +87,6 @@ class G1ParScanThreadState : public StackObj {
   ~G1ParScanThreadState();
 
   ageTable*         age_table()       { return &_age_table;       }
-
-  G1ParGCAllocBuffer* alloc_buffer(GCAllocPurpose purpose) {
-    return _alloc_buffers[purpose];
-  }
-
-  size_t alloc_buffer_waste() const              { return _alloc_buffer_waste; }
-  size_t undo_waste() const                      { return _undo_waste; }
 
 #ifdef ASSERT
   bool queue_is_empty() const { return _refs->is_empty(); }
@@ -121,12 +112,6 @@ class G1ParScanThreadState : public StackObj {
       }
     }
   }
- private:
-
-  inline HeapWord* allocate(GCAllocPurpose purpose, size_t word_sz);
-  inline HeapWord* allocate_slow(GCAllocPurpose purpose, size_t word_sz);
-  inline void undo_allocation(GCAllocPurpose purpose, HeapWord* obj, size_t word_sz);
-
  public:
 
   void set_evac_failure_closure(OopsInHeapRegionClosure* evac_failure_cl) {
@@ -172,8 +157,6 @@ class G1ParScanThreadState : public StackObj {
   }
 
  private:
-  void retire_alloc_buffers();
-
   #define G1_PARTIAL_ARRAY_MASK 0x2
 
   inline bool has_partial_array_mask(oop* ref) const {

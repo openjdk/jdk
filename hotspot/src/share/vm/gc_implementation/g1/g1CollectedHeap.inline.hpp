@@ -98,10 +98,12 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
   assert(!isHumongous(word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _mutator_alloc_region.attempt_allocation(word_size,
-                                                      false /* bot_updates */);
+  AllocationContext_t context = AllocationContext::current();
+  HeapWord* result = _allocator->mutator_alloc_region(context)->attempt_allocation(word_size,
+                                                                                   false /* bot_updates */);
   if (result == NULL) {
     result = attempt_allocation_slow(word_size,
+                                     context,
                                      gc_count_before_ret,
                                      gclocker_retry_count_ret);
   }
@@ -112,17 +114,17 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
   return result;
 }
 
-inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
-                                                              word_size) {
+inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t word_size,
+                                                              AllocationContext_t context) {
   assert(!isHumongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = _survivor_gc_alloc_region.attempt_allocation(word_size,
-                                                      false /* bot_updates */);
+  HeapWord* result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                                       false /* bot_updates */);
   if (result == NULL) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _survivor_gc_alloc_region.attempt_allocation_locked(word_size,
-                                                      false /* bot_updates */);
+    result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                                      false /* bot_updates */);
   }
   if (result != NULL) {
     dirty_young_block(result, word_size);
@@ -130,16 +132,17 @@ inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
   return result;
 }
 
-inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size) {
+inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size,
+                                                         AllocationContext_t context) {
   assert(!isHumongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = _old_gc_alloc_region.attempt_allocation(word_size,
-                                                       true /* bot_updates */);
+  HeapWord* result = _allocator->old_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                                  true /* bot_updates */);
   if (result == NULL) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _old_gc_alloc_region.attempt_allocation_locked(word_size,
-                                                       true /* bot_updates */);
+    result = _allocator->old_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                                 true /* bot_updates */);
   }
   return result;
 }

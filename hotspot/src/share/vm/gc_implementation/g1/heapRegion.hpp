@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_HEAPREGION_HPP
 
+#include "gc_implementation/g1/g1AllocationContext.hpp"
 #include "gc_implementation/g1/g1BlockOffsetTable.hpp"
 #include "gc_implementation/g1/g1_specialized_oop_closures.hpp"
 #include "gc_implementation/g1/heapRegionType.hpp"
@@ -222,6 +223,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // The index of this region in the heap region sequence.
   uint  _hrm_index;
 
+  AllocationContext_t _allocation_context;
+
   HeapRegionType _type;
 
   // For a humongous region, region in which it starts.
@@ -303,7 +306,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
  public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
-             MemRegion mr);
+             MemRegion mr,
+             AllocationContext_t context = AllocationContext::system());
 
   // Initializing the HeapRegion not only resets the data structure, but also
   // resets the BOT for that heap region.
@@ -508,6 +512,14 @@ class HeapRegion: public G1OffsetTableContigSpace {
     assert(in_collection_set(), "should only invoke on member of CS.");
     assert(r == NULL || r->in_collection_set(), "Malformed CS.");
     _next_in_special_set = r;
+  }
+
+  void set_allocation_context(AllocationContext_t context) {
+    _allocation_context = context;
+  }
+
+  AllocationContext_t  allocation_context() const {
+    return _allocation_context;
   }
 
   // Methods used by the HeapRegionSetBase class and subclasses.
