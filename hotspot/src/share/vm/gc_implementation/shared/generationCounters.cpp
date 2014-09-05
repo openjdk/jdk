@@ -62,11 +62,12 @@ void GenerationCounters::initialize(const char* name, int ordinal, int spaces,
 
 GenerationCounters::GenerationCounters(const char* name,
                                        int ordinal, int spaces,
+                                       size_t min_capacity, size_t max_capacity,
                                        VirtualSpace* v)
   : _virtual_space(v) {
   assert(v != NULL, "don't call this constructor if v == NULL");
   initialize(name, ordinal, spaces,
-             v->committed_size(), v->reserved_size(), v->committed_size());
+             min_capacity, max_capacity, v->committed_size());
 }
 
 GenerationCounters::GenerationCounters(const char* name,

@@ -70,15 +70,13 @@ int compare_virtual_memory_site(const VirtualMemoryAllocationSite& s1,
  */
 class MallocAllocationSiteWalker : public MallocSiteWalker {
  private:
-  SortedLinkedList<MallocSite, compare_malloc_size, ResourceObj::ARENA>
-                 _malloc_sites;
+  SortedLinkedList<MallocSite, compare_malloc_size> _malloc_sites;
   size_t         _count;
 
   // Entries in MallocSiteTable with size = 0 and count = 0,
   // when the malloc site is not longer there.
  public:
-  MallocAllocationSiteWalker(Arena* arena) : _count(0), _malloc_sites(arena) {
-  }
+  MallocAllocationSiteWalker() : _count(0) { }
 
   inline size_t count() const { return _count; }
 
@@ -109,13 +107,12 @@ int compare_virtual_memory_base(const ReservedMemoryRegion& r1, const ReservedMe
 // Walk all virtual memory regions for baselining
 class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
  private:
-  SortedLinkedList<ReservedMemoryRegion, compare_virtual_memory_base, ResourceObj::ARENA>
+  SortedLinkedList<ReservedMemoryRegion, compare_virtual_memory_base>
                 _virtual_memory_regions;
   size_t        _count;
 
  public:
-  VirtualMemoryAllocationWalker(Arena* a) : _count(0), _virtual_memory_regions(a) {
-  }
+  VirtualMemoryAllocationWalker() : _count(0) { }
 
   bool do_allocation_site(const ReservedMemoryRegion* rgn)  {
     if (rgn->size() >= MemBaseline::SIZE_THRESHOLD) {
@@ -136,39 +133,30 @@ class VirtualMemoryAllocationWalker : public VirtualMemoryWalker {
 
 
 bool MemBaseline::baseline_summary() {
-  assert(_malloc_memory_snapshot == NULL, "Malloc baseline not yet reset");
-  assert(_virtual_memory_snapshot == NULL, "Virtual baseline not yet reset");
-
-  _malloc_memory_snapshot =  new (arena()) MallocMemorySnapshot();
-  _virtual_memory_snapshot = new (arena()) VirtualMemorySnapshot();
-  if (_malloc_memory_snapshot == NULL || _virtual_memory_snapshot == NULL) {
-    return false;
-  }
-  MallocMemorySummary::snapshot(_malloc_memory_snapshot);
-  VirtualMemorySummary::snapshot(_virtual_memory_snapshot);
+  MallocMemorySummary::snapshot(&_malloc_memory_snapshot);
+  VirtualMemorySummary::snapshot(&_virtual_memory_snapshot);
   return true;
 }
 
 bool MemBaseline::baseline_allocation_sites() {
-  assert(arena() != NULL, "Just check");
   // Malloc allocation sites
-  MallocAllocationSiteWalker malloc_walker(arena());
+  MallocAllocationSiteWalker malloc_walker;
   if (!MallocSiteTable::walk_malloc_site(&malloc_walker)) {
     return false;
   }
 
-  _malloc_sites.set_head(malloc_walker.malloc_sites()->head());
+  _malloc_sites.move(malloc_walker.malloc_sites());
   // The malloc sites are collected in size order
   _malloc_sites_order = by_size;
 
   // Virtual memory allocation sites
-  VirtualMemoryAllocationWalker virtual_memory_walker(arena());
+  VirtualMemoryAllocationWalker virtual_memory_walker;
   if (!VirtualMemoryTracker::walk_virtual_memory(&virtual_memory_walker)) {
     return false;
   }
 
   // Virtual memory allocations are collected in call stack order
-  _virtual_memory_allocations.set_head(virtual_memory_walker.virtual_memory_allocations()->head());
+  _virtual_memory_allocations.move(virtual_memory_walker.virtual_memory_allocations());
 
   if (!aggregate_virtual_memory_allocation_sites()) {
     return false;
@@ -180,11 +168,6 @@ bool MemBaseline::baseline_allocation_sites() {
 }
 
 bool MemBaseline::baseline(bool summaryOnly) {
-  if (arena() == NULL) {
-    _arena = new (std::nothrow, mtNMT) Arena(mtNMT);
-    if (arena() == NULL) return false;
-  }
-
   reset();
 
   _class_count = InstanceKlass::number_of_instance_classes();
@@ -211,8 +194,7 @@ int compare_allocation_site(const VirtualMemoryAllocationSite& s1,
 }
 
 bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
-  SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site, ResourceObj::ARENA>
-    allocation_sites(arena());
+  SortedLinkedList<VirtualMemoryAllocationSite, compare_allocation_site> allocation_sites;
 
   VirtualMemoryAllocationIterator itr = virtual_memory_allocations();
   const ReservedMemoryRegion* rgn;
@@ -230,12 +212,12 @@ bool MemBaseline::aggregate_virtual_memory_allocation_sites() {
     site->commit_memory(rgn->committed_size());
   }
 
-  _virtual_memory_sites.set_head(allocation_sites.head());
+  _virtual_memory_sites.move(&allocation_sites);
   return true;
 }
 
 MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
-  assert(!_malloc_sites.is_empty(), "Detail baseline?");
+  assert(!_malloc_sites.is_empty(), "Not detail baseline");
   switch(order) {
     case by_size:
       malloc_sites_to_size_order();
@@ -251,7 +233,7 @@ MallocSiteIterator MemBaseline::malloc_sites(SortingOrder order) {
 }
 
 VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) {
-  assert(!_virtual_memory_sites.is_empty(), "Detail baseline?");
+  assert(!_virtual_memory_sites.is_empty(), "Not detail baseline");
   switch(order) {
     case by_size:
       virtual_memory_sites_to_size_order();
@@ -270,8 +252,7 @@ VirtualMemorySiteIterator MemBaseline::virtual_memory_sites(SortingOrder order) 
 // Sorting allocations sites in different orders
 void MemBaseline::malloc_sites_to_size_order() {
   if (_malloc_sites_order != by_size) {
-    SortedLinkedList<MallocSite, compare_malloc_size, ResourceObj::ARENA>
-      tmp(arena());
+    SortedLinkedList<MallocSite, compare_malloc_size> tmp;
 
     // Add malloc sites to sorted linked list to sort into size order
     tmp.move(&_malloc_sites);
@@ -283,8 +264,7 @@ void MemBaseline::malloc_sites_to_size_order() {
 
 void MemBaseline::malloc_sites_to_allocation_site_order() {
   if (_malloc_sites_order != by_site) {
-    SortedLinkedList<MallocSite, compare_malloc_site, ResourceObj::ARENA>
-      tmp(arena());
+    SortedLinkedList<MallocSite, compare_malloc_site> tmp;
     // Add malloc sites to sorted linked list to sort into site (address) order
     tmp.move(&_malloc_sites);
     _malloc_sites.set_head(tmp.head());
@@ -295,8 +275,7 @@ void MemBaseline::malloc_sites_to_allocation_site_order() {
 
 void MemBaseline::virtual_memory_sites_to_size_order() {
   if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_size, ResourceObj::ARENA>
-      tmp(arena());
+    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_size> tmp;
 
     tmp.move(&_virtual_memory_sites);
 
@@ -308,10 +287,9 @@ void MemBaseline::virtual_memory_sites_to_size_order() {
 
 void MemBaseline::virtual_memory_sites_to_reservation_site_order() {
   if (_virtual_memory_sites_order != by_size) {
-    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_site, ResourceObj::ARENA>
-      tmp(arena());
+    SortedLinkedList<VirtualMemoryAllocationSite, compare_virtual_memory_site> tmp;
 
-    tmp.add(&_virtual_memory_sites);
+    tmp.move(&_virtual_memory_sites);
 
     _virtual_memory_sites.set_head(tmp.head());
     tmp.set_head(NULL);

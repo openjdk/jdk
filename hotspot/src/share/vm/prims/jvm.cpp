@@ -1403,14 +1403,6 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsPrimitiveClass(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jclass, JVM_GetComponentType(JNIEnv *env, jclass cls))
-  JVMWrapper("JVM_GetComponentType");
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  oop result = Reflection::array_component_type(mirror, CHECK_NULL);
-  return (jclass) JNIHandles::make_local(env, result);
-JVM_END
-
-
 JVM_ENTRY(jint, JVM_GetClassModifiers(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_GetClassModifiers");
   if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {

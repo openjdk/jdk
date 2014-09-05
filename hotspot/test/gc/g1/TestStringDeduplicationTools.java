@@ -129,8 +129,19 @@ class TestStringDeduplicationTools {
         return list;
     }
 
+    /**
+     * Verifies that the given list contains expected number of unique strings.
+     * It's possible that deduplication hasn't completed yet, so the method
+     * will perform several attempts to check with a little pause between.
+     * The method throws RuntimeException to signal that verification failed.
+     *
+     * @param list strings to check
+     * @param uniqueExpected expected number of unique strings
+     * @throws RuntimeException if check fails
+     */
     private static void verifyStrings(ArrayList<String> list, int uniqueExpected) {
-        for (;;) {
+        boolean passed = false;
+        for (int attempts = 0; attempts < 10; attempts++) {
             // Check number of deduplicated strings
             ArrayList<Object> unique = new ArrayList<Object>(uniqueExpected);
             for (String string: list) {
@@ -153,11 +164,11 @@ class TestStringDeduplicationTools {
                                ", uniqueExpected=" + uniqueExpected);
 
             if (unique.size() == uniqueExpected) {
-                System.out.println("Deduplication completed");
+                System.out.println("Deduplication completed (as fast as " + attempts + " iterations)");
+                passed = true;
                 break;
             } else {
                 System.out.println("Deduplication not completed, waiting...");
-
                 // Give the deduplication thread time to complete
                 try {
                     Thread.sleep(1000);
@@ -165,6 +176,9 @@ class TestStringDeduplicationTools {
                     throw new RuntimeException(e);
                 }
             }
+        }
+        if (!passed) {
+            throw new RuntimeException("String verification failed");
         }
     }
 
@@ -247,13 +261,19 @@ class TestStringDeduplicationTools {
             forceDeduplication(ageThreshold, FullGC);
 
             // Wait for deduplication to occur
-            while (getValue(dupString1) != getValue(baseString)) {
+            for (int attempts = 0; attempts < 10; attempts++) {
+                if (getValue(dupString1) == getValue(baseString)) {
+                    break;
+                }
                 System.out.println("Waiting...");
                 try {
-                    Thread.sleep(100);
+                    Thread.sleep(1000);
                 } catch (Exception e) {
                     throw new RuntimeException(e);
                 }
+            }
+            if (getValue(dupString1) != getValue(baseString)) {
+                throw new RuntimeException("Deduplication has not occurred");
             }
 
             // Create a new duplicate of baseString

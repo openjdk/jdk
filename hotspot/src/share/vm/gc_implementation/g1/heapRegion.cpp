@@ -29,7 +29,7 @@
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
 #include "memory/genOopClosures.inline.hpp"
 #include "memory/iterator.hpp"
@@ -322,34 +322,11 @@ bool HeapRegion::claimHeapRegion(jint claimValue) {
   return false;
 }
 
-HeapWord* HeapRegion::next_block_start_careful(HeapWord* addr) {
-  HeapWord* low = addr;
-  HeapWord* high = end();
-  while (low < high) {
-    size_t diff = pointer_delta(high, low);
-    // Must add one below to bias toward the high amount.  Otherwise, if
-  // "high" were at the desired value, and "low" were one less, we
-    // would not converge on "high".  This is not symmetric, because
-    // we set "high" to a block start, which might be the right one,
-    // which we don't do for "low".
-    HeapWord* middle = low + (diff+1)/2;
-    if (middle == high) return high;
-    HeapWord* mid_bs = block_start_careful(middle);
-    if (mid_bs < addr) {
-      low = middle;
-    } else {
-      high = mid_bs;
-    }
-  }
-  assert(low == high && low >= addr, "Didn't work.");
-  return low;
-}
-
-HeapRegion::HeapRegion(uint hrs_index,
+HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
                        MemRegion mr) :
     G1OffsetTableContigSpace(sharedOffsetArray, mr),
-    _hrs_index(hrs_index),
+    _hrm_index(hrm_index),
     _humongous_type(NotHumongous), _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL), _orig_end(NULL),
@@ -563,19 +540,15 @@ void HeapRegion::add_strong_code_root(nmethod* nm) {
   hrrs->add_strong_code_root(nm);
 }
 
+void HeapRegion::add_strong_code_root_locked(nmethod* nm) {
+  assert_locked_or_safepoint(CodeCache_lock);
+  HeapRegionRemSet* hrrs = rem_set();
+  hrrs->add_strong_code_root_locked(nm);
+}
+
 void HeapRegion::remove_strong_code_root(nmethod* nm) {
   HeapRegionRemSet* hrrs = rem_set();
   hrrs->remove_strong_code_root(nm);
-}
-
-void HeapRegion::migrate_strong_code_roots() {
-  assert(in_collection_set(), "only collection set regions");
-  assert(!isHumongous(),
-          err_msg("humongous region "HR_FORMAT" should not have been added to collection set",
-                  HR_FORMAT_PARAMS(this)));
-
-  HeapRegionRemSet* hrrs = rem_set();
-  hrrs->migrate_strong_code_roots();
 }
 
 void HeapRegion::strong_code_roots_do(CodeBlobClosure* blk) const {

@@ -22,10 +22,9 @@
  */
 
 /*
- * @key stress
  * @test
  * @summary Stress test for malloc tracking
- * @key nmt jcmd
+ * @key nmt jcmd stress
  * @library /testlibrary /testlibrary/whitebox
  * @build MallocStressTest
  * @ignore - This test is disabled since it will stress NMT and timeout during normal testing

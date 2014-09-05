@@ -3126,6 +3126,8 @@ void Metaspace::global_initialize() {
 
   if (DumpSharedSpaces) {
 #if INCLUDE_CDS
+    MetaspaceShared::estimate_regions_size();
+
     SharedReadOnlySize  = align_size_up(SharedReadOnlySize,  max_alignment);
     SharedReadWriteSize = align_size_up(SharedReadWriteSize, max_alignment);
     SharedMiscDataSize  = align_size_up(SharedMiscDataSize,  max_alignment);
