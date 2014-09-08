@@ -30,6 +30,7 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Stream;
 import java.security.BasicPermission;
+
 import sun.hotspot.parser.DiagnosticCommand;
 
 public class WhiteBox {
@@ -167,6 +168,12 @@ public class WhiteBox {
 
   // CPU features
   public native String getCPUFeatures();
+
+  // Native extensions
+  public native long getHeapUsageForContext(int context);
+  public native long getHeapRegionCountForContext(int context);
+  public native int getContextForObject(Object obj);
+  public native void printRegionInfo(int context);
 
   // VM flags
   public native void    setBooleanVMFlag(String name, boolean value);
