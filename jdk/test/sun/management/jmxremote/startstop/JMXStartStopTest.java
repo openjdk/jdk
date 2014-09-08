@@ -115,8 +115,7 @@ public class JMXStartStopTest {
     throws Exception {
 
         Set<ObjectName> names = server.queryNames(pattern,query);
-        for (Iterator<ObjectName> i = names.iterator(); i.hasNext(); ) {
-            ObjectName name = (ObjectName)i.next();
+        for (ObjectName name : names) {
             MBeanInfo info = server.getMBeanInfo(name);
             dbg_print("Got MBean: " + name);
 
