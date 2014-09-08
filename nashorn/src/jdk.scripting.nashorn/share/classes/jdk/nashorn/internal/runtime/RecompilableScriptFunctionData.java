@@ -84,6 +84,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** Allocator map from makeMap() */
     private final PropertyMap allocatorMap;
 
+    /**
+     * Opaque object representing parser state at the end of the function. Used when reparsing outer function
+     * to help with skipping parsing inner functions.
+     */
+    private final Object endParserState;
+
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
     private transient CodeInstaller<ScriptEnvironment> installer;
 
@@ -98,9 +104,8 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** Id to parent function if one exists */
     private RecompilableScriptFunctionData parent;
 
-    private final boolean isDeclared;
-    private final boolean isAnonymous;
-    private final boolean needsCallee;
+    /** Copy of the {@link FunctionNode} flags. */
+    private final int functionFlags;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -136,15 +141,14 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
-              getFlags(functionNode));
+              getDataFlags(functionNode));
 
         this.functionName        = functionNode.getName();
         this.lineNumber          = functionNode.getLineNumber();
-        this.isDeclared          = functionNode.isDeclared();
-        this.needsCallee         = functionNode.needsCallee();
-        this.isAnonymous         = functionNode.isAnonymous();
+        this.functionFlags       = functionNode.getFlags() | (functionNode.needsCallee() ? FunctionNode.NEEDS_CALLEE : 0);
         this.functionNodeId      = functionNode.getId();
         this.source              = functionNode.getSource();
+        this.endParserState      = functionNode.getEndParserState();
         this.token               = tokenFor(functionNode);
         this.installer           = installer;
         this.allocatorClassName  = allocatorClassName;
@@ -199,6 +203,24 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             return -1;
         }
         return depth;
+    }
+
+    /**
+     * Returns the names of all external symbols this function uses.
+     * @return the names of all external symbols this function uses.
+     */
+    public Set<String> getExternalSymbolNames() {
+        return externalScopeDepths == null ? Collections.<String>emptySet() :
+            Collections.unmodifiableSet(externalScopeDepths.keySet());
+    }
+
+    /**
+     * Returns the opaque object representing the parser state at the end of this function's body, used to
+     * skip parsing this function when reparsing its containing outer function.
+     * @return the object representing the end parser state
+     */
+    public Object getEndParserState() {
+        return endParserState;
     }
 
     /**
@@ -269,7 +291,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     public boolean inDynamicContext() {
-        return (flags & IN_DYNAMIC_CONTEXT) != 0;
+        return getFunctionFlag(FunctionNode.IN_DYNAMIC_CONTEXT);
     }
 
     private static String functionName(final FunctionNode fn) {
@@ -293,7 +315,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return Token.toDesc(TokenType.FUNCTION, position, length);
     }
 
-    private static int getFlags(final FunctionNode functionNode) {
+    private static int getDataFlags(final FunctionNode functionNode) {
         int flags = IS_CONSTRUCTOR;
         if (functionNode.isStrict()) {
             flags |= IS_STRICT;
@@ -306,9 +328,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
         if (functionNode.isVarArg()) {
             flags |= IS_VARIABLE_ARITY;
-        }
-        if (functionNode.inDynamicContext()) {
-            flags |= IN_DYNAMIC_CONTEXT;
         }
         return flags;
     }
@@ -337,7 +356,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     }
 
     FunctionNode reparse() {
-        final boolean isProgram = functionNodeId == FunctionNode.FIRST_FUNCTION_ID;
         // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
         final int descPosition = Token.descPosition(token);
         final Context context = Context.getContextTrusted();
@@ -346,18 +364,27 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             source,
             new Context.ThrowErrorManager(),
             isStrict(),
-            functionNodeId - (isProgram ? 0 : 1),
             lineNumber - 1,
             context.getLogger(Parser.class)); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
 
-        if (isAnonymous) {
+        if (getFunctionFlag(FunctionNode.IS_ANONYMOUS)) {
             parser.setFunctionName(functionName);
         }
+        parser.setReparsedFunction(this);
 
-        final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition, Token.descLength(token), true);
-        // Parser generates a program AST even if we're recompiling a single function, so when we are only recompiling a
-        // single function, extract it from the program.
-        return (isProgram ? program : extractFunctionFromScript(program)).setName(null, functionName);
+        final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition,
+                Token.descLength(token), true);
+        // Parser generates a program AST even if we're recompiling a single function, so when we are only
+        // recompiling a single function, extract it from the program.
+        return (isProgram() ? program : extractFunctionFromScript(program)).setName(null, functionName);
+    }
+
+    private boolean getFunctionFlag(final int flag) {
+        return (functionFlags & flag) != 0;
+    }
+
+    private boolean isProgram() {
+        return getFunctionFlag(FunctionNode.IS_PROGRAM);
     }
 
     TypeMap typeMap(final MethodType fnCallSiteType) {
@@ -546,7 +573,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         assert fns.size() == 1 : "got back more than one method in recompilation";
         final FunctionNode f = fns.iterator().next();
         assert f.getId() == functionNodeId;
-        if (!isDeclared && f.isDeclared()) {
+        if (!getFunctionFlag(FunctionNode.IS_DECLARED) && f.isDeclared()) {
             return f.clearFlag(null, FunctionNode.IS_DECLARED);
         }
         return f;
@@ -669,7 +696,15 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     public boolean needsCallee() {
-        return needsCallee;
+        return getFunctionFlag(FunctionNode.NEEDS_CALLEE);
+    }
+
+    /**
+     * Returns the {@link FunctionNode} flags associated with this function data.
+     * @return the {@link FunctionNode} flags associated with this function data.
+     */
+    public int getFunctionFlags() {
+        return functionFlags;
     }
 
     @Override
