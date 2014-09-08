@@ -26,7 +26,6 @@
 package com.sun.tools.javac.comp;
 
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.JCLambda;
 import java.util.Iterator;
 import java.util.NoSuchElementException;
 
@@ -156,11 +155,5 @@ public class Env<A> implements Iterable<Env<A>> {
                 throw new UnsupportedOperationException();
             }
         };
-    }
-
-    public JCLambda getLambda() {
-        Env<A> out = enclosing(JCTree.Tag.LAMBDA);
-
-        return out != null ? (JCLambda) out.tree : null;
     }
 }
