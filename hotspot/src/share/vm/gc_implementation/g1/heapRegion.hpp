@@ -306,8 +306,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
  public:
   HeapRegion(uint hrm_index,
              G1BlockOffsetSharedArray* sharedOffsetArray,
-             MemRegion mr,
-             AllocationContext_t context = AllocationContext::system());
+             MemRegion mr);
 
   // Initializing the HeapRegion not only resets the data structure, but also
   // resets the BOT for that heap region.
