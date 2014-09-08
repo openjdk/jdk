@@ -189,7 +189,7 @@ public final class Timing implements Loggable {
             maxKeyLength++;
 
             final StringBuilder sb = new StringBuilder();
-            sb.append("Accumulated complation phase Timings:\n\n");
+            sb.append("Accumulated compilation phase timings:\n\n");
             for (final Map.Entry<String, Long> entry : timings.entrySet()) {
                 int len;
 

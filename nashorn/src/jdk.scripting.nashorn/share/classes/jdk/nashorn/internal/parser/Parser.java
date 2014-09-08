@@ -148,7 +148,7 @@ public class Parser extends AbstractParser implements Loggable {
     /** to receive line information from Lexer when scanning multine literals. */
     protected final Lexer.LineInfoReceiver lineInfoReceiver;
 
-    private int nextFunctionId;
+    private RecompilableScriptFunctionData reparsedFunction;
 
     /**
      * Constructor
@@ -171,7 +171,7 @@ public class Parser extends AbstractParser implements Loggable {
      * @param log debug logger if one is needed
      */
     public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final DebugLogger log) {
-        this(env, source, errors, strict, FunctionNode.FIRST_FUNCTION_ID, 0, log);
+        this(env, source, errors, strict, 0, log);
     }
 
     /**
@@ -181,15 +181,13 @@ public class Parser extends AbstractParser implements Loggable {
      * @param source  source to parse
      * @param errors  error manager
      * @param strict  parser created with strict mode enabled.
-     * @param nextFunctionId  starting value for assigning new unique ids to function nodes
      * @param lineOffset line offset to start counting lines from
      * @param log debug logger if one is needed
      */
-    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final int nextFunctionId, final int lineOffset, final DebugLogger log) {
+    public Parser(final ScriptEnvironment env, final Source source, final ErrorManager errors, final boolean strict, final int lineOffset, final DebugLogger log) {
         super(source, errors, strict, lineOffset);
         this.env = env;
         this.namespace = new Namespace(env.getNamespace());
-        this.nextFunctionId    = nextFunctionId;
         this.scripting = env._scripting;
         if (this.scripting) {
             this.lineInfoReceiver = new Lexer.LineInfoReceiver() {
@@ -225,6 +223,16 @@ public class Parser extends AbstractParser implements Loggable {
      */
     public void setFunctionName(final String name) {
         defaultNames.push(createIdentNode(0, 0, name));
+    }
+
+    /**
+     * Sets the {@link RecompilableScriptFunctionData} representing the function being reparsed (when this
+     * parser instance is used to reparse a previously parsed function, as part of its on-demand compilation).
+     * This will trigger various special behaviors, such as skipping nested function bodies.
+     * @param reparsedFunction the function being reparsed.
+     */
+    public void setReparsedFunction(final RecompilableScriptFunctionData reparsedFunction) {
+        this.reparsedFunction = reparsedFunction;
     }
 
     /**
@@ -472,7 +480,6 @@ loop:
         final FunctionNode functionNode =
             new FunctionNode(
                 source,
-                nextFunctionId++,
                 functionLine,
                 token,
                 Token.descPosition(token),
@@ -2828,10 +2835,14 @@ loop:
         FunctionNode functionNode = null;
         long lastToken = 0L;
 
+        final boolean parseBody;
+        Object endParserState = null;
         try {
             // Create a new function block.
             functionNode = newFunctionNode(firstToken, ident, parameters, kind, functionLine);
-
+            assert functionNode != null;
+            final int functionId = functionNode.getId();
+            parseBody = reparsedFunction == null || functionId <= reparsedFunction.getFunctionNodeId();
             // Nashorn extension: expression closures
             if (!env._no_syntax_extensions && type != LBRACE) {
                 /*
@@ -2847,32 +2858,150 @@ loop:
                 assert lc.getCurrentBlock() == lc.getFunctionBody(functionNode);
                 // EOL uses length field to store the line number
                 final int lastFinish = Token.descPosition(lastToken) + (Token.descType(lastToken) == EOL ? 0 : Token.descLength(lastToken));
-                final ReturnNode returnNode = new ReturnNode(functionNode.getLineNumber(), expr.getToken(), lastFinish, expr);
-                appendStatement(returnNode);
+                // Only create the return node if we aren't skipping nested functions. Note that we aren't
+                // skipping parsing of these extended functions; they're considered to be small anyway. Also,
+                // they don't end with a single well known token, so it'd be very hard to get correctly (see
+                // the note below for reasoning on skipping happening before instead of after RBRACE for
+                // details).
+                if (parseBody) {
+                    final ReturnNode returnNode = new ReturnNode(functionNode.getLineNumber(), expr.getToken(), lastFinish, expr);
+                    appendStatement(returnNode);
+                }
                 functionNode.setFinish(lastFinish);
-
             } else {
                 expect(LBRACE);
+                final int lastLexed = stream.last();
+                if (parseBody || !skipFunctionBody(functionNode)) {
+                    // Gather the function elements.
+                    final List<Statement> prevFunctionDecls = functionDeclarations;
+                    functionDeclarations = new ArrayList<>();
+                    try {
+                        sourceElements(false);
+                        addFunctionDeclarations(functionNode);
+                    } finally {
+                        functionDeclarations = prevFunctionDecls;
+                    }
 
-                // Gather the function elements.
-                final List<Statement> prevFunctionDecls = functionDeclarations;
-                functionDeclarations = new ArrayList<>();
-                try {
-                    sourceElements(false);
-                    addFunctionDeclarations(functionNode);
-                } finally {
-                    functionDeclarations = prevFunctionDecls;
+                    lastToken = token;
+                    // Avoiding storing parser state if the function body was small (that is, the next token
+                    // to be read from the token stream is before the last token lexed before we entered
+                    // function body). That'll force the function to be reparsed instead of skipped. Skipping
+                    // involves throwing away and recreating the lexer and the token stream, so for small
+                    // functions it is likely more economical to not bother with skipping (both in terms of
+                    // storing the state, and in terms of throwing away lexer and token stream).
+                    if (parseBody && lastLexed < stream.first()) {
+                        // Since the lexer can read ahead and lexify some number of tokens in advance and have
+                        // them buffered in the TokenStream, we need to produce a lexer state as it was just
+                        // before it lexified RBRACE, and not whatever is its current (quite possibly well read
+                        // ahead) state.
+                        endParserState = new ParserState(Token.descPosition(token), line, linePosition);
+
+                        // NOTE: you might wonder why do we capture/restore parser state before RBRACE instead of
+                        // after RBRACE; after all, we could skip the below "expect(RBRACE);" if we captured the
+                        // state after it. The reason is that RBRACE is a well-known token that we can expect and
+                        // will never involve us getting into a weird lexer state, and as such is a great reparse
+                        // point. Typical example of a weird lexer state after RBRACE would be:
+                        //     function this_is_skipped() { ... } "use strict";
+                        // because lexer is doing weird off-by-one maneuvers around string literal quotes. Instead
+                        // of compensating for the possibility of a string literal (or similar) after RBRACE,
+                        // we'll rather just restart parsing from this well-known, friendly token instead.
+                    }
                 }
-
-                lastToken = token;
                 expect(RBRACE);
                 functionNode.setFinish(finish);
             }
         } finally {
             functionNode = restoreFunctionNode(functionNode, lastToken);
         }
+
+        // NOTE: we can only do alterations to the function node after restoreFunctionNode.
+
+        if (parseBody) {
+            functionNode = functionNode.setEndParserState(lc, endParserState);
+        } else if (functionNode.getBody().getStatementCount() > 0){
+            // This is to ensure the body is empty when !parseBody but we couldn't skip parsing it (see
+            // skipFunctionBody() for possible reasons). While it is not strictly necessary for correctness to
+            // enforce empty bodies in nested functions that were supposed to be skipped, we do assert it as
+            // an invariant in few places in the compiler pipeline, so for consistency's sake we'll throw away
+            // nested bodies early if we were supposed to skip 'em.
+            functionNode = functionNode.setBody(null, functionNode.getBody().setStatements(null,
+                    Collections.<Statement>emptyList()));
+        }
+
+        if (reparsedFunction != null) {
+            // We restore the flags stored in the function's ScriptFunctionData that we got when we first
+            // eagerly parsed the code. We're doing it because some flags would be set based on the
+            // content of the function, or even content of its nested functions, most of which are normally
+            // skipped during an on-demand compilation.
+            final RecompilableScriptFunctionData data = reparsedFunction.getScriptFunctionData(functionNode.getId());
+            if (data != null) {
+                // Data can be null if when we originally parsed the file, we removed the function declaration
+                // as it was dead code.
+                functionNode = functionNode.setFlags(lc, data.getFunctionFlags());
+                // This compensates for missing markEval() in case the function contains an inner function
+                // that contains eval(), that now we didn't discover since we skipped the inner function.
+                if (functionNode.hasNestedEval()) {
+                    assert functionNode.hasScopeBlock();
+                    functionNode = functionNode.setBody(lc, functionNode.getBody().setNeedsScope(null));
+                }
+            }
+        }
         printAST(functionNode);
         return functionNode;
+    }
+
+    private boolean skipFunctionBody(final FunctionNode functionNode) {
+        if (reparsedFunction == null) {
+            // Not reparsing, so don't skip any function body.
+            return false;
+        }
+        // Skip to the RBRACE of this function, and continue parsing from there.
+        final RecompilableScriptFunctionData data = reparsedFunction.getScriptFunctionData(functionNode.getId());
+        if (data == null) {
+            // Nested function is not known to the reparsed function. This can happen if the FunctionNode was
+            // in dead code that was removed. Both FoldConstants and Lower prune dead code. In that case, the
+            // FunctionNode was dropped before a RecompilableScriptFunctionData could've been created for it.
+            return false;
+        }
+        final ParserState parserState = (ParserState)data.getEndParserState();
+        if (parserState == null) {
+            // The function has no stored parser state; it was deemed too small to be skipped.
+            return false;
+        }
+
+        stream.reset();
+        lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions);
+        line = parserState.line;
+        linePosition = parserState.linePosition;
+        // Doesn't really matter, but it's safe to treat it as if there were a semicolon before
+        // the RBRACE.
+        type = SEMICOLON;
+        k = -1;
+        next();
+
+        return true;
+    }
+
+    /**
+     * Encapsulates part of the state of the parser, enough to reconstruct the state of both parser and lexer
+     * for resuming parsing after skipping a function body.
+     */
+    private static class ParserState {
+        private final int position;
+        private final int line;
+        private final int linePosition;
+
+        ParserState(final int position, final int line, final int linePosition) {
+            this.position = position;
+            this.line = line;
+            this.linePosition = linePosition;
+        }
+
+        Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting) {
+            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting);
+            newLexer.restoreState(new Lexer.State(position, Integer.MAX_VALUE, line, -1, linePosition, SEMICOLON));
+            return newLexer;
+        }
     }
 
     private void printAST(final FunctionNode functionNode) {
@@ -3247,6 +3376,9 @@ loop:
             } else {
                 lc.setFlag(fn, FunctionNode.HAS_NESTED_EVAL);
             }
+            // NOTE: it is crucial to mark the body of the outer function as needing scope even when we skip
+            // parsing a nested function. functionBody() contains code to compensate for the lack of invoking
+            // this method when the parser skips a nested function.
             lc.setBlockNeedsScope(lc.getFunctionBody(fn));
         }
     }
