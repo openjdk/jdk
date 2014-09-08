@@ -56,7 +56,7 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
     /**
      * SPI implementations map
      */
-    private ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProvider> providersMap =
+    private final ConcurrentMap<Class<? extends LocaleServiceProvider>, LocaleServiceProvider> providersMap =
             new ConcurrentHashMap<>();
 
     /**
@@ -167,7 +167,6 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
                     avail.addAll(Arrays.asList(lsp.getAvailableLocales()));
                 }
             }
-            availableLocales = avail.toArray(new Locale[0]);
         }
 
         // assuming caller won't mutate the array.
@@ -178,7 +177,7 @@ public abstract class AuxLocaleProviderAdapter extends LocaleProviderAdapter {
      * A dummy locale service provider that indicates there is no
      * provider available
      */
-    private static NullProvider NULL_PROVIDER = new NullProvider();
+    private static final NullProvider NULL_PROVIDER = new NullProvider();
     private static class NullProvider extends LocaleServiceProvider {
         @Override
         public Locale[] getAvailableLocales() {

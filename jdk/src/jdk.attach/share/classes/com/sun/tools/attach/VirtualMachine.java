@@ -636,7 +636,7 @@ public abstract class VirtualMachine {
      * @throws  NullPointerException
      *          If agentProperties is null.
      *
-     * @since   1.9
+     * @since   1.8
      */
     public abstract void startManagementAgent(Properties agentProperties) throws IOException;
 
@@ -662,7 +662,7 @@ public abstract class VirtualMachine {
      *          that cannot be identified as an error to indicate that the
      *          operation failed in the target VM.
      *
-     * @since   1.9
+     * @since   1.8
      */
     public abstract String startLocalManagementAgent() throws IOException;
 

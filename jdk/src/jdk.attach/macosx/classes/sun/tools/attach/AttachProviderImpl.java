@@ -27,8 +27,6 @@ package sun.tools.attach;
 import com.sun.tools.attach.VirtualMachine;
 import com.sun.tools.attach.VirtualMachineDescriptor;
 import com.sun.tools.attach.AttachNotSupportedException;
-import com.sun.tools.attach.spi.AttachProvider;
-
 import java.io.IOException;
 
 /*
@@ -36,9 +34,6 @@ import java.io.IOException;
  * socket.
  */
 public class AttachProviderImpl extends HotSpotAttachProvider {
-
-    // perf counter for the JVM version
-    private static final String JVM_VERSION = "java.property.java.vm.version";
 
     public AttachProviderImpl() {
     }

@@ -25,20 +25,20 @@
 
 package sun.util.cldr;
 
-import java.io.File;
 import java.security.AccessController;
-import java.security.PrivilegedAction;
+import java.security.PrivilegedActionException;
+import java.security.PrivilegedExceptionAction;
 import java.text.spi.BreakIteratorProvider;
 import java.text.spi.CollatorProvider;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.Locale;
-import java.util.ResourceBundle;
+import java.util.ServiceLoader;
 import java.util.Set;
 import java.util.StringTokenizer;
-import java.util.spi.TimeZoneNameProvider;
 import sun.util.locale.provider.JRELocaleProviderAdapter;
 import sun.util.locale.provider.LocaleProviderAdapter;
+import sun.util.locale.provider.LocaleDataMetaInfo;
 
 /**
  * LocaleProviderAdapter implementation for the CLDR locale data.
@@ -47,26 +47,31 @@ import sun.util.locale.provider.LocaleProviderAdapter;
  * @author Naoto Sato
  */
 public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
-    private static final String LOCALE_DATA_JAR_NAME = "cldrdata.jar";
+
+    private final LocaleDataMetaInfo metaInfo;
 
     public CLDRLocaleProviderAdapter() {
-        final String sep = File.separator;
-        String localeDataJar = java.security.AccessController.doPrivileged(
-                    new sun.security.action.GetPropertyAction("java.home"))
-                + sep + "lib" + sep + "ext" + sep + LOCALE_DATA_JAR_NAME;
-
-        // Peek at the installed extension directory to see if the jar file for
-        // CLDR resources is installed or not.
-        final File f = new File(localeDataJar);
-        boolean result = AccessController.doPrivileged(
-                new PrivilegedAction<Boolean>() {
+        try {
+            metaInfo = AccessController.doPrivileged(new PrivilegedExceptionAction<LocaleDataMetaInfo>() {
                     @Override
-                    public Boolean run() {
-                        return f.exists();
+                public LocaleDataMetaInfo run() {
+                    for (LocaleDataMetaInfo ldmi : ServiceLoader.loadInstalled(LocaleDataMetaInfo.class)) {
+                        if (ldmi.getType() == LocaleProviderAdapter.Type.CLDR) {
+                            return ldmi;
+                        }
+                    }
+                    return null;
                     }
                 });
-        if (!result) {
-            throw new UnsupportedOperationException();
+        }  catch (Exception e) {
+            // Catch any exception, and fail gracefully as if CLDR locales do not exist.
+            // It's ok ignore it if something wrong happens because there always is the
+            // JRE or FALLBACK LocaleProviderAdapter that will do the right thing.
+            throw new UnsupportedOperationException(e);
+        }
+
+        if (metaInfo == null) {
+            throw new UnsupportedOperationException("CLDR locale data could not be found.");
         }
     }
 
@@ -91,7 +96,7 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     @Override
     public Locale[] getAvailableLocales() {
-        Set<String> all = createLanguageTagSet("All");
+        Set<String> all = createLanguageTagSet("AvailableLocales");
         Locale[] locs = new Locale[all.size()];
         int index = 0;
         for (String tag : all) {
@@ -102,11 +107,10 @@ public class CLDRLocaleProviderAdapter extends JRELocaleProviderAdapter {
 
     @Override
     protected Set<String> createLanguageTagSet(String category) {
-        ResourceBundle rb = ResourceBundle.getBundle("sun.util.cldr.CLDRLocaleDataMetaInfo", Locale.ROOT);
-        if (rb.containsKey(category)) {
+        String supportedLocaleString = metaInfo.availableLanguageTags(category);
+        if (supportedLocaleString == null) {
             return Collections.emptySet();
         }
-        String supportedLocaleString = rb.getString(category);
         Set<String> tagset = new HashSet<>();
         StringTokenizer tokens = new StringTokenizer(supportedLocaleString);
         while (tokens.hasMoreTokens()) {
