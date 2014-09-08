@@ -26,7 +26,7 @@ import java.io.IOException;
 import java.lang.reflect.Method;
 import java.net.ConnectException;
 import java.net.ServerSocket;
-import java.rmi.NoSuchObjectException;
+import java.rmi.RemoteException;
 import java.rmi.registry.LocateRegistry;
 import java.rmi.registry.Registry;
 import java.util.ArrayList;
@@ -115,8 +115,7 @@ public class JMXStartStopTest {
     throws Exception {
 
         Set<ObjectName> names = server.queryNames(pattern,query);
-        for (Iterator<ObjectName> i = names.iterator(); i.hasNext(); ) {
-            ObjectName name = (ObjectName)i.next();
+        for (ObjectName name : names) {
             MBeanInfo info = server.getMBeanInfo(name);
             dbg_print("Got MBean: " + name);
 
@@ -174,9 +173,9 @@ public class JMXStartStopTest {
         } catch (Exception e) {
             Throwable t = e;
             while (t != null) {
-                if (t instanceof NoSuchObjectException ||
-                    t instanceof ConnectException ||
-                    t instanceof SSLHandshakeException) {
+                if (t instanceof RemoteException ||
+                    t instanceof SSLHandshakeException ||
+                    t instanceof ConnectException) {
                     break;
                 }
                 t = t.getCause();
@@ -617,7 +616,10 @@ public class JMXStartStopTest {
                 busyPort = ss.getLocalPort();
                 jcmd(
                     line -> {
-                        if (line.contains("Port already in use: " + busyPort)) {
+                        boolean match = line.contains("Port already in use: " +
+                                                      busyPort);
+                        System.out.println("[match] " + line + " => "  + match);
+                        if (match) {
                             checks.getAndUpdate((op) -> op | 4);
                         }
                     },

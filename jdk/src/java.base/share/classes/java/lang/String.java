@@ -2119,7 +2119,7 @@ public final class String
      * @since 1.5
      */
     public boolean contains(CharSequence s) {
-        return indexOf(s.toString()) > -1;
+        return indexOf(s.toString()) >= 0;
     }
 
     /**
