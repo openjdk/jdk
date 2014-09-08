@@ -1374,7 +1374,9 @@ public class DeferredAttr extends JCTree.Visitor {
                 @Override
                 public Symbol process(MethodSymbol ms) {
                     ArgumentExpressionKind kind = ArgumentExpressionKind.methodKind(ms, types);
-                    return kind != ArgumentExpressionKind.POLY ? ms.getReturnType().tsym : null;
+                    if (kind == ArgumentExpressionKind.POLY || ms.getReturnType().hasTag(TYPEVAR))
+                        return null;
+                    return ms.getReturnType().tsym;
                 }
                 @Override
                 public Symbol reduce(Symbol s1, Symbol s2) {
