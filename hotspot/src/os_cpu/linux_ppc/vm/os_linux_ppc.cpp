@@ -613,7 +613,7 @@ void os::verify_stack_alignment() {
 }
 #endif
 
-int os:extra_bang_size_in_bytes() {
+int os::extra_bang_size_in_bytes() {
   // PPC does not require the additional stack bang.
   return 0;
 }
