@@ -25,6 +25,7 @@
  * @test
  * @bug 8005220
  * @summary javap must display repeating annotations
+ * @ignore 8057687 emit correct byte code an attributes for type annotations
  */
 import java.io.*;
 import java.util.*;
