@@ -1351,6 +1351,12 @@ public class DeferredAttr extends JCTree.Visitor {
                 site = env.enclClass.sym.type;
             }
 
+            while (site.hasTag(TYPEVAR)) {
+                site = site.getUpperBound();
+            }
+
+            site = types.capture(site);
+
             List<Type> args = rs.dummyArgs(tree.args.length());
             Name name = TreeInfo.name(tree.meth);
 
