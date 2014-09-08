@@ -369,33 +369,44 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
 #endif
 }
 
-bool
-G1BlockOffsetArray::verify_for_object(HeapWord* obj_start,
-                                      size_t word_size) const {
-  size_t first_card = _array->index_for(obj_start);
-  size_t last_card = _array->index_for(obj_start + word_size - 1);
-  if (!_array->is_card_boundary(obj_start)) {
-    // If the object is not on a card boundary the BOT entry of the
-    // first card should point to another object so we should not
-    // check that one.
-    first_card += 1;
-  }
-  for (size_t card = first_card; card <= last_card; card += 1) {
-    HeapWord* card_addr = _array->address_for_index(card);
-    HeapWord* block_start = block_start_const(card_addr);
-    if (block_start != obj_start) {
-      gclog_or_tty->print_cr("block start: "PTR_FORMAT" is incorrect - "
-                             "card index: "SIZE_FORMAT" "
-                             "card addr: "PTR_FORMAT" BOT entry: %u "
-                             "obj: "PTR_FORMAT" word size: "SIZE_FORMAT" "
-                             "cards: ["SIZE_FORMAT","SIZE_FORMAT"]",
-                             p2i(block_start), card, p2i(card_addr),
-                             _array->offset_array(card),
-                             p2i(obj_start), word_size, first_card, last_card);
-      return false;
+void G1BlockOffsetArray::verify() const {
+  size_t start_card = _array->index_for(gsp()->bottom());
+  size_t end_card = _array->index_for(gsp()->top());
+
+  for (size_t current_card = start_card; current_card < end_card; current_card++) {
+    u_char entry = _array->offset_array(current_card);
+    if (entry < N_words) {
+      // The entry should point to an object before the current card. Verify that
+      // it is possible to walk from that object in to the current card by just
+      // iterating over the objects following it.
+      HeapWord* card_address = _array->address_for_index(current_card);
+      HeapWord* obj_end = card_address - entry;
+      while (obj_end < card_address) {
+        HeapWord* obj = obj_end;
+        size_t obj_size = block_size(obj);
+        obj_end = obj + obj_size;
+        guarantee(obj_end > obj && obj_end <= gsp()->top(),
+            err_msg("Invalid object end. obj: " PTR_FORMAT " obj_size: " SIZE_FORMAT " obj_end: " PTR_FORMAT " top: " PTR_FORMAT,
+                p2i(obj), obj_size, p2i(obj_end), p2i(gsp()->top())));
+      }
+    } else {
+      // Because we refine the BOT based on which cards are dirty there is not much we can verify here.
+      // We need to make sure that we are going backwards and that we don't pass the start of the
+      // corresponding heap region. But that is about all we can verify.
+      size_t backskip = BlockOffsetArray::entry_to_cards_back(entry);
+      guarantee(backskip >= 1, "Must be going back at least one card.");
+
+      size_t max_backskip = current_card - start_card;
+      guarantee(backskip <= max_backskip,
+          err_msg("Going backwards beyond the start_card. start_card: " SIZE_FORMAT " current_card: " SIZE_FORMAT " backskip: " SIZE_FORMAT,
+              start_card, current_card, backskip));
+
+      HeapWord* backskip_address = _array->address_for_index(current_card - backskip);
+      guarantee(backskip_address >= gsp()->bottom(),
+          err_msg("Going backwards beyond bottom of the region: bottom: " PTR_FORMAT ", backskip_address: " PTR_FORMAT,
+              p2i(gsp()->bottom()), p2i(backskip_address)));
     }
   }
-  return true;
 }
 
 #ifndef PRODUCT
