@@ -23,13 +23,12 @@
 
 /**
  * JDK-8048079: Persistent code store is broken after optimistic types merge
- *
+ * Same script as JDK-8048079_1b.js to exercise code cache again.
  * @test
- * @run
+ * @runif external.yui
  * @option -pcc
  * @option -Dnashorn.persistent.code.cache=build/nashorn_code_cache
  * @fork
  */
 
-load(__DIR__ + 'prototype.js');
 load(__DIR__ + 'yui.js');

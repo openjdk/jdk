@@ -26,9 +26,8 @@
  *
  * @test
  * @option -Dnashorn.compiler.splitter.threshold=200
- * @run
+ * @runif external.yui
  * @fork
  */
 
-load(__DIR__ + 'NASHORN-689.js');
-load(__DIR__ + 'NASHORN-58.js');
+load(__DIR__ + 'yui.js');

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,13 @@
  */
 
 /**
- * Test various scripts with low splitter threshold
+ * JDK-8048079: Persistent code store is broken after optimistic types merge
  *
  * @test
- * @option -Dnashorn.compiler.splitter.threshold=200
- * @run
+ * @runif external.prototype
+ * @option -pcc
+ * @option -Dnashorn.persistent.code.cache=build/nashorn_code_cache
  * @fork
  */
 
-load(__DIR__ + 'NASHORN-689.js');
-load(__DIR__ + 'NASHORN-58.js');
+load(__DIR__ + 'prototype.js');
