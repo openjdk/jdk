@@ -621,6 +621,10 @@ protected:
 
 public:
 
+  G1Allocator* allocator() {
+    return _allocator;
+  }
+
   G1MonitoringSupport* g1mm() {
     assert(_g1mm != NULL, "should have been initialized");
     return _g1mm;

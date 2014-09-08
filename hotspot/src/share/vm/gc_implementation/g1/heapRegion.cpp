@@ -322,9 +322,10 @@ bool HeapRegion::claimHeapRegion(jint claimValue) {
 
 HeapRegion::HeapRegion(uint hrm_index,
                        G1BlockOffsetSharedArray* sharedOffsetArray,
-                       MemRegion mr, AllocationContext_t context) :
+                       MemRegion mr) :
     G1OffsetTableContigSpace(sharedOffsetArray, mr),
-    _hrm_index(hrm_index), _allocation_context(context),
+    _hrm_index(hrm_index),
+    _allocation_context(AllocationContext::system()),
     _humongous_start_region(NULL),
     _in_collection_set(false),
     _next_in_special_set(NULL),

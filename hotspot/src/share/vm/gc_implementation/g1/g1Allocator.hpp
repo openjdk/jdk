@@ -86,6 +86,12 @@ public:
    void set_used(size_t bytes) {
      _summary_bytes_used = bytes;
    }
+
+   virtual HeapRegion* new_heap_region(uint hrs_index,
+                                       G1BlockOffsetSharedArray* sharedOffsetArray,
+                                       MemRegion mr) {
+     return new HeapRegion(hrs_index, sharedOffsetArray, mr);
+   }
 };
 
 // The default allocator for G1.
