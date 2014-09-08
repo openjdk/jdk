@@ -1,0 +1,15 @@
+SyntaxError: test/script/basic/es6/let-redeclare-extra.js#35:8<eval>@2:2:8 Variable "x" has already been declared
+    let x = 2;
+        ^
+SyntaxError: test/script/basic/es6/let-redeclare-extra.js#35:8<eval>@4:3:8 Variable "x" has already been declared
+    var x = 2;
+        ^
+SyntaxError: test/script/basic/es6/let-redeclare-extra.js#35:8<eval>@4:2:8 Variable "x" has already been declared
+    var x = 2;
+        ^
+SyntaxError: test/script/basic/es6/let-redeclare-extra.js#35:8<eval>@4:2:10 Variable "x" has already been declared
+    const x = function (){};
+          ^
+SyntaxError: test/script/basic/es6/let-redeclare-extra.js#35:8<eval>@4:3:13 Variable "a" has already been declared
+    function a () {};
+             ^
