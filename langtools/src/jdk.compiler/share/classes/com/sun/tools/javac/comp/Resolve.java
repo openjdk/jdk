@@ -2992,7 +2992,7 @@ public class Resolve {
         /**
          * Should lookup stop at given phase with given result
          */
-        protected boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
+        final boolean shouldStop(Symbol sym, MethodResolutionPhase phase) {
             return phase.ordinal() > maxPhase.ordinal() ||
                     sym.kind < ERRONEOUS || sym.kind == AMBIGUOUS;
         }
@@ -4174,15 +4174,39 @@ public class Resolve {
         VARARITY(true, true) {
             @Override
             public Symbol mergeResults(Symbol bestSoFar, Symbol sym) {
-                switch (sym.kind) {
-                    case WRONG_MTH:
-                        return (bestSoFar.kind == WRONG_MTH || bestSoFar.kind == WRONG_MTHS) ?
-                            bestSoFar :
-                            sym;
-                    case ABSENT_MTH:
-                        return bestSoFar;
-                    default:
-                        return sym;
+                //Check invariants (see {@code LookupHelper.shouldStop})
+                Assert.check(bestSoFar.kind >= ERRONEOUS && bestSoFar.kind != AMBIGUOUS);
+                if (sym.kind < ERRONEOUS) {
+                    //varargs resolution successful
+                    return sym;
+                } else {
+                    //pick best error
+                    switch (bestSoFar.kind) {
+                        case WRONG_MTH:
+                        case WRONG_MTHS:
+                            //Override previous errors if they were caused by argument mismatch.
+                            //This generally means preferring current symbols - but we need to pay
+                            //attention to the fact that the varargs lookup returns 'less' candidates
+                            //than the previous rounds, and adjust that accordingly.
+                            switch (sym.kind) {
+                                case WRONG_MTH:
+                                    //if the previous round matched more than one method, return that
+                                    //result instead
+                                    return bestSoFar.kind == WRONG_MTHS ?
+                                            bestSoFar : sym;
+                                case ABSENT_MTH:
+                                    //do not override erroneous symbol if the arity lookup did not
+                                    //match any method
+                                    return bestSoFar;
+                                case WRONG_MTHS:
+                                default:
+                                    //safe to override
+                                    return sym;
+                            }
+                        default:
+                            //otherwise, return first error
+                            return bestSoFar;
+                    }
                 }
             }
         };
