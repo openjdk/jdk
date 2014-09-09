@@ -196,11 +196,6 @@ public final class Context {
         }
 
         @Override
-        public long getUniqueEvalId() {
-            return context.getUniqueEvalId();
-        }
-
-        @Override
         public void storeScript(final String classInfoFile, final Source source, final String mainClassName,
                                 final Map<String,byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers,
                                 final Object[] constants, final int compilationId) {
@@ -334,9 +329,6 @@ public final class Context {
     /** Unique id for script. Used only when --loader-per-compile=false */
     private final AtomicLong uniqueScriptId;
 
-    /** Unique id for 'eval' */
-    private final AtomicLong uniqueEvalId;
-
     /** Optional class filter to use for Java classes. Can be null. */
     private final ClassFilter classFilter;
 
@@ -450,7 +442,6 @@ public final class Context {
             this.uniqueScriptId = new AtomicLong();
         }
         this.errors    = errors;
-        this.uniqueEvalId = new AtomicLong();
 
         // if user passed -classpath option, make a class loader with that and set it as
         // thread context class loader so that script can access classes from that path.
@@ -1188,10 +1179,6 @@ public final class Context {
                     return new ScriptLoader(appLoader, Context.this);
                 }
              }, CREATE_LOADER_ACC_CTXT);
-    }
-
-    private long getUniqueEvalId() {
-        return uniqueEvalId.getAndIncrement();
     }
 
     private long getUniqueScriptId() {
