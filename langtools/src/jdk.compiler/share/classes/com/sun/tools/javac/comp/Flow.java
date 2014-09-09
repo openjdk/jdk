@@ -247,7 +247,7 @@ public class Flow {
                     return !env.info.scope.includes(sym) &&
                            sym.owner.kind == MTH;
                 }
-            }.analyzeTree(env);
+            }.analyzeTree(env, that);
             LambdaFlowAnalyzer flowAnalyzer = new LambdaFlowAnalyzer();
             flowAnalyzer.analyzeTree(env, that, make);
             return flowAnalyzer.inferredThrownTypes;
