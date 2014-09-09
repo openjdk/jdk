@@ -1588,8 +1588,17 @@ void os::print_os_info_brief(outputStream* st) {
 }
 
 void os::print_os_info(outputStream* st) {
-  st->print("OS:");
-
+#ifdef ASSERT
+  char buffer[1024];
+  DWORD size = sizeof(buffer);
+  st->print(" HostName: ");
+  if (GetComputerNameEx(ComputerNameDnsHostname, buffer, &size)) {
+    st->print("%s", buffer);
+  } else {
+    st->print("N/A");
+  }
+#endif
+  st->print(" OS:");
   os::win32::print_windows_version(st);
 }
 
