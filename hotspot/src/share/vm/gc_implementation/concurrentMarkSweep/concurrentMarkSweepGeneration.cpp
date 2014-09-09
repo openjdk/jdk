@@ -328,9 +328,11 @@ AdaptiveSizePolicy* CMSCollector::size_policy() {
 void ConcurrentMarkSweepGeneration::initialize_performance_counters() {
 
   const char* gen_name = "old";
+  GenCollectorPolicy* gcp = (GenCollectorPolicy*) GenCollectedHeap::heap()->collector_policy();
 
   // Generation Counters - generation 1, 1 subspace
-  _gen_counters = new GenerationCounters(gen_name, 1, 1, &_virtual_space);
+  _gen_counters = new GenerationCounters(gen_name, 1, 1,
+      gcp->min_old_size(), gcp->max_old_size(), &_virtual_space);
 
   _space_counters = new GSpaceCounters(gen_name, 0,
                                        _virtual_space.reserved_size(),

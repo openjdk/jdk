@@ -683,7 +683,9 @@ public:
     return _task_queues->steal(worker_id, hash_seed, obj);
   }
 
-  ConcurrentMark(G1CollectedHeap* g1h, G1RegionToSpaceMapper* prev_bitmap_storage, G1RegionToSpaceMapper* next_bitmap_storage);
+  ConcurrentMark(G1CollectedHeap* g1h,
+                 G1RegionToSpaceMapper* prev_bitmap_storage,
+                 G1RegionToSpaceMapper* next_bitmap_storage);
   ~ConcurrentMark();
 
   ConcurrentMarkThread* cmThread() { return _cmThread; }
@@ -712,8 +714,10 @@ public:
   // inconsistent) and always passing the size. hr is the region that
   // contains the object and it's passed optionally from callers who
   // might already have it (no point in recalculating it).
-  inline void grayRoot(oop obj, size_t word_size,
-                       uint worker_id, HeapRegion* hr = NULL);
+  inline void grayRoot(oop obj,
+                       size_t word_size,
+                       uint worker_id,
+                       HeapRegion* hr = NULL);
 
   // It iterates over the heap and for each object it comes across it
   // will dump the contents of its reference fields, as well as
@@ -734,7 +738,8 @@ public:
   //   AND MARKED : indicates that an object is both explicitly and
   //   implicitly live (it should be one or the other, not both)
   void print_reachable(const char* str,
-                       VerifyOption vo, bool all) PRODUCT_RETURN;
+                       VerifyOption vo,
+                       bool all) PRODUCT_RETURN;
 
   // Clear the next marking bitmap (will be called concurrently).
   void clearNextBitmap();
@@ -771,12 +776,11 @@ public:
   // this carefully!
   inline void markPrev(oop p);
 
-  // Clears marks for all objects in the given range, for the prev,
-  // next, or both bitmaps.  NB: the previous bitmap is usually
+  // Clears marks for all objects in the given range, for the prev or
+  // next bitmaps.  NB: the previous bitmap is usually
   // read-only, so use this carefully!
   void clearRangePrevBitmap(MemRegion mr);
   void clearRangeNextBitmap(MemRegion mr);
-  void clearRangeBothBitmaps(MemRegion mr);
 
   // Notify data structures that a GC has started.
   void note_start_of_gc() {
@@ -797,21 +801,6 @@ public:
                            bool verify_enqueued_buffers,
                            bool verify_thread_buffers,
                            bool verify_fingers) PRODUCT_RETURN;
-
-  bool isMarked(oop p) const {
-    assert(p != NULL && p->is_oop(), "expected an oop");
-    HeapWord* addr = (HeapWord*)p;
-    assert(addr >= _nextMarkBitMap->startWord() ||
-           addr < _nextMarkBitMap->endWord(), "in a region");
-
-    return _nextMarkBitMap->isMarked(addr);
-  }
-
-  inline bool not_yet_marked(oop p) const;
-
-  // XXX Debug code
-  bool containing_card_is_marked(void* p);
-  bool containing_cards_are_marked(void* start, void* last);
 
   bool isPrevMarked(oop p) const {
     assert(p != NULL && p->is_oop(), "expected an oop");
@@ -898,7 +887,8 @@ public:
   // marked_bytes array slot for the given HeapRegion.
   // Sets the bits in the given card bitmap that are associated with the
   // cards that are spanned by the memory region.
-  inline void count_region(MemRegion mr, HeapRegion* hr,
+  inline void count_region(MemRegion mr,
+                           HeapRegion* hr,
                            size_t* marked_bytes_array,
                            BitMap* task_card_bm);
 
@@ -906,56 +896,27 @@ public:
   // data structures for the given worker id.
   inline void count_region(MemRegion mr, HeapRegion* hr, uint worker_id);
 
-  // Counts the given memory region in the task/worker counting
-  // data structures for the given worker id.
-  inline void count_region(MemRegion mr, uint worker_id);
-
   // Counts the given object in the given task/worker counting
   // data structures.
-  inline void count_object(oop obj, HeapRegion* hr,
+  inline void count_object(oop obj,
+                           HeapRegion* hr,
                            size_t* marked_bytes_array,
                            BitMap* task_card_bm);
 
-  // Counts the given object in the task/worker counting data
-  // structures for the given worker id.
-  inline void count_object(oop obj, HeapRegion* hr, uint worker_id);
-
   // Attempts to mark the given object and, if successful, counts
   // the object in the given task/worker counting structures.
-  inline bool par_mark_and_count(oop obj, HeapRegion* hr,
+  inline bool par_mark_and_count(oop obj,
+                                 HeapRegion* hr,
                                  size_t* marked_bytes_array,
                                  BitMap* task_card_bm);
 
   // Attempts to mark the given object and, if successful, counts
   // the object in the task/worker counting structures for the
   // given worker id.
-  inline bool par_mark_and_count(oop obj, size_t word_size,
-                                 HeapRegion* hr, uint worker_id);
-
-  // Attempts to mark the given object and, if successful, counts
-  // the object in the task/worker counting structures for the
-  // given worker id.
-  inline bool par_mark_and_count(oop obj, HeapRegion* hr, uint worker_id);
-
-  // Similar to the above routine but we don't know the heap region that
-  // contains the object to be marked/counted, which this routine looks up.
-  inline bool par_mark_and_count(oop obj, uint worker_id);
-
-  // Similar to the above routine but there are times when we cannot
-  // safely calculate the size of obj due to races and we, therefore,
-  // pass the size in as a parameter. It is the caller's responsibility
-  // to ensure that the size passed in for obj is valid.
-  inline bool par_mark_and_count(oop obj, size_t word_size, uint worker_id);
-
-  // Unconditionally mark the given object, and unconditionally count
-  // the object in the counting structures for worker id 0.
-  // Should *not* be called from parallel code.
-  inline bool mark_and_count(oop obj, HeapRegion* hr);
-
-  // Similar to the above routine but we don't know the heap region that
-  // contains the object to be marked/counted, which this routine looks up.
-  // Should *not* be called from parallel code.
-  inline bool mark_and_count(oop obj);
+  inline bool par_mark_and_count(oop obj,
+                                 size_t word_size,
+                                 HeapRegion* hr,
+                                 uint worker_id);
 
   // Returns true if initialization was successfully completed.
   bool completed_initialization() const {
@@ -1227,9 +1188,12 @@ public:
     _finger = new_finger;
   }
 
-  CMTask(uint worker_id, ConcurrentMark *cm,
-         size_t* marked_bytes, BitMap* card_bm,
-         CMTaskQueue* task_queue, CMTaskQueueSet* task_queues);
+  CMTask(uint worker_id,
+         ConcurrentMark *cm,
+         size_t* marked_bytes,
+         BitMap* card_bm,
+         CMTaskQueue* task_queue,
+         CMTaskQueueSet* task_queues);
 
   // it prints statistics associated with this task
   void print_stats();

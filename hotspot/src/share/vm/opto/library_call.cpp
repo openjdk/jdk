@@ -845,7 +845,6 @@ bool LibraryCallKit::try_to_inline(int predicate) {
   case vmIntrinsics::_isArray:
   case vmIntrinsics::_isPrimitive:
   case vmIntrinsics::_getSuperclass:
-  case vmIntrinsics::_getComponentType:
   case vmIntrinsics::_getClassAccessFlags:      return inline_native_Class_query(intrinsic_id());
 
   case vmIntrinsics::_floatToRawIntBits:
@@ -3412,10 +3411,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     prim_return_value = null();
     return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
     break;
-  case vmIntrinsics::_getComponentType:
-    prim_return_value = null();
-    return_type = TypeInstPtr::MIRROR->cast_to_ptr_type(TypePtr::BotPTR);
-    break;
   case vmIntrinsics::_getClassAccessFlags:
     prim_return_value = intcon(JVM_ACC_ABSTRACT | JVM_ACC_FINAL | JVM_ACC_PUBLIC);
     return_type = TypeInt::INT;  // not bool!  6297094
@@ -3530,17 +3525,6 @@ bool LibraryCallKit::inline_native_Class_query(vmIntrinsics::ID id) {
     if (!stopped()) {
       query_value = load_mirror_from_klass(kls);
     }
-    break;
-
-  case vmIntrinsics::_getComponentType:
-    if (generate_array_guard(kls, region) != NULL) {
-      // Be sure to pin the oop load to the guard edge just created:
-      Node* is_array_ctrl = region->in(region->req()-1);
-      Node* cma = basic_plus_adr(kls, in_bytes(ArrayKlass::component_mirror_offset()));
-      Node* cmo = make_load(is_array_ctrl, cma, TypeInstPtr::MIRROR, T_OBJECT, MemNode::unordered);
-      phi->add_req(cmo);
-    }
-    query_value = null();  // non-array case is null
     break;
 
   case vmIntrinsics::_getClassAccessFlags:

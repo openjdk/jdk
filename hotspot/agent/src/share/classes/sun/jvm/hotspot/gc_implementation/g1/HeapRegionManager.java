@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,9 +37,9 @@ import sun.jvm.hotspot.types.CIntegerField;
 import sun.jvm.hotspot.types.Type;
 import sun.jvm.hotspot.types.TypeDataBase;
 
-// Mirror class for HeapRegionSeq. It essentially encapsulates the G1HeapRegionTable.
+// Mirror class for HeapRegionManager.
 
-public class HeapRegionSeq extends VMObject {
+public class HeapRegionManager extends VMObject {
     // G1HeapRegionTable _regions
     static private long regionsFieldOffset;
     // uint _committed_length
@@ -54,7 +54,7 @@ public class HeapRegionSeq extends VMObject {
     }
 
     static private synchronized void initialize(TypeDataBase db) {
-        Type type = db.lookupType("HeapRegionSeq");
+        Type type = db.lookupType("HeapRegionManager");
 
         regionsFieldOffset = type.getField("_regions").getOffset();
         numCommittedField = type.getCIntegerField("_num_committed");
@@ -82,7 +82,7 @@ public class HeapRegionSeq extends VMObject {
         return regions().heapRegionIterator(length());
     }
 
-    public HeapRegionSeq(Address addr) {
+    public HeapRegionManager(Address addr) {
         super(addr);
     }
 }
