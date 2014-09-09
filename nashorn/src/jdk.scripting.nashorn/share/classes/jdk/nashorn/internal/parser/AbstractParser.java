@@ -326,18 +326,28 @@ public abstract class AbstractParser {
     }
 
     /**
-     * Check next token and advance.
+     * Check current token and advance to the next token.
      *
      * @param expected Expected tokenType.
      *
      * @throws ParserException on unexpected token type
      */
     protected final void expect(final TokenType expected) throws ParserException {
+        expectDontAdvance(expected);
+        next();
+    }
+
+    /**
+     * Check current token, but don't advance to the next token.
+     *
+     * @param expected Expected tokenType.
+     *
+     * @throws ParserException on unexpected token type
+     */
+    protected final void expectDontAdvance(final TokenType expected) throws ParserException {
         if (type != expected) {
             throw error(expectMessage(expected));
         }
-
-        next();
     }
 
     /**

@@ -272,7 +272,7 @@ public class Parser extends AbstractParser implements Loggable {
 
         try {
             stream = new TokenStream();
-            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions);
+            lexer  = new Lexer(source, startPos, len, stream, scripting && !env._no_syntax_extensions, reparsedFunction != null);
             lexer.line = lexer.pendingLine = lineOffset + 1;
             line = lineOffset;
 
@@ -2869,9 +2869,9 @@ loop:
                 }
                 functionNode.setFinish(lastFinish);
             } else {
-                expect(LBRACE);
-                final int lastLexed = stream.last();
+                expectDontAdvance(LBRACE);
                 if (parseBody || !skipFunctionBody(functionNode)) {
+                    next();
                     // Gather the function elements.
                     final List<Statement> prevFunctionDecls = functionDeclarations;
                     functionDeclarations = new ArrayList<>();
@@ -2883,13 +2883,7 @@ loop:
                     }
 
                     lastToken = token;
-                    // Avoiding storing parser state if the function body was small (that is, the next token
-                    // to be read from the token stream is before the last token lexed before we entered
-                    // function body). That'll force the function to be reparsed instead of skipped. Skipping
-                    // involves throwing away and recreating the lexer and the token stream, so for small
-                    // functions it is likely more economical to not bother with skipping (both in terms of
-                    // storing the state, and in terms of throwing away lexer and token stream).
-                    if (parseBody && lastLexed < stream.first()) {
+                    if (parseBody) {
                         // Since the lexer can read ahead and lexify some number of tokens in advance and have
                         // them buffered in the TokenStream, we need to produce a lexer state as it was just
                         // before it lexified RBRACE, and not whatever is its current (quite possibly well read
@@ -2964,10 +2958,7 @@ loop:
             return false;
         }
         final ParserState parserState = (ParserState)data.getEndParserState();
-        if (parserState == null) {
-            // The function has no stored parser state; it was deemed too small to be skipped.
-            return false;
-        }
+        assert parserState != null;
 
         stream.reset();
         lexer = parserState.createLexer(source, lexer, stream, scripting && !env._no_syntax_extensions);
@@ -2998,7 +2989,7 @@ loop:
         }
 
         Lexer createLexer(final Source source, final Lexer lexer, final TokenStream stream, final boolean scripting) {
-            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting);
+            final Lexer newLexer = new Lexer(source, position, lexer.limit - position, stream, scripting, true);
             newLexer.restoreState(new Lexer.State(position, Integer.MAX_VALUE, line, -1, linePosition, SEMICOLON));
             return newLexer;
         }
