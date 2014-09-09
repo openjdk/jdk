@@ -565,7 +565,7 @@ protected:
   TRACE_DEFINE_KLASS_METHODS;
 
   // garbage collection support
-  virtual void oops_do(OopClosure* cl);
+  void oops_do(OopClosure* cl);
 
   // Iff the class loader (or mirror for anonymous classes) is alive the
   // Klass is considered alive.

@@ -101,7 +101,8 @@ void PSYoungGen::initialize_work() {
   }
 
   // Generation Counters - generation 0, 3 subspaces
-  _gen_counters = new PSGenerationCounters("new", 0, 3, _virtual_space);
+  _gen_counters = new PSGenerationCounters("new", 0, 3, _min_gen_size,
+                                           _max_gen_size, _virtual_space);
 
   // Compute maximum space sizes for performance counters
   ParallelScavengeHeap* heap = (ParallelScavengeHeap*)Universe::heap();
