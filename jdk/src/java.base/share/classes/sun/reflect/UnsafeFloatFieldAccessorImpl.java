@@ -33,7 +33,7 @@ class UnsafeFloatFieldAccessorImpl extends UnsafeFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Float(getFloat(obj));
+        return Float.valueOf(getFloat(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {
