@@ -80,6 +80,7 @@ needs_jdk = \
   runtime/NMT/MallocSiteHashOverflow.java \
   runtime/NMT/MallocStressTest.java \
   runtime/NMT/MallocTestType.java \
+  runtime/NMT/MallocTrackingVerify.java \
   runtime/NMT/ReleaseCommittedMemory.java \
   runtime/NMT/ReleaseNoCommit.java \
   runtime/NMT/ShutdownTwice.java \
