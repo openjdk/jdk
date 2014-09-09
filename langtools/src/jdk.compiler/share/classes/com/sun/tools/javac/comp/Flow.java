@@ -208,7 +208,7 @@ public class Flow {
 
     public void analyzeTree(Env<AttrContext> env, TreeMaker make) {
         new AliveAnalyzer().analyzeTree(env, make);
-        new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit).analyzeTree(env);
+        new AssignAnalyzer().analyzeTree(env);
         new FlowAnalyzer().analyzeTree(env, make);
         new CaptureAnalyzer().analyzeTree(env, make);
     }
@@ -241,7 +241,7 @@ public class Flow {
         //related errors, which will allow for more errors to be detected
         Log.DiagnosticHandler diagHandler = new Log.DiscardDiagnosticHandler(log);
         try {
-            new AssignAnalyzer(log, syms, lint, names, enforceThisDotInit) {
+            new AssignAnalyzer() {
                 @Override
                 protected boolean trackable(VarSymbol sym) {
                     return !env.info.scope.includes(sym) &&
@@ -1369,12 +1369,12 @@ public class Flow {
      * effectively-final local variables/parameters.
      */
 
-    public abstract static class AbstractAssignAnalyzer<P extends AbstractAssignAnalyzer.AbstractAssignPendingExit>
+    public abstract class AbstractAssignAnalyzer<P extends AbstractAssignAnalyzer<P>.AbstractAssignPendingExit>
         extends BaseAnalyzer<P> {
 
         /** The set of definitely assigned variables.
          */
-        protected final Bits inits;
+        protected Bits inits;
 
         /** The set of definitely unassigned variables.
          */
@@ -1428,13 +1428,7 @@ public class Flow {
         /** The starting position of the analysed tree */
         int startPos;
 
-        final Symtab syms;
-
-        protected Names names;
-
-        final boolean enforceThisDotInit;
-
-        public static class AbstractAssignPendingExit extends BaseAnalyzer.PendingExit {
+        public class AbstractAssignPendingExit extends BaseAnalyzer.PendingExit {
 
             final Bits inits;
             final Bits uninits;
@@ -1456,17 +1450,14 @@ public class Flow {
             }
         }
 
-        public AbstractAssignAnalyzer(Bits inits, Symtab syms, Names names, boolean enforceThisDotInit) {
-            this.inits = inits;
+        public AbstractAssignAnalyzer() {
+            this.inits = new Bits();
             uninits = new Bits();
             uninitsTry = new Bits();
             initsWhenTrue = new Bits(true);
             initsWhenFalse = new Bits(true);
             uninitsWhenTrue = new Bits(true);
             uninitsWhenFalse = new Bits(true);
-            this.syms = syms;
-            this.names = names;
-            this.enforceThisDotInit = enforceThisDotInit;
         }
 
         private boolean isInitialConstructor = false;
@@ -2431,24 +2422,13 @@ public class Flow {
         }
     }
 
-    public static class AssignAnalyzer
-        extends AbstractAssignAnalyzer<AssignAnalyzer.AssignPendingExit> {
+    public class AssignAnalyzer extends AbstractAssignAnalyzer<AssignAnalyzer.AssignPendingExit> {
 
-        Log log;
-        Lint lint;
-
-        public static class AssignPendingExit
-            extends AbstractAssignAnalyzer.AbstractAssignPendingExit {
+        public class AssignPendingExit extends AbstractAssignAnalyzer<AssignPendingExit>.AbstractAssignPendingExit {
 
             public AssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
                 super(tree, inits, uninits);
             }
-        }
-
-        public AssignAnalyzer(Log log, Symtab syms, Lint lint, Names names, boolean enforceThisDotInit) {
-            super(new Bits(), syms, names, enforceThisDotInit);
-            this.log = log;
-            this.lint = lint;
         }
 
         @Override
