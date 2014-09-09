@@ -28,6 +28,7 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/heapRegion.inline.hpp"
+#include "gc_implementation/g1/heapRegionBounds.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/shared/liveRange.hpp"
@@ -138,32 +139,16 @@ void HeapRegionDCTOC::walk_mem_region(MemRegion mr,
   }
 }
 
-// Minimum region size; we won't go lower than that.
-// We might want to decrease this in the future, to deal with small
-// heaps a bit more efficiently.
-#define MIN_REGION_SIZE  (      1024 * 1024 )
-
-// Maximum region size; we don't go higher than that. There's a good
-// reason for having an upper bound. We don't want regions to get too
-// large, otherwise cleanup's effectiveness would decrease as there
-// will be fewer opportunities to find totally empty regions after
-// marking.
-#define MAX_REGION_SIZE  ( 32 * 1024 * 1024 )
-
-// The automatic region size calculation will try to have around this
-// many regions in the heap (based on the min heap size).
-#define TARGET_REGION_NUMBER          2048
-
 size_t HeapRegion::max_region_size() {
-  return (size_t)MAX_REGION_SIZE;
+  return HeapRegionBounds::max_size();
 }
 
 void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size) {
   uintx region_size = G1HeapRegionSize;
   if (FLAG_IS_DEFAULT(G1HeapRegionSize)) {
     size_t average_heap_size = (initial_heap_size + max_heap_size) / 2;
-    region_size = MAX2(average_heap_size / TARGET_REGION_NUMBER,
-                       (uintx) MIN_REGION_SIZE);
+    region_size = MAX2(average_heap_size / HeapRegionBounds::target_number(),
+                       (uintx) HeapRegionBounds::min_size());
   }
 
   int region_size_log = log2_long((jlong) region_size);
@@ -173,10 +158,10 @@ void HeapRegion::setup_heap_region_size(size_t initial_heap_size, size_t max_hea
   region_size = ((uintx)1 << region_size_log);
 
   // Now make sure that we don't go over or under our limits.
-  if (region_size < MIN_REGION_SIZE) {
-    region_size = MIN_REGION_SIZE;
-  } else if (region_size > MAX_REGION_SIZE) {
-    region_size = MAX_REGION_SIZE;
+  if (region_size < HeapRegionBounds::min_size()) {
+    region_size = HeapRegionBounds::min_size();
+  } else if (region_size > HeapRegionBounds::max_size()) {
+    region_size = HeapRegionBounds::max_size();
   }
 
   // And recalculate the log.
