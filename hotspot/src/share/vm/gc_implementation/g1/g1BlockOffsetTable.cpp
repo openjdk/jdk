@@ -370,8 +370,9 @@ void G1BlockOffsetArray::alloc_block_work2(HeapWord** threshold_, size_t* index_
 }
 
 void G1BlockOffsetArray::verify() const {
+  assert(gsp()->bottom() < gsp()->top(), "Only non-empty regions should be verified.");
   size_t start_card = _array->index_for(gsp()->bottom());
-  size_t end_card = _array->index_for(gsp()->top());
+  size_t end_card = _array->index_for(gsp()->top() - 1);
 
   for (size_t current_card = start_card; current_card < end_card; current_card++) {
     u_char entry = _array->offset_array(current_card);
