@@ -94,7 +94,18 @@ public final class Constructor<T> extends Executable {
     // For sharing of ConstructorAccessors. This branching structure
     // is currently only two levels deep (i.e., one root Constructor
     // and potentially many Constructor objects pointing to it.)
+    //
+    // If this branching structure would ever contain cycles, deadlocks can
+    // occur in annotation code.
     private Constructor<T>      root;
+
+    /**
+     * Used by Excecutable for annotation sharing.
+     */
+    @Override
+    Executable getRoot() {
+        return root;
+    }
 
     /**
      * Package-private constructor used by ReflectAccess to enable
@@ -132,6 +143,9 @@ public final class Constructor<T> extends Executable {
         // which implicitly requires that new java.lang.reflect
         // objects be fabricated for each reflective call on Class
         // objects.)
+        if (this.root != null)
+            throw new IllegalArgumentException("Can not copy a non-root Constructor");
+
         Constructor<T> res = new Constructor<>(clazz,
                                                parameterTypes,
                                                exceptionTypes, modifiers, slot,
