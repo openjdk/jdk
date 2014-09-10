@@ -59,7 +59,7 @@ final class LambdaFormBuffer {
             resultName = names[result];
     }
 
-    LambdaForm lambdaForm() {
+    private LambdaForm lambdaForm() {
         assert(!inTrans());  // need endEdit call to tidy things up
         return new LambdaForm(debugName, arity, nameArray(), resultIndex());
     }
@@ -276,7 +276,7 @@ final class LambdaFormBuffer {
     }
 
     /** Finish a transaction. */
-    void endEdit() {
+    LambdaForm endEdit() {
         assert(verifyFirstChange());
         // Assuming names have been changed pairwise from originalNames[i] to names[i],
         // update arguments to ensure referential integrity.
@@ -316,6 +316,7 @@ final class LambdaFormBuffer {
             arity -= exprp;
         }
         assert(verifyArity());
+        return lambdaForm();
     }
 
     private Name[] copyNamesInto(Name[] buffer) {
