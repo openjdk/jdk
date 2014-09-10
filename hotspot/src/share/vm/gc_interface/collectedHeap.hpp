@@ -640,6 +640,15 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // actual number may be germane.
   static bool use_parallel_gc_threads() { return ParallelGCThreads > 0; }
 
+  // Copy the current allocation context statistics for the specified contexts.
+  // For each context in contexts, set the corresponding entries in the totals
+  // and accuracy arrays to the current values held by the statistics.  Each
+  // array should be of length len.
+  virtual void copy_allocation_context_stats(const jint* contexts,
+                                             jlong* totals,
+                                             jbyte* accuracy,
+                                             jint len) { }
+
   /////////////// Unit tests ///////////////
 
   NOT_PRODUCT(static void test_is_in();)

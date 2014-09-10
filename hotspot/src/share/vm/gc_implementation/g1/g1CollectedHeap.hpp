@@ -1250,6 +1250,11 @@ public:
   // The same as above but assume that the caller holds the Heap_lock.
   void collect_locked(GCCause::Cause cause);
 
+  virtual void copy_allocation_context_stats(const jint* contexts,
+                                             jlong* totals,
+                                             jbyte* accuracy,
+                                             jint len);
+
   // True iff an evacuation has failed in the most-recent collection.
   bool evacuation_failed() { return _evacuation_failed; }
 
