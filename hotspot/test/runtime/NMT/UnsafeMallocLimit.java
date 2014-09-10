@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,27 +19,32 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- *
  */
 
-#ifndef SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP
-#define SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP
+/*
+ * @test
+ * @bug 8055289
+ * @library /testlibrary
+ * @build UnsafeMallocLimit
+ * @run main/othervm -Xmx32m -XX:NativeMemoryTracking=summary UnsafeMallocLimit
+ */
 
-#include "memory/allocation.hpp"
+import com.oracle.java.testlibrary.*;
+import sun.misc.Unsafe;
 
-class Metadata;
+public class UnsafeMallocLimit {
 
-// Helper class to mark and unmark metadata used on the stack as either handles
-// or executing methods, so that it can't be deleted during class redefinition
-// and class unloading.
-// This is also used for other things that can be deallocated, like class
-// metadata during parsing, relocated methods, and methods in backtraces.
-class MetadataOnStackMark : public StackObj {
-  NOT_PRODUCT(static bool _is_active;)
- public:
-  MetadataOnStackMark(bool has_redefined_a_class);
-  ~MetadataOnStackMark();
-  static void record(Metadata* m);
-};
-
-#endif // SHARE_VM_CLASSFILE_METADATAONSTACKMARK_HPP
+    public static void main(String args[]) throws Exception {
+        if (Platform.is32bit()) {
+            Unsafe unsafe = Utils.getUnsafe();
+            try {
+                unsafe.allocateMemory(1 << 30);
+                throw new RuntimeException("Did not get expected OOME");
+            } catch (OutOfMemoryError e) {
+                // Expected exception
+            }
+        } else {
+            System.out.println("Test only valid on 32-bit platforms");
+        }
+    }
+}
