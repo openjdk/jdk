@@ -127,15 +127,17 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
+    MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+        assert(this.getClass() == DirectMethodHandle.class);  // must override in subclasses
+        return new DirectMethodHandle(mt, lf, member);
+    }
+
+    @Override
     String internalProperties() {
         return "\n& DMH.MN="+internalMemberName();
     }
 
     //// Implementation methods.
-    @Override
-    MethodHandle viewAsType(MethodType newType) {
-        return new DirectMethodHandle(newType, form, member);
-    }
     @Override
     @ForceInline
     MemberName internalMemberName() {
@@ -364,8 +366,8 @@ class DirectMethodHandle extends MethodHandle {
             return true;
         }
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            return new Special(newType, form, member);
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new Special(mt, lf, member);
         }
     }
 
@@ -382,8 +384,8 @@ class DirectMethodHandle extends MethodHandle {
             assert(initMethod.isResolved());
         }
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            return new Constructor(newType, form, member, initMethod, instanceClass);
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new Constructor(mt, lf, member, initMethod, instanceClass);
         }
     }
 
@@ -412,8 +414,8 @@ class DirectMethodHandle extends MethodHandle {
             return fieldType.cast(obj);
         }
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            return new Accessor(newType, form, member, fieldOffset);
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new Accessor(mt, lf, member, fieldOffset);
         }
     }
 
@@ -455,8 +457,8 @@ class DirectMethodHandle extends MethodHandle {
             return fieldType.cast(obj);
         }
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            return new StaticAccessor(newType, form, member, staticBase, staticOffset);
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            return new StaticAccessor(mt, lf, member, staticBase, staticOffset);
         }
     }
 

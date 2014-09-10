@@ -1315,9 +1315,27 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    MethodHandle viewAsType(MethodType newType) {
+    MethodHandle viewAsType(MethodType newType, boolean strict) {
         // No actual conversions, just a new view of the same method.
-        return MethodHandleImpl.makePairwiseConvert(this, newType, 0);
+        // Note that this operation must not produce a DirectMethodHandle,
+        // because retyped DMHs, like any transformed MHs,
+        // cannot be cracked into MethodHandleInfo.
+        assert viewAsTypeChecks(newType, strict);
+        BoundMethodHandle mh = rebind();
+        assert(!((MethodHandle)mh instanceof DirectMethodHandle));
+        return mh.copyWith(newType, mh.form);
+    }
+
+    /*non-public*/
+    boolean viewAsTypeChecks(MethodType newType, boolean strict) {
+        if (strict) {
+            assert(type().isViewableAs(newType, true))
+                : Arrays.asList(this, newType);
+        } else {
+            assert(type().basicType().isViewableAs(newType.basicType(), true))
+                : Arrays.asList(this, newType);
+        }
+        return true;
     }
 
     // Decoding
@@ -1371,6 +1389,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     //// Method handle implementation methods.
     //// Sub-classes can override these default implementations.
     //// All these methods assume arguments are already validated.
+
+    /*non-public*/
+    abstract MethodHandle copyWith(MethodType mt, LambdaForm lf);
 
     /*non-public*/
     BoundMethodHandle rebind() {

@@ -773,16 +773,27 @@ class MethodType implements java.io.Serializable {
         return sj.toString();
     }
 
-
+    /** True if the old return type can always be viewed (w/o casting) under new return type,
+     *  and the new parameters can be viewed (w/o casting) under the old parameter types.
+     */
     /*non-public*/
-    boolean isViewableAs(MethodType newType) {
-        if (!VerifyType.isNullConversion(returnType(), newType.returnType(), true))
+    boolean isViewableAs(MethodType newType, boolean keepInterfaces) {
+        if (!VerifyType.isNullConversion(returnType(), newType.returnType(), keepInterfaces))
             return false;
+        return parametersAreViewableAs(newType, keepInterfaces);
+    }
+    /** True if the new parameters can be viewed (w/o casting) under the old parameter types. */
+    /*non-public*/
+    boolean parametersAreViewableAs(MethodType newType, boolean keepInterfaces) {
+        if (form == newType.form && form.erasedType == this)
+            return true;  // my reference parameters are all Object
+        if (ptypes == newType.ptypes)
+            return true;
         int argc = parameterCount();
         if (argc != newType.parameterCount())
             return false;
         for (int i = 0; i < argc; i++) {
-            if (!VerifyType.isNullConversion(newType.parameterType(i), parameterType(i), true))
+            if (!VerifyType.isNullConversion(newType.parameterType(i), parameterType(i), keepInterfaces))
                 return false;
         }
         return true;
