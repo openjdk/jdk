@@ -460,6 +460,11 @@ class LambdaForm {
         return param;
     }
 
+    /** Report the N-th argument type constraint. */
+    Object parameterConstraint(int n) {
+        return parameter(n).constraint;
+    }
+
     /** Report the arity. */
     int arity() {
         return arity;
@@ -1421,6 +1426,7 @@ class LambdaForm {
         final BasicType type;
         private short index;
         final NamedFunction function;
+        final Object constraint;  // additional type information, if not null
         @Stable final Object[] arguments;
 
         private Name(int index, BasicType type, NamedFunction function, Object[] arguments) {
@@ -1428,7 +1434,17 @@ class LambdaForm {
             this.type = type;
             this.function = function;
             this.arguments = arguments;
+            this.constraint = null;
             assert(this.index == index);
+        }
+        private Name(Name that, Object constraint) {
+            this.index = that.index;
+            this.type = that.type;
+            this.function = that.function;
+            this.arguments = that.arguments;
+            this.constraint = constraint;
+            assert(constraint == null || isParam());  // only params have constraints
+            assert(constraint == null || constraint instanceof BoundMethodHandle.SpeciesData || constraint instanceof Class);
         }
         Name(MethodHandle function, Object... arguments) {
             this(new NamedFunction(function), arguments);
@@ -1477,7 +1493,11 @@ class LambdaForm {
         }
         Name cloneWithIndex(int i) {
             Object[] newArguments = (arguments == null) ? null : arguments.clone();
-            return new Name(i, type, function, newArguments);
+            return new Name(i, type, function, newArguments).withConstraint(constraint);
+        }
+        Name withConstraint(Object constraint) {
+            if (constraint == this.constraint)  return this;
+            return new Name(this, constraint);
         }
         Name replaceName(Name oldName, Name newName) {  // FIXME: use replaceNames uniformly
             if (oldName == newName)  return this;
@@ -1557,7 +1577,12 @@ class LambdaForm {
             return (function == null) ? s : s + "=" + exprString();
         }
         public String paramString() {
-            return toString();
+            String s = toString();
+            Object c = constraint;
+            if (c == null)
+                return s;
+            if (c instanceof Class)  c = ((Class<?>)c).getSimpleName();
+            return s + "/" + c;
         }
         public String exprString() {
             if (function == null)  return toString();
@@ -1679,6 +1704,7 @@ class LambdaForm {
     static Name internArgument(Name n) {
         assert(n.isParam()) : "not param: " + n;
         assert(n.index < INTERNED_ARGUMENT_LIMIT);
+        if (n.constraint != null)  return n;
         return argument(n.index, n.type);
     }
     static Name[] arguments(int extra, String types) {

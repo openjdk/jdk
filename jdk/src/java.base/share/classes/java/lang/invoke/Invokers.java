@@ -260,7 +260,9 @@ class Invokers {
                 : Arrays.asList(mtype, customized, which, nameCursor, names.length);
         if (MTYPE_ARG >= INARG_LIMIT) {
             assert(names[MTYPE_ARG] == null);
-            NamedFunction getter = BoundMethodHandle.speciesData_L().getterFunction(0);
+            BoundMethodHandle.SpeciesData speciesData = BoundMethodHandle.speciesData_L();
+            names[THIS_MH] = names[THIS_MH].withConstraint(speciesData);
+            NamedFunction getter = speciesData.getterFunction(0);
             names[MTYPE_ARG] = new Name(getter, names[THIS_MH]);
             // else if isLinker, then MTYPE is passed in from the caller (e.g., the JVM)
         }

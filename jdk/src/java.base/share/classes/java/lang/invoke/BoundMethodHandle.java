@@ -138,7 +138,8 @@ import jdk.internal.org.objectweb.asm.Type;
      */
     static BoundMethodHandle makeReinvoker(MethodHandle target) {
         LambdaForm form = DelegatingMethodHandle.makeReinvokerForm(
-                target, MethodTypeForm.LF_REBIND, Species_L.SPECIES_DATA.getterFunction(0) );
+                target, MethodTypeForm.LF_REBIND,
+                Species_L.SPECIES_DATA, Species_L.SPECIES_DATA.getterFunction(0));
         return Species_L.make(target.type(), form, target);
     }
 
