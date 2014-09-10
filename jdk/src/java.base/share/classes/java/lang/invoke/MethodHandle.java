@@ -774,7 +774,7 @@ public abstract class MethodHandle {
     /*non-public*/ MethodHandle asTypeUncached(MethodType newType) {
         if (!type.isConvertibleTo(newType))
             throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = convertArguments(newType);
+        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, 1);
     }
 
     /**
@@ -987,7 +987,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         int collectArgPos = type().parameterCount()-1;
         MethodHandle target = this;
         if (arrayType != type().parameterType(collectArgPos))
-            target = convertArguments(type().changeParameterType(collectArgPos, arrayType));
+            target = MethodHandleImpl.makePairwiseConvert(this, type().changeParameterType(collectArgPos, arrayType), 1);
         MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
         return MethodHandles.collectArguments(target, collectArgPos, collector);
     }
@@ -1260,14 +1260,8 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      * @see MethodHandles#insertArguments
      */
     public MethodHandle bindTo(Object x) {
-        Class<?> ptype;
-        @SuppressWarnings("LocalVariableHidesMemberVariable")
-        MethodType type = type();
-        if (type.parameterCount() == 0 ||
-            (ptype = type.parameterType(0)).isPrimitive())
-            throw newIllegalArgumentException("no leading reference parameter", x);
-        x = ptype.cast(x);  // throw CCE if needed
-        return bindReceiver(x);
+        x = type.leadingReferenceParameter().cast(x);  // throw CCE if needed
+        return bindArgumentL(0, x);
     }
 
     /**
@@ -1305,6 +1299,10 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     //// All these methods assume arguments are already validated.
 
     // Other transforms to do:  convert, explicitCast, permute, drop, filter, fold, GWT, catch
+
+    BoundMethodHandle bindArgumentL(int pos, Object value) {
+        return rebind().bindArgumentL(pos, value);
+    }
 
     /*non-public*/
     MethodHandle setVarargs(MemberName member) throws IllegalAccessException {
@@ -1374,37 +1372,8 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     //// Sub-classes can override these default implementations.
     //// All these methods assume arguments are already validated.
 
-    /*non-public*/ MethodHandle convertArguments(MethodType newType) {
-        // Override this if it can be improved.
-        return MethodHandleImpl.makePairwiseConvert(this, newType, 1);
-    }
-
     /*non-public*/
-    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
-        // Override this if it can be improved.
-        return rebind().bindArgument(pos, basicType, value);
-    }
-
-    /*non-public*/
-    MethodHandle bindReceiver(Object receiver) {
-        // Override this if it can be improved.
-        return bindArgument(0, L_TYPE, receiver);
-    }
-
-    /*non-public*/
-    MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
-        // Override this if it can be improved.
-        return rebind().dropArguments(srcType, pos, drops);
-    }
-
-    /*non-public*/
-    MethodHandle permuteArguments(MethodType newType, int[] reorder) {
-        // Override this if it can be improved.
-        return rebind().permuteArguments(newType, reorder);
-    }
-
-    /*non-public*/
-    MethodHandle rebind() {
+    BoundMethodHandle rebind() {
         // Bind 'this' into a new invoker, of the known class BMH.
         MethodType type2 = type();
         LambdaForm form2 = reinvokerForm(this);

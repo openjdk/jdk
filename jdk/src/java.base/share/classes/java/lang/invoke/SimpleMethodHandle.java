@@ -25,9 +25,6 @@
 
 package java.lang.invoke;
 
-import static java.lang.invoke.LambdaForm.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
-
 /**
  * A method handle whose behavior is determined only by its LambdaForm.
  * @author jrose
@@ -39,24 +36,5 @@ final class SimpleMethodHandle extends MethodHandle {
 
     /*non-public*/ static SimpleMethodHandle make(MethodType type, LambdaForm form) {
         return new SimpleMethodHandle(type, form);
-    }
-
-    @Override
-    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
-        MethodType type2 = type().dropParameterTypes(pos, pos+1);
-        LambdaForm form2 = internalForm().bind(1+pos, BoundMethodHandle.SpeciesData.EMPTY);
-        return BoundMethodHandle.bindSingle(type2, form2, basicType, value);
-    }
-
-    @Override
-    MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
-        LambdaForm newForm = internalForm().addArguments(pos, srcType.parameterList().subList(pos, pos+drops));
-        return new SimpleMethodHandle(srcType, newForm);
-    }
-
-    @Override
-    MethodHandle permuteArguments(MethodType newType, int[] reorder) {
-        LambdaForm form2 = internalForm().permuteArguments(1, reorder, basicTypes(newType.parameterList()));
-        return new SimpleMethodHandle(newType, form2);
     }
 }

@@ -211,7 +211,7 @@ public class CallSite {
     public abstract MethodHandle dynamicInvoker();
 
     /*non-public*/ MethodHandle makeDynamicInvoker() {
-        MethodHandle getTarget = GET_TARGET.bindReceiver(this);
+        MethodHandle getTarget = GET_TARGET.bindArgumentL(0, this);
         MethodHandle invoker = MethodHandles.exactInvoker(this.type());
         return MethodHandles.foldArguments(invoker, getTarget);
     }

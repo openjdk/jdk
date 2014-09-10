@@ -60,13 +60,12 @@ import jdk.internal.org.objectweb.asm.Type;
     // BMH API and internals
     //
 
-    static MethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
+    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, BasicType xtype, Object x) {
         // for some type signatures, there exist pre-defined concrete BMH classes
         try {
             switch (xtype) {
             case L_TYPE:
-                if (true)  return bindSingle(type, form, x);  // Use known fast path.
-                return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(L_TYPE).constructor().invokeBasic(type, form, x);
+                return bindSingle(type, form, x);  // Use known fast path.
             case I_TYPE:
                 return (BoundMethodHandle) SpeciesData.EMPTY.extendWith(I_TYPE).constructor().invokeBasic(type, form, ValueConversions.widenSubword(x));
             case J_TYPE:
@@ -82,49 +81,40 @@ import jdk.internal.org.objectweb.asm.Type;
         }
     }
 
-    static MethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
-            return new Species_L(type, form, x);
+    static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
+        return Species_L.make(type, form, x);
     }
 
-    MethodHandle cloneExtend(MethodType type, LambdaForm form, BasicType xtype, Object x) {
-        try {
-            switch (xtype) {
-            case L_TYPE: return copyWithExtendL(type, form, x);
-            case I_TYPE: return copyWithExtendI(type, form, ValueConversions.widenSubword(x));
-            case J_TYPE: return copyWithExtendJ(type, form, (long) x);
-            case F_TYPE: return copyWithExtendF(type, form, (float) x);
-            case D_TYPE: return copyWithExtendD(type, form, (double) x);
-            }
-        } catch (Throwable t) {
-            throw newInternalError(t);
-        }
-        throw newInternalError("unexpected type: " + xtype);
-    }
-
-    @Override
-    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
+    @Override // there is a default binder in the super class, for 'L' types only
+    /*non-public*/
+    BoundMethodHandle bindArgumentL(int pos, Object value) {
         MethodType type = type().dropParameterTypes(pos, pos+1);
         LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return cloneExtend(type, form, basicType, value);
+        return copyWithExtendL(type, form, value);
     }
-
-    @Override
-    MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
-        LambdaForm form = internalForm().addArguments(pos, srcType.parameterList().subList(pos, pos + drops));
-        try {
-             return copyWith(srcType, form);
-         } catch (Throwable t) {
-             throw newInternalError(t);
-         }
+    /*non-public*/
+    BoundMethodHandle bindArgumentI(int pos, int value) {
+        MethodType type = type().dropParameterTypes(pos, pos+1);
+        LambdaForm form = internalForm().bind(1+pos, speciesData());
+        return copyWithExtendI(type, form, value);
     }
-
-    @Override
-    MethodHandle permuteArguments(MethodType newType, int[] reorder) {
-        try {
-             return copyWith(newType, form.permuteArguments(1, reorder, basicTypes(newType.parameterList())));
-         } catch (Throwable t) {
-             throw newInternalError(t);
-         }
+    /*non-public*/
+    BoundMethodHandle bindArgumentJ(int pos, long value) {
+        MethodType type = type().dropParameterTypes(pos, pos+1);
+        LambdaForm form = internalForm().bind(1+pos, speciesData());
+        return copyWithExtendJ(type, form, value);
+    }
+    /*non-public*/
+    BoundMethodHandle bindArgumentF(int pos, float value) {
+        MethodType type = type().dropParameterTypes(pos, pos+1);
+        LambdaForm form = internalForm().bind(1+pos, speciesData());
+        return copyWithExtendF(type, form, value);
+    }
+    /*non-public*/
+    BoundMethodHandle bindArgumentD(int pos, double value) {
+        MethodType type = type().dropParameterTypes(pos, pos + 1);
+        LambdaForm form = internalForm().bind(1+pos, speciesData());
+        return copyWithExtendD(type, form, value);
     }
 
     /**
