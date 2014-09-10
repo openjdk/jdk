@@ -85,12 +85,13 @@ abstract class DelegatingMethodHandle extends MethodHandle {
     private static LambdaForm chooseDelegatingForm(MethodHandle target) {
         if (target instanceof SimpleMethodHandle)
             return target.internalForm();  // no need for an indirection
-        return makeReinvokerForm(target, MethodTypeForm.LF_DELEGATE, NF_getTarget);
+        return makeReinvokerForm(target, MethodTypeForm.LF_DELEGATE, DelegatingMethodHandle.class, NF_getTarget);
     }
 
     /** Create a LF which simply reinvokes a target of the given basic type. */
     static LambdaForm makeReinvokerForm(MethodHandle target,
                                         int whichCache,
+                                        Object constraint,
                                         NamedFunction getTargetFn) {
         MethodType mtype = target.type().basicType();
         boolean customized = (whichCache < 0 ||
@@ -108,6 +109,7 @@ abstract class DelegatingMethodHandle extends MethodHandle {
         final int REINVOKE    = nameCursor++;
         LambdaForm.Name[] names = LambdaForm.arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
         assert(names.length == nameCursor);
+        names[THIS_DMH] = names[THIS_DMH].withConstraint(constraint);
         Object[] targetArgs;
         if (customized) {
             targetArgs = Arrays.copyOfRange(names, ARG_BASE, ARG_LIMIT, Object[].class);

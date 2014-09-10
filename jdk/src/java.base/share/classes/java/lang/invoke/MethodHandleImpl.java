@@ -710,6 +710,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLL();
+        names[THIS_MH]          = names[THIS_MH].withConstraint(data);
         names[GET_TARGET]       = new Name(data.getterFunction(0), names[THIS_MH]);
         names[GET_CLASS]        = new Name(data.getterFunction(1), names[THIS_MH]);
         names[GET_CATCHER]      = new Name(data.getterFunction(2), names[THIS_MH]);
