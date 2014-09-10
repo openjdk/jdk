@@ -179,45 +179,49 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * integral widening or narrowing, and floating point widening or narrowing.
      * @param srcType required call type
      * @param target original method handle
-     * @param level which strength of conversion is allowed
+     * @param strict if true, only asType conversions are allowed; if false, explicitCastArguments conversions allowed
+     * @param monobox if true, unboxing conversions are assumed to be exactly typed (Integer to int only, not long or double)
      * @return an adapter to the original handle with the desired new type,
      *          or the original target if the types are already identical
      *          or null if the adaptation cannot be made
      */
-    static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType, int level) {
-        assert(level >= 0 && level <= 2);
+    static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType,
+                                            boolean strict, boolean monobox) {
         MethodType dstType = target.type();
         assert(dstType.parameterCount() == target.type().parameterCount());
         if (srcType == dstType)
             return target;
+        return makePairwiseConvertIndirect(target, srcType, strict, monobox);
+    }
 
-        // Calculate extra arguments (temporaries) required in the names array.
-        // FIXME: Use an ArrayList<Name>.  Some arguments require more than one conversion step.
-        final int INARG_COUNT = srcType.parameterCount();
-        int conversions = 0;
-        boolean[] needConv = new boolean[1+INARG_COUNT];
-        for (int i = 0; i <= INARG_COUNT; i++) {
-            Class<?> src = (i == INARG_COUNT) ? dstType.returnType() : srcType.parameterType(i);
-            Class<?> dst = (i == INARG_COUNT) ? srcType.returnType() : dstType.parameterType(i);
-            if (!VerifyType.isNullConversion(src, dst, false) ||
-                level <= 1 && dst.isInterface() && !dst.isAssignableFrom(src)) {
-                needConv[i] = true;
-                conversions++;
-            }
+    private static int countNonNull(Object[] array) {
+        int count = 0;
+        for (Object x : array) {
+            if (x != null)  ++count;
         }
-        boolean retConv = needConv[INARG_COUNT];
-        if (retConv && srcType.returnType() == void.class) {
+        return count;
+    }
+
+    static MethodHandle makePairwiseConvertIndirect(MethodHandle target, MethodType srcType,
+                                                    boolean strict, boolean monobox) {
+        // Calculate extra arguments (temporaries) required in the names array.
+        Object[] convSpecs = computeValueConversions(srcType, target.type(), strict, monobox);
+        final int INARG_COUNT = srcType.parameterCount();
+        int convCount = countNonNull(convSpecs);
+        boolean retConv = (convSpecs[INARG_COUNT] != null);
+        boolean retVoid = srcType.returnType() == void.class;
+        if (retConv && retVoid) {
+            convCount -= 1;
             retConv = false;
-            conversions--;
         }
 
         final int IN_MH         = 0;
         final int INARG_BASE    = 1;
         final int INARG_LIMIT   = INARG_BASE + INARG_COUNT;
-        final int NAME_LIMIT    = INARG_LIMIT + conversions + 1;
+        final int NAME_LIMIT    = INARG_LIMIT + convCount + 1;
         final int RETURN_CONV   = (!retConv ? -1         : NAME_LIMIT - 1);
         final int OUT_CALL      = (!retConv ? NAME_LIMIT : RETURN_CONV) - 1;
-        final int RESULT        = (srcType.returnType() == void.class ? -1 : NAME_LIMIT - 1);
+        final int RESULT        = (retVoid ? -1 : NAME_LIMIT - 1);
 
         // Now build a LambdaForm.
         MethodType lambdaType = srcType.basicType().invokerType();
@@ -229,59 +233,21 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         int nameCursor = INARG_LIMIT;
         for (int i = 0; i < INARG_COUNT; i++) {
-            Class<?> src = srcType.parameterType(i);
-            Class<?> dst = dstType.parameterType(i);
-
-            if (!needConv[i]) {
+            Object convSpec = convSpecs[i];
+            if (convSpec == null) {
                 // do nothing: difference is trivial
                 outArgs[OUTARG_BASE + i] = names[INARG_BASE + i];
                 continue;
             }
 
-            // Tricky case analysis follows.
-            MethodHandle fn = null;
-            if (src.isPrimitive()) {
-                if (dst.isPrimitive()) {
-                    fn = ValueConversions.convertPrimitive(src, dst);
-                } else {
-                    Wrapper w = Wrapper.forPrimitiveType(src);
-                    MethodHandle boxMethod = ValueConversions.box(w);
-                    if (dst == w.wrapperType())
-                        fn = boxMethod;
-                    else
-                        fn = boxMethod.asType(MethodType.methodType(dst, src));
-                }
+            Name conv;
+            if (convSpec instanceof Class) {
+                Class<?> convClass = (Class<?>) convSpec;
+                conv = new Name(Lazy.MH_castReference, convClass, names[INARG_BASE + i]);
             } else {
-                if (dst.isPrimitive()) {
-                    // Caller has boxed a primitive.  Unbox it for the target.
-                    Wrapper w = Wrapper.forPrimitiveType(dst);
-                    if (level == 0 || VerifyType.isNullConversion(src, w.wrapperType(), false)) {
-                        fn = ValueConversions.unbox(dst);
-                    } else if (src == Object.class || !Wrapper.isWrapperType(src)) {
-                        // Examples:  Object->int, Number->int, Comparable->int; Byte->int, Character->int
-                        // must include additional conversions
-                        // src must be examined at runtime, to detect Byte, Character, etc.
-                        MethodHandle unboxMethod = (level == 1
-                                                    ? ValueConversions.unbox(dst)
-                                                    : ValueConversions.unboxCast(dst));
-                        fn = unboxMethod;
-                    } else {
-                        // Example: Byte->int
-                        // Do this by reformulating the problem to Byte->byte.
-                        Class<?> srcPrim = Wrapper.forWrapperType(src).primitiveType();
-                        MethodHandle unbox = ValueConversions.unbox(srcPrim);
-                        // Compose the two conversions.  FIXME:  should make two Names for this job
-                        fn = unbox.asType(MethodType.methodType(dst, src));
-                    }
-                } else {
-                    // Simple reference conversion.
-                    // Note:  Do not check for a class hierarchy relation
-                    // between src and dst.  In all cases a 'null' argument
-                    // will pass the cast conversion.
-                    fn = ValueConversions.cast(dst, Lazy.MH_castReference);
-                }
+                MethodHandle fn = (MethodHandle) convSpec;
+                conv = new Name(fn, names[INARG_BASE + i]);
             }
-            Name conv = new Name(fn, names[INARG_BASE + i]);
             assert(names[nameCursor] == null);
             names[nameCursor++] = conv;
             assert(outArgs[OUTARG_BASE + i] == null);
@@ -292,25 +258,25 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(nameCursor == OUT_CALL);
         names[OUT_CALL] = new Name(target, outArgs);
 
-        if (RETURN_CONV < 0) {
+        Object convSpec = convSpecs[INARG_COUNT];
+        if (!retConv) {
             assert(OUT_CALL == names.length-1);
         } else {
-            Class<?> needReturn = srcType.returnType();
-            Class<?> haveReturn = dstType.returnType();
-            MethodHandle fn;
-            Object[] arg = { names[OUT_CALL] };
-            if (haveReturn == void.class) {
-                // synthesize a zero value for the given void
-                Object zero = Wrapper.forBasicType(needReturn).zero();
-                fn = MethodHandles.constant(needReturn, zero);
-                arg = new Object[0];  // don't pass names[OUT_CALL] to conversion
+            Name conv;
+            if (convSpec == void.class) {
+                conv = new Name(LambdaForm.constantZero(BasicType.basicType(srcType.returnType())));
+            } else if (convSpec instanceof Class) {
+                Class<?> convClass = (Class<?>) convSpec;
+                conv = new Name(Lazy.MH_castReference, convClass, names[OUT_CALL]);
             } else {
-                MethodHandle identity = MethodHandles.identity(needReturn);
-                MethodType needConversion = identity.type().changeParameterType(0, haveReturn);
-                fn = makePairwiseConvert(identity, needConversion, level);
+                MethodHandle fn = (MethodHandle) convSpec;
+                if (fn.type().parameterCount() == 0)
+                    conv = new Name(fn);  // don't pass retval to void conversion
+                else
+                    conv = new Name(fn, names[OUT_CALL]);
             }
             assert(names[RETURN_CONV] == null);
-            names[RETURN_CONV] = new Name(fn, arg);
+            names[RETURN_CONV] = conv;
             assert(RETURN_CONV == names.length-1);
         }
 
@@ -343,6 +309,81 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         names[names.length - 1] = new Name(ValueConversions.identity(), names[1]);
         LambdaForm form = new LambdaForm("identity", lambdaType.parameterCount(), names);
         return SimpleMethodHandle.make(MethodType.methodType(refType, refType), form);
+    }
+
+    static Object[] computeValueConversions(MethodType srcType, MethodType dstType,
+                                            boolean strict, boolean monobox) {
+        final int INARG_COUNT = srcType.parameterCount();
+        Object[] convSpecs = new Object[INARG_COUNT+1];
+        for (int i = 0; i <= INARG_COUNT; i++) {
+            boolean isRet = (i == INARG_COUNT);
+            Class<?> src = isRet ? dstType.returnType() : srcType.parameterType(i);
+            Class<?> dst = isRet ? srcType.returnType() : dstType.parameterType(i);
+            if (!VerifyType.isNullConversion(src, dst, /*keepInterfaces=*/ strict)) {
+                convSpecs[i] = valueConversion(src, dst, strict, monobox);
+            }
+        }
+        return convSpecs;
+    }
+    static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType,
+                                            boolean strict) {
+        return makePairwiseConvert(target, srcType, strict, /*monobox=*/ false);
+    }
+
+    /**
+     * Find a conversion function from the given source to the given destination.
+     * This conversion function will be used as a LF NamedFunction.
+     * Return a Class object if a simple cast is needed.
+     * Return void.class if void is involved.
+     */
+    static Object valueConversion(Class<?> src, Class<?> dst, boolean strict, boolean monobox) {
+        assert(!VerifyType.isNullConversion(src, dst, /*keepInterfaces=*/ strict));  // caller responsibility
+        if (dst == void.class)
+            return dst;
+        MethodHandle fn;
+        if (src.isPrimitive()) {
+            if (src == void.class) {
+                return void.class;  // caller must recognize this specially
+            } else if (dst.isPrimitive()) {
+                // Examples: int->byte, byte->int, boolean->int (!strict)
+                fn = ValueConversions.convertPrimitive(src, dst);
+            } else {
+                // Examples: int->Integer, boolean->Object, float->Number
+                Wrapper wsrc = Wrapper.forPrimitiveType(src);
+                fn = ValueConversions.boxExact(wsrc);
+                assert(fn.type().parameterType(0) == wsrc.primitiveType());
+                assert(fn.type().returnType() == wsrc.wrapperType());
+                if (!VerifyType.isNullConversion(wsrc.wrapperType(), dst, strict)) {
+                    // Corner case, such as int->Long, which will probably fail.
+                    MethodType mt = MethodType.methodType(dst, src);
+                    if (strict)
+                        fn = fn.asType(mt);
+                    else
+                        fn = MethodHandleImpl.makePairwiseConvert(fn, mt, /*strict=*/ false);
+                }
+            }
+        } else if (dst.isPrimitive()) {
+            Wrapper wdst = Wrapper.forPrimitiveType(dst);
+            if (monobox || src == wdst.wrapperType()) {
+                // Use a strongly-typed unboxer, if possible.
+                fn = ValueConversions.unboxExact(wdst, strict);
+            } else {
+                // Examples:  Object->int, Number->int, Comparable->int, Byte->int
+                // must include additional conversions
+                // src must be examined at runtime, to detect Byte, Character, etc.
+                fn = (strict
+                        ? ValueConversions.unboxWiden(wdst)
+                        : ValueConversions.unboxCast(wdst));
+            }
+        } else {
+            // Simple reference conversion.
+            // Note:  Do not check for a class hierarchy relation
+            // between src and dst.  In all cases a 'null' argument
+            // will pass the cast conversion.
+            return dst;
+        }
+        assert(fn.type().parameterCount() <= 1) : "pc"+Arrays.asList(src.getSimpleName(), dst.getSimpleName(), fn);
+        return fn;
     }
 
     static MethodHandle makeVarargsCollector(MethodHandle target, Class<?> arrayType) {
@@ -720,10 +761,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodHandle collectArgs = varargsArray(type.parameterCount()).asType(varargsType);
         // Result unboxing: ValueConversions.unbox() OR ValueConversions.identity() OR ValueConversions.ignore().
         MethodHandle unboxResult;
-        if (type.returnType().isPrimitive()) {
-            unboxResult = ValueConversions.unbox(type.returnType());
+        Class<?> rtype = type.returnType();
+        if (rtype.isPrimitive()) {
+            if (rtype == void.class) {
+                unboxResult = ValueConversions.ignore();
+            } else {
+                Wrapper w = Wrapper.forPrimitiveType(type.returnType());
+                unboxResult = ValueConversions.unboxExact(w);
+            }
         } else {
-            unboxResult = ValueConversions.identity();
+            unboxResult = MethodHandles.identity(Object.class);
         }
 
         BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLLLL();
@@ -773,7 +820,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             mh = MethodHandles.dropArguments(mh, 1, type.parameterList().subList(1, arity));
             return mh;
         }
-        return makePairwiseConvert(Lazy.NF_throwException.resolvedHandle(), type, 2);
+        return makePairwiseConvert(Lazy.NF_throwException.resolvedHandle(), type, false, true);
     }
 
     static <T extends Throwable> Empty throwException(T t) throws T { throw t; }

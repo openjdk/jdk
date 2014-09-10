@@ -771,7 +771,7 @@ public abstract class MethodHandle {
     /*non-public*/ MethodHandle asTypeUncached(MethodType newType) {
         if (!type.isConvertibleTo(newType))
             throw new WrongMethodTypeException("cannot convert "+this+" to "+newType);
-        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, 1);
+        return asTypeCache = MethodHandleImpl.makePairwiseConvert(this, newType, true);
     }
 
     /**
@@ -984,7 +984,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         int collectArgPos = type().parameterCount()-1;
         MethodHandle target = this;
         if (arrayType != type().parameterType(collectArgPos))
-            target = MethodHandleImpl.makePairwiseConvert(this, type().changeParameterType(collectArgPos, arrayType), 1);
+            target = MethodHandleImpl.makePairwiseConvert(this, type().changeParameterType(collectArgPos, arrayType), true);
         MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
         return MethodHandles.collectArguments(target, collectArgPos, collector);
     }

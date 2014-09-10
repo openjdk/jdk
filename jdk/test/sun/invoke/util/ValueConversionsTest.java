@@ -25,7 +25,7 @@ package test.sun.invoke.util;
 
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.Wrapper;
-
+import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MethodHandle;
 import java.io.Serializable;
@@ -65,6 +65,7 @@ public class ValueConversionsTest {
     private void testUnbox(boolean doCast, Wrapper dst, Wrapper src) throws Throwable {
         boolean expectThrow = !doCast && !dst.isConvertibleFrom(src);
         if (dst == Wrapper.OBJECT || src == Wrapper.OBJECT)  return;  // must have prims
+        if (dst == Wrapper.VOID   || src == Wrapper.VOID  )  return;  // must have values
         if (dst == Wrapper.OBJECT)
             expectThrow = false;  // everything (even VOID==null here) converts to OBJECT
         try {
@@ -78,9 +79,9 @@ public class ValueConversionsTest {
                 }
                 MethodHandle unboxer;
                 if (doCast)
-                    unboxer = ValueConversions.unboxCast(dst.primitiveType());
+                    unboxer = ValueConversions.unboxCast(dst);
                 else
-                    unboxer = ValueConversions.unbox(dst.primitiveType());
+                    unboxer = ValueConversions.unboxWiden(dst);
                 Object expResult = (box == null) ? dst.zero() : dst.wrap(box);
                 Object result = null;
                 switch (dst) {
@@ -91,9 +92,7 @@ public class ValueConversionsTest {
                     case CHAR:    result = (char)    unboxer.invokeExact(box); break;
                     case BYTE:    result = (byte)    unboxer.invokeExact(box); break;
                     case SHORT:   result = (short)   unboxer.invokeExact(box); break;
-                    case OBJECT:  result = (Object)  unboxer.invokeExact(box); break;
                     case BOOLEAN: result = (boolean) unboxer.invokeExact(box); break;
-                    case VOID:    result = null;     unboxer.invokeExact(box); break;
                 }
                 if (expectThrow) {
                     expResult = "(need an exception)";
@@ -111,22 +110,22 @@ public class ValueConversionsTest {
     @Test
     public void testBox() throws Throwable {
         for (Wrapper w : Wrapper.values()) {
-            if (w == Wrapper.VOID)  continue;  // skip this; no unboxed form
+            if (w == Wrapper.VOID)    continue;  // skip this; no unboxed form
+            if (w == Wrapper.OBJECT)  continue;  // skip this; already unboxed
             for (int n = -5; n < 10; n++) {
                 Object box = w.wrap(n);
-                MethodHandle boxer = ValueConversions.box(w.primitiveType());
+                MethodHandle boxer = ValueConversions.boxExact(w);
                 Object expResult = box;
                 Object result = null;
                 switch (w) {
-                    case INT:     result = boxer.invokeExact(/*int*/n); break;
-                    case LONG:    result = boxer.invokeExact((long)n); break;
-                    case FLOAT:   result = boxer.invokeExact((float)n); break;
-                    case DOUBLE:  result = boxer.invokeExact((double)n); break;
-                    case CHAR:    result = boxer.invokeExact((char)n); break;
-                    case BYTE:    result = boxer.invokeExact((byte)n); break;
-                    case SHORT:   result = boxer.invokeExact((short)n); break;
-                    case OBJECT:  result = boxer.invokeExact((Object)n); break;
-                    case BOOLEAN: result = boxer.invokeExact((n & 1) != 0); break;
+                    case INT:     result = (Integer) boxer.invokeExact(/*int*/n); break;
+                    case LONG:    result = (Long)    boxer.invokeExact((long)n); break;
+                    case FLOAT:   result = (Float)   boxer.invokeExact((float)n); break;
+                    case DOUBLE:  result = (Double)  boxer.invokeExact((double)n); break;
+                    case CHAR:    result = (Character) boxer.invokeExact((char)n); break;
+                    case BYTE:    result = (Byte)    boxer.invokeExact((byte)n); break;
+                    case SHORT:   result = (Short)   boxer.invokeExact((short)n); break;
+                    case BOOLEAN: result = (Boolean) boxer.invokeExact((n & 1) != 0); break;
                 }
                 assertEquals("(dst,src,n,box)="+Arrays.asList(w,w,n,box),
                              expResult, result);
@@ -139,8 +138,8 @@ public class ValueConversionsTest {
         Class<?>[] types = { Object.class, Serializable.class, String.class, Number.class, Integer.class };
         Object[] objects = { new Object(), Boolean.FALSE,      "hello",      (Long)12L,    (Integer)6    };
         for (Class<?> dst : types) {
-            MethodHandle caster = ValueConversions.cast(dst);
-            assertEquals(caster.type(), ValueConversions.identity().type());
+            MethodHandle caster = ValueConversions.cast().bindTo(dst);
+            assertEquals(caster.type(), MethodHandles.identity(Object.class).type());
             for (Object obj : objects) {
                 Class<?> src = obj.getClass();
                 boolean canCast = dst.isAssignableFrom(src);
@@ -183,14 +182,12 @@ public class ValueConversionsTest {
         }
     }
     static void testConvert(Wrapper src, Wrapper dst, long tval) throws Throwable {
+        if (dst == Wrapper.OBJECT || src == Wrapper.OBJECT)  return;  // must have prims
+        if (dst == Wrapper.VOID   || src == Wrapper.VOID  )  return;  // must have values
         boolean testSingleCase = (tval != 0);
         final long tvalInit = tval;
         MethodHandle conv = ValueConversions.convertPrimitive(src, dst);
-        MethodType convType;
-        if (src == Wrapper.VOID)
-            convType = MethodType.methodType(dst.primitiveType() /* , void */);
-        else
-            convType = MethodType.methodType(dst.primitiveType(), src.primitiveType());
+        MethodType convType = MethodType.methodType(dst.primitiveType(), src.primitiveType());
         assertEquals(convType, conv.type());
         MethodHandle converter = conv.asType(conv.type().changeReturnType(Object.class));
         for (;;) {
@@ -206,9 +203,7 @@ public class ValueConversionsTest {
                 case CHAR:    result = converter.invokeExact((char)n); break;
                 case BYTE:    result = converter.invokeExact((byte)n); break;
                 case SHORT:   result = converter.invokeExact((short)n); break;
-                case OBJECT:  result = converter.invokeExact((Object)n); break;
                 case BOOLEAN: result = converter.invokeExact((n & 1) != 0); break;
-                case VOID:    result = converter.invokeExact(); break;
                 default:  throw new AssertionError();
             }
             assertEquals("(src,dst,n,testValue)="+Arrays.asList(src,dst,"0x"+Long.toHexString(n),testValue),
