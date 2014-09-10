@@ -79,7 +79,8 @@ final class MethodTypeForm {
             LF_CS_LINKER      = 13,  // linkToCallSite_CS
             LF_MH_LINKER      = 14,  // linkToCallSite_MH
             LF_GWC            = 15,  // guardWithCatch (catchException)
-            LF_LIMIT          = 16;
+            LF_GWT            = 16,  // guardWithTest
+            LF_LIMIT          = 17;
 
     /** Return the type corresponding uniquely (1-1) to this MT-form.
      *  It might have any primitive returns or arguments, but will have no references except Object.

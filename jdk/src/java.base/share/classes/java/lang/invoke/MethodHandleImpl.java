@@ -640,29 +640,66 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     MethodHandle makeGuardWithTest(MethodHandle test,
                                    MethodHandle target,
                                    MethodHandle fallback) {
-        MethodType basicType = target.type().basicType();
-        MethodHandle invokeBasic = MethodHandles.basicInvoker(basicType);
-        int arity = basicType.parameterCount();
-        int extraNames = 3;
-        MethodType lambdaType = basicType.invokerType();
-        Name[] names = arguments(extraNames, lambdaType);
+        MethodType type = target.type();
+        assert(test.type().equals(type.changeReturnType(boolean.class)) && fallback.type().equals(type));
+        MethodType basicType = type.basicType();
+        LambdaForm form = makeGuardWithTestForm(basicType);
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
+        BoundMethodHandle mh;
+        try {
+            mh = (BoundMethodHandle)
+                    data.constructor().invokeBasic(type, form,
+                        (Object) test, (Object) target, (Object) fallback);
+        } catch (Throwable ex) {
+            throw uncaughtException(ex);
+        }
+        assert(mh.type() == type);
+        return mh;
+    }
 
-        Object[] testArgs   = Arrays.copyOfRange(names, 1, 1 + arity, Object[].class);
-        Object[] targetArgs = Arrays.copyOfRange(names, 0, 1 + arity, Object[].class);
+    static
+    LambdaForm makeGuardWithTestForm(MethodType basicType) {
+        LambdaForm lform = basicType.form().cachedLambdaForm(MethodTypeForm.LF_GWT);
+        if (lform != null)  return lform;
+        final int THIS_MH      = 0;  // the BMH_LLL
+        final int ARG_BASE     = 1;  // start of incoming arguments
+        final int ARG_LIMIT    = ARG_BASE + basicType.parameterCount();
+        int nameCursor = ARG_LIMIT;
+        final int GET_TEST     = nameCursor++;
+        final int GET_TARGET   = nameCursor++;
+        final int GET_FALLBACK = nameCursor++;
+        final int CALL_TEST    = nameCursor++;
+        final int SELECT_ALT   = nameCursor++;
+        final int CALL_TARGET  = nameCursor++;
+        assert(CALL_TARGET == SELECT_ALT+1);  // must be true to trigger IBG.emitSelectAlternative
+
+        MethodType lambdaType = basicType.invokerType();
+        Name[] names = arguments(nameCursor - ARG_LIMIT, lambdaType);
+
+        BoundMethodHandle.SpeciesData data = BoundMethodHandle.speciesData_LLL();
+        names[THIS_MH] = names[THIS_MH].withConstraint(data);
+        names[GET_TEST]     = new Name(data.getterFunction(0), names[THIS_MH]);
+        names[GET_TARGET]   = new Name(data.getterFunction(1), names[THIS_MH]);
+        names[GET_FALLBACK] = new Name(data.getterFunction(2), names[THIS_MH]);
+
+        Object[] invokeArgs = Arrays.copyOfRange(names, 0, ARG_LIMIT, Object[].class);
 
         // call test
-        names[arity + 1] = new Name(test, testArgs);
+        MethodType testType = basicType.changeReturnType(boolean.class).basicType();
+        invokeArgs[0] = names[GET_TEST];
+        names[CALL_TEST] = new Name(testType, invokeArgs);
 
         // call selectAlternative
-        Object[] selectArgs = { names[arity + 1], target, fallback };
-        names[arity + 2] = new Name(Lazy.MH_selectAlternative, selectArgs);
-        targetArgs[0] = names[arity + 2];
+        names[SELECT_ALT] = new Name(Lazy.MH_selectAlternative, names[CALL_TEST],
+                                     names[GET_TARGET], names[GET_FALLBACK]);
 
         // call target or fallback
-        names[arity + 3] = new Name(new NamedFunction(invokeBasic), targetArgs);
+        invokeArgs[0] = names[SELECT_ALT];
+        names[CALL_TARGET] = new Name(basicType, invokeArgs);
 
-        LambdaForm form = new LambdaForm("guard", lambdaType.parameterCount(), names);
-        return SimpleMethodHandle.make(target.type(), form);
+        lform = new LambdaForm("guard", lambdaType.parameterCount(), names);
+
+        return basicType.form().setCachedLambdaForm(MethodTypeForm.LF_GWT, lform);
     }
 
     /**
