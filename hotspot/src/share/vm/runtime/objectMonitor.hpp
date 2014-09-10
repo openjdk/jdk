@@ -141,7 +141,7 @@ class ObjectMonitor {
     _header       = NULL;
     _count        = 0;
     _waiters      = 0,
-    _recursions   = 0;
+      _recursions   = 0;
     _object       = NULL;
     _owner        = NULL;
     _WaitSet      = NULL;
@@ -158,12 +158,12 @@ class ObjectMonitor {
   }
 
   ~ObjectMonitor() {
-   // TODO: Add asserts ...
-   // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-   // _count == 0 _EntryList  == NULL etc
+    // TODO: Add asserts ...
+    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
+    // _count == 0 _EntryList  == NULL etc
   }
 
-private:
+ private:
   void Recycle() {
     // TODO: add stronger asserts ...
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
@@ -180,7 +180,7 @@ private:
     OwnerIsThread  = 0;
   }
 
-public:
+ public:
 
   void*     object() const;
   void*     object_addr();
@@ -225,9 +225,9 @@ public:
   void      ExitEpilog(Thread * Self, ObjectWaiter * Wakee);
   bool      ExitSuspendEquivalent(JavaThread * Self);
   void      post_monitor_wait_event(EventJavaMonitorWait * event,
-                                                   jlong notifier_tid,
-                                                   jlong timeout,
-                                                   bool timedout);
+                                    jlong notifier_tid,
+                                    jlong timeout,
+                                    bool timedout);
 
  private:
   friend class ObjectSynchronizer;
@@ -253,8 +253,8 @@ public:
  private:
   int OwnerIsThread;               // _owner is (Thread *) vs SP/BasicLock
   ObjectWaiter * volatile _cxq;    // LL of recently-arrived threads blocked on entry.
-                                    // The list is actually composed of WaitNodes, acting
-                                    // as proxies for Threads.
+  // The list is actually composed of WaitNodes, acting
+  // as proxies for Threads.
  protected:
   ObjectWaiter * volatile _EntryList;     // Threads blocked on entry or reentry.
  private:

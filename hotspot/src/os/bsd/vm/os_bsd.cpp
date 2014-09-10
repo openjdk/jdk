@@ -260,11 +260,11 @@ void os::Bsd::initialize_system_info() {
   mib[1] = HW_NCPU;
   len = sizeof(cpu_val);
   if (sysctl(mib, 2, &cpu_val, &len, NULL, 0) != -1 && cpu_val >= 1) {
-       assert(len == sizeof(cpu_val), "unexpected data size");
-       set_processor_count(cpu_val);
+    assert(len == sizeof(cpu_val), "unexpected data size");
+    set_processor_count(cpu_val);
   }
   else {
-       set_processor_count(1);   // fallback
+    set_processor_count(1);   // fallback
   }
 
   /* get physical memory via hw.memsize sysctl (hw.memsize is used
@@ -284,19 +284,19 @@ void os::Bsd::initialize_system_info() {
 
   len = sizeof(mem_val);
   if (sysctl(mib, 2, &mem_val, &len, NULL, 0) != -1) {
-       assert(len == sizeof(mem_val), "unexpected data size");
-       _physical_memory = mem_val;
+    assert(len == sizeof(mem_val), "unexpected data size");
+    _physical_memory = mem_val;
   } else {
-       _physical_memory = 256*1024*1024;       // fallback (XXXBSD?)
+    _physical_memory = 256*1024*1024;       // fallback (XXXBSD?)
   }
 
 #ifdef __OpenBSD__
   {
-       // limit _physical_memory memory view on OpenBSD since
-       // datasize rlimit restricts us anyway.
-       struct rlimit limits;
-       getrlimit(RLIMIT_DATA, &limits);
-       _physical_memory = MIN2(_physical_memory, (julong)limits.rlim_cur);
+    // limit _physical_memory memory view on OpenBSD since
+    // datasize rlimit restricts us anyway.
+    struct rlimit limits;
+    getrlimit(RLIMIT_DATA, &limits);
+    _physical_memory = MIN2(_physical_memory, (julong)limits.rlim_cur);
   }
 #endif
 }
@@ -561,14 +561,14 @@ debug_only(static bool signal_sets_initialized = false);
 static sigset_t unblocked_sigs, vm_sigs, allowdebug_blocked_sigs;
 
 bool os::Bsd::is_sig_ignored(int sig) {
-      struct sigaction oact;
-      sigaction(sig, (struct sigaction*)NULL, &oact);
-      void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
-                                     : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
-      if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN))
-           return true;
-      else
-           return false;
+  struct sigaction oact;
+  sigaction(sig, (struct sigaction*)NULL, &oact);
+  void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
+                                 : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
+  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN))
+    return true;
+  else
+    return false;
 }
 
 void os::Bsd::signal_sets_init() {
@@ -596,18 +596,18 @@ void os::Bsd::signal_sets_init() {
   sigaddset(&unblocked_sigs, SR_signum);
 
   if (!ReduceSignalUsage) {
-   if (!os::Bsd::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
+    if (!os::Bsd::is_sig_ignored(SHUTDOWN1_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN1_SIGNAL);
       sigaddset(&allowdebug_blocked_sigs, SHUTDOWN1_SIGNAL);
-   }
-   if (!os::Bsd::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
+    }
+    if (!os::Bsd::is_sig_ignored(SHUTDOWN2_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN2_SIGNAL);
       sigaddset(&allowdebug_blocked_sigs, SHUTDOWN2_SIGNAL);
-   }
-   if (!os::Bsd::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
+    }
+    if (!os::Bsd::is_sig_ignored(SHUTDOWN3_SIGNAL)) {
       sigaddset(&unblocked_sigs, SHUTDOWN3_SIGNAL);
       sigaddset(&allowdebug_blocked_sigs, SHUTDOWN3_SIGNAL);
-   }
+    }
   }
   // Fill in signals that are blocked by all but the VM thread.
   sigemptyset(&vm_sigs);
@@ -846,9 +846,9 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
 
   // Aborted due to thread limit being reached
   if (state == ZOMBIE) {
-      thread->set_osthread(NULL);
-      delete osthread;
-      return false;
+    thread->set_osthread(NULL);
+    delete osthread;
+    return false;
   }
 
   // The thread is returned suspended (in state INITIALIZED),
@@ -868,7 +868,7 @@ bool os::create_main_thread(JavaThread* thread) {
 
 bool os::create_attached_thread(JavaThread* thread) {
 #ifdef ASSERT
-    thread->verify_not_published();
+  thread->verify_not_published();
 #endif
 
   // Allocate the OSThread object
@@ -919,7 +919,7 @@ void os::free_thread(OSThread* osthread) {
     // Restore caller's signal mask
     sigset_t sigmask = osthread->caller_sigmask();
     pthread_sigmask(SIG_SETMASK, &sigmask, NULL);
-   }
+  }
 
   delete osthread;
 }
@@ -1023,27 +1023,27 @@ void os::Bsd::clock_init() {
 #ifdef __APPLE__
 
 jlong os::javaTimeNanos() {
-    const uint64_t tm = mach_absolute_time();
-    const uint64_t now = (tm * Bsd::_timebase_info.numer) / Bsd::_timebase_info.denom;
-    const uint64_t prev = Bsd::_max_abstime;
-    if (now <= prev) {
-      return prev;   // same or retrograde time;
-    }
-    const uint64_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&Bsd::_max_abstime, prev);
-    assert(obsv >= prev, "invariant");   // Monotonicity
-    // If the CAS succeeded then we're done and return "now".
-    // If the CAS failed and the observed value "obsv" is >= now then
-    // we should return "obsv".  If the CAS failed and now > obsv > prv then
-    // some other thread raced this thread and installed a new value, in which case
-    // we could either (a) retry the entire operation, (b) retry trying to install now
-    // or (c) just return obsv.  We use (c).   No loop is required although in some cases
-    // we might discard a higher "now" value in deference to a slightly lower but freshly
-    // installed obsv value.   That's entirely benign -- it admits no new orderings compared
-    // to (a) or (b) -- and greatly reduces coherence traffic.
-    // We might also condition (c) on the magnitude of the delta between obsv and now.
-    // Avoiding excessive CAS operations to hot RW locations is critical.
-    // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
-    return (prev == obsv) ? now : obsv;
+  const uint64_t tm = mach_absolute_time();
+  const uint64_t now = (tm * Bsd::_timebase_info.numer) / Bsd::_timebase_info.denom;
+  const uint64_t prev = Bsd::_max_abstime;
+  if (now <= prev) {
+    return prev;   // same or retrograde time;
+  }
+  const uint64_t obsv = Atomic::cmpxchg(now, (volatile jlong*)&Bsd::_max_abstime, prev);
+  assert(obsv >= prev, "invariant");   // Monotonicity
+  // If the CAS succeeded then we're done and return "now".
+  // If the CAS failed and the observed value "obsv" is >= now then
+  // we should return "obsv".  If the CAS failed and now > obsv > prv then
+  // some other thread raced this thread and installed a new value, in which case
+  // we could either (a) retry the entire operation, (b) retry trying to install now
+  // or (c) just return obsv.  We use (c).   No loop is required although in some cases
+  // we might discard a higher "now" value in deference to a slightly lower but freshly
+  // installed obsv value.   That's entirely benign -- it admits no new orderings compared
+  // to (a) or (b) -- and greatly reduces coherence traffic.
+  // We might also condition (c) on the magnitude of the delta between obsv and now.
+  // Avoiding excessive CAS operations to hot RW locations is critical.
+  // See https://blogs.oracle.com/dave/entry/cas_and_cache_trivia_invalidate
+  return (prev == obsv) ? now : obsv;
 }
 
 #else // __APPLE__
@@ -1307,7 +1307,7 @@ bool os::dll_build_name(char* buffer, size_t buflen,
         continue; // skip the empty path values
       }
       snprintf(buffer, buflen, "%s/" JNI_LIB_PREFIX "%s" JNI_LIB_SUFFIX,
-          pelements[i], fname);
+               pelements[i], fname);
       if (file_exists(buffer)) {
         retval = true;
         break;
@@ -1372,14 +1372,14 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     if (dlinfo.dli_fname != NULL && dlinfo.dli_fbase != NULL) {
       if (Decoder::decode((address)(addr - (address)dlinfo.dli_fbase),
                           buf, buflen, offset, dlinfo.dli_fname)) {
-         return true;
+        return true;
       }
     }
 
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
         Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
-                        dlinfo.dli_fbase)) {
+        dlinfo.dli_fbase)) {
       if (!Decoder::demangle(localbuf, buf, buflen)) {
         jio_snprintf(buf, buflen, "%s", localbuf);
       }
@@ -1465,7 +1465,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 
   bool failed_to_read_elf_head=
     (sizeof(elf_head)!=
-        (::read(file_descriptor, &elf_head,sizeof(elf_head))));
+     (::read(file_descriptor, &elf_head,sizeof(elf_head))));
 
   ::close(file_descriptor);
   if (failed_to_read_elf_head) {
@@ -1525,33 +1525,33 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   };
 
   #if  (defined IA32)
-    static  Elf32_Half running_arch_code=EM_386;
+  static  Elf32_Half running_arch_code=EM_386;
   #elif   (defined AMD64)
-    static  Elf32_Half running_arch_code=EM_X86_64;
+  static  Elf32_Half running_arch_code=EM_X86_64;
   #elif  (defined IA64)
-    static  Elf32_Half running_arch_code=EM_IA_64;
+  static  Elf32_Half running_arch_code=EM_IA_64;
   #elif  (defined __sparc) && (defined _LP64)
-    static  Elf32_Half running_arch_code=EM_SPARCV9;
+  static  Elf32_Half running_arch_code=EM_SPARCV9;
   #elif  (defined __sparc) && (!defined _LP64)
-    static  Elf32_Half running_arch_code=EM_SPARC;
+  static  Elf32_Half running_arch_code=EM_SPARC;
   #elif  (defined __powerpc64__)
-    static  Elf32_Half running_arch_code=EM_PPC64;
+  static  Elf32_Half running_arch_code=EM_PPC64;
   #elif  (defined __powerpc__)
-    static  Elf32_Half running_arch_code=EM_PPC;
+  static  Elf32_Half running_arch_code=EM_PPC;
   #elif  (defined ARM)
-    static  Elf32_Half running_arch_code=EM_ARM;
+  static  Elf32_Half running_arch_code=EM_ARM;
   #elif  (defined S390)
-    static  Elf32_Half running_arch_code=EM_S390;
+  static  Elf32_Half running_arch_code=EM_S390;
   #elif  (defined ALPHA)
-    static  Elf32_Half running_arch_code=EM_ALPHA;
+  static  Elf32_Half running_arch_code=EM_ALPHA;
   #elif  (defined MIPSEL)
-    static  Elf32_Half running_arch_code=EM_MIPS_RS3_LE;
+  static  Elf32_Half running_arch_code=EM_MIPS_RS3_LE;
   #elif  (defined PARISC)
-    static  Elf32_Half running_arch_code=EM_PARISC;
+  static  Elf32_Half running_arch_code=EM_PARISC;
   #elif  (defined MIPS)
-    static  Elf32_Half running_arch_code=EM_MIPS;
+  static  Elf32_Half running_arch_code=EM_MIPS;
   #elif  (defined M68K)
-    static  Elf32_Half running_arch_code=EM_68K;
+  static  Elf32_Half running_arch_code=EM_68K;
   #else
     #error Method os::dll_load requires that one of following is defined:\
          IA32, AMD64, IA64, __sparc, __powerpc__, ARM, S390, ALPHA, MIPS, MIPSEL, PARISC, M68K
@@ -1574,7 +1574,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   }
 
   assert(running_arch_index != -1,
-    "Didn't find running architecture code (running_arch_code) in arch_array");
+         "Didn't find running architecture code (running_arch_code) in arch_array");
   if (running_arch_index == -1) {
     // Even though running architecture detection failed
     // we may still continue with reporting dlerror() message
@@ -1596,13 +1596,13 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   if (lib_arch.compat_class != arch_array[running_arch_index].compat_class) {
     if (lib_arch.name!=NULL) {
       ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-        " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
-        lib_arch.name, arch_array[running_arch_index].name);
+                 " (Possible cause: can't load %s-bit .so on a %s-bit platform)",
+                 lib_arch.name, arch_array[running_arch_index].name);
     } else {
       ::snprintf(diag_msg_buf, diag_msg_max_length-1,
-      " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
-        lib_arch.code,
-        arch_array[running_arch_index].name);
+                 " (Possible cause: can't load this .so (machine code=0x%x) on a %s-bit platform)",
+                 lib_arch.code,
+                 arch_array[running_arch_index].name);
     }
   }
 
@@ -1630,7 +1630,7 @@ void* os::dll_lookup(void* handle, const char* name) {
 static bool _print_ascii_file(const char* filename, outputStream* st) {
   int fd = ::open(filename, O_RDONLY);
   if (fd == -1) {
-     return false;
+    return false;
   }
 
   char buf[32];
@@ -1785,8 +1785,8 @@ void os::jvm_path(char *buf, jint buflen) {
 
   char dli_fname[MAXPATHLEN];
   bool ret = dll_address_to_library_name(
-                CAST_FROM_FN_PTR(address, os::jvm_path),
-                dli_fname, sizeof(dli_fname), NULL);
+                                         CAST_FROM_FN_PTR(address, os::jvm_path),
+                                         dli_fname, sizeof(dli_fname), NULL);
   assert(ret, "cannot locate libjvm");
   char *rp = NULL;
   if (ret && dli_fname[0] != '\0') {
@@ -1884,12 +1884,12 @@ UserHandler(int sig, void *siginfo, void *context) {
   // the program is interrupted by Ctrl-C, SIGINT is sent to every thread. We
   // don't want to flood the manager thread with sem_post requests.
   if (sig == SIGINT && Atomic::add(1, &sigint_count) > 1)
-      return;
+    return;
 
   // Ctrl-C is pressed during error reporting, likely because the error
   // handler fails to abort. Let VM die immediately.
   if (sig == SIGINT && is_error_reported()) {
-     os::die();
+    os::die();
   }
 
   os::signal_notify(sig);
@@ -1952,16 +1952,16 @@ typedef sem_t os_semaphore_t;
 #endif
 
 class Semaphore : public StackObj {
-  public:
-    Semaphore();
-    ~Semaphore();
-    void signal();
-    void wait();
-    bool trywait();
-    bool timedwait(unsigned int sec, int nsec);
-  private:
-    jlong currenttime() const;
-    os_semaphore_t _semaphore;
+ public:
+  Semaphore();
+  ~Semaphore();
+  void signal();
+  void wait();
+  bool trywait();
+  bool timedwait(unsigned int sec, int nsec);
+ private:
+  jlong currenttime() const;
+  os_semaphore_t _semaphore;
 };
 
 Semaphore::Semaphore() : _semaphore(0) {
@@ -1981,9 +1981,9 @@ void Semaphore::wait() {
 }
 
 jlong Semaphore::currenttime() const {
-    struct timeval tv;
-    gettimeofday(&tv, NULL);
-    return (tv.tv_sec * NANOSECS_PER_SEC) + (tv.tv_usec * 1000);
+  struct timeval tv;
+  gettimeofday(&tv, NULL);
+  return (tv.tv_sec * NANOSECS_PER_SEC) + (tv.tv_usec * 1000);
 }
 
 #ifdef __APPLE__
@@ -2180,7 +2180,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
   }
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, prot,
-                                   MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
+                                     MAP_PRIVATE|MAP_FIXED|MAP_ANONYMOUS, -1, 0);
   if (res != (uintptr_t) MAP_FAILED) {
     return true;
   }
@@ -2194,7 +2194,7 @@ bool os::pd_commit_memory(char* addr, size_t size, bool exec) {
 }
 
 bool os::pd_commit_memory(char* addr, size_t size, size_t alignment_hint,
-                       bool exec) {
+                          bool exec) {
   // alignment_hint is ignored on this OS
   return pd_commit_memory(addr, size, exec);
 }
@@ -2262,7 +2262,7 @@ bool os::pd_uncommit_memory(char* addr, size_t size) {
   return ::mprotect(addr, size, PROT_NONE) == 0;
 #else
   uintptr_t res = (uintptr_t) ::mmap(addr, size, PROT_NONE,
-                MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
+                                     MAP_PRIVATE|MAP_FIXED|MAP_NORESERVE|MAP_ANONYMOUS, -1, 0);
   return res  != (uintptr_t) MAP_FAILED;
 #endif
 }
@@ -2323,7 +2323,7 @@ static int anon_munmap(char * addr, size_t size) {
 }
 
 char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
-                         size_t alignment_hint) {
+                            size_t alignment_hint) {
   return anon_mmap(requested_addr, bytes, (requested_addr != NULL));
 }
 
@@ -2401,24 +2401,24 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
   // Currently, size is the total size of the heap
   int shmid = shmget(key, bytes, IPC_CREAT|SHM_R|SHM_W);
   if (shmid == -1) {
-     // Possible reasons for shmget failure:
-     // 1. shmmax is too small for Java heap.
-     //    > check shmmax value: cat /proc/sys/kernel/shmmax
-     //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
-     // 2. not enough large page memory.
-     //    > check available large pages: cat /proc/meminfo
-     //    > increase amount of large pages:
-     //          echo new_value > /proc/sys/vm/nr_hugepages
-     //      Note 1: different Bsd may use different name for this property,
-     //            e.g. on Redhat AS-3 it is "hugetlb_pool".
-     //      Note 2: it's possible there's enough physical memory available but
-     //            they are so fragmented after a long run that they can't
-     //            coalesce into large pages. Try to reserve large pages when
-     //            the system is still "fresh".
-     if (warn_on_failure) {
-       warning("Failed to reserve shared memory (errno = %d).", errno);
-     }
-     return NULL;
+    // Possible reasons for shmget failure:
+    // 1. shmmax is too small for Java heap.
+    //    > check shmmax value: cat /proc/sys/kernel/shmmax
+    //    > increase shmmax value: echo "0xffffffff" > /proc/sys/kernel/shmmax
+    // 2. not enough large page memory.
+    //    > check available large pages: cat /proc/meminfo
+    //    > increase amount of large pages:
+    //          echo new_value > /proc/sys/vm/nr_hugepages
+    //      Note 1: different Bsd may use different name for this property,
+    //            e.g. on Redhat AS-3 it is "hugetlb_pool".
+    //      Note 2: it's possible there's enough physical memory available but
+    //            they are so fragmented after a long run that they can't
+    //            coalesce into large pages. Try to reserve large pages when
+    //            the system is still "fresh".
+    if (warn_on_failure) {
+      warning("Failed to reserve shared memory (errno = %d).", errno);
+    }
+    return NULL;
   }
 
   // attach to the region
@@ -2432,10 +2432,10 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
   shmctl(shmid, IPC_RMID, NULL);
 
   if ((intptr_t)addr == -1) {
-     if (warn_on_failure) {
-       warning("Failed to attach shared memory (errno = %d).", err);
-     }
-     return NULL;
+    if (warn_on_failure) {
+      warning("Failed to attach shared memory (errno = %d).", err);
+    }
+    return NULL;
   }
 
   // The memory is committed
@@ -2506,12 +2506,12 @@ char* os::pd_attempt_reserve_memory_at(size_t bytes, char* requested_addr) {
   // if kernel honors the hint then we can return immediately.
   char * addr = anon_mmap(requested_addr, bytes, false);
   if (addr == requested_addr) {
-     return requested_addr;
+    return requested_addr;
   }
 
   if (addr != NULL) {
-     // mmap() is successful but it fails to reserve at the requested address
-     anon_munmap(addr, bytes);
+    // mmap() is successful but it fails to reserve at the requested address
+    anon_munmap(addr, bytes);
   }
 
   int i;
@@ -2839,12 +2839,12 @@ static int SR_initialize() {
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
     int sig = ::strtol(s, 0, 10);
     if (sig > 0 || sig < NSIG) {
-        SR_signum = sig;
+      SR_signum = sig;
     }
   }
 
   assert(SR_signum > SIGSEGV && SR_signum > SIGBUS,
-        "SR_signum must be greater than max(SIGSEGV, SIGBUS), see 4355769");
+         "SR_signum must be greater than max(SIGSEGV, SIGBUS), see 4355769");
 
   sigemptyset(&SR_sigset);
   sigaddset(&SR_sigset, SR_signum);
@@ -2977,7 +2977,7 @@ static void do_resume(OSThread* osthread) {
 //
 extern "C" JNIEXPORT int
 JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
-                        void* ucontext, int abort_if_unrecognized);
+                      void* ucontext, int abort_if_unrecognized);
 
 void signalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
@@ -3168,12 +3168,12 @@ void os::Bsd::install_signal_handlers() {
     signal_setting_t begin_signal_setting = NULL;
     signal_setting_t end_signal_setting = NULL;
     begin_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
-                             dlsym(RTLD_DEFAULT, "JVM_begin_signal_setting"));
+                                          dlsym(RTLD_DEFAULT, "JVM_begin_signal_setting"));
     if (begin_signal_setting != NULL) {
       end_signal_setting = CAST_TO_FN_PTR(signal_setting_t,
-                             dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
+                                          dlsym(RTLD_DEFAULT, "JVM_end_signal_setting"));
       get_signal_action = CAST_TO_FN_PTR(get_signal_t,
-                            dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
+                                         dlsym(RTLD_DEFAULT, "JVM_get_signal_action"));
       libjsig_is_loaded = true;
       assert(UseSignalChaining, "should enable signal-chaining");
     }
@@ -3203,10 +3203,10 @@ void os::Bsd::install_signal_handlers() {
     // exception handling, while leaving the standard BSD signal handlers functional.
     kern_return_t kr;
     kr = task_set_exception_ports(mach_task_self(),
-        EXC_MASK_BAD_ACCESS | EXC_MASK_ARITHMETIC,
-        MACH_PORT_NULL,
-        EXCEPTION_STATE_IDENTITY,
-        MACHINE_THREAD_STATE);
+                                  EXC_MASK_BAD_ACCESS | EXC_MASK_ARITHMETIC,
+                                  MACH_PORT_NULL,
+                                  EXCEPTION_STATE_IDENTITY,
+                                  MACHINE_THREAD_STATE);
 
     assert(kr == KERN_SUCCESS, "could not set mach task signal handler");
 #endif
@@ -3302,7 +3302,7 @@ static void print_signal_handler(outputStream* st, int sig,
 
   // Check: is it our handler?
   if (handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)signalHandler) ||
-     handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler)) {
+      handler == CAST_FROM_FN_PTR(address, (sa_sigaction_t)SR_handler)) {
     // It is our signal handler
     // check for flags, reset system-used one!
     if ((int)sa.sa_flags != os::Bsd::get_our_sigflags(sig)) {
@@ -3542,22 +3542,22 @@ jint os::init_2(void)
   // Add in 2*BytesPerWord times page size to account for VM stack during
   // class initialization depending on 32 or 64 bit VM.
   os::Bsd::min_stack_allowed = MAX2(os::Bsd::min_stack_allowed,
-            (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
-                    2*BytesPerWord COMPILER2_PRESENT(+1)) * Bsd::page_size());
+                                    (size_t)(StackYellowPages+StackRedPages+StackShadowPages+
+                                    2*BytesPerWord COMPILER2_PRESENT(+1)) * Bsd::page_size());
 
   size_t threadStackSizeInBytes = ThreadStackSize * K;
   if (threadStackSizeInBytes != 0 &&
       threadStackSizeInBytes < os::Bsd::min_stack_allowed) {
-        tty->print_cr("\nThe stack size specified is too small, "
-                      "Specify at least %dk",
-                      os::Bsd::min_stack_allowed/ K);
-        return JNI_ERR;
+    tty->print_cr("\nThe stack size specified is too small, "
+                  "Specify at least %dk",
+                  os::Bsd::min_stack_allowed/ K);
+    return JNI_ERR;
   }
 
   // Make the stack size a multiple of the page size so that
   // the yellow/red zones can be guarded.
   JavaThread::set_stack_size_at_create(round_to(threadStackSizeInBytes,
-        vm_page_size()));
+                                                vm_page_size()));
 
   if (MaxFDLimit) {
     // set the number of file descriptors to max. print out error
@@ -3670,12 +3670,12 @@ void os::SuspendedThreadTask::internal_do_task() {
 
 ///
 class PcFetcher : public os::SuspendedThreadTask {
-public:
+ public:
   PcFetcher(Thread* thread) : os::SuspendedThreadTask(thread) {}
   ExtendedPC result();
-protected:
+ protected:
   void do_task(const os::SuspendedThreadTaskContext& context);
-private:
+ private:
   ExtendedPC _epc;
 };
 
@@ -3722,7 +3722,7 @@ bool os::find(address addr, outputStream* st) {
     st->print(PTR_FORMAT ": ", addr);
     if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#x", dlinfo.dli_sname,
-                 addr - (intptr_t)dlinfo.dli_saddr);
+                addr - (intptr_t)dlinfo.dli_saddr);
     } else if (dlinfo.dli_fbase != NULL) {
       st->print("<offset %#x>", addr - (intptr_t)dlinfo.dli_fbase);
     } else {
@@ -3892,11 +3892,11 @@ int os::open(const char *path, int oflag, int mode) {
      * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
      */
 #ifdef FD_CLOEXEC
-    {
-        int flags = ::fcntl(fd, F_GETFD);
-        if (flags != -1)
-            ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
-    }
+  {
+    int flags = ::fcntl(fd, F_GETFD);
+    if (flags != -1)
+      ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+  }
 #endif
 
   if (o_delete != 0) {
@@ -3960,23 +3960,23 @@ int os::available(int fd, jlong *bytes) {
 }
 
 int os::socket_available(int fd, jint *pbytes) {
-   if (fd < 0)
-     return OS_OK;
+  if (fd < 0)
+    return OS_OK;
 
-   int ret;
+  int ret;
 
-   RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
+  RESTARTABLE(::ioctl(fd, FIONREAD, pbytes), ret);
 
-   //%% note ioctl can return 0 when successful, JVM_SocketAvailable
-   // is expected to return 0 on failure and 1 on success to the jdk.
+  //%% note ioctl can return 0 when successful, JVM_SocketAvailable
+  // is expected to return 0 on failure and 1 on success to the jdk.
 
-   return (ret == OS_ERR) ? 0 : 1;
+  return (ret == OS_ERR) ? 0 : 1;
 }
 
 // Map a block of memory.
 char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
-                     char *addr, size_t bytes, bool read_only,
-                     bool allow_exec) {
+                        char *addr, size_t bytes, bool read_only,
+                        bool allow_exec) {
   int prot;
   int flags;
 
@@ -4007,8 +4007,8 @@ char* os::pd_map_memory(int fd, const char* file_name, size_t file_offset,
 
 // Remap a block of memory.
 char* os::pd_remap_memory(int fd, const char* file_name, size_t file_offset,
-                       char *addr, size_t bytes, bool read_only,
-                       bool allow_exec) {
+                          char *addr, size_t bytes, bool read_only,
+                          bool allow_exec) {
   // same as map_memory() on this OS
   return os::map_memory(fd, file_name, file_offset, addr, bytes, read_only,
                         allow_exec);
@@ -4127,7 +4127,7 @@ void os::pause() {
     }
   } else {
     jio_fprintf(stderr,
-      "Could not open pause file '%s', continuing immediately.\n", filename);
+                "Could not open pause file '%s', continuing immediately.\n", filename);
   }
 }
 
@@ -4223,28 +4223,28 @@ void os::PlatformEvent::park() {       // AKA "down()"
 
   int v;
   for (;;) {
-      v = _Event;
-      if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    v = _Event;
+    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v == 0) {
-     // Do this the hard way by blocking ...
-     int status = pthread_mutex_lock(_mutex);
-     assert_status(status == 0, status, "mutex_lock");
-     guarantee(_nParked == 0, "invariant");
-     ++_nParked;
-     while (_Event < 0) {
-        status = pthread_cond_wait(_cond, _mutex);
-        // for some reason, under 2.7 lwp_cond_wait() may return ETIME ...
-        // Treat this the same as if the wait was interrupted
-        if (status == ETIMEDOUT) { status = EINTR; }
-        assert_status(status == 0 || status == EINTR, status, "cond_wait");
-     }
-     --_nParked;
+    // Do this the hard way by blocking ...
+    int status = pthread_mutex_lock(_mutex);
+    assert_status(status == 0, status, "mutex_lock");
+    guarantee(_nParked == 0, "invariant");
+    ++_nParked;
+    while (_Event < 0) {
+      status = pthread_cond_wait(_cond, _mutex);
+      // for some reason, under 2.7 lwp_cond_wait() may return ETIME ...
+      // Treat this the same as if the wait was interrupted
+      if (status == ETIMEDOUT) { status = EINTR; }
+      assert_status(status == 0 || status == EINTR, status, "cond_wait");
+    }
+    --_nParked;
 
     _Event = 0;
-     status = pthread_mutex_unlock(_mutex);
-     assert_status(status == 0, status, "mutex_unlock");
+    status = pthread_mutex_unlock(_mutex);
+    assert_status(status == 0, status, "mutex_unlock");
     // Paranoia to ensure our locked and lock-free paths interact
     // correctly with each other.
     OrderAccess::fence();
@@ -4257,8 +4257,8 @@ int os::PlatformEvent::park(jlong millis) {
 
   int v;
   for (;;) {
-      v = _Event;
-      if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
+    v = _Event;
+    if (Atomic::cmpxchg(v-1, &_Event, v) == v) break;
   }
   guarantee(v >= 0, "invariant");
   if (v != 0) return OS_OK;
@@ -4302,7 +4302,7 @@ int os::PlatformEvent::park(jlong millis) {
   }
   --_nParked;
   if (_Event >= 0) {
-     ret = OS_OK;
+    ret = OS_OK;
   }
   _Event = 0;
   status = pthread_mutex_unlock(_mutex);
@@ -4532,17 +4532,17 @@ void Parker::unpark() {
   const int s = _counter;
   _counter = 1;
   if (s < 1) {
-     if (WorkAroundNPTLTimedWaitHang) {
-        status = pthread_cond_signal(_cond);
-        assert(status == 0, "invariant");
-        status = pthread_mutex_unlock(_mutex);
-        assert(status == 0, "invariant");
-     } else {
-        status = pthread_mutex_unlock(_mutex);
-        assert(status == 0, "invariant");
-        status = pthread_cond_signal(_cond);
-        assert(status == 0, "invariant");
-     }
+    if (WorkAroundNPTLTimedWaitHang) {
+      status = pthread_cond_signal(_cond);
+      assert(status == 0, "invariant");
+      status = pthread_mutex_unlock(_mutex);
+      assert(status == 0, "invariant");
+    } else {
+      status = pthread_mutex_unlock(_mutex);
+      assert(status == 0, "invariant");
+      status = pthread_cond_signal(_cond);
+      assert(status == 0, "invariant");
+    }
   } else {
     pthread_mutex_unlock(_mutex);
     assert(status == 0, "invariant");
@@ -4600,26 +4600,26 @@ int os::fork_and_exec(char* cmd) {
     // Wait for the child process to exit.  This returns immediately if
     // the child has already exited. */
     while (waitpid(pid, &status, 0) < 0) {
-        switch (errno) {
-        case ECHILD: return 0;
-        case EINTR: break;
-        default: return -1;
-        }
+      switch (errno) {
+      case ECHILD: return 0;
+      case EINTR: break;
+      default: return -1;
+      }
     }
 
     if (WIFEXITED(status)) {
-       // The child exited normally; get its exit code.
-       return WEXITSTATUS(status);
+      // The child exited normally; get its exit code.
+      return WEXITSTATUS(status);
     } else if (WIFSIGNALED(status)) {
-       // The child exited because of a signal
-       // The best value to return is 0x80 + signal number,
-       // because that is what all Unix shells do, and because
-       // it allows callers to distinguish between process exit and
-       // process death by signal.
-       return 0x80 + WTERMSIG(status);
+      // The child exited because of a signal
+      // The best value to return is 0x80 + signal number,
+      // because that is what all Unix shells do, and because
+      // it allows callers to distinguish between process exit and
+      // process death by signal.
+      return 0x80 + WTERMSIG(status);
     } else {
-       // Unknown exit code; pass it through
-       return status;
+      // Unknown exit code; pass it through
+      return status;
     }
   }
 }
@@ -4634,40 +4634,40 @@ int os::fork_and_exec(char* cmd) {
 //
 bool os::is_headless_jre() {
 #ifdef __APPLE__
-    // We no longer build headless-only on Mac OS X
-    return false;
+  // We no longer build headless-only on Mac OS X
+  return false;
 #else
-    struct stat statbuf;
-    char buf[MAXPATHLEN];
-    char libmawtpath[MAXPATHLEN];
-    const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
-    const char *new_xawtstr = "/libawt_xawt" JNI_LIB_SUFFIX;
-    char *p;
+  struct stat statbuf;
+  char buf[MAXPATHLEN];
+  char libmawtpath[MAXPATHLEN];
+  const char *xawtstr  = "/xawt/libmawt" JNI_LIB_SUFFIX;
+  const char *new_xawtstr = "/libawt_xawt" JNI_LIB_SUFFIX;
+  char *p;
 
-    // Get path to libjvm.so
-    os::jvm_path(buf, sizeof(buf));
+  // Get path to libjvm.so
+  os::jvm_path(buf, sizeof(buf));
 
-    // Get rid of libjvm.so
-    p = strrchr(buf, '/');
-    if (p == NULL) return false;
-    else *p = '\0';
+  // Get rid of libjvm.so
+  p = strrchr(buf, '/');
+  if (p == NULL) return false;
+  else *p = '\0';
 
-    // Get rid of client or server
-    p = strrchr(buf, '/');
-    if (p == NULL) return false;
-    else *p = '\0';
+  // Get rid of client or server
+  p = strrchr(buf, '/');
+  if (p == NULL) return false;
+  else *p = '\0';
 
-    // check xawt/libmawt.so
-    strcpy(libmawtpath, buf);
-    strcat(libmawtpath, xawtstr);
-    if (::stat(libmawtpath, &statbuf) == 0) return false;
+  // check xawt/libmawt.so
+  strcpy(libmawtpath, buf);
+  strcat(libmawtpath, xawtstr);
+  if (::stat(libmawtpath, &statbuf) == 0) return false;
 
-    // check libawt_xawt.so
-    strcpy(libmawtpath, buf);
-    strcat(libmawtpath, new_xawtstr);
-    if (::stat(libmawtpath, &statbuf) == 0) return false;
+  // check libawt_xawt.so
+  strcpy(libmawtpath, buf);
+  strcat(libmawtpath, new_xawtstr);
+  if (::stat(libmawtpath, &statbuf) == 0) return false;
 
-    return true;
+  return true;
 #endif
 }
 
