@@ -3334,6 +3334,7 @@ void ConcurrentMark::aggregate_count_data() {
   } else {
     g1_par_agg_task.work(0);
   }
+  _g1h->allocation_context_stats().update_at_remark();
 }
 
 // Clear the per-worker arrays used to store the per-region counting data

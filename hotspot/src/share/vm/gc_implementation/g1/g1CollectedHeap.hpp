@@ -263,6 +263,9 @@ private:
   // Class that handles the different kinds of allocations.
   G1Allocator* _allocator;
 
+  // Statistics for each allocation context
+  AllocationContextStats _allocation_context_stats;
+
   // PLAB sizing policy for survivors.
   PLABStats _survivor_plab_stats;
 
@@ -656,6 +659,8 @@ public:
 
   // Determines PLAB size for a particular allocation purpose.
   size_t desired_plab_sz(GCAllocPurpose purpose);
+
+  inline AllocationContextStats& allocation_context_stats();
 
   // Do anything common to GC's.
   virtual void gc_prologue(bool full);

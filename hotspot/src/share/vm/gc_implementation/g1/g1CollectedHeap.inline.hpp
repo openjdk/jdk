@@ -37,6 +37,10 @@
 
 // Inline functions for G1CollectedHeap
 
+inline AllocationContextStats& G1CollectedHeap::allocation_context_stats() {
+  return _allocation_context_stats;
+}
+
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 

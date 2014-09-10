@@ -3596,7 +3596,7 @@ void G1CollectedHeap::gc_prologue(bool full /* Ignored */) {
   }
 }
 
-void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
+void G1CollectedHeap::gc_epilogue(bool full) {
 
   if (G1SummarizeRSetStats &&
       (G1SummarizeRSetStatsPeriod > 0) &&
@@ -3613,6 +3613,7 @@ void G1CollectedHeap::gc_epilogue(bool full /* Ignored */) {
   // always_do_update_barrier = true;
 
   resize_all_tlabs();
+  allocation_context_stats().update(full);
 
   // We have just completed a GC. Update the soft reference
   // policy with the new heap occupancy
