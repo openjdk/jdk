@@ -109,7 +109,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
         static String name(Class<?> arrayClass, boolean isSetter) {
             Class<?> elemClass = arrayClass.getComponentType();
-            if (elemClass == null)  throw new IllegalArgumentException();
+            if (elemClass == null)  throw newIllegalArgumentException("not an array", arrayClass);
             return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(elemClass);
         }
         static final boolean USE_WEAKLY_TYPED_ARRAY_ACCESSORS = false;  // FIXME: decide
@@ -179,13 +179,17 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         for (int i = 0; i <= INARG_COUNT; i++) {
             Class<?> src = (i == INARG_COUNT) ? dstType.returnType() : srcType.parameterType(i);
             Class<?> dst = (i == INARG_COUNT) ? srcType.returnType() : dstType.parameterType(i);
-            if (!VerifyType.isNullConversion(src, dst) ||
+            if (!VerifyType.isNullConversion(src, dst, false) ||
                 level <= 1 && dst.isInterface() && !dst.isAssignableFrom(src)) {
                 needConv[i] = true;
                 conversions++;
             }
         }
         boolean retConv = needConv[INARG_COUNT];
+        if (retConv && srcType.returnType() == void.class) {
+            retConv = false;
+            conversions--;
+        }
 
         final int IN_MH         = 0;
         final int INARG_BASE    = 1;
@@ -193,6 +197,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         final int NAME_LIMIT    = INARG_LIMIT + conversions + 1;
         final int RETURN_CONV   = (!retConv ? -1         : NAME_LIMIT - 1);
         final int OUT_CALL      = (!retConv ? NAME_LIMIT : RETURN_CONV) - 1;
+        final int RESULT        = (srcType.returnType() == void.class ? -1 : NAME_LIMIT - 1);
 
         // Now build a LambdaForm.
         MethodType lambdaType = srcType.basicType().invokerType();
@@ -230,7 +235,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 if (dst.isPrimitive()) {
                     // Caller has boxed a primitive.  Unbox it for the target.
                     Wrapper w = Wrapper.forPrimitiveType(dst);
-                    if (level == 0 || VerifyType.isNullConversion(src, w.wrapperType())) {
+                    if (level == 0 || VerifyType.isNullConversion(src, w.wrapperType(), false)) {
                         fn = ValueConversions.unbox(dst);
                     } else if (src == Object.class || !Wrapper.isWrapperType(src)) {
                         // Examples:  Object->int, Number->int, Comparable->int; Byte->int, Character->int
@@ -289,7 +294,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             assert(RETURN_CONV == names.length-1);
         }
 
-        LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names);
+        LambdaForm form = new LambdaForm("convert", lambdaType.parameterCount(), names, RESULT);
         return SimpleMethodHandle.make(srcType, form);
     }
 

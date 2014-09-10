@@ -464,7 +464,7 @@ class LambdaForm {
         return sig.indexOf('_');
     }
     static BasicType signatureReturn(String sig) {
-        return basicType(sig.charAt(signatureArity(sig)+1));
+        return basicType(sig.charAt(signatureArity(sig) + 1));
     }
     static boolean isValidSignature(String sig) {
         int arity = sig.indexOf('_');
@@ -582,7 +582,7 @@ class LambdaForm {
             isCompiled = true;
             return vmentry;
         } catch (Error | Exception ex) {
-            throw newInternalError("compileToBytecode", ex);
+            throw newInternalError("compileToBytecode: " + this, ex);
         }
     }
 

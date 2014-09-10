@@ -46,8 +46,10 @@ import sun.misc.Unsafe;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
     static final Integer COMPILE_THRESHOLD;
+    static final int PROFILE_LEVEL;
+
     static {
-        final Object[] values = { false, false, false, false, null };
+        final Object[] values = { false, false, false, false, null, null };
         AccessController.doPrivileged(new PrivilegedAction<Void>() {
                 public Void run() {
                     values[0] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DEBUG_NAMES");
@@ -55,6 +57,7 @@ import sun.misc.Unsafe;
                     values[2] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_INTERPRETER");
                     values[3] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE");
                     values[4] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD");
+                    values[5] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
                     return null;
                 }
             });
@@ -63,6 +66,7 @@ import sun.misc.Unsafe;
         TRACE_INTERPRETER         = (Boolean) values[2];
         TRACE_METHOD_LINKAGE      = (Boolean) values[3];
         COMPILE_THRESHOLD         = (Integer) values[4];
+        PROFILE_LEVEL             = (Integer) values[5];
     }
 
     /** Tell if any of the debugging switches are turned on.
