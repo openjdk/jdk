@@ -35,6 +35,7 @@ import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
+import java.lang.invoke.MethodHandleImpl.ArrayAccessor;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
@@ -427,6 +428,40 @@ class InvokerBytecodeGenerator {
         emitStoreInsn(L_TYPE, index);
     }
 
+    private byte arrayTypeCode(Wrapper elementType) {
+        switch (elementType) {
+            case BOOLEAN: return Opcodes.T_BOOLEAN;
+            case BYTE:    return Opcodes.T_BYTE;
+            case CHAR:    return Opcodes.T_CHAR;
+            case SHORT:   return Opcodes.T_SHORT;
+            case INT:     return Opcodes.T_INT;
+            case LONG:    return Opcodes.T_LONG;
+            case FLOAT:   return Opcodes.T_FLOAT;
+            case DOUBLE:  return Opcodes.T_DOUBLE;
+            case OBJECT:  return 0; // in place of Opcodes.T_OBJECT
+            default:      throw new InternalError();
+        }
+    }
+
+    private int arrayInsnOpcode(byte tcode, int aaop) throws InternalError {
+        assert(aaop == Opcodes.AASTORE || aaop == Opcodes.AALOAD);
+        int xas;
+        switch (tcode) {
+            case Opcodes.T_BOOLEAN: xas = Opcodes.BASTORE; break;
+            case Opcodes.T_BYTE:    xas = Opcodes.BASTORE; break;
+            case Opcodes.T_CHAR:    xas = Opcodes.CASTORE; break;
+            case Opcodes.T_SHORT:   xas = Opcodes.SASTORE; break;
+            case Opcodes.T_INT:     xas = Opcodes.IASTORE; break;
+            case Opcodes.T_LONG:    xas = Opcodes.LASTORE; break;
+            case Opcodes.T_FLOAT:   xas = Opcodes.FASTORE; break;
+            case Opcodes.T_DOUBLE:  xas = Opcodes.DASTORE; break;
+            case 0:                 xas = Opcodes.AASTORE; break;
+            default:      throw new InternalError();
+        }
+        return xas - Opcodes.AASTORE + aaop;
+    }
+
+
     private void freeFrameLocal(int oldFrameLocal) {
         int i = indexForFrameLocal(oldFrameLocal);
         if (i < 0)  return;
@@ -616,6 +651,10 @@ class InvokerBytecodeGenerator {
                 i = i+2; // Jump to the end of GWC idiom
             } else if (isNewArray(rtype, name)) {
                 emitNewArray(rtype, name);
+            } else if (isArrayLoad(member)) {
+                emitArrayLoad(name);
+            } else if (isArrayStore(member)) {
+                emitArrayStore(name);
             } else if (isStaticallyInvocable(member)) {
                 emitStaticInvoke(name);
             } else {
@@ -632,6 +671,35 @@ class InvokerBytecodeGenerator {
         final byte[] classFile = cw.toByteArray();
         maybeDump(className, classFile);
         return classFile;
+    }
+
+    boolean isArrayLoad(MemberName member) {
+        return  member != null &&
+                member.getDeclaringClass() == ArrayAccessor.class &&
+                member.getName() != null &&
+                member.getName().startsWith("getElement");
+    }
+
+    boolean isArrayStore(MemberName member) {
+        return  member != null &&
+                member.getDeclaringClass() == ArrayAccessor.class &&
+                member.getName() != null &&
+                member.getName().startsWith("setElement");
+    }
+
+    void emitArrayLoad(Name name)  { emitArrayOp(name, Opcodes.AALOAD);  }
+    void emitArrayStore(Name name) { emitArrayOp(name, Opcodes.AASTORE); }
+
+    void emitArrayOp(Name name, int arrayOpcode) {
+        assert arrayOpcode == Opcodes.AALOAD || arrayOpcode == Opcodes.AASTORE;
+        Class<?> elementType = name.function.methodType().parameterType(0).getComponentType();
+        assert elementType != null;
+        emitPushArguments(name);
+        if (elementType.isPrimitive()) {
+            Wrapper w = Wrapper.forPrimitiveType(elementType);
+            arrayOpcode = arrayInsnOpcode(arrayTypeCode(w), arrayOpcode);
+        }
+        mv.visitInsn(arrayOpcode);
     }
 
     /**
