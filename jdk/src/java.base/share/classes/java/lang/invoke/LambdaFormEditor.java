@@ -443,8 +443,383 @@ class LambdaFormEditor {
             buf.insertParameter(0, newBaseAddress);
         }
 
-        buf.endEdit();
-        form = buf.lambdaForm();
+        form = buf.endEdit();
         return putInCache(key, form);
+    }
+
+    LambdaForm addArgumentForm(int pos, BasicType type) {
+        Transform key = Transform.of(Transform.Kind.ADD_ARG, pos, type.ordinal());
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity+1);
+            assert(form.parameterType(pos) == type);
+            return form;
+        }
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        buf.insertParameter(pos, new Name(type));
+
+        form = buf.endEdit();
+        return putInCache(key, form);
+    }
+
+    LambdaForm dupArgumentForm(int srcPos, int dstPos) {
+        Transform key = Transform.of(Transform.Kind.DUP_ARG, srcPos, dstPos);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity-1);
+            return form;
+        }
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        assert(lambdaForm.parameter(srcPos).constraint == null);
+        assert(lambdaForm.parameter(dstPos).constraint == null);
+        buf.replaceParameterByCopy(dstPos, srcPos);
+
+        form = buf.endEdit();
+        return putInCache(key, form);
+    }
+
+    LambdaForm spreadArgumentsForm(int pos, Class<?> arrayType, int arrayLength) {
+        Class<?> elementType = arrayType.getComponentType();
+        Class<?> erasedArrayType = arrayType;
+        if (!elementType.isPrimitive())
+            erasedArrayType = Object[].class;
+        BasicType bt = basicType(elementType);
+        int elementTypeKey = bt.ordinal();
+        if (bt.basicTypeClass() != elementType) {
+            if (elementType.isPrimitive()) {
+                elementTypeKey = TYPE_LIMIT + Wrapper.forPrimitiveType(elementType).ordinal();
+            }
+        }
+        Transform key = Transform.of(Transform.Kind.SPREAD_ARGS, pos, elementTypeKey, arrayLength);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity - arrayLength + 1);
+            return form;
+        }
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        assert(pos <= MethodType.MAX_JVM_ARITY);
+        assert(pos + arrayLength <= lambdaForm.arity);
+        assert(pos > 0);  // cannot spread the MH arg itself
+
+        Name spreadParam = new Name(L_TYPE);
+        Name checkSpread = new Name(MethodHandleImpl.Lazy.NF_checkSpreadArgument, spreadParam, arrayLength);
+
+        // insert the new expressions
+        int exprPos = lambdaForm.arity();
+        buf.insertExpression(exprPos++, checkSpread);
+        // adjust the arguments
+        MethodHandle aload = MethodHandles.arrayElementGetter(erasedArrayType);
+        for (int i = 0; i < arrayLength; i++) {
+            Name loadArgument = new Name(aload, spreadParam, i);
+            buf.insertExpression(exprPos + i, loadArgument);
+            buf.replaceParameterByCopy(pos + i, exprPos + i);
+        }
+        buf.insertParameter(pos, spreadParam);
+
+        form = buf.endEdit();
+        return putInCache(key, form);
+    }
+
+    LambdaForm collectArgumentsForm(int pos, MethodType collectorType) {
+        int collectorArity = collectorType.parameterCount();
+        boolean dropResult = (collectorType.returnType() == void.class);
+        if (collectorArity == 1 && !dropResult) {
+            return filterArgumentForm(pos, basicType(collectorType.parameterType(0)));
+        }
+        BasicType[] newTypes = BasicType.basicTypes(collectorType.parameterList());
+        Transform.Kind kind = (dropResult
+                ? Transform.Kind.COLLECT_ARGS_TO_VOID
+                : Transform.Kind.COLLECT_ARGS);
+        if (dropResult && collectorArity == 0)  pos = 1;  // pure side effect
+        Transform key = Transform.of(kind, pos, collectorArity, BasicType.basicTypesOrd(newTypes));
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity - (dropResult ? 0 : 1) + collectorArity);
+            return form;
+        }
+        form = makeArgumentCombinationForm(pos, collectorType, false, dropResult);
+        return putInCache(key, form);
+    }
+
+    LambdaForm collectArgumentArrayForm(int pos, MethodHandle arrayCollector) {
+        MethodType collectorType = arrayCollector.type();
+        int collectorArity = collectorType.parameterCount();
+        assert(arrayCollector.intrinsicName() == Intrinsic.NEW_ARRAY);
+        Class<?> arrayType = collectorType.returnType();
+        Class<?> elementType = arrayType.getComponentType();
+        BasicType argType = basicType(elementType);
+        int argTypeKey = argType.ordinal();
+        if (argType.basicTypeClass() != elementType) {
+            // return null if it requires more metadata (like String[].class)
+            if (!elementType.isPrimitive())
+                return null;
+            argTypeKey = TYPE_LIMIT + Wrapper.forPrimitiveType(elementType).ordinal();
+        }
+        assert(collectorType.parameterList().equals(Collections.nCopies(collectorArity, elementType)));
+        Transform.Kind kind = Transform.Kind.COLLECT_ARGS_TO_ARRAY;
+        Transform key = Transform.of(kind, pos, collectorArity, argTypeKey);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity - 1 + collectorArity);
+            return form;
+        }
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        assert(pos + 1 <= lambdaForm.arity);
+        assert(pos > 0);  // cannot filter the MH arg itself
+
+        Name[] newParams = new Name[collectorArity];
+        for (int i = 0; i < collectorArity; i++) {
+            newParams[i] = new Name(pos + i, argType);
+        }
+        Name callCombiner = new Name(arrayCollector, (Object[]) /*...*/ newParams);
+
+        // insert the new expression
+        int exprPos = lambdaForm.arity();
+        buf.insertExpression(exprPos, callCombiner);
+
+        // insert new arguments
+        int argPos = pos + 1;  // skip result parameter
+        for (Name newParam : newParams) {
+            buf.insertParameter(argPos++, newParam);
+        }
+        assert(buf.lastIndexOf(callCombiner) == exprPos+newParams.length);
+        buf.replaceParameterByCopy(pos, exprPos+newParams.length);
+
+        form = buf.endEdit();
+        return putInCache(key, form);
+    }
+
+    LambdaForm filterArgumentForm(int pos, BasicType newType) {
+        Transform key = Transform.of(Transform.Kind.FILTER_ARG, pos, newType.ordinal());
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity);
+            assert(form.parameterType(pos) == newType);
+            return form;
+        }
+
+        BasicType oldType = lambdaForm.parameterType(pos);
+        MethodType filterType = MethodType.methodType(oldType.basicTypeClass(),
+                newType.basicTypeClass());
+        form = makeArgumentCombinationForm(pos, filterType, false, false);
+        return putInCache(key, form);
+    }
+
+    private LambdaForm makeArgumentCombinationForm(int pos,
+                                                   MethodType combinerType,
+                                                   boolean keepArguments, boolean dropResult) {
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+        int combinerArity = combinerType.parameterCount();
+        int resultArity = (dropResult ? 0 : 1);
+
+        assert(pos <= MethodType.MAX_JVM_ARITY);
+        assert(pos + resultArity + (keepArguments ? combinerArity : 0) <= lambdaForm.arity);
+        assert(pos > 0);  // cannot filter the MH arg itself
+        assert(combinerType == combinerType.basicType());
+        assert(combinerType.returnType() != void.class || dropResult);
+
+        BoundMethodHandle.SpeciesData oldData = oldSpeciesData();
+        BoundMethodHandle.SpeciesData newData = newSpeciesData(L_TYPE);
+
+        // The newly created LF will run with a different BMH.
+        // Switch over any pre-existing BMH field references to the new BMH class.
+        Name oldBaseAddress = lambdaForm.parameter(0);  // BMH holding the values
+        buf.replaceFunctions(oldData.getterFunctions(), newData.getterFunctions(), oldBaseAddress);
+        Name newBaseAddress = oldBaseAddress.withConstraint(newData);
+        buf.renameParameter(0, newBaseAddress);
+
+        Name getCombiner = new Name(newData.getterFunction(oldData.fieldCount()), newBaseAddress);
+        Object[] combinerArgs = new Object[1 + combinerArity];
+        combinerArgs[0] = getCombiner;
+        Name[] newParams;
+        if (keepArguments) {
+            newParams = new Name[0];
+            System.arraycopy(lambdaForm.names, pos + resultArity,
+                             combinerArgs, 1, combinerArity);
+        } else {
+            newParams = new Name[combinerArity];
+            BasicType[] newTypes = basicTypes(combinerType.parameterList());
+            for (int i = 0; i < newTypes.length; i++) {
+                newParams[i] = new Name(pos + i, newTypes[i]);
+            }
+            System.arraycopy(newParams, 0,
+                             combinerArgs, 1, combinerArity);
+        }
+        Name callCombiner = new Name(combinerType, combinerArgs);
+
+        // insert the two new expressions
+        int exprPos = lambdaForm.arity();
+        buf.insertExpression(exprPos+0, getCombiner);
+        buf.insertExpression(exprPos+1, callCombiner);
+
+        // insert new arguments, if needed
+        int argPos = pos + resultArity;  // skip result parameter
+        for (Name newParam : newParams) {
+            buf.insertParameter(argPos++, newParam);
+        }
+        assert(buf.lastIndexOf(callCombiner) == exprPos+1+newParams.length);
+        if (!dropResult) {
+            buf.replaceParameterByCopy(pos, exprPos+1+newParams.length);
+        }
+
+        return buf.endEdit();
+    }
+
+    LambdaForm filterReturnForm(BasicType newType, boolean constantZero) {
+        Transform.Kind kind = (constantZero ? Transform.Kind.FILTER_RETURN_TO_ZERO : Transform.Kind.FILTER_RETURN);
+        Transform key = Transform.of(kind, newType.ordinal());
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity);
+            assert(form.returnType() == newType);
+            return form;
+        }
+        LambdaFormBuffer buf = buffer();
+        buf.startEdit();
+
+        int insPos = lambdaForm.names.length;
+        Name callFilter;
+        if (constantZero) {
+            // Synthesize a constant zero value for the given type.
+            if (newType == V_TYPE)
+                callFilter = null;
+            else
+                callFilter = new Name(constantZero(newType));
+        } else {
+            BoundMethodHandle.SpeciesData oldData = oldSpeciesData();
+            BoundMethodHandle.SpeciesData newData = newSpeciesData(L_TYPE);
+
+            // The newly created LF will run with a different BMH.
+            // Switch over any pre-existing BMH field references to the new BMH class.
+            Name oldBaseAddress = lambdaForm.parameter(0);  // BMH holding the values
+            buf.replaceFunctions(oldData.getterFunctions(), newData.getterFunctions(), oldBaseAddress);
+            Name newBaseAddress = oldBaseAddress.withConstraint(newData);
+            buf.renameParameter(0, newBaseAddress);
+
+            Name getFilter = new Name(newData.getterFunction(oldData.fieldCount()), newBaseAddress);
+            buf.insertExpression(insPos++, getFilter);
+            BasicType oldType = lambdaForm.returnType();
+            if (oldType == V_TYPE) {
+                MethodType filterType = MethodType.methodType(newType.basicTypeClass());
+                callFilter = new Name(filterType, getFilter);
+            } else {
+                MethodType filterType = MethodType.methodType(newType.basicTypeClass(), oldType.basicTypeClass());
+                callFilter = new Name(filterType, getFilter, lambdaForm.names[lambdaForm.result]);
+            }
+        }
+
+        if (callFilter != null)
+            buf.insertExpression(insPos++, callFilter);
+        buf.setResult(callFilter);
+
+        form = buf.endEdit();
+        return putInCache(key, form);
+    }
+
+    LambdaForm foldArgumentsForm(int foldPos, boolean dropResult, MethodType combinerType) {
+        int combinerArity = combinerType.parameterCount();
+        Transform.Kind kind = (dropResult ? Transform.Kind.FOLD_ARGS_TO_VOID : Transform.Kind.FOLD_ARGS);
+        Transform key = Transform.of(kind, foldPos, combinerArity);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == lambdaForm.arity - (kind == Transform.Kind.FOLD_ARGS ? 1 : 0));
+            return form;
+        }
+        form = makeArgumentCombinationForm(foldPos, combinerType, true, dropResult);
+        return putInCache(key, form);
+    }
+
+    LambdaForm permuteArgumentsForm(int skip, int[] reorder) {
+        assert(skip == 1);  // skip only the leading MH argument, names[0]
+        int length = lambdaForm.names.length;
+        int outArgs = reorder.length;
+        int inTypes = 0;
+        boolean nullPerm = true;
+        for (int i = 0; i < reorder.length; i++) {
+            int inArg = reorder[i];
+            if (inArg != i)  nullPerm = false;
+            inTypes = Math.max(inTypes, inArg+1);
+        }
+        assert(skip + reorder.length == lambdaForm.arity);
+        if (nullPerm)  return lambdaForm;  // do not bother to cache
+        Transform key = Transform.of(Transform.Kind.PERMUTE_ARGS, reorder);
+        LambdaForm form = getInCache(key);
+        if (form != null) {
+            assert(form.arity == skip+inTypes) : form;
+            return form;
+        }
+
+        BasicType[] types = new BasicType[inTypes];
+        for (int i = 0; i < outArgs; i++) {
+            int inArg = reorder[i];
+            types[inArg] = lambdaForm.names[skip + i].type;
+        }
+        assert (skip + outArgs == lambdaForm.arity);
+        assert (permutedTypesMatch(reorder, types, lambdaForm.names, skip));
+        int pos = 0;
+        while (pos < outArgs && reorder[pos] == pos) {
+            pos += 1;
+        }
+        Name[] names2 = new Name[length - outArgs + inTypes];
+        System.arraycopy(lambdaForm.names, 0, names2, 0, skip + pos);
+        int bodyLength = length - lambdaForm.arity;
+        System.arraycopy(lambdaForm.names, skip + outArgs, names2, skip + inTypes, bodyLength);
+        int arity2 = names2.length - bodyLength;
+        int result2 = lambdaForm.result;
+        if (result2 >= 0) {
+            if (result2 < skip + outArgs) {
+                result2 = reorder[result2 - skip];
+            } else {
+                result2 = result2 - outArgs + inTypes;
+            }
+        }
+        for (int j = pos; j < outArgs; j++) {
+            Name n = lambdaForm.names[skip + j];
+            int i = reorder[j];
+            Name n2 = names2[skip + i];
+            if (n2 == null) {
+                names2[skip + i] = n2 = new Name(types[i]);
+            } else {
+                assert (n2.type == types[i]);
+            }
+            for (int k = arity2; k < names2.length; k++) {
+                names2[k] = names2[k].replaceName(n, n2);
+            }
+        }
+        for (int i = skip + pos; i < arity2; i++) {
+            if (names2[i] == null) {
+                names2[i] = argument(i, types[i - skip]);
+            }
+        }
+        for (int j = lambdaForm.arity; j < lambdaForm.names.length; j++) {
+            int i = j - lambdaForm.arity + arity2;
+            Name n = lambdaForm.names[j];
+            Name n2 = names2[i];
+            if (n != n2) {
+                for (int k = i + 1; k < names2.length; k++) {
+                    names2[k] = names2[k].replaceName(n, n2);
+                }
+            }
+        }
+
+        form = new LambdaForm(lambdaForm.debugName, arity2, names2, result2);
+        return putInCache(key, form);
+    }
+
+    static boolean permutedTypesMatch(int[] reorder, BasicType[] types, Name[] names, int skip) {
+        for (int i = 0; i < reorder.length; i++) {
+            assert (names[skip + i].isParam());
+            assert (names[skip + i].type == types[reorder[i]]);
+        }
+        return true;
     }
 }

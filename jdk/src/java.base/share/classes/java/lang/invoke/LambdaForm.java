@@ -802,28 +802,6 @@ class LambdaForm {
         return rval;
     }
 
-    //** This transform is applied (statically) to every name.function. */
-    /*
-    private static MethodHandle eraseSubwordTypes(MethodHandle mh) {
-        MethodType mt = mh.type();
-        if (mt.hasPrimitives()) {
-            mt = mt.changeReturnType(eraseSubwordType(mt.returnType()));
-            for (int i = 0; i < mt.parameterCount(); i++) {
-                mt = mt.changeParameterType(i, eraseSubwordType(mt.parameterType(i)));
-            }
-            mh = MethodHandles.explicitCastArguments(mh, mt);
-        }
-        return mh;
-    }
-    private static Class<?> eraseSubwordType(Class<?> type) {
-        if (!type.isPrimitive())  return type;
-        if (type == int.class)  return type;
-        Wrapper w = Wrapper.forPrimitiveType(type);
-        if (w.isSubwordOrInt())  return int.class;
-        return type;
-    }
-    */
-
     static void traceInterpreter(String event, Object obj, Object... args) {
         if (TRACE_INTERPRETER) {
             System.out.println("LFI: "+event+" "+(obj != null ? obj : "")+(args != null && args.length != 0 ? Arrays.asList(args) : ""));

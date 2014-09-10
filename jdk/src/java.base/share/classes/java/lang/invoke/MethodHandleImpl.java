@@ -191,7 +191,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(dstType.parameterCount() == target.type().parameterCount());
         if (srcType == dstType)
             return target;
-        return makePairwiseConvertIndirect(target, srcType, strict, monobox);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            return makePairwiseConvertByEditor(target, srcType, strict, monobox);
+        } else {
+            return makePairwiseConvertIndirect(target, srcType, strict, monobox);
+        }
     }
 
     private static int countNonNull(Object[] array) {
@@ -200,6 +204,63 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (x != null)  ++count;
         }
         return count;
+    }
+
+    static MethodHandle makePairwiseConvertByEditor(MethodHandle target, MethodType srcType,
+                                                    boolean strict, boolean monobox) {
+        Object[] convSpecs = computeValueConversions(srcType, target.type(), strict, monobox);
+        int convCount = countNonNull(convSpecs);
+        if (convCount == 0)
+            return target.viewAsType(srcType, strict);
+        MethodType basicSrcType = srcType.basicType();
+        MethodType midType = target.type().basicType();
+        BoundMethodHandle mh = target.rebind();
+        // FIXME: Reduce number of bindings when there is more than one Class conversion.
+        // FIXME: Reduce number of bindings when there are repeated conversions.
+        for (int i = 0; i < convSpecs.length-1; i++) {
+            Object convSpec = convSpecs[i];
+            if (convSpec == null)  continue;
+            MethodHandle fn;
+            if (convSpec instanceof Class) {
+                fn = Lazy.MH_castReference.bindTo(convSpec);
+            } else {
+                fn = (MethodHandle) convSpec;
+            }
+            Class<?> newType = basicSrcType.parameterType(i);
+            if (--convCount == 0)
+                midType = srcType;
+            else
+                midType = midType.changeParameterType(i, newType);
+            LambdaForm form2 = mh.editor().filterArgumentForm(1+i, BasicType.basicType(newType));
+            mh = mh.copyWithExtendL(midType, form2, fn);
+            mh = mh.rebind();
+        }
+        Object convSpec = convSpecs[convSpecs.length-1];
+        if (convSpec != null) {
+            MethodHandle fn;
+            if (convSpec instanceof Class) {
+                if (convSpec == void.class)
+                    fn = null;
+                else
+                    fn = Lazy.MH_castReference.bindTo(convSpec);
+            } else {
+                fn = (MethodHandle) convSpec;
+            }
+            Class<?> newType = basicSrcType.returnType();
+            assert(--convCount == 0);
+            midType = srcType;
+            if (fn != null) {
+                mh = mh.rebind();  // rebind if too complex
+                LambdaForm form2 = mh.editor().filterReturnForm(BasicType.basicType(newType), false);
+                mh = mh.copyWithExtendL(midType, form2, fn);
+            } else {
+                LambdaForm form2 = mh.editor().filterReturnForm(BasicType.basicType(newType), true);
+                mh = mh.copyWith(midType, form2);
+            }
+        }
+        assert(convCount == 0);
+        assert(mh.type().equals(srcType));
+        return mh;
     }
 
     static MethodHandle makePairwiseConvertIndirect(MethodHandle target, MethodType srcType,

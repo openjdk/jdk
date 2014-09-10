@@ -28,7 +28,6 @@ package java.lang.invoke;
 import java.lang.reflect.*;
 import java.util.BitSet;
 import java.util.List;
-import java.util.ArrayList;
 import java.util.Arrays;
 
 import sun.invoke.util.ValueConversions;
@@ -2094,23 +2093,86 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static
     MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
-        reorder = reorder.clone();
-        permuteArgumentChecks(reorder, newType, target.type());
-        // first detect dropped arguments and handle them separately
-        MethodHandle originalTarget = target;
-        int newArity = newType.parameterCount();
-        for (int dropIdx; (dropIdx = findFirstDrop(reorder, newArity)) >= 0; ) {
-            // dropIdx is missing from reorder; add it in at the end
-            int oldArity = reorder.length;
-            target = dropArguments(target, oldArity, newType.parameterType(dropIdx));
-            reorder = Arrays.copyOf(reorder, oldArity+1);
-            reorder[oldArity] = dropIdx;
+        reorder = reorder.clone();  // get a private copy
+        MethodType oldType = target.type();
+        permuteArgumentChecks(reorder, newType, oldType);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            // first detect dropped arguments and handle them separately
+            int[] originalReorder = reorder;
+            BoundMethodHandle result = target.rebind();
+            LambdaForm form = result.form;
+            int newArity = newType.parameterCount();
+            // Normalize the reordering into a real permutation,
+            // by removing duplicates and adding dropped elements.
+            // This somewhat improves lambda form caching, as well
+            // as simplifying the transform by breaking it up into steps.
+            for (int ddIdx; (ddIdx = findFirstDupOrDrop(reorder, newArity)) != 0; ) {
+                if (ddIdx > 0) {
+                    // We found a duplicated entry at reorder[ddIdx].
+                    // Example:  (x,y,z)->asList(x,y,z)
+                    // permuted by [1*,0,1] => (a0,a1)=>asList(a1,a0,a1)
+                    // permuted by [0,1,0*] => (a0,a1)=>asList(a0,a1,a0)
+                    // The starred element corresponds to the argument
+                    // deleted by the dupArgumentForm transform.
+                    int srcPos = ddIdx, dstPos = srcPos, dupVal = reorder[srcPos];
+                    boolean killFirst = false;
+                    for (int val; (val = reorder[--dstPos]) != dupVal; ) {
+                        // Set killFirst if the dup is larger than an intervening position.
+                        // This will remove at least one inversion from the permutation.
+                        if (dupVal > val) killFirst = true;
+                    }
+                    if (!killFirst) {
+                        srcPos = dstPos;
+                        dstPos = ddIdx;
+                    }
+                    form = form.editor().dupArgumentForm(1 + srcPos, 1 + dstPos);
+                    assert (reorder[srcPos] == reorder[dstPos]);
+                    oldType = oldType.dropParameterTypes(dstPos, dstPos + 1);
+                    // contract the reordering by removing the element at dstPos
+                    int tailPos = dstPos + 1;
+                    System.arraycopy(reorder, tailPos, reorder, dstPos, reorder.length - tailPos);
+                    reorder = Arrays.copyOf(reorder, reorder.length - 1);
+                } else {
+                    int dropVal = ~ddIdx, insPos = 0;
+                    while (insPos < reorder.length && reorder[insPos] < dropVal) {
+                        // Find first element of reorder larger than dropVal.
+                        // This is where we will insert the dropVal.
+                        insPos += 1;
+                    }
+                    Class<?> ptype = newType.parameterType(dropVal);
+                    form = form.editor().addArgumentForm(1 + insPos, BasicType.basicType(ptype));
+                    oldType = oldType.insertParameterTypes(insPos, ptype);
+                    // expand the reordering by inserting an element at insPos
+                    int tailPos = insPos + 1;
+                    reorder = Arrays.copyOf(reorder, reorder.length + 1);
+                    System.arraycopy(reorder, insPos, reorder, tailPos, reorder.length - tailPos);
+                    reorder[insPos] = dropVal;
+                }
+                assert (permuteArgumentChecks(reorder, newType, oldType));
+            }
+            assert (reorder.length == newArity);  // a perfect permutation
+            // Note:  This may cache too many distinct LFs. Consider backing off to varargs code.
+            form = form.editor().permuteArgumentsForm(1, reorder);
+            if (newType == result.type() && form == result.internalForm())
+                return result;
+            return result.copyWith(newType, form);
+        } else {
+            // first detect dropped arguments and handle them separately
+            MethodHandle originalTarget = target;
+            int newArity = newType.parameterCount();
+            for (int dropIdx; (dropIdx = findFirstDrop(reorder, newArity)) >= 0; ) {
+                // dropIdx is missing from reorder; add it in at the end
+                int oldArity = reorder.length;
+                target = dropArguments(target, oldArity, newType.parameterType(dropIdx));
+                reorder = Arrays.copyOf(reorder, oldArity+1);
+                reorder[oldArity] = dropIdx;
+            }
+            assert(target == originalTarget || permuteArgumentChecks(reorder, newType, target.type()));
+            // Note:  This may cache too many distinct LFs. Consider backing off to varargs code.
+            BoundMethodHandle result = target.rebind();
+            LambdaForm form = result.form.permuteArguments(1, reorder, basicTypes(newType.parameterList()));
+            return result.copyWith(newType, form);
         }
-        assert(target == originalTarget || permuteArgumentChecks(reorder, newType, target.type()));
-        // Note:  This may cache too many distinct LFs. Consider backing off to varargs code.
-        BoundMethodHandle result = target.rebind();
-        LambdaForm form = result.form.permuteArguments(1, reorder, basicTypes(newType.parameterList()));
-        return result.copyWith(newType, form);
     }
 
     /** Return the first value in [0..newArity-1] that is not present in reorder. */
@@ -2141,6 +2203,52 @@ assert((int)twice.invokeExact(21) == 42);
         if (zeroPos == newArity)
             return -1;
         return zeroPos;
+    }
+
+    /**
+     * Return an indication of any duplicate or omission in reorder.
+     * If the reorder contains a duplicate entry, return the index of the second occurrence.
+     * Otherwise, return ~(n), for the first n in [0..newArity-1] that is not present in reorder.
+     * Otherwise, return zero.
+     * If an element not in [0..newArity-1] is encountered, return reorder.length.
+     */
+    private static int findFirstDupOrDrop(int[] reorder, int newArity) {
+        final int BIT_LIMIT = 63;  // max number of bits in bit mask
+        if (newArity < BIT_LIMIT) {
+            long mask = 0;
+            for (int i = 0; i < reorder.length; i++) {
+                int arg = reorder[i];
+                if (arg >= newArity)  return reorder.length;
+                int bit = 1 << arg;
+                if ((mask & bit) != 0)
+                    return i;  // >0 indicates a dup
+                mask |= bit;
+            }
+            if (mask == (1 << newArity) - 1) {
+                assert(Long.numberOfTrailingZeros(Long.lowestOneBit(~mask)) == newArity);
+                return 0;
+            }
+            // find first zero
+            long zeroBit = Long.lowestOneBit(~mask);
+            int zeroPos = Long.numberOfTrailingZeros(zeroBit);
+            assert(zeroPos < newArity);
+            return ~zeroPos;
+        } else {
+            // same algorithm, different bit set
+            BitSet mask = new BitSet(newArity);
+            for (int i = 0; i < reorder.length; i++) {
+                int arg = reorder[i];
+                if (arg >= newArity)  return reorder.length;
+                if (mask.get(arg))
+                    return i;  // >0 indicates a dup
+                mask.set(arg);
+            }
+            int zeroPos = mask.nextClearBit(0);
+            if (zeroPos == newArity) {
+                return 0;
+            }
+            return ~zeroPos;
+        }
     }
 
     private static boolean permuteArgumentChecks(int[] reorder, MethodType newType, MethodType oldType) {
@@ -2374,7 +2482,14 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
         if (dropped == 0)  return target;
         BoundMethodHandle result = target.rebind();
         LambdaForm lform = result.form;
-        lform = lform.addArguments(pos, valueTypes);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            int insertFormArg = 1 + pos;
+            for (Class<?> ptype : valueTypes) {
+                lform = lform.editor().addArgumentForm(insertFormArg++, BasicType.basicType(ptype));
+            }
+        } else {
+            lform = lform.addArguments(pos, valueTypes);
+        }
         MethodType newType = oldType.insertParameterTypes(pos, valueTypes);
         result = result.copyWith(newType, lform);
         return result;
@@ -2525,7 +2640,18 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
     /*non-public*/ static
     MethodHandle filterArgument(MethodHandle target, int pos, MethodHandle filter) {
         filterArgumentChecks(target, pos, filter);
-        return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            MethodType targetType = target.type();
+            MethodType filterType = filter.type();
+            BoundMethodHandle result = target.rebind();
+            Class<?> newParamType = filterType.parameterType(0);
+            LambdaForm lform = result.editor().filterArgumentForm(1 + pos, BasicType.basicType(newParamType));
+            MethodType newType = targetType.changeParameterType(pos, newParamType);
+            result = result.copyWithExtendL(newType, lform, filter);
+            return result;
+        } else {
+            return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
+        }
     }
 
     private static void filterArgumentsCheckArity(MethodHandle target, int pos, MethodHandle[] filters) {
@@ -2651,12 +2777,36 @@ assertEquals("[top, [[up, down, strange], charm], bottom]",
      */
     public static
     MethodHandle collectArguments(MethodHandle target, int pos, MethodHandle filter) {
+        MethodType newType = collectArgumentsChecks(target, pos, filter);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            MethodType collectorType = filter.type();
+            BoundMethodHandle result = target.rebind();
+            LambdaForm lform;
+            if (collectorType.returnType().isArray() && filter.intrinsicName() == Intrinsic.NEW_ARRAY) {
+                lform = result.editor().collectArgumentArrayForm(1 + pos, filter);
+                if (lform != null) {
+                    return result.copyWith(newType, lform);
+                }
+            }
+            lform = result.editor().collectArgumentsForm(1 + pos, collectorType.basicType());
+            return result.copyWithExtendL(newType, lform, filter);
+        } else {
+            return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
+        }
+    }
+
+    private static MethodType collectArgumentsChecks(MethodHandle target, int pos, MethodHandle filter) throws RuntimeException {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
-        if (filterType.returnType() != void.class &&
-            filterType.returnType() != targetType.parameterType(pos))
+        Class<?> rtype = filterType.returnType();
+        List<Class<?>> filterArgs = filterType.parameterList();
+        if (rtype == void.class) {
+            return targetType.insertParameterTypes(pos, filterArgs);
+        }
+        if (rtype != targetType.parameterType(pos)) {
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
-        return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
+        }
+        return targetType.dropParameterTypes(pos, pos+1).insertParameterTypes(pos, filterArgs);
     }
 
     /**
@@ -2721,7 +2871,16 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
         filterReturnValueChecks(targetType, filterType);
-        return MethodHandleImpl.makeCollectArguments(filter, target, 0, false);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            BoundMethodHandle result = target.rebind();
+            BasicType rtype = BasicType.basicType(filterType.returnType());
+            LambdaForm lform = result.editor().filterReturnForm(rtype, false);
+            MethodType newType = targetType.changeReturnType(filterType.returnType());
+            result = result.copyWithExtendL(newType, lform, filter);
+            return result;
+        } else {
+            return MethodHandleImpl.makeCollectArguments(filter, target, 0, false);
+        }
     }
 
     private static void filterReturnValueChecks(MethodType targetType, MethodType filterType) throws RuntimeException {
@@ -2815,7 +2974,19 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
         MethodType targetType = target.type();
         MethodType combinerType = combiner.type();
         Class<?> rtype = foldArgumentChecks(foldPos, targetType, combinerType);
-        return MethodHandleImpl.makeCollectArguments(target, combiner, foldPos, true);
+        if (USE_LAMBDA_FORM_EDITOR) {
+            BoundMethodHandle result = target.rebind();
+            boolean dropResult = (rtype == void.class);
+            // Note:  This may cache too many distinct LFs. Consider backing off to varargs code.
+            LambdaForm lform = result.editor().foldArgumentsForm(1 + foldPos, dropResult, combinerType.basicType());
+            MethodType newType = targetType;
+            if (!dropResult)
+                newType = newType.dropParameterTypes(foldPos, foldPos + 1);
+            result = result.copyWithExtendL(newType, lform, combiner);
+            return result;
+        } else {
+            return MethodHandleImpl.makeCollectArguments(target, combiner, foldPos, true);
+        }
     }
 
     private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType) {
