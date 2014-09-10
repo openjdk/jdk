@@ -25,8 +25,9 @@
 
 package java.lang.invoke;
 
+import java.lang.reflect.Array;
 import java.util.Arrays;
-import sun.invoke.empty.Empty;
+
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
@@ -40,52 +41,63 @@ class Invokers {
     // exact type (sans leading target MH) for the outgoing call
     private final MethodType targetType;
 
-    // FIXME: Get rid of the invokers that are not useful.
-
-    // exact invoker for the outgoing call
-    private /*lazy*/ MethodHandle exactInvoker;
-    private /*lazy*/ MethodHandle basicInvoker;  // invokeBasic (unchecked exact)
-
-    // erased (partially untyped but with primitives) invoker for the outgoing call
-    // FIXME: get rid of
-    private /*lazy*/ MethodHandle erasedInvoker;
-    // FIXME: get rid of
-    /*lazy*/ MethodHandle erasedInvokerWithDrops;  // for InvokeGeneric
-
-    // general invoker for the outgoing call
-    private /*lazy*/ MethodHandle generalInvoker;
-
-    // general invoker for the outgoing call, uses varargs
-    private /*lazy*/ MethodHandle varargsInvoker;
-
-    // general invoker for the outgoing call; accepts a trailing Object[]
-    private final /*lazy*/ MethodHandle[] spreadInvokers;
-
-    // invoker for an unbound callsite
-    private /*lazy*/ MethodHandle uninitializedCallSite;
+    // Cached adapter information:
+    private final @Stable MethodHandle[] invokers = new MethodHandle[INV_LIMIT];
+    // Indexes into invokers:
+    static final int
+            INV_EXACT          =  0,  // MethodHandles.exactInvoker
+            INV_GENERIC        =  1,  // MethodHandles.invoker (generic invocation)
+            INV_BASIC          =  2,  // MethodHandles.basicInvoker
+            INV_LIMIT          =  3;
 
     /** Compute and cache information common to all collecting adapters
      *  that implement members of the erasure-family of the given erased type.
      */
     /*non-public*/ Invokers(MethodType targetType) {
         this.targetType = targetType;
-        this.spreadInvokers = new MethodHandle[targetType.parameterCount()+1];
     }
 
     /*non-public*/ MethodHandle exactInvoker() {
-        MethodHandle invoker = exactInvoker;
+        MethodHandle invoker = cachedInvoker(INV_EXACT);
         if (invoker != null)  return invoker;
         invoker = makeExactOrGeneralInvoker(true);
-        exactInvoker = invoker;
-        return invoker;
+        return setCachedInvoker(INV_EXACT, invoker);
     }
 
-    /*non-public*/ MethodHandle generalInvoker() {
-        MethodHandle invoker = generalInvoker;
+    /*non-public*/ MethodHandle genericInvoker() {
+        MethodHandle invoker = cachedInvoker(INV_GENERIC);
         if (invoker != null)  return invoker;
         invoker = makeExactOrGeneralInvoker(false);
-        generalInvoker = invoker;
-        return invoker;
+        return setCachedInvoker(INV_GENERIC, invoker);
+    }
+
+    /*non-public*/ MethodHandle basicInvoker() {
+        MethodHandle invoker = cachedInvoker(INV_BASIC);
+        if (invoker != null)  return invoker;
+        MethodType basicType = targetType.basicType();
+        if (basicType != targetType) {
+            // double cache; not used significantly
+            return setCachedInvoker(INV_BASIC, basicType.invokers().basicInvoker());
+        }
+        invoker = basicType.form().cachedMethodHandle(MethodTypeForm.MH_BASIC_INV);
+        if (invoker == null) {
+            MemberName method = invokeBasicMethod(basicType);
+            invoker = DirectMethodHandle.make(method);
+            assert(checkInvoker(invoker));
+            invoker = basicType.form().setCachedMethodHandle(MethodTypeForm.MH_BASIC_INV, invoker);
+        }
+        return setCachedInvoker(INV_BASIC, invoker);
+    }
+
+    private MethodHandle cachedInvoker(int idx) {
+        return invokers[idx];
+    }
+
+    private synchronized MethodHandle setCachedInvoker(int idx, final MethodHandle invoker) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        MethodHandle prev = invokers[idx];
+        if (prev != null)  return prev;
+        return invokers[idx] = invoker;
     }
 
     private MethodHandle makeExactOrGeneralInvoker(boolean isExact) {
@@ -110,21 +122,6 @@ class Invokers {
         }
     }
 
-    /*non-public*/ MethodHandle basicInvoker() {
-        MethodHandle invoker = basicInvoker;
-        if (invoker != null)  return invoker;
-        MethodType basicType = targetType.basicType();
-        if (basicType != targetType) {
-            // double cache; not used significantly
-            return basicInvoker = basicType.invokers().basicInvoker();
-        }
-        MemberName method = invokeBasicMethod(basicType);
-        invoker = DirectMethodHandle.make(method);
-        assert(checkInvoker(invoker));
-        basicInvoker = invoker;
-        return invoker;
-    }
-
     // This next one is called from LambdaForm.NamedFunction.<init>.
     /*non-public*/ static MemberName invokeBasicMethod(MethodType basicType) {
         assert(basicType == basicType.basicType());
@@ -145,87 +142,42 @@ class Invokers {
         return true;
     }
 
-    // FIXME: get rid of
-    /*non-public*/ MethodHandle erasedInvoker() {
-        MethodHandle xinvoker = exactInvoker();
-        MethodHandle invoker = erasedInvoker;
-        if (invoker != null)  return invoker;
-        MethodType erasedType = targetType.erase();
-        invoker = xinvoker.asType(erasedType.invokerType());
-        erasedInvoker = invoker;
-        return invoker;
-    }
-
+    /**
+     * Find or create an invoker which passes unchanged a given number of arguments
+     * and spreads the rest from a trailing array argument.
+     * The invoker target type is the post-spread type {@code (TYPEOF(uarg*), TYPEOF(sarg*))=>RT}.
+     * All the {@code sarg}s must have a common type {@code C}.  (If there are none, {@code Object} is assumed.}
+     * @param leadingArgCount the number of unchanged (non-spread) arguments
+     * @return {@code invoker.invokeExact(mh, uarg*, C[]{sarg*}) := (RT)mh.invoke(uarg*, sarg*)}
+     */
     /*non-public*/ MethodHandle spreadInvoker(int leadingArgCount) {
-        MethodHandle vaInvoker = spreadInvokers[leadingArgCount];
-        if (vaInvoker != null)  return vaInvoker;
         int spreadArgCount = targetType.parameterCount() - leadingArgCount;
-        MethodType spreadInvokerType = targetType
-            .replaceParameterTypes(leadingArgCount, targetType.parameterCount(), Object[].class);
-        if (targetType.parameterSlotCount() <= MethodType.MAX_MH_INVOKER_ARITY) {
-            // Factor sinvoker.invoke(mh, a) into ginvoker.asSpreader().invoke(mh, a)
-            // where ginvoker.invoke(mh, a*) => mh.invoke(a*).
-            MethodHandle genInvoker = generalInvoker();
-            vaInvoker = genInvoker.asSpreader(Object[].class, spreadArgCount);
-        } else {
-            // Cannot build a general invoker here of type ginvoker.invoke(mh, a*[254]).
-            // Instead, factor sinvoker.invoke(mh, a) into ainvoker.invoke(filter(mh), a)
-            // where filter(mh) == mh.asSpreader(Object[], spreadArgCount)
-            MethodHandle arrayInvoker = MethodHandles.exactInvoker(spreadInvokerType);
-            MethodHandle makeSpreader;
-            try {
-                makeSpreader = IMPL_LOOKUP
-                    .findVirtual(MethodHandle.class, "asSpreader",
-                        MethodType.methodType(MethodHandle.class, Class.class, int.class));
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-            makeSpreader = MethodHandles.insertArguments(makeSpreader, 1, Object[].class, spreadArgCount);
-            vaInvoker = MethodHandles.filterArgument(arrayInvoker, 0, makeSpreader);
+        MethodType postSpreadType = targetType;
+        Class<?> argArrayType = impliedRestargType(postSpreadType, leadingArgCount);
+        if (postSpreadType.parameterSlotCount() <= MethodType.MAX_MH_INVOKER_ARITY) {
+            return genericInvoker().asSpreader(argArrayType, spreadArgCount);
         }
-        assert(vaInvoker.type().equals(spreadInvokerType.invokerType()));
-        maybeCompileToBytecode(vaInvoker);
-        spreadInvokers[leadingArgCount] = vaInvoker;
-        return vaInvoker;
+        // Cannot build a generic invoker here of type ginvoker.invoke(mh, a*[254]).
+        // Instead, factor sinvoker.invoke(mh, a) into ainvoker.invoke(filter(mh), a)
+        // where filter(mh) == mh.asSpreader(Object[], spreadArgCount)
+        MethodType preSpreadType = postSpreadType
+            .replaceParameterTypes(leadingArgCount, postSpreadType.parameterCount(), argArrayType);
+        MethodHandle arrayInvoker = MethodHandles.invoker(preSpreadType);
+        MethodHandle makeSpreader = MethodHandles.insertArguments(Lazy.MH_asSpreader, 1, argArrayType, spreadArgCount);
+        return MethodHandles.filterArgument(arrayInvoker, 0, makeSpreader);
     }
 
-    /*non-public*/ MethodHandle varargsInvoker() {
-        MethodHandle vaInvoker = varargsInvoker;
-        if (vaInvoker != null)  return vaInvoker;
-        vaInvoker = spreadInvoker(0).asType(MethodType.genericMethodType(0, true).invokerType());
-        varargsInvoker = vaInvoker;
-        return vaInvoker;
-    }
-
-    private static MethodHandle THROW_UCS = null;
-
-    /*non-public*/ MethodHandle uninitializedCallSite() {
-        MethodHandle invoker = uninitializedCallSite;
-        if (invoker != null)  return invoker;
-        if (targetType.parameterCount() > 0) {
-            MethodType type0 = targetType.dropParameterTypes(0, targetType.parameterCount());
-            Invokers invokers0 = type0.invokers();
-            invoker = MethodHandles.dropArguments(invokers0.uninitializedCallSite(),
-                                                  0, targetType.parameterList());
-            assert(invoker.type().equals(targetType));
-            uninitializedCallSite = invoker;
-            return invoker;
+    private static Class<?> impliedRestargType(MethodType restargType, int fromPos) {
+        if (restargType.isGeneric())  return Object[].class;  // can be nothing else
+        int maxPos = restargType.parameterCount();
+        if (fromPos >= maxPos)  return Object[].class;  // reasonable default
+        Class<?> argType = restargType.parameterType(fromPos);
+        for (int i = fromPos+1; i < maxPos; i++) {
+            if (argType != restargType.parameterType(i))
+                throw newIllegalArgumentException("need homogeneous rest arguments", restargType);
         }
-        invoker = THROW_UCS;
-        if (invoker == null) {
-            try {
-                THROW_UCS = invoker = IMPL_LOOKUP
-                    .findStatic(CallSite.class, "uninitializedCallSite",
-                                MethodType.methodType(Empty.class));
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError(ex);
-            }
-        }
-        invoker = MethodHandles.explicitCastArguments(invoker, MethodType.methodType(targetType.returnType()));
-        invoker = invoker.dropArguments(targetType, 0, targetType.parameterCount());
-        assert(invoker.type().equals(targetType));
-        uninitializedCallSite = invoker;
-        return invoker;
+        if (argType == Object.class)  return Object[].class;
+        return Array.newInstance(argType, 0).getClass();
     }
 
     public String toString() {
@@ -457,4 +409,16 @@ class Invokers {
         }
     }
 
+    private static class Lazy {
+        private static final MethodHandle MH_asSpreader;
+
+        static {
+            try {
+                MH_asSpreader = IMPL_LOOKUP.findVirtual(MethodHandle.class, "asSpreader",
+                        MethodType.methodType(MethodHandle.class, Class.class, int.class));
+            } catch (ReflectiveOperationException ex) {
+                throw newInternalError(ex);
+            }
+        }
+    }
 }

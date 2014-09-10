@@ -1151,7 +1151,7 @@ class LambdaForm {
                     if (LambdaForm.signatureReturn(sig) == V_TYPE)
                         srcType = srcType.changeReturnType(void.class);
                     MethodTypeForm typeForm = srcType.form();
-                    typeForm.namedFunctionInvoker = DirectMethodHandle.make(m);
+                    typeForm.setCachedMethodHandle(MethodTypeForm.MH_NF_INV, DirectMethodHandle.make(m));
                 }
             }
         }
@@ -1249,15 +1249,16 @@ class LambdaForm {
             MethodType.methodType(Object.class, MethodHandle.class, Object[].class);
 
         private static MethodHandle computeInvoker(MethodTypeForm typeForm) {
-            MethodHandle mh = typeForm.namedFunctionInvoker;
+            typeForm = typeForm.basicType().form();  // normalize to basic type
+            MethodHandle mh = typeForm.cachedMethodHandle(MethodTypeForm.MH_NF_INV);
             if (mh != null)  return mh;
             MemberName invoker = InvokerBytecodeGenerator.generateNamedFunctionInvoker(typeForm);  // this could take a while
             mh = DirectMethodHandle.make(invoker);
-            MethodHandle mh2 = typeForm.namedFunctionInvoker;
+            MethodHandle mh2 = typeForm.cachedMethodHandle(MethodTypeForm.MH_NF_INV);
             if (mh2 != null)  return mh2;  // benign race
             if (!mh.type().equals(INVOKER_METHOD_TYPE))
                 throw newInternalError(mh.debugString());
-            return typeForm.namedFunctionInvoker = mh;
+            return typeForm.setCachedMethodHandle(MethodTypeForm.MH_NF_INV, mh);
         }
 
         @Hidden

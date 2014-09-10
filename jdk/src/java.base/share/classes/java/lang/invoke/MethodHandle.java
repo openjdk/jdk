@@ -624,15 +624,8 @@ public abstract class MethodHandle {
      * @see MethodHandles#spreadInvoker
      */
     public Object invokeWithArguments(Object... arguments) throws Throwable {
-        int argc = arguments == null ? 0 : arguments.length;
-        @SuppressWarnings("LocalVariableHidesMemberVariable")
-        MethodType type = type();
-        if (type.parameterCount() != argc || isVarargsCollector()) {
-            // simulate invoke
-            return asType(MethodType.genericMethodType(argc)).invokeWithArguments(arguments);
-        }
-        MethodHandle invoker = type.invokers().varargsInvoker();
-        return invoker.invokeExact(this, arguments);
+        MethodType invocationType = MethodType.genericMethodType(arguments == null ? 0 : arguments.length);
+        return invocationType.invokers().spreadInvoker(0).invokeExact(asType(invocationType), arguments);
     }
 
     /**

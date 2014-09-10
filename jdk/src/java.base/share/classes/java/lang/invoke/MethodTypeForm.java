@@ -51,7 +51,13 @@ final class MethodTypeForm {
     final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    @Stable MethodHandle namedFunctionInvoker; // cached helper for LF.NamedFunction
+    @Stable final MethodHandle[] methodHandles;
+    // Indexes into methodHandles:
+    static final int
+            MH_BASIC_INV      =  0,  // cached instance of MH.invokeBasic
+            MH_NF_INV         =  1,  // cached helper for LF.NamedFunction
+            MH_UNINIT_CS      =  2,  // uninitialized call site
+            MH_LIMIT          =  3;
 
     // Cached lambda form information, for basic types only:
     final @Stable LambdaForm[] lambdaForms;
@@ -96,6 +102,18 @@ final class MethodTypeForm {
         assert(erasedType == basicType)
                 : "erasedType: " + erasedType + " != basicType: " + basicType;
         return true;
+    }
+
+    public MethodHandle cachedMethodHandle(int which) {
+        assert(assertIsBasicType());
+        return methodHandles[which];
+    }
+
+    synchronized public MethodHandle setCachedMethodHandle(int which, MethodHandle mh) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        MethodHandle prev = methodHandles[which];
+        if (prev != null)  return prev;
+        return methodHandles[which] = mh;
     }
 
     public LambdaForm cachedLambdaForm(int which) {
@@ -169,6 +187,7 @@ final class MethodTypeForm {
             this.argCounts = that.argCounts;
             this.argToSlotTable = that.argToSlotTable;
             this.slotToArgTable = that.slotToArgTable;
+            this.methodHandles = null;
             this.lambdaForms = null;
             return;
         }
@@ -214,6 +233,7 @@ final class MethodTypeForm {
         // Initialize caches, but only for basic types
         assert(basicType == erasedType);
         this.lambdaForms = new LambdaForm[LF_LIMIT];
+        this.methodHandles = new MethodHandle[MH_LIMIT];
     }
 
     private static long pack(int a, int b, int c, int d) {
