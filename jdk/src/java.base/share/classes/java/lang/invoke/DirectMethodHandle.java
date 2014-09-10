@@ -127,6 +127,11 @@ class DirectMethodHandle extends MethodHandle {
     }
 
     @Override
+    BoundMethodHandle rebind() {
+        return BoundMethodHandle.makeReinvoker(this);
+    }
+
+    @Override
     MethodHandle copyWith(MethodType mt, LambdaForm lf) {
         assert(this.getClass() == DirectMethodHandle.class);  // must override in subclasses
         return new DirectMethodHandle(mt, lf, member);

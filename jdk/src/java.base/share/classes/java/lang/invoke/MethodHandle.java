@@ -1393,66 +1393,11 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     abstract MethodHandle copyWith(MethodType mt, LambdaForm lf);
 
-    /*non-public*/
-    BoundMethodHandle rebind() {
-        // Bind 'this' into a new invoker, of the known class BMH.
-        MethodType type2 = type();
-        LambdaForm form2 = reinvokerForm(this);
-        // form2 = lambda (bmh, arg*) { thismh = bmh[0]; invokeBasic(thismh, arg*) }
-        return BoundMethodHandle.bindSingle(type2, form2, this);
-    }
-
-    /*non-public*/
-    MethodHandle reinvokerTarget() {
-        throw new InternalError("not a reinvoker MH: "+this.getClass().getName()+": "+this);
-    }
-
-    /** Create a LF which simply reinvokes a target of the given basic type.
-     *  The target MH must override {@link #reinvokerTarget} to provide the target.
+    /** Require this method handle to be a BMH, or else replace it with a "wrapper" BMH.
+     *  Many transforms are implemented only for BMHs.
+     *  @return a behaviorally equivalent BMH
      */
-    static LambdaForm reinvokerForm(MethodHandle target) {
-        MethodType mtype = target.type().basicType();
-        LambdaForm reinvoker = mtype.form().cachedLambdaForm(MethodTypeForm.LF_REINVOKE);
-        if (reinvoker != null)  return reinvoker;
-        if (mtype.parameterSlotCount() >= MethodType.MAX_MH_ARITY)
-            return makeReinvokerForm(target.type(), target);  // cannot cache this
-        reinvoker = makeReinvokerForm(mtype, null);
-        return mtype.form().setCachedLambdaForm(MethodTypeForm.LF_REINVOKE, reinvoker);
-    }
-    private static LambdaForm makeReinvokerForm(MethodType mtype, MethodHandle customTargetOrNull) {
-        boolean customized = (customTargetOrNull != null);
-        MethodHandle MH_invokeBasic = customized ? null : MethodHandles.basicInvoker(mtype);
-        final int THIS_BMH    = 0;
-        final int ARG_BASE    = 1;
-        final int ARG_LIMIT   = ARG_BASE + mtype.parameterCount();
-        int nameCursor = ARG_LIMIT;
-        final int NEXT_MH     = customized ? -1 : nameCursor++;
-        final int REINVOKE    = nameCursor++;
-        LambdaForm.Name[] names = LambdaForm.arguments(nameCursor - ARG_LIMIT, mtype.invokerType());
-        Object[] targetArgs;
-        MethodHandle targetMH;
-        if (customized) {
-            targetArgs = Arrays.copyOfRange(names, ARG_BASE, ARG_LIMIT, Object[].class);
-            targetMH = customTargetOrNull;
-        } else {
-            names[NEXT_MH] = new LambdaForm.Name(NF_reinvokerTarget, names[THIS_BMH]);
-            targetArgs = Arrays.copyOfRange(names, THIS_BMH, ARG_LIMIT, Object[].class);
-            targetArgs[0] = names[NEXT_MH];  // overwrite this MH with next MH
-            targetMH = MethodHandles.basicInvoker(mtype);
-        }
-        names[REINVOKE] = new LambdaForm.Name(targetMH, targetArgs);
-        return new LambdaForm("BMH.reinvoke", ARG_LIMIT, names);
-    }
-
-    private static final LambdaForm.NamedFunction NF_reinvokerTarget;
-    static {
-        try {
-            NF_reinvokerTarget = new LambdaForm.NamedFunction(MethodHandle.class
-                .getDeclaredMethod("reinvokerTarget"));
-        } catch (ReflectiveOperationException ex) {
-            throw newInternalError(ex);
-        }
-    }
+    abstract BoundMethodHandle rebind();
 
     /**
      * Replace the old lambda form of this method handle with a new one.

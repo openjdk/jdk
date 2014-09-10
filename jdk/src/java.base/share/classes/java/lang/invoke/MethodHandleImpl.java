@@ -351,22 +351,23 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (type.parameterType(last) != arrayType)
             target = target.asType(type.changeParameterType(last, arrayType));
         target = target.asFixedArity();  // make sure this attribute is turned off
-        return new AsVarargsCollector(target, target.type(), arrayType);
+        return new AsVarargsCollector(target, arrayType);
     }
 
-    static class AsVarargsCollector extends MethodHandle {
+    private static final class AsVarargsCollector extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
         private @Stable MethodHandle asCollectorCache;
 
-        AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
-            super(type, reinvokerForm(target));
+        AsVarargsCollector(MethodHandle target, Class<?> arrayType) {
+            this(target.type(), target, arrayType);
+        }
+        AsVarargsCollector(MethodType type, MethodHandle target, Class<?> arrayType) {
+            super(type, target);
             this.target = target;
             this.arrayType = arrayType;
             this.asCollectorCache = target.asCollector(arrayType, 0);
         }
-
-        @Override MethodHandle reinvokerTarget() { return target; }
 
         @Override
         public boolean isVarargsCollector() {
@@ -374,8 +375,19 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         @Override
+        protected MethodHandle getTarget() {
+            return target;
+        }
+
+        @Override
         public MethodHandle asFixedArity() {
             return target;
+        }
+
+        @Override
+        MethodHandle setVarargs(MemberName member) {
+            if (member.isVarargs())  return this;
+            return asFixedArity();
         }
 
         @Override
@@ -415,32 +427,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                             newType.lastParameterType().getComponentType()))
                     : Arrays.asList(this, newType);
             return true;
-        }
-
-        @Override
-        MethodHandle setVarargs(MemberName member) {
-            if (member.isVarargs())  return this;
-            return asFixedArity();
-        }
-
-        @Override
-        MemberName internalMemberName() {
-            return asFixedArity().internalMemberName();
-        }
-        @Override
-        Class<?> internalCallerClass() {
-            return asFixedArity().internalCallerClass();
-        }
-
-        /*non-public*/
-        @Override
-        boolean isInvokeSpecial() {
-            return asFixedArity().isInvokeSpecial();
-        }
-
-        @Override
-        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
-            throw newIllegalArgumentException("do not use this");
         }
     }
 
@@ -972,7 +958,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
 
     /** This subclass allows a wrapped method handle to be re-associated with an arbitrary member name. */
-    static class WrappedMember extends MethodHandle {
+    private static final class WrappedMember extends DelegatingMethodHandle {
         private final MethodHandle target;
         private final MemberName member;
         private final Class<?> callerClass;
@@ -981,23 +967,13 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         private WrappedMember(MethodHandle target, MethodType type,
                               MemberName member, boolean isInvokeSpecial,
                               Class<?> callerClass) {
-            super(type, reinvokerForm(target));
+            super(type, target);
             this.target = target;
             this.member = member;
             this.callerClass = callerClass;
             this.isInvokeSpecial = isInvokeSpecial;
         }
 
-        @Override
-        MethodHandle reinvokerTarget() {
-            return target;
-        }
-        @Override
-        public MethodHandle asTypeUncached(MethodType newType) {
-            // This MH is an alias for target, except for the MemberName
-            // Drop the MemberName if there is any conversion.
-            return asTypeCache = target.asType(newType);
-        }
         @Override
         MemberName internalMemberName() {
             return member;
@@ -1010,10 +986,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         boolean isInvokeSpecial() {
             return isInvokeSpecial;
         }
-
         @Override
-        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
-            throw newIllegalArgumentException("do not use this");
+        protected MethodHandle getTarget() {
+            return target;
+        }
+        @Override
+        public MethodHandle asTypeUncached(MethodType newType) {
+            // This MH is an alias for target, except for the MemberName
+            // Drop the MemberName if there is any conversion.
+            return asTypeCache = target.asType(newType);
         }
     }
 

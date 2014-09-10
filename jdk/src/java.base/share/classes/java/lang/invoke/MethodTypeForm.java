@@ -70,8 +70,8 @@ final class MethodTypeForm {
             LF_INVINTERFACE   =  4,
             LF_INVSTATIC_INIT =  5,  // DMH invokeStatic with <clinit> barrier
             LF_INTERPRET      =  6,  // LF interpreter
-            LF_COUNTER        =  7,  // CMH wrapper
-            LF_REINVOKE       =  8,  // other wrapper
+            LF_REBIND         =  7,  // BoundMethodHandle
+            LF_DELEGATE       =  8,  // DelegatingMethodHandle
             LF_EX_LINKER      =  9,  // invokeExact_MT (for invokehandle)
             LF_EX_INVOKER     = 10,  // MHs.invokeExact
             LF_GEN_LINKER     = 11,  // generic invoke_MT (for invokehandle)
