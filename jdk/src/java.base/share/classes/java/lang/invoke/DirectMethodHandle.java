@@ -142,44 +142,7 @@ class DirectMethodHandle extends MethodHandle {
         return member;
     }
 
-    @Override
-    MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
-        // If the member needs dispatching, do so.
-        if (pos == 0 && basicType == L_TYPE) {
-            DirectMethodHandle concrete = maybeRebind(value);
-            if (concrete != null)
-                return concrete.bindReceiver(value);
-        }
-        return super.bindArgument(pos, basicType, value);
-    }
-
-    @Override
-    MethodHandle bindReceiver(Object receiver) {
-        // If the member needs dispatching, do so.
-        DirectMethodHandle concrete = maybeRebind(receiver);
-        if (concrete != null)
-            return concrete.bindReceiver(receiver);
-        return super.bindReceiver(receiver);
-    }
-
     private static final MemberName.Factory IMPL_NAMES = MemberName.getFactory();
-
-    private DirectMethodHandle maybeRebind(Object receiver) {
-        if (receiver != null) {
-            switch (member.getReferenceKind()) {
-            case REF_invokeInterface:
-            case REF_invokeVirtual:
-                // Pre-dispatch the member.
-                Class<?> concreteClass = receiver.getClass();
-                MemberName concrete = new MemberName(concreteClass, member.getName(), member.getMethodType(), REF_invokeSpecial);
-                concrete = IMPL_NAMES.resolveOrNull(REF_invokeSpecial, concrete, concreteClass);
-                if (concrete != null)
-                    return new DirectMethodHandle(type(), preparedLambdaForm(concrete), concrete);
-                break;
-            }
-        }
-        return null;
-    }
 
     /**
      * Create a LF which can invoke the given method.

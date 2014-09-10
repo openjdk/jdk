@@ -434,27 +434,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         boolean isInvokeSpecial() {
             return asFixedArity().isInvokeSpecial();
         }
-
-
-        @Override
-        MethodHandle bindArgument(int pos, BasicType basicType, Object value) {
-            return asFixedArity().bindArgument(pos, basicType, value);
-        }
-
-        @Override
-        MethodHandle bindReceiver(Object receiver) {
-            return asFixedArity().bindReceiver(receiver);
-        }
-
-        @Override
-        MethodHandle dropArguments(MethodType srcType, int pos, int drops) {
-            return asFixedArity().dropArguments(srcType, pos, drops);
-        }
-
-        @Override
-        MethodHandle permuteArguments(MethodType newType, int[] reorder) {
-            return asFixedArity().permuteArguments(newType, reorder);
-        }
     }
 
     /** Factory method:  Spread selected argument. */
@@ -794,7 +773,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(Throwable.class.isAssignableFrom(type.parameterType(0)));
         int arity = type.parameterCount();
         if (arity > 1) {
-            return throwException(type.dropParameterTypes(1, arity)).dropArguments(type, 1, arity-1);
+            MethodHandle mh = throwException(type.dropParameterTypes(1, arity));
+            mh = MethodHandles.dropArguments(mh, 1, type.parameterList().subList(1, arity));
+            return mh;
         }
         return makePairwiseConvert(Lazy.NF_throwException.resolvedHandle(), type, 2);
     }

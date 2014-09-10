@@ -499,6 +499,17 @@ class MethodType implements java.io.Serializable {
         return this;  // arguments check out; no change
     }
 
+    /** Return the leading parameter type, which must exist and be a reference.
+     *  @return the leading parameter type, after error checks
+     */
+    /*non-public*/ Class<?> leadingReferenceParameter() {
+        Class<?> ptype;
+        if (ptypes.length == 0 ||
+            (ptype = ptypes[0]).isPrimitive())
+            throw newIllegalArgumentException("no leading reference parameter");
+        return ptype;
+    }
+
     /**
      * Finds or creates a method type with some parameter types omitted.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.

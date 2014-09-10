@@ -26,6 +26,7 @@
 package java.lang.invoke;
 
 import java.lang.reflect.*;
+import java.util.BitSet;
 import java.util.List;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -1143,7 +1144,7 @@ return mh1;
             Class<? extends Object> refc = receiver.getClass(); // may get NPE
             MemberName method = resolveOrFail(REF_invokeSpecial, refc, name, type);
             MethodHandle mh = getDirectMethodNoRestrict(REF_invokeSpecial, refc, method, findBoundCallerClass(method));
-            return mh.bindReceiver(receiver).setVarargs(method);
+            return mh.bindArgumentL(0, receiver).setVarargs(method);
         }
 
         /**
@@ -2086,11 +2087,55 @@ assert((int)twice.invokeExact(21) == 42);
     public static
     MethodHandle permuteArguments(MethodHandle target, MethodType newType, int... reorder) {
         reorder = reorder.clone();
-        checkReorder(reorder, newType, target.type());
-        return target.permuteArguments(newType, reorder);
+        permuteArgumentChecks(reorder, newType, target.type());
+        // first detect dropped arguments and handle them separately
+        MethodHandle originalTarget = target;
+        int newArity = newType.parameterCount();
+        for (int dropIdx; (dropIdx = findFirstDrop(reorder, newArity)) >= 0; ) {
+            // dropIdx is missing from reorder; add it in at the end
+            int oldArity = reorder.length;
+            target = dropArguments(target, oldArity, newType.parameterType(dropIdx));
+            reorder = Arrays.copyOf(reorder, oldArity+1);
+            reorder[oldArity] = dropIdx;
+        }
+        assert(target == originalTarget || permuteArgumentChecks(reorder, newType, target.type()));
+        // Note:  This may cache too many distinct LFs. Consider backing off to varargs code.
+        BoundMethodHandle result = target.rebind();
+        LambdaForm form = result.form.permuteArguments(1, reorder, basicTypes(newType.parameterList()));
+        return result.copyWith(newType, form);
     }
 
-    private static void checkReorder(int[] reorder, MethodType newType, MethodType oldType) {
+    /** Return the first value in [0..newArity-1] that is not present in reorder. */
+    private static int findFirstDrop(int[] reorder, int newArity) {
+        final int BIT_LIMIT = 63;  // max number of bits in bit mask
+        if (newArity < BIT_LIMIT) {
+            long mask = 0;
+            for (int arg : reorder) {
+                assert(arg < newArity);
+                mask |= (1 << arg);
+            }
+            if (mask == (1 << newArity) - 1) {
+                assert(Long.numberOfTrailingZeros(Long.lowestOneBit(~mask)) == newArity);
+                return -1;
+            }
+            // find first zero
+            long zeroBit = Long.lowestOneBit(~mask);
+            int zeroPos = Long.numberOfTrailingZeros(zeroBit);
+            assert(zeroPos < newArity);
+            return zeroPos;
+        }
+        BitSet mask = new BitSet(newArity);
+        for (int arg : reorder) {
+            assert(arg < newArity);
+            mask.set(arg);
+        }
+        int zeroPos = mask.nextClearBit(0);
+        if (zeroPos == newArity)
+            return -1;
+        return zeroPos;
+    }
+
+    private static boolean permuteArgumentChecks(int[] reorder, MethodType newType, MethodType oldType) {
         if (newType.returnType() != oldType.returnType())
             throw newIllegalArgumentException("return types do not match",
                     oldType, newType);
@@ -2108,7 +2153,7 @@ assert((int)twice.invokeExact(21) == 42);
                     throw newIllegalArgumentException("parameter types do not match after reorder",
                             oldType, newType);
             }
-            if (!bad)  return;
+            if (!bad)  return true;
         }
         throw newIllegalArgumentException("bad reorder array: "+Arrays.toString(reorder));
     }
@@ -2192,6 +2237,37 @@ assert((int)twice.invokeExact(21) == 42);
     public static
     MethodHandle insertArguments(MethodHandle target, int pos, Object... values) {
         int insCount = values.length;
+        Class<?>[] ptypes = insertArgumentsChecks(target, insCount, pos);
+        if (insCount == 0)  return target;
+        BoundMethodHandle result = target.rebind();
+        for (int i = 0; i < insCount; i++) {
+            Object value = values[i];
+            Class<?> ptype = ptypes[pos+i];
+            if (ptype.isPrimitive()) {
+                result = insertArgumentPrimitive(result, pos, ptype, value);
+            } else {
+                value = ptype.cast(value);  // throw CCE if needed
+                result = result.bindArgumentL(pos, value);
+            }
+        }
+        return result;
+    }
+
+    private static BoundMethodHandle insertArgumentPrimitive(BoundMethodHandle result, int pos,
+                                                             Class<?> ptype, Object value) {
+        Wrapper w = Wrapper.forPrimitiveType(ptype);
+        // perform unboxing and/or primitive conversion
+        value = w.convert(value, ptype);
+        switch (w) {
+        case INT:     return result.bindArgumentI(pos, (int)value);
+        case LONG:    return result.bindArgumentJ(pos, (long)value);
+        case FLOAT:   return result.bindArgumentF(pos, (float)value);
+        case DOUBLE:  return result.bindArgumentD(pos, (double)value);
+        default:      return result.bindArgumentI(pos, ValueConversions.widenSubword(value));
+        }
+    }
+
+    private static Class<?>[] insertArgumentsChecks(MethodHandle target, int insCount, int pos) throws RuntimeException {
         MethodType oldType = target.type();
         int outargs = oldType.parameterCount();
         int inargs  = outargs - insCount;
@@ -2199,31 +2275,7 @@ assert((int)twice.invokeExact(21) == 42);
             throw newIllegalArgumentException("too many values to insert");
         if (pos < 0 || pos > inargs)
             throw newIllegalArgumentException("no argument type to append");
-        MethodHandle result = target;
-        for (int i = 0; i < insCount; i++) {
-            Object value = values[i];
-            Class<?> ptype = oldType.parameterType(pos+i);
-            if (ptype.isPrimitive()) {
-                BasicType btype = I_TYPE;
-                Wrapper w = Wrapper.forPrimitiveType(ptype);
-                switch (w) {
-                case LONG:    btype = J_TYPE; break;
-                case FLOAT:   btype = F_TYPE; break;
-                case DOUBLE:  btype = D_TYPE; break;
-                }
-                // perform unboxing and/or primitive conversion
-                value = w.convert(value, ptype);
-                result = result.bindArgument(pos, btype, value);
-                continue;
-            }
-            value = ptype.cast(value);  // throw CCE if needed
-            if (pos == 0) {
-                result = result.bindReceiver(value);
-            } else {
-                result = result.bindArgument(pos, L_TYPE, value);
-            }
-        }
-        return result;
+        return oldType.ptypes();
     }
 
     /**
@@ -2271,18 +2323,26 @@ assertEquals("yz", (String) d0.invokeExact(123, "x", "y", "z"));
     public static
     MethodHandle dropArguments(MethodHandle target, int pos, List<Class<?>> valueTypes) {
         MethodType oldType = target.type();  // get NPE
+        int dropped = dropArgumentChecks(oldType, pos, valueTypes);
+        if (dropped == 0)  return target;
+        BoundMethodHandle result = target.rebind();
+        LambdaForm lform = result.form;
+        lform = lform.addArguments(pos, valueTypes);
+        MethodType newType = oldType.insertParameterTypes(pos, valueTypes);
+        result = result.copyWith(newType, lform);
+        return result;
+    }
+
+    private static int dropArgumentChecks(MethodType oldType, int pos, List<Class<?>> valueTypes) {
         int dropped = valueTypes.size();
         MethodType.checkSlotCount(dropped);
-        if (dropped == 0)  return target;
         int outargs = oldType.parameterCount();
         int inargs  = outargs + dropped;
-        if (pos < 0 || pos >= inargs)
-            throw newIllegalArgumentException("no argument type to remove");
-        ArrayList<Class<?>> ptypes = new ArrayList<>(oldType.parameterList());
-        ptypes.addAll(pos, valueTypes);
-        if (ptypes.size() != inargs)  throw newIllegalArgumentException("valueTypes");
-        MethodType newType = MethodType.methodType(oldType.returnType(), ptypes);
-        return target.dropArguments(newType, pos, dropped);
+        if (pos < 0 || pos > outargs)
+            throw newIllegalArgumentException("no argument type to remove"
+                    + Arrays.asList(oldType, pos, valueTypes, inargs, outargs)
+                    );
+        return dropped;
     }
 
     /**
