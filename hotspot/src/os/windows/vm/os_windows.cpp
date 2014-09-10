@@ -22,8 +22,8 @@
  *
  */
 
-// Must be at least Windows 2000 or XP to use IsDebuggerPresent
-#define _WIN32_WINNT 0x500
+// Must be at least Windows Vista or Server 2008 to use InitOnceExecuteOnce
+#define _WIN32_WINNT 0x0600
 
 // no precompiled headers
 #include "classfile/classLoader.hpp"
@@ -409,8 +409,6 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
-extern jint volatile vm_getting_terminated;
-
 // Thread start routine for all new Java threads
 static unsigned __stdcall java_start(Thread* thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -432,13 +430,10 @@ static unsigned __stdcall java_start(Thread* thread) {
     }
   }
 
-  // Diagnostic code to investigate JDK-6573254 (Part I)
-  unsigned res = 90115;  // non-java thread
+  // Diagnostic code to investigate JDK-6573254
+  int res = 90115;  // non-java thread
   if (thread->is_Java_thread()) {
-    JavaThread* java_thread = (JavaThread*)thread;
-    res = java_lang_Thread::is_daemon(java_thread->threadObj())
-          ? 70115        // java daemon thread
-          : 80115;       // java non-daemon thread
+    res = 60115;    // java thread
   }
 
   // Install a win32 structured exception handler around every thread created
@@ -458,12 +453,9 @@ static unsigned __stdcall java_start(Thread* thread) {
     Atomic::dec_ptr((intptr_t*)&os::win32::_os_thread_count);
   }
 
-  // Diagnostic code to investigate JDK-6573254 (Part II)
-  if (OrderAccess::load_acquire(&vm_getting_terminated)) {
-    return res;
-  }
-
-  return 0;
+  // Thread must not return from exit_process_or_thread(), but if it does,
+  // let it proceed to exit normally
+  return (unsigned)os::win32::exit_process_or_thread(os::win32::EPT_THREAD, res);
 }
 
 static OSThread* create_os_thread(Thread* thread, HANDLE thread_handle, int thread_id) {
@@ -1062,17 +1054,15 @@ void os::check_or_create_dump(void* exceptionRecord, void* contextRecord, char* 
 }
 
 
-
-void os::abort(bool dump_core)
-{
+void os::abort(bool dump_core) {
   os::shutdown();
   // no core dump on Windows
-  ::exit(1);
+  win32::exit_process_or_thread(win32::EPT_PROCESS, 1);
 }
 
 // Die immediately, no exit hook, no abort hook, no cleanup.
 void os::die() {
-  _exit(-1);
+  win32::exit_process_or_thread(win32::EPT_PROCESS_DIE, -1);
 }
 
 // Directory routines copied from src/win32/native/java/io/dirent_md.c
@@ -3632,6 +3622,10 @@ bool   os::win32::_is_nt              = false;
 bool   os::win32::_is_windows_2003    = false;
 bool   os::win32::_is_windows_server  = false;
 
+// 6573254
+// Currently, the bug is observed across all the supported Windows releases,
+// including the latest one (as of this writing - Windows Server 2012 R2)
+bool   os::win32::_has_exit_bug       = true;
 bool   os::win32::_has_performance_count = 0;
 
 void os::win32::initialize_system_info() {
@@ -3727,6 +3721,69 @@ HINSTANCE os::win32::load_Windows_dll(const char* name, char *ebuf, int ebuflen)
     "os::win32::load_windows_dll() cannot load %s from system directories.", name);
   return NULL;
 }
+
+#define MIN_EXIT_MUTEXES 1
+#define MAX_EXIT_MUTEXES 16
+
+struct ExitMutexes {
+  DWORD count;
+  HANDLE handles[MAX_EXIT_MUTEXES];
+};
+
+static BOOL CALLBACK init_muts_call(PINIT_ONCE, PVOID ppmuts, PVOID*) {
+  static ExitMutexes muts;
+
+  muts.count = os::processor_count();
+  if (muts.count < MIN_EXIT_MUTEXES) {
+    muts.count = MIN_EXIT_MUTEXES;
+  } else if (muts.count > MAX_EXIT_MUTEXES) {
+    muts.count = MAX_EXIT_MUTEXES;
+  }
+
+  for (DWORD i = 0; i < muts.count; ++i) {
+    muts.handles[i] = CreateMutex(NULL, FALSE, NULL);
+    if (muts.handles[i] == NULL) {
+      return FALSE;
+    }
+  }
+  *((ExitMutexes**)ppmuts) = &muts;
+  return TRUE;
+}
+
+int os::win32::exit_process_or_thread(Ept what, int exit_code) {
+  if (os::win32::has_exit_bug()) {
+    static INIT_ONCE init_once_muts = INIT_ONCE_STATIC_INIT;
+    static ExitMutexes* pmuts;
+
+    if (!InitOnceExecuteOnce(&init_once_muts, init_muts_call, &pmuts, NULL)) {
+      warning("ExitMutex initialization failed in %s: %d\n", __FILE__, __LINE__);
+    } else if (WaitForMultipleObjects(pmuts->count, pmuts->handles,
+                                      (what != EPT_THREAD), // exiting process waits for all mutexes
+                                      INFINITE) == WAIT_FAILED) {
+      warning("ExitMutex acquisition failed in %s: %d\n", __FILE__, __LINE__);
+    }
+  }
+
+  switch (what) {
+    case EPT_THREAD:
+      _endthreadex((unsigned)exit_code);
+      break;
+
+    case EPT_PROCESS:
+      ::exit(exit_code);
+      break;
+
+    case EPT_PROCESS_DIE:
+      _exit(exit_code);
+      break;
+  }
+
+  // should not reach here
+  return exit_code;
+}
+
+#undef MIN_EXIT_MUTEXES
+#undef MAX_EXIT_MUTEXES
 
 void os::win32::setmode_streams() {
   _setmode(_fileno(stdin), _O_BINARY);
