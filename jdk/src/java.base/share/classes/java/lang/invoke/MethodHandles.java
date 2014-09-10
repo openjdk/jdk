@@ -41,6 +41,7 @@ import sun.security.util.SecurityConstants;
 import java.lang.invoke.LambdaForm.BasicType;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
+import static java.lang.invoke.MethodHandleImpl.Intrinsic;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import java.util.concurrent.ConcurrentHashMap;
 
@@ -2198,14 +2199,29 @@ assert((int)twice.invokeExact(21) == 42);
      */
     public static
     MethodHandle identity(Class<?> type) {
-        if (type == void.class)
-            throw newIllegalArgumentException("void type");
-        else if (type == Object.class)
-            return ValueConversions.identity();
-        else if (type.isPrimitive())
-            return ValueConversions.identity(Wrapper.forPrimitiveType(type));
-        else
-            return MethodHandleImpl.makeReferenceIdentity(type);
+        Wrapper btw = (type.isPrimitive() ? Wrapper.forPrimitiveType(type) : Wrapper.OBJECT);
+        int pos = btw.ordinal();
+        MethodHandle ident = IDENTITY_MHS[pos];
+        if (ident == null) {
+            ident = setCachedMethodHandle(IDENTITY_MHS, pos, makeIdentity(btw.primitiveType()));
+        }
+        if (ident.type().returnType() == type)
+            return ident;
+        // something like identity(Foo.class); do not bother to intern these
+        assert(btw == Wrapper.OBJECT);
+        return makeIdentity(type);
+    }
+    private static final MethodHandle[] IDENTITY_MHS = new MethodHandle[Wrapper.values().length];
+    private static MethodHandle makeIdentity(Class<?> ptype) {
+        MethodType mtype = MethodType.methodType(ptype, ptype);
+        LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
+        return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.IDENTITY);
+    }
+    synchronized private static MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        MethodHandle prev = cache[pos];
+        if (prev != null) return prev;
+        return cache[pos] = value;
     }
 
     /**

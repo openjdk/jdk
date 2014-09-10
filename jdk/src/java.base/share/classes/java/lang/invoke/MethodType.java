@@ -510,6 +510,32 @@ class MethodType implements java.io.Serializable {
         return ptype;
     }
 
+    /** Delete the last parameter type and replace it with arrayLength copies of the component type of arrayType.
+     * @param arrayType any array type
+     * @param arrayLength the number of parameter types to insert
+     * @return the resulting type
+     */
+    /*non-public*/ MethodType asCollectorType(Class<?> arrayType, int arrayLength) {
+        assert(parameterCount() >= 1);
+        assert(lastParameterType().isAssignableFrom(arrayType));
+        MethodType res;
+        if (arrayType == Object[].class) {
+            res = genericMethodType(arrayLength);
+            if (rtype != Object.class) {
+                res = res.changeReturnType(rtype);
+            }
+        } else {
+            Class<?> elemType = arrayType.getComponentType();
+            assert(elemType != null);
+            res = methodType(rtype, Collections.nCopies(arrayLength, elemType));
+        }
+        if (ptypes.length == 1) {
+            return res;
+        } else {
+            return res.insertParameterTypes(0, parameterList().subList(0, ptypes.length-1));
+        }
+    }
+
     /**
      * Finds or creates a method type with some parameter types omitted.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
