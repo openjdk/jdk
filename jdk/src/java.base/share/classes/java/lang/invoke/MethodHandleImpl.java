@@ -357,7 +357,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static class AsVarargsCollector extends MethodHandle {
         private final MethodHandle target;
         private final Class<?> arrayType;
-        private /*@Stable*/ MethodHandle asCollectorCache;
+        private @Stable MethodHandle asCollectorCache;
 
         AsVarargsCollector(MethodHandle target, MethodType type, Class<?> arrayType) {
             super(type, reinvokerForm(target));
@@ -534,7 +534,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         static final MethodHandle MH_castReference;
         static final MethodHandle MH_copyAsPrimitiveArray;
-        static final MethodHandle MH_copyAsReferenceArray;
         static final MethodHandle MH_fillNewTypedArray;
         static final MethodHandle MH_fillNewArray;
         static final MethodHandle MH_arrayIdentity;
@@ -557,8 +556,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                             MethodType.methodType(Object.class, Class.class, Object.class));
                 MH_copyAsPrimitiveArray = IMPL_LOOKUP.findStatic(MHI, "copyAsPrimitiveArray",
                                             MethodType.methodType(Object.class, Wrapper.class, Object[].class));
-                MH_copyAsReferenceArray = IMPL_LOOKUP.findStatic(MHI, "copyAsReferenceArray",
-                                            MethodType.methodType(Object[].class, Class.class, Object[].class));
                 MH_arrayIdentity        = IMPL_LOOKUP.findStatic(MHI, "identity",
                                             MethodType.methodType(Object[].class, Object[].class));
                 MH_fillNewArray         = IMPL_LOOKUP.findStatic(MHI, "fillNewArray",
@@ -758,8 +755,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         BoundMethodHandle mh;
         try {
             mh = (BoundMethodHandle)
-                    data.constructor[0].invokeBasic(type, form, (Object) target, (Object) exType, (Object) catcher,
-                                                    (Object) collectArgs, (Object) unboxResult);
+                    data.constructor().invokeBasic(type, form, (Object) target, (Object) exType, (Object) catcher,
+                                                   (Object) collectArgs, (Object) unboxResult);
         } catch (Throwable ex) {
             throw uncaughtException(ex);
         }
@@ -1095,6 +1092,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     private static Object[] fillNewTypedArray(Object[] example, Integer len, Object[] /*not ...*/ args) {
         Object[] a = Arrays.copyOf(example, len);
+        assert(a.getClass() != Object[].class);
         fillWithArguments(a, 0, args);
         return a;
     }
@@ -1143,9 +1141,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
     private static final MethodHandle[] FILL_ARRAYS = makeFillArrays();
 
-    private static Object[] copyAsReferenceArray(Class<? extends Object[]> arrayType, Object... a) {
-        return Arrays.copyOf(a, a.length, arrayType);
-    }
     private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
         Object a = w.makeArray(boxes.length);
         w.copyArrayUnboxing(boxes, 0, a, 0, boxes.length);
@@ -1265,8 +1260,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (nargs >= MAX_JVM_ARITY/2 - 1) {
             int slots = nargs;
             final int MAX_ARRAY_SLOTS = MAX_JVM_ARITY - 1;  // 1 for receiver MH
-            if (arrayType == double[].class || arrayType == long[].class)
-                slots *= 2;
+            if (slots <= MAX_ARRAY_SLOTS && elemType.isPrimitive())
+                slots *= Wrapper.forPrimitiveType(elemType).stackSlots();
             if (slots > MAX_ARRAY_SLOTS)
                 throw new IllegalArgumentException("too many arguments: "+arrayType.getSimpleName()+", length "+nargs);
         }
@@ -1276,16 +1271,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodHandle cache[] = TYPED_COLLECTORS.get(elemType);
         MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
         if (mh != null)  return mh;
-        if (elemType.isPrimitive()) {
+        if (nargs == 0) {
+            Object example = java.lang.reflect.Array.newInstance(arrayType.getComponentType(), 0);
+            mh = MethodHandles.constant(arrayType, example);
+        } else if (elemType.isPrimitive()) {
             MethodHandle builder = Lazy.MH_fillNewArray;
             MethodHandle producer = buildArrayProducer(arrayType);
             mh = buildVarargsArray(builder, producer, nargs);
         } else {
-            @SuppressWarnings("unchecked")
-            Class<? extends Object[]> objArrayType = (Class<? extends Object[]>) arrayType;
+            Class<? extends Object[]> objArrayType = arrayType.asSubclass(Object[].class);
             Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
             MethodHandle builder = Lazy.MH_fillNewTypedArray.bindTo(example);
-            MethodHandle producer = Lazy.MH_arrayIdentity;
+            MethodHandle producer = Lazy.MH_arrayIdentity; // must be weakly typed
             mh = buildVarargsArray(builder, producer, nargs);
         }
         mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
@@ -1297,9 +1294,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     private static MethodHandle buildArrayProducer(Class<?> arrayType) {
         Class<?> elemType = arrayType.getComponentType();
-        if (elemType.isPrimitive())
-            return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
-        else
-            return Lazy.MH_copyAsReferenceArray.bindTo(arrayType);
+        assert(elemType.isPrimitive());
+        return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
     }
 }

@@ -319,7 +319,7 @@ public class CallSite {
                 throw new ClassCastException("bootstrap method failed to produce a CallSite");
             }
             if (!site.getTarget().type().equals(type))
-                throw new WrongMethodTypeException("wrong type: "+site.getTarget());
+                throw wrongTargetType(site.getTarget(), type);
         } catch (Throwable ex) {
             BootstrapMethodError bex;
             if (ex instanceof BootstrapMethodError)

@@ -308,7 +308,7 @@ class Invokers {
                 : Arrays.asList(mtype, customized, which, nameCursor, names.length);
         if (MTYPE_ARG >= INARG_LIMIT) {
             assert(names[MTYPE_ARG] == null);
-            NamedFunction getter = BoundMethodHandle.getSpeciesData("L").getterFunction(0);
+            NamedFunction getter = BoundMethodHandle.speciesData_L().getterFunction(0);
             names[MTYPE_ARG] = new Name(getter, names[THIS_MH]);
             // else if isLinker, then MTYPE is passed in from the caller (e.g., the JVM)
         }
@@ -360,9 +360,6 @@ class Invokers {
     Object checkGenericType(Object mhObj, Object expectedObj) {
         MethodHandle mh = (MethodHandle) mhObj;
         MethodType expected = (MethodType) expectedObj;
-        if (mh.type() == expected)  return mh;
-        MethodHandle atc = mh.asTypeCache;
-        if (atc != null && atc.type() == expected)  return atc;
         return mh.asType(expected);
         /* Maybe add more paths here.  Possible optimizations:
          * for (R)MH.invoke(a*),
@@ -436,24 +433,25 @@ class Invokers {
     }
 
     // Local constant functions:
-    private static final NamedFunction NF_checkExactType;
-    private static final NamedFunction NF_checkGenericType;
-    private static final NamedFunction NF_asType;
-    private static final NamedFunction NF_getCallSiteTarget;
+    private static final NamedFunction
+        NF_checkExactType,
+        NF_checkGenericType,
+        NF_getCallSiteTarget;
     static {
         try {
-            NF_checkExactType = new NamedFunction(Invokers.class
-                    .getDeclaredMethod("checkExactType", Object.class, Object.class));
-            NF_checkGenericType = new NamedFunction(Invokers.class
-                    .getDeclaredMethod("checkGenericType", Object.class, Object.class));
-            NF_asType = new NamedFunction(MethodHandle.class
-                    .getDeclaredMethod("asType", MethodType.class));
-            NF_getCallSiteTarget = new NamedFunction(Invokers.class
-                    .getDeclaredMethod("getCallSiteTarget", Object.class));
-            NF_checkExactType.resolve();
-            NF_checkGenericType.resolve();
-            NF_getCallSiteTarget.resolve();
-            // bound
+            NamedFunction nfs[] = {
+                NF_checkExactType = new NamedFunction(Invokers.class
+                        .getDeclaredMethod("checkExactType", Object.class, Object.class)),
+                NF_checkGenericType = new NamedFunction(Invokers.class
+                        .getDeclaredMethod("checkGenericType", Object.class, Object.class)),
+                NF_getCallSiteTarget = new NamedFunction(Invokers.class
+                        .getDeclaredMethod("getCallSiteTarget", Object.class))
+            };
+            for (NamedFunction nf : nfs) {
+                // Each nf must be statically invocable or we get tied up in our bootstraps.
+                assert(InvokerBytecodeGenerator.isStaticallyInvocable(nf.member)) : nf;
+                nf.resolve();
+            }
         } catch (ReflectiveOperationException ex) {
             throw newInternalError(ex);
         }
