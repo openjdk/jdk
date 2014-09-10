@@ -28,7 +28,6 @@ package java.lang.invoke;
 
 import java.util.*;
 import java.lang.invoke.LambdaForm.BasicType;
-import sun.invoke.util.*;
 import sun.misc.Unsafe;
 
 import static java.lang.invoke.MethodHandleStatics.*;
@@ -988,7 +987,7 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         MethodHandle target = this;
         if (arrayType != type().parameterType(collectArgPos))
             target = convertArguments(type().changeParameterType(collectArgPos, arrayType));
-        MethodHandle collector = ValueConversions.varargsArray(arrayType, arrayLength);
+        MethodHandle collector = MethodHandleImpl.varargsArray(arrayType, arrayLength);
         return MethodHandles.collectArguments(target, collectArgPos, collector);
     }
 

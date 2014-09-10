@@ -36,7 +36,6 @@ import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
 import java.lang.invoke.MethodHandleImpl.ArrayAccessor;
-import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -904,7 +903,7 @@ class InvokerBytecodeGenerator {
         if (!ptypes.equals(Collections.nCopies(size, arrayElementType)))
             return false;
         // Assume varargsArray caches pointers.
-        if (fn != ValueConversions.varargsArray(rtype, size))
+        if (fn != MethodHandleImpl.varargsArray(rtype, size))
             return false;
         return true;
     }
