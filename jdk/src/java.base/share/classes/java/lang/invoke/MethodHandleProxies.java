@@ -33,6 +33,7 @@ import java.util.ArrayList;
 import sun.reflect.CallerSensitive;
 import sun.reflect.Reflection;
 import sun.reflect.misc.ReflectUtil;
+import static java.lang.invoke.MethodHandleStatics.*;
 
 /**
  * This class consists exclusively of static methods that help adapt
@@ -148,7 +149,7 @@ public class MethodHandleProxies {
     public static
     <T> T asInterfaceInstance(final Class<T> intfc, final MethodHandle target) {
         if (!intfc.isInterface() || !Modifier.isPublic(intfc.getModifiers()))
-            throw new IllegalArgumentException("not a public interface: "+intfc.getName());
+            throw newIllegalArgumentException("not a public interface", intfc.getName());
         final MethodHandle mh;
         if (System.getSecurityManager() != null) {
             final Class<?> caller = Reflection.getCallerClass();
@@ -165,7 +166,7 @@ public class MethodHandleProxies {
         }
         final Method[] methods = getSingleNameMethods(intfc);
         if (methods == null)
-            throw new IllegalArgumentException("not a single-method interface: "+intfc.getName());
+            throw newIllegalArgumentException("not a single-method interface", intfc.getName());
         final MethodHandle[] vaTargets = new MethodHandle[methods.length];
         for (int i = 0; i < methods.length; i++) {
             Method sm = methods[i];
@@ -189,7 +190,7 @@ public class MethodHandleProxies {
                         return getArg(method.getName());
                     if (isObjectMethod(method))
                         return callObjectMethod(proxy, method, args);
-                    throw new InternalError("bad proxy method: "+method);
+                    throw newInternalError("bad proxy method: "+method);
                 }
             };
 
@@ -240,7 +241,7 @@ public class MethodHandleProxies {
                 return (WrapperInstance) x;
         } catch (ClassCastException ex) {
         }
-        throw new IllegalArgumentException("not a wrapper instance");
+        throw newIllegalArgumentException("not a wrapper instance");
     }
 
     /**

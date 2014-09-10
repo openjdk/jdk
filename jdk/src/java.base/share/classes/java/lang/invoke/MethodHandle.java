@@ -762,11 +762,19 @@ public abstract class MethodHandle {
             return this;
         }
         // Return 'this.asTypeCache' if the conversion is already memoized.
+        MethodHandle atc = asTypeCached(newType);
+        if (atc != null) {
+            return atc;
+        }
+        return asTypeUncached(newType);
+    }
+
+    private MethodHandle asTypeCached(MethodType newType) {
         MethodHandle atc = asTypeCache;
         if (atc != null && newType == atc.type) {
             return atc;
         }
-        return asTypeUncached(newType);
+        return null;
     }
 
     /** Override this to change asType behavior. */
@@ -991,8 +999,11 @@ assertEquals("[123]", (String) longsToString.invokeExact((long)123));
         return MethodHandles.collectArguments(target, collectArgPos, collector);
     }
 
-    // private API: return true if last param exactly matches arrayType
-    private boolean asCollectorChecks(Class<?> arrayType, int arrayLength) {
+    /**
+     * See if {@code asCollector} can be validly called with the given arguments.
+     * Return false if the last parameter is not an exact match to arrayType.
+     */
+    /*non-public*/ boolean asCollectorChecks(Class<?> arrayType, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (nargs != 0) {
@@ -1154,7 +1165,7 @@ assertEquals("[three, thee, tee]", Arrays.toString((Object[])ls.get(0)));
      * @see #asFixedArity
      */
     public MethodHandle asVarargsCollector(Class<?> arrayType) {
-        Class<?> arrayElement = arrayType.getComponentType();
+        arrayType.getClass(); // explicit NPE
         boolean lastMatch = asCollectorChecks(arrayType, 0);
         if (isVarargsCollector() && lastMatch)
             return this;
@@ -1283,14 +1294,17 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
      */
     @Override
     public String toString() {
-        if (DEBUG_METHOD_HANDLE_NAMES)  return debugString();
+        if (DEBUG_METHOD_HANDLE_NAMES)  return "MethodHandle"+debugString();
         return standardString();
     }
     String standardString() {
         return "MethodHandle"+type;
     }
+    /** Return a string with a several lines describing the method handle structure.
+     *  This string would be suitable for display in an IDE debugger.
+     */
     String debugString() {
-        return standardString()+"/LF="+internalForm()+internalProperties();
+        return type+" : "+internalForm()+internalProperties();
     }
 
     //// Implementation methods.
@@ -1302,15 +1316,13 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     MethodHandle setVarargs(MemberName member) throws IllegalAccessException {
         if (!member.isVarargs())  return this;
-        int argc = type().parameterCount();
-        if (argc != 0) {
-            Class<?> arrayType = type().parameterType(argc-1);
-            if (arrayType.isArray()) {
-                return MethodHandleImpl.makeVarargsCollector(this, arrayType);
-            }
+        Class<?> arrayType = type().lastParameterType();
+        if (arrayType.isArray()) {
+            return MethodHandleImpl.makeVarargsCollector(this, arrayType);
         }
         throw member.makeAccessException("cannot make variable arity", null);
     }
+
     /*non-public*/
     MethodHandle viewAsType(MethodType newType) {
         // No actual conversions, just a new view of the same method.
@@ -1361,7 +1373,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
 
     /*non-public*/
     Object internalProperties() {
-        // Override to something like "/FOO=bar"
+        // Override to something to follow this.form, like "\n& FOO=bar"
         return "";
     }
 
@@ -1469,6 +1481,7 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     void updateForm(LambdaForm newForm) {
         if (form == newForm)  return;
+        assert(this instanceof DirectMethodHandle && this.internalMemberName().isStatic());
         // ISSUE: Should we have a memory fence here?
         UNSAFE.putObject(this, FORM_OFFSET, newForm);
         this.form.prepare();  // as in MethodHandle.<init>

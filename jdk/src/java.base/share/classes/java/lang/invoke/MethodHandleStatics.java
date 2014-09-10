@@ -45,7 +45,7 @@ import sun.misc.Unsafe;
     static final boolean DUMP_CLASS_FILES;
     static final boolean TRACE_INTERPRETER;
     static final boolean TRACE_METHOD_LINKAGE;
-    static final Integer COMPILE_THRESHOLD;
+    static final int COMPILE_THRESHOLD;
     static final int PROFILE_LEVEL;
 
     static {
@@ -56,7 +56,7 @@ import sun.misc.Unsafe;
                     values[1] = Boolean.getBoolean("java.lang.invoke.MethodHandle.DUMP_CLASS_FILES");
                     values[2] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_INTERPRETER");
                     values[3] = Boolean.getBoolean("java.lang.invoke.MethodHandle.TRACE_METHOD_LINKAGE");
-                    values[4] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD");
+                    values[4] = Integer.getInteger("java.lang.invoke.MethodHandle.COMPILE_THRESHOLD", 30);
                     values[5] = Integer.getInteger("java.lang.invoke.MethodHandle.PROFILE_LEVEL", 0);
                     return null;
                 }
@@ -131,7 +131,10 @@ import sun.misc.Unsafe;
     /*non-public*/ static RuntimeException newIllegalArgumentException(String message, Object obj, Object obj2) {
         return new IllegalArgumentException(message(message, obj, obj2));
     }
+    /** Propagate unchecked exceptions and errors, but wrap anything checked and throw that instead. */
     /*non-public*/ static Error uncaughtException(Throwable ex) {
+        if (ex instanceof Error)  throw (Error) ex;
+        if (ex instanceof RuntimeException)  throw (RuntimeException) ex;
         throw newInternalError("uncaught exception", ex);
     }
     static Error NYI() {

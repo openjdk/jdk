@@ -59,6 +59,7 @@ class DirectMethodHandle extends MethodHandle {
             MemberName m = new MemberName(Object.class, member.getName(), member.getMethodType(), member.getReferenceKind());
             m = MemberName.getFactory().resolveOrNull(m.getReferenceKind(), m, null);
             if (m != null && m.isPublic()) {
+                assert(member.getReferenceKind() == m.getReferenceKind());  // else this.form is wrong
                 member = m;
             }
         }
@@ -127,7 +128,7 @@ class DirectMethodHandle extends MethodHandle {
 
     @Override
     String internalProperties() {
-        return "/DMH="+member.toString();
+        return "\n& DMH.MN="+internalMemberName();
     }
 
     //// Implementation methods.
