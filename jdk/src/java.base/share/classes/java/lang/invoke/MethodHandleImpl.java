@@ -1054,6 +1054,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         ARRAY_LOAD,
         ARRAY_STORE,
         IDENTITY,
+        ZERO,
         NONE // no intrinsic associated
     }
 

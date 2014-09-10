@@ -668,6 +668,10 @@ class InvokerBytecodeGenerator {
                     assert(name.arguments.length == 1);
                     emitPushArguments(name);
                     continue;
+                case ZERO:
+                    assert(name.arguments.length == 0);
+                    emitConst(name.type.basicTypeWrapper().zero());
+                    continue;
                 case NONE:
                     // no intrinsic associated
                     break;
