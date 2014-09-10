@@ -107,7 +107,7 @@ class Invokers {
         LambdaForm lform = invokeHandleForm(mtype, false, which);
         MethodHandle invoker = BoundMethodHandle.bindSingle(invokerType, lform, mtype);
         String whichName = (isExact ? "invokeExact" : "invoke");
-        invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke(whichName, mtype));
+        invoker = invoker.withInternalMemberName(MemberName.makeMethodHandleInvoke(whichName, mtype), false);
         assert(checkInvoker(invoker));
         maybeCompileToBytecode(invoker);
         return invoker;

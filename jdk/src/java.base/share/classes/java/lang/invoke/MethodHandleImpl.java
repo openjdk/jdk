@@ -807,7 +807,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         mh = mh.bindTo(new UnsupportedOperationException("cannot reflectively invoke MethodHandle"));
         if (!method.getInvocationType().equals(mh.type()))
             throw new InternalError(method.toString());
-        mh = mh.withInternalMemberName(method);
+        mh = mh.withInternalMemberName(method, false);
         mh = mh.asVarargsCollector(Object[].class);
         assert(method.isVarargs());
         FAKE_METHOD_HANDLE_INVOKE[idx] = mh;
@@ -844,7 +844,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             MethodHandle vamh = prepareForInvoker(mh);
             // Cache the result of makeInjectedInvoker once per argument class.
             MethodHandle bccInvoker = CV_makeInjectedInvoker.get(hostClass);
-            return restoreToType(bccInvoker.bindTo(vamh), mh.type(), mh.internalMemberName(), hostClass);
+            return restoreToType(bccInvoker.bindTo(vamh), mh, hostClass);
         }
 
         private static MethodHandle makeInjectedInvoker(Class<?> hostClass) {
@@ -899,12 +899,14 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         // Undo the adapter effect of prepareForInvoker:
-        private static MethodHandle restoreToType(MethodHandle vamh, MethodType type,
-                                                  MemberName member,
+        private static MethodHandle restoreToType(MethodHandle vamh,
+                                                  MethodHandle original,
                                                   Class<?> hostClass) {
+            MethodType type = original.type();
             MethodHandle mh = vamh.asCollector(Object[].class, type.parameterCount());
+            MemberName member = original.internalMemberName();
             mh = mh.asType(type);
-            mh = new WrappedMember(mh, type, member, hostClass);
+            mh = new WrappedMember(mh, type, member, original.isInvokeSpecial(), hostClass);
             return mh;
         }
 
@@ -974,12 +976,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         private final MethodHandle target;
         private final MemberName member;
         private final Class<?> callerClass;
+        private final boolean isInvokeSpecial;
 
-        private WrappedMember(MethodHandle target, MethodType type, MemberName member, Class<?> callerClass) {
+        private WrappedMember(MethodHandle target, MethodType type,
+                              MemberName member, boolean isInvokeSpecial,
+                              Class<?> callerClass) {
             super(type, reinvokerForm(target));
             this.target = target;
             this.member = member;
             this.callerClass = callerClass;
+            this.isInvokeSpecial = isInvokeSpecial;
         }
 
         @Override
@@ -1002,7 +1008,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
         @Override
         boolean isInvokeSpecial() {
-            return target.isInvokeSpecial();
+            return isInvokeSpecial;
         }
 
         @Override
@@ -1011,10 +1017,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
     }
 
-    static MethodHandle makeWrappedMember(MethodHandle target, MemberName member) {
-        if (member.equals(target.internalMemberName()))
+    static MethodHandle makeWrappedMember(MethodHandle target, MemberName member, boolean isInvokeSpecial) {
+        if (member.equals(target.internalMemberName()) && isInvokeSpecial == target.isInvokeSpecial())
             return target;
-        return new WrappedMember(target, target.type(), member, null);
+        return new WrappedMember(target, target.type(), member, isInvokeSpecial, null);
     }
 
     /// Collection of multiple arguments.
