@@ -395,69 +395,11 @@ public class ValueConversions {
         throw new IllegalArgumentException("cannot find zero constant for " + wrap);
     }
 
-    /// Converting references to references.
-
-    /**
-     * Identity function.
-     * @param x an arbitrary reference value
-     * @return the same value x
-     */
-    static <T> T identity(T x) {
-        return x;
-    }
-
-    static <T> T[] identity(T[] x) {
-        return x;
-    }
-
-    /**
-     * Identity function on ints.
-     * @param x an arbitrary int value
-     * @return the same value x
-     */
-    static int identity(int x) {
-        return x;
-    }
-
-    static byte identity(byte x) {
-        return x;
-    }
-
-    static short identity(short x) {
-        return x;
-    }
-
-    static boolean identity(boolean x) {
-        return x;
-    }
-
-    static char identity(char x) {
-        return x;
-    }
-
-    /**
-     * Identity function on longs.
-     * @param x an arbitrary long value
-     * @return the same value x
-     */
-    static long identity(long x) {
-        return x;
-    }
-
-    static float identity(float x) {
-        return x;
-    }
-
-    static double identity(double x) {
-        return x;
-    }
-
-    private static final MethodHandle IDENTITY, CAST_REFERENCE, IGNORE, EMPTY;
+    private static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
             MethodType ignoreType = idType.changeReturnType(void.class);
-            IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
             IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
@@ -468,41 +410,6 @@ public class ValueConversions {
 
     public static MethodHandle ignore() {
         return IGNORE;
-    }
-
-    public static MethodHandle identity() {
-        return IDENTITY;
-    }
-
-    public static MethodHandle identity(Class<?> type) {
-        if (!type.isPrimitive())
-            // Reference identity has been moved into MethodHandles:
-            return MethodHandles.identity(type);
-        return identity(Wrapper.findPrimitiveType(type));
-    }
-
-    public static MethodHandle identity(Wrapper wrap) {
-        WrapperCache cache = CONSTANT_FUNCTIONS[1];
-        MethodHandle mh = cache.get(wrap);
-        if (mh != null) {
-            return mh;
-        }
-        // slow path
-        MethodType type = MethodType.methodType(wrap.primitiveType());
-        if (wrap != Wrapper.VOID)
-            type = type.appendParameterTypes(wrap.primitiveType());
-        try {
-            mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", type);
-        } catch (ReflectiveOperationException ex) {
-            mh = null;
-        }
-        if (mh == null && wrap == Wrapper.VOID) {
-            mh = EMPTY;  // #(){} : #()void
-        }
-        if (mh != null) {
-            return cache.put(wrap, mh);
-        }
-        throw new IllegalArgumentException("cannot find identity for " + wrap);
     }
 
     /** Return a method that casts its second argument (an Object) to the given type (a Class). */

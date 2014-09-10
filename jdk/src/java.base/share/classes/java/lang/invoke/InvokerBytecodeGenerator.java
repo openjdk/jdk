@@ -664,6 +664,10 @@ class InvokerBytecodeGenerator {
                 case ARRAY_STORE:
                     emitArrayStore(name);
                     continue;
+                case IDENTITY:
+                    assert(name.arguments.length == 1);
+                    emitPushArguments(name);
+                    continue;
                 case NONE:
                     // no intrinsic associated
                     break;

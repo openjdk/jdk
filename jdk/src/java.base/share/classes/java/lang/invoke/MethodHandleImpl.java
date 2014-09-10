@@ -303,14 +303,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
     }
 
-    static MethodHandle makeReferenceIdentity(Class<?> refType) {
-        MethodType lambdaType = MethodType.genericMethodType(1).invokerType();
-        Name[] names = arguments(1, lambdaType);
-        names[names.length - 1] = new Name(ValueConversions.identity(), names[1]);
-        LambdaForm form = new LambdaForm("identity", lambdaType.parameterCount(), names);
-        return SimpleMethodHandle.make(MethodType.methodType(refType, refType), form);
-    }
-
     static Object[] computeValueConversions(MethodType srcType, MethodType dstType,
                                             boolean strict, boolean monobox) {
         final int INARG_COUNT = srcType.parameterCount();
@@ -1061,6 +1053,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         NEW_ARRAY,
         ARRAY_LOAD,
         ARRAY_STORE,
+        IDENTITY,
         NONE // no intrinsic associated
     }
 
@@ -1097,6 +1090,16 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         String internalProperties() {
             return super.internalProperties() +
                     "\n& Intrinsic="+intrinsicName;
+        }
+
+        @Override
+        public MethodHandle asCollector(Class<?> arrayType, int arrayLength) {
+            if (intrinsicName == Intrinsic.IDENTITY) {
+                MethodType resultType = type().asCollectorType(arrayType, arrayLength);
+                MethodHandle newArray = MethodHandleImpl.varargsArray(arrayType, arrayLength);
+                return newArray.asType(resultType);
+            }
+            return super.asCollector(arrayType, arrayLength);
         }
     }
 

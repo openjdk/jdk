@@ -158,14 +158,6 @@ public class ValueConversionsTest {
     }
 
     @Test
-    public void testIdentity() throws Throwable {
-        MethodHandle id = ValueConversions.identity();
-        Object expResult = "foo";
-        Object result = id.invokeExact(expResult);
-        assertEquals(expResult, result);
-    }
-
-    @Test
     public void testConvert() throws Throwable {
         for (long tval = 0, ctr = 0;;) {
             if (++ctr > 99999)  throw new AssertionError("too many test values");
