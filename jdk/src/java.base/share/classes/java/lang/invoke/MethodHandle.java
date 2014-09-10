@@ -27,11 +27,8 @@ package java.lang.invoke;
 
 
 import java.util.*;
-import java.lang.invoke.LambdaForm.BasicType;
-import sun.misc.Unsafe;
 
 import static java.lang.invoke.MethodHandleStatics.*;
-import static java.lang.invoke.LambdaForm.BasicType.*;
 
 /**
  * A method handle is a typed, directly executable reference to an underlying method,
@@ -1353,6 +1350,12 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     /*non-public*/
     Class<?> internalCallerClass() {
         return null;  // caller-bound MH for @CallerSensitive method returns caller
+    }
+
+    /*non-public*/
+    MethodHandleImpl.Intrinsic intrinsicName() {
+        // no special intrinsic meaning to most MHs
+        return MethodHandleImpl.Intrinsic.NONE;
     }
 
     /*non-public*/

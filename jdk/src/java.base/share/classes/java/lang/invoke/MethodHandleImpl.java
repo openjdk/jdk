@@ -30,7 +30,6 @@ import java.security.PrivilegedAction;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
-import java.util.List;
 
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
@@ -86,6 +85,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             // safe to view non-strictly, because element type follows from array type
             mh = mh.viewAsType(correctType, false);
         }
+        mh = makeIntrinsic(mh, (isSetter ? Intrinsic.ARRAY_STORE : Intrinsic.ARRAY_LOAD));
         // Atomically update accessor cache.
         synchronized(cache) {
             if (cache[cacheIndex] == null) {
@@ -111,8 +111,8 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER;
         static {
             MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
-            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = getAccessor(Object[].class, false);
-            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = getAccessor(Object[].class, true);
+            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = makeIntrinsic(getAccessor(Object[].class, false), Intrinsic.ARRAY_LOAD);
+            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = makeIntrinsic(getAccessor(Object[].class, true),  Intrinsic.ARRAY_STORE);
 
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
             assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
@@ -502,10 +502,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         static final NamedFunction NF_checkSpreadArgument;
         static final NamedFunction NF_guardWithCatch;
-        static final NamedFunction NF_selectAlternative;
         static final NamedFunction NF_throwException;
 
         static final MethodHandle MH_castReference;
+        static final MethodHandle MH_selectAlternative;
         static final MethodHandle MH_copyAsPrimitiveArray;
         static final MethodHandle MH_fillNewTypedArray;
         static final MethodHandle MH_fillNewArray;
@@ -516,13 +516,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 NF_checkSpreadArgument = new NamedFunction(MHI.getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
                 NF_guardWithCatch      = new NamedFunction(MHI.getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
                                                                                  MethodHandle.class, Object[].class));
-                NF_selectAlternative   = new NamedFunction(MHI.getDeclaredMethod("selectAlternative", boolean.class, MethodHandle.class,
-                                                                                 MethodHandle.class));
                 NF_throwException      = new NamedFunction(MHI.getDeclaredMethod("throwException", Throwable.class));
 
                 NF_checkSpreadArgument.resolve();
                 NF_guardWithCatch.resolve();
-                NF_selectAlternative.resolve();
                 NF_throwException.resolve();
 
                 MH_castReference        = IMPL_LOOKUP.findStatic(MHI, "castReference",
@@ -535,6 +532,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                             MethodType.methodType(Object[].class, Integer.class, Object[].class));
                 MH_fillNewTypedArray    = IMPL_LOOKUP.findStatic(MHI, "fillNewTypedArray",
                                             MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
+
+                MH_selectAlternative    = makeIntrinsic(
+                        IMPL_LOOKUP.findStatic(MHI, "selectAlternative",
+                                MethodType.methodType(MethodHandle.class, boolean.class, MethodHandle.class, MethodHandle.class)),
+                        Intrinsic.SELECT_ALTERNATIVE);
             } catch (ReflectiveOperationException ex) {
                 throw newInternalError(ex);
             }
@@ -620,7 +622,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
         // call selectAlternative
         Object[] selectArgs = { names[arity + 1], target, fallback };
-        names[arity + 2] = new Name(Lazy.NF_selectAlternative, selectArgs);
+        names[arity + 2] = new Name(Lazy.MH_selectAlternative, selectArgs);
         targetArgs[0] = names[arity + 2];
 
         // call target or fallback
@@ -689,7 +691,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         Object[] args = new Object[invokeBasic.type().parameterCount()];
         args[0] = names[GET_COLLECT_ARGS];
         System.arraycopy(names, ARG_BASE, args, 1, ARG_LIMIT-ARG_BASE);
-        names[BOXED_ARGS] = new Name(new NamedFunction(invokeBasic), args);
+        names[BOXED_ARGS] = new Name(makeIntrinsic(invokeBasic, Intrinsic.GUARD_WITH_CATCH), args);
 
         // t_{i+1}:L=MethodHandleImpl.guardWithCatch(target:L,exType:L,catcher:L,t_{i}:L);
         Object[] gwcArgs = new Object[] {names[GET_TARGET], names[GET_CLASS], names[GET_CATCHER], names[BOXED_ARGS]};
@@ -698,7 +700,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         // t_{i+2}:I=MethodHandle.invokeBasic(unbox:L,t_{i+1}:L);
         MethodHandle invokeBasicUnbox = MethodHandles.basicInvoker(MethodType.methodType(basicType.rtype(), Object.class));
         Object[] unboxArgs  = new Object[] {names[GET_UNBOX_RESULT], names[TRY_CATCH]};
-        names[UNBOX_RESULT] = new Name(new NamedFunction(invokeBasicUnbox), unboxArgs);
+        names[UNBOX_RESULT] = new Name(invokeBasicUnbox, unboxArgs);
 
         lform = new LambdaForm("guardWithCatch", lambdaType.parameterCount(), names);
 
@@ -1004,6 +1006,63 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return new WrappedMember(target, target.type(), member, isInvokeSpecial, null);
     }
 
+    /** Intrinsic IDs */
+    /*non-public*/
+    enum Intrinsic {
+        SELECT_ALTERNATIVE,
+        GUARD_WITH_CATCH,
+        NEW_ARRAY,
+        ARRAY_LOAD,
+        ARRAY_STORE,
+        NONE // no intrinsic associated
+    }
+
+    /** Mark arbitrary method handle as intrinsic.
+     * InvokerBytecodeGenerator uses this info to produce more efficient bytecode shape. */
+    private static final class IntrinsicMethodHandle extends DelegatingMethodHandle {
+        private final MethodHandle target;
+        private final Intrinsic intrinsicName;
+
+        IntrinsicMethodHandle(MethodHandle target, Intrinsic intrinsicName) {
+            super(target.type(), target);
+            this.target = target;
+            this.intrinsicName = intrinsicName;
+        }
+
+        @Override
+        protected MethodHandle getTarget() {
+            return target;
+        }
+
+        @Override
+        Intrinsic intrinsicName() {
+            return intrinsicName;
+        }
+
+        @Override
+        public MethodHandle asTypeUncached(MethodType newType) {
+            // This MH is an alias for target, except for the intrinsic name
+            // Drop the name if there is any conversion.
+            return asTypeCache = target.asType(newType);
+        }
+
+        @Override
+        String internalProperties() {
+            return super.internalProperties() +
+                    "\n& Intrinsic="+intrinsicName;
+        }
+    }
+
+    static MethodHandle makeIntrinsic(MethodHandle target, Intrinsic intrinsicName) {
+        if (intrinsicName == target.intrinsicName())
+            return target;
+        return new IntrinsicMethodHandle(target, intrinsicName);
+    }
+
+    static MethodHandle makeIntrinsic(MethodType type, LambdaForm form, Intrinsic intrinsicName) {
+        return new IntrinsicMethodHandle(SimpleMethodHandle.make(type, form), intrinsicName);
+    }
+
     /// Collection of multiple arguments.
 
     private static MethodHandle findCollector(String name, int nargs, Class<?> rtype, Class<?>... ptypes) {
@@ -1053,6 +1112,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         for (;;) {
             MethodHandle mh = findCollector("array", mhs.size(), Object[].class);
             if (mh == null)  break;
+            mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
             mhs.add(mh);
         }
         assert(mhs.size() == 11);  // current number of methods
@@ -1131,9 +1191,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         MethodHandle mh = ARRAYS[nargs];
         if (mh != null)  return mh;
         mh = findCollector("array", nargs, Object[].class);
+        if (mh != null)  mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
         if (mh != null)  return ARRAYS[nargs] = mh;
         mh = buildVarargsArray(Lazy.MH_fillNewArray, Lazy.MH_arrayIdentity, nargs);
         assert(assertCorrectArity(mh, nargs));
+        mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
         return ARRAYS[nargs] = mh;
     }
 
@@ -1263,6 +1325,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             mh = buildVarargsArray(builder, producer, nargs);
         }
         mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
+        mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
         assert(assertCorrectArity(mh, nargs));
         if (nargs < cache.length)
             cache[nargs] = mh;

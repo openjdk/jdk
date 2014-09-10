@@ -27,11 +27,10 @@ package java.lang.invoke;
 
 import java.lang.annotation.*;
 import java.lang.reflect.Method;
-import java.util.Map;
 import java.util.List;
 import java.util.Arrays;
 import java.util.HashMap;
-import java.util.concurrent.ConcurrentHashMap;
+
 import sun.invoke.util.Wrapper;
 import java.lang.reflect.Field;
 
@@ -1370,6 +1369,11 @@ class LambdaForm {
 
         public boolean isConstantZero() {
             return this.equals(constantZero(returnType()));
+        }
+
+        public MethodHandleImpl.Intrinsic intrinsicName() {
+            return resolvedHandle == null ? MethodHandleImpl.Intrinsic.NONE
+                                          : resolvedHandle.intrinsicName();
         }
     }
 
