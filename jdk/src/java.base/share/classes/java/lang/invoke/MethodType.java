@@ -467,6 +467,38 @@ class MethodType implements java.io.Serializable {
         return dropParameterTypes(start, end).insertParameterTypes(start, ptypesToInsert);
     }
 
+    /** Replace the last arrayLength parameter types with the component type of arrayType.
+     * @param arrayType any array type
+     * @param arrayLength the number of parameter types to change
+     * @return the resulting type
+     */
+    /*non-public*/ MethodType asSpreaderType(Class<?> arrayType, int arrayLength) {
+        assert(parameterCount() >= arrayLength);
+        int spreadPos = ptypes.length - arrayLength;
+        if (arrayLength == 0)  return this;  // nothing to change
+        if (arrayType == Object[].class) {
+            if (isGeneric())  return this;  // nothing to change
+            if (spreadPos == 0) {
+                // no leading arguments to preserve; go generic
+                MethodType res = genericMethodType(arrayLength);
+                if (rtype != Object.class) {
+                    res = res.changeReturnType(rtype);
+                }
+                return res;
+            }
+        }
+        Class<?> elemType = arrayType.getComponentType();
+        assert(elemType != null);
+        for (int i = spreadPos; i < ptypes.length; i++) {
+            if (ptypes[i] != elemType) {
+                Class<?>[] fixedPtypes = ptypes.clone();
+                Arrays.fill(fixedPtypes, i, ptypes.length, elemType);
+                return methodType(rtype, fixedPtypes);
+            }
+        }
+        return this;  // arguments check out; no change
+    }
+
     /**
      * Finds or creates a method type with some parameter types omitted.
      * Convenience method for {@link #methodType(java.lang.Class, java.lang.Class[]) methodType}.
@@ -572,6 +604,10 @@ class MethodType implements java.io.Serializable {
      */
     public MethodType generic() {
         return genericMethodType(parameterCount());
+    }
+
+    /*non-public*/ boolean isGeneric() {
+        return this == erase() && !hasPrimitives();
     }
 
     /**

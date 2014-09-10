@@ -102,7 +102,7 @@ public class CallSite {
      */
     /*package-private*/
     CallSite(MethodType type) {
-        target = type.invokers().uninitializedCallSite();
+        target = makeUninitializedCallSite(type);
     }
 
     /**
@@ -217,19 +217,32 @@ public class CallSite {
     }
 
     private static final MethodHandle GET_TARGET;
+    private static final MethodHandle THROW_UCS;
     static {
         try {
             GET_TARGET = IMPL_LOOKUP.
                 findVirtual(CallSite.class, "getTarget", MethodType.methodType(MethodHandle.class));
+            THROW_UCS = IMPL_LOOKUP.
+                findStatic(CallSite.class, "uninitializedCallSite", MethodType.methodType(Object.class, Object[].class));
         } catch (ReflectiveOperationException e) {
             throw newInternalError(e);
         }
     }
 
     /** This guy is rolled into the default target if a MethodType is supplied to the constructor. */
-    /*package-private*/
-    static Empty uninitializedCallSite() {
+    private static Object uninitializedCallSite(Object... ignore) {
         throw new IllegalStateException("uninitialized call site");
+    }
+
+    private MethodHandle makeUninitializedCallSite(MethodType targetType) {
+        MethodType basicType = targetType.basicType();
+        MethodHandle invoker = basicType.form().cachedMethodHandle(MethodTypeForm.MH_UNINIT_CS);
+        if (invoker == null) {
+            invoker = THROW_UCS.asType(basicType);
+            invoker = basicType.form().setCachedMethodHandle(MethodTypeForm.MH_UNINIT_CS, invoker);
+        }
+        // unchecked view is OK since no values will be received or returned
+        return invoker.viewAsType(targetType);
     }
 
     // unsafe stuff:

@@ -1882,6 +1882,7 @@ return invoker;
     MethodHandle spreadInvoker(MethodType type, int leadingArgCount) {
         if (leadingArgCount < 0 || leadingArgCount > type.parameterCount())
             throw newIllegalArgumentException("bad argument count", leadingArgCount);
+        type = type.asSpreaderType(Object[].class, type.parameterCount() - leadingArgCount);
         return type.invokers().spreadInvoker(leadingArgCount);
     }
 
@@ -1961,7 +1962,7 @@ return invoker;
      */
     static public
     MethodHandle invoker(MethodType type) {
-        return type.invokers().generalInvoker();
+        return type.invokers().genericInvoker();
     }
 
     static /*non-public*/
