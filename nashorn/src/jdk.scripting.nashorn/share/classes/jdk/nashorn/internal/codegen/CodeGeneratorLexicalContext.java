@@ -31,6 +31,7 @@ import java.util.Collections;
 import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
+
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.Block;
@@ -158,7 +159,9 @@ final class CodeGeneratorLexicalContext extends LexicalContext {
 
     CompileUnit popCompileUnit(final CompileUnit oldUnit) {
         assert compileUnits.peek() == oldUnit;
-        compileUnits.pop();
+        final CompileUnit unit = compileUnits.pop();
+        assert unit.hasCode() : "compile unit popped without code";
+        unit.setUsed();
         return compileUnits.isEmpty() ? null : compileUnits.peek();
     }
 

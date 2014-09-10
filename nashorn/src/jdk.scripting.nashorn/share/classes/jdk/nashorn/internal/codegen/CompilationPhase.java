@@ -53,7 +53,6 @@ import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
-import jdk.nashorn.internal.ir.CompileUnitHolder;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LiteralNode;
 import jdk.nashorn.internal.ir.LiteralNode.ArrayLiteralNode;
@@ -302,70 +301,6 @@ enum CompilationPhase {
         }
     },
 
-    /**
-     * Mark compile units used in the method tree. Used for non-rest compilation only
-     */
-    MARK_USED_COMPILE_UNITS(
-            EnumSet.of(
-                    INITIALIZED,
-                    PARSED,
-                    CONSTANT_FOLDED,
-                    LOWERED,
-                    BUILTINS_TRANSFORMED,
-                    SPLIT,
-                    SYMBOLS_ASSIGNED,
-                    SCOPE_DEPTHS_COMPUTED,
-                    OPTIMISTIC_TYPES_ASSIGNED,
-                    LOCAL_VARIABLE_TYPES_CALCULATED)) {
-
-        @Override
-        FunctionNode transform(final Compiler compiler, final CompilationPhases phases, final FunctionNode fn) {
-            final FunctionNode newFunctionNode = (FunctionNode)fn.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
-                private void tagUsed(final CompileUnitHolder node) {
-                    assert node.getCompileUnit() != null : "no compile unit in " + node;
-                    node.getCompileUnit().setUsed();
-                }
-
-                @Override
-                public Node leaveFunctionNode(final FunctionNode node) {
-                    tagUsed(node);
-                    return node;
-                }
-
-                @Override
-                public Node leaveSplitNode(final SplitNode node) {
-                    tagUsed(node);
-                    return node;
-                }
-
-                @Override
-                public Node leaveLiteralNode(final LiteralNode<?> node) {
-                    if (node instanceof ArrayLiteralNode) {
-                        final ArrayLiteralNode aln = (ArrayLiteralNode)node;
-                        if (aln.getUnits() != null) {
-                            for (final ArrayUnit au : aln.getUnits()) {
-                                tagUsed(au);
-                            }
-                        }
-                        return aln;
-                    }
-                    return node;
-                }
-
-                @Override
-                public Node leaveDefault(final Node node) {
-                    return node.ensureUniqueLabels(lc);
-                }
-            });
-
-            return newFunctionNode;
-        }
-
-        @Override
-        public String toString() {
-            return "'Tag Compile Units Used'";
-        }
-    },
 
     /**
      * Reuse compile units, if they are already present. We are using the same compiler
@@ -401,6 +336,8 @@ enum CompilationPhase {
                 if (phases.isRestOfCompilation()) {
                     sb.append("$restOf");
                 }
+                //it's ok to not copy the initCount, methodCount and clinitCount here, as codegen is what
+                //fills those out anyway. Thus no need for a copy constructor
                 final CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
@@ -425,7 +362,6 @@ enum CompilationPhase {
                     assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
 
                     log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
-                    newUnit.setUsed();
                     return node.setCompileUnit(lc, newUnit).setState(lc, CompilationState.COMPILE_UNITS_REUSED);
                 }
 
@@ -438,7 +374,6 @@ enum CompilationPhase {
                     assert newUnit != null : "old unit has no mapping to new unit " + oldUnit;
 
                     log.fine("Replacing compile unit: ", oldUnit, " => ", newUnit, " in ", quote(node.getName()));
-                    newUnit.setUsed();
                     return node.setCompileUnit(lc, newUnit);
                 }
 
@@ -453,7 +388,6 @@ enum CompilationPhase {
                         for (final ArrayUnit au : aln.getUnits()) {
                             final CompileUnit newUnit = map.get(au.getCompileUnit());
                             assert newUnit != null;
-                            newUnit.setUsed();
                             newArrayUnits.add(new ArrayUnit(newUnit, au.getLo(), au.getHi()));
                         }
                         return aln.setUnits(lc, newArrayUnits);
@@ -500,8 +434,14 @@ enum CompilationPhase {
 
             FunctionNode newFunctionNode = fn;
 
+            //root class is special, as it is bootstrapped from createProgramFunction, thus it's skipped
+            //in CodeGeneration - the rest can be used as a working "is compile unit used" metric
+            fn.getCompileUnit().setUsed();
+
             compiler.getLogger().fine("Starting bytecode generation for ", quote(fn.getName()), " - restOf=", phases.isRestOfCompilation());
+
             final CodeGenerator codegen = new CodeGenerator(compiler, phases.isRestOfCompilation() ? compiler.getContinuationEntryPoints() : null);
+
             try {
                 // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
                 // in the lazy + optimistic world. See CodeGenerator.skipFunction().
@@ -522,19 +462,21 @@ enum CompilationPhase {
             }
 
             for (final CompileUnit compileUnit : compiler.getCompileUnits()) {
+                final ClassEmitter classEmitter = compileUnit.getClassEmitter();
+                classEmitter.end();
+
                 if (!compileUnit.isUsed()) {
                     compiler.getLogger().fine("Skipping unused compile unit ", compileUnit);
                     continue;
                 }
 
-                final ClassEmitter classEmitter = compileUnit.getClassEmitter();
-                classEmitter.end();
-
                 final byte[] bytecode = classEmitter.toByteArray();
                 assert bytecode != null;
 
                 final String className = compileUnit.getUnitClassName();
-                compiler.addClass(className, bytecode);
+                compiler.addClass(className, bytecode); //classes are only added to the bytecode map if compile unit is used
+
+                CompileUnit.increaseEmitCount();
 
                 // should we verify the generated code?
                 if (senv._verify_code) {
