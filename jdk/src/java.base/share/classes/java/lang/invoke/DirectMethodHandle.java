@@ -260,9 +260,10 @@ class DirectMethodHandle extends MethodHandle {
         } else {
             names[GET_MEMBER] = new Name(Lazy.NF_internalMemberName, names[DMH_THIS]);
         }
+        assert(findDirectMethodHandle(names[GET_MEMBER]) == names[DMH_THIS]);
         Object[] outArgs = Arrays.copyOfRange(names, ARG_BASE, GET_MEMBER+1, Object[].class);
         assert(outArgs[outArgs.length-1] == names[GET_MEMBER]);  // look, shifted args!
-        int result = LambdaForm.LAST_RESULT;
+        int result = LAST_RESULT;
         if (doesAlloc) {
             assert(outArgs[outArgs.length-2] == names[NEW_OBJ]);  // got to move this one
             System.arraycopy(outArgs, 0, outArgs, 1, outArgs.length-2);
@@ -275,6 +276,16 @@ class DirectMethodHandle extends MethodHandle {
         // This is a tricky bit of code.  Don't send it through the LF interpreter.
         lform.compileToBytecode();
         return lform;
+    }
+
+    static Object findDirectMethodHandle(Name name) {
+        if (name.function == Lazy.NF_internalMemberName ||
+            name.function == Lazy.NF_internalMemberNameEnsureInit ||
+            name.function == Lazy.NF_constructorMethod) {
+            assert(name.arguments.length == 1);
+            return name.arguments[0];
+        }
+        return null;
     }
 
     private static void maybeCompile(LambdaForm lform, MemberName m) {
