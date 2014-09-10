@@ -530,7 +530,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      * Pre-initialized NamedFunctions for bootstrapping purposes.
      * Factored in an inner class to delay initialization until first usage.
      */
-    private static class Lazy {
+    static class Lazy {
         private static final Class<?> MHI = MethodHandleImpl.class;
 
         static final NamedFunction NF_checkSpreadArgument;
