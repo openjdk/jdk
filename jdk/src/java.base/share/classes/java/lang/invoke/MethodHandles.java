@@ -2508,32 +2508,36 @@ assertEquals("XY", (String) f2.invokeExact("x", "y")); // XY
      */
     public static
     MethodHandle filterArguments(MethodHandle target, int pos, MethodHandle... filters) {
-        MethodType targetType = target.type();
+        filterArgumentsCheckArity(target, pos, filters);
         MethodHandle adapter = target;
-        MethodType adapterType = null;
-        assert((adapterType = targetType) != null);
-        int maxPos = targetType.parameterCount();
-        if (pos + filters.length > maxPos)
-            throw newIllegalArgumentException("too many filters");
         int curPos = pos-1;  // pre-incremented
         for (MethodHandle filter : filters) {
             curPos += 1;
             if (filter == null)  continue;  // ignore null elements of filters
             adapter = filterArgument(adapter, curPos, filter);
-            assert((adapterType = adapterType.changeParameterType(curPos, filter.type().parameterType(0))) != null);
         }
-        assert(adapterType.equals(adapter.type()));
         return adapter;
     }
 
     /*non-public*/ static
     MethodHandle filterArgument(MethodHandle target, int pos, MethodHandle filter) {
+        filterArgumentChecks(target, pos, filter);
+        return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
+    }
+
+    private static void filterArgumentsCheckArity(MethodHandle target, int pos, MethodHandle[] filters) {
+        MethodType targetType = target.type();
+        int maxPos = targetType.parameterCount();
+        if (pos + filters.length > maxPos)
+            throw newIllegalArgumentException("too many filters");
+    }
+
+    private static void filterArgumentChecks(MethodHandle target, int pos, MethodHandle filter) throws RuntimeException {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
         if (filterType.parameterCount() != 1
             || filterType.returnType() != targetType.parameterType(pos))
             throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
-        return MethodHandleImpl.makeCollectArguments(target, filter, pos, false);
     }
 
     /**
@@ -2713,15 +2717,17 @@ System.out.println((int) f0.invokeExact("x", "y")); // 2
     MethodHandle filterReturnValue(MethodHandle target, MethodHandle filter) {
         MethodType targetType = target.type();
         MethodType filterType = filter.type();
+        filterReturnValueChecks(targetType, filterType);
+        return MethodHandleImpl.makeCollectArguments(filter, target, 0, false);
+    }
+
+    private static void filterReturnValueChecks(MethodType targetType, MethodType filterType) throws RuntimeException {
         Class<?> rtype = targetType.returnType();
         int filterValues = filterType.parameterCount();
         if (filterValues == 0
                 ? (rtype != void.class)
                 : (rtype != filterType.parameterType(0)))
-            throw newIllegalArgumentException("target and filter types do not match", target, filter);
-        // result = fold( lambda(retval, arg...) { filter(retval) },
-        //                lambda(        arg...) { target(arg...) } )
-        return MethodHandleImpl.makeCollectArguments(filter, target, 0, false);
+            throw newIllegalArgumentException("target and filter types do not match", targetType, filterType);
     }
 
     /**
@@ -2802,24 +2808,28 @@ assertEquals("boojum", (String) catTrace.invokeExact("boo", "jum"));
      */
     public static
     MethodHandle foldArguments(MethodHandle target, MethodHandle combiner) {
-        int pos = 0;
+        int foldPos = 0;
         MethodType targetType = target.type();
         MethodType combinerType = combiner.type();
-        int foldPos = pos;
-        int foldArgs = combinerType.parameterCount();
-        int foldVals = combinerType.returnType() == void.class ? 0 : 1;
+        Class<?> rtype = foldArgumentChecks(foldPos, targetType, combinerType);
+        return MethodHandleImpl.makeCollectArguments(target, combiner, foldPos, true);
+    }
+
+    private static Class<?> foldArgumentChecks(int foldPos, MethodType targetType, MethodType combinerType) {
+        int foldArgs   = combinerType.parameterCount();
+        Class<?> rtype = combinerType.returnType();
+        int foldVals = rtype == void.class ? 0 : 1;
         int afterInsertPos = foldPos + foldVals;
         boolean ok = (targetType.parameterCount() >= afterInsertPos + foldArgs);
         if (ok && !(combinerType.parameterList()
                     .equals(targetType.parameterList().subList(afterInsertPos,
                                                                afterInsertPos + foldArgs))))
             ok = false;
-        if (ok && foldVals != 0 && !combinerType.returnType().equals(targetType.parameterType(0)))
+        if (ok && foldVals != 0 && combinerType.returnType() != targetType.parameterType(0))
             ok = false;
         if (!ok)
             throw misMatchedTypes("target and combiner types", targetType, combinerType);
-        MethodType newType = targetType.dropParameterTypes(foldPos, afterInsertPos);
-        return MethodHandleImpl.makeCollectArguments(target, combiner, foldPos, true);
+        return rtype;
     }
 
     /**
