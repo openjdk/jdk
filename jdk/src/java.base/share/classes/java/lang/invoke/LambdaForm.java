@@ -124,8 +124,7 @@ class LambdaForm {
     MemberName vmentry;   // low-level behavior, or null if not yet prepared
     private boolean isCompiled;
 
-    // Caches for common structural transforms:
-    LambdaForm[] bindCache;
+    Object transformCache;  // managed by LambdaFormEditor
 
     public static final int VOID_RESULT = -1, LAST_RESULT = -2;
 
@@ -212,6 +211,13 @@ class LambdaForm {
                 btypes[i] = basicType(types.charAt(i));
             }
             return btypes;
+        }
+        static byte[] basicTypesOrd(BasicType[] btypes) {
+            byte[] ords = new byte[btypes.length];
+            for (int i = 0; i < btypes.length; i++) {
+                ords[i] = (byte)btypes[i].ordinal();
+            }
+            return ords;
         }
         static boolean isBasicTypeChar(char c) {
             return "LIJFDV".indexOf(c) >= 0;
@@ -408,7 +414,7 @@ class LambdaForm {
      * This allows Name references to be freely reused to construct
      * fresh lambdas, without confusion.
      */
-    private boolean nameRefsAreLegal() {
+    boolean nameRefsAreLegal() {
         assert(arity >= 0 && arity <= names.length);
         assert(result >= -1 && result < names.length);
         // Do all names possess an index consistent with their local definition order?
@@ -887,87 +893,8 @@ class LambdaForm {
     public int hashCode() {
         return result + 31 * Arrays.hashCode(names);
     }
-
-    LambdaForm bind(int namePos, BoundMethodHandle.SpeciesData oldData) {
-        Name name = names[namePos];
-        BoundMethodHandle.SpeciesData newData = oldData.extendWith(name.type);
-        return bind(name, new Name(newData.getterFunction(oldData.fieldCount()), names[0]), oldData, newData);
-    }
-    LambdaForm bind(Name name, Name binding,
-                    BoundMethodHandle.SpeciesData oldData,
-                    BoundMethodHandle.SpeciesData newData) {
-        int pos = name.index;
-        assert(name.isParam());
-        assert(!binding.isParam());
-        assert(name.type == binding.type);
-        assert(0 <= pos && pos < arity && names[pos] == name);
-        assert(binding.function.memberDeclaringClassOrNull() == newData.fieldHolder());
-        assert(oldData.getterFunctions().length == newData.getterFunctions().length-1);
-        if (bindCache != null) {
-            LambdaForm form = bindCache[pos];
-            if (form != null) {
-                assert(form.contains(binding)) : "form << " + form + " >> does not contain binding << " + binding + " >>";
-                return form;
-            }
-        } else {
-            bindCache = new LambdaForm[arity];
-        }
-        assert(nameRefsAreLegal());
-        int arity2 = arity-1;
-        Name[] names2 = names.clone();
-        names2[pos] = binding;  // we might move this in a moment
-
-        // The newly created LF will run with a different BMH.
-        // Switch over any pre-existing BMH field references to the new BMH class.
-        int firstOldRef = -1;
-        for (int i = 0; i < names2.length; i++) {
-            Name n = names[i];
-            if (n.function != null &&
-                n.function.memberDeclaringClassOrNull() == oldData.fieldHolder()) {
-                MethodHandle oldGetter = n.function.resolvedHandle;
-                MethodHandle newGetter = null;
-                for (int j = 0; j < oldData.getterHandles().length; j++) {
-                    if (oldGetter == oldData.getterHandles()[j])
-                        newGetter =  newData.getterHandles()[j];
-                }
-                if (newGetter != null) {
-                    if (firstOldRef < 0)  firstOldRef = i;
-                    Name n2 = new Name(newGetter, n.arguments);
-                    names2[i] = n2;
-                }
-            }
-        }
-
-        // Walk over the new list of names once, in forward order.
-        // Replace references to 'name' with 'binding'.
-        // Replace data structure references to the old BMH species with the new.
-        // This might cause a ripple effect, but it will settle in one pass.
-        assert(firstOldRef < 0 || firstOldRef > pos);
-        for (int i = pos+1; i < names2.length; i++) {
-            if (i <= arity2)  continue;
-            names2[i] = names2[i].replaceNames(names, names2, pos, i);
-        }
-
-        //  (a0, a1, name=a2, a3, a4)  =>  (a0, a1, a3, a4, binding)
-        int insPos = pos;
-        for (; insPos+1 < names2.length; insPos++) {
-            Name n = names2[insPos+1];
-            if (n.isParam()) {
-                names2[insPos] = n;
-            } else {
-                break;
-            }
-        }
-        names2[insPos] = binding;
-
-        // Since we moved some stuff, maybe update the result reference:
-        int result2 = result;
-        if (result2 == pos)
-            result2 = insPos;
-        else if (result2 > pos && result2 <= insPos)
-            result2 -= 1;
-
-        return bindCache[pos] = new LambdaForm(debugName, arity2, names2, result2);
+    LambdaFormEditor editor() {
+        return LambdaFormEditor.lambdaFormEditor(this);
     }
 
     boolean contains(Name name) {

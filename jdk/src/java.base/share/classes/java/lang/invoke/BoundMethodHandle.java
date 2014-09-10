@@ -54,6 +54,7 @@ import jdk.internal.org.objectweb.asm.Type;
 
     /*non-public*/ BoundMethodHandle(MethodType type, LambdaForm form) {
         super(type, form);
+        assert(speciesData() == speciesData(form));
     }
 
     //
@@ -81,6 +82,11 @@ import jdk.internal.org.objectweb.asm.Type;
         }
     }
 
+    /*non-public*/
+    LambdaFormEditor editor() {
+        return form.editor();
+    }
+
     static BoundMethodHandle bindSingle(MethodType type, LambdaForm form, Object x) {
         return Species_L.make(type, form, x);
     }
@@ -88,33 +94,23 @@ import jdk.internal.org.objectweb.asm.Type;
     @Override // there is a default binder in the super class, for 'L' types only
     /*non-public*/
     BoundMethodHandle bindArgumentL(int pos, Object value) {
-        MethodType type = type().dropParameterTypes(pos, pos+1);
-        LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return copyWithExtendL(type, form, value);
+        return editor().bindArgumentL(this, pos, value);
     }
     /*non-public*/
     BoundMethodHandle bindArgumentI(int pos, int value) {
-        MethodType type = type().dropParameterTypes(pos, pos+1);
-        LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return copyWithExtendI(type, form, value);
+        return editor().bindArgumentI(this, pos, value);
     }
     /*non-public*/
     BoundMethodHandle bindArgumentJ(int pos, long value) {
-        MethodType type = type().dropParameterTypes(pos, pos+1);
-        LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return copyWithExtendJ(type, form, value);
+        return editor().bindArgumentJ(this, pos, value);
     }
     /*non-public*/
     BoundMethodHandle bindArgumentF(int pos, float value) {
-        MethodType type = type().dropParameterTypes(pos, pos+1);
-        LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return copyWithExtendF(type, form, value);
+        return editor().bindArgumentF(this, pos, value);
     }
     /*non-public*/
     BoundMethodHandle bindArgumentD(int pos, double value) {
-        MethodType type = type().dropParameterTypes(pos, pos + 1);
-        LambdaForm form = internalForm().bind(1+pos, speciesData());
-        return copyWithExtendD(type, form, value);
+        return editor().bindArgumentD(this, pos, value);
     }
 
     @Override
@@ -148,6 +144,14 @@ import jdk.internal.org.objectweb.asm.Type;
      * static field containing this value, and they must accordingly implement this method.
      */
     /*non-public*/ abstract SpeciesData speciesData();
+
+    /*non-public*/ static SpeciesData speciesData(LambdaForm form) {
+        Object c = form.names[0].constraint;
+        if (c instanceof SpeciesData)
+            return (SpeciesData) c;
+        // if there is no BMH constraint, then use the null constraint
+        return SpeciesData.EMPTY;
+    }
 
     /**
      * Return the number of fields in this BMH.  Equivalent to speciesData().fieldCount().
