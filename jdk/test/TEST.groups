@@ -124,18 +124,29 @@ jdk_security2 = \
 
 jdk_security3 = \
     javax/security  \
+    -javax/security/auth/kerberos \
     com/sun/security \
+    -com/sun/security/jgss \
     com/sun/org/apache/xml/internal/security \
     sun/security \
+    -sun/security/krb5 \
+    -sun/security/jgss \
     javax/net \
     sun/net/www/protocol/https \
     com/sun/net/ssl \
     lib/security
 
+jdk_security4 = \
+    com/sun/security/jgss \
+    javax/security/auth/kerberos \
+    sun/security/krb5 \
+    sun/security/jgss
+
 jdk_security = \
     :jdk_security1 \
     :jdk_security2 \
-    :jdk_security3
+    :jdk_security3 \
+    :jdk_security4
 
 jdk_text = \
     java/text \
