@@ -106,18 +106,18 @@
 # include <sys/syscall.h>
 
 #if defined(__FreeBSD__) || defined(__NetBSD__)
-# include <elf.h>
+  #include <elf.h>
 #endif
 
 #ifdef __APPLE__
-# include <mach/mach.h> // semaphore_* API
-# include <mach-o/dyld.h>
-# include <sys/proc_info.h>
-# include <objc/objc-auto.h>
+  #include <mach/mach.h> // semaphore_* API
+  #include <mach-o/dyld.h>
+  #include <sys/proc_info.h>
+  #include <objc/objc-auto.h>
 #endif
 
 #ifndef MAP_ANONYMOUS
-#define MAP_ANONYMOUS MAP_ANON
+  #define MAP_ANONYMOUS MAP_ANON
 #endif
 
 #define MAX_PATH    (2 * K)
@@ -152,9 +152,9 @@ static bool check_signals = true;
 
 static pid_t _initial_pid = 0;
 
-/* Signal number used to suspend/resume a thread */
+// Signal number used to suspend/resume a thread
 
-/* do not use any signal number less than SIGSEGV, see 4355769 */
+// do not use any signal number less than SIGSEGV, see 4355769
 static int SR_signum = SIGUSR2;
 sigset_t SR_sigset;
 
@@ -232,20 +232,20 @@ static char cpu_arch[] = "arm";
 #elif defined(PPC32)
 static char cpu_arch[] = "ppc";
 #elif defined(SPARC)
-#  ifdef _LP64
+  #ifdef _LP64
 static char cpu_arch[] = "sparcv9";
-#  else
+  #else
 static char cpu_arch[] = "sparc";
-#  endif
+  #endif
 #else
-#error Add appropriate cpu_arch setting
+  #error Add appropriate cpu_arch setting
 #endif
 
 // Compiler variant
 #ifdef COMPILER2
-#define COMPILER_VARIANT "server"
+  #define COMPILER_VARIANT "server"
 #else
-#define COMPILER_VARIANT "client"
+  #define COMPILER_VARIANT "client"
 #endif
 
 
@@ -255,21 +255,19 @@ void os::Bsd::initialize_system_info() {
   int cpu_val;
   julong mem_val;
 
-  /* get processors count via hw.ncpus sysctl */
+  // get processors count via hw.ncpus sysctl
   mib[0] = CTL_HW;
   mib[1] = HW_NCPU;
   len = sizeof(cpu_val);
   if (sysctl(mib, 2, &cpu_val, &len, NULL, 0) != -1 && cpu_val >= 1) {
     assert(len == sizeof(cpu_val), "unexpected data size");
     set_processor_count(cpu_val);
-  }
-  else {
+  } else {
     set_processor_count(1);   // fallback
   }
 
-  /* get physical memory via hw.memsize sysctl (hw.memsize is used
-   * since it returns a 64 bit value)
-   */
+  // get physical memory via hw.memsize sysctl (hw.memsize is used
+  // since it returns a 64 bit value)
   mib[0] = CTL_HW;
 
 #if defined (HW_MEMSIZE) // Apple
@@ -287,7 +285,7 @@ void os::Bsd::initialize_system_info() {
     assert(len == sizeof(mem_val), "unexpected data size");
     _physical_memory = mem_val;
   } else {
-    _physical_memory = 256*1024*1024;       // fallback (XXXBSD?)
+    _physical_memory = 256 * 1024 * 1024;       // fallback (XXXBSD?)
   }
 
 #ifdef __OpenBSD__
@@ -342,14 +340,14 @@ void os::init_system_properties_values() {
   // Important note: if the location of libjvm.so changes this
   // code needs to be changed accordingly.
 
-// See ld(1):
-//      The linker uses the following search paths to locate required
-//      shared libraries:
-//        1: ...
-//        ...
-//        7: The default directories, normally /lib and /usr/lib.
+  // See ld(1):
+  //      The linker uses the following search paths to locate required
+  //      shared libraries:
+  //        1: ...
+  //        ...
+  //        7: The default directories, normally /lib and /usr/lib.
 #ifndef DEFAULT_LIBPATH
-#define DEFAULT_LIBPATH "/lib:/usr/lib"
+  #define DEFAULT_LIBPATH "/lib:/usr/lib"
 #endif
 
 // Base path of extensions installed on the system.
@@ -435,8 +433,8 @@ void os::init_system_properties_values() {
 
 #else // __APPLE__
 
-#define SYS_EXTENSIONS_DIR   "/Library/Java/Extensions"
-#define SYS_EXTENSIONS_DIRS  SYS_EXTENSIONS_DIR ":/Network" SYS_EXTENSIONS_DIR ":/System" SYS_EXTENSIONS_DIR ":/usr/lib/java"
+  #define SYS_EXTENSIONS_DIR   "/Library/Java/Extensions"
+  #define SYS_EXTENSIONS_DIRS  SYS_EXTENSIONS_DIR ":/Network" SYS_EXTENSIONS_DIR ":/System" SYS_EXTENSIONS_DIR ":/usr/lib/java"
 
   const char *user_home_dir = get_home();
   // The null in SYS_EXTENSIONS_DIRS counts for the size of the colon after user_home_dir.
@@ -565,10 +563,11 @@ bool os::Bsd::is_sig_ignored(int sig) {
   sigaction(sig, (struct sigaction*)NULL, &oact);
   void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
                                  : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
-  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN))
+  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 void os::Bsd::signal_sets_init() {
@@ -611,8 +610,9 @@ void os::Bsd::signal_sets_init() {
   }
   // Fill in signals that are blocked by all but the VM thread.
   sigemptyset(&vm_sigs);
-  if (!ReduceSignalUsage)
+  if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
+  }
   debug_only(signal_sets_initialized = true);
 
 }
@@ -671,8 +671,8 @@ static bool _thread_safety_check(Thread* thread) {
 #ifdef __APPLE__
 // library handle for calling objc_registerThreadWithCollector()
 // without static linking to the libobjc library
-#define OBJC_LIB "/usr/lib/libobjc.dylib"
-#define OBJC_GCREGISTER "objc_registerThreadWithCollector"
+  #define OBJC_LIB "/usr/lib/libobjc.dylib"
+  #define OBJC_GCREGISTER "objc_registerThreadWithCollector"
 typedef void (*objc_registerThreadWithCollector_t)();
 extern "C" objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction;
 objc_registerThreadWithCollector_t objc_registerThreadWithCollectorFunction = NULL;
@@ -997,9 +997,9 @@ jlong os::javaTimeMillis() {
 }
 
 #ifndef __APPLE__
-#ifndef CLOCK_MONOTONIC
-#define CLOCK_MONOTONIC (1)
-#endif
+  #ifndef CLOCK_MONOTONIC
+    #define CLOCK_MONOTONIC (1)
+  #endif
 #endif
 
 #ifdef __APPLE__
@@ -1176,7 +1176,6 @@ void os::die() {
 // from src/solaris/hpi/src/system_md.c
 
 size_t os::lasterror(char *buf, size_t len) {
-
   if (errno == 0)  return 0;
 
   const char *s = ::strerror(errno);
@@ -1246,9 +1245,9 @@ int os::current_process_id() {
 
 #define JNI_LIB_PREFIX "lib"
 #ifdef __APPLE__
-#define JNI_LIB_SUFFIX ".dylib"
+  #define JNI_LIB_SUFFIX ".dylib"
 #else
-#define JNI_LIB_SUFFIX ".so"
+  #define JNI_LIB_SUFFIX ".so"
 #endif
 
 const char* os::dll_file_extension() { return JNI_LIB_SUFFIX; }
@@ -1269,9 +1268,9 @@ const char* os::get_temp_directory() {
   }
   return temp_path;
 }
-#else /* __APPLE__ */
+#else // __APPLE__
 const char* os::get_temp_directory() { return "/tmp"; }
-#endif /* __APPLE__ */
+#endif // __APPLE__
 
 static bool file_exists(const char* filename) {
   struct stat statbuf;
@@ -1378,8 +1377,7 @@ bool os::dll_address_to_function_name(address addr, char *buf,
 
     // Handle non-dynamic manually:
     if (dlinfo.dli_fbase != NULL &&
-        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset,
-        dlinfo.dli_fbase)) {
+        Decoder::decode(addr, localbuf, MACH_MAXSYMLEN, offset, dlinfo.dli_fbase)) {
       if (!Decoder::demangle(localbuf, buf, buflen)) {
         jio_snprintf(buf, buflen, "%s", localbuf);
       }
@@ -1433,8 +1431,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   return NULL;
 }
 #else
-void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
-{
+void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1482,27 +1479,27 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
   } arch_t;
 
   #ifndef EM_486
-  #define EM_486          6               /* Intel 80486 */
+    #define EM_486          6               /* Intel 80486 */
   #endif
 
   #ifndef EM_MIPS_RS3_LE
-  #define EM_MIPS_RS3_LE  10              /* MIPS */
+    #define EM_MIPS_RS3_LE  10              /* MIPS */
   #endif
 
   #ifndef EM_PPC64
-  #define EM_PPC64        21              /* PowerPC64 */
+    #define EM_PPC64        21              /* PowerPC64 */
   #endif
 
   #ifndef EM_S390
-  #define EM_S390         22              /* IBM System/390 */
+    #define EM_S390         22              /* IBM System/390 */
   #endif
 
   #ifndef EM_IA_64
-  #define EM_IA_64        50              /* HP/Intel IA-64 */
+    #define EM_IA_64        50              /* HP/Intel IA-64 */
   #endif
 
   #ifndef EM_X86_64
-  #define EM_X86_64       62              /* AMD x86-64 */
+    #define EM_X86_64       62              /* AMD x86-64 */
   #endif
 
   static const arch_t arch_array[]={
@@ -1608,7 +1605,7 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
 
   return NULL;
 }
-#endif /* !__APPLE__ */
+#endif // !__APPLE__
 
 void* os::get_default_process_handle() {
 #ifdef __APPLE__
@@ -1792,8 +1789,9 @@ void os::jvm_path(char *buf, jint buflen) {
   if (ret && dli_fname[0] != '\0') {
     rp = realpath(dli_fname, buf);
   }
-  if (rp == NULL)
+  if (rp == NULL) {
     return;
+  }
 
   if (Arguments::sun_java_launcher_is_altjvm()) {
     // Support for the java launcher's '-XXaltjvm=<path>' option. Typical
@@ -1822,8 +1820,9 @@ void os::jvm_path(char *buf, jint buflen) {
         assert(strstr(p, "/libjvm") == p, "invalid library name");
 
         rp = realpath(java_home_var, buf);
-        if (rp == NULL)
+        if (rp == NULL) {
           return;
+        }
 
         // determine if this is a legacy image or modules image
         // modules image doesn't have "jre" subdirectory
@@ -1855,8 +1854,9 @@ void os::jvm_path(char *buf, jint buflen) {
         } else {
           // Fall back to path of current library
           rp = realpath(dli_fname, buf);
-          if (rp == NULL)
+          if (rp == NULL) {
             return;
+          }
         }
       }
     }
@@ -1878,13 +1878,13 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 
 static volatile jint sigint_count = 0;
 
-static void
-UserHandler(int sig, void *siginfo, void *context) {
+static void UserHandler(int sig, void *siginfo, void *context) {
   // 4511530 - sem_post is serialized and handled by the manager thread. When
   // the program is interrupted by Ctrl-C, SIGINT is sent to every thread. We
   // don't want to flood the manager thread with sem_post requests.
-  if (sig == SIGINT && Atomic::add(1, &sigint_count) > 1)
+  if (sig == SIGINT && Atomic::add(1, &sigint_count) > 1) {
     return;
+  }
 
   // Ctrl-C is pressed during error reporting, likely because the error
   // handler fails to abort. Let VM die immediately.
@@ -1923,10 +1923,8 @@ void os::signal_raise(int signal_number) {
   ::raise(signal_number);
 }
 
-/*
- * The following code is moved from os.cpp for making this
- * code platform specific, which it is by its very nature.
- */
+// The following code is moved from os.cpp for making this
+// code platform specific, which it is by its very nature.
 
 // Will be modified when max signal is changed to be dynamic
 int os::sigexitnum_pd() {
@@ -1939,16 +1937,18 @@ static volatile jint pending_signals[NSIG+1] = { 0 };
 // Bsd(POSIX) specific hand shaking semaphore.
 #ifdef __APPLE__
 typedef semaphore_t os_semaphore_t;
-#define SEM_INIT(sem, value)    semaphore_create(mach_task_self(), &sem, SYNC_POLICY_FIFO, value)
-#define SEM_WAIT(sem)           semaphore_wait(sem)
-#define SEM_POST(sem)           semaphore_signal(sem)
-#define SEM_DESTROY(sem)        semaphore_destroy(mach_task_self(), sem)
+
+  #define SEM_INIT(sem, value)    semaphore_create(mach_task_self(), &sem, SYNC_POLICY_FIFO, value)
+  #define SEM_WAIT(sem)           semaphore_wait(sem)
+  #define SEM_POST(sem)           semaphore_signal(sem)
+  #define SEM_DESTROY(sem)        semaphore_destroy(mach_task_self(), sem)
 #else
 typedef sem_t os_semaphore_t;
-#define SEM_INIT(sem, value)    sem_init(&sem, 0, value)
-#define SEM_WAIT(sem)           sem_wait(&sem)
-#define SEM_POST(sem)           sem_post(&sem)
-#define SEM_DESTROY(sem)        sem_destroy(&sem)
+
+  #define SEM_INIT(sem, value)    sem_init(&sem, 0, value)
+  #define SEM_WAIT(sem)           sem_wait(&sem)
+  #define SEM_POST(sem)           sem_post(&sem)
+  #define SEM_DESTROY(sem)        sem_destroy(&sem)
 #endif
 
 class Semaphore : public StackObj {
@@ -2087,12 +2087,10 @@ static int check_pending_signals(bool wait) {
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
       if (threadIsSuspended) {
-        //
         // The semaphore has been incremented, but while we were waiting
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        //
         ::SEM_POST(sig_sem);
 
         thread->java_suspend_self();
@@ -2393,9 +2391,8 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
   char *addr;
 
   bool warn_on_failure = UseLargePages &&
-                        (!FLAG_IS_DEFAULT(UseLargePages) ||
-                         !FLAG_IS_DEFAULT(LargePageSizeInBytes)
-                        );
+                         (!FLAG_IS_DEFAULT(UseLargePages) ||
+                          !FLAG_IS_DEFAULT(LargePageSizeInBytes));
 
   // Create a large shared memory region to attach to based on size.
   // Currently, size is the total size of the heap
@@ -2573,8 +2570,7 @@ void os::naked_short_sleep(jlong ms) {
   req.tv_sec = 0;
   if (ms > 0) {
     req.tv_nsec = (ms % 1000) * 1000000;
-  }
-  else {
+  } else {
     req.tv_nsec = 1;
   }
 
@@ -2637,7 +2633,7 @@ int os::java_to_os_priority[CriticalPriority + 1] = {
   31               // 11 CriticalPriority
 };
 #else
-/* Using Mach high-level priority assignments */
+// Using Mach high-level priority assignments
 int os::java_to_os_priority[CriticalPriority + 1] = {
    0,              // 0 Entry should never be used (MINPRI_USER)
 
@@ -2690,12 +2686,14 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
   int policy;
   pthread_t self = pthread_self();
 
-  if (pthread_getschedparam(self, &policy, &sp) != 0)
+  if (pthread_getschedparam(self, &policy, &sp) != 0) {
     return OS_ERR;
+  }
 
   sp.sched_priority = newpri;
-  if (pthread_setschedparam(self, policy, &sp) != 0)
+  if (pthread_setschedparam(self, policy, &sp) != 0) {
     return OS_ERR;
+  }
 
   return OS_OK;
 #else
@@ -2751,7 +2749,6 @@ void os::hint_no_preempt() {}
 //      - sends signal to end the sigsuspend loop in the SR_handler
 //
 //  Note that the SR_lock plays no role in this suspend/resume protocol.
-//
 
 static void resume_clear_context(OSThread *osthread) {
   osthread->set_ucontext(NULL);
@@ -2763,7 +2760,6 @@ static void suspend_save_context(OSThread *osthread, siginfo_t* siginfo, ucontex
   osthread->set_siginfo(siginfo);
 }
 
-//
 // Handler function invoked when a thread's execution is suspended or
 // resumed. We have to be careful that only async-safe functions are
 // called here (Note: most pthread functions are not async safe and
@@ -2835,7 +2831,7 @@ static void SR_handler(int sig, siginfo_t* siginfo, ucontext_t* context) {
 static int SR_initialize() {
   struct sigaction act;
   char *s;
-  /* Get signal number to use for suspend/resume */
+  // Get signal number to use for suspend/resume
   if ((s = ::getenv("_JAVA_SR_SIGNUM")) != 0) {
     int sig = ::strtol(s, 0, 10);
     if (sig > 0 || sig < NSIG) {
@@ -2849,7 +2845,7 @@ static int SR_initialize() {
   sigemptyset(&SR_sigset);
   sigaddset(&SR_sigset, SR_signum);
 
-  /* Set up signal handler for suspend/resume */
+  // Set up signal handler for suspend/resume
   act.sa_flags = SA_RESTART|SA_SIGINFO;
   act.sa_handler = (void (*)(int)) SR_handler;
 
@@ -2975,9 +2971,9 @@ static void do_resume(OSThread* osthread) {
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" JNIEXPORT int
-JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
-                      void* ucontext, int abort_if_unrecognized);
+extern "C" JNIEXPORT int JVM_handle_bsd_signal(int signo, siginfo_t* siginfo,
+                                               void* ucontext,
+                                               int abort_if_unrecognized);
 
 void signalHandler(int sig, siginfo_t* info, void* uc) {
   assert(info != NULL && uc != NULL, "it must be old kernel");
@@ -3243,7 +3239,7 @@ void os::Bsd::install_signal_handlers() {
 // We will never set this flag, and we should
 // ignore this flag in our diagnostic
 #ifdef SIGNIFICANT_SIGNAL_MASK
-#undef SIGNIFICANT_SIGNAL_MASK
+  #undef SIGNIFICANT_SIGNAL_MASK
 #endif
 #define SIGNIFICANT_SIGNAL_MASK (~0x04000000)
 
@@ -3315,9 +3311,12 @@ static void print_signal_handler(outputStream* st, int sig,
 }
 
 
-#define DO_SIGNAL_CHECK(sig) \
-  if (!sigismember(&check_signal_done, sig)) \
-    os::Bsd::check_signal_handler(sig)
+#define DO_SIGNAL_CHECK(sig)                      \
+  do {                                            \
+    if (!sigismember(&check_signal_done, sig)) {  \
+      os::Bsd::check_signal_handler(sig);         \
+    }                                             \
+  } while (0)
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
@@ -3432,7 +3431,8 @@ void os::Bsd::check_signal_handler(int sig) {
   }
 }
 
-extern void report_error(char* file_name, int line_no, char* title, char* format, ...);
+extern void report_error(char* file_name, int line_no, char* title,
+                         char* format, ...);
 
 extern bool signal_name(int signo, char* buf, size_t len);
 
@@ -3450,7 +3450,7 @@ const char* os::exception_name(int exception_code, char* buf, size_t size) {
 
 // this is called _before_ the most of global arguments have been parsed
 void os::init(void) {
-  char dummy;   /* used to get a guess on initial stack address */
+  char dummy;   // used to get a guess on initial stack address
 //  first_hrtime = gethrtime();
 
   // With BsdThreads the JavaMain thread pid (primordial thread)
@@ -3503,8 +3503,7 @@ extern "C" {
 }
 
 // this is called _after_ the global arguments have been parsed
-jint os::init_2(void)
-{
+jint os::init_2(void) {
   // Allocate a single page and mark it as readable for safepoint polling
   address polling_page = (address) ::mmap(NULL, Bsd::page_size(), PROT_READ, MAP_PRIVATE|MAP_ANONYMOUS, -1, 0);
   guarantee(polling_page != MAP_FAILED, "os::init_2: failed to allocate polling page");
@@ -3512,8 +3511,10 @@ jint os::init_2(void)
   os::set_polling_page(polling_page);
 
 #ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous)
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n", (intptr_t)polling_page);
+  if (Verbose && PrintMiscellaneous) {
+    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
+               (intptr_t)polling_page);
+  }
 #endif
 
   if (!UseMembar) {
@@ -3522,8 +3523,10 @@ jint os::init_2(void)
     os::set_memory_serialize_page(mem_serialize_page);
 
 #ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous)
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
+    if (Verbose && PrintMiscellaneous) {
+      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
+                 (intptr_t)mem_serialize_page);
+    }
 #endif
   }
 
@@ -3565,8 +3568,9 @@ jint os::init_2(void)
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode))
+      if (PrintMiscellaneous && (Verbose || WizardMode)) {
         perror("os::init_2 getrlimit failed");
+      }
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
 
@@ -3579,8 +3583,9 @@ jint os::init_2(void)
 
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode))
+        if (PrintMiscellaneous && (Verbose || WizardMode)) {
           perror("os::init_2 setrlimit failed");
+        }
       }
     }
   }
@@ -3623,16 +3628,17 @@ void os::init_3(void) { }
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
-  if (!guard_memory((char*)_polling_page, Bsd::page_size()))
+  if (!guard_memory((char*)_polling_page, Bsd::page_size())) {
     fatal("Could not disable polling page");
-};
+  }
+}
 
 // Mark the polling page as readable
 void os::make_polling_page_readable(void) {
   if (!bsd_mprotect((char *)_polling_page, Bsd::page_size(), PROT_READ)) {
     fatal("Could not enable polling page");
   }
-};
+}
 
 int os::active_processor_count() {
   return _processor_count;
@@ -3707,8 +3713,9 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
   return fetcher.result();
 }
 
-int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime)
-{
+int os::Bsd::safe_cond_timedwait(pthread_cond_t *_cond,
+                                 pthread_mutex_t *_mutex,
+                                 const struct timespec *_abstime) {
   return pthread_cond_timedwait(_cond, _mutex, _abstime);
 }
 
@@ -3745,8 +3752,9 @@ bool os::find(address addr, outputStream* st) {
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
       if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
-          && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
+          && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin) {
         end = (address) dlinfo2.dli_saddr;
+      }
       Disassembler::decode(begin, end, st);
     }
     return true;
@@ -3760,9 +3768,9 @@ bool os::find(address addr, outputStream* st) {
 // This does not do anything on Bsd. This is basically a hook for being
 // able to use structured exception handling (thread-local exception filters)
 // on, e.g., Win32.
-void
-os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method,
-                         JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value,
+                              methodHandle* method, JavaCallArguments* args,
+                              Thread* thread) {
   f(value, method, args, thread);
 }
 
@@ -3803,7 +3811,8 @@ bool os::check_heap(bool force) {
 }
 
 ATTRIBUTE_PRINTF(3, 0)
-int local_vsnprintf(char* buf, size_t count, const char* format, va_list args) {
+int local_vsnprintf(char* buf, size_t count, const char* format,
+                    va_list args) {
   return ::vsnprintf(buf, count, format, args);
 }
 
@@ -3815,7 +3824,7 @@ bool os::dir_is_empty(const char* path) {
   dir = opendir(path);
   if (dir == NULL) return true;
 
-  /* Scan the directory */
+  // Scan the directory
   bool result = true;
   char buf[sizeof(struct dirent) + MAX_PATH];
   while (result && (ptr = ::readdir(dir)) != NULL) {
@@ -3831,7 +3840,7 @@ bool os::dir_is_empty(const char* path) {
 // from src/solaris/hpi/src/system_md.c
 
 #ifndef O_DELETE
-#define O_DELETE 0x10000
+  #define O_DELETE 0x10000
 #endif
 
 // Open a file. Unlink the file immediately after open returns
@@ -3839,7 +3848,6 @@ bool os::dir_is_empty(const char* path) {
 // O_DELETE is used only in j2se/src/share/native/java/util/zip/ZipFile.c
 
 int os::open(const char *path, int oflag, int mode) {
-
   if (strlen(path) > MAX_PATH - 1) {
     errno = ENAMETOOLONG;
     return -1;
@@ -3851,7 +3859,7 @@ int os::open(const char *path, int oflag, int mode) {
   fd = ::open(path, oflag, mode);
   if (fd == -1) return -1;
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded, the file might still be a directory
   {
     struct stat buf;
     int ret = ::fstat(fd, &buf);
@@ -3869,33 +3877,33 @@ int os::open(const char *path, int oflag, int mode) {
     }
   }
 
-    /*
-     * All file descriptors that are opened in the JVM and not
-     * specifically destined for a subprocess should have the
-     * close-on-exec flag set.  If we don't set it, then careless 3rd
-     * party native code might fork and exec without closing all
-     * appropriate file descriptors (e.g. as we do in closeDescriptors in
-     * UNIXProcess.c), and this in turn might:
-     *
-     * - cause end-of-file to fail to be detected on some file
-     *   descriptors, resulting in mysterious hangs, or
-     *
-     * - might cause an fopen in the subprocess to fail on a system
-     *   suffering from bug 1085341.
-     *
-     * (Yes, the default setting of the close-on-exec flag is a Unix
-     * design flaw)
-     *
-     * See:
-     * 1085341: 32-bit stdio routines should support file descriptors >255
-     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-     */
+  // All file descriptors that are opened in the JVM and not
+  // specifically destined for a subprocess should have the
+  // close-on-exec flag set.  If we don't set it, then careless 3rd
+  // party native code might fork and exec without closing all
+  // appropriate file descriptors (e.g. as we do in closeDescriptors in
+  // UNIXProcess.c), and this in turn might:
+  //
+  // - cause end-of-file to fail to be detected on some file
+  //   descriptors, resulting in mysterious hangs, or
+  //
+  // - might cause an fopen in the subprocess to fail on a system
+  //   suffering from bug 1085341.
+  //
+  // (Yes, the default setting of the close-on-exec flag is a Unix
+  // design flaw)
+  //
+  // See:
+  // 1085341: 32-bit stdio routines should support file descriptors >255
+  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+  //
 #ifdef FD_CLOEXEC
   {
     int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1)
+    if (flags != -1) {
       ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
   }
 #endif
 
@@ -3936,11 +3944,9 @@ int os::available(int fd, jlong *bytes) {
   if (::fstat(fd, &buf) >= 0) {
     mode = buf.st_mode;
     if (S_ISCHR(mode) || S_ISFIFO(mode) || S_ISSOCK(mode)) {
-      /*
-      * XXX: is the following call interruptible? If so, this might
-      * need to go through the INTERRUPT_IO() wrapper as for other
-      * blocking, interruptible calls in this file.
-      */
+      // XXX: is the following call interruptible? If so, this might
+      // need to go through the INTERRUPT_IO() wrapper as for other
+      // blocking, interruptible calls in this file.
       int n;
       if (::ioctl(fd, FIONREAD, &n) >= 0) {
         *bytes = n;
@@ -3960,8 +3966,9 @@ int os::available(int fd, jlong *bytes) {
 }
 
 int os::socket_available(int fd, jint *pbytes) {
-  if (fd < 0)
+  if (fd < 0) {
     return OS_OK;
+  }
 
   int ret;
 
@@ -4063,8 +4070,9 @@ jlong os::thread_cpu_time(Thread *thread, bool user_sys_cpu_time) {
 
   mach_thread = thread->osthread()->thread_id();
   kr = thread_info(mach_thread, THREAD_BASIC_INFO, (thread_info_t)&tinfo, &tcount);
-  if (kr != KERN_SUCCESS)
+  if (kr != KERN_SUCCESS) {
     return -1;
+  }
 
   if (user_sys_cpu_time) {
     jlong nanos;
@@ -4195,7 +4203,8 @@ void os::pause() {
 // abstime will be the absolute timeout time
 // TODO: replace compute_abstime() with unpackTime()
 
-static struct timespec* compute_abstime(struct timespec* abstime, jlong millis) {
+static struct timespec* compute_abstime(struct timespec* abstime,
+                                        jlong millis) {
   if (millis < 0)  millis = 0;
   struct timeval now;
   int status = gettimeofday(&now, NULL);
@@ -4358,36 +4367,33 @@ void os::PlatformEvent::unpark() {
 // JSR166
 // -------------------------------------------------------
 
-/*
- * The solaris and bsd implementations of park/unpark are fairly
- * conservative for now, but can be improved. They currently use a
- * mutex/condvar pair, plus a a count.
- * Park decrements count if > 0, else does a condvar wait.  Unpark
- * sets count to 1 and signals condvar.  Only one thread ever waits
- * on the condvar. Contention seen when trying to park implies that someone
- * is unparking you, so don't wait. And spurious returns are fine, so there
- * is no need to track notifications.
- */
+// The solaris and bsd implementations of park/unpark are fairly
+// conservative for now, but can be improved. They currently use a
+// mutex/condvar pair, plus a a count.
+// Park decrements count if > 0, else does a condvar wait.  Unpark
+// sets count to 1 and signals condvar.  Only one thread ever waits
+// on the condvar. Contention seen when trying to park implies that someone
+// is unparking you, so don't wait. And spurious returns are fine, so there
+// is no need to track notifications.
 
 #define MAX_SECS 100000000
-/*
- * This code is common to bsd and solaris and will be moved to a
- * common place in dolphin.
- *
- * The passed in time value is either a relative time in nanoseconds
- * or an absolute time in milliseconds. Either way it has to be unpacked
- * into suitable seconds and nanoseconds components and stored in the
- * given timespec structure.
- * Given time is a 64-bit value and the time_t used in the timespec is only
- * a signed-32-bit value (except on 64-bit Bsd) we have to watch for
- * overflow if times way in the future are given. Further on Solaris versions
- * prior to 10 there is a restriction (see cond_timedwait) that the specified
- * number of seconds, in abstime, is less than current_time  + 100,000,000.
- * As it will be 28 years before "now + 100000000" will overflow we can
- * ignore overflow and just impose a hard-limit on seconds using the value
- * of "now + 100,000,000". This places a limit on the timeout of about 3.17
- * years from "now".
- */
+
+// This code is common to bsd and solaris and will be moved to a
+// common place in dolphin.
+//
+// The passed in time value is either a relative time in nanoseconds
+// or an absolute time in milliseconds. Either way it has to be unpacked
+// into suitable seconds and nanoseconds components and stored in the
+// given timespec structure.
+// Given time is a 64-bit value and the time_t used in the timespec is only
+// a signed-32-bit value (except on 64-bit Bsd) we have to watch for
+// overflow if times way in the future are given. Further on Solaris versions
+// prior to 10 there is a restriction (see cond_timedwait) that the specified
+// number of seconds, in abstime, is less than current_time  + 100,000,000.
+// As it will be 28 years before "now + 100000000" will overflow we can
+// ignore overflow and just impose a hard-limit on seconds using the value
+// of "now + 100,000,000". This places a limit on the timeout of about 3.17
+// years from "now".
 
 static void unpackTime(struct timespec* absTime, bool isAbsolute, jlong time) {
   assert(time > 0, "convertTime");
@@ -4402,19 +4408,16 @@ static void unpackTime(struct timespec* absTime, bool isAbsolute, jlong time) {
     jlong secs = time / 1000;
     if (secs > max_secs) {
       absTime->tv_sec = max_secs;
-    }
-    else {
+    } else {
       absTime->tv_sec = secs;
     }
     absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
-  }
-  else {
+  } else {
     jlong secs = time / NANOSECS_PER_SEC;
     if (secs >= MAX_SECS) {
       absTime->tv_sec = max_secs;
       absTime->tv_nsec = 0;
-    }
-    else {
+    } else {
       absTime->tv_sec = now.tv_sec + secs;
       absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
       if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
@@ -4550,10 +4553,10 @@ void Parker::unpark() {
 }
 
 
-/* Darwin has no "environ" in a dynamic library. */
+// Darwin has no "environ" in a dynamic library.
 #ifdef __APPLE__
-#include <crt_externs.h>
-#define environ (*_NSGetEnviron())
+  #include <crt_externs.h>
+  #define environ (*_NSGetEnviron())
 #else
 extern char** environ;
 #endif
@@ -4649,13 +4652,19 @@ bool os::is_headless_jre() {
 
   // Get rid of libjvm.so
   p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
+  if (p == NULL) {
+    return false;
+  } else {
+    *p = '\0';
+  }
 
   // Get rid of client or server
   p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
+  if (p == NULL) {
+    return false;
+  } else {
+    *p = '\0';
+  }
 
   // check xawt/libmawt.so
   strcpy(libmawtpath, buf);

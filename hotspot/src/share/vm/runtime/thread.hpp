@@ -178,7 +178,6 @@ class Thread: public ThreadShadow {
   // 2. It would be more natural if set_external_suspend() is private and
   // part of java_suspend(), but that probably would affect the suspend/query
   // performance. Need more investigation on this.
-  //
 
   // suspend/resume lock: used for self-suspend
   Monitor* _SR_lock;
@@ -514,7 +513,7 @@ class Thread: public ThreadShadow {
   void    record_stack_base_and_size();
 
   bool    on_local_stack(address adr) const {
-    /* QQQ this has knowledge of direction, ought to be a stack method */
+    // QQQ this has knowledge of direction, ought to be a stack method
     return (_stack_base >= adr && adr >= (_stack_base - _stack_size));
   }
 
@@ -624,8 +623,8 @@ class Thread: public ThreadShadow {
 
 inline Thread* Thread::current() {
 #ifdef ASSERT
-// This function is very high traffic. Define PARANOID to enable expensive
-// asserts.
+  // This function is very high traffic. Define PARANOID to enable expensive
+  // asserts.
 #ifdef PARANOID
   // Signal handler should call ThreadLocalStorage::get_thread_slow()
   Thread* t = ThreadLocalStorage::get_thread_slow();
@@ -843,8 +842,8 @@ class JavaThread: public Thread {
   jint                  _in_deopt_handler;       // count of deoptimization
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
-  bool                  _do_not_unlock_if_synchronized; // Do not unlock the receiver of a synchronized method (since it was
-  // never locked) when throwing an exception. Used by interpreter only.
+  bool                  _do_not_unlock_if_synchronized;  // Do not unlock the receiver of a synchronized method (since it was
+                                                         // never locked) when throwing an exception. Used by interpreter only.
 
   // JNI attach states:
   enum JNIAttachStates {
@@ -904,7 +903,7 @@ class JavaThread: public Thread {
     const char*  _file;
     int _line;
   }   _jmp_ring[jump_ring_buffer_size];
-#endif /* PRODUCT */
+#endif // PRODUCT
 
 #if INCLUDE_ALL_GCS
   // Support for G1 barriers
@@ -1071,7 +1070,7 @@ class JavaThread: public Thread {
     // Warning: is_ext_suspend_completed() may temporarily drop the
     // SR_lock to allow the thread to reach a stable thread state if
     // it is currently in a transient thread state.
-    return is_ext_suspend_completed(false /*!called_by_wait */,
+    return is_ext_suspend_completed(false /* !called_by_wait */,
                                     SuspendRetryDelay, bits);
   }
 
@@ -1096,7 +1095,7 @@ class JavaThread: public Thread {
   // Whenever a thread transitions from native to vm/java it must suspend
   // if external|deopt suspend is present.
   bool is_suspend_after_native() const {
-    return (_suspend_flags & (_external_suspend | _deopt_suspend) ) != 0;
+    return (_suspend_flags & (_external_suspend | _deopt_suspend)) != 0;
   }
 
   // external suspend request is completed
@@ -1137,8 +1136,8 @@ class JavaThread: public Thread {
 
   bool is_suspend_equivalent() const             { return _suspend_equivalent; }
 
-  void set_suspend_equivalent()                  { _suspend_equivalent = true; };
-  void clear_suspend_equivalent()                { _suspend_equivalent = false; };
+  void set_suspend_equivalent()                  { _suspend_equivalent = true; }
+  void clear_suspend_equivalent()                { _suspend_equivalent = false; }
 
   // Thread.stop support
   void send_thread_stop(oop throwable);
@@ -1238,18 +1237,25 @@ class JavaThread: public Thread {
 
   // Stack overflow support
   inline size_t stack_available(address cur_sp);
-  address stack_yellow_zone_base()
-    { return (address)(stack_base() - (stack_size() - (stack_red_zone_size() + stack_yellow_zone_size()))); }
-  size_t  stack_yellow_zone_size()
-    { return StackYellowPages * os::vm_page_size(); }
-  address stack_red_zone_base()
-    { return (address)(stack_base() - (stack_size() - stack_red_zone_size())); }
-  size_t stack_red_zone_size()
-    { return StackRedPages * os::vm_page_size(); }
-  bool in_stack_yellow_zone(address a)
-    { return (a <= stack_yellow_zone_base()) && (a >= stack_red_zone_base()); }
-  bool in_stack_red_zone(address a)
-    { return (a <= stack_red_zone_base()) && (a >= (address)((intptr_t)stack_base() - stack_size())); }
+  address stack_yellow_zone_base() {
+    return (address)(stack_base() -
+                     (stack_size() -
+                     (stack_red_zone_size() + stack_yellow_zone_size())));
+  }
+  size_t  stack_yellow_zone_size() {
+    return StackYellowPages * os::vm_page_size();
+  }
+  address stack_red_zone_base() {
+    return (address)(stack_base() - (stack_size() - stack_red_zone_size()));
+  }
+  size_t stack_red_zone_size() { return StackRedPages * os::vm_page_size(); }
+  bool in_stack_yellow_zone(address a) {
+    return (a <= stack_yellow_zone_base()) && (a >= stack_red_zone_base());
+  }
+  bool in_stack_red_zone(address a) {
+    return (a <= stack_red_zone_base()) &&
+           (a >= (address)((intptr_t)stack_base() - stack_size()));
+  }
 
   void create_stack_guard_pages();
   void remove_stack_guard_pages();
@@ -1289,14 +1295,14 @@ class JavaThread: public Thread {
 
 #ifndef PRODUCT
   void record_jump(address target, address instr, const char* file, int line);
-#endif /* PRODUCT */
+#endif // PRODUCT
 
   // For assembly stub generation
   static ByteSize threadObj_offset()             { return byte_offset_of(JavaThread, _threadObj); }
 #ifndef PRODUCT
   static ByteSize jmp_ring_index_offset()        { return byte_offset_of(JavaThread, _jmp_ring_index); }
   static ByteSize jmp_ring_offset()              { return byte_offset_of(JavaThread, _jmp_ring); }
-#endif /* PRODUCT */
+#endif // PRODUCT
   static ByteSize jni_environment_offset()       { return byte_offset_of(JavaThread, _jni_environment); }
   static ByteSize last_Java_sp_offset() {
     return byte_offset_of(JavaThread, _anchor) + JavaFrameAnchor::last_Java_sp_offset();
@@ -1349,15 +1355,18 @@ class JavaThread: public Thread {
   // JNI critical regions. These can nest.
   bool in_critical()    { return _jni_active_critical > 0; }
   bool in_last_critical()  { return _jni_active_critical == 1; }
-  void enter_critical() { assert(Thread::current() == this ||
-                                 Thread::current()->is_VM_thread() && SafepointSynchronize::is_synchronizing(),
-                                 "this must be current thread or synchronizing");
-  _jni_active_critical++; }
-  void exit_critical()  { assert(Thread::current() == this,
-                                 "this must be current thread");
-  _jni_active_critical--;
-  assert(_jni_active_critical >= 0,
-         "JNI critical nesting problem?"); }
+  void enter_critical() {
+    assert(Thread::current() == this ||
+           (Thread::current()->is_VM_thread() &&
+           SafepointSynchronize::is_synchronizing()),
+           "this must be current thread or synchronizing");
+    _jni_active_critical++;
+  }
+  void exit_critical() {
+    assert(Thread::current() == this, "this must be current thread");
+    _jni_active_critical--;
+    assert(_jni_active_critical >= 0, "JNI critical nesting problem?");
+  }
 
   // Checked JNI, is the programmer required to check for exceptions, specify which function name
   bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
@@ -1406,8 +1415,8 @@ class JavaThread: public Thread {
   char* name() const { return (char*)get_thread_name(); }
   void print_on(outputStream* st) const;
   void print_value();
-  void print_thread_state_on(outputStream* ) const      PRODUCT_RETURN;
-  void print_thread_state() const                       PRODUCT_RETURN;
+  void print_thread_state_on(outputStream*) const      PRODUCT_RETURN;
+  void print_thread_state() const                      PRODUCT_RETURN;
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
   const char* get_thread_name() const;
@@ -1766,7 +1775,7 @@ class CompilerThread : public JavaThread {
   void          set_env(ciEnv* env)              { _env = env; }
 
   BufferBlob*   get_buffer_blob() const          { return _buffer_blob; }
-  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; };
+  void          set_buffer_blob(BufferBlob* b)   { _buffer_blob = b; }
 
   // Get/set the thread's logging information
   CompileLog*   log()                            { return _log; }
