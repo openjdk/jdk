@@ -1579,7 +1579,7 @@ return mh1;
                 return false;
             return true;
         }
-        private MethodHandle restrictReceiver(MemberName method, MethodHandle mh, Class<?> caller) throws IllegalAccessException {
+        private MethodHandle restrictReceiver(MemberName method, DirectMethodHandle mh, Class<?> caller) throws IllegalAccessException {
             assert(!method.isStatic());
             // receiver type of mh is too wide; narrow to caller
             if (!method.getDeclaringClass().isAssignableFrom(caller)) {
@@ -1588,7 +1588,9 @@ return mh1;
             MethodType rawType = mh.type();
             if (rawType.parameterType(0) == caller)  return mh;
             MethodType narrowType = rawType.changeParameterType(0, caller);
-            return mh.viewAsType(narrowType);
+            assert(!mh.isVarargsCollector());  // viewAsType will lose varargs-ness
+            assert(mh.viewAsTypeChecks(narrowType, true));
+            return mh.copyWith(narrowType, mh.form);
         }
 
         /** Check access and get the requested method. */
@@ -1650,15 +1652,17 @@ return mh1;
                 checkMethod(refKind, refc, method);
             }
 
-            MethodHandle mh = DirectMethodHandle.make(refKind, refc, method);
-            mh = maybeBindCaller(method, mh, callerClass);
-            mh = mh.setVarargs(method);
+            DirectMethodHandle dmh = DirectMethodHandle.make(refKind, refc, method);
+            MethodHandle mh = dmh;
             // Optionally narrow the receiver argument to refc using restrictReceiver.
             if (doRestrict &&
                    (refKind == REF_invokeSpecial ||
                        (MethodHandleNatives.refKindHasReceiver(refKind) &&
-                           restrictProtectedReceiver(method))))
-                mh = restrictReceiver(method, mh, lookupClass());
+                           restrictProtectedReceiver(method)))) {
+                mh = restrictReceiver(method, dmh, lookupClass());
+            }
+            mh = maybeBindCaller(method, mh, callerClass);
+            mh = mh.setVarargs(method);
             return mh;
         }
         private MethodHandle maybeBindCaller(MemberName method, MethodHandle mh,
@@ -1690,12 +1694,12 @@ return mh1;
             // Optionally check with the security manager; this isn't needed for unreflect* calls.
             if (checkSecurity)
                 checkSecurityManager(refc, field);
-            MethodHandle mh = DirectMethodHandle.make(refc, field);
+            DirectMethodHandle dmh = DirectMethodHandle.make(refc, field);
             boolean doRestrict = (MethodHandleNatives.refKindHasReceiver(refKind) &&
                                     restrictProtectedReceiver(field));
             if (doRestrict)
-                mh = restrictReceiver(field, mh, lookupClass());
-            return mh;
+                return restrictReceiver(field, dmh, lookupClass());
+            return dmh;
         }
         /** Check access and get the requested constructor. */
         private MethodHandle getDirectConstructor(Class<?> refc, MemberName ctor) throws IllegalAccessException {

@@ -37,4 +37,9 @@ final class SimpleMethodHandle extends MethodHandle {
     /*non-public*/ static SimpleMethodHandle make(MethodType type, LambdaForm form) {
         return new SimpleMethodHandle(type, form);
     }
+
+    @Override
+    /*non-public*/ SimpleMethodHandle copyWith(MethodType mt, LambdaForm lf) {
+        return make(mt, lf);
+    }
 }

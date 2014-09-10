@@ -84,7 +84,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             assert((isSetter ? mh.type().parameterType(2) : mh.type().returnType()) == Object.class);
             assert(isSetter || correctType.parameterType(0).getComponentType() == correctType.returnType());
             // safe to view non-strictly, because element type follows from array type
-            mh = mh.viewAsType(correctType);
+            mh = mh.viewAsType(correctType, false);
         }
         // Atomically update accessor cache.
         synchronized(cache) {
@@ -406,18 +406,21 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         }
 
         @Override
-        MethodHandle setVarargs(MemberName member) {
-            if (member.isVarargs())  return this;
-            return asFixedArity();
+        boolean viewAsTypeChecks(MethodType newType, boolean strict) {
+            super.viewAsTypeChecks(newType, true);
+            if (strict) return true;
+            // extra assertion for non-strict checks:
+            assert (type().lastParameterType().getComponentType()
+                    .isAssignableFrom(
+                            newType.lastParameterType().getComponentType()))
+                    : Arrays.asList(this, newType);
+            return true;
         }
 
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            if (newType.lastParameterType() != type().lastParameterType())
-                throw new InternalError();
-            MethodHandle newTarget = asFixedArity().viewAsType(newType);
-            // put back the varargs bit:
-            return new AsVarargsCollector(newTarget, newType, arrayType);
+        MethodHandle setVarargs(MemberName member) {
+            if (member.isVarargs())  return this;
+            return asFixedArity();
         }
 
         @Override
@@ -433,6 +436,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         @Override
         boolean isInvokeSpecial() {
             return asFixedArity().isInvokeSpecial();
+        }
+
+        @Override
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            throw newIllegalArgumentException("do not use this");
         }
     }
 
@@ -996,9 +1004,10 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         boolean isInvokeSpecial() {
             return target.isInvokeSpecial();
         }
+
         @Override
-        MethodHandle viewAsType(MethodType newType) {
-            return new WrappedMember(target, newType, member, callerClass);
+        MethodHandle copyWith(MethodType mt, LambdaForm lf) {
+            throw newIllegalArgumentException("do not use this");
         }
     }
 

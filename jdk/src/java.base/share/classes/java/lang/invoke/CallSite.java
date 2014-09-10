@@ -242,7 +242,7 @@ public class CallSite {
             invoker = basicType.form().setCachedMethodHandle(MethodTypeForm.MH_UNINIT_CS, invoker);
         }
         // unchecked view is OK since no values will be received or returned
-        return invoker.viewAsType(targetType);
+        return invoker.viewAsType(targetType, false);
     }
 
     // unsafe stuff:
