@@ -27,8 +27,11 @@ package java.lang.invoke;
 
 import java.security.AccessController;
 import java.security.PrivilegedAction;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.Collections;
+import java.util.List;
+
 import sun.invoke.empty.Empty;
 import sun.invoke.util.ValueConversions;
 import sun.invoke.util.VerifyType;
@@ -44,6 +47,20 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
  * @author jrose
  */
 /*non-public*/ abstract class MethodHandleImpl {
+    // Do not adjust this except for special platforms:
+    private static final int MAX_ARITY;
+    static {
+        final Object[] values = { 255 };
+        AccessController.doPrivileged(new PrivilegedAction<Void>() {
+            @Override
+            public Void run() {
+                values[0] = Integer.getInteger(MethodHandleImpl.class.getName()+".MAX_ARITY", 255);
+                return null;
+            }
+        });
+        MAX_ARITY = (Integer) values[0];
+    }
+
     /// Factory methods to create method handles:
 
     static void initStatics() {
@@ -516,6 +533,11 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final NamedFunction NF_throwException;
 
         static final MethodHandle MH_castReference;
+        static final MethodHandle MH_copyAsPrimitiveArray;
+        static final MethodHandle MH_copyAsReferenceArray;
+        static final MethodHandle MH_fillNewTypedArray;
+        static final MethodHandle MH_fillNewArray;
+        static final MethodHandle MH_arrayIdentity;
 
         static {
             try {
@@ -531,8 +553,18 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                 NF_selectAlternative.resolve();
                 NF_throwException.resolve();
 
-                MethodType mt = MethodType.methodType(Object.class, Class.class, Object.class);
-                MH_castReference = IMPL_LOOKUP.findStatic(MHI, "castReference", mt);
+                MH_castReference        = IMPL_LOOKUP.findStatic(MHI, "castReference",
+                                            MethodType.methodType(Object.class, Class.class, Object.class));
+                MH_copyAsPrimitiveArray = IMPL_LOOKUP.findStatic(MHI, "copyAsPrimitiveArray",
+                                            MethodType.methodType(Object.class, Wrapper.class, Object[].class));
+                MH_copyAsReferenceArray = IMPL_LOOKUP.findStatic(MHI, "copyAsReferenceArray",
+                                            MethodType.methodType(Object[].class, Class.class, Object[].class));
+                MH_arrayIdentity        = IMPL_LOOKUP.findStatic(MHI, "identity",
+                                            MethodType.methodType(Object[].class, Object[].class));
+                MH_fillNewArray         = IMPL_LOOKUP.findStatic(MHI, "fillNewArray",
+                                            MethodType.methodType(Object[].class, Integer.class, Object[].class));
+                MH_fillNewTypedArray    = IMPL_LOOKUP.findStatic(MHI, "fillNewTypedArray",
+                                            MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
             } catch (ReflectiveOperationException ex) {
                 throw newInternalError(ex);
             }
@@ -713,8 +745,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         // Prepare auxiliary method handles used during LambdaForm interpretation.
         // Box arguments and wrap them into Object[]: ValueConversions.array().
         MethodType varargsType = type.changeReturnType(Object[].class);
-        MethodHandle collectArgs = ValueConversions.varargsArray(type.parameterCount())
-                                                   .asType(varargsType);
+        MethodHandle collectArgs = varargsArray(type.parameterCount()).asType(varargsType);
         // Result unboxing: ValueConversions.unbox() OR ValueConversions.identity() OR ValueConversions.ignore().
         MethodHandle unboxResult;
         if (type.returnType().isPrimitive()) {
@@ -999,4 +1030,276 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return new WrappedMember(target, target.type(), member, null);
     }
 
+    /// Collection of multiple arguments.
+
+    private static MethodHandle findCollector(String name, int nargs, Class<?> rtype, Class<?>... ptypes) {
+        MethodType type = MethodType.genericMethodType(nargs)
+                .changeReturnType(rtype)
+                .insertParameterTypes(0, ptypes);
+        try {
+            return IMPL_LOOKUP.findStatic(MethodHandleImpl.class, name, type);
+        } catch (ReflectiveOperationException ex) {
+            return null;
+        }
+    }
+
+    private static final Object[] NO_ARGS_ARRAY = {};
+    private static Object[] makeArray(Object... args) { return args; }
+    private static Object[] array() { return NO_ARGS_ARRAY; }
+    private static Object[] array(Object a0)
+                { return makeArray(a0); }
+    private static Object[] array(Object a0, Object a1)
+                { return makeArray(a0, a1); }
+    private static Object[] array(Object a0, Object a1, Object a2)
+                { return makeArray(a0, a1, a2); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3)
+                { return makeArray(a0, a1, a2, a3); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4)
+                { return makeArray(a0, a1, a2, a3, a4); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5)
+                { return makeArray(a0, a1, a2, a3, a4, a5); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
+    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8, Object a9)
+                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
+    private static MethodHandle[] makeArrays() {
+        ArrayList<MethodHandle> mhs = new ArrayList<>();
+        for (;;) {
+            MethodHandle mh = findCollector("array", mhs.size(), Object[].class);
+            if (mh == null)  break;
+            mhs.add(mh);
+        }
+        assert(mhs.size() == 11);  // current number of methods
+        return mhs.toArray(new MethodHandle[MAX_ARITY+1]);
+    }
+    private static final MethodHandle[] ARRAYS = makeArrays();
+
+    // filling versions of the above:
+    // using Integer len instead of int len and no varargs to avoid bootstrapping problems
+    private static Object[] fillNewArray(Integer len, Object[] /*not ...*/ args) {
+        Object[] a = new Object[len];
+        fillWithArguments(a, 0, args);
+        return a;
+    }
+    private static Object[] fillNewTypedArray(Object[] example, Integer len, Object[] /*not ...*/ args) {
+        Object[] a = Arrays.copyOf(example, len);
+        fillWithArguments(a, 0, args);
+        return a;
+    }
+    private static void fillWithArguments(Object[] a, int pos, Object... args) {
+        System.arraycopy(args, 0, a, pos, args.length);
+    }
+    // using Integer pos instead of int pos to avoid bootstrapping problems
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0)
+                { fillWithArguments(a, pos, a0); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1)
+                { fillWithArguments(a, pos, a0, a1); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2)
+                { fillWithArguments(a, pos, a0, a1, a2); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3)
+                { fillWithArguments(a, pos, a0, a1, a2, a3); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8); return a; }
+    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
+                                  Object a4, Object a5, Object a6, Object a7,
+                                  Object a8, Object a9)
+                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
+    private static MethodHandle[] makeFillArrays() {
+        ArrayList<MethodHandle> mhs = new ArrayList<>();
+        mhs.add(null);  // there is no empty fill; at least a0 is required
+        for (;;) {
+            MethodHandle mh = findCollector("fillArray", mhs.size(), Object[].class, Integer.class, Object[].class);
+            if (mh == null)  break;
+            mhs.add(mh);
+        }
+        assert(mhs.size() == 11);  // current number of methods
+        return mhs.toArray(new MethodHandle[0]);
+    }
+    private static final MethodHandle[] FILL_ARRAYS = makeFillArrays();
+
+    private static Object[] copyAsReferenceArray(Class<? extends Object[]> arrayType, Object... a) {
+        return Arrays.copyOf(a, a.length, arrayType);
+    }
+    private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
+        Object a = w.makeArray(boxes.length);
+        w.copyArrayUnboxing(boxes, 0, a, 0, boxes.length);
+        return a;
+    }
+
+    /** Return a method handle that takes the indicated number of Object
+     *  arguments and returns an Object array of them, as if for varargs.
+     */
+    static MethodHandle varargsArray(int nargs) {
+        MethodHandle mh = ARRAYS[nargs];
+        if (mh != null)  return mh;
+        mh = findCollector("array", nargs, Object[].class);
+        if (mh != null)  return ARRAYS[nargs] = mh;
+        mh = buildVarargsArray(Lazy.MH_fillNewArray, Lazy.MH_arrayIdentity, nargs);
+        assert(assertCorrectArity(mh, nargs));
+        return ARRAYS[nargs] = mh;
+    }
+
+    private static boolean assertCorrectArity(MethodHandle mh, int arity) {
+        assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
+        return true;
+    }
+
+    // Array identity function (used as Lazy.MH_arrayIdentity).
+    static <T> T[] identity(T[] x) {
+        return x;
+    }
+
+    private static MethodHandle buildVarargsArray(MethodHandle newArray, MethodHandle finisher, int nargs) {
+        // Build up the result mh as a sequence of fills like this:
+        //   finisher(fill(fill(newArrayWA(23,x1..x10),10,x11..x20),20,x21..x23))
+        // The various fill(_,10*I,___*[J]) are reusable.
+        int leftLen = Math.min(nargs, LEFT_ARGS);  // absorb some arguments immediately
+        int rightLen = nargs - leftLen;
+        MethodHandle leftCollector = newArray.bindTo(nargs);
+        leftCollector = leftCollector.asCollector(Object[].class, leftLen);
+        MethodHandle mh = finisher;
+        if (rightLen > 0) {
+            MethodHandle rightFiller = fillToRight(LEFT_ARGS + rightLen);
+            if (mh == Lazy.MH_arrayIdentity)
+                mh = rightFiller;
+            else
+                mh = MethodHandles.collectArguments(mh, 0, rightFiller);
+        }
+        if (mh == Lazy.MH_arrayIdentity)
+            mh = leftCollector;
+        else
+            mh = MethodHandles.collectArguments(mh, 0, leftCollector);
+        return mh;
+    }
+
+    private static final int LEFT_ARGS = (FILL_ARRAYS.length - 1);
+    private static final MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
+    /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
+     *  fills a[L]..a[N-1] with corresponding arguments,
+     *  and then returns a.  The value L is a global constant (LEFT_ARGS).
+     */
+    private static MethodHandle fillToRight(int nargs) {
+        MethodHandle filler = FILL_ARRAY_TO_RIGHT[nargs];
+        if (filler != null)  return filler;
+        filler = buildFiller(nargs);
+        assert(assertCorrectArity(filler, nargs - LEFT_ARGS + 1));
+        return FILL_ARRAY_TO_RIGHT[nargs] = filler;
+    }
+    private static MethodHandle buildFiller(int nargs) {
+        if (nargs <= LEFT_ARGS)
+            return Lazy.MH_arrayIdentity;  // no args to fill; return the array unchanged
+        // we need room for both mh and a in mh.invoke(a, arg*[nargs])
+        final int CHUNK = LEFT_ARGS;
+        int rightLen = nargs % CHUNK;
+        int midLen = nargs - rightLen;
+        if (rightLen == 0) {
+            midLen = nargs - (rightLen = CHUNK);
+            if (FILL_ARRAY_TO_RIGHT[midLen] == null) {
+                // build some precursors from left to right
+                for (int j = LEFT_ARGS % CHUNK; j < midLen; j += CHUNK)
+                    if (j > LEFT_ARGS)  fillToRight(j);
+            }
+        }
+        if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
+        assert(rightLen > 0);
+        MethodHandle midFill = fillToRight(midLen);  // recursive fill
+        MethodHandle rightFill = FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
+        assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
+        assert(rightFill.type().parameterCount() == 1 + rightLen);
+
+        // Combine the two fills:
+        //   right(mid(a, x10..x19), x20..x23)
+        // The final product will look like this:
+        //   right(mid(newArrayLeft(24, x0..x9), x10..x19), x20..x23)
+        if (midLen == LEFT_ARGS)
+            return rightFill;
+        else
+            return MethodHandles.collectArguments(rightFill, 0, midFill);
+    }
+
+    // Type-polymorphic version of varargs maker.
+    private static final ClassValue<MethodHandle[]> TYPED_COLLECTORS
+        = new ClassValue<MethodHandle[]>() {
+            @Override
+            protected MethodHandle[] computeValue(Class<?> type) {
+                return new MethodHandle[256];
+            }
+    };
+
+    static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
+
+    /** Return a method handle that takes the indicated number of
+     *  typed arguments and returns an array of them.
+     *  The type argument is the array type.
+     */
+    static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
+        Class<?> elemType = arrayType.getComponentType();
+        if (elemType == null)  throw new IllegalArgumentException("not an array: "+arrayType);
+        // FIXME: Need more special casing and caching here.
+        if (nargs >= MAX_JVM_ARITY/2 - 1) {
+            int slots = nargs;
+            final int MAX_ARRAY_SLOTS = MAX_JVM_ARITY - 1;  // 1 for receiver MH
+            if (arrayType == double[].class || arrayType == long[].class)
+                slots *= 2;
+            if (slots > MAX_ARRAY_SLOTS)
+                throw new IllegalArgumentException("too many arguments: "+arrayType.getSimpleName()+", length "+nargs);
+        }
+        if (elemType == Object.class)
+            return varargsArray(nargs);
+        // other cases:  primitive arrays, subtypes of Object[]
+        MethodHandle cache[] = TYPED_COLLECTORS.get(elemType);
+        MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
+        if (mh != null)  return mh;
+        if (elemType.isPrimitive()) {
+            MethodHandle builder = Lazy.MH_fillNewArray;
+            MethodHandle producer = buildArrayProducer(arrayType);
+            mh = buildVarargsArray(builder, producer, nargs);
+        } else {
+            @SuppressWarnings("unchecked")
+            Class<? extends Object[]> objArrayType = (Class<? extends Object[]>) arrayType;
+            Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
+            MethodHandle builder = Lazy.MH_fillNewTypedArray.bindTo(example);
+            MethodHandle producer = Lazy.MH_arrayIdentity;
+            mh = buildVarargsArray(builder, producer, nargs);
+        }
+        mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
+        assert(assertCorrectArity(mh, nargs));
+        if (nargs < cache.length)
+            cache[nargs] = mh;
+        return mh;
+    }
+
+    private static MethodHandle buildArrayProducer(Class<?> arrayType) {
+        Class<?> elemType = arrayType.getComponentType();
+        if (elemType.isPrimitive())
+            return Lazy.MH_copyAsPrimitiveArray.bindTo(Wrapper.forPrimitiveType(elemType));
+        else
+            return Lazy.MH_copyAsReferenceArray.bindTo(arrayType);
+    }
 }
