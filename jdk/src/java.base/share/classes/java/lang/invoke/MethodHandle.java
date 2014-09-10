@@ -869,29 +869,34 @@ assertEquals("[A, B, C]", (String) caToString2.invokeExact('A', "BC".toCharArray
         return MethodHandleImpl.makeSpreadArguments(this, arrayType, spreadArgPos, arrayLength);
     }
 
-    private void asSpreaderChecks(Class<?> arrayType, int arrayLength) {
+    /**
+     * See if {@code asSpreader} can be validly called with the given arguments.
+     * Return the type of the method handle call after spreading but before conversions.
+     */
+    private MethodType asSpreaderChecks(Class<?> arrayType, int arrayLength) {
         spreadArrayChecks(arrayType, arrayLength);
         int nargs = type().parameterCount();
         if (nargs < arrayLength || arrayLength < 0)
             throw newIllegalArgumentException("bad spread array length");
-        if (arrayType != Object[].class && arrayLength != 0) {
-            boolean sawProblem = false;
-            Class<?> arrayElement = arrayType.getComponentType();
-            for (int i = nargs - arrayLength; i < nargs; i++) {
-                if (!MethodType.canConvert(arrayElement, type().parameterType(i))) {
-                    sawProblem = true;
+        Class<?> arrayElement = arrayType.getComponentType();
+        MethodType mtype = type();
+        boolean match = true, fail = false;
+        for (int i = nargs - arrayLength; i < nargs; i++) {
+            Class<?> ptype = mtype.parameterType(i);
+            if (ptype != arrayElement) {
+                match = false;
+                if (!MethodType.canConvert(arrayElement, ptype)) {
+                    fail = true;
                     break;
                 }
             }
-            if (sawProblem) {
-                ArrayList<Class<?>> ptypes = new ArrayList<>(type().parameterList());
-                for (int i = nargs - arrayLength; i < nargs; i++) {
-                    ptypes.set(i, arrayElement);
-                }
-                // elicit an error:
-                this.asType(MethodType.methodType(type().returnType(), ptypes));
-            }
         }
+        if (match)  return mtype;
+        MethodType needType = mtype.asSpreaderType(arrayType, arrayLength);
+        if (!fail)  return needType;
+        // elicit an error:
+        this.asType(needType);
+        throw newInternalError("should not return", null);
     }
 
     private void spreadArrayChecks(Class<?> arrayType, int arrayLength) {
