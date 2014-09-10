@@ -117,6 +117,31 @@ import jdk.internal.org.objectweb.asm.Type;
         return copyWithExtendD(type, form, value);
     }
 
+    @Override
+    BoundMethodHandle rebind() {
+        if (!tooComplex()) {
+            return this;
+        }
+        return makeReinvoker(this);
+    }
+
+    private boolean tooComplex() {
+        return (fieldCount() > FIELD_COUNT_THRESHOLD ||
+                form.expressionCount() > FORM_EXPRESSION_THRESHOLD);
+    }
+    private static final int FIELD_COUNT_THRESHOLD = 12;      // largest convenient BMH field count
+    private static final int FORM_EXPRESSION_THRESHOLD = 24;  // largest convenient BMH expression count
+
+    /**
+     * A reinvoker MH has this form:
+     * {@code lambda (bmh, arg*) { thismh = bmh[0]; invokeBasic(thismh, arg*) }}
+     */
+    static BoundMethodHandle makeReinvoker(MethodHandle target) {
+        LambdaForm form = DelegatingMethodHandle.makeReinvokerForm(
+                target, MethodTypeForm.LF_REBIND, Species_L.SPECIES_DATA.getterFunction(0) );
+        return Species_L.make(target.type(), form, target);
+    }
+
     /**
      * Return the {@link SpeciesData} instance representing this BMH species. All subclasses must provide a
      * static field containing this value, and they must accordingly implement this method.
@@ -168,15 +193,6 @@ import jdk.internal.org.objectweb.asm.Type;
     /*non-public*/ abstract BoundMethodHandle copyWithExtendF(MethodType mt, LambdaForm lf, float  narg);
     /*non-public*/ abstract BoundMethodHandle copyWithExtendD(MethodType mt, LambdaForm lf, double narg);
 
-    // The following is a grossly irregular hack:
-    @Override MethodHandle reinvokerTarget() {
-        try {
-            return (MethodHandle) arg(0);
-        } catch (Throwable ex) {
-            throw newInternalError(ex);
-        }
-    }
-
     //
     // concrete BMH classes required to close bootstrap loops
     //
@@ -188,8 +204,6 @@ import jdk.internal.org.objectweb.asm.Type;
             super(mt, lf);
             this.argL0 = argL0;
         }
-        // The following is a grossly irregular hack:
-        @Override MethodHandle reinvokerTarget() { return (MethodHandle) argL0; }
         @Override
         /*non-public*/ SpeciesData speciesData() {
             return SPECIES_DATA;
@@ -582,16 +596,6 @@ import jdk.internal.org.objectweb.asm.Type;
             }
 
             mv.visitInsn(RETURN);
-            mv.visitMaxs(0, 0);
-            mv.visitEnd();
-
-            // emit implementation of reinvokerTarget()
-            mv = cw.visitMethod(NOT_ACC_PUBLIC + ACC_FINAL, "reinvokerTarget", "()" + MH_SIG, null, null);
-            mv.visitCode();
-            mv.visitVarInsn(ALOAD, 0);
-            mv.visitFieldInsn(GETFIELD, className, "argL0", JLO_SIG);
-            mv.visitTypeInsn(CHECKCAST, MH);
-            mv.visitInsn(ARETURN);
             mv.visitMaxs(0, 0);
             mv.visitEnd();
 

@@ -466,6 +466,11 @@ class LambdaForm {
         return arity;
     }
 
+    /** Report the number of expressions (non-parameter names). */
+    int expressionCount() {
+        return names.length - arity;
+    }
+
     /** Return the method type corresponding to my basic type signature. */
     MethodType methodType() {
         return signatureType(basicTypeSignature());
