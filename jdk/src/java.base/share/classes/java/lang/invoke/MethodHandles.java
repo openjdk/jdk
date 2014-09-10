@@ -2024,8 +2024,11 @@ return invoker;
      */
     public static
     MethodHandle explicitCastArguments(MethodHandle target, MethodType newType) {
-        if (!target.type().isCastableTo(newType)) {
-            throw new WrongMethodTypeException("cannot explicitly cast "+target+" to "+newType);
+        MethodType oldType = target.type();
+        // use the asTypeCache when possible:
+        if (oldType == newType)  return target;
+        if (oldType.explicitCastEquivalentToAsType(newType)) {
+            return target.asType(newType);
         }
         return MethodHandleImpl.makePairwiseConvert(target, newType, false);
     }

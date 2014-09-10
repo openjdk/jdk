@@ -825,29 +825,111 @@ class MethodType implements java.io.Serializable {
         return true;
     }
     /*non-public*/
-    boolean isCastableTo(MethodType newType) {
-        int argc = parameterCount();
-        if (argc != newType.parameterCount())
-            return false;
-        return true;
-    }
-    /*non-public*/
     boolean isConvertibleTo(MethodType newType) {
+        MethodTypeForm oldForm = this.form();
+        MethodTypeForm newForm = newType.form();
+        if (oldForm == newForm)
+            // same parameter count, same primitive/object mix
+            return true;
         if (!canConvert(returnType(), newType.returnType()))
             return false;
-        int argc = parameterCount();
-        if (argc != newType.parameterCount())
+        Class<?>[] srcTypes = newType.ptypes;
+        Class<?>[] dstTypes = ptypes;
+        if (srcTypes == dstTypes)
+            return true;
+        int argc;
+        if ((argc = srcTypes.length) != dstTypes.length)
             return false;
-        for (int i = 0; i < argc; i++) {
-            if (!canConvert(newType.parameterType(i), parameterType(i)))
+        if (argc <= 1) {
+            if (argc == 1 && !canConvert(srcTypes[0], dstTypes[0]))
                 return false;
+            return true;
+        }
+        if ((oldForm.primitiveParameterCount() == 0 && oldForm.erasedType == this) ||
+            (newForm.primitiveParameterCount() == 0 && newForm.erasedType == newType)) {
+            // Somewhat complicated test to avoid a loop of 2 or more trips.
+            // If either type has only Object parameters, we know we can convert.
+            assert(canConvertParameters(srcTypes, dstTypes));
+            return true;
+        }
+        return canConvertParameters(srcTypes, dstTypes);
+    }
+
+    /** Returns true if MHs.explicitCastArguments produces the same result as MH.asType.
+     *  If the type conversion is impossible for either, the result should be false.
+     */
+    /*non-public*/
+    boolean explicitCastEquivalentToAsType(MethodType newType) {
+        if (this == newType)  return true;
+        if (!explicitCastEquivalentToAsType(rtype, newType.rtype)) {
+            return false;
+        }
+        Class<?>[] srcTypes = newType.ptypes;
+        Class<?>[] dstTypes = ptypes;
+        if (dstTypes == srcTypes) {
+            return true;
+        }
+        if (dstTypes.length != srcTypes.length) {
+            return false;
+        }
+        for (int i = 0; i < dstTypes.length; i++) {
+            if (!explicitCastEquivalentToAsType(srcTypes[i], dstTypes[i])) {
+                return false;
+            }
         }
         return true;
     }
+
+    /** Reports true if the src can be converted to the dst, by both asType and MHs.eCE,
+     *  and with the same effect.
+     *  MHs.eCA has the following "upgrades" to MH.asType:
+     *  1. interfaces are unchecked (that is, treated as if aliased to Object)
+     *     Therefore, {@code Object->CharSequence} is possible in both cases but has different semantics
+     *  2. the full matrix of primitive-to-primitive conversions is supported
+     *     Narrowing like {@code long->byte} and basic-typing like {@code boolean->int}
+     *     are not supported by asType, but anything supported by asType is equivalent
+     *     with MHs.eCE.
+     *  3a. unboxing conversions can be followed by the full matrix of primitive conversions
+     *  3b. unboxing of null is permitted (creates a zero primitive value)
+     *     Most unboxing conversions, like {@code Object->int}, has potentially
+     *     different behaviors for asType vs. MHs.eCE, because the dynamic value
+     *     might be a wrapper of a type that requires narrowing, like {@code (Object)1L->byte}.
+     *     The equivalence is only certain if the static src type is a wrapper,
+     *     and the conversion will be a widening one.
+     * Other than interfaces, reference-to-reference conversions are the same.
+     * Boxing primitives to references is the same for both operators.
+     */
+    private static boolean explicitCastEquivalentToAsType(Class<?> src, Class<?> dst) {
+        if (src == dst || dst == Object.class || dst == void.class)  return true;
+        if (src.isPrimitive()) {
+            // Could be a prim/prim conversion, where casting is a strict superset.
+            // Or a boxing conversion, which is always to an exact wrapper class.
+            return canConvert(src, dst);
+        } else if (dst.isPrimitive()) {
+            Wrapper dw = Wrapper.forPrimitiveType(dst);
+            // Watch out:  If src is Number or Object, we could get dynamic narrowing conversion.
+            // The conversion is known to be widening only if the wrapper type is statically visible.
+            return (Wrapper.isWrapperType(src) &&
+                    dw.isConvertibleFrom(Wrapper.forWrapperType(src)));
+        } else {
+            // R->R always works, but we have to avoid a check-cast to an interface.
+            return !dst.isInterface() || dst.isAssignableFrom(src);
+        }
+    }
+
+    private boolean canConvertParameters(Class<?>[] srcTypes, Class<?>[] dstTypes) {
+        for (int i = 0; i < srcTypes.length; i++) {
+            if (!canConvert(srcTypes[i], dstTypes[i])) {
+                return false;
+            }
+        }
+        return true;
+    }
+
     /*non-public*/
     static boolean canConvert(Class<?> src, Class<?> dst) {
         // short-circuit a few cases:
-        if (src == dst || dst == Object.class)  return true;
+        if (src == dst || src == Object.class || dst == Object.class)  return true;
         // the remainder of this logic is documented in MethodHandle.asType
         if (src.isPrimitive()) {
             // can force void to an explicit null, a la reflect.Method.invoke
