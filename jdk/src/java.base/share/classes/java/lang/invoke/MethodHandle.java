@@ -1356,9 +1356,9 @@ assertEquals("[three, thee, tee]", asListFix.invoke((Object)argv).toString());
     }
 
     /*non-public*/
-    MethodHandle withInternalMemberName(MemberName member) {
+    MethodHandle withInternalMemberName(MemberName member, boolean isInvokeSpecial) {
         if (member != null) {
-            return MethodHandleImpl.makeWrappedMember(this, member);
+            return MethodHandleImpl.makeWrappedMember(this, member, isInvokeSpecial);
         } else if (internalMemberName() == null) {
             // The required internaMemberName is null, and this MH (like most) doesn't have one.
             return this;
