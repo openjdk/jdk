@@ -482,8 +482,8 @@ class os: AllStatic {
   // run cmd in a separate process and return its exit code; or -1 on failures
   static int fork_and_exec(char *cmd);
 
-  // os::exit() is merged with vm_exit()
-  // static void exit(int num);
+  // Call ::exit() on all platforms but Windows
+  static void exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();

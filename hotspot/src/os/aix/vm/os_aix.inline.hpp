@@ -269,4 +269,8 @@ inline bool os::supports_monotonic_clock() {
   return true;
 }
 
+inline void os::exit(int num) {
+  ::exit(num);
+}
+
 #endif // OS_AIX_VM_OS_AIX_INLINE_HPP
