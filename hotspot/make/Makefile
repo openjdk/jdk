@@ -890,3 +890,5 @@ include $(GAMMADIR)/make/jprt.gmk
 	create_jdk copy_jdk update_jdk test_jdk \
 	copy_product_jdk copy_fastdebug_jdk copy_debug_jdk  \
 	$(HS_ALT_MAKE)/Makefile.make remove_old_debuginfo
+
+.NOTPARALLEL:
