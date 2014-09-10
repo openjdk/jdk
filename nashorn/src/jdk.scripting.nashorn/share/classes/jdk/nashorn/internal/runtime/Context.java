@@ -196,11 +196,11 @@ public final class Context {
         }
 
         @Override
-        public void storeScript(final String classInfoFile, final Source source, final String mainClassName,
+        public void storeScript(final String cacheKey, final Source source, final String mainClassName,
                                 final Map<String,byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers,
                                 final Object[] constants, final int compilationId) {
             if (context.codeStore != null) {
-                context.codeStore.storeScript(classInfoFile, source, mainClassName, classBytes, initializers, constants, compilationId);
+                context.codeStore.storeScript(cacheKey, source, mainClassName, classBytes, initializers, constants, compilationId);
             }
         }
 

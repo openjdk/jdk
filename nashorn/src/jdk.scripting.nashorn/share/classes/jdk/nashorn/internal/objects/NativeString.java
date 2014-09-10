@@ -71,9 +71,9 @@ public final class NativeString extends ScriptObject {
 
     private final CharSequence value;
 
-    // Method handle to create an object wrapper for a primitive string
-    private static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeString.class, Object.class));
-    // Method handle to retrieve the String prototype object
+    /** Method handle to create an object wrapper for a primitive string */
+    static final MethodHandle WRAPFILTER = findOwnMH("wrapFilter", MH.type(NativeString.class, Object.class));
+    /** Method handle to retrieve the String prototype object */
     private static final MethodHandle PROTOFILTER = findOwnMH("protoFilter", MH.type(Object.class, Object.class));
 
     // initialized by nasgen
