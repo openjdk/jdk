@@ -5448,9 +5448,10 @@ public:
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
   void do_oop(oop* p) {
     oop obj = *p;
+    assert(obj != NULL, "the caller should have filtered out NULL values");
 
     G1CollectedHeap::in_cset_state_t cset_state = _g1->in_cset_state(obj);
-    if (obj == NULL || cset_state == G1CollectedHeap::InNeither) {
+    if (cset_state == G1CollectedHeap::InNeither) {
       return;
     }
     if (cset_state == G1CollectedHeap::InCSet) {
