@@ -52,27 +52,54 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     }
 
     static MethodHandle makeArrayElementAccessor(Class<?> arrayClass, boolean isSetter) {
+        if (arrayClass == Object[].class)
+            return (isSetter ? ArrayAccessor.OBJECT_ARRAY_SETTER : ArrayAccessor.OBJECT_ARRAY_GETTER);
         if (!arrayClass.isArray())
             throw newIllegalArgumentException("not an array: "+arrayClass);
-        MethodHandle accessor = ArrayAccessor.getAccessor(arrayClass, isSetter);
-        MethodType srcType = accessor.type().erase();
-        MethodType lambdaType = srcType.invokerType();
-        Name[] names = arguments(1, lambdaType);
-        Name[] args  = Arrays.copyOfRange(names, 1, 1 + srcType.parameterCount());
-        names[names.length - 1] = new Name(accessor.asType(srcType), (Object[]) args);
-        LambdaForm form = new LambdaForm("getElement", lambdaType.parameterCount(), names);
-        MethodHandle mh = SimpleMethodHandle.make(srcType, form);
-        if (ArrayAccessor.needCast(arrayClass)) {
-            mh = mh.bindTo(arrayClass);
+        MethodHandle[] cache = ArrayAccessor.TYPED_ACCESSORS.get(arrayClass);
+        int cacheIndex = (isSetter ? ArrayAccessor.SETTER_INDEX : ArrayAccessor.GETTER_INDEX);
+        MethodHandle mh = cache[cacheIndex];
+        if (mh != null)  return mh;
+        mh = ArrayAccessor.getAccessor(arrayClass, isSetter);
+        MethodType correctType = ArrayAccessor.correctType(arrayClass, isSetter);
+        if (mh.type() != correctType) {
+            assert(mh.type().parameterType(0) == Object[].class);
+            assert((isSetter ? mh.type().parameterType(2) : mh.type().returnType()) == Object.class);
+            assert(isSetter || correctType.parameterType(0).getComponentType() == correctType.returnType());
+            // safe to view non-strictly, because element type follows from array type
+            mh = mh.viewAsType(correctType);
         }
-        mh = mh.asType(ArrayAccessor.correctType(arrayClass, isSetter));
+        // Atomically update accessor cache.
+        synchronized(cache) {
+            if (cache[cacheIndex] == null) {
+                cache[cacheIndex] = mh;
+            } else {
+                // Throw away newly constructed accessor and use cached version.
+                mh = cache[cacheIndex];
+            }
+        }
         return mh;
     }
 
     static final class ArrayAccessor {
         /// Support for array element access
-        static final HashMap<Class<?>, MethodHandle> GETTER_CACHE = new HashMap<>();  // TODO use it
-        static final HashMap<Class<?>, MethodHandle> SETTER_CACHE = new HashMap<>();  // TODO use it
+        static final int GETTER_INDEX = 0, SETTER_INDEX = 1, INDEX_LIMIT = 2;
+        static final ClassValue<MethodHandle[]> TYPED_ACCESSORS
+                = new ClassValue<MethodHandle[]>() {
+                    @Override
+                    protected MethodHandle[] computeValue(Class<?> type) {
+                        return new MethodHandle[INDEX_LIMIT];
+                    }
+                };
+        static final MethodHandle OBJECT_ARRAY_GETTER, OBJECT_ARRAY_SETTER;
+        static {
+            MethodHandle[] cache = TYPED_ACCESSORS.get(Object[].class);
+            cache[GETTER_INDEX] = OBJECT_ARRAY_GETTER = getAccessor(Object[].class, false);
+            cache[SETTER_INDEX] = OBJECT_ARRAY_SETTER = getAccessor(Object[].class, true);
+
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_GETTER.internalMemberName()));
+            assert(InvokerBytecodeGenerator.isStaticallyInvocable(ArrayAccessor.OBJECT_ARRAY_SETTER.internalMemberName()));
+        }
 
         static int     getElementI(int[]     a, int i)            { return              a[i]; }
         static long    getElementJ(long[]    a, int i)            { return              a[i]; }
@@ -94,45 +121,21 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static void    setElementC(char[]    a, int i, char    x) {              a[i] = x; }
         static void    setElementL(Object[]  a, int i, Object  x) {              a[i] = x; }
 
-        static Object  getElementL(Class<?> arrayClass, Object[] a, int i)           { arrayClass.cast(a); return a[i]; }
-        static void    setElementL(Class<?> arrayClass, Object[] a, int i, Object x) { arrayClass.cast(a); a[i] = x; }
-
-        // Weakly typed wrappers of Object[] accessors:
-        static Object  getElementL(Object    a, int i)            { return getElementL((Object[])a, i); }
-        static void    setElementL(Object    a, int i, Object  x) {        setElementL((Object[]) a, i, x); }
-        static Object  getElementL(Object   arrayClass, Object a, int i)             { return getElementL((Class<?>) arrayClass, (Object[])a, i); }
-        static void    setElementL(Object   arrayClass, Object a, int i, Object x)   {        setElementL((Class<?>) arrayClass, (Object[])a, i, x); }
-
-        static boolean needCast(Class<?> arrayClass) {
-            Class<?> elemClass = arrayClass.getComponentType();
-            return !elemClass.isPrimitive() && elemClass != Object.class;
-        }
         static String name(Class<?> arrayClass, boolean isSetter) {
             Class<?> elemClass = arrayClass.getComponentType();
             if (elemClass == null)  throw newIllegalArgumentException("not an array", arrayClass);
             return (!isSetter ? "getElement" : "setElement") + Wrapper.basicTypeChar(elemClass);
         }
-        static final boolean USE_WEAKLY_TYPED_ARRAY_ACCESSORS = false;  // FIXME: decide
         static MethodType type(Class<?> arrayClass, boolean isSetter) {
             Class<?> elemClass = arrayClass.getComponentType();
             Class<?> arrayArgClass = arrayClass;
             if (!elemClass.isPrimitive()) {
                 arrayArgClass = Object[].class;
-                if (USE_WEAKLY_TYPED_ARRAY_ACCESSORS)
-                    arrayArgClass = Object.class;
+                elemClass = Object.class;
             }
-            if (!needCast(arrayClass)) {
-                return !isSetter ?
+            return !isSetter ?
                     MethodType.methodType(elemClass,  arrayArgClass, int.class) :
                     MethodType.methodType(void.class, arrayArgClass, int.class, elemClass);
-            } else {
-                Class<?> classArgClass = Class.class;
-                if (USE_WEAKLY_TYPED_ARRAY_ACCESSORS)
-                    classArgClass = Object.class;
-                return !isSetter ?
-                    MethodType.methodType(Object.class, classArgClass, arrayArgClass, int.class) :
-                    MethodType.methodType(void.class,   classArgClass, arrayArgClass, int.class, Object.class);
-            }
         }
         static MethodType correctType(Class<?> arrayClass, boolean isSetter) {
             Class<?> elemClass = arrayClass.getComponentType();
