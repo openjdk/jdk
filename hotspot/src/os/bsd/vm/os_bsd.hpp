@@ -30,8 +30,8 @@
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
 
-/* pthread_getattr_np comes with BsdThreads-0.9-7 on RedHat 7.1 */
-typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
+// pthread_getattr_np comes with BsdThreads-0.9-7 on RedHat 7.1
+typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
 
 #ifdef __APPLE__
 // Mac OS X doesn't support clock_gettime. Stub out the type, it is
@@ -205,9 +205,9 @@ class PlatformEvent : public CHeapObj<mtInternal> {
  public:
   PlatformEvent() {
     int status;
-    status = pthread_cond_init (_cond, NULL);
+    status = pthread_cond_init(_cond, NULL);
     assert_status(status == 0, status, "cond_init");
-    status = pthread_mutex_init (_mutex, NULL);
+    status = pthread_mutex_init(_mutex, NULL);
     assert_status(status == 0, status, "mutex_init");
     _Event   = 0;
     _nParked = 0;
@@ -234,9 +234,9 @@ class PlatformParker : public CHeapObj<mtInternal> {
  public:
   PlatformParker() {
     int status;
-    status = pthread_cond_init (_cond, NULL);
+    status = pthread_cond_init(_cond, NULL);
     assert_status(status == 0, status, "cond_init");
-    status = pthread_mutex_init (_mutex, NULL);
+    status = pthread_mutex_init(_mutex, NULL);
     assert_status(status == 0, status, "mutex_init");
   }
 };

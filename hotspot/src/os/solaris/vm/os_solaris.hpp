@@ -36,10 +36,10 @@ class Solaris {
  private:
 
   // Support for "new" libthread APIs for getting & setting thread context (2.8)
-  #define TRS_VALID       0
-  #define TRS_NONVOLATILE 1
-  #define TRS_LWPID       2
-  #define TRS_INVALID     3
+#define TRS_VALID       0
+#define TRS_NONVOLATILE 1
+#define TRS_LWPID       2
+#define TRS_INVALID     3
 
   // initialized to libthread or lwp synchronization primitives depending on UseLWPSychronization
   static int_fnP_mutex_tP _mutex_lock;
@@ -61,8 +61,8 @@ class Solaris {
   typedef id_t            lgrp_id_t;
   typedef int             lgrp_rsrc_t;
   typedef enum lgrp_view {
-    LGRP_VIEW_CALLER,       /* what's available to the caller */
-    LGRP_VIEW_OS            /* what's available to operating system */
+    LGRP_VIEW_CALLER,       // what's available to the caller
+    LGRP_VIEW_OS            // what's available to operating system
   } lgrp_view_t;
 
   typedef uint_t (*getisax_func_t)(uint32_t* array, uint_t n);
@@ -216,8 +216,7 @@ class Solaris {
   static void set_mutex_destroy(int_fnP_mutex_tP func)   { _mutex_destroy = func; }
   static void set_mutex_scope(int scope)                 { _mutex_scope = scope; }
 
-  static int cond_timedwait(cond_t *cv, mutex_t *mx, timestruc_t *abst)
-                                                { return _cond_timedwait(cv, mx, abst); }
+  static int cond_timedwait(cond_t *cv, mutex_t *mx, timestruc_t *abst) { return _cond_timedwait(cv, mx, abst); }
   static int cond_wait(cond_t *cv, mutex_t *mx) { return _cond_wait(cv, mx); }
   static int cond_signal(cond_t *cv)            { return _cond_signal(cv); }
   static int cond_broadcast(cond_t *cv)         { return _cond_broadcast(cv); }
@@ -225,8 +224,7 @@ class Solaris {
   static int cond_destroy(cond_t *cv)           { return _cond_destroy(cv); }
   static int cond_scope()                       { return _cond_scope; }
 
-  static void set_cond_timedwait(int_fnP_cond_tP_mutex_tP_timestruc_tP func)
-                                                           { _cond_timedwait = func; }
+  static void set_cond_timedwait(int_fnP_cond_tP_mutex_tP_timestruc_tP func) { _cond_timedwait = func; }
   static void set_cond_wait(int_fnP_cond_tP_mutex_tP func) { _cond_wait = func; }
   static void set_cond_signal(int_fnP_cond_tP func)        { _cond_signal = func; }
   static void set_cond_broadcast(int_fnP_cond_tP func)     { _cond_broadcast = func; }
@@ -247,7 +245,7 @@ class Solaris {
   static id_t lgrp_home(idtype_t type, id_t id)      { return _lgrp_home != NULL ? _lgrp_home(type, id) : -1; }
   static lgrp_cookie_t lgrp_init(lgrp_view_t view)   { return _lgrp_init != NULL ? _lgrp_init(view) : 0; }
   static int lgrp_fini(lgrp_cookie_t cookie)         { return _lgrp_fini != NULL ? _lgrp_fini(cookie) : -1; }
-  static lgrp_id_t lgrp_root(lgrp_cookie_t cookie)   { return _lgrp_root != NULL ? _lgrp_root(cookie) : -1; };
+  static lgrp_id_t lgrp_root(lgrp_cookie_t cookie)   { return _lgrp_root != NULL ? _lgrp_root(cookie) : -1; }
   static int lgrp_children(lgrp_cookie_t  cookie,  lgrp_id_t  parent,
                            lgrp_id_t *lgrp_array, uint_t lgrp_array_size) {
     return _lgrp_children != NULL ? _lgrp_children(cookie, parent, lgrp_array, lgrp_array_size) : -1;

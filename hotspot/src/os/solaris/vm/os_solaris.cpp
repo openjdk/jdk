@@ -124,17 +124,17 @@
 // compile on older systems without this header file.
 
 #ifndef MADV_ACCESS_LWP
-# define  MADV_ACCESS_LWP         7       /* next LWP to access heavily */
+  #define  MADV_ACCESS_LWP   7       /* next LWP to access heavily */
 #endif
 #ifndef MADV_ACCESS_MANY
-# define  MADV_ACCESS_MANY        8       /* many processes to access heavily */
+  #define  MADV_ACCESS_MANY  8       /* many processes to access heavily */
 #endif
 
 #ifndef LGRP_RSRC_CPU
-# define LGRP_RSRC_CPU           0       /* CPU resources */
+  #define LGRP_RSRC_CPU      0       /* CPU resources */
 #endif
 #ifndef LGRP_RSRC_MEM
-# define LGRP_RSRC_MEM           1       /* memory resources */
+  #define LGRP_RSRC_MEM      1       /* memory resources */
 #endif
 
 // see thr_setprio(3T) for the basis of these numbers
@@ -190,7 +190,7 @@ static void unpackTime(timespec* absTime, bool isAbsolute, jlong time);
 Thread* ThreadLocalStorage::_get_thread_cache[ThreadLocalStorage::_pd_cache_size] = {NULL};
 
 #ifndef PRODUCT
-#define _PCT(n,d)       ((100.0*(double)(n))/(double)(d))
+  #define _PCT(n,d)       ((100.0*(double)(n))/(double)(d))
 
 int ThreadLocalStorage::_tcacheHit = 0;
 int ThreadLocalStorage::_tcacheMiss = 0;
@@ -200,7 +200,7 @@ void ThreadLocalStorage::print_statistics() {
   tty->print_cr("Thread cache hits %d misses %d total %d percent %f\n",
                 _tcacheHit, _tcacheMiss, total, _PCT(_tcacheHit, total));
 }
-#undef _PCT
+  #undef _PCT
 #endif // PRODUCT
 
 Thread* ThreadLocalStorage::get_thread_via_cache_slowly(uintptr_t raw_id,
@@ -356,8 +356,9 @@ static volatile hrtime_t max_hrtime = 0;
 
 void os::Solaris::initialize_system_info() {
   set_processor_count(sysconf(_SC_NPROCESSORS_CONF));
-  _processors_online = sysconf (_SC_NPROCESSORS_ONLN);
-  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) * (julong)sysconf(_SC_PAGESIZE);
+  _processors_online = sysconf(_SC_NPROCESSORS_ONLN);
+  _physical_memory = (julong)sysconf(_SC_PHYS_PAGES) *
+                                     (julong)sysconf(_SC_PAGESIZE);
 }
 
 int os::active_processor_count() {
@@ -556,9 +557,8 @@ bool os::bind_to_processor(uint processor_id) {
 
 bool os::getenv(const char* name, char* buffer, int len) {
   char* val = ::getenv(name);
-  if (val == NULL
-      ||   strlen(val) + 1  >  len ) {
-    if (len > 0)  buffer[0] = 0; // return a null string
+  if (val == NULL || strlen(val) + 1 > len) {
+    if (len > 0) buffer[0] = 0; // return a null string
     return false;
   }
   strcpy(buffer, val);
@@ -780,8 +780,7 @@ void os::breakpoint() {
   BREAKPOINT;
 }
 
-bool os::obsolete_option(const JavaVMOption *option)
-{
+bool os::obsolete_option(const JavaVMOption *option) {
   if (!strncmp(option->optionString, "-Xt", 3)) {
     return true;
   } else if (!strncmp(option->optionString, "-Xtm", 4)) {
@@ -906,7 +905,6 @@ static OSThread* create_os_thread(Thread* thread, thread_t thread_id) {
 }
 
 void os::Solaris::hotspot_sigmask(Thread* thread) {
-
   //Save caller's signal mask
   sigset_t sigmask;
   thr_sigsetmask(SIG_SETMASK, NULL, &sigmask);
@@ -970,7 +968,8 @@ bool os::create_main_thread(JavaThread* thread) {
 }
 
 
-bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
+bool os::create_thread(Thread* thread, ThreadType thr_type,
+                       size_t stack_size) {
   // Allocate the OSThread object
   OSThread* osthread = new OSThread(NULL, NULL);
   if (osthread == NULL) {
@@ -1088,14 +1087,14 @@ bool os::create_thread(Thread* thread, ThreadType thr_type, size_t stack_size) {
   return true;
 }
 
-/* defined for >= Solaris 10. This allows builds on earlier versions
- *  of Solaris to take advantage of the newly reserved Solaris JVM signals
- *  With SIGJVM1, SIGJVM2, INTERRUPT_SIGNAL is SIGJVM1, ASYNC_SIGNAL is SIGJVM2
- *  and -XX:+UseAltSigs does nothing since these should have no conflict
- */
+// defined for >= Solaris 10. This allows builds on earlier versions
+// of Solaris to take advantage of the newly reserved Solaris JVM signals
+// With SIGJVM1, SIGJVM2, INTERRUPT_SIGNAL is SIGJVM1, ASYNC_SIGNAL is SIGJVM2
+// and -XX:+UseAltSigs does nothing since these should have no conflict
+//
 #if !defined(SIGJVM1)
-#define SIGJVM1 39
-#define SIGJVM2 40
+  #define SIGJVM1 39
+  #define SIGJVM2 40
 #endif
 
 debug_only(static bool signal_sets_initialized = false);
@@ -1108,10 +1107,11 @@ bool os::Solaris::is_sig_ignored(int sig) {
   sigaction(sig, (struct sigaction*)NULL, &oact);
   void* ohlr = oact.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oact.sa_sigaction)
                                  : CAST_FROM_FN_PTR(void*,  oact.sa_handler);
-  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN))
+  if (ohlr == CAST_FROM_FN_PTR(void*, SIG_IGN)) {
     return true;
-  else
+  } else {
     return false;
+  }
 }
 
 // Note: SIGRTMIN is a macro that calls sysconf() so it will
@@ -1173,8 +1173,9 @@ void os::Solaris::signal_sets_init() {
   }
   // Fill in signals that are blocked by all but the VM thread.
   sigemptyset(&vm_sigs);
-  if (!ReduceSignalUsage)
+  if (!ReduceSignalUsage) {
     sigaddset(&vm_sigs, BREAK_SIGNAL);
+  }
   debug_only(signal_sets_initialized = true);
 
   // For diagnostics only used in run_periodic_checks
@@ -1244,14 +1245,13 @@ void os::initialize_thread(Thread* thr) {
     assert(stack_size > 0, "Stack size calculation problem");
 
     if (stack_size > jt->stack_size()) {
-      NOT_PRODUCT(
-                  struct rlimit limits;
-                  getrlimit(RLIMIT_STACK, &limits);
-                  size_t size = adjust_stack_size(base, (size_t)limits.rlim_cur);
-                  assert(size >= jt->stack_size(), "Stack size problem in main thread");
-                  )
-      tty->print_cr(
-                    "Stack size of %d Kb exceeds current limit of %d Kb.\n"
+#ifndef PRODUCT
+      struct rlimit limits;
+      getrlimit(RLIMIT_STACK, &limits);
+      size_t size = adjust_stack_size(base, (size_t)limits.rlim_cur);
+      assert(size >= jt->stack_size(), "Stack size problem in main thread");
+#endif
+      tty->print_cr("Stack size of %d Kb exceeds current limit of %d Kb.\n"
                     "(Stack sizes are rounded up to a multiple of the system page size.)\n"
                     "See limit(1) to increase the stack size limit.",
                     stack_size / K, jt->stack_size() / K);
@@ -1325,20 +1325,23 @@ int os::allocate_thread_local_storage() {
   //           JavaThread in Java code, and have stubs simply
   //           treat %g2 as a caller-save register, preserving it in a %lN.
   thread_key_t tk;
-  if (thr_keycreate( &tk, NULL))
+  if (thr_keycreate(&tk, NULL)) {
     fatal(err_msg("os::allocate_thread_local_storage: thr_keycreate failed "
                   "(%s)", strerror(errno)));
+  }
   return int(tk);
 }
 
 void os::free_thread_local_storage(int index) {
   // %%% don't think we need anything here
-  // if ( pthread_key_delete((pthread_key_t) tk) )
+  // if (pthread_key_delete((pthread_key_t) tk)) {
   //   fatal("os::free_thread_local_storage: pthread_key_delete failed");
+  // }
 }
 
-#define SMALLINT 32   // libthread allocate for tsd_common is a version specific
+// libthread allocate for tsd_common is a version specific
 // small number - point is NO swap space available
+#define SMALLINT 32
 void os::thread_local_storage_at_put(int index, void* value) {
   // %%% this is used only in threadLocalStorage.cpp
   if (thr_setspecific((thread_key_t)index, value)) {
@@ -1431,29 +1434,31 @@ bool os::supports_vtime() { return true; }
 
 bool os::enable_vtime() {
   int fd = ::open("/proc/self/ctl", O_WRONLY);
-  if (fd == -1)
+  if (fd == -1) {
     return false;
+  }
 
   long cmd[] = { PCSET, PR_MSACCT };
   int res = ::write(fd, cmd, sizeof(long) * 2);
   ::close(fd);
-  if (res != sizeof(long) * 2)
+  if (res != sizeof(long) * 2) {
     return false;
-
+  }
   return true;
 }
 
 bool os::vtime_enabled() {
   int fd = ::open("/proc/self/status", O_RDONLY);
-  if (fd == -1)
+  if (fd == -1) {
     return false;
+  }
 
   pstatus_t status;
   int res = os::read(fd, (void*) &status, sizeof(pstatus_t));
   ::close(fd);
-  if (res != sizeof(pstatus_t))
+  if (res != sizeof(pstatus_t)) {
     return false;
-
+  }
   return status.pr_flags & PR_MSACCT;
 }
 
@@ -1471,8 +1476,9 @@ jlong getTimeMillis() {
 // Must return millis since Jan 1 1970 for JVM_CurrentTimeMillis
 jlong os::javaTimeMillis() {
   timeval t;
-  if (gettimeofday( &t, NULL) == -1)
+  if (gettimeofday(&t, NULL) == -1) {
     fatal(err_msg("os::javaTimeMillis: gettimeofday (%s)", strerror(errno)));
+  }
   return jlong(t.tv_sec) * 1000  +  jlong(t.tv_usec) / 1000;
 }
 
@@ -1625,7 +1631,7 @@ bool os::address_is_in_vm(address addr) {
   return false;
 }
 
-typedef int (*dladdr1_func_type) (void *, Dl_info *, void **, int);
+typedef int (*dladdr1_func_type)(void *, Dl_info *, void **, int);
 static dladdr1_func_type dladdr1_func = NULL;
 
 bool os::dll_address_to_function_name(address addr, char *buf,
@@ -1643,9 +1649,9 @@ bool os::dll_address_to_function_name(address addr, char *buf,
     // available even if the vm is built on a machine that does
     // not have dladdr1 support.  Make sure there is a value for
     // RTLD_DL_SYMENT.
-    #ifndef RTLD_DL_SYMENT
-    #define RTLD_DL_SYMENT 1
-    #endif
+#ifndef RTLD_DL_SYMENT
+  #define RTLD_DL_SYMENT 1
+#endif
 #ifdef _LP64
     Elf64_Sym * info;
 #else
@@ -1763,8 +1769,7 @@ void os::print_dll_info(outputStream * st) {
 // in case of error it checks if .dll/.so was built for the
 // same architecture as Hotspot is running on
 
-void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
-{
+void * os::dll_load(const char *filename, char *ebuf, int ebuflen) {
   void * result= ::dlopen(filename, RTLD_LAZY);
   if (result != NULL) {
     // Successful loading
@@ -1824,26 +1829,26 @@ void * os::dll_load(const char *filename, char *ebuf, int ebuflen)
     {EM_ARM,         EM_ARM,     ELFCLASS32, ELFDATA2LSB, (char*)"ARM 32"}
   };
 
-  #if  (defined IA32)
+#if  (defined IA32)
   static  Elf32_Half running_arch_code=EM_386;
-  #elif   (defined AMD64)
+#elif   (defined AMD64)
   static  Elf32_Half running_arch_code=EM_X86_64;
-  #elif  (defined IA64)
+#elif  (defined IA64)
   static  Elf32_Half running_arch_code=EM_IA_64;
-  #elif  (defined __sparc) && (defined _LP64)
+#elif  (defined __sparc) && (defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARCV9;
-  #elif  (defined __sparc) && (!defined _LP64)
+#elif  (defined __sparc) && (!defined _LP64)
   static  Elf32_Half running_arch_code=EM_SPARC;
-  #elif  (defined __powerpc64__)
+#elif  (defined __powerpc64__)
   static  Elf32_Half running_arch_code=EM_PPC64;
-  #elif  (defined __powerpc__)
+#elif  (defined __powerpc__)
   static  Elf32_Half running_arch_code=EM_PPC;
-  #elif (defined ARM)
+#elif (defined ARM)
   static  Elf32_Half running_arch_code=EM_ARM;
-  #else
-    #error Method os::dll_load requires that one of following is defined:\
-         IA32, AMD64, IA64, __sparc, __powerpc__, ARM, ARM
-  #endif
+#else
+  #error Method os::dll_load requires that one of following is defined:\
+       IA32, AMD64, IA64, __sparc, __powerpc__, ARM, ARM
+#endif
 
   // Identify compatability class for VM's architecture and library's architecture
   // Obtain string descriptions for architectures
@@ -2219,7 +2224,6 @@ void os::print_jni_name_suffix_on(outputStream* st, int args_size) {
 // from src/solaris/hpi/src/system_md.c
 
 size_t os::lasterror(char *buf, size_t len) {
-
   if (errno == 0)  return 0;
 
   const char *s = ::strerror(errno);
@@ -2314,9 +2318,10 @@ void* os::signal(int signal_number, void* handler) {
   sigAct.sa_flags = SA_RESTART & ~SA_RESETHAND;
   sigAct.sa_handler = CAST_TO_FN_PTR(sa_handler_t, handler);
 
-  if (sigaction(signal_number, &sigAct, &oldSigAct))
+  if (sigaction(signal_number, &sigAct, &oldSigAct)) {
     // -1 means registration failed
     return (void *)-1;
+  }
 
   return CAST_FROM_FN_PTR(void*, oldSigAct.sa_handler);
 }
@@ -2325,10 +2330,8 @@ void os::signal_raise(int signal_number) {
   raise(signal_number);
 }
 
-/*
- * The following code is moved from os.cpp for making this
- * code platform specific, which it is by its very nature.
- */
+// The following code is moved from os.cpp for making this
+// code platform specific, which it is by its very nature.
 
 // a counter for each possible signal value
 static int Sigexit = 0;
@@ -2366,7 +2369,7 @@ void os::Solaris::init_signal_mem() {
     preinstalled_sigs = (int *)os::malloc(sizeof(int) * (Maxsignum + 1), mtInternal);
     memset(preinstalled_sigs, 0, (sizeof(int) * (Maxsignum + 1)));
   }
-  ourSigFlags = (int*)malloc(sizeof(int) * (Maxsignum + 1 ), mtInternal);
+  ourSigFlags = (int*)malloc(sizeof(int) * (Maxsignum + 1), mtInternal);
   memset(ourSigFlags, 0, sizeof(int) * (Maxsignum + 1));
 }
 
@@ -2411,12 +2414,10 @@ static int check_pending_signals(bool wait_for_signal) {
       // were we externally suspended while we were waiting?
       threadIsSuspended = thread->handle_special_suspend_equivalent_condition();
       if (threadIsSuspended) {
-        //
         // The semaphore has been incremented, but while we were waiting
         // another thread suspended us. We don't want to continue running
         // while suspended because that would surprise the thread that
         // suspended us.
-        //
         ret = ::sema_post(&sig_sem);
         assert(ret == 0, "sema_post() failed");
 
@@ -2714,7 +2715,8 @@ bool os::get_page_info(char *start, page_info* info) {
 
 // Scan the pages from start to end until a page different than
 // the one described in the info parameter is encountered.
-char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info* page_found) {
+char *os::scan_pages(char *start, char* end, page_info* page_expected,
+                     page_info* page_found) {
   const uint_t info_types[] = { MEMINFO_VLGRP, MEMINFO_VPAGESIZE };
   const size_t types = sizeof(info_types) / sizeof(info_types[0]);
   uint64_t addrs[MAX_MEMINFO_CNT], outdata[types * MAX_MEMINFO_CNT + 1];
@@ -2741,8 +2743,7 @@ char *os::scan_pages(char *start, char* end, page_info* page_expected, page_info
           if (outdata[types * i + 1] != page_expected->size) {
             break;
           }
-        } else
-        if (page_expected->size != 0) {
+        } else if (page_expected->size != 0) {
           break;
         }
 
@@ -2795,11 +2796,13 @@ char* os::Solaris::mmap_chunk(char *addr, size_t size, int flags, int prot) {
   return b;
 }
 
-char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignment_hint, bool fixed) {
+char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes,
+                             size_t alignment_hint, bool fixed) {
   char* addr = requested_addr;
   int flags = MAP_PRIVATE | MAP_NORESERVE;
 
-  assert(!(fixed && (alignment_hint > 0)), "alignment hint meaningless with fixed mmap");
+  assert(!(fixed && (alignment_hint > 0)),
+         "alignment hint meaningless with fixed mmap");
 
   if (fixed) {
     flags |= MAP_FIXED;
@@ -2814,8 +2817,10 @@ char* os::Solaris::anon_mmap(char* requested_addr, size_t bytes, size_t alignmen
   return mmap_chunk(addr, bytes, flags, PROT_NONE);
 }
 
-char* os::pd_reserve_memory(size_t bytes, char* requested_addr, size_t alignment_hint) {
-  char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint, (requested_addr != NULL));
+char* os::pd_reserve_memory(size_t bytes, char* requested_addr,
+                            size_t alignment_hint) {
+  char* addr = Solaris::anon_mmap(requested_addr, bytes, alignment_hint,
+                                  (requested_addr != NULL));
 
   guarantee(requested_addr == NULL || requested_addr == addr,
             "OS failed to return requested mmap address.");
@@ -3080,7 +3085,8 @@ void os::large_page_init() {
   }
 }
 
-bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
+bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes,
+                                    size_t align) {
   // Signal to OS that we want large pages for addresses
   // from addr, addr + bytes
   struct memcntl_mha mpss_struct;
@@ -3095,7 +3101,8 @@ bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
   return true;
 }
 
-char* os::reserve_memory_special(size_t size, size_t alignment, char* addr, bool exec) {
+char* os::reserve_memory_special(size_t size, size_t alignment, char* addr,
+                                 bool exec) {
   fatal("os::reserve_memory_special should not be called on Solaris.");
   return NULL;
 }
@@ -3160,14 +3167,14 @@ bool os::dont_yield() {
     static hrtime_t last_time = 0;
     hrtime_t diff = getTimeNanos() - last_time;
 
-    if (diff < DontYieldALotInterval * 1000000)
+    if (diff < DontYieldALotInterval * 1000000) {
       return true;
+    }
 
     last_time += diff;
 
     return false;
-  }
-  else {
+  } else {
     return false;
   }
 }
@@ -3362,8 +3369,10 @@ static int lwp_priocntl_init() {
     myMax = MIN2(myMax, (int)fxInfo->fx_uprilim);       // clamp - restrict
   } else {
     // No clue - punt
-    if (ThreadPriorityVerbose)
-      tty->print_cr("Unknown scheduling class: %s ... \n", ClassInfo.pc_clname);
+    if (ThreadPriorityVerbose) {
+      tty->print_cr("Unknown scheduling class: %s ... \n",
+                    ClassInfo.pc_clname);
+    }
     return EINVAL;      // no clue, punt
   }
 
@@ -3386,9 +3395,7 @@ static int lwp_priocntl_init() {
 // Convert from the libthread "thr_setprio" scale to our current
 // lwp scheduling class scale.
 //
-static
-int     scale_to_lwp_priority (int rMin, int rMax, int x)
-{
+static int scale_to_lwp_priority(int rMin, int rMax, int x) {
   int v;
 
   if (x == 127) return rMax;            // avoid round-down
@@ -3415,8 +3422,9 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
 
   // If something went wrong on init, don't change priorities.
   if (!priocntl_enable) {
-    if (ThreadPriorityVerbose)
+    if (ThreadPriorityVerbose) {
       tty->print_cr("Trying to set priority but init failed, ignoring");
+    }
     return EINVAL;
   }
 
@@ -3578,7 +3586,6 @@ int set_lwp_class_and_priority(int ThreadID, int lwpid,
 // Maximum priority an so on.  This will cause VM threads
 // to get unfair treatment against other Solaris processes
 // which do not explicitly alter their thread priorities.
-//
 
 int os::java_to_os_priority[CriticalPriority + 1] = {
   -99999,         // 0 Entry should never be used
@@ -3641,7 +3648,8 @@ OSReturn os::set_native_priority(Thread* thread, int newpri) {
 }
 
 
-OSReturn os::get_native_priority(const Thread* const thread, int *priority_ptr) {
+OSReturn os::get_native_priority(const Thread* const thread,
+                                 int *priority_ptr) {
   int p;
   if (!UseThreadPriorities) {
     *priority_ptr = NormalPriority;
@@ -3870,7 +3878,9 @@ ExtendedPC os::get_thread_pc(Thread* thread) {
 
 // This does not do anything on Solaris. This is basically a hook for being
 // able to use structured exception handling (thread-local exception filters) on, e.g., Win32.
-void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* method, JavaCallArguments* args, Thread* thread) {
+void os::os_exception_wrapper(java_call_t f, JavaValue* value,
+                              methodHandle* method, JavaCallArguments* args,
+                              Thread* thread) {
   f(value, method, args, thread);
 }
 
@@ -3901,9 +3911,10 @@ void os::os_exception_wrapper(java_call_t f, JavaValue* value, methodHandle* met
 // Note that the VM will print warnings if it detects conflicting signal
 // handlers, unless invoked with the option "-XX:+AllowUserSignalHandlers".
 //
-extern "C" JNIEXPORT int
-JVM_handle_solaris_signal(int signo, siginfo_t* siginfo, void* ucontext,
-                          int abort_if_unrecognized);
+extern "C" JNIEXPORT int JVM_handle_solaris_signal(int signo,
+                                                   siginfo_t* siginfo,
+                                                   void* ucontext,
+                                                   int abort_if_unrecognized);
 
 
 void signalHandler(int sig, siginfo_t* info, void* ucVoid) {
@@ -3912,11 +3923,11 @@ void signalHandler(int sig, siginfo_t* info, void* ucVoid) {
   errno = orig_errno;
 }
 
-/* Do not delete - if guarantee is ever removed,  a signal handler (even empty)
-   is needed to provoke threads blocked on IO to return an EINTR
-   Note: this explicitly does NOT call JVM_handle_solaris_signal and
-   does NOT participate in signal chaining due to requirement for
-   NOT setting SA_RESTART to make EINTR work. */
+// Do not delete - if guarantee is ever removed,  a signal handler (even empty)
+// is needed to provoke threads blocked on IO to return an EINTR
+// Note: this explicitly does NOT call JVM_handle_solaris_signal and
+// does NOT participate in signal chaining due to requirement for
+// NOT setting SA_RESTART to make EINTR work.
 extern "C" void sigINTRHandler(int sig, siginfo_t* info, void* ucVoid) {
   if (UseSignalChaining) {
     struct sigaction *actp = os::Solaris::get_chained_signal_action(sig);
@@ -4008,27 +4019,31 @@ bool os::Solaris::chained_handler(int sig, siginfo_t* siginfo, void* context) {
 }
 
 struct sigaction* os::Solaris::get_preinstalled_handler(int sig) {
-  assert((chainedsigactions != (struct sigaction *)NULL) && (preinstalled_sigs != (int *)NULL) , "signals not yet initialized");
+  assert((chainedsigactions != (struct sigaction *)NULL) &&
+         (preinstalled_sigs != (int *)NULL), "signals not yet initialized");
   if (preinstalled_sigs[sig] != 0) {
     return &chainedsigactions[sig];
   }
   return NULL;
 }
 
-void os::Solaris::save_preinstalled_handler(int sig, struct sigaction& oldAct) {
-
+void os::Solaris::save_preinstalled_handler(int sig,
+                                            struct sigaction& oldAct) {
   assert(sig > 0 && sig <= Maxsignum, "vm signal out of expected range");
-  assert((chainedsigactions != (struct sigaction *)NULL) && (preinstalled_sigs != (int *)NULL) , "signals not yet initialized");
+  assert((chainedsigactions != (struct sigaction *)NULL) &&
+         (preinstalled_sigs != (int *)NULL), "signals not yet initialized");
   chainedsigactions[sig] = oldAct;
   preinstalled_sigs[sig] = 1;
 }
 
-void os::Solaris::set_signal_handler(int sig, bool set_installed, bool oktochain) {
+void os::Solaris::set_signal_handler(int sig, bool set_installed,
+                                     bool oktochain) {
   // Check for overwrite.
   struct sigaction oldAct;
   sigaction(sig, (struct sigaction*)NULL, &oldAct);
-  void* oldhand = oldAct.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oldAct.sa_sigaction)
-                                      : CAST_FROM_FN_PTR(void*,  oldAct.sa_handler);
+  void* oldhand =
+      oldAct.sa_sigaction ? CAST_FROM_FN_PTR(void*,  oldAct.sa_sigaction)
+                          : CAST_FROM_FN_PTR(void*,  oldAct.sa_handler);
   if (oldhand != CAST_FROM_FN_PTR(void*, SIG_DFL) &&
       oldhand != CAST_FROM_FN_PTR(void*, SIG_IGN) &&
       oldhand != CAST_FROM_FN_PTR(void*, signalHandler)) {
@@ -4059,9 +4074,9 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed, bool oktochain
   // not using stack banging
   if (!UseStackBanging && sig == SIGSEGV) {
     sigAct.sa_flags = SA_SIGINFO | SA_RESTART | SA_ONSTACK;
+  } else if (sig == os::Solaris::SIGinterrupt()) {
     // Interruptible i/o requires SA_RESTART cleared so EINTR
     // is returned instead of restarting system calls
-  } else if (sig == os::Solaris::SIGinterrupt()) {
     sigemptyset(&sigAct.sa_mask);
     sigAct.sa_handler = NULL;
     sigAct.sa_flags = SA_SIGINFO;
@@ -4079,9 +4094,12 @@ void os::Solaris::set_signal_handler(int sig, bool set_installed, bool oktochain
 }
 
 
-#define DO_SIGNAL_CHECK(sig) \
-  if (!sigismember(&check_signal_done, sig)) \
-    os::Solaris::check_signal_handler(sig)
+#define DO_SIGNAL_CHECK(sig)                      \
+  do {                                            \
+    if (!sigismember(&check_signal_done, sig)) {  \
+      os::Solaris::check_signal_handler(sig);     \
+    }                                             \
+  } while (0)
 
 // This method is a periodic task to check for misbehaving JNI applications
 // under CheckJNI, we can add any periodic checks here
@@ -4275,7 +4293,8 @@ void os::Solaris::install_signal_handlers() {
 }
 
 
-void report_error(const char* file_name, int line_no, const char* title, const char* format, ...);
+void report_error(const char* file_name, int line_no, const char* title,
+                  const char* format, ...);
 
 const char * signames[] = {
   "SIG0",
@@ -4389,8 +4408,7 @@ void os::Solaris::synchronization_init() {
     os::Solaris::set_cond_init(lwp_cond_init);
     os::Solaris::set_cond_destroy(lwp_cond_destroy);
     os::Solaris::set_cond_scope(USYNC_THREAD);
-  }
-  else {
+  } else {
     os::Solaris::set_mutex_scope(USYNC_THREAD);
     os::Solaris::set_cond_scope(USYNC_THREAD);
 
@@ -4407,8 +4425,7 @@ void os::Solaris::synchronization_init() {
       os::Solaris::set_cond_broadcast(CAST_TO_FN_PTR(int_fnP_cond_tP, resolve_symbol("pthread_cond_broadcast")));
       os::Solaris::set_cond_init(pthread_cond_default_init);
       os::Solaris::set_cond_destroy(CAST_TO_FN_PTR(int_fnP_cond_tP, resolve_symbol("pthread_cond_destroy")));
-    }
-    else {
+    } else {
       os::Solaris::set_mutex_lock(CAST_TO_FN_PTR(int_fnP_mutex_tP, resolve_symbol("mutex_lock")));
       os::Solaris::set_mutex_trylock(CAST_TO_FN_PTR(int_fnP_mutex_tP, resolve_symbol("mutex_trylock")));
       os::Solaris::set_mutex_unlock(CAST_TO_FN_PTR(int_fnP_mutex_tP, resolve_symbol("mutex_unlock")));
@@ -4489,9 +4506,10 @@ void os::init(void) {
   init_random(1234567);
 
   page_size = sysconf(_SC_PAGESIZE);
-  if (page_size == -1)
+  if (page_size == -1) {
     fatal(err_msg("os_solaris.cpp: os::init: sysconf failed (%s)",
                   strerror(errno)));
+  }
   init_page_sizes((size_t) page_size);
 
   Solaris::initialize_system_info();
@@ -4517,8 +4535,9 @@ void os::init(void) {
   // and is available on linker patches for 5.7 and 5.8.
   // libdl.so must have been loaded, this call is just an entry lookup
   void * hdl = dlopen("libdl.so", RTLD_NOW);
-  if (hdl)
+  if (hdl) {
     dladdr1_func = CAST_TO_FN_PTR(dladdr1_func_type, dlsym(hdl, "dladdr1"));
+  }
 
   // (Solaris only) this switches to calls that actually do locking.
   ThreadCritical::initialize();
@@ -4566,8 +4585,10 @@ jint os::init_2(void) {
   os::set_polling_page(polling_page);
 
 #ifndef PRODUCT
-  if (Verbose && PrintMiscellaneous)
-    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n", (intptr_t)polling_page);
+  if (Verbose && PrintMiscellaneous) {
+    tty->print("[SafePoint Polling address: " INTPTR_FORMAT "]\n",
+               (intptr_t)polling_page);
+  }
 #endif
 
   if (!UseMembar) {
@@ -4576,8 +4597,10 @@ jint os::init_2(void) {
     os::set_memory_serialize_page(mem_serialize_page);
 
 #ifndef PRODUCT
-    if (Verbose && PrintMiscellaneous)
-      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n", (intptr_t)mem_serialize_page);
+    if (Verbose && PrintMiscellaneous) {
+      tty->print("[Memory Serialize  Page address: " INTPTR_FORMAT "]\n",
+                 (intptr_t)mem_serialize_page);
+    }
 #endif
   }
 
@@ -4656,14 +4679,16 @@ jint os::init_2(void) {
     struct rlimit nbr_files;
     int status = getrlimit(RLIMIT_NOFILE, &nbr_files);
     if (status != 0) {
-      if (PrintMiscellaneous && (Verbose || WizardMode))
+      if (PrintMiscellaneous && (Verbose || WizardMode)) {
         perror("os::init_2 getrlimit failed");
+      }
     } else {
       nbr_files.rlim_cur = nbr_files.rlim_max;
       status = setrlimit(RLIMIT_NOFILE, &nbr_files);
       if (status != 0) {
-        if (PrintMiscellaneous && (Verbose || WizardMode))
+        if (PrintMiscellaneous && (Verbose || WizardMode)) {
           perror("os::init_2 setrlimit failed");
+        }
       }
     }
   }
@@ -4715,15 +4740,17 @@ void os::init_3(void) {
 
 // Mark the polling page as unreadable
 void os::make_polling_page_unreadable(void) {
-  if (mprotect((char *)_polling_page, page_size, PROT_NONE) != 0)
+  if (mprotect((char *)_polling_page, page_size, PROT_NONE) != 0) {
     fatal("Could not disable polling page");
-};
+  }
+}
 
 // Mark the polling page as readable
 void os::make_polling_page_readable(void) {
-  if (mprotect((char *)_polling_page, page_size, PROT_READ) != 0)
+  if (mprotect((char *)_polling_page, page_size, PROT_READ) != 0) {
     fatal("Could not enable polling page");
-};
+  }
+}
 
 // OS interface.
 
@@ -4736,13 +4763,15 @@ int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
   if (!sol_vsnprintf) {
     //search  for the named symbol in the objects that were loaded after libjvm
     void* where = RTLD_NEXT;
-    if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL)
+    if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL) {
       sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
+    }
     if (!sol_vsnprintf){
       //search  for the named symbol in the objects that were loaded before libjvm
       where = RTLD_DEFAULT;
-      if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL)
+      if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL) {
         sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
+      }
       assert(sol_vsnprintf != NULL, "vsnprintf not found");
     }
   }
@@ -4758,7 +4787,7 @@ bool os::dir_is_empty(const char* path) {
   dir = opendir(path);
   if (dir == NULL) return true;
 
-  /* Scan the directory */
+  // Scan the directory
   bool result = true;
   char buf[sizeof(struct dirent) + MAX_PATH];
   struct dirent *dbuf = (struct dirent *) buf;
@@ -4775,7 +4804,7 @@ bool os::dir_is_empty(const char* path) {
 // from src/solaris/hpi/src/system_md.c
 
 #ifndef O_DELETE
-#define O_DELETE 0x10000
+  #define O_DELETE 0x10000
 #endif
 
 // Open a file. Unlink the file immediately after open returns
@@ -4794,7 +4823,7 @@ int os::open(const char *path, int oflag, int mode) {
   fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
 
-  //If the open succeeded, the file might still be a directory
+  // If the open succeeded, the file might still be a directory
   {
     struct stat64 buf64;
     int ret = ::fstat64(fd, &buf64);
@@ -4811,40 +4840,40 @@ int os::open(const char *path, int oflag, int mode) {
       return -1;
     }
   }
-    /*
-     * 32-bit Solaris systems suffer from:
-     *
-     * - an historical default soft limit of 256 per-process file
-     *   descriptors that is too low for many Java programs.
-     *
-     * - a design flaw where file descriptors created using stdio
-     *   fopen must be less than 256, _even_ when the first limit above
-     *   has been raised.  This can cause calls to fopen (but not calls to
-     *   open, for example) to fail mysteriously, perhaps in 3rd party
-     *   native code (although the JDK itself uses fopen).  One can hardly
-     *   criticize them for using this most standard of all functions.
-     *
-     * We attempt to make everything work anyways by:
-     *
-     * - raising the soft limit on per-process file descriptors beyond
-     *   256
-     *
-     * - As of Solaris 10u4, we can request that Solaris raise the 256
-     *   stdio fopen limit by calling function enable_extended_FILE_stdio.
-     *   This is done in init_2 and recorded in enabled_extended_FILE_stdio
-     *
-     * - If we are stuck on an old (pre 10u4) Solaris system, we can
-     *   workaround the bug by remapping non-stdio file descriptors below
-     *   256 to ones beyond 256, which is done below.
-     *
-     * See:
-     * 1085341: 32-bit stdio routines should support file descriptors >255
-     * 6533291: Work around 32-bit Solaris stdio limit of 256 open files
-     * 6431278: Netbeans crash on 32 bit Solaris: need to call
-     *          enable_extended_FILE_stdio() in VM initialisation
-     * Giri Mandalika's blog
-     * http://technopark02.blogspot.com/2005_05_01_archive.html
-     */
+
+  // 32-bit Solaris systems suffer from:
+  //
+  // - an historical default soft limit of 256 per-process file
+  //   descriptors that is too low for many Java programs.
+  //
+  // - a design flaw where file descriptors created using stdio
+  //   fopen must be less than 256, _even_ when the first limit above
+  //   has been raised.  This can cause calls to fopen (but not calls to
+  //   open, for example) to fail mysteriously, perhaps in 3rd party
+  //   native code (although the JDK itself uses fopen).  One can hardly
+  //   criticize them for using this most standard of all functions.
+  //
+  // We attempt to make everything work anyways by:
+  //
+  // - raising the soft limit on per-process file descriptors beyond
+  //   256
+  //
+  // - As of Solaris 10u4, we can request that Solaris raise the 256
+  //   stdio fopen limit by calling function enable_extended_FILE_stdio.
+  //   This is done in init_2 and recorded in enabled_extended_FILE_stdio
+  //
+  // - If we are stuck on an old (pre 10u4) Solaris system, we can
+  //   workaround the bug by remapping non-stdio file descriptors below
+  //   256 to ones beyond 256, which is done below.
+  //
+  // See:
+  // 1085341: 32-bit stdio routines should support file descriptors >255
+  // 6533291: Work around 32-bit Solaris stdio limit of 256 open files
+  // 6431278: Netbeans crash on 32 bit Solaris: need to call
+  //          enable_extended_FILE_stdio() in VM initialisation
+  // Giri Mandalika's blog
+  // http://technopark02.blogspot.com/2005_05_01_archive.html
+  //
 #ifndef  _LP64
   if ((!enabled_extended_FILE_stdio) && fd < 256) {
     int newfd = ::fcntl(fd, F_DUPFD, 256);
@@ -4854,33 +4883,34 @@ int os::open(const char *path, int oflag, int mode) {
     }
   }
 #endif // 32-bit Solaris
-    /*
-     * All file descriptors that are opened in the JVM and not
-     * specifically destined for a subprocess should have the
-     * close-on-exec flag set.  If we don't set it, then careless 3rd
-     * party native code might fork and exec without closing all
-     * appropriate file descriptors (e.g. as we do in closeDescriptors in
-     * UNIXProcess.c), and this in turn might:
-     *
-     * - cause end-of-file to fail to be detected on some file
-     *   descriptors, resulting in mysterious hangs, or
-     *
-     * - might cause an fopen in the subprocess to fail on a system
-     *   suffering from bug 1085341.
-     *
-     * (Yes, the default setting of the close-on-exec flag is a Unix
-     * design flaw)
-     *
-     * See:
-     * 1085341: 32-bit stdio routines should support file descriptors >255
-     * 4843136: (process) pipe file descriptor from Runtime.exec not being closed
-     * 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
-     */
+
+  // All file descriptors that are opened in the JVM and not
+  // specifically destined for a subprocess should have the
+  // close-on-exec flag set.  If we don't set it, then careless 3rd
+  // party native code might fork and exec without closing all
+  // appropriate file descriptors (e.g. as we do in closeDescriptors in
+  // UNIXProcess.c), and this in turn might:
+  //
+  // - cause end-of-file to fail to be detected on some file
+  //   descriptors, resulting in mysterious hangs, or
+  //
+  // - might cause an fopen in the subprocess to fail on a system
+  //   suffering from bug 1085341.
+  //
+  // (Yes, the default setting of the close-on-exec flag is a Unix
+  // design flaw)
+  //
+  // See:
+  // 1085341: 32-bit stdio routines should support file descriptors >255
+  // 4843136: (process) pipe file descriptor from Runtime.exec not being closed
+  // 6339493: (process) Runtime.exec does not close all file descriptors on Solaris 9
+  //
 #ifdef FD_CLOEXEC
   {
     int flags = ::fcntl(fd, F_GETFD);
-    if (flags != -1)
+    if (flags != -1) {
       ::fcntl(fd, F_SETFD, flags | FD_CLOEXEC);
+    }
   }
 #endif
 
@@ -5035,9 +5065,8 @@ void record_synch(char* name, bool returning);  // defined below
 class RecordSynch {
   char* _name;
  public:
-  RecordSynch(char* name) :_name(name)
-                 { record_synch(_name, false); }
-  ~RecordSynch() { record_synch(_name,   true);  }
+  RecordSynch(char* name) :_name(name) { record_synch(_name, false); }
+  ~RecordSynch()                       { record_synch(_name, true); }
 };
 
 #define CHECK_SYNCH_OP(ret, name, params, args, inner)          \
@@ -5067,7 +5096,7 @@ extern "C" ret name params {                                    \
   if (!CHECK_POINTER_OK(p))  fatal(false,  "Pointer must be in C heap only.");
 
 #define CHECK_MUTEX(mutex_op) \
-CHECK_SYNCH_OP(int, mutex_op, (mutex_t *mu), (mu), CHECK_MU);
+  CHECK_SYNCH_OP(int, mutex_op, (mutex_t *mu), (mu), CHECK_MU);
 
 CHECK_MUTEX(   mutex_lock)
 CHECK_MUTEX(  _mutex_lock)
@@ -5077,14 +5106,14 @@ CHECK_MUTEX( mutex_trylock)
 CHECK_MUTEX(_mutex_trylock)
 
 #define CHECK_COND(cond_op) \
-CHECK_SYNCH_OP(int, cond_op, (cond_t *cv, mutex_t *mu), (cv, mu), CHECK_MU;CHECK_CV);
+  CHECK_SYNCH_OP(int, cond_op, (cond_t *cv, mutex_t *mu), (cv, mu), CHECK_MU; CHECK_CV);
 
 CHECK_COND( cond_wait);
 CHECK_COND(_cond_wait);
 CHECK_COND(_cond_wait_cancel);
 
 #define CHECK_COND2(cond_op) \
-CHECK_SYNCH_OP(int, cond_op, (cond_t *cv, mutex_t *mu, timestruc_t* ts), (cv, mu, ts), CHECK_MU;CHECK_CV);
+  CHECK_SYNCH_OP(int, cond_op, (cond_t *cv, mutex_t *mu, timestruc_t* ts), (cv, mu, ts), CHECK_MU; CHECK_CV);
 
 CHECK_COND2( cond_timedwait);
 CHECK_COND2(_cond_timedwait);
@@ -5275,10 +5304,11 @@ bool os::find(address addr, outputStream* st) {
     st->print(PTR_FORMAT ": ", addr);
     if (dlinfo.dli_sname != NULL && dlinfo.dli_saddr != NULL) {
       st->print("%s+%#lx", dlinfo.dli_sname, addr-(intptr_t)dlinfo.dli_saddr);
-    } else if (dlinfo.dli_fbase != NULL)
+    } else if (dlinfo.dli_fbase != NULL) {
       st->print("<offset %#lx>", addr-(intptr_t)dlinfo.dli_fbase);
-    else
+    } else {
       st->print("<absolute address>");
+    }
     if (dlinfo.dli_fname != NULL) {
       st->print(" in %s", dlinfo.dli_fname);
     }
@@ -5296,8 +5326,9 @@ bool os::find(address addr, outputStream* st) {
       if (begin < lowest)  begin = lowest;
       Dl_info dlinfo2;
       if (dladdr(end, &dlinfo2) != 0 && dlinfo2.dli_saddr != dlinfo.dli_saddr
-          && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin)
+          && end > dlinfo2.dli_saddr && dlinfo2.dli_saddr > begin) {
         end = (address) dlinfo2.dli_saddr;
+      }
       Disassembler::decode(begin, end, st);
     }
     return true;
@@ -5554,36 +5585,34 @@ void os::PlatformEvent::unpark() {
 // JSR166
 // -------------------------------------------------------
 
-/*
- * The solaris and linux implementations of park/unpark are fairly
- * conservative for now, but can be improved. They currently use a
- * mutex/condvar pair, plus _counter.
- * Park decrements _counter if > 0, else does a condvar wait.  Unpark
- * sets count to 1 and signals condvar.  Only one thread ever waits
- * on the condvar. Contention seen when trying to park implies that someone
- * is unparking you, so don't wait. And spurious returns are fine, so there
- * is no need to track notifications.
- */
+// The solaris and linux implementations of park/unpark are fairly
+// conservative for now, but can be improved. They currently use a
+// mutex/condvar pair, plus _counter.
+// Park decrements _counter if > 0, else does a condvar wait.  Unpark
+// sets count to 1 and signals condvar.  Only one thread ever waits
+// on the condvar. Contention seen when trying to park implies that someone
+// is unparking you, so don't wait. And spurious returns are fine, so there
+// is no need to track notifications.
 
 #define MAX_SECS 100000000
-/*
- * This code is common to linux and solaris and will be moved to a
- * common place in dolphin.
- *
- * The passed in time value is either a relative time in nanoseconds
- * or an absolute time in milliseconds. Either way it has to be unpacked
- * into suitable seconds and nanoseconds components and stored in the
- * given timespec structure.
- * Given time is a 64-bit value and the time_t used in the timespec is only
- * a signed-32-bit value (except on 64-bit Linux) we have to watch for
- * overflow if times way in the future are given. Further on Solaris versions
- * prior to 10 there is a restriction (see cond_timedwait) that the specified
- * number of seconds, in abstime, is less than current_time  + 100,000,000.
- * As it will be 28 years before "now + 100000000" will overflow we can
- * ignore overflow and just impose a hard-limit on seconds using the value
- * of "now + 100,000,000". This places a limit on the timeout of about 3.17
- * years from "now".
- */
+
+// This code is common to linux and solaris and will be moved to a
+// common place in dolphin.
+//
+// The passed in time value is either a relative time in nanoseconds
+// or an absolute time in milliseconds. Either way it has to be unpacked
+// into suitable seconds and nanoseconds components and stored in the
+// given timespec structure.
+// Given time is a 64-bit value and the time_t used in the timespec is only
+// a signed-32-bit value (except on 64-bit Linux) we have to watch for
+// overflow if times way in the future are given. Further on Solaris versions
+// prior to 10 there is a restriction (see cond_timedwait) that the specified
+// number of seconds, in abstime, is less than current_time  + 100,000,000.
+// As it will be 28 years before "now + 100000000" will overflow we can
+// ignore overflow and just impose a hard-limit on seconds using the value
+// of "now + 100,000,000". This places a limit on the timeout of about 3.17
+// years from "now".
+//
 static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
   assert(time > 0, "convertTime");
 
@@ -5597,19 +5626,16 @@ static void unpackTime(timespec* absTime, bool isAbsolute, jlong time) {
     jlong secs = time / 1000;
     if (secs > max_secs) {
       absTime->tv_sec = max_secs;
-    }
-    else {
+    } else {
       absTime->tv_sec = secs;
     }
     absTime->tv_nsec = (time % 1000) * NANOSECS_PER_MILLISEC;
-  }
-  else {
+  } else {
     jlong secs = time / NANOSECS_PER_SEC;
     if (secs >= MAX_SECS) {
       absTime->tv_sec = max_secs;
       absTime->tv_nsec = 0;
-    }
-    else {
+    } else {
       absTime->tv_sec = now.tv_sec + secs;
       absTime->tv_nsec = (time % NANOSECS_PER_SEC) + now.tv_usec*1000;
       if (absTime->tv_nsec >= NANOSECS_PER_SEC) {
@@ -5831,13 +5857,19 @@ bool os::is_headless_jre() {
 
   // Get rid of libjvm.so
   p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
+  if (p == NULL) {
+    return false;
+  } else {
+    *p = '\0';
+  }
 
   // Get rid of client or server
   p = strrchr(buf, '/');
-  if (p == NULL) return false;
-  else *p = '\0';
+  if (p == NULL) {
+    return false;
+  } else {
+    *p = '\0';
+  }
 
   // check xawt/libmawt.so
   strcpy(libmawtpath, buf);
@@ -5911,8 +5943,9 @@ int os::timeout(int fd, long timeout) {
         gettimeofday(&t, &aNull);
         newtime = ((julong)t.tv_sec * 1000)  +  t.tv_usec /1000;
         timeout -= newtime - prevtime;
-        if (timeout <= 0)
+        if (timeout <= 0) {
           return OS_OK;
+        }
         prevtime = newtime;
       }
     } else return res;
@@ -5943,12 +5976,12 @@ int os::connect(int fd, struct sockaddr *him, socklen_t len) {
   //
   //     EISCONN          The socket is already connected.
   if (_result == OS_ERR && errno == EINTR) {
-     /* restarting a connect() changes its errno semantics */
+    // restarting a connect() changes its errno semantics
     RESTARTABLE(::connect(fd, him, len), _result);
-     /* undo these changes */
+    // undo these changes
     if (_result == OS_ERR) {
       if (errno == EALREADY) {
-        errno = EINPROGRESS; /* fall through */
+        errno = EINPROGRESS; // fall through
       } else if (errno == EISCONN) {
         errno = 0;
         return OS_OK;

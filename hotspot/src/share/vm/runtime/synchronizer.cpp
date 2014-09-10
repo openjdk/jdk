@@ -57,7 +57,6 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 // for instance.  If you make changes here, make sure to modify the
 // interpreter, and both C1 and C2 fast-path inline locking code emission.
 //
-//
 // -----------------------------------------------------------------------------
 
 #ifdef DTRACE_ENABLED
@@ -77,10 +76,10 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define DTRACE_MONITOR_WAIT_PROBE(monitor, obj, thread, millis)            \
   {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
+    if (DTraceMonitorProbes) {                                             \
       DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
       HOTSPOT_MONITOR_WAIT(jtid,                                           \
-                           (uintptr_t)(monitor), bytes, len, (millis));  \
+                           (uintptr_t)(monitor), bytes, len, (millis));    \
     }                                                                      \
   }
 
@@ -88,10 +87,10 @@ PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
 #define DTRACE_MONITOR_PROBE(probe, monitor, obj, thread)                  \
   {                                                                        \
-    if (DTraceMonitorProbes) {                                            \
+    if (DTraceMonitorProbes) {                                             \
       DTRACE_MONITOR_PROBE_COMMON(obj, thread);                            \
       HOTSPOT_MONITOR_PROBE_##probe(jtid, /* probe = waited */             \
-                       (uintptr_t)(monitor), bytes, len);                  \
+                                    (uintptr_t)(monitor), bytes, len);     \
     }                                                                      \
   }
 
@@ -116,8 +115,8 @@ ObjectMonitor * volatile ObjectSynchronizer::gFreeList  = NULL;
 ObjectMonitor * volatile ObjectSynchronizer::gOmInUseList  = NULL;
 int ObjectSynchronizer::gOmInUseCount = 0;
 static volatile intptr_t ListLock = 0;      // protects global monitor free-list cache
-static volatile int MonitorFreeCount  = 0;      // # on gFreeList
-static volatile int MonitorPopulation = 0;      // # Extant -- in circulation
+static volatile int MonitorFreeCount  = 0;  // # on gFreeList
+static volatile int MonitorPopulation = 0;  // # Extant -- in circulation
 #define CHAINMARKER (cast_to_oop<intptr_t>(-1))
 
 // -----------------------------------------------------------------------------
@@ -127,7 +126,8 @@ static volatile int MonitorPopulation = 0;      // # Extant -- in circulation
 // if the following function is changed. The implementation is
 // extremely sensitive to race condition. Be careful.
 
-void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock, bool attempt_rebias, TRAPS) {
+void ObjectSynchronizer::fast_enter(Handle obj, BasicLock* lock,
+                                    bool attempt_rebias, TRAPS) {
   if (UseBiasedLocking) {
     if (!SafepointSynchronize::is_at_safepoint()) {
       BiasedLocking::Condition cond = BiasedLocking::revoke_and_rebias(obj, attempt_rebias, THREAD);
@@ -198,8 +198,8 @@ void ObjectSynchronizer::slow_enter(Handle obj, BasicLock* lock, TRAPS) {
       return;
     }
     // Fall through to inflate() ...
-  } else
-  if (mark->has_locker() && THREAD->is_lock_owned((address)mark->locker())) {
+  } else if (mark->has_locker() &&
+             THREAD->is_lock_owned((address)mark->locker())) {
     assert(lock != mark->locker(), "must not re-lock the same lock");
     assert(lock != (BasicLock*)obj->mark(), "don't relock with same BasicLock");
     lock->set_displaced_header(NULL);
@@ -261,7 +261,7 @@ void ObjectSynchronizer::reenter(Handle obj, intptr_t recursion, TRAPS) {
 // -----------------------------------------------------------------------------
 // JNI locks on java objects
 // NOTE: must use heavy weight monitor to handle jni monitor enter
-void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) { // possible entry from jni enter
+void ObjectSynchronizer::jni_enter(Handle obj, TRAPS) {
   // the current locking is from JNI instead of Java code
   TEVENT(jni_enter);
   if (UseBiasedLocking) {
@@ -349,7 +349,7 @@ int ObjectSynchronizer::wait(Handle obj, jlong millis, TRAPS) {
   return dtrace_waited_probe(monitor, obj, THREAD);
 }
 
-void ObjectSynchronizer::waitUninterruptibly (Handle obj, jlong millis, TRAPS) {
+void ObjectSynchronizer::waitUninterruptibly(Handle obj, jlong millis, TRAPS) {
   if (UseBiasedLocking) {
     BiasedLocking::revoke_and_rebias(obj, false, THREAD);
     assert(!obj->mark()->has_bias_pattern(), "biases should be revoked by now");
@@ -426,7 +426,7 @@ static SharedGlobals GVars;
 static int MonitorScavengeThreshold = 1000000;
 static volatile int ForceMonitorScavenge = 0; // Scavenge required and pending
 
-static markOop ReadStableMark (oop obj) {
+static markOop ReadStableMark(oop obj) {
   markOop mark = obj->mark();
   if (!mark->is_being_inflated()) {
     return mark;       // normal fast-path return
@@ -510,7 +510,6 @@ static markOop ReadStableMark (oop obj) {
 //   result in hashtable collisions and reduced hashtable efficiency.
 //   There are simple ways to "diffuse" the middle address bits over the
 //   generated hashCode values:
-//
 
 static inline intptr_t get_next_hash(Thread * Self, oop obj) {
   intptr_t value = 0;
@@ -520,21 +519,17 @@ static inline intptr_t get_next_hash(Thread * Self, oop obj) {
     // On MP system we'll have lots of RW access to a global, so the
     // mechanism induces lots of coherency traffic.
     value = os::random();
-  } else
-  if (hashCode == 1) {
+  } else if (hashCode == 1) {
     // This variation has the property of being stable (idempotent)
     // between STW operations.  This can be useful in some of the 1-0
     // synchronization schemes.
     intptr_t addrBits = cast_from_oop<intptr_t>(obj) >> 3;
     value = addrBits ^ (addrBits >> 5) ^ GVars.stwRandom;
-  } else
-  if (hashCode == 2) {
+  } else if (hashCode == 2) {
     value = 1;            // for sensitivity testing
-  } else
-  if (hashCode == 3) {
+  } else if (hashCode == 3) {
     value = ++GVars.hcSequence;
-  } else
-  if (hashCode == 4) {
+  } else if (hashCode == 4) {
     value = cast_from_oop<intptr_t>(obj);
   } else {
     // Marsaglia's xor-shift scheme with thread-specific state
@@ -557,8 +552,8 @@ static inline intptr_t get_next_hash(Thread * Self, oop obj) {
   TEVENT(hashCode: GENERATE);
   return value;
 }
-//
-intptr_t ObjectSynchronizer::FastHashCode (Thread * Self, oop obj) {
+
+intptr_t ObjectSynchronizer::FastHashCode(Thread * Self, oop obj) {
   if (UseBiasedLocking) {
     // NOTE: many places throughout the JVM do not expect a safepoint
     // to be taken here, in particular most operations on perm gen
@@ -592,7 +587,7 @@ intptr_t ObjectSynchronizer::FastHashCode (Thread * Self, oop obj) {
   ObjectMonitor* monitor = NULL;
   markOop temp, test;
   intptr_t hash;
-  markOop mark = ReadStableMark (obj);
+  markOop mark = ReadStableMark(obj);
 
   // object should remain ineligible for biased locking
   assert(!mark->has_bias_pattern(), "invariant");
@@ -706,7 +701,7 @@ ObjectSynchronizer::LockOwnership ObjectSynchronizer::query_lock_ownership
   // The caller must beware this method can revoke bias, and
   // revocation can result in a safepoint.
   assert(!SafepointSynchronize::is_at_safepoint(), "invariant");
-  assert(self->thread_state() != _thread_blocked , "invariant");
+  assert(self->thread_state() != _thread_blocked, "invariant");
 
   // Possible mark states: neutral, biased, stack-locked, inflated
 
@@ -841,7 +836,6 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
 // --   unassigned and on a thread's private omFreeList
 // --   assigned to an object.  The object is inflated and the mark refers
 //      to the objectmonitor.
-//
 
 
 // Constraining monitor pool growth via MonitorBound ...
@@ -859,9 +853,8 @@ void ObjectSynchronizer::oops_do(OopClosure* f) {
 // See also: GuaranteedSafepointInterval
 //
 // The current implementation uses asynchronous VM operations.
-//
 
-static void InduceScavenge (Thread * Self, const char * Whence) {
+static void InduceScavenge(Thread * Self, const char * Whence) {
   // Induce STW safepoint to trim monitors
   // Ultimately, this results in a call to deflate_idle_monitors() in the near future.
   // More precisely, trigger an asynchronous STW safepoint as the number
@@ -886,7 +879,7 @@ static void InduceScavenge (Thread * Self, const char * Whence) {
   }
 }
 
-void ObjectSynchronizer::verifyInUse (Thread *Self) {
+void ObjectSynchronizer::verifyInUse(Thread *Self) {
   ObjectMonitor* mid;
   int inusetally = 0;
   for (mid = Self->omInUseList; mid != NULL; mid = mid->FreeNext) {
@@ -901,7 +894,7 @@ void ObjectSynchronizer::verifyInUse (Thread *Self) {
   assert(freetally == Self->omFreeCount, "free count off");
 }
 
-ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc (Thread * Self) {
+ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc(Thread * Self) {
   // A large MAXPRIVATE value reduces both list lock contention
   // and list coherency traffic, but also tends to increase the
   // number of objectMonitors in circulation as well as the STW
@@ -1032,9 +1025,9 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::omAlloc (Thread * Self) {
 // omRelease is to return a monitor to the free list after a CAS
 // attempt failed.  This doesn't allow unbounded #s of monitors to
 // accumulate on a thread's free list.
-//
 
-void ObjectSynchronizer::omRelease (Thread * Self, ObjectMonitor * m, bool fromPerThreadAlloc) {
+void ObjectSynchronizer::omRelease(Thread * Self, ObjectMonitor * m,
+                                   bool fromPerThreadAlloc) {
   guarantee(m->object() == NULL, "invariant");
 
   // Remove from omInUseList
@@ -1086,7 +1079,7 @@ void ObjectSynchronizer::omRelease (Thread * Self, ObjectMonitor * m, bool fromP
 // be not inopportune interleavings between omFlush() and the scavenge
 // operator.
 
-void ObjectSynchronizer::omFlush (Thread * Self) {
+void ObjectSynchronizer::omFlush(Thread * Self) {
   ObjectMonitor * List = Self->omFreeList;  // Null-terminated SLL
   Self->omFreeList = NULL;
   ObjectMonitor * Tail = NULL;
@@ -1152,7 +1145,8 @@ ObjectMonitor* ObjectSynchronizer::inflate_helper(oop obj) {
 // multiple locks occupy the same $ line.  Padding might be appropriate.
 
 
-ObjectMonitor * NOINLINE ObjectSynchronizer::inflate (Thread * Self, oop object) {
+ObjectMonitor * NOINLINE ObjectSynchronizer::inflate(Thread * Self,
+                                                     oop object) {
   // Inflate mutates the heap ...
   // Relaxing assertion for bug 6320749.
   assert(Universe::verify_in_progress() ||
@@ -1373,7 +1367,6 @@ ObjectMonitor * NOINLINE ObjectSynchronizer::inflate (Thread * Self, oop object)
 // typically drives the scavenge rate.  Large heaps can mean infrequent GC,
 // which in turn can mean large(r) numbers of objectmonitors in circulation.
 // This is an unfortunate aspect of this design.
-//
 
 enum ManifestConstants {
   ClearResponsibleAtSTW   = 0,
@@ -1383,7 +1376,8 @@ enum ManifestConstants {
 // Deflate a single monitor if not in use
 // Return true if deflated, false if in use
 bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
-                                         ObjectMonitor** freeHeadp, ObjectMonitor** freeTailp) {
+                                         ObjectMonitor** freeHeadp,
+                                         ObjectMonitor** freeTailp) {
   bool deflated;
   // Normal case ... The monitor is associated with obj.
   guarantee(obj->mark() == markOopDesc::encode(mid), "invariant");
@@ -1427,7 +1421,8 @@ bool ObjectSynchronizer::deflate_monitor(ObjectMonitor* mid, oop obj,
 
 // Caller acquires ListLock
 int ObjectSynchronizer::walk_monitor_list(ObjectMonitor** listheadp,
-                                          ObjectMonitor** freeHeadp, ObjectMonitor** freeTailp) {
+                                          ObjectMonitor** freeHeadp,
+                                          ObjectMonitor** freeTailp) {
   ObjectMonitor* mid;
   ObjectMonitor* next;
   ObjectMonitor* curmidinuse = NULL;

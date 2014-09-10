@@ -27,8 +27,8 @@
 
 // Linux_OS defines the interface to Linux operating systems
 
-/* pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1 */
-typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
+// pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1
+typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
@@ -302,9 +302,9 @@ class PlatformEvent : public CHeapObj<mtInternal> {
  public:
   PlatformEvent() {
     int status;
-    status = pthread_cond_init (_cond, os::Linux::condAttr());
+    status = pthread_cond_init(_cond, os::Linux::condAttr());
     assert_status(status == 0, status, "cond_init");
-    status = pthread_mutex_init (_mutex, NULL);
+    status = pthread_mutex_init(_mutex, NULL);
     assert_status(status == 0, status, "mutex_init");
     _Event   = 0;
     _nParked = 0;
@@ -336,11 +336,11 @@ class PlatformParker : public CHeapObj<mtInternal> {
  public:
   PlatformParker() {
     int status;
-    status = pthread_cond_init (&_cond[REL_INDEX], os::Linux::condAttr());
+    status = pthread_cond_init(&_cond[REL_INDEX], os::Linux::condAttr());
     assert_status(status == 0, status, "cond_init rel");
-    status = pthread_cond_init (&_cond[ABS_INDEX], NULL);
+    status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
     assert_status(status == 0, status, "cond_init abs");
-    status = pthread_mutex_init (_mutex, NULL);
+    status = pthread_mutex_init(_mutex, NULL);
     assert_status(status == 0, status, "mutex_init");
     _cur_index = -1; // mark as unused
   }
