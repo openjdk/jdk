@@ -51,6 +51,7 @@ import java.util.function.Consumer;
 import java.util.logging.Level;
 import jdk.internal.dynalink.support.NameCodec;
 import jdk.nashorn.internal.codegen.types.Type;
+import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.Optimistic;
 import jdk.nashorn.internal.ir.debug.ClassHistogramElement;
@@ -63,6 +64,7 @@ import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.Source;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -478,6 +480,19 @@ public final class Compiler implements Loggable {
 
     Type getOptimisticType(final Optimistic node) {
         return typeEvaluator.getOptimisticType(node);
+    }
+
+    /**
+     * Returns true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property names retrieved through
+     * {@link ScriptRuntime#toPropertyIterator(Object)}. It is used to avoid optimistic assumptions about its
+     * property name types.
+     * @param expr the expression to test
+     * @return true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property iterators.
+     */
+    boolean hasStringPropertyIterator(final Expression expr) {
+        return typeEvaluator.hasStringPropertyIterator(expr);
     }
 
     void addInvalidatedProgramPoint(final int programPoint, final Type type) {
