@@ -214,13 +214,14 @@ class os: AllStatic {
 
   // Interface for detecting multiprocessor system
   static inline bool is_MP() {
-#if !INCLUDE_NMT
-    assert(_processor_count > 0, "invalid processor count");
-    return _processor_count > 1 || AssumeMP;
-#else
-    // NMT needs atomic operations before this initialization.
-    return true;
-#endif
+    // During bootstrap if _processor_count is not yet initialized
+    // we claim to be MP as that is safest. If any platform has a
+    // stub generator that might be triggered in this phase and for
+    // which being declared MP when in fact not, is a problem - then
+    // the bootstrap routine for the stub generator needs to check
+    // the processor count directly and leave the bootstrap routine
+    // in place until called after initialization has ocurred.
+    return (_processor_count != 1) || AssumeMP;
   }
   static julong available_memory();
   static julong physical_memory();
