@@ -115,7 +115,7 @@ class Thread: public ThreadShadow {
   void  operator delete(void* p);
 
  protected:
-   static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
+  static void* allocate(size_t size, bool throw_excpt, MEMFLAGS flags = mtThread);
  private:
 
   // ***************************************************************
@@ -225,10 +225,10 @@ class Thread: public ThreadShadow {
   // claimed as a task.
   jint _oops_do_parity;
 
-  public:
-   void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
-   HandleMark* last_handle_mark() const          { return _last_handle_mark; }
-  private:
+ public:
+  void set_last_handle_mark(HandleMark* mark)   { _last_handle_mark = mark; }
+  HandleMark* last_handle_mark() const          { return _last_handle_mark; }
+ private:
 
   // debug support for checking if code does allow safepoints or not
   // GC points in the VM can happen because of allocation, invoking a VM operation, or blocking on
@@ -445,9 +445,9 @@ class Thread: public ThreadShadow {
   virtual void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
   // Handles the parallel case for the method below.
-private:
+ private:
   bool claim_oops_do_par_case(int collection_parity);
-public:
+ public:
   // Requires that "collection_parity" is that of the current roots
   // iteration.  If "is_par" is false, sets the parity of "this" to
   // "collection_parity", and returns "true".  If "is_par" is true,
@@ -664,9 +664,9 @@ class NamedThread: public Thread {
 
 // Worker threads are named and have an id of an assigned work.
 class WorkerThread: public NamedThread {
-private:
+ private:
   uint _id;
-public:
+ public:
   WorkerThread() : _id(0)               { }
   virtual bool is_Worker_thread() const { return true; }
 
@@ -844,7 +844,7 @@ class JavaThread: public Thread {
                                                  // handlers thread is in
   volatile bool         _doing_unsafe_access;    // Thread may fault due to unsafe access
   bool                  _do_not_unlock_if_synchronized; // Do not unlock the receiver of a synchronized method (since it was
-                                                 // never locked) when throwing an exception. Used by interpreter only.
+  // never locked) when throwing an exception. Used by interpreter only.
 
   // JNI attach states:
   enum JNIAttachStates {
@@ -898,11 +898,11 @@ class JavaThread: public Thread {
 #ifndef PRODUCT
   int _jmp_ring_index;
   struct {
-      // We use intptr_t instead of address so debugger doesn't try and display strings
-      intptr_t _target;
-      intptr_t _instruction;
-      const char*  _file;
-      int _line;
+    // We use intptr_t instead of address so debugger doesn't try and display strings
+    intptr_t _target;
+    intptr_t _instruction;
+    const char*  _file;
+    int _line;
   }   _jmp_ring[jump_ring_buffer_size];
 #endif /* PRODUCT */
 
@@ -1113,7 +1113,7 @@ class JavaThread: public Thread {
   // when a suspend equivalent condition lifts.
   bool handle_special_suspend_equivalent_condition() {
     assert(is_suspend_equivalent(),
-      "should only be called in a suspend equivalence condition");
+           "should only be called in a suspend equivalence condition");
     MutexLockerEx ml(SR_lock(), Mutex::_no_safepoint_check_flag);
     bool ret = is_external_suspend();
     if (!ret) {
@@ -1339,10 +1339,10 @@ class JavaThread: public Thread {
     // Only return NULL if thread is off the thread list; starting to
     // exit should not return NULL.
     if (thread_from_jni_env->is_terminated()) {
-       thread_from_jni_env->block_if_vm_exited();
-       return NULL;
+      thread_from_jni_env->block_if_vm_exited();
+      return NULL;
     } else {
-       return thread_from_jni_env;
+      return thread_from_jni_env;
     }
   }
 
@@ -1352,12 +1352,12 @@ class JavaThread: public Thread {
   void enter_critical() { assert(Thread::current() == this ||
                                  Thread::current()->is_VM_thread() && SafepointSynchronize::is_synchronizing(),
                                  "this must be current thread or synchronizing");
-                          _jni_active_critical++; }
+  _jni_active_critical++; }
   void exit_critical()  { assert(Thread::current() == this,
                                  "this must be current thread");
-                          _jni_active_critical--;
-                          assert(_jni_active_critical >= 0,
-                                 "JNI critical nesting problem?"); }
+  _jni_active_critical--;
+  assert(_jni_active_critical >= 0,
+         "JNI critical nesting problem?"); }
 
   // Checked JNI, is the programmer required to check for exceptions, specify which function name
   bool is_pending_jni_exception_check() const { return _pending_jni_exception_check_fn != NULL; }
@@ -1411,10 +1411,10 @@ class JavaThread: public Thread {
   void print_on_error(outputStream* st, char* buf, int buflen) const;
   void verify();
   const char* get_thread_name() const;
-private:
+ private:
   // factor out low-level mechanics for use in both normal and error cases
   const char* get_thread_name_string(char* buf = NULL, int buflen = 0) const;
-public:
+ public:
   const char* get_threadgroup_name() const;
   const char* get_parent_name() const;
 
@@ -1456,20 +1456,20 @@ public:
 
   // Profiling operation (see fprofile.cpp)
  public:
-   bool profile_last_Java_frame(frame* fr);
+  bool profile_last_Java_frame(frame* fr);
 
  private:
-   ThreadProfiler* _thread_profiler;
+  ThreadProfiler* _thread_profiler;
  private:
-   friend class FlatProfiler;                    // uses both [gs]et_thread_profiler.
-   friend class FlatProfilerTask;                // uses get_thread_profiler.
-   friend class ThreadProfilerMark;              // uses get_thread_profiler.
-   ThreadProfiler* get_thread_profiler()         { return _thread_profiler; }
-   ThreadProfiler* set_thread_profiler(ThreadProfiler* tp) {
-     ThreadProfiler* result = _thread_profiler;
-     _thread_profiler = tp;
-     return result;
-   }
+  friend class FlatProfiler;                    // uses both [gs]et_thread_profiler.
+  friend class FlatProfilerTask;                // uses get_thread_profiler.
+  friend class ThreadProfilerMark;              // uses get_thread_profiler.
+  ThreadProfiler* get_thread_profiler()         { return _thread_profiler; }
+  ThreadProfiler* set_thread_profiler(ThreadProfiler* tp) {
+    ThreadProfiler* result = _thread_profiler;
+    _thread_profiler = tp;
+    return result;
+  }
 
  public:
   // Returns the running thread as a JavaThread
@@ -1692,15 +1692,15 @@ public:
 
 
   // JSR166 per-thread parker
-private:
+ private:
   Parker*    _parker;
-public:
+ public:
   Parker*     parker() { return _parker; }
 
   // Biased locking support
-private:
+ private:
   GrowableArray<MonitorInfo*>* _cached_monitor_info;
-public:
+ public:
   GrowableArray<MonitorInfo*>* cached_monitor_info() { return _cached_monitor_info; }
   void set_cached_monitor_info(GrowableArray<MonitorInfo*>* info) { _cached_monitor_info = info; }
 
@@ -1708,12 +1708,12 @@ public:
   bool is_attaching_via_jni() const { return _jni_attach_state == _attaching_via_jni; }
   bool has_attached_via_jni() const { return is_attaching_via_jni() || _jni_attach_state == _attached_via_jni; }
   inline void set_done_attaching_via_jni();
-private:
+ private:
   // This field is used to determine if a thread has claimed
   // a par_id: it is UINT_MAX if the thread has not claimed a par_id;
   // otherwise its value is the par_id that has been claimed.
   uint _claimed_par_id;
-public:
+ public:
   uint get_claimed_par_id() { return _claimed_par_id; }
   void set_claimed_par_id(uint id) { _claimed_par_id = id; }
 };
@@ -1782,9 +1782,9 @@ class CompilerThread : public JavaThread {
   void oops_do(OopClosure* f, CLDClosure* cld_f, CodeBlobClosure* cf);
 
 #ifndef PRODUCT
-private:
+ private:
   IdealGraphPrinter *_ideal_graph_printer;
-public:
+ public:
   IdealGraphPrinter *ideal_graph_printer()                       { return _ideal_graph_printer; }
   void set_ideal_graph_printer(IdealGraphPrinter *n)             { _ideal_graph_printer = n; }
 #endif
@@ -1885,13 +1885,13 @@ class Threads: AllStatic {
   // is true, then Threads_lock is grabbed as needed. Otherwise, the
   // VM needs to be at a safepoint.
   static GrowableArray<JavaThread*>* get_pending_threads(int count,
-    address monitor, bool doLock);
+                                                         address monitor, bool doLock);
 
   // Get owning Java thread from the monitor's owner field. If doLock
   // is true, then Threads_lock is grabbed as needed. Otherwise, the
   // VM needs to be at a safepoint.
   static JavaThread *owning_thread_from_monitor_owner(address owner,
-    bool doLock);
+                                                      bool doLock);
 
   // Number of threads on the active threads list
   static int number_of_threads()                 { return _number_of_threads; }
@@ -1911,9 +1911,9 @@ class ThreadClosure: public StackObj {
 };
 
 class SignalHandlerMark: public StackObj {
-private:
+ private:
   Thread* _thread;
-public:
+ public:
   SignalHandlerMark(Thread* t) {
     _thread = t;
     if (_thread) _thread->enter_signal_handler();

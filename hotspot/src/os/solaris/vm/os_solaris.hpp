@@ -61,8 +61,8 @@ class Solaris {
   typedef id_t            lgrp_id_t;
   typedef int             lgrp_rsrc_t;
   typedef enum lgrp_view {
-        LGRP_VIEW_CALLER,       /* what's available to the caller */
-        LGRP_VIEW_OS            /* what's available to operating system */
+    LGRP_VIEW_CALLER,       /* what's available to the caller */
+    LGRP_VIEW_OS            /* what's available to operating system */
   } lgrp_view_t;
 
   typedef uint_t (*getisax_func_t)(uint32_t* array, uint_t n);
@@ -74,8 +74,8 @@ class Solaris {
   typedef int (*lgrp_children_func_t)(lgrp_cookie_t  cookie,  lgrp_id_t  parent,
                                       lgrp_id_t *lgrp_array, uint_t lgrp_array_size);
   typedef int (*lgrp_resources_func_t)(lgrp_cookie_t  cookie,  lgrp_id_t  lgrp,
-                                      lgrp_id_t *lgrp_array, uint_t lgrp_array_size,
-                                      lgrp_rsrc_t type);
+                                       lgrp_id_t *lgrp_array, uint_t lgrp_array_size,
+                                       lgrp_rsrc_t type);
   typedef int (*lgrp_nlgrps_func_t)(lgrp_cookie_t cookie);
   typedef int (*lgrp_cookie_stale_func_t)(lgrp_cookie_t cookie);
   typedef int (*meminfo_func_t)(const uint64_t inaddr[],   int addr_count,
@@ -128,7 +128,7 @@ class Solaris {
   static bool valid_stack_address(Thread* thread, address sp);
   static bool valid_ucontext(Thread* thread, ucontext_t* valid, ucontext_t* suspect);
   static ucontext_t* get_valid_uc_in_signal_handler(Thread* thread,
-    ucontext_t* uc);
+                                                    ucontext_t* uc);
 
   static ExtendedPC  ucontext_get_ExtendedPC(ucontext_t* uc);
   static intptr_t*   ucontext_get_sp(ucontext_t* uc);
@@ -143,7 +143,7 @@ class Solaris {
   // os_solaris_i486.hpp and os_solaris_sparc.hpp, but that file
   // provides extensions to the os class and not the Solaris class.
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
-    intptr_t** ret_sp, intptr_t** ret_fp);
+                                              intptr_t** ret_sp, intptr_t** ret_fp);
 
   static void hotspot_sigmask(Thread* thread);
 
@@ -249,7 +249,7 @@ class Solaris {
   static int lgrp_fini(lgrp_cookie_t cookie)         { return _lgrp_fini != NULL ? _lgrp_fini(cookie) : -1; }
   static lgrp_id_t lgrp_root(lgrp_cookie_t cookie)   { return _lgrp_root != NULL ? _lgrp_root(cookie) : -1; };
   static int lgrp_children(lgrp_cookie_t  cookie,  lgrp_id_t  parent,
-                    lgrp_id_t *lgrp_array, uint_t lgrp_array_size) {
+                           lgrp_id_t *lgrp_array, uint_t lgrp_array_size) {
     return _lgrp_children != NULL ? _lgrp_children(cookie, parent, lgrp_array, lgrp_array_size) : -1;
   }
   static int lgrp_resources(lgrp_cookie_t  cookie,  lgrp_id_t  lgrp,
@@ -269,8 +269,8 @@ class Solaris {
 
   static void set_meminfo(meminfo_func_t func)       { _meminfo = func; }
   static int meminfo (const uint64_t inaddr[],   int addr_count,
-                     const uint_t  info_req[],  int info_count,
-                     uint64_t  outdata[], uint_t validity[]) {
+                      const uint_t  info_req[],  int info_count,
+                      uint64_t  outdata[], uint_t validity[]) {
     return _meminfo != NULL ? _meminfo(inaddr, addr_count, info_req, info_count,
                                        outdata, validity) : -1;
   }
@@ -300,57 +300,57 @@ class Solaris {
 };
 
 class PlatformEvent : public CHeapObj<mtInternal> {
-  private:
-    double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
-    volatile int _Event;
-    int _nParked;
-    int _pipev[2];
-    mutex_t _mutex[1];
-    cond_t  _cond[1];
-    double PostPad[2];
+ private:
+  double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
+  volatile int _Event;
+  int _nParked;
+  int _pipev[2];
+  mutex_t _mutex[1];
+  cond_t  _cond[1];
+  double PostPad[2];
 
-  protected:
-    // Defining a protected ctor effectively gives us an abstract base class.
-    // That is, a PlatformEvent can never be instantiated "naked" but only
-    // as a part of a ParkEvent (recall that ParkEvent extends PlatformEvent).
-    // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee(0, "invariant"); }
-    PlatformEvent() {
-      int status;
-      status = os::Solaris::cond_init(_cond);
-      assert_status(status == 0, status, "cond_init");
-      status = os::Solaris::mutex_init(_mutex);
-      assert_status(status == 0, status, "mutex_init");
-      _Event   = 0;
-      _nParked = 0;
-      _pipev[0] = _pipev[1] = -1;
-    }
+ protected:
+  // Defining a protected ctor effectively gives us an abstract base class.
+  // That is, a PlatformEvent can never be instantiated "naked" but only
+  // as a part of a ParkEvent (recall that ParkEvent extends PlatformEvent).
+  // TODO-FIXME: make dtor private
+  ~PlatformEvent() { guarantee(0, "invariant"); }
+  PlatformEvent() {
+    int status;
+    status = os::Solaris::cond_init(_cond);
+    assert_status(status == 0, status, "cond_init");
+    status = os::Solaris::mutex_init(_mutex);
+    assert_status(status == 0, status, "mutex_init");
+    _Event   = 0;
+    _nParked = 0;
+    _pipev[0] = _pipev[1] = -1;
+  }
 
-  public:
-    // Exercise caution using reset() and fired() -- they may require MEMBARs
-    void reset() { _Event = 0; }
-    int  fired() { return _Event; }
-    void park();
-    int  park(jlong millis);
-    void unpark();
+ public:
+  // Exercise caution using reset() and fired() -- they may require MEMBARs
+  void reset() { _Event = 0; }
+  int  fired() { return _Event; }
+  void park();
+  int  park(jlong millis);
+  void unpark();
 };
 
 class PlatformParker : public CHeapObj<mtInternal> {
-  protected:
-    mutex_t _mutex[1];
-    cond_t  _cond[1];
+ protected:
+  mutex_t _mutex[1];
+  cond_t  _cond[1];
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformParker() { guarantee(0, "invariant"); }
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformParker() { guarantee(0, "invariant"); }
 
-  public:
-    PlatformParker() {
-      int status;
-      status = os::Solaris::cond_init(_cond);
-      assert_status(status == 0, status, "cond_init");
-      status = os::Solaris::mutex_init(_mutex);
-      assert_status(status == 0, status, "mutex_init");
-    }
+ public:
+  PlatformParker() {
+    int status;
+    status = os::Solaris::cond_init(_cond);
+    assert_status(status == 0, status, "cond_init");
+    status = os::Solaris::mutex_init(_mutex);
+    assert_status(status == 0, status, "mutex_init");
+  }
 };
 
 #endif // OS_SOLARIS_VM_OS_SOLARIS_HPP

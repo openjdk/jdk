@@ -407,7 +407,7 @@ static int ParkCommon (ParkEvent * ev, jlong timo) {
   // Diagnostic support - periodically unwedge blocked threads
   intx nmt = NativeMonitorTimeout;
   if (nmt > 0 && (nmt < timo || timo <= 0)) {
-     timo = nmt;
+    timo = nmt;
   }
   int err = OS_OK;
   if (0 == timo) {
@@ -590,7 +590,7 @@ void Monitor::IUnlock (bool RelaxAssert) {
     // as a diagnostic measure consider setting w->_ListNext = BAD
     assert(UNS(_OnDeck) == _LBIT, "invariant");
     _OnDeck = w;           // pass OnDeck to w.
-                            // w will clear OnDeck once it acquires the outer lock
+    // w will clear OnDeck once it acquires the outer lock
 
     // Another optional optimization ...
     // For heavily contended locks it's not uncommon that some other
@@ -1082,14 +1082,14 @@ bool Monitor::wait(bool no_safepoint_check, long timeout, bool as_suspend_equiva
   guarantee(no_safepoint_check || Self->is_Java_thread(), "invariant");
 
   #ifdef ASSERT
-    Monitor * least = get_least_ranked_lock_besides_this(Self->owned_locks());
-    assert(least != this, "Specification of get_least_... call above");
-    if (least != NULL && least->rank() <= special) {
-      tty->print("Attempting to wait on monitor %s/%d while holding"
-                 " lock %s/%d -- possible deadlock",
-                 name(), rank(), least->name(), least->rank());
-      assert(false, "Shouldn't block(wait) while holding a lock of rank special");
-    }
+  Monitor * least = get_least_ranked_lock_besides_this(Self->owned_locks());
+  assert(least != this, "Specification of get_least_... call above");
+  if (least != NULL && least->rank() <= special) {
+    tty->print("Attempting to wait on monitor %s/%d while holding"
+               " lock %s/%d -- possible deadlock",
+               name(), rank(), least->name(), least->rank());
+    assert(false, "Shouldn't block(wait) while holding a lock of rank special");
+  }
   #endif // ASSERT
 
   int wait_status;
@@ -1173,8 +1173,8 @@ Mutex::~Mutex() {
 Mutex::Mutex (int Rank, const char * name, bool allow_vm_block) {
   ClearMonitor((Monitor *) this, name);
 #ifdef ASSERT
- _allow_vm_block   = allow_vm_block;
- _rank             = Rank;
+  _allow_vm_block   = allow_vm_block;
+  _rank             = Rank;
 #endif
 }
 
@@ -1280,38 +1280,38 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
     // link "this" into the owned locks list
 
     #ifdef ASSERT  // Thread::_owned_locks is under the same ifdef
-      Monitor* locks = get_least_ranked_lock(new_owner->owned_locks());
-                    // Mutex::set_owner_implementation is a friend of Thread
+    Monitor* locks = get_least_ranked_lock(new_owner->owned_locks());
+    // Mutex::set_owner_implementation is a friend of Thread
 
-      assert(this->rank() >= 0, "bad lock rank");
+    assert(this->rank() >= 0, "bad lock rank");
 
-      // Deadlock avoidance rules require us to acquire Mutexes only in
-      // a global total order. For example m1 is the lowest ranked mutex
-      // that the thread holds and m2 is the mutex the thread is trying
-      // to acquire, then  deadlock avoidance rules require that the rank
-      // of m2 be less  than the rank of m1.
-      // The rank Mutex::native  is an exception in that it is not subject
-      // to the verification rules.
-      // Here are some further notes relating to mutex acquisition anomalies:
-      // . under Solaris, the interrupt lock gets acquired when doing
-      //   profiling, so any lock could be held.
-      // . it is also ok to acquire Safepoint_lock at the very end while we
-      //   already hold Terminator_lock - may happen because of periodic safepoints
-      if (this->rank() != Mutex::native &&
-          this->rank() != Mutex::suspend_resume &&
-          locks != NULL && locks->rank() <= this->rank() &&
-          !SafepointSynchronize::is_at_safepoint() &&
-          this != Interrupt_lock && this != ProfileVM_lock &&
-          !(this == Safepoint_lock && contains(locks, Terminator_lock) &&
-            SafepointSynchronize::is_synchronizing())) {
-        new_owner->print_owned_locks();
-        fatal(err_msg("acquiring lock %s/%d out of order with lock %s/%d -- "
-                      "possible deadlock", this->name(), this->rank(),
-                      locks->name(), locks->rank()));
-      }
+    // Deadlock avoidance rules require us to acquire Mutexes only in
+    // a global total order. For example m1 is the lowest ranked mutex
+    // that the thread holds and m2 is the mutex the thread is trying
+    // to acquire, then  deadlock avoidance rules require that the rank
+    // of m2 be less  than the rank of m1.
+    // The rank Mutex::native  is an exception in that it is not subject
+    // to the verification rules.
+    // Here are some further notes relating to mutex acquisition anomalies:
+    // . under Solaris, the interrupt lock gets acquired when doing
+    //   profiling, so any lock could be held.
+    // . it is also ok to acquire Safepoint_lock at the very end while we
+    //   already hold Terminator_lock - may happen because of periodic safepoints
+    if (this->rank() != Mutex::native &&
+        this->rank() != Mutex::suspend_resume &&
+        locks != NULL && locks->rank() <= this->rank() &&
+        !SafepointSynchronize::is_at_safepoint() &&
+        this != Interrupt_lock && this != ProfileVM_lock &&
+        !(this == Safepoint_lock && contains(locks, Terminator_lock) &&
+        SafepointSynchronize::is_synchronizing())) {
+      new_owner->print_owned_locks();
+      fatal(err_msg("acquiring lock %s/%d out of order with lock %s/%d -- "
+                    "possible deadlock", this->name(), this->rank(),
+                    locks->name(), locks->rank()));
+    }
 
-      this->_next = new_owner->_owned_locks;
-      new_owner->_owned_locks = this;
+    this->_next = new_owner->_owned_locks;
+    new_owner->_owned_locks = this;
     #endif
 
   } else {
@@ -1326,25 +1326,25 @@ void Monitor::set_owner_implementation(Thread *new_owner) {
     _owner = NULL; // set the owner
 
     #ifdef ASSERT
-      Monitor *locks = old_owner->owned_locks();
+    Monitor *locks = old_owner->owned_locks();
 
-      // remove "this" from the owned locks list
+    // remove "this" from the owned locks list
 
-      Monitor *prev = NULL;
-      bool found = false;
-      for (; locks != NULL; prev = locks, locks = locks->next()) {
-        if (locks == this) {
-          found = true;
-          break;
-        }
+    Monitor *prev = NULL;
+    bool found = false;
+    for (; locks != NULL; prev = locks, locks = locks->next()) {
+      if (locks == this) {
+        found = true;
+        break;
       }
-      assert(found, "Removing a lock not owned");
-      if (prev == NULL) {
-        old_owner->_owned_locks = _next;
-      } else {
-        prev->_next = _next;
-      }
-      _next = NULL;
+    }
+    assert(found, "Removing a lock not owned");
+    if (prev == NULL) {
+      old_owner->_owned_locks = _next;
+    } else {
+      prev->_next = _next;
+    }
+    _next = NULL;
     #endif
   }
 }
@@ -1360,11 +1360,11 @@ void Monitor::check_prelock_state(Thread *thread) {
                     name()));
     }
     debug_only(if (rank() != Mutex::special) \
-      thread->check_for_valid_safepoint_state(false);)
+               thread->check_for_valid_safepoint_state(false);)
   }
   if (thread->is_Watcher_thread()) {
     assert(!WatcherThread::watcher_thread()->has_crash_protection(),
-        "locking not allowed when crash protection is set");
+           "locking not allowed when crash protection is set");
   }
 }
 

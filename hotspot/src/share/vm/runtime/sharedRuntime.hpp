@@ -50,8 +50,8 @@ class SharedRuntime: AllStatic {
 
  private:
   static methodHandle resolve_sub_helper(JavaThread *thread,
-                                     bool is_virtual,
-                                     bool is_optimized, TRAPS);
+                                         bool is_virtual,
+                                         bool is_optimized, TRAPS);
 
   // Shared stub locations
 
@@ -309,11 +309,11 @@ class SharedRuntime: AllStatic {
                                      bool is_virtual,
                                      bool is_optimized, TRAPS);
 
-  private:
+ private:
   // deopt blob
   static void generate_deopt_blob(void);
 
-  public:
+ public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
   // Resets a call-site in compiled code so it will get resolved again.
