@@ -2184,9 +2184,14 @@ assert((int)twice.invokeExact(21) == 42);
             if (type == void.class)
                 throw newIllegalArgumentException("void type");
             Wrapper w = Wrapper.forPrimitiveType(type);
-            return insertArguments(identity(type), 0, w.convert(value, type));
+            value = w.convert(value, type);
+            if (w.zero().equals(value))
+                return zero(w, type);
+            return insertArguments(identity(type), 0, value);
         } else {
-            return identity(type).bindTo(type.cast(value));
+            if (value == null)
+                return zero(Wrapper.OBJECT, type);
+            return identity(type).bindTo(value);
         }
     }
 
@@ -2217,6 +2222,25 @@ assert((int)twice.invokeExact(21) == 42);
         LambdaForm lform = LambdaForm.identityForm(BasicType.basicType(ptype));
         return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.IDENTITY);
     }
+
+    private static MethodHandle zero(Wrapper btw, Class<?> rtype) {
+        int pos = btw.ordinal();
+        MethodHandle zero = ZERO_MHS[pos];
+        if (zero == null) {
+            zero = setCachedMethodHandle(ZERO_MHS, pos, makeZero(btw.primitiveType()));
+        }
+        if (zero.type().returnType() == rtype)
+            return zero;
+        assert(btw == Wrapper.OBJECT);
+        return makeZero(rtype);
+    }
+    private static final MethodHandle[] ZERO_MHS = new MethodHandle[Wrapper.values().length];
+    private static MethodHandle makeZero(Class<?> rtype) {
+        MethodType mtype = MethodType.methodType(rtype);
+        LambdaForm lform = LambdaForm.zeroForm(BasicType.basicType(rtype));
+        return MethodHandleImpl.makeIntrinsic(mtype, lform, Intrinsic.ZERO);
+    }
+
     synchronized private static MethodHandle setCachedMethodHandle(MethodHandle[] cache, int pos, MethodHandle value) {
         // Simulate a CAS, to avoid racy duplication of results.
         MethodHandle prev = cache[pos];
