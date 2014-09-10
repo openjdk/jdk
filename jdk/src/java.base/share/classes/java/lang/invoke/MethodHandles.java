@@ -2026,7 +2026,7 @@ return invoker;
         if (!target.type().isCastableTo(newType)) {
             throw new WrongMethodTypeException("cannot explicitly cast "+target+" to "+newType);
         }
-        return MethodHandleImpl.makePairwiseConvert(target, newType, 2);
+        return MethodHandleImpl.makePairwiseConvert(target, newType, false);
     }
 
     /**

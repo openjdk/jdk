@@ -35,12 +35,28 @@ public class ValueConversions {
     private static final Class<?> THIS_CLASS = ValueConversions.class;
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
-    private static EnumMap<Wrapper, MethodHandle>[] newWrapperCaches(int n) {
-        @SuppressWarnings("unchecked")  // generic array creation
-        EnumMap<Wrapper, MethodHandle>[] caches
-                = (EnumMap<Wrapper, MethodHandle>[]) new EnumMap<?,?>[n];
+    /** Thread-safe canonicalized mapping from Wrapper to MethodHandle
+     * with unsynchronized reads and synchronized writes.
+     * It's safe to publish MethodHandles by data race because they are immutable. */
+    private static class WrapperCache {
+        /** EnumMap uses preconstructed array internally, which is constant during it's lifetime. */
+        private final EnumMap<Wrapper, MethodHandle> map = new EnumMap<>(Wrapper.class);
+
+        public MethodHandle get(Wrapper w) {
+            return map.get(w);
+        }
+        public synchronized MethodHandle put(final Wrapper w, final MethodHandle mh) {
+            // Simulate CAS to avoid racy duplication
+            MethodHandle prev = map.putIfAbsent(w, mh);
+            if (prev != null)  return prev;
+            return mh;
+        }
+    }
+
+    private static WrapperCache[] newWrapperCaches(int n) {
+        WrapperCache[] caches = new WrapperCache[n];
         for (int i = 0; i < n; i++)
-            caches[i] = new EnumMap<>(Wrapper.class);
+            caches[i] = new WrapperCache();
         return caches;
     }
 
@@ -51,63 +67,92 @@ public class ValueConversions {
     //   implicit conversions sanctioned by JLS 5.1.2, etc.
     //   explicit conversions as allowed by explicitCastArguments
 
+    static int unboxInteger(Integer x) {
+        return x;
+    }
     static int unboxInteger(Object x, boolean cast) {
         if (x instanceof Integer)
-            return ((Integer) x).intValue();
+            return (Integer) x;
         return primitiveConversion(Wrapper.INT, x, cast).intValue();
     }
 
+    static byte unboxByte(Byte x) {
+        return x;
+    }
     static byte unboxByte(Object x, boolean cast) {
         if (x instanceof Byte)
-            return ((Byte) x).byteValue();
+            return (Byte) x;
         return primitiveConversion(Wrapper.BYTE, x, cast).byteValue();
     }
 
+    static short unboxShort(Short x) {
+        return x;
+    }
     static short unboxShort(Object x, boolean cast) {
         if (x instanceof Short)
-            return ((Short) x).shortValue();
+            return (Short) x;
         return primitiveConversion(Wrapper.SHORT, x, cast).shortValue();
     }
 
+    static boolean unboxBoolean(Boolean x) {
+        return x;
+    }
     static boolean unboxBoolean(Object x, boolean cast) {
         if (x instanceof Boolean)
-            return ((Boolean) x).booleanValue();
+            return (Boolean) x;
         return (primitiveConversion(Wrapper.BOOLEAN, x, cast).intValue() & 1) != 0;
     }
 
+    static char unboxCharacter(Character x) {
+        return x;
+    }
     static char unboxCharacter(Object x, boolean cast) {
         if (x instanceof Character)
-            return ((Character) x).charValue();
+            return (Character) x;
         return (char) primitiveConversion(Wrapper.CHAR, x, cast).intValue();
     }
 
+    static long unboxLong(Long x) {
+        return x;
+    }
     static long unboxLong(Object x, boolean cast) {
         if (x instanceof Long)
-            return ((Long) x).longValue();
+            return (Long) x;
         return primitiveConversion(Wrapper.LONG, x, cast).longValue();
     }
 
+    static float unboxFloat(Float x) {
+        return x;
+    }
     static float unboxFloat(Object x, boolean cast) {
         if (x instanceof Float)
-            return ((Float) x).floatValue();
+            return (Float) x;
         return primitiveConversion(Wrapper.FLOAT, x, cast).floatValue();
     }
 
+    static double unboxDouble(Double x) {
+        return x;
+    }
     static double unboxDouble(Object x, boolean cast) {
         if (x instanceof Double)
-            return ((Double) x).doubleValue();
+            return (Double) x;
         return primitiveConversion(Wrapper.DOUBLE, x, cast).doubleValue();
     }
 
-    private static MethodType unboxType(Wrapper wrap) {
+    private static MethodType unboxType(Wrapper wrap, int kind) {
+        if (kind == 0)
+            return MethodType.methodType(wrap.primitiveType(), wrap.wrapperType());
         return MethodType.methodType(wrap.primitiveType(), Object.class, boolean.class);
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            UNBOX_CONVERSIONS = newWrapperCaches(2);
+    private static final WrapperCache[] UNBOX_CONVERSIONS = newWrapperCaches(4);
 
-    private static MethodHandle unbox(Wrapper wrap, boolean cast) {
-        EnumMap<Wrapper, MethodHandle> cache = UNBOX_CONVERSIONS[(cast?1:0)];
+    private static MethodHandle unbox(Wrapper wrap, int kind) {
+        // kind 0 -> strongly typed with NPE
+        // kind 1 -> strongly typed but zero for null,
+        // kind 2 -> asType rules: accept multiple box types but only widening conversions with NPE
+        // kind 3 -> explicitCastArguments rules: allow narrowing conversions, zero for null
+        WrapperCache cache = UNBOX_CONVERSIONS[kind];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -115,41 +160,59 @@ public class ValueConversions {
         // slow path
         switch (wrap) {
             case OBJECT:
-                mh = IDENTITY; break;
             case VOID:
-                mh = IGNORE; break;
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+                throw new IllegalArgumentException("unbox "+wrap);
         }
         // look up the method
         String name = "unbox" + wrap.wrapperSimpleName();
-        MethodType type = unboxType(wrap);
+        MethodType type = unboxType(wrap, kind);
         try {
             mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
         } catch (ReflectiveOperationException ex) {
             mh = null;
         }
         if (mh != null) {
-            mh = MethodHandles.insertArguments(mh, 1, cast);
-            cache.put(wrap, mh);
-            return mh;
+            if (kind > 0) {
+                boolean cast = (kind != 2);
+                mh = MethodHandles.insertArguments(mh, 1, cast);
+            }
+            if (kind == 1) {  // casting but exact (null -> zero)
+                mh = mh.asType(unboxType(wrap, 0));
+            }
+            return cache.put(wrap, mh);
         }
         throw new IllegalArgumentException("cannot find unbox adapter for " + wrap
-                + (cast ? " (cast)" : ""));
+                + (kind <= 1 ? " (exact)" : kind == 3 ? " (cast)" : ""));
     }
 
+    /** Return an exact unboxer for the given primitive type. */
+    public static MethodHandle unboxExact(Wrapper type) {
+        return unbox(type, 0);
+    }
+
+    /** Return an exact unboxer for the given primitive type, with optional null-to-zero conversion.
+     *  The boolean says whether to throw an NPE on a null value (false means unbox a zero).
+     *  The type of the unboxer is of a form like (Integer)int.
+     */
+    public static MethodHandle unboxExact(Wrapper type, boolean throwNPE) {
+        return unbox(type, throwNPE ? 0 : 1);
+    }
+
+    /** Return a widening unboxer for the given primitive type.
+     *  Widen narrower primitive boxes to the given type.
+     *  Do not narrow any primitive values or convert null to zero.
+     *  The type of the unboxer is of a form like (Object)int.
+     */
+    public static MethodHandle unboxWiden(Wrapper type) {
+        return unbox(type, 2);
+    }
+
+    /** Return a casting unboxer for the given primitive type.
+     *  Widen or narrow primitive values to the given type, or convert null to zero, as needed.
+     *  The type of the unboxer is of a form like (Object)int.
+     */
     public static MethodHandle unboxCast(Wrapper type) {
-        return unbox(type, true);
-    }
-
-    public static MethodHandle unbox(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), false);
-    }
-
-    public static MethodHandle unboxCast(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), true);
+        return unbox(type, 3);
     }
 
     static private final Integer ZERO_INT = 0, ONE_INT = 1;
@@ -246,57 +309,26 @@ public class ValueConversions {
         return MethodType.methodType(boxType, wrap.primitiveType());
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            BOX_CONVERSIONS = newWrapperCaches(2);
+    private static final WrapperCache[] BOX_CONVERSIONS = newWrapperCaches(1);
 
-    private static MethodHandle box(Wrapper wrap, boolean exact) {
-        EnumMap<Wrapper, MethodHandle> cache = BOX_CONVERSIONS[(exact?1:0)];
+    public static MethodHandle boxExact(Wrapper wrap) {
+        WrapperCache cache = BOX_CONVERSIONS[0];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
-            return mh;
-        }
-        // slow path
-        switch (wrap) {
-            case OBJECT:
-                mh = IDENTITY; break;
-            case VOID:
-                mh = ZERO_OBJECT;
-                break;
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
             return mh;
         }
         // look up the method
         String name = "box" + wrap.wrapperSimpleName();
         MethodType type = boxType(wrap);
-        if (exact) {
-            try {
-                mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
-            } catch (ReflectiveOperationException ex) {
-                mh = null;
-            }
-        } else {
-            mh = box(wrap, !exact).asType(type.erase());
+        try {
+            mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
+        } catch (ReflectiveOperationException ex) {
+            mh = null;
         }
         if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
-        throw new IllegalArgumentException("cannot find box adapter for "
-                + wrap + (exact ? " (exact)" : ""));
-    }
-
-    public static MethodHandle box(Class<?> type) {
-        boolean exact = false;
-        // e.g., boxShort(short)Short if exact,
-        // e.g., boxShort(short)Object if !exact
-        return box(Wrapper.forPrimitiveType(type), exact);
-    }
-
-    public static MethodHandle box(Wrapper type) {
-        boolean exact = false;
-        return box(type, exact);
+        throw new IllegalArgumentException("cannot find box adapter for " + wrap);
     }
 
     /// Constant functions
@@ -328,11 +360,10 @@ public class ValueConversions {
         return 0;
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            CONSTANT_FUNCTIONS = newWrapperCaches(2);
+    private static final WrapperCache[] CONSTANT_FUNCTIONS = newWrapperCaches(2);
 
     public static MethodHandle zeroConstantFunction(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[0];
+        WrapperCache cache = CONSTANT_FUNCTIONS[0];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -353,15 +384,13 @@ public class ValueConversions {
                 break;
         }
         if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
 
         // use zeroInt and cast the result
         if (wrap.isSubwordOrInt() && wrap != Wrapper.INT) {
             mh = MethodHandles.explicitCastArguments(zeroConstantFunction(Wrapper.INT), type);
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
         throw new IllegalArgumentException("cannot find zero constant for " + wrap);
     }
@@ -423,15 +452,13 @@ public class ValueConversions {
         return x;
     }
 
-    private static final MethodHandle IDENTITY, CAST_REFERENCE, ZERO_OBJECT, IGNORE, EMPTY;
+    private static final MethodHandle IDENTITY, CAST_REFERENCE, IGNORE, EMPTY;
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
             MethodType ignoreType = idType.changeReturnType(void.class);
-            MethodType zeroObjectType = MethodType.genericMethodType(0);
             IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
-            ZERO_OBJECT = IMPL_LOOKUP.findStatic(THIS_CLASS, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
@@ -439,30 +466,8 @@ public class ValueConversions {
         }
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[] WRAPPER_CASTS
-            = newWrapperCaches(1);
-
-    /** Return a method that casts its sole argument (an Object) to the given type
-     *  and returns it as the given type.
-     */
-    public static MethodHandle cast(Class<?> type) {
-        return cast(type, CAST_REFERENCE);
-    }
-    public static MethodHandle cast(Class<?> type, MethodHandle castReference) {
-        if (type.isPrimitive())  throw new IllegalArgumentException("cannot cast primitive type "+type);
-        MethodHandle mh;
-        Wrapper wrap = null;
-        EnumMap<Wrapper, MethodHandle> cache = null;
-        if (Wrapper.isWrapperType(type)) {
-            wrap = Wrapper.forWrapperType(type);
-            cache = WRAPPER_CASTS[0];
-            mh = cache.get(wrap);
-            if (mh != null)  return mh;
-        }
-        mh = MethodHandles.insertArguments(castReference, 0, type);
-        if (cache != null)
-            cache.put(wrap, mh);
-        return mh;
+    public static MethodHandle ignore() {
+        return IGNORE;
     }
 
     public static MethodHandle identity() {
@@ -477,7 +482,7 @@ public class ValueConversions {
     }
 
     public static MethodHandle identity(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[1];
+        WrapperCache cache = CONSTANT_FUNCTIONS[1];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -495,15 +500,14 @@ public class ValueConversions {
             mh = EMPTY;  // #(){} : #()void
         }
         if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
-        }
-
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
         throw new IllegalArgumentException("cannot find identity for " + wrap);
+    }
+
+    /** Return a method that casts its second argument (an Object) to the given type (a Class). */
+    public static MethodHandle cast() {
+        return CAST_REFERENCE;
     }
 
     /// Primitive conversions.
@@ -712,11 +716,10 @@ public class ValueConversions {
         return (x ? (byte)1 : (byte)0);
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
+    private static final WrapperCache[] CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
 
     public static MethodHandle convertPrimitive(Wrapper wsrc, Wrapper wdst) {
-        EnumMap<Wrapper, MethodHandle> cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];
+        WrapperCache cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];
         MethodHandle mh = cache.get(wdst);
         if (mh != null) {
             return mh;
@@ -724,17 +727,9 @@ public class ValueConversions {
         // slow path
         Class<?> src = wsrc.primitiveType();
         Class<?> dst = wdst.primitiveType();
-        MethodType type = src == void.class ? MethodType.methodType(dst) : MethodType.methodType(dst, src);
+        MethodType type = MethodType.methodType(dst, src);
         if (wsrc == wdst) {
-            mh = identity(src);
-        } else if (wsrc == Wrapper.VOID) {
-            mh = zeroConstantFunction(wdst);
-        } else if (wdst == Wrapper.VOID) {
-            mh = MethodHandles.dropArguments(EMPTY, 0, src);  // Defer back to MethodHandles.
-        } else if (wsrc == Wrapper.OBJECT) {
-            mh = unboxCast(dst);
-        } else if (wdst == Wrapper.OBJECT) {
-            mh = box(src);
+            mh = MethodHandles.identity(src);
         } else {
             assert(src.isPrimitive() && dst.isPrimitive());
             try {
@@ -745,8 +740,7 @@ public class ValueConversions {
         }
         if (mh != null) {
             assert(mh.type() == type) : mh;
-            cache.put(wdst, mh);
-            return mh;
+            return cache.put(wdst, mh);
         }
 
         throw new IllegalArgumentException("cannot find primitive conversion function for " +
