@@ -35,7 +35,7 @@ import static java.lang.invoke.LambdaForm.*;
 import static java.lang.invoke.LambdaForm.BasicType.*;
 import static java.lang.invoke.MethodHandleStatics.*;
 import static java.lang.invoke.MethodHandleNatives.Constants.*;
-import java.lang.invoke.MethodHandleImpl.ArrayAccessor;
+
 import sun.invoke.util.VerifyAccess;
 import sun.invoke.util.VerifyType;
 import sun.invoke.util.Wrapper;
@@ -636,26 +636,44 @@ class InvokerBytecodeGenerator {
         Name onStack = null;
         for (int i = lambdaForm.arity; i < lambdaForm.names.length; i++) {
             Name name = lambdaForm.names[i];
-            MemberName member = name.function.member();
-            Class<?> rtype = name.function.methodType().returnType();
 
             emitStoreResult(onStack);
             onStack = name;  // unless otherwise modified below
+            MethodHandleImpl.Intrinsic intr = name.function.intrinsicName();
+            switch (intr) {
+                case SELECT_ALTERNATIVE:
+                    assert isSelectAlternative(i);
+                    onStack = emitSelectAlternative(name, lambdaForm.names[i+1]);
+                    i++;  // skip MH.invokeBasic of the selectAlternative result
+                    continue;
+                case GUARD_WITH_CATCH:
+                    assert isGuardWithCatch(i);
+                    onStack = emitGuardWithCatch(i);
+                    i = i+2; // Jump to the end of GWC idiom
+                    continue;
+                case NEW_ARRAY:
+                    Class<?> rtype = name.function.methodType().returnType();
+                    if (isStaticallyNameable(rtype)) {
+                        emitNewArray(name);
+                        continue;
+                    }
+                    break;
+                case ARRAY_LOAD:
+                    emitArrayLoad(name);
+                    continue;
+                case ARRAY_STORE:
+                    emitArrayStore(name);
+                    continue;
+                case NONE:
+                    // no intrinsic associated
+                    break;
+                default:
+                    throw newInternalError("Unknown intrinsic: "+intr);
+            }
 
-            if (isSelectAlternative(i)) {
-                onStack = emitSelectAlternative(name, lambdaForm.names[i + 1]);
-                i++;  // skip MH.invokeBasic of the selectAlternative result
-            } else if (isGuardWithCatch(i)) {
-                onStack = emitGuardWithCatch(i);
-                i = i+2; // Jump to the end of GWC idiom
-            } else if (isNewArray(rtype, name)) {
-                emitNewArray(rtype, name);
-            } else if (isArrayLoad(member)) {
-                emitArrayLoad(name);
-            } else if (isArrayStore(member)) {
-                emitArrayStore(name);
-            } else if (isStaticallyInvocable(member)) {
-                emitStaticInvoke(name);
+            MemberName member = name.function.member();
+            if (isStaticallyInvocable(member)) {
+                emitStaticInvoke(member, name);
             } else {
                 emitInvoke(name);
             }
@@ -670,20 +688,6 @@ class InvokerBytecodeGenerator {
         final byte[] classFile = cw.toByteArray();
         maybeDump(className, classFile);
         return classFile;
-    }
-
-    boolean isArrayLoad(MemberName member) {
-        return  member != null &&
-                member.getDeclaringClass() == ArrayAccessor.class &&
-                member.getName() != null &&
-                member.getName().startsWith("getElement");
-    }
-
-    boolean isArrayStore(MemberName member) {
-        return  member != null &&
-                member.getDeclaringClass() == ArrayAccessor.class &&
-                member.getName() != null &&
-                member.getName().startsWith("setElement");
     }
 
     void emitArrayLoad(Name name)  { emitArrayOp(name, Opcodes.AALOAD);  }
@@ -837,33 +841,31 @@ class InvokerBytecodeGenerator {
         }
     }
 
-    boolean isNewArray(Class<?> rtype, Name name) {
-        return rtype.isArray() &&
-                isStaticallyNameable(rtype) &&
-                isArrayBuilder(name.function.resolvedHandle) &&
-                name.arguments.length > 0;
-    }
-
-    void emitNewArray(Class<?> rtype, Name name) throws InternalError {
+    void emitNewArray(Name name) throws InternalError {
+        Class<?> rtype = name.function.methodType().returnType();
+        if (name.arguments.length == 0) {
+            // The array will be a constant.
+            Object emptyArray;
+            try {
+                emptyArray = name.function.resolvedHandle.invoke();
+            } catch (Throwable ex) {
+                throw newInternalError(ex);
+            }
+            assert(java.lang.reflect.Array.getLength(emptyArray) == 0);
+            assert(emptyArray.getClass() == rtype);  // exact typing
+            mv.visitLdcInsn(constantPlaceholder(emptyArray));
+            emitReferenceCast(rtype, emptyArray);
+            return;
+        }
         Class<?> arrayElementType = rtype.getComponentType();
+        assert(arrayElementType != null);
         emitIconstInsn(name.arguments.length);
-        int xas;
+        int xas = Opcodes.AASTORE;
         if (!arrayElementType.isPrimitive()) {
             mv.visitTypeInsn(Opcodes.ANEWARRAY, getInternalName(arrayElementType));
-            xas = Opcodes.AASTORE;
         } else {
-            int tc;
-            switch (Wrapper.forPrimitiveType(arrayElementType)) {
-            case BOOLEAN: tc = Opcodes.T_BOOLEAN; xas = Opcodes.BASTORE; break;
-            case BYTE:    tc = Opcodes.T_BYTE;    xas = Opcodes.BASTORE; break;
-            case CHAR:    tc = Opcodes.T_CHAR;    xas = Opcodes.CASTORE; break;
-            case SHORT:   tc = Opcodes.T_SHORT;   xas = Opcodes.SASTORE; break;
-            case INT:     tc = Opcodes.T_INT;     xas = Opcodes.IASTORE; break;
-            case LONG:    tc = Opcodes.T_LONG;    xas = Opcodes.LASTORE; break;
-            case FLOAT:   tc = Opcodes.T_FLOAT;   xas = Opcodes.FASTORE; break;
-            case DOUBLE:  tc = Opcodes.T_DOUBLE;  xas = Opcodes.DASTORE; break;
-            default:      throw new InternalError(rtype.getName());
-            }
+            byte tc = arrayTypeCode(Wrapper.forPrimitiveType(arrayElementType));
+            xas = arrayInsnOpcode(tc, xas);
             mv.visitIntInsn(Opcodes.NEWARRAY, tc);
         }
         // store arguments
@@ -888,24 +890,6 @@ class InvokerBytecodeGenerator {
         case REF_putStatic:          return Opcodes.PUTSTATIC;
         }
         throw new InternalError("refKind="+refKind);
-    }
-
-    static boolean isArrayBuilder(MethodHandle fn) {
-        if (fn == null)
-            return false;
-        MethodType mtype = fn.type();
-        Class<?> rtype = mtype.returnType();
-        Class<?> arrayElementType = rtype.getComponentType();
-        if (arrayElementType == null)
-            return false;
-        List<Class<?>> ptypes = mtype.parameterList();
-        int size = ptypes.size();
-        if (!ptypes.equals(Collections.nCopies(size, arrayElementType)))
-            return false;
-        // Assume varargsArray caches pointers.
-        if (fn != MethodHandleImpl.varargsArray(rtype, size))
-            return false;
-        return true;
     }
 
     /**
