@@ -746,7 +746,6 @@ ifeq ($(BUILD_HEADLESS), true)
         -I$(JDK_TOPDIR)/src/java.desktop/$(OPENJDK_TARGET_OS_API_DIR)/native/libsunwjdga/ \
         $(LIBJAVA_HEADER_FLAGS) \
         #
-    LIBAWT_HEADLESS_EXFILES := initIDs.c
 
     LIBAWT_HEADLESS_REORDER :=
     ifeq ($(OPENJDK_TARGET_OS), solaris)
@@ -759,7 +758,6 @@ ifeq ($(BUILD_HEADLESS), true)
         LIBRARY := awt_headless, \
         OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
         SRC := $(LIBAWT_HEADLESS_DIRS), \
-        EXCLUDE_FILES := $(LIBAWT_HEADLESS_EXFILES), \
         EXCLUDES := $(LIBAWT_HEADLESS_EXCLUDES), \
         LANG := C, \
         OPTIMIZATION := LOW, \
@@ -930,7 +928,7 @@ ifeq ($(OPENJDK_TARGET_OS), macosx)
       $(LIBJAVA_HEADER_FLAGS) \
       #
 
-  LIBAWT_LWAWT_EXFILES := fontpath.c awt_Font.c X11Color.c initIDs.c
+  LIBAWT_LWAWT_EXFILES := fontpath.c awt_Font.c X11Color.c
   LIBAWT_LWAWT_EXCLUDES := $(JDK_TOPDIR)/src/java.desktop/unix/native/common/sun/awt/medialib
 
   $(eval $(call SetupNativeCompilation,BUILD_LIBAWT_LWAWT, \
