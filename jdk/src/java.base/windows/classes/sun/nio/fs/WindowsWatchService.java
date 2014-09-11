@@ -25,9 +25,16 @@
 
 package sun.nio.fs;
 
-import java.nio.file.*;
 import java.io.IOException;
-import java.util.*;
+import java.nio.file.NotDirectoryException;
+import java.nio.file.Path;
+import java.nio.file.StandardWatchEventKinds;
+import java.nio.file.WatchEvent;
+import java.nio.file.WatchKey;
+import java.util.HashMap;
+import java.util.Map;
+import java.util.Set;
+
 import com.sun.nio.file.ExtendedWatchEventModifier;
 import sun.misc.Unsafe;
 
@@ -42,7 +49,6 @@ class WindowsWatchService
     extends AbstractWatchService
 {
     private final static int WAKEUP_COMPLETION_KEY = 0;
-    private final Unsafe unsafe = Unsafe.getUnsafe();
 
     // background thread to service I/O completion port
     private final Poller poller;
@@ -82,7 +88,7 @@ class WindowsWatchService
     /**
      * Windows implementation of WatchKey.
      */
-    private class WindowsWatchKey extends AbstractWatchKey {
+    private static class WindowsWatchKey extends AbstractWatchKey {
         // file key (used to detect existing registrations)
         private final FileKey fileKey;
 
@@ -169,15 +175,9 @@ class WindowsWatchService
             return completionKey;
         }
 
-        // close directory and release buffer
-        void releaseResources() {
-            CloseHandle(handle);
-            buffer.cleaner().clean();
-        }
-
-        // Invalidate key by closing directory and releasing buffer
+        // Invalidate the key, assumes that resources have been released
         void invalidate() {
-            releaseResources();
+            ((WindowsWatchService)watcher()).poller.releaseResources(this);
             handle = INVALID_HANDLE_VALUE;
             buffer = null;
             countAddress = 0;
@@ -193,7 +193,7 @@ class WindowsWatchService
         public void cancel() {
             if (isValid()) {
                 // delegate to poller
-                poller.cancel(this);
+                ((WindowsWatchService)watcher()).poller.cancel(this);
             }
         }
     }
@@ -241,18 +241,25 @@ class WindowsWatchService
     /**
      * Background thread to service I/O completion port.
      */
-    private class Poller extends AbstractPoller {
+    private static class Poller extends AbstractPoller {
+        private final static Unsafe UNSAFE = Unsafe.getUnsafe();
+
         /*
          * typedef struct _OVERLAPPED {
-         *     DWORD  Internal;
-         *     DWORD  InternalHigh;
-         *     DWORD  Offset;
-         *     DWORD  OffsetHigh;
-         *     HANDLE hEvent;
+         *     ULONG_PTR  Internal;
+         *     ULONG_PTR  InternalHigh;
+         *     union {
+         *         struct { DWORD Offset; DWORD OffsetHigh; };
+         *         PVOID  Pointer;
+         *     };
+         *     HANDLE    hEvent;
          * } OVERLAPPED;
          */
         private static final short SIZEOF_DWORD         = 4;
         private static final short SIZEOF_OVERLAPPED    = 32; // 20 on 32-bit
+        private static final short OFFSETOF_HEVENT      =
+            (UNSAFE.addressSize() == 4) ? (short) 16 : 24;
+
 
         /*
          * typedef struct _FILE_NOTIFY_INFORMATION {
@@ -276,10 +283,10 @@ class WindowsWatchService
         private final long port;
 
         // maps completion key to WatchKey
-        private final Map<Integer,WindowsWatchKey> ck2key;
+        private final Map<Integer, WindowsWatchKey> ck2key;
 
         // maps file key to WatchKey
-        private final Map<FileKey,WindowsWatchKey> fk2key;
+        private final Map<FileKey, WindowsWatchKey> fk2key;
 
         // unique completion key for each directory
         // native completion key capacity is 64 bits on Win64.
@@ -393,8 +400,13 @@ class WindowsWatchService
                 long overlappedAddress = bufferAddress + size - SIZEOF_OVERLAPPED;
                 long countAddress = overlappedAddress - SIZEOF_DWORD;
 
+                // zero the overlapped structure
+                UNSAFE.setMemory(overlappedAddress, SIZEOF_OVERLAPPED, (byte)0);
+
                 // start async read of changes to directory
                 try {
+                    createAndAttachEvent(overlappedAddress);
+
                     ReadDirectoryChangesW(handle,
                                           bufferAddress,
                                           CHANGES_BUFFER_SIZE,
@@ -403,6 +415,7 @@ class WindowsWatchService
                                           countAddress,
                                           overlappedAddress);
                 } catch (WindowsException x) {
+                    closeAttachedEvent(overlappedAddress);
                     buffer.release();
                     return new IOException(x.getMessage());
                 }
@@ -421,7 +434,7 @@ class WindowsWatchService
                     // 2. release existing key's resources (handle/buffer)
                     // 3. re-initialize key with new handle/buffer
                     ck2key.remove(existing.completionKey());
-                    existing.releaseResources();
+                    releaseResources(existing);
                     watchKey = existing.init(handle, events, watchSubtree, buffer,
                         countAddress, overlappedAddress, completionKey);
                 }
@@ -434,6 +447,42 @@ class WindowsWatchService
             } finally {
                 if (!registered) CloseHandle(handle);
             }
+        }
+
+        /**
+         * Cancels the outstanding I/O operation on the directory
+         * associated with the given key and releases the associated
+         * resources.
+         */
+        private void releaseResources(WindowsWatchKey key) {
+            try {
+                CancelIo(key.handle());
+                GetOverlappedResult(key.handle(), key.overlappedAddress());
+            } catch (WindowsException expected) {
+                // expected as I/O operation has been cancelled
+            }
+            CloseHandle(key.handle());
+            closeAttachedEvent(key.overlappedAddress());
+            key.buffer().cleaner().clean();
+        }
+
+        /**
+         * Creates an unnamed event and set it as the hEvent field
+         * in the given OVERLAPPED structure
+         */
+        private void createAndAttachEvent(long ov) throws WindowsException {
+            long hEvent = CreateEvent(false, false);
+            UNSAFE.putAddress(ov + OFFSETOF_HEVENT, hEvent);
+        }
+
+        /**
+         * Closes the event attached to the given OVERLAPPED structure. A
+         * no-op if there isn't an event attached.
+         */
+        private void closeAttachedEvent(long ov) {
+            long hEvent = UNSAFE.getAddress(ov + OFFSETOF_HEVENT);
+            if (hEvent != 0 && hEvent != INVALID_HANDLE_VALUE)
+               CloseHandle(hEvent);
         }
 
         // cancel single key
@@ -451,9 +500,8 @@ class WindowsWatchService
         @Override
         void implCloseAll() {
             // cancel all keys
-            for (Map.Entry<Integer, WindowsWatchKey> entry: ck2key.entrySet()) {
-                entry.getValue().invalidate();
-            }
+            ck2key.values().forEach(WindowsWatchKey::invalidate);
+
             fk2key.clear();
             ck2key.clear();
 
@@ -462,8 +510,7 @@ class WindowsWatchService
         }
 
         // Translate file change action into watch event
-        private WatchEvent.Kind<?> translateActionToEvent(int action)
-        {
+        private WatchEvent.Kind<?> translateActionToEvent(int action) {
             switch (action) {
                 case FILE_ACTION_MODIFIED :
                     return StandardWatchEventKinds.ENTRY_MODIFY;
@@ -487,18 +534,18 @@ class WindowsWatchService
 
             int nextOffset;
             do {
-                int action = unsafe.getInt(address + OFFSETOF_ACTION);
+                int action = UNSAFE.getInt(address + OFFSETOF_ACTION);
 
                 // map action to event
                 WatchEvent.Kind<?> kind = translateActionToEvent(action);
                 if (key.events().contains(kind)) {
                     // copy the name
-                    int nameLengthInBytes = unsafe.getInt(address + OFFSETOF_FILENAMELENGTH);
+                    int nameLengthInBytes = UNSAFE.getInt(address + OFFSETOF_FILENAMELENGTH);
                     if ((nameLengthInBytes % 2) != 0) {
-                        throw new AssertionError("FileNameLength.FileNameLength is not a multiple of 2");
+                        throw new AssertionError("FileNameLength is not a multiple of 2");
                     }
                     char[] nameAsArray = new char[nameLengthInBytes/2];
-                    unsafe.copyMemory(null, address + OFFSETOF_FILENAME, nameAsArray,
+                    UNSAFE.copyMemory(null, address + OFFSETOF_FILENAME, nameAsArray,
                         Unsafe.ARRAY_CHAR_BASE_OFFSET, nameLengthInBytes);
 
                     // create FileName and queue event
@@ -508,7 +555,7 @@ class WindowsWatchService
                 }
 
                 // next event
-                nextOffset = unsafe.getInt(address + OFFSETOF_NEXTENTRYOFFSET);
+                nextOffset = UNSAFE.getInt(address + OFFSETOF_NEXTENTRYOFFSET);
                 address += (long)nextOffset;
             } while (nextOffset != 0);
         }
