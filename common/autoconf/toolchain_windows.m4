@@ -33,6 +33,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT],
       if test -f "$VS100BASE/$VCVARSFILE"; then
         AC_MSG_NOTICE([Found Visual Studio installation at $VS100BASE using $METHOD])
         VS_ENV_CMD="$VS100BASE/$VCVARSFILE"
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be one of 'v100', 'v110' or 'v120' for VS 2010, 2012 or VS2013
+        # TODO: improve detection for other versions of VS
+        PLATFORM_TOOLSET="v100"
       else
         AC_MSG_NOTICE([Found Visual Studio installation at $VS100BASE using $METHOD])
         AC_MSG_NOTICE([Warning: $VCVARSFILE is missing, this is probably Visual Studio Express. Ignoring])
@@ -61,6 +65,10 @@ AC_DEFUN([TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT],
         else
           VS_ENV_ARGS="/x64"
         fi
+        # PLATFORM_TOOLSET is used during the compilation of the freetype sources (see
+        # 'LIB_BUILD_FREETYPE' in libraries.m4) and must be 'Windows7.1SDK' for Windows7.1SDK
+        # TODO: improve detection for other versions of SDK
+        PLATFORM_TOOLSET="Windows7.1SDK"
       else
         AC_MSG_NOTICE([Found Windows SDK installation at $WIN_SDK_BASE using $METHOD])
         AC_MSG_NOTICE([Warning: Installation is broken, SetEnv.Cmd is missing. Ignoring])
