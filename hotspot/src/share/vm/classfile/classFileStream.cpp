@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -30,7 +30,7 @@ void ClassFileStream::truncated_file_error(TRAPS) {
   THROW_MSG(vmSymbols::java_lang_ClassFormatError(), "Truncated class file");
 }
 
-ClassFileStream::ClassFileStream(u1* buffer, int length, char* source) {
+ClassFileStream::ClassFileStream(u1* buffer, int length, const char* source) {
   _buffer_start = buffer;
   _buffer_end   = buffer + length;
   _current      = buffer;

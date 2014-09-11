@@ -24,6 +24,7 @@
 /*
  * @test
  * @library /testlibrary /testlibrary/whitebox /compiler/whitebox
+ *          /compiler/testlibrary
  * @build IncrementExactLongTest
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
@@ -35,7 +36,7 @@
  *                   -XX:+IgnoreUnrecognizedVMOptions -XX:+WhiteBoxAPI -XX:+LogCompilation
  *                   -XX:CompileCommand=compileonly,MathIntrinsic*::execMathMethod
  *                   -XX:LogFile=hs.log -XX:+UseMathExactIntrinsics IncrementExactLongTest
- * @run main Verifier hs_neg.log hs.log
+ * @run main intrinsics.Verifier hs_neg.log hs.log
  */
 
 public class IncrementExactLongTest {
