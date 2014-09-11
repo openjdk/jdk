@@ -54,6 +54,7 @@ m4_include([toolchain_windows.m4])
 
 AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK])
 AC_DEFUN_ONCE([CUSTOM_LATE_HOOK])
+AC_DEFUN_ONCE([CUSTOM_SUMMARY_AND_WARNINGS_HOOK])
 
 # This line needs to be here, verbatim, after all includes and the dummy hook
 # definitions. It is replaced with custom functionality when building
@@ -273,3 +274,4 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
 
 # Finally output some useful information to the user
 HELP_PRINT_SUMMARY_AND_WARNINGS
+CUSTOM_SUMMARY_AND_WARNINGS_HOOK
