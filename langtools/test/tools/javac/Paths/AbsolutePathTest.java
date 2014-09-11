@@ -23,11 +23,11 @@
 
 /*
  * @test
- * @ignore 8055500 [javac] fix for 8030046 is incorrect
- * @bug 8030046
+ * @bug 8030046 8055500
  * @summary javac incorrectly handles absolute paths in manifest classpath
  * @author govereau
  * @library /tools/lib
+ * @ignore 8055768 ToolBox does not close opened files
  * @build ToolBox
  * @run main AbsolutePathTest
  */

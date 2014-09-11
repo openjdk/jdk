@@ -25,7 +25,8 @@
  * @test
  * @bug 8008077 8029721 8042451 8043974
  * @summary Test population of reference info for lambda expressions
- * javac crash for annotated parameter type of lambda in a field
+ *          javac crash for annotated parameter type of lambda in a field
+ * @ignore 8057687 emit correct byte code an attributes for type annotations
  * @compile -g Driver.java ReferenceInfoUtil.java Lambda.java
  * @run main Driver Lambda
  * @author Werner Dietl
