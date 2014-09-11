@@ -1,0 +1,6 @@
+ExtraneousEquals.java:10:23: compiler.err.illegal.start.of.expr
+ExtraneousEquals.java:10:24: compiler.err.illegal.start.of.expr
+ExtraneousEquals.java:10:25: compiler.err.expected: ';'
+ExtraneousEquals.java:10:28: compiler.err.not.stmt
+ExtraneousEquals.java:10:29: compiler.err.expected: ';'
+5 errors

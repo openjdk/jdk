@@ -34,6 +34,7 @@ class T6747671<E> {
     }
 
     @TA B @TA[] arr = new @TA B @TA [0];//JDK-8022567: raw warning (2)
+    //todo: 8057688 type annotations in type argument position are lost
     Class<B[]> classes1;//no warning
     Class<B>[] classes2;//no warning
 
