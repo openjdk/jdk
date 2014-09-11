@@ -1971,7 +1971,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc, request, operator);
+        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc);
         if (cinv != null) {
             return cinv;
         }
