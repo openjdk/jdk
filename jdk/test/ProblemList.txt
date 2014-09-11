@@ -275,6 +275,9 @@ com/sun/jdi/JdbReadTwiceTest.sh                                 generic-all
 
 # jdk_util
 
+# 8051641
+sun/util/calendar/zi/TestZoneInfo310.java                        generic-all
+
 ############################################################################
 
 # jdk_instrument
