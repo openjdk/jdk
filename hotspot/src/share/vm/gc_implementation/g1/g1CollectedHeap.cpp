@@ -4670,6 +4670,56 @@ class G1KlassScanClosure : public KlassClosure {
   }
 };
 
+class G1CodeBlobClosure : public CodeBlobClosure {
+  class HeapRegionGatheringOopClosure : public OopClosure {
+    G1CollectedHeap* _g1h;
+    OopClosure* _work;
+    nmethod* _nm;
+
+    template <typename T>
+    void do_oop_work(T* p) {
+      _work->do_oop(p);
+      T oop_or_narrowoop = oopDesc::load_heap_oop(p);
+      if (!oopDesc::is_null(oop_or_narrowoop)) {
+        oop o = oopDesc::decode_heap_oop_not_null(oop_or_narrowoop);
+        HeapRegion* hr = _g1h->heap_region_containing_raw(o);
+        assert(!_g1h->obj_in_cs(o) || hr->rem_set()->strong_code_roots_list_contains(_nm), "if o still in CS then evacuation failed and nm must already be in the remset");
+        hr->add_strong_code_root(_nm);
+      }
+    }
+
+  public:
+    HeapRegionGatheringOopClosure(OopClosure* oc) : _g1h(G1CollectedHeap::heap()), _work(oc), _nm(NULL) {}
+
+    void do_oop(oop* o) {
+      do_oop_work(o);
+    }
+
+    void do_oop(narrowOop* o) {
+      do_oop_work(o);
+    }
+
+    void set_nm(nmethod* nm) {
+      _nm = nm;
+    }
+  };
+
+  HeapRegionGatheringOopClosure _oc;
+public:
+  G1CodeBlobClosure(OopClosure* oc) : _oc(oc) {}
+
+  void do_code_blob(CodeBlob* cb) {
+    nmethod* nm = cb->as_nmethod_or_null();
+    if (nm != NULL) {
+      if (!nm->test_set_oops_do_mark()) {
+        _oc.set_nm(nm);
+        nm->oops_do(&_oc);
+        nm->fix_oop_relocations();
+      }
+    }
+  }
+};
+
 class G1ParTask : public AbstractGangTask {
 protected:
   G1CollectedHeap*       _g1h;
@@ -4735,22 +4785,6 @@ public:
 
     void do_cld(ClassLoaderData* cld) {
       cld->oops_do(_oop_closure, &_klass_in_cld_closure, _claim);
-    }
-  };
-
-  class G1CodeBlobClosure: public CodeBlobClosure {
-    OopClosure* _f;
-
-   public:
-    G1CodeBlobClosure(OopClosure* f) : _f(f) {}
-    void do_code_blob(CodeBlob* blob) {
-      nmethod* that = blob->as_nmethod_or_null();
-      if (that != NULL) {
-        if (!that->test_set_oops_do_mark()) {
-          that->oops_do(_f);
-          that->fix_oop_relocations();
-        }
-      }
     }
   };
 
@@ -4944,7 +4978,7 @@ g1_process_roots(OopClosure* scan_non_heap_roots,
   g1_policy()->phase_times()->record_satb_filtering_time(worker_i, satb_filtering_ms);
 
   // Now scan the complement of the collection set.
-  MarkingCodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots, CodeBlobToOopClosure::FixRelocations);
+  G1CodeBlobClosure scavenge_cs_nmethods(scan_non_heap_weak_roots);
 
   g1_rem_set()->oops_into_collection_set_do(scan_rs, &scavenge_cs_nmethods, worker_i);
 
@@ -5990,12 +6024,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // collection set are reset when the collection set is freed.
   hot_card_cache->reset_hot_cache();
   hot_card_cache->set_use_cache(true);
-
-  // Migrate the strong code roots attached to each region in
-  // the collection set. Ideally we would like to do this
-  // after we have finished the scanning/evacuation of the
-  // strong code roots for a particular heap region.
-  migrate_strong_code_roots();
 
   purge_code_root_memory();
 
@@ -7049,13 +7077,8 @@ class RegisterNMethodOopClosure: public OopClosure {
                      " starting at "HR_FORMAT,
                      _nm, HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region())));
 
-      // HeapRegion::add_strong_code_root() avoids adding duplicate
-      // entries but having duplicates is  OK since we "mark" nmethods
-      // as visited when we scan the strong code root lists during the GC.
-      hr->add_strong_code_root(_nm);
-      assert(hr->rem_set()->strong_code_roots_list_contains(_nm),
-             err_msg("failed to add code root "PTR_FORMAT" to remembered set of region "HR_FORMAT,
-                     _nm, HR_FORMAT_PARAMS(hr)));
+      // HeapRegion::add_strong_code_root_locked() avoids adding duplicate entries.
+      hr->add_strong_code_root_locked(_nm);
     }
   }
 
@@ -7082,9 +7105,6 @@ class UnregisterNMethodOopClosure: public OopClosure {
                      _nm, HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region())));
 
       hr->remove_strong_code_root(_nm);
-      assert(!hr->rem_set()->strong_code_roots_list_contains(_nm),
-             err_msg("failed to remove code root "PTR_FORMAT" of region "HR_FORMAT,
-                     _nm, HR_FORMAT_PARAMS(hr)));
     }
   }
 
@@ -7112,28 +7132,9 @@ void G1CollectedHeap::unregister_nmethod(nmethod* nm) {
   nm->oops_do(&reg_cl, true);
 }
 
-class MigrateCodeRootsHeapRegionClosure: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion *hr) {
-    assert(!hr->isHumongous(),
-           err_msg("humongous region "HR_FORMAT" should not have been added to collection set",
-                   HR_FORMAT_PARAMS(hr)));
-    hr->migrate_strong_code_roots();
-    return false;
-  }
-};
-
-void G1CollectedHeap::migrate_strong_code_roots() {
-  MigrateCodeRootsHeapRegionClosure cl;
-  double migrate_start = os::elapsedTime();
-  collection_set_iterate(&cl);
-  double migration_time_ms = (os::elapsedTime() - migrate_start) * 1000.0;
-  g1_policy()->phase_times()->record_strong_code_root_migration_time(migration_time_ms);
-}
-
 void G1CollectedHeap::purge_code_root_memory() {
   double purge_start = os::elapsedTime();
-  G1CodeRootSet::purge_chunks(G1CodeRootsChunkCacheKeepPercent);
+  G1CodeRootSet::purge();
   double purge_time_ms = (os::elapsedTime() - purge_start) * 1000.0;
   g1_policy()->phase_times()->record_strong_code_root_purge_time(purge_time_ms);
 }

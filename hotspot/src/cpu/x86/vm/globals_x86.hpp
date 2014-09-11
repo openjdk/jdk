@@ -176,6 +176,8 @@ define_pd_global(uintx, TypeProfileLevel, 111);
           "Use count trailing zeros instruction")                           \
                                                                             \
   product(bool, UseBMI1Instructions, false,                                 \
-          "Use BMI instructions")
-
+          "Use BMI1 instructions")                                          \
+                                                                            \
+  product(bool, UseBMI2Instructions, false,                                 \
+          "Use BMI2 instructions")
 #endif // CPU_X86_VM_GLOBALS_X86_HPP
