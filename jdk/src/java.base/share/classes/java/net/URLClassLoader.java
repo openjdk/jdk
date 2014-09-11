@@ -354,10 +354,11 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @exception NullPointerException if {@code name} is {@code null}.
      */
     protected Class<?> findClass(final String name)
-         throws ClassNotFoundException
+        throws ClassNotFoundException
     {
+        final Class<?> result;
         try {
-            return AccessController.doPrivileged(
+            result = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Class<?>>() {
                     public Class<?> run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
@@ -369,13 +370,17 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                                 throw new ClassNotFoundException(name, e);
                             }
                         } else {
-                            throw new ClassNotFoundException(name);
+                            return null;
                         }
                     }
                 }, acc);
         } catch (java.security.PrivilegedActionException pae) {
             throw (ClassNotFoundException) pae.getException();
         }
+        if (result == null) {
+            throw new ClassNotFoundException(name);
+        }
+        return result;
     }
 
     /*

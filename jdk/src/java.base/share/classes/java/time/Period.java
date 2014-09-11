@@ -358,7 +358,7 @@ public final class Period
         if (start < 0 || end < 0) {
             return 0;
         }
-        int val = Integer.parseInt(text, 10, start, end);
+        int val = Integer.parseInt(text, start, end, 10);
         try {
             return Math.multiplyExact(val, negate);
         } catch (ArithmeticException ex) {

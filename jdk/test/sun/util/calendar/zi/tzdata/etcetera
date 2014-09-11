@@ -21,7 +21,6 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# <pre>
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 
@@ -37,7 +36,7 @@ Zone	Etc/UTC		0	-	UTC
 Zone	Etc/UCT		0	-	UCT
 
 # The following link uses older naming conventions,
-# but it belongs here, not in the file `backward',
+# but it belongs here, not in the file 'backward',
 # as functions like gmtime load the "GMT" file to handle leap seconds properly.
 # We want this to work even on installations that omit the other older names.
 Link	Etc/GMT				GMT
