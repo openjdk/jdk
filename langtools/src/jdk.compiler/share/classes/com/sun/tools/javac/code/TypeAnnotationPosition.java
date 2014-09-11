@@ -256,6 +256,9 @@ public class TypeAnnotationPosition {
         case METHOD_RETURN:
         case FIELD:
             break;
+        case UNKNOWN:
+            sb.append(", position UNKNOWN!");
+            break;
         default:
             Assert.error("Unknown target type: " + type);
         }
@@ -658,11 +661,10 @@ public class TypeAnnotationPosition {
     public static TypeAnnotationPosition
         exceptionParameter(final List<TypePathEntry> location,
                            final JCLambda onLambda,
-                           final int type_index,
                            final int pos) {
         return new TypeAnnotationPosition(TargetType.EXCEPTION_PARAMETER, pos,
                                           Integer.MIN_VALUE, onLambda,
-                                          type_index, Integer.MIN_VALUE,
+                                          Integer.MIN_VALUE, Integer.MIN_VALUE,
                                           location);
     }
 
@@ -675,7 +677,7 @@ public class TypeAnnotationPosition {
     public static TypeAnnotationPosition
         exceptionParameter(final JCLambda onLambda,
                            final int pos) {
-        return exceptionParameter(emptyPath, onLambda, Integer.MIN_VALUE, pos);
+        return exceptionParameter(emptyPath, onLambda, pos);
     }
 
     /**
@@ -685,7 +687,7 @@ public class TypeAnnotationPosition {
      */
     public static TypeAnnotationPosition
         exceptionParameter(final List<TypePathEntry> location) {
-        return exceptionParameter(location, null, Integer.MIN_VALUE, -1);
+        return exceptionParameter(location, null, -1);
     }
 
 
@@ -1199,4 +1201,12 @@ public class TypeAnnotationPosition {
         return methodTypeParameterBound(location, null, parameter_index,
                                         bound_index, -1);
     }
+
+    // Consider this deprecated on arrival.  We eventually want to get
+    // rid of this value altogether.  Do not use it for anything new.
+    public static final TypeAnnotationPosition unknown =
+        new TypeAnnotationPosition(TargetType.UNKNOWN, -1,
+                                   Integer.MIN_VALUE, null,
+                                   Integer.MIN_VALUE, Integer.MIN_VALUE,
+                                   emptyPath);
 }

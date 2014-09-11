@@ -26,7 +26,8 @@
  * @bug     8013852
  * @summary Annotations on types
  * @library /tools/javac/lib
- * @ignore
+ * @ignore 8057688 type annotations in type argument position are lost
+ * @ignore 8031744 Annotations on many Language Model elements are not returned
  * @build JavacTestingAbstractProcessor DPrinter BasicAnnoTests
  * @compile/process -processor BasicAnnoTests -proc:only BasicAnnoTests.java
  */
