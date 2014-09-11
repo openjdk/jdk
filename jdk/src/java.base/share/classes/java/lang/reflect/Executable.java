@@ -53,6 +53,11 @@ public abstract class Executable extends AccessibleObject
     abstract byte[] getAnnotationBytes();
 
     /**
+     * Accessor method to allow code sharing
+     */
+    abstract Executable getRoot();
+
+    /**
      * Does the Executable have generic information.
      */
     abstract boolean hasGenericInformation();
@@ -540,11 +545,16 @@ public abstract class Executable extends AccessibleObject
 
     private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                getAnnotationBytes(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            Executable root = getRoot();
+            if (root != null) {
+                declaredAnnotations = root.declaredAnnotations();
+            } else {
+                declaredAnnotations = AnnotationParser.parseAnnotations(
+                    getAnnotationBytes(),
+                    sun.misc.SharedSecrets.getJavaLangAccess().
+                    getConstantPool(getDeclaringClass()),
+                    getDeclaringClass());
+            }
         }
         return declaredAnnotations;
     }

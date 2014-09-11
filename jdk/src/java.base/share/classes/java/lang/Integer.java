@@ -595,37 +595,6 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * Parses the {@link CharSequence} argument as a signed {@code int} in the
      * specified {@code radix}, beginning at the specified {@code beginIndex}
-     * and extending to the end of the sequence.
-     *
-     * <p>The method does not take steps to guard against the
-     * {@code CharSequence} being mutated while parsing.
-     *
-     * @param      s   the {@code CharSequence} containing the {@code int}
-     *                  representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
-     * @param      beginIndex   the beginning index, inclusive.
-     * @return     the signed {@code int} represented by the subsequence in
-     *             the specified radix.
-     * @throws     NullPointerException  if {@code s} is null.
-     * @throws     IndexOutOfBoundsException  if {@code beginIndex} is
-     *             negative, or if {@code beginIndex} is greater than
-     *             {@code s.length()}.
-     * @throws     NumberFormatException  if the {@code CharSequence} does not
-     *             contain a parsable {@code int} in the specified
-     *             {@code radix}, or if {@code radix} is either smaller than
-     *             {@link java.lang.Character#MIN_RADIX} or larger than
-     *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
-     */
-    public static int parseInt(CharSequence s, int radix, int beginIndex)
-                throws NumberFormatException {
-        // forces an implicit null check of s
-        return parseInt(s, radix, beginIndex, s.length());
-    }
-
-    /**
-     * Parses the {@link CharSequence} argument as a signed {@code int} in the
-     * specified {@code radix}, beginning at the specified {@code beginIndex}
      * and extending to {@code endIndex - 1}.
      *
      * <p>The method does not take steps to guard against the
@@ -633,9 +602,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @param      s   the {@code CharSequence} containing the {@code int}
      *                  representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
      * @param      beginIndex   the beginning index, inclusive.
      * @param      endIndex     the ending index, exclusive.
+     * @param      radix   the radix to be used while parsing {@code s}.
      * @return     the signed {@code int} represented by the subsequence in
      *             the specified radix.
      * @throws     NullPointerException  if {@code s} is null.
@@ -650,7 +619,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *             {@link java.lang.Character#MAX_RADIX}.
      * @since  1.9
      */
-    public static int parseInt(CharSequence s, int radix, int beginIndex, int endIndex)
+    public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         s = Objects.requireNonNull(s);
 
@@ -690,7 +659,7 @@ public final class Integer extends Number implements Comparable<Integer> {
             int result = 0;
             while (i < endIndex) {
                 // Accumulating negatively avoids surprises near MAX_VALUE
-                int digit = Character.digit(s.charAt(i++), radix);
+                int digit = Character.digit(s.charAt(i), radix);
                 if (digit < 0 || result < multmin) {
                     throw NumberFormatException.forCharSequence(s, beginIndex,
                             endIndex, i);
@@ -700,6 +669,7 @@ public final class Integer extends Number implements Comparable<Integer> {
                     throw NumberFormatException.forCharSequence(s, beginIndex,
                             endIndex, i);
                 }
+                i++;
                 result -= digit;
             }
             return negative ? result : -result;
@@ -808,37 +778,6 @@ public final class Integer extends Number implements Comparable<Integer> {
     /**
      * Parses the {@link CharSequence} argument as an unsigned {@code int} in
      * the specified {@code radix}, beginning at the specified
-     * {@code beginIndex} and extending to the end of the sequence.
-     *
-     * <p>The method does not take steps to guard against the
-     * {@code CharSequence} being mutated while parsing.
-     *
-     * @param      s   the {@code CharSequence} containing the unsigned
-     *                 {@code int} representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
-     * @param      beginIndex   the beginning index, inclusive.
-     * @return     the unsigned {@code int} represented by the subsequence in
-     *             the specified radix.
-     * @throws     NullPointerException  if {@code s} is null.
-     * @throws     IndexOutOfBoundsException  if {@code beginIndex} is
-     *             negative, or if {@code beginIndex} is greater than
-     *             {@code s.length()}.
-     * @throws     NumberFormatException  if the {@code CharSequence} does not
-     *             contain a parsable unsigned {@code int} in the specified
-     *             {@code radix}, or if {@code radix} is either smaller than
-     *             {@link java.lang.Character#MIN_RADIX} or larger than
-     *             {@link java.lang.Character#MAX_RADIX}.
-     * @since  1.9
-     */
-    public static int parseUnsignedInt(CharSequence s, int radix, int beginIndex)
-                throws NumberFormatException {
-        // forces an implicit null check of s
-        return parseUnsignedInt(s, radix, beginIndex, s.length());
-    }
-
-    /**
-     * Parses the {@link CharSequence} argument as an unsigned {@code int} in
-     * the specified {@code radix}, beginning at the specified
      * {@code beginIndex} and extending to {@code endIndex - 1}.
      *
      * <p>The method does not take steps to guard against the
@@ -846,9 +785,9 @@ public final class Integer extends Number implements Comparable<Integer> {
      *
      * @param      s   the {@code CharSequence} containing the unsigned
      *                 {@code int} representation to be parsed
-     * @param      radix   the radix to be used while parsing {@code s}.
      * @param      beginIndex   the beginning index, inclusive.
      * @param      endIndex     the ending index, exclusive.
+     * @param      radix   the radix to be used while parsing {@code s}.
      * @return     the unsigned {@code int} represented by the subsequence in
      *             the specified radix.
      * @throws     NullPointerException  if {@code s} is null.
@@ -863,7 +802,7 @@ public final class Integer extends Number implements Comparable<Integer> {
      *             {@link java.lang.Character#MAX_RADIX}.
      * @since  1.9
      */
-    public static int parseUnsignedInt(CharSequence s, int radix, int beginIndex, int endIndex)
+    public static int parseUnsignedInt(CharSequence s, int beginIndex, int endIndex, int radix)
                 throws NumberFormatException {
         s = Objects.requireNonNull(s);
 
@@ -881,9 +820,9 @@ public final class Integer extends Number implements Comparable<Integer> {
             } else {
                 if (len <= 5 || // Integer.MAX_VALUE in Character.MAX_RADIX is 6 digits
                         (radix == 10 && len <= 9)) { // Integer.MAX_VALUE in base 10 is 10 digits
-                    return parseInt(s, radix, start, start + len);
+                    return parseInt(s, start, start + len, radix);
                 } else {
-                    long ell = Long.parseLong(s, radix, start, start + len);
+                    long ell = Long.parseLong(s, start, start + len, radix);
                     if ((ell & 0xffff_ffff_0000_0000L) == 0) {
                         return (int) ell;
                     } else {
