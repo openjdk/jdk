@@ -74,6 +74,7 @@ public class Gen extends JCTree.Visitor {
     private Name accessDollar;
     private final Types types;
     private final Lower lower;
+    private final Flow flow;
 
     /** Format of stackmap tables to be generated. */
     private final Code.StackMapFormat stackMap;
@@ -113,6 +114,7 @@ public class Gen extends JCTree.Visitor {
         stringBufferAppend = new HashMap<>();
         accessDollar = names.
             fromString("access" + target.syntheticNameChar());
+        flow = Flow.instance(context);
         lower = Lower.instance(context);
 
         Options options = Options.instance(context);
@@ -519,6 +521,7 @@ public class Gen extends JCTree.Visitor {
         ListBuffer<Attribute.TypeCompound> fieldTAs = new ListBuffer<>();
         ListBuffer<Attribute.TypeCompound> nonfieldTAs = new ListBuffer<>();
         for (TypeCompound ta : tas) {
+            Assert.check(ta.getPosition().type != TargetType.UNKNOWN);
             if (ta.getPosition().type == TargetType.FIELD) {
                 fieldTAs.add(ta);
             } else {
@@ -1818,7 +1821,10 @@ public class Gen extends JCTree.Visitor {
                 || code.meth.getKind() == javax.lang.model.element.ElementKind.STATIC_INIT;
 
         for (Attribute.TypeCompound ta : meth.getRawTypeAttributes()) {
-            if (ta.position != null && ta.position.matchesPos(treePos))
+            if (ta.hasUnknownPosition())
+                ta.tryFixPosition();
+
+            if (ta.position.matchesPos(treePos))
                 ta.position.updatePosOffset(code.cp);
         }
 
@@ -1826,7 +1832,10 @@ public class Gen extends JCTree.Visitor {
             return;
 
         for (Attribute.TypeCompound ta : meth.owner.getRawTypeAttributes()) {
-            if (ta.position != null && ta.position.matchesPos(treePos))
+            if (ta.hasUnknownPosition())
+                ta.tryFixPosition();
+
+            if (ta.position.matchesPos(treePos))
                 ta.position.updatePosOffset(code.cp);
         }
 
@@ -1836,7 +1845,10 @@ public class Gen extends JCTree.Visitor {
                 continue;
 
             for (Attribute.TypeCompound ta : s.getRawTypeAttributes()) {
-                if (ta.position != null && ta.position.matchesPos(treePos))
+                if (ta.hasUnknownPosition())
+                    ta.tryFixPosition();
+
+                if (ta.position.matchesPos(treePos))
                     ta.position.updatePosOffset(code.cp);
             }
         }
@@ -2208,8 +2220,8 @@ public class Gen extends JCTree.Visitor {
     }
 
     public void visitTypeTest(JCInstanceOf tree) {
-        genExpr(tree.expr, tree.expr.type).load();
         setTypeAnnotationPositions(tree.pos);
+        genExpr(tree.expr, tree.expr.type).load();
         code.emitop2(instanceof_, makeRef(tree.pos(), tree.clazz.type));
         result = items.makeStackItem(syms.booleanType);
     }
@@ -2373,9 +2385,7 @@ public class Gen extends JCTree.Visitor {
              */
             if (varDebugInfo && (cdef.sym.flags() & SYNTHETIC) == 0) {
                 try {
-                    LVTAssignAnalyzer lvtAssignAnalyzer = LVTAssignAnalyzer.make(
-                            lvtRanges, syms, names);
-                    lvtAssignAnalyzer.analyzeTree(localEnv);
+                    new LVTAssignAnalyzer().analyzeTree(localEnv);
                 } catch (Throwable e) {
                     throw e;
                 }
@@ -2466,11 +2476,10 @@ public class Gen extends JCTree.Visitor {
         }
     }
 
-    static class LVTAssignAnalyzer
+    class LVTAssignAnalyzer
         extends Flow.AbstractAssignAnalyzer<LVTAssignAnalyzer.LVTAssignPendingExit> {
 
         final LVTBits lvtInits;
-        final LVTRanges lvtRanges;
 
         /*  This class is anchored to a context dependent tree. The tree can
          *  vary inside the same instruction for example in the switch instruction
@@ -2478,34 +2487,11 @@ public class Gen extends JCTree.Visitor {
          *  to a given case. The aim is to always anchor the bits to the tree
          *  capable of closing a DA range.
          */
-        static class LVTBits extends Bits {
-
-            enum BitsOpKind {
-                INIT,
-                CLEAR,
-                INCL_BIT,
-                EXCL_BIT,
-                ASSIGN,
-                AND_SET,
-                OR_SET,
-                DIFF_SET,
-                XOR_SET,
-                INCL_RANGE,
-                EXCL_RANGE,
-            }
+        class LVTBits extends Bits {
 
             JCTree currentTree;
-            LVTAssignAnalyzer analyzer;
             private int[] oldBits = null;
             BitsState stateBeforeOp;
-
-            LVTBits() {
-                super(false);
-            }
-
-            LVTBits(int[] bits, BitsState initState) {
-                super(bits, initState);
-            }
 
             @Override
             public void clear() {
@@ -2614,12 +2600,11 @@ public class Gen extends JCTree.Visitor {
                 if (currentTree != null &&
                         stateBeforeOp != BitsState.UNKNOWN &&
                         trackTree(currentTree)) {
-                    List<VarSymbol> locals =
-                            analyzer.lvtRanges
-                            .getVars(analyzer.currentMethod, currentTree);
+                    List<VarSymbol> locals = lvtRanges
+                            .getVars(currentMethod, currentTree);
                     locals = locals != null ?
                             locals : List.<VarSymbol>nil();
-                    for (JCVariableDecl vardecl : analyzer.vardecls) {
+                    for (JCVariableDecl vardecl : vardecls) {
                         //once the first is null, the rest will be so.
                         if (vardecl == null) {
                             break;
@@ -2629,7 +2614,7 @@ public class Gen extends JCTree.Visitor {
                         }
                     }
                     if (!locals.isEmpty()) {
-                        analyzer.lvtRanges.setEntry(analyzer.currentMethod,
+                        lvtRanges.setEntry(currentMethod,
                                 currentTree, locals);
                     }
                 }
@@ -2647,7 +2632,7 @@ public class Gen extends JCTree.Visitor {
             boolean trackVar(VarSymbol var) {
                 return (var.owner.kind == MTH &&
                         (var.flags() & PARAMETER) == 0 &&
-                        analyzer.trackable(var));
+                        trackable(var));
             }
 
             boolean trackTree(JCTree tree) {
@@ -2663,7 +2648,8 @@ public class Gen extends JCTree.Visitor {
 
         }
 
-        public class LVTAssignPendingExit extends Flow.AssignAnalyzer.AssignPendingExit {
+        public class LVTAssignPendingExit extends
+                                    Flow.AbstractAssignAnalyzer<LVTAssignPendingExit>.AbstractAssignPendingExit {
 
             LVTAssignPendingExit(JCTree tree, final Bits inits, final Bits uninits) {
                 super(tree, inits, uninits);
@@ -2676,16 +2662,10 @@ public class Gen extends JCTree.Visitor {
             }
         }
 
-        private LVTAssignAnalyzer(LVTRanges lvtRanges, Symtab syms, Names names) {
-            super(new LVTBits(), syms, names, false);
-            lvtInits = (LVTBits)inits;
-            this.lvtRanges = lvtRanges;
-        }
-
-        public static LVTAssignAnalyzer make(LVTRanges lvtRanges, Symtab syms, Names names) {
-            LVTAssignAnalyzer result = new LVTAssignAnalyzer(lvtRanges, syms, names);
-            result.lvtInits.analyzer = result;
-            return result;
+        private LVTAssignAnalyzer() {
+            flow.super();
+            lvtInits = new LVTBits();
+            inits = lvtInits;
         }
 
         @Override

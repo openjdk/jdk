@@ -84,6 +84,20 @@ public class Bits {
 
     }
 
+    public enum BitsOpKind {
+        INIT,
+        CLEAR,
+        INCL_BIT,
+        EXCL_BIT,
+        ASSIGN,
+        AND_SET,
+        OR_SET,
+        DIFF_SET,
+        XOR_SET,
+        INCL_RANGE,
+        EXCL_RANGE,
+    }
+
     private final static int wordlen = 32;
     private final static int wordshift = 5;
     private final static int wordmask = wordlen - 1;

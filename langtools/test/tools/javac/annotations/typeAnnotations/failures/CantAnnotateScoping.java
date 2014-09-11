@@ -3,6 +3,7 @@
  * @bug 8006733 8006775
  * @summary Ensure behavior for nested types is correct.
  * @author Werner Dietl
+ * @ignore 8057679 clarify error messages trying to annotate scoping
  * @compile/fail/ref=CantAnnotateScoping.out -XDrawDiagnostics CantAnnotateScoping.java
  */
 
