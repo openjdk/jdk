@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,6 +22,7 @@
  */
 
 import com.oracle.java.testlibrary.Platform;
+import intrinsics.Verifier;
 
 import java.io.FileOutputStream;
 import java.lang.reflect.Executable;
@@ -79,10 +80,10 @@ public abstract class IntrinsicBase extends CompilerWhiteBoxTest {
 
         System.out.println("Expected intrinsic count is " + expectedIntrinsicCount + " name " + getIntrinsicId());
 
-        final FileOutputStream out = new FileOutputStream(getVMOption("LogFile") + ".verify.properties");
+        final FileOutputStream out = new FileOutputStream(getVMOption("LogFile") + Verifier.PROPERTY_FILE_SUFFIX);
         Properties expectedProps = new Properties();
-        expectedProps.setProperty("intrinsic.name", getIntrinsicId());
-        expectedProps.setProperty("intrinsic.expectedCount", String.valueOf(expectedIntrinsicCount));
+        expectedProps.setProperty(Verifier.INTRINSIC_NAME_PROPERTY, getIntrinsicId());
+        expectedProps.setProperty(Verifier.INTRINSIC_EXPECTED_COUNT_PROPERTY, String.valueOf(expectedIntrinsicCount));
         expectedProps.store(out, null);
 
         out.close();

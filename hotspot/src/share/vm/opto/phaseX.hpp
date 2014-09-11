@@ -100,7 +100,6 @@ public:
 #ifndef PRODUCT
   Node  *find_index(uint idx);  // For debugging
   void   dump();                // For debugging, dump statistics
-#endif
   uint   _grows;                // For debugging, count of table grow()s
   uint   _look_probes;          // For debugging, count of hash probes
   uint   _lookup_hits;          // For debugging, count of hash_finds
@@ -111,6 +110,7 @@ public:
   uint   _delete_misses;        // For debugging, count of hash probes for deletes
   uint   _total_inserts;        // For debugging, total inserts into hash table
   uint   _total_insert_probes;  // For debugging, total probes while inserting
+#endif
 };
 
 

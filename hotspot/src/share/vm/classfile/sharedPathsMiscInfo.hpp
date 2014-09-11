@@ -165,7 +165,7 @@ public:
       out->print("Expecting that %s does not exist", path);
       break;
     case REQUIRED:
-      out->print("Expecting that file %s must exist and not altered", path);
+      out->print("Expecting that file %s must exist and is not altered", path);
       break;
     default:
       ShouldNotReachHere();

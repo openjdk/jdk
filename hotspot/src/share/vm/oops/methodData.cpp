@@ -86,7 +86,7 @@ ProfileData::ProfileData() {
 
 char* ProfileData::print_data_on_helper(const MethodData* md) const {
   DataLayout* dp  = md->extra_data_base();
-  DataLayout* end = md->extra_data_limit();
+  DataLayout* end = md->args_data_limit();
   stringStream ss;
   for (;; dp = MethodData::next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
@@ -1048,14 +1048,15 @@ void MethodData::post_initialize(BytecodeStream* stream) {
     stream->next();
     data->post_initialize(stream, this);
   }
-  if (_parameters_type_data_di != -1) {
+  if (_parameters_type_data_di != no_parameters) {
     parameters_type_data()->post_initialize(NULL, this);
   }
 }
 
 // Initialize the MethodData* corresponding to a given method.
 MethodData::MethodData(methodHandle method, int size, TRAPS)
-  : _extra_data_lock(Monitor::leaf, "MDO extra data lock") {
+  : _extra_data_lock(Monitor::leaf, "MDO extra data lock"),
+    _parameters_type_data_di(parameters_uninitialized) {
   No_Safepoint_Verifier no_safepoint;  // init function atomic wrt GC
   ResourceMark rm;
   // Set the method back-pointer.
@@ -1111,7 +1112,7 @@ MethodData::MethodData(methodHandle method, int size, TRAPS)
     DataLayout *dp = data_layout_at(data_size + extra_size + arg_data_size);
     dp->initialize(DataLayout::parameters_type_data_tag, 0, parms_cell);
   } else {
-    _parameters_type_data_di = -1;
+    _parameters_type_data_di = no_parameters;
   }
 
   // Set an initial hint. Don't use set_hint_di() because
@@ -1236,7 +1237,7 @@ DataLayout* MethodData::next_extra(DataLayout* dp) {
 }
 
 ProfileData* MethodData::bci_to_extra_data_helper(int bci, Method* m, DataLayout*& dp, bool concurrent) {
-  DataLayout* end = extra_data_limit();
+  DataLayout* end = args_data_limit();
 
   for (;; dp = next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
@@ -1285,7 +1286,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
          "code needs to be adjusted");
 
   DataLayout* dp  = extra_data_base();
-  DataLayout* end = extra_data_limit();
+  DataLayout* end = args_data_limit();
 
   // Allocation in the extra data space has to be atomic because not
   // all entries have the same size and non atomic concurrent
@@ -1330,7 +1331,7 @@ ProfileData* MethodData::bci_to_extra_data(int bci, Method* m, bool create_if_mi
 
 ArgInfoData *MethodData::arg_info() {
   DataLayout* dp    = extra_data_base();
-  DataLayout* end   = extra_data_limit();
+  DataLayout* end   = args_data_limit();
   for (; dp < end; dp = next_extra(dp)) {
     if (dp->tag() == DataLayout::arg_info_data_tag)
       return new ArgInfoData(dp);
@@ -1357,7 +1358,7 @@ void MethodData::print_value_on(outputStream* st) const {
 void MethodData::print_data_on(outputStream* st) const {
   ResourceMark rm;
   ProfileData* data = first_data();
-  if (_parameters_type_data_di != -1) {
+  if (_parameters_type_data_di != no_parameters) {
     parameters_type_data()->print_data_on(st);
   }
   for ( ; is_valid(data); data = next_data(data)) {
@@ -1367,7 +1368,7 @@ void MethodData::print_data_on(outputStream* st) const {
   }
   st->print_cr("--- Extra data:");
   DataLayout* dp    = extra_data_base();
-  DataLayout* end   = extra_data_limit();
+  DataLayout* end   = args_data_limit();
   for (;; dp = next_extra(dp)) {
     assert(dp < end, "moved past end of extra data");
     // No need for "OrderAccess::load_acquire" ops,
@@ -1565,7 +1566,7 @@ public:
 // redefined method
 void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
   DataLayout* dp  = extra_data_base();
-  DataLayout* end = extra_data_limit();
+  DataLayout* end = args_data_limit();
 
   int shift = 0;
   for (; dp < end; dp = next_extra(dp)) {
@@ -1610,7 +1611,7 @@ void MethodData::clean_extra_data(CleanExtraDataClosure* cl) {
 void MethodData::verify_extra_data_clean(CleanExtraDataClosure* cl) {
 #ifdef ASSERT
   DataLayout* dp  = extra_data_base();
-  DataLayout* end = extra_data_limit();
+  DataLayout* end = args_data_limit();
 
   for (; dp < end; dp = next_extra(dp)) {
     switch(dp->tag()) {

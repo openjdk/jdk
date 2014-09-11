@@ -238,6 +238,7 @@ void* BufferBlob::operator new(size_t s, unsigned size, bool is_critical) throw(
 
 void BufferBlob::free( BufferBlob *blob ) {
   ThreadInVMfromUnknown __tiv;  // get to VM state in case we block on CodeCache_lock
+  blob->flush();
   {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
     CodeCache::free((CodeBlob*)blob);
