@@ -2,7 +2,7 @@
 ^dist/
 ^drop/
 ^drop_included/
-^webrev/
+^webrev
 /nbproject/private/
 ^.hgtip
 .DS_Store
