@@ -3865,7 +3865,7 @@ public class Arrays {
 
         @Override
         public boolean contains(Object o) {
-            return indexOf(o) != -1;
+            return indexOf(o) >= 0;
         }
 
         @Override

@@ -29,38 +29,34 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodHandles.Lookup;
 import java.lang.invoke.MethodType;
-import java.security.AccessController;
-import java.security.PrivilegedAction;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.EnumMap;
-import java.util.List;
 
 public class ValueConversions {
     private static final Class<?> THIS_CLASS = ValueConversions.class;
-    // Do not adjust this except for special platforms:
-    private static final int MAX_ARITY;
-    static {
-        final Object[] values = { 255 };
-        AccessController.doPrivileged(new PrivilegedAction<Void>() {
-                @Override
-                public Void run() {
-                    values[0] = Integer.getInteger(THIS_CLASS.getName()+".MAX_ARITY", 255);
-                    return null;
-                }
-            });
-        MAX_ARITY = (Integer) values[0];
-    }
-
     private static final Lookup IMPL_LOOKUP = MethodHandles.lookup();
 
-    private static EnumMap<Wrapper, MethodHandle>[] newWrapperCaches(int n) {
-        @SuppressWarnings("unchecked")  // generic array creation
-        EnumMap<Wrapper, MethodHandle>[] caches
-                = (EnumMap<Wrapper, MethodHandle>[]) new EnumMap<?,?>[n];
+    /** Thread-safe canonicalized mapping from Wrapper to MethodHandle
+     * with unsynchronized reads and synchronized writes.
+     * It's safe to publish MethodHandles by data race because they are immutable. */
+    private static class WrapperCache {
+        /** EnumMap uses preconstructed array internally, which is constant during it's lifetime. */
+        private final EnumMap<Wrapper, MethodHandle> map = new EnumMap<>(Wrapper.class);
+
+        public MethodHandle get(Wrapper w) {
+            return map.get(w);
+        }
+        public synchronized MethodHandle put(final Wrapper w, final MethodHandle mh) {
+            // Simulate CAS to avoid racy duplication
+            MethodHandle prev = map.putIfAbsent(w, mh);
+            if (prev != null)  return prev;
+            return mh;
+        }
+    }
+
+    private static WrapperCache[] newWrapperCaches(int n) {
+        WrapperCache[] caches = new WrapperCache[n];
         for (int i = 0; i < n; i++)
-            caches[i] = new EnumMap<>(Wrapper.class);
+            caches[i] = new WrapperCache();
         return caches;
     }
 
@@ -71,63 +67,92 @@ public class ValueConversions {
     //   implicit conversions sanctioned by JLS 5.1.2, etc.
     //   explicit conversions as allowed by explicitCastArguments
 
+    static int unboxInteger(Integer x) {
+        return x;
+    }
     static int unboxInteger(Object x, boolean cast) {
         if (x instanceof Integer)
-            return ((Integer) x).intValue();
+            return (Integer) x;
         return primitiveConversion(Wrapper.INT, x, cast).intValue();
     }
 
+    static byte unboxByte(Byte x) {
+        return x;
+    }
     static byte unboxByte(Object x, boolean cast) {
         if (x instanceof Byte)
-            return ((Byte) x).byteValue();
+            return (Byte) x;
         return primitiveConversion(Wrapper.BYTE, x, cast).byteValue();
     }
 
+    static short unboxShort(Short x) {
+        return x;
+    }
     static short unboxShort(Object x, boolean cast) {
         if (x instanceof Short)
-            return ((Short) x).shortValue();
+            return (Short) x;
         return primitiveConversion(Wrapper.SHORT, x, cast).shortValue();
     }
 
+    static boolean unboxBoolean(Boolean x) {
+        return x;
+    }
     static boolean unboxBoolean(Object x, boolean cast) {
         if (x instanceof Boolean)
-            return ((Boolean) x).booleanValue();
+            return (Boolean) x;
         return (primitiveConversion(Wrapper.BOOLEAN, x, cast).intValue() & 1) != 0;
     }
 
+    static char unboxCharacter(Character x) {
+        return x;
+    }
     static char unboxCharacter(Object x, boolean cast) {
         if (x instanceof Character)
-            return ((Character) x).charValue();
+            return (Character) x;
         return (char) primitiveConversion(Wrapper.CHAR, x, cast).intValue();
     }
 
+    static long unboxLong(Long x) {
+        return x;
+    }
     static long unboxLong(Object x, boolean cast) {
         if (x instanceof Long)
-            return ((Long) x).longValue();
+            return (Long) x;
         return primitiveConversion(Wrapper.LONG, x, cast).longValue();
     }
 
+    static float unboxFloat(Float x) {
+        return x;
+    }
     static float unboxFloat(Object x, boolean cast) {
         if (x instanceof Float)
-            return ((Float) x).floatValue();
+            return (Float) x;
         return primitiveConversion(Wrapper.FLOAT, x, cast).floatValue();
     }
 
+    static double unboxDouble(Double x) {
+        return x;
+    }
     static double unboxDouble(Object x, boolean cast) {
         if (x instanceof Double)
-            return ((Double) x).doubleValue();
+            return (Double) x;
         return primitiveConversion(Wrapper.DOUBLE, x, cast).doubleValue();
     }
 
-    private static MethodType unboxType(Wrapper wrap) {
+    private static MethodType unboxType(Wrapper wrap, int kind) {
+        if (kind == 0)
+            return MethodType.methodType(wrap.primitiveType(), wrap.wrapperType());
         return MethodType.methodType(wrap.primitiveType(), Object.class, boolean.class);
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            UNBOX_CONVERSIONS = newWrapperCaches(2);
+    private static final WrapperCache[] UNBOX_CONVERSIONS = newWrapperCaches(4);
 
-    private static MethodHandle unbox(Wrapper wrap, boolean cast) {
-        EnumMap<Wrapper, MethodHandle> cache = UNBOX_CONVERSIONS[(cast?1:0)];
+    private static MethodHandle unbox(Wrapper wrap, int kind) {
+        // kind 0 -> strongly typed with NPE
+        // kind 1 -> strongly typed but zero for null,
+        // kind 2 -> asType rules: accept multiple box types but only widening conversions with NPE
+        // kind 3 -> explicitCastArguments rules: allow narrowing conversions, zero for null
+        WrapperCache cache = UNBOX_CONVERSIONS[kind];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -135,41 +160,59 @@ public class ValueConversions {
         // slow path
         switch (wrap) {
             case OBJECT:
-                mh = IDENTITY; break;
             case VOID:
-                mh = IGNORE; break;
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+                throw new IllegalArgumentException("unbox "+wrap);
         }
         // look up the method
         String name = "unbox" + wrap.wrapperSimpleName();
-        MethodType type = unboxType(wrap);
+        MethodType type = unboxType(wrap, kind);
         try {
             mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
         } catch (ReflectiveOperationException ex) {
             mh = null;
         }
         if (mh != null) {
-            mh = MethodHandles.insertArguments(mh, 1, cast);
-            cache.put(wrap, mh);
-            return mh;
+            if (kind > 0) {
+                boolean cast = (kind != 2);
+                mh = MethodHandles.insertArguments(mh, 1, cast);
+            }
+            if (kind == 1) {  // casting but exact (null -> zero)
+                mh = mh.asType(unboxType(wrap, 0));
+            }
+            return cache.put(wrap, mh);
         }
         throw new IllegalArgumentException("cannot find unbox adapter for " + wrap
-                + (cast ? " (cast)" : ""));
+                + (kind <= 1 ? " (exact)" : kind == 3 ? " (cast)" : ""));
     }
 
+    /** Return an exact unboxer for the given primitive type. */
+    public static MethodHandle unboxExact(Wrapper type) {
+        return unbox(type, 0);
+    }
+
+    /** Return an exact unboxer for the given primitive type, with optional null-to-zero conversion.
+     *  The boolean says whether to throw an NPE on a null value (false means unbox a zero).
+     *  The type of the unboxer is of a form like (Integer)int.
+     */
+    public static MethodHandle unboxExact(Wrapper type, boolean throwNPE) {
+        return unbox(type, throwNPE ? 0 : 1);
+    }
+
+    /** Return a widening unboxer for the given primitive type.
+     *  Widen narrower primitive boxes to the given type.
+     *  Do not narrow any primitive values or convert null to zero.
+     *  The type of the unboxer is of a form like (Object)int.
+     */
+    public static MethodHandle unboxWiden(Wrapper type) {
+        return unbox(type, 2);
+    }
+
+    /** Return a casting unboxer for the given primitive type.
+     *  Widen or narrow primitive values to the given type, or convert null to zero, as needed.
+     *  The type of the unboxer is of a form like (Object)int.
+     */
     public static MethodHandle unboxCast(Wrapper type) {
-        return unbox(type, true);
-    }
-
-    public static MethodHandle unbox(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), false);
-    }
-
-    public static MethodHandle unboxCast(Class<?> type) {
-        return unbox(Wrapper.forPrimitiveType(type), true);
+        return unbox(type, 3);
     }
 
     static private final Integer ZERO_INT = 0, ONE_INT = 1;
@@ -266,57 +309,26 @@ public class ValueConversions {
         return MethodType.methodType(boxType, wrap.primitiveType());
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            BOX_CONVERSIONS = newWrapperCaches(2);
+    private static final WrapperCache[] BOX_CONVERSIONS = newWrapperCaches(1);
 
-    private static MethodHandle box(Wrapper wrap, boolean exact) {
-        EnumMap<Wrapper, MethodHandle> cache = BOX_CONVERSIONS[(exact?1:0)];
+    public static MethodHandle boxExact(Wrapper wrap) {
+        WrapperCache cache = BOX_CONVERSIONS[0];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
-            return mh;
-        }
-        // slow path
-        switch (wrap) {
-            case OBJECT:
-                mh = IDENTITY; break;
-            case VOID:
-                mh = ZERO_OBJECT;
-                break;
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
             return mh;
         }
         // look up the method
         String name = "box" + wrap.wrapperSimpleName();
         MethodType type = boxType(wrap);
-        if (exact) {
-            try {
-                mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
-            } catch (ReflectiveOperationException ex) {
-                mh = null;
-            }
-        } else {
-            mh = box(wrap, !exact).asType(type.erase());
+        try {
+            mh = IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
+        } catch (ReflectiveOperationException ex) {
+            mh = null;
         }
         if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
-        throw new IllegalArgumentException("cannot find box adapter for "
-                + wrap + (exact ? " (exact)" : ""));
-    }
-
-    public static MethodHandle box(Class<?> type) {
-        boolean exact = false;
-        // e.g., boxShort(short)Short if exact,
-        // e.g., boxShort(short)Object if !exact
-        return box(Wrapper.forPrimitiveType(type), exact);
-    }
-
-    public static MethodHandle box(Wrapper type) {
-        boolean exact = false;
-        return box(type, exact);
+        throw new IllegalArgumentException("cannot find box adapter for " + wrap);
     }
 
     /// Constant functions
@@ -348,11 +360,10 @@ public class ValueConversions {
         return 0;
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            CONSTANT_FUNCTIONS = newWrapperCaches(2);
+    private static final WrapperCache[] CONSTANT_FUNCTIONS = newWrapperCaches(2);
 
     public static MethodHandle zeroConstantFunction(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[0];
+        WrapperCache cache = CONSTANT_FUNCTIONS[0];
         MethodHandle mh = cache.get(wrap);
         if (mh != null) {
             return mh;
@@ -373,184 +384,37 @@ public class ValueConversions {
                 break;
         }
         if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
 
         // use zeroInt and cast the result
         if (wrap.isSubwordOrInt() && wrap != Wrapper.INT) {
             mh = MethodHandles.explicitCastArguments(zeroConstantFunction(Wrapper.INT), type);
-            cache.put(wrap, mh);
-            return mh;
+            return cache.put(wrap, mh);
         }
         throw new IllegalArgumentException("cannot find zero constant for " + wrap);
     }
 
-    /// Converting references to references.
-
-    /**
-     * Identity function.
-     * @param x an arbitrary reference value
-     * @return the same value x
-     */
-    static <T> T identity(T x) {
-        return x;
-    }
-
-    static <T> T[] identity(T[] x) {
-        return x;
-    }
-
-    /**
-     * Identity function on ints.
-     * @param x an arbitrary int value
-     * @return the same value x
-     */
-    static int identity(int x) {
-        return x;
-    }
-
-    static byte identity(byte x) {
-        return x;
-    }
-
-    static short identity(short x) {
-        return x;
-    }
-
-    static boolean identity(boolean x) {
-        return x;
-    }
-
-    static char identity(char x) {
-        return x;
-    }
-
-    /**
-     * Identity function on longs.
-     * @param x an arbitrary long value
-     * @return the same value x
-     */
-    static long identity(long x) {
-        return x;
-    }
-
-    static float identity(float x) {
-        return x;
-    }
-
-    static double identity(double x) {
-        return x;
-    }
-
-    private static ClassCastException newClassCastException(Class<?> t, Object obj) {
-        return new ClassCastException("Cannot cast " + obj.getClass().getName() + " to " + t.getName());
-    }
-
-    private static final MethodHandle IDENTITY, CAST_REFERENCE, ZERO_OBJECT, IGNORE, EMPTY,
-            ARRAY_IDENTITY, FILL_NEW_TYPED_ARRAY, FILL_NEW_ARRAY;
+    private static final MethodHandle CAST_REFERENCE, IGNORE, EMPTY;
     static {
         try {
             MethodType idType = MethodType.genericMethodType(1);
             MethodType ignoreType = idType.changeReturnType(void.class);
-            MethodType zeroObjectType = MethodType.genericMethodType(0);
-            IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", idType);
             CAST_REFERENCE = IMPL_LOOKUP.findVirtual(Class.class, "cast", idType);
-            ZERO_OBJECT = IMPL_LOOKUP.findStatic(THIS_CLASS, "zeroObject", zeroObjectType);
             IGNORE = IMPL_LOOKUP.findStatic(THIS_CLASS, "ignore", ignoreType);
             EMPTY = IMPL_LOOKUP.findStatic(THIS_CLASS, "empty", ignoreType.dropParameterTypes(0, 1));
-            ARRAY_IDENTITY = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", MethodType.methodType(Object[].class, Object[].class));
-            FILL_NEW_ARRAY = IMPL_LOOKUP
-                    .findStatic(THIS_CLASS, "fillNewArray",
-                          MethodType.methodType(Object[].class, Integer.class, Object[].class));
-            FILL_NEW_TYPED_ARRAY = IMPL_LOOKUP
-                    .findStatic(THIS_CLASS, "fillNewTypedArray",
-                          MethodType.methodType(Object[].class, Object[].class, Integer.class, Object[].class));
         } catch (NoSuchMethodException | IllegalAccessException ex) {
             throw newInternalError("uncaught exception", ex);
         }
     }
 
-    // Varargs methods need to be in a separately initialized class, to avoid bootstrapping problems.
-    static class LazyStatics {
-        private static final MethodHandle COPY_AS_REFERENCE_ARRAY, COPY_AS_PRIMITIVE_ARRAY, MAKE_LIST;
-        static {
-            try {
-                //MAKE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeArray", MethodType.methodType(Object[].class, Object[].class));
-                COPY_AS_REFERENCE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsReferenceArray", MethodType.methodType(Object[].class, Class.class, Object[].class));
-                COPY_AS_PRIMITIVE_ARRAY = IMPL_LOOKUP.findStatic(THIS_CLASS, "copyAsPrimitiveArray", MethodType.methodType(Object.class, Wrapper.class, Object[].class));
-                MAKE_LIST = IMPL_LOOKUP.findStatic(THIS_CLASS, "makeList", MethodType.methodType(List.class, Object[].class));
-            } catch (ReflectiveOperationException ex) {
-                throw newInternalError("uncaught exception", ex);
-            }
-        }
+    public static MethodHandle ignore() {
+        return IGNORE;
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[] WRAPPER_CASTS
-            = newWrapperCaches(1);
-
-    /** Return a method that casts its sole argument (an Object) to the given type
-     *  and returns it as the given type.
-     */
-    public static MethodHandle cast(Class<?> type) {
-        return cast(type, CAST_REFERENCE);
-    }
-    public static MethodHandle cast(Class<?> type, MethodHandle castReference) {
-        if (type.isPrimitive())  throw new IllegalArgumentException("cannot cast primitive type "+type);
-        MethodHandle mh;
-        Wrapper wrap = null;
-        EnumMap<Wrapper, MethodHandle> cache = null;
-        if (Wrapper.isWrapperType(type)) {
-            wrap = Wrapper.forWrapperType(type);
-            cache = WRAPPER_CASTS[0];
-            mh = cache.get(wrap);
-            if (mh != null)  return mh;
-        }
-        mh = MethodHandles.insertArguments(castReference, 0, type);
-        if (cache != null)
-            cache.put(wrap, mh);
-        return mh;
-    }
-
-    public static MethodHandle identity() {
-        return IDENTITY;
-    }
-
-    public static MethodHandle identity(Class<?> type) {
-        if (!type.isPrimitive())
-            // Reference identity has been moved into MethodHandles:
-            return MethodHandles.identity(type);
-        return identity(Wrapper.findPrimitiveType(type));
-    }
-
-    public static MethodHandle identity(Wrapper wrap) {
-        EnumMap<Wrapper, MethodHandle> cache = CONSTANT_FUNCTIONS[1];
-        MethodHandle mh = cache.get(wrap);
-        if (mh != null) {
-            return mh;
-        }
-        // slow path
-        MethodType type = MethodType.methodType(wrap.primitiveType());
-        if (wrap != Wrapper.VOID)
-            type = type.appendParameterTypes(wrap.primitiveType());
-        try {
-            mh = IMPL_LOOKUP.findStatic(THIS_CLASS, "identity", type);
-        } catch (ReflectiveOperationException ex) {
-            mh = null;
-        }
-        if (mh == null && wrap == Wrapper.VOID) {
-            mh = EMPTY;  // #(){} : #()void
-        }
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
-        }
-
-        if (mh != null) {
-            cache.put(wrap, mh);
-            return mh;
-        }
-        throw new IllegalArgumentException("cannot find identity for " + wrap);
+    /** Return a method that casts its second argument (an Object) to the given type (a Class). */
+    public static MethodHandle cast() {
+        return CAST_REFERENCE;
     }
 
     /// Primitive conversions.
@@ -759,11 +623,10 @@ public class ValueConversions {
         return (x ? (byte)1 : (byte)0);
     }
 
-    private static final EnumMap<Wrapper, MethodHandle>[]
-            CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
+    private static final WrapperCache[] CONVERT_PRIMITIVE_FUNCTIONS = newWrapperCaches(Wrapper.values().length);
 
     public static MethodHandle convertPrimitive(Wrapper wsrc, Wrapper wdst) {
-        EnumMap<Wrapper, MethodHandle> cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];
+        WrapperCache cache = CONVERT_PRIMITIVE_FUNCTIONS[wsrc.ordinal()];
         MethodHandle mh = cache.get(wdst);
         if (mh != null) {
             return mh;
@@ -771,17 +634,9 @@ public class ValueConversions {
         // slow path
         Class<?> src = wsrc.primitiveType();
         Class<?> dst = wdst.primitiveType();
-        MethodType type = src == void.class ? MethodType.methodType(dst) : MethodType.methodType(dst, src);
+        MethodType type = MethodType.methodType(dst, src);
         if (wsrc == wdst) {
-            mh = identity(src);
-        } else if (wsrc == Wrapper.VOID) {
-            mh = zeroConstantFunction(wdst);
-        } else if (wdst == Wrapper.VOID) {
-            mh = MethodHandles.dropArguments(EMPTY, 0, src);  // Defer back to MethodHandles.
-        } else if (wsrc == Wrapper.OBJECT) {
-            mh = unboxCast(dst);
-        } else if (wdst == Wrapper.OBJECT) {
-            mh = box(src);
+            mh = MethodHandles.identity(src);
         } else {
             assert(src.isPrimitive() && dst.isPrimitive());
             try {
@@ -792,8 +647,7 @@ public class ValueConversions {
         }
         if (mh != null) {
             assert(mh.type() == type) : mh;
-            cache.put(wdst, mh);
-            return mh;
+            return cache.put(wdst, mh);
         }
 
         throw new IllegalArgumentException("cannot find primitive conversion function for " +
@@ -806,363 +660,6 @@ public class ValueConversions {
 
     private static String capitalize(String x) {
         return Character.toUpperCase(x.charAt(0))+x.substring(1);
-    }
-
-    /// Collection of multiple arguments.
-
-    public static Object convertArrayElements(Class<?> arrayType, Object array) {
-        Class<?> src = array.getClass().getComponentType();
-        Class<?> dst = arrayType.getComponentType();
-        if (src == null || dst == null)  throw new IllegalArgumentException("not array type");
-        Wrapper sw = (src.isPrimitive() ? Wrapper.forPrimitiveType(src) : null);
-        Wrapper dw = (dst.isPrimitive() ? Wrapper.forPrimitiveType(dst) : null);
-        int length;
-        if (sw == null) {
-            Object[] a = (Object[]) array;
-            length = a.length;
-            if (dw == null)
-                return Arrays.copyOf(a, length, arrayType.asSubclass(Object[].class));
-            Object res = dw.makeArray(length);
-            dw.copyArrayUnboxing(a, 0, res, 0, length);
-            return res;
-        }
-        length = java.lang.reflect.Array.getLength(array);
-        Object[] res;
-        if (dw == null) {
-            res = Arrays.copyOf(NO_ARGS_ARRAY, length, arrayType.asSubclass(Object[].class));
-        } else {
-            res = new Object[length];
-        }
-        sw.copyArrayBoxing(array, 0, res, 0, length);
-        if (dw == null)  return res;
-        Object a = dw.makeArray(length);
-        dw.copyArrayUnboxing(res, 0, a, 0, length);
-        return a;
-    }
-
-    private static MethodHandle findCollector(String name, int nargs, Class<?> rtype, Class<?>... ptypes) {
-        MethodType type = MethodType.genericMethodType(nargs)
-                .changeReturnType(rtype)
-                .insertParameterTypes(0, ptypes);
-        try {
-            return IMPL_LOOKUP.findStatic(THIS_CLASS, name, type);
-        } catch (ReflectiveOperationException ex) {
-            return null;
-        }
-    }
-
-    private static final Object[] NO_ARGS_ARRAY = {};
-    private static Object[] makeArray(Object... args) { return args; }
-    private static Object[] array() { return NO_ARGS_ARRAY; }
-    private static Object[] array(Object a0)
-                { return makeArray(a0); }
-    private static Object[] array(Object a0, Object a1)
-                { return makeArray(a0, a1); }
-    private static Object[] array(Object a0, Object a1, Object a2)
-                { return makeArray(a0, a1, a2); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3)
-                { return makeArray(a0, a1, a2, a3); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4)
-                { return makeArray(a0, a1, a2, a3, a4); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5)
-                { return makeArray(a0, a1, a2, a3, a4, a5); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-    private static Object[] array(Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8, Object a9)
-                { return makeArray(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-    private static MethodHandle[] makeArrays() {
-        ArrayList<MethodHandle> mhs = new ArrayList<>();
-        for (;;) {
-            MethodHandle mh = findCollector("array", mhs.size(), Object[].class);
-            if (mh == null)  break;
-            mhs.add(mh);
-        }
-        assert(mhs.size() == 11);  // current number of methods
-        return mhs.toArray(new MethodHandle[MAX_ARITY+1]);
-    }
-    private static final MethodHandle[] ARRAYS = makeArrays();
-
-    // filling versions of the above:
-    // using Integer len instead of int len and no varargs to avoid bootstrapping problems
-    private static Object[] fillNewArray(Integer len, Object[] /*not ...*/ args) {
-        Object[] a = new Object[len];
-        fillWithArguments(a, 0, args);
-        return a;
-    }
-    private static Object[] fillNewTypedArray(Object[] example, Integer len, Object[] /*not ...*/ args) {
-        Object[] a = Arrays.copyOf(example, len);
-        fillWithArguments(a, 0, args);
-        return a;
-    }
-    private static void fillWithArguments(Object[] a, int pos, Object... args) {
-        System.arraycopy(args, 0, a, pos, args.length);
-    }
-    // using Integer pos instead of int pos to avoid bootstrapping problems
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0)
-                { fillWithArguments(a, pos, a0); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1)
-                { fillWithArguments(a, pos, a0, a1); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2)
-                { fillWithArguments(a, pos, a0, a1, a2); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3)
-                { fillWithArguments(a, pos, a0, a1, a2, a3); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8); return a; }
-    private static Object[] fillArray(Integer pos, Object[] a, Object a0, Object a1, Object a2, Object a3,
-                                  Object a4, Object a5, Object a6, Object a7,
-                                  Object a8, Object a9)
-                { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
-    private static MethodHandle[] makeFillArrays() {
-        ArrayList<MethodHandle> mhs = new ArrayList<>();
-        mhs.add(null);  // there is no empty fill; at least a0 is required
-        for (;;) {
-            MethodHandle mh = findCollector("fillArray", mhs.size(), Object[].class, Integer.class, Object[].class);
-            if (mh == null)  break;
-            mhs.add(mh);
-        }
-        assert(mhs.size() == 11);  // current number of methods
-        return mhs.toArray(new MethodHandle[0]);
-    }
-    private static final MethodHandle[] FILL_ARRAYS = makeFillArrays();
-
-    private static Object[] copyAsReferenceArray(Class<? extends Object[]> arrayType, Object... a) {
-        return Arrays.copyOf(a, a.length, arrayType);
-    }
-    private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
-        Object a = w.makeArray(boxes.length);
-        w.copyArrayUnboxing(boxes, 0, a, 0, boxes.length);
-        return a;
-    }
-
-    /** Return a method handle that takes the indicated number of Object
-     *  arguments and returns an Object array of them, as if for varargs.
-     */
-    public static MethodHandle varargsArray(int nargs) {
-        MethodHandle mh = ARRAYS[nargs];
-        if (mh != null)  return mh;
-        mh = findCollector("array", nargs, Object[].class);
-        if (mh != null)  return ARRAYS[nargs] = mh;
-        mh = buildVarargsArray(FILL_NEW_ARRAY, ARRAY_IDENTITY, nargs);
-        assert(assertCorrectArity(mh, nargs));
-        return ARRAYS[nargs] = mh;
-    }
-
-    private static boolean assertCorrectArity(MethodHandle mh, int arity) {
-        assert(mh.type().parameterCount() == arity) : "arity != "+arity+": "+mh;
-        return true;
-    }
-
-    private static MethodHandle buildVarargsArray(MethodHandle newArray, MethodHandle finisher, int nargs) {
-        // Build up the result mh as a sequence of fills like this:
-        //   finisher(fill(fill(newArrayWA(23,x1..x10),10,x11..x20),20,x21..x23))
-        // The various fill(_,10*I,___*[J]) are reusable.
-        int leftLen = Math.min(nargs, LEFT_ARGS);  // absorb some arguments immediately
-        int rightLen = nargs - leftLen;
-        MethodHandle leftCollector = newArray.bindTo(nargs);
-        leftCollector = leftCollector.asCollector(Object[].class, leftLen);
-        MethodHandle mh = finisher;
-        if (rightLen > 0) {
-            MethodHandle rightFiller = fillToRight(LEFT_ARGS + rightLen);
-            if (mh == ARRAY_IDENTITY)
-                mh = rightFiller;
-            else
-                mh = MethodHandles.collectArguments(mh, 0, rightFiller);
-        }
-        if (mh == ARRAY_IDENTITY)
-            mh = leftCollector;
-        else
-            mh = MethodHandles.collectArguments(mh, 0, leftCollector);
-        return mh;
-    }
-
-    private static final int LEFT_ARGS = (FILL_ARRAYS.length - 1);
-    private static final MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
-    /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
-     *  fills a[L]..a[N-1] with corresponding arguments,
-     *  and then returns a.  The value L is a global constant (LEFT_ARGS).
-     */
-    private static MethodHandle fillToRight(int nargs) {
-        MethodHandle filler = FILL_ARRAY_TO_RIGHT[nargs];
-        if (filler != null)  return filler;
-        filler = buildFiller(nargs);
-        assert(assertCorrectArity(filler, nargs - LEFT_ARGS + 1));
-        return FILL_ARRAY_TO_RIGHT[nargs] = filler;
-    }
-    private static MethodHandle buildFiller(int nargs) {
-        if (nargs <= LEFT_ARGS)
-            return ARRAY_IDENTITY;  // no args to fill; return the array unchanged
-        // we need room for both mh and a in mh.invoke(a, arg*[nargs])
-        final int CHUNK = LEFT_ARGS;
-        int rightLen = nargs % CHUNK;
-        int midLen = nargs - rightLen;
-        if (rightLen == 0) {
-            midLen = nargs - (rightLen = CHUNK);
-            if (FILL_ARRAY_TO_RIGHT[midLen] == null) {
-                // build some precursors from left to right
-                for (int j = LEFT_ARGS % CHUNK; j < midLen; j += CHUNK)
-                    if (j > LEFT_ARGS)  fillToRight(j);
-            }
-        }
-        if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
-        assert(rightLen > 0);
-        MethodHandle midFill = fillToRight(midLen);  // recursive fill
-        MethodHandle rightFill = FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
-        assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
-        assert(rightFill.type().parameterCount() == 1 + rightLen);
-
-        // Combine the two fills:
-        //   right(mid(a, x10..x19), x20..x23)
-        // The final product will look like this:
-        //   right(mid(newArrayLeft(24, x0..x9), x10..x19), x20..x23)
-        if (midLen == LEFT_ARGS)
-            return rightFill;
-        else
-            return MethodHandles.collectArguments(rightFill, 0, midFill);
-    }
-
-    // Type-polymorphic version of varargs maker.
-    private static final ClassValue<MethodHandle[]> TYPED_COLLECTORS
-        = new ClassValue<MethodHandle[]>() {
-            @Override
-            protected MethodHandle[] computeValue(Class<?> type) {
-                return new MethodHandle[256];
-            }
-    };
-
-    static final int MAX_JVM_ARITY = 255;  // limit imposed by the JVM
-
-    /** Return a method handle that takes the indicated number of
-     *  typed arguments and returns an array of them.
-     *  The type argument is the array type.
-     */
-    public static MethodHandle varargsArray(Class<?> arrayType, int nargs) {
-        Class<?> elemType = arrayType.getComponentType();
-        if (elemType == null)  throw new IllegalArgumentException("not an array: "+arrayType);
-        // FIXME: Need more special casing and caching here.
-        if (nargs >= MAX_JVM_ARITY/2 - 1) {
-            int slots = nargs;
-            final int MAX_ARRAY_SLOTS = MAX_JVM_ARITY - 1;  // 1 for receiver MH
-            if (arrayType == double[].class || arrayType == long[].class)
-                slots *= 2;
-            if (slots > MAX_ARRAY_SLOTS)
-                throw new IllegalArgumentException("too many arguments: "+arrayType.getSimpleName()+", length "+nargs);
-        }
-        if (elemType == Object.class)
-            return varargsArray(nargs);
-        // other cases:  primitive arrays, subtypes of Object[]
-        MethodHandle cache[] = TYPED_COLLECTORS.get(elemType);
-        MethodHandle mh = nargs < cache.length ? cache[nargs] : null;
-        if (mh != null)  return mh;
-        if (elemType.isPrimitive()) {
-            MethodHandle builder = FILL_NEW_ARRAY;
-            MethodHandle producer = buildArrayProducer(arrayType);
-            mh = buildVarargsArray(builder, producer, nargs);
-        } else {
-            @SuppressWarnings("unchecked")
-            Class<? extends Object[]> objArrayType = (Class<? extends Object[]>) arrayType;
-            Object[] example = Arrays.copyOf(NO_ARGS_ARRAY, 0, objArrayType);
-            MethodHandle builder = FILL_NEW_TYPED_ARRAY.bindTo(example);
-            MethodHandle producer = ARRAY_IDENTITY;
-            mh = buildVarargsArray(builder, producer, nargs);
-        }
-        mh = mh.asType(MethodType.methodType(arrayType, Collections.<Class<?>>nCopies(nargs, elemType)));
-        assert(assertCorrectArity(mh, nargs));
-        if (nargs < cache.length)
-            cache[nargs] = mh;
-        return mh;
-    }
-
-    private static MethodHandle buildArrayProducer(Class<?> arrayType) {
-        Class<?> elemType = arrayType.getComponentType();
-        if (elemType.isPrimitive())
-            return LazyStatics.COPY_AS_PRIMITIVE_ARRAY.bindTo(Wrapper.forPrimitiveType(elemType));
-        else
-            return LazyStatics.COPY_AS_REFERENCE_ARRAY.bindTo(arrayType);
-    }
-
-    // List version of varargs maker.
-
-    private static final List<Object> NO_ARGS_LIST = Arrays.asList(NO_ARGS_ARRAY);
-    private static List<Object> makeList(Object... args) { return Arrays.asList(args); }
-    private static List<Object> list() { return NO_ARGS_LIST; }
-    private static List<Object> list(Object a0)
-                { return makeList(a0); }
-    private static List<Object> list(Object a0, Object a1)
-                { return makeList(a0, a1); }
-    private static List<Object> list(Object a0, Object a1, Object a2)
-                { return makeList(a0, a1, a2); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3)
-                { return makeList(a0, a1, a2, a3); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4)
-                { return makeList(a0, a1, a2, a3, a4); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4, Object a5)
-                { return makeList(a0, a1, a2, a3, a4, a5); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4, Object a5, Object a6)
-                { return makeList(a0, a1, a2, a3, a4, a5, a6); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4, Object a5, Object a6, Object a7)
-                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4, Object a5, Object a6, Object a7,
-                                     Object a8)
-                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7, a8); }
-    private static List<Object> list(Object a0, Object a1, Object a2, Object a3,
-                                     Object a4, Object a5, Object a6, Object a7,
-                                     Object a8, Object a9)
-                { return makeList(a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); }
-    private static MethodHandle[] makeLists() {
-        ArrayList<MethodHandle> mhs = new ArrayList<>();
-        for (;;) {
-            MethodHandle mh = findCollector("list", mhs.size(), List.class);
-            if (mh == null)  break;
-            mhs.add(mh);
-        }
-        assert(mhs.size() == 11);  // current number of methods
-        return mhs.toArray(new MethodHandle[MAX_ARITY+1]);
-    }
-    private static final MethodHandle[] LISTS = makeLists();
-
-    /** Return a method handle that takes the indicated number of Object
-     *  arguments and returns a List.
-     */
-    public static MethodHandle varargsList(int nargs) {
-        MethodHandle mh = LISTS[nargs];
-        if (mh != null)  return mh;
-        mh = findCollector("list", nargs, List.class);
-        if (mh != null)  return LISTS[nargs] = mh;
-        return LISTS[nargs] = buildVarargsList(nargs);
-    }
-    private static MethodHandle buildVarargsList(int nargs) {
-        return MethodHandles.filterReturnValue(varargsArray(nargs), LazyStatics.MAKE_LIST);
     }
 
     // handy shared exception makers (they simplify the common case code)

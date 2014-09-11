@@ -30,8 +30,10 @@ import com.sun.tools.attach.AgentLoadException;
 import com.sun.tools.attach.AgentInitializationException;
 import com.sun.tools.attach.spi.AttachProvider;
 
+import java.io.BufferedReader;
 import java.io.InputStream;
 import java.io.IOException;
+import java.io.InputStreamReader;
 import java.util.Properties;
 import java.util.stream.Collectors;
 
@@ -188,7 +190,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
             .filter(entry -> checkedKeyName(entry.getKey()))
             .map(entry -> stripKeyName(entry.getKey()) + "=" + escape(entry.getValue()))
             .collect(Collectors.joining(" "));
-        executeJCmd("ManagementAgent.start " + args);
+        executeJCmd("ManagementAgent.start " + args).close();
     }
 
     private String escape(Object arg) {
@@ -201,7 +203,7 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
 
     @Override
     public String startLocalManagementAgent() throws IOException {
-        executeJCmd("ManagementAgent.start_local");
+        executeJCmd("ManagementAgent.start_local").close();
         return getAgentProperties().getProperty("com.sun.management.jmxremote.localConnectorAddress");
     }
 
@@ -305,11 +307,11 @@ public abstract class HotSpotVirtualMachine extends VirtualMachine {
      * Utility method to read data into a String.
      */
     String readErrorMessage(InputStream sis) throws IOException {
-        byte b[] = new byte[1024];
-        int n;
-        StringBuffer message = new StringBuffer();
-        while ((n = sis.read(b)) != -1) {
-            message.append(new String(b, 0, n, "UTF-8"));
+        String s;
+        StringBuilder message = new StringBuilder();
+        BufferedReader br = new BufferedReader(new InputStreamReader(sis));
+        while ((s = br.readLine()) != null) {
+            message.append(s);
         }
         return message.toString();
     }

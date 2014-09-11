@@ -289,6 +289,17 @@ public class Unsigned {
                                       "\tconverting back ''%s'' resulted in %d%n",
                                       value, radix, bigString,  longResult);
                 }
+
+                // test offset based parse method
+                longResult = Long.parseUnsignedLong("prefix" + bigString + "suffix", "prefix".length(),
+                        "prefix".length() + bigString.length(), radix);
+
+                if (!toUnsignedBigInt(longResult).equals(value)) {
+                    errors++;
+                    System.err.printf("Bad roundtrip conversion of %d in base %d" +
+                            "\tconverting back ''%s'' resulted in %d%n",
+                            value, radix, bigString,  longResult);
+                }
             }
         }
 

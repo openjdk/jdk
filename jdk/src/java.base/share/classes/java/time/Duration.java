@@ -424,7 +424,7 @@ public final class Duration
             return 0;
         }
         try {
-            long val = Long.parseLong(text, 10, start, end);
+            long val = Long.parseLong(text, start, end, 10);
             return Math.multiplyExact(val, multiplier);
         } catch (NumberFormatException | ArithmeticException ex) {
             throw (DateTimeParseException) new DateTimeParseException("Text cannot be parsed to a Duration: " + errorText, text, 0).initCause(ex);
@@ -437,7 +437,7 @@ public final class Duration
             return 0;
         }
         try {
-            int fraction = Integer.parseInt(text, 10, start, end);
+            int fraction = Integer.parseInt(text, start, end, 10);
 
             // for number strings smaller than 9 digits, interpret as if there
             // were trailing zeros

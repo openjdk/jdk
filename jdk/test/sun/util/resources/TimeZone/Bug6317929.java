@@ -122,11 +122,11 @@ public class Bug6317929 {
         TimeZone Currie = TimeZone.getTimeZone("Australia/Currie");
         tzLocale = locales2Test[0];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
-           ("Eastern Standard Time (New South Wales)"))
+           ("Australian Eastern Standard Time (New South Wales)"))
             throw new RuntimeException("\n" + tzLocale + ": LONG, " +
                                        "non-daylight saving name for " +
                                        "Australia/Currie should be " +
-                                       "\"Eastern Standard Time " +
+                                       "\"Australian Eastern Standard Time " +
                                        "(New South Wales)\"");
         tzLocale = locales2Test[1];
         if (!Currie.getDisplayName(false, TimeZone.LONG, tzLocale).equals
