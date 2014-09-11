@@ -247,12 +247,95 @@ AC_DEFUN_ONCE([LIB_SETUP_CUPS],
 
 ])
 
+AC_DEFUN([LIB_BUILD_FREETYPE],
+[
+  FREETYPE_SRC_PATH="$1"
+  BUILD_FREETYPE=yes
+
+  # Check if the freetype sources are acessible..
+  if ! test -d $FREETYPE_SRC_PATH; then
+    AC_MSG_WARN([--with-freetype-src specified, but can't find path "$FREETYPE_SRC_PATH" - ignoring --with-freetype-src])
+    BUILD_FREETYPE=no
+  fi
+  # ..and contain a vc2010 project file
+  vcxproj_path="$FREETYPE_SRC_PATH/builds/windows/vc2010/freetype.vcxproj"
+  if test "x$BUILD_FREETYPE" = xyes && ! test -s $vcxproj_path; then
+    AC_MSG_WARN([Can't find project file $vcxproj_path (you may try a newer freetype version) - ignoring --with-freetype-src])
+    BUILD_FREETYPE=no
+  fi
+  # Now check if configure found a version of 'msbuild.exe'
+  if test "x$BUILD_FREETYPE" = xyes && test "x$MSBUILD" == x ; then
+    AC_MSG_WARN([Can't find an msbuild.exe executable (you may try to install .NET 4.0) - ignoring --with-freetype-src])
+    BUILD_FREETYPE=no
+  fi
+
+  # Ready to go..
+  if test "x$BUILD_FREETYPE" = xyes; then
+
+    # msbuild requires trailing slashes for output directories
+    freetype_lib_path="$FREETYPE_SRC_PATH/lib$OPENJDK_TARGET_CPU_BITS/"
+    freetype_lib_path_unix="$freetype_lib_path"
+    freetype_obj_path="$FREETYPE_SRC_PATH/obj$OPENJDK_TARGET_CPU_BITS/"
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(vcxproj_path)
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(freetype_lib_path)
+    BASIC_WINDOWS_REWRITE_AS_WINDOWS_MIXED_PATH(freetype_obj_path)
+    if test "x$OPENJDK_TARGET_CPU_BITS" = x64; then
+      freetype_platform=x64
+    else
+      freetype_platform=win32
+    fi
+
+    # The original freetype project file is for VS 2010 (i.e. 'v100'),
+    # so we have to adapt the toolset if building with any other toolsed (i.e. SDK).
+    # Currently 'PLATFORM_TOOLSET' is set in 'TOOLCHAIN_CHECK_POSSIBLE_VISUAL_STUDIO_ROOT'/
+    # 'TOOLCHAIN_CHECK_POSSIBLE_WIN_SDK_ROOT' in toolchain_windows.m4
+    AC_MSG_NOTICE([Trying to compile freetype sources with PlatformToolset=$PLATFORM_TOOLSET to $freetype_lib_path_unix ...])
+
+    # First we try to build the freetype.dll
+    $ECHO -e "@echo off\n"\
+	     "$MSBUILD $vcxproj_path "\
+		       "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+		       "/p:Configuration=\"Release Multithreaded\" "\
+		       "/p:Platform=$freetype_platform "\
+		       "/p:ConfigurationType=DynamicLibrary "\
+		       "/p:TargetName=freetype "\
+		       "/p:OutDir=\"$freetype_lib_path\" "\
+		       "/p:IntDir=\"$freetype_obj_path\" > freetype.log" > freetype.bat
+    cmd /c freetype.bat
+
+    if test -s "$freetype_lib_path_unix/freetype.dll"; then
+      # If that succeeds we also build freetype.lib
+      $ECHO -e "@echo off\n"\
+	       "$MSBUILD $vcxproj_path "\
+			 "/p:PlatformToolset=$PLATFORM_TOOLSET "\
+			 "/p:Configuration=\"Release Multithreaded\" "\
+			 "/p:Platform=$freetype_platform "\
+			 "/p:ConfigurationType=StaticLibrary "\
+			 "/p:TargetName=freetype "\
+			 "/p:OutDir=\"$freetype_lib_path\" "\
+			 "/p:IntDir=\"$freetype_obj_path\" >> freetype.log" > freetype.bat
+      cmd /c freetype.bat
+
+      if test -s "$freetype_lib_path_unix/freetype.lib"; then
+	# Once we build both, lib and dll, set freetype lib and include path appropriately
+	POTENTIAL_FREETYPE_INCLUDE_PATH="$FREETYPE_SRC_PATH/include"
+	POTENTIAL_FREETYPE_LIB_PATH="$freetype_lib_path_unix"
+	AC_MSG_NOTICE([Compiling freetype sources succeeded! (see freetype.log for build results)])
+      else
+	BUILD_FREETYPE=no
+      fi
+    else
+      BUILD_FREETYPE=no
+    fi
+  fi
+])
+
 AC_DEFUN([LIB_CHECK_POTENTIAL_FREETYPE],
 [
   POTENTIAL_FREETYPE_INCLUDE_PATH="$1"
   POTENTIAL_FREETYPE_LIB_PATH="$2"
   METHOD="$3"
-  
+
   # First check if the files exists.
   if test -s "$POTENTIAL_FREETYPE_INCLUDE_PATH/ft2build.h"; then
     # We found an arbitrary include file. That's a good sign.
@@ -305,6 +388,8 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
       [specify directory for the freetype include files])])
   AC_ARG_WITH(freetype-lib, [AS_HELP_STRING([--with-freetype-lib],
       [specify directory for the freetype library])])
+  AC_ARG_WITH(freetype-src, [AS_HELP_STRING([--with-freetype-src],
+      [specify directory with freetype sources to automatically build the library (experimental, Windows-only)])])
   AC_ARG_ENABLE(freetype-bundling, [AS_HELP_STRING([--disable-freetype-bundling],
       [disable bundling of the freetype library with the build result @<:@enabled on Windows or when using --with-freetype, disabled otherwise@:>@])])
 
@@ -313,7 +398,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
   FREETYPE_BUNDLE_LIB_PATH=
 
   if test "x$FREETYPE_NOT_NEEDED" = xyes; then
-    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x; then
+    if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x || test "x$with_freetype_src" != x; then
       AC_MSG_WARN([freetype not used, so --with-freetype is ignored])
     fi
     if test "x$enable_freetype_bundling" != x; then
@@ -324,6 +409,25 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
 
     BUNDLE_FREETYPE="$enable_freetype_bundling"
 
+    if  test "x$with_freetype_src" != x; then
+      if test "x$OPENJDK_TARGET_OS" = xwindows; then
+        # Try to build freetype if --with-freetype-src was given on Windows
+        LIB_BUILD_FREETYPE([$with_freetype_src])
+        if test "x$BUILD_FREETYPE" = xyes; then
+          # Okay, we built it. Check that it works.
+          LIB_CHECK_POTENTIAL_FREETYPE($POTENTIAL_FREETYPE_INCLUDE_PATH, $POTENTIAL_FREETYPE_LIB_PATH, [--with-freetype-src])
+          if test "x$FOUND_FREETYPE" != xyes; then
+            AC_MSG_ERROR([Can not use the built freetype at location given by --with-freetype-src])
+          fi
+        else
+          AC_MSG_NOTICE([User specified --with-freetype-src but building freetype failed. (see freetype.log for build results)])
+          AC_MSG_ERROR([Consider building freetype manually and using --with-freetype instead.])
+        fi
+      else
+        AC_MSG_WARN([--with-freetype-src is currently only supported on Windows - ignoring])
+      fi
+    fi
+
     if test "x$with_freetype" != x || test "x$with_freetype_include" != x || test "x$with_freetype_lib" != x; then
       # User has specified settings
 
@@ -331,12 +435,12 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
         # If not specified, default is to bundle freetype
         BUNDLE_FREETYPE=yes
       fi
-      
+
       if test "x$with_freetype" != x; then
         POTENTIAL_FREETYPE_INCLUDE_PATH="$with_freetype/include"
         POTENTIAL_FREETYPE_LIB_PATH="$with_freetype/lib"
       fi
-      
+
       # Allow --with-freetype-lib and --with-freetype-include to override
       if test "x$with_freetype_include" != x; then
         POTENTIAL_FREETYPE_INCLUDE_PATH="$with_freetype_include"
@@ -468,7 +572,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
         FREETYPE_CFLAGS="-I$FREETYPE_INCLUDE_PATH"
       fi
     fi
-    
+
     if test "x$FREETYPE_LIBS" = x; then
       BASIC_FIXUP_PATH(FREETYPE_LIB_PATH)
       if test "x$OPENJDK_TARGET_OS" = xwindows; then
@@ -484,7 +588,7 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
     PREV_CXXCFLAGS="$CXXFLAGS"
     PREV_LIBS="$LIBS"
     PREV_CXX="$CXX"
-    CXXFLAGS="$CXXFLAGS $FREETYPE_CFLAGS" 
+    CXXFLAGS="$CXXFLAGS $FREETYPE_CFLAGS"
     LIBS="$LIBS $FREETYPE_LIBS"
     CXX="$FIXPATH $CXX"
     AC_LINK_IFELSE([AC_LANG_SOURCE([[
@@ -502,9 +606,9 @@ AC_DEFUN_ONCE([LIB_SETUP_FREETYPE],
           AC_MSG_RESULT([no])
           AC_MSG_NOTICE([Could not compile and link with freetype. This might be a 32/64-bit mismatch.])
           AC_MSG_NOTICE([Using FREETYPE_CFLAGS=$FREETYPE_CFLAGS and FREETYPE_LIBS=$FREETYPE_LIBS])
-          
+
           HELP_MSG_MISSING_DEPENDENCY([freetype])
-          
+
           AC_MSG_ERROR([Can not continue without freetype. $HELP_MSG])
         ]
     )
