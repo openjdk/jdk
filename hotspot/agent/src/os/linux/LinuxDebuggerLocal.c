@@ -64,7 +64,10 @@ static jmethodID listAdd_ID = 0;
 #define THROW_NEW_DEBUGGER_EXCEPTION(str) { throw_new_debugger_exception(env, str); return;}
 
 void throw_new_debugger_exception(JNIEnv* env, const char* errMsg) {
-  (*env)->ThrowNew(env, (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
+  jclass clazz;
+  clazz = (*env)->FindClass(env, "sun/jvm/hotspot/debugger/DebuggerException");
+  CHECK_EXCEPTION;
+  (*env)->ThrowNew(env, clazz, errMsg);
 }
 
 struct ps_prochandle* get_proc_handle(JNIEnv* env, jobject this_obj) {
@@ -149,11 +152,14 @@ static void fillThreadsAndLoadObjects(JNIEnv* env, jobject this_obj, struct ps_p
      const char* name;
      jobject loadObject;
      jobject loadObjectList;
+     jstring str;
 
      base = get_lib_base(ph, i);
      name = get_lib_name(ph, i);
-     loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID,
-                                   (*env)->NewStringUTF(env, name), (jlong)0, (jlong)base);
+
+     str = (*env)->NewStringUTF(env, name);
+     CHECK_EXCEPTION;
+     loadObject = (*env)->CallObjectMethod(env, this_obj, createLoadObject_ID, str, (jlong)0, (jlong)base);
      CHECK_EXCEPTION;
      loadObjectList = (*env)->GetObjectField(env, this_obj, loadObjectList_ID);
      CHECK_EXCEPTION;
@@ -298,13 +304,18 @@ JNIEXPORT jlong JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_l
 JNIEXPORT jobject JNICALL Java_sun_jvm_hotspot_debugger_linux_LinuxDebuggerLocal_lookupByAddress0
   (JNIEnv *env, jobject this_obj, jlong addr) {
   uintptr_t offset;
+  jobject obj;
+  jstring str;
   const char* sym = NULL;
 
   struct ps_prochandle* ph = get_proc_handle(env, this_obj);
   sym = symbol_for_pc(ph, (uintptr_t) addr, &offset);
   if (sym == NULL) return 0;
-  return (*env)->CallObjectMethod(env, this_obj, createClosestSymbol_ID,
-                          (*env)->NewStringUTF(env, sym), (jlong)offset);
+  str = (*env)->NewStringUTF(env, sym);
+  CHECK_EXCEPTION_(NULL);
+  obj = (*env)->CallObjectMethod(env, this_obj, createClosestSymbol_ID, str, (jlong)offset);
+  CHECK_EXCEPTION_(NULL);
+  return obj;
 }
 
 /*

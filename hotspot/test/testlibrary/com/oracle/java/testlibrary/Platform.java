@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,6 +27,7 @@ public class Platform {
     private static final String osName      = System.getProperty("os.name");
     private static final String dataModel   = System.getProperty("sun.arch.data.model");
     private static final String vmVersion   = System.getProperty("java.vm.version");
+    private static final String javaVersion = System.getProperty("java.version");
     private static final String osArch      = System.getProperty("os.arch");
     private static final String vmName      = System.getProperty("java.vm.name");
 
@@ -83,7 +84,8 @@ public class Platform {
     }
 
     public static boolean isDebugBuild() {
-        return vmVersion.toLowerCase().contains("debug");
+        return (vmVersion.toLowerCase().contains("debug") ||
+                javaVersion.toLowerCase().contains("debug"));
     }
 
     public static String getVMVersion() {

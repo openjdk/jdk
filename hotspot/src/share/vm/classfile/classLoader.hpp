@@ -72,11 +72,11 @@ class ClassPathEntry: public CHeapObj<mtClass> {
 
 class ClassPathDirEntry: public ClassPathEntry {
  private:
-  char* _dir;           // Name of directory
+  const char* _dir;           // Name of directory
  public:
   bool is_jar_file()  { return false;  }
   const char* name()  { return _dir; }
-  ClassPathDirEntry(char* dir);
+  ClassPathDirEntry(const char* dir);
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
@@ -100,8 +100,8 @@ typedef struct {
 
 class ClassPathZipEntry: public ClassPathEntry {
  private:
-  jzfile* _zip;        // The zip archive
-  char*   _zip_name;   // Name of zip archive
+  jzfile* _zip;              // The zip archive
+  const char*   _zip_name;   // Name of zip archive
  public:
   bool is_jar_file()  { return true;  }
   const char* name()  { return _zip_name; }
@@ -119,7 +119,7 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For lazier loading of boot class path entries
 class LazyClassPathEntry: public ClassPathEntry {
  private:
-  char* _path; // dir or file
+  const char* _path; // dir or file
   struct stat _st;
   MetaIndex* _meta_index;
   bool _has_error;
@@ -129,7 +129,7 @@ class LazyClassPathEntry: public ClassPathEntry {
  public:
   bool is_jar_file();
   const char* name()  { return _path; }
-  LazyClassPathEntry(char* path, const struct stat* st, bool throw_exception);
+  LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception);
   virtual ~LazyClassPathEntry();
   u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
 
@@ -216,17 +216,17 @@ class ClassLoader: AllStatic {
   static void setup_meta_index(const char* meta_index_path, const char* meta_index_dir,
                                int start_index);
   static void setup_bootstrap_search_path();
-  static void setup_search_path(char *class_path);
+  static void setup_search_path(const char *class_path);
 
   static void load_zip_library();
-  static ClassPathEntry* create_class_path_entry(char *path, const struct stat* st,
+  static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
                                                  bool lazy, bool throw_exception, TRAPS);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
-  static bool get_canonical_path(char* orig, char* out, int len);
+  static bool get_canonical_path(const char* orig, char* out, int len);
  public:
-  static bool update_class_path_entry_list(char *path,
+  static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
                                            bool throw_exception=true);
   static void print_bootclasspath();

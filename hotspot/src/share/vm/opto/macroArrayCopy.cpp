@@ -506,6 +506,8 @@ Node* PhaseMacroExpand::generate_arraycopy(ArrayCopyNode *ac, AllocateArrayNode*
     Node* src_klass  = ac->in(ArrayCopyNode::SrcKlass);
     Node* dest_klass = ac->in(ArrayCopyNode::DestKlass);
 
+    assert(src_klass != NULL && dest_klass != NULL, "should have klasses");
+
     // Generate the subtype check.
     // This might fold up statically, or then again it might not.
     //
@@ -1209,6 +1211,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
     // (7) src_offset + length must not exceed length of src.
     Node* alen = ac->in(ArrayCopyNode::SrcLen);
+    assert(alen != NULL, "need src len");
     generate_limit_guard(&ctrl,
                          src_offset, length,
                          alen,
@@ -1216,6 +1219,7 @@ void PhaseMacroExpand::expand_arraycopy_node(ArrayCopyNode *ac) {
 
     // (8) dest_offset + length must not exceed length of dest.
     alen = ac->in(ArrayCopyNode::DestLen);
+    assert(alen != NULL, "need dest len");
     generate_limit_guard(&ctrl,
                          dest_offset, length,
                          alen,
