@@ -53,6 +53,7 @@ import java.util.EnumSet;
 import java.util.Iterator;
 import java.util.LinkedList;
 import java.util.List;
+
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.AccessorProperty;
@@ -308,7 +309,7 @@ public final class ObjectClassGenerator implements Loggable {
         newEmptyInit(className, classEmitter);
         newAllocate(className, classEmitter);
 
-        return toByteArray(classEmitter);
+        return toByteArray(className, classEmitter);
     }
 
     /**
@@ -341,7 +342,7 @@ public final class ObjectClassGenerator implements Loggable {
         initWithArguments.returnVoid();
         initWithArguments.end();
 
-        return toByteArray(classEmitter);
+        return toByteArray(className, classEmitter);
     }
 
     /**
@@ -484,15 +485,13 @@ public final class ObjectClassGenerator implements Loggable {
      * @param classEmitter Open class emitter.
      * @return Byte codes for the class.
      */
-    private byte[] toByteArray(final ClassEmitter classEmitter) {
+    private byte[] toByteArray(final String className, final ClassEmitter classEmitter) {
         classEmitter.end();
 
         final byte[] code = classEmitter.toByteArray();
         final ScriptEnvironment env = context.getEnv();
 
-        if (env._print_code && env._print_code_dir == null) {
-            env.getErr().println(ClassEmitter.disassemble(code));
-        }
+        DumpBytecode.dumpBytecode(env, log, code, className);
 
         if (env._verify_code) {
             context.verify(code);

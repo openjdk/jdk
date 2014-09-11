@@ -48,6 +48,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
 import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -300,6 +301,7 @@ enum CompilationPhase {
         }
     },
 
+
     /**
      * Reuse compile units, if they are already present. We are using the same compiler
      * to recompile stuff
@@ -334,6 +336,8 @@ enum CompilationPhase {
                 if (phases.isRestOfCompilation()) {
                     sb.append("$restOf");
                 }
+                //it's ok to not copy the initCount, methodCount and clinitCount here, as codegen is what
+                //fills those out anyway. Thus no need for a copy constructor
                 final CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
@@ -430,8 +434,14 @@ enum CompilationPhase {
 
             FunctionNode newFunctionNode = fn;
 
+            //root class is special, as it is bootstrapped from createProgramFunction, thus it's skipped
+            //in CodeGeneration - the rest can be used as a working "is compile unit used" metric
+            fn.getCompileUnit().setUsed();
+
             compiler.getLogger().fine("Starting bytecode generation for ", quote(fn.getName()), " - restOf=", phases.isRestOfCompilation());
+
             final CodeGenerator codegen = new CodeGenerator(compiler, phases.isRestOfCompilation() ? compiler.getContinuationEntryPoints() : null);
+
             try {
                 // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
                 // in the lazy + optimistic world. See CodeGenerator.skipFunction().
@@ -455,12 +465,18 @@ enum CompilationPhase {
                 final ClassEmitter classEmitter = compileUnit.getClassEmitter();
                 classEmitter.end();
 
+                if (!compileUnit.isUsed()) {
+                    compiler.getLogger().fine("Skipping unused compile unit ", compileUnit);
+                    continue;
+                }
+
                 final byte[] bytecode = classEmitter.toByteArray();
                 assert bytecode != null;
 
                 final String className = compileUnit.getUnitClassName();
+                compiler.addClass(className, bytecode); //classes are only added to the bytecode map if compile unit is used
 
-                compiler.addClass(className, bytecode);
+                CompileUnit.increaseEmitCount();
 
                 // should we verify the generated code?
                 if (senv._verify_code) {
@@ -536,6 +552,9 @@ enum CompilationPhase {
 
             // initialize function in the compile units
             for (final CompileUnit unit : compiler.getCompileUnits()) {
+                if (!unit.isUsed()) {
+                    continue;
+                }
                 unit.setCode(installedClasses.get(unit.getUnitClassName()));
             }
 
