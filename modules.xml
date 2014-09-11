@@ -1034,6 +1034,12 @@
       <name>org.w3c.dom.ls</name>
     </export>
     <export>
+      <name>org.w3c.dom.ranges</name>
+    </export>
+    <export>
+      <name>org.w3c.dom.traversal</name>
+    </export>
+    <export>
       <name>org.w3c.dom.views</name>
     </export>
     <export>
