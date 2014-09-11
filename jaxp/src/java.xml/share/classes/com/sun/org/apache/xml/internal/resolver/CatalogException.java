@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// CatalogException.java - Catalog exception
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -36,6 +30,9 @@ package com.sun.org.apache.xml.internal.resolver;
  *
  */
 public class CatalogException extends Exception {
+
+  private static final long serialVersionUID = 4007157171817798450L;
+
   /** A wrapper around another exception */
   public static final int WRAPPER = 1;
   /** An invalid entry */
@@ -56,8 +53,8 @@ public class CatalogException extends Exception {
   /**
    * The embedded exception if tunnelling, or null.
    */
-  private Exception exception = null;
-  private int exceptionType = 0;
+  private final Exception exception;
+  private final int exceptionType;
 
   /**
    * Create a new CatalogException.
