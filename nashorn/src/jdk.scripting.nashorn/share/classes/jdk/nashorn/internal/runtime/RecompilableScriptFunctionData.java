@@ -42,6 +42,7 @@ import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -55,7 +56,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-
 /**
  * This is a subclass that represents a script function that may be regenerated,
  * for example with specialization based on call site types, or lazily generated.
@@ -81,8 +81,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** Token of this function within the source. */
     private final long token;
 
-    /** Allocator map from makeMap() */
-    private final PropertyMap allocatorMap;
+    /**
+     * Represents the allocation strategy (property map, script object class, and method handle) for when
+     * this function is used as a constructor. Note that majority of functions (those not setting any this.*
+     * properties) will share a single canonical "default strategy" instance.
+     */
+    private final AllocationStrategy allocationStrategy;
 
     /**
      * Opaque object representing parser state at the end of the function. Used when reparsing outer function
@@ -92,12 +96,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
     private transient CodeInstaller<ScriptEnvironment> installer;
-
-    /** Name of class where allocator function resides */
-    private final String allocatorClassName;
-
-    /** lazily generated allocator */
-    private transient MethodHandle allocator;
 
     private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
 
@@ -124,8 +122,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      *
      * @param functionNode        functionNode that represents this function code
      * @param installer           installer for code regeneration versions of this function
-     * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
-     * @param allocatorMap        allocator map to seed instances with, when constructing
+     * @param allocationDescriptor descriptor for the allocation behavior when this function is used as a constructor
      * @param nestedFunctions     nested function map
      * @param externalScopeDepths external scope depths
      * @param internalSymbols     internal symbols to method, defined in its scope
@@ -133,8 +130,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
         final CodeInstaller<ScriptEnvironment> installer,
-        final String allocatorClassName,
-        final PropertyMap allocatorMap,
+        final AllocatorDescriptor allocationDescriptor,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
         final Map<String, Integer> externalScopeDepths,
         final Set<String> internalSymbols) {
@@ -151,11 +147,10 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         this.endParserState      = functionNode.getEndParserState();
         this.token               = tokenFor(functionNode);
         this.installer           = installer;
-        this.allocatorClassName  = allocatorClassName;
-        this.allocatorMap        = allocatorMap;
-        this.nestedFunctions     = nestedFunctions;
-        this.externalScopeDepths = externalScopeDepths;
-        this.internalSymbols     = new HashSet<>(internalSymbols);
+        this.allocationStrategy  = AllocationStrategy.get(allocationDescriptor);
+        this.nestedFunctions     = smallMap(nestedFunctions);
+        this.externalScopeDepths = smallMap(externalScopeDepths);
+        this.internalSymbols     = smallSet(new HashSet<>(internalSymbols));
 
         for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
             assert nfn.getParent() == null;
@@ -163,6 +158,27 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
 
         createLogger();
+    }
+
+    private static <K, V> Map<K, V> smallMap(final Map<K, V> map) {
+        if (map == null || map.isEmpty()) {
+            return Collections.emptyMap();
+        } else if (map.size() == 1) {
+            final Map.Entry<K, V> entry = map.entrySet().iterator().next();
+            return Collections.singletonMap(entry.getKey(), entry.getValue());
+        } else {
+            return map;
+        }
+    }
+
+    private static <T> Set<T> smallSet(final Set<T> set) {
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        } else if (set.size() == 1) {
+            return Collections.singleton(set.iterator().next());
+        } else {
+            return set;
+        }
     }
 
     @Override
@@ -194,11 +210,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return the external symbol table with proto depths
      */
     public int getExternalSymbolDepth(final String symbolName) {
-        final Map<String, Integer> map = externalScopeDepths;
-        if (map == null) {
-            return -1;
-        }
-        final Integer depth = map.get(symbolName);
+        final Integer depth = externalScopeDepths.get(symbolName);
         if (depth == null) {
             return -1;
         }
@@ -210,8 +222,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return the names of all external symbols this function uses.
      */
     public Set<String> getExternalSymbolNames() {
-        return externalScopeDepths == null ? Collections.<String>emptySet() :
-            Collections.unmodifiableSet(externalScopeDepths.keySet());
+        return Collections.unmodifiableSet(externalScopeDepths.keySet());
     }
 
     /**
@@ -334,25 +345,12 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     PropertyMap getAllocatorMap() {
-        return allocatorMap;
+        return allocationStrategy.getAllocatorMap();
     }
 
     @Override
     ScriptObject allocate(final PropertyMap map) {
-        try {
-            ensureHasAllocator(); //if allocatorClass name is set to null (e.g. for bound functions) we don't even try
-            return allocator == null ? null : (ScriptObject)allocator.invokeExact(map);
-        } catch (final RuntimeException | Error e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    private void ensureHasAllocator() throws ClassNotFoundException {
-        if (allocator == null && allocatorClassName != null) {
-            this.allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName), CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
-        }
+        return allocationStrategy.allocate(map);
     }
 
     FunctionNode reparse() {
@@ -753,21 +751,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             }
         }
         return null;
-    }
-
-    /**
-     * Get the uppermost parent, the program, for this data
-     * @return program
-     */
-    public RecompilableScriptFunctionData getProgram() {
-        RecompilableScriptFunctionData program = this;
-        while (true) {
-            final RecompilableScriptFunctionData p = program.getParent();
-            if (p == null) {
-                return program;
-            }
-            program = p;
-        }
     }
 
     /**

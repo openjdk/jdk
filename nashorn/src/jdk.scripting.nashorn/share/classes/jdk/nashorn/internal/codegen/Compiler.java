@@ -736,13 +736,6 @@ public final class Compiler implements Loggable {
         return name.replace('/', '.');
     }
 
-    RecompilableScriptFunctionData getProgram() {
-        if (compiledFunction == null) {
-            return null;
-        }
-        return compiledFunction.getProgram();
-    }
-
     RecompilableScriptFunctionData getScriptFunctionData(final int functionId) {
         return compiledFunction == null ? null : compiledFunction.getScriptFunctionData(functionId);
     }
