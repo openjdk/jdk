@@ -34,8 +34,8 @@ import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
+import java.lang.invoke.MethodType;
 import java.util.concurrent.Callable;
-import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 
@@ -48,7 +48,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     private static final long serialVersionUID = -5928687246526840321L;
 
-    static class Accessors {
+    static final class Accessors {
         Object getter;
         Object setter;
 
@@ -67,20 +67,20 @@ public final class UserAccessorProperty extends SpillProperty {
         }
     }
 
+    private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
+
     /** Getter method handle */
-    private final static CompilerConstants.Call USER_ACCESSOR_GETTER = staticCall(MethodHandles.lookup(), UserAccessorProperty.class,
-            "userAccessorGetter", Object.class, Accessors.class, Object.class);
+    private final static MethodHandle INVOKE_GETTER_ACCESSOR = findOwnMH_S("invokeGetterAccessor", Object.class, Accessors.class, Object.class);
 
     /** Setter method handle */
-    private final static CompilerConstants.Call USER_ACCESSOR_SETTER = staticCall(MethodHandles.lookup(), UserAccessorProperty.class,
-            "userAccessorSetter", void.class, Accessors.class, String.class, Object.class, Object.class);
+    private final static MethodHandle INVOKE_SETTER_ACCESSOR = findOwnMH_S("invokeSetterAccessor", void.class, Accessors.class, String.class, Object.class, Object.class);
 
     /** Dynamic invoker for getter */
-    private static final Object INVOKE_UA_GETTER = new Object();
+    private static final Object GETTER_INVOKER_KEY = new Object();
 
     private static MethodHandle getINVOKE_UA_GETTER() {
 
-        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_GETTER,
+        return Context.getGlobal().getDynamicInvoker(GETTER_INVOKER_KEY,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
@@ -91,10 +91,10 @@ public final class UserAccessorProperty extends SpillProperty {
     }
 
     /** Dynamic invoker for setter */
-    private static Object INVOKE_UA_SETTER = new Object();
+    private static Object SETTER_INVOKER_KEY = new Object();
 
     private static MethodHandle getINVOKE_UA_SETTER() {
-        return Context.getGlobal().getDynamicInvoker(INVOKE_UA_SETTER,
+        return Context.getGlobal().getDynamicInvoker(SETTER_INVOKER_KEY,
                 new Callable<MethodHandle>() {
                     @Override
                     public MethodHandle call() {
@@ -190,7 +190,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public Object getObjectValue(final ScriptObject self, final ScriptObject owner) {
-        return userAccessorGetter(getAccessors((owner != null) ? owner : self), self);
+        return invokeGetterAccessor(getAccessors((owner != null) ? owner : self), self);
     }
 
     @Override
@@ -210,13 +210,13 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public void setValue(final ScriptObject self, final ScriptObject owner, final Object value, final boolean strict) {
-        userAccessorSetter(getAccessors((owner != null) ? owner : self), strict ? getKey() : null, self, value);
+        invokeSetterAccessor(getAccessors((owner != null) ? owner : self), strict ? getKey() : null, self, value);
     }
 
     @Override
     public MethodHandle getGetter(final Class<?> type) {
         //this returns a getter on the format (Accessors, Object receiver)
-        return Lookup.filterReturnType(USER_ACCESSOR_GETTER.methodHandle(), type);
+        return Lookup.filterReturnType(INVOKE_GETTER_ACCESSOR, type);
     }
 
     @Override
@@ -260,7 +260,7 @@ public final class UserAccessorProperty extends SpillProperty {
 
     @Override
     public MethodHandle getSetter(final Class<?> type, final PropertyMap currentMap) {
-        return USER_ACCESSOR_SETTER.methodHandle();
+        return INVOKE_SETTER_ACCESSOR;
     }
 
     @Override
@@ -269,11 +269,21 @@ public final class UserAccessorProperty extends SpillProperty {
         return (value instanceof ScriptFunction) ? (ScriptFunction)value : null;
     }
 
+    /**
+     * Get the getter for the {@code Accessors} object.
+     * This is the the super {@code Object} type getter with {@code Accessors} return type.
+     *
+     * @return The getter handle for the Accessors
+     */
+    MethodHandle getAccessorsGetter() {
+        return super.getGetter(Object.class).asType(MethodType.methodType(Accessors.class, Object.class));
+    }
+
     // User defined getter and setter are always called by "dyn:call". Note that the user
     // getter/setter may be inherited. If so, proto is bound during lookup. In either
     // inherited or self case, slot is also bound during lookup. Actual ScriptFunction
     // to be called is retrieved everytime and applied.
-    static Object userAccessorGetter(final Accessors gs, final Object self) {
+    private static Object invokeGetterAccessor(final Accessors gs, final Object self) {
         final Object func = gs.getter;
         if (func instanceof ScriptFunction) {
             try {
@@ -288,7 +298,7 @@ public final class UserAccessorProperty extends SpillProperty {
         return UNDEFINED;
     }
 
-    static void userAccessorSetter(final Accessors gs, final String name, final Object self, final Object value) {
+    private static void invokeSetterAccessor(final Accessors gs, final String name, final Object self, final Object value) {
         final Object func = gs.setter;
         if (func instanceof ScriptFunction) {
             try {
@@ -301,6 +311,10 @@ public final class UserAccessorProperty extends SpillProperty {
         } else if (name != null) {
             throw typeError("property.has.no.setter", name, ScriptRuntime.safeToString(self));
         }
+    }
+
+    private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
+        return MH.findStatic(LOOKUP, UserAccessorProperty.class, name, MH.type(rtype, types));
     }
 
 }

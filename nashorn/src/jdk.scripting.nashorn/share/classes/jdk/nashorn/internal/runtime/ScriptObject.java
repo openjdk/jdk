@@ -1050,7 +1050,7 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     private static int getIntValue(final FindProperty find, final int programPoint) {
-        final MethodHandle getter = find.getGetter(int.class, programPoint);
+        final MethodHandle getter = find.getGetter(int.class, programPoint, null);
         if (getter != null) {
             try {
                 return (int)getter.invokeExact((Object)find.getGetterReceiver());
@@ -1065,7 +1065,7 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     private static long getLongValue(final FindProperty find, final int programPoint) {
-        final MethodHandle getter = find.getGetter(long.class, programPoint);
+        final MethodHandle getter = find.getGetter(long.class, programPoint, null);
         if (getter != null) {
             try {
                 return (long)getter.invokeExact((Object)find.getGetterReceiver());
@@ -1080,7 +1080,7 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     private static double getDoubleValue(final FindProperty find, final int programPoint) {
-        final MethodHandle getter = find.getGetter(double.class, programPoint);
+        final MethodHandle getter = find.getGetter(double.class, programPoint, null);
         if (getter != null) {
             try {
                 return (double)getter.invokeExact((Object)find.getGetterReceiver());
@@ -1971,7 +1971,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc, request, operator);
+        final GuardedInvocation cinv = Global.getConstants().findGetMethod(find, this, desc);
         if (cinv != null) {
             return cinv;
         }
@@ -1983,7 +1983,7 @@ public abstract class ScriptObject implements PropertyAccess {
                 NashornCallSiteDescriptor.getProgramPoint(desc) :
                 UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 
-        mh = find.getGetter(returnType, programPoint);
+        mh = find.getGetter(returnType, programPoint, request);
         // Get the appropriate guard for this callsite and property.
         final MethodHandle guard = NashornGuards.getGuard(this, property, desc, explicitInstanceOfCheck);
         final ScriptObject owner = find.getOwner();
@@ -1995,8 +1995,9 @@ public abstract class ScriptObject implements PropertyAccess {
             mh = Lookup.emptyGetter(returnType);
             protoSwitchPoint = getProtoSwitchPoint(name, owner);
         } else if (!find.isSelf()) {
-            assert mh.type().returnType().equals(returnType) : "returntype mismatch for getter " + mh.type().returnType() + " != " + returnType;
-            if (!property.hasGetterFunction(owner)) {
+            assert mh.type().returnType().equals(returnType) :
+                    "return type mismatch for getter " + mh.type().returnType() + " != " + returnType;
+            if (!(property instanceof UserAccessorProperty)) {
                 // Add a filter that replaces the self object with the prototype owning the property.
                 mh = addProtoFilter(mh, find.getProtoChainLength());
             }
@@ -2167,7 +2168,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation inv = new SetMethodCreator(this, find, desc, explicitInstanceOfCheck).createGuardedInvocation();
+        final GuardedInvocation inv = new SetMethodCreator(this, find, desc, request).createGuardedInvocation();
 
         final GuardedInvocation cinv = Global.getConstants().findSetMethod(find, this, inv, desc, request);
         if (cinv != null) {
@@ -2320,13 +2321,13 @@ public abstract class ScriptObject implements PropertyAccess {
                         find.isSelf()?
                             getKnownFunctionPropertyGuardSelf(
                                 getMap(),
-                                find.getGetter(Object.class, INVALID_PROGRAM_POINT),
+                                find.getGetter(Object.class, INVALID_PROGRAM_POINT, request),
                                 func)
                             :
                             //TODO this always does a scriptobject check
                             getKnownFunctionPropertyGuardProto(
                                 getMap(),
-                                find.getGetter(Object.class, INVALID_PROGRAM_POINT),
+                                find.getGetter(Object.class, INVALID_PROGRAM_POINT, request),
                                 find.getProtoChainLength(),
                                 func),
                         getProtoSwitchPoint(NO_SUCH_PROPERTY_NAME, find.getOwner()),
