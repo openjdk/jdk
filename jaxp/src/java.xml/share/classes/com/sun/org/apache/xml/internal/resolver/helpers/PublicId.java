@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// PublicId.java - Information about public identifiers
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -34,7 +28,8 @@ package com.sun.org.apache.xml.internal.resolver.helpers;
  *
  */
 public abstract class PublicId {
-  protected PublicId() { }
+
+  protected PublicId() {}
 
   /**
    * Normalize a public identifier.
@@ -58,18 +53,17 @@ public abstract class PublicId {
    * @return The normalized identifier.
    */
   public static String normalize(String publicId) {
-    String normal = publicId.replace('\t', ' ');
-    normal = normal.replace('\r', ' ');
-    normal = normal.replace('\n', ' ');
-    normal = normal.trim();
+      String normal = publicId.replace('\t', ' ');
+      normal = normal.replace('\r', ' ');
+      normal = normal.replace('\n', ' ');
+      normal = normal.trim();
 
-    int pos;
+      int pos;
 
-    while ((pos = normal.indexOf("  ")) >= 0) {
-      normal = normal.substring(0, pos) + normal.substring(pos+1);
-    }
-
-    return normal;
+      while ((pos = normal.indexOf("  ")) >= 0) {
+          normal = normal.substring(0, pos) + normal.substring(pos+1);
+      }
+      return normal;
   }
 
   /**
@@ -83,21 +77,24 @@ public abstract class PublicId {
    * @return The normalized identifier.
    */
   public static String encodeURN(String publicId) {
-    String urn = PublicId.normalize(publicId);
+      String urn = PublicId.normalize(publicId);
 
-    urn = PublicId.stringReplace(urn, "%", "%25");
-    urn = PublicId.stringReplace(urn, ";", "%3B");
-    urn = PublicId.stringReplace(urn, "'", "%27");
-    urn = PublicId.stringReplace(urn, "?", "%3F");
-    urn = PublicId.stringReplace(urn, "#", "%23");
-    urn = PublicId.stringReplace(urn, "+", "%2B");
-    urn = PublicId.stringReplace(urn, " ", "+");
-    urn = PublicId.stringReplace(urn, "::", ";");
-    urn = PublicId.stringReplace(urn, ":", "%3A");
-    urn = PublicId.stringReplace(urn, "//", ":");
-    urn = PublicId.stringReplace(urn, "/", "%2F");
+      urn = PublicId.stringReplace(urn, "%", "%25");
+      urn = PublicId.stringReplace(urn, ";", "%3B");
+      urn = PublicId.stringReplace(urn, "'", "%27");
+      urn = PublicId.stringReplace(urn, "?", "%3F");
+      urn = PublicId.stringReplace(urn, "#", "%23");
+      urn = PublicId.stringReplace(urn, "+", "%2B");
+      urn = PublicId.stringReplace(urn, " ", "+");
+      urn = PublicId.stringReplace(urn, "::", ";");
+      urn = PublicId.stringReplace(urn, ":", "%3A");
+      urn = PublicId.stringReplace(urn, "//", ":");
+      urn = PublicId.stringReplace(urn, "/", "%2F");
 
-    return "urn:publicid:" + urn;
+      StringBuilder buffer = new StringBuilder(13 + urn.length());
+      buffer.append("urn:publicid:");
+      buffer.append(urn);
+      return buffer.toString();
   }
 
   /**
@@ -111,51 +108,62 @@ public abstract class PublicId {
    * @return The normalized identifier.
    */
   public static String decodeURN(String urn) {
-    String publicId = "";
+      String publicId;
+      if (urn.startsWith("urn:publicid:")) {
+          publicId = urn.substring(13);
+      }
+      else {
+          return urn;
+      }
 
-    if (urn.startsWith("urn:publicid:")) {
-      publicId = urn.substring(13);
-    } else {
-      return urn;
-    }
+      final boolean hasEscape = (publicId.indexOf('%') >= 0);
+      if (hasEscape) {
+          publicId = PublicId.stringReplace(publicId, "%2F", "/");
+      }
+      publicId = PublicId.stringReplace(publicId, ":", "//");
+      if (hasEscape) {
+          publicId = PublicId.stringReplace(publicId, "%3A", ":");
+      }
+      publicId = PublicId.stringReplace(publicId, ";", "::");
+      publicId = PublicId.stringReplace(publicId, "+", " ");
+      if (hasEscape) {
+          publicId = PublicId.stringReplace(publicId, "%2B", "+");
+          publicId = PublicId.stringReplace(publicId, "%23", "#");
+          publicId = PublicId.stringReplace(publicId, "%3F", "?");
+          publicId = PublicId.stringReplace(publicId, "%27", "'");
+          publicId = PublicId.stringReplace(publicId, "%3B", ";");
+          publicId = PublicId.stringReplace(publicId, "%25", "%");
+      }
 
-    publicId = PublicId.stringReplace(publicId, "%2F", "/");
-    publicId = PublicId.stringReplace(publicId, ":", "//");
-    publicId = PublicId.stringReplace(publicId, "%3A", ":");
-    publicId = PublicId.stringReplace(publicId, ";", "::");
-    publicId = PublicId.stringReplace(publicId, "+", " ");
-    publicId = PublicId.stringReplace(publicId, "%2B", "+");
-    publicId = PublicId.stringReplace(publicId, "%23", "#");
-    publicId = PublicId.stringReplace(publicId, "%3F", "?");
-    publicId = PublicId.stringReplace(publicId, "%27", "'");
-    publicId = PublicId.stringReplace(publicId, "%3B", ";");
-    publicId = PublicId.stringReplace(publicId, "%25", "%");
-
-    return publicId;
-    }
+      return publicId;
+  }
 
   /**
    * Replace one string with another.
-   *
    */
   private static String stringReplace(String str,
-                                      String oldStr,
-                                      String newStr) {
-
-    String result = "";
-    int pos = str.indexOf(oldStr);
-
-    //    System.out.println(str + ": " + oldStr + " => " + newStr);
-
-    while (pos >= 0) {
-      //      System.out.println(str + " (" + pos + ")");
-      result += str.substring(0, pos);
-      result += newStr;
-      str = str.substring(pos+1);
-
-      pos = str.indexOf(oldStr);
-    }
-
-    return result + str;
+          String oldStr,
+          String newStr) {
+      int pos = str.indexOf(oldStr);
+      if (pos >= 0) {
+          final StringBuilder buffer = new StringBuilder();
+          final int oldStrLength = oldStr.length();
+          int start = 0;
+          do {
+              for (int i = start; i < pos; ++i) {
+                  buffer.append(str.charAt(i));
+              }
+              buffer.append(newStr);
+              start = pos + oldStrLength;
+              pos = str.indexOf(oldStr, start);
+          }
+          while (pos >= 0);
+          final int strLength = str.length();
+          for (int i = start; i < strLength; ++i) {
+              buffer.append(str.charAt(i));
+          }
+          return buffer.toString();
+      }
+      return str;
   }
 }
