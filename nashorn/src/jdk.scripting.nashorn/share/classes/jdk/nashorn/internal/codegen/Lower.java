@@ -71,7 +71,6 @@ import jdk.nashorn.internal.ir.visitor.NodeOperatorVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.parser.TokenType;
-import jdk.nashorn.internal.runtime.CodeInstaller;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.Source;
@@ -92,9 +91,6 @@ import jdk.nashorn.internal.runtime.logging.Logger;
 final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Loggable {
 
     private final DebugLogger log;
-
-    // needed only to get unique eval id
-    private final CodeInstaller<?> installer;
 
     /**
      * Constructor.
@@ -143,7 +139,6 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
             }
         });
 
-        this.installer = compiler.getCodeInstaller();
         this.log       = initLogger(compiler.getContext());
     }
 
@@ -566,16 +561,13 @@ final class Lower extends NodeOperatorVisitor<BlockLexicalContext> implements Lo
     private String evalLocation(final IdentNode node) {
         final Source source = lc.getCurrentFunction().getSource();
         final int pos = node.position();
-        // Code installer is null when running with --compile-only, use 0 as id in that case
-        final long id = installer == null ? 0 : installer.getUniqueEvalId();
         return new StringBuilder().
             append(source.getName()).
             append('#').
             append(source.getLine(pos)).
             append(':').
             append(source.getColumn(pos)).
-            append("<eval>@").
-            append(id).
+            append("<eval>").
             toString();
     }
 

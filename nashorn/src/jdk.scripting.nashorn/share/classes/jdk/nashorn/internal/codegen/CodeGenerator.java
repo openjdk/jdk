@@ -1622,9 +1622,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             protected void evaluate() {
-                method.load(ITERATOR_TYPE, iterSlot);
-                // TODO: optimistic for-in iteration
-                method.invoke(interfaceCallNoLookup(ITERATOR_CLASS, "next", Object.class));
+                new OptimisticOperation((Optimistic)forNode.getInit(), TypeBounds.UNBOUNDED) {
+                    @Override
+                    void loadStack() {
+                        method.load(ITERATOR_TYPE, iterSlot);
+                    }
+
+                    @Override
+                    void consumeStack() {
+                        method.invoke(interfaceCallNoLookup(ITERATOR_CLASS, "next", Object.class));
+                        convertOptimisticReturnValue();
+                    }
+                }.emit();
             }
         }.store();
         body.accept(this);

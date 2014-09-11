@@ -25,8 +25,6 @@
 
 package jdk.nashorn.internal.codegen;
 
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getClassName;
-import static jdk.nashorn.internal.codegen.ObjectClassGenerator.getPaddedFieldCount;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.util.HashMap;
@@ -34,6 +32,7 @@ import java.util.HashSet;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Set;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.ir.Block;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -44,7 +43,6 @@ import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.WithNode;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.Context;
-import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
@@ -208,14 +206,10 @@ final class FindScopeDepths extends NodeVisitor<LexicalContext> implements Logga
 
         assert nestedFunctions != null;
         // Generate the object class and property map in case this function is ever used as constructor
-        final int         fieldCount         = getPaddedFieldCount(newFunctionNode.getThisProperties());
-        final String      allocatorClassName = Compiler.binaryName(getClassName(fieldCount));
-        final PropertyMap allocatorMap       = PropertyMap.newMap(null, allocatorClassName, 0, fieldCount, 0);
         final RecompilableScriptFunctionData data = new RecompilableScriptFunctionData(
                 newFunctionNode,
                 compiler.getCodeInstaller(),
-                allocatorClassName,
-                allocatorMap,
+                new AllocatorDescriptor(newFunctionNode.getThisProperties()),
                 nestedFunctions,
                 externalSymbolDepths.get(fnId),
                 internalSymbols.get(fnId)

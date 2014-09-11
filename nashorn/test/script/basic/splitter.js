@@ -30,7 +30,5 @@
  * @fork
  */
 
-load(__DIR__ + 'prototype.js');
-load(__DIR__ + 'yui.js');
 load(__DIR__ + 'NASHORN-689.js');
 load(__DIR__ + 'NASHORN-58.js');

@@ -29,7 +29,9 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import java.lang.invoke.MethodHandle;
+import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.internal.codegen.ObjectClassGenerator;
+import jdk.nashorn.internal.objects.Global;
 
 /**
  * This class represents the result from a find property search.
@@ -79,25 +81,17 @@ public final class FindProperty {
      * @param programPoint program point, or INVALID_PROGRAM_POINT if pessimistic
      * @return method handle for the getter
      */
-    public MethodHandle getGetter(final Class<?> type, final int programPoint) {
+    public MethodHandle getGetter(final Class<?> type, final int programPoint, final LinkRequest request) {
         final MethodHandle getter;
         if (isValid(programPoint)) {
             getter = property.getOptimisticGetter(type, programPoint);
         } else {
             getter = property.getGetter(type);
         }
-        return getGetterInner(getter);
-    }
-
-    private MethodHandle getGetterInner(final MethodHandle getter) {
         if (property instanceof UserAccessorProperty) {
-            final UserAccessorProperty uc        = (UserAccessorProperty)property;
-            final ScriptObject         owner     = getOwner();
-            final ScriptObject         container = (owner != null) ? owner : self;
-            return MH.insertArguments(getter, 0, uc.getAccessors(container));
+            return insertAccessorsGetter((UserAccessorProperty) property, request, getter);
         }
         return getter;
-
     }
 
     /**
@@ -111,16 +105,29 @@ public final class FindProperty {
      *
      * @return method handle for the getter
      */
-    public MethodHandle getSetter(final Class<?> type, final boolean strict) {
-        final MethodHandle setter = property.getSetter(type, getOwner().getMap());
+    public MethodHandle getSetter(final Class<?> type, final boolean strict, final LinkRequest request) {
+        MethodHandle setter = property.getSetter(type, getOwner().getMap());
         if (property instanceof UserAccessorProperty) {
-            final UserAccessorProperty uc        = (UserAccessorProperty)property;
-            final ScriptObject         owner     = getOwner();
-            final ScriptObject         container = (owner != null) ? owner : self;
-            return MH.insertArguments(setter, 0, uc.getAccessors(container), strict ? property.getKey() : null);
+            setter =  MH.insertArguments(setter, 1, strict ? property.getKey() : null);
+            return insertAccessorsGetter((UserAccessorProperty) property, request, setter);
         }
 
         return setter;
+    }
+
+    // Fold an accessor getter into the method handle of a user accessor property.
+    private MethodHandle insertAccessorsGetter(final UserAccessorProperty uap, final LinkRequest request, final MethodHandle mh) {
+        MethodHandle superGetter = uap.getAccessorsGetter();
+        if (isInherited()) {
+            superGetter = ScriptObject.addProtoFilter(superGetter, getProtoChainLength());
+        }
+        if (request != null && !(request.getReceiver() instanceof ScriptObject)) {
+            final MethodHandle wrapFilter = Global.getPrimitiveWrapFilter(request.getReceiver());
+            superGetter = MH.filterArguments(superGetter, 0, wrapFilter.asType(wrapFilter.type().changeReturnType(superGetter.type().parameterType(0))));
+        }
+        superGetter = MH.asType(superGetter, superGetter.type().changeParameterType(0, Object.class));
+
+        return MH.foldArguments(mh, superGetter);
     }
 
     /**
@@ -136,7 +143,7 @@ public final class FindProperty {
      * @return appropriate receiver
      */
     public ScriptObject getGetterReceiver() {
-        return property != null && property.hasGetterFunction(prototype) ? self : prototype;
+        return property != null && property instanceof UserAccessorProperty ? self : prototype;
     }
 
     /**
