@@ -52,25 +52,26 @@ class ObjectSynchronizer : AllStatic {
   // assembly copies of these routines. Please keep them synchronized.
   //
   // attempt_rebias flag is used by UseBiasedLocking implementation
-  static void fast_enter  (Handle obj, BasicLock* lock, bool attempt_rebias, TRAPS);
-  static void fast_exit   (oop obj,    BasicLock* lock, Thread* THREAD);
+  static void fast_enter(Handle obj, BasicLock* lock, bool attempt_rebias,
+                         TRAPS);
+  static void fast_exit(oop obj, BasicLock* lock, Thread* THREAD);
 
   // WARNING: They are ONLY used to handle the slow cases. They should
   // only be used when the fast cases failed. Use of these functions
   // without previous fast case check may cause fatal error.
-  static void slow_enter  (Handle obj, BasicLock* lock, TRAPS);
-  static void slow_exit   (oop obj,    BasicLock* lock, Thread* THREAD);
+  static void slow_enter(Handle obj, BasicLock* lock, TRAPS);
+  static void slow_exit(oop obj, BasicLock* lock, Thread* THREAD);
 
   // Used only to handle jni locks or other unmatched monitor enter/exit
   // Internally they will use heavy weight monitor.
-  static void jni_enter   (Handle obj, TRAPS);
+  static void jni_enter(Handle obj, TRAPS);
   static bool jni_try_enter(Handle obj, Thread* THREAD); // Implements Unsafe.tryMonitorEnter
-  static void jni_exit    (oop obj,    Thread* THREAD);
+  static void jni_exit(oop obj, Thread* THREAD);
 
   // Handle all interpreter, compiler and jni cases
-  static int  wait               (Handle obj, jlong millis, TRAPS);
-  static void notify             (Handle obj,               TRAPS);
-  static void notifyall          (Handle obj,               TRAPS);
+  static int  wait(Handle obj, jlong millis, TRAPS);
+  static void notify(Handle obj, TRAPS);
+  static void notifyall(Handle obj, TRAPS);
 
   // Special internal-use-only method for use by JVM infrastructure
   // that needs to wait() on a java-level object but that can't risk
@@ -80,13 +81,14 @@ class ObjectSynchronizer : AllStatic {
   // used by classloading to free classloader object lock,
   // wait on an internal lock, and reclaim original lock
   // with original recursion count
-  static intptr_t complete_exit  (Handle obj,                TRAPS);
-  static void reenter            (Handle obj, intptr_t recursion, TRAPS);
+  static intptr_t complete_exit(Handle obj, TRAPS);
+  static void reenter (Handle obj, intptr_t recursion, TRAPS);
 
   // thread-specific and global objectMonitor free list accessors
   static void verifyInUse(Thread * Self);
   static ObjectMonitor * omAlloc(Thread * Self);
-  static void omRelease(Thread * Self, ObjectMonitor * m, bool FromPerThreadAlloc);
+  static void omRelease(Thread * Self, ObjectMonitor * m,
+                        bool FromPerThreadAlloc);
   static void omFlush(Thread * Self);
 
   // Inflate light weight monitor to heavy weight monitor
@@ -116,7 +118,8 @@ class ObjectSynchronizer : AllStatic {
   static int walk_monitor_list(ObjectMonitor** listheadp,
                                ObjectMonitor** freeHeadp,
                                ObjectMonitor** freeTailp);
-  static bool deflate_monitor(ObjectMonitor* mid, oop obj, ObjectMonitor** freeHeadp,
+  static bool deflate_monitor(ObjectMonitor* mid, oop obj,
+                              ObjectMonitor** freeHeadp,
                               ObjectMonitor** freeTailp);
   static void oops_do(OopClosure* f);
 
@@ -159,13 +162,13 @@ class ObjectLocker : public StackObj {
   ~ObjectLocker();
 
   // Monitor behavior
-  void wait      (TRAPS)      { ObjectSynchronizer::wait     (_obj, 0, CHECK); } // wait forever
-  void notify_all(TRAPS)      { ObjectSynchronizer::notifyall(_obj,    CHECK); }
-  void waitUninterruptibly (TRAPS) { ObjectSynchronizer::waitUninterruptibly (_obj, 0, CHECK); }
+  void wait(TRAPS)  { ObjectSynchronizer::wait(_obj, 0, CHECK); } // wait forever
+  void notify_all(TRAPS)  { ObjectSynchronizer::notifyall(_obj, CHECK); }
+  void waitUninterruptibly(TRAPS) { ObjectSynchronizer::waitUninterruptibly(_obj, 0, CHECK); }
   // complete_exit gives up lock completely, returning recursion count
   // reenter reclaims lock with original recursion count
-  intptr_t complete_exit(TRAPS) { return  ObjectSynchronizer::complete_exit(_obj, CHECK_0); }
-  void reenter(intptr_t recursion, TRAPS) { ObjectSynchronizer::reenter(_obj, recursion, CHECK); }
+  intptr_t complete_exit(TRAPS)  { return ObjectSynchronizer::complete_exit(_obj, CHECK_0); }
+  void reenter(intptr_t recursion, TRAPS)  { ObjectSynchronizer::reenter(_obj, recursion, CHECK); }
 };
 
 #endif // SHARE_VM_RUNTIME_SYNCHRONIZER_HPP

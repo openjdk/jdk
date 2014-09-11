@@ -27,8 +27,8 @@
 
 // Linux_OS defines the interface to Linux operating systems
 
-/* pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1 */
-typedef int (*pthread_getattr_func_type) (pthread_t, pthread_attr_t *);
+// pthread_getattr_np comes with LinuxThreads-0.9-7 on RedHat 7.1
+typedef int (*pthread_getattr_func_type)(pthread_t, pthread_attr_t *);
 
 // Information about the protection of the page at address '0' on this os.
 static bool zero_page_read_protected() { return true; }
@@ -151,7 +151,7 @@ class Linux {
   // that file provides extensions to the os class and not the
   // Linux class.
   static ExtendedPC fetch_frame_from_ucontext(Thread* thread, ucontext_t* uc,
-    intptr_t** ret_sp, intptr_t** ret_fp);
+                                              intptr_t** ret_sp, intptr_t** ret_fp);
 
   // This boolean allows users to forward their own non-matching signals
   // to JVM_handle_linux_signal, harmlessly.
@@ -222,10 +222,10 @@ class Linux {
   static jlong fast_thread_cpu_time(clockid_t clockid);
 
   // pthread_cond clock suppport
-  private:
+ private:
   static pthread_condattr_t _condattr[1];
 
-  public:
+ public:
   static pthread_condattr_t* condAttr() { return _condattr; }
 
   // Stack repair handling
@@ -235,7 +235,7 @@ class Linux {
   // LinuxThreads work-around for 6292965
   static int safe_cond_timedwait(pthread_cond_t *_cond, pthread_mutex_t *_mutex, const struct timespec *_abstime);
 
-private:
+ private:
   typedef int (*sched_getcpu_func_t)(void);
   typedef int (*numa_node_to_cpus_func_t)(int node, unsigned long *buffer, int bufferlen);
   typedef int (*numa_max_node_func_t)(void);
@@ -262,7 +262,7 @@ private:
   static void set_numa_set_bind_policy(numa_set_bind_policy_func_t func) { _numa_set_bind_policy = func; }
   static void set_numa_all_nodes(unsigned long* ptr) { _numa_all_nodes = ptr; }
   static int sched_getcpu_syscall(void);
-public:
+ public:
   static int sched_getcpu()  { return _sched_getcpu != NULL ? _sched_getcpu() : -1; }
   static int numa_node_to_cpus(int node, unsigned long *buffer, int bufferlen) {
     return _numa_node_to_cpus != NULL ? _numa_node_to_cpus(node, buffer, bufferlen) : -1;
@@ -287,63 +287,63 @@ public:
 
 
 class PlatformEvent : public CHeapObj<mtInternal> {
-  private:
-    double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
-    volatile int _Event;
-    volatile int _nParked;
-    pthread_mutex_t _mutex[1];
-    pthread_cond_t  _cond[1];
-    double PostPad[2];
-    Thread * _Assoc;
+ private:
+  double CachePad[4];   // increase odds that _mutex is sole occupant of cache line
+  volatile int _Event;
+  volatile int _nParked;
+  pthread_mutex_t _mutex[1];
+  pthread_cond_t  _cond[1];
+  double PostPad[2];
+  Thread * _Assoc;
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformEvent() { guarantee(0, "invariant"); }
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformEvent() { guarantee(0, "invariant"); }
 
-  public:
-    PlatformEvent() {
-      int status;
-      status = pthread_cond_init (_cond, os::Linux::condAttr());
-      assert_status(status == 0, status, "cond_init");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-      _Event   = 0;
-      _nParked = 0;
-      _Assoc   = NULL;
-    }
+ public:
+  PlatformEvent() {
+    int status;
+    status = pthread_cond_init(_cond, os::Linux::condAttr());
+    assert_status(status == 0, status, "cond_init");
+    status = pthread_mutex_init(_mutex, NULL);
+    assert_status(status == 0, status, "mutex_init");
+    _Event   = 0;
+    _nParked = 0;
+    _Assoc   = NULL;
+  }
 
-    // Use caution with reset() and fired() -- they may require MEMBARs
-    void reset() { _Event = 0; }
-    int  fired() { return _Event; }
-    void park();
-    void unpark();
-    int  park(jlong millis); // relative timed-wait only
-    void SetAssociation(Thread * a) { _Assoc = a; }
+  // Use caution with reset() and fired() -- they may require MEMBARs
+  void reset() { _Event = 0; }
+  int  fired() { return _Event; }
+  void park();
+  void unpark();
+  int  park(jlong millis); // relative timed-wait only
+  void SetAssociation(Thread * a) { _Assoc = a; }
 };
 
 class PlatformParker : public CHeapObj<mtInternal> {
-  protected:
-    enum {
-        REL_INDEX = 0,
-        ABS_INDEX = 1
-    };
-    int _cur_index;  // which cond is in use: -1, 0, 1
-    pthread_mutex_t _mutex[1];
-    pthread_cond_t  _cond[2]; // one for relative times and one for abs.
+ protected:
+  enum {
+    REL_INDEX = 0,
+    ABS_INDEX = 1
+  };
+  int _cur_index;  // which cond is in use: -1, 0, 1
+  pthread_mutex_t _mutex[1];
+  pthread_cond_t  _cond[2]; // one for relative times and one for abs.
 
-  public:       // TODO-FIXME: make dtor private
-    ~PlatformParker() { guarantee(0, "invariant"); }
+ public:       // TODO-FIXME: make dtor private
+  ~PlatformParker() { guarantee(0, "invariant"); }
 
-  public:
-    PlatformParker() {
-      int status;
-      status = pthread_cond_init (&_cond[REL_INDEX], os::Linux::condAttr());
-      assert_status(status == 0, status, "cond_init rel");
-      status = pthread_cond_init (&_cond[ABS_INDEX], NULL);
-      assert_status(status == 0, status, "cond_init abs");
-      status = pthread_mutex_init (_mutex, NULL);
-      assert_status(status == 0, status, "mutex_init");
-      _cur_index = -1; // mark as unused
-    }
+ public:
+  PlatformParker() {
+    int status;
+    status = pthread_cond_init(&_cond[REL_INDEX], os::Linux::condAttr());
+    assert_status(status == 0, status, "cond_init rel");
+    status = pthread_cond_init(&_cond[ABS_INDEX], NULL);
+    assert_status(status == 0, status, "cond_init abs");
+    status = pthread_mutex_init(_mutex, NULL);
+    assert_status(status == 0, status, "mutex_init");
+    _cur_index = -1; // mark as unused
+  }
 };
 
 #endif // OS_LINUX_VM_OS_LINUX_HPP
