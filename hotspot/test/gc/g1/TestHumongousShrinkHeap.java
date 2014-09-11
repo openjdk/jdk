@@ -26,7 +26,7 @@
  * @bug 8036025 8056043
  * @summary Verify that heap shrinks after GC in the presence of fragmentation due to humongous objects
  * @library /testlibrary
- * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=50 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc TestHumongousShrinkHeap
+ * @run main/othervm -XX:MinHeapFreeRatio=10 -XX:MaxHeapFreeRatio=12 -XX:+UseG1GC -XX:G1HeapRegionSize=1M -verbose:gc TestHumongousShrinkHeap
  */
 
 import java.lang.management.ManagementFactory;
@@ -41,12 +41,24 @@ public class TestHumongousShrinkHeap {
     public static final String MIN_FREE_RATIO_FLAG_NAME = "MinHeapFreeRatio";
     public static final String MAX_FREE_RATIO_FLAG_NAME = "MaxHeapFreeRatio";
 
-    private static final ArrayList<ArrayList<byte[]>> garbage = new ArrayList<>();
-    private static final int PAGE_SIZE = 1024 * 1024; // 1M
-    private static final int PAGES_NUM = 5;
+    private static final List<List<byte[]>> garbage = new ArrayList();
+    private static final int REGION_SIZE = 1024 * 1024; // 1M
+    private static final int LISTS_COUNT = 10;
+    private static final int HUMON_SIZE = Math.round(.9f * REGION_SIZE);
+    private static final long AVAILABLE_MEMORY
+                              = Runtime.getRuntime().freeMemory();
+    private static final int HUMON_COUNT
+                             = (int) ((AVAILABLE_MEMORY / HUMON_SIZE)
+            / LISTS_COUNT);
 
 
     public static void main(String[] args) {
+        System.out.format("Running with %s max heap size. "
+                + "Will allocate humongous object of %s size %d times.%n",
+                MemoryUsagePrinter.humanReadableByteCount(AVAILABLE_MEMORY, false),
+                MemoryUsagePrinter.humanReadableByteCount(HUMON_SIZE, false),
+                HUMON_COUNT
+        );
         new TestHumongousShrinkHeap().test();
     }
 
@@ -54,8 +66,8 @@ public class TestHumongousShrinkHeap {
         System.gc();
         MemoryUsagePrinter.printMemoryUsage("init");
 
-        eat();
-        MemoryUsagePrinter.printMemoryUsage("eaten");
+        allocate();
+        MemoryUsagePrinter.printMemoryUsage("allocated");
         MemoryUsage muFull = ManagementFactory.getMemoryMXBean().getHeapMemoryUsage();
 
         free();
@@ -72,15 +84,12 @@ public class TestHumongousShrinkHeap {
         ));
     }
 
-    private void eat() {
-        int HumongousObjectSize = Math.round(.9f * PAGE_SIZE);
-        System.out.println("Will allocate objects of size=" +
-                MemoryUsagePrinter.humanReadableByteCount(HumongousObjectSize, true));
+    private void allocate() {
 
-        for (int i = 0; i < PAGES_NUM; i++) {
-            ArrayList<byte[]> stuff = new ArrayList<>();
-            eatList(stuff, 100, HumongousObjectSize);
-            MemoryUsagePrinter.printMemoryUsage("eat #" + i);
+        for (int i = 0; i < LISTS_COUNT; i++) {
+            List<byte[]> stuff = new ArrayList();
+            allocateList(stuff, HUMON_COUNT, HUMON_SIZE);
+            MemoryUsagePrinter.printMemoryUsage("allocate #" + (i+1));
             garbage.add(stuff);
         }
     }
@@ -90,12 +99,12 @@ public class TestHumongousShrinkHeap {
         garbage.subList(0, garbage.size() - 1).clear();
 
         // do not free last one element from last list
-        ArrayList stuff = garbage.get(garbage.size() - 1);
+        List stuff = garbage.get(garbage.size() - 1);
         stuff.subList(0, stuff.size() - 1).clear();
         System.gc();
     }
 
-    private static void eatList(List garbage, int count, int size) {
+    private static void allocateList(List garbage, int count, int size) {
         for (int i = 0; i < count; i++) {
             garbage.add(new byte[size]);
         }
@@ -122,9 +131,9 @@ class MemoryUsagePrinter {
         float freeratio = 1f - (float) memusage.getUsed() / memusage.getCommitted();
         System.out.format("[%-24s] init: %-7s, used: %-7s, comm: %-7s, freeRatio ~= %.1f%%%n",
                 label,
-                humanReadableByteCount(memusage.getInit(), true),
-                humanReadableByteCount(memusage.getUsed(), true),
-                humanReadableByteCount(memusage.getCommitted(), true),
+                humanReadableByteCount(memusage.getInit(), false),
+                humanReadableByteCount(memusage.getUsed(), false),
+                humanReadableByteCount(memusage.getCommitted(), false),
                 freeratio * 100
         );
     }
