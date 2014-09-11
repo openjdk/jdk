@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,13 +22,59 @@
  */
 
 /**
- * Test various scripts with low splitter threshold
+ * JDK-8057678: Tests for let&const keywords in Nashorn
  *
  * @test
- * @option -Dnashorn.compiler.splitter.threshold=200
  * @run
- * @fork
+ * @option --language=es6
+ * @option -scripting
  */
 
-load(__DIR__ + 'NASHORN-689.js');
-load(__DIR__ + 'NASHORN-58.js');
+
+function tryIt (code) {
+    try {
+        eval(code)
+    } catch (e) {
+        print(e)
+    }
+}
+
+tryIt(<<CODE
+      let a = 2;
+      do {
+        a--;
+        let b = a;
+      } while (a > 0);
+      print(a)
+      print(b)
+CODE)
+
+tryIt(<<CODE
+       let a = 2
+       while(a > 0) {
+            a--
+            let b = a
+       }
+       print(a)
+       print(b)
+CODE)
+
+tryIt(<<CODE
+       let a = 2
+       while(a > 0) {
+            a--
+            const b = a
+       }
+       print(a)
+       print(b)
+CODE)
+
+tryIt(<<CODE
+       let a = 2;
+       do {
+         a--;
+         const b = a;
+       } while (a > 0);
+       print(a)
+       print(b)
+CODE)
