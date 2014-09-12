@@ -970,6 +970,14 @@ public class GlyphView extends View implements TabableView, Cloneable {
         }
     }
 
+    /** {@inheritDoc} */
+    @Override
+    void updateAfterChange() {
+        // Drop the break spots. They will be re-calculated during
+        // layout. It is necessary for proper line break calculation.
+        breakSpots = null;
+    }
+
     /**
      * Class to hold data needed to justify this GlyphView in a PargraphView.Row
      */
