@@ -60,6 +60,8 @@ import com.sun.source.util.TaskEvent;
 import com.sun.source.util.TaskListener;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
 
 /**
@@ -209,7 +211,7 @@ public class ClientCodeWrapper {
             this.clientJavaFileManager = clientJavaFileManager;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public ClassLoader getClassLoader(Location location) {
             try {
                 return clientJavaFileManager.getClassLoader(location);
@@ -220,7 +222,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Iterable<JavaFileObject> list(Location location, String packageName, Set<Kind> kinds, boolean recurse) throws IOException {
             try {
                 return wrapJavaFileObjects(clientJavaFileManager.list(location, packageName, kinds, recurse));
@@ -231,7 +233,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public String inferBinaryName(Location location, JavaFileObject file) {
             try {
                 return clientJavaFileManager.inferBinaryName(location, unwrap(file));
@@ -242,7 +244,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean isSameFile(FileObject a, FileObject b) {
             try {
                 return clientJavaFileManager.isSameFile(unwrap(a), unwrap(b));
@@ -253,7 +255,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean handleOption(String current, Iterator<String> remaining) {
             try {
                 return clientJavaFileManager.handleOption(current, remaining);
@@ -264,7 +266,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean hasLocation(Location location) {
             try {
                 return clientJavaFileManager.hasLocation(location);
@@ -275,7 +277,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public JavaFileObject getJavaFileForInput(Location location, String className, Kind kind) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getJavaFileForInput(location, className, kind));
@@ -286,7 +288,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public JavaFileObject getJavaFileForOutput(Location location, String className, Kind kind, FileObject sibling) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getJavaFileForOutput(location, className, kind, unwrap(sibling)));
@@ -297,7 +299,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public FileObject getFileForInput(Location location, String packageName, String relativeName) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getFileForInput(location, packageName, relativeName));
@@ -308,7 +310,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public FileObject getFileForOutput(Location location, String packageName, String relativeName, FileObject sibling) throws IOException {
             try {
                 return wrap(clientJavaFileManager.getFileForOutput(location, packageName, relativeName, unwrap(sibling)));
@@ -319,7 +321,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public void flush() throws IOException {
             try {
                 clientJavaFileManager.flush();
@@ -330,7 +332,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public void close() throws IOException {
             try {
                 clientJavaFileManager.close();
@@ -341,7 +343,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public int isSupportedOption(String option) {
             try {
                 return clientJavaFileManager.isSupportedOption(option);
@@ -365,7 +367,7 @@ public class ClientCodeWrapper {
             this.clientFileObject = clientFileObject;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public URI toUri() {
             try {
                 return clientFileObject.toUri();
@@ -376,7 +378,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public String getName() {
             try {
                 return clientFileObject.getName();
@@ -387,7 +389,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public InputStream openInputStream() throws IOException {
             try {
                 return clientFileObject.openInputStream();
@@ -398,7 +400,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public OutputStream openOutputStream() throws IOException {
             try {
                 return clientFileObject.openOutputStream();
@@ -409,7 +411,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
             try {
                 return clientFileObject.openReader(ignoreEncodingErrors);
@@ -420,7 +422,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
             try {
                 return clientFileObject.getCharContent(ignoreEncodingErrors);
@@ -431,7 +433,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Writer openWriter() throws IOException {
             try {
                 return clientFileObject.openWriter();
@@ -442,7 +444,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public long getLastModified() {
             try {
                 return clientFileObject.getLastModified();
@@ -453,7 +455,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean delete() {
             try {
                 return clientFileObject.delete();
@@ -475,7 +477,7 @@ public class ClientCodeWrapper {
             super(clientJavaFileObject);
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Kind getKind() {
             try {
                 return ((JavaFileObject)clientFileObject).getKind();
@@ -486,7 +488,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public boolean isNameCompatible(String simpleName, Kind kind) {
             try {
                 return ((JavaFileObject)clientFileObject).isNameCompatible(simpleName, kind);
@@ -497,7 +499,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public NestingKind getNestingKind() {
             try {
                 return ((JavaFileObject)clientFileObject).getNestingKind();
@@ -508,7 +510,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public Modifier getAccessLevel() {
             try {
                 return ((JavaFileObject)clientFileObject).getAccessLevel();
@@ -532,7 +534,7 @@ public class ClientCodeWrapper {
             this.clientDiagnosticListener = clientDiagnosticListener;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER)
         public void report(Diagnostic<? extends T> diagnostic) {
             try {
                 clientDiagnosticListener.report(unwrap(diagnostic));
@@ -556,38 +558,47 @@ public class ClientCodeWrapper {
             this.d = d;
         }
 
+        @DefinedBy(Api.COMPILER)
         public Diagnostic.Kind getKind() {
             return d.getKind();
         }
 
+        @DefinedBy(Api.COMPILER)
         public JavaFileObject getSource() {
             return unwrap(d.getSource());
         }
 
+        @DefinedBy(Api.COMPILER)
         public long getPosition() {
             return d.getPosition();
         }
 
+        @DefinedBy(Api.COMPILER)
         public long getStartPosition() {
             return d.getStartPosition();
         }
 
+        @DefinedBy(Api.COMPILER)
         public long getEndPosition() {
             return d.getEndPosition();
         }
 
+        @DefinedBy(Api.COMPILER)
         public long getLineNumber() {
             return d.getLineNumber();
         }
 
+        @DefinedBy(Api.COMPILER)
         public long getColumnNumber() {
             return d.getColumnNumber();
         }
 
+        @DefinedBy(Api.COMPILER)
         public String getCode() {
             return d.getCode();
         }
 
+        @DefinedBy(Api.COMPILER)
         public String getMessage(Locale locale) {
             return d.getMessage(locale);
         }
@@ -605,7 +616,7 @@ public class ClientCodeWrapper {
             this.clientTaskListener = clientTaskListener;
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public void started(TaskEvent ev) {
             try {
                 clientTaskListener.started(ev);
@@ -616,7 +627,7 @@ public class ClientCodeWrapper {
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.COMPILER_TREE)
         public void finished(TaskEvent ev) {
             try {
                 clientTaskListener.finished(ev);

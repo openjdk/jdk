@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8039410 8042601 8042829 8049393
+ * @bug 8039410 8042601 8042829 8049393 8050031
  * @summary test to determine if members are ordered correctly
  * @author ksrini
  * @library ../lib/
@@ -119,6 +119,8 @@ public class TestOrdering extends JavadocTester {
         javadoc(cmdArgs.toArray(new String[cmdArgs.size()]));
         checkExit(Exit.OK);
         checkOrder("index-all.html", composeTestVectors());
+        checkOrder("add0/add/package-tree.html", expectedPackageTreeOrdering);
+        checkOrder("overview-tree.html", expectedOverviewOrdering);
     }
 
     @Test
@@ -380,5 +382,45 @@ public class TestOrdering extends JavadocTester {
         "add3/add/add/Add.html#ADDADD\"",
         "add3/add/Add.html#ADDADD\"",
         "add3/Add.html#ADDADD\""
+    };
+    final String expectedPackageTreeOrdering[] = {
+        "<a href=\"../../add0/add/Add.add.html\" title=\"enum in add0.add\">",
+        "<a href=\"../../add0/add/Add.ADD.html\" title=\"enum in add0.add\">"
+    };
+    final String expectedOverviewOrdering[] = {
+        "<a href=\"Add.add.html\" title=\"enum in &lt;Unnamed&gt;\">",
+        "<a href=\"add0/Add.add.html\" title=\"enum in add0\">",
+        "<a href=\"add0/add/Add.add.html\" title=\"enum in add0.add\">",
+        "<a href=\"add0/add/add/Add.add.html\" title=\"enum in add0.add.add\">",
+        "<a href=\"add0/add/add/add/Add.add.html\" title=\"enum in add0.add.add.add\">",
+        "<a href=\"add1/Add.add.html\" title=\"enum in add1\">",
+        "<a href=\"add1/add/Add.add.html\" title=\"enum in add1.add\">",
+        "<a href=\"add1/add/add/Add.add.html\" title=\"enum in add1.add.add\">",
+        "<a href=\"add1/add/add/add/Add.add.html\" title=\"enum in add1.add.add.add\">",
+        "<a href=\"add2/Add.add.html\" title=\"enum in add2\">",
+        "<a href=\"add2/add/Add.add.html\" title=\"enum in add2.add\">",
+        "<a href=\"add2/add/add/Add.add.html\" title=\"enum in add2.add.add\">",
+        "<a href=\"add2/add/add/add/Add.add.html\" title=\"enum in add2.add.add.add\">",
+        "<a href=\"add3/Add.add.html\" title=\"enum in add3\">",
+        "<a href=\"add3/add/Add.add.html\" title=\"enum in add3.add\">",
+        "<a href=\"add3/add/add/Add.add.html\" title=\"enum in add3.add.add\">",
+        "<a href=\"add3/add/add/add/Add.add.html\" title=\"enum in add3.add.add.add\">",
+        "<a href=\"Add.ADD.html\" title=\"enum in &lt;Unnamed&gt;\">",
+        "<a href=\"add0/Add.ADD.html\" title=\"enum in add0\">",
+        "<a href=\"add0/add/Add.ADD.html\" title=\"enum in add0.add\">",
+        "<a href=\"add0/add/add/Add.ADD.html\" title=\"enum in add0.add.add\">",
+        "<a href=\"add0/add/add/add/Add.ADD.html\" title=\"enum in add0.add.add.add\">",
+        "<a href=\"add1/Add.ADD.html\" title=\"enum in add1\">",
+        "<a href=\"add1/add/Add.ADD.html\" title=\"enum in add1.add\">",
+        "<a href=\"add1/add/add/Add.ADD.html\" title=\"enum in add1.add.add\">",
+        "<a href=\"add1/add/add/add/Add.ADD.html\" title=\"enum in add1.add.add.add\">",
+        "<a href=\"add2/Add.ADD.html\" title=\"enum in add2\">",
+        "<a href=\"add2/add/Add.ADD.html\" title=\"enum in add2.add\">",
+        "<a href=\"add2/add/add/Add.ADD.html\" title=\"enum in add2.add.add\">",
+        "<a href=\"add2/add/add/add/Add.ADD.html\" title=\"enum in add2.add.add.add\">",
+        "<a href=\"add3/Add.ADD.html\" title=\"enum in add3\">",
+        "<a href=\"add3/add/Add.ADD.html\" title=\"enum in add3.add\">",
+        "<a href=\"add3/add/add/Add.ADD.html\" title=\"enum in add3.add.add\">",
+        "<a href=\"add3/add/add/add/Add.ADD.html\" title=\"enum in add3.add.add.add\">",
     };
 }

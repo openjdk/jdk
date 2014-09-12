@@ -36,6 +36,9 @@ import javax.lang.model.util.*;
 import java.io.PrintWriter;
 import java.io.Writer;
 import java.util.*;
+
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.StringUtils;
 
 /**
@@ -62,7 +65,7 @@ public class PrintingProcessor extends AbstractProcessor {
         writer = new PrintWriter(w);
     }
 
-    @Override
+    @Override @DefinedBy(Api.ANNOTATION_PROCESSING)
     public boolean process(Set<? extends TypeElement> tes,
                            RoundEnvironment renv) {
 
@@ -95,7 +98,7 @@ public class PrintingProcessor extends AbstractProcessor {
             indentation = 0;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         protected PrintingElementVisitor defaultAction(Element e, Boolean newLine) {
             if (newLine != null && newLine)
                 writer.println();
@@ -104,7 +107,7 @@ public class PrintingProcessor extends AbstractProcessor {
             return this;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitExecutable(ExecutableElement e, Boolean p) {
             ElementKind kind = e.getKind();
 
@@ -118,7 +121,7 @@ public class PrintingProcessor extends AbstractProcessor {
                     NestingKind.ANONYMOUS ==
                     // Use an anonymous class to determine anonymity!
                     (new SimpleElementVisitor7<NestingKind, Void>() {
-                        @Override
+                        @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public NestingKind visitType(TypeElement e, Void p) {
                             return e.getNestingKind();
                         }
@@ -155,7 +158,7 @@ public class PrintingProcessor extends AbstractProcessor {
         }
 
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitType(TypeElement e, Boolean p) {
             ElementKind kind = e.getKind();
             NestingKind nestingKind = e.getNestingKind();
@@ -259,7 +262,7 @@ public class PrintingProcessor extends AbstractProcessor {
             return this;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitVariable(VariableElement e, Boolean newLine) {
             ElementKind kind = e.getKind();
             defaultAction(e, newLine);
@@ -278,14 +281,14 @@ public class PrintingProcessor extends AbstractProcessor {
             return this;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitTypeParameter(TypeParameterElement e, Boolean p) {
             writer.print(e.getSimpleName());
             return this;
         }
 
         // Should we do more here?
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public PrintingElementVisitor visitPackage(PackageElement e, Boolean p) {
             defaultAction(e, false);
             if (!e.isUnnamed())

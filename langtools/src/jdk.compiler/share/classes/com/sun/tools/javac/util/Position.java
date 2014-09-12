@@ -26,6 +26,9 @@
 package com.sun.tools.javac.util;
 
 import java.util.BitSet;
+
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 import static com.sun.tools.javac.util.LayoutCharacters.*;
 
 /** A class that defines source code positions as simple character
@@ -174,6 +177,7 @@ public class Position {
             return startPosition[line - FIRSTLINE];
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public long getStartPosition(long line) {
             return getStartPosition(longToInt(line));
         }
@@ -182,6 +186,7 @@ public class Position {
             return startPosition[line - FIRSTLINE] + column - FIRSTCOLUMN;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public long getPosition(long line, long column) {
             return getPosition(longToInt(line), longToInt(column));
         }
@@ -215,6 +220,7 @@ public class Position {
             return lastLine;  // pos is on this line
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public long getLineNumber(long pos) {
             return getLineNumber(longToInt(pos));
         }
@@ -223,6 +229,7 @@ public class Position {
             return pos - startPosition[getLineNumber(pos) - FIRSTLINE] + FIRSTCOLUMN;
         }
 
+        @DefinedBy(Api.COMPILER_TREE)
         public long getColumnNumber(long pos) {
             return getColumnNumber(longToInt(pos));
         }

@@ -31,7 +31,7 @@
  * @author  Mandy Chung
  *
  * @build MemoryManagement MemoryUtil
- * @run main/othervm/timeout=600 MemoryManagement
+ * @run main/othervm/timeout=600 -Xmn8m -XX:+IgnoreUnrecognizedVMOptions -XX:G1HeapRegionSize=1 -XX:-UseLargePages MemoryManagement
  */
 
 import java.lang.management.*;
@@ -49,6 +49,8 @@ public class MemoryManagement {
     private static volatile boolean trace = false;
     private static volatile boolean testFailed = false;
     private static final int NUM_CHUNKS = 2;
+    // Must match -Xmn set on the @run line
+    private static final int YOUNG_GEN_SIZE = 8 * 1024 * 1024;
     private static volatile long chunkSize;
     private static volatile int listenerInvoked = 0;
 
@@ -101,16 +103,25 @@ public class MemoryManagement {
 
         Thread allocator = new AllocatorThread();
 
+        // The chunk size needs to be larger than YOUNG_GEN_SIZE,
+        // otherwise we will get intermittent failures when objects
+        // end up in the young gen instead of the old gen.
+        final long epsilon = 1024;
+        chunkSize = YOUNG_GEN_SIZE + epsilon;
+
         // Now set threshold
         MemoryUsage mu = mpool.getUsage();
-        long max = mu.getMax();
-        if (max != -1) {
-            chunkSize = (max - mu.getUsed()) / 20;
-        } else { // 6980984
-            System.gc();
-            chunkSize = Runtime.getRuntime().freeMemory()/20;
-        }
         newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
+
+        // Sanity check. Make sure the new threshold isn't too large.
+        // Tweak the test if this fails.
+        final long headRoom = chunkSize * 2;
+        final long max = mu.getMax();
+        if (max != -1 && newThreshold > max - headRoom) {
+            throw new RuntimeException("TEST FAILED: newThreshold: " + newThreshold +
+                    " is too near the maximum old gen size: " + max +
+                    " used: " + mu.getUsed() + " headRoom: " + headRoom);
+        }
 
         System.out.println("Setting threshold for " + mpool.getName() +
             " from " + mpool.getUsageThreshold() + " to " + newThreshold +

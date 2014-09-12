@@ -138,7 +138,7 @@ public class TestZoneTextPrinterParser extends AbstractTestPrinterParser {
             {"Asia/Taipei",      "China Standard Time",   preferred, Locale.ENGLISH, TextStyle.FULL},
             {"America/Chicago",  "CST",                   none,      Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Taipei",      "CST",                   preferred, Locale.ENGLISH, TextStyle.SHORT},
-            {"Australia/South",  "CST",                   preferred_s, Locale.ENGLISH, TextStyle.SHORT},
+            {"Australia/South",  "ACST",                  preferred_s, Locale.ENGLISH, TextStyle.SHORT},
             {"America/Chicago",  "CDT",                   none,        Locale.ENGLISH, TextStyle.SHORT},
             {"Asia/Shanghai",    "CDT",                   preferred_s, Locale.ENGLISH, TextStyle.SHORT},
        };

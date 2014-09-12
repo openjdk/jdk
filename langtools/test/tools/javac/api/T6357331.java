@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2006, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2006, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,7 +27,7 @@
  * @summary NPE from JavacTask.getElements() after calling CompilationTask.run
  */
 import java.io.*;
-import java.util.Arrays;
+import java.util.*;
 import javax.tools.*;
 import com.sun.source.util.*;
 
@@ -36,7 +36,11 @@ public class T6357331
     public static void main(String... args) {
         JavaCompiler tool = ToolProvider.getSystemJavaCompiler();
         PrintWriter out = new PrintWriter(new StringWriter());
-        final JavacTask task = (JavacTask) (tool.getTask(out, null, null, null, null, null));
+        List<String> opts = Arrays.asList("-d", ".");
+        StandardJavaFileManager fm = tool.getStandardFileManager(null, null, null);
+        File thisFile = new File(System.getProperty("test.src"), "T6357331.java");
+        Iterable<? extends JavaFileObject> files = fm.getJavaFileObjects(thisFile);
+        final JavacTask task = (JavacTask) (tool.getTask(out, fm, null, opts, null, files));
 
         // set a listener to verify that IllegalStateException is not thrown
         // during the compilation

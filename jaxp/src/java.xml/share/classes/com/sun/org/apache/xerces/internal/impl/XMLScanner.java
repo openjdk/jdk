@@ -973,6 +973,7 @@ public abstract class XMLScanner
                         fStringBuffer2.append('\n');
                     }
                 } else if (c != -1 && XMLChar.isHighSurrogate(c)) {
+                    fStringBuffer3.clear();
                     if (scanSurrogates(fStringBuffer3)) {
                         stringBuffer.append(fStringBuffer3);
                         if (entityDepth == fEntityDepth && fNeedNonNormalizedValue) {

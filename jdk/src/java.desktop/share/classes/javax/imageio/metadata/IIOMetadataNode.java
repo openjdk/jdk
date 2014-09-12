@@ -305,6 +305,9 @@ public class IIOMetadataNode implements Element, NodeList {
     /**
      * Check that the node is either <code>null</code> or an
      * <code>IIOMetadataNode</code>.
+     *
+     * @throws DOMException if {@code node} is not {@code null} and not an
+     * instance of {@code IIOMetadataNode}
      */
     private void checkNode(Node node) throws DOMException {
         if (node == null) {

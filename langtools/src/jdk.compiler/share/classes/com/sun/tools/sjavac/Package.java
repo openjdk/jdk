@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,6 +35,7 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import com.sun.tools.javac.util.Assert;
 
 /**
  * The Package class maintains meta information about a package.
@@ -54,10 +55,10 @@ import java.util.Set;
  * the visible recompilation of the dependent packages indicates how much circular
  * dependencies your code has.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class Package implements Comparable<Package> {
     // The module this package belongs to. (There is a legacy module with an empty string name,
@@ -83,9 +84,9 @@ public class Package implements Comparable<Package> {
 
     public Package(Module m, String n) {
         int c = n.indexOf(":");
-        assert(c != -1);
+        Assert.check(c != -1);
         String mn = n.substring(0,c);
-        assert(m.name().equals(m.name()));
+        Assert.check(m.name().equals(m.name()));
         name = n;
         dirname = n.replace('.', File.separatorChar);
         if (m.name().length() > 0) {
@@ -256,7 +257,7 @@ public class Package implements Comparable<Package> {
     }
 
     public void setArtifacts(Set<URI> as) {
-        assert(!artifacts.isEmpty());
+        Assert.check(!artifacts.isEmpty());
         artifacts = new HashMap<>();
         addArtifacts(as);
     }

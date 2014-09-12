@@ -159,13 +159,13 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
 
     static native void awt_output_flush();
 
-    static final void  awtFUnlock() {
+    static void  awtFUnlock() {
         awtUnlock();
         awt_output_flush();
     }
 
 
-    public native void nativeLoadSystemColors(int[] systemColors);
+    private native void nativeLoadSystemColors(int[] systemColors);
 
     static UIDefaults getUIDefaults() {
         if (uidefaults == null) {
@@ -876,7 +876,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     */
 
     // Need this for XMenuItemPeer.
-    protected static final Object targetToPeer(Object target) {
+    protected static Object targetToPeer(Object target) {
         Object p=null;
         if (target != null && !GraphicsEnvironment.isHeadless()) {
             p = specialPeerMap.get(target);
@@ -887,7 +887,7 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     // Need this for XMenuItemPeer.
-    protected static final void targetDisposedPeer(Object target, Object peer) {
+    protected static void targetDisposedPeer(Object target, Object peer) {
         SunToolkit.targetDisposedPeer(target, peer);
     }
 
@@ -927,6 +927,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
     }
 
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
+        if (f != null) {
+            return f.createDragSourceContextPeer(dge);
+        }
+
         return XDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
@@ -938,6 +943,11 @@ public final class XToolkit extends UNIXToolkit implements Runnable {
                     int srcActions,
                     DragGestureListener dgl)
     {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(c);
+        if (f != null) {
+            return f.createDragGestureRecognizer(recognizerClass, ds, c, srcActions, dgl);
+        }
+
         if (MouseDragGestureRecognizer.class.equals(recognizerClass))
             return (T)new XMouseDragGestureRecognizer(ds, c, srcActions, dgl);
         else

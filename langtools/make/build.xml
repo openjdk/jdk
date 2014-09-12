@@ -83,7 +83,7 @@
  - global property definitions
  - general top level targets
  - general diagnostic/debugging targets
- - groups of targets for each tool: javac, javadoc, doclets, javah, javap
+ - groups of targets for each tool: javac, javadoc, javah, javap
     Within each group, the following targets are provided, where applicable
       build-bootstrap-TOOL      build the bootstrap version of the tool
       build-classes-TOOL        build the classes for the tool
@@ -252,15 +252,15 @@
     </target>
 
     <target name="build-bootstrap-tools"
-        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-doclets,build-bootstrap-javah,build-bootstrap-sjavac"
+        depends="build-bootstrap-javac,build-bootstrap-javadoc,build-bootstrap-javah,build-bootstrap-sjavac"
     />
 
     <target name="build-all-tools"
-        depends="build-javac,build-javadoc,build-doclets,build-javah,build-javap,build-sjavac"
+        depends="build-javac,build-javadoc,build-javah,build-javap,build-sjavac"
     />
 
     <target name="build-all-classes" depends="build-bootstrap-javac,-create-import-jdk-stubs">
-        <build-classes includes="${javac.includes} ${javadoc.includes} ${doclets.includes} ${javah.includes} ${javap.includes} ${sjavac.includes}"/>
+        <build-classes includes="${javac.includes} ${javadoc.includes} ${javah.includes} ${javap.includes} ${sjavac.includes}"/>
     </target>
 
     <!-- clean -->
@@ -615,7 +615,7 @@
     <target name="build-bootstrap-javadoc" depends="build-bootstrap-javac">
         <build-bootstrap-classes includes="${javadoc.includes}"/>
         <build-bootstrap-jar     name="javadoc" includes="${javadoc.includes}"
-                                 jarclasspath="javac.jar doclets.jar"/>
+                                 jarclasspath="javac.jar"/>
         <build-bootstrap-tool    name="javadoc"/>
     </target>
 
@@ -625,7 +625,7 @@
 
     <target name="build-javadoc" depends="build-javac,build-classes-javadoc">
         <build-jar  name="javadoc" includes="${javadoc.includes}"
-                    jarclasspath="javac.jar doclets.jar"/>
+                    jarclasspath="javac.jar"/>
         <build-tool name="javadoc"/>
     </target>
 
@@ -643,40 +643,6 @@
 
     <target name="javadoc" depends="build-javadoc,jtreg-javadoc,findbugs-javadoc"/>
 
-
-    <!--
-    **** doclets targets.
-    -->
-
-    <target name="build-bootstrap-doclets" depends="build-bootstrap-javadoc,-def-build-bootstrap-jar">
-        <build-bootstrap-classes includes="${doclets.includes}"/>
-        <build-bootstrap-jar     name="doclets" includes="${doclets.includes}"
-                                 jarmainclass="com.sun.tools.javadoc.Main"
-                                 jarclasspath="javadoc.jar"/>
-    </target>
-
-    <target name="build-classes-doclets" depends="build-classes-javadoc">
-        <build-classes includes="${doclets.includes}"/>
-    </target>
-
-    <target name="build-doclets" depends="build-javadoc,build-classes-doclets">
-        <!-- just jar, no bin for doclets -->
-        <build-jar name="doclets" includes="${doclets.includes}" jarclasspath="javadoc.jar"/>
-    </target>
-
-    <!-- (no javadoc for doclets) -->
-
-    <target name="jtreg-doclets" depends="build-doclets,-def-jtreg">
-        <jtreg-tool name="doclets" tests="${doclets.tests}"/>
-    </target>
-
-    <target name="findbugs-doclets" depends="build-doclets,-def-findbugs">
-        <findbugs-tool name="doclets"/>
-    </target>
-
-    <target name="doclets" depends="build-doclets,jtreg-doclets,findbugs-doclets"/>
-
-
     <!--
     **** javah targets.
     -->
@@ -684,7 +650,7 @@
     <target name="build-bootstrap-javah" depends="build-bootstrap-javadoc">
         <build-bootstrap-classes includes="${javah.includes}"/>
         <build-bootstrap-jar     name="javah" includes="${javah.includes}"
-                                 jarclasspath="javadoc.jar doclets.jar javac.jar"/>
+                                 jarclasspath="javadoc.jar javac.jar"/>
         <build-bootstrap-tool    name="javah"/>
     </target>
 

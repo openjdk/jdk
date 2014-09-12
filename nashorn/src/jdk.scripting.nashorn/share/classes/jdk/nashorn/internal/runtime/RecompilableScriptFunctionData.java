@@ -32,17 +32,17 @@ import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
 import jdk.internal.dynalink.support.NameCodec;
-import jdk.nashorn.internal.codegen.CompileUnit;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.codegen.CompilerConstants;
 import jdk.nashorn.internal.codegen.FunctionSignature;
+import jdk.nashorn.internal.codegen.ObjectClassGenerator.AllocatorDescriptor;
 import jdk.nashorn.internal.codegen.OptimisticTypesPersistence;
 import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.Type;
@@ -56,7 +56,6 @@ import jdk.nashorn.internal.parser.TokenType;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
 import jdk.nashorn.internal.runtime.logging.Loggable;
 import jdk.nashorn.internal.runtime.logging.Logger;
-
 /**
  * This is a subclass that represents a script function that may be regenerated,
  * for example with specialization based on call site types, or lazily generated.
@@ -73,11 +72,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     private final String functionName;
 
-    // TODO: try to eliminate the need for this somehow, either by allowing Source to change its name, allowing a
-    // function to internally replace its Source with one of a different name, or storing this additional field in the
-    // Source object.
-    private final String sourceURL;
-
     /** The line number where this function begins. */
     private final int lineNumber;
 
@@ -87,26 +81,29 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     /** Token of this function within the source. */
     private final long token;
 
-    /** Allocator map from makeMap() */
-    private final PropertyMap allocatorMap;
+    /**
+     * Represents the allocation strategy (property map, script object class, and method handle) for when
+     * this function is used as a constructor. Note that majority of functions (those not setting any this.*
+     * properties) will share a single canonical "default strategy" instance.
+     */
+    private final AllocationStrategy allocationStrategy;
+
+    /**
+     * Opaque object representing parser state at the end of the function. Used when reparsing outer function
+     * to help with skipping parsing inner functions.
+     */
+    private final Object endParserState;
 
     /** Code installer used for all further recompilation/specialization of this ScriptFunction */
     private transient CodeInstaller<ScriptEnvironment> installer;
-
-    /** Name of class where allocator function resides */
-    private final String allocatorClassName;
-
-    /** lazily generated allocator */
-    private transient MethodHandle allocator;
 
     private final Map<Integer, RecompilableScriptFunctionData> nestedFunctions;
 
     /** Id to parent function if one exists */
     private RecompilableScriptFunctionData parent;
 
-    private final boolean isDeclared;
-    private final boolean isAnonymous;
-    private final boolean needsCallee;
+    /** Copy of the {@link FunctionNode} flags. */
+    private final int functionFlags;
 
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
@@ -125,42 +122,35 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      *
      * @param functionNode        functionNode that represents this function code
      * @param installer           installer for code regeneration versions of this function
-     * @param allocatorClassName  name of our allocator class, will be looked up dynamically if used as a constructor
-     * @param allocatorMap        allocator map to seed instances with, when constructing
+     * @param allocationDescriptor descriptor for the allocation behavior when this function is used as a constructor
      * @param nestedFunctions     nested function map
-     * @param sourceURL           source URL
      * @param externalScopeDepths external scope depths
      * @param internalSymbols     internal symbols to method, defined in its scope
      */
     public RecompilableScriptFunctionData(
         final FunctionNode functionNode,
         final CodeInstaller<ScriptEnvironment> installer,
-        final String allocatorClassName,
-        final PropertyMap allocatorMap,
+        final AllocatorDescriptor allocationDescriptor,
         final Map<Integer, RecompilableScriptFunctionData> nestedFunctions,
-        final String sourceURL,
         final Map<String, Integer> externalScopeDepths,
         final Set<String> internalSymbols) {
 
         super(functionName(functionNode),
               Math.min(functionNode.getParameters().size(), MAX_ARITY),
-              getFlags(functionNode));
+              getDataFlags(functionNode));
 
         this.functionName        = functionNode.getName();
         this.lineNumber          = functionNode.getLineNumber();
-        this.isDeclared          = functionNode.isDeclared();
-        this.needsCallee         = functionNode.needsCallee();
-        this.isAnonymous         = functionNode.isAnonymous();
+        this.functionFlags       = functionNode.getFlags() | (functionNode.needsCallee() ? FunctionNode.NEEDS_CALLEE : 0);
         this.functionNodeId      = functionNode.getId();
         this.source              = functionNode.getSource();
+        this.endParserState      = functionNode.getEndParserState();
         this.token               = tokenFor(functionNode);
         this.installer           = installer;
-        this.sourceURL           = sourceURL;
-        this.allocatorClassName  = allocatorClassName;
-        this.allocatorMap        = allocatorMap;
-        this.nestedFunctions     = nestedFunctions;
-        this.externalScopeDepths = externalScopeDepths;
-        this.internalSymbols     = new HashSet<>(internalSymbols);
+        this.allocationStrategy  = AllocationStrategy.get(allocationDescriptor);
+        this.nestedFunctions     = smallMap(nestedFunctions);
+        this.externalScopeDepths = smallMap(externalScopeDepths);
+        this.internalSymbols     = smallSet(new HashSet<>(internalSymbols));
 
         for (final RecompilableScriptFunctionData nfn : nestedFunctions.values()) {
             assert nfn.getParent() == null;
@@ -168,6 +158,27 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         }
 
         createLogger();
+    }
+
+    private static <K, V> Map<K, V> smallMap(final Map<K, V> map) {
+        if (map == null || map.isEmpty()) {
+            return Collections.emptyMap();
+        } else if (map.size() == 1) {
+            final Map.Entry<K, V> entry = map.entrySet().iterator().next();
+            return Collections.singletonMap(entry.getKey(), entry.getValue());
+        } else {
+            return map;
+        }
+    }
+
+    private static <T> Set<T> smallSet(final Set<T> set) {
+        if (set == null || set.isEmpty()) {
+            return Collections.emptySet();
+        } else if (set.size() == 1) {
+            return Collections.singleton(set.iterator().next());
+        } else {
+            return set;
+        }
     }
 
     @Override
@@ -199,15 +210,28 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * @return the external symbol table with proto depths
      */
     public int getExternalSymbolDepth(final String symbolName) {
-        final Map<String, Integer> map = externalScopeDepths;
-        if (map == null) {
-            return -1;
-        }
-        final Integer depth = map.get(symbolName);
+        final Integer depth = externalScopeDepths.get(symbolName);
         if (depth == null) {
             return -1;
         }
         return depth;
+    }
+
+    /**
+     * Returns the names of all external symbols this function uses.
+     * @return the names of all external symbols this function uses.
+     */
+    public Set<String> getExternalSymbolNames() {
+        return Collections.unmodifiableSet(externalScopeDepths.keySet());
+    }
+
+    /**
+     * Returns the opaque object representing the parser state at the end of this function's body, used to
+     * skip parsing this function when reparsing its containing outer function.
+     * @return the object representing the end parser state
+     */
+    public Object getEndParserState() {
+        return endParserState;
     }
 
     /**
@@ -278,7 +302,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     public boolean inDynamicContext() {
-        return (flags & IN_DYNAMIC_CONTEXT) != 0;
+        return getFunctionFlag(FunctionNode.IN_DYNAMIC_CONTEXT);
     }
 
     private static String functionName(final FunctionNode fn) {
@@ -302,7 +326,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return Token.toDesc(TokenType.FUNCTION, position, length);
     }
 
-    private static int getFlags(final FunctionNode functionNode) {
+    private static int getDataFlags(final FunctionNode functionNode) {
         int flags = IS_CONSTRUCTOR;
         if (functionNode.isStrict()) {
             flags |= IS_STRICT;
@@ -316,37 +340,20 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         if (functionNode.isVarArg()) {
             flags |= IS_VARIABLE_ARITY;
         }
-        if (functionNode.inDynamicContext()) {
-            flags |= IN_DYNAMIC_CONTEXT;
-        }
         return flags;
     }
 
     @Override
     PropertyMap getAllocatorMap() {
-        return allocatorMap;
+        return allocationStrategy.getAllocatorMap();
     }
 
     @Override
     ScriptObject allocate(final PropertyMap map) {
-        try {
-            ensureHasAllocator(); //if allocatorClass name is set to null (e.g. for bound functions) we don't even try
-            return allocator == null ? null : (ScriptObject)allocator.invokeExact(map);
-        } catch (final RuntimeException | Error e) {
-            throw e;
-        } catch (final Throwable t) {
-            throw new RuntimeException(t);
-        }
-    }
-
-    private void ensureHasAllocator() throws ClassNotFoundException {
-        if (allocator == null && allocatorClassName != null) {
-            this.allocator = MH.findStatic(LOOKUP, Context.forStructureClass(allocatorClassName), CompilerConstants.ALLOCATE.symbolName(), MH.type(ScriptObject.class, PropertyMap.class));
-        }
+        return allocationStrategy.allocate(map);
     }
 
     FunctionNode reparse() {
-        final boolean isProgram = functionNodeId == FunctionNode.FIRST_FUNCTION_ID;
         // NOTE: If we aren't recompiling the top-level program, we decrease functionNodeId 'cause we'll have a synthetic program node
         final int descPosition = Token.descPosition(token);
         final Context context = Context.getContextTrusted();
@@ -355,18 +362,27 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             source,
             new Context.ThrowErrorManager(),
             isStrict(),
-            functionNodeId - (isProgram ? 0 : 1),
             lineNumber - 1,
             context.getLogger(Parser.class)); // source starts at line 0, so even though lineNumber is the correct declaration line, back off one to make it exclusive
 
-        if (isAnonymous) {
+        if (getFunctionFlag(FunctionNode.IS_ANONYMOUS)) {
             parser.setFunctionName(functionName);
         }
+        parser.setReparsedFunction(this);
 
-        final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition, Token.descLength(token), true);
-        // Parser generates a program AST even if we're recompiling a single function, so when we are only recompiling a
-        // single function, extract it from the program.
-        return (isProgram ? program : extractFunctionFromScript(program)).setName(null, functionName).setSourceURL(null,  sourceURL);
+        final FunctionNode program = parser.parse(CompilerConstants.PROGRAM.symbolName(), descPosition,
+                Token.descLength(token), true);
+        // Parser generates a program AST even if we're recompiling a single function, so when we are only
+        // recompiling a single function, extract it from the program.
+        return (isProgram() ? program : extractFunctionFromScript(program)).setName(null, functionName);
+    }
+
+    private boolean getFunctionFlag(final int flag) {
+        return (functionFlags & flag) != 0;
+    }
+
+    private boolean isProgram() {
+        return getFunctionFlag(FunctionNode.IS_PROGRAM);
     }
 
     TypeMap typeMap(final MethodType fnCallSiteType) {
@@ -395,18 +411,19 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             final ScriptObject runtimeScope, final Map<Integer, Type> invalidatedProgramPoints,
             final int[] continuationEntryPoints) {
         final TypeMap typeMap = typeMap(actualCallSiteType);
-        final Object typeInformationFile = OptimisticTypesPersistence.getLocationDescriptor(source, functionNodeId, typeMap == null ? null : typeMap.getParameterTypes(functionNodeId));
+        final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
+        final Object typeInformationFile = OptimisticTypesPersistence.getLocationDescriptor(source, functionNodeId, paramTypes);
         final Context context = Context.getContextTrusted();
         return new Compiler(
                 context,
                 context.getEnv(),
                 installer,
                 functionNode.getSource(),  // source
-                functionNode.getSourceURL(),
+                context.getErrorManager(),
                 isStrict() | functionNode.isStrict(), // is strict
                 true,       // is on demand
                 this,       // compiledFunction, i.e. this RecompilableScriptFunctionData
-                typeMap(actualCallSiteType), // type map
+                typeMap,    // type map
                 getEffectiveInvalidatedProgramPoints(invalidatedProgramPoints, typeInformationFile), // invalidated program points
                 typeInformationFile,
                 continuationEntryPoints, // continuation entry points
@@ -431,7 +448,7 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return loadedProgramPoints != null ? loadedProgramPoints : new TreeMap<Integer, Type>();
     }
 
-    private TypeSpecializedFunction compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope) {
+    private FunctionInitializer compileTypeSpecialization(final MethodType actualCallSiteType, final ScriptObject runtimeScope, final boolean persist) {
         // We're creating an empty script object for holding local variables. AssignSymbols will populate it with
         // explicit Undefined values for undefined local variables (see AssignSymbols#defineSymbol() and
         // CompilationEnvironment#declareLocalSymbol()).
@@ -440,21 +457,79 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             log.info("Type specialization of '", functionName, "' signature: ", actualCallSiteType);
         }
 
+        final boolean persistentCache = usePersistentCodeCache() && persist;
+        String cacheKey = null;
+        if (persistentCache) {
+            final TypeMap typeMap = typeMap(actualCallSiteType);
+            final Type[] paramTypes = typeMap == null ? null : typeMap.getParameterTypes(functionNodeId);
+            cacheKey = CodeStore.getCacheKey(functionNodeId, paramTypes);
+            final StoredScript script = installer.loadScript(source, cacheKey);
+
+            if (script != null) {
+                Compiler.updateCompilationId(script.getCompilationId());
+                return install(script);
+            }
+        }
+
         final FunctionNode fn = reparse();
         final Compiler compiler = getCompiler(fn, actualCallSiteType, runtimeScope);
-
         final FunctionNode compiledFn = compiler.compile(fn, CompilationPhases.COMPILE_ALL);
-        return new TypeSpecializedFunction(compiledFn, compiler.getInvalidatedProgramPoints());
+
+        if (persist && !compiledFn.getFlag(FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION)) {
+            compiler.persistClassInfo(cacheKey, compiledFn);
+        }
+        return new FunctionInitializer(compiledFn, compiler.getInvalidatedProgramPoints());
     }
 
-    private static class TypeSpecializedFunction {
-        private final FunctionNode fn;
-        private final Map<Integer, Type> invalidatedProgramPoints;
 
-        TypeSpecializedFunction(final FunctionNode fn, final Map<Integer, Type> invalidatedProgramPoints) {
-            this.fn = fn;
-            this.invalidatedProgramPoints = invalidatedProgramPoints;
+    /**
+     * Install this script using the given {@code installer}.
+     *
+     * @param script the compiled script
+     * @return the function initializer
+     */
+    private FunctionInitializer install(final StoredScript script) {
+
+        final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final String   mainClassName   = script.getMainClassName();
+        final byte[]   mainClassBytes  = script.getClassBytes().get(mainClassName);
+
+        final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
+
+        installedClasses.put(mainClassName, mainClass);
+
+        for (final Map.Entry<String, byte[]> entry : script.getClassBytes().entrySet()) {
+            final String className = entry.getKey();
+            final byte[] code = entry.getValue();
+
+            if (className.equals(mainClassName)) {
+                continue;
+            }
+
+            installedClasses.put(className, installer.install(className, code));
         }
+
+        final Map<Integer, FunctionInitializer> initializers = script.getInitializers();
+        assert initializers != null;
+        assert initializers.size() == 1;
+        final FunctionInitializer initializer = initializers.values().iterator().next();
+
+        final Object[] constants = script.getConstants();
+        for (int i = 0; i < constants.length; i++) {
+            if (constants[i] instanceof RecompilableScriptFunctionData) {
+                // replace deserialized function data with the ones we already have
+                constants[i] = getScriptFunctionData(((RecompilableScriptFunctionData) constants[i]).getFunctionNodeId());
+            }
+        }
+
+        installer.initialize(installedClasses.values(), source, constants);
+        initializer.setCode(installedClasses.get(initializer.getClassName()));
+        return initializer;
+    }
+
+    boolean usePersistentCodeCache() {
+        final ScriptEnvironment env = installer.getOwner();
+        return env._persistent_cache && env._optimistic_types;
     }
 
     private MethodType explicitParams(final MethodType callSiteType) {
@@ -496,48 +571,45 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         assert fns.size() == 1 : "got back more than one method in recompilation";
         final FunctionNode f = fns.iterator().next();
         assert f.getId() == functionNodeId;
-        if (!isDeclared && f.isDeclared()) {
+        if (!getFunctionFlag(FunctionNode.IS_DECLARED) && f.isDeclared()) {
             return f.clearFlag(null, FunctionNode.IS_DECLARED);
         }
         return f;
     }
 
+    MethodHandle lookup(final FunctionInitializer fnInit) {
+        final MethodType type = fnInit.getMethodType();
+        return lookupCodeMethod(fnInit.getCode(), type);
+    }
+
     MethodHandle lookup(final FunctionNode fn) {
         final MethodType type = new FunctionSignature(fn).getMethodType();
-        log.info("Looking up ", DebugLogger.quote(fn.getName()), " type=", type);
-        return lookupWithExplicitType(fn, new FunctionSignature(fn).getMethodType());
+        return lookupCodeMethod(fn.getCompileUnit().getCode(), type);
     }
 
-    MethodHandle lookupWithExplicitType(final FunctionNode fn, final MethodType targetType) {
-        return lookupCodeMethod(fn.getCompileUnit(), targetType);
-    }
-
-    private MethodHandle lookupCodeMethod(final CompileUnit compileUnit, final MethodType targetType) {
-        return MH.findStatic(LOOKUP, compileUnit.getCode(), functionName, targetType);
+    MethodHandle lookupCodeMethod(final Class<?> code, final MethodType targetType) {
+        log.info("Looking up ", DebugLogger.quote(name), " type=", targetType);
+        return MH.findStatic(LOOKUP, code, functionName, targetType);
     }
 
     /**
      * Initializes this function data with the eagerly generated version of the code. This method can only be invoked
      * by the compiler internals in Nashorn and is public for implementation reasons only. Attempting to invoke it
      * externally will result in an exception.
-     * @param functionNode the functionNode belonging to this data
      */
-    public void initializeCode(final FunctionNode functionNode) {
+    public void initializeCode(final FunctionInitializer initializer) {
         // Since the method is public, we double-check that we aren't invoked with an inappropriate compile unit.
-        if(!(code.isEmpty() && functionNode.getCompileUnit().isInitializing(this, functionNode))) {
-            throw new IllegalStateException(functionNode.getName() + " id=" + functionNode.getId());
+        if(!code.isEmpty()) {
+            throw new IllegalStateException(name);
         }
-        addCode(functionNode);
+        addCode(lookup(initializer), null, null, initializer.getFlags());
     }
 
-    private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints, final int fnFlags) {
-        final CompiledFunction cfn = new CompiledFunction(target, this, invalidatedProgramPoints, fnFlags);
+    private CompiledFunction addCode(final MethodHandle target, final Map<Integer, Type> invalidatedProgramPoints,
+                                     final MethodType callSiteType, final int fnFlags) {
+        final CompiledFunction cfn = new CompiledFunction(target, this, invalidatedProgramPoints, callSiteType, fnFlags);
         code.add(cfn);
         return cfn;
-    }
-
-    private CompiledFunction addCode(final FunctionNode fn) {
-        return addCode(lookup(fn), null, fn.getFlags());
     }
 
     /**
@@ -546,17 +618,16 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
      * up getting one that takes a "double" etc. because of internal function logic causes widening (e.g. assignment of
      * a wider value to the parameter variable). However, we use the method handle type for matching subsequent lookups
      * for the same specialization, so we must adapt the handle to the expected type.
-     * @param tfn the function
+     * @param fnInit the function
      * @param callSiteType the call site type
      * @return the compiled function object, with its type matching that of the call site type.
      */
-    private CompiledFunction addCode(final TypeSpecializedFunction tfn, final MethodType callSiteType) {
-        final FunctionNode fn = tfn.fn;
-        if (fn.isVarArg()) {
-            return addCode(fn);
+    private CompiledFunction addCode(final FunctionInitializer fnInit, final MethodType callSiteType) {
+        if (isVariableArity()) {
+            return addCode(lookup(fnInit), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
         }
 
-        final MethodHandle handle = lookup(fn);
+        final MethodHandle handle = lookup(fnInit);
         final MethodType fromType = handle.type();
         MethodType toType = needsCallee(fromType) ? callSiteType.changeParameterType(0, ScriptFunction.class) : callSiteType.dropParameterTypes(0, 1);
         toType = toType.changeReturnType(fromType.returnType());
@@ -581,41 +652,39 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             toType = toType.dropParameterTypes(fromCount, toCount);
         }
 
-        return addCode(lookup(fn).asType(toType), tfn.invalidatedProgramPoints, fn.getFlags());
+        return addCode(lookup(fnInit).asType(toType), fnInit.getInvalidatedProgramPoints(), callSiteType, fnInit.getFlags());
     }
 
 
     @Override
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
-        synchronized (code) {
-            CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
-            if (existingBest == null) {
-                existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope), callSiteType);
-            }
-
-            assert existingBest != null;
-            //we are calling a vararg method with real args
-            boolean applyToCall = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
-
-            //if the best one is an apply to call, it has to match the callsite exactly
-            //or we need to regenerate
-            if (existingBest.isApplyToCall()) {
-                final CompiledFunction best = code.lookupExactApplyToCall(callSiteType);
-                if (best != null) {
-                    return best;
-                }
-                applyToCall = true;
-            }
-
-            if (applyToCall) {
-                final TypeSpecializedFunction tfn = compileTypeSpecialization(callSiteType, runtimeScope);
-                if (tfn.fn.hasOptimisticApplyToCall()) { //did the specialization work
-                    existingBest = addCode(tfn, callSiteType);
-                }
-            }
-
-            return existingBest;
+    synchronized CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
+        CompiledFunction existingBest = super.getBest(callSiteType, runtimeScope);
+        if (existingBest == null) {
+            existingBest = addCode(compileTypeSpecialization(callSiteType, runtimeScope, true), callSiteType);
         }
+
+        assert existingBest != null;
+        //we are calling a vararg method with real args
+        boolean applyToCall = existingBest.isVarArg() && !CompiledFunction.isVarArgsType(callSiteType);
+
+        //if the best one is an apply to call, it has to match the callsite exactly
+        //or we need to regenerate
+        if (existingBest.isApplyToCall()) {
+            final CompiledFunction best = lookupExactApplyToCall(callSiteType);
+            if (best != null) {
+                return best;
+            }
+            applyToCall = true;
+        }
+
+        if (applyToCall) {
+            final FunctionInitializer fnInit = compileTypeSpecialization(callSiteType, runtimeScope, false);
+            if ((fnInit.getFlags() & FunctionNode.HAS_APPLY_TO_CALL_SPECIALIZATION) != 0) { //did the specialization work
+                existingBest = addCode(fnInit, callSiteType);
+            }
+        }
+
+        return existingBest;
     }
 
     @Override
@@ -625,7 +694,15 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
     @Override
     public boolean needsCallee() {
-        return needsCallee;
+        return getFunctionFlag(FunctionNode.NEEDS_CALLEE);
+    }
+
+    /**
+     * Returns the {@link FunctionNode} flags associated with this function data.
+     * @return the {@link FunctionNode} flags associated with this function data.
+     */
+    public int getFunctionFlags() {
+        return functionFlags;
     }
 
     @Override
@@ -635,6 +712,18 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             return MethodType.genericMethodType(2, true);
         }
         return MethodType.genericMethodType(2 + getArity());
+    }
+
+    /**
+     * Return the function node id.
+     * @return the function node id
+     */
+    public int getFunctionNodeId() {
+        return functionNodeId;
+    }
+
+    public Source getSource() {
+        return source;
     }
 
     /**
@@ -662,21 +751,6 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
             }
         }
         return null;
-    }
-
-    /**
-     * Get the uppermost parent, the program, for this data
-     * @return program
-     */
-    public RecompilableScriptFunctionData getProgram() {
-        RecompilableScriptFunctionData program = this;
-        while (true) {
-            final RecompilableScriptFunctionData p = program.getParent();
-            if (p == null) {
-                return program;
-            }
-            program = p;
-        }
     }
 
     /**

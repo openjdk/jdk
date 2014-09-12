@@ -21,39 +21,27 @@
 # or visit www.oracle.com if you need additional information or have any
 # questions.
 #
-# TZ zone descriptions
+# tz zone descriptions (deprecated version)
 #
 # This file is in the public domain, so clarified as of
 # 2009-05-17 by Arthur David Olson.
 #
-# From Paul Eggert (2013-08-14):
+# From Paul Eggert (2014-07-31):
+# This file is intended as a backward-compatibility aid for older programs.
+# New programs should use zone1970.tab.  This file is like zone1970.tab (see
+# zone1970.tab's comments), but with the following additional restrictions:
 #
-# This file contains a table where each row stands for an area that is
-# the intersection of a region identified by a country code and of a
-# zone where civil clocks have agreed since 1970.  The columns of the
-# table are as follows:
+# 1.  This file contains only ASCII characters.
+# 2.  The first data column contains exactly one country code.
 #
-# 1.  ISO 3166 2-character country code.  See the file 'iso3166.tab'.
-# 2.  Latitude and longitude of the area's principal location
-#     in ISO 6709 sign-degrees-minutes-seconds format,
-#     either +-DDMM+-DDDMM or +-DDMMSS+-DDDMMSS,
-#     first latitude (+ is north), then longitude (+ is east).
-# 3.  Zone name used in value of TZ environment variable.
-#     Please see the 'Theory' file for how zone names are chosen.
-#     If multiple zones overlap a country, each has a row in the
-#     table, with column 1 being duplicated.
-# 4.  Comments; present if and only if the country has multiple rows.
-#
-# Columns are separated by a single tab.
-# The table is sorted first by country, then an order within the country that
-# (1) makes some geographical sense, and
-# (2) puts the most populous areas first, where that does not contradict (1).
-#
-# Lines beginning with '#' are comments.
+# Because of (2), each row stands for an area that is the intersection
+# of a region identified by a country code and of a zone where civil
+# clocks have agreed since 1970; this is a narrower definition than
+# that of zone1970.tab.
 #
 # This table is intended as an aid for users, to help them select time
-# zone data appropriate for their practical needs.  It is not intended
-# to take or endorse any position on legal or territorial claims.
+# zone data entries appropriate for their practical needs.  It is not
+# intended to take or endorse any position on legal or territorial claims.
 #
 #country-
 #code	coordinates	TZ			comments
@@ -72,7 +60,7 @@ AQ	-6736+06253	Antarctica/Mawson	Mawson Station, Holme Bay
 AQ	-6835+07758	Antarctica/Davis	Davis Station, Vestfold Hills
 AQ	-6617+11031	Antarctica/Casey	Casey Station, Bailey Peninsula
 AQ	-7824+10654	Antarctica/Vostok	Vostok Station, Lake Vostok
-AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Terre Adelie
+AQ	-6640+14001	Antarctica/DumontDUrville	Dumont-d'Urville Station, Adelie Land
 AQ	-690022+0393524	Antarctica/Syowa	Syowa Station, E Ongul I
 AQ	-720041+0023206	Antarctica/Troll	Troll Station, Queen Maud Land
 AR	-3436-05827	America/Argentina/Buenos_Aires	Buenos Aires (BA, CF)
@@ -151,7 +139,7 @@ CA	+4901-08816	America/Nipigon	Eastern Time - Ontario & Quebec - places that did
 CA	+4823-08915	America/Thunder_Bay	Eastern Time - Thunder Bay, Ontario
 CA	+6344-06828	America/Iqaluit	Eastern Time - east Nunavut - most locations
 CA	+6608-06544	America/Pangnirtung	Eastern Time - Pangnirtung, Nunavut
-CA	+744144-0944945	America/Resolute	Central Standard Time - Resolute, Nunavut
+CA	+744144-0944945	America/Resolute	Central Time - Resolute, Nunavut
 CA	+484531-0913718	America/Atikokan	Eastern Standard Time - Atikokan, Ontario and Southampton I, Nunavut
 CA	+624900-0920459	America/Rankin_Inlet	Central Time - central Nunavut
 CA	+4953-09709	America/Winnipeg	Central Time - Manitoba & west Ontario
@@ -176,13 +164,10 @@ CH	+4723+00832	Europe/Zurich
 CI	+0519-00402	Africa/Abidjan
 CK	-2114-15946	Pacific/Rarotonga
 CL	-3327-07040	America/Santiago	most locations
-CL	-2709-10926	Pacific/Easter	Easter Island & Sala y Gomez
+CL	-2709-10926	Pacific/Easter	Easter Island
 CM	+0403+00942	Africa/Douala
-CN	+3114+12128	Asia/Shanghai	east China - Beijing, Guangdong, Shanghai, etc.
-CN	+4545+12641	Asia/Harbin	Heilongjiang (except Mohe), Jilin
-CN	+2934+10635	Asia/Chongqing	central China - Sichuan, Yunnan, Guangxi, Shaanxi, Guizhou, etc.
-CN	+4348+08735	Asia/Urumqi	most of Tibet & Xinjiang
-CN	+3929+07559	Asia/Kashgar	west Tibet & Xinjiang
+CN	+3114+12128	Asia/Shanghai	Beijing Time
+CN	+4348+08735	Asia/Urumqi	Xinjiang Time
 CO	+0436-07405	America/Bogota
 CR	+0956-08405	America/Costa_Rica
 CU	+2308-08222	America/Havana
@@ -364,24 +349,26 @@ RE	-2052+05528	Indian/Reunion
 RO	+4426+02606	Europe/Bucharest
 RS	+4450+02030	Europe/Belgrade
 RU	+5443+02030	Europe/Kaliningrad	Moscow-01 - Kaliningrad
-RU	+5545+03735	Europe/Moscow	Moscow+00 - west Russia
-RU	+4844+04425	Europe/Volgograd	Moscow+00 - Caspian Sea
-RU	+5312+05009	Europe/Samara	Moscow+00 - Samara, Udmurtia
+RU	+554521+0373704	Europe/Moscow	Moscow+00 - west Russia
 RU	+4457+03406	Europe/Simferopol	Moscow+00 - Crimea
+RU	+4844+04425	Europe/Volgograd	Moscow+00 - Caspian Sea
+RU	+5312+05009	Europe/Samara	Moscow+00 (Moscow+01 after 2014-10-26) - Samara, Udmurtia
 RU	+5651+06036	Asia/Yekaterinburg	Moscow+02 - Urals
 RU	+5500+07324	Asia/Omsk	Moscow+03 - west Siberia
 RU	+5502+08255	Asia/Novosibirsk	Moscow+03 - Novosibirsk
-RU	+5345+08707	Asia/Novokuznetsk	Moscow+03 - Novokuznetsk
+RU	+5345+08707	Asia/Novokuznetsk	Moscow+03 (Moscow+04 after 2014-10-26) - Kemerovo
 RU	+5601+09250	Asia/Krasnoyarsk	Moscow+04 - Yenisei River
 RU	+5216+10420	Asia/Irkutsk	Moscow+05 - Lake Baikal
+RU	+5203+11328	Asia/Chita	Moscow+06 (Moscow+05 after 2014-10-26) - Zabaykalsky
 RU	+6200+12940	Asia/Yakutsk	Moscow+06 - Lena River
 RU	+623923+1353314	Asia/Khandyga	Moscow+06 - Tomponsky, Ust-Maysky
 RU	+4310+13156	Asia/Vladivostok	Moscow+07 - Amur River
 RU	+4658+14242	Asia/Sakhalin	Moscow+07 - Sakhalin Island
 RU	+643337+1431336	Asia/Ust-Nera	Moscow+07 - Oymyakonsky
-RU	+5934+15048	Asia/Magadan	Moscow+08 - Magadan
-RU	+5301+15839	Asia/Kamchatka	Moscow+08 - Kamchatka
-RU	+6445+17729	Asia/Anadyr	Moscow+08 - Bering Sea
+RU	+5934+15048	Asia/Magadan	Moscow+08 (Moscow+07 after 2014-10-26) - Magadan
+RU	+6728+15343	Asia/Srednekolymsk	Moscow+08 - E Sakha, N Kuril Is
+RU	+5301+15839	Asia/Kamchatka	Moscow+08 (Moscow+09 after 2014-10-26) - Kamchatka
+RU	+6445+17729	Asia/Anadyr	Moscow+08 (Moscow+09 after 2014-10-26) - Bering Sea
 RW	-0157+03004	Africa/Kigali
 SA	+2438+04643	Asia/Riyadh
 SB	-0932+16012	Pacific/Guadalcanal
@@ -448,13 +435,13 @@ US	+394421-1045903	America/Denver	Mountain Time
 US	+433649-1161209	America/Boise	Mountain Time - south Idaho & east Oregon
 US	+332654-1120424	America/Phoenix	Mountain Standard Time - Arizona (except Navajo)
 US	+340308-1181434	America/Los_Angeles	Pacific Time
+US	+550737-1313435	America/Metlakatla	Pacific Standard Time - Annette Island, Alaska
 US	+611305-1495401	America/Anchorage	Alaska Time
 US	+581807-1342511	America/Juneau	Alaska Time - Alaska panhandle
 US	+571035-1351807	America/Sitka	Alaska Time - southeast Alaska panhandle
 US	+593249-1394338	America/Yakutat	Alaska Time - Alaska panhandle neck
 US	+643004-1652423	America/Nome	Alaska Time - west Alaska
 US	+515248-1763929	America/Adak	Aleutian Islands
-US	+550737-1313435	America/Metlakatla	Metlakatla Time - Annette Island
 US	+211825-1575130	Pacific/Honolulu	Hawaii
 UY	-3453-05611	America/Montevideo
 UZ	+3940+06648	Asia/Samarkand	west Uzbekistan

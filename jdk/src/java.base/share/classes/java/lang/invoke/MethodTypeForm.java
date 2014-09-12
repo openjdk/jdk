@@ -47,15 +47,17 @@ final class MethodTypeForm {
     final int[] argToSlotTable, slotToArgTable;
     final long argCounts;               // packed slot & value counts
     final long primCounts;              // packed prim & double counts
-    final int vmslots;                  // total number of parameter slots
     final MethodType erasedType;        // the canonical erasure
     final MethodType basicType;         // the canonical erasure, with primitives simplified
 
     // Cached adapter information:
-    @Stable String typeString;           // argument type signature characters
-    @Stable MethodHandle genericInvoker; // JVM hook for inexact invoke
-    @Stable MethodHandle basicInvoker;   // cached instance of MH.invokeBasic
-    @Stable MethodHandle namedFunctionInvoker; // cached helper for LF.NamedFunction
+    @Stable final MethodHandle[] methodHandles;
+    // Indexes into methodHandles:
+    static final int
+            MH_BASIC_INV      =  0,  // cached instance of MH.invokeBasic
+            MH_NF_INV         =  1,  // cached helper for LF.NamedFunction
+            MH_UNINIT_CS      =  2,  // uninitialized call site
+            MH_LIMIT          =  3;
 
     // Cached lambda form information, for basic types only:
     final @Stable LambdaForm[] lambdaForms;
@@ -68,26 +70,55 @@ final class MethodTypeForm {
             LF_INVINTERFACE   =  4,
             LF_INVSTATIC_INIT =  5,  // DMH invokeStatic with <clinit> barrier
             LF_INTERPRET      =  6,  // LF interpreter
-            LF_COUNTER        =  7,  // CMH wrapper
-            LF_REINVOKE       =  8,  // other wrapper
-            LF_EX_LINKER      =  9,  // invokeExact_MT
-            LF_EX_INVOKER     = 10,  // invokeExact MH
-            LF_GEN_LINKER     = 11,
-            LF_GEN_INVOKER    = 12,
+            LF_REBIND         =  7,  // BoundMethodHandle
+            LF_DELEGATE       =  8,  // DelegatingMethodHandle
+            LF_EX_LINKER      =  9,  // invokeExact_MT (for invokehandle)
+            LF_EX_INVOKER     = 10,  // MHs.invokeExact
+            LF_GEN_LINKER     = 11,  // generic invoke_MT (for invokehandle)
+            LF_GEN_INVOKER    = 12,  // generic MHs.invoke
             LF_CS_LINKER      = 13,  // linkToCallSite_CS
             LF_MH_LINKER      = 14,  // linkToCallSite_MH
-            LF_GWC            = 15,
-            LF_LIMIT          = 16;
+            LF_GWC            = 15,  // guardWithCatch (catchException)
+            LF_GWT            = 16,  // guardWithTest
+            LF_LIMIT          = 17;
 
+    /** Return the type corresponding uniquely (1-1) to this MT-form.
+     *  It might have any primitive returns or arguments, but will have no references except Object.
+     */
     public MethodType erasedType() {
         return erasedType;
     }
 
+    /** Return the basic type derived from the erased type of this MT-form.
+     *  A basic type is erased (all references Object) and also has all primitive
+     *  types (except int, long, float, double, void) normalized to int.
+     *  Such basic types correspond to low-level JVM calling sequences.
+     */
     public MethodType basicType() {
         return basicType;
     }
 
+    private boolean assertIsBasicType() {
+        // primitives must be flattened also
+        assert(erasedType == basicType)
+                : "erasedType: " + erasedType + " != basicType: " + basicType;
+        return true;
+    }
+
+    public MethodHandle cachedMethodHandle(int which) {
+        assert(assertIsBasicType());
+        return methodHandles[which];
+    }
+
+    synchronized public MethodHandle setCachedMethodHandle(int which, MethodHandle mh) {
+        // Simulate a CAS, to avoid racy duplication of results.
+        MethodHandle prev = methodHandles[which];
+        if (prev != null)  return prev;
+        return methodHandles[which] = mh;
+    }
+
     public LambdaForm cachedLambdaForm(int which) {
+        assert(assertIsBasicType());
         return lambdaForms[which];
     }
 
@@ -96,28 +127,6 @@ final class MethodTypeForm {
         LambdaForm prev = lambdaForms[which];
         if (prev != null) return prev;
         return lambdaForms[which] = form;
-    }
-
-    public MethodHandle basicInvoker() {
-        assert(erasedType == basicType) : "erasedType: " + erasedType + " != basicType: " + basicType;  // primitives must be flattened also
-        MethodHandle invoker = basicInvoker;
-        if (invoker != null)  return invoker;
-        invoker = DirectMethodHandle.make(invokeBasicMethod(basicType));
-        basicInvoker = invoker;
-        return invoker;
-    }
-
-    // This next one is called from LambdaForm.NamedFunction.<init>.
-    /*non-public*/ static MemberName invokeBasicMethod(MethodType basicType) {
-        assert(basicType == basicType.basicType());
-        try {
-            // Do approximately the same as this public API call:
-            //   Lookup.findVirtual(MethodHandle.class, name, type);
-            // But bypass access and corner case checks, since we know exactly what we need.
-            return IMPL_LOOKUP.resolveOrFail(REF_invokeVirtual, MethodHandle.class, "invokeBasic", basicType);
-         } catch (ReflectiveOperationException ex) {
-            throw newInternalError("JVM cannot find invoker for "+basicType, ex);
-        }
     }
 
     /**
@@ -172,6 +181,16 @@ final class MethodTypeForm {
             this.basicType = erasedType;
         } else {
             this.basicType = MethodType.makeImpl(bt, bpts, true);
+            // fill in rest of data from the basic type:
+            MethodTypeForm that = this.basicType.form();
+            assert(this != that);
+            this.primCounts = that.primCounts;
+            this.argCounts = that.argCounts;
+            this.argToSlotTable = that.argToSlotTable;
+            this.slotToArgTable = that.slotToArgTable;
+            this.methodHandles = null;
+            this.lambdaForms = null;
+            return;
         }
         if (lac != 0) {
             int slot = ptypeCount + lac;
@@ -187,10 +206,14 @@ final class MethodTypeForm {
                 argToSlotTab[1+i]  = slot;
             }
             assert(slot == 0);  // filled the table
-        }
-        this.primCounts = pack(lrc, prc, lac, pac);
-        this.argCounts = pack(rslotCount, rtypeCount, pslotCount, ptypeCount);
-        if (slotToArgTab == null) {
+        } else if (pac != 0) {
+            // have primitives but no long primitives; share slot counts with generic
+            assert(ptypeCount == pslotCount);
+            MethodTypeForm that = MethodType.genericMethodType(ptypeCount).form();
+            assert(this != that);
+            slotToArgTab = that.slotToArgTable;
+            argToSlotTab = that.argToSlotTable;
+        } else {
             int slot = ptypeCount; // first arg is deepest in stack
             slotToArgTab = new int[slot+1];
             argToSlotTab = new int[1+ptypeCount];
@@ -201,19 +224,17 @@ final class MethodTypeForm {
                 argToSlotTab[1+i]  = slot;
             }
         }
+        this.primCounts = pack(lrc, prc, lac, pac);
+        this.argCounts = pack(rslotCount, rtypeCount, pslotCount, ptypeCount);
         this.argToSlotTable = argToSlotTab;
         this.slotToArgTable = slotToArgTab;
 
         if (pslotCount >= 256)  throw newIllegalArgumentException("too many arguments");
 
-        // send a few bits down to the JVM:
-        this.vmslots = parameterSlotCount();
-
-        if (basicType == erasedType) {
-            lambdaForms = new LambdaForm[LF_LIMIT];
-        } else {
-            lambdaForms = null;  // could be basicType.form().lambdaForms;
-        }
+        // Initialize caches, but only for basic types
+        assert(basicType == erasedType);
+        this.lambdaForms = new LambdaForm[LF_LIMIT];
+        this.methodHandles = new MethodHandle[MH_LIMIT];
     }
 
     private static long pack(int a, int b, int c, int d) {
@@ -300,7 +321,7 @@ final class MethodTypeForm {
      */
     public static MethodType canonicalize(MethodType mt, int howRet, int howArgs) {
         Class<?>[] ptypes = mt.ptypes();
-        Class<?>[] ptc = MethodTypeForm.canonicalizes(ptypes, howArgs);
+        Class<?>[] ptc = MethodTypeForm.canonicalizeAll(ptypes, howArgs);
         Class<?> rtype = mt.returnType();
         Class<?> rtc = MethodTypeForm.canonicalize(rtype, howRet);
         if (ptc == null && rtc == null) {
@@ -368,7 +389,7 @@ final class MethodTypeForm {
     /** Canonicalize each param type in the given array.
      *  Return null if all types are already canonicalized.
      */
-    static Class<?>[] canonicalizes(Class<?>[] ts, int how) {
+    static Class<?>[] canonicalizeAll(Class<?>[] ts, int how) {
         Class<?>[] cs = null;
         for (int imax = ts.length, i = 0; i < imax; i++) {
             Class<?> c = canonicalize(ts[i], how);

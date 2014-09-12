@@ -58,6 +58,7 @@ import com.sun.tools.javac.file.Locations;
 import com.sun.tools.javac.main.Option;
 import com.sun.tools.javac.main.OptionHelper;
 import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic.SimpleDiagnosticPosition;
 
 /**
@@ -137,7 +138,7 @@ public abstract class BaseFileManager implements JavaFileManager {
     }
 
     // <editor-fold defaultstate="collapsed" desc="Option handling">
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean handleOption(String current, Iterator<String> remaining) {
         OptionHelper helper = new GrumpyHelper(log) {
             @Override
@@ -183,7 +184,7 @@ public abstract class BaseFileManager implements JavaFileManager {
         private static final Set<Option> javacFileManagerOptions =
             Option.getJavacFileManagerOptions();
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public int isSupportedOption(String option) {
         for (Option o : javacFileManagerOptions) {
             if (o.matches(option))

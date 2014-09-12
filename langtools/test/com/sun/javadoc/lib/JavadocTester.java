@@ -38,6 +38,7 @@ import java.lang.ref.SoftReference;
 import java.lang.reflect.InvocationTargetException;
 import java.lang.reflect.Method;
 import java.nio.file.Files;
+import java.util.Arrays;
 import java.util.ArrayList;
 import java.util.EnumMap;
 import java.util.HashMap;
@@ -290,6 +291,7 @@ public abstract class JavadocTester {
                 break;
             }
         }
+        out.println("args: " + Arrays.toString(args));
 //        log.setOutDir(outputDir);
 
         outputDirectoryCheck.check(outputDir);
@@ -461,6 +463,31 @@ public abstract class JavadocTester {
                 failed(s + " is in the wrong order.");
             }
             prevIndex = currentIndex;
+        }
+    }
+
+    /**
+     * Ensures that a series of strings appear only once, in the generated output,
+     * noting that, this test does not exhaustively check for all other possible
+     * duplicates once one is found.
+     * @param path the file to check
+     * @param strings ensure each are unique
+     */
+    public void checkUnique(String path, String... strings) {
+        String fileString = readOutputFile(path);
+        for (String s : strings) {
+            int currentIndex = fileString.indexOf(s);
+            checking(s + " at index " + currentIndex);
+            if (currentIndex == -1) {
+                failed(s + " not found.");
+                continue;
+            }
+            int nextindex = fileString.indexOf(s, currentIndex + s.length());
+            if (nextindex == -1) {
+                passed(s + " is unique");
+            } else {
+                failed(s + " is not unique, found at " + nextindex);
+            }
         }
     }
 

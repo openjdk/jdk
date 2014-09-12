@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -354,10 +354,11 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
      * @exception NullPointerException if {@code name} is {@code null}.
      */
     protected Class<?> findClass(final String name)
-         throws ClassNotFoundException
+        throws ClassNotFoundException
     {
+        final Class<?> result;
         try {
-            return AccessController.doPrivileged(
+            result = AccessController.doPrivileged(
                 new PrivilegedExceptionAction<Class<?>>() {
                     public Class<?> run() throws ClassNotFoundException {
                         String path = name.replace('.', '/').concat(".class");
@@ -369,13 +370,17 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
                                 throw new ClassNotFoundException(name, e);
                             }
                         } else {
-                            throw new ClassNotFoundException(name);
+                            return null;
                         }
                     }
                 }, acc);
         } catch (java.security.PrivilegedActionException pae) {
             throw (ClassNotFoundException) pae.getException();
         }
+        if (result == null) {
+            throw new ClassNotFoundException(name);
+        }
+        return result;
     }
 
     /*
@@ -407,6 +412,29 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
         return pkg;
     }
 
+    // Also called by VM to define Package for classes loaded from the CDS
+    // archive
+    private void definePackageInternal(String pkgname, Manifest man, URL url)
+    {
+        if (getAndVerifyPackage(pkgname, man, url) == null) {
+            try {
+                if (man != null) {
+                    definePackage(pkgname, man, url);
+                } else {
+                    definePackage(pkgname, null, null, null, null, null, null, null);
+                }
+            } catch (IllegalArgumentException iae) {
+                // parallel-capable class loaders: re-verify in case of a
+                // race condition
+                if (getAndVerifyPackage(pkgname, man, url) == null) {
+                    // Should never happen
+                    throw new AssertionError("Cannot find package " +
+                                             pkgname);
+                }
+            }
+        }
+    }
+
     /*
      * Defines a Class using the class bytes obtained from the specified
      * Resource. The resulting Class must be resolved before it can be
@@ -420,23 +448,7 @@ public class URLClassLoader extends SecureClassLoader implements Closeable {
             String pkgname = name.substring(0, i);
             // Check if package already loaded.
             Manifest man = res.getManifest();
-            if (getAndVerifyPackage(pkgname, man, url) == null) {
-                try {
-                    if (man != null) {
-                        definePackage(pkgname, man, url);
-                    } else {
-                        definePackage(pkgname, null, null, null, null, null, null, null);
-                    }
-                } catch (IllegalArgumentException iae) {
-                    // parallel-capable class loaders: re-verify in case of a
-                    // race condition
-                    if (getAndVerifyPackage(pkgname, man, url) == null) {
-                        // Should never happen
-                        throw new AssertionError("Cannot find package " +
-                                                 pkgname);
-                    }
-                }
-            }
+            definePackageInternal(pkgname, man, url);
         }
         // Now read the class bytes and define the class
         java.nio.ByteBuffer bb = res.getByteBuffer();

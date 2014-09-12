@@ -1297,10 +1297,19 @@ public class DefaultMutableTreeNode implements Cloneable,
 
     private void readObject(ObjectInputStream s)
         throws IOException, ClassNotFoundException {
+
+        ObjectInputStream.GetField f = s.readFields();
+        parent = (MutableTreeNode) f.get("parent", null);
+        @SuppressWarnings("unchecked")
+        Vector<TreeNode> newChildren = (Vector<TreeNode>) f.get("children", null);
+        boolean newAllowsChildren = f.get("allowsChildren", false);
+        if (!newAllowsChildren && newChildren != null && newChildren.size() > 0) {
+            throw new IllegalStateException("node does not allow children");
+        }
+        children = newChildren;
+        allowsChildren = newAllowsChildren;
+
         Object[]      tValues;
-
-        s.defaultReadObject();
-
         tValues = (Object[])s.readObject();
 
         if(tValues.length > 0 && tValues[0].equals("userObject"))
@@ -1308,7 +1317,7 @@ public class DefaultMutableTreeNode implements Cloneable,
     }
 
     private final class PreorderEnumeration implements Enumeration<TreeNode> {
-        private final Stack<Enumeration<TreeNode>> stack = new Stack<>();
+        private final Stack<Enumeration<? extends TreeNode>> stack = new Stack<>();
 
         public PreorderEnumeration(TreeNode rootNode) {
             super();
@@ -1322,10 +1331,9 @@ public class DefaultMutableTreeNode implements Cloneable,
         }
 
         public TreeNode nextElement() {
-            Enumeration<TreeNode> enumer = stack.peek();
+            Enumeration<? extends TreeNode> enumer = stack.peek();
             TreeNode    node = enumer.nextElement();
-            @SuppressWarnings("unchecked")
-            Enumeration<TreeNode> children = node.children();
+            Enumeration<? extends TreeNode> children = node.children();
 
             if (!enumer.hasMoreElements()) {
                 stack.pop();
@@ -1342,7 +1350,7 @@ public class DefaultMutableTreeNode implements Cloneable,
 
     final class PostorderEnumeration implements Enumeration<TreeNode> {
         protected TreeNode root;
-        protected Enumeration<TreeNode> children;
+        protected Enumeration<? extends TreeNode> children;
         protected Enumeration<TreeNode> subtree;
 
         public PostorderEnumeration(TreeNode rootNode) {

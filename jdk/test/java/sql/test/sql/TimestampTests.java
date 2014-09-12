@@ -29,66 +29,27 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.util.Calendar;
 import static org.testng.Assert.*;
-import org.testng.annotations.AfterClass;
-import org.testng.annotations.AfterMethod;
-import org.testng.annotations.BeforeClass;
-import org.testng.annotations.BeforeMethod;
+import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
+import util.BaseTest;
 
-public class TimestampTests {
+public class TimestampTests extends BaseTest {
 
-    public TimestampTests() {
-    }
-
-    @BeforeClass
-    public static void setUpClass() throws Exception {
-    }
-
-    @AfterClass
-    public static void tearDownClass() throws Exception {
-    }
-
-    @BeforeMethod
-    public void setUpMethod() throws Exception {
-    }
-
-    @AfterMethod
-    public void tearDownMethod() throws Exception {
-    }
-
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for an invalid Timestamp
      */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_timestamp() throws Exception {
-        String testTS = "2009-11-01-01 10:50";
-        Timestamp.valueOf(testTS);
+    @Test(dataProvider = "invalidTimestampValues",
+            expectedExceptions = IllegalArgumentException.class)
+    public void test(String ts) throws Exception {
+        Timestamp.valueOf(ts);
     }
 
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Timestamp
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_year2() throws Exception {
-        String testTS = "aaaa-11-01-01 10:50";
-        Timestamp.valueOf(testTS);
-    }
-
-    /**
-     * Validate an IllegalArgumentException is thrown for an invalid Timestamp
-     */
-    @Test(expectedExceptions = IllegalArgumentException.class)
-    public void testInvalid_year3() throws Exception {
-        String testTS = "aaaa-11-01 10:50";
-        Timestamp.valueOf(testTS);
-    }
-
-    /**
+    /*
      * Validate that two Timestamp are equal when the leading 0 in seconds is
      * omitted
      */
     @Test
-    public void test1() throws Exception {
+    public void test01() throws Exception {
         String testTS = "2009-01-01 10:50:00";
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
@@ -96,23 +57,23 @@ public class TimestampTests {
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate two Timestamps created from the same string are equal
      */
     @Test
-    public void test2() throws Exception {
+    public void test02() throws Exception {
         String testTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
         Timestamp ts2 = Timestamp.valueOf(testTS);
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one with leading 0s for month and day
      * equals same string without the leading 0s.
      */
     @Test
-    public void test3() throws Exception {
+    public void test03() throws Exception {
         String testTS = "2009-1-1 10:50:0";
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
@@ -120,12 +81,12 @@ public class TimestampTests {
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one with leading 0s for day omitted
      * are equal
      */
     @Test
-    public void test4() throws Exception {
+    public void test04() throws Exception {
         String testTS = "2009-01-1 10:50:0";
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
@@ -133,12 +94,12 @@ public class TimestampTests {
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one with leading 0s for month omitted
      * and both with leading 0s for seconds omitted are equal
      */
     @Test
-    public void test5() throws Exception {
+    public void test05() throws Exception {
         String testTS = "2009-1-01 10:50:0";
         String ExpectedTS = "2009-01-01 10:50:0";
         Timestamp ts = Timestamp.valueOf(testTS);
@@ -146,11 +107,11 @@ public class TimestampTests {
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one with leading 0s for month omitted
      */
     @Test
-    public void test6() throws Exception {
+    public void test06() throws Exception {
         String testTS = "2005-1-01 10:20:50.00";
         String ExpectedTS = "2005-01-01 10:20:50.00";
         Timestamp ts = Timestamp.valueOf(testTS);
@@ -158,52 +119,53 @@ public class TimestampTests {
         assertEquals(ts, ts2, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one created using valueOf and another
      * via a constructor are equal
      */
     @Test
-    public void test7() {
+    public void test07() {
 
         Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.001");
         Timestamp ts2 = new Timestamp(96, 11, 13, 14, 15, 25, 1000000);
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one created using valueOf and another
      * via a constructor are equal
      */
     @Test
-    public void test8() {
+    public void test08() {
         Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.001");
         Timestamp ts2 = new Timestamp(ts1.getTime());
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that two Timestamp values one created using valueOf and another
      * via a constructor are equal
      */
     @Test
-    public void test9() {
+    public void test09() {
 
         Timestamp ts1 = Timestamp.valueOf("1996-12-13 14:15:25.0");
         Timestamp ts2 = new Timestamp(96, 11, 13, 14, 15, 25, 0);
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that a Timestamp cannot be equal to null
      */
     @Test
     public void test10() {
 
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 14:15:25.745634");
-        assertFalse(ts1.equals(null), "Error ts1 == null");
+        Timestamp ts2 = null;
+        assertFalse(ts1.equals(ts2), "Error ts1 == null");
     }
 
-    /**
+    /*
      * Validate that a Timestamp is equal to another timestamp created with the
      * using the same value but not equal to a Timestamp which is one day later
      */
@@ -218,7 +180,7 @@ public class TimestampTests {
 
     }
 
-    /**
+    /*
      * Validate that a Timestamp is equal to itself
      */
     @Test
@@ -227,19 +189,20 @@ public class TimestampTests {
         assertTrue(ts1.equals(ts1), "Error ts1 != ts1");
     }
 
-    /**
+    /*
      * Validate that two Timestamps are equal when one is created from the
      * toString() of the other
      */
-    @Test
-    public void test13() {
-        Timestamp ts1 = Timestamp.valueOf("1996-12-10 12:26:19.12");
+    @Test(dataProvider = "validTimestampValues")
+    public void test13(String ts, String expectedTS) {
+        Timestamp ts1 = Timestamp.valueOf(ts);
         Timestamp ts2 = Timestamp.valueOf(ts1.toString());
-        assertTrue(ts1.equals(ts2) && ts2.equals(ts1), "Error ts1 != ts2");
+        assertTrue(ts1.equals(ts2) && ts2.equals(ts1)
+                && ts1.toString().equals(expectedTS), "Error ts1 != ts2");
     }
 
     // Before Tests
-    /**
+    /*
      * Validate that Timestamp ts1 is before Timestamp ts2
      */
     @Test
@@ -249,7 +212,7 @@ public class TimestampTests {
         assertTrue(ts1.before(ts2), "Error ts1 not before ts2");
     }
 
-    /**
+    /*
      * Validate that Timestamp ts1 is before Timestamp ts2
      */
     @Test
@@ -259,7 +222,7 @@ public class TimestampTests {
         assertTrue(ts1.before(ts2), "Error ts1 not before ts2");
     }
 
-    /**
+    /*
      * Validate that Timestamp ts1 is before Timestamp ts2
      */
     @Test
@@ -289,7 +252,7 @@ public class TimestampTests {
         assertFalse(ts1.before(ts1), "Error ts1 before ts1!");
     }
 
-    /**
+    /*
      * Create 3 Timestamps and make sure the 1st is before the other two
      * Timestamps which are each greater than the one before it
      */
@@ -302,7 +265,7 @@ public class TimestampTests {
         assertTrue(ts1.before(ts2) && ts2.before(ts3) && ts1.before(ts3));
     }
 
-    /**
+    /*
      * Validate that Timestamp ts1 is not after Timestamp ts2
      */
     @Test
@@ -313,7 +276,7 @@ public class TimestampTests {
 
     }
 
-    /**
+    /*
      * Validate that Timestamp ts1 is after Timestamp ts2
      */
     @Test
@@ -323,7 +286,7 @@ public class TimestampTests {
         assertTrue(ts1.after(ts2), "Error ts1 not after ts2");
     }
 
-    /**
+    /*
      * Validate that a NullPointerException is thrown if a null is passed to the
      * after method
      */
@@ -333,7 +296,7 @@ public class TimestampTests {
         ts1.after(null);
     }
 
-    /**
+    /*
      * Validate that a Timestamp cannot be after itself
      */
     @Test
@@ -341,9 +304,10 @@ public class TimestampTests {
         Timestamp ts1 = Timestamp.valueOf("1999-11-10 12:26:19.3456543");
         assertFalse(ts1.after(ts1), "Error ts1 is after itself");
     }
-    /**
-     * Validate that a Timestamp after() works correctly with Timestamp
-     * created using milliseconds
+
+    /*
+     * Validate that a Timestamp after() works correctly with Timestamp created
+     * using milliseconds
      */
     @Test
     public void test24() {
@@ -354,7 +318,7 @@ public class TimestampTests {
         assertTrue(ts1.after(ts2) && ts2.after(ts3) && ts1.after(ts3));
     }
 
-    /**
+    /*
      * Validate compareTo returns 0 for Timestamps that are the same
      */
     @Test
@@ -364,7 +328,7 @@ public class TimestampTests {
         assertTrue(ts1.compareTo(ts2) == 0, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate compareTo returns -1 for when the 1st Timestamp is earlier than
      * the 2nd Timestamp
      */
@@ -376,7 +340,7 @@ public class TimestampTests {
         assertTrue(ts2.compareTo(ts1) == 1, "Error ts1 is not before ts2");
     }
 
-    /**
+    /*
      * Validate compareTo returns 1 for when the 1st Timestamp is later than the
      * 2nd Timestamp
      */
@@ -388,7 +352,7 @@ public class TimestampTests {
         assertTrue(ts2.compareTo(ts1) == -1, "Error ts1 not after ts2");
     }
 
-    /**
+    /*
      * Validate compareTo returns 0 for Timestamps that are the same
      */
     @Test
@@ -398,7 +362,7 @@ public class TimestampTests {
         assertTrue(ts1.compareTo(ts2) == 0, "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate compareTo returns 0 for Timestamps that are the same
      */
     @Test
@@ -408,7 +372,7 @@ public class TimestampTests {
         assertFalse(ts1.equals(d), "Error ts1 == d");
     }
 
-    /**
+    /*
      * Validate compareTo returns 0 for Timestamps that are the same
      */
     @Test
@@ -418,7 +382,7 @@ public class TimestampTests {
         assertTrue(ts1.equals(d), "Error ts1 != d");
     }
 
-    /**
+    /*
      * Validate equals returns false when a Date object is passed to equals
      */
     @Test
@@ -428,7 +392,7 @@ public class TimestampTests {
         assertFalse(ts1.equals(d), "Error ts1 != d");
     }
 
-    /**
+    /*
      * Validate equals returns false when a Date object is passed to equals
      */
     @Test
@@ -438,7 +402,7 @@ public class TimestampTests {
         assertFalse(ts1.equals(d), "Error ts1 != d");
     }
 
-    /**
+    /*
      * Validate equals returns false when a Time object is passed to equals
      */
     @Test
@@ -448,7 +412,7 @@ public class TimestampTests {
         assertFalse(ts1.equals(t1), "Error ts1 == t1");
     }
 
-    /**
+    /*
      * Validate equals returns false when a String object is passed to equals
      */
     @Test
@@ -457,7 +421,7 @@ public class TimestampTests {
         assertFalse(ts1.equals("1966-08-30 08:08:08"), "Error ts1 == a String");
     }
 
-    /**
+    /*
      * Validate getTime() returns the same value from 2 timeStamps created by
      */
     @Test
@@ -469,7 +433,7 @@ public class TimestampTests {
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate getTime() returns the same value from 2 timeStamps when
      * setTime() is used to specify the same value for both Timestamps
      */
@@ -483,7 +447,7 @@ public class TimestampTests {
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for an invalid nanos value
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -493,7 +457,7 @@ public class TimestampTests {
 
     }
 
-    /**
+    /*
      * Validate an IllegalArgumentException is thrown for an invalid nanos value
      */
     @Test(expectedExceptions = IllegalArgumentException.class)
@@ -501,10 +465,9 @@ public class TimestampTests {
         int nanos = 999999999;
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
         ts1.setNanos(nanos + 1);
-
     }
 
-    /**
+    /*
      * Validate you can set nanos to 999999999
      */
     @Test
@@ -513,10 +476,9 @@ public class TimestampTests {
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
         ts1.setNanos(nanos);
         assertTrue(ts1.getNanos() == nanos, "Error Invalid Nanos value");
-
     }
 
-    /**
+    /*
      * Validate you can set nanos to 0
      */
     @Test
@@ -525,10 +487,9 @@ public class TimestampTests {
         Timestamp ts1 = Timestamp.valueOf("1961-08-30 00:00:00");
         ts1.setNanos(nanos);
         assertTrue(ts1.getNanos() == nanos, "Error Invalid Nanos value");
-
     }
 
-    /**
+    /*
      * Validate that a Timestamp made from a LocalDateTime are equal
      */
     @Test
@@ -539,7 +500,7 @@ public class TimestampTests {
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that a Timestamp LocalDateTime value, made from a LocalDateTime
      * are equal
      */
@@ -551,7 +512,7 @@ public class TimestampTests {
                 "Error LocalDateTime values are not equal");
     }
 
-    /**
+    /*
      * Validate an NPE occurs when a null LocalDateTime is passed to valueOF
      */
     @Test(expectedExceptions = NullPointerException.class)
@@ -560,7 +521,7 @@ public class TimestampTests {
         Timestamp.valueOf(ldt);
     }
 
-    /**
+    /*
      * Validate that a Timestamp made from a Instant are equal
      */
     @Test
@@ -571,7 +532,7 @@ public class TimestampTests {
         assertTrue(ts1.equals(ts2), "Error ts1 != ts2");
     }
 
-    /**
+    /*
      * Validate that a Timestamp made from a Instant are equal
      */
     @Test
@@ -582,7 +543,7 @@ public class TimestampTests {
                 "Error Instant values do not match");
     }
 
-    /**
+    /*
      * Validate an NPE occurs when a null instant is passed to from
      */
     @Test(expectedExceptions = NullPointerException.class)
@@ -592,7 +553,7 @@ public class TimestampTests {
     }
 
     // Added SQE tests
-    /**
+    /*
      * Create a Timestamp and a 2nd Timestamp that is 1 month earlier and
      * validate that it is not before or after the original Timestamp
      */
@@ -607,7 +568,7 @@ public class TimestampTests {
         assertFalse(ts1.before(ts2) || ts2.after(ts1));
     }
 
-    /**
+    /*
      * Create two Timestamps and validate that compareTo returns 1 to indicate
      * the 1st Timestamp is greater than the 2nd Timestamp
      */
@@ -622,7 +583,7 @@ public class TimestampTests {
         assertTrue(ts1.compareTo(ts2) == 1);
     }
 
-    /**
+    /*
      * Create two Timestamps and validate that the 1st Timestamp is not equal to
      * the 2nd Timestamp but equal to itself
      */
@@ -637,4 +598,114 @@ public class TimestampTests {
         assertTrue(!ts1.equals(ts2) && ts1.equals(ts1));
     }
 
+    /*
+     * Validate that two Timestamps are equal when one is created from the
+     * toString() of the other
+     */
+    @Test(dataProvider = "validateNanos")
+    public void test51(String ts, int nanos) {
+        Timestamp ts1 = Timestamp.valueOf(ts);
+        Timestamp ts2 = Timestamp.valueOf(ts1.toString());
+        assertTrue(ts1.getNanos() == nanos && ts1.equals(ts2),
+                "Error with Nanos");
+    }
+
+    /*
+     * DataProvider used to provide Timestamps which are not valid and are used
+     * to validate that an IllegalArgumentException will be thrown from the
+     * valueOf method
+     */
+    @DataProvider(name = "invalidTimestampValues")
+    private Object[][] invalidTimestampValues() {
+        return new Object[][]{
+            {"2009-11-01-01 10:50:01"},
+            {"aaaa-11-01-01 10:50"},
+            {"aaaa-11-01 10:50"},
+            {"1961--30 00:00:00"},
+            {"--30 00:00:00"},
+            {"-- 00:00:00"},
+            {"1961-1- 00:00:00"},
+            {"2009-11-01"},
+            {"10:50:01"},
+            {"1961-a-30 00:00:00"},
+            {"1961-01-bb 00:00:00"},
+            {"1961-08-30 00:00:00."},
+            {"1961-08-30 :00:00"},
+            {"1961-08-30 00::00"},
+            {"1961-08-30 00:00:"},
+            {"1961-08-30 ::"},
+            {"1961-08-30 0a:00:00"},
+            {"1961-08-30 00:bb:00"},
+            {"1961-08-30 00:01:cc"},
+            {"1961-08-30 00:00:00.01a"},
+            {"1961-08-30 00:00:00.a"},
+            {"1996-12-10 12:26:19.1234567890"},
+            {null}
+        };
+    }
+
+    /*
+     * DataProvider used to provide Timestamps which are  valid and are used
+     * to validate that an IllegalArgumentException will not be thrown from the
+     * valueOf method and the corect value from toString() is returned
+     */
+    @DataProvider(name = "validTimestampValues")
+    private Object[][] validTimestampValues() {
+        return new Object[][]{
+            {"1961-08-30 00:00:00", "1961-08-30 00:00:00.0"},
+            {"1961-08-30 11:22:33", "1961-08-30 11:22:33.0"},
+            {"1961-8-30 00:00:00", "1961-08-30 00:00:00.0"},
+            {"1966-08-1 00:00:00", "1966-08-01 00:00:00.0"},
+            {"1996-12-10 12:26:19.1", "1996-12-10 12:26:19.1"},
+            {"1996-12-10 12:26:19.12", "1996-12-10 12:26:19.12"},
+            {"1996-12-10 12:26:19.123", "1996-12-10 12:26:19.123"},
+            {"1996-12-10 12:26:19.1234", "1996-12-10 12:26:19.1234"},
+            {"1996-12-10 12:26:19.12345", "1996-12-10 12:26:19.12345"},
+            {"1996-12-10 12:26:19.123456", "1996-12-10 12:26:19.123456"},
+            {"1996-12-10 12:26:19.1234567", "1996-12-10 12:26:19.1234567"},
+            {"1996-12-10 12:26:19.12345678", "1996-12-10 12:26:19.12345678"},
+            {"1996-12-10 12:26:19.123456789", "1996-12-10 12:26:19.123456789"},
+            {"1996-12-10 12:26:19.000000001", "1996-12-10 12:26:19.000000001"},
+            {"1996-12-10 12:26:19.000000012", "1996-12-10 12:26:19.000000012"},
+            {"1996-12-10 12:26:19.000000123", "1996-12-10 12:26:19.000000123"},
+            {"1996-12-10 12:26:19.000001234", "1996-12-10 12:26:19.000001234"},
+            {"1996-12-10 12:26:19.000012345", "1996-12-10 12:26:19.000012345"},
+            {"1996-12-10 12:26:19.000123456", "1996-12-10 12:26:19.000123456"},
+            {"1996-12-10 12:26:19.001234567", "1996-12-10 12:26:19.001234567"},
+            {"1996-12-10 12:26:19.12345678", "1996-12-10 12:26:19.12345678"},
+            {"1996-12-10 12:26:19.0", "1996-12-10 12:26:19.0"},
+            {"1996-12-10 12:26:19.01230", "1996-12-10 12:26:19.0123"}
+        };
+    }
+
+    /*
+     * DataProvider used to provide Timestamp and Nanos values in order to
+     * validate that the correct Nanos value is generated from the specified
+     * Timestamp
+     */
+    @DataProvider(name = "validateNanos")
+    private Object[][] validateNanos() {
+        return new Object[][]{
+            {"1961-08-30 00:00:00", 0},
+            {"1996-12-10 12:26:19.1", 100000000},
+            {"1996-12-10 12:26:19.12", 120000000},
+            {"1996-12-10 12:26:19.123", 123000000},
+            {"1996-12-10 12:26:19.1234", 123400000},
+            {"1996-12-10 12:26:19.12345", 123450000},
+            {"1996-12-10 12:26:19.123456", 123456000},
+            {"1996-12-10 12:26:19.1234567", 123456700},
+            {"1996-12-10 12:26:19.12345678", 123456780},
+            {"1996-12-10 12:26:19.123456789", 123456789},
+            {"1996-12-10 12:26:19.000000001", 1},
+            {"1996-12-10 12:26:19.000000012", 12},
+            {"1996-12-10 12:26:19.000000123", 123},
+            {"1996-12-10 12:26:19.000001234", 1234},
+            {"1996-12-10 12:26:19.000012345", 12345},
+            {"1996-12-10 12:26:19.000123456", 123456},
+            {"1996-12-10 12:26:19.001234567", 1234567},
+            {"1996-12-10 12:26:19.012345678", 12345678},
+            {"1996-12-10 12:26:19.0", 0},
+            {"1996-12-10 12:26:19.01230", 12300000}
+        };
+    }
 }

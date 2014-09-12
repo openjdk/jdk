@@ -27,6 +27,7 @@ package jdk.nashorn.internal.ir;
 
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.parser.Token;
 
 /**
  * Node represents a var/let declaration.
@@ -43,12 +44,18 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     private final int flags;
 
     /** Flag that determines if this function node is a statement */
-    public static final int IS_STATEMENT = 1 << 0;
+    public static final int IS_STATEMENT                 = 1 << 0;
+
+    /** Flag for ES6 LET declaration */
+    public static final int IS_LET                       = 1 << 1;
+
+    /** Flag for ES6 CONST declaration */
+    public static final int IS_CONST                     = 1 << 2;
 
     /** Flag that determines if this is the last function declaration in a function
      *  This is used to micro optimize the placement of return value assignments for
      *  a program node */
-    public static final int IS_LAST_FUNCTION_DECLARATION = 1 << 1;
+    public static final int IS_LAST_FUNCTION_DECLARATION = 1 << 3;
 
     /**
      * Constructor
@@ -109,6 +116,43 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     }
 
     /**
+     * Is this a VAR node block scoped? This returns true for ECMAScript 6 LET and CONST nodes.
+     * @return true if an ES6 LET or CONST node
+     */
+    public boolean isBlockScoped() {
+        return getFlag(IS_LET) || getFlag(IS_CONST);
+    }
+
+    /**
+     * Is this an ECMAScript 6 LET node?
+     * @return true if LET node
+     */
+    public boolean isLet() {
+        return getFlag(IS_LET);
+    }
+
+    /**
+     * Is this an ECMAScript 6 CONST node?
+     * @return true if CONST node
+     */
+    public boolean isConst() {
+        return getFlag(IS_CONST);
+    }
+
+    /**
+     * Return the flags to use for symbols for this declaration.
+     * @return the symbol flags
+     */
+    public int getSymbolFlags() {
+        if (isLet()) {
+            return Symbol.IS_VAR | Symbol.IS_LET;
+        } else if (isConst()) {
+            return Symbol.IS_VAR | Symbol.IS_CONST;
+        }
+        return Symbol.IS_VAR;
+    }
+
+    /**
      * Does this variable declaration have an init value
      * @return true if an init exists, false otherwise
      */
@@ -139,7 +183,7 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
 
     @Override
     public void toString(final StringBuilder sb, final boolean printType) {
-        sb.append("var ");
+        sb.append(Token.descType(getToken()).getName()).append(' ');
         name.toString(sb, printType);
 
         if (init != null) {

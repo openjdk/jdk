@@ -628,18 +628,20 @@ public abstract class ArrayData {
         Class<?> widest = Integer.class;
 
         for (final Object item : items) {
-            final Class<?> itemClass = item == null ? null : item.getClass();
+            if (item == null) {
+                return Object.class;
+            }
+            final Class<?> itemClass = item.getClass();
             if (itemClass == Long.class) {
                 if (widest == Integer.class) {
                     widest = Long.class;
                 }
-            } else if (itemClass == Double.class) {
+            } else if (itemClass == Double.class || itemClass == Float.class) {
                 if (widest == Integer.class || widest == Long.class) {
                     widest = Double.class;
                 }
-            } else if (!(item instanceof Number)) {
-                widest = Object.class;
-                break;
+            } else if (itemClass != Integer.class && itemClass != Short.class && itemClass != Byte.class) {
+                return Object.class;
             }
         }
 

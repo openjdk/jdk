@@ -32,6 +32,8 @@ import java.lang.reflect.Method;
 import javax.lang.model.AnnotatedConstruct;
 
 import com.sun.tools.javac.model.AnnotationProxyMaker;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -50,7 +52,7 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
 
 
     // Override to enforce a narrower return type.
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public abstract List<? extends Attribute.Compound> getAnnotationMirrors();
 
 
@@ -74,6 +76,7 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
 
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public <A extends Annotation> A[] getAnnotationsByType(Class<A> annoType) {
 
         if (!annoType.isAnnotation())
@@ -170,6 +173,7 @@ public abstract class AnnoConstruct implements AnnotatedConstruct {
     }
 
     // This method is part of the javax.lang.model API, do not use this in javac code.
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public <A extends Annotation> A getAnnotation(Class<A> annoType) {
 
         if (!annoType.isAnnotation())

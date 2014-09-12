@@ -40,18 +40,38 @@ public class VerifyType {
     /**
      * True if a value can be stacked as the source type and unstacked as the
      * destination type, without violating the JVM's type consistency.
+     * <p>
+     * If both types are references, we apply the verifier's subclass check
+     * (or subtyping, if keepInterfaces).
+     * If the src type is a type guaranteed to be null (Void) it can be converted
+     * to any other reference type.
+     * <p>
+     * If both types are primitives, we apply the verifier's primitive conversions.
+     * These do not include Java conversions such as long to double, since those
+     * require computation and (in general) stack depth changes.
+     * But very simple 32-bit viewing changes, such as byte to int,
+     * are null conversions, because they do not require any computation.
+     * These conversions are from any type to a wider type up to 32 bits,
+     * as long as the conversion is not signed to unsigned (byte to char).
+     * <p>
+     * The primitive type 'void' does not interconvert with any other type,
+     * even though it is legal to drop any type from the stack and "return void".
+     * The stack effects, though are different between void and any other type,
+     * so it is safer to report a non-trivial conversion.
      *
      * @param src the type of a stacked value
      * @param dst the type by which we'd like to treat it
+     * @param keepInterfaces if false, we treat any interface as if it were Object
      * @return whether the retyping can be done without motion or reformatting
      */
-    public static boolean isNullConversion(Class<?> src, Class<?> dst) {
+    public static boolean isNullConversion(Class<?> src, Class<?> dst, boolean keepInterfaces) {
         if (src == dst)            return true;
         // Verifier allows any interface to be treated as Object:
-        if (dst.isInterface())     dst = Object.class;
-        if (src.isInterface())     src = Object.class;
-        if (src == dst)            return true;  // check again
-        if (dst == void.class)     return true;  // drop any return value
+        if (!keepInterfaces) {
+            if (dst.isInterface())  dst = Object.class;
+            if (src.isInterface())  src = Object.class;
+            if (src == dst)         return true;  // check again
+        }
         if (isNullType(src))       return !dst.isPrimitive();
         if (!src.isPrimitive())    return dst.isAssignableFrom(src);
         if (!dst.isPrimitive())    return false;
@@ -82,25 +102,13 @@ public class VerifyType {
      * Is the given type java.lang.Null or an equivalent null-only type?
      */
     public static boolean isNullType(Class<?> type) {
-        if (type == null)  return false;
-        return type == NULL_CLASS
-            // This one may also be used as a null type.
-            // TO DO: Decide if we really want to legitimize it here.
-            // Probably we do, unless java.lang.Null really makes it into Java 7
-            //|| type == Void.class
-            // Locally known null-only class:
-            || type == Empty.class
-            ;
-    }
-    private static final Class<?> NULL_CLASS;
-    static {
-        Class<?> nullClass = null;
-        try {
-            nullClass = Class.forName("java.lang.Null");
-        } catch (ClassNotFoundException ex) {
-            // OK, we'll cope
-        }
-        NULL_CLASS = nullClass;
+        // Any reference statically typed as Void is guaranteed to be null.
+        // Therefore, it can be safely treated as a value of any
+        // other type that admits null, i.e., a reference type.
+        if (type == Void.class)  return true;
+        // Locally known null-only class:
+        if (type == Empty.class)  return true;
+        return false;
     }
 
     /**
@@ -111,14 +119,14 @@ public class VerifyType {
      * @param recv the type of the method handle receiving the call
      * @return whether the retyping can be done without motion or reformatting
      */
-    public static boolean isNullConversion(MethodType call, MethodType recv) {
+    public static boolean isNullConversion(MethodType call, MethodType recv, boolean keepInterfaces) {
         if (call == recv)  return true;
         int len = call.parameterCount();
         if (len != recv.parameterCount())  return false;
         for (int i = 0; i < len; i++)
-            if (!isNullConversion(call.parameterType(i), recv.parameterType(i)))
+            if (!isNullConversion(call.parameterType(i), recv.parameterType(i), keepInterfaces))
                 return false;
-        return isNullConversion(recv.returnType(), call.returnType());
+        return isNullConversion(recv.returnType(), call.returnType(), keepInterfaces);
     }
 
     /**

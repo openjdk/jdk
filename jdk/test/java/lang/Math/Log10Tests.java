@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 public class Log10Tests {
     private Log10Tests(){}
 
@@ -70,7 +68,7 @@ public class Log10Tests {
             {Double.NEGATIVE_INFINITY,  NaNd},
             {-8.0,                      NaNd},
             {-1.0,                      NaNd},
-            {-DoubleConsts.MIN_NORMAL,  NaNd},
+            {-Double.MIN_NORMAL,        NaNd},
             {-Double.MIN_VALUE,         NaNd},
             {-0.0,                      -infinityD},
             {+0.0,                      -infinityD},

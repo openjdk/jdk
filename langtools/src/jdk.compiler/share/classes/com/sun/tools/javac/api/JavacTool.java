@@ -33,23 +33,22 @@ import java.io.Writer;
 import java.nio.charset.Charset;
 import java.util.Collections;
 import java.util.EnumSet;
-import java.util.Iterator;
 import java.util.Locale;
 import java.util.Set;
+
 import javax.lang.model.SourceVersion;
 import javax.tools.*;
 
 import com.sun.source.util.JavacTask;
 import com.sun.tools.javac.file.JavacFileManager;
-import com.sun.tools.javac.main.Main;
+import com.sun.tools.javac.main.Arguments;
 import com.sun.tools.javac.main.Option;
-import com.sun.tools.javac.main.OptionHelper;
-import com.sun.tools.javac.main.OptionHelper.GrumpyHelper;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
-import com.sun.tools.javac.util.Log.PrefixKind;
-import com.sun.tools.javac.util.Options;
+import com.sun.tools.javac.util.PropagatedException;
 
 /**
  * TODO: describe com.sun.tools.javac.api.Tool
@@ -81,6 +80,7 @@ public final class JavacTool implements JavaCompiler {
         return new JavacTool();
     }
 
+    @Override @DefinedBy(Api.COMPILER)
     public JavacFileManager getStandardFileManager(
         DiagnosticListener<? super JavaFileObject> diagnosticListener,
         Locale locale,
@@ -96,7 +96,7 @@ public final class JavacTool implements JavaCompiler {
         return new JavacFileManager(context, true, charset);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavacTask getTask(Writer out,
                              JavaFileManager fileManager,
                              DiagnosticListener<? super JavaFileObject> diagnosticListener,
@@ -109,6 +109,7 @@ public final class JavacTool implements JavaCompiler {
                 context);
     }
 
+    /* Internal version of getTask, allowing context to be provided. */
     public JavacTask getTask(Writer out,
                              JavaFileManager fileManager,
                              DiagnosticListener<? super JavaFileObject> diagnosticListener,
@@ -120,14 +121,17 @@ public final class JavacTool implements JavaCompiler {
         try {
             ClientCodeWrapper ccw = ClientCodeWrapper.instance(context);
 
-            if (options != null)
+            if (options != null) {
                 for (String option : options)
                     option.getClass(); // null check
+            }
+
             if (classes != null) {
                 for (String cls : classes)
                     if (!SourceVersion.isName(cls)) // implicit null check
                         throw new IllegalArgumentException("Not a valid class name: " + cls);
             }
+
             if (compilationUnits != null) {
                 compilationUnits = ccw.wrapJavaFileObjects(compilationUnits); // implicit null check
                 for (JavaFileObject cu : compilationUnits) {
@@ -153,82 +157,17 @@ public final class JavacTool implements JavaCompiler {
 
             context.put(JavaFileManager.class, fileManager);
 
-            processOptions(context, fileManager, options);
-            Main compiler = new Main("javacTask", context.get(Log.outKey));
-            return new JavacTaskImpl(compiler, options, context, classes, compilationUnits);
+            Arguments args = Arguments.instance(context);
+            args.init("javac", options, classes, compilationUnits);
+            return new JavacTaskImpl(context);
+        } catch (PropagatedException ex) {
+            throw ex.getCause();
         } catch (ClientCodeException ex) {
             throw new RuntimeException(ex.getCause());
         }
     }
 
-    private void processOptions(Context context,
-                                       JavaFileManager fileManager,
-                                       Iterable<String> options)
-    {
-        if (options == null)
-            return;
-
-        final Options optionTable = Options.instance(context);
-        Log log = Log.instance(context);
-
-        Option[] recognizedOptions =
-                Option.getJavacToolOptions().toArray(new Option[0]);
-        OptionHelper optionHelper = new GrumpyHelper(log) {
-            @Override
-            public String get(Option option) {
-                return optionTable.get(option.getText());
-            }
-
-            @Override
-            public void put(String name, String value) {
-                optionTable.put(name, value);
-            }
-
-            @Override
-            public void remove(String name) {
-                optionTable.remove(name);
-            }
-        };
-
-        Iterator<String> flags = options.iterator();
-        while (flags.hasNext()) {
-            String flag = flags.next();
-            int j;
-            for (j=0; j<recognizedOptions.length; j++)
-                if (recognizedOptions[j].matches(flag))
-                    break;
-
-            if (j == recognizedOptions.length) {
-                if (fileManager.handleOption(flag, flags)) {
-                    continue;
-                } else {
-                    String msg = log.localize(PrefixKind.JAVAC, "err.invalid.flag", flag);
-                    throw new IllegalArgumentException(msg);
-                }
-            }
-
-            Option option = recognizedOptions[j];
-            if (option.hasArg()) {
-                if (!flags.hasNext()) {
-                    String msg = log.localize(PrefixKind.JAVAC, "err.req.arg", flag);
-                    throw new IllegalArgumentException(msg);
-                }
-                String operand = flags.next();
-                if (option.process(optionHelper, flag, operand))
-                    // should not happen as the GrumpyHelper will throw exceptions
-                    // in case of errors
-                    throw new IllegalArgumentException(flag + " " + operand);
-            } else {
-                if (option.process(optionHelper, flag))
-                    // should not happen as the GrumpyHelper will throw exceptions
-                    // in case of errors
-                    throw new IllegalArgumentException(flag);
-            }
-        }
-
-        optionTable.notifyListeners();
-    }
-
+    @Override @DefinedBy(Api.COMPILER)
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
         if (err == null)
             err = System.err;
@@ -237,11 +176,13 @@ public final class JavacTool implements JavaCompiler {
         return com.sun.tools.javac.Main.compile(arguments, new PrintWriter(err, true));
     }
 
+    @Override @DefinedBy(Api.COMPILER)
     public Set<SourceVersion> getSourceVersions() {
         return Collections.unmodifiableSet(EnumSet.range(SourceVersion.RELEASE_3,
                                                          SourceVersion.latest()));
     }
 
+    @Override @DefinedBy(Api.COMPILER)
     public int isSupportedOption(String option) {
         Set<Option> recognizedOptions = Option.getJavacToolOptions();
         for (Option o : recognizedOptions) {

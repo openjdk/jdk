@@ -25,6 +25,7 @@
 
 package sun.awt;
 
+import java.awt.Component;
 import java.awt.Container;
 import java.awt.Frame;
 import java.awt.Graphics;
@@ -33,6 +34,13 @@ import java.awt.MenuBar;
 import java.awt.MenuComponent;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
+import java.awt.dnd.DragGestureEvent;
+import java.awt.dnd.DragGestureListener;
+import java.awt.dnd.DragGestureRecognizer;
+import java.awt.dnd.DragSource;
+import java.awt.dnd.DropTarget;
+import java.awt.dnd.InvalidDnDOperationException;
+import java.awt.dnd.peer.DragSourceContextPeer;
 import java.awt.peer.FramePeer;
 
 /**
@@ -169,4 +177,27 @@ public abstract class LightweightFrame extends Frame {
         hostW = w;
         hostH = h;
     }
+
+    /**
+     * Create a drag gesture recognizer for the lightweight frame.
+     */
+    public abstract <T extends DragGestureRecognizer> T createDragGestureRecognizer(
+            Class<T> abstractRecognizerClass,
+            DragSource ds, Component c, int srcActions,
+            DragGestureListener dgl);
+
+    /**
+     * Create a drag source context peer for the lightweight frame.
+     */
+    public abstract DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException;
+
+    /**
+     * Adds a drop target to the lightweight frame.
+     */
+    public abstract void addDropTarget(DropTarget dt);
+
+    /**
+     * Removes a drop target from the lightweight frame.
+     */
+    public abstract void removeDropTarget(DropTarget dt);
 }

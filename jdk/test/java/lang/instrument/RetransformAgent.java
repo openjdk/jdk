@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -34,8 +34,7 @@
 import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
-
-import ilib.*;
+import asmlib.*;
 
 class RetransformAgent {
 
@@ -75,20 +74,25 @@ class RetransformAgent {
             // System.err.println("hook " + trname + ": " + className +
             //                    (redef? " REDEF" : " LOAD"));
             if ((redef? onRedef : onLoad) && className != null && className.equals(cname)) {
-                Options opt = new Options();
-                opt.shouldInstrumentIndexed = true;
-                opt.shouldInstrumentCall = true;
-                opt.targetMethod = nname;
-                opt.fixedIndex = redef? redefIndex : loadIndex;
-                opt.trackerClassName = "RetransformAgent";
+                int fixedIndex = redef ? redefIndex : loadIndex;
                 try {
-                    byte[] newcf =  Inject.instrumentation(opt, loader, className, classfileBuffer);
+                    byte[] newcf = Instrumentor.instrFor(classfileBuffer)
+                                   .addMethodEntryInjection(
+                                        nname,
+                                        (h)->{
+                                           h.push(fixedIndex);
+                                           h.invokeStatic("RetransformAgent", "callTracker", "(I)V", false);
+                                        })
+                                   .apply();
                     /*** debugging ...
-                         String fname = trname + (redef?"_redef" : "");
-                         write_buffer(fname + "_before.class", classfileBuffer);
-                         write_buffer(fname + "_instr.class", newcf);
+                         if (newcf != null) {
+                            String fname = trname + (redef?"_redef" : "") + "/" + className;
+                            System.err.println("dumping to: " + fname);
+                            write_buffer(fname + "_before.class", classfileBuffer);
+                            write_buffer(fname + "_instr.class", newcf);
+                         }
                     ***/
-                    System.err.println(trname + ": " + className + " index: " + opt.fixedIndex +
+                    System.err.println(trname + ": " + className + " index: " + fixedIndex +
                                        (redef? " REDEF" : " LOAD") +
                                        " len before: " + classfileBuffer.length +
                                        " after: " + newcf.length);
@@ -104,10 +108,14 @@ class RetransformAgent {
 
     static void write_buffer(String fname, byte[]buffer) {
         try {
-            FileOutputStream outStream = new FileOutputStream(fname);
-            outStream.write(buffer, 0, buffer.length);
-            outStream.close();
-        } catch (Exception ex) {
+            File f = new File(fname);
+            if (!f.getParentFile().exists()) {
+                f.getParentFile().mkdirs();
+            }
+            try (FileOutputStream outStream = new FileOutputStream(f)) {
+                outStream.write(buffer, 0, buffer.length);
+            }
+        } catch (IOException ex) {
             System.err.println("EXCEPTION in write_buffer: " + ex);
         }
     }

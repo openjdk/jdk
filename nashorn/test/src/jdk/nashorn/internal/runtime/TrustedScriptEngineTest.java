@@ -35,6 +35,7 @@ import javax.script.ScriptEngineFactory;
 import javax.script.ScriptEngineManager;
 import javax.script.ScriptException;
 import javax.script.SimpleScriptContext;
+import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import org.testng.annotations.Test;
 
@@ -220,8 +221,98 @@ public class TrustedScriptEngineTest {
         assertTrue(e.eval("typeof bar").equals("function"));
     }
 
+    @Test
+    public void classFilterTest() throws ScriptException {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final ScriptEngine e = fac.getScriptEngine(new ClassFilter() {
+            @Override
+            public boolean exposeToScripts(final String fullName) {
+                // don't allow anything that is not "java."
+                return fullName.startsWith("java.");
+            }
+        });
 
-    @Test public void nashornSwallowsConstKeyword() throws Exception {
+        assertEquals(e.eval("typeof javax.script.ScriptEngine"), "object");
+        assertEquals(e.eval("typeof java.util.Vector"), "function");
+
+        try {
+            e.eval("Java.type('javax.script.ScriptContext')");
+            fail("should not reach here");
+        } catch (final ScriptException | RuntimeException se) {
+            if (! (se.getCause() instanceof ClassNotFoundException)) {
+                fail("ClassNotFoundException expected");
+            }
+        }
+    }
+
+    @Test
+    public void classFilterTest2() throws ScriptException {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final ScriptEngine e = fac.getScriptEngine(new String[0], Thread.currentThread().getContextClassLoader(),
+            new ClassFilter() {
+                @Override
+                public boolean exposeToScripts(final String fullName) {
+                    // don't allow anything that is not "java."
+                    return fullName.startsWith("java.");
+                }
+            });
+
+        assertEquals(e.eval("typeof javax.script.ScriptEngine"), "object");
+        assertEquals(e.eval("typeof java.util.Vector"), "function");
+
+        try {
+            e.eval("Java.type('javax.script.ScriptContext')");
+            fail("should not reach here");
+        } catch (final ScriptException | RuntimeException se) {
+            if (! (se.getCause() instanceof ClassNotFoundException)) {
+                fail("ClassNotFoundException expected");
+            }
+        }
+    }
+
+    @Test
+    public void nullClassFilterTest() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine((ClassFilter)null);
+            fail("should have thrown NPE");
+        } catch (NullPointerException npe) {}
+    }
+
+    @Test
+    public void nullClassFilterTest2() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(new String[0], null, null);
+            fail("should have thrown NPE");
+        } catch (NullPointerException npe) {}
+    }
+
+    @Test
+    public void nullArgsTest() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine((String[])null);
+            fail("should have thrown NPE");
+        } catch (NullPointerException npe) {}
+    }
+
+    @Test
+    public void nullArgsTest2() {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        try {
+            fac.getScriptEngine(null, null, new ClassFilter() {
+                @Override
+                public boolean exposeToScripts(final String name) {
+                    return true;
+                }
+            });
+            fail("should have thrown NPE");
+        } catch (NullPointerException npe) {}
+    }
+
+    @Test
+    public void nashornSwallowsConstKeyword() throws Exception {
         final NashornScriptEngineFactory f = new NashornScriptEngineFactory();
         final String[] args = new String[] { "--const-as-var" };
         final ScriptEngine engine = f.getScriptEngine(args);

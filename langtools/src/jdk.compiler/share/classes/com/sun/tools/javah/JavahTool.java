@@ -39,6 +39,9 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /*
  * <p><b>This is NOT part of any supported API.
  * If you write code that depends on this, you do so at your own
@@ -59,6 +62,7 @@ public class JavahTool implements NativeHeaderTool {
         return JavahTask.getDefaultFileManager(diagnosticListener, null);
     }
 
+    @DefinedBy(Api.COMPILER)
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
         JavahTask t = new JavahTask(
                 JavahTask.getPrintWriterForStream(out),
@@ -69,10 +73,12 @@ public class JavahTool implements NativeHeaderTool {
         return (t.run() ? 0 : 1);
     }
 
+    @DefinedBy(Api.COMPILER)
     public Set<SourceVersion> getSourceVersions() {
         return EnumSet.allOf(SourceVersion.class);
     }
 
+    @DefinedBy(Api.COMPILER)
     public int isSupportedOption(String option) {
         for (JavahTask.Option opt : JavahTask.recognizedOptions) {
             if (opt.matches(option))

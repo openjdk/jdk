@@ -148,11 +148,12 @@ public final class JstatdTest {
     private OutputAnalyzer waitForJstatdRMI(ProcessBuilder pb) throws IOException, InterruptedException {
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
 
+        String remoteHost = (serverName != null) ? serverName : "JStatRemoteHost";
         while (output.getExitValue() != 0) {
             String out = output.getOutput();
 
             if (out.contains("RMI Registry not available") ||
-                out.contains("RMI Server JStatRemoteHost not available")) {
+                out.contains("RMI Server " + remoteHost + " not available")) {
                 Thread.sleep(100);
                 output = new OutputAnalyzer(pb.start());
             } else {

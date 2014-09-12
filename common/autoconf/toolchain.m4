@@ -557,6 +557,14 @@ AC_DEFUN_ONCE([TOOLCHAIN_DETECT_TOOLCHAIN_EXTRA],
     BASIC_FIXUP_EXECUTABLE(RC)
     AC_CHECK_PROG([DUMPBIN], [dumpbin], [dumpbin],,,)
     BASIC_FIXUP_EXECUTABLE(DUMPBIN)
+    # We need to check for 'msbuild.exe' because at the place where we expect to
+    # find 'msbuild.exe' there's also a directory called 'msbuild' and configure
+    # won't find the 'msbuild.exe' executable in that case (and the
+    # 'ac_executable_extensions' is unusable due to performance reasons).
+    # Notice that we intentionally don't fix up the path to MSBUILD because we
+    # will call it in a DOS shell during freetype detection on Windows (see
+    # 'LIB_SETUP_FREETYPE' in "libraries.m4"
+    AC_CHECK_PROG([MSBUILD], [msbuild.exe], [msbuild.exe],,,)
   fi
 
   if test "x$OPENJDK_TARGET_OS" = xsolaris; then

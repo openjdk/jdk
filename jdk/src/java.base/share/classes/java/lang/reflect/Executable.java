@@ -53,6 +53,11 @@ public abstract class Executable extends AccessibleObject
     abstract byte[] getAnnotationBytes();
 
     /**
+     * Accessor method to allow code sharing
+     */
+    abstract Executable getRoot();
+
+    /**
      * Does the Executable have generic information.
      */
     abstract boolean hasGenericInformation();
@@ -540,11 +545,16 @@ public abstract class Executable extends AccessibleObject
 
     private synchronized  Map<Class<? extends Annotation>, Annotation> declaredAnnotations() {
         if (declaredAnnotations == null) {
-            declaredAnnotations = AnnotationParser.parseAnnotations(
-                getAnnotationBytes(),
-                sun.misc.SharedSecrets.getJavaLangAccess().
-                getConstantPool(getDeclaringClass()),
-                getDeclaringClass());
+            Executable root = getRoot();
+            if (root != null) {
+                declaredAnnotations = root.declaredAnnotations();
+            } else {
+                declaredAnnotations = AnnotationParser.parseAnnotations(
+                    getAnnotationBytes(),
+                    sun.misc.SharedSecrets.getJavaLangAccess().
+                    getConstantPool(getDeclaringClass()),
+                    getDeclaringClass());
+            }
         }
         return declaredAnnotations;
     }
@@ -585,21 +595,24 @@ public abstract class Executable extends AccessibleObject
     /**
      * Returns an {@code AnnotatedType} object that represents the use of a
      * type to specify the receiver type of the method/constructor represented
-     * by this Executable object. The receiver type of a method/constructor is
-     * available only if the method/constructor has a <em>receiver
-     * parameter</em> (JLS 8.4.1).
+     * by this {@code Executable} object.
      *
-     * If this {@code Executable} object represents a constructor or instance
-     * method that does not have a receiver parameter, or has a receiver
-     * parameter with no annotations on its type, then the return value is an
-     * {@code AnnotatedType} object representing an element with no
+     * The receiver type of a method/constructor is available only if the
+     * method/constructor has a receiver parameter (JLS 8.4.1). If this {@code
+     * Executable} object <em>represents an instance method or represents a
+     * constructor of an inner member class</em>, and the
+     * method/constructor <em>either</em> has no receiver parameter or has a
+     * receiver parameter with no annotations on its type, then the return
+     * value is an {@code AnnotatedType} object representing an element with no
      * annotations.
      *
-     * If this {@code Executable} object represents a static method, then the
-     * return value is null.
+     * If this {@code Executable} object represents a static method or
+     * represents a constructor of a top level, static member, local, or
+     * anoymous class, then the return value is null.
      *
      * @return an object representing the receiver type of the method or
-     * constructor represented by this {@code Executable}
+     * constructor represented by this {@code Executable} or {@code null} if
+     * this {@code Executable} can not have a receiver parameter
      */
     public AnnotatedType getAnnotatedReceiverType() {
         if (Modifier.isStatic(this.getModifiers()))

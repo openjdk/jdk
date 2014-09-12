@@ -276,7 +276,7 @@ public final class WToolkit extends SunToolkit implements Runnable {
         setExtraMouseButtonsEnabledNative(areExtraMouseButtonsEnabled);
     }
 
-    private final void registerShutdownHook() {
+    private void registerShutdownHook() {
         AccessController.doPrivileged((PrivilegedAction<Void>) () -> {
             Thread shutdown = new Thread(ThreadGroupUtils.getRootThreadGroup(), this::shutdown);
             shutdown.setContextClassLoader(null);
@@ -746,11 +746,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
     @Override
     protected native void loadSystemColors(int[] systemColors);
 
-    public static final Object targetToPeer(Object target) {
+    public static Object targetToPeer(Object target) {
         return SunToolkit.targetToPeer(target);
     }
 
-    public static final void targetDisposedPeer(Object target, Object peer) {
+    public static void targetDisposedPeer(Object target, Object peer) {
         SunToolkit.targetDisposedPeer(target, peer);
     }
 
@@ -844,6 +844,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
 
     @Override
     public DragSourceContextPeer createDragSourceContextPeer(DragGestureEvent dge) throws InvalidDnDOperationException {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
+        if (f != null) {
+            return f.createDragSourceContextPeer(dge);
+        }
+
         return WDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
@@ -854,6 +859,11 @@ public final class WToolkit extends SunToolkit implements Runnable {
                                     DragSource ds, Component c, int srcActions,
                                     DragGestureListener dgl)
     {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(c);
+        if (f != null) {
+            return f.createDragGestureRecognizer(abstractRecognizerClass, ds, c, srcActions, dgl);
+        }
+
         if (MouseDragGestureRecognizer.class.equals(abstractRecognizerClass))
             return (T)new WMouseDragGestureRecognizer(ds, c, srcActions, dgl);
         else

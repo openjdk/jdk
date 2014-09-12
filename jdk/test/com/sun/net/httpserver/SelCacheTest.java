@@ -24,11 +24,14 @@
 /**
  * @test
  * @bug 6270015
+ * @library /lib/testlibrary/
+ * @build jdk.testlibrary.SimpleSSLContext
  * @run main/othervm -Dsun.net.httpserver.selCacheTimeout=2 SelCacheTest
  * @summary  Light weight HTTP server
  */
 
 import com.sun.net.httpserver.*;
+import jdk.testlibrary.SimpleSSLContext;
 
 import java.util.*;
 import java.util.concurrent.*;
@@ -65,7 +68,7 @@ public class SelCacheTest extends Test {
             executor = Executors.newCachedThreadPool();
             s1.setExecutor (executor);
             s2.setExecutor (executor);
-            ctx = new SimpleSSLContext(System.getProperty("test.src")).get();
+            ctx = new SimpleSSLContext().get();
             s2.setHttpsConfigurator(new HttpsConfigurator (ctx));
             s1.start();
             s2.start();
