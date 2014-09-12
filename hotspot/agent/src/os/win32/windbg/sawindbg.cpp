@@ -112,7 +112,9 @@ static jmethodID setThreadIntegerRegisterSet_ID = 0;
  return;}
 
 static void throwNewDebuggerException(JNIEnv* env, const char* errMsg) {
-  env->ThrowNew(env->FindClass("sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
+  jclass clazz = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
+  CHECK_EXCEPTION;
+  env->ThrowNew(clazz, errMsg);
 }
 
 /*
@@ -310,15 +312,18 @@ static bool getWindbgInterfaces(JNIEnv* env, jobject obj) {
 static bool setImageAndSymbolPath(JNIEnv* env, jobject obj) {
   jboolean isCopy;
   jclass clazz = env->GetObjectClass(obj);
+  CHECK_EXCEPTION_(false);
   jstring path;
   const char* buf;
 
   path = (jstring) env->GetStaticObjectField(clazz, imagePath_ID);
+  CHECK_EXCEPTION_(false);
   buf = env->GetStringUTFChars(path, &isCopy);
   CHECK_EXCEPTION_(false);
   AutoJavaString imagePath(env, path, buf);
 
   path = (jstring) env->GetStaticObjectField(clazz, symbolPath_ID);
+  CHECK_EXCEPTION_(false);
   buf = env->GetStringUTFChars(path, &isCopy);
   CHECK_EXCEPTION_(false);
   AutoJavaString symbolPath(env, path, buf);
