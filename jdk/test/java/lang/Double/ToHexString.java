@@ -25,11 +25,13 @@
  * @test
  * @bug 4826774 4926547
  * @summary Tests for {Float, Double}.toHexString methods
+ * @library ../Math
+ * @build DoubleConsts
+ * @run main ToHexString
  * @author Joseph D. Darcy
  */
 
 import java.util.regex.*;
-import sun.misc.DoubleConsts;
 
 public class ToHexString {
     private ToHexString() {}
@@ -83,7 +85,7 @@ public class ToHexString {
                     DoubleConsts.EXP_BIAS;
                 result.append("0x");
 
-                if (exponent == DoubleConsts.MIN_EXPONENT - 1) { // zero or subnormal
+                if (exponent == Double.MIN_EXPONENT - 1) { // zero or subnormal
                     if(signifString.equals("0000000000000")) {
                         result.append("0.0p0");
                     }

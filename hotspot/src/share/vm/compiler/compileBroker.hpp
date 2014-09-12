@@ -111,14 +111,14 @@ class CompileTask : public CHeapObj<mtCompiler> {
 private:
   static void  print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                       bool is_osr_method = false, int osr_bci = -1, bool is_blocking = false,
-                                      const char* msg = NULL, bool short_form = false);
+                                      const char* msg = NULL, bool short_form = false, bool cr = true);
 
 public:
-  void         print_compilation(outputStream* st = tty, const char* msg = NULL, bool short_form = false);
-  static void  print_compilation(outputStream* st, const nmethod* nm, const char* msg = NULL, bool short_form = false) {
+  void         print_compilation(outputStream* st = tty, const char* msg = NULL, bool short_form = false, bool cr = true);
+  static void  print_compilation(outputStream* st, const nmethod* nm, const char* msg = NULL, bool short_form = false, bool cr = true) {
     print_compilation_impl(st, nm->method(), nm->compile_id(), nm->comp_level(),
                            nm->is_osr_method(), nm->is_osr_method() ? nm->osr_entry_bci() : -1, /*is_blocking*/ false,
-                           msg, short_form);
+                           msg, short_form, cr);
   }
 
   static void  print_inlining(outputStream* st, ciMethod* method, int inline_level, int bci, const char* msg = NULL);
@@ -131,8 +131,7 @@ public:
 
   static void  print_inline_indent(int inline_level, outputStream* st = tty);
 
-  void         print();
-  void         print_line();
+  void         print_tty();
   void         print_line_on_error(outputStream* st, char* buf, int buflen);
 
   void         log_task(xmlStream* log);
@@ -234,7 +233,8 @@ class CompileQueue : public CHeapObj<mtCompiler> {
   // Redefine Classes support
   void mark_on_stack();
   void free_all();
-  NOT_PRODUCT (void print();)
+  void print_tty();
+  void print(outputStream* st = tty);
 
   ~CompileQueue() {
     assert (is_empty(), " Compile Queue must be empty");
@@ -341,7 +341,7 @@ class CompileBroker: AllStatic {
   static void init_compiler_threads(int c1_compiler_count, int c2_compiler_count);
   static bool compilation_is_complete  (methodHandle method, int osr_bci, int comp_level);
   static bool compilation_is_prohibited(methodHandle method, int osr_bci, int comp_level);
-  static bool is_compile_blocking      ();
+  static bool is_compile_blocking();
   static void preload_classes          (methodHandle method, TRAPS);
 
   static CompileTask* create_compile_task(CompileQueue* queue,
@@ -369,11 +369,8 @@ class CompileBroker: AllStatic {
                                   int hot_count,
                                   const char* comment,
                                   Thread* thread);
-  static CompileQueue* compile_queue(int comp_level) {
-    if (is_c2_compile(comp_level)) return _c2_compile_queue;
-    if (is_c1_compile(comp_level)) return _c1_compile_queue;
-    return NULL;
-  }
+
+  static CompileQueue* compile_queue(int comp_level);
   static bool init_compiler_runtime();
   static void shutdown_compiler_runtime(AbstractCompiler* comp, CompilerThread* thread);
 
@@ -390,6 +387,7 @@ class CompileBroker: AllStatic {
   }
 
   static bool compilation_is_in_queue(methodHandle method);
+  static void print_compile_queues(outputStream* st);
   static int queue_size(int comp_level) {
     CompileQueue *q = compile_queue(comp_level);
     return q != NULL ? q->size() : 0;

@@ -50,6 +50,7 @@ public class LowMemoryTest {
     private static boolean testFailed = false;
     private static final int NUM_TRIGGERS = 5;
     private static final int NUM_CHUNKS = 2;
+    private static final int YOUNG_GEN_SIZE = 8 * 1024 * 1024;
     private static long chunkSize;
 
     /**
@@ -59,11 +60,19 @@ public class LowMemoryTest {
      */
     public static void main(String a[]) throws Throwable {
         final String main = "LowMemoryTest$TestMain";
-        RunUtil.runTestKeepGcOpts(main);
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseSerialGC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseParallelGC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseG1GC");
-        RunUtil.runTestClearGcOpts(main, "-XX:+UseConcMarkSweepGC");
+        // Use a low young gen size to ensure that the
+        // allocated objects are put in the old gen.
+        final String nmFlag = "-Xmn" + YOUNG_GEN_SIZE;
+        // Using large pages will change the young gen size,
+        // make sure we don't use them for this test.
+        final String lpFlag = "-XX:-UseLargePages";
+        // Prevent G1 from selecting a large heap region size,
+        // since that would change the young gen size.
+        final String g1Flag = "-XX:G1HeapRegionSize=1m";
+        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseSerialGC");
+        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseParallelGC");
+        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseG1GC", g1Flag);
+        RunUtil.runTestClearGcOpts(main, nmFlag, lpFlag, "-XX:+UseConcMarkSweepGC");
     }
 
     private static volatile boolean listenerInvoked = false;
@@ -151,10 +160,24 @@ public class LowMemoryTest {
             Thread allocator = new AllocatorThread();
             Thread sweeper = new SweeperThread();
 
-            // Now set threshold
+            // The chunk size needs to be larger than YOUNG_GEN_SIZE,
+            // otherwise we will get intermittent failures when objects
+            // end up in the young gen instead of the old gen.
+            final long epsilon = 1024;
+            chunkSize = YOUNG_GEN_SIZE + epsilon;
+
             MemoryUsage mu = mpool.getUsage();
-            chunkSize = (mu.getMax() - mu.getUsed()) / 20;
             newThreshold = mu.getUsed() + (chunkSize * NUM_CHUNKS);
+
+            // Sanity check. Make sure the new threshold isn't too large.
+            // Tweak the test if this fails.
+            final long headRoom = chunkSize * 2;
+            final long max = mu.getMax();
+            if (max != -1 && newThreshold > max - headRoom) {
+                throw new RuntimeException("TEST FAILED: newThreshold: " + newThreshold +
+                        " is too near the maximum old gen size: " + max +
+                        " used: " + mu.getUsed() + " headRoom: " + headRoom);
+            }
 
             System.out.println("Setting threshold for " + mpool.getName() +
                 " from " + mpool.getUsageThreshold() + " to " + newThreshold +

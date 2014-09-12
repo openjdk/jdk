@@ -28,8 +28,6 @@
  * @author Joseph D. Darcy
  */
 
-import sun.misc.DoubleConsts;
-
 public class CubeRootTests {
     private CubeRootTests(){}
 
@@ -93,7 +91,7 @@ public class CubeRootTests {
         }
 
         // Test cbrt(2^(3n)) = 2^n.
-        for(int i = 18; i <= DoubleConsts.MAX_EXPONENT/3; i++) {
+        for(int i = 18; i <= Double.MAX_EXPONENT/3; i++) {
             failures += testCubeRootCase(Math.scalb(1.0, 3*i),
                                          Math.scalb(1.0, i) );
         }
@@ -240,7 +238,7 @@ public class CubeRootTests {
             double pcNeighborsStrictCbrt[] = new double[5];
 
             // Test near cbrt(2^(3n)) = 2^n.
-            for(int i = 18; i <= DoubleConsts.MAX_EXPONENT/3; i++) {
+            for(int i = 18; i <= Double.MAX_EXPONENT/3; i++) {
                 double pc = Math.scalb(1.0, 3*i);
 
                 pcNeighbors[2] = pc;

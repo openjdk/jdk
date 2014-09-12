@@ -187,7 +187,6 @@ public class LCMS implements PCMM {
     public static native void colorConvert(LCMSTransform trans,
                                            LCMSImageLayout src,
                                            LCMSImageLayout dest);
-    public static native void freeTransform(long ID);
 
     public static native void initLCMS(Class<?> Trans, Class<?> IL, Class<?> Pf);
 

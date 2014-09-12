@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,11 +39,6 @@
 
 package j2dbench.tests.cmm;
 
-import j2dbench.Group;
-import j2dbench.Option;
-import j2dbench.Result;
-import j2dbench.TestEnvironment;
-import j2dbench.tests.iio.IIOTests;
 import java.awt.AlphaComposite;
 import java.awt.Color;
 import java.awt.Graphics2D;
@@ -53,15 +48,22 @@ import java.awt.image.BufferedImage;
 import java.awt.image.ColorConvertOp;
 import java.awt.image.Raster;
 import java.awt.image.WritableRaster;
+
 import javax.imageio.ImageIO;
+
+import j2dbench.Group;
+import j2dbench.Option;
+import j2dbench.Result;
+import j2dbench.TestEnvironment;
+import j2dbench.tests.iio.IIOTests;
 
 public class ColorConvertOpTests extends ColorConversionTests {
 
-    private static enum ImageContent {
-        BLANK("bank", "Blank (opaque black)"),
-        RANDOM("random", "Random"),
-        VECTOR("vector", "Vector Art"),
-        PHOTO("photo", "Photograph");
+    private static class ImageContent {
+        static ImageContent BLANK = new ImageContent("bank", "Blank (opaque black)");
+        static ImageContent RANDOM = new ImageContent("random", "Random");
+        static ImageContent VECTOR = new ImageContent("vector", "Vector Art");
+        static ImageContent PHOTO= new ImageContent("photo", "Photograph");
 
         public final String name;
         public final String descr;
@@ -70,15 +72,19 @@ public class ColorConvertOpTests extends ColorConversionTests {
             this.name = name;
             this.descr = descr;
         }
+
+        public static ImageContent[] values() {
+            return new ImageContent[]{BLANK, RANDOM, VECTOR, PHOTO};
+        }
     }
 
-    private static enum ImageType {
-        INT_ARGB(BufferedImage.TYPE_INT_ARGB, "INT_ARGB", "TYPE_INT_ARGB"),
-        INT_RGB(BufferedImage.TYPE_INT_RGB, "INT_RGB", "TYPE_INT_RGB"),
-        INT_BGR(BufferedImage.TYPE_INT_BGR, "INT_BGR", "TYPE_INT_BGR"),
-        BYTE_3BYTE_BGR(BufferedImage.TYPE_3BYTE_BGR, "3BYTE_BGR", "TYPE_3BYTE_BGR"),
-        BYTE_4BYTE_ABGR(BufferedImage.TYPE_4BYTE_ABGR, "4BYTE_BGR", "TYPE_4BYTE_BGR"),
-        COMPATIBLE_DST(0, "Compatible", "Compatible destination");
+    private static class ImageType {
+        static ImageType INT_ARGB = new ImageType(BufferedImage.TYPE_INT_ARGB, "INT_ARGB", "TYPE_INT_ARGB");
+        static ImageType INT_RGB = new ImageType(BufferedImage.TYPE_INT_RGB, "INT_RGB", "TYPE_INT_RGB");
+        static ImageType INT_BGR = new ImageType(BufferedImage.TYPE_INT_BGR, "INT_BGR", "TYPE_INT_BGR");
+        static ImageType BYTE_3BYTE_BGR = new ImageType(BufferedImage.TYPE_3BYTE_BGR, "3BYTE_BGR", "TYPE_3BYTE_BGR");
+        static ImageType BYTE_4BYTE_ABGR = new ImageType(BufferedImage.TYPE_4BYTE_ABGR, "4BYTE_BGR", "TYPE_4BYTE_BGR");
+        static ImageType COMPATIBLE_DST = new ImageType(0, "Compatible", "Compatible destination");
 
         private ImageType(int type, String abbr, String descr) {
             this.type = type;
@@ -89,11 +95,16 @@ public class ColorConvertOpTests extends ColorConversionTests {
         public final int type;
         public final String abbrev;
         public final String descr;
+
+        public static ImageType[] values() {
+            return new ImageType[]{INT_ARGB, INT_RGB, INT_BGR,
+                    BYTE_3BYTE_BGR, BYTE_4BYTE_ABGR, COMPATIBLE_DST};
+        }
     }
 
-    private static enum ListType {
-        SRC("srcType", "Source Images"),
-        DST("dstType", "Destination Images");
+    private static class ListType {
+        static ListType SRC = new ListType("srcType", "Source Images");
+        static ListType DST = new ListType("dstType", "Destination Images");
 
         private ListType(String name, String description) {
             this.name = name;
@@ -320,64 +331,55 @@ public class ColorConvertOpTests extends ColorConversionTests {
         BufferedImage image;
         image = new BufferedImage(width, height, type);
         boolean hasAlpha = image.getColorModel().hasAlpha();
-        switch (contentType) {
-            case RANDOM:
-                for (int y = 0; y < height; y++) {
-                    for (int x = 0; x < width; x++) {
-                        int rgb = (int)(Math.random() * 0xffffff);
-                        if (hasAlpha) {
-                            rgb |= 0x7f000000;
-                        }
-                        image.setRGB(x, y, rgb);
-                    }
-                }
-                break;
-            case VECTOR:
-                {
-                    Graphics2D g = image.createGraphics();
+        if (contentType == ImageContent.RANDOM) {
+            for (int y = 0; y < height; y++) {
+                for (int x = 0; x < width; x++) {
+                    int rgb = (int) (Math.random() * 0xffffff);
                     if (hasAlpha) {
-                        // fill background with a translucent color
-                        g.setComposite(AlphaComposite.getInstance(
-                                           AlphaComposite.SRC, 0.5f));
+                        rgb |= 0x7f000000;
                     }
-                    g.setColor(Color.blue);
-                    g.fillRect(0, 0, width, height);
-                    g.setComposite(AlphaComposite.Src);
-                    g.setColor(Color.yellow);
-                    g.fillOval(2, 2, width-4, height-4);
-                    g.setColor(Color.red);
-                    g.fillOval(4, 4, width-8, height-8);
-                    g.setColor(Color.green);
-                    g.fillRect(8, 8, width-16, height-16);
-                    g.setColor(Color.white);
-                    g.drawLine(0, 0, width, height);
-                    g.drawLine(0, height, width, 0);
-                    g.dispose();
-                    break;
+                    image.setRGB(x, y, rgb);
                 }
-            case PHOTO:
-                {
-                    Image photo = null;
-                    try {
-                        photo = ImageIO.read(
-                            IIOTests.class.getResourceAsStream("images/photo.jpg"));
-                    } catch (Exception e) {
-                        System.err.println("error loading photo");
-                        e.printStackTrace();
-                    }
-                    Graphics2D g = image.createGraphics();
-                    if (hasAlpha) {
-                        g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC,
-                                                                  0.5f));
-                    }
-                    g.drawImage(photo, 0, 0, width, height, null);
-                    g.dispose();
-                    break;
-                }
-            default:
-                break;
+            }
         }
-
+        if (contentType == ImageContent.VECTOR) {
+            Graphics2D g = image.createGraphics();
+            if (hasAlpha) {
+                // fill background with a translucent color
+                g.setComposite(AlphaComposite.getInstance(
+                                   AlphaComposite.SRC, 0.5f));
+            }
+            g.setColor(Color.blue);
+            g.fillRect(0, 0, width, height);
+            g.setComposite(AlphaComposite.Src);
+            g.setColor(Color.yellow);
+            g.fillOval(2, 2, width-4, height-4);
+            g.setColor(Color.red);
+            g.fillOval(4, 4, width-8, height-8);
+            g.setColor(Color.green);
+            g.fillRect(8, 8, width-16, height-16);
+            g.setColor(Color.white);
+            g.drawLine(0, 0, width, height);
+            g.drawLine(0, height, width, 0);
+            g.dispose();
+        }
+        if (contentType == ImageContent.PHOTO) {
+            Image photo = null;
+            try {
+                photo = ImageIO.read(
+                    IIOTests.class.getResourceAsStream("images/photo.jpg"));
+            } catch (Exception e) {
+                System.err.println("error loading photo");
+                e.printStackTrace();
+            }
+            Graphics2D g = image.createGraphics();
+            if (hasAlpha) {
+                g.setComposite(AlphaComposite.getInstance(AlphaComposite.SRC,
+                                                          0.5f));
+            }
+            g.drawImage(photo, 0, 0, width, height, null);
+            g.dispose();
+        }
         return image;
     }
 }

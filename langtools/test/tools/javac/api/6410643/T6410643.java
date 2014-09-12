@@ -49,9 +49,13 @@ public class T6410643 extends ToolTester {
 
     void test(String... args) {
         task = tool.getTask(null, null, null, null, null, null);
-        if (task.call())
+        try {
+            task.call();
             throw new AssertionError("Error expected");
-        System.err.println("Compilation failed as expected!");
+        } catch (IllegalStateException e) {
+            System.err.println("Expected error occurred: " + e);
+        }
+
         Iterable<String>         s = singleton(null);
         Iterable<JavaFileObject> f = singleton(null);
         //    case (null, null, null) is tested above

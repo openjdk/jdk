@@ -26,6 +26,7 @@
 package sun.awt.X11;
 
 import java.awt.Graphics;
+import java.awt.dnd.DropTarget;
 
 import sun.awt.LightweightFrame;
 import sun.swing.JLightweightFrame;
@@ -68,5 +69,15 @@ public class XLightweightFramePeer extends XFramePeer {
     @Override
     public void updateCursorImmediately() {
         SwingAccessor.getJLightweightFrameAccessor().updateCursor((JLightweightFrame)getLwTarget());
+    }
+
+    @Override
+    public void addDropTarget(DropTarget dt) {
+        getLwTarget().addDropTarget(dt);
+    }
+
+    @Override
+    public void removeDropTarget(DropTarget dt) {
+        getLwTarget().removeDropTarget(dt);
     }
 }

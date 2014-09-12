@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2005, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2005, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,7 +35,7 @@ import java.lang.instrument.*;
 import java.security.ProtectionDomain;
 import java.io.*;
 
-import ilib.*;
+import asmlib.*;
 
 class NativeMethodPrefixAgent {
 
@@ -62,14 +62,25 @@ class NativeMethodPrefixAgent {
             System.out.println(trname + ": " +
                                (redef? "Retransforming " : "Loading ") + className);
             if (className != null) {
-                Options opt = new Options();
-                opt.shouldInstrumentNativeMethods = true;
-                opt.trackerClassName = "bootreporter/StringIdCallbackReporter";
-                opt.wrappedTrackerMethodName = "tracker";
-                opt.fixedIndex = transformId;
-                opt.wrappedPrefix = "wrapped_" + trname + "_";
                 try {
-                    byte[] newcf =  Inject.instrumentation(opt, loader, className, classfileBuffer);
+                    byte[] newcf = Instrumentor.instrFor(classfileBuffer)
+                                   .addNativeMethodTrackingInjection(
+                                        "wrapped_" + trname + "_",
+                                        (h)->{
+                                            h.push(h.getName());
+                                            h.push(transformId);
+                                            h.invokeStatic("bootreporter/StringIdCallbackReporter", "tracker", "(Ljava/lang/String;I)V", false);
+                                        })
+                                   .apply();
+                    /*** debugging ...
+                    if (newcf != null) {
+                        String fname = trname + (redef?"_redef" : "") + "/" + className;
+                        System.err.println("dumping to: " + fname);
+                        write_buffer(fname + "_before.class", classfileBuffer);
+                        write_buffer(fname + "_instr.class", newcf);
+                    }
+                    ***/
+
                     return redef? null : newcf;
                 } catch (Throwable ex) {
                     System.err.println("ERROR: Injection failure: " + ex);
@@ -86,10 +97,14 @@ class NativeMethodPrefixAgent {
     // for debugging
     static void write_buffer(String fname, byte[]buffer) {
         try {
-            FileOutputStream outStream = new FileOutputStream(fname);
-            outStream.write(buffer, 0, buffer.length);
-            outStream.close();
-        } catch (Exception ex) {
+            File f = new File(fname);
+            if (!f.getParentFile().exists()) {
+                f.getParentFile().mkdirs();
+            }
+            try (FileOutputStream outStream = new FileOutputStream(f)) {
+                outStream.write(buffer, 0, buffer.length);
+            }
+        } catch (IOException ex) {
             System.err.println("EXCEPTION in write_buffer: " + ex);
         }
     }

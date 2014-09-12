@@ -277,6 +277,14 @@ public class Block extends Node implements BreakableNode, Terminal, Flags<Block>
     }
 
     /**
+     * Returns the number of statements in the block.
+     * @return the number of statements in the block.
+     */
+    public int getStatementCount() {
+        return statements.size();
+    }
+
+    /**
      * Returns the line number of the first statement in the block.
      * @return the line number of the first statement in the block, or -1 if the block has no statements.
      */

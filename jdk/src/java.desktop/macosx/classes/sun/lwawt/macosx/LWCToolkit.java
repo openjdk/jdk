@@ -688,6 +688,11 @@ public final class LWCToolkit extends LWToolkit {
     @Override
     public DragSourceContextPeer createDragSourceContextPeer(
             DragGestureEvent dge) throws InvalidDnDOperationException {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(dge.getComponent());
+        if (f != null) {
+            return f.createDragSourceContextPeer(dge);
+        }
+
         return CDragSourceContextPeer.createDragSourceContextPeer(dge);
     }
 
@@ -696,6 +701,11 @@ public final class LWCToolkit extends LWToolkit {
     public <T extends DragGestureRecognizer> T createDragGestureRecognizer(
             Class<T> abstractRecognizerClass, DragSource ds, Component c,
             int srcActions, DragGestureListener dgl) {
+        final LightweightFrame f = SunToolkit.getLightweightFrame(c);
+        if (f != null) {
+            return f.createDragGestureRecognizer(abstractRecognizerClass, ds, c, srcActions, dgl);
+        }
+
         DragGestureRecognizer dgr = null;
 
         // Create a new mouse drag gesture recognizer if we have a class match:

@@ -29,6 +29,7 @@
  * forever, so make this test future safe, we specify them explicitly
  *
  * @test
+ * @fork
  * @runif external.octane
  * @option -scripting
  * @option -Dnashorn.typeInfo.disabled=true
@@ -37,5 +38,5 @@
  */
 
 var fn  = __DIR__ + 'compile-octane.js';
-var url = "file://" + fn; 
-loadWithNewGlobal(new java.net.URL(url));
+var url = new java.io.File(fn).toURL();
+loadWithNewGlobal(url);

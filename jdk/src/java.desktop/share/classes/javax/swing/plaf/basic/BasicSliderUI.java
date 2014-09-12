@@ -397,13 +397,14 @@ public class BasicSliderUI extends SliderUI{
     protected boolean labelsHaveSameBaselines() {
         if (!checkedLabelBaselines) {
             checkedLabelBaselines = true;
-            Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+            @SuppressWarnings("rawtypes")
+            Dictionary dictionary = slider.getLabelTable();
             if (dictionary != null) {
                 sameLabelBaselines = true;
-                Enumeration<JComponent> elements = dictionary.elements();
+                Enumeration<?> elements = dictionary.elements();
                 int baseline = -1;
                 while (elements.hasMoreElements()) {
-                    JComponent label = elements.nextElement();
+                    JComponent label = (JComponent) elements.nextElement();
                     Dimension pref = label.getPreferredSize();
                     int labelBaseline = label.getBaseline(pref.width,
                                                           pref.height);
@@ -656,10 +657,15 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Gets the height of the tick area for horizontal sliders and the width of the
-     * tick area for vertical sliders.  BasicSliderUI uses the returned value to
-     * determine the tick area rectangle.  If you want to give your ticks some room,
-     * make this larger than you need and paint your ticks away from the sides in paintTicks().
+     * Gets the height of the tick area for horizontal sliders and the width of
+     * the tick area for vertical sliders. BasicSliderUI uses the returned value
+     * to determine the tick area rectangle. If you want to give your ticks some
+     * room, make this larger than you need and paint your ticks away from the
+     * sides in paintTicks().
+     *
+     * @return an integer representing the height of the tick area for
+     * horizontal sliders, and the width of the tick area for the vertical
+     * sliders
      */
     protected int getTickLength() {
         return 8;
@@ -753,12 +759,13 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getWidthOfWidestLabel() {
-        Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         int widest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
             while ( keys.hasMoreElements() ) {
-                JComponent label = dictionary.get(keys.nextElement());
+                JComponent label = (JComponent) dictionary.get(keys.nextElement());
                 widest = Math.max( label.getPreferredSize().width, widest );
             }
         }
@@ -766,12 +773,13 @@ public class BasicSliderUI extends SliderUI{
     }
 
     protected int getHeightOfTallestLabel() {
-        Dictionary<?, JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         int tallest = 0;
         if ( dictionary != null ) {
             Enumeration<?> keys = dictionary.keys();
             while ( keys.hasMoreElements() ) {
-                JComponent label = dictionary.get(keys.nextElement());
+                JComponent label = (JComponent) dictionary.get(keys.nextElement());
                 tallest = Math.max( label.getPreferredSize().height, tallest );
             }
         }
@@ -842,18 +850,19 @@ public class BasicSliderUI extends SliderUI{
      * @since 1.6
      */
     protected Integer getHighestValue() {
-        Dictionary<Integer, ?> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
 
         if (dictionary == null) {
             return null;
         }
 
-        Enumeration<Integer> keys = dictionary.keys();
+        Enumeration<?> keys = dictionary.keys();
 
         Integer max = null;
 
         while (keys.hasMoreElements()) {
-            Integer i = keys.nextElement();
+            Integer i = (Integer) keys.nextElement();
 
             if (max == null || i > max) {
                 max = i;
@@ -867,22 +876,23 @@ public class BasicSliderUI extends SliderUI{
      * Returns the smallest value that has an entry in the label table.
      *
      * @return smallest value that has an entry in the label table, or
-     *         null.
+     * null.
      * @since 1.6
      */
     protected Integer getLowestValue() {
-        Dictionary<Integer, JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
 
         if (dictionary == null) {
             return null;
         }
 
-        Enumeration<Integer> keys = dictionary.keys();
+        Enumeration<?> keys = dictionary.keys();
 
         Integer min = null;
 
         while (keys.hasMoreElements()) {
-            Integer i = keys.nextElement();
+            Integer i = (Integer) keys.nextElement();
 
             if (min == null || i < min) {
                 min = i;
@@ -894,7 +904,11 @@ public class BasicSliderUI extends SliderUI{
 
 
     /**
-     * Returns the label that corresponds to the highest slider value in the label table.
+     * Returns the label that corresponds to the highest slider value in the
+     * label table.
+     *
+     * @return the label that corresponds to the highest slider value in the
+     * label table
      * @see JSlider#setLabelTable
      */
     protected Component getLowestValueLabel() {
@@ -906,7 +920,11 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Returns the label that corresponds to the lowest slider value in the label table.
+     * Returns the label that corresponds to the lowest slider value in the
+     * label table.
+     *
+     * @return the label that corresponds to the lowest slider value in the
+     * label table
      * @see JSlider#setLabelTable
      */
     protected Component getHighestValueLabel() {
@@ -1121,17 +1139,18 @@ public class BasicSliderUI extends SliderUI{
     public void paintLabels( Graphics g ) {
         Rectangle labelBounds = labelRect;
 
-        Dictionary<Integer, JComponent> dictionary = slider.getLabelTable();
+        @SuppressWarnings("rawtypes")
+        Dictionary dictionary = slider.getLabelTable();
         if ( dictionary != null ) {
-            Enumeration<Integer> keys = dictionary.keys();
+            Enumeration<?> keys = dictionary.keys();
             int minValue = slider.getMinimum();
             int maxValue = slider.getMaximum();
             boolean enabled = slider.isEnabled();
             while ( keys.hasMoreElements() ) {
-                Integer key = keys.nextElement();
+                Integer key = (Integer)keys.nextElement();
                 int value = key.intValue();
                 if (value >= minValue && value <= maxValue) {
-                    JComponent label = dictionary.get(key);
+                    JComponent label = (JComponent) dictionary.get(key);
                     label.setEnabled(enabled);
 
                     if (label instanceof JLabel) {
@@ -1166,8 +1185,14 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Called for every label in the label table.  Used to draw the labels for horizontal sliders.
-     * The graphics have been translated to labelRect.y already.
+     * Called for every label in the label table. Used to draw the labels for
+     * horizontal sliders. The graphics have been translated to labelRect.y
+     * already.
+     *
+     * @param g the graphics context in which to paint
+     * @param value the value of the slider
+     * @param label the component label in the label table that needs to be
+     * painted
      * @see JSlider#setLabelTable
      */
     protected void paintHorizontalLabel( Graphics g, int value, Component label ) {
@@ -1179,8 +1204,14 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * Called for every label in the label table.  Used to draw the labels for vertical sliders.
-     * The graphics have been translated to labelRect.x already.
+     * Called for every label in the label table. Used to draw the labels for
+     * vertical sliders. The graphics have been translated to labelRect.x
+     * already.
+     *
+     * @param g the graphics context in which to paint
+     * @param value the value of the slider
+     * @param label the component label in the label table that needs to be
+     * painted
      * @see JSlider#setLabelTable
      */
     protected void paintVerticalLabel( Graphics g, int value, Component label ) {
@@ -1342,9 +1373,12 @@ public class BasicSliderUI extends SliderUI{
     }
 
     /**
-     * This function is called when a mousePressed was detected in the track, not
-     * in the thumb.  The default behavior is to scroll by block.  You can
-     *  override this method to stop it from scrolling or to add additional behavior.
+     * This function is called when a mousePressed was detected in the track,
+     * not in the thumb. The default behavior is to scroll by block. You can
+     * override this method to stop it from scrolling or to add additional
+     * behavior.
+     *
+     * @param dir the direction and number of blocks to scroll
      */
     protected void scrollDueToClickInTrack( int dir ) {
         scrollByBlock( dir );
@@ -1387,6 +1421,7 @@ public class BasicSliderUI extends SliderUI{
      * @param value the slider value to get the location for
      * @param trackY y-origin of the track
      * @param trackHeight the height of the track
+     * @return the y location for the specified value of the slider
      * @since 1.6
      */
     protected int yPositionForValue(int value, int trackY, int trackHeight) {
@@ -1417,6 +1452,9 @@ public class BasicSliderUI extends SliderUI{
      * track at the the bottom or the top, this method sets the value to either
      * the minimum or maximum value of the slider, depending on if the slider
      * is inverted or not.
+     *
+     * @param yPos the location of the slider along the y axis
+     * @return the value at the y position
      */
     public int valueForYPosition( int yPos ) {
         int value;
@@ -1449,6 +1487,9 @@ public class BasicSliderUI extends SliderUI{
      * track at the left or the right, this method sets the value to either the
      * minimum or maximum value of the slider, depending on if the slider is
      * inverted or not.
+     *
+     * @param xPos the location of the slider along the x axis
+     * @return the value of the x position
      */
     public int valueForXPosition( int xPos ) {
         int value;

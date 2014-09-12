@@ -1635,34 +1635,34 @@ int Method::backedge_count() {
 }
 
 int Method::highest_comp_level() const {
-  const MethodData* mdo = method_data();
-  if (mdo != NULL) {
-    return mdo->highest_comp_level();
+  const MethodCounters* mcs = method_counters();
+  if (mcs != NULL) {
+    return mcs->highest_comp_level();
   } else {
     return CompLevel_none;
   }
 }
 
 int Method::highest_osr_comp_level() const {
-  const MethodData* mdo = method_data();
-  if (mdo != NULL) {
-    return mdo->highest_osr_comp_level();
+  const MethodCounters* mcs = method_counters();
+  if (mcs != NULL) {
+    return mcs->highest_osr_comp_level();
   } else {
     return CompLevel_none;
   }
 }
 
 void Method::set_highest_comp_level(int level) {
-  MethodData* mdo = method_data();
-  if (mdo != NULL) {
-    mdo->set_highest_comp_level(level);
+  MethodCounters* mcs = method_counters();
+  if (mcs != NULL) {
+    mcs->set_highest_comp_level(level);
   }
 }
 
 void Method::set_highest_osr_comp_level(int level) {
-  MethodData* mdo = method_data();
-  if (mdo != NULL) {
-    mdo->set_highest_osr_comp_level(level);
+  MethodCounters* mcs = method_counters();
+  if (mcs != NULL) {
+    mcs->set_highest_osr_comp_level(level);
   }
 }
 

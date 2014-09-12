@@ -37,6 +37,7 @@ import javax.lang.model.type.*;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  * Utility methods for operating on types.
@@ -64,6 +65,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         types = Types.instance(context);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public Element asElement(TypeMirror t) {
         switch (t.getKind()) {
             case DECLARED:
@@ -77,47 +79,56 @@ public class JavacTypes implements javax.lang.model.util.Types {
         }
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isSameType(TypeMirror t1, TypeMirror t2) {
         return types.isSameType((Type) t1, (Type) t2);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isSubtype(TypeMirror t1, TypeMirror t2) {
         validateTypeNotIn(t1, EXEC_OR_PKG);
         validateTypeNotIn(t2, EXEC_OR_PKG);
         return types.isSubtype((Type) t1, (Type) t2);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isAssignable(TypeMirror t1, TypeMirror t2) {
         validateTypeNotIn(t1, EXEC_OR_PKG);
         validateTypeNotIn(t2, EXEC_OR_PKG);
         return types.isAssignable((Type) t1, (Type) t2);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean contains(TypeMirror t1, TypeMirror t2) {
         validateTypeNotIn(t1, EXEC_OR_PKG);
         validateTypeNotIn(t2, EXEC_OR_PKG);
         return types.containsType((Type) t1, (Type) t2);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isSubsignature(ExecutableType m1, ExecutableType m2) {
         return types.isSubSignature((Type) m1, (Type) m2);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Type> directSupertypes(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG);
         return types.directSupertypes((Type) t);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror erasure(TypeMirror t) {
         if (t.getKind() == TypeKind.PACKAGE)
             throw new IllegalArgumentException(t.toString());
         return types.erasure((Type) t);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeElement boxedClass(PrimitiveType p) {
         return types.boxedClass((Type) p);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public PrimitiveType unboxedType(TypeMirror t) {
         if (t.getKind() != TypeKind.DECLARED)
             throw new IllegalArgumentException(t.toString());
@@ -127,11 +138,13 @@ public class JavacTypes implements javax.lang.model.util.Types {
         return (PrimitiveType)unboxed;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror capture(TypeMirror t) {
         validateTypeNotIn(t, EXEC_OR_PKG);
         return types.capture((Type) t);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public PrimitiveType getPrimitiveType(TypeKind kind) {
         switch (kind) {
         case BOOLEAN:   return syms.booleanType;
@@ -147,10 +160,12 @@ public class JavacTypes implements javax.lang.model.util.Types {
         }
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public NullType getNullType() {
         return (NullType) syms.botType;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public NoType getNoType(TypeKind kind) {
         switch (kind) {
         case VOID:      return syms.voidType;
@@ -160,6 +175,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         }
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public ArrayType getArrayType(TypeMirror componentType) {
         switch (componentType.getKind()) {
         case VOID:
@@ -172,6 +188,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
                                   Type.noAnnotations);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public WildcardType getWildcardType(TypeMirror extendsBound,
                                         TypeMirror superBound) {
         BoundKind bkind;
@@ -201,6 +218,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         }
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public DeclaredType getDeclaredType(TypeElement typeElem,
                                         TypeMirror... typeArgs) {
         ClassSymbol sym = (ClassSymbol) typeElem;
@@ -213,6 +231,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         return getDeclaredType0(sym.type.getEnclosingType(), sym, typeArgs);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public DeclaredType getDeclaredType(DeclaredType enclosing,
                                         TypeElement typeElem,
                                         TypeMirror... typeArgs) {
@@ -263,6 +282,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
      * @throws IllegalArgumentException if the element is not a valid one
      *          for the given type
      */
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public TypeMirror asMemberOf(DeclaredType containing, Element element) {
         Type site = (Type)containing;
         Symbol sym = (Symbol)element;

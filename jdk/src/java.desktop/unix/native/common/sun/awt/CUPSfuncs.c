@@ -436,6 +436,7 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
     if (name == NULL) {
         (*env)->ExceptionClear(env);
         JNU_ThrowOutOfMemoryError(env, "Could not create printer name");
+        return;
     }
     const char *filename;
 
@@ -467,8 +468,11 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
             }
         }
         if (defx > 0) {
-          jobject rxObj = (*env)->NewObject(env, intCls, intCtr, defx);
-          jobject ryObj = (*env)->NewObject(env, intCls, intCtr, defy);
+          jobject rxObj, ryObj;
+          rxObj = (*env)->NewObject(env, intCls, intCtr, defx);
+          CHECK_NULL(rxObj);
+          ryObj = (*env)->NewObject(env, intCls, intCtr, defy);
+          CHECK_NULL(ryObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
           (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
         }
@@ -492,8 +496,11 @@ Java_sun_print_CUPSPrinter_getResolutions(JNIEnv *env,
                 }
             }
             if (resx > 0 && (resx != defx || resy != defy )) {
-              jobject rxObj = (*env)->NewObject(env, intCls, intCtr, resx);
-              jobject ryObj = (*env)->NewObject(env, intCls, intCtr, resy);
+              jobject rxObj, ryObj;
+              rxObj = (*env)->NewObject(env, intCls, intCtr, resx);
+              CHECK_NULL(rxObj);
+              ryObj = (*env)->NewObject(env, intCls, intCtr, resy);
+              CHECK_NULL(ryObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, rxObj);
               (*env)->CallBooleanMethod(env, arrayList, arrListAddMID, ryObj);
             }

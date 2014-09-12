@@ -75,9 +75,9 @@ JAR="${COMPILEJAVA}/bin/jar"
 
 cp ${TESTSRC}/${AGENT}.java .
 cp ${TESTSRC}/${APP}.java .
-rm -rf ilib
-mkdir ilib
-cp ${TESTSRC}/ilib/*.java ilib
+rm -rf asmlib
+mkdir asmlib
+cp ${TESTSRC}/asmlib/*.java asmlib
 rm -rf bootpath
 mkdir -p bootpath/bootreporter
 cp ${TESTSRC}/bootreporter/*.java bootpath/bootreporter
@@ -86,7 +86,7 @@ cd bootpath
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} bootreporter/*.java
 cd ..
 
-${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} ${AGENT}.java ilib/*.java
+${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -XDignore.symbol.file ${AGENT}.java asmlib/*.java
 ${JAVAC} ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -classpath .${PATHSEP}bootpath ${APP}.java
 
 echo "Manifest-Version: 1.0"    >  ${AGENT}.mf
@@ -98,6 +98,6 @@ while [ $# != 0 ] ; do
   shift
 done
 
-${JAR} ${TESTTOOLVMOPTS} cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class ilib/*.class
+${JAR} ${TESTTOOLVMOPTS} cvfm ${AGENT}.jar ${AGENT}.mf ${AGENT}*.class asmlib/*.class
 
-# rm -rf  ${AGENT}.java ilib ${AGENT}.mf ${AGENT}*.class
+# rm -rf  ${AGENT}.java asmlib ${AGENT}.mf ${AGENT}*.class

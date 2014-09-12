@@ -467,6 +467,10 @@ Java_java_net_TwoStacksPlainSocketImpl_socketBind(JNIEnv *env, jobject this,
                     (*env)->SetIntField(env, fd1Obj, IO_fd_fdID, fd1);
                 }
             }
+        } else {
+            /* NET_BindV6() closes both sockets upon a failure */
+            (*env)->SetObjectField(env, this, psi_fdID, NULL);
+            (*env)->SetObjectField(env, this, psi_fd1ID, NULL);
         }
     } else {
         rv = NET_WinBind(fd, (struct sockaddr *)&him, len, exclBind);

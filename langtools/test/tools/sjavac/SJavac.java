@@ -25,7 +25,7 @@
 /*
  * @test
  * @summary Test all aspects of sjavac.
- * @bug 8004658 8042441 8042699
+ * @bug 8004658 8042441 8042699 8054461 8054474 8054465
  *
  * @build Wrapper
  * @run main Wrapper SJavac
@@ -67,9 +67,6 @@ public class SJavac {
     // Where to put c-header files.
     Path headers;
 
-    // The sjavac compiler.
-    Main main = new Main();
-
     // Remember the previous bin and headers state here.
     Map<String,Long> previous_bin_state;
     Map<String,Long> previous_headers_state;
@@ -99,6 +96,9 @@ public class SJavac {
         compileCircularSources();
         compileExcludingDependency();
         incrementalCompileTestFullyQualifiedRef();
+        compileWithAtFile();
+        testStateDir();
+        testPermittedArtifact();
 
         delete(gensrc);
         delete(gensrc2);
@@ -463,6 +463,98 @@ public class SJavac {
                          "bin/javac_state");
     }
 
+   /**
+     * Tests @atfile
+     * @throws Exception If test fails
+     */
+    void compileWithAtFile() throws Exception {
+        System.out.println("\nTest @atfile with command line content.");
+        System.out.println("---------------------------------------");
+
+        delete(gensrc);
+        delete(gensrc2);
+        delete(bin);
+
+        populate(gensrc,
+                 "list.txt",
+                 "-if */alfa/omega/A.java\n-if */beta/B.java\ngensrc\n-d bin\n",
+                 "alfa/omega/A.java",
+                 "package alfa.omega; import beta.B; public class A { B b; }",
+                 "beta/B.java",
+                 "package beta; public class B { }",
+                 "beta/C.java",
+                 "broken");
+        previous_bin_state = collectState(bin);
+        compile("@gensrc/list.txt", "--server:portfile=testserver,background=false");
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                         "bin/javac_state",
+                         "bin/alfa/omega/A.class",
+                         "bin/beta/B.class");
+    }
+
+    /**
+     * Tests storing javac_state into another directory.
+     * @throws Exception If test fails
+     */
+    void testStateDir() throws Exception {
+        System.out.println("\nVerify that --state-dir=bar works.");
+        System.out.println("----------------------------------");
+
+        Path bar = defaultfs.getPath("bar");
+        Files.createDirectory(bar);
+
+        delete(gensrc);
+        delete(bin);
+        delete(bar);
+        previous_bin_state = collectState(bin);
+        Map<String,Long> previous_bar_state = collectState(bar);
+
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { }");
+
+        compile("--state-dir=bar", "-src", "gensrc", "-d", "bin", serverArg);
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                                     "bin/alfa/omega/A.class");
+        Map<String,Long> new_bar_state = collectState(bar);
+        verifyThatFilesHaveBeenAdded(previous_bar_state, new_bar_state,
+                                     "bar/javac_state");
+    }
+
+    /**
+     * Test white listing of external artifacts inside the destination dir.
+     * @throws Exception If test fails
+     */
+    void testPermittedArtifact() throws Exception {
+        System.out.println("\nVerify that --permit-artifact=bar works.");
+        System.out.println("-------------------------------------------");
+
+        delete(gensrc);
+        delete(bin);
+
+        previous_bin_state = collectState(bin);
+
+        populate(gensrc,
+                 "alfa/omega/A.java",
+                 "package alfa.omega; public class A { }");
+
+        populate(bin,
+                 "alfa/omega/AA.class",
+                 "Ugh, a messy build system (tobefixed) wrote this class file, sjavac must not delete it.");
+
+        compile("--log=debug", "--permit-artifact=bin/alfa/omega/AA.class", "-src", "gensrc", "-d", "bin", serverArg);
+
+        Map<String,Long> new_bin_state = collectState(bin);
+        verifyThatFilesHaveBeenAdded(previous_bin_state, new_bin_state,
+                                     "bin/alfa/omega/A.class",
+                                     "bin/alfa/omega/AA.class",
+                                     "bin/javac_state");
+    }
+
     void removeFrom(Path dir, String... args) throws IOException {
         for (String filename : args) {
             Path p = dir.resolve(filename);
@@ -512,7 +604,7 @@ public class SJavac {
     }
 
     void compile(String... args) throws Exception {
-        int rc = main.go(args, System.out, System.err);
+        int rc = Main.go(args);
         if (rc != 0) throw new Exception("Error during compile!");
 
         // Wait a second, to get around the (temporary) problem with
@@ -528,7 +620,7 @@ public class SJavac {
     }
 
     void compileExpectFailure(String... args) throws Exception {
-        int rc = main.go(args, System.out, System.err);
+        int rc = Main.go(args);
         if (rc == 0) throw new Exception("Expected error during compile! Did not fail!");
     }
 

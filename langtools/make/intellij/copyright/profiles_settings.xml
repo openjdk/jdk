@@ -1,3 +1,7 @@
 <component name="CopyrightManager">
-  <settings default="langtools" />
+  <settings default="langtools">
+    <LanguageOptions name="JAVA">
+      <option name="fileLocation" value="1" />
+    </LanguageOptions>
+  </settings>
 </component>

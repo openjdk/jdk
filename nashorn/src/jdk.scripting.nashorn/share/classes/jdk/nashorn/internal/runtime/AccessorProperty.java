@@ -136,16 +136,16 @@ public class AccessorProperty extends Property {
     }
 
     /** Seed getter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private transient MethodHandle primitiveGetter;
+    transient MethodHandle primitiveGetter;
 
     /** Seed setter for the primitive version of this field (in -Dnashorn.fields.dual=true mode) */
-    private transient MethodHandle primitiveSetter;
+    transient MethodHandle primitiveSetter;
 
     /** Seed getter for the Object version of this field */
-    private transient MethodHandle objectGetter;
+    transient MethodHandle objectGetter;
 
     /** Seed setter for the Object version of this field */
-    private transient MethodHandle objectSetter;
+    transient MethodHandle objectSetter;
 
     /**
      * Current type of this object, in object only mode, this is an Object.class. In dual-fields mode
@@ -185,10 +185,10 @@ public class AccessorProperty extends Property {
      * @param key    the property key
      * @param flags  the property flags
      * @param slot   spill slot
-     * @param objectGetter
-     * @param objectSetter
-     * @param primitiveGetter
-     * @param primitiveSetter
+     * @param primitiveGetter primitive getter
+     * @param primitiveSetter primitive setter
+     * @param objectGetter    object getter
+     * @param objectSetter    object setter
      */
     protected AccessorProperty(
             final String key,
@@ -255,7 +255,7 @@ public class AccessorProperty extends Property {
     }
 
     /**
-     * Normal ACCESS PROPERTY constructor given a structure glass.
+     * Normal ACCESS PROPERTY constructor given a structure class.
      * Constructor for dual field AccessorPropertys.
      *
      * @param key              property key
@@ -267,6 +267,7 @@ public class AccessorProperty extends Property {
         super(key, flags, slot);
 
         initGetterSetter(structure);
+        initializeType();
     }
 
     private void initGetterSetter(final Class<?> structure) {
@@ -291,8 +292,6 @@ public class AccessorProperty extends Property {
             objectSetter    = gs.objectSetters[slot];
             primitiveSetter = gs.primitiveSetters[slot];
         }
-
-        initializeType();
     }
 
     /**
@@ -412,8 +411,8 @@ public class AccessorProperty extends Property {
         }
      }
 
-     @Override
-     public long getLongValue(final ScriptObject self, final ScriptObject owner) {
+    @Override
+    public long getLongValue(final ScriptObject self, final ScriptObject owner) {
         try {
             return (long)getGetter(long.class).invokeExact((Object)self);
         } catch (final Error | RuntimeException e) {
@@ -531,12 +530,13 @@ public class AccessorProperty extends Property {
 
     @Override
     void initMethodHandles(final Class<?> structure) {
+        // sanity check for structure class
         if (!ScriptObject.class.isAssignableFrom(structure) || !StructureLoader.isStructureClass(structure.getName())) {
             throw new IllegalArgumentException();
         }
-        if (!isSpill()) {
-            initGetterSetter(structure);
-        }
+        // this method is overridden in SpillProperty
+        assert !isSpill();
+        initGetterSetter(structure);
     }
 
     @Override
@@ -548,6 +548,8 @@ public class AccessorProperty extends Property {
                 type == double.class ||
                 type == Object.class :
                 "invalid getter type " + type + " for " + getKey();
+
+        checkUndeclared();
 
         //all this does is add a return value filter for object fields only
         final MethodHandle[] getterCache = GETTER_CACHE;
@@ -579,6 +581,8 @@ public class AccessorProperty extends Property {
             return getOptimisticPrimitiveGetter(type, programPoint);
         }
 
+        checkUndeclared();
+
         return debug(
             createGetter(
                 getCurrentType(),
@@ -608,6 +612,13 @@ public class AccessorProperty extends Property {
         return newMap;
     }
 
+    private void checkUndeclared() {
+        if ((getFlags() & NEEDS_DECLARATION) != 0) {
+            // a lexically defined variable that hasn't seen its declaration - throw ReferenceError
+            throw ECMAErrors.referenceError("not.defined", getKey());
+        }
+    }
+
     // the final three arguments are for debug printout purposes only
     @SuppressWarnings("unused")
     private static Object replaceMap(final Object sobj, final PropertyMap newMap) {
@@ -635,13 +646,14 @@ public class AccessorProperty extends Property {
 
     @Override
     public MethodHandle getSetter(final Class<?> type, final PropertyMap currentMap) {
-        final int      i       = getAccessorTypeIndex(type);
-        final int      ci      = isUndefined() ? -1 : getAccessorTypeIndex(getCurrentType());
-        final Class<?> forType = isUndefined() ? type : getCurrentType();
+        checkUndeclared();
+
+        final int typeIndex        = getAccessorTypeIndex(type);
+        final int currentTypeIndex = getAccessorTypeIndex(getCurrentType());
 
         //if we are asking for an object setter, but are still a primitive type, we might try to box it
         MethodHandle mh;
-        if (needsInvalidator(i, ci)) {
+        if (needsInvalidator(typeIndex, currentTypeIndex)) {
             final Property     newProperty = getWiderProperty(type);
             final PropertyMap  newMap      = getWiderMap(currentMap, newProperty);
 
@@ -652,6 +664,7 @@ public class AccessorProperty extends Property {
                  mh = ObjectClassGenerator.createGuardBoxedPrimitiveSetter(ct, generateSetter(ct, ct), mh);
             }
         } else {
+            final Class<?> forType = isUndefined() ? type : getCurrentType();
             mh = generateSetter(!forType.isPrimitive() ? Object.class : forType, type);
         }
 
@@ -692,11 +705,12 @@ public class AccessorProperty extends Property {
         if (OBJECT_FIELDS_ONLY) {
             return false;
         }
-        return getCurrentType() != Object.class && (isConfigurable() || isWritable());
+        // Return true for currently undefined even if non-writable/configurable to allow initialization of ES6 CONST.
+        return getCurrentType() == null || (getCurrentType() != Object.class && (isConfigurable() || isWritable()));
     }
 
-    private boolean needsInvalidator(final int ti, final int fti) {
-        return canChangeType() && ti > fti;
+    private boolean needsInvalidator(final int typeIndex, final int currentTypeIndex) {
+        return canChangeType() && typeIndex > currentTypeIndex;
     }
 
     @Override
@@ -712,7 +726,7 @@ public class AccessorProperty extends Property {
 
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return mh;
         }
 
@@ -734,7 +748,7 @@ public class AccessorProperty extends Property {
     }
 
     private MethodHandle debugReplace(final Class<?> oldType, final Class<?> newType, final PropertyMap oldMap, final PropertyMap newMap) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return REPLACE_MAP;
         }
 
@@ -767,7 +781,7 @@ public class AccessorProperty extends Property {
     }
 
     private static MethodHandle debugInvalidate(final String key, final SwitchPoint sp) {
-        if (!Global.hasInstance()) {
+        if (!Context.DEBUG || !Global.hasInstance()) {
             return INVALIDATE_SP;
         }
 

@@ -59,6 +59,7 @@ import java.security.PrivilegedAction;
 import java.util.EnumSet;
 import java.util.HashSet;
 import java.util.Set;
+
 import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.util.TraceClassVisitor;
@@ -135,6 +136,16 @@ public class ClassEmitter implements Emitter {
     /** Set of constants access methods required. */
     private Set<Class<?>> constantMethodNeeded;
 
+    private int methodCount;
+
+    private int initCount;
+
+    private int clinitCount;
+
+    private int fieldCount;
+
+    private final Set<String> methodNames;
+
     /**
      * Constructor - only used internally in this class as it breaks
      * abstraction towards ASM or other code generator below
@@ -146,6 +157,11 @@ public class ClassEmitter implements Emitter {
         this.context        = context;
         this.cw             = cw;
         this.methodsStarted = new HashSet<>();
+        this.methodNames    = new HashSet<>();
+    }
+
+    public Set<String> getMethodNames() {
+        return methodNames;
     }
 
     /**
@@ -206,6 +222,38 @@ public class ClassEmitter implements Emitter {
      */
     String getUnitClassName() {
         return unitClassName;
+    }
+
+    /**
+     * Get the method count, including init and clinit methods
+     * @return method count
+     */
+    public int getMethodCount() {
+        return methodCount;
+    }
+
+    /**
+     * Get the clinit count
+     * @return clinit count
+     */
+    public int getClinitCount() {
+        return clinitCount;
+    }
+
+    /**
+     * Get the init count
+     * @return init count
+     */
+    public int getInitCount() {
+        return initCount;
+    }
+
+    /**
+     * Get the field count
+     * @return field count
+     */
+    public int getFieldCount() {
+        return fieldCount;
     }
 
     /**
@@ -359,9 +407,16 @@ public class ClassEmitter implements Emitter {
      */
     @Override
     public void end() {
-        assert classStarted;
+        assert classStarted : "class not started for " + unitClassName;
 
         if (unitClassName != null) {
+            final MethodEmitter initMethod = init(EnumSet.of(Flag.PRIVATE));
+            initMethod.begin();
+            initMethod.load(Type.OBJECT, 0);
+            initMethod.newInstance(jdk.nashorn.internal.scripts.JS.class);
+            initMethod.returnVoid();
+            initMethod.end();
+
             defineCommonUtilities();
         }
 
@@ -419,6 +474,8 @@ public class ClassEmitter implements Emitter {
     }
 
     SplitMethodEmitter method(final SplitNode splitNode, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
+        methodCount++;
+        methodNames.add(methodName);
         return new SplitMethodEmitter(this, methodVisitor(EnumSet.of(Flag.PUBLIC, Flag.STATIC), methodName, rtype, ptypes), splitNode);
     }
 
@@ -446,6 +503,8 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving this method
      */
     MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final Class<?> rtype, final Class<?>... ptypes) {
+        methodCount++;
+        methodNames.add(methodName);
         return new MethodEmitter(this, methodVisitor(methodFlags, methodName, rtype, ptypes));
     }
 
@@ -471,6 +530,8 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving this method
      */
     MethodEmitter method(final EnumSet<Flag> methodFlags, final String methodName, final String descriptor) {
+        methodCount++;
+        methodNames.add(methodName);
         return new MethodEmitter(this, cw.visitMethod(Flag.getValue(methodFlags), methodName, descriptor, null, null));
     }
 
@@ -481,6 +542,8 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving this method
      */
     MethodEmitter method(final FunctionNode functionNode) {
+        methodCount++;
+        methodNames.add(functionNode.getName());
         final FunctionSignature signature = new FunctionSignature(functionNode);
         final MethodVisitor mv = cw.visitMethod(
             ACC_PUBLIC | ACC_STATIC | (functionNode.isVarArg() ? ACC_VARARGS : 0),
@@ -499,6 +562,8 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving this method
      */
     MethodEmitter restOfMethod(final FunctionNode functionNode) {
+        methodCount++;
+        methodNames.add(functionNode.getName());
         final MethodVisitor mv = cw.visitMethod(
             ACC_PUBLIC | ACC_STATIC,
             functionNode.getName(),
@@ -516,6 +581,7 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving <clinit>
      */
     MethodEmitter clinit() {
+        clinitCount++;
         return method(EnumSet.of(Flag.STATIC), CLINIT.symbolName(), void.class);
     }
 
@@ -525,6 +591,7 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving <init>()V
      */
     MethodEmitter init() {
+        initCount++;
         return method(INIT.symbolName(), void.class);
     }
 
@@ -535,6 +602,7 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving <init>()V
      */
     MethodEmitter init(final Class<?>... ptypes) {
+        initCount++;
         return method(INIT.symbolName(), void.class, ptypes);
     }
 
@@ -547,6 +615,7 @@ public class ClassEmitter implements Emitter {
      * @return method emitter to use for weaving <init>(...)V
      */
     MethodEmitter init(final EnumSet<Flag> flags, final Class<?>... ptypes) {
+        initCount++;
         return method(flags, INIT.symbolName(), void.class, ptypes);
     }
 
@@ -561,6 +630,7 @@ public class ClassEmitter implements Emitter {
      * @see ClassEmitter.Flag
      */
     final void field(final EnumSet<Flag> fieldFlags, final String fieldName, final Class<?> fieldType, final Object value) {
+        fieldCount++;
         cw.visitField(Flag.getValue(fieldFlags), fieldName, typeDescriptor(fieldType), null, value).visitEnd();
     }
 

@@ -29,7 +29,7 @@
  */
 
 function func(x) {
-    var o = {x:0}; 
+    var o = {x:0};
     with(o){
        delete x;
     }
@@ -42,7 +42,7 @@ if (typeof func() != 'undefined') {
 
 function func2() {
     var x;
-    var o = {x:0}; 
+    var o = {x:0};
     with(o){
        delete x;
     }

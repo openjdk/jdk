@@ -835,13 +835,17 @@ Java_sun_awt_Win32GraphicsDevice_initIDs(JNIEnv *env, jclass cls)
     TRY;
 
     /* class ids */
-    AwtWin32GraphicsDevice::indexCMClass =
-        (jclass)env->NewGlobalRef(env->FindClass("java/awt/image/IndexColorModel"));
+    jclass iCMClass = env->FindClass("java/awt/image/IndexColorModel");
+    CHECK_NULL(iCMClass);
+    AwtWin32GraphicsDevice::indexCMClass = (jclass) env->NewGlobalRef(iCMClass);
+    env->DeleteLocalRef(iCMClass);
     DASSERT(AwtWin32GraphicsDevice::indexCMClass);
     CHECK_NULL(AwtWin32GraphicsDevice::indexCMClass);
 
-    AwtWin32GraphicsDevice::wToolkitClass =
-        (jclass)env->NewGlobalRef(env->FindClass("sun/awt/windows/WToolkit"));
+    jclass wTClass = env->FindClass("sun/awt/windows/WToolkit");
+    CHECK_NULL(wTClass);
+    AwtWin32GraphicsDevice::wToolkitClass = (jclass)env->NewGlobalRef(wTClass);
+    env->DeleteLocalRef(wTClass);
     DASSERT(AwtWin32GraphicsDevice::wToolkitClass);
     CHECK_NULL(AwtWin32GraphicsDevice::wToolkitClass);
 

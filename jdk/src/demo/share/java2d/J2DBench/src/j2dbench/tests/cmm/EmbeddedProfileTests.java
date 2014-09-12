@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions
@@ -39,16 +39,18 @@
 
 package j2dbench.tests.cmm;
 
+import java.awt.image.BufferedImage;
+import java.io.IOException;
+import java.net.URL;
+
+import javax.imageio.ImageIO;
+import javax.imageio.ImageReader;
+import javax.imageio.stream.ImageInputStream;
+
 import j2dbench.Group;
 import j2dbench.Option;
 import j2dbench.Result;
 import j2dbench.TestEnvironment;
-import java.awt.image.BufferedImage;
-import java.io.IOException;
-import java.net.URL;
-import javax.imageio.ImageIO;
-import javax.imageio.ImageReader;
-import javax.imageio.stream.ImageInputStream;
 
 /* This benchmark verifies how changes in cmm library affects image decoding */
 public class EmbeddedProfileTests extends ColorConversionTests {
@@ -68,10 +70,10 @@ public class EmbeddedProfileTests extends ColorConversionTests {
         new ReadImageTest();
     }
 
-    private static enum IccImageResource {
-        SMALL("images/img_icc_small.jpg", "512x512", "Small: 512x512"),
-        MEDIUM("images/img_icc_medium.jpg", "2048x2048", "Medium: 2048x2048"),
-        LARGE("images/img_icc_large.jpg", "4096x4096", "Large: 4096x4096");
+    private static class IccImageResource {
+        static IccImageResource SMALL = new IccImageResource("images/img_icc_small.jpg", "512x512", "Small: 512x512");
+        static IccImageResource MEDIUM = new IccImageResource("images/img_icc_medium.jpg", "2048x2048", "Medium: 2048x2048");
+        static IccImageResource LARGE = new IccImageResource("images/img_icc_large.jpg", "4096x4096", "Large: 4096x4096");
 
         private IccImageResource(String file, String name, String description) {
             this.url = CMMTests.class.getResource(file);
@@ -82,6 +84,10 @@ public class EmbeddedProfileTests extends ColorConversionTests {
         public final URL url;
         public final String abbrev;
         public final String description;
+
+        public static IccImageResource[] values() {
+            return new IccImageResource[]{SMALL, MEDIUM, LARGE};
+        }
     }
 
     private static Option createImageList() {
@@ -145,7 +151,7 @@ public class EmbeddedProfileTests extends ColorConversionTests {
 
             try {
                 iis = ImageIO.createImageInputStream(url.openStream());
-                reader = ImageIO.getImageReaders(iis).next();
+                reader = (ImageReader) ImageIO.getImageReaders(iis).next();
             } catch (IOException e) {
                 throw new RuntimeException("Unable to run the becnhmark", e);
             }
