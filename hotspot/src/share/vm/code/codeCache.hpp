@@ -152,6 +152,10 @@ class CodeCache : AllStatic {
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
 
+  // Dcmd (Diagnostic commands)
+  static void print_codelist(outputStream* st);
+  static void print_layout(outputStream* st);
+
   // The full limits of the codeCache
   static address  low_bound()                    { return (address) _heap->low_boundary(); }
   static address  high_bound()                   { return (address) _heap->high_boundary(); }
