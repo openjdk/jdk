@@ -243,6 +243,7 @@
       <to>java.rmi</to>
       <to>java.security.jgss</to>
       <to>java.security.sasl</to>
+      <to>java.sql</to>
       <to>jdk.charsets</to>
       <to>jdk.deploy.osx</to>
       <to>jdk.dev</to>
