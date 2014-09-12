@@ -169,13 +169,17 @@ public class Date extends java.util.Date {
         return jla.newStringUnsafe(buf);
     }
 
-    /*
+    /**
      * Formats an unsigned integer into a char array in decimal output format.
      * Numbers will be zero-padded or truncated if the string representation
      * of the integer is smaller than or exceeds len, respectively.
      *
      * Should consider moving this to Integer and expose it through
      * JavaLangAccess similar to Integer::formatUnsignedInt
+     * @param val  Value to convert
+     * @param buf  Array containing converted value
+     * @param offset Starting pos in buf
+     * @param len  length of output value
      */
     protected static void formatDecimalInt(int val, char[] buf, int offset, int len) {
         int charPos = offset + len;
