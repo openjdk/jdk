@@ -71,7 +71,7 @@ abstract class ModulesXmlReader {
             if (Files.exists(mdir) && Files.isDirectory(mdir)) {
                 return ClassFileReader.newInstance(mdir);
             } else {
-                // aggregator module or os-specific module in modules.xml
+                // aggregator module or os-specific module in jdeps-modules.xml
                 // mdir not exist
                 return defaultReader;
             }
@@ -124,8 +124,7 @@ abstract class ModulesXmlReader {
     public Set<Module> load(InputStream in) throws XMLStreamException, IOException {
         Set<Module> modules = new HashSet<>();
         if (in == null) {
-            System.err.println("WARNING: modules.xml doesn't exist");
-            return modules;
+            throw new RuntimeException("jdeps-modules.xml doesn't exist");
         }
         XMLInputFactory factory = XMLInputFactory.newInstance();
         XMLEventReader reader = factory.createXMLEventReader(in, "UTF-8");

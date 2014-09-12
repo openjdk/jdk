@@ -35,6 +35,9 @@ import com.sun.tools.javac.util.Context;
 import com.sun.tools.javadoc.Start;
 import java.util.Collections;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Provides access to functionality specific to the JDK documentation tool,
  * javadoc.
@@ -65,12 +68,14 @@ public class JavadocTaskImpl implements DocumentationTask {
         setLocale(Locale.getDefault());
     }
 
+    @DefinedBy(Api.COMPILER)
     public void setLocale(Locale locale) {
         if (used.get())
             throw new IllegalStateException();
         this.locale = locale;
     }
 
+    @DefinedBy(Api.COMPILER)
     public Boolean call() {
         if (!used.getAndSet(true)) {
             initContext();

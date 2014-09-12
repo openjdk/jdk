@@ -28,6 +28,8 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.getProgramPoint;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
 
 import java.lang.invoke.MethodHandle;
@@ -370,22 +372,19 @@ public final class GlobalConstants implements Loggable {
      * @param find      property lookup
      * @param receiver  receiver
      * @param desc      callsite descriptor
-     * @param request   link request
-     * @param operator  operator
      *
      * @return resulting getter, or null if failed to create constant
      */
-    synchronized GuardedInvocation findGetMethod(final FindProperty find, final ScriptObject receiver, final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
-        if (GLOBAL_ONLY && !find.getOwner().isGlobal()) {
+    synchronized GuardedInvocation findGetMethod(final FindProperty find, final ScriptObject receiver, final CallSiteDescriptor desc) {
+        // Also return null if property may have side effects
+        if ((GLOBAL_ONLY && !find.getOwner().isGlobal()) || find.getProperty() instanceof UserAccessorProperty) {
             return null;
         }
 
-        final int programPoint         = NashornCallSiteDescriptor.isOptimistic(desc) ?
-            NashornCallSiteDescriptor.getProgramPoint(desc) :
-            UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-        final boolean     isOptimistic = programPoint != UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-        final Class<?>    retType      = desc.getMethodType().returnType();
-        final String      name         = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        final boolean  isOptimistic = NashornCallSiteDescriptor.isOptimistic(desc);
+        final int      programPoint = isOptimistic ? getProgramPoint(desc) : INVALID_PROGRAM_POINT;
+        final Class<?> retType      = desc.getMethodType().returnType();
+        final String   name         = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
 
         final Access acc = getOrCreateSwitchPoint(name);
 

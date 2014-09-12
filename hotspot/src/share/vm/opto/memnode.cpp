@@ -933,12 +933,12 @@ Node *LoadNode::make(PhaseGVN& gvn, Node *ctl, Node *mem, Node *adr, const TypeP
   return (LoadNode*)NULL;
 }
 
-LoadLNode* LoadLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+LoadLNode* LoadLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
   return new LoadLNode(ctl, mem, adr, adr_type, rt->is_long(), mo, require_atomic);
 }
 
-LoadDNode* LoadDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
+LoadDNode* LoadDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, const Type* rt, MemOrd mo) {
   bool require_atomic = true;
   return new LoadDNode(ctl, mem, adr, adr_type, rt, mo, require_atomic);
 }
@@ -1471,6 +1471,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
 
   Node* ctrl    = in(MemNode::Control);
   Node* address = in(MemNode::Address);
+  bool progress = false;
 
   // Skip up past a SafePoint control.  Cannot do this for Stores because
   // pointer stores & cardmarks must stay on the same side of a SafePoint.
@@ -1478,6 +1479,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       phase->C->get_alias_index(phase->type(address)->is_ptr()) != Compile::AliasIdxRaw ) {
     ctrl = ctrl->in(0);
     set_req(MemNode::Control,ctrl);
+    progress = true;
   }
 
   intptr_t ignore = 0;
@@ -1490,6 +1492,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
         && all_controls_dominate(base, phase->C->start())) {
       // A method-invariant, non-null address (constant or 'this' argument).
       set_req(MemNode::Control, NULL);
+      progress = true;
     }
   }
 
@@ -1550,7 +1553,7 @@ Node *LoadNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     }
   }
 
-  return NULL;                  // No further progress
+  return progress ? this : NULL;
 }
 
 // Helper to recognize certain Klass fields which are invariant across
@@ -1796,13 +1799,6 @@ const Type *LoadNode::Value( PhaseTransform *phase ) const {
       }
       const Type* aift = load_array_final_field(tkls, klass);
       if (aift != NULL)  return aift;
-      if (tkls->offset() == in_bytes(ArrayKlass::component_mirror_offset())
-          && klass->is_array_klass()) {
-        // The field is ArrayKlass::_component_mirror.  Return its (constant) value.
-        // (Folds up aClassConstant.getComponentType, common in Arrays.copyOf.)
-        assert(Opcode() == Op_LoadP, "must load an oop from _component_mirror");
-        return TypeInstPtr::make(klass->as_array_klass()->component_mirror());
-      }
       if (tkls->offset() == in_bytes(Klass::java_mirror_offset())) {
         // The field is Klass::_java_mirror.  Return its (constant) value.
         // (Folds up the 2nd indirection in anObjConstant.getClass().)
@@ -2014,7 +2010,6 @@ const Type* LoadSNode::Value(PhaseTransform *phase) const {
 //----------------------------LoadKlassNode::make------------------------------
 // Polymorphic factory method:
 Node *LoadKlassNode::make( PhaseGVN& gvn, Node *mem, Node *adr, const TypePtr* at, const TypeKlassPtr *tk ) {
-  Compile* C = gvn.C;
   Node *ctl = NULL;
   // sanity check the alias category against the created node type
   const TypePtr *adr_type = adr->bottom_type()->isa_ptr();
@@ -2198,18 +2193,15 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
   }
 
   // Simplify k.java_mirror.as_klass to plain k, where k is a Klass*.
-  // Simplify ak.component_mirror.array_klass to plain ak, ak an ArrayKlass.
   // See inline_native_Class_query for occurrences of these patterns.
   // Java Example:  x.getClass().isAssignableFrom(y)
-  // Java Example:  Array.newInstance(x.getClass().getComponentType(), n)
   //
   // This improves reflective code, often making the Class
   // mirror go completely dead.  (Current exception:  Class
   // mirrors may appear in debug info, but we could clean them out by
   // introducing a new debug info operator for Klass*.java_mirror).
   if (toop->isa_instptr() && toop->klass() == phase->C->env()->Class_klass()
-      && (offset == java_lang_Class::klass_offset_in_bytes() ||
-          offset == java_lang_Class::array_klass_offset_in_bytes())) {
+      && offset == java_lang_Class::klass_offset_in_bytes()) {
     // We are loading a special hidden field from a Class mirror,
     // the field which points to its Klass or ArrayKlass metaobject.
     if (base->is_Load()) {
@@ -2221,9 +2213,6 @@ Node* LoadNode::klass_identity_common(PhaseTransform *phase ) {
           && adr2->is_AddP()
           ) {
         int mirror_field = in_bytes(Klass::java_mirror_offset());
-        if (offset == java_lang_Class::array_klass_offset_in_bytes()) {
-          mirror_field = in_bytes(ArrayKlass::component_mirror_offset());
-        }
         if (tkls->offset() == mirror_field) {
           return adr2->in(AddPNode::Base);
         }
@@ -2379,12 +2368,12 @@ StoreNode* StoreNode::make(PhaseGVN& gvn, Node* ctl, Node* mem, Node* adr, const
   return (StoreNode*)NULL;
 }
 
-StoreLNode* StoreLNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+StoreLNode* StoreLNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new StoreLNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
 
-StoreDNode* StoreDNode::make_atomic(Compile *C, Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
+StoreDNode* StoreDNode::make_atomic(Node* ctl, Node* mem, Node* adr, const TypePtr* adr_type, Node* val, MemOrd mo) {
   bool require_atomic = true;
   return new StoreDNode(ctl, mem, adr, adr_type, val, mo, require_atomic);
 }
@@ -2460,7 +2449,7 @@ Node *StoreNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       // and I need to disappear.
       if (moved != NULL) {
         // %%% hack to ensure that Ideal returns a new node:
-        mem = MergeMemNode::make(phase->C, mem);
+        mem = MergeMemNode::make(mem);
         return mem;             // fold me away
       }
     }
@@ -2797,9 +2786,10 @@ bool ClearArrayNode::step_through(Node** np, uint instance_id, PhaseTransform* p
   assert(n->is_ClearArray(), "sanity");
   intptr_t offset;
   AllocateNode* alloc = AllocateNode::Ideal_allocation(n->in(3), phase, offset);
-  // This method is called only before Allocate nodes are expanded during
-  // macro nodes expansion. Before that ClearArray nodes are only generated
-  // in LibraryCallKit::generate_arraycopy() which follows allocations.
+  // This method is called only before Allocate nodes are expanded
+  // during macro nodes expansion. Before that ClearArray nodes are
+  // only generated in PhaseMacroExpand::generate_arraycopy() (before
+  // Allocate nodes are expanded) which follows allocations.
   assert(alloc != NULL, "should have allocation");
   if (alloc->_idx == instance_id) {
     // Can not bypass initialization of the instance we are looking for.
@@ -2820,7 +2810,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
                                    intptr_t start_offset,
                                    Node* end_offset,
                                    PhaseGVN* phase) {
-  Compile* C = phase->C;
   intptr_t offset = start_offset;
 
   int unit = BytesPerLong;
@@ -2847,7 +2836,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     return mem;
   }
 
-  Compile* C = phase->C;
   int unit = BytesPerLong;
   Node* zbase = start_offset;
   Node* zend  = end_offset;
@@ -2875,7 +2863,6 @@ Node* ClearArrayNode::clear_memory(Node* ctl, Node* mem, Node* dest,
     return mem;
   }
 
-  Compile* C = phase->C;
   assert((end_offset % BytesPerInt) == 0, "odd end offset");
   intptr_t done_offset = end_offset;
   if ((done_offset % BytesPerLong) != 0) {
@@ -2944,6 +2931,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
     return NULL;
   }
 
+  bool progress = false;
   // Eliminate volatile MemBars for scalar replaced objects.
   if (can_reshape && req() == (Precedent+1)) {
     bool eliminate = false;
@@ -2966,6 +2954,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
           phase->is_IterGVN()->_worklist.push(my_mem); // remove dead node later
           my_mem = NULL;
         }
+        progress = true;
       }
       if (my_mem != NULL && my_mem->is_Mem()) {
         const TypeOopPtr* t_oop = my_mem->in(MemNode::Address)->bottom_type()->isa_oopptr();
@@ -2995,7 +2984,7 @@ Node *MemBarNode::Ideal(PhaseGVN *phase, bool can_reshape) {
       return new ConINode(TypeInt::ZERO);
     }
   }
-  return NULL;
+  return progress ? this : NULL;
 }
 
 //------------------------------Value------------------------------------------
@@ -3497,6 +3486,7 @@ Node* InitializeNode::capture_store(StoreNode* st, intptr_t start,
   // if it redundantly stored the same value (or zero to fresh memory).
 
   // In any case, wire it in:
+  phase->igvn_rehash_node_delayed(this);
   set_req(i, new_st);
 
   // The caller may now kill the old guy.
@@ -4126,7 +4116,7 @@ MergeMemNode::MergeMemNode(Node *new_base) : Node(1+Compile::AliasIdxRaw) {
 
 // Make a new, untransformed MergeMem with the same base as 'mem'.
 // If mem is itself a MergeMem, populate the result with the same edges.
-MergeMemNode* MergeMemNode::make(Compile* C, Node* mem) {
+MergeMemNode* MergeMemNode::make(Node* mem) {
   return new MergeMemNode(mem);
 }
 

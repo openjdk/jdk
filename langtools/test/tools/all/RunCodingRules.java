@@ -30,8 +30,12 @@
 
 import java.io.*;
 import java.nio.file.Files;
+import java.nio.file.Path;
+import java.nio.file.Paths;
+import java.nio.file.StandardOpenOption;
 import java.util.*;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 import javax.tools.Diagnostic;
 import javax.tools.DiagnosticListener;
@@ -48,25 +52,26 @@ public class RunCodingRules {
     }
 
     public void run() throws Exception {
-        File testSrc = new File(System.getProperty("test.src", "."));
-        File targetDir = new File(System.getProperty("test.classes", "."));
-        File sourceDir = null;
-        File crulesDir = null;
-        for (File d = testSrc; d != null; d = d.getParentFile()) {
-            if (new File(d, "TEST.ROOT").exists()) {
-                d = d.getParentFile();
-                File f = new File(d, "src/share/classes");
-                if (f.exists()) {
-                    sourceDir = f;
-                    f = new File(d, "make/tools");
-                    if (f.exists())
-                        crulesDir = f;
+        Path testSrc = Paths.get(System.getProperty("test.src", "."));
+        Path targetDir = Paths.get(System.getProperty("test.classes", "."));
+        List<Path> sourceDirs = null;
+        Path crulesDir = null;
+        for (Path d = testSrc; d != null; d = d.getParent()) {
+            if (Files.exists(d.resolve("TEST.ROOT"))) {
+                d = d.getParent();
+                Path toolsPath = d.resolve("make/tools");
+                if (Files.exists(toolsPath)) {
+                    crulesDir = toolsPath;
+                    sourceDirs = Files.walk(d.resolve("src"), 1)
+                                      .map(p -> p.resolve("share/classes"))
+                                      .filter(p -> Files.isDirectory(p))
+                                      .collect(Collectors.toList());
                     break;
                 }
             }
         }
 
-        if (sourceDir == null || crulesDir == null) {
+        if (sourceDirs == null || crulesDir == null) {
             System.err.println("Warning: sources not found, test skipped.");
             return ;
         }
@@ -77,35 +82,43 @@ public class RunCodingRules {
             Assert.check(diagnostic.getKind() != Diagnostic.Kind.ERROR, diagnostic.toString());
         };
 
-        List<File> crulesFiles = Files.walk(crulesDir.toPath())
+        List<File> crulesFiles = Files.walk(crulesDir)
+                                      .filter(entry -> entry.getFileName().toString().endsWith(".java"))
+                                      .filter(entry -> entry.getParent().endsWith("crules"))
                                       .map(entry -> entry.toFile())
-                                      .filter(entry -> entry.getName().endsWith(".java"))
-                                      .filter(entry -> entry.getParentFile().getName().equals("crules"))
                                       .collect(Collectors.toList());
 
-        File crulesTarget = new File(targetDir, "crules");
-        crulesTarget.mkdirs();
-        List<String> crulesOptions = Arrays.asList("-d", crulesTarget.getAbsolutePath());
+        Path crulesTarget = targetDir.resolve("crules");
+        Files.createDirectories(crulesTarget);
+        List<String> crulesOptions = Arrays.asList("-d", crulesTarget.toString());
         javaCompiler.getTask(null, fm, noErrors, crulesOptions, null,
                 fm.getJavaFileObjectsFromFiles(crulesFiles)).call();
-        File registration = new File(crulesTarget, "META-INF/services/com.sun.source.util.Plugin");
-        registration.getParentFile().mkdirs();
-        try (Writer metaInfServices = new FileWriter(registration)) {
+        Path registration = crulesTarget.resolve("META-INF/services/com.sun.source.util.Plugin");
+        Files.createDirectories(registration.getParent());
+        try (Writer metaInfServices = Files.newBufferedWriter(registration, StandardOpenOption.CREATE, StandardOpenOption.TRUNCATE_EXISTING)) {
             metaInfServices.write("crules.CodingRulesAnalyzerPlugin\n");
         }
 
-        List<File> sources = Files.walk(sourceDir.toPath())
-                                  .map(entry -> entry.toFile())
-                                  .filter(entry -> entry.getName().endsWith(".java"))
-                                  .collect(Collectors.toList());
+        List<File> sources = sourceDirs.stream()
+                                       .flatMap(dir -> silentFilesWalk(dir))
+                                       .filter(entry -> entry.getFileName().toString().endsWith(".java"))
+                                       .map(p -> p.toFile())
+                                       .collect(Collectors.toList());
 
-        File sourceTarget = new File(targetDir, "classes");
-        sourceTarget.mkdirs();
-        String processorPath = crulesTarget.getAbsolutePath() + File.pathSeparator +
-                crulesDir.getAbsolutePath();
-        List<String> options = Arrays.asList("-d", sourceTarget.getAbsolutePath(),
+        Path sourceTarget = targetDir.resolve("classes");
+        Files.createDirectories(sourceTarget);
+        String processorPath = crulesTarget.toString() + File.pathSeparator + crulesDir.toString();
+        List<String> options = Arrays.asList("-d", sourceTarget.toString(),
                 "-processorpath", processorPath, "-Xplugin:coding_rules");
         javaCompiler.getTask(null, fm, noErrors, options, null,
                 fm.getJavaFileObjectsFromFiles(sources)).call();
+    }
+
+    Stream<Path> silentFilesWalk(Path dir) throws IllegalStateException {
+        try {
+            return Files.walk(dir);
+        } catch (IOException ex) {
+            throw new IllegalStateException(ex);
+        }
     }
 }

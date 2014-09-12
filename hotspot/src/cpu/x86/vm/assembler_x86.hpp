@@ -888,6 +888,14 @@ private:
   void addq(Register dst, Address src);
   void addq(Register dst, Register src);
 
+#ifdef _LP64
+ //Add Unsigned Integers with Carry Flag
+  void adcxq(Register dst, Register src);
+
+ //Add Unsigned Integers with Overflow Flag
+  void adoxq(Register dst, Register src);
+#endif
+
   void addr_nop_4();
   void addr_nop_5();
   void addr_nop_7();
@@ -1204,18 +1212,19 @@ private:
   void idivl(Register src);
   void divl(Register src); // Unsigned division
 
+#ifdef _LP64
   void idivq(Register src);
+#endif
 
   void imull(Register dst, Register src);
   void imull(Register dst, Register src, int value);
   void imull(Register dst, Address src);
 
+#ifdef _LP64
   void imulq(Register dst, Register src);
   void imulq(Register dst, Register src, int value);
-#ifdef _LP64
   void imulq(Register dst, Address src);
 #endif
-
 
   // jcc is the generic conditional branch generator to run-
   // time routines, jcc is used for branches to labels. jcc
@@ -1408,8 +1417,15 @@ private:
   void movzwq(Register dst, Register src);
 #endif
 
+  // Unsigned multiply with RAX destination register
   void mull(Address src);
   void mull(Register src);
+
+#ifdef _LP64
+  void mulq(Address src);
+  void mulq(Register src);
+  void mulxq(Register dst1, Register dst2, Register src);
+#endif
 
   // Multiply Scalar Double-Precision Floating-Point Values
   void mulsd(XMMRegister dst, Address src);
@@ -1540,6 +1556,11 @@ private:
   void rdtsc();
 
   void ret(int imm16);
+
+#ifdef _LP64
+  void rorq(Register dst, int imm8);
+  void rorxq(Register dst, Register src, int imm8);
+#endif
 
   void sahf();
 
@@ -1837,6 +1858,7 @@ private:
   void vpbroadcastd(XMMRegister dst, XMMRegister src);
 
   // Carry-Less Multiplication Quadword
+  void pclmulqdq(XMMRegister dst, XMMRegister src, int mask);
   void vpclmulqdq(XMMRegister dst, XMMRegister nds, XMMRegister src, int mask);
 
   // AVX instruction which is used to clear upper 128 bits of YMM registers and

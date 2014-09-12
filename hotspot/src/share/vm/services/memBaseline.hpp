@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,425 +25,181 @@
 #ifndef SHARE_VM_SERVICES_MEM_BASELINE_HPP
 #define SHARE_VM_SERVICES_MEM_BASELINE_HPP
 
+#if INCLUDE_NMT
+
 #include "memory/allocation.hpp"
 #include "runtime/mutex.hpp"
-#include "services/memPtr.hpp"
-#include "services/memSnapshot.hpp"
+#include "services/mallocSiteTable.hpp"
+#include "services/mallocTracker.hpp"
+#include "services/nmtCommon.hpp"
+#include "services/virtualMemoryTracker.hpp"
+#include "utilities/linkedlist.hpp"
 
-// compare unsigned number
-#define UNSIGNED_COMPARE(a, b)  ((a > b) ? 1 : ((a == b) ? 0 : -1))
-
-/*
- * MallocCallsitePointer and VMCallsitePointer are used
- * to baseline memory blocks with their callsite information.
- * They are only available when detail tracking is turned
- * on.
- */
-
-/* baselined malloc record aggregated by callsite */
-class MallocCallsitePointer : public MemPointer {
- private:
-  size_t    _count;   // number of malloc invocation from this callsite
-  size_t    _amount;  // total amount of memory malloc-ed from this callsite
-
- public:
-  MallocCallsitePointer() {
-    _count = 0;
-    _amount = 0;
-  }
-
-  MallocCallsitePointer(address pc) : MemPointer(pc) {
-    _count = 0;
-    _amount = 0;
-  }
-
-  MallocCallsitePointer& operator=(const MallocCallsitePointer& p) {
-    MemPointer::operator=(p);
-    _count = p.count();
-    _amount = p.amount();
-    return *this;
-  }
-
-  inline void inc(size_t size) {
-    _count ++;
-    _amount += size;
-  };
-
-  inline size_t count() const {
-    return _count;
-  }
-
-  inline size_t amount() const {
-    return _amount;
-  }
-};
-
-// baselined virtual memory record aggregated by callsite
-class VMCallsitePointer : public MemPointer {
- private:
-  size_t     _count;              // number of invocation from this callsite
-  size_t     _reserved_amount;    // total reserved amount
-  size_t     _committed_amount;   // total committed amount
-
- public:
-  VMCallsitePointer() {
-    _count = 0;
-    _reserved_amount = 0;
-    _committed_amount = 0;
-  }
-
-  VMCallsitePointer(address pc) : MemPointer(pc) {
-    _count = 0;
-    _reserved_amount = 0;
-    _committed_amount = 0;
-  }
-
-  VMCallsitePointer& operator=(const VMCallsitePointer& p) {
-    MemPointer::operator=(p);
-    _count = p.count();
-    _reserved_amount = p.reserved_amount();
-    _committed_amount = p.committed_amount();
-    return *this;
-  }
-
-  inline void inc(size_t reserved, size_t committed) {
-    _count ++;
-    _reserved_amount += reserved;
-    _committed_amount += committed;
-  }
-
-  inline size_t count() const {
-    return _count;
-  }
-
-  inline size_t reserved_amount() const {
-    return _reserved_amount;
-  }
-
-  inline size_t committed_amount() const {
-    return _committed_amount;
-  }
-};
-
-// maps a memory type flag to readable name
-typedef struct _memType2Name {
-  MEMFLAGS     _flag;
-  const char*  _name;
-} MemType2Name;
-
-
-// This class aggregates malloc'd records by memory type
-class MallocMem VALUE_OBJ_CLASS_SPEC {
- private:
-  MEMFLAGS       _type;
-
-  size_t         _count;
-  size_t         _amount;
-
- public:
-  MallocMem() {
-    _type = mtNone;
-    _count = 0;
-    _amount = 0;
-  }
-
-  MallocMem(MEMFLAGS flags) {
-    assert(HAS_VALID_MEMORY_TYPE(flags), "no type");
-    _type = FLAGS_TO_MEMORY_TYPE(flags);
-    _count = 0;
-    _amount = 0;
-  }
-
-  inline void set_type(MEMFLAGS flag) {
-    _type = flag;
-  }
-
-  inline void clear() {
-    _count = 0;
-    _amount = 0;
-    _type = mtNone;
-  }
-
-  MallocMem& operator=(const MallocMem& m) {
-    assert(_type == m.type(), "different type");
-    _count = m.count();
-    _amount = m.amount();
-    return *this;
-  }
-
-  inline void inc(size_t amt) {
-    _amount += amt;
-    _count ++;
-  }
-
-  inline void reduce(size_t amt) {
-    assert(_amount >= amt, "Just check");
-    _amount -= amt;
-  }
-
-  inline void overwrite_counter(size_t count) {
-    _count = count;
-  }
-
-  inline MEMFLAGS type() const {
-    return _type;
-  }
-
-  inline bool is_type(MEMFLAGS flags) const {
-    return FLAGS_TO_MEMORY_TYPE(flags) == _type;
-  }
-
-  inline size_t count() const {
-    return _count;
-  }
-
-  inline size_t amount() const {
-    return _amount;
-  }
-};
-
-// This class records live arena's memory usage
-class ArenaMem : public MallocMem {
- public:
-  ArenaMem(MEMFLAGS typeflag): MallocMem(typeflag) {
-  }
-  ArenaMem() { }
-};
-
-// This class aggregates virtual memory by its memory type
-class VMMem VALUE_OBJ_CLASS_SPEC {
- private:
-  MEMFLAGS       _type;
-
-  size_t         _count;
-  size_t         _reserved_amount;
-  size_t         _committed_amount;
-
- public:
-  VMMem() {
-    _type = mtNone;
-    _count = 0;
-    _reserved_amount = 0;
-    _committed_amount = 0;
-  }
-
-  VMMem(MEMFLAGS flags) {
-    assert(HAS_VALID_MEMORY_TYPE(flags), "no type");
-    _type = FLAGS_TO_MEMORY_TYPE(flags);
-    _count = 0;
-    _reserved_amount = 0;
-    _committed_amount = 0;
-  }
-
-  inline void clear() {
-    _type = mtNone;
-    _count = 0;
-    _reserved_amount = 0;
-    _committed_amount = 0;
-  }
-
-  inline void set_type(MEMFLAGS flags) {
-    _type = FLAGS_TO_MEMORY_TYPE(flags);
-  }
-
-  VMMem& operator=(const VMMem& m) {
-    assert(_type == m.type(), "different type");
-
-    _count = m.count();
-    _reserved_amount = m.reserved_amount();
-    _committed_amount = m.committed_amount();
-    return *this;
-  }
-
-
-  inline MEMFLAGS type() const {
-    return _type;
-  }
-
-  inline bool is_type(MEMFLAGS flags) const {
-    return FLAGS_TO_MEMORY_TYPE(flags) == _type;
-  }
-
-  inline void inc(size_t reserved_amt, size_t committed_amt) {
-    _reserved_amount += reserved_amt;
-    _committed_amount += committed_amt;
-    _count ++;
-  }
-
-  inline size_t count() const {
-    return _count;
-  }
-
-  inline size_t reserved_amount() const {
-    return _reserved_amount;
-  }
-
-  inline size_t committed_amount() const {
-    return _committed_amount;
-  }
-};
-
-
-
-#define NUMBER_OF_MEMORY_TYPE    (mt_number_of_types + 1)
-
-class BaselineReporter;
-class BaselineComparisonReporter;
+typedef LinkedListIterator<MallocSite>                   MallocSiteIterator;
+typedef LinkedListIterator<VirtualMemoryAllocationSite>  VirtualMemorySiteIterator;
+typedef LinkedListIterator<ReservedMemoryRegion>         VirtualMemoryAllocationIterator;
 
 /*
- * This class baselines current memory snapshot.
- * A memory baseline summarizes memory usage by memory type,
- * aggregates memory usage by callsites when detail tracking
- * is on.
+ * Baseline a memory snapshot
  */
 class MemBaseline VALUE_OBJ_CLASS_SPEC {
-  friend class BaselineReporter;
-  friend class BaselineComparisonReporter;
+ public:
+  enum BaselineThreshold {
+    SIZE_THRESHOLD = K        // Only allocation size over this threshold will be baselined.
+  };
+
+  enum BaselineType {
+    Not_baselined,
+    Summary_baselined,
+    Detail_baselined
+  };
+
+  enum SortingOrder {
+    by_address,   // by memory address
+    by_size,      // by memory size
+    by_site       // by call site where the memory is allocated from
+  };
 
  private:
-  // overall summaries
-  size_t        _total_malloced;
-  size_t        _total_vm_reserved;
-  size_t        _total_vm_committed;
-  size_t        _number_of_classes;
-  size_t        _number_of_threads;
+  // Summary information
+  MallocMemorySnapshot   _malloc_memory_snapshot;
+  VirtualMemorySnapshot  _virtual_memory_snapshot;
 
-  // if it has properly baselined
-  bool          _baselined;
+  size_t               _class_count;
 
-  // we categorize memory into three categories within the memory type
-  MallocMem     _malloc_data[NUMBER_OF_MEMORY_TYPE];
-  VMMem         _vm_data[NUMBER_OF_MEMORY_TYPE];
-  ArenaMem      _arena_data[NUMBER_OF_MEMORY_TYPE];
+  // Allocation sites information
+  // Malloc allocation sites
+  LinkedListImpl<MallocSite>                  _malloc_sites;
 
-  // memory records that aggregate memory usage by callsites.
-  // only available when detail tracking is on.
-  MemPointerArray*  _malloc_cs;
-  MemPointerArray*  _vm_cs;
-  // virtual memory map
-  MemPointerArray*  _vm_map;
+  // All virtual memory allocations
+  LinkedListImpl<ReservedMemoryRegion>        _virtual_memory_allocations;
 
- private:
-  static MemType2Name  MemType2NameMap[NUMBER_OF_MEMORY_TYPE];
+  // Virtual memory allocations by allocation sites, always in by_address
+  // order
+  LinkedListImpl<VirtualMemoryAllocationSite> _virtual_memory_sites;
 
- private:
-  // should not use copy constructor
-  MemBaseline(MemBaseline& copy) { ShouldNotReachHere(); }
+  SortingOrder         _malloc_sites_order;
+  SortingOrder         _virtual_memory_sites_order;
 
-  // check and block at a safepoint
-  static inline void check_safepoint(JavaThread* thr);
+  BaselineType         _baseline_type;
 
  public:
   // create a memory baseline
-  MemBaseline();
-
-  ~MemBaseline();
-
-  inline bool baselined() const {
-    return _baselined;
+  MemBaseline():
+    _baseline_type(Not_baselined),
+    _class_count(0) {
   }
 
-  MemBaseline& operator=(const MemBaseline& other);
+  ~MemBaseline() {
+    reset();
+  }
+
+  bool baseline(bool summaryOnly = true);
+
+  BaselineType baseline_type() const { return _baseline_type; }
+
+  MallocMemorySnapshot* malloc_memory_snapshot() {
+    return &_malloc_memory_snapshot;
+  }
+
+  VirtualMemorySnapshot* virtual_memory_snapshot() {
+    return &_virtual_memory_snapshot;
+  }
+
+  MallocSiteIterator malloc_sites(SortingOrder order);
+  VirtualMemorySiteIterator virtual_memory_sites(SortingOrder order);
+
+  // Virtual memory allocation iterator always returns in virtual memory
+  // base address order.
+  VirtualMemoryAllocationIterator virtual_memory_allocations() {
+    assert(!_virtual_memory_allocations.is_empty(), "Not detail baseline");
+    return VirtualMemoryAllocationIterator(_virtual_memory_allocations.head());
+  }
+
+  // Total reserved memory = total malloc'd memory + total reserved virtual
+  // memory
+  size_t total_reserved_memory() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    size_t amount = _malloc_memory_snapshot.total() +
+           _virtual_memory_snapshot.total_reserved();
+    return amount;
+  }
+
+  // Total committed memory = total malloc'd memory + total committed
+  // virtual memory
+  size_t total_committed_memory() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    size_t amount = _malloc_memory_snapshot.total() +
+           _virtual_memory_snapshot.total_committed();
+    return amount;
+  }
+
+  size_t total_arena_memory() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _malloc_memory_snapshot.total_arena();
+  }
+
+  size_t malloc_tracking_overhead() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    MemBaseline* bl = const_cast<MemBaseline*>(this);
+    return bl->_malloc_memory_snapshot.malloc_overhead()->size();
+  }
+
+  MallocMemory* malloc_memory(MEMFLAGS flag) {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _malloc_memory_snapshot.by_type(flag);
+  }
+
+  VirtualMemory* virtual_memory(MEMFLAGS flag) {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _virtual_memory_snapshot.by_type(flag);
+  }
+
+
+  size_t class_count() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _class_count;
+  }
+
+  size_t thread_count() const {
+    assert(baseline_type() != Not_baselined, "Not yet baselined");
+    return _malloc_memory_snapshot.thread_count();
+  }
 
   // reset the baseline for reuse
-  void clear();
+  void reset() {
+    _baseline_type = Not_baselined;
+    _malloc_memory_snapshot.reset();
+    _virtual_memory_snapshot.reset();
+    _class_count  = 0;
 
-  // baseline the snapshot
-  bool baseline(MemSnapshot& snapshot, bool summary_only = true);
-
-  bool baseline(const MemPointerArray* malloc_records,
-                const MemPointerArray* vm_records,
-                bool summary_only = true);
-
-  // total malloc'd memory of specified memory type
-  inline size_t malloc_amount(MEMFLAGS flag) const {
-    return _malloc_data[flag2index(flag)].amount();
+    _malloc_sites.clear();
+    _virtual_memory_sites.clear();
+    _virtual_memory_allocations.clear();
   }
-  // number of malloc'd memory blocks of specified memory type
-  inline size_t malloc_count(MEMFLAGS flag) const {
-    return _malloc_data[flag2index(flag)].count();
-  }
-  // total memory used by arenas of specified memory type
-  inline size_t arena_amount(MEMFLAGS flag) const {
-    return _arena_data[flag2index(flag)].amount();
-  }
-  // number of arenas of specified memory type
-  inline size_t arena_count(MEMFLAGS flag) const {
-    return _arena_data[flag2index(flag)].count();
-  }
-  // total reserved memory of specified memory type
-  inline size_t reserved_amount(MEMFLAGS flag) const {
-    return _vm_data[flag2index(flag)].reserved_amount();
-  }
-  // total committed memory of specified memory type
-  inline size_t committed_amount(MEMFLAGS flag) const {
-    return _vm_data[flag2index(flag)].committed_amount();
-  }
-  // total memory (malloc'd + mmap'd + arena) of specified
-  // memory type
-  inline size_t total_amount(MEMFLAGS flag) const {
-    int index = flag2index(flag);
-    return _malloc_data[index].amount() +
-           _vm_data[index].reserved_amount() +
-           _arena_data[index].amount();
-  }
-
-  /* overall summaries */
-
-  // total malloc'd memory in snapshot
-  inline size_t total_malloc_amount() const {
-    return _total_malloced;
-  }
-  // total mmap'd memory in snapshot
-  inline size_t total_reserved_amount() const {
-    return _total_vm_reserved;
-  }
-  // total committed memory in snapshot
-  inline size_t total_committed_amount() const {
-    return _total_vm_committed;
-  }
-  // number of loaded classes
-  inline size_t number_of_classes() const {
-    return _number_of_classes;
-  }
-  // number of running threads
-  inline size_t number_of_threads() const {
-    return _number_of_threads;
-  }
-  // lookup human readable name of a memory type
-  static const char* type2name(MEMFLAGS type);
 
  private:
-  // convert memory flag to the index to mapping table
-  int         flag2index(MEMFLAGS flag) const;
+  // Baseline summary information
+  bool baseline_summary();
 
-  // reset baseline values
-  void reset();
+  // Baseline allocation sites (detail tracking only)
+  bool baseline_allocation_sites();
 
-  // summarize the records in global snapshot
-  bool baseline_malloc_summary(const MemPointerArray* malloc_records);
-  bool baseline_vm_summary(const MemPointerArray* vm_records);
-  bool baseline_malloc_details(const MemPointerArray* malloc_records);
-  bool baseline_vm_details(const MemPointerArray* vm_records);
+  // Aggregate virtual memory allocation by allocation sites
+  bool aggregate_virtual_memory_allocation_sites();
 
-  // print a line of malloc'd memory aggregated by callsite
-  void print_malloc_callsite(outputStream* st, address pc, size_t size,
-    size_t count, int diff_amt, int diff_count) const;
-  // print a line of mmap'd memory aggregated by callsite
-  void print_vm_callsite(outputStream* st, address pc, size_t rsz,
-    size_t csz, int diff_rsz, int diff_csz) const;
+  // Sorting allocation sites in different orders
+  // Sort allocation sites in size order
+  void malloc_sites_to_size_order();
+  // Sort allocation sites in call site address order
+  void malloc_sites_to_allocation_site_order();
 
-  // sorting functions for raw records
-  static int malloc_sort_by_pc(const void* p1, const void* p2);
-  static int malloc_sort_by_addr(const void* p1, const void* p2);
-
- private:
-  // sorting functions for baselined records
-  static int bl_malloc_sort_by_size(const void* p1, const void* p2);
-  static int bl_vm_sort_by_size(const void* p1, const void* p2);
-  static int bl_malloc_sort_by_pc(const void* p1, const void* p2);
-  static int bl_vm_sort_by_pc(const void* p1, const void* p2);
+  // Sort allocation sites in reserved size order
+  void virtual_memory_sites_to_size_order();
+  // Sort allocation sites in call site address order
+  void virtual_memory_sites_to_reservation_site_order();
 };
 
+#endif // INCLUDE_NMT
 
 #endif // SHARE_VM_SERVICES_MEM_BASELINE_HPP

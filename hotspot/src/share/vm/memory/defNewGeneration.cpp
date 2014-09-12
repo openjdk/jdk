@@ -214,9 +214,11 @@ DefNewGeneration::DefNewGeneration(ReservedSpace rs,
   _max_eden_size = size - (2*_max_survivor_size);
 
   // allocate the performance counters
+  GenCollectorPolicy* gcp = (GenCollectorPolicy*) GenCollectedHeap::heap()->collector_policy();
 
   // Generation counters -- generation 0, 3 subspaces
-  _gen_counters = new GenerationCounters("new", 0, 3, &_virtual_space);
+  _gen_counters = new GenerationCounters("new", 0, 3,
+      gcp->min_young_size(), gcp->max_young_size(), &_virtual_space);
   _gc_counters = new CollectorCounters(policy, 0);
 
   _eden_counters = new CSpaceCounters("eden", 0, _max_eden_size, _eden_space,
@@ -790,7 +792,7 @@ oop DefNewGeneration::copy_to_survivor_space(oop old) {
 
   // Try allocating obj in to-space (unless too old)
   if (old->age() < tenuring_threshold()) {
-    obj = (oop) to()->allocate(s);
+    obj = (oop) to()->allocate_aligned(s);
   }
 
   // Otherwise try allocating obj tenured

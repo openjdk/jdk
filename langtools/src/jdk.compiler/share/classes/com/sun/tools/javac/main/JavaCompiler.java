@@ -26,6 +26,7 @@
 package com.sun.tools.javac.main;
 
 import java.io.*;
+import java.util.Collection;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.LinkedHashMap;
@@ -43,13 +44,13 @@ import javax.tools.JavaFileManager;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardLocation;
 
-import static javax.tools.StandardLocation.CLASS_OUTPUT;
-
 import com.sun.source.util.TaskEvent;
 import com.sun.tools.javac.api.MultiTaskListener;
 import com.sun.tools.javac.code.*;
 import com.sun.tools.javac.code.Lint.LintCategory;
-import com.sun.tools.javac.code.Symbol.*;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.code.Symbol.CompletionFailure;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.comp.*;
 import com.sun.tools.javac.comp.CompileStates.CompileState;
 import com.sun.tools.javac.file.JavacFileManager;
@@ -57,9 +58,17 @@ import com.sun.tools.javac.jvm.*;
 import com.sun.tools.javac.parser.*;
 import com.sun.tools.javac.processing.*;
 import com.sun.tools.javac.tree.*;
-import com.sun.tools.javac.tree.JCTree.*;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.tree.JCTree.JCCompilationUnit;
+import com.sun.tools.javac.tree.JCTree.JCExpression;
+import com.sun.tools.javac.tree.JCTree.JCLambda;
+import com.sun.tools.javac.tree.JCTree.JCMemberReference;
+import com.sun.tools.javac.tree.JCTree.JCMethodDecl;
+import com.sun.tools.javac.tree.JCTree.JCVariableDecl;
 import com.sun.tools.javac.util.*;
 import com.sun.tools.javac.util.Log.WriterKind;
+
+import static javax.tools.StandardLocation.CLASS_OUTPUT;
 
 import static com.sun.tools.javac.code.TypeTag.CLASS;
 import static com.sun.tools.javac.main.Option.*;
@@ -394,19 +403,6 @@ public class JavaCompiler {
         processPcks   = options.isSet("process.packages");
         werror        = options.isSet(WERROR);
 
-        // Should this be with other option checking, in Main
-        if (source.compareTo(Source.DEFAULT) < 0) {
-            if (options.isUnset(XLINT_CUSTOM, "-" + LintCategory.OPTIONS.option)) {
-                if (fileManager instanceof BaseFileManager) {
-                    if (((BaseFileManager) fileManager).isDefaultBootClassPath())
-                        log.warning(LintCategory.OPTIONS, "source.no.bootclasspath", source.name);
-                }
-            }
-        }
-
-        // Should this be with other option checking, in Main
-        checkForObsoleteOptions(target);
-
         verboseCompilePolicy = options.isSet("verboseCompilePolicy");
 
         if (attrParseOnly)
@@ -434,33 +430,6 @@ public class JavaCompiler {
 
         if (options.isUnset("oldDiags"))
             log.setDiagnosticFormatter(RichDiagnosticFormatter.instance(context));
-    }
-
-    // Should this be with other option checking, in Main
-    private void checkForObsoleteOptions(Target target) {
-        // Unless lint checking on options is disabled, check for
-        // obsolete source and target options.
-        boolean obsoleteOptionFound = false;
-
-        boolean lintOptions =
-            options.isUnset(XLINT_CUSTOM, "-"+LintCategory.OPTIONS.option);
-
-        if (source.compareTo(Source.MIN) < 0) {
-            log.error("option.removed.source", source.name, Source.MIN.name);
-        } else if (source == Source.MIN && lintOptions) {
-            log.warning(LintCategory.OPTIONS, "option.obsolete.source", source.name);
-            obsoleteOptionFound = true;
-        }
-
-        if (target.compareTo(Target.MIN) < 0) {
-            log.error("option.removed.target", target.name, Target.MIN.name);
-        } else if (target == Target.MIN && lintOptions) {
-            log.warning(LintCategory.OPTIONS, "option.obsolete.target", target.name);
-            obsoleteOptionFound = true;
-        }
-
-        if (obsoleteOptionFound)
-            log.warning(LintCategory.OPTIONS, "option.obsolete.suppression");
     }
 
     /* Switches:
@@ -834,8 +803,8 @@ public class JavaCompiler {
      * @param processors user provided annotation processors to bypass
      * discovery, {@code null} means that no processors were provided
      */
-    public void compile(List<JavaFileObject> sourceFileObjects,
-                        List<String> classnames,
+    public void compile(Collection<JavaFileObject> sourceFileObjects,
+                        Collection<String> classnames,
                         Iterable<? extends Processor> processors)
     {
         if (!taskListener.isEmpty()) {
@@ -1082,7 +1051,7 @@ public class JavaCompiler {
     // and all deferredDiagnostics must have been handled: i.e. either reported
     // or determined to be transient, and therefore suppressed.
     public void processAnnotations(List<JCCompilationUnit> roots,
-                                   List<String> classnames) {
+                                   Collection<String> classnames) {
         if (shouldStop(CompileState.PROCESS)) {
             // Errors were encountered.
             // Unless all the errors are resolve errors, the errors were parse errors

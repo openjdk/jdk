@@ -70,9 +70,9 @@ Symbol* SymbolTable::allocate_symbol(const u1* name, int len, bool c_heap, TRAPS
 void SymbolTable::initialize_symbols(int arena_alloc_size) {
   // Initialize the arena for global symbols, size passed in depends on CDS.
   if (arena_alloc_size == 0) {
-    _arena = new (mtSymbol) Arena();
+    _arena = new (mtSymbol) Arena(mtSymbol);
   } else {
-    _arena = new (mtSymbol) Arena(arena_alloc_size);
+    _arena = new (mtSymbol) Arena(mtSymbol, arena_alloc_size);
   }
 }
 
@@ -201,7 +201,7 @@ Symbol* SymbolTable::lookup(int index, const char* name,
     }
   }
   // If the bucket size is too deep check if this hash code is insufficient.
-  if (count >= BasicHashtable<mtSymbol>::rehash_count && !needs_rehashing()) {
+  if (count >= rehash_count && !needs_rehashing()) {
     _needs_rehashing = check_rehash_table(count);
   }
   return NULL;

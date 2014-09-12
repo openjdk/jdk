@@ -2107,7 +2107,12 @@ private:
 
   // data index for the area dedicated to parameters. -1 if no
   // parameter profiling.
+  enum { no_parameters = -2, parameters_uninitialized = -1 };
   int _parameters_type_data_di;
+  int parameters_size_in_bytes() const {
+    ParametersTypeData* param = parameters_type_data();
+    return param == NULL ? 0 : param->size_in_bytes();
+  }
 
   // Beginning of the data entries
   intptr_t _data[1];
@@ -2130,7 +2135,7 @@ private:
 
   // Helper for data_at
   DataLayout* limit_data_position() const {
-    return (DataLayout*)((address)data_base() + _data_size);
+    return data_layout_at(_data_size);
   }
   bool out_of_bounds(int data_index) const {
     return data_index >= data_size();
@@ -2371,10 +2376,11 @@ public:
   }
 
   // Add a handful of extra data records, for trap tracking.
-  DataLayout* extra_data_base() const { return limit_data_position(); }
+  DataLayout* extra_data_base() const  { return limit_data_position(); }
   DataLayout* extra_data_limit() const { return (DataLayout*)((address)this + size_in_bytes()); }
-  int extra_data_size() const { return (address)extra_data_limit()
-                               - (address)extra_data_base(); }
+  DataLayout* args_data_limit() const  { return (DataLayout*)((address)this + size_in_bytes() -
+                                                              parameters_size_in_bytes()); }
+  int extra_data_size() const          { return (address)extra_data_limit() - (address)extra_data_base(); }
   static DataLayout* next_extra(DataLayout* dp);
 
   // Return (uint)-1 for overflow.
@@ -2429,11 +2435,12 @@ public:
 
   // Return pointer to area dedicated to parameters in MDO
   ParametersTypeData* parameters_type_data() const {
-    return _parameters_type_data_di != -1 ? data_layout_at(_parameters_type_data_di)->data_in()->as_ParametersTypeData() : NULL;
+    assert(_parameters_type_data_di != parameters_uninitialized, "called too early");
+    return _parameters_type_data_di != no_parameters ? data_layout_at(_parameters_type_data_di)->data_in()->as_ParametersTypeData() : NULL;
   }
 
   int parameters_type_data_di() const {
-    assert(_parameters_type_data_di != -1, "no args type data");
+    assert(_parameters_type_data_di != parameters_uninitialized && _parameters_type_data_di != no_parameters, "no args type data");
     return _parameters_type_data_di;
   }
 
@@ -2480,8 +2487,8 @@ public:
   static bool profile_return_jsr292_only();
 
   void clean_method_data(BoolObjectClosure* is_alive);
-
   void clean_weak_method_links();
+  Mutex* extra_data_lock() { return &_extra_data_lock; }
 };
 
 #endif // SHARE_VM_OOPS_METHODDATAOOP_HPP

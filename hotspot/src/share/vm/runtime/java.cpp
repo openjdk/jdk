@@ -57,7 +57,6 @@
 #include "runtime/thread.inline.hpp"
 #include "runtime/timer.hpp"
 #include "runtime/vm_operations.hpp"
-#include "services/memReporter.hpp"
 #include "services/memTracker.hpp"
 #include "trace/tracing.hpp"
 #include "utilities/dtrace.hpp"
@@ -349,12 +348,7 @@ void print_statistics() {
 #endif // ENABLE_ZAP_DEAD_LOCALS
   // Native memory tracking data
   if (PrintNMTStatistics) {
-    if (MemTracker::is_on()) {
-      BaselineTTYOutputer outputer(tty);
-      MemTracker::print_memory_usage(outputer, K, false);
-    } else {
-      tty->print_cr("%s", MemTracker::reason());
-    }
+    MemTracker::final_report(tty);
   }
 }
 
@@ -390,12 +384,7 @@ void print_statistics() {
 
   // Native memory tracking data
   if (PrintNMTStatistics) {
-    if (MemTracker::is_on()) {
-      BaselineTTYOutputer outputer(tty);
-      MemTracker::print_memory_usage(outputer, K, false);
-    } else {
-      tty->print_cr("%s", MemTracker::reason());
-    }
+    MemTracker::final_report(tty);
   }
 }
 
@@ -441,6 +430,8 @@ extern "C" {
   }
 }
 
+jint volatile vm_getting_terminated = 0;
+
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
@@ -470,6 +461,8 @@ void before_exit(JavaThread * thread) {
       return;
     }
   }
+
+  OrderAccess::release_store(&vm_getting_terminated, 1);
 
   // The only difference between this and Win32's _onexit procs is that
   // this version is invoked before any threads get killed.
@@ -543,10 +536,6 @@ void before_exit(JavaThread * thread) {
     _before_exit_status = BEFORE_EXIT_DONE;
     BeforeExit_lock->notify_all();
   }
-
-  // Shutdown NMT before exit. Otherwise,
-  // it will run into trouble when system destroys static variables.
-  MemTracker::shutdown(MemTracker::NMT_normal);
 
   if (VerifyStringTableAtExit) {
     int fail_cnt = 0;

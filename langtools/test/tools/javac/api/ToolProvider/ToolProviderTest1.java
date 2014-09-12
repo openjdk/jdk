@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,12 +25,11 @@
  * @test
  * @bug 6604599
  * @summary ToolProvider should be less compiler-specific
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main ToolProviderTest1
  */
 
-import java.util.ArrayList;
 import java.util.List;
 
 // verify that running accessing ToolProvider by itself does not
@@ -46,24 +45,18 @@ public class ToolProviderTest1 {
     }
 
     void run() throws Exception {
+        ToolBox tb = new ToolBox();
         String classpath = System.getProperty("java.class.path");
 
-        List<String> output = new ArrayList<>();
-        ToolBox.AnyToolArgs javaParams =
-                new ToolBox.AnyToolArgs()
-                        .appendArgs(ToolBox.javaBinary)
-                        .appendArgs(ToolBox.testVMOpts)
-                        .appendArgs(ToolBox.testJavaOpts)
-                        .appendArgs("-verbose:class",
-                                "-classpath", classpath,
-                                ToolProviderTest1.class.getName(),
-                                "javax.tools.ToolProvider")
-                        .setErrOutput(output)
-                        .setStdOutput(output);
+        List<String> lines = tb.new JavaTask()
+                .vmOptions("-verbose:class")
+                .classpath(classpath)
+                .className(getClass().getName())
+                .classArgs("javax.tools.ToolProvider")
+                .run()
+                .getOutputLines(ToolBox.OutputKind.STDOUT);
 
-        ToolBox.executeCommand(javaParams);
-
-        for (String line : output) {
+        for (String line : lines) {
             System.err.println(line);
             if (line.contains("com.sun.tools.javac."))
                 error(">>> " + line);

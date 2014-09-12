@@ -1,5 +1,6 @@
 ^build/
 ^dist/
+^webrev
 ^.idea
 /nbproject/private/
 ^.hgtip

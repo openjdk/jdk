@@ -327,10 +327,6 @@ import java.util.Objects;
         assert(getReferenceKind() == oldKind);
         assert(MethodHandleNatives.refKindIsValid(refKind));
         flags += (((int)refKind - oldKind) << MN_REFERENCE_KIND_SHIFT);
-//        if (isConstructor() && refKind != REF_newInvokeSpecial)
-//            flags += (IS_METHOD - IS_CONSTRUCTOR);
-//        else if (refKind == REF_newInvokeSpecial && isMethod())
-//            flags += (IS_CONSTRUCTOR - IS_METHOD);
         return this;
     }
 
@@ -344,9 +340,11 @@ import java.util.Objects;
         return !testFlags(mask, 0);
     }
 
-    /** Utility method to query if this member is a method handle invocation (invoke or invokeExact). */
+    /** Utility method to query if this member is a method handle invocation (invoke or invokeExact).
+     *  Also returns true for the non-public MH.invokeBasic.
+     */
     public boolean isMethodHandleInvoke() {
-        final int bits = MH_INVOKE_MODS;
+        final int bits = MH_INVOKE_MODS &~ Modifier.PUBLIC;
         final int negs = Modifier.STATIC;
         if (testFlags(bits | negs, bits) &&
             clazz == MethodHandle.class) {
@@ -355,7 +353,14 @@ import java.util.Objects;
         return false;
     }
     public static boolean isMethodHandleInvokeName(String name) {
-        return name.equals("invoke") || name.equals("invokeExact");
+        switch (name) {
+        case "invoke":
+        case "invokeExact":
+        case "invokeBasic":  // internal sig-poly method
+            return true;
+        default:
+            return false;
+        }
     }
     private static final int MH_INVOKE_MODS = Modifier.NATIVE | Modifier.FINAL | Modifier.PUBLIC;
 
@@ -720,16 +725,8 @@ import java.util.Objects;
         init(defClass, name, type, flagsMods(IS_FIELD, 0, refKind));
         initResolved(false);
     }
-    /** Create a field or type name from the given components:  Declaring class, name, type.
-     *  The declaring class may be supplied as null if this is to be a bare name and type.
-     *  The modifier flags default to zero.
-     *  The resulting name will in an unresolved state.
-     */
-    public MemberName(Class<?> defClass, String name, Class<?> type, Void unused) {
-        this(defClass, name, type, REF_NONE);
-        initResolved(false);
-    }
-    /** Create a method or constructor name from the given components:  Declaring class, name, type, modifiers.
+    /** Create a method or constructor name from the given components:
+     *  Declaring class, name, type, reference kind.
      *  It will be a constructor if and only if the name is {@code "&lt;init&gt;"}.
      *  The declaring class may be supplied as null if this is to be a bare name and type.
      *  The last argument is optional, a boolean which requests REF_invokeSpecial.

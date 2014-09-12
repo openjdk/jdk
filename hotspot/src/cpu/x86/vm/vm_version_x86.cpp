@@ -27,6 +27,7 @@
 #include "asm/macroAssembler.inline.hpp"
 #include "memory/resourceArea.hpp"
 #include "runtime/java.hpp"
+#include "runtime/os.hpp"
 #include "runtime/stubCodeGenerator.hpp"
 #include "vm_version_x86.hpp"
 
@@ -484,7 +485,7 @@ void VM_Version::get_processor_features() {
   }
 
   char buf[256];
-  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
+  jio_snprintf(buf, sizeof(buf), "(%u cores per cpu, %u threads per core) family %d model %d stepping %d%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s",
                cores_per_cpu(), threads_per_core(),
                cpu_family(), _model, _stepping,
                (supports_cmov() ? ", cmov" : ""),
@@ -513,8 +514,9 @@ void VM_Version::get_processor_features() {
                (supports_tscinv_bit() ? ", tscinvbit": ""),
                (supports_tscinv() ? ", tscinv": ""),
                (supports_bmi1() ? ", bmi1" : ""),
-               (supports_bmi2() ? ", bmi2" : ""));
-  _features_str = strdup(buf);
+               (supports_bmi2() ? ", bmi2" : ""),
+               (supports_adx() ? ", adx" : ""));
+  _features_str = os::strdup(buf);
 
   // UseSSE is set to the smaller of what hardware supports and what
   // the command line requires.  I.e., you cannot set UseSSE to 2 on
@@ -559,13 +561,13 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCLMUL, false);
   }
 
-  if (UseCLMUL && (UseAVX > 0) && (UseSSE > 2)) {
+  if (UseCLMUL && (UseSSE > 2)) {
     if (FLAG_IS_DEFAULT(UseCRC32Intrinsics)) {
       UseCRC32Intrinsics = true;
     }
   } else if (UseCRC32Intrinsics) {
     if (!FLAG_IS_DEFAULT(UseCRC32Intrinsics))
-      warning("CRC32 Intrinsics requires AVX and CLMUL instructions (not available on this CPU)");
+      warning("CRC32 Intrinsics requires CLMUL instructions (not available on this CPU)");
     FLAG_SET_DEFAULT(UseCRC32Intrinsics, false);
   }
 
@@ -603,6 +605,17 @@ void VM_Version::get_processor_features() {
 
 #if INCLUDE_RTM_OPT
   if (UseRTMLocking) {
+    if (is_intel_family_core()) {
+      if ((_model == CPU_MODEL_HASWELL_E3) ||
+          (_model == CPU_MODEL_HASWELL_E7 && _stepping < 3) ||
+          (_model == CPU_MODEL_BROADWELL  && _stepping < 4)) {
+        if (!UnlockExperimentalVMOptions) {
+          vm_exit_during_initialization("UseRTMLocking is only available as experimental option on this platform. It must be enabled via -XX:+UnlockExperimentalVMOptions flag.");
+        } else {
+          warning("UseRTMLocking is only available as experimental option on this platform.");
+        }
+      }
+    }
     if (!FLAG_IS_CMDLINE(UseRTMLocking)) {
       // RTM locking should be used only for applications with
       // high lock contention. For now we do not use it by default.
@@ -677,7 +690,20 @@ void VM_Version::get_processor_features() {
     }
 #endif
   }
+
+#ifdef _LP64
+  if (FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+    UseMultiplyToLenIntrinsic = true;
+  }
+#else
+  if (UseMultiplyToLenIntrinsic) {
+    if (!FLAG_IS_DEFAULT(UseMultiplyToLenIntrinsic)) {
+      warning("multiplyToLen intrinsic is not available in 32-bit VM");
+    }
+    FLAG_SET_DEFAULT(UseMultiplyToLenIntrinsic, false);
+  }
 #endif
+#endif // COMPILER2
 
   // On new cpus instructions which update whole XMM register should be used
   // to prevent partial register stall due to dependencies on high half.
@@ -805,6 +831,24 @@ void VM_Version::get_processor_features() {
         }
       }
     }
+    if ((cpu_family() == 0x06) &&
+        ((extended_cpu_model() == 0x36) || // Centerton
+         (extended_cpu_model() == 0x37) || // Silvermont
+         (extended_cpu_model() == 0x4D))) {
+#ifdef COMPILER2
+      if (FLAG_IS_DEFAULT(OptoScheduling)) {
+        OptoScheduling = true;
+      }
+#endif
+      if (supports_sse4_2()) { // Silvermont
+        if (FLAG_IS_DEFAULT(UseUnalignedLoadStores)) {
+          UseUnalignedLoadStores = true; // use movdqu on newest Intel cpus
+        }
+      }
+    }
+    if(FLAG_IS_DEFAULT(AllocatePrefetchInstr) && supports_3dnow_prefetch()) {
+      AllocatePrefetchInstr = 3;
+    }
   }
 
   // Use count leading zeros count instruction if available.
@@ -817,23 +861,35 @@ void VM_Version::get_processor_features() {
     FLAG_SET_DEFAULT(UseCountLeadingZerosInstruction, false);
   }
 
-  if (supports_bmi1()) {
-    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
-      UseBMI1Instructions = true;
-    }
-  } else if (UseBMI1Instructions) {
-    warning("BMI1 instructions are not available on this CPU");
-    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
-  }
-
   // Use count trailing zeros instruction if available
   if (supports_bmi1()) {
+    // tzcnt does not require VEX prefix
     if (FLAG_IS_DEFAULT(UseCountTrailingZerosInstruction)) {
-      UseCountTrailingZerosInstruction = UseBMI1Instructions;
+      UseCountTrailingZerosInstruction = true;
     }
   } else if (UseCountTrailingZerosInstruction) {
     warning("tzcnt instruction is not available on this CPU");
     FLAG_SET_DEFAULT(UseCountTrailingZerosInstruction, false);
+  }
+
+  // BMI instructions use an encoding with VEX prefix.
+  // VEX prefix is generated only when AVX > 0.
+  if (supports_bmi1() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI1Instructions)) {
+      UseBMI1Instructions = true;
+    }
+  } else if (UseBMI1Instructions) {
+    warning("BMI1 instructions are not available on this CPU (AVX is also required)");
+    FLAG_SET_DEFAULT(UseBMI1Instructions, false);
+  }
+
+  if (supports_bmi2() && supports_avx()) {
+    if (FLAG_IS_DEFAULT(UseBMI2Instructions)) {
+      UseBMI2Instructions = true;
+    }
+  } else if (UseBMI2Instructions) {
+    warning("BMI2 instructions are not available on this CPU (AVX is also required)");
+    FLAG_SET_DEFAULT(UseBMI2Instructions, false);
   }
 
   // Use population count instruction if available.
@@ -892,23 +948,25 @@ void VM_Version::get_processor_features() {
   AllocatePrefetchDistance = allocate_prefetch_distance();
   AllocatePrefetchStyle    = allocate_prefetch_style();
 
-  if( is_intel() && cpu_family() == 6 && supports_sse3() ) {
-    if( AllocatePrefetchStyle == 2 ) { // watermark prefetching on Core
+  if (is_intel() && cpu_family() == 6 && supports_sse3()) {
+    if (AllocatePrefetchStyle == 2) { // watermark prefetching on Core
 #ifdef _LP64
       AllocatePrefetchDistance = 384;
 #else
       AllocatePrefetchDistance = 320;
 #endif
     }
-    if( supports_sse4_2() && supports_ht() ) { // Nehalem based cpus
+    if (supports_sse4_2() && supports_ht()) { // Nehalem based cpus
       AllocatePrefetchDistance = 192;
       AllocatePrefetchLines = 4;
+    }
 #ifdef COMPILER2
-      if (AggressiveOpts && FLAG_IS_DEFAULT(UseFPUForSpilling)) {
+    if (supports_sse4_2()) {
+      if (FLAG_IS_DEFAULT(UseFPUForSpilling)) {
         FLAG_SET_DEFAULT(UseFPUForSpilling, true);
       }
-#endif
     }
+#endif
   }
   assert(AllocatePrefetchDistance % AllocatePrefetchStepSize == 0, "invalid value");
 

@@ -922,6 +922,30 @@ const TypeFunc* OptoRuntime::digestBase_implCompressMB_Type() {
   return TypeFunc::make(domain, range);
 }
 
+const TypeFunc* OptoRuntime::multiplyToLen_Type() {
+  // create input type (domain)
+  int num_args      = 6;
+  int argcnt = num_args;
+  const Type** fields = TypeTuple::fields(argcnt);
+  int argp = TypeFunc::Parms;
+  fields[argp++] = TypePtr::NOTNULL;    // x
+  fields[argp++] = TypeInt::INT;        // xlen
+  fields[argp++] = TypePtr::NOTNULL;    // y
+  fields[argp++] = TypeInt::INT;        // ylen
+  fields[argp++] = TypePtr::NOTNULL;    // z
+  fields[argp++] = TypeInt::INT;        // zlen
+  assert(argp == TypeFunc::Parms+argcnt, "correct decoding");
+  const TypeTuple* domain = TypeTuple::make(TypeFunc::Parms+argcnt, fields);
+
+  // no result type needed
+  fields = TypeTuple::fields(1);
+  fields[TypeFunc::Parms+0] = NULL;
+  const TypeTuple* range = TypeTuple::make(TypeFunc::Parms, fields);
+  return TypeFunc::make(domain, range);
+}
+
+
+
 //------------- Interpreter state access for on stack replacement
 const TypeFunc* OptoRuntime::osr_end_Type() {
   // create input type (domain)
@@ -1381,11 +1405,11 @@ NamedCounter* OptoRuntime::new_named_counter(JVMState* youngest_jvms, NamedCount
   }
   NamedCounter* c;
   if (tag == NamedCounter::BiasedLockingCounter) {
-    c = new BiasedLockingNamedCounter(strdup(st.as_string()));
+    c = new BiasedLockingNamedCounter(st.as_string());
   } else if (tag == NamedCounter::RTMLockingCounter) {
-    c = new RTMLockingNamedCounter(strdup(st.as_string()));
+    c = new RTMLockingNamedCounter(st.as_string());
   } else {
-    c = new NamedCounter(strdup(st.as_string()), tag);
+    c = new NamedCounter(st.as_string(), tag);
   }
 
   // atomically add the new counter to the head of the list.  We only

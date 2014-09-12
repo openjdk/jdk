@@ -37,10 +37,10 @@ import java.util.Map;
  * The class also knows how to find source files (scanRoot) given include/exclude
  * patterns and a root.
  *
- * <p><b>This is NOT part of any supported API.
- * If you write code that depends on this, you do so at your own
- * risk.  This code and its internal interfaces are subject to change
- * or deletion without notice.</b></p>
+ *  <p><b>This is NOT part of any supported API.
+ *  If you write code that depends on this, you do so at your own risk.
+ *  This code and its internal interfaces are subject to change or
+ *  deletion without notice.</b>
  */
 public class Source implements Comparable<Source> {
     // The package the source belongs to.
@@ -313,7 +313,7 @@ public class Source implements Comparable<Source> {
             int sp = fn.lastIndexOf(File.separatorChar);
             String pkg = "";
             if (sp != -1) {
-                pkg = fn.substring(0,sp).replace('/','.');
+                pkg = fn.substring(0,sp).replace(File.separatorChar,'.');
             }
             // Is this a module-info.java file?
             if (fn.endsWith("module-info.java")) {

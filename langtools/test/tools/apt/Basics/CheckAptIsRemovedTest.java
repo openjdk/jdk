@@ -25,7 +25,7 @@
  * @test
  * @bug 4908512 5024825 4957203 4993280 4996963 6174696 6177059 7041249
  * @summary Make sure apt is removed and doesn't come back
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main CheckAptIsRemovedTest
  */
@@ -34,7 +34,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
 
-//original test: test/tools/apt/Basics/apt.sh
+// Original test: test/tools/apt/Basics/apt.sh
 public class CheckAptIsRemovedTest {
     //I think this class can be let with the imports only and that should be enough for as test's purpose
     private static final String NullAPFSrc =
@@ -77,20 +77,18 @@ public class CheckAptIsRemovedTest {
         Path aptLin = Paths.get(testJDK, "bin", "apt");
         Path aptWin = Paths.get(testJDK, "bin", "apt.exe");
 
-//        if [ -f "${TESTJAVA}/bin/apt" -o -f "${TESTJAVA}/bin/apt.exe" ];then
         if (Files.exists(aptLin) || Files.exists(aptWin)) {
             throw new AssertionError("apt executable should not exist");
         }
 
-//        JAVAC="${TESTJAVA}/bin/javac ${TESTTOOLVMOPTS} -source 1.5 -sourcepath ${TESTSRC} -classpath ${TESTJAVA}/lib/tools.jar -d . "
-//        $JAVAC ${TESTSRC}/NullAPF.java
         Path classpath = Paths.get(testJDK, "lib", "tools.jar");
-        ToolBox.JavaToolArgs javacArgs =
-                new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .setOptions("-sourcepath", ".",
-                    "-classpath", classpath.toString())
-                .setSources(NullAPFSrc);
-        ToolBox.javac(javacArgs);
+        ToolBox tb = new ToolBox();
+        tb.new JavacTask()
+                .classpath(classpath.toString()) // TODO: add overload
+                .sourcepath(".")
+                .sources(NullAPFSrc)
+                .run(ToolBox.Expect.FAIL)
+                .writeAll();
     }
 
 }

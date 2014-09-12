@@ -7293,6 +7293,467 @@ void MacroAssembler::encode_iso_array(Register src, Register dst, Register len,
   bind(L_done);
 }
 
+#ifdef _LP64
+/**
+ * Helper for multiply_to_len().
+ */
+void MacroAssembler::add2_with_carry(Register dest_hi, Register dest_lo, Register src1, Register src2) {
+  addq(dest_lo, src1);
+  adcq(dest_hi, 0);
+  addq(dest_lo, src2);
+  adcq(dest_hi, 0);
+}
+
+/**
+ * Multiply 64 bit by 64 bit first loop.
+ */
+void MacroAssembler::multiply_64_x_64_loop(Register x, Register xstart, Register x_xstart,
+                                           Register y, Register y_idx, Register z,
+                                           Register carry, Register product,
+                                           Register idx, Register kdx) {
+  //
+  //  jlong carry, x[], y[], z[];
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx-, kdx--) {
+  //    huge_128 product = y[idx] * x[xstart] + carry;
+  //    z[kdx] = (jlong)product;
+  //    carry  = (jlong)(product >>> 64);
+  //  }
+  //  z[xstart] = carry;
+  //
+
+  Label L_first_loop, L_first_loop_exit;
+  Label L_one_x, L_one_y, L_multiply;
+
+  decrementl(xstart);
+  jcc(Assembler::negative, L_one_x);
+
+  movq(x_xstart, Address(x, xstart, Address::times_4,  0));
+  rorq(x_xstart, 32); // convert big-endian to little-endian
+
+  bind(L_first_loop);
+  decrementl(idx);
+  jcc(Assembler::negative, L_first_loop_exit);
+  decrementl(idx);
+  jcc(Assembler::negative, L_one_y);
+  movq(y_idx, Address(y, idx, Address::times_4,  0));
+  rorq(y_idx, 32); // convert big-endian to little-endian
+  bind(L_multiply);
+  movq(product, x_xstart);
+  mulq(y_idx); // product(rax) * y_idx -> rdx:rax
+  addq(product, carry);
+  adcq(rdx, 0);
+  subl(kdx, 2);
+  movl(Address(z, kdx, Address::times_4,  4), product);
+  shrq(product, 32);
+  movl(Address(z, kdx, Address::times_4,  0), product);
+  movq(carry, rdx);
+  jmp(L_first_loop);
+
+  bind(L_one_y);
+  movl(y_idx, Address(y,  0));
+  jmp(L_multiply);
+
+  bind(L_one_x);
+  movl(x_xstart, Address(x,  0));
+  jmp(L_first_loop);
+
+  bind(L_first_loop_exit);
+}
+
+/**
+ * Multiply 64 bit by 64 bit and add 128 bit.
+ */
+void MacroAssembler::multiply_add_128_x_128(Register x_xstart, Register y, Register z,
+                                            Register yz_idx, Register idx,
+                                            Register carry, Register product, int offset) {
+  //     huge_128 product = (y[idx] * x_xstart) + z[kdx] + carry;
+  //     z[kdx] = (jlong)product;
+
+  movq(yz_idx, Address(y, idx, Address::times_4,  offset));
+  rorq(yz_idx, 32); // convert big-endian to little-endian
+  movq(product, x_xstart);
+  mulq(yz_idx);     // product(rax) * yz_idx -> rdx:product(rax)
+  movq(yz_idx, Address(z, idx, Address::times_4,  offset));
+  rorq(yz_idx, 32); // convert big-endian to little-endian
+
+  add2_with_carry(rdx, product, carry, yz_idx);
+
+  movl(Address(z, idx, Address::times_4,  offset+4), product);
+  shrq(product, 32);
+  movl(Address(z, idx, Address::times_4,  offset), product);
+
+}
+
+/**
+ * Multiply 128 bit by 128 bit. Unrolled inner loop.
+ */
+void MacroAssembler::multiply_128_x_128_loop(Register x_xstart, Register y, Register z,
+                                             Register yz_idx, Register idx, Register jdx,
+                                             Register carry, Register product,
+                                             Register carry2) {
+  //   jlong carry, x[], y[], z[];
+  //   int kdx = ystart+1;
+  //   for (int idx=ystart-2; idx >= 0; idx -= 2) { // Third loop
+  //     huge_128 product = (y[idx+1] * x_xstart) + z[kdx+idx+1] + carry;
+  //     z[kdx+idx+1] = (jlong)product;
+  //     jlong carry2  = (jlong)(product >>> 64);
+  //     product = (y[idx] * x_xstart) + z[kdx+idx] + carry2;
+  //     z[kdx+idx] = (jlong)product;
+  //     carry  = (jlong)(product >>> 64);
+  //   }
+  //   idx += 2;
+  //   if (idx > 0) {
+  //     product = (y[idx] * x_xstart) + z[kdx+idx] + carry;
+  //     z[kdx+idx] = (jlong)product;
+  //     carry  = (jlong)(product >>> 64);
+  //   }
+  //
+
+  Label L_third_loop, L_third_loop_exit, L_post_third_loop_done;
+
+  movl(jdx, idx);
+  andl(jdx, 0xFFFFFFFC);
+  shrl(jdx, 2);
+
+  bind(L_third_loop);
+  subl(jdx, 1);
+  jcc(Assembler::negative, L_third_loop_exit);
+  subl(idx, 4);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry, product, 8);
+  movq(carry2, rdx);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry2, product, 0);
+  movq(carry, rdx);
+  jmp(L_third_loop);
+
+  bind (L_third_loop_exit);
+
+  andl (idx, 0x3);
+  jcc(Assembler::zero, L_post_third_loop_done);
+
+  Label L_check_1;
+  subl(idx, 2);
+  jcc(Assembler::negative, L_check_1);
+
+  multiply_add_128_x_128(x_xstart, y, z, yz_idx, idx, carry, product, 0);
+  movq(carry, rdx);
+
+  bind (L_check_1);
+  addl (idx, 0x2);
+  andl (idx, 0x1);
+  subl(idx, 1);
+  jcc(Assembler::negative, L_post_third_loop_done);
+
+  movl(yz_idx, Address(y, idx, Address::times_4,  0));
+  movq(product, x_xstart);
+  mulq(yz_idx); // product(rax) * yz_idx -> rdx:product(rax)
+  movl(yz_idx, Address(z, idx, Address::times_4,  0));
+
+  add2_with_carry(rdx, product, yz_idx, carry);
+
+  movl(Address(z, idx, Address::times_4,  0), product);
+  shrq(product, 32);
+
+  shlq(rdx, 32);
+  orq(product, rdx);
+  movq(carry, product);
+
+  bind(L_post_third_loop_done);
+}
+
+/**
+ * Multiply 128 bit by 128 bit using BMI2. Unrolled inner loop.
+ *
+ */
+void MacroAssembler::multiply_128_x_128_bmi2_loop(Register y, Register z,
+                                                  Register carry, Register carry2,
+                                                  Register idx, Register jdx,
+                                                  Register yz_idx1, Register yz_idx2,
+                                                  Register tmp, Register tmp3, Register tmp4) {
+  assert(UseBMI2Instructions, "should be used only when BMI2 is available");
+
+  //   jlong carry, x[], y[], z[];
+  //   int kdx = ystart+1;
+  //   for (int idx=ystart-2; idx >= 0; idx -= 2) { // Third loop
+  //     huge_128 tmp3 = (y[idx+1] * rdx) + z[kdx+idx+1] + carry;
+  //     jlong carry2  = (jlong)(tmp3 >>> 64);
+  //     huge_128 tmp4 = (y[idx]   * rdx) + z[kdx+idx] + carry2;
+  //     carry  = (jlong)(tmp4 >>> 64);
+  //     z[kdx+idx+1] = (jlong)tmp3;
+  //     z[kdx+idx] = (jlong)tmp4;
+  //   }
+  //   idx += 2;
+  //   if (idx > 0) {
+  //     yz_idx1 = (y[idx] * rdx) + z[kdx+idx] + carry;
+  //     z[kdx+idx] = (jlong)yz_idx1;
+  //     carry  = (jlong)(yz_idx1 >>> 64);
+  //   }
+  //
+
+  Label L_third_loop, L_third_loop_exit, L_post_third_loop_done;
+
+  movl(jdx, idx);
+  andl(jdx, 0xFFFFFFFC);
+  shrl(jdx, 2);
+
+  bind(L_third_loop);
+  subl(jdx, 1);
+  jcc(Assembler::negative, L_third_loop_exit);
+  subl(idx, 4);
+
+  movq(yz_idx1,  Address(y, idx, Address::times_4,  8));
+  rorxq(yz_idx1, yz_idx1, 32); // convert big-endian to little-endian
+  movq(yz_idx2, Address(y, idx, Address::times_4,  0));
+  rorxq(yz_idx2, yz_idx2, 32);
+
+  mulxq(tmp4, tmp3, yz_idx1);  //  yz_idx1 * rdx -> tmp4:tmp3
+  mulxq(carry2, tmp, yz_idx2); //  yz_idx2 * rdx -> carry2:tmp
+
+  movq(yz_idx1,  Address(z, idx, Address::times_4,  8));
+  rorxq(yz_idx1, yz_idx1, 32);
+  movq(yz_idx2, Address(z, idx, Address::times_4,  0));
+  rorxq(yz_idx2, yz_idx2, 32);
+
+  if (VM_Version::supports_adx()) {
+    adcxq(tmp3, carry);
+    adoxq(tmp3, yz_idx1);
+
+    adcxq(tmp4, tmp);
+    adoxq(tmp4, yz_idx2);
+
+    movl(carry, 0); // does not affect flags
+    adcxq(carry2, carry);
+    adoxq(carry2, carry);
+  } else {
+    add2_with_carry(tmp4, tmp3, carry, yz_idx1);
+    add2_with_carry(carry2, tmp4, tmp, yz_idx2);
+  }
+  movq(carry, carry2);
+
+  movl(Address(z, idx, Address::times_4, 12), tmp3);
+  shrq(tmp3, 32);
+  movl(Address(z, idx, Address::times_4,  8), tmp3);
+
+  movl(Address(z, idx, Address::times_4,  4), tmp4);
+  shrq(tmp4, 32);
+  movl(Address(z, idx, Address::times_4,  0), tmp4);
+
+  jmp(L_third_loop);
+
+  bind (L_third_loop_exit);
+
+  andl (idx, 0x3);
+  jcc(Assembler::zero, L_post_third_loop_done);
+
+  Label L_check_1;
+  subl(idx, 2);
+  jcc(Assembler::negative, L_check_1);
+
+  movq(yz_idx1, Address(y, idx, Address::times_4,  0));
+  rorxq(yz_idx1, yz_idx1, 32);
+  mulxq(tmp4, tmp3, yz_idx1); //  yz_idx1 * rdx -> tmp4:tmp3
+  movq(yz_idx2, Address(z, idx, Address::times_4,  0));
+  rorxq(yz_idx2, yz_idx2, 32);
+
+  add2_with_carry(tmp4, tmp3, carry, yz_idx2);
+
+  movl(Address(z, idx, Address::times_4,  4), tmp3);
+  shrq(tmp3, 32);
+  movl(Address(z, idx, Address::times_4,  0), tmp3);
+  movq(carry, tmp4);
+
+  bind (L_check_1);
+  addl (idx, 0x2);
+  andl (idx, 0x1);
+  subl(idx, 1);
+  jcc(Assembler::negative, L_post_third_loop_done);
+  movl(tmp4, Address(y, idx, Address::times_4,  0));
+  mulxq(carry2, tmp3, tmp4);  //  tmp4 * rdx -> carry2:tmp3
+  movl(tmp4, Address(z, idx, Address::times_4,  0));
+
+  add2_with_carry(carry2, tmp3, tmp4, carry);
+
+  movl(Address(z, idx, Address::times_4,  0), tmp3);
+  shrq(tmp3, 32);
+
+  shlq(carry2, 32);
+  orq(tmp3, carry2);
+  movq(carry, tmp3);
+
+  bind(L_post_third_loop_done);
+}
+
+/**
+ * Code for BigInteger::multiplyToLen() instrinsic.
+ *
+ * rdi: x
+ * rax: xlen
+ * rsi: y
+ * rcx: ylen
+ * r8:  z
+ * r11: zlen
+ * r12: tmp1
+ * r13: tmp2
+ * r14: tmp3
+ * r15: tmp4
+ * rbx: tmp5
+ *
+ */
+void MacroAssembler::multiply_to_len(Register x, Register xlen, Register y, Register ylen, Register z, Register zlen,
+                                     Register tmp1, Register tmp2, Register tmp3, Register tmp4, Register tmp5) {
+  ShortBranchVerifier sbv(this);
+  assert_different_registers(x, xlen, y, ylen, z, zlen, tmp1, tmp2, tmp3, tmp4, tmp5, rdx);
+
+  push(tmp1);
+  push(tmp2);
+  push(tmp3);
+  push(tmp4);
+  push(tmp5);
+
+  push(xlen);
+  push(zlen);
+
+  const Register idx = tmp1;
+  const Register kdx = tmp2;
+  const Register xstart = tmp3;
+
+  const Register y_idx = tmp4;
+  const Register carry = tmp5;
+  const Register product  = xlen;
+  const Register x_xstart = zlen;  // reuse register
+
+  // First Loop.
+  //
+  //  final static long LONG_MASK = 0xffffffffL;
+  //  int xstart = xlen - 1;
+  //  int ystart = ylen - 1;
+  //  long carry = 0;
+  //  for (int idx=ystart, kdx=ystart+1+xstart; idx >= 0; idx-, kdx--) {
+  //    long product = (y[idx] & LONG_MASK) * (x[xstart] & LONG_MASK) + carry;
+  //    z[kdx] = (int)product;
+  //    carry = product >>> 32;
+  //  }
+  //  z[xstart] = (int)carry;
+  //
+
+  movl(idx, ylen);      // idx = ylen;
+  movl(kdx, zlen);      // kdx = xlen+ylen;
+  xorq(carry, carry);   // carry = 0;
+
+  Label L_done;
+
+  movl(xstart, xlen);
+  decrementl(xstart);
+  jcc(Assembler::negative, L_done);
+
+  multiply_64_x_64_loop(x, xstart, x_xstart, y, y_idx, z, carry, product, idx, kdx);
+
+  Label L_second_loop;
+  testl(kdx, kdx);
+  jcc(Assembler::zero, L_second_loop);
+
+  Label L_carry;
+  subl(kdx, 1);
+  jcc(Assembler::zero, L_carry);
+
+  movl(Address(z, kdx, Address::times_4,  0), carry);
+  shrq(carry, 32);
+  subl(kdx, 1);
+
+  bind(L_carry);
+  movl(Address(z, kdx, Address::times_4,  0), carry);
+
+  // Second and third (nested) loops.
+  //
+  // for (int i = xstart-1; i >= 0; i--) { // Second loop
+  //   carry = 0;
+  //   for (int jdx=ystart, k=ystart+1+i; jdx >= 0; jdx--, k--) { // Third loop
+  //     long product = (y[jdx] & LONG_MASK) * (x[i] & LONG_MASK) +
+  //                    (z[k] & LONG_MASK) + carry;
+  //     z[k] = (int)product;
+  //     carry = product >>> 32;
+  //   }
+  //   z[i] = (int)carry;
+  // }
+  //
+  // i = xlen, j = tmp1, k = tmp2, carry = tmp5, x[i] = rdx
+
+  const Register jdx = tmp1;
+
+  bind(L_second_loop);
+  xorl(carry, carry);    // carry = 0;
+  movl(jdx, ylen);       // j = ystart+1
+
+  subl(xstart, 1);       // i = xstart-1;
+  jcc(Assembler::negative, L_done);
+
+  push (z);
+
+  Label L_last_x;
+  lea(z, Address(z, xstart, Address::times_4, 4)); // z = z + k - j
+  subl(xstart, 1);       // i = xstart-1;
+  jcc(Assembler::negative, L_last_x);
+
+  if (UseBMI2Instructions) {
+    movq(rdx,  Address(x, xstart, Address::times_4,  0));
+    rorxq(rdx, rdx, 32); // convert big-endian to little-endian
+  } else {
+    movq(x_xstart, Address(x, xstart, Address::times_4,  0));
+    rorq(x_xstart, 32);  // convert big-endian to little-endian
+  }
+
+  Label L_third_loop_prologue;
+  bind(L_third_loop_prologue);
+
+  push (x);
+  push (xstart);
+  push (ylen);
+
+
+  if (UseBMI2Instructions) {
+    multiply_128_x_128_bmi2_loop(y, z, carry, x, jdx, ylen, product, tmp2, x_xstart, tmp3, tmp4);
+  } else { // !UseBMI2Instructions
+    multiply_128_x_128_loop(x_xstart, y, z, y_idx, jdx, ylen, carry, product, x);
+  }
+
+  pop(ylen);
+  pop(xlen);
+  pop(x);
+  pop(z);
+
+  movl(tmp3, xlen);
+  addl(tmp3, 1);
+  movl(Address(z, tmp3, Address::times_4,  0), carry);
+  subl(tmp3, 1);
+  jccb(Assembler::negative, L_done);
+
+  shrq(carry, 32);
+  movl(Address(z, tmp3, Address::times_4,  0), carry);
+  jmp(L_second_loop);
+
+  // Next infrequent code is moved outside loops.
+  bind(L_last_x);
+  if (UseBMI2Instructions) {
+    movl(rdx, Address(x,  0));
+  } else {
+    movl(x_xstart, Address(x,  0));
+  }
+  jmp(L_third_loop_prologue);
+
+  bind(L_done);
+
+  pop(zlen);
+  pop(xlen);
+
+  pop(tmp5);
+  pop(tmp4);
+  pop(tmp3);
+  pop(tmp2);
+  pop(tmp1);
+}
+#endif
+
 /**
  * Emits code to update CRC-32 with a byte value according to constants in table
  *
@@ -7316,17 +7777,34 @@ void MacroAssembler::update_byte_crc32(Register crc, Register val, Register tabl
  * Fold 128-bit data chunk
  */
 void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, Register buf, int offset) {
-  vpclmulhdq(xtmp, xK, xcrc); // [123:64]
-  vpclmulldq(xcrc, xK, xcrc); // [63:0]
-  vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
-  pxor(xcrc, xtmp);
+  if (UseAVX > 0) {
+    vpclmulhdq(xtmp, xK, xcrc); // [123:64]
+    vpclmulldq(xcrc, xK, xcrc); // [63:0]
+    vpxor(xcrc, xcrc, Address(buf, offset), false /* vector256 */);
+    pxor(xcrc, xtmp);
+  } else {
+    movdqa(xtmp, xcrc);
+    pclmulhdq(xtmp, xK);   // [123:64]
+    pclmulldq(xcrc, xK);   // [63:0]
+    pxor(xcrc, xtmp);
+    movdqu(xtmp, Address(buf, offset));
+    pxor(xcrc, xtmp);
+  }
 }
 
 void MacroAssembler::fold_128bit_crc32(XMMRegister xcrc, XMMRegister xK, XMMRegister xtmp, XMMRegister xbuf) {
-  vpclmulhdq(xtmp, xK, xcrc);
-  vpclmulldq(xcrc, xK, xcrc);
-  pxor(xcrc, xbuf);
-  pxor(xcrc, xtmp);
+  if (UseAVX > 0) {
+    vpclmulhdq(xtmp, xK, xcrc);
+    vpclmulldq(xcrc, xK, xcrc);
+    pxor(xcrc, xbuf);
+    pxor(xcrc, xtmp);
+  } else {
+    movdqa(xtmp, xcrc);
+    pclmulhdq(xtmp, xK);
+    pclmulldq(xcrc, xK);
+    pxor(xcrc, xbuf);
+    pxor(xcrc, xtmp);
+  }
 }
 
 /**
@@ -7444,9 +7922,17 @@ void MacroAssembler::kernel_crc32(Register crc, Register buf, Register len, Regi
   // Fold 128 bits in xmm1 down into 32 bits in crc register.
   BIND(L_fold_128b);
   movdqu(xmm0, ExternalAddress(StubRoutines::x86::crc_by128_masks_addr()));
-  vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
-  vpand(xmm3, xmm0, xmm2, false /* vector256 */);
-  vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
+  if (UseAVX > 0) {
+    vpclmulqdq(xmm2, xmm0, xmm1, 0x1);
+    vpand(xmm3, xmm0, xmm2, false /* vector256 */);
+    vpclmulqdq(xmm0, xmm0, xmm3, 0x1);
+  } else {
+    movdqa(xmm2, xmm0);
+    pclmulqdq(xmm2, xmm1, 0x1);
+    movdqa(xmm3, xmm0);
+    pand(xmm3, xmm2);
+    pclmulqdq(xmm0, xmm3, 0x1);
+  }
   psrldq(xmm1, 8);
   psrldq(xmm2, 4);
   pxor(xmm0, xmm1);

@@ -265,7 +265,7 @@ void Type::Initialize_shared(Compile* current) {
   // locking.
 
   Arena* save = current->type_arena();
-  Arena* shared_type_arena = new (mtCompiler)Arena();
+  Arena* shared_type_arena = new (mtCompiler)Arena(mtCompiler);
 
   current->set_type_arena(shared_type_arena);
   _shared_type_dict =
@@ -1708,8 +1708,8 @@ const TypeTuple *TypeTuple::LONG_CC_PAIR;
 // Make a TypeTuple from the range of a method signature
 const TypeTuple *TypeTuple::make_range(ciSignature* sig) {
   ciType* return_type = sig->return_type();
-  uint total_fields = TypeFunc::Parms + return_type->size();
-  const Type **field_array = fields(total_fields);
+  uint arg_cnt = return_type->size();
+  const Type **field_array = fields(arg_cnt);
   switch (return_type->basic_type()) {
   case T_LONG:
     field_array[TypeFunc::Parms]   = TypeLong::LONG;
@@ -1734,26 +1734,26 @@ const TypeTuple *TypeTuple::make_range(ciSignature* sig) {
   default:
     ShouldNotReachHere();
   }
-  return (TypeTuple*)(new TypeTuple(total_fields,field_array))->hashcons();
+  return (TypeTuple*)(new TypeTuple(TypeFunc::Parms + arg_cnt, field_array))->hashcons();
 }
 
 // Make a TypeTuple from the domain of a method signature
 const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig) {
-  uint total_fields = TypeFunc::Parms + sig->size();
+  uint arg_cnt = sig->size();
 
   uint pos = TypeFunc::Parms;
   const Type **field_array;
   if (recv != NULL) {
-    total_fields++;
-    field_array = fields(total_fields);
+    arg_cnt++;
+    field_array = fields(arg_cnt);
     // Use get_const_type here because it respects UseUniqueSubclasses:
     field_array[pos++] = get_const_type(recv)->join_speculative(TypePtr::NOTNULL);
   } else {
-    field_array = fields(total_fields);
+    field_array = fields(arg_cnt);
   }
 
   int i = 0;
-  while (pos < total_fields) {
+  while (pos < TypeFunc::Parms + arg_cnt) {
     ciType* type = sig->type_at(i);
 
     switch (type->basic_type()) {
@@ -1780,7 +1780,8 @@ const TypeTuple *TypeTuple::make_domain(ciInstanceKlass* recv, ciSignature* sig)
     }
     i++;
   }
-  return (TypeTuple*)(new TypeTuple(total_fields,field_array))->hashcons();
+
+  return (TypeTuple*)(new TypeTuple(TypeFunc::Parms + arg_cnt, field_array))->hashcons();
 }
 
 const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
@@ -1789,6 +1790,7 @@ const TypeTuple *TypeTuple::make( uint cnt, const Type **fields ) {
 
 //------------------------------fields-----------------------------------------
 // Subroutine call type with space allocated for argument types
+// Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
 const Type **TypeTuple::fields( uint arg_cnt ) {
   const Type **flds = (const Type **)(Compile::current()->type_arena()->Amalloc_4((TypeFunc::Parms+arg_cnt)*sizeof(Type*) ));
   flds[TypeFunc::Control  ] = Type::CONTROL;
@@ -5087,11 +5089,11 @@ int TypeFunc::hash(void) const {
 // Dump Function Type
 #ifndef PRODUCT
 void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
-  if( _range->_cnt <= Parms )
+  if( _range->cnt() <= Parms )
     st->print("void");
   else {
     uint i;
-    for (i = Parms; i < _range->_cnt-1; i++) {
+    for (i = Parms; i < _range->cnt()-1; i++) {
       _range->field_at(i)->dump2(d,depth,st);
       st->print("/");
     }
@@ -5104,9 +5106,9 @@ void TypeFunc::dump2( Dict &d, uint depth, outputStream *st ) const {
     return;
   }
   d.Insert((void*)this,(void*)this);    // Stop recursion
-  if (Parms < _domain->_cnt)
+  if (Parms < _domain->cnt())
     _domain->field_at(Parms)->dump2(d,depth-1,st);
-  for (uint i = Parms+1; i < _domain->_cnt; i++) {
+  for (uint i = Parms+1; i < _domain->cnt(); i++) {
     st->print(", ");
     _domain->field_at(i)->dump2(d,depth-1,st);
   }

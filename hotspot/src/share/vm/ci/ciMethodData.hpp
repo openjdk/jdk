@@ -410,6 +410,9 @@ private:
   // Area dedicated to parameters. NULL if no parameter profiling for
   // this method.
   DataLayout* _parameters;
+  int parameters_size() const {
+    return _parameters == NULL ? 0 : parameters_type_data()->size_in_bytes();
+  }
 
   ciMethodData(MethodData* md);
   ciMethodData();
@@ -460,9 +463,6 @@ private:
 
   address data_base() const {
     return (address) _data;
-  }
-  DataLayout* limit_data_position() const {
-    return (DataLayout*)((address)data_base() + _data_size);
   }
 
   void load_extra_data();
@@ -524,7 +524,9 @@ public:
   ciProfileData* next_data(ciProfileData* current);
   bool is_valid(ciProfileData* current) { return current != NULL; }
 
-  DataLayout* extra_data_base() const { return limit_data_position(); }
+  DataLayout* extra_data_base() const  { return data_layout_at(data_size()); }
+  DataLayout* args_data_limit() const  { return data_layout_at(data_size() + extra_data_size() -
+                                                               parameters_size()); }
 
   // Get the data at an arbitrary bci, or NULL if there is none. If m
   // is not NULL look for a SpeculativeTrapData if any first.

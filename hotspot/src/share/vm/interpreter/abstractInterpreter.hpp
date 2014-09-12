@@ -280,9 +280,6 @@ class AbstractInterpreterGenerator: public StackObj {
   address generate_result_handler_for(BasicType type);
   address generate_slow_signature_handler();
 
-  // entry point generator
-  address generate_method_entry(AbstractInterpreter::MethodKind kind);
-
   void bang_stack_shadow_pages(bool native_call);
 
   void generate_all();

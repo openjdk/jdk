@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -1313,11 +1313,11 @@ public class MLet extends java.net.URLClassLoader
         if (type.compareTo("java.lang.Long") == 0)
              return Long.valueOf(param);
         if (type.compareTo("java.lang.Integer") == 0)
-             return param;
+             return Integer.valueOf(param);
         if (type.compareTo("java.lang.Float") == 0)
-             return new Float(param);
+             return Float.valueOf(param);
         if (type.compareTo("java.lang.Double") == 0)
-             return new Double(param);
+             return Double.valueOf(param);
         if (type.compareTo("java.lang.String") == 0)
              return param;
 

@@ -369,8 +369,20 @@ public class ConstantWriter extends BasicWriter {
                     case '\r':
                         sb.append('\\').append('r');
                         break;
+                    case '\b':
+                        sb.append('\\').append('b');
+                        break;
+                    case '\f':
+                        sb.append('\\').append('f');
+                        break;
                     case '\"':
                         sb.append('\\').append('\"');
+                        break;
+                    case '\'':
+                        sb.append('\\').append('\'');
+                        break;
+                    case '\\':
+                        sb.append('\\').append('\\');
                         break;
                     default:
                         sb.append(c);

@@ -89,7 +89,7 @@ public final class DumpBytecode {
 
 
             // should code be dumped to disk - only valid in compile_only mode?
-            if (env._dest_dir != null && env._compile_only) {
+            if (env._dest_dir != null) {
                 final String fileName = className.replace('.', File.separatorChar) + ".class";
                 final int    index    = fileName.lastIndexOf(File.separatorChar);
 

@@ -72,11 +72,11 @@ class ClassPathEntry: public CHeapObj<mtClass> {
 
 class ClassPathDirEntry: public ClassPathEntry {
  private:
-  char* _dir;           // Name of directory
+  const char* _dir;           // Name of directory
  public:
   bool is_jar_file()  { return false;  }
   const char* name()  { return _dir; }
-  ClassPathDirEntry(char* dir);
+  ClassPathDirEntry(const char* dir);
   ClassFileStream* open_stream(const char* name, TRAPS);
   // Debugging
   NOT_PRODUCT(void compile_the_world(Handle loader, TRAPS);)
@@ -100,13 +100,14 @@ typedef struct {
 
 class ClassPathZipEntry: public ClassPathEntry {
  private:
-  jzfile* _zip;        // The zip archive
-  char*   _zip_name;   // Name of zip archive
+  jzfile* _zip;              // The zip archive
+  const char*   _zip_name;   // Name of zip archive
  public:
   bool is_jar_file()  { return true;  }
   const char* name()  { return _zip_name; }
   ClassPathZipEntry(jzfile* zip, const char* zip_name);
   ~ClassPathZipEntry();
+  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
   ClassFileStream* open_stream(const char* name, TRAPS);
   void contents_do(void f(const char* name, void* context), void* context);
   // Debugging
@@ -118,16 +119,20 @@ class ClassPathZipEntry: public ClassPathEntry {
 // For lazier loading of boot class path entries
 class LazyClassPathEntry: public ClassPathEntry {
  private:
-  char* _path; // dir or file
+  const char* _path; // dir or file
   struct stat _st;
   MetaIndex* _meta_index;
   bool _has_error;
+  bool _throw_exception;
   volatile ClassPathEntry* _resolved_entry;
   ClassPathEntry* resolve_entry(TRAPS);
  public:
   bool is_jar_file();
   const char* name()  { return _path; }
-  LazyClassPathEntry(char* path, const struct stat* st);
+  LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception);
+  virtual ~LazyClassPathEntry();
+  u1* open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS);
+
   ClassFileStream* open_stream(const char* name, TRAPS);
   void set_meta_index(MetaIndex* meta_index) { _meta_index = meta_index; }
   virtual bool is_lazy();
@@ -138,6 +143,7 @@ class LazyClassPathEntry: public ClassPathEntry {
 
 class PackageHashtable;
 class PackageInfo;
+class SharedPathsMiscInfo;
 template <MEMFLAGS F> class HashtableBucket;
 
 class ClassLoader: AllStatic {
@@ -145,7 +151,7 @@ class ClassLoader: AllStatic {
   enum SomeConstants {
     package_hash_table_size = 31  // Number of buckets
   };
- private:
+ protected:
   friend class LazyClassPathEntry;
 
   // Performance counters
@@ -187,9 +193,14 @@ class ClassLoader: AllStatic {
   static ClassPathEntry* _first_entry;
   // Last entry in linked list of ClassPathEntry instances
   static ClassPathEntry* _last_entry;
+  static int _num_entries;
+
   // Hash table used to keep track of loaded packages
   static PackageHashtable* _package_hash_table;
   static const char* _shared_archive;
+
+  // Info used by CDS
+  CDS_ONLY(static SharedPathsMiscInfo * _shared_paths_misc_info;)
 
   // Hash function
   static unsigned int hash(const char *s, int n);
@@ -201,19 +212,23 @@ class ClassLoader: AllStatic {
   static bool add_package(const char *pkgname, int classpath_index, TRAPS);
 
   // Initialization
-  static void setup_meta_index();
+  static void setup_bootstrap_meta_index();
+  static void setup_meta_index(const char* meta_index_path, const char* meta_index_dir,
+                               int start_index);
   static void setup_bootstrap_search_path();
+  static void setup_search_path(const char *class_path);
+
   static void load_zip_library();
-  static ClassPathEntry* create_class_path_entry(char *path, const struct stat* st,
-                                                 bool lazy, TRAPS);
+  static ClassPathEntry* create_class_path_entry(const char *path, const struct stat* st,
+                                                 bool lazy, bool throw_exception, TRAPS);
 
   // Canonicalizes path names, so strcmp will work properly. This is mainly
   // to avoid confusing the zip library
-  static bool get_canonical_path(char* orig, char* out, int len);
+  static bool get_canonical_path(const char* orig, char* out, int len);
  public:
-  // Used by the kernel jvm.
-  static void update_class_path_entry_list(char *path,
-                                           bool check_for_duplicates);
+  static bool update_class_path_entry_list(const char *path,
+                                           bool check_for_duplicates,
+                                           bool throw_exception=true);
   static void print_bootclasspath();
 
   // Timing
@@ -296,6 +311,7 @@ class ClassLoader: AllStatic {
 
   // Initialization
   static void initialize();
+  CDS_ONLY(static void initialize_shared_path();)
   static void create_package_info_table();
   static void create_package_info_table(HashtableBucket<mtClass> *t, int length,
                                         int number_of_entries);
@@ -310,9 +326,20 @@ class ClassLoader: AllStatic {
     return e;
   }
 
+#if INCLUDE_CDS
   // Sharing dump and restore
   static void copy_package_info_buckets(char** top, char* end);
   static void copy_package_info_table(char** top, char* end);
+
+  static void  check_shared_classpath(const char *path);
+  static void  finalize_shared_paths_misc_info();
+  static int   get_shared_paths_misc_info_size();
+  static void* get_shared_paths_misc_info();
+  static bool  check_shared_paths_misc_info(void* info, int size);
+  static void  exit_with_path_failure(const char* error, const char* message);
+#endif
+
+  static void  trace_class_path(const char* msg, const char* name = NULL);
 
   // VM monitoring and management support
   static jlong classloader_time_ms();
@@ -337,7 +364,7 @@ class ClassLoader: AllStatic {
 
   // Force compilation of all methods in all classes in bootstrap class path (stress test)
 #ifndef PRODUCT
- private:
+ protected:
   static int _compile_the_world_class_counter;
   static int _compile_the_world_method_counter;
  public:

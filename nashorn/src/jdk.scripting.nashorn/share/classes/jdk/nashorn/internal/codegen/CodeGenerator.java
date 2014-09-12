@@ -52,11 +52,11 @@ import static jdk.nashorn.internal.ir.Symbol.IS_INTERNAL;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_APPLY_TO_CALL;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_DECLARE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_FAST_SCOPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_SCOPE;
-import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.io.PrintWriter;
 import java.util.ArrayDeque;
@@ -76,6 +76,7 @@ import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.function.Supplier;
+import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.IntDeque;
 import jdk.nashorn.internal.codegen.ClassEmitter.Flag;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
@@ -238,19 +239,12 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
     /** From what size should we use spill instead of fields for JavaScript objects? */
     private static final int OBJECT_SPILL_THRESHOLD = Options.getIntProperty("nashorn.spill.threshold", 256);
 
-    private static boolean assertsEnabled = false;
-    static {
-        assert assertsEnabled = true; // Intentional side effect
-    }
-
     private final Set<String> emittedMethods = new HashSet<>();
 
     // Function Id -> ContinuationInfo. Used by compilation of rest-of function only.
     private final Map<Integer, ContinuationInfo> fnIdToContinuationInfo = new HashMap<>();
 
     private final Deque<Label> scopeEntryLabels = new ArrayDeque<>();
-
-    private final Set<Integer> initializedFunctionIds = new HashSet<>();
 
     private static final Label METHOD_BOUNDARY = new Label("");
     private final Deque<Label> catchLabels = new ArrayDeque<>();
@@ -291,7 +285,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the correct flags for a call site in the current function
      */
     int getCallSiteFlags() {
-        return lc.getCurrentFunction().isStrict() ? callSiteFlags | CALLSITE_STRICT : callSiteFlags;
+        return lc.getCurrentFunction().getCallSiteFlags() | callSiteFlags;
     }
 
     /**
@@ -309,6 +303,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * @return the method generator used
      */
     private MethodEmitter loadIdent(final IdentNode identNode, final TypeBounds resultBounds) {
+        checkTemporalDeadZone(identNode);
         final Symbol symbol = identNode.getSymbol();
 
         if (!symbol.isScope()) {
@@ -339,6 +334,15 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         return method;
+    }
+
+    // Any access to LET and CONST variables before their declaration must throw ReferenceError.
+    // This is called the temporal dead zone (TDZ). See https://gist.github.com/rwaldron/f0807a758aa03bcdd58a
+    private void checkTemporalDeadZone(final IdentNode identNode) {
+        if (identNode.isDead()) {
+            method.load(identNode.getSymbol().getName());
+            method.invoke(ScriptRuntime.THROW_REFERENCE_ERROR);
+        }
     }
 
     private boolean isRestOf() {
@@ -1618,9 +1622,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
             @Override
             protected void evaluate() {
-                method.load(ITERATOR_TYPE, iterSlot);
-                // TODO: optimistic for-in iteration
-                method.invoke(interfaceCallNoLookup(ITERATOR_CLASS, "next", Object.class));
+                new OptimisticOperation((Optimistic)forNode.getInit(), TypeBounds.UNBOUNDED) {
+                    @Override
+                    void loadStack() {
+                        method.load(ITERATOR_TYPE, iterSlot);
+                    }
+
+                    @Override
+                    void consumeStack() {
+                        method.invoke(interfaceCallNoLookup(ITERATOR_CLASS, "next", Object.class));
+                        convertOptimisticReturnValue();
+                    }
+                }.emit();
             }
         }.store();
         body.accept(this);
@@ -1766,7 +1779,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         }
 
         // Debugging: print symbols? @see --print-symbols flag
-        printSymbols(block, (isFunctionBody ? "Function " : "Block in ") + (function.getIdent() == null ? "<anonymous>" : function.getIdent().getName()));
+        printSymbols(block, function, (isFunctionBody ? "Function " : "Block in ") + (function.getIdent() == null ? "<anonymous>" : function.getIdent().getName()));
     }
 
     /**
@@ -1872,6 +1885,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // lingers around. Also, currently loading previously persisted optimistic types information only works if
         // we're on-demand compiling a function, so with this strategy the :program method can also have the warmup
         // benefit of using previously persisted types.
+        //
         // NOTE that this means the first compiled class will effectively just have a :createProgramFunction method, and
         // the RecompilableScriptFunctionData (RSFD) object in its constants array. It won't even have the :program
         // method. This is by design. It does mean that we're wasting one compiler execution (and we could minimize this
@@ -1879,11 +1893,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         // We could emit an initial separate compile unit with the initial version of :program in it to better utilize
         // the compilation pipeline, but that would need more invasive changes, as currently the assumption that
         // :program is emitted into the first compilation unit of the function lives in many places.
-        if(!onDemand && lazy && env._optimistic_types && functionNode.isProgram()) {
-            return true;
-        }
-
-        return false;
+        return !onDemand && lazy && env._optimistic_types && functionNode.isProgram();
     }
 
     @Override
@@ -3226,27 +3236,34 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             return false;
         }
         final Expression init = varNode.getInit();
+        final IdentNode identNode = varNode.getName();
+        final Symbol identSymbol = identNode.getSymbol();
+        assert identSymbol != null : "variable node " + varNode + " requires a name with a symbol";
+        final boolean needsScope = identSymbol.isScope();
 
         if (init == null) {
+            if (needsScope && varNode.isBlockScoped()) {
+                // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+                method.loadCompilerConstant(SCOPE);
+                method.loadUndefined(Type.OBJECT);
+                final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
+                assert isFastScope(identSymbol);
+                storeFastScopeVar(identSymbol, flags);
+            }
             return false;
         }
 
         enterStatement(varNode);
-
-        final IdentNode identNode = varNode.getName();
-        final Symbol identSymbol = identNode.getSymbol();
-        assert identSymbol != null : "variable node " + varNode + " requires a name with a symbol";
-
         assert method != null;
 
-        final boolean needsScope = identSymbol.isScope();
         if (needsScope) {
             method.loadCompilerConstant(SCOPE);
         }
 
         if (needsScope) {
             loadExpressionUnbounded(init);
-            final int flags = CALLSITE_SCOPE | getCallSiteFlags();
+            // block scoped variables need a DECLARE flag to signal end of temporal dead zone (TDZ)
+            final int flags = CALLSITE_SCOPE | getCallSiteFlags() | (varNode.isBlockScoped() ? CALLSITE_DECLARE : 0);
             if (isFastScope(identSymbol)) {
                 storeFastScopeVar(identSymbol, flags);
             } else {
@@ -4111,19 +4128,18 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
      * Debug code used to print symbols
      *
      * @param block the block we are in
+     * @param function the function we are in
      * @param ident identifier for block or function where applicable
      */
-    private void printSymbols(final Block block, final String ident) {
-        if (!compiler.getScriptEnvironment()._print_symbols) {
-            return;
+    private void printSymbols(final Block block, final FunctionNode function, final String ident) {
+        if (compiler.getScriptEnvironment()._print_symbols || function.getFlag(FunctionNode.IS_PRINT_SYMBOLS)) {
+            final PrintWriter out = compiler.getScriptEnvironment().getErr();
+            out.println("[BLOCK in '" + ident + "']");
+            if (!block.printSymbols(out)) {
+                out.println("<no symbols>");
+            }
+            out.println();
         }
-
-        final PrintWriter out = compiler.getScriptEnvironment().getErr();
-        out.println("[BLOCK in '" + ident + "']");
-        if (!block.printSymbols(out)) {
-            out.println("<no symbols>");
-        }
-        out.println();
     }
 
 
@@ -4323,7 +4339,11 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                         }
                     } else {
                         final Type storeType = assignNode.getType();
-                        method.convert(storeType);
+                        if (symbol.hasSlotFor(storeType)) {
+                            // Only emit a convert for a store known to be live; converts for dead stores can
+                            // give us an unnecessary ClassCastException.
+                            method.convert(storeType);
+                        }
                         storeIdentWithCatchConversion(node, storeType);
                     }
                     return false;
@@ -4350,6 +4370,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         protected abstract void evaluate();
 
         void store() {
+            if (target instanceof IdentNode) {
+                checkTemporalDeadZone((IdentNode)target);
+            }
             prologue();
             evaluate(); // leaves an operation of whatever the operationType was on the stack
             storeNonDiscard();
@@ -4383,9 +4406,8 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             createFunction.end();
         }
 
-        if (addInitializer && !initializedFunctionIds.contains(fnId) && !compiler.isOnDemandCompilation()) {
-            functionNode.getCompileUnit().addFunctionInitializer(data, functionNode);
-            initializedFunctionIds.add(fnId);
+        if (addInitializer && !compiler.isOnDemandCompilation()) {
+            compiler.addFunctionInitializer(data, functionNode);
         }
 
         // We don't emit a ScriptFunction on stack for the outermost compiled function (as there's no code being
@@ -5247,7 +5269,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             }
             lvarIndex = nextLvarIndex;
         }
-        if(assertsEnabled) {
+        if (AssertsEnabled.assertsEnabled()) {
             method.load(arrayIndex);
             method.invoke(RewriteException.ASSERT_ARRAY_LENGTH);
         } else {
