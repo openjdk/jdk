@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -65,9 +65,6 @@ extern "C" void RecursiveInterpreterActivation(interpreterState istate )
 
 #define __ _masm->
 #define STATE(field_name) (Address(state, byte_offset_of(BytecodeInterpreter, field_name)))
-
-Label fast_accessor_slow_entry_path;  // fast accessor methods need to be able to jmp to unsynchronized
-                                      // c++ interpreter entry point this holds that entry point label.
 
 // default registers for state and sender_sp
 // state and sender_sp are the same on 32bit because we have no choice.
@@ -660,7 +657,6 @@ void InterpreterGenerator::generate_stack_overflow_check(void) {
   // generate_method_entry) so the guard should work for them too.
   //
 
-  // monitor entry size: see picture of stack set (generate_method_entry) and frame_i486.hpp
   const int entry_size    = frame::interpreter_frame_monitor_size() * wordSize;
 
   // total overhead size: entry_size + (saved rbp, thru expr stack bottom).
@@ -794,156 +790,6 @@ void InterpreterGenerator::lock_method(void) {
   __ lock_object(monitor);
 }
 
-// Call an accessor method (assuming it is resolved, otherwise drop into vanilla (slow path) entry
-
-address InterpreterGenerator::generate_accessor_entry(void) {
-
-  // rbx: Method*
-
-  // rsi/r13: senderSP must preserved for slow path, set SP to it on fast path
-
-  Label xreturn_path;
-
-  // do fastpath for resolved accessor methods
-  if (UseFastAccessorMethods) {
-
-    address entry_point = __ pc();
-
-    Label slow_path;
-    // If we need a safepoint check, generate full interpreter entry.
-    ExternalAddress state(SafepointSynchronize::address_of_state());
-    __ cmp32(ExternalAddress(SafepointSynchronize::address_of_state()),
-             SafepointSynchronize::_not_synchronized);
-
-    __ jcc(Assembler::notEqual, slow_path);
-    // ASM/C++ Interpreter
-    // Code: _aload_0, _(i|a)getfield, _(i|a)return or any rewrites thereof; parameter size = 1
-    // Note: We can only use this code if the getfield has been resolved
-    //       and if we don't have a null-pointer exception => check for
-    //       these conditions first and use slow path if necessary.
-    // rbx,: method
-    // rcx: receiver
-    __ movptr(rax, Address(rsp, wordSize));
-
-    // check if local 0 != NULL and read field
-    __ testptr(rax, rax);
-    __ jcc(Assembler::zero, slow_path);
-
-    // read first instruction word and extract bytecode @ 1 and index @ 2
-    __ movptr(rdx, Address(rbx, Method::const_offset()));
-    __ movptr(rdi, Address(rdx, ConstMethod::constants_offset()));
-    __ movl(rdx, Address(rdx, ConstMethod::codes_offset()));
-    // Shift codes right to get the index on the right.
-    // The bytecode fetched looks like <index><0xb4><0x2a>
-    __ shrl(rdx, 2*BitsPerByte);
-    __ shll(rdx, exact_log2(in_words(ConstantPoolCacheEntry::size())));
-    __ movptr(rdi, Address(rdi, ConstantPool::cache_offset_in_bytes()));
-
-    // rax,: local 0
-    // rbx,: method
-    // rcx: receiver - do not destroy since it is needed for slow path!
-    // rcx: scratch
-    // rdx: constant pool cache index
-    // rdi: constant pool cache
-    // rsi/r13: sender sp
-
-    // check if getfield has been resolved and read constant pool cache entry
-    // check the validity of the cache entry by testing whether _indices field
-    // contains Bytecode::_getfield in b1 byte.
-    assert(in_words(ConstantPoolCacheEntry::size()) == 4, "adjust shift below");
-    __ movl(rcx,
-            Address(rdi,
-                    rdx,
-                    Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::indices_offset()));
-    __ shrl(rcx, 2*BitsPerByte);
-    __ andl(rcx, 0xFF);
-    __ cmpl(rcx, Bytecodes::_getfield);
-    __ jcc(Assembler::notEqual, slow_path);
-
-    // Note: constant pool entry is not valid before bytecode is resolved
-    __ movptr(rcx,
-            Address(rdi,
-                    rdx,
-                    Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::f2_offset()));
-    __ movl(rdx,
-            Address(rdi,
-                    rdx,
-                    Address::times_ptr, ConstantPoolCache::base_offset() + ConstantPoolCacheEntry::flags_offset()));
-
-    Label notByte, notShort, notChar;
-    const Address field_address (rax, rcx, Address::times_1);
-
-    // Need to differentiate between igetfield, agetfield, bgetfield etc.
-    // because they are different sizes.
-    // Use the type from the constant pool cache
-    __ shrl(rdx, ConstantPoolCacheEntry::tos_state_shift);
-    // Make sure we don't need to mask rdx after the above shift
-    ConstantPoolCacheEntry::verify_tos_state_shift();
-#ifdef _LP64
-    Label notObj;
-    __ cmpl(rdx, atos);
-    __ jcc(Assembler::notEqual, notObj);
-    // atos
-    __ movptr(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notObj);
-#endif // _LP64
-    __ cmpl(rdx, btos);
-    __ jcc(Assembler::notEqual, notByte);
-    __ load_signed_byte(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notByte);
-    __ cmpl(rdx, stos);
-    __ jcc(Assembler::notEqual, notShort);
-    __ load_signed_short(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notShort);
-    __ cmpl(rdx, ctos);
-    __ jcc(Assembler::notEqual, notChar);
-    __ load_unsigned_short(rax, field_address);
-    __ jmp(xreturn_path);
-
-    __ bind(notChar);
-#ifdef ASSERT
-    Label okay;
-#ifndef _LP64
-    __ cmpl(rdx, atos);
-    __ jcc(Assembler::equal, okay);
-#endif // _LP64
-    __ cmpl(rdx, itos);
-    __ jcc(Assembler::equal, okay);
-    __ stop("what type is this?");
-    __ bind(okay);
-#endif // ASSERT
-    // All the rest are a 32 bit wordsize
-    __ movl(rax, field_address);
-
-    __ bind(xreturn_path);
-
-    // _ireturn/_areturn
-    __ pop(rdi);                               // get return address
-    __ mov(rsp, sender_sp_on_entry);           // set sp to sender sp
-    __ jmp(rdi);
-
-    // generate a vanilla interpreter entry as the slow path
-    __ bind(slow_path);
-    // We will enter c++ interpreter looking like it was
-    // called by the call_stub this will cause it to return
-    // a tosca result to the invoker which might have been
-    // the c++ interpreter itself.
-
-    __ jmp(fast_accessor_slow_entry_path);
-    return entry_point;
-
-  } else {
-    return NULL;
-  }
-
-}
-
 address InterpreterGenerator::generate_Reference_get_entry(void) {
 #if INCLUDE_ALL_GCS
   if (UseG1GC) {
@@ -961,7 +807,7 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 
   // If G1 is not enabled then attempt to go through the accessor entry point
   // Reference.get is an accessor
-  return generate_accessor_entry();
+  return generate_jump_to_normal_entry();
 }
 
 //
@@ -1670,10 +1516,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
 
   address entry_point = __ pc();
 
-  // Fast accessor methods share this entry point.
-  // This works because frame manager is in the same codelet
-  if (UseFastAccessorMethods && !synchronized) __ bind(fast_accessor_slow_entry_path);
-
   Label dispatch_entry_2;
   __ movptr(rcx, sender_sp_on_entry);
   __ movptr(state, (int32_t)NULL_WORD);                              // no current activation
@@ -2212,40 +2054,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   return entry_point;
 }
 
-address AbstractInterpreterGenerator::generate_method_entry(AbstractInterpreter::MethodKind kind) {
-  // determine code generation flags
-  bool synchronized = false;
-  address entry_point = NULL;
-
-  switch (kind) {
-    case Interpreter::zerolocals             :                                                                             break;
-    case Interpreter::zerolocals_synchronized: synchronized = true;                                                        break;
-    case Interpreter::native                 : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(false);  break;
-    case Interpreter::native_synchronized    : entry_point = ((InterpreterGenerator*)this)->generate_native_entry(true);   break;
-    case Interpreter::empty                  : entry_point = ((InterpreterGenerator*)this)->generate_empty_entry();        break;
-    case Interpreter::accessor               : entry_point = ((InterpreterGenerator*)this)->generate_accessor_entry();     break;
-    case Interpreter::abstract               : entry_point = ((InterpreterGenerator*)this)->generate_abstract_entry();     break;
-
-    case Interpreter::java_lang_math_sin     : // fall thru
-    case Interpreter::java_lang_math_cos     : // fall thru
-    case Interpreter::java_lang_math_tan     : // fall thru
-    case Interpreter::java_lang_math_abs     : // fall thru
-    case Interpreter::java_lang_math_log     : // fall thru
-    case Interpreter::java_lang_math_log10   : // fall thru
-    case Interpreter::java_lang_math_sqrt    : // fall thru
-    case Interpreter::java_lang_math_pow     : // fall thru
-    case Interpreter::java_lang_math_exp     : // fall thru
-      entry_point = ((InterpreterGenerator*)this)->generate_math_entry(kind);     break;
-    case Interpreter::java_lang_ref_reference_get
-                                             : entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry(); break;
-    default                                  : ShouldNotReachHere();                                                       break;
-  }
-
-  if (entry_point) return entry_point;
-
-  return ((InterpreterGenerator*)this)->generate_normal_entry(synchronized);
-
-}
 
 InterpreterGenerator::InterpreterGenerator(StubQueue* code)
  : CppInterpreterGenerator(code) {

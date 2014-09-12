@@ -27,7 +27,7 @@
  * @summary  Make sure that type annotations are displayed correctly
  * @author   Bhavesh Patel
  * @library  ../lib
- * @ignore
+ * @ignore 8006735 output type annotations in javadoc
  * @build    JavadocTester
  * @run main TestTypeAnnotations
  */

@@ -33,7 +33,7 @@ class UnsafeStaticLongFieldAccessorImpl extends UnsafeStaticFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Long(getLong(obj));
+        return Long.valueOf(getLong(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

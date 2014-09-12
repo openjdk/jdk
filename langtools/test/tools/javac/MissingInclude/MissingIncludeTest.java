@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,25 +26,26 @@
  * @bug 4509051 4785453
  * @summary javac <AT>sourcefiles should catch Exception, when sourcefiles
  * doesn't exist.
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main MissingIncludeTest
  */
 
-//original test: test/tools/javac/MissingInclude.sh
+// Original test: test/tools/javac/MissingInclude.sh
 public class MissingIncludeTest {
 
-    private static final String MissingIncludeSrc =
-        "class MissingInclude {}";
+    private static final String MissingIncludeFile = "MissingInclude.java";
+    private static final String MissingIncludeSrc = "class MissingInclude {}";
 
     public static void main(String[] args) throws Exception {
-        ToolBox.createJavaFileFromSource(MissingIncludeSrc);
+        ToolBox tb = new ToolBox();
 
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} @/nonexistent_file MissingInclude.java 2> ${TMP1}
-        ToolBox.JavaToolArgs params =
-                new ToolBox.JavaToolArgs(ToolBox.Expect.FAIL)
-                .setAllArgs("@/nonexistent_file", "MissingInclude.java");
-        ToolBox.javac(params);
+        tb.writeFile(MissingIncludeFile, MissingIncludeSrc);
+
+        tb.new JavacTask(ToolBox.Mode.CMDLINE)
+                .options("@/nonexistent_file")
+                .files(MissingIncludeFile)
+                .run(ToolBox.Expect.FAIL);
     }
 
 }

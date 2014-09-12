@@ -1,0 +1,2 @@
+ConditionalWithVoid.java:12:48: compiler.err.neither.conditional.subtype: java.lang.Integer, void
+1 error

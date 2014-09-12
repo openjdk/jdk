@@ -27,7 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.StringTokenizer;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around <code>java.util.Date</code> that allows
@@ -70,6 +71,8 @@ import java.util.StringTokenizer;
  * denotes implementation inheritance, and not type inheritance.
  */
 public class Timestamp extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Timestamp</code> object initialized
@@ -171,9 +174,6 @@ public class Timestamp extends java.util.Date {
         final int DAY_LENGTH = 2;
         final int MAX_MONTH = 12;
         final int MAX_DAY = 31;
-        String date_s;
-        String time_s;
-        String nanos_s;
         int year = 0;
         int month = 0;
         int day = 0;
@@ -184,49 +184,38 @@ public class Timestamp extends java.util.Date {
         int firstDash;
         int secondDash;
         int dividingSpace;
-        int firstColon = 0;
-        int secondColon = 0;
-        int period = 0;
+        int firstColon;
+        int secondColon;
+        int period;
         String formatError = "Timestamp format must be yyyy-mm-dd hh:mm:ss[.fffffffff]";
-        String zeros = "000000000";
-        String delimiterDate = "-";
-        String delimiterTime = ":";
 
         if (s == null) throw new java.lang.IllegalArgumentException("null string");
 
         // Split the string into date and time components
         s = s.trim();
         dividingSpace = s.indexOf(' ');
-        if (dividingSpace > 0) {
-            date_s = s.substring(0,dividingSpace);
-            time_s = s.substring(dividingSpace+1);
-        } else {
+        if (dividingSpace < 0) {
             throw new java.lang.IllegalArgumentException(formatError);
         }
 
         // Parse the date
-        firstDash = date_s.indexOf('-');
-        secondDash = date_s.indexOf('-', firstDash+1);
+        firstDash = s.indexOf('-');
+        secondDash = s.indexOf('-', firstDash+1);
 
         // Parse the time
-        if (time_s == null)
-            throw new java.lang.IllegalArgumentException(formatError);
-        firstColon = time_s.indexOf(':');
-        secondColon = time_s.indexOf(':', firstColon+1);
-        period = time_s.indexOf('.', secondColon+1);
+        firstColon = s.indexOf(':', dividingSpace + 1);
+        secondColon = s.indexOf(':', firstColon + 1);
+        period = s.indexOf('.', secondColon + 1);
 
         // Convert the date
         boolean parsedDate = false;
-        if ((firstDash > 0) && (secondDash > 0) && (secondDash < date_s.length() - 1)) {
-            String yyyy = date_s.substring(0, firstDash);
-            String mm = date_s.substring(firstDash + 1, secondDash);
-            String dd = date_s.substring(secondDash + 1);
-            if (yyyy.length() == YEAR_LENGTH &&
-                    (mm.length() >= 1 && mm.length() <= MONTH_LENGTH) &&
-                    (dd.length() >= 1 && dd.length() <= DAY_LENGTH)) {
-                 year = Integer.parseInt(yyyy);
-                 month = Integer.parseInt(mm);
-                 day = Integer.parseInt(dd);
+        if (firstDash > 0 && secondDash > 0 && secondDash < dividingSpace - 1) {
+            if (firstDash == YEAR_LENGTH &&
+                    (secondDash - firstDash > 1 && secondDash - firstDash <= MONTH_LENGTH + 1) &&
+                    (dividingSpace - secondDash > 1 && dividingSpace - secondDash <= DAY_LENGTH + 1)) {
+                 year = Integer.parseInt(s, 0, firstDash, 10);
+                 month = Integer.parseInt(s, firstDash + 1, secondDash, 10);
+                 day = Integer.parseInt(s, secondDash + 1, dividingSpace, 10);
 
                 if ((month >= 1 && month <= MAX_MONTH) && (day >= 1 && day <= MAX_DAY)) {
                     parsedDate = true;
@@ -238,25 +227,27 @@ public class Timestamp extends java.util.Date {
         }
 
         // Convert the time; default missing nanos
-        if ((firstColon > 0) & (secondColon > 0) &
-            (secondColon < time_s.length()-1)) {
-            hour = Integer.parseInt(time_s.substring(0, firstColon));
-            minute =
-                Integer.parseInt(time_s.substring(firstColon+1, secondColon));
-            if ((period > 0) & (period < time_s.length()-1)) {
-                second =
-                    Integer.parseInt(time_s.substring(secondColon+1, period));
-                nanos_s = time_s.substring(period+1);
-                if (nanos_s.length() > 9)
+        int len = s.length();
+        if (firstColon > 0 && secondColon > 0 && secondColon < len - 1) {
+            hour = Integer.parseInt(s, dividingSpace + 1, firstColon, 10);
+            minute = Integer.parseInt(s, firstColon + 1, secondColon, 10);
+            if (period > 0 && period < len - 1) {
+                second = Integer.parseInt(s, secondColon + 1, period, 10);
+                int nanoPrecision = len - (period + 1);
+                if (nanoPrecision > 9)
                     throw new java.lang.IllegalArgumentException(formatError);
-                if (!Character.isDigit(nanos_s.charAt(0)))
+                if (!Character.isDigit(s.charAt(period + 1)))
                     throw new java.lang.IllegalArgumentException(formatError);
-                nanos_s = nanos_s + zeros.substring(0,9-nanos_s.length());
-                a_nanos = Integer.parseInt(nanos_s);
+                int tmpNanos = Integer.parseInt(s, period + 1, len, 10);
+                while (nanoPrecision < 9) {
+                    tmpNanos *= 10;
+                    nanoPrecision++;
+                }
+                a_nanos = tmpNanos;
             } else if (period > 0) {
                 throw new java.lang.IllegalArgumentException(formatError);
             } else {
-                second = Integer.parseInt(time_s.substring(secondColon+1));
+                second = Integer.parseInt(s, secondColon + 1, len, 10);
             }
         } else {
             throw new java.lang.IllegalArgumentException(formatError);
@@ -274,95 +265,41 @@ public class Timestamp extends java.util.Date {
      *           <code>yyyy-mm-dd hh:mm:ss.fffffffff</code> format
      */
     @SuppressWarnings("deprecation")
-    public String toString () {
-
+    public String toString() {
         int year = super.getYear() + 1900;
         int month = super.getMonth() + 1;
         int day = super.getDate();
         int hour = super.getHours();
         int minute = super.getMinutes();
         int second = super.getSeconds();
-        String yearString;
-        String monthString;
-        String dayString;
-        String hourString;
-        String minuteString;
-        String secondString;
-        String nanosString;
-        String zeros = "000000000";
-        String yearZeros = "0000";
-        StringBuffer timestampBuf;
 
-        if (year < 1000) {
-            // Add leading zeros
-            yearString = "" + year;
-            yearString = yearZeros.substring(0, (4-yearString.length())) +
-                yearString;
+        int trailingZeros = 0;
+        int tmpNanos = nanos;
+        if (tmpNanos == 0) {
+            trailingZeros = 8;
         } else {
-            yearString = "" + year;
-        }
-        if (month < 10) {
-            monthString = "0" + month;
-        } else {
-            monthString = Integer.toString(month);
-        }
-        if (day < 10) {
-            dayString = "0" + day;
-        } else {
-            dayString = Integer.toString(day);
-        }
-        if (hour < 10) {
-            hourString = "0" + hour;
-        } else {
-            hourString = Integer.toString(hour);
-        }
-        if (minute < 10) {
-            minuteString = "0" + minute;
-        } else {
-            minuteString = Integer.toString(minute);
-        }
-        if (second < 10) {
-            secondString = "0" + second;
-        } else {
-            secondString = Integer.toString(second);
-        }
-        if (nanos == 0) {
-            nanosString = "0";
-        } else {
-            nanosString = Integer.toString(nanos);
-
-            // Add leading zeros
-            nanosString = zeros.substring(0, (9-nanosString.length())) +
-                nanosString;
-
-            // Truncate trailing zeros
-            char[] nanosChar = new char[nanosString.length()];
-            nanosString.getChars(0, nanosString.length(), nanosChar, 0);
-            int truncIndex = 8;
-            while (nanosChar[truncIndex] == '0') {
-                truncIndex--;
+            while (tmpNanos % 10 == 0) {
+                tmpNanos /= 10;
+                trailingZeros++;
             }
-
-            nanosString = new String(nanosChar, 0, truncIndex + 1);
         }
 
-        // do a string buffer here instead.
-        timestampBuf = new StringBuffer(20+nanosString.length());
-        timestampBuf.append(yearString);
-        timestampBuf.append("-");
-        timestampBuf.append(monthString);
-        timestampBuf.append("-");
-        timestampBuf.append(dayString);
-        timestampBuf.append(" ");
-        timestampBuf.append(hourString);
-        timestampBuf.append(":");
-        timestampBuf.append(minuteString);
-        timestampBuf.append(":");
-        timestampBuf.append(secondString);
-        timestampBuf.append(".");
-        timestampBuf.append(nanosString);
+        char[] buf = new char[29 - trailingZeros];
+        Date.formatDecimalInt(year, buf, 0, 4);
+        buf[4] = '-';
+        Date.formatDecimalInt(month, buf, 5, 2);
+        buf[7] = '-';
+        Date.formatDecimalInt(day, buf, 8, 2);
+        buf[10] = ' ';
+        Date.formatDecimalInt(hour, buf, 11, 2);
+        buf[13] = ':';
+        Date.formatDecimalInt(minute, buf, 14, 2);
+        buf[16] = ':';
+        Date.formatDecimalInt(second, buf, 17, 2);
+        buf[19] = '.';
+        Date.formatDecimalInt(tmpNanos, buf, 20, 9 - trailingZeros);
 
-        return (timestampBuf.toString());
+        return jla.newStringUnsafe(buf);
     }
 
     /**

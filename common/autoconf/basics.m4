@@ -377,7 +377,6 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_REQUIRE_PROGS(CMP, cmp)
   BASIC_REQUIRE_PROGS(COMM, comm)
   BASIC_REQUIRE_PROGS(CP, cp)
-  BASIC_REQUIRE_PROGS(CPIO, cpio)
   BASIC_REQUIRE_PROGS(CUT, cut)
   BASIC_REQUIRE_PROGS(DATE, date)
   BASIC_REQUIRE_PROGS(DIFF, [gdiff diff])
@@ -427,6 +426,7 @@ AC_DEFUN_ONCE([BASIC_SETUP_FUNDAMENTAL_TOOLS],
   BASIC_PATH_PROGS(READLINK, [greadlink readlink])
   BASIC_PATH_PROGS(DF, df)
   BASIC_PATH_PROGS(SETFILE, SetFile)
+  BASIC_PATH_PROGS(CPIO, [cpio bsdcpio])
 ])
 
 # Setup basic configuration paths, and platform-specific stuff related to PATHs.
@@ -849,7 +849,12 @@ AC_DEFUN([BASIC_CHECK_FIND_DELETE],
   if test -f $DELETEDIR/TestIfFindSupportsDelete; then
     # No, it does not.
     rm $DELETEDIR/TestIfFindSupportsDelete
-    FIND_DELETE="-exec rm \{\} \+"
+    if test "x$OPENJDK_TARGET_OS" = "xaix"; then
+      # AIX 'find' is buggy if called with '-exec {} \+' and an empty file list
+      FIND_DELETE="-print | xargs rm"
+    else
+      FIND_DELETE="-exec rm \{\} \+"
+    fi
     AC_MSG_RESULT([no])
   else
     AC_MSG_RESULT([yes])
@@ -954,7 +959,7 @@ AC_DEFUN([BASIC_CHECK_DIR_ON_LOCAL_DISK],
 # not be the case in cygwin in certain conditions.
 AC_DEFUN_ONCE([BASIC_CHECK_SRC_PERMS],
 [
-  if test x"$OPENJDK_BUILD_OS" = xwindows; then
+  if test "x$OPENJDK_BUILD_OS_ENV" = "xwindows.cygwin"; then
     file_to_test="$SRC_ROOT/LICENSE"
     if test `$STAT -c '%a' "$file_to_test"` -lt 400; then
       AC_MSG_ERROR([Bad file permissions on src files. This is usually caused by cloning the repositories with a non cygwin hg in a directory not created in cygwin.])

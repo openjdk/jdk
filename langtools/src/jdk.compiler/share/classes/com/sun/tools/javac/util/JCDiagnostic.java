@@ -36,6 +36,7 @@ import com.sun.tools.javac.api.DiagnosticFormatter;
 import com.sun.tools.javac.code.Lint.LintCategory;
 import com.sun.tools.javac.tree.EndPosTable;
 import com.sun.tools.javac.tree.JCTree;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 import static com.sun.tools.javac.util.JCDiagnostic.DiagnosticType.*;
 
@@ -466,6 +467,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Get the name of the source file referred to by this diagnostic.
      * @return the name of the source referred to with this diagnostic, or null if none
      */
+    @DefinedBy(Api.COMPILER)
     public JavaFileObject getSource() {
         if (source == null)
             return null;
@@ -493,14 +495,17 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         return (position == null ? Position.NOPOS : position.getEndPosition(source.getEndPosTable()));
     }
 
+    @DefinedBy(Api.COMPILER)
     public long getStartPosition() {
         return getIntStartPosition();
     }
 
+    @DefinedBy(Api.COMPILER)
     public long getPosition() {
         return getIntPosition();
     }
 
+    @DefinedBy(Api.COMPILER)
     public long getEndPosition() {
         return getIntEndPosition();
     }
@@ -513,6 +518,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Get the line number within the source referred to by this diagnostic.
      * @return  the line number within the source referred to by this diagnostic
      */
+    @DefinedBy(Api.COMPILER)
     public long getLineNumber() {
         if (sourcePosition == null) {
             sourcePosition = new SourcePosition();
@@ -524,6 +530,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
      * Get the column number within the line of source referred to by this diagnostic.
      * @return  the column number within the line of source referred to by this diagnostic
      */
+    @DefinedBy(Api.COMPILER)
     public long getColumnNumber() {
         if (sourcePosition == null) {
             sourcePosition = new SourcePosition();
@@ -569,6 +576,7 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
 
     // Methods for javax.tools.Diagnostic
 
+    @DefinedBy(Api.COMPILER)
     public Diagnostic.Kind getKind() {
         switch (type) {
         case NOTE:
@@ -584,10 +592,12 @@ public class JCDiagnostic implements Diagnostic<JavaFileObject> {
         }
     }
 
+    @DefinedBy(Api.COMPILER)
     public String getCode() {
         return key;
     }
 
+    @DefinedBy(Api.COMPILER)
     public String getMessage(Locale locale) {
         return defaultFormatter.formatMessage(this, locale);
     }

@@ -248,15 +248,20 @@ public class Utils {
             throw new DocletAbortException(exc);
         }
     }
-
+    /**
+     * Returns a TypeComparator object suitable for sorting Types.
+     * @return a TypeComparator objectt
+     */
+    public Comparator<Type> makeTypeComparator() {
+        return new TypeComparator();
+    }
     /**
      * We want the list of types in alphabetical order.  However, types are not
      * comparable.  We need a comparator for now.
      */
     private static class TypeComparator implements Comparator<Type> {
         public int compare(Type type1, Type type2) {
-            return type1.qualifiedTypeName().compareToIgnoreCase(
-                type2.qualifiedTypeName());
+            return compareStrings(type1.qualifiedTypeName(), type2.qualifiedTypeName());
         }
     }
 
@@ -812,7 +817,15 @@ public class Utils {
         collator.setStrength(caseSensitive ? Collator.TERTIARY : Collator.SECONDARY);
         return collator.compare(s1, s2);
     }
-
+    /**
+     * A simple comparator which compares simple names, then the fully qualified names
+     * and finally the kinds, ClassUse comparator works well for this purpose.
+     *
+     * @return a simple general purpose doc comparator
+     */
+    public Comparator<Doc> makeGeneralPurposeComparator() {
+        return makeComparatorForClassUse();
+    }
     /**
      * A comparator for index file presentations, and are sorted as follows:
      *  1. sort on simple names of entities

@@ -28,6 +28,10 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/stringTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#if INCLUDE_CDS
+#include "classfile/sharedClassUtil.hpp"
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 #include "classfile/vmSymbols.hpp"
 #include "gc_interface/collectedHeap.inline.hpp"
 #include "interpreter/bytecode.hpp"
@@ -993,7 +997,15 @@ JVM_ENTRY(jclass, JVM_FindLoadedClass(JNIEnv *env, jobject loader, jstring name)
                                                               h_loader,
                                                               Handle(),
                                                               CHECK_NULL);
-
+#if INCLUDE_CDS
+  if (k == NULL) {
+    // If the class is not already loaded, try to see if it's in the shared
+    // archive for the current classloader (h_loader).
+    instanceKlassHandle ik = SystemDictionaryShared::find_or_load_shared_class(
+        klass_name, h_loader, CHECK_NULL);
+    k = ik();
+  }
+#endif
   return (k == NULL) ? NULL :
             (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END
@@ -1388,14 +1400,6 @@ JVM_QUICK_ENTRY(jboolean, JVM_IsPrimitiveClass(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_IsPrimitiveClass");
   oop mirror = JNIHandles::resolve_non_null(cls);
   return (jboolean) java_lang_Class::is_primitive(mirror);
-JVM_END
-
-
-JVM_ENTRY(jclass, JVM_GetComponentType(JNIEnv *env, jclass cls))
-  JVMWrapper("JVM_GetComponentType");
-  oop mirror = JNIHandles::resolve_non_null(cls);
-  oop result = Reflection::array_component_type(mirror, CHECK_NULL);
-  return (jclass) JNIHandles::make_local(env, result);
 JVM_END
 
 

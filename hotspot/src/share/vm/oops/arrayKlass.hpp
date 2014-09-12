@@ -39,7 +39,6 @@ class ArrayKlass: public Klass {
   Klass* volatile _higher_dimension;  // Refers the (n+1)'th-dimensional array (if present).
   Klass* volatile _lower_dimension;   // Refers the (n-1)'th-dimensional array (if present).
   int      _vtable_len;        // size of vtable for this klass
-  oop      _component_mirror;  // component type, as a java/lang/Class
 
  protected:
   // Constructors
@@ -69,13 +68,6 @@ class ArrayKlass: public Klass {
   int  log2_element_size() const        { return layout_helper_log2_element_size(layout_helper()); }
   // type of elements (T_OBJECT for both oop arrays and array-arrays)
   BasicType element_type() const        { return layout_helper_element_type(layout_helper()); }
-
-  oop  component_mirror() const         { return _component_mirror; }
-  void set_component_mirror(oop m)      { klass_oop_store(&_component_mirror, m); }
-  oop* adr_component_mirror()           { return (oop*)&this->_component_mirror;}
-
-  // Compiler/Interpreter offset
-  static ByteSize component_mirror_offset() { return in_ByteSize(offset_of(ArrayKlass, _component_mirror)); }
 
   virtual Klass* java_super() const;//{ return SystemDictionary::Object_klass(); }
 
@@ -122,9 +114,6 @@ class ArrayKlass: public Klass {
   void array_klasses_do(void f(Klass* k));
   void array_klasses_do(void f(Klass* k, TRAPS), TRAPS);
 
-  // GC support
-  virtual void oops_do(OopClosure* cl);
-
   // Return a handle.
   static void     complete_create_array_klass(ArrayKlass* k, KlassHandle super_klass, TRAPS);
 
@@ -137,7 +126,7 @@ class ArrayKlass: public Klass {
 
   // CDS support - remove and restore oops from metadata. Oops are not shared.
   virtual void remove_unshareable_info();
-  virtual void restore_unshareable_info(TRAPS);
+  virtual void restore_unshareable_info(ClassLoaderData* loader_data, Handle protection_domain, TRAPS);
 
   // Printing
   void print_on(outputStream* st) const;

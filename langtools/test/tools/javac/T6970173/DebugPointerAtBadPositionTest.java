@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,7 +25,7 @@
  * @test
  * @bug 6970173
  * @summary Debug pointer at bad position
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main DebugPointerAtBadPositionTest
  */
@@ -75,9 +75,10 @@ public class DebugPointerAtBadPositionTest {
     }
 
     void compileTestClass() throws Exception {
-        ToolBox.JavaToolArgs javacSuccessArgs =
-                new ToolBox.JavaToolArgs().setSources(testSource);
-        ToolBox.javac(javacSuccessArgs);
+        ToolBox tb = new ToolBox();
+        tb.new JavacTask()
+                .sources(testSource)
+                .run();
     }
 
     void checkClassFile(final File cfile, String methodToFind) throws Exception {

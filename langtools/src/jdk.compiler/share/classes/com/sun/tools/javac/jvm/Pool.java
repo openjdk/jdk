@@ -40,6 +40,9 @@ import com.sun.tools.javac.util.Name;
 
 import java.util.*;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /** An internal structure that corresponds to the constant pool of a classfile.
  *
  *  <p><b>This is NOT part of any supported API.
@@ -155,6 +158,7 @@ public class Pool {
             super(m);
             this.uniqueType = new UniqueType(m.type, types);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object any) {
             if (!(any instanceof Method)) return false;
             MethodSymbol o = ((Method)any).other;
@@ -164,6 +168,7 @@ public class Pool {
                 o.owner == m.owner &&
                 ((Method)any).uniqueType.equals(uniqueType);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
             MethodSymbol m = this.other;
             return
@@ -181,7 +186,7 @@ public class Pool {
             uniqueStaticArgs = getUniqueTypeArray(m.staticArgs, types);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object any) {
             if (!super.equals(any)) return false;
             if (!(any instanceof DynamicMethod)) return false;
@@ -193,7 +198,7 @@ public class Pool {
                             ((DynamicMethod)any).uniqueStaticArgs);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
             int hash = super.hashCode();
             DynamicMethodSymbol dm = (DynamicMethodSymbol)other;
@@ -224,6 +229,7 @@ public class Pool {
             super(v);
             this.uniqueType = new UniqueType(v.type, types);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public boolean equals(Object any) {
             if (!(any instanceof Variable)) return false;
             VarSymbol o = ((Variable)any).other;
@@ -233,6 +239,7 @@ public class Pool {
                 o.owner == v.owner &&
                 ((Variable)any).uniqueType.equals(uniqueType);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public int hashCode() {
             VarSymbol v = other;
             return

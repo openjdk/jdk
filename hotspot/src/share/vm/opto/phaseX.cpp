@@ -42,10 +42,14 @@ NodeHash::NodeHash(uint est_max_size) :
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(Thread::current()->resource_area()),
   _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ), // (Node**)_a->Amalloc(_max * sizeof(Node*)) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _inserts(0), _insert_limit( insert_limit() )
+#ifndef PRODUCT
+  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _delete_probes(0), _delete_hits(0), _delete_misses(0),
   _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0) {
+  _insert_probes(0), _grows(0)
+#endif
+{
   // _sentinel must be in the current node space
   _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
@@ -56,11 +60,14 @@ NodeHash::NodeHash(Arena *arena, uint est_max_size) :
   _max( round_up(est_max_size < NODE_HASH_MINIMUM_SIZE ? NODE_HASH_MINIMUM_SIZE : est_max_size) ),
   _a(arena),
   _table( NEW_ARENA_ARRAY( _a , Node* , _max ) ),
-  _inserts(0), _insert_limit( insert_limit() ),
-  _look_probes(0), _lookup_hits(0), _lookup_misses(0),
+  _inserts(0), _insert_limit( insert_limit() )
+#ifndef PRODUCT
+  ,_look_probes(0), _lookup_hits(0), _lookup_misses(0),
   _delete_probes(0), _delete_hits(0), _delete_misses(0),
   _total_insert_probes(0), _total_inserts(0),
-  _insert_probes(0), _grows(0) {
+  _insert_probes(0), _grows(0)
+#endif
+{
   // _sentinel must be in the current node space
   _sentinel = new ProjNode(NULL, TypeFunc::Control);
   memset(_table,0,sizeof(Node*)*_max);
@@ -87,15 +94,15 @@ Node *NodeHash::hash_find( const Node *n ) {
   // ((Node*)n)->set_hash( n->hash() );
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;
-  debug_only( _look_probes++ );
+  NOT_PRODUCT( _look_probes++ );
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;                // Miss!
   }
 
@@ -108,16 +115,16 @@ Node *NodeHash::hash_find( const Node *n ) {
         if( n->in(i)!=k->in(i)) // Different inputs?
           goto collision;       // "goto" is a speed hack...
       if( n->cmp(*k) ) {        // Check for any special bits
-        debug_only( _lookup_hits++ );
+        NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
   collision:
-    debug_only( _look_probes++ );
+    NOT_PRODUCT( _look_probes++ );
     key = (key + stride/*7*/) & (_max-1); // Stride through table with relative prime
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
-      debug_only( _lookup_misses++ );
+      NOT_PRODUCT( _lookup_misses++ );
       return NULL;              // Miss!
     }
   }
@@ -132,16 +139,16 @@ Node *NodeHash::hash_find_insert( Node *n ) {
   // n->set_hash( );
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     return NULL;
   }
   uint key = hash & (_max-1);
   uint stride = key | 0x01;     // stride must be relatively prime to table siz
   uint first_sentinel = 0;      // replace a sentinel if seen.
-  debug_only( _look_probes++ );
+  NOT_PRODUCT( _look_probes++ );
   Node *k = _table[key];        // Get hashed value
   if( !k ) {                    // ?Miss?
-    debug_only( _lookup_misses++ );
+    NOT_PRODUCT( _lookup_misses++ );
     _table[key] = n;            // Insert into table!
     debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
     check_grow();               // Grow table if insert hit limit
@@ -160,16 +167,16 @@ Node *NodeHash::hash_find_insert( Node *n ) {
         if( n->in(i)!=k->in(i)) // Different inputs?
           goto collision;       // "goto" is a speed hack...
       if( n->cmp(*k) ) {        // Check for any special bits
-        debug_only( _lookup_hits++ );
+        NOT_PRODUCT( _lookup_hits++ );
         return k;               // Hit!
       }
     }
   collision:
-    debug_only( _look_probes++ );
+    NOT_PRODUCT( _look_probes++ );
     key = (key + stride) & (_max-1); // Stride through table w/ relative prime
     k = _table[key];            // Get hashed value
     if( !k ) {                  // ?Miss?
-      debug_only( _lookup_misses++ );
+      NOT_PRODUCT( _lookup_misses++ );
       key = (first_sentinel == 0) ? key : first_sentinel; // ?saw sentinel?
       _table[key] = n;          // Insert into table!
       debug_only(n->enter_hash_lock()); // Lock down the node while in the table.
@@ -200,7 +207,7 @@ void NodeHash::hash_insert( Node *n ) {
   uint stride = key | 0x01;
 
   while( 1 ) {                  // While probing hash table
-    debug_only( _insert_probes++ );
+    NOT_PRODUCT( _insert_probes++ );
     Node *k = _table[key];      // Get hashed value
     if( !k || (k == _sentinel) ) break;       // Found a slot
     assert( k != n, "already inserted" );
@@ -218,7 +225,7 @@ bool NodeHash::hash_delete( const Node *n ) {
   Node *k;
   uint hash = n->hash();
   if (hash == Node::NO_HASH) {
-    debug_only( _delete_misses++ );
+    NOT_PRODUCT( _delete_misses++ );
     return false;
   }
   uint key = hash & (_max-1);
@@ -226,10 +233,10 @@ bool NodeHash::hash_delete( const Node *n ) {
   debug_only( uint counter = 0; );
   for( ; /* (k != NULL) && (k != _sentinel) */; ) {
     debug_only( counter++ );
-    debug_only( _delete_probes++ );
+    NOT_PRODUCT( _delete_probes++ );
     k = _table[key];            // Get hashed value
     if( !k ) {                  // Miss?
-      debug_only( _delete_misses++ );
+      NOT_PRODUCT( _delete_misses++ );
 #ifdef ASSERT
       if( VerifyOpto ) {
         for( uint i=0; i < _max; i++ )
@@ -239,7 +246,7 @@ bool NodeHash::hash_delete( const Node *n ) {
       return false;             // Miss! Not in chain
     }
     else if( n == k ) {
-      debug_only( _delete_hits++ );
+      NOT_PRODUCT( _delete_hits++ );
       _table[key] = _sentinel;  // Hit! Label as deleted entry
       debug_only(((Node*)n)->exit_hash_lock()); // Unlock the node upon removal from table.
       return true;
@@ -271,11 +278,13 @@ void  NodeHash::grow() {
   uint   old_max   = _max;
   Node **old_table = _table;
   // Construct new table with twice the space
+#ifndef PRODUCT
   _grows++;
   _total_inserts       += _inserts;
   _total_insert_probes += _insert_probes;
-  _inserts         = 0;
   _insert_probes   = 0;
+#endif
+  _inserts         = 0;
   _max     = _max << 1;
   _table   = NEW_ARENA_ARRAY( _a , Node* , _max ); // (Node**)_a->Amalloc( _max * sizeof(Node*) );
   memset(_table,0,sizeof(Node*)*_max);
@@ -615,7 +624,7 @@ ConNode* PhaseTransform::makecon(const Type *t) {
 // Make an idealized constant - one of ConINode, ConPNode, etc.
 ConNode* PhaseValues::uncached_makecon(const Type *t) {
   assert(t->singleton(), "must be a constant");
-  ConNode* x = ConNode::make(C, t);
+  ConNode* x = ConNode::make(t);
   ConNode* k = (ConNode*)hash_find_insert(x); // Value numbering
   if (k == NULL) {
     set_type(x, t);             // Missed, provide type mapping
@@ -933,9 +942,32 @@ void PhaseIterGVN::init_verifyPhaseIterGVN() {
   for (int i = 0; i < _verify_window_size; i++) {
     _verify_window[i] = NULL;
   }
+#ifdef ASSERT
+  // Verify that all modified nodes are on _worklist
+  Unique_Node_List* modified_list = C->modified_nodes();
+  while (modified_list != NULL && modified_list->size()) {
+    Node* n = modified_list->pop();
+    if (n->outcnt() != 0 && !n->is_Con() && !_worklist.member(n)) {
+      n->dump();
+      assert(false, "modified node is not on IGVN._worklist");
+    }
+  }
+#endif
 }
 
 void PhaseIterGVN::verify_PhaseIterGVN() {
+#ifdef ASSERT
+  // Verify nodes with changed inputs.
+  Unique_Node_List* modified_list = C->modified_nodes();
+  while (modified_list != NULL && modified_list->size()) {
+    Node* n = modified_list->pop();
+    if (n->outcnt() != 0 && !n->is_Con()) { // skip dead and Con nodes
+      n->dump();
+      assert(false, "modified node was not processed by IGVN.transform_old()");
+    }
+  }
+#endif
+
   C->verify_graph_edges();
   if( VerifyOpto && allow_progress() ) {
     // Must turn off allow_progress to enable assert and break recursion
@@ -964,6 +996,14 @@ void PhaseIterGVN::verify_PhaseIterGVN() {
                   (int) _verify_counter, (int) _verify_full_passes);
     }
   }
+
+#ifdef ASSERT
+  while (modified_list->size()) {
+    Node* n = modified_list->pop();
+    n->dump();
+    assert(false, "VerifyIterativeGVN: new modified node was added");
+  }
+#endif
 }
 #endif /* PRODUCT */
 
@@ -1066,6 +1106,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
   Node* k = n;
   DEBUG_ONLY(dead_loop_check(k);)
   DEBUG_ONLY(bool is_new = (k->outcnt() == 0);)
+  C->remove_modified_node(k);
   Node* i = k->Ideal(this, /*can_reshape=*/true);
   assert(i != k || is_new || i->outcnt() > 0, "don't return dead nodes");
 #ifndef PRODUCT
@@ -1107,6 +1148,7 @@ Node *PhaseIterGVN::transform_old(Node* n) {
     DEBUG_ONLY(dead_loop_check(k);)
     // Try idealizing again
     DEBUG_ONLY(is_new = (k->outcnt() == 0);)
+    C->remove_modified_node(k);
     i = k->Ideal(this, /*can_reshape=*/true);
     assert(i != k || is_new || (i->outcnt() > 0), "don't return dead nodes");
 #ifndef PRODUCT
@@ -1259,6 +1301,7 @@ void PhaseIterGVN::remove_globally_dead_node( Node *dead ) {
       _stack.pop();
       // Remove dead node from iterative worklist
       _worklist.remove(dead);
+      C->remove_modified_node(dead);
       // Constant node that has no out-edges and has only one in-edge from
       // root is usually dead. However, sometimes reshaping walk makes
       // it reachable by adding use edges. So, we will NOT count Con nodes
@@ -1288,7 +1331,7 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
   for (DUIterator_Last imin, i = old->last_outs(imin); i >= imin; ) {
     Node* use = old->last_out(i);  // for each use...
     // use might need re-hashing (but it won't if it's a new node)
-    bool is_in_table = _table.hash_delete( use );
+    rehash_node_delayed(use);
     // Update use-def info as well
     // We remove all occurrences of old within use->in,
     // so as to avoid rehashing any node more than once.
@@ -1299,11 +1342,6 @@ void PhaseIterGVN::subsume_node( Node *old, Node *nn ) {
         use->set_req(j, nn);
         ++num_edges;
       }
-    }
-    // Insert into GVN hash table if unique
-    // If a duplicate, 'use' will be cleaned up when pulled off worklist
-    if( is_in_table ) {
-      hash_find_insert(use);
     }
     i -= num_edges;    // we deleted 1 or more copies of this edge
   }
@@ -1599,7 +1637,7 @@ Node *PhaseCCP::transform_once( Node *n ) {
     if( t == Type::TOP ) {
       // cache my top node on the Compile instance
       if( C->cached_top_node() == NULL || C->cached_top_node()->in(0) == NULL ) {
-        C->set_cached_top_node( ConNode::make(C, Type::TOP) );
+        C->set_cached_top_node(ConNode::make(Type::TOP));
         set_type(C->top(), Type::TOP);
       }
       nn = C->top();
@@ -1725,7 +1763,7 @@ void PhasePeephole::do_transform() {
         MachNode *m = n->as_Mach();
         int deleted_count = 0;
         // check for peephole opportunities
-        MachNode *m2 = m->peephole( block, instruction_index, _regalloc, deleted_count, C );
+        MachNode *m2 = m->peephole(block, instruction_index, _regalloc, deleted_count);
         if( m2 != NULL ) {
 #ifndef PRODUCT
           if( PrintOptoPeephole ) {

@@ -42,6 +42,9 @@ import com.sun.tools.javac.comp.Infer.GraphSolver.InferenceGraph.Node;
 import com.sun.tools.javac.comp.Resolve.InapplicableMethodException;
 import com.sun.tools.javac.comp.Resolve.VerboseResolutionMode;
 
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -76,6 +79,16 @@ public class Infer {
     /** should the graph solver be used? */
     boolean allowGraphInference;
 
+    /**
+     * folder in which the inference dependency graphs should be written.
+     */
+    final private String dependenciesFolder;
+
+    /**
+     * List of graphs awaiting to be dumped to a file.
+     */
+    private List<String> pendingGraphs;
+
     public static Infer instance(Context context) {
         Infer instance = context.get(inferKey);
         if (instance == null)
@@ -96,6 +109,8 @@ public class Infer {
         Options options = Options.instance(context);
         allowGraphInference = Source.instance(context).allowGraphInference()
                 && options.isUnset("useLegacyInference");
+        dependenciesFolder = options.get("dumpInferenceGraphsTo");
+        pendingGraphs = List.nil();
     }
 
     /** A value for prototypes that admit any type, including polymorphic ones. */
@@ -218,6 +233,33 @@ public class Infer {
                  */
                 inferenceContext.captureTypeCache.clear();
             }
+            dumpGraphsIfNeeded(env.tree, msym, resolveContext);
+        }
+    }
+
+    private void dumpGraphsIfNeeded(DiagnosticPosition pos, Symbol msym, Resolve.MethodResolutionContext rsContext) {
+        int round = 0;
+        try {
+            for (String graph : pendingGraphs.reverse()) {
+                Assert.checkNonNull(dependenciesFolder);
+                Name name = msym.name == msym.name.table.names.init ?
+                        msym.owner.name : msym.name;
+                String filename = String.format("%s@%s[mode=%s,step=%s]_%d.dot",
+                        name,
+                        pos.getStartPosition(),
+                        rsContext.attrMode(),
+                        rsContext.step,
+                        round);
+                File dotFile = new File(dependenciesFolder, filename);
+                try (FileWriter fw = new FileWriter(dotFile)) {
+                    fw.append(graph);
+                }
+                round++;
+            }
+        } catch (IOException ex) {
+            Assert.error("Error occurred when dumping inference graph: " + ex.getMessage());
+        } finally {
+            pendingGraphs = List.nil();
         }
     }
 
@@ -1640,6 +1682,10 @@ public class Infer {
             checkWithinBounds(inferenceContext, warn); //initial propagation of bounds
             InferenceGraph inferenceGraph = new InferenceGraph(stuckDeps);
             while (!sstrategy.done()) {
+                if (dependenciesFolder != null) {
+                    //add this graph to the pending queue
+                    pendingGraphs = pendingGraphs.prepend(inferenceGraph.toDot());
+                }
                 InferenceGraph.Node nodeToSolve = sstrategy.pickNode(inferenceGraph);
                 List<Type> varsToSolve = List.from(nodeToSolve.data);
                 List<Type> saved_undet = inferenceContext.save();
@@ -1835,7 +1881,7 @@ public class Infer {
                 @Override
                 public Properties nodeAttributes() {
                     Properties p = new Properties();
-                    p.put("label", toString());
+                    p.put("label", "\"" + toString() + "\"");
                     return p;
                 }
 
@@ -1857,7 +1903,7 @@ public class Infer {
                                 }
                             }
                         }
-                        p.put("label", buf.toString());
+                        p.put("label", "\"" + buf.toString() + "\"");
                     }
                     return p;
                 }

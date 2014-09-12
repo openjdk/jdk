@@ -647,6 +647,10 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
                   _printer(IdealGraphPrinter::printer()),
 #endif
                   _congraph(NULL),
+                  _comp_arena(mtCompiler),
+                  _node_arena(mtCompiler),
+                  _old_arena(mtCompiler),
+                  _Compile_types(mtCompiler),
                   _replay_inline_data(NULL),
                   _late_inlines(comp_arena(), 2, 0, NULL),
                   _string_late_inlines(comp_arena(), 2, 0, NULL),
@@ -954,6 +958,10 @@ Compile::Compile( ciEnv* ci_env,
     _in_dump_cnt(0),
     _printer(NULL),
 #endif
+    _comp_arena(mtCompiler),
+    _node_arena(mtCompiler),
+    _old_arena(mtCompiler),
+    _Compile_types(mtCompiler),
     _dead_node_list(comp_arena()),
     _dead_node_count(0),
     _congraph(NULL),
@@ -1039,6 +1047,7 @@ void Compile::Init(int aliaslevel) {
 
   _node_note_array = NULL;
   _default_node_notes = NULL;
+  DEBUG_ONLY( _modified_nodes = NULL; ) // Used in Optimize()
 
   _immutable_memory = NULL; // filled in at first inquiry
 
@@ -1245,6 +1254,18 @@ void Compile::print_missing_nodes() {
     if (_log != NULL) {
       _log->tail("mismatched_nodes");
     }
+  }
+}
+void Compile::record_modified_node(Node* n) {
+  if (_modified_nodes != NULL && !_inlining_incrementally &&
+      n->outcnt() != 0 && !n->is_Con()) {
+    _modified_nodes->push(n);
+  }
+}
+
+void Compile::remove_modified_node(Node* n) {
+  if (_modified_nodes != NULL) {
+    _modified_nodes->remove(n);
   }
 }
 #endif
@@ -2035,6 +2056,9 @@ void Compile::Optimize() {
   // Iterative Global Value Numbering, including ideal transforms
   // Initialize IterGVN with types and values from parse-time GVN
   PhaseIterGVN igvn(initial_gvn());
+#ifdef ASSERT
+  _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
+#endif
   {
     NOT_PRODUCT( TracePhase t2("iterGVN", &_t_iterGVN, TimeCompiler); )
     igvn.optimize();
@@ -2197,6 +2221,7 @@ void Compile::Optimize() {
     }
   }
 
+  DEBUG_ONLY( _modified_nodes = NULL; )
  } // (End scope of igvn; run destructor if necessary for asserts.)
 
   process_print_inlining();
@@ -2825,7 +2850,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           // oops implicit null check is not generated.
           // This will allow to generate normal oop implicit null check.
           if (Matcher::gen_narrow_oop_implicit_null_checks())
-            new_in2 = ConNode::make(this, TypeNarrowOop::NULL_PTR);
+            new_in2 = ConNode::make(TypeNarrowOop::NULL_PTR);
           //
           // This transformation together with CastPP transformation above
           // will generated code for implicit NULL checks for compressed oops.
@@ -2864,9 +2889,9 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
           //    NullCheck base_reg
           //
         } else if (t->isa_oopptr()) {
-          new_in2 = ConNode::make(this, t->make_narrowoop());
+          new_in2 = ConNode::make(t->make_narrowoop());
         } else if (t->isa_klassptr()) {
-          new_in2 = ConNode::make(this, t->make_narrowklass());
+          new_in2 = ConNode::make(t->make_narrowklass());
         }
       }
       if (new_in2 != NULL) {
@@ -2899,11 +2924,11 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       const Type* t = in1->bottom_type();
       if (t == TypePtr::NULL_PTR) {
         assert(t->isa_oopptr(), "null klass?");
-        n->subsume_by(ConNode::make(this, TypeNarrowOop::NULL_PTR), this);
+        n->subsume_by(ConNode::make(TypeNarrowOop::NULL_PTR), this);
       } else if (t->isa_oopptr()) {
-        n->subsume_by(ConNode::make(this, t->make_narrowoop()), this);
+        n->subsume_by(ConNode::make(t->make_narrowoop()), this);
       } else if (t->isa_klassptr()) {
-        n->subsume_by(ConNode::make(this, t->make_narrowklass()), this);
+        n->subsume_by(ConNode::make(t->make_narrowklass()), this);
       }
     }
     if (in1->outcnt() == 0) {
@@ -2964,7 +2989,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModI)) {
-          DivModINode* divmod = DivModINode::make(this, n);
+          DivModINode* divmod = DivModINode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -2984,7 +3009,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (d) {
         // Replace them with a fused divmod if supported
         if (Matcher::has_match_rule(Op_DivModL)) {
-          DivModLNode* divmod = DivModLNode::make(this, n);
+          DivModLNode* divmod = DivModLNode::make(n);
           d->subsume_by(divmod->div_proj(), this);
           n->subsume_by(divmod->mod_proj(), this);
         } else {
@@ -3010,7 +3035,7 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
     if (n->req()-1 > 2) {
       // Replace many operand PackNodes with a binary tree for matching
       PackNode* p = (PackNode*) n;
-      Node* btp = p->binary_tree_pack(this, 1, n->req());
+      Node* btp = p->binary_tree_pack(1, n->req());
       n->subsume_by(btp, this);
     }
     break;
@@ -3035,11 +3060,11 @@ void Compile::final_graph_reshaping_impl( Node *n, Final_Reshape_Counts &frc) {
       if (t != NULL && t->is_con()) {
         juint shift = t->get_con();
         if (shift > mask) { // Unsigned cmp
-          n->set_req(2, ConNode::make(this, TypeInt::make(shift & mask)));
+          n->set_req(2, ConNode::make(TypeInt::make(shift & mask)));
         }
       } else {
         if (t == NULL || t->_lo < 0 || t->_hi > (int)mask) {
-          Node* shift = new AndINode(in2, ConNode::make(this, TypeInt::make(mask)));
+          Node* shift = new AndINode(in2, ConNode::make(TypeInt::make(mask)));
           n->set_req(2, shift);
         }
       }
@@ -3770,6 +3795,56 @@ void Compile::ConstantTable::fill_jump_table(CodeBuffer& cb, MachConstantNode* n
   }
 }
 
+//----------------------------static_subtype_check-----------------------------
+// Shortcut important common cases when superklass is exact:
+// (0) superklass is java.lang.Object (can occur in reflective code)
+// (1) subklass is already limited to a subtype of superklass => always ok
+// (2) subklass does not overlap with superklass => always fail
+// (3) superklass has NO subtypes and we can check with a simple compare.
+int Compile::static_subtype_check(ciKlass* superk, ciKlass* subk) {
+  if (StressReflectiveCode) {
+    return SSC_full_test;       // Let caller generate the general case.
+  }
+
+  if (superk == env()->Object_klass()) {
+    return SSC_always_true;     // (0) this test cannot fail
+  }
+
+  ciType* superelem = superk;
+  if (superelem->is_array_klass())
+    superelem = superelem->as_array_klass()->base_element_type();
+
+  if (!subk->is_interface()) {  // cannot trust static interface types yet
+    if (subk->is_subtype_of(superk)) {
+      return SSC_always_true;   // (1) false path dead; no dynamic test needed
+    }
+    if (!(superelem->is_klass() && superelem->as_klass()->is_interface()) &&
+        !superk->is_subtype_of(subk)) {
+      return SSC_always_false;
+    }
+  }
+
+  // If casting to an instance klass, it must have no subtypes
+  if (superk->is_interface()) {
+    // Cannot trust interfaces yet.
+    // %%% S.B. superk->nof_implementors() == 1
+  } else if (superelem->is_instance_klass()) {
+    ciInstanceKlass* ik = superelem->as_instance_klass();
+    if (!ik->has_subklass() && !ik->is_interface()) {
+      if (!ik->is_final()) {
+        // Add a dependency if there is a chance of a later subclass.
+        dependencies()->assert_leaf_type(ik);
+      }
+      return SSC_easy_test;     // (3) caller can do a simple ptr comparison
+    }
+  } else {
+    // A primitive array type has no subtypes.
+    return SSC_easy_test;       // (3) caller can do a simple ptr comparison
+  }
+
+  return SSC_full_test;
+}
+
 // The message about the current inlining is accumulated in
 // _print_inlining_stream and transfered into the _print_inlining_list
 // once we know whether inlining succeeds or not. For regular
@@ -4031,6 +4106,7 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
   int j = 0;
   int identical = 0;
   int i = 0;
+  bool modified = false;
   for (; i < _expensive_nodes->length()-1; i++) {
     assert(j <= i, "can't write beyond current index");
     if (_expensive_nodes->at(i)->Opcode() == _expensive_nodes->at(i+1)->Opcode()) {
@@ -4043,20 +4119,23 @@ void Compile::cleanup_expensive_nodes(PhaseIterGVN &igvn) {
       identical = 0;
     } else {
       Node* n = _expensive_nodes->at(i);
-      igvn.hash_delete(n);
-      n->set_req(0, NULL);
+      igvn.replace_input_of(n, 0, NULL);
       igvn.hash_insert(n);
+      modified = true;
     }
   }
   if (identical > 0) {
     _expensive_nodes->at_put(j++, _expensive_nodes->at(i));
   } else if (_expensive_nodes->length() >= 1) {
     Node* n = _expensive_nodes->at(i);
-    igvn.hash_delete(n);
-    n->set_req(0, NULL);
+    igvn.replace_input_of(n, 0, NULL);
     igvn.hash_insert(n);
+    modified = true;
   }
   _expensive_nodes->trunc_to(j);
+  if (modified) {
+    igvn.optimize();
+  }
 }
 
 void Compile::add_expensive_node(Node * n) {

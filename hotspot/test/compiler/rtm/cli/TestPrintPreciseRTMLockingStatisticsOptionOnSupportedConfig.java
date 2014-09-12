@@ -30,6 +30,7 @@
  * @library /testlibrary /testlibrary/whitebox /compiler/testlibrary
  * @build TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions
  *                   -XX:+WhiteBoxAPI
  *                   TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
@@ -53,16 +54,19 @@ public class TestPrintPreciseRTMLockingStatisticsOptionOnSupportedConfig
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE,
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking");
 
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName,
                 TestPrintPreciseRTMLockingStatisticsBase.DEFAULT_VALUE,
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:-UseRTMLocking", prepareOptionValue("true"));
 
         // verify that option could be turned on
         CommandLineOptionTest.verifyOptionValueForSameVM(optionName, "true",
                 CommandLineOptionTest.UNLOCK_DIAGNOSTIC_VM_OPTIONS,
+                CommandLineOptionTest.UNLOCK_EXPERIMENTAL_VM_OPTIONS,
                 "-XX:+UseRTMLocking", prepareOptionValue("true"));
     }
 

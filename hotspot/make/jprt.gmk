@@ -42,6 +42,9 @@ jprt_build_debugEmb:
 jprt_build_fastdebugEmb:
 	$(MAKE) JAVASE_EMBEDDED=true MINIMIZE_RAM_USAGE=true jprt_build_fastdebug
 
+jprt_build_optimizedEmb:
+	$(MAKE) JAVASE_EMBEDDED=true MINIMIZE_RAM_USAGE=true jprt_build_optimized
+
 jprt_build_productOpen:
 	$(MAKE) OPENJDK=true jprt_build_product
 
@@ -50,6 +53,9 @@ jprt_build_debugOpen:
 
 jprt_build_fastdebugOpen:
 	$(MAKE) OPENJDK=true jprt_build_fastdebug
+
+jprt_build_optimizedOpen:
+	$(MAKE) OPENJDK=true jprt_build_optimized
 
 jprt_build_product: all_product copy_product_jdk export_product_jdk
 	( $(CD) $(JDK_IMAGE_DIR) && \
@@ -63,5 +69,9 @@ jprt_build_debug: all_debug copy_debug_jdk export_debug_jdk
 	( $(CD) $(JDK_IMAGE_DIR)/debug && \
 	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
 
-.PHONY: jprt_build_product jprt_build_fastdebug jprt_build_debug
+jprt_build_optimized: all_optimized copy_optimized_jdk export_optimized_jdk
+	( $(CD) $(JDK_IMAGE_DIR)/optimized && \
+	  $(ZIPEXE) $(ZIPFLAGS) -r $(JPRT_ARCHIVE_BUNDLE) . )
+
+.PHONY: jprt_build_product jprt_build_fastdebug jprt_build_debug jprt_build_optimized
 

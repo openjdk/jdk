@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,14 +25,15 @@
  * @test
  * @bug 4491755 4785453
  * @summary Prob w/static inner class with same name as a regular class
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main InnerClassFileTest
  */
 
+import java.nio.file.Path;
 import java.nio.file.Paths;
 
-//original test: test/tools/javac/innerClassFile/Driver.sh
+// Original test: test/tools/javac/innerClassFile/Driver.sh
 public class InnerClassFileTest {
 
     private static final String BSrc =
@@ -90,38 +91,37 @@ public class InnerClassFileTest {
         new InnerClassFileTest().run();
     }
 
+    private final ToolBox tb = new ToolBox();
+
     void run() throws Exception {
         createFiles();
         compileFiles();
     }
 
     void createFiles() throws Exception {
-//        mkdir src
-//        cp -r ${TESTSRC}${FS}* src
-        ToolBox.createJavaFileFromSource(Paths.get("src"), BSrc);
-        ToolBox.createJavaFileFromSource(Paths.get("src"), CSrc);
-        ToolBox.createJavaFileFromSource(Paths.get("src"), MainSrc);
-        ToolBox.createJavaFileFromSource(Paths.get("src"), R1Src);
-        ToolBox.createJavaFileFromSource(Paths.get("src"), R2Src);
-        ToolBox.createJavaFileFromSource(Paths.get("src"), R3Src);
+        Path srcDir = Paths.get("src");
+        tb.writeJavaFiles(srcDir, BSrc, CSrc, MainSrc, R1Src, R2Src, R3Src);
     }
 
     void compileFiles() throws Exception {
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . -classpath .
-//              -sourcepath src src/x/B.java src/x/C.java src/y/Main.java
-        ToolBox.JavaToolArgs args =
-                new ToolBox.JavaToolArgs()
-                .setAllArgs("-d", ".", "-cp" , ".", "-sourcepath", "src",
-                "src/x/B.java", "src/x/C.java", "src/y/Main.java");
-        ToolBox.javac(args);
+        tb.new JavacTask()
+                .outdir(".")
+                .classpath(".")
+                .sourcepath("src")
+                .files("src/x/B.java", "src/x/C.java", "src/y/Main.java")
+                .run()
+                .writeAll();
 
-//        rm y/R3.class
-        ToolBox.rm(Paths.get("y", "R3.class"));
+        tb.deleteFiles("y/R3.class");
 
-//        "${TESTJAVA}${FS}bin${FS}javac" ${TESTTOOLVMOPTS} -d . -classpath .
-//                -sourcepath src src/y/Main.java
-        args.setAllArgs("-d", ".", "-cp", ".", "-sourcepath", "src", "src/y/Main.java");
-        ToolBox.javac(args);
+        tb.new JavacTask()
+                .outdir(".")
+                .classpath(".")
+                .sourcepath("src")
+                .files("src/y/Main.java")
+                .run()
+                .writeAll();
+
     }
 
 }

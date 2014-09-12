@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// XCatalogReader.java - Read XML Catalog files
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -34,7 +28,7 @@ import org.xml.sax.*;
 import javax.xml.parsers.*;
 
 /**
- * Parse "xcatalog" XML Catalog files, this is the XML Catalog format
+ * Parse "XCatalog" XML Catalog files, this is the XML Catalog format
  * developed by John Cowan and supported by Apache.
  *
  * @see Catalog
@@ -52,6 +46,7 @@ public class XCatalogReader extends SAXCatalogReader implements SAXCatalogParser
   /** Set the current catalog. */
   public void setCatalog (Catalog catalog) {
     this.catalog = catalog;
+    debug = catalog.getCatalogManager().debug;
   }
 
   /** Get the current catalog. */
@@ -59,13 +54,19 @@ public class XCatalogReader extends SAXCatalogReader implements SAXCatalogParser
     return catalog;
   }
 
-  /** The constructor */
-  public XCatalogReader(SAXParserFactory parserFactory) {
+  /** Default constructor */
+  public XCatalogReader() {
+    super();
+  }
+
+  /** Constructor allowing for providing custom SAX parser factory */
+  public XCatalogReader(SAXParserFactory parserFactory, Catalog catalog) {
     super(parserFactory);
+    setCatalog(catalog);
   }
 
   // ----------------------------------------------------------------------
-  // Implement the SAX DocumentHandler interface
+  // Implement the SAX ContentHandler interface
 
   /** The SAX <code>setDocumentLocator</code> method does nothing. */
   public void setDocumentLocator (Locator locator) {
@@ -106,44 +107,44 @@ public class XCatalogReader extends SAXCatalogReader implements SAXCatalogParser
     Vector entryArgs = new Vector();
 
     if (localName.equals("Base")) {
-      entryType = catalog.BASE;
+      entryType = Catalog.BASE;
       entryArgs.add(atts.getValue("HRef"));
 
-      catalog.getCatalogManager().debug.message(4, "Base", atts.getValue("HRef"));
+      debug.message(4, "Base", atts.getValue("HRef"));
     } else if (localName.equals("Delegate")) {
-      entryType = catalog.DELEGATE_PUBLIC;
-      entryArgs.add(atts.getValue("PublicId"));
+      entryType = Catalog.DELEGATE_PUBLIC;
+      entryArgs.add(atts.getValue("PublicID"));
       entryArgs.add(atts.getValue("HRef"));
 
-      catalog.getCatalogManager().debug.message(4, "Delegate",
-                    PublicId.normalize(atts.getValue("PublicId")),
+      debug.message(4, "Delegate",
+                    PublicId.normalize(atts.getValue("PublicID")),
                     atts.getValue("HRef"));
     } else if (localName.equals("Extend")) {
-      entryType = catalog.CATALOG;
+      entryType = Catalog.CATALOG;
       entryArgs.add(atts.getValue("HRef"));
 
-      catalog.getCatalogManager().debug.message(4, "Extend", atts.getValue("HRef"));
+      debug.message(4, "Extend", atts.getValue("HRef"));
     } else if (localName.equals("Map")) {
-      entryType = catalog.PUBLIC;
-      entryArgs.add(atts.getValue("PublicId"));
+      entryType = Catalog.PUBLIC;
+      entryArgs.add(atts.getValue("PublicID"));
       entryArgs.add(atts.getValue("HRef"));
 
-      catalog.getCatalogManager().debug.message(4, "Map",
-                    PublicId.normalize(atts.getValue("PublicId")),
+      debug.message(4, "Map",
+                    PublicId.normalize(atts.getValue("PublicID")),
                     atts.getValue("HRef"));
     } else if (localName.equals("Remap")) {
-      entryType = catalog.SYSTEM;
-      entryArgs.add(atts.getValue("SystemId"));
+      entryType = Catalog.SYSTEM;
+      entryArgs.add(atts.getValue("SystemID"));
       entryArgs.add(atts.getValue("HRef"));
 
-      catalog.getCatalogManager().debug.message(4, "Remap",
-                    atts.getValue("SystemId"),
+      debug.message(4, "Remap",
+                    atts.getValue("SystemID"),
                     atts.getValue("HRef"));
-    } else if (localName.equals("XMLCatalog")) {
+    } else if (localName.equals("XCatalog")) {
       // nop, start of catalog
     } else {
       // This is equivalent to an invalid catalog entry type
-      catalog.getCatalogManager().debug.message(1, "Invalid catalog entry type", localName);
+      debug.message(1, "Invalid catalog entry type", localName);
     }
 
     if (entryType >= 0) {
@@ -152,21 +153,21 @@ public class XCatalogReader extends SAXCatalogReader implements SAXCatalogParser
         catalog.addEntry(ce);
       } catch (CatalogException cex) {
         if (cex.getExceptionType() == CatalogException.INVALID_ENTRY_TYPE) {
-          catalog.getCatalogManager().debug.message(1, "Invalid catalog entry type", localName);
+          debug.message(1, "Invalid catalog entry type", localName);
         } else if (cex.getExceptionType() == CatalogException.INVALID_ENTRY) {
-          catalog.getCatalogManager().debug.message(1, "Invalid catalog entry", localName);
+          debug.message(1, "Invalid catalog entry", localName);
         }
       }
     }
-    }
+  }
 
-    /** The SAX <code>endElement</code> method does nothing. */
-    public void endElement (String namespaceURI,
-                            String localName,
-                            String qName)
-      throws SAXException {
-      return;
-    }
+  /** The SAX <code>endElement</code> method does nothing. */
+  public void endElement (String namespaceURI,
+                          String localName,
+                          String qName)
+    throws SAXException {
+    return;
+  }
 
   /** The SAX <code>characters</code> method does nothing. */
   public void characters (char ch[], int start, int length)
@@ -185,4 +186,23 @@ public class XCatalogReader extends SAXCatalogReader implements SAXCatalogParser
     throws SAXException {
     return;
   }
+
+  /** The SAX <code>skippedEntity</code> method does nothing. */
+  public void skippedEntity (String name)
+    throws SAXException {
+    return;
+  }
+
+  /** The SAX <code>startPrefixMapping</code> method does nothing. */
+  public void startPrefixMapping(String prefix, String uri)
+    throws SAXException {
+    return;
+  }
+
+  /** The SAX <code>endPrefixMapping</code> method does nothing. */
+  public void endPrefixMapping(String prefix)
+    throws SAXException {
+    return;
+  }
+
 }

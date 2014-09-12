@@ -135,12 +135,6 @@ BOOL WINAPI DllMain(HINSTANCE hinst, DWORD reason, LPVOID reserved) {
       if (ForceTimeHighResolution)
         timeEndPeriod(1L);
 
-      // Workaround for issue when a custom launcher doesn't call
-      // DestroyJavaVM and NMT is trying to track memory when free is
-      // called from a static destructor
-      if (MemTracker::is_on()) {
-          MemTracker::shutdown(MemTracker::NMT_normal);
-      }
       break;
     default:
       break;
@@ -163,6 +157,10 @@ bool os::getenv(const char* name, char* buffer, int len) {
  return result > 0 && result < len;
 }
 
+bool os::unsetenv(const char* name) {
+  assert(name != NULL, "Null pointer");
+  return (SetEnvironmentVariable(name, NULL) == TRUE);
+}
 
 // No setuid programs under Windows.
 bool os::have_special_privileges() {
@@ -319,15 +317,16 @@ extern "C" void breakpoint() {
  * So far, this method is only used by Native Memory Tracking, which is
  * only supported on Windows XP or later.
  */
-address os::get_caller_pc(int n) {
+int os::get_native_stack(address* stack, int frames, int toSkip) {
 #ifdef _NMT_NOINLINE_
-  n++;
+  toSkip ++;
 #endif
-  address pc;
-  if (os::Kernel32Dll::RtlCaptureStackBackTrace(n + 1, 1, (PVOID*)&pc, NULL) == 1) {
-    return pc;
+  int captured = Kernel32Dll::RtlCaptureStackBackTrace(toSkip + 1, frames,
+    (PVOID*)stack, NULL);
+  for (int index = captured; index < frames; index ++) {
+    stack[index] = NULL;
   }
-  return NULL;
+  return captured;
 }
 
 
@@ -410,6 +409,8 @@ struct tm* os::localtime_pd(const time_t* clock, struct tm* res) {
 
 LONG WINAPI topLevelExceptionFilter(struct _EXCEPTION_POINTERS* exceptionInfo);
 
+extern jint volatile vm_getting_terminated;
+
 // Thread start routine for all new Java threads
 static unsigned __stdcall java_start(Thread* thread) {
   // Try to randomize the cache line index of hot stack frames.
@@ -431,9 +432,17 @@ static unsigned __stdcall java_start(Thread* thread) {
     }
   }
 
+  // Diagnostic code to investigate JDK-6573254 (Part I)
+  unsigned res = 90115;  // non-java thread
+  if (thread->is_Java_thread()) {
+    JavaThread* java_thread = (JavaThread*)thread;
+    res = java_lang_Thread::is_daemon(java_thread->threadObj())
+          ? 70115        // java daemon thread
+          : 80115;       // java non-daemon thread
+  }
 
   // Install a win32 structured exception handler around every thread created
-  // by VM, so VM can genrate error dump when an exception occurred in non-
+  // by VM, so VM can generate error dump when an exception occurred in non-
   // Java thread (e.g. VM thread).
   __try {
      thread->run();
@@ -447,6 +456,11 @@ static unsigned __stdcall java_start(Thread* thread) {
   // which frees the CodeHeap containing the Atomic::add code
   if (thread != VMThread::vm_thread() && VMThread::vm_thread() != NULL) {
     Atomic::dec_ptr((intptr_t*)&os::win32::_os_thread_count);
+  }
+
+  // Diagnostic code to investigate JDK-6573254 (Part II)
+  if (OrderAccess::load_acquire(&vm_getting_terminated)) {
+    return res;
   }
 
   return 0;
@@ -2901,7 +2915,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
                                 PAGE_READWRITE);
   // If reservation failed, return NULL
   if (p_buf == NULL) return NULL;
-  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, mtNone, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve((address)p_buf, size_of_reserve, CALLER_PC);
   os::release_memory(p_buf, bytes + chunk_size);
 
   // we still need to round up to a page boundary (in case we are using large pages)
@@ -2967,7 +2981,7 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
         // need to create a dummy 'reserve' record to match
         // the release.
         MemTracker::record_virtual_memory_reserve((address)p_buf,
-          bytes_to_release, mtNone, CALLER_PC);
+          bytes_to_release, CALLER_PC);
         os::release_memory(p_buf, bytes_to_release);
       }
 #ifdef ASSERT
@@ -2986,11 +3000,10 @@ static char* allocate_pages_individually(size_t bytes, char* addr, DWORD flags, 
   }
   // Although the memory is allocated individually, it is returned as one.
   // NMT records it as one block.
-  address pc = CALLER_PC;
   if ((flags & MEM_COMMIT) != 0) {
-    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, mtNone, pc);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)p_buf, bytes, CALLER_PC);
   } else {
-    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, mtNone, pc);
+    MemTracker::record_virtual_memory_reserve((address)p_buf, bytes, CALLER_PC);
   }
 
   // made it this far, success
@@ -3188,8 +3201,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* addr, boo
     DWORD flag = MEM_RESERVE | MEM_COMMIT | MEM_LARGE_PAGES;
     char * res = (char *)VirtualAlloc(addr, bytes, flag, prot);
     if (res != NULL) {
-      address pc = CALLER_PC;
-      MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, mtNone, pc);
+      MemTracker::record_virtual_memory_reserve_and_commit((address)res, bytes, CALLER_PC);
     }
 
     return res;
