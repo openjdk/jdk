@@ -1198,6 +1198,13 @@ public abstract class View implements SwingConstants {
     }
 
     /**
+     * Updates the view to reflect the changes.
+     */
+    void updateAfterChange() {
+        // Do nothing by default. Should be overridden in subclasses, if any.
+    }
+
+    /**
      * Forwards the <code>DocumentEvent</code> to the give child view.  This
      * simply messages the view with a call to <code>insertUpdate</code>,
      * <code>removeUpdate</code>, or <code>changedUpdate</code> depending
