@@ -27,7 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDateTime;
-import java.util.StringTokenizer;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around <code>java.util.Date</code> that allows
@@ -70,6 +71,8 @@ import java.util.StringTokenizer;
  * denotes implementation inheritance, and not type inheritance.
  */
 public class Timestamp extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Timestamp</code> object initialized
@@ -262,95 +265,41 @@ public class Timestamp extends java.util.Date {
      *           <code>yyyy-mm-dd hh:mm:ss.fffffffff</code> format
      */
     @SuppressWarnings("deprecation")
-    public String toString () {
-
+    public String toString() {
         int year = super.getYear() + 1900;
         int month = super.getMonth() + 1;
         int day = super.getDate();
         int hour = super.getHours();
         int minute = super.getMinutes();
         int second = super.getSeconds();
-        String yearString;
-        String monthString;
-        String dayString;
-        String hourString;
-        String minuteString;
-        String secondString;
-        String nanosString;
-        String zeros = "000000000";
-        String yearZeros = "0000";
-        StringBuffer timestampBuf;
 
-        if (year < 1000) {
-            // Add leading zeros
-            yearString = "" + year;
-            yearString = yearZeros.substring(0, (4-yearString.length())) +
-                yearString;
+        int trailingZeros = 0;
+        int tmpNanos = nanos;
+        if (tmpNanos == 0) {
+            trailingZeros = 8;
         } else {
-            yearString = "" + year;
-        }
-        if (month < 10) {
-            monthString = "0" + month;
-        } else {
-            monthString = Integer.toString(month);
-        }
-        if (day < 10) {
-            dayString = "0" + day;
-        } else {
-            dayString = Integer.toString(day);
-        }
-        if (hour < 10) {
-            hourString = "0" + hour;
-        } else {
-            hourString = Integer.toString(hour);
-        }
-        if (minute < 10) {
-            minuteString = "0" + minute;
-        } else {
-            minuteString = Integer.toString(minute);
-        }
-        if (second < 10) {
-            secondString = "0" + second;
-        } else {
-            secondString = Integer.toString(second);
-        }
-        if (nanos == 0) {
-            nanosString = "0";
-        } else {
-            nanosString = Integer.toString(nanos);
-
-            // Add leading zeros
-            nanosString = zeros.substring(0, (9-nanosString.length())) +
-                nanosString;
-
-            // Truncate trailing zeros
-            char[] nanosChar = new char[nanosString.length()];
-            nanosString.getChars(0, nanosString.length(), nanosChar, 0);
-            int truncIndex = 8;
-            while (nanosChar[truncIndex] == '0') {
-                truncIndex--;
+            while (tmpNanos % 10 == 0) {
+                tmpNanos /= 10;
+                trailingZeros++;
             }
-
-            nanosString = new String(nanosChar, 0, truncIndex + 1);
         }
 
-        // do a string buffer here instead.
-        timestampBuf = new StringBuffer(20+nanosString.length());
-        timestampBuf.append(yearString);
-        timestampBuf.append("-");
-        timestampBuf.append(monthString);
-        timestampBuf.append("-");
-        timestampBuf.append(dayString);
-        timestampBuf.append(" ");
-        timestampBuf.append(hourString);
-        timestampBuf.append(":");
-        timestampBuf.append(minuteString);
-        timestampBuf.append(":");
-        timestampBuf.append(secondString);
-        timestampBuf.append(".");
-        timestampBuf.append(nanosString);
+        char[] buf = new char[29 - trailingZeros];
+        Date.formatDecimalInt(year, buf, 0, 4);
+        buf[4] = '-';
+        Date.formatDecimalInt(month, buf, 5, 2);
+        buf[7] = '-';
+        Date.formatDecimalInt(day, buf, 8, 2);
+        buf[10] = ' ';
+        Date.formatDecimalInt(hour, buf, 11, 2);
+        buf[13] = ':';
+        Date.formatDecimalInt(minute, buf, 14, 2);
+        buf[16] = ':';
+        Date.formatDecimalInt(second, buf, 17, 2);
+        buf[19] = '.';
+        Date.formatDecimalInt(tmpNanos, buf, 20, 9 - trailingZeros);
 
-        return (timestampBuf.toString());
+        return jla.newStringUnsafe(buf);
     }
 
     /**
