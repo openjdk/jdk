@@ -27,6 +27,8 @@ package java.sql;
 
 import java.time.Instant;
 import java.time.LocalDate;
+import sun.misc.SharedSecrets;
+import sun.misc.JavaLangAccess;
 
 /**
  * <P>A thin wrapper around a millisecond value that allows
@@ -41,6 +43,8 @@ import java.time.LocalDate;
  * time zone with which the instance is associated.
  */
 public class Date extends java.util.Date {
+
+    private static final JavaLangAccess jla = SharedSecrets.getJavaLangAccess();
 
     /**
      * Constructs a <code>Date</code> object initialized with the given
@@ -155,17 +159,30 @@ public class Date extends java.util.Date {
         int month = super.getMonth() + 1;
         int day = super.getDate();
 
-        char buf[] = "2000-00-00".toCharArray();
-        buf[0] = Character.forDigit(year/1000,10);
-        buf[1] = Character.forDigit((year/100)%10,10);
-        buf[2] = Character.forDigit((year/10)%10,10);
-        buf[3] = Character.forDigit(year%10,10);
-        buf[5] = Character.forDigit(month/10,10);
-        buf[6] = Character.forDigit(month%10,10);
-        buf[8] = Character.forDigit(day/10,10);
-        buf[9] = Character.forDigit(day%10,10);
+        char buf[] = new char[10];
+        formatDecimalInt(year, buf, 0, 4);
+        buf[4] = '-';
+        Date.formatDecimalInt(month, buf, 5, 2);
+        buf[7] = '-';
+        Date.formatDecimalInt(day, buf, 8, 2);
 
-        return new String(buf);
+        return jla.newStringUnsafe(buf);
+    }
+
+    /*
+     * Formats an unsigned integer into a char array in decimal output format.
+     * Numbers will be zero-padded or truncated if the string representation
+     * of the integer is smaller than or exceeds len, respectively.
+     *
+     * Should consider moving this to Integer and expose it through
+     * JavaLangAccess similar to Integer::formatUnsignedInt
+     */
+    protected static void formatDecimalInt(int val, char[] buf, int offset, int len) {
+        int charPos = offset + len;
+        do {
+            buf[--charPos] = (char)('0' + (val % 10));
+            val /= 10;
+        } while (charPos > offset);
     }
 
     // Override all the time operations inherited from java.util.Date;
