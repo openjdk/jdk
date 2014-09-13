@@ -181,7 +181,7 @@ public class Date extends java.util.Date {
      * @param offset Starting pos in buf
      * @param len  length of output value
      */
-    protected static void formatDecimalInt(int val, char[] buf, int offset, int len) {
+    static void formatDecimalInt(int val, char[] buf, int offset, int len) {
         int charPos = offset + len;
         do {
             buf[--charPos] = (char)('0' + (val % 10));
