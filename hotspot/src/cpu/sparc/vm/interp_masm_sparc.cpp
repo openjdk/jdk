@@ -2407,8 +2407,8 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr( Register backedge_c
   br_null_short(O0, Assembler::pn, overflow_with_error);
 
   // Has the nmethod been invalidated already?
-  ld(O0, nmethod::entry_bci_offset(), O2);
-  cmp_and_br_short(O2, InvalidOSREntryBci, Assembler::equal, Assembler::pn, overflow_with_error);
+  ldub(O0, nmethod::state_offset(), O2);
+  cmp_and_br_short(O2, nmethod::in_use, Assembler::notEqual, Assembler::pn, overflow_with_error);
 
   // migrate the interpreter frame off of the stack
 
