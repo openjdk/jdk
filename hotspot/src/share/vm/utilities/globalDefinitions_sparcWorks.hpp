@@ -265,14 +265,6 @@ inline int g_isfinite(jdouble f)                 { return finite(f); }
 
 inline int wcslen(const jchar* x) { return wcslen((const wchar_t*)x); }
 
-
-// Misc
-// NOTE: This one leads to an infinite recursion on Linux
-#ifndef LINUX
-int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr);
-#define vsnprintf local_vsnprintf
-#endif
-
 // Portability macros
 #define PRAGMA_INTERFACE
 #define PRAGMA_IMPLEMENTATION

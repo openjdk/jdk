@@ -5041,10 +5041,6 @@ bool os::check_heap(bool force) {
   return true;
 }
 
-int local_vsnprintf(char* buf, size_t count, const char* format, va_list args) {
-  return ::vsnprintf(buf, count, format, args);
-}
-
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {
   DIR *dir = NULL;
