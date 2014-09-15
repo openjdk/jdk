@@ -40,6 +40,9 @@ import javax.lang.model.type.TypeVisitor;
 import javax.lang.model.util.Elements;
 import javax.lang.model.util.SimpleTypeVisitor9;
 
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
 /**
  * Returns internal type signature.
  *
@@ -249,29 +252,29 @@ public class TypeSignature {
 
     String qualifiedTypeName(TypeMirror type) {
         TypeVisitor<Name, Void> v = new SimpleTypeVisitor9<Name, Void>() {
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Name visitArray(ArrayType t, Void p) {
                 return t.getComponentType().accept(this, p);
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Name visitDeclared(DeclaredType t, Void p) {
                 return ((TypeElement) t.asElement()).getQualifiedName();
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Name visitPrimitive(PrimitiveType t, Void p) {
                 return elems.getName(t.toString());
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Name visitNoType(NoType t, Void p) {
                 if (t.getKind() == TypeKind.VOID)
                     return elems.getName("void");
                 return defaultAction(t, p);
             }
 
-            @Override
+            @Override @DefinedBy(Api.LANGUAGE_MODEL)
             public Name visitTypeVariable(TypeVariable t, Void p) {
                 return t.getUpperBound().accept(this, p);
             }

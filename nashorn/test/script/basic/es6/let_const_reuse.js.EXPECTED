@@ -1,0 +1,8 @@
+ReferenceError: "a" is not defined
+SyntaxError: test/script/basic/es6/let_const_reuse.js#35:9<eval>:3:8 Assignment to constant "a"
+        a--
+        ^
+SyntaxError: test/script/basic/es6/let_const_reuse.js#35:9<eval>:3:8 Assignment to constant "a"
+        a--
+        ^
+ReferenceError: "a" is not defined

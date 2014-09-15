@@ -35,6 +35,7 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
+
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -127,6 +128,14 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
      */
     private boolean argumentsEscape(final FunctionNode functionNode) {
 
+        @SuppressWarnings("serial")
+        final UnsupportedOperationException uoe = new UnsupportedOperationException() {
+            @Override
+            public Throwable fillInStackTrace() {
+                return null;
+            }
+        };
+
         final Deque<Set<Expression>> stack = new ArrayDeque<>();
         //ensure that arguments is only passed as arg to apply
         try {
@@ -151,7 +160,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
                 @Override
                 public Node leaveIdentNode(final IdentNode identNode) {
                     if (isParam(identNode.getName()) || ARGUMENTS.equals(identNode.getName()) && !isCurrentArg(identNode)) {
-                        throw new UnsupportedOperationException();
+                        throw uoe; //avoid filling in stack trace
                     }
                     return identNode;
                 }

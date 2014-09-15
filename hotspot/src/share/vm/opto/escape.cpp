@@ -945,7 +945,8 @@ void ConnectionGraph::process_call_arguments(CallNode *call) {
                   strcmp(call->as_CallLeaf()->_name, "sha256_implCompress") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha256_implCompressMB") == 0 ||
                   strcmp(call->as_CallLeaf()->_name, "sha512_implCompress") == 0 ||
-                  strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0)
+                  strcmp(call->as_CallLeaf()->_name, "sha512_implCompressMB") == 0 ||
+                  strcmp(call->as_CallLeaf()->_name, "multiplyToLen") == 0)
                   ))) {
             call->dump();
             fatal(err_msg_res("EA unexpected CallLeaf %s", call->as_CallLeaf()->_name));
@@ -1452,7 +1453,6 @@ int ConnectionGraph::find_init_values(JavaObjectNode* pta, PointsToNode* init_va
     return 0;
 
   InitializeNode* ini = alloc->as_Allocate()->initialization();
-  Compile* C = _compile;
   bool visited_bottom_offset = false;
   GrowableArray<int> offsets_worklist;
 

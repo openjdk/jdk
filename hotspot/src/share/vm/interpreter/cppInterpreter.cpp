@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -108,7 +108,7 @@ void CppInterpreterGenerator::generate_all() {
   }
 
 
-#define method_entry(kind) Interpreter::_entry_table[Interpreter::kind] = generate_method_entry(Interpreter::kind)
+#define method_entry(kind) Interpreter::_entry_table[Interpreter::kind] = ((InterpreterGenerator*)this)->generate_method_entry(Interpreter::kind)
 
   { CodeletMark cm(_masm, "(kind = frame_manager)");
     // all non-native method kinds

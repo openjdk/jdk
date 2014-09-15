@@ -84,7 +84,7 @@ class FromCardCache : public AllStatic {
 
   static void initialize(uint n_par_rs, uint max_num_regions);
 
-  static void shrink(uint new_num_regions);
+  static void invalidate(uint start_idx, size_t num_regions);
 
   static void print(outputStream* out = gclog_or_tty) PRODUCT_RETURN;
 
@@ -185,6 +185,9 @@ public:
   // objects.
   void scrub(CardTableModRefBS* ctbs, BitMap* region_bm, BitMap* card_bm);
 
+  // Returns whether this remembered set (and all sub-sets) contain no entries.
+  bool is_empty() const;
+
   size_t occupied() const;
   size_t occ_fine() const;
   size_t occ_coarse() const;
@@ -210,11 +213,11 @@ public:
 
   // Declare the heap size (in # of regions) to the OtherRegionsTable.
   // (Uses it to initialize from_card_cache).
-  static void init_from_card_cache(uint max_regions);
+  static void initialize(uint max_regions);
 
-  // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
-  // Make sure any entries for higher regions are invalid.
-  static void shrink_from_card_cache(uint new_num_regions);
+  // Declares that regions between start_idx <= i < start_idx + num_regions are
+  // not in use. Make sure that any entries for these regions are invalid.
+  static void invalidate(uint start_idx, size_t num_regions);
 
   static void print_from_card_cache();
 };
@@ -267,6 +270,10 @@ public:
 
   HeapRegion* hr() const {
     return _other_regions.hr();
+  }
+
+  bool is_empty() const {
+    return (strong_code_roots_list_length() == 0) && _other_regions.is_empty();
   }
 
   size_t occupied() {
@@ -342,13 +349,13 @@ public:
   // Returns the memory occupancy of all static data structures associated
   // with remembered sets.
   static size_t static_mem_size() {
-    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::free_chunks_static_mem_size();
+    return OtherRegionsTable::static_mem_size() + G1CodeRootSet::static_mem_size();
   }
 
   // Returns the memory occupancy of all free_list data structures associated
   // with remembered sets.
   static size_t fl_mem_size() {
-    return OtherRegionsTable::fl_mem_size() + G1CodeRootSet::free_chunks_mem_size();
+    return OtherRegionsTable::fl_mem_size();
   }
 
   bool contains_reference(OopOrNarrowOopStar from) const {
@@ -358,20 +365,17 @@ public:
   // Routines for managing the list of code roots that point into
   // the heap region that owns this RSet.
   void add_strong_code_root(nmethod* nm);
+  void add_strong_code_root_locked(nmethod* nm);
   void remove_strong_code_root(nmethod* nm);
-
-  // During a collection, migrate the successfully evacuated strong
-  // code roots that referenced into the region that owns this RSet
-  // to the RSets of the new regions that they now point into.
-  // Unsuccessfully evacuated code roots are not migrated.
-  void migrate_strong_code_roots();
 
   // Applies blk->do_code_blob() to each of the entries in
   // the strong code roots list
   void strong_code_roots_do(CodeBlobClosure* blk) const;
 
+  void clean_strong_code_roots(HeapRegion* hr);
+
   // Returns the number of elements in the strong code roots list
-  size_t strong_code_roots_list_length() {
+  size_t strong_code_roots_list_length() const {
     return _code_roots.length();
   }
 
@@ -393,12 +397,11 @@ public:
   // Declare the heap size (in # of regions) to the HeapRegionRemSet(s).
   // (Uses it to initialize from_card_cache).
   static void init_heap(uint max_regions) {
-    OtherRegionsTable::init_from_card_cache(max_regions);
+    OtherRegionsTable::initialize(max_regions);
   }
 
-  // Declares that only regions i s.t. 0 <= i < new_n_regs are in use.
-  static void shrink_heap(uint new_n_regs) {
-    OtherRegionsTable::shrink_from_card_cache(new_n_regs);
+  static void invalidate(uint start_idx, uint num_regions) {
+    OtherRegionsTable::invalidate(start_idx, num_regions);
   }
 
 #ifndef PRODUCT

@@ -28,6 +28,7 @@
 #include "gc_implementation/shared/liveRange.hpp"
 #include "gc_implementation/shared/markSweep.hpp"
 #include "gc_implementation/shared/spaceDecorator.hpp"
+#include "gc_interface/collectedHeap.inline.hpp"
 #include "memory/blockOffsetTable.inline.hpp"
 #include "memory/defNewGeneration.hpp"
 #include "memory/genCollectedHeap.hpp"
@@ -718,6 +719,27 @@ inline HeapWord* ContiguousSpace::par_allocate_impl(size_t size,
       return NULL;
     }
   } while (true);
+}
+
+HeapWord* ContiguousSpace::allocate_aligned(size_t size) {
+  assert(Heap_lock->owned_by_self() || (SafepointSynchronize::is_at_safepoint() && Thread::current()->is_VM_thread()), "not locked");
+  HeapWord* end_value = end();
+
+  HeapWord* obj = CollectedHeap::align_allocation_or_fail(top(), end_value, SurvivorAlignmentInBytes);
+  if (obj == NULL) {
+    return NULL;
+  }
+
+  if (pointer_delta(end_value, obj) >= size) {
+    HeapWord* new_top = obj + size;
+    set_top(new_top);
+    assert(is_ptr_aligned(obj, SurvivorAlignmentInBytes) && is_aligned(new_top),
+      "checking alignment");
+    return obj;
+  } else {
+    set_top(obj);
+    return NULL;
+  }
 }
 
 // Requires locking.

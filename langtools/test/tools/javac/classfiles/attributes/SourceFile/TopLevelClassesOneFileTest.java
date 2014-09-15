@@ -25,8 +25,8 @@
  * @test
  * @summary sourcefile attribute test for two type in one file.
  * @bug 8040129
- * @library /tools/javac/lib ../lib
- * @build SourceFileTestBase TestBase InMemoryFileManager ToolBox
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build ToolBox SourceFileTestBase TestBase InMemoryFileManager
  * @run main TopLevelClassesOneFileTest
  */
 

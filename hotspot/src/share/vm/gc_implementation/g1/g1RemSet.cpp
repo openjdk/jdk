@@ -32,7 +32,7 @@
 #include "gc_implementation/g1/g1GCPhaseTimes.hpp"
 #include "gc_implementation/g1/g1OopClosures.inline.hpp"
 #include "gc_implementation/g1/g1RemSet.inline.hpp"
-#include "gc_implementation/g1/heapRegionSeq.inline.hpp"
+#include "gc_implementation/g1/heapRegionManager.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #include "memory/iterator.hpp"
 #include "oops/oop.inline.hpp"
@@ -110,7 +110,7 @@ class ScanRSClosure : public HeapRegionClosure {
   G1CollectedHeap* _g1h;
 
   OopsInHeapRegionClosure* _oc;
-  CodeBlobToOopClosure* _code_root_cl;
+  CodeBlobClosure* _code_root_cl;
 
   G1BlockOffsetSharedArray* _bot_shared;
   G1SATBCardTableModRefBS *_ct_bs;
@@ -122,7 +122,7 @@ class ScanRSClosure : public HeapRegionClosure {
 
 public:
   ScanRSClosure(OopsInHeapRegionClosure* oc,
-                CodeBlobToOopClosure* code_root_cl,
+                CodeBlobClosure* code_root_cl,
                 uint worker_i) :
     _oc(oc),
     _code_root_cl(code_root_cl),
@@ -242,7 +242,7 @@ public:
 };
 
 void G1RemSet::scanRS(OopsInHeapRegionClosure* oc,
-                      CodeBlobToOopClosure* code_root_cl,
+                      CodeBlobClosure* code_root_cl,
                       uint worker_i) {
   double rs_time_start = os::elapsedTime();
   HeapRegion *startRegion = _g1->start_cset_region_for_worker(worker_i);
@@ -321,7 +321,7 @@ void G1RemSet::cleanupHRRS() {
 }
 
 void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
-                                           CodeBlobToOopClosure* code_root_cl,
+                                           CodeBlobClosure* code_root_cl,
                                            uint worker_i) {
 #if CARD_REPEAT_HISTO
   ct_freq_update_histo_and_reset();
@@ -349,23 +349,8 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
 
   assert((ParallelGCThreads > 0) || worker_i == 0, "invariant");
 
-  // The two flags below were introduced temporarily to serialize
-  // the updating and scanning of remembered sets. There are some
-  // race conditions when these two operations are done in parallel
-  // and they are causing failures. When we resolve said race
-  // conditions, we'll revert back to parallel remembered set
-  // updating and scanning. See CRs 6677707 and 6677708.
-  if (G1UseParallelRSetUpdating || (worker_i == 0)) {
-    updateRS(&into_cset_dcq, worker_i);
-  } else {
-    _g1p->phase_times()->record_update_rs_processed_buffers(worker_i, 0);
-    _g1p->phase_times()->record_update_rs_time(worker_i, 0.0);
-  }
-  if (G1UseParallelRSetScanning || (worker_i == 0)) {
-    scanRS(oc, code_root_cl, worker_i);
-  } else {
-    _g1p->phase_times()->record_scan_rs_time(worker_i, 0.0);
-  }
+  updateRS(&into_cset_dcq, worker_i);
+  scanRS(oc, code_root_cl, worker_i);
 
   // We now clear the cached values of _cset_rs_update_cl for this worker
   _cset_rs_update_cl[worker_i] = NULL;
@@ -555,6 +540,12 @@ G1UpdateRSOrPushRefOopClosure(G1CollectedHeap* g1h,
 
 bool G1RemSet::refine_card(jbyte* card_ptr, uint worker_i,
                            bool check_for_refs_into_cset) {
+  assert(_g1->is_in_exact(_ct_bs->addr_for(card_ptr)),
+         err_msg("Card at "PTR_FORMAT" index "SIZE_FORMAT" representing heap at "PTR_FORMAT" (%u) must be in committed heap",
+                 p2i(card_ptr),
+                 _ct_bs->index_for(_ct_bs->addr_for(card_ptr)),
+                 _ct_bs->addr_for(card_ptr),
+                 _g1->addr_to_region(_ct_bs->addr_for(card_ptr))));
 
   // If the card is no longer dirty, nothing to do.
   if (*card_ptr != CardTableModRefBS::dirty_card_val()) {

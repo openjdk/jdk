@@ -2246,7 +2246,7 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
   const siginfo_t* si = (const siginfo_t*)siginfo;
 
   os::Posix::print_siginfo_brief(st, si);
-
+#if INCLUDE_CDS
   if (si && (si->si_signo == SIGBUS || si->si_signo == SIGSEGV) &&
       UseSharedSpaces) {
     FileMapInfo* mapinfo = FileMapInfo::current_info();
@@ -2256,6 +2256,7 @@ void os::print_siginfo(outputStream* st, void* siginfo) {
                 " possible disk/network problem.");
     }
   }
+#endif
   st->cr();
 }
 
@@ -3504,9 +3505,12 @@ char* os::Linux::reserve_memory_special_huge_tlbfs_mixed(size_t bytes, size_t al
 
   assert(is_ptr_aligned(start, alignment), "Must be");
 
-  // os::reserve_memory_special will record this memory area.
-  // Need to release it here to prevent overlapping reservations.
-  MemTracker::record_virtual_memory_release((address)start, bytes);
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    // os::reserve_memory_special will record this memory area.
+    // Need to release it here to prevent overlapping reservations.
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    tkr.record((address)start, bytes);
+  }
 
   char* end = start + bytes;
 
@@ -3601,7 +3605,7 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
     }
 
     // The memory is committed
-    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
+    MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
   }
 
   return addr;
@@ -3617,24 +3621,30 @@ bool os::Linux::release_memory_special_huge_tlbfs(char* base, size_t bytes) {
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  assert(UseLargePages, "only for large pages");
-
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-
   bool res;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    res = os::Linux::release_memory_special_impl(base, bytes);
+    if (res) {
+      tkr.record((address)base, bytes);
+    }
+
+  } else {
+    res = os::Linux::release_memory_special_impl(base, bytes);
+  }
+  return res;
+}
+
+bool os::Linux::release_memory_special_impl(char* base, size_t bytes) {
+  assert(UseLargePages, "only for large pages");
+  bool res;
+
   if (UseSHM) {
     res = os::Linux::release_memory_special_shm(base, bytes);
   } else {
     assert(UseHugeTLBFS, "must be");
     res = os::Linux::release_memory_special_huge_tlbfs(base, bytes);
   }
-
-  if (res) {
-    tkr.record((address)base, bytes);
-  } else {
-    tkr.discard();
-  }
-
   return res;
 }
 

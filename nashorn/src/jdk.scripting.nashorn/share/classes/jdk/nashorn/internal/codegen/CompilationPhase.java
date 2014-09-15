@@ -48,6 +48,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
+
+import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
 import jdk.nashorn.internal.ir.FunctionNode.CompilationState;
@@ -61,6 +63,7 @@ import jdk.nashorn.internal.ir.debug.ASTWriter;
 import jdk.nashorn.internal.ir.debug.PrintVisitor;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 import jdk.nashorn.internal.runtime.CodeInstaller;
+import jdk.nashorn.internal.runtime.FunctionInitializer;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptEnvironment;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -279,12 +282,12 @@ enum CompilationPhase {
             final PrintWriter       err  = senv.getErr();
 
             //TODO separate phase for the debug printouts for abstraction and clarity
-            if (senv._print_lower_ast) {
+            if (senv._print_lower_ast || fn.getFlag(FunctionNode.IS_PRINT_LOWER_AST)) {
                 err.println("Lower AST for: " + quote(newFunctionNode.getName()));
                 err.println(new ASTWriter(newFunctionNode));
             }
 
-            if (senv._print_lower_parse) {
+            if (senv._print_lower_parse || fn.getFlag(FunctionNode.IS_PRINT_LOWER_PARSE)) {
                 err.println("Lower AST for: " + quote(newFunctionNode.getName()));
                 err.println(new PrintVisitor(newFunctionNode));
             }
@@ -297,6 +300,7 @@ enum CompilationPhase {
             return "'Local Variable Type Calculation'";
         }
     },
+
 
     /**
      * Reuse compile units, if they are already present. We are using the same compiler
@@ -324,15 +328,17 @@ enum CompilationPhase {
             final DebugLogger log = compiler.getLogger();
 
             log.fine("Clearing bytecode cache");
+            compiler.clearBytecode();
 
             for (final CompileUnit oldUnit : compiler.getCompileUnits()) {
-                CompileUnit newUnit = map.get(oldUnit);
                 assert map.get(oldUnit) == null;
                 final StringBuilder sb = new StringBuilder(compiler.nextCompileUnitName());
                 if (phases.isRestOfCompilation()) {
                     sb.append("$restOf");
                 }
-                newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
+                //it's ok to not copy the initCount, methodCount and clinitCount here, as codegen is what
+                //fills those out anyway. Thus no need for a copy constructor
+                final CompileUnit newUnit = compiler.createCompileUnit(sb.toString(), oldUnit.getWeight());
                 log.fine("Creating new compile unit ", oldUnit, " => ", newUnit);
                 map.put(oldUnit, newUnit);
                 assert newUnit != null;
@@ -428,8 +434,14 @@ enum CompilationPhase {
 
             FunctionNode newFunctionNode = fn;
 
+            //root class is special, as it is bootstrapped from createProgramFunction, thus it's skipped
+            //in CodeGeneration - the rest can be used as a working "is compile unit used" metric
+            fn.getCompileUnit().setUsed();
+
             compiler.getLogger().fine("Starting bytecode generation for ", quote(fn.getName()), " - restOf=", phases.isRestOfCompilation());
+
             final CodeGenerator codegen = new CodeGenerator(compiler, phases.isRestOfCompilation() ? compiler.getContinuationEntryPoints() : null);
+
             try {
                 // Explicitly set BYTECODE_GENERATED here; it can not be set in case of skipping codegen for :program
                 // in the lazy + optimistic world. See CodeGenerator.skipFunction().
@@ -453,12 +465,18 @@ enum CompilationPhase {
                 final ClassEmitter classEmitter = compileUnit.getClassEmitter();
                 classEmitter.end();
 
+                if (!compileUnit.isUsed()) {
+                    compiler.getLogger().fine("Skipping unused compile unit ", compileUnit);
+                    continue;
+                }
+
                 final byte[] bytecode = classEmitter.toByteArray();
                 assert bytecode != null;
 
                 final String className = compileUnit.getUnitClassName();
+                compiler.addClass(className, bytecode); //classes are only added to the bytecode map if compile unit is used
 
-                compiler.addClass(className, bytecode);
+                CompileUnit.increaseEmitCount();
 
                 // should we verify the generated code?
                 if (senv._verify_code) {
@@ -502,8 +520,7 @@ enum CompilationPhase {
             long length = 0L;
 
             final CodeInstaller<ScriptEnvironment> codeInstaller = compiler.getCodeInstaller();
-
-            final Map<String, byte[]> bytecode = compiler.getBytecode();
+            final Map<String, byte[]>              bytecode      = compiler.getBytecode();
 
             for (final Entry<String, byte[]> entry : bytecode.entrySet()) {
                 final String className = entry.getKey();
@@ -535,18 +552,22 @@ enum CompilationPhase {
 
             // initialize function in the compile units
             for (final CompileUnit unit : compiler.getCompileUnits()) {
+                if (!unit.isUsed()) {
+                    continue;
+                }
                 unit.setCode(installedClasses.get(unit.getUnitClassName()));
-                unit.initializeFunctionsCode();
             }
 
             if (!compiler.isOnDemandCompilation()) {
-                codeInstaller.storeCompiledScript(compiler.getSource(), compiler.getFirstCompileUnit().getUnitClassName(), bytecode, constants);
-            }
-
-            // remove installed bytecode from table in case compiler is reused
-            for (final String className : installedClasses.keySet()) {
-                log.fine("Removing installed class ", quote(className), " from bytecode table...");
-                compiler.removeClass(className);
+                // Initialize functions
+                final Map<Integer, FunctionInitializer> initializers = compiler.getFunctionInitializers();
+                if (initializers != null) {
+                    for (final Entry<Integer, FunctionInitializer> entry : initializers.entrySet()) {
+                        final FunctionInitializer initializer = entry.getValue();
+                        initializer.setCode(installedClasses.get(initializer.getClassName()));
+                        compiler.getScriptFunctionData(entry.getKey()).initializeCode(initializer);
+                    }
+                }
             }
 
             if (log.isEnabled()) {
@@ -592,12 +613,10 @@ enum CompilationPhase {
         this.pre = pre;
     }
 
-    boolean isApplicable(final FunctionNode functionNode) {
-        //this means that all in pre are present in state. state can be larger
-        return functionNode.hasState(pre);
-    }
-
     private static FunctionNode setStates(final FunctionNode functionNode, final CompilationState state) {
+        if (!AssertsEnabled.assertsEnabled()) {
+            return functionNode;
+        }
         return (FunctionNode)functionNode.accept(new NodeVisitor<LexicalContext>(new LexicalContext()) {
             @Override
             public Node leaveFunctionNode(final FunctionNode fn) {
@@ -617,7 +636,7 @@ enum CompilationPhase {
 
         assert pre != null;
 
-        if (!isApplicable(functionNode)) {
+        if (!functionNode.hasState(pre)) {
             final StringBuilder sb = new StringBuilder("Compilation phase ");
             sb.append(this).
                 append(" is not applicable to ").
@@ -630,7 +649,7 @@ enum CompilationPhase {
             throw new CompilationException(sb.toString());
          }
 
-         startTime = System.currentTimeMillis();
+         startTime = System.nanoTime();
 
          return functionNode;
      }
@@ -643,7 +662,7 @@ enum CompilationPhase {
      */
     protected FunctionNode end(final Compiler compiler, final FunctionNode functionNode) {
         compiler.getLogger().unindent();
-        endTime = System.currentTimeMillis();
+        endTime = System.nanoTime();
         compiler.getScriptEnvironment()._timing.accumulateTime(toString(), endTime - startTime);
 
         isFinished = true;

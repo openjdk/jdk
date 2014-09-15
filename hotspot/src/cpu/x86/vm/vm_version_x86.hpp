@@ -209,7 +209,9 @@ public:
                    erms : 1,
                         : 1,
                    rtm  : 1,
-                        : 20;
+                        : 7,
+                   adx  : 1,
+                        : 12;
     } bits;
   };
 
@@ -260,7 +262,8 @@ protected:
     CPU_CLMUL  = (1 << 21), // carryless multiply for CRC
     CPU_BMI1   = (1 << 22),
     CPU_BMI2   = (1 << 23),
-    CPU_RTM    = (1 << 24)  // Restricted Transactional Memory instructions
+    CPU_RTM    = (1 << 24),  // Restricted Transactional Memory instructions
+    CPU_ADX    = (1 << 25)
   } cpuFeatureFlags;
 
   enum {
@@ -276,7 +279,10 @@ protected:
     CPU_MODEL_WESTMERE_EX    = 0x2f,
     CPU_MODEL_SANDYBRIDGE    = 0x2a,
     CPU_MODEL_SANDYBRIDGE_EP = 0x2d,
-    CPU_MODEL_IVYBRIDGE_EP   = 0x3a
+    CPU_MODEL_IVYBRIDGE_EP   = 0x3a,
+    CPU_MODEL_HASWELL_E3     = 0x3c,
+    CPU_MODEL_HASWELL_E7     = 0x3f,
+    CPU_MODEL_BROADWELL      = 0x3d
   } cpuExtendedFamily;
 
   // cpuid information block.  All info derived from executing cpuid with
@@ -462,10 +468,16 @@ protected:
     }
     // Intel features.
     if(is_intel()) {
+      if(_cpuid_info.sef_cpuid7_ebx.bits.adx != 0)
+         result |= CPU_ADX;
       if(_cpuid_info.sef_cpuid7_ebx.bits.bmi2 != 0)
         result |= CPU_BMI2;
       if(_cpuid_info.ext_cpuid1_ecx.bits.lzcnt_intel != 0)
         result |= CPU_LZCNT;
+      // for Intel, ecx.bits.misalignsse bit (bit 8) indicates support for prefetchw
+      if (_cpuid_info.ext_cpuid1_ecx.bits.misalignsse != 0) {
+        result |= CPU_3DNOW_PREFETCH;
+      }
     }
 
     return result;
@@ -622,6 +634,7 @@ public:
   static bool supports_rtm()      { return (_cpuFeatures & CPU_RTM) != 0; }
   static bool supports_bmi1()     { return (_cpuFeatures & CPU_BMI1) != 0; }
   static bool supports_bmi2()     { return (_cpuFeatures & CPU_BMI2) != 0; }
+  static bool supports_adx()     { return (_cpuFeatures & CPU_ADX) != 0; }
   // Intel features
   static bool is_intel_family_core() { return is_intel() &&
                                        extended_cpu_family() == CPU_FAMILY_INTEL_CORE; }

@@ -120,7 +120,7 @@ var getEnvMethod = Context.class.getMethod("getEnv")
 
 var sourceForMethod = Source.class.getMethod("sourceFor", java.lang.String.class, java.lang.String.class)
 var ParserConstructor = Parser.class.getConstructor(ScriptEnvironment.class, Source.class, ErrorManager.class)
-var CompilerConstructor = Compiler.class.getConstructor(Context.class, ScriptEnvironment.class, CodeInstaller.class, Source.class, String.class, boolean.class);
+var CompilerConstructor = Compiler.class.getConstructor(Context.class, ScriptEnvironment.class, CodeInstaller.class, Source.class, ErrorManager.class, boolean.class);
 
 // compile(script) -- compiles a script specified as a string with its
 // source code, returns a jdk.nashorn.internal.ir.FunctionNode object

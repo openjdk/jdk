@@ -60,6 +60,8 @@ import static javax.tools.StandardLocation.*;
 
 import com.sun.tools.javac.util.BaseFileManager;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.List;
 import com.sun.tools.javac.util.ListBuffer;
 
@@ -138,18 +140,18 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         defaultFileSystem = fs;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void flush() throws IOException {
         contentCache.clear();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public void close() throws IOException {
         for (FileSystem fs: fileSystems.values())
             fs.close();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public ClassLoader getClassLoader(Location location) {
         nullCheck(location);
         Iterable<? extends Path> path = getLocation(location);
@@ -169,6 +171,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 
     // <editor-fold defaultstate="collapsed" desc="Location handling">
 
+    @DefinedBy(Api.COMPILER)
     public boolean hasLocation(Location location) {
         return (getLocation(location) != null);
     }
@@ -281,7 +284,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         return ((PathFileObject) fo).getPath();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean isSameFile(FileObject a, FileObject b) {
         nullCheck(a);
         nullCheck(b);
@@ -292,7 +295,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         return ((PathFileObject) a).isSameFile((PathFileObject) b);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Iterable<JavaFileObject> list(Location location,
             String packageName, Set<Kind> kinds, boolean recurse)
             throws IOException {
@@ -402,13 +405,13 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         return getJavaFileObjectsFromPaths(Arrays.asList(nullCheck(paths)));
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForInput(Location location,
             String className, Kind kind) throws IOException {
         return getFileForInput(location, getRelativePath(className, kind));
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForInput(Location location,
             String packageName, String relativeName) throws IOException {
         return getFileForInput(location, getRelativePath(packageName, relativeName));
@@ -433,13 +436,13 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public JavaFileObject getJavaFileForOutput(Location location,
             String className, Kind kind, FileObject sibling) throws IOException {
         return getFileForOutput(location, getRelativePath(className, kind), sibling);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public FileObject getFileForOutput(Location location, String packageName,
             String relativeName, FileObject sibling)
             throws IOException {
@@ -474,7 +477,7 @@ public class JavacPathFileManager extends BaseFileManager implements PathFileMan
 
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public String inferBinaryName(Location location, JavaFileObject fo) {
         nullCheck(fo);
         // Need to match the path semantics of list(location, ...)

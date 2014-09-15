@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * Copyright 2007, 2008, 2009, 2010, 2011 Red Hat, Inc.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -731,7 +731,7 @@ InterpreterFrame *InterpreterFrame::build(Method* const method, TRAPS) {
     if (method->is_static())
       object = method->constants()->pool_holder()->java_mirror();
     else
-      object = (oop) locals[0];
+      object = (oop) (void*)locals[0];
     monitor->set_obj(object);
   }
 
@@ -831,60 +831,6 @@ address InterpreterGenerator::generate_normal_entry(bool synchronized) {
   return generate_entry((address) CppInterpreter::normal_entry);
 }
 
-address AbstractInterpreterGenerator::generate_method_entry(
-    AbstractInterpreter::MethodKind kind) {
-  address entry_point = NULL;
-
-  switch (kind) {
-  case Interpreter::zerolocals:
-  case Interpreter::zerolocals_synchronized:
-    break;
-
-  case Interpreter::native:
-    entry_point = ((InterpreterGenerator*) this)->generate_native_entry(false);
-    break;
-
-  case Interpreter::native_synchronized:
-    entry_point = ((InterpreterGenerator*) this)->generate_native_entry(false);
-    break;
-
-  case Interpreter::empty:
-    entry_point = ((InterpreterGenerator*) this)->generate_empty_entry();
-    break;
-
-  case Interpreter::accessor:
-    entry_point = ((InterpreterGenerator*) this)->generate_accessor_entry();
-    break;
-
-  case Interpreter::abstract:
-    entry_point = ((InterpreterGenerator*) this)->generate_abstract_entry();
-    break;
-
-  case Interpreter::java_lang_math_sin:
-  case Interpreter::java_lang_math_cos:
-  case Interpreter::java_lang_math_tan:
-  case Interpreter::java_lang_math_abs:
-  case Interpreter::java_lang_math_log:
-  case Interpreter::java_lang_math_log10:
-  case Interpreter::java_lang_math_sqrt:
-  case Interpreter::java_lang_math_pow:
-  case Interpreter::java_lang_math_exp:
-    entry_point = ((InterpreterGenerator*) this)->generate_math_entry(kind);
-    break;
-
-  case Interpreter::java_lang_ref_reference_get:
-    entry_point = ((InterpreterGenerator*)this)->generate_Reference_get_entry();
-    break;
-
-  default:
-    ShouldNotReachHere();
-  }
-
-  if (entry_point == NULL)
-    entry_point = ((InterpreterGenerator*) this)->generate_normal_entry(false);
-
-  return entry_point;
-}
 
 InterpreterGenerator::InterpreterGenerator(StubQueue* code)
  : CppInterpreterGenerator(code) {

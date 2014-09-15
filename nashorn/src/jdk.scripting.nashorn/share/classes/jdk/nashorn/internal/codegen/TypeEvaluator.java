@@ -55,6 +55,19 @@ final class TypeEvaluator {
         this.runtimeScope = runtimeScope;
     }
 
+    /**
+     * Returns true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property names retrieved through
+     * {@link ScriptRuntime#toPropertyIterator(Object)}. It is used to avoid optimistic assumptions about its
+     * property name types.
+     * @param expr the expression to test
+     * @return true if the expression can be safely evaluated, and its value is an object known to always use
+     * String as the type of its property iterators.
+     */
+    boolean hasStringPropertyIterator(final Expression expr) {
+        return evaluateSafely(expr) instanceof ScriptObject;
+    }
+
     Type getOptimisticType(final Optimistic node) {
         assert compiler.useOptimisticTypes();
 
@@ -108,13 +121,21 @@ final class TypeEvaluator {
 
         // Safely evaluate the property, and return the narrowest type for the actual value (e.g. Type.INT for a boxed
         // integer).
-        final Object value = property.getObjectValue(owner, owner);
+        final Object value = property.needsDeclaration() ? ScriptRuntime.UNDEFINED : property.getObjectValue(owner, owner);
         if (value == ScriptRuntime.UNDEFINED) {
             return null;
         }
         return Type.typeFor(JSType.unboxedFieldType(value));
     }
 
+    /**
+     * Declares a symbol name as belonging to a non-scoped local variable during an on-demand compilation of a single
+     * function. This method will add an explicit Undefined binding for the local into the runtime scope if it's
+     * otherwise implicitly undefined so that when an expression is evaluated for the name, it won't accidentally find
+     * an unrelated value higher up the scope chain. It is only required to call this method when doing an optimistic
+     * on-demand compilation.
+     * @param symbolName the name of the symbol that is to be declared as being a non-scoped local variable.
+     */
     void declareLocalSymbol(final String symbolName) {
         assert
             compiler.useOptimisticTypes() &&

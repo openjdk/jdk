@@ -129,7 +129,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double _cur_collection_par_time_ms;
   double _cur_collection_code_root_fixup_time_ms;
-  double _cur_strong_code_root_migration_time_ms;
   double _cur_strong_code_root_purge_time_ms;
 
   double _cur_evac_fail_recalc_used;
@@ -157,11 +156,17 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
   double _recorded_young_free_cset_time_ms;
   double _recorded_non_young_free_cset_time_ms;
 
+  double _cur_fast_reclaim_humongous_time_ms;
+  size_t _cur_fast_reclaim_humongous_total;
+  size_t _cur_fast_reclaim_humongous_candidates;
+  size_t _cur_fast_reclaim_humongous_reclaimed;
+
   double _cur_verify_before_time_ms;
   double _cur_verify_after_time_ms;
 
   // Helper methods for detailed logging
   void print_stats(int level, const char* str, double value);
+  void print_stats(int level, const char* str, size_t value);
   void print_stats(int level, const char* str, double value, uint workers);
 
  public:
@@ -227,10 +232,6 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
     _cur_collection_code_root_fixup_time_ms = ms;
   }
 
-  void record_strong_code_root_migration_time(double ms) {
-    _cur_strong_code_root_migration_time_ms = ms;
-  }
-
   void record_strong_code_root_purge_time(double ms) {
     _cur_strong_code_root_purge_time_ms = ms;
   }
@@ -280,6 +281,16 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   void record_non_young_free_cset_time_ms(double time_ms) {
     _recorded_non_young_free_cset_time_ms = time_ms;
+  }
+
+  void record_fast_reclaim_humongous_stats(size_t total, size_t candidates) {
+    _cur_fast_reclaim_humongous_total = total;
+    _cur_fast_reclaim_humongous_candidates = candidates;
+  }
+
+  void record_fast_reclaim_humongous_time_ms(double value, size_t reclaimed) {
+    _cur_fast_reclaim_humongous_time_ms = value;
+    _cur_fast_reclaim_humongous_reclaimed = reclaimed;
   }
 
   void record_young_cset_choice_time_ms(double time_ms) {
@@ -346,6 +357,10 @@ class G1GCPhaseTimes : public CHeapObj<mtGC> {
 
   double non_young_free_cset_time_ms() {
     return _recorded_non_young_free_cset_time_ms;
+  }
+
+  double fast_reclaim_humongous_time_ms() {
+    return _cur_fast_reclaim_humongous_time_ms;
   }
 
   double average_last_update_rs_time() {

@@ -47,6 +47,7 @@ import com.sun.tools.javac.tree.JCTree.*;
 import com.sun.tools.javac.tree.TreeInfo;
 import com.sun.tools.javac.tree.TreeScanner;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Name;
 import static com.sun.tools.javac.code.Scope.LookupKind.NON_RECURSIVE;
 import static com.sun.tools.javac.code.TypeTag.CLASS;
@@ -84,6 +85,7 @@ public class JavacElements implements Elements {
         enter = Enter.instance(context);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageSymbol getPackageElement(CharSequence name) {
         String strName = name.toString();
         if (strName.equals(""))
@@ -93,6 +95,7 @@ public class JavacElements implements Elements {
             : null;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public ClassSymbol getTypeElement(CharSequence name) {
         String strName = name.toString();
         return SourceVersion.isName(strName)
@@ -308,6 +311,7 @@ public class JavacElements implements Elements {
         return (treeTop != null) ? treeTop.fst : null;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public String getDocComment(Element e) {
         // Our doc comment is contained in a map in our toplevel,
         // indexed by our tree.  Find our enter environment, which gives
@@ -323,19 +327,23 @@ public class JavacElements implements Elements {
         return toplevel.docComments.getCommentText(tree);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public PackageElement getPackageOf(Element e) {
         return cast(Symbol.class, e).packge();
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isDeprecated(Element e) {
         Symbol sym = cast(Symbol.class, e);
         return (sym.flags() & Flags.DEPRECATED) != 0;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public Name getBinaryName(TypeElement type) {
         return cast(TypeSymbol.class, type).flatName();
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public Map<MethodSymbol, Attribute> getElementValuesWithDefaults(
                                                         AnnotationMirror a) {
         Attribute.Compound anno = cast(Attribute.Compound.class, a);
@@ -356,6 +364,7 @@ public class JavacElements implements Elements {
     /**
      * {@inheritDoc}
      */
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public FilteredMemberList getAllMembers(TypeElement element) {
         Symbol sym = cast(Symbol.class, element);
         WriteableScope scope = sym.members().dupUnshared();
@@ -393,7 +402,7 @@ public class JavacElements implements Elements {
      * @param e  the element being examined
      * @return all annotations of the element
      */
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.Compound> getAllAnnotationMirrors(Element e) {
         Symbol sym = cast(Symbol.class, e);
         List<Attribute.Compound> annos = sym.getAnnotationMirrors();
@@ -436,6 +445,7 @@ public class JavacElements implements Elements {
         return false;
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean hides(Element hiderEl, Element hideeEl) {
         Symbol hider = cast(Symbol.class, hiderEl);
         Symbol hidee = cast(Symbol.class, hideeEl);
@@ -472,6 +482,7 @@ public class JavacElements implements Elements {
         return hidee.isInheritedIn(hiderClass, types);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean overrides(ExecutableElement riderEl,
                              ExecutableElement rideeEl, TypeElement typeEl) {
         MethodSymbol rider = cast(MethodSymbol.class, riderEl);
@@ -494,6 +505,7 @@ public class JavacElements implements Elements {
                rider.overrides(ridee, origin, types, false);
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public String getConstantExpression(Object value) {
         return Constants.format(value);
     }
@@ -507,16 +519,18 @@ public class JavacElements implements Elements {
      * @param w the writer to print the output to
      * @param elements the elements to print
      */
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public void printElements(java.io.Writer w, Element... elements) {
         for (Element element : elements)
             (new PrintingProcessor.PrintingElementVisitor(w, this)).visit(element).flush();
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public Name getName(CharSequence cs) {
         return names.fromString(cs.toString());
     }
 
-    @Override
+    @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public boolean isFunctionalInterface(TypeElement element) {
         if (element.getKind() != ElementKind.INTERFACE)
             return false;

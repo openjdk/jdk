@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// Namespaces.java - Analyze namespace nodes in a DOM tree
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -47,8 +41,9 @@ public class Namespaces {
         String name = element.getTagName();
         String prefix = "";
 
-        if (name.indexOf(':') > 0) {
-            prefix = name.substring(0, name.indexOf(':'));
+        final int indexOfColon = name.indexOf(':');
+        if (indexOfColon > 0) {
+            prefix = name.substring(0, indexOfColon);
         }
 
         return prefix;
@@ -64,8 +59,9 @@ public class Namespaces {
     public static String getLocalName(Element element) {
         String name = element.getTagName();
 
-        if (name.indexOf(':') > 0) {
-            name = name.substring(name.indexOf(':')+1);
+        final int indexOfColon = name.indexOf(':');
+        if (indexOfColon > 0) {
+            name = name.substring(indexOfColon + 1);
         }
 
         return name;
@@ -85,7 +81,7 @@ public class Namespaces {
             return null;
         }
 
-        if (prefix.equals("")) {
+        if (prefix.length() == 0) {
             if (((Element) node).hasAttribute("xmlns")) {
                 return ((Element) node).getAttribute("xmlns");
             }

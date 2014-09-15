@@ -82,11 +82,14 @@ public abstract class Property implements Serializable {
      * is narrower than object, e.g. Math.PI which is declared
      * as a double
      */
-    public static final int IS_NASGEN_PRIMITIVE = 1 << 6;
+    public static final int IS_NASGEN_PRIMITIVE     = 1 << 6;
 
     /** Is this property bound to a receiver? This means get/set operations will be delegated to
      *  a statically defined object instead of the object passed as callsite parameter. */
-    public static final int IS_BOUND = 1 << 8;
+    public static final int IS_BOUND                = 1 << 7;
+
+    /** Is this a lexically scoped LET or CONST variable that is dead until it is declared. */
+    public static final int NEEDS_DECLARATION       = 1 << 8;
 
     /** Property key. */
     private final String key;
@@ -287,14 +290,12 @@ public abstract class Property implements Serializable {
     }
 
     /**
-     * Does this property use any slots in the spill array described in
-     * {@link Property#isSpill}? In that case how many. Currently a property
-     * only uses max one spill slot, but this may change in future representations
+     * Is this a LET or CONST property that needs to see its declaration before being usable?
      *
-     * @return number of spill slots a property is using
+     * @return true if this is a block-scoped variable
      */
-    public int getSpillCount() {
-        return 0;
+    public boolean needsDeclaration() {
+        return (flags & NEEDS_DECLARATION) == NEEDS_DECLARATION;
     }
 
     /**

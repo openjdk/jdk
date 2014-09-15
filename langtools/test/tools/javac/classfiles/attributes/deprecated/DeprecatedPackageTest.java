@@ -25,8 +25,8 @@
  * @test
  * @bug 8042261
  * @summary Checking that deprecated attribute does not apply to classes of deprecated package.
- * @library /tools/javac/lib ../lib
- * @build DeprecatedPackageTest TestBase TestResult InMemoryFileManager ToolBox
+ * @library /tools/lib /tools/javac/lib ../lib
+ * @build  ToolBox TestBase TestResult InMemoryFileManager
  * @run main DeprecatedPackageTest
  */
 

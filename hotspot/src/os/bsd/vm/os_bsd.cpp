@@ -1678,14 +1678,9 @@ void os::print_dll_info(outputStream *st) {
 
   dlclose(handle);
 #elif defined(__APPLE__)
-  uint32_t count;
-  uint32_t i;
-
-  count = _dyld_image_count();
-  for (i = 1; i < count; i++) {
-    const char *name = _dyld_get_image_name(i);
-    intptr_t slide = _dyld_get_image_vmaddr_slide(i);
-    st->print_cr(PTR_FORMAT " \t%s", slide, name);
+  for (uint32_t i = 1; i < _dyld_image_count(); i++) {
+    st->print_cr(PTR_FORMAT " \t%s", _dyld_get_image_header(i),
+        _dyld_get_image_name(i));
   }
 #else
   st->print_cr("Error: Cannot print dynamic libraries.");
@@ -2439,23 +2434,25 @@ char* os::reserve_memory_special(size_t bytes, size_t alignment, char* req_addr,
   }
 
   // The memory is committed
-  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, mtNone, CALLER_PC);
+  MemTracker::record_virtual_memory_reserve_and_commit((address)addr, bytes, CALLER_PC);
 
   return addr;
 }
 
 bool os::release_memory_special(char* base, size_t bytes) {
-  MemTracker::Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
-  // detaching the SHM segment will also delete it, see reserve_memory_special()
-  int rslt = shmdt(base);
-  if (rslt == 0) {
-    tkr.record((address)base, bytes);
-    return true;
+  if (MemTracker::tracking_level() > NMT_minimal) {
+    Tracker tkr = MemTracker::get_virtual_memory_release_tracker();
+    // detaching the SHM segment will also delete it, see reserve_memory_special()
+    int rslt = shmdt(base);
+    if (rslt == 0) {
+      tkr.record((address)base, bytes);
+      return true;
+    } else {
+      return false;
+    }
   } else {
-    tkr.discard();
-    return false;
+    return shmdt(base) == 0;
   }
-
 }
 
 size_t os::large_page_size() {

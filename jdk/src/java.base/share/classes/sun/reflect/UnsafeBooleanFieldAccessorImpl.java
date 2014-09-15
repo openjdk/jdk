@@ -33,7 +33,7 @@ class UnsafeBooleanFieldAccessorImpl extends UnsafeFieldAccessorImpl {
     }
 
     public Object get(Object obj) throws IllegalArgumentException {
-        return new Boolean(getBoolean(obj));
+        return Boolean.valueOf(getBoolean(obj));
     }
 
     public boolean getBoolean(Object obj) throws IllegalArgumentException {

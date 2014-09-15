@@ -40,6 +40,8 @@ import javax.tools.JavaFileObject;
 import static javax.tools.JavaFileObject.Kind.*;
 
 import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /**
  * <p><b>This is NOT part of any supported API.
@@ -61,10 +63,13 @@ public abstract class BaseFileObject implements JavaFileObject {
         return getClass().getSimpleName() + "[" + getName() + "]";
     }
 
+    @DefinedBy(Api.COMPILER)
     public NestingKind getNestingKind() { return null; }
 
+    @DefinedBy(Api.COMPILER)
     public Modifier getAccessLevel()  { return null; }
 
+    @DefinedBy(Api.COMPILER)
     public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
         return new InputStreamReader(openInputStream(), getDecoder(ignoreEncodingErrors));
     }

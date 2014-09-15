@@ -90,7 +90,9 @@ struct DebuggerWith2Objects : DebuggerWithObject {
 */
 
 static void throwNewDebuggerException(JNIEnv* env, const char* errMsg) {
-  env->ThrowNew(env->FindClass("sun/jvm/hotspot/debugger/DebuggerException"), errMsg);
+  jclass clazz = env->FindClass("sun/jvm/hotspot/debugger/DebuggerException");
+  CHECK_EXCEPTION;
+  env->ThrowNew(clazz, errMsg);
 }
 
 // JNI ids for some fields, methods
@@ -314,7 +316,7 @@ static void * pathmap_dlopen(const char * name, int mode) {
     handle = dlopen(name, mode);
   }
   if (_libsaproc_debug) {
-    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%x\n", name, handle);
+    printf("libsaproc DEBUG: pathmap_dlopen %s return 0x%lx\n", name, (unsigned long) handle);
   }
   return handle;
 }
@@ -661,30 +663,30 @@ init_classsharing_workaround(void *cd, const prmap_t* pmap, const char* obj_name
   // read FileMapHeader
   size_t n = read(fd, pheader, sizeof(struct FileMapHeader));
   if (n != sizeof(struct FileMapHeader)) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "unable to read shared archive file map header from %s", classes_jsa);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   // check file magic
   if (pheader->_magic != 0xf00baba2) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "%s has bad shared archive magic 0x%x, expecting 0xf00baba2",
                    classes_jsa, pheader->_magic);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
   // check version
   if (pheader->_version != CURRENT_ARCHIVE_VERSION) {
-    free(pheader);
-    close(fd);
     char errMsg[ERR_MSG_SIZE];
     sprintf(errMsg, "%s has wrong shared archive version %d, expecting %d",
                    classes_jsa, pheader->_version, CURRENT_ARCHIVE_VERSION);
+    close(fd);
+    free(pheader);
     THROW_NEW_DEBUGGER_EXCEPTION_(errMsg, 1);
   }
 
@@ -962,6 +964,7 @@ JNIEXPORT jlongArray JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLoca
   CHECK_EXCEPTION_(0);
   jboolean isCopy;
   jlong* ptr = env->GetLongArrayElements(res, &isCopy);
+  CHECK_EXCEPTION_(NULL);
   for (int i = 0; i < NPRGREG; i++) {
     ptr[i] = (jlong) (uintptr_t) gregs[i];
   }
@@ -1253,6 +1256,7 @@ JNIEXPORT jstring JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_d
   (JNIEnv *env, jobject this_object, jstring name) {
   jboolean isCopy;
   const char* ptr = env->GetStringUTFChars(name, &isCopy);
+  CHECK_EXCEPTION_(NULL);
   char  buf[2*SYMBOL_BUF_SIZE + 1];
   jstring res = 0;
   if (cplus_demangle((char*) ptr, buf, sizeof(buf)) != DEMANGLE_ESPACE) {
@@ -1439,7 +1443,9 @@ JNIEXPORT void JNICALL Java_sun_jvm_hotspot_debugger_proc_ProcDebuggerLocal_init
                             "createClosestSymbol", "(Ljava/lang/String;J)Lsun/jvm/hotspot/debugger/cdbg/ClosestSymbol;");
   CHECK_EXCEPTION;
 
-  listAdd_ID = env->GetMethodID(env->FindClass("java/util/List"), "add", "(Ljava/lang/Object;)Z");
+  jclass list_clazz = env->FindClass("java/util/List");
+  CHECK_EXCEPTION;
+  listAdd_ID = env->GetMethodID(list_clazz, "add", "(Ljava/lang/Object;)Z");
   CHECK_EXCEPTION;
 
   // part of the class sharing workaround

@@ -26,8 +26,13 @@
 #include "classfile/classFileParser.hpp"
 #include "classfile/classFileStream.hpp"
 #include "classfile/classLoader.hpp"
+#include "classfile/classLoaderExt.hpp"
 #include "classfile/classLoaderData.inline.hpp"
 #include "classfile/javaClasses.hpp"
+#if INCLUDE_CDS
+#include "classfile/sharedPathsMiscInfo.hpp"
+#include "classfile/sharedClassUtil.hpp"
+#endif
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
 #include "compiler/compileBroker.hpp"
@@ -35,6 +40,7 @@
 #include "interpreter/bytecodeStream.hpp"
 #include "interpreter/oopMapCache.hpp"
 #include "memory/allocation.inline.hpp"
+#include "memory/filemap.hpp"
 #include "memory/generation.hpp"
 #include "memory/oopFactory.hpp"
 #include "memory/universe.inline.hpp"
@@ -114,8 +120,12 @@ PerfCounter*    ClassLoader::_load_instance_class_failCounter = NULL;
 
 ClassPathEntry* ClassLoader::_first_entry         = NULL;
 ClassPathEntry* ClassLoader::_last_entry          = NULL;
+int             ClassLoader::_num_entries         = 0;
 PackageHashtable* ClassLoader::_package_hash_table = NULL;
 
+#if INCLUDE_CDS
+SharedPathsMiscInfo* ClassLoader::_shared_paths_misc_info = NULL;
+#endif
 // helper routines
 bool string_starts_with(const char* str, const char* str_to_find) {
   size_t str_len = strlen(str);
@@ -179,9 +189,10 @@ bool ClassPathEntry::is_lazy() {
   return false;
 }
 
-ClassPathDirEntry::ClassPathDirEntry(char* dir) : ClassPathEntry() {
-  _dir = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
-  strcpy(_dir, dir);
+ClassPathDirEntry::ClassPathDirEntry(const char* dir) : ClassPathEntry() {
+  char* copy = NEW_C_HEAP_ARRAY(char, strlen(dir)+1, mtClass);
+  strcpy(copy, dir);
+  _dir = copy;
 }
 
 
@@ -194,6 +205,14 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
   // check if file exists
   struct stat st;
   if (os::stat(path, &st) == 0) {
+#if INCLUDE_CDS
+    if (DumpSharedSpaces) {
+      // We have already check in ClassLoader::check_shared_classpath() that the directory is empty, so
+      // we should never find a file underneath it -- unless user has added a new file while we are running
+      // the dump, in which case let's quit!
+      ShouldNotReachHere();
+    }
+#endif
     // found file, open it
     int file_handle = os::open(path, 0, 0);
     if (file_handle != -1) {
@@ -217,8 +236,9 @@ ClassFileStream* ClassPathDirEntry::open_stream(const char* name, TRAPS) {
 
 ClassPathZipEntry::ClassPathZipEntry(jzfile* zip, const char* zip_name) : ClassPathEntry() {
   _zip = zip;
-  _zip_name = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
-  strcpy(_zip_name, zip_name);
+  char *copy = NEW_C_HEAP_ARRAY(char, strlen(zip_name)+1, mtClass);
+  strcpy(copy, zip_name);
+  _zip_name = copy;
 }
 
 ClassPathZipEntry::~ClassPathZipEntry() {
@@ -228,13 +248,13 @@ ClassPathZipEntry::~ClassPathZipEntry() {
   FREE_C_HEAP_ARRAY(char, _zip_name, mtClass);
 }
 
-ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
-  // enable call to C land
+u1* ClassPathZipEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {
+    // enable call to C land
   JavaThread* thread = JavaThread::current();
   ThreadToNativeFromVM ttn(thread);
   // check whether zip archive contains name
-  jint filesize, name_len;
-  jzentry* entry = (*FindEntry)(_zip, name, &filesize, &name_len);
+  jint name_len;
+  jzentry* entry = (*FindEntry)(_zip, name, filesize, &name_len);
   if (entry == NULL) return NULL;
   u1* buffer;
   char name_buf[128];
@@ -245,19 +265,33 @@ ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
     filename = NEW_RESOURCE_ARRAY(char, name_len + 1);
   }
 
-  // file found, get pointer to class in mmaped jar file.
+  // file found, get pointer to the entry in mmapped jar file.
   if (ReadMappedEntry == NULL ||
       !(*ReadMappedEntry)(_zip, entry, &buffer, filename)) {
-      // mmaped access not available, perhaps due to compression,
+      // mmapped access not available, perhaps due to compression,
       // read contents into resource array
-      buffer     = NEW_RESOURCE_ARRAY(u1, filesize);
+      int size = (*filesize) + ((nul_terminate) ? 1 : 0);
+      buffer = NEW_RESOURCE_ARRAY(u1, size);
       if (!(*ReadEntry)(_zip, entry, buffer, filename)) return NULL;
+  }
+
+  // return result
+  if (nul_terminate) {
+    buffer[*filesize] = 0;
+  }
+  return buffer;
+}
+
+ClassFileStream* ClassPathZipEntry::open_stream(const char* name, TRAPS) {
+  jint filesize;
+  u1* buffer = open_entry(name, &filesize, false, CHECK_NULL);
+  if (buffer == NULL) {
+    return NULL;
   }
   if (UsePerfData) {
     ClassLoader::perf_sys_classfile_bytes_read()->inc(filesize);
   }
-  // return result
-  return new ClassFileStream(buffer, filesize, _zip_name);    // Resource allocated
+  return new ClassFileStream(buffer, filesize, _zip_name); // Resource allocated
 }
 
 // invoke function for each entry in the zip file
@@ -272,12 +306,17 @@ void ClassPathZipEntry::contents_do(void f(const char* name, void* context), voi
   }
 }
 
-LazyClassPathEntry::LazyClassPathEntry(char* path, const struct stat* st) : ClassPathEntry() {
-  _path = strdup(path);
+LazyClassPathEntry::LazyClassPathEntry(const char* path, const struct stat* st, bool throw_exception) : ClassPathEntry() {
+  _path = os::strdup_check_oom(path);
   _st = *st;
   _meta_index = NULL;
   _resolved_entry = NULL;
   _has_error = false;
+  _throw_exception = throw_exception;
+}
+
+LazyClassPathEntry::~LazyClassPathEntry() {
+  os::free((void*)_path);
 }
 
 bool LazyClassPathEntry::is_jar_file() {
@@ -289,7 +328,11 @@ ClassPathEntry* LazyClassPathEntry::resolve_entry(TRAPS) {
     return (ClassPathEntry*) _resolved_entry;
   }
   ClassPathEntry* new_entry = NULL;
-  new_entry = ClassLoader::create_class_path_entry(_path, &_st, false, CHECK_NULL);
+  new_entry = ClassLoader::create_class_path_entry(_path, &_st, false, _throw_exception, CHECK_NULL);
+  if (!_throw_exception && new_entry == NULL) {
+    assert(!HAS_PENDING_EXCEPTION, "must be");
+    return NULL;
+  }
   {
     ThreadCritical tc;
     if (_resolved_entry == NULL) {
@@ -323,6 +366,23 @@ bool LazyClassPathEntry::is_lazy() {
   return true;
 }
 
+u1* LazyClassPathEntry::open_entry(const char* name, jint* filesize, bool nul_terminate, TRAPS) {
+  if (_has_error) {
+    return NULL;
+  }
+  ClassPathEntry* cpe = resolve_entry(THREAD);
+  if (cpe == NULL) {
+    _has_error = true;
+    return NULL;
+  } else if (cpe->is_jar_file()) {
+    return ((ClassPathZipEntry*)cpe)->open_entry(name, filesize, nul_terminate,THREAD);
+  } else {
+    ShouldNotReachHere();
+    *filesize = 0;
+    return NULL;
+  }
+}
+
 static void print_meta_index(LazyClassPathEntry* entry,
                              GrowableArray<char*>& meta_packages) {
   tty->print("[Meta index for %s=", entry->name());
@@ -333,15 +393,62 @@ static void print_meta_index(LazyClassPathEntry* entry,
   tty->print_cr("]");
 }
 
+#if INCLUDE_CDS
+void ClassLoader::exit_with_path_failure(const char* error, const char* message) {
+  assert(DumpSharedSpaces, "only called at dump time");
+  tty->print_cr("Hint: enable -XX:+TraceClassPaths to diagnose the failure");
+  vm_exit_during_initialization(error, message);
+}
+#endif
 
-void ClassLoader::setup_meta_index() {
+void ClassLoader::trace_class_path(const char* msg, const char* name) {
+  if (!TraceClassPaths) {
+    return;
+  }
+
+  if (msg) {
+    tty->print("%s", msg);
+  }
+  if (name) {
+    if (strlen(name) < 256) {
+      tty->print("%s", name);
+    } else {
+      // For very long paths, we need to print each character separately,
+      // as print_cr() has a length limit
+      while (name[0] != '\0') {
+        tty->print("%c", name[0]);
+        name++;
+      }
+    }
+  }
+  if (msg && msg[0] == '[') {
+    tty->print_cr("]");
+  } else {
+    tty->cr();
+  }
+}
+
+void ClassLoader::setup_bootstrap_meta_index() {
   // Set up meta index which allows us to open boot jars lazily if
   // class data sharing is enabled
+  const char* meta_index_path = Arguments::get_meta_index_path();
+  const char* meta_index_dir  = Arguments::get_meta_index_dir();
+  setup_meta_index(meta_index_path, meta_index_dir, 0);
+}
+
+void ClassLoader::setup_meta_index(const char* meta_index_path, const char* meta_index_dir, int start_index) {
   const char* known_version = "% VERSION 2";
-  char* meta_index_path = Arguments::get_meta_index_path();
-  char* meta_index_dir  = Arguments::get_meta_index_dir();
   FILE* file = fopen(meta_index_path, "r");
   int line_no = 0;
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    if (file != NULL) {
+      _shared_paths_misc_info->add_required_file(meta_index_path);
+    } else {
+      _shared_paths_misc_info->add_nonexist_path(meta_index_path);
+    }
+  }
+#endif
   if (file != NULL) {
     ResourceMark rm;
     LazyClassPathEntry* cur_entry = NULL;
@@ -376,7 +483,7 @@ void ClassLoader::setup_meta_index() {
           // Hand off current packages to current lazy entry (if any)
           if ((cur_entry != NULL) &&
               (boot_class_path_packages.length() > 0)) {
-            if (TraceClassLoading && Verbose) {
+            if ((TraceClassLoading || TraceClassPaths) && Verbose) {
               print_meta_index(cur_entry, boot_class_path_packages);
             }
             MetaIndex* index = new MetaIndex(boot_class_path_packages.adr_at(0),
@@ -387,8 +494,10 @@ void ClassLoader::setup_meta_index() {
           boot_class_path_packages.clear();
 
           // Find lazy entry corresponding to this jar file
-          for (ClassPathEntry* entry = _first_entry; entry != NULL; entry = entry->next()) {
-            if (entry->is_lazy() &&
+          int count = 0;
+          for (ClassPathEntry* entry = _first_entry; entry != NULL; entry = entry->next(), count++) {
+            if (count >= start_index &&
+                entry->is_lazy() &&
                 string_starts_with(entry->name(), meta_index_dir) &&
                 string_ends_with(entry->name(), &package_name[2])) {
               cur_entry = (LazyClassPathEntry*) entry;
@@ -416,7 +525,7 @@ void ClassLoader::setup_meta_index() {
         default:
         {
           if (!skipCurrentJar && cur_entry != NULL) {
-            char* new_name = strdup(package_name);
+            char* new_name = os::strdup_check_oom(package_name);
             boot_class_path_packages.append(new_name);
           }
         }
@@ -425,7 +534,7 @@ void ClassLoader::setup_meta_index() {
     // Hand off current packages to current lazy entry (if any)
     if ((cur_entry != NULL) &&
         (boot_class_path_packages.length() > 0)) {
-      if (TraceClassLoading && Verbose) {
+      if ((TraceClassLoading || TraceClassPaths) && Verbose) {
         print_meta_index(cur_entry, boot_class_path_packages);
       }
       MetaIndex* index = new MetaIndex(boot_class_path_packages.adr_at(0),
@@ -436,36 +545,90 @@ void ClassLoader::setup_meta_index() {
   }
 }
 
-void ClassLoader::setup_bootstrap_search_path() {
-  assert(_first_entry == NULL, "should not setup bootstrap class search path twice");
-  char* sys_class_path = os::strdup(Arguments::get_sysclasspath());
-  if (TraceClassLoading && Verbose) {
-    tty->print_cr("[Bootstrap loader class path=%s]", sys_class_path);
+#if INCLUDE_CDS
+void ClassLoader::check_shared_classpath(const char *path) {
+  if (strcmp(path, "") == 0) {
+    exit_with_path_failure("Cannot have empty path in archived classpaths", NULL);
   }
 
-  int len = (int)strlen(sys_class_path);
+  struct stat st;
+  if (os::stat(path, &st) == 0) {
+    if ((st.st_mode & S_IFREG) != S_IFREG) { // is directory
+      if (!os::dir_is_empty(path)) {
+        tty->print_cr("Error: non-empty directory '%s'", path);
+        exit_with_path_failure("CDS allows only empty directories in archived classpaths", NULL);
+      }
+    }
+  }
+}
+#endif
+
+void ClassLoader::setup_bootstrap_search_path() {
+  assert(_first_entry == NULL, "should not setup bootstrap class search path twice");
+  const char* sys_class_path = Arguments::get_sysclasspath();
+  if (PrintSharedArchiveAndExit) {
+    // Don't print sys_class_path - this is the bootcp of this current VM process, not necessarily
+    // the same as the bootcp of the shared archive.
+  } else {
+    trace_class_path("[Bootstrap loader class path=", sys_class_path);
+  }
+#if INCLUDE_CDS
+  if (DumpSharedSpaces) {
+    _shared_paths_misc_info->add_boot_classpath(sys_class_path);
+  }
+#endif
+  setup_search_path(sys_class_path);
+}
+
+#if INCLUDE_CDS
+int ClassLoader::get_shared_paths_misc_info_size() {
+  return _shared_paths_misc_info->get_used_bytes();
+}
+
+void* ClassLoader::get_shared_paths_misc_info() {
+  return _shared_paths_misc_info->buffer();
+}
+
+bool ClassLoader::check_shared_paths_misc_info(void *buf, int size) {
+  SharedPathsMiscInfo* checker = SharedClassUtil::allocate_shared_paths_misc_info((char*)buf, size);
+  bool result = checker->check();
+  delete checker;
+  return result;
+}
+#endif
+
+void ClassLoader::setup_search_path(const char *class_path) {
+  int offset = 0;
+  int len = (int)strlen(class_path);
   int end = 0;
 
   // Iterate over class path entries
   for (int start = 0; start < len; start = end) {
-    while (sys_class_path[end] && sys_class_path[end] != os::path_separator()[0]) {
+    while (class_path[end] && class_path[end] != os::path_separator()[0]) {
       end++;
     }
-    char* path = NEW_C_HEAP_ARRAY(char, end-start+1, mtClass);
-    strncpy(path, &sys_class_path[start], end-start);
-    path[end-start] = '\0';
+    EXCEPTION_MARK;
+    ResourceMark rm(THREAD);
+    char* path = NEW_RESOURCE_ARRAY(char, end - start + 1);
+    strncpy(path, &class_path[start], end - start);
+    path[end - start] = '\0';
     update_class_path_entry_list(path, false);
-    FREE_C_HEAP_ARRAY(char, path, mtClass);
-    while (sys_class_path[end] == os::path_separator()[0]) {
+#if INCLUDE_CDS
+    if (DumpSharedSpaces) {
+      check_shared_classpath(path);
+    }
+#endif
+    while (class_path[end] == os::path_separator()[0]) {
       end++;
     }
   }
 }
 
-ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct stat* st, bool lazy, TRAPS) {
+ClassPathEntry* ClassLoader::create_class_path_entry(const char *path, const struct stat* st,
+                                                     bool lazy, bool throw_exception, TRAPS) {
   JavaThread* thread = JavaThread::current();
   if (lazy) {
-    return new LazyClassPathEntry(path, st);
+    return new LazyClassPathEntry(path, st, throw_exception);
   }
   ClassPathEntry* new_entry = NULL;
   if ((st->st_mode & S_IFREG) == S_IFREG) {
@@ -474,7 +637,11 @@ ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct st
     char canonical_path[JVM_MAXPATHLEN];
     if (!get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
       // This matches the classic VM
-      THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
+      if (throw_exception) {
+        THROW_MSG_(vmSymbols::java_io_IOException(), "Bad pathname", NULL);
+      } else {
+        return NULL;
+      }
     }
     char* error_msg = NULL;
     jzfile* zip;
@@ -486,7 +653,7 @@ ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct st
     }
     if (zip != NULL && error_msg == NULL) {
       new_entry = new ClassPathZipEntry(zip, path);
-      if (TraceClassLoading) {
+      if (TraceClassLoading || TraceClassPaths) {
         tty->print_cr("[Opened %s]", path);
       }
     } else {
@@ -500,12 +667,16 @@ ClassPathEntry* ClassLoader::create_class_path_entry(char *path, const struct st
         msg = NEW_RESOURCE_ARRAY(char, len); ;
         jio_snprintf(msg, len - 1, "error in opening JAR file <%s> %s", error_msg, path);
       }
-      THROW_MSG_(vmSymbols::java_lang_ClassNotFoundException(), msg, NULL);
+      if (throw_exception) {
+        THROW_MSG_(vmSymbols::java_lang_ClassNotFoundException(), msg, NULL);
+      } else {
+        return NULL;
+      }
     }
   } else {
     // Directory
     new_entry = new ClassPathDirEntry(path);
-    if (TraceClassLoading) {
+    if (TraceClassLoading || TraceClassPaths) {
       tty->print_cr("[Path %s]", path);
     }
   }
@@ -520,11 +691,8 @@ ClassPathZipEntry* ClassLoader::create_class_path_zip_entry(const char *path) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     if ((st.st_mode & S_IFREG) == S_IFREG) {
-      char orig_path[JVM_MAXPATHLEN];
       char canonical_path[JVM_MAXPATHLEN];
-
-      strcpy(orig_path, path);
-      if (get_canonical_path(orig_path, canonical_path, JVM_MAXPATHLEN)) {
+      if (get_canonical_path(path, canonical_path, JVM_MAXPATHLEN)) {
         char* error_msg = NULL;
         jzfile* zip;
         {
@@ -566,23 +734,37 @@ void ClassLoader::add_to_list(ClassPathEntry *new_entry) {
       _last_entry = new_entry;
     }
   }
+  _num_entries ++;
 }
 
-void ClassLoader::update_class_path_entry_list(char *path,
-                                               bool check_for_duplicates) {
+// Returns true IFF the file/dir exists and the entry was successfully created.
+bool ClassLoader::update_class_path_entry_list(const char *path,
+                                               bool check_for_duplicates,
+                                               bool throw_exception) {
   struct stat st;
   if (os::stat(path, &st) == 0) {
     // File or directory found
     ClassPathEntry* new_entry = NULL;
     Thread* THREAD = Thread::current();
-    new_entry = create_class_path_entry(path, &st, LazyBootClassLoader, CHECK);
+    new_entry = create_class_path_entry(path, &st, LazyBootClassLoader, throw_exception, CHECK_(false));
+    if (new_entry == NULL) {
+      return false;
+    }
     // The kernel VM adds dynamically to the end of the classloader path and
     // doesn't reorder the bootclasspath which would break java.lang.Package
     // (see PackageInfo).
     // Add new entry to linked list
     if (!check_for_duplicates || !contains_entry(new_entry)) {
-      add_to_list(new_entry);
+      ClassLoaderExt::add_class_path_entry(path, check_for_duplicates, new_entry);
     }
+    return true;
+  } else {
+#if INCLUDE_CDS
+    if (DumpSharedSpaces) {
+      _shared_paths_misc_info->add_nonexist_path(path);
+    }
+#endif
+    return false;
   }
 }
 
@@ -734,10 +916,10 @@ public:
     assert(n == number_of_entries(), "just checking");
   }
 
-  void copy_table(char** top, char* end, PackageHashtable* table);
+  CDS_ONLY(void copy_table(char** top, char* end, PackageHashtable* table);)
 };
 
-
+#if INCLUDE_CDS
 void PackageHashtable::copy_table(char** top, char* end,
                                   PackageHashtable* table) {
   // Copy (relocate) the table to the shared space.
@@ -745,33 +927,30 @@ void PackageHashtable::copy_table(char** top, char* end,
 
   // Calculate the space needed for the package name strings.
   int i;
-  int n = 0;
-  for (i = 0; i < table_size(); ++i) {
-    for (PackageInfo* pp = table->bucket(i);
-                      pp != NULL;
-                      pp = pp->next()) {
-      n += (int)(strlen(pp->pkgname()) + 1);
-    }
-  }
-  if (*top + n + sizeof(intptr_t) >= end) {
-    report_out_of_shared_space(SharedMiscData);
-  }
-
-  // Copy the table data (the strings) to the shared space.
-  n = align_size_up(n, sizeof(HeapWord));
-  *(intptr_t*)(*top) = n;
-  *top += sizeof(intptr_t);
+  intptr_t* tableSize = (intptr_t*)(*top);
+  *top += sizeof(intptr_t);  // For table size
+  char* tableStart = *top;
 
   for (i = 0; i < table_size(); ++i) {
     for (PackageInfo* pp = table->bucket(i);
                       pp != NULL;
                       pp = pp->next()) {
       int n1 = (int)(strlen(pp->pkgname()) + 1);
+      if (*top + n1 >= end) {
+        report_out_of_shared_space(SharedMiscData);
+      }
       pp->set_pkgname((char*)memcpy(*top, pp->pkgname(), n1));
       *top += n1;
     }
   }
   *top = (char*)align_size_up((intptr_t)*top, sizeof(HeapWord));
+  if (*top >= end) {
+    report_out_of_shared_space(SharedMiscData);
+  }
+
+  // Write table size
+  intptr_t len = *top - (char*)tableStart;
+  *tableSize = len;
 }
 
 
@@ -782,7 +961,7 @@ void ClassLoader::copy_package_info_buckets(char** top, char* end) {
 void ClassLoader::copy_package_info_table(char** top, char* end) {
   _package_hash_table->copy_table(top, end, _package_hash_table);
 }
-
+#endif
 
 PackageInfo* ClassLoader::lookup_package(const char *pkgname) {
   const char *cp = strrchr(pkgname, '/');
@@ -875,7 +1054,8 @@ objArrayOop ClassLoader::get_system_packages(TRAPS) {
 
 instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   ResourceMark rm(THREAD);
-  EventMark m("loading class %s", h_name->as_C_string());
+  const char* class_name = h_name->as_C_string();
+  EventMark m("loading class %s", class_name);
   ThreadProfilerMark tpm(ThreadProfilerMark::classLoaderRegion);
 
   stringStream st;
@@ -883,18 +1063,24 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
   // st.print("%s.class", h_name->as_utf8());
   st.print_raw(h_name->as_utf8());
   st.print_raw(".class");
-  char* name = st.as_string();
+  const char* file_name = st.as_string();
+  ClassLoaderExt::Context context(class_name, file_name, THREAD);
 
   // Lookup stream for parsing .class file
   ClassFileStream* stream = NULL;
   int classpath_index = 0;
+  ClassPathEntry* e = NULL;
+  instanceKlassHandle h;
   {
     PerfClassTraceTime vmtimer(perf_sys_class_lookup_time(),
                                ((JavaThread*) THREAD)->get_thread_stat()->perf_timers_addr(),
                                PerfClassTraceTime::CLASS_LOAD);
-    ClassPathEntry* e = _first_entry;
+    e = _first_entry;
     while (e != NULL) {
-      stream = e->open_stream(name, CHECK_NULL);
+      stream = e->open_stream(file_name, CHECK_NULL);
+      if (!context.check(stream, classpath_index)) {
+        return h; // NULL
+      }
       if (stream != NULL) {
         break;
       }
@@ -903,9 +1089,7 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
     }
   }
 
-  instanceKlassHandle h;
   if (stream != NULL) {
-
     // class file found, parse it
     ClassFileParser parser(stream);
     ClassLoaderData* loader_data = ClassLoaderData::the_null_class_loader_data();
@@ -915,12 +1099,19 @@ instanceKlassHandle ClassLoader::load_classfile(Symbol* h_name, TRAPS) {
                                                        loader_data,
                                                        protection_domain,
                                                        parsed_name,
-                                                       false,
-                                                       CHECK_(h));
-
-    // add to package table
-    if (add_package(name, classpath_index, THREAD)) {
-      h = result;
+                                                       context.should_verify(classpath_index),
+                                                       THREAD);
+    if (HAS_PENDING_EXCEPTION) {
+      ResourceMark rm;
+      if (DumpSharedSpaces) {
+        tty->print_cr("Preload Error: Failed to load %s", class_name);
+      }
+      return h;
+    }
+    h = context.record_result(classpath_index, e, result, THREAD);
+  } else {
+    if (DumpSharedSpaces) {
+      tty->print_cr("Preload Error: Cannot find %s", class_name);
     }
   }
 
@@ -1015,14 +1206,27 @@ void ClassLoader::initialize() {
 
   // lookup zip library entry points
   load_zip_library();
+#if INCLUDE_CDS
   // initialize search path
+  if (DumpSharedSpaces) {
+    _shared_paths_misc_info = SharedClassUtil::allocate_shared_paths_misc_info();
+  }
+#endif
   setup_bootstrap_search_path();
   if (LazyBootClassLoader) {
     // set up meta index which makes boot classpath initialization lazier
-    setup_meta_index();
+    setup_bootstrap_meta_index();
   }
 }
 
+#if INCLUDE_CDS
+void ClassLoader::initialize_shared_path() {
+  if (DumpSharedSpaces) {
+    ClassLoaderExt::setup_search_paths();
+    _shared_paths_misc_info->write_jint(0); // see comments in SharedPathsMiscInfo::check()
+  }
+}
+#endif
 
 jlong ClassLoader::classloader_time_ms() {
   return UsePerfData ?
@@ -1066,11 +1270,17 @@ void classLoader_init() {
 }
 
 
-bool ClassLoader::get_canonical_path(char* orig, char* out, int len) {
+bool ClassLoader::get_canonical_path(const char* orig, char* out, int len) {
   assert(orig != NULL && out != NULL && len > 0, "bad arguments");
   if (CanonicalizeEntry != NULL) {
-    JNIEnv* env = JavaThread::current()->jni_environment();
-    if ((CanonicalizeEntry)(env, os::native_path(orig), out, len) < 0) {
+    JavaThread* THREAD = JavaThread::current();
+    JNIEnv* env = THREAD->jni_environment();
+    ResourceMark rm(THREAD);
+
+    // os::native_path writes into orig_copy
+    char* orig_copy = NEW_RESOURCE_ARRAY_IN_THREAD(THREAD, char, strlen(orig)+1);
+    strcpy(orig_copy, orig);
+    if ((CanonicalizeEntry)(env, os::native_path(orig_copy), out, len) < 0) {
       return false;
     }
   } else {

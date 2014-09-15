@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP
 #define SHARE_VM_GC_IMPLEMENTATION_G1_G1BLOCKOFFSETTABLE_HPP
 
+#include "gc_implementation/g1/g1RegionToSpaceMapper.hpp"
 #include "memory/memRegion.hpp"
 #include "runtime/virtualspace.hpp"
 #include "utilities/globalDefinitions.hpp"
@@ -106,6 +107,16 @@ public:
   inline HeapWord* block_start_const(const void* addr) const;
 };
 
+class G1BlockOffsetSharedArrayMappingChangedListener : public G1MappingChangedListener {
+ public:
+  virtual void on_commit(uint start_idx, size_t num_regions) {
+    // Nothing to do. The BOT is hard-wired to be part of the HeapRegion, and we cannot
+    // retrieve it here since this would cause firing of several asserts. The code
+    // executed after commit of a region already needs to do some re-initialization of
+    // the HeapRegion, so we combine that.
+  }
+};
+
 // This implementation of "G1BlockOffsetTable" divides the covered region
 // into "N"-word subregions (where "N" = 2^"LogN".  An array with an entry
 // for each such subregion indicates how far back one must go to find the
@@ -125,6 +136,7 @@ class G1BlockOffsetSharedArray: public CHeapObj<mtGC> {
   friend class VMStructs;
 
 private:
+  G1BlockOffsetSharedArrayMappingChangedListener _listener;
   // The reserved region covered by the shared array.
   MemRegion _reserved;
 
@@ -133,15 +145,7 @@ private:
 
   // Array for keeping offsets for retrieving object start fast given an
   // address.
-  VirtualSpace _vs;
   u_char* _offset_array;          // byte array keeping backwards offsets
-
-  void check_index(size_t index, const char* msg) const {
-    assert(index < _vs.committed_size(),
-           err_msg("%s - "
-                   "index: " SIZE_FORMAT ", _vs.committed_size: " SIZE_FORMAT,
-                   msg, index, _vs.committed_size()));
-  }
 
   void check_offset(size_t offset, const char* msg) const {
     assert(offset <= N_words,
@@ -152,63 +156,29 @@ private:
 
   // Bounds checking accessors:
   // For performance these have to devolve to array accesses in product builds.
-  u_char offset_array(size_t index) const {
-    check_index(index, "index out of range");
-    return _offset_array[index];
-  }
+  inline u_char offset_array(size_t index) const;
 
-  void set_offset_array(HeapWord* left, HeapWord* right, u_char offset);
-
-  void set_offset_array(size_t index, u_char offset) {
-    check_index(index, "index out of range");
-    check_offset(offset, "offset too large");
+  void set_offset_array_raw(size_t index, u_char offset) {
     _offset_array[index] = offset;
   }
 
-  void set_offset_array(size_t index, HeapWord* high, HeapWord* low) {
-    check_index(index, "index out of range");
-    assert(high >= low, "addresses out of order");
-    check_offset(pointer_delta(high, low), "offset too large");
-    _offset_array[index] = (u_char) pointer_delta(high, low);
-  }
+  inline void set_offset_array(size_t index, u_char offset);
 
-  void set_offset_array(size_t left, size_t right, u_char offset) {
-    check_index(right, "right index out of range");
-    assert(left <= right, "indexes out of order");
-    size_t num_cards = right - left + 1;
-    if (UseMemSetInBOT) {
-      memset(&_offset_array[left], offset, num_cards);
-    } else {
-      size_t i = left;
-      const size_t end = i + num_cards;
-      for (; i < end; i++) {
-        _offset_array[i] = offset;
-      }
-    }
-  }
+  inline void set_offset_array(size_t index, HeapWord* high, HeapWord* low);
 
-  void check_offset_array(size_t index, HeapWord* high, HeapWord* low) const {
-    check_index(index, "index out of range");
-    assert(high >= low, "addresses out of order");
-    check_offset(pointer_delta(high, low), "offset too large");
-    assert(_offset_array[index] == pointer_delta(high, low), "Wrong offset");
-  }
+  inline void set_offset_array(size_t left, size_t right, u_char offset);
 
   bool is_card_boundary(HeapWord* p) const;
 
+public:
+
   // Return the number of slots needed for an offset array
   // that covers mem_region_words words.
-  // We always add an extra slot because if an object
-  // ends on a card boundary we put a 0 in the next
-  // offset array slot, so we want that slot always
-  // to be reserved.
-
-  size_t compute_size(size_t mem_region_words) {
-    size_t number_of_slots = (mem_region_words / N_words) + 1;
-    return ReservedSpace::page_align_size_up(number_of_slots);
+  static size_t compute_size(size_t mem_region_words) {
+    size_t number_of_slots = (mem_region_words / N_words);
+    return ReservedSpace::allocation_align_size_up(number_of_slots);
   }
 
-public:
   enum SomePublicConstants {
     LogN = 9,
     LogN_words = LogN - LogHeapWordSize,
@@ -222,25 +192,19 @@ public:
   // least "init_word_size".) The contents of the initial table are
   // undefined; it is the responsibility of the constituent
   // G1BlockOffsetTable(s) to initialize cards.
-  G1BlockOffsetSharedArray(MemRegion reserved, size_t init_word_size);
-
-  // Notes a change in the committed size of the region covered by the
-  // table.  The "new_word_size" may not be larger than the size of the
-  // reserved region this table covers.
-  void resize(size_t new_word_size);
-
-  void set_bottom(HeapWord* new_bottom);
-
-  // Updates all the BlockOffsetArray's sharing this shared array to
-  // reflect the current "top"'s of their spaces.
-  void update_offset_arrays();
+  G1BlockOffsetSharedArray(MemRegion heap, G1RegionToSpaceMapper* storage);
 
   // Return the appropriate index into "_offset_array" for "p".
   inline size_t index_for(const void* p) const;
+  inline size_t index_for_raw(const void* p) const;
 
   // Return the address indicating the start of the region corresponding to
   // "index" in "_offset_array".
   inline HeapWord* address_for_index(size_t index) const;
+  // Variant of address_for_index that does not check the index for validity.
+  inline HeapWord* address_for_index_raw(size_t index) const {
+    return _reserved.start() + (index << LogN_words);
+  }
 };
 
 // And here is the G1BlockOffsetTable subtype that uses the array.
@@ -255,24 +219,12 @@ private:
     LogN    = G1BlockOffsetSharedArray::LogN
   };
 
-  // The following enums are used by do_block_helper
-  enum Action {
-    Action_single,      // BOT records a single block (see single_block())
-    Action_mark,        // BOT marks the start of a block (see mark_block())
-    Action_check        // Check that BOT records block correctly
-                        // (see verify_single_block()).
-  };
-
   // This is the array, which can be shared by several BlockOffsetArray's
   // servicing different
   G1BlockOffsetSharedArray* _array;
 
   // The space that owns this subregion.
   G1OffsetTableContigSpace* _gsp;
-
-  // If true, array entries are initialized to 0; otherwise, they are
-  // initialized to point backwards to the beginning of the covered region.
-  bool _init_to_zero;
 
   // The portion [_unallocated_block, _sp.end()) of the space that
   // is a single block known not to contain any objects.
@@ -287,9 +239,6 @@ private:
   // Same as above, except that the args here are a card _index_ interval
   // that is closed: [start_index, end_index]
   void set_remainder_to_point_to_start_incl(size_t start, size_t end);
-
-  // A helper function for BOT adjustment/verification work
-  void do_block_internal(HeapWord* blk_start, HeapWord* blk_end, Action action);
 
 protected:
 
@@ -338,11 +287,9 @@ protected:
 
 public:
   // The space may not have it's bottom and top set yet, which is why the
-  // region is passed as a parameter.  If "init_to_zero" is true, the
-  // elements of the array are initialized to zero.  Otherwise, they are
-  // initialized to point backwards to the beginning.
-  G1BlockOffsetArray(G1BlockOffsetSharedArray* array, MemRegion mr,
-                     bool init_to_zero);
+  // region is passed as a parameter. The elements of the array are
+  // initialized to zero.
+  G1BlockOffsetArray(G1BlockOffsetSharedArray* array, MemRegion mr);
 
   // Note: this ought to be part of the constructor, but that would require
   // "this" to be passed as a parameter to a member constructor for
@@ -350,113 +297,18 @@ public:
   // This would be legal C++, but MS VC++ doesn't allow it.
   void set_space(G1OffsetTableContigSpace* sp);
 
-  // Resets the covered region to the given "mr".
-  void set_region(MemRegion mr);
-
   // Resets the covered region to one with the same _bottom as before but
   // the "new_word_size".
   void resize(size_t new_word_size);
 
-  // These must be guaranteed to work properly (i.e., do nothing)
-  // when "blk_start" ("blk" for second version) is "NULL".
-  virtual void alloc_block(HeapWord* blk_start, HeapWord* blk_end);
-  virtual void alloc_block(HeapWord* blk, size_t size) {
-    alloc_block(blk, blk + size);
-  }
-
-  // The following methods are useful and optimized for a
-  // general, non-contiguous space.
-
-  // Given a block [blk_start, blk_start + full_blk_size), and
-  // a left_blk_size < full_blk_size, adjust the BOT to show two
-  // blocks [blk_start, blk_start + left_blk_size) and
-  // [blk_start + left_blk_size, blk_start + full_blk_size).
-  // It is assumed (and verified in the non-product VM) that the
-  // BOT was correct for the original block.
-  void split_block(HeapWord* blk_start, size_t full_blk_size,
-                           size_t left_blk_size);
-
-  // Adjust the BOT to show that it has a single block in the
-  // range [blk_start, blk_start + size). All necessary BOT
-  // cards are adjusted, but _unallocated_block isn't.
-  void single_block(HeapWord* blk_start, HeapWord* blk_end);
-  void single_block(HeapWord* blk, size_t size) {
-    single_block(blk, blk + size);
-  }
-
-  // Adjust BOT to show that it has a block in the range
-  // [blk_start, blk_start + size). Only the first card
-  // of BOT is touched. It is assumed (and verified in the
-  // non-product VM) that the remaining cards of the block
-  // are correct.
-  void mark_block(HeapWord* blk_start, HeapWord* blk_end);
-  void mark_block(HeapWord* blk, size_t size) {
-    mark_block(blk, blk + size);
-  }
-
-  // Adjust _unallocated_block to indicate that a particular
-  // block has been newly allocated or freed. It is assumed (and
-  // verified in the non-product VM) that the BOT is correct for
-  // the given block.
-  inline void allocated(HeapWord* blk_start, HeapWord* blk_end) {
-    // Verify that the BOT shows [blk, blk + blk_size) to be one block.
-    verify_single_block(blk_start, blk_end);
-    if (BlockOffsetArrayUseUnallocatedBlock) {
-      _unallocated_block = MAX2(_unallocated_block, blk_end);
-    }
-  }
-
-  inline void allocated(HeapWord* blk, size_t size) {
-    allocated(blk, blk + size);
-  }
-
-  inline void freed(HeapWord* blk_start, HeapWord* blk_end);
-
-  inline void freed(HeapWord* blk, size_t size);
-
   virtual HeapWord* block_start_unsafe(const void* addr);
   virtual HeapWord* block_start_unsafe_const(const void* addr) const;
-
-  // Requires "addr" to be the start of a card and returns the
-  // start of the block that contains the given address.
-  HeapWord* block_start_careful(const void* addr) const;
-
-  // If true, initialize array slots with no allocated blocks to zero.
-  // Otherwise, make them point back to the front.
-  bool init_to_zero() { return _init_to_zero; }
-
-  // Verification & debugging - ensure that the offset table reflects the fact
-  // that the block [blk_start, blk_end) or [blk, blk + size) is a
-  // single block of storage. NOTE: can;t const this because of
-  // call to non-const do_block_internal() below.
-  inline void verify_single_block(HeapWord* blk_start, HeapWord* blk_end) {
-    if (VerifyBlockOffsetArray) {
-      do_block_internal(blk_start, blk_end, Action_check);
-    }
-  }
-
-  inline void verify_single_block(HeapWord* blk, size_t size) {
-    verify_single_block(blk, blk + size);
-  }
 
   // Used by region verification. Checks that the contents of the
   // BOT reflect that there's a single object that spans the address
   // range [obj_start, obj_start + word_size); returns true if this is
   // the case, returns false if it's not.
   bool verify_for_object(HeapWord* obj_start, size_t word_size) const;
-
-  // Verify that the given block is before _unallocated_block
-  inline void verify_not_unallocated(HeapWord* blk_start,
-                                     HeapWord* blk_end) const {
-    if (BlockOffsetArrayUseUnallocatedBlock) {
-      assert(blk_start < blk_end, "Block inconsistency?");
-      assert(blk_end <= _unallocated_block, "_unallocated_block problem");
-    }
-  }
-
-  inline void verify_not_unallocated(HeapWord* blk, size_t size) const {
-    verify_not_unallocated(blk, blk + size);
-  }
 
   void check_all_cards(size_t left_card, size_t right_card) const;
 
@@ -480,6 +332,12 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
                       blk_start, blk_end);
   }
 
+  // Zero out the entry for _bottom (offset will be zero). Does not check for availability of the
+  // memory first.
+  void zero_bottom_entry_raw();
+  // Variant of initialize_threshold that does not check for availability of the
+  // memory first.
+  HeapWord* initialize_threshold_raw();
  public:
   G1BlockOffsetArrayContigSpace(G1BlockOffsetSharedArray* array, MemRegion mr);
 
@@ -487,8 +345,10 @@ class G1BlockOffsetArrayContigSpace: public G1BlockOffsetArray {
   // bottom of the covered region.
   HeapWord* initialize_threshold();
 
-  // Zero out the entry for _bottom (offset will be zero).
-  void      zero_bottom_entry();
+  void reset_bot() {
+    zero_bottom_entry_raw();
+    initialize_threshold_raw();
+  }
 
   // Return the next threshold, the point at which the table should be
   // updated.

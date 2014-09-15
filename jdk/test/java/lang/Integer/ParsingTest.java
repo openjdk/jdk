@@ -23,24 +23,22 @@
 
 /*
  * @test
- * @bug 5017980 6576055 8041972
+ * @bug 5017980 6576055 8041972 8055251
  * @summary Test parsing methods
  * @author Joseph D. Darcy
  */
 
-import java.lang.IllegalArgumentException;
 import java.lang.IndexOutOfBoundsException;
 import java.lang.NullPointerException;
 import java.lang.RuntimeException;
 
 /**
- * There are eight methods in java.lang.Integer which transform strings
+ * There are seven methods in java.lang.Integer which transform strings
  * into an int or Integer value:
  *
  * public Integer(String s)
  * public static Integer decode(String nm)
- * public static int parseInt(CharSequence s, int radix, int beginIndex, int endIndex)
- * public static int parseInt(CharSequence s, int radix, int beginIndex)
+ * public static int parseInt(CharSequence s, int beginIndex, int endIndex, int radix)
  * public static int parseInt(String s, int radix)
  * public static int parseInt(String s)
  * public static Integer valueOf(String s, int radix)
@@ -55,20 +53,17 @@ import java.lang.RuntimeException;
 public class ParsingTest {
 
     public static void main(String... argv) {
-        check("+100", +100);
-        check("-100", -100);
+        check(+100, "+100");
+        check(-100, "-100");
 
-        check("+0", 0);
-        check("-0", 0);
-        check("+00000", 0);
-        check("-00000", 0);
+        check(0, "+0");
+        check(0, "-0");
+        check(0, "+00000");
+        check(0, "-00000");
 
-        check("+00000", 0, 0, 6);
-        check("-00000", 0, 0, 6);
-
-        check("0", 0);
-        check("1", 1);
-        check("9", 9);
+        check(0, "0");
+        check(1, "1");
+        check(9, "9");
 
         checkFailure("");
         checkFailure("\u0000");
@@ -85,41 +80,37 @@ public class ParsingTest {
         checkFailure("-+6");
         checkFailure("*100");
 
-        check("test-00000", 0, 4, 10);
-        check("test-12345", -12345, 4, 10);
-        check("xx12345yy", 12345, 2, 7);
+        // check offset based methods
+        check(0, "+00000", 0, 6, 10);
+        check(0, "-00000", 0, 6, 10);
+        check(0, "test-00000", 4, 10, 10);
+        check(-12345, "test-12345", 4, 10, 10);
+        check(12345, "xx12345yy", 2, 7, 10);
+        check(15, "xxFyy", 2, 3, 16);
 
-        checkNumberFormatException("", 10, 0);
-        checkNumberFormatException("100", 10, 3);
-        checkNumberFormatException("+1000000", 10, 8);
-        checkNumberFormatException("-1000000", 10, 8);
+        checkNumberFormatException("", 0, 0, 10);
+        checkNumberFormatException("+-6", 0, 3, 10);
+        checkNumberFormatException("1000000", 7, 7, 10);
+        checkNumberFormatException("1000000", 0, 2, Character.MAX_RADIX + 1);
+        checkNumberFormatException("1000000", 0, 2, Character.MIN_RADIX - 1);
 
-        checkNumberFormatException("", 10, 0, 0);
-        checkNumberFormatException("+-6", 10, 0, 3);
-        checkNumberFormatException("1000000", 10, 7);
-        checkNumberFormatException("1000000", 10, 7, 7);
-        checkNumberFormatException("1000000", Character.MAX_RADIX + 1, 0, 2);
-        checkNumberFormatException("1000000", Character.MIN_RADIX - 1, 0, 2);
+        checkIndexOutOfBoundsException("1000000", 10, 4, 10);
+        checkIndexOutOfBoundsException("1000000", -1, 2, Character.MAX_RADIX + 1);
+        checkIndexOutOfBoundsException("1000000", -1, 2, Character.MIN_RADIX - 1);
+        checkIndexOutOfBoundsException("1000000", 10, 2, Character.MAX_RADIX + 1);
+        checkIndexOutOfBoundsException("1000000", 10, 2, Character.MIN_RADIX - 1);
+        checkIndexOutOfBoundsException("-1", 0, 3, 10);
+        checkIndexOutOfBoundsException("-1", 2, 3, 10);
+        checkIndexOutOfBoundsException("-1", -1, 2, 10);
 
-        checkIndexOutOfBoundsException("1000000", 10, 8);
-        checkIndexOutOfBoundsException("1000000", 10, -1);
-        checkIndexOutOfBoundsException("1000000", 10, 10, 4);
-        checkIndexOutOfBoundsException("1000000", Character.MAX_RADIX + 1, -1, 2);
-        checkIndexOutOfBoundsException("1000000", Character.MIN_RADIX - 1, -1, 2);
-        checkIndexOutOfBoundsException("1000000", Character.MAX_RADIX + 1, 10, 2);
-        checkIndexOutOfBoundsException("1000000", Character.MIN_RADIX - 1, 10, 2);
-        checkIndexOutOfBoundsException("-1", 10, 0, 3);
-        checkIndexOutOfBoundsException("-1", 10, 2, 3);
-        checkIndexOutOfBoundsException("-1", 10, -1, 2);
-
-        checkNull(10, 0, 1);
-        checkNull(10, -1, 0);
-        checkNull(10, 0, 0);
-        checkNull(10, 0, -1);
+        checkNull(0, 1, 10);
+        checkNull(-1, 0, 10);
+        checkNull(0, 0, 10);
+        checkNull(0, -1, 10);
         checkNull(-1, -1, -1);
     }
 
-    private static void check(String val, int expected) {
+    private static void check(int expected, String val) {
         int n = Integer.parseInt(val);
         if (n != expected)
             throw new RuntimeException("Integer.parseInt failed. String:" +
@@ -137,11 +128,11 @@ public class ParsingTest {
         }
     }
 
-    private static void checkNumberFormatException(String val, int radix, int start) {
+    private static void checkNumberFormatException(String val, int start, int end, int radix) {
         int n = 0;
         try {
-            n = Integer.parseInt(val, radix, start);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+            n = Integer.parseInt(val, start, end, radix);
+            System.err.println("parseInt(" + val + ", " + start + ", " + end + ", " + radix +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (NumberFormatException nfe) {
@@ -149,23 +140,11 @@ public class ParsingTest {
         }
     }
 
-    private static void checkNumberFormatException(String val, int radix, int start, int end) {
+    private static void checkIndexOutOfBoundsException(String val, int start, int end, int radix) {
         int n = 0;
         try {
-            n = Integer.parseInt(val, radix, start, end);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
-                    ") incorrectly returned " + n);
-            throw new RuntimeException();
-        } catch (NumberFormatException nfe) {
-            ; // Expected
-        }
-    }
-
-    private static void checkIndexOutOfBoundsException(String val, int radix, int start) {
-        int n = 0;
-        try {
-            n = Integer.parseInt(val, radix, start);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start +
+            n = Integer.parseInt(val, start, end, radix);
+            System.err.println("parseInt(" + val + ", " + start + ", " + end + ", " + radix  +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (IndexOutOfBoundsException ioob) {
@@ -173,23 +152,11 @@ public class ParsingTest {
         }
     }
 
-    private static void checkIndexOutOfBoundsException(String val, int radix, int start, int end) {
+    private static void checkNull(int start, int end, int radix) {
         int n = 0;
         try {
-            n = Integer.parseInt(val, radix, start, end);
-            System.err.println("parseInt(" + val + ", " + radix + ", " + start + ", " + end +
-                    ") incorrectly returned " + n);
-            throw new RuntimeException();
-        } catch (IndexOutOfBoundsException ioob) {
-            ; // Expected
-        }
-    }
-
-    private static void checkNull(int radix, int start, int end) {
-        int n = 0;
-        try {
-            n = Integer.parseInt(null, 10, start, end);
-            System.err.println("parseInt(null, " + radix + ", " + start + ", " + end +
+            n = Integer.parseInt(null, start, end, radix);
+            System.err.println("parseInt(null, " + start + ", " + end + ", " + radix +
                     ") incorrectly returned " + n);
             throw new RuntimeException();
         } catch (NullPointerException npe) {
@@ -197,10 +164,10 @@ public class ParsingTest {
         }
     }
 
-    private static void check(String val, int expected, int start, int end) {
-        int n = Integer.parseInt(val, 10, start, end);
+    private static void check(int expected, String val, int start, int end, int radix) {
+        int n = Integer.parseInt(val, start, end, radix);
         if (n != expected)
-            throw new RuntimeException("Integer.parsedInt failed. String:" +
-                    val + ", start: " + start + ", end: " + end + " Result:" + n);
+            throw new RuntimeException("Integer.parsedInt failed. Expected: " + expected + " String: \"" +
+                    val + "\", start: " + start + ", end: " + end + ", radix: " + radix + " Result:" + n);
     }
 }

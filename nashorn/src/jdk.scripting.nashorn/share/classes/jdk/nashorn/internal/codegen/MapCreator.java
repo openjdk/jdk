@@ -52,8 +52,7 @@ public class MapCreator<T> {
      * Constructor
      *
      * @param structure structure to generate map for (a JO subclass)
-     * @param keys      list of keys for map
-     * @param symbols   list of symbols for map
+     * @param tuples    list of tuples for map
      */
     MapCreator(final Class<? extends ScriptObject> structure, final List<MapTuple<T>> tuples) {
         this.structure = structure;
@@ -147,6 +146,15 @@ public class MapCreator<T> {
 
         if (symbol.isFunctionDeclaration()) {
             flags |= Property.IS_FUNCTION_DECLARATION;
+        }
+
+        if (symbol.isConst()) {
+            flags |= Property.NOT_WRITABLE;
+        }
+
+        // Mark symbol as needing declaration. Access before declaration will throw a ReferenceError.
+        if (symbol.isBlockScoped() && symbol.isScope()) {
+            flags |= Property.NEEDS_DECLARATION;
         }
 
         return flags;

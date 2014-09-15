@@ -237,8 +237,10 @@ void G1GCPhaseTimes::note_gc_end() {
   _last_gc_worker_times_ms.verify();
   _last_gc_worker_other_times_ms.verify();
 
-  _last_redirty_logged_cards_time_ms.verify();
-  _last_redirty_logged_cards_processed_cards.verify();
+  if (G1DeferredRSUpdate) {
+    _last_redirty_logged_cards_time_ms.verify();
+    _last_redirty_logged_cards_processed_cards.verify();
+  }
 }
 
 void G1GCPhaseTimes::note_string_dedup_fixup_start() {
@@ -255,6 +257,10 @@ void G1GCPhaseTimes::print_stats(int level, const char* str, double value) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms]", str, value);
 }
 
+void G1GCPhaseTimes::print_stats(int level, const char* str, size_t value) {
+  LineBuffer(level).append_and_print_cr("[%s: "SIZE_FORMAT"]", str, value);
+}
+
 void G1GCPhaseTimes::print_stats(int level, const char* str, double value, uint workers) {
   LineBuffer(level).append_and_print_cr("[%s: %.1lf ms, GC Workers: %u]", str, value, workers);
 }
@@ -268,9 +274,6 @@ double G1GCPhaseTimes::accounted_time_ms() {
 
     // Now subtract the time taken to fix up roots in generated code
     misc_time_ms += _cur_collection_code_root_fixup_time_ms;
-
-    // Strong code root migration time
-    misc_time_ms += _cur_strong_code_root_migration_time_ms;
 
     // Strong code root purge time
     misc_time_ms += _cur_strong_code_root_purge_time_ms;
@@ -322,7 +325,6 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     _last_obj_copy_times_ms.print(1, "Object Copy (ms)");
   }
   print_stats(1, "Code Root Fixup", _cur_collection_code_root_fixup_time_ms);
-  print_stats(1, "Code Root Migration", _cur_strong_code_root_migration_time_ms);
   print_stats(1, "Code Root Purge", _cur_strong_code_root_purge_time_ms);
   if (G1StringDedup::is_enabled()) {
     print_stats(1, "String Dedup Fixup", _cur_string_dedup_fixup_time_ms, _active_gc_threads);
@@ -355,6 +357,14 @@ void G1GCPhaseTimes::print(double pause_time_sec) {
     if (G1Log::finest()) {
       _last_redirty_logged_cards_time_ms.print(3, "Parallel Redirty");
       _last_redirty_logged_cards_processed_cards.print(3, "Redirtied Cards");
+    }
+  }
+  if (G1ReclaimDeadHumongousObjectsAtYoungGC) {
+    print_stats(2, "Humongous Reclaim", _cur_fast_reclaim_humongous_time_ms);
+    if (G1Log::finest()) {
+      print_stats(3, "Humongous Total", _cur_fast_reclaim_humongous_total);
+      print_stats(3, "Humongous Candidate", _cur_fast_reclaim_humongous_candidates);
+      print_stats(3, "Humongous Reclaimed", _cur_fast_reclaim_humongous_reclaimed);
     }
   }
   print_stats(2, "Free CSet",
