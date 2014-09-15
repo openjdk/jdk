@@ -27,6 +27,7 @@ import java.sql.Time;
 import java.sql.Timestamp;
 import java.time.Instant;
 import java.time.LocalDateTime;
+import java.time.ZoneId;
 import java.util.Calendar;
 import static org.testng.Assert.*;
 import org.testng.annotations.DataProvider;
@@ -610,6 +611,12 @@ public class TimestampTests extends BaseTest {
                 "Error with Nanos");
     }
 
+    @Test(dataProvider = "validTimestampLongValues")
+    public void test52(long value, String ts) {
+        Timestamp ts1 = new Timestamp(value);
+        assertEquals(ts1.toString(), ts, "ts1.toString() != ts");
+    }
+
     /*
      * DataProvider used to provide Timestamps which are not valid and are used
      * to validate that an IllegalArgumentException will be thrown from the
@@ -675,6 +682,40 @@ public class TimestampTests extends BaseTest {
             {"1996-12-10 12:26:19.12345678", "1996-12-10 12:26:19.12345678"},
             {"1996-12-10 12:26:19.0", "1996-12-10 12:26:19.0"},
             {"1996-12-10 12:26:19.01230", "1996-12-10 12:26:19.0123"}
+        };
+    }
+
+    @DataProvider(name = "validTimestampLongValues")
+    private Object[][] validTimestampLongValues() {
+        return new Object[][]{
+            {1L, "1970-01-01 01:00:00.001"},
+            {-3600*1000L - 1, "1969-12-31 23:59:59.999"},
+            {-(20000L*365*24*60*60*1000), "18018-08-28 01:00:00.0"},
+            {Timestamp.valueOf("1961-08-30 11:22:33").getTime(), "1961-08-30 11:22:33.0"},
+            {Timestamp.valueOf("1961-08-30 11:22:33.54321000").getTime(), "1961-08-30 11:22:33.543"}, // nanoprecision lost
+            {new Timestamp(114, 10, 10, 10, 10, 10, 100000000).getTime(), "2014-11-10 10:10:10.1"},
+            {new Timestamp(0, 10, 10, 10, 10, 10, 100000).getTime(), "1900-11-10 10:10:10.0"}, // nanoprecision lost
+            {new Date(114, 10, 10).getTime(), "2014-11-10 00:00:00.0"},
+            {new Date(0, 10, 10).getTime(), "1900-11-10 00:00:00.0"},
+            {LocalDateTime.of(1960, 10, 10, 10, 10, 10, 50000).atZone(ZoneId.of("America/Los_Angeles"))
+                .toInstant().toEpochMilli(), "1960-10-10 19:10:10.0"},
+
+            // millisecond timestamps wraps around at year 1, so Long.MIN_VALUE looks similar
+            // Long.MAX_VALUE, while actually representing 292278994 BCE
+            {Long.MIN_VALUE, "292278994-08-17 08:12:55.192"},
+            {Long.MAX_VALUE + 1, "292278994-08-17 08:12:55.192"},
+            {Long.MAX_VALUE, "292278994-08-17 08:12:55.807"},
+            {Long.MIN_VALUE - 1, "292278994-08-17 08:12:55.807"},
+
+            // wrap around point near 0001-01-01, test that we never get a negative year:
+            {-(1970L*365*24*60*60*1000), "0001-04-25 01:00:00.0"},
+            {-(1970L*365*24*60*60*1000 + 115*24*60*60*1000L), "0001-12-31 01:00:00.0"},
+            {-(1970L*365*24*60*60*1000 + 115*24*60*60*1000L - 23*60*60*1000L), "0001-01-01 00:00:00.0"},
+
+            {LocalDateTime.of(0, 1, 1, 10, 10, 10, 50000).atZone(ZoneId.of("America/Los_Angeles"))
+                .toInstant().toEpochMilli() - 2*24*60*60*1000L, "0001-01-01 19:03:08.0"}, // 1 BCE
+            {LocalDateTime.of(0, 1, 1, 10, 10, 10, 50000).atZone(ZoneId.of("America/Los_Angeles"))
+                .toInstant().toEpochMilli() - 3*24*60*60*1000L, "0002-12-31 19:03:08.0"} // 2 BCE
         };
     }
 
