@@ -4737,7 +4737,7 @@ void G1PrintRegionLivenessInfoClosure::get_hum_bytes(size_t* used_bytes,
 }
 
 bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
-  const char* type = "";
+  const char* type       = r->get_type_str();
   HeapWord* bottom       = r->bottom();
   HeapWord* end          = r->end();
   size_t capacity_bytes  = r->capacity();
@@ -4748,15 +4748,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
 
-  if (r->used() == 0) {
-    type = "FREE";
-  } else if (r->is_survivor()) {
-    type = "SURV";
-  } else if (r->is_young()) {
-    type = "EDEN";
-  } else if (r->startsHumongous()) {
-    type = "HUMS";
-
+  if (r->startsHumongous()) {
     assert(_hum_used_bytes == 0 && _hum_capacity_bytes == 0 &&
            _hum_prev_live_bytes == 0 && _hum_next_live_bytes == 0,
            "they should have been zeroed after the last time we used them");
@@ -4769,12 +4761,9 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
                   &prev_live_bytes, &next_live_bytes);
     end = bottom + HeapRegion::GrainWords;
   } else if (r->continuesHumongous()) {
-    type = "HUMC";
     get_hum_bytes(&used_bytes, &capacity_bytes,
                   &prev_live_bytes, &next_live_bytes);
     assert(end == bottom + HeapRegion::GrainWords, "invariant");
-  } else {
-    type = "OLD";
   }
 
   _total_used_bytes      += used_bytes;
