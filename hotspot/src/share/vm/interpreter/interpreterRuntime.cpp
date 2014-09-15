@@ -987,17 +987,6 @@ ConstantPoolCacheEntry *cp_entry))
   int index = cp_entry->field_index();
   if ((ik->field_access_flags(index) & JVM_ACC_FIELD_ACCESS_WATCHED) == 0) return;
 
-  switch(cp_entry->flag_state()) {
-    case btos:    // fall through
-    case ctos:    // fall through
-    case stos:    // fall through
-    case itos:    // fall through
-    case ftos:    // fall through
-    case ltos:    // fall through
-    case dtos:    // fall through
-    case atos: break;
-    default: ShouldNotReachHere(); return;
-  }
   bool is_static = (obj == NULL);
   HandleMark hm(thread);
 

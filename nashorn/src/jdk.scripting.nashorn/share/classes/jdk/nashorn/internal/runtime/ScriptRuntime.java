@@ -108,6 +108,11 @@ public final class ScriptRuntime {
     public static final Call APPLY = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "apply", Object.class, ScriptFunction.class, Object.class, Object[].class);
 
     /**
+     * Throws a reference error for an undefined variable.
+     */
+    public static final Call THROW_REFERENCE_ERROR = staticCall(MethodHandles.lookup(), ScriptRuntime.class, "throwReferenceError", void.class, String.class);
+
+    /**
      * Converts a switch tag value to a simple integer. deflt value if it can't.
      *
      * @param tag   Switch statement tag value.
@@ -379,6 +384,15 @@ public final class ScriptRuntime {
         } catch (final Throwable t) {
             throw new RuntimeException(t);
         }
+    }
+
+    /**
+     * Throws a reference error for an undefined variable.
+     *
+     * @param name the variable name
+     */
+    public static void throwReferenceError(final String name) {
+        throw referenceError("not.defined", name);
     }
 
     /**
@@ -701,6 +715,9 @@ public final class ScriptRuntime {
         }
         if (x instanceof ScriptObject && y instanceof ScriptObject) {
             return x == y;
+        }
+        if (x instanceof ScriptObjectMirror || y instanceof ScriptObjectMirror) {
+            return ScriptObjectMirror.identical(x, y);
         }
         return equalValues(x, y);
     }

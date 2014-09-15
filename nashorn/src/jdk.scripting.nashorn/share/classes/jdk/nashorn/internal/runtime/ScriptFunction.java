@@ -36,6 +36,7 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.util.Collections;
+
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
@@ -44,6 +45,9 @@ import jdk.nashorn.internal.codegen.ApplySpecialization;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeFunction;
+import jdk.nashorn.internal.runtime.ScriptFunctionData;
+import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
@@ -423,9 +427,9 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param constructor constructor
      * @return prototype, or null if given constructor is not a ScriptFunction
      */
-    public static ScriptObject getPrototype(final Object constructor) {
-        if (constructor instanceof ScriptFunction) {
-            final Object proto = ((ScriptFunction)constructor).getPrototype();
+    public static ScriptObject getPrototype(final ScriptFunction constructor) {
+        if (constructor != null) {
+            final Object proto = constructor.getPrototype();
             if (proto instanceof ScriptObject) {
                 return (ScriptObject)proto;
             }
@@ -465,7 +469,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
         final CompiledFunction cf = data.getBestConstructor(type, scope);
-        final GuardedInvocation bestCtorInv = new GuardedInvocation(cf.getConstructor(), cf.getOptimisticAssumptionsSwitchPoint());
+        final GuardedInvocation bestCtorInv = cf.createConstructorInvocation();
         //TODO - ClassCastException
         return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this, cf.getFlags()), bestCtorInv.getSwitchPoints(), null);
     }
@@ -545,11 +549,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
         final CompiledFunction cf = data.getBestInvoker(type, scope);
-        final GuardedInvocation bestInvoker =
-                new GuardedInvocation(
-                        cf.createInvoker(type.returnType(), programPoint),
-                        cf.getOptimisticAssumptionsSwitchPoint());
-
+        final GuardedInvocation bestInvoker = cf.createFunctionInvocation(type.returnType(), programPoint);
         final MethodHandle callHandle = bestInvoker.getInvocation();
 
         if (data.needsCallee()) {
@@ -623,6 +623,23 @@ public abstract class ScriptFunction extends ScriptObject {
             appliedType = appliedType.insertParameterTypes(1, Object.class);
         } else if (appliedFnNeedsWrappedThis) {
             appliedType = appliedType.changeParameterType(1, Object.class);
+        }
+
+        /*
+         * dropArgs is a synthetic method handle that contains any args that we need to
+         * get rid of that come after the arguments array in the apply case. We adapt
+         * the callsite to ask for 3 args only and then dropArguments on the method handle
+         * to make it fit the extraneous args.
+         */
+        MethodType dropArgs = MH.type(void.class);
+        if (isApply && !isFailedApplyToCall) {
+            final int pc = appliedType.parameterCount();
+            for (int i = 3; i < pc; i++) {
+                dropArgs = dropArgs.appendParameterTypes(appliedType.parameterType(i));
+            }
+            if (pc > 3) {
+                appliedType = appliedType.dropParameterTypes(3, pc);
+            }
         }
 
         if (isApply || isFailedApplyToCall) {
@@ -706,6 +723,15 @@ public abstract class ScriptFunction extends ScriptObject {
         }
         inv = MH.dropArguments(inv, 0, applyFnType);
 
+        /*
+         * Dropargs can only be non-()V in the case of isApply && !isFailedApplyToCall, which
+         * is when we need to add arguments to the callsite to catch and ignore the synthetic
+         * extra args that someone has added to the command line.
+         */
+        for (int i = 0; i < dropArgs.parameterCount(); i++) {
+            inv = MH.dropArguments(inv, 4 + i, dropArgs.parameterType(i));
+        }
+
         MethodHandle guard = appliedInvocation.getGuard();
         // If the guard checks the value of "this" but we aren't passing thisArg, insert the default one
         if (!passesThis && guard.type().parameterCount() > 1) {
@@ -742,7 +768,7 @@ public abstract class ScriptFunction extends ScriptObject {
         final Object[] varArgs = (Object[])args[paramCount - 1];
         // -1 'cause we're not passing the vararg array itself
         final int copiedArgCount = args.length - 1;
-        int varArgCount = varArgs.length;
+        final int varArgCount = varArgs.length;
 
         // Spread arguments for the delegate createApplyOrCallCall invocation.
         final Object[] spreadArgs = new Object[copiedArgCount + varArgCount];

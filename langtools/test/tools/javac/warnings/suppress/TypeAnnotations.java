@@ -2,6 +2,7 @@
  * @test /nodynamiccopyright/
  * @bug 8021112
  * @summary Verify that \\@SuppressWarnings("unchecked") works for type annotations
+ * @ignore  8057683 improve ordering of errors with type annotations
  * @build VerifySuppressWarnings
  * @compile/ref=TypeAnnotations.out -XDrawDiagnostics -Xlint:unchecked,deprecation,cast TypeAnnotations.java
  * @run main VerifySuppressWarnings TypeAnnotations.java

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -609,15 +609,15 @@ public:
 // signature types.
 class TypeTuple : public Type {
   TypeTuple( uint cnt, const Type **fields ) : Type(Tuple), _cnt(cnt), _fields(fields) { }
+
+  const uint          _cnt;              // Count of fields
+  const Type ** const _fields;           // Array of field types
+
 public:
   virtual bool eq( const Type *t ) const;
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
-
-public:
-  const uint          _cnt;              // Count of fields
-  const Type ** const _fields;           // Array of field types
 
   // Accessors:
   uint cnt() const { return _cnt; }
@@ -635,6 +635,7 @@ public:
   static const TypeTuple *make_domain(ciInstanceKlass* recv, ciSignature *sig);
 
   // Subroutine call type with space allocated for argument types
+  // Memory for Control, I_O, Memory, FramePtr, and ReturnAdr is allocated implicitly
   static const Type **fields( uint arg_cnt );
 
   virtual const Type *xmeet( const Type *t ) const;
@@ -1447,6 +1448,10 @@ class TypeFunc : public Type {
   virtual int  hash() const;             // Type specific hashing
   virtual bool singleton(void) const;    // TRUE if type is a singleton
   virtual bool empty(void) const;        // TRUE if type is vacuous
+
+  const TypeTuple* const _domain;     // Domain of inputs
+  const TypeTuple* const _range;      // Range of results
+
 public:
   // Constants are shared among ADLC and VM
   enum { Control    = AdlcVMDeps::Control,
@@ -1457,8 +1462,6 @@ public:
          Parms      = AdlcVMDeps::Parms
   };
 
-  const TypeTuple* const _domain;     // Domain of inputs
-  const TypeTuple* const _range;      // Range of results
 
   // Accessors:
   const TypeTuple* domain() const { return _domain; }

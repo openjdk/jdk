@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// BootstrapResolver.java - Resolve entities and URIs internally
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -65,14 +59,17 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
   /** System identifier for OASIS XML Catalog files. */
   public static final String xmlCatalogSysId = "http://www.oasis-open.org/committees/entity/release/1.0/catalog.dtd";
 
+  /** Public identifier for legacy Apache XCatalog files.  There is no official system identifier for XCatalog files. */
+  public static final String xCatalogPubId = "-//DTD XCatalog//EN";
+
   /** Private hash used for public identifiers. */
-  private Hashtable publicMap = new Hashtable();
+  private final Hashtable publicMap = new Hashtable();
 
   /** Private hash used for system identifiers. */
-  private Hashtable systemMap = new Hashtable();
+  private final Hashtable systemMap = new Hashtable();
 
   /** Private hash used for URIs. */
-  private Hashtable uriMap = new Hashtable();
+  private final Hashtable uriMap = new Hashtable();
 
   /** Constructor. */
   public BootstrapResolver() {
@@ -90,6 +87,11 @@ public class BootstrapResolver implements EntityResolver, URIResolver {
     url = this.getClass().getResource("/com/sun/org/apache/xml/internal/resolver/etc/catalog.xsd");
     if (url != null) {
       uriMap.put(xmlCatalogXSD, url.toString());
+    }
+
+    url = this.getClass().getResource("/com/sun/org/apache/xml/internal/resolver/etc/xcatalog.dtd");
+    if (url != null) {
+      publicMap.put(xCatalogPubId, url.toString());
     }
   }
 

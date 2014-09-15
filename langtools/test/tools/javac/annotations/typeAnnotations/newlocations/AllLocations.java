@@ -25,6 +25,7 @@
  * @test
  * @bug 8027262
  * @summary Stress test for type annotatons
+ * @ignore 8057685 javac should not crash compiling type annotations
  * @compile AllLocations.java
  */
 

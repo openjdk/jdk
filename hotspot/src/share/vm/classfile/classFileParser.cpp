@@ -31,6 +31,9 @@
 #include "classfile/javaClasses.hpp"
 #include "classfile/symbolTable.hpp"
 #include "classfile/systemDictionary.hpp"
+#if INCLUDE_CDS
+#include "classfile/systemDictionaryShared.hpp"
+#endif
 #include "classfile/verificationType.hpp"
 #include "classfile/verifier.hpp"
 #include "classfile/vmSymbols.hpp"
@@ -60,6 +63,7 @@
 #include "services/threadService.hpp"
 #include "utilities/array.hpp"
 #include "utilities/globalDefinitions.hpp"
+#include "utilities/ostream.hpp"
 
 // We generally try to create the oops directly when parsing, rather than
 // allocating temporary data structures and copying the bytes twice. A
@@ -3786,7 +3790,15 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   instanceKlassHandle nullHandle;
 
   // Figure out whether we can skip format checking (matching classic VM behavior)
-  _need_verify = Verifier::should_verify_for(class_loader(), verify);
+  if (DumpSharedSpaces) {
+    // verify == true means it's a 'remote' class (i.e., non-boot class)
+    // Verification decision is based on BytecodeVerificationRemote flag
+    // for those classes.
+    _need_verify = (verify) ? BytecodeVerificationRemote :
+                              BytecodeVerificationLocal;
+  } else {
+    _need_verify = Verifier::should_verify_for(class_loader(), verify);
+  }
 
   // Set the verify flag in stream
   cfs->set_verify(_need_verify);
@@ -3804,6 +3816,18 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
   // Version numbers
   u2 minor_version = cfs->get_u2_fast();
   u2 major_version = cfs->get_u2_fast();
+
+  if (DumpSharedSpaces && major_version < JAVA_1_5_VERSION) {
+    ResourceMark rm;
+    warning("Pre JDK 1.5 class not supported by CDS: %u.%u %s",
+            major_version,  minor_version, name->as_C_string());
+    Exceptions::fthrow(
+      THREAD_AND_LOCATION,
+      vmSymbols::java_lang_UnsupportedClassVersionError(),
+      "Unsupported major.minor version for dump time %u.%u",
+      major_version,
+      minor_version);
+  }
 
   // Check version numbers - we check this even with verifier off
   if (!is_supported_version(major_version, minor_version)) {
@@ -3912,6 +3936,18 @@ instanceKlassHandle ClassFileParser::parseClassFile(Symbol* name,
       if (cfs->source() != NULL) tty->print(" from %s", cfs->source());
       tty->print_cr("]");
     }
+#if INCLUDE_CDS
+    if (DumpLoadedClassList != NULL && cfs->source() != NULL && classlist_file->is_open()) {
+      // Only dump the classes that can be stored into CDS archive
+      if (SystemDictionaryShared::is_sharing_possible(loader_data)) {
+        if (name != NULL) {
+          ResourceMark rm(THREAD);
+          classlist_file->print_cr("%s", name->as_C_string());
+          classlist_file->flush();
+        }
+      }
+    }
+#endif
 
     u2 super_class_index = cfs->get_u2_fast();
     instanceKlassHandle super_klass = parse_super_class(super_class_index,

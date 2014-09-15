@@ -88,7 +88,6 @@ public class CompressedClassPointers {
             "-version");
         OutputAnalyzer output = new OutputAnalyzer(pb.start());
         output.shouldContain("HeapBaseMinAddress must be at least");
-        output.shouldContain("HotSpot");
         output.shouldHaveExitValue(0);
     }
 

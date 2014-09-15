@@ -297,17 +297,18 @@ public class AttributeWriter extends BasicWriter
                     writeInnerClassHeader();
                     first = false;
                 }
-                print("   ");
                 for (String name: access_flags.getInnerClassModifiers())
                     print(name + " ");
-                if (info.inner_name_index!=0) {
+                if (info.inner_name_index != 0) {
                     print("#" + info.inner_name_index + "= ");
                 }
                 print("#" + info.inner_class_info_index);
                 if (info.outer_class_info_index != 0) {
                     print(" of #" + info.outer_class_info_index);
                 }
-                print("; //");
+                print(";");
+                tab();
+                print("// ");
                 if (info.inner_name_index != 0) {
                     print(getInnerName(constant_pool, info) + "=");
                 }

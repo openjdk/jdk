@@ -337,7 +337,7 @@ export_optimized:
 export_product_jdk::
 	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) generic_export
 export_optimized_jdk::
-	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR) generic_export
+	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) generic_export
 export_fastdebug_jdk::
 	$(MAKE) BUILD_FLAVOR=$(@:export_%_jdk=%) ALT_EXPORT_PATH=$(JDK_IMAGE_DIR)/$(@:export_%_jdk=%) generic_export
 export_debug_jdk::
@@ -719,6 +719,19 @@ copy_debug_jdk::
 	  ($(CD) $(JDK_IMPORT_PATH) && \
 	   $(TAR) -cf - $(JDK_DIRS)) | \
 	   ($(CD) $(JDK_IMAGE_DIR)/debug && $(TAR) -xf -) ; \
+	fi
+
+copy_optimized_jdk::
+	$(RM) -r $(JDK_IMAGE_DIR)/optimized
+	$(MKDIR) -p $(JDK_IMAGE_DIR)/optimized
+	if [ -d $(JDK_IMPORT_PATH)/optimized ] ; then \
+	  ($(CD) $(JDK_IMPORT_PATH)/optimized && \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
+	   ($(CD) $(JDK_IMAGE_DIR)/optimized && $(TAR) -xf -) ; \
+	else \
+	  ($(CD) $(JDK_IMPORT_PATH) && \
+	   $(TAR) -cf - $(JDK_DIRS)) | \
+	   ($(CD) $(JDK_IMAGE_DIR)/optimized && $(TAR) -xf -) ; \
 	fi
 
 #

@@ -1,16 +1,10 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
- */
-// TextCatalogReader.java - Read text/plain Catalog files
-
-/*
- * Copyright 2001-2004 The Apache Software Foundation or its licensors,
- * as applicable.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,18 +17,19 @@
 
 package com.sun.org.apache.xml.internal.resolver.readers;
 
-import java.io.InputStream;
-import java.io.IOException;
-import java.io.FileNotFoundException;
-import java.net.URL;
-import java.net.URLConnection;
-import java.net.MalformedURLException;
-import java.util.Vector;
-import java.util.Stack;
 import com.sun.org.apache.xml.internal.resolver.Catalog;
 import com.sun.org.apache.xml.internal.resolver.CatalogEntry;
 import com.sun.org.apache.xml.internal.resolver.CatalogException;
 import com.sun.org.apache.xml.internal.resolver.readers.CatalogReader;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.io.InputStream;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLConnection;
+import java.util.Locale;
+import java.util.Stack;
+import java.util.Vector;
 
 /**
  * Parses plain text Catalog files.
@@ -140,7 +135,7 @@ public class TextCatalogReader implements CatalogReader {
         if (caseSensitive) {
           entryToken = token;
         } else {
-          entryToken = token.toUpperCase();
+          entryToken = token.toUpperCase(Locale.ENGLISH);
         }
 
         try {

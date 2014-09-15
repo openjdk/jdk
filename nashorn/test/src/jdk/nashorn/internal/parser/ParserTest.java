@@ -82,11 +82,16 @@ public class ParserTest {
             parseTestSet(TEST262_SUITE_DIR, new TestFilter() {
                 @Override
                 public boolean exclude(final File file, final String content) {
-                    return content.indexOf("@negative") != -1;
+                    return content != null && content.contains("@negative");
                 }
             });
         }
-        parseTestSet(TEST_BASIC_DIR, null);
+        parseTestSet(TEST_BASIC_DIR,  new TestFilter() {
+            @Override
+            public boolean exclude(final File file, final String content) {
+                return file.getName().equals("es6");
+            }
+        });
     }
 
     private void parseTestSet(final String testSet, final TestFilter filter) {
@@ -120,6 +125,9 @@ public class ParserTest {
     private int skipped;
 
     private void parseJSDirectory(final File dir, final TestFilter filter) {
+        if (filter != null && filter.exclude(dir, null)) {
+            return;
+        }
         for (final File f : dir.listFiles()) {
             if (f.isDirectory()) {
                 parseJSDirectory(f, filter);

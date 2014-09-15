@@ -325,6 +325,10 @@ ifeq ($(USE_CLANG), true)
   else ifeq ($(shell expr $(CC_VER_MAJOR) = 5 \& $(CC_VER_MINOR) = 1), 1)
     OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT)
     OPT_CFLAGS/unsafe.o += -O1
+  # Clang 6.0 
+  else ifeq ($(shell expr $(CC_VER_MAJOR) = 6 \& $(CC_VER_MINOR) = 0), 1) 
+    OPT_CFLAGS/loopTransform.o += $(OPT_CFLAGS/NOOPT) 
+    OPT_CFLAGS/unsafe.o += -O1 
   else
     $(error "Update compiler workarounds for Clang $(CC_VER_MAJOR).$(CC_VER_MINOR)")
   endif
@@ -508,13 +512,9 @@ endif
 
 ifeq ($(USE_CLANG),)
   # Enable bounds checking.
-  # _FORTIFY_SOURCE appears in GCC 4.0+
   ifeq "$(shell expr \( $(CC_VER_MAJOR) \> 3 \) )" "1"
-    # compile time size bounds checks
-    FASTDEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=1
-
-    # and runtime size bounds checks and paranoid stack smashing checks.
-    DEBUG_CFLAGS += -U_FORTIFY_SOURCE -D_FORTIFY_SOURCE=2 -fstack-protector-all --param ssp-buffer-size=1
+    # stack smashing checks.
+    DEBUG_CFLAGS += -fstack-protector-all --param ssp-buffer-size=1
   endif
 endif
 

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -27,14 +27,13 @@
  * @test
  * @bug 8009640
  * @summary -profile <compact> does not work when -bootclasspath specified
- * @library /tools/javac/lib
+ * @library /tools/lib
  * @build ToolBox
  * @run main CheckRejectProfileBCPOptionsIfUsedTogetherTest
  */
 
 import com.sun.tools.javac.util.Assert;
-import java.util.ArrayList;
-import java.util.List;
+import java.nio.file.Paths;
 
 public class CheckRejectProfileBCPOptionsIfUsedTogetherTest {
 
@@ -44,21 +43,18 @@ public class CheckRejectProfileBCPOptionsIfUsedTogetherTest {
         "}";
 
     public static void main(String args[]) throws Exception {
-        List<String> errOutput = new ArrayList<>();
-        String testJDK = ToolBox.jdkUnderTest;
-        ToolBox.createJavaFileFromSource(TestSrc);
+        ToolBox tb = new ToolBox();
+        tb.writeFile("Test.java", TestSrc);
 
-        ToolBox.AnyToolArgs javacParams =
-                new ToolBox.AnyToolArgs(ToolBox.Expect.FAIL)
-                .appendArgs(ToolBox.javacBinary)
-                .appendArgs(ToolBox.testToolVMOpts)
-                .appendArgs("-profile", "compact1", "-bootclasspath",
-                testJDK + "/jre/lib/rt.jar", "Test.java")
-                .setErrOutput(errOutput);
+        ToolBox.Result result = tb.new JavacTask(ToolBox.Mode.CMDLINE)
+                .options("-profile", "compact1",
+                        "-bootclasspath", Paths.get(ToolBox.testJDK, "jre/lib/rt.jar").toString())
+                .files("Test.java")
+                .run(ToolBox.Expect.FAIL)
+                .writeAll();
 
-        ToolBox.executeCommand(javacParams);
-
-        Assert.check(errOutput.get(0).startsWith(
+        String out = result.getOutput(ToolBox.OutputKind.DIRECT);
+        Assert.check(out.startsWith(
                 "javac: profile and bootclasspath options cannot be used together"),
                 "Incorrect javac error output");
     }

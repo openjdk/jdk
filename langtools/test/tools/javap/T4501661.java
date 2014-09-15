@@ -38,10 +38,12 @@ public class T4501661 {
         File javaFile = writeTestFile();
         File classFile = compileTestFile(javaFile);
         boolean[] values = { false, true };
-        for (boolean priv: values) {
-            for (boolean prot: values) {
-                for (boolean publ: values) {
-                    test(priv, prot, publ, classFile);
+        for (boolean pack : values) {
+            for (boolean priv : values) {
+                for (boolean prot : values) {
+                    for (boolean publ : values) {
+                        test(pack, priv, prot, publ, classFile);
+                    }
                 }
             }
         }
@@ -50,8 +52,10 @@ public class T4501661 {
             throw new Exception(errors + " errors found");
     }
 
-    void test(boolean priv, boolean prot, boolean publ, File classFile) {
+    void test(boolean pack, boolean priv, boolean prot, boolean publ, File classFile) {
         List<String> args = new ArrayList<String>();
+        if (pack)
+            args.add("-package");
         if (priv)
             args.add("-private");
         if (prot)

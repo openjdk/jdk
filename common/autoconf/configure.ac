@@ -54,6 +54,7 @@ m4_include([toolchain_windows.m4])
 
 AC_DEFUN_ONCE([CUSTOM_EARLY_HOOK])
 AC_DEFUN_ONCE([CUSTOM_LATE_HOOK])
+AC_DEFUN_ONCE([CUSTOM_SUMMARY_AND_WARNINGS_HOOK])
 
 # This line needs to be here, verbatim, after all includes and the dummy hook
 # definitions. It is replaced with custom functionality when building
@@ -142,7 +143,6 @@ JDKOPT_SETUP_JDK_VERSION_NUMBERS
 ###############################################################################
 
 BOOTJDK_SETUP_BOOT_JDK
-BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
 
 ###############################################################################
 #
@@ -233,6 +233,9 @@ BPERF_SETUP_BUILD_CORES
 BPERF_SETUP_BUILD_MEMORY
 BPERF_SETUP_BUILD_JOBS
 
+# Setup arguments for the boot jdk (after cores and memory have been setup)
+BOOTJDK_SETUP_BOOT_JDK_ARGUMENTS
+
 # Setup smart javac (after cores and memory have been setup)
 BPERF_SETUP_SMART_JAVAC
 
@@ -271,3 +274,4 @@ $CHMOD +x $OUTPUT_ROOT/compare.sh
 
 # Finally output some useful information to the user
 HELP_PRINT_SUMMARY_AND_WARNINGS
+CUSTOM_SUMMARY_AND_WARNINGS_HOOK

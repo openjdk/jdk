@@ -47,13 +47,16 @@
 #include "utilities/exceptions.hpp"
 
 #if INCLUDE_ALL_GCS
+#include "gc_implementation/parallelScavenge/parallelScavengeHeap.inline.hpp"
 #include "gc_implementation/g1/concurrentMark.hpp"
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/heapRegionRemSet.hpp"
 #endif // INCLUDE_ALL_GCS
 
-#ifdef INCLUDE_NMT
+#if INCLUDE_NMT
+#include "services/mallocSiteTable.hpp"
 #include "services/memTracker.hpp"
+#include "utilities/nativeCallStack.hpp"
 #endif // INCLUDE_NMT
 
 #include "compiler/compileBroker.hpp"
@@ -225,6 +228,30 @@ WB_ENTRY(jint, WB_StressVirtualSpaceResize(JNIEnv* env, jobject o,
                                         (size_t) magnitude, (size_t) iterations);
 WB_END
 
+WB_ENTRY(jboolean, WB_isObjectInOldGen(JNIEnv* env, jobject o, jobject obj))
+  oop p = JNIHandles::resolve(obj);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    G1CollectedHeap* g1 = G1CollectedHeap::heap();
+    const HeapRegion* hr = g1->heap_region_containing(p);
+    if (hr == NULL) {
+      return false;
+    }
+    return !(hr->is_young());
+  } else if (UseParallelGC) {
+    ParallelScavengeHeap* psh = ParallelScavengeHeap::heap();
+    return !psh->is_in_young(p);
+  }
+#endif // INCLUDE_ALL_GCS
+  GenCollectedHeap* gch = GenCollectedHeap::heap();
+  return !gch->is_in_young(p);
+WB_END
+
+WB_ENTRY(jlong, WB_GetObjectSize(JNIEnv* env, jobject o, jobject obj))
+  oop p = JNIHandles::resolve(obj);
+  return p->size() * HeapWordSize;
+WB_END
+
 #if INCLUDE_ALL_GCS
 WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
@@ -235,7 +262,7 @@ WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
-  size_t nr = g1->free_regions();
+  size_t nr = g1->num_free_regions();
   return (jlong)nr;
 WB_END
 
@@ -255,12 +282,16 @@ WB_END
 // NMT picks it up correctly
 WB_ENTRY(jlong, WB_NMTMalloc(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
-
-  if (MemTracker::is_on() && !MemTracker::shutdown_in_progress()) {
     addr = (jlong)(uintptr_t)os::malloc(size, mtTest);
-  }
-
   return addr;
+WB_END
+
+// Alloc memory with pseudo call stack. The test can create psudo malloc
+// allocation site to stress the malloc tracking.
+WB_ENTRY(jlong, WB_NMTMallocWithPseudoStack(JNIEnv* env, jobject o, jlong size, jint pseudo_stack))
+  address pc = (address)(size_t)pseudo_stack;
+  NativeCallStack stack(&pc, 1);
+  return (jlong)os::malloc(size, mtTest, stack);
 WB_END
 
 // Free the memory allocated by NMTAllocTest
@@ -271,10 +302,8 @@ WB_END
 WB_ENTRY(jlong, WB_NMTReserveMemory(JNIEnv* env, jobject o, jlong size))
   jlong addr = 0;
 
-  if (MemTracker::is_on() && !MemTracker::shutdown_in_progress()) {
     addr = (jlong)(uintptr_t)os::reserve_memory(size);
     MemTracker::record_virtual_memory_type((address)addr, mtTest);
-  }
 
   return addr;
 WB_END
@@ -293,19 +322,19 @@ WB_ENTRY(void, WB_NMTReleaseMemory(JNIEnv* env, jobject o, jlong addr, jlong siz
   os::release_memory((char *)(uintptr_t)addr, size);
 WB_END
 
-// Block until the current generation of NMT data to be merged, used to reliably test the NMT feature
-WB_ENTRY(jboolean, WB_NMTWaitForDataMerge(JNIEnv* env))
-
-  if (!MemTracker::is_on() || MemTracker::shutdown_in_progress()) {
-    return false;
-  }
-
-  return MemTracker::wbtest_wait_for_data_merge();
-WB_END
-
 WB_ENTRY(jboolean, WB_NMTIsDetailSupported(JNIEnv* env))
-  return MemTracker::tracking_level() == MemTracker::NMT_detail;
+  return MemTracker::tracking_level() == NMT_detail;
 WB_END
+
+WB_ENTRY(void, WB_NMTOverflowHashBucket(JNIEnv* env, jobject o, jlong num))
+  address pc = (address)1;
+  for (jlong index = 0; index < num; index ++) {
+    NativeCallStack stack(&pc, 1);
+    os::malloc(0, mtTest, stack);
+    pc += MallocSiteTable::hash_buckets();
+  }
+WB_END
+
 
 #endif // INCLUDE_NMT
 
@@ -597,6 +626,15 @@ WB_ENTRY(jobject, WB_GetUint64VMFlag(JNIEnv* env, jobject o, jstring name))
   return NULL;
 WB_END
 
+WB_ENTRY(jobject, WB_GetSizeTVMFlag(JNIEnv* env, jobject o, jstring name))
+  uintx result;
+  if (GetVMFlag <size_t> (thread, env, name, &result, &CommandLineFlags::size_tAt)) {
+    ThreadToNativeFromVM ttnfv(thread);   // can't be in VM when we call JNI
+    return longBox(thread, env, result);
+  }
+  return NULL;
+WB_END
+
 WB_ENTRY(jobject, WB_GetDoubleVMFlag(JNIEnv* env, jobject o, jstring name))
   double result;
   if (GetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAt)) {
@@ -637,6 +675,11 @@ WB_ENTRY(void, WB_SetUint64VMFlag(JNIEnv* env, jobject o, jstring name, jlong va
   SetVMFlag <uint64_t> (thread, env, name, &result, &CommandLineFlags::uint64_tAtPut);
 WB_END
 
+WB_ENTRY(void, WB_SetSizeTVMFlag(JNIEnv* env, jobject o, jstring name, jlong value))
+  size_t result = value;
+  SetVMFlag <size_t> (thread, env, name, &result, &CommandLineFlags::size_tAtPut);
+WB_END
+
 WB_ENTRY(void, WB_SetDoubleVMFlag(JNIEnv* env, jobject o, jstring name, jdouble value))
   double result = value;
   SetVMFlag <double> (thread, env, name, &result, &CommandLineFlags::doubleAtPut);
@@ -672,6 +715,9 @@ WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collect(GCCause::_last_ditch_collection);
 WB_END
 
+WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
+  Universe::heap()->collect(GCCause::_wb_young_gc);
+WB_END
 
 WB_ENTRY(void, WB_ReadReservedMemory(JNIEnv* env, jobject o))
   // static+volatile in order to force the read to happen
@@ -823,6 +869,8 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
 
 static JNINativeMethod methods[] = {
   {CC"getObjectAddress",   CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectAddress  },
+  {CC"getObjectSize",      CC"(Ljava/lang/Object;)J", (void*)&WB_GetObjectSize     },
+  {CC"isObjectInOldGen",   CC"(Ljava/lang/Object;)Z", (void*)&WB_isObjectInOldGen  },
   {CC"getHeapOopSize",     CC"()I",                   (void*)&WB_GetHeapOopSize    },
   {CC"isClassAlive0",      CC"(Ljava/lang/String;)Z", (void*)&WB_IsClassAlive      },
   {CC"parseCommandLine",
@@ -843,12 +891,13 @@ static JNINativeMethod methods[] = {
 #endif // INCLUDE_ALL_GCS
 #if INCLUDE_NMT
   {CC"NMTMalloc",           CC"(J)J",                 (void*)&WB_NMTMalloc          },
+  {CC"NMTMallocWithPseudoStack", CC"(JI)J",           (void*)&WB_NMTMallocWithPseudoStack},
   {CC"NMTFree",             CC"(J)V",                 (void*)&WB_NMTFree            },
   {CC"NMTReserveMemory",    CC"(J)J",                 (void*)&WB_NMTReserveMemory   },
   {CC"NMTCommitMemory",     CC"(JJ)V",                (void*)&WB_NMTCommitMemory    },
   {CC"NMTUncommitMemory",   CC"(JJ)V",                (void*)&WB_NMTUncommitMemory  },
   {CC"NMTReleaseMemory",    CC"(JJ)V",                (void*)&WB_NMTReleaseMemory   },
-  {CC"NMTWaitForDataMerge", CC"()Z",                  (void*)&WB_NMTWaitForDataMerge},
+  {CC"NMTOverflowHashBucket", CC"(J)V",               (void*)&WB_NMTOverflowHashBucket},
   {CC"NMTIsDetailSupported",CC"()Z",                  (void*)&WB_NMTIsDetailSupported},
 #endif // INCLUDE_NMT
   {CC"deoptimizeAll",      CC"()V",                   (void*)&WB_DeoptimizeAll     },
@@ -880,6 +929,7 @@ static JNINativeMethod methods[] = {
   {CC"setIntxVMFlag",      CC"(Ljava/lang/String;J)V",(void*)&WB_SetIntxVMFlag},
   {CC"setUintxVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetUintxVMFlag},
   {CC"setUint64VMFlag",    CC"(Ljava/lang/String;J)V",(void*)&WB_SetUint64VMFlag},
+  {CC"setSizeTVMFlag",     CC"(Ljava/lang/String;J)V",(void*)&WB_SetSizeTVMFlag},
   {CC"setDoubleVMFlag",    CC"(Ljava/lang/String;D)V",(void*)&WB_SetDoubleVMFlag},
   {CC"setStringVMFlag",    CC"(Ljava/lang/String;Ljava/lang/String;)V",
                                                       (void*)&WB_SetStringVMFlag},
@@ -891,12 +941,15 @@ static JNINativeMethod methods[] = {
                                                       (void*)&WB_GetUintxVMFlag},
   {CC"getUint64VMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Long;",
                                                       (void*)&WB_GetUint64VMFlag},
+  {CC"getSizeTVMFlag",     CC"(Ljava/lang/String;)Ljava/lang/Long;",
+                                                      (void*)&WB_GetSizeTVMFlag},
   {CC"getDoubleVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/Double;",
                                                       (void*)&WB_GetDoubleVMFlag},
   {CC"getStringVMFlag",    CC"(Ljava/lang/String;)Ljava/lang/String;",
                                                       (void*)&WB_GetStringVMFlag},
   {CC"isInStringTable",    CC"(Ljava/lang/String;)Z", (void*)&WB_IsInStringTable  },
   {CC"fullGC",   CC"()V",                             (void*)&WB_FullGC },
+  {CC"youngGC",  CC"()V",                             (void*)&WB_YoungGC },
   {CC"readReservedMemory", CC"()V",                   (void*)&WB_ReadReservedMemory },
   {CC"allocateMetaspace",
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },

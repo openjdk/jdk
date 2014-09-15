@@ -80,17 +80,20 @@ public interface CodeInstaller<T> {
     public long getUniqueScriptId();
 
     /**
-     * Get next unique eval id
-     * @return unique eval id
-     */
-    public long getUniqueEvalId();
-
-    /**
      * Store a compiled script for later reuse
      * @param source the script source
      * @param mainClassName the main class name
      * @param classBytes map of class names to class bytes
      * @param constants constants array
      */
-    public void storeCompiledScript(Source source, String mainClassName, Map<String, byte[]> classBytes, Object[] constants);
+    public void storeScript(String cacheKey, Source source, String mainClassName, Map<String, byte[]> classBytes,
+                            Map<Integer, FunctionInitializer> initializers, Object[] constants, int compilationId);
+
+    /**
+     * Load a previously compiled script
+     * @param source the script source
+     * @param functionKey the function id and signature
+     * @return compiled script data
+     */
+    public StoredScript loadScript(Source source, String functionKey);
 }

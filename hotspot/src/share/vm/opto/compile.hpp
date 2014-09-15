@@ -344,6 +344,8 @@ class Compile : public Phase {
   VectorSet             _dead_node_list;        // Set of dead nodes
   uint                  _dead_node_count;       // Number of dead nodes; VectorSet::Size() is O(N).
                                                 // So use this to keep count and make the call O(1).
+  DEBUG_ONLY( Unique_Node_List* _modified_nodes; )  // List of nodes which inputs were modified
+
   debug_only(static int _debug_idx;)            // Monotonic counter (not reset), use -XX:BreakAtNode=<idx>
   Arena                 _node_arena;            // Arena for new-space Nodes
   Arena                 _old_arena;             // Arena for old-space Nodes, lifetime during xform
@@ -599,6 +601,10 @@ class Compile : public Phase {
   bool          method_has_option(const char * option) {
     return method() != NULL && method()->has_option(option);
   }
+  template<typename T>
+  bool          method_has_option_value(const char * option, T& value) {
+    return method() != NULL && method()->has_option_value(option, value);
+  }
 #ifndef PRODUCT
   bool          trace_opto_output() const       { return _trace_opto_output; }
   bool              parsed_irreducible_loop() const { return _parsed_irreducible_loop; }
@@ -765,6 +771,11 @@ class Compile : public Phase {
   uint         count_live_nodes_by_graph_walk();
   void         print_missing_nodes();
 #endif
+
+  // Record modified nodes to check that they are put on IGVN worklist
+  void         record_modified_node(Node* n) NOT_DEBUG_RETURN;
+  void         remove_modified_node(Node* n) NOT_DEBUG_RETURN;
+  DEBUG_ONLY( Unique_Node_List*   modified_nodes() const { return _modified_nodes; } )
 
   // Constant table
   ConstantTable&   constant_table() { return _constant_table; }
@@ -1192,6 +1203,10 @@ class Compile : public Phase {
 
   // Definitions of pd methods
   static void pd_compiler2_init();
+
+  // Static parse-time type checking logic for gen_subtype_check:
+  enum { SSC_always_false, SSC_always_true, SSC_easy_test, SSC_full_test };
+  int static_subtype_check(ciKlass* superk, ciKlass* subk);
 
   // Auxiliary method for randomized fuzzing/stressing
   static bool randomized_select(int count);

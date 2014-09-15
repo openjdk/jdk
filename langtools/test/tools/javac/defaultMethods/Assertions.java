@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,19 +25,6 @@ package test;
 import java.util.Arrays;
 import java.util.HashSet;
 import java.util.Set;
-
-/*
- * @test
- * @bug 8025141
- * @summary Interfaces must not contain non-public fields, ensure $assertionsDisabled
- *          is not generated into an interface
- * @compile Assertions.java
- * @run main/othervm -da test.Assertions
- * @run main/othervm -ea:test.Assertions test.Assertions Inner
- * @run main/othervm -ea:test.Outer test.Assertions Outer
- * @run main/othervm -ea:test.Another test.Assertions Another.Inner
- * @run main/othervm -ea:test... test.Assertions Inner Outer Another.Inner
- */
 
 public class Assertions {
     interface Inner {

@@ -357,7 +357,7 @@ class CompilerInterfaceVC10 extends CompilerInterface {
     }
 
     @Override
-    Vector getDebugCompilerFlags(String opt) {
+    Vector getDebugCompilerFlags(String opt, String platformName) {
         Vector rv = new Vector();
 
         // Set /On option
@@ -369,6 +369,10 @@ class CompilerInterfaceVC10 extends CompilerInterface {
         addAttr(rv, "RuntimeLibrary", "MultiThreadedDLL");
         // Set /Oy- option
         addAttr(rv, "OmitFramePointers", "false");
+        // Set /homeparams for x64 debug builds
+        if(platformName.equals("x64")) {
+            addAttr(rv, "AdditionalOptions", "/homeparams");
+        }
 
         return rv;
     }

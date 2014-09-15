@@ -47,6 +47,8 @@ import com.sun.tools.javac.api.ClientCodeWrapper;
 import com.sun.tools.javac.file.JavacFileManager;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.Log;
 import com.sun.tools.javadoc.ToolOption;
 
@@ -60,7 +62,7 @@ import com.sun.tools.javadoc.ToolOption;
  * or deletion without notice.</b></p>
  */
 public class JavadocTool implements DocumentationTool {
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public DocumentationTask getTask(
             Writer out,
             JavaFileManager fileManager,
@@ -121,7 +123,7 @@ public class JavadocTool implements DocumentationTool {
     }
 
     // TODO: used shared static method in JavacFileManager
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public StandardJavaFileManager getStandardFileManager(
             DiagnosticListener<? super JavaFileObject> diagnosticListener,
             Locale locale,
@@ -137,7 +139,7 @@ public class JavadocTool implements DocumentationTool {
         return new JavacFileManager(context, true, charset);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public int run(InputStream in, OutputStream out, OutputStream err, String... arguments) {
         PrintWriter err_pw = new PrintWriter(err == null ? System.err : err, true);
         PrintWriter out_pw = new PrintWriter(out == null ? System.out : out);
@@ -152,13 +154,13 @@ public class JavadocTool implements DocumentationTool {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Set<SourceVersion> getSourceVersions() {
         return Collections.unmodifiableSet(
                 EnumSet.range(SourceVersion.RELEASE_3, SourceVersion.latest()));
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public int isSupportedOption(String option) {
         if (option == null)
             throw new NullPointerException();

@@ -3402,7 +3402,7 @@ BytecodeInterpreter::print() {
   tty->print_cr("osr._osr_buf: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_buf);
   tty->print_cr("osr._osr_entry: " INTPTR_FORMAT, (uintptr_t) this->_result._osr._osr_entry);
   tty->print_cr("prev_link: " INTPTR_FORMAT, (uintptr_t) this->_prev_link);
-  tty->print_cr("native_mirror: " INTPTR_FORMAT, (uintptr_t) this->_oop_temp);
+  tty->print_cr("native_mirror: " INTPTR_FORMAT, (uintptr_t) p2i(this->_oop_temp));
   tty->print_cr("stack_base: " INTPTR_FORMAT, (uintptr_t) this->_stack_base);
   tty->print_cr("stack_limit: " INTPTR_FORMAT, (uintptr_t) this->_stack_limit);
   tty->print_cr("monitor_base: " INTPTR_FORMAT, (uintptr_t) this->_monitor_base);

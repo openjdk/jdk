@@ -39,7 +39,7 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  * Node indicating code is split across classes.
  */
 @Immutable
-public class SplitNode extends LexicalContextStatement implements Labels {
+public class SplitNode extends LexicalContextStatement implements Labels, CompileUnitHolder {
     /** Split node method name. */
     private final String name;
 
@@ -116,6 +116,7 @@ public class SplitNode extends LexicalContextStatement implements Labels {
      * Get the compile unit for this split node
      * @return compile unit
      */
+    @Override
     public CompileUnit getCompileUnit() {
         return compileUnit;
     }

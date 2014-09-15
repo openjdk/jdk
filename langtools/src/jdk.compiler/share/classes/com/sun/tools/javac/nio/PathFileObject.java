@@ -44,6 +44,8 @@ import javax.lang.model.element.NestingKind;
 import javax.tools.JavaFileObject;
 
 import com.sun.tools.javac.util.BaseFileManager;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 
 /**
@@ -150,12 +152,12 @@ abstract class PathFileObject implements JavaFileObject {
         return path;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Kind getKind() {
         return BaseFileManager.getKind(path.getFileName().toString());
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean isNameCompatible(String simpleName, Kind kind) {
         simpleName.getClass();
         // null check
@@ -177,45 +179,45 @@ abstract class PathFileObject implements JavaFileObject {
         return false;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public NestingKind getNestingKind() {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Modifier getAccessLevel() {
         return null;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public URI toUri() {
         return path.toUri();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public String getName() {
         return path.toString();
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public InputStream openInputStream() throws IOException {
         return Files.newInputStream(path);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public OutputStream openOutputStream() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return Files.newOutputStream(path);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Reader openReader(boolean ignoreEncodingErrors) throws IOException {
         CharsetDecoder decoder = fileManager.getDecoder(fileManager.getEncodingName(), ignoreEncodingErrors);
         return new InputStreamReader(openInputStream(), decoder);
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public CharSequence getCharContent(boolean ignoreEncodingErrors) throws IOException {
         CharBuffer cb = fileManager.getCachedContent(this);
         if (cb == null) {
@@ -236,14 +238,14 @@ abstract class PathFileObject implements JavaFileObject {
         return cb;
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public Writer openWriter() throws IOException {
         fileManager.flushCache(this);
         ensureParentDirectoriesExist();
         return new OutputStreamWriter(Files.newOutputStream(path), fileManager.getEncodingName());
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public long getLastModified() {
         try {
             return Files.getLastModifiedTime(path).toMillis();
@@ -252,7 +254,7 @@ abstract class PathFileObject implements JavaFileObject {
         }
     }
 
-    @Override
+    @Override @DefinedBy(Api.COMPILER)
     public boolean delete() {
         try {
             Files.delete(path);

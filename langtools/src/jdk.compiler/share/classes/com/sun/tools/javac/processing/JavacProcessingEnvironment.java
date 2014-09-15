@@ -64,6 +64,8 @@ import com.sun.tools.javac.util.Assert;
 import com.sun.tools.javac.util.ClientCodeException;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.Convert;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
 import com.sun.tools.javac.util.JCDiagnostic;
 import com.sun.tools.javac.util.JavacMessages;
 import com.sun.tools.javac.util.List;
@@ -757,20 +759,20 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             this.elements = elements;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<TypeElement> visitPackage(PackageElement e, Set<TypeElement> p) {
             // Don't scan enclosed elements of a package
             return p;
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<TypeElement> visitType(TypeElement e, Set<TypeElement> p) {
             // Type parameters are not considered to be enclosed by a type
             scan(e.getTypeParameters(), p);
             return super.visitType(e, p);
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<TypeElement> visitExecutable(ExecutableElement e, Set<TypeElement> p) {
             // Type parameters are not considered to be enclosed by an executable
             scan(e.getTypeParameters(), p);
@@ -785,7 +787,7 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
             }
         }
 
-        @Override
+        @Override @DefinedBy(Api.LANGUAGE_MODEL)
         public Set<TypeElement> scan(Element e, Set<TypeElement> p) {
             addAnnotations(e, p);
             return super.scan(e, p);
@@ -1390,30 +1392,37 @@ public class JavacProcessingEnvironment implements ProcessingEnvironment, Closea
      * processors.
      * {@literal "-Afoo=bar"} should be {@literal "-Afoo" => "bar"}.
      */
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Map<String,String> getOptions() {
         return processorOptions;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Messager getMessager() {
         return messager;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Filer getFiler() {
         return filer;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public JavacElements getElementUtils() {
         return elementUtils;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public JavacTypes getTypeUtils() {
         return typeUtils;
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public SourceVersion getSourceVersion() {
         return Source.toSourceVersion(source);
     }
 
+    @DefinedBy(Api.ANNOTATION_PROCESSING)
     public Locale getLocale() {
         return messages.getCurrentLocale();
     }

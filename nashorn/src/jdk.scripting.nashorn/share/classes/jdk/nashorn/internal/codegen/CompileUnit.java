@@ -25,12 +25,8 @@
 
 package jdk.nashorn.internal.codegen;
 
-import java.util.Collections;
-import java.util.LinkedHashSet;
 import java.util.Set;
 import java.util.TreeSet;
-import jdk.nashorn.internal.ir.FunctionNode;
-import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 
 /**
  * Used to track split class compilation.
@@ -46,35 +42,9 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     private Class<?> clazz;
 
-    private Set<FunctionInitializer> functionInitializers = new LinkedHashSet<>();
+    private boolean isUsed;
 
-    private static class FunctionInitializer {
-        final RecompilableScriptFunctionData data;
-        final FunctionNode functionNode;
-
-        FunctionInitializer(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
-            this.data = data;
-            this.functionNode = functionNode;
-        }
-
-        void initializeCode() {
-            data.initializeCode(functionNode);
-        }
-
-        @Override
-        public int hashCode() {
-            return data.hashCode() + 31 * functionNode.hashCode();
-        }
-
-        @Override
-        public boolean equals(final Object obj) {
-            if (obj == null || obj.getClass() != FunctionInitializer.class) {
-                return false;
-            }
-            final FunctionInitializer other = (FunctionInitializer)obj;
-            return data == other.data && functionNode == other.functionNode;
-        }
-    }
+    private static int emittedUnitCount;
 
     CompileUnit(final String className, final ClassEmitter classEmitter, final long initialWeight) {
         this.className    = className;
@@ -84,6 +54,33 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     static Set<CompileUnit> createCompileUnitSet() {
         return new TreeSet<>();
+    }
+
+    static void increaseEmitCount() {
+        emittedUnitCount++;
+    }
+
+    public static int getEmittedUnitCount() {
+        return emittedUnitCount;
+    }
+
+    /**
+     * Check if this compile unit is used
+     * @return true if tagged as in use - i.e active code that needs to be generated
+     */
+    public boolean isUsed() {
+        return isUsed;
+    }
+
+    public boolean hasCode() {
+        return (classEmitter.getMethodCount() - classEmitter.getInitCount() - classEmitter.getClinitCount()) > 0;
+    }
+
+    /**
+     * Tag this compile unit as used
+     */
+    public void setUsed() {
+        this.isUsed = true;
     }
 
     /**
@@ -106,29 +103,6 @@ public final class CompileUnit implements Comparable<CompileUnit> {
         // Revisit this - refactor to avoid null-ed out non-final fields
         // null out emitter
         this.classEmitter = null;
-    }
-
-    void addFunctionInitializer(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
-        functionInitializers.add(new FunctionInitializer(data, functionNode));
-    }
-
-    /**
-     * Returns true if this compile unit is responsible for initializing the specified function data with specified
-     * function node.
-     * @param data the function data to check
-     * @param functionNode the function node to check
-     * @return true if this unit is responsible for initializing the function data with the function node, otherwise
-     * false
-     */
-    public boolean isInitializing(final RecompilableScriptFunctionData data, final FunctionNode functionNode) {
-        return functionInitializers.contains(new FunctionInitializer(data, functionNode));
-    }
-
-    void initializeFunctionsCode() {
-        for(final FunctionInitializer init : functionInitializers) {
-            init.initializeCode();
-        }
-        functionInitializers = Collections.emptySet();
     }
 
     /**
@@ -178,7 +152,8 @@ public final class CompileUnit implements Comparable<CompileUnit> {
 
     @Override
     public String toString() {
-        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + ']';
+        final String methods = classEmitter != null ? classEmitter.getMethodNames().toString() : "<anon>";
+        return "[CompileUnit className=" + shortName(className) + " weight=" + weight + '/' + Splitter.SPLIT_THRESHOLD + " hasCode=" + methods + ']';
     }
 
     @Override

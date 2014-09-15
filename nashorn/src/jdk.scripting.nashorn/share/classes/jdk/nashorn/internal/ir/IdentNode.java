@@ -46,6 +46,8 @@ public final class IdentNode extends Expression implements PropertyKey, Function
     private static final int INITIALIZED_HERE  = 1 << 1;
     private static final int FUNCTION          = 1 << 2;
     private static final int FUTURESTRICT_NAME = 1 << 3;
+    private static final int IS_DECLARED_HERE  = 1 << 4;
+    private static final int IS_DEAD           = 1 << 5;
 
     /** Identifier. */
     private final String name;
@@ -71,7 +73,7 @@ public final class IdentNode extends Expression implements PropertyKey, Function
      */
     public IdentNode(final long token, final int finish, final String name) {
         super(token, finish);
-        this.name = name.intern();
+        this.name = name;
         this.type = null;
         this.flags = 0;
         this.programPoint = INVALID_PROGRAM_POINT;
@@ -244,6 +246,45 @@ public final class IdentNode extends Expression implements PropertyKey, Function
             return this;
         }
         return new IdentNode(this, name, type, flags | INITIALIZED_HERE, programPoint, conversion);
+    }
+
+    /**
+     * Is this a LET or CONST identifier used before its declaration?
+     *
+     * @return true if identifier is dead
+     */
+    public boolean isDead() {
+        return (flags & IS_DEAD) != 0;
+    }
+
+    /**
+     * Flag this IdentNode as a LET or CONST identifier used before its declaration.
+     *
+     * @return a new IdentNode equivalent to this but marked as dead.
+     */
+    public IdentNode markDead() {
+        return new IdentNode(this, name, type, flags | IS_DEAD, programPoint, conversion);
+    }
+
+    /**
+     * Is this IdentNode declared here?
+     *
+     * @return true if identifier is declared here
+     */
+    public boolean isDeclaredHere() {
+        return (flags & IS_DECLARED_HERE) != 0;
+    }
+
+    /**
+     * Flag this IdentNode as being declared here.
+     *
+     * @return a new IdentNode equivalent to this but marked as declared here.
+     */
+    public IdentNode setIsDeclaredHere() {
+        if (isDeclaredHere()) {
+            return this;
+        }
+        return new IdentNode(this, name, type, flags | IS_DECLARED_HERE, programPoint, conversion);
     }
 
     /**

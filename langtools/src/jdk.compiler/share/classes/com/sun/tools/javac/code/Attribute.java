@@ -33,6 +33,7 @@ import javax.lang.model.element.AnnotationValueVisitor;
 import javax.lang.model.type.DeclaredType;
 import com.sun.tools.javac.code.Symbol.*;
 import com.sun.tools.javac.util.*;
+import com.sun.tools.javac.util.DefinedBy.Api;
 
 /** An annotation value.
  *
@@ -52,10 +53,12 @@ public abstract class Attribute implements AnnotationValue {
 
     public abstract void accept(Visitor v);
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public Object getValue() {
         throw new UnsupportedOperationException();
     }
 
+    @DefinedBy(Api.LANGUAGE_MODEL)
     public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
         throw new UnsupportedOperationException();
     }
@@ -74,12 +77,15 @@ public abstract class Attribute implements AnnotationValue {
             super(type);
             this.value = value;
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return Constants.format(value, type);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Object getValue() {
             return Constants.decode(value, type);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             if (value instanceof String)
                 return v.visitString((String) value, p);
@@ -121,12 +127,15 @@ public abstract class Attribute implements AnnotationValue {
                                       types.syms.classType.tsym,
                                       Type.noAnnotations);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return classType + ".class";
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Type getValue() {
             return classType;
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitType(classType, p);
         }
@@ -142,7 +151,7 @@ public abstract class Attribute implements AnnotationValue {
          *  access this attribute.
          */
         public final List<Pair<MethodSymbol,Attribute>> values;
-        public final TypeAnnotationPosition position;
+        public TypeAnnotationPosition position;
 
         private boolean synthesized = false;
 
@@ -170,7 +179,51 @@ public abstract class Attribute implements AnnotationValue {
 
         @Override
         public TypeAnnotationPosition getPosition() {
+            if (hasUnknownPosition()) {
+                if (values.size() != 0) {
+                    Name valueName = values.head.fst.name.table.names.value;
+                    Pair<MethodSymbol, Attribute> res = getElemPair(valueName);
+                    position = res == null ? null : res.snd.getPosition();
+                }
+            }
             return position;
+        }
+
+        public boolean isContainerTypeCompound() {
+            if (isSynthesized() && values.size() == 1)
+                return getFirstEmbeddedTC() != null;
+            return false;
+        }
+
+        private Compound getFirstEmbeddedTC() {
+            if (values.size() == 1) {
+                Pair<MethodSymbol, Attribute> val = values.get(0);
+                if (val.fst.getSimpleName().contentEquals("value")
+                        && val.snd instanceof Array) {
+                    Array arr = (Array) val.snd;
+                    if (arr.values.length != 0
+                            && arr.values[0] instanceof Attribute.TypeCompound)
+                        return (Attribute.TypeCompound) arr.values[0];
+                }
+            }
+            return null;
+        }
+
+        public boolean tryFixPosition() {
+            if (!isContainerTypeCompound())
+                return false;
+
+            Compound from = getFirstEmbeddedTC();
+            if (from != null && from.position != null &&
+                    from.position.type != TargetType.UNKNOWN) {
+                position = from.position;
+                return true;
+            }
+            return false;
+        }
+
+        public boolean hasUnknownPosition() {
+            return position.type == TargetType.UNKNOWN;
         }
 
         public void accept(Visitor v) { v.visitCompound(this); }
@@ -183,6 +236,7 @@ public abstract class Attribute implements AnnotationValue {
          *     @com.example.foo
          * Omit parens for marker annotations, and omit "value=" when allowed.
          */
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder buf = new StringBuilder();
             buf.append("@");
@@ -218,30 +272,28 @@ public abstract class Attribute implements AnnotationValue {
             return null;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Attribute.Compound getValue() {
             return this;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitAnnotation(this, p);
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public DeclaredType getAnnotationType() {
             return (DeclaredType) type;
         }
 
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public Map<MethodSymbol, Attribute> getElementValues() {
             Map<MethodSymbol, Attribute> valmap = new LinkedHashMap<>();
             for (Pair<MethodSymbol, Attribute> value : values)
                 valmap.put(value.fst, value.snd);
             return valmap;
         }
-
-        public TypeCompound toTypeCompound() {
-            // It is safe to alias the position.
-            return new TypeCompound(this, this.position);
-        }
-
     }
 
     public static class TypeCompound extends Compound {
@@ -272,6 +324,7 @@ public abstract class Attribute implements AnnotationValue {
         }
 
         public void accept(Visitor v) { v.visitArray(this); }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             StringBuilder buf = new StringBuilder();
             buf.append('{');
@@ -285,9 +338,11 @@ public abstract class Attribute implements AnnotationValue {
             buf.append('}');
             return buf.toString();
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public List<Attribute> getValue() {
             return List.from(values);
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitArray(getValue(), p);
         }
@@ -310,12 +365,15 @@ public abstract class Attribute implements AnnotationValue {
             this.value = Assert.checkNonNull(value);
         }
         public void accept(Visitor v) { v.visitEnum(this); }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return value.enclClass() + "." + value;     // qualified name
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public VarSymbol getValue() {
             return value;
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitEnumConstant(value, p);
         }
@@ -326,12 +384,15 @@ public abstract class Attribute implements AnnotationValue {
             super(type);
         }
         public void accept(Visitor v) { v.visitError(this); }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {
             return "<error>";
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public String getValue() {
             return toString();
         }
+        @DefinedBy(Api.LANGUAGE_MODEL)
         public <R, P> R accept(AnnotationValueVisitor<R, P> v, P p) {
             return v.visitString(toString(), p);
         }

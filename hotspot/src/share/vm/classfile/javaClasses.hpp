@@ -222,7 +222,6 @@ class java_lang_String : AllStatic {
   macro(java_lang_Class, oop_size,               int_signature,     false) \
   macro(java_lang_Class, static_oop_field_count, int_signature,     false) \
   macro(java_lang_Class, protection_domain,      object_signature,  false) \
-  macro(java_lang_Class, init_lock,              object_signature,  false) \
   macro(java_lang_Class, signers,                object_signature,  false)
 
 class java_lang_Class : AllStatic {

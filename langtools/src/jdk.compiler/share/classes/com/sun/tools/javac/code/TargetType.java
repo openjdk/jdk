@@ -107,7 +107,10 @@ public enum TargetType {
     CONSTRUCTOR_REFERENCE_TYPE_ARGUMENT(0x4A, true),
 
     /** For annotations on a type argument of a method reference. */
-    METHOD_REFERENCE_TYPE_ARGUMENT(0x4B, true);
+    METHOD_REFERENCE_TYPE_ARGUMENT(0x4B, true),
+
+    /** For annotations with an unknown target. */
+    UNKNOWN(0xFF);
 
     private static final int MAXIMUM_TARGET_TYPE_VALUE = 0x4B;
 
@@ -147,15 +150,26 @@ public enum TargetType {
         targets = new TargetType[MAXIMUM_TARGET_TYPE_VALUE + 1];
         TargetType[] alltargets = values();
         for (TargetType target : alltargets) {
+            if (target.targetTypeValue != UNKNOWN.targetTypeValue)
                 targets[target.targetTypeValue] = target;
+        }
+        for (int i = 0; i <= MAXIMUM_TARGET_TYPE_VALUE; ++i) {
+            if (targets[i] == null)
+                targets[i] = UNKNOWN;
         }
     }
 
     public static boolean isValidTargetTypeValue(int tag) {
+        if (tag == UNKNOWN.targetTypeValue)
+            return true;
+
         return (tag >= 0 && tag < targets.length);
     }
 
     public static TargetType fromTargetTypeValue(int tag) {
+        if (tag == UNKNOWN.targetTypeValue)
+            return UNKNOWN;
+
         if (tag < 0 || tag >= targets.length)
             Assert.error("Unknown TargetType: " + tag);
         return targets[tag];
