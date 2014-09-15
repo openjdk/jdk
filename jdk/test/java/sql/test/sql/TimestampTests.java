@@ -29,12 +29,37 @@ import java.time.Instant;
 import java.time.LocalDateTime;
 import java.time.ZoneId;
 import java.util.Calendar;
+import java.util.TimeZone;
 import static org.testng.Assert.*;
+import org.testng.annotations.AfterClass;
+import org.testng.annotations.BeforeClass;
 import org.testng.annotations.DataProvider;
 import org.testng.annotations.Test;
 import util.BaseTest;
 
 public class TimestampTests extends BaseTest {
+
+    private static TimeZone defaultTimeZone = null;
+
+    /*
+     * Need to set and use a custom TimeZone which does not
+     * observe daylight savings time for this test.
+     */
+    @BeforeClass
+    public static void setUpClass() throws Exception {
+        defaultTimeZone = TimeZone.getDefault();
+        TimeZone tzone = TimeZone.getTimeZone("GMT+01");
+        assertFalse(tzone.observesDaylightTime());
+        TimeZone.setDefault(tzone);
+    }
+
+    /*
+     * Conservatively reset the default time zone after test.
+     */
+    @AfterClass
+    public static void tearDownClass() throws Exception {
+        TimeZone.setDefault(defaultTimeZone);
+    }
 
     /*
      * Validate an IllegalArgumentException is thrown for an invalid Timestamp
