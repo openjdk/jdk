@@ -493,7 +493,7 @@ ALL_TARGETS += default all
 # file.
 
 CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
-    bootcycle-build docs docstemp test
+    bootcycle-build docs docstemp test make-support
 CLEAN_TARGETS := $(addprefix clean-, $(CLEAN_COMPONENTS))
 
 # Remove everything, except the output from configure.
