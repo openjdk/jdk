@@ -214,7 +214,7 @@ class Main {
                     in.close();
                 }
                 out.close();
-                if(nflag) {
+                if (nflag) {
                     JarFile jarFile = null;
                     File packFile = null;
                     JarOutputStream jos = null;
@@ -287,11 +287,14 @@ class Main {
                 }
             } else if (tflag) {
                 replaceFSC(files);
+                // For the "list table contents" action, access using the
+                // ZipFile class is always most efficient since only a
+                // "one-finger" scan through the central directory is required.
                 if (fname != null) {
                     list(fname, files);
                 } else {
                     InputStream in = new FileInputStream(FileDescriptor.in);
-                    try{
+                    try {
                         list(new BufferedInputStream(in), files);
                     } finally {
                         in.close();
@@ -299,6 +302,15 @@ class Main {
                 }
             } else if (xflag) {
                 replaceFSC(files);
+                // For the extract action, when extracting all the entries,
+                // access using the ZipInputStream class is most efficient,
+                // since only a single sequential scan through the zip file is
+                // required.  When using the ZipFile class, a "two-finger" scan
+                // is required, but this is likely to be more efficient when a
+                // partial extract is requested.  In case the zip file has
+                // "leading garbage", we fall back from the ZipInputStream
+                // implementation to the ZipFile implementation, since only the
+                // latter can handle it.
                 if (fname != null && files != null) {
                     extract(fname, files);
                 } else {
@@ -306,7 +318,9 @@ class Main {
                         ? new FileInputStream(FileDescriptor.in)
                         : new FileInputStream(fname);
                     try {
-                        extract(new BufferedInputStream(in), files);
+                        if (!extract(new BufferedInputStream(in), files) && fname != null) {
+                            extract(fname, files);
+                        }
                     } finally {
                         in.close();
                     }
@@ -921,14 +935,19 @@ class Main {
 
     /**
      * Extracts specified entries from JAR file.
+     *
+     * @return whether entries were found and successfully extracted
+     * (indicating this was a zip file without "leading garbage")
      */
-    void extract(InputStream in, String files[]) throws IOException {
+    boolean extract(InputStream in, String files[]) throws IOException {
         ZipInputStream zis = new ZipInputStream(in);
         ZipEntry e;
         // Set of all directory entries specified in archive.  Disallows
         // null entries.  Disallows all entries if using pre-6.0 behavior.
+        boolean entriesFound = false;
         Set<ZipEntry> dirs = newDirSet();
         while ((e = zis.getNextEntry()) != null) {
+            entriesFound = true;
             if (files == null) {
                 dirs.add(extractFile(zis, e));
             } else {
@@ -947,6 +966,8 @@ class Main {
         // instead of during, because creating a file in a directory changes
         // that directory's timestamp.
         updateLastModifiedTime(dirs);
+
+        return entriesFound;
     }
 
     /**
@@ -958,7 +979,6 @@ class Main {
         Enumeration<? extends ZipEntry> zes = zf.entries();
         while (zes.hasMoreElements()) {
             ZipEntry e = zes.nextElement();
-            InputStream is;
             if (files == null) {
                 dirs.add(extractFile(zf.getInputStream(e), e));
             } else {
