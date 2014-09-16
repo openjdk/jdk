@@ -1481,9 +1481,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       // Discard all rset updates
       JavaThread::dirty_card_queue_set().abandon_logs();
-      assert(!G1DeferredRSUpdate
-             || (G1DeferredRSUpdate &&
-                (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
+      assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 
       _young_list->reset_sampled_info();
       // At this point there should be no regions in the
@@ -2094,15 +2092,13 @@ jint G1CollectedHeap::initialize() {
                                                 concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
-  if (G1DeferredRSUpdate) {
-    dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
-                                      DirtyCardQ_CBL_mon,
-                                      DirtyCardQ_FL_lock,
-                                      -1, // never trigger processing
-                                      -1, // no limit on length
-                                      Shared_DirtyCardQ_lock,
-                                      &JavaThread::dirty_card_queue_set());
-  }
+  dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
+                                    DirtyCardQ_CBL_mon,
+                                    DirtyCardQ_FL_lock,
+                                    -1, // never trigger processing
+                                    -1, // no limit on length
+                                    Shared_DirtyCardQ_lock,
+                                    &JavaThread::dirty_card_queue_set());
 
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
@@ -5389,7 +5385,6 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
 };
 
 void G1CollectedHeap::redirty_logged_cards() {
-  guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
   double redirty_logged_cards_start = os::elapsedTime();
 
   uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
@@ -6049,9 +6044,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // RSets.
   enqueue_discovered_references(n_workers);
 
-  if (G1DeferredRSUpdate) {
-    redirty_logged_cards();
-  }
+  redirty_logged_cards();
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
