@@ -39,7 +39,6 @@ class ciField : public ResourceObj {
   CI_PACKAGE_ACCESS
   friend class ciEnv;
   friend class ciInstanceKlass;
-  friend class NonStaticFieldFiller;
 
 private:
   ciFlags          _flags;
