@@ -2171,7 +2171,7 @@ assert((int)twice.invokeExact(21) == 42);
                 // dropIdx is missing from reorder; add it in at the end
                 int oldArity = reorder.length;
                 target = dropArguments(target, oldArity, newType.parameterType(dropIdx));
-                reorder = Arrays.copyOf(reorder, oldArity+1);
+                reorder = Arrays.copyOf(reorder, oldArity + 1);
                 reorder[oldArity] = dropIdx;
             }
             assert(target == originalTarget || permuteArgumentChecks(reorder, newType, target.type()));
@@ -2189,9 +2189,9 @@ assert((int)twice.invokeExact(21) == 42);
             long mask = 0;
             for (int arg : reorder) {
                 assert(arg < newArity);
-                mask |= (1 << arg);
+                mask |= (1L << arg);
             }
-            if (mask == (1 << newArity) - 1) {
+            if (mask == (1L << newArity) - 1) {
                 assert(Long.numberOfTrailingZeros(Long.lowestOneBit(~mask)) == newArity);
                 return -1;
             }
@@ -2200,16 +2200,18 @@ assert((int)twice.invokeExact(21) == 42);
             int zeroPos = Long.numberOfTrailingZeros(zeroBit);
             assert(zeroPos < newArity);
             return zeroPos;
+        } else {
+            BitSet mask = new BitSet(newArity);
+            for (int arg : reorder) {
+                assert (arg < newArity);
+                mask.set(arg);
+            }
+            int zeroPos = mask.nextClearBit(0);
+            assert(zeroPos <= newArity);
+            if (zeroPos == newArity)
+                return -1;
+            return zeroPos;
         }
-        BitSet mask = new BitSet(newArity);
-        for (int arg : reorder) {
-            assert(arg < newArity);
-            mask.set(arg);
-        }
-        int zeroPos = mask.nextClearBit(0);
-        if (zeroPos == newArity)
-            return -1;
-        return zeroPos;
     }
 
     /**
@@ -2225,32 +2227,42 @@ assert((int)twice.invokeExact(21) == 42);
             long mask = 0;
             for (int i = 0; i < reorder.length; i++) {
                 int arg = reorder[i];
-                if (arg >= newArity)  return reorder.length;
-                int bit = 1 << arg;
-                if ((mask & bit) != 0)
+                if (arg >= newArity) {
+                    return reorder.length;
+                }
+                long bit = 1L << arg;
+                if ((mask & bit) != 0) {
                     return i;  // >0 indicates a dup
+                }
                 mask |= bit;
             }
-            if (mask == (1 << newArity) - 1) {
+            if (mask == (1L << newArity) - 1) {
                 assert(Long.numberOfTrailingZeros(Long.lowestOneBit(~mask)) == newArity);
                 return 0;
             }
             // find first zero
             long zeroBit = Long.lowestOneBit(~mask);
             int zeroPos = Long.numberOfTrailingZeros(zeroBit);
-            assert(zeroPos < newArity);
+            assert(zeroPos <= newArity);
+            if (zeroPos == newArity) {
+                return 0;
+            }
             return ~zeroPos;
         } else {
             // same algorithm, different bit set
             BitSet mask = new BitSet(newArity);
             for (int i = 0; i < reorder.length; i++) {
                 int arg = reorder[i];
-                if (arg >= newArity)  return reorder.length;
-                if (mask.get(arg))
+                if (arg >= newArity) {
+                    return reorder.length;
+                }
+                if (mask.get(arg)) {
                     return i;  // >0 indicates a dup
+                }
                 mask.set(arg);
             }
             int zeroPos = mask.nextClearBit(0);
+            assert(zeroPos <= newArity);
             if (zeroPos == newArity) {
                 return 0;
             }
