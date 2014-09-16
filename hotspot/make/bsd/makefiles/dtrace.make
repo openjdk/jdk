@@ -92,7 +92,7 @@ XLIBJVM_DTRACE_DEBUGINFO   = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DEBUGINFO)
 XLIBJVM_DTRACE_DIZ         = $(XLIBJVM_DIR)/$(LIBJVM_DTRACE_DIZ)
 
 $(XLIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS).h $(LIBJVM_DB_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c #-lc
@@ -128,7 +128,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 $(XLIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) mkdir -p $(XLIBJVM_DIR) ; \
 	$(CC) $(SYMFLAG) -xarch=$(XARCH) -D$(TYPE) -I. \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c #-lc -lthread -ldoor
@@ -202,7 +202,7 @@ $(JVMOFFS.o): $(JVMOFFS).h $(JVMOFFS).cpp
 	$(QUIETLY) $(CXX) -c -I. -o $@ $(ARCHFLAG) -D$(TYPE) $(JVMOFFS).cpp
 
 $(LIBJVM_DB): $(DTRACE_SRCDIR)/$(JVM_DB).c $(JVMOFFS.o) $(XLIBJVM_DB) $(LIBJVM_DB_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I. -I$(GENERATED) \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DB) -o $@ $(DTRACE_SRCDIR)/$(JVM_DB).c -Wall # -lc
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -231,7 +231,7 @@ ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
 endif
 
 $(LIBJVM_DTRACE): $(DTRACE_SRCDIR)/$(JVM_DTRACE).c $(XLIBJVM_DTRACE) $(DTRACE_SRCDIR)/$(JVM_DTRACE).h $(LIBJVM_DTRACE_MAPFILE)
-	@echo Making $@
+	@echo $(LOG_INFO) Making $@
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) -D$(TYPE) -I.  \
 		$(SHARED_FLAG) $(LFLAGS_JVM_DTRACE) -o $@ $(DTRACE_SRCDIR)/$(JVM_DTRACE).c #-lc -lthread -ldoor
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)
@@ -296,13 +296,13 @@ CFLAGS += -DDTRACE_ENABLED #$(DTRACE_INCL)
 dtraceCheck:
 
 dtrace_stuff: dtrace_gen_headers
-	$(QUIETLY) echo "dtrace headers generated"
+	$(QUIETLY) echo $(LOG_INFO) "dtrace headers generated"
 
 
 else # manually disabled
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled via environment variable"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled via environment variable"
 
 dtrace_stuff:
 
@@ -311,7 +311,7 @@ endif # ifeq ("${HOTSPOT_DISABLE_DTRACE_PROBES}", "")
 else # No dtrace program found
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled: not supported by system"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled: not supported by system"
 
 dtrace_stuff:
 
@@ -323,6 +323,6 @@ endif # ifeq ($(OS_VENDOR), Darwin)
 else # CORE build
 
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled for CORE builds"
+	$(QUIETLY) echo $(LOG_INFO) "**NOTICE** Dtrace support disabled for CORE builds"
 
 endif # ifneq ("${TYPE}", "CORE")
