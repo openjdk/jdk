@@ -26,7 +26,7 @@
  * @key gc
  * @bug 8049831
  * @library /testlibrary /testlibrary/whitebox
- * @build TestCMSClassUnloadingEnabledHWM AllocateBeyondMetaspaceSize
+ * @build TestCMSClassUnloadingEnabledHWM
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
  * @run driver TestCMSClassUnloadingEnabledHWM
@@ -35,9 +35,11 @@
 
 import com.oracle.java.testlibrary.OutputAnalyzer;
 import com.oracle.java.testlibrary.ProcessTools;
-
+import java.lang.management.GarbageCollectorMXBean;
+import java.lang.management.ManagementFactory;
 import java.util.ArrayList;
 import java.util.Arrays;
+import sun.hotspot.WhiteBox;
 
 public class TestCMSClassUnloadingEnabledHWM {
   private static long MetaspaceSize = 32 * 1024 * 1024;
@@ -48,15 +50,18 @@ public class TestCMSClassUnloadingEnabledHWM {
       "-Xbootclasspath/a:.",
       "-XX:+UnlockDiagnosticVMOptions",
       "-XX:+WhiteBoxAPI",
+      "-Xmx128m",
+      "-XX:CMSMaxAbortablePrecleanTime=1",
+      "-XX:CMSWaitDuration=50",
       "-XX:MetaspaceSize=" + MetaspaceSize,
       "-Xmn" + YoungGenSize,
       "-XX:+UseConcMarkSweepGC",
       "-XX:" + (enableUnloading ? "+" : "-") + "CMSClassUnloadingEnabled",
       "-XX:+PrintHeapAtGC",
       "-XX:+PrintGCDetails",
-      "AllocateBeyondMetaspaceSize",
-      "" + MetaspaceSize,
-      "" + YoungGenSize);
+      "-XX:+PrintGCTimeStamps",
+      TestCMSClassUnloadingEnabledHWM.AllocateBeyondMetaspaceSize.class.getName(),
+      "" + MetaspaceSize);
     return new OutputAnalyzer(pb.start());
   }
 
@@ -87,6 +92,38 @@ public class TestCMSClassUnloadingEnabledHWM {
   public static void main(String args[]) throws Exception {
     testWithCMSClassUnloading();
     testWithoutCMSClassUnloading();
+  }
+
+  public static class AllocateBeyondMetaspaceSize {
+    public static void main(String [] args) throws Exception {
+      if (args.length != 1) {
+        throw new IllegalArgumentException("Usage: <MetaspaceSize>");
+      }
+
+      WhiteBox wb = WhiteBox.getWhiteBox();
+
+      // Allocate past the MetaspaceSize limit.
+      long metaspaceSize = Long.parseLong(args[0]);
+      long allocationBeyondMetaspaceSize  = metaspaceSize * 2;
+      long metaspace = wb.allocateMetaspace(null, allocationBeyondMetaspaceSize);
+
+      // Wait for at least one GC to occur. The caller will parse the log files produced.
+      GarbageCollectorMXBean cmsGCBean = getCMSGCBean();
+      while (cmsGCBean.getCollectionCount() == 0) {
+        Thread.sleep(100);
+      }
+
+      wb.freeMetaspace(null, metaspace, metaspace);
+    }
+
+    private static GarbageCollectorMXBean getCMSGCBean() {
+      for (GarbageCollectorMXBean gcBean : ManagementFactory.getGarbageCollectorMXBeans()) {
+        if (gcBean.getObjectName().toString().equals("java.lang:type=GarbageCollector,name=ConcurrentMarkSweep")) {
+          return gcBean;
+        }
+      }
+      return null;
+    }
   }
 }
 
