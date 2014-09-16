@@ -142,13 +142,6 @@ javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
 # 8050115
 javax/management/monitor/GaugeMonitorDeadlockTest.java          generic-all
 
-# 8042205 8057951                                               generic-all
-javax/management/monitor/CounterMonitorTest.java 
-javax/management/monitor/NonComparableAttributeValueTest.java 
-javax/management/monitor/ReflectionExceptionTest.java 
-javax/management/monitor/RuntimeExceptionTest.java
-javax/management/monitor/AttributeArbitraryDataTypeTest.java
-
 ############################################################################
 
 # jdk_math
