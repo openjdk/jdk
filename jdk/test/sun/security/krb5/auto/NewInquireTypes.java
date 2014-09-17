@@ -29,6 +29,7 @@
  * @run main/othervm NewInquireTypes
  */
 
+import com.sun.security.jgss.ExtendedGSSContext;
 import com.sun.security.jgss.InquireType;
 import sun.security.jgss.GSSUtil;
 import sun.security.krb5.internal.KRBCred;
@@ -52,10 +53,12 @@ public class NewInquireTypes {
 
         Context.handshake(c, s);
 
+        ExtendedGSSContext ctxt = (ExtendedGSSContext)c.x();
         EncryptionKey key = (EncryptionKey)
-                c.x().inquireSecContext(InquireType.KRB5_GET_SESSION_KEY_EX);
+                ctxt.inquireSecContext(InquireType.KRB5_GET_SESSION_KEY_EX);
         KerberosCredMessage cred = (KerberosCredMessage)
-                c.x().inquireSecContext(InquireType.KRB5_GET_KRB_CRED);
+                ctxt.inquireSecContext(InquireType.KRB5_GET_KRB_CRED);
+        c.status();
 
         // Confirm the KRB_CRED message is encrypted with the session key.
         new KRBCred(cred.getEncoded()).encPart.decrypt(
