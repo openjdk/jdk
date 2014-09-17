@@ -292,7 +292,7 @@ public class BigIntegerTest {
      * ensures that {@code v} is just under the B-Z threshold, that {@code z} is
      * over the threshold and {@code w} is much larger than {@code z}. This
      * implies that {@code u/v} uses the standard division algorithm and
-     * {@code w/z} uses the B-Z algorithm.  The results of the two algorithms
+     * {@code w/z} uses the B-Z algorithm.  The results of the two algorithms
      * are then compared using the observation described in the foregoing and
      * if they are not equal a failure is logged.
      */
