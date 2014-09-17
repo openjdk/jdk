@@ -289,12 +289,12 @@ public class BigIntegerTest {
      * where {@code abs(u) > abs(v)} and {@code a > b && b > 0}, then if
      * {@code w/z = q1*z + r1} and {@code u/v = q2*v + r2}, then
      * {@code q1 = q2*pow(2,a-b)} and {@code r1 = r2*pow(2,b)}.  The test
-     * ensures that {@code v} is just under the B-Z threshold, that {@code z} is
-     * over the threshold and {@code w} is much larger than {@code z}. This
-     * implies that {@code u/v} uses the standard division algorithm and
-     * {@code w/z} uses the B-Z algorithm.  The results of the two algorithms
-     * are then compared using the observation described in the foregoing and
-     * if they are not equal a failure is logged.
+     * ensures that {@code v} is just under the B-Z threshold, that {@code z} is
+     * over the threshold and {@code w} is much larger than {@code z}. This
+     * implies that {@code u/v} uses the standard division algorithm and
+     * {@code w/z} uses the B-Z algorithm.  The results of the two algorithms
+     * are then compared using the observation described in the foregoing and
+     * if they are not equal a failure is logged.
      */
     public static void divideLarge() {
         int failCount = 0;
