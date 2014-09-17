@@ -1747,9 +1747,11 @@ void CompileBroker::compiler_thread_loop() {
     // We need this HandleMark to avoid leaking VM handles.
     HandleMark hm(thread);
 
-    if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-      // the code cache is really full
-      handle_full_code_cache();
+    // Check if the CodeCache is full
+    int code_blob_type = 0;
+    if (CodeCache::is_full(&code_blob_type)) {
+      // The CodeHeap for code_blob_type is really full
+      handle_full_code_cache(code_blob_type);
     }
 
     CompileTask* task = queue->get();
@@ -2079,7 +2081,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * The CodeCache is full.  Print out warning and disable compilation
  * or try code cache cleaning so compilation can continue later.
  */
-void CompileBroker::handle_full_code_cache() {
+void CompileBroker::handle_full_code_cache(int code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
@@ -2095,8 +2097,6 @@ void CompileBroker::handle_full_code_cache() {
       xtty->stamp();
       xtty->end_elem();
     }
-
-    CodeCache::report_codemem_full();
 
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
@@ -2119,12 +2119,7 @@ void CompileBroker::handle_full_code_cache() {
       disable_compilation_forever();
     }
 
-    // Print warning only once
-    if (should_print_compiler_warning()) {
-      warning("CodeCache is full. Compiler has been disabled.");
-      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
-      codecache_print(/* detailed= */ true);
-    }
+    CodeCache::report_codemem_full(code_blob_type, should_print_compiler_warning());
   }
 }
 

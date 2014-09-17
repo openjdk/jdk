@@ -131,7 +131,7 @@ void NMethodSweeper::record_sweep(nmethod* nm, int line) {
 #define SWEEP(nm)
 #endif
 
-nmethod* NMethodSweeper::_current                      = NULL; // Current nmethod
+NMethodIterator NMethodSweeper::_current;                      // Current nmethod
 long     NMethodSweeper::_traversals                   = 0;    // Stack scan count, also sweep ID.
 long     NMethodSweeper::_total_nof_code_cache_sweeps  = 0;    // Total number of full sweeps of the code cache
 long     NMethodSweeper::_time_counter                 = 0;    // Virtual time used to periodically invoke sweeper
@@ -150,26 +150,24 @@ volatile int  NMethodSweeper::_bytes_changed           = 0;    // Counts the tot
                                                                //   3) zombie      -> marked_for_reclamation
 int    NMethodSweeper::_hotness_counter_reset_val       = 0;
 
-long   NMethodSweeper::_total_nof_methods_reclaimed     = 0;    // Accumulated nof methods flushed
-long   NMethodSweeper::_total_nof_c2_methods_reclaimed  = 0;    // Accumulated nof methods flushed
-size_t NMethodSweeper::_total_flushed_size              = 0;    // Total number of bytes flushed from the code cache
-Tickspan  NMethodSweeper::_total_time_sweeping;                 // Accumulated time sweeping
-Tickspan  NMethodSweeper::_total_time_this_sweep;               // Total time this sweep
-Tickspan  NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
-Tickspan  NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
-
+long   NMethodSweeper::_total_nof_methods_reclaimed     = 0;   // Accumulated nof methods flushed
+long   NMethodSweeper::_total_nof_c2_methods_reclaimed  = 0;   // Accumulated nof methods flushed
+size_t NMethodSweeper::_total_flushed_size              = 0;   // Total number of bytes flushed from the code cache
+Tickspan NMethodSweeper::_total_time_sweeping;                 // Accumulated time sweeping
+Tickspan NMethodSweeper::_total_time_this_sweep;               // Total time this sweep
+Tickspan NMethodSweeper::_peak_sweep_time;                     // Peak time for a full sweep
+Tickspan NMethodSweeper::_peak_sweep_fraction_time;            // Peak time sweeping one fraction
 
 
 class MarkActivationClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
-    if (cb->is_nmethod()) {
-      nmethod* nm = (nmethod*)cb;
-      nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
-      // If we see an activation belonging to a non_entrant nmethod, we mark it.
-      if (nm->is_not_entrant()) {
-        nm->mark_as_seen_on_stack();
-      }
+    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
+    nmethod* nm = (nmethod*)cb;
+    nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
+    // If we see an activation belonging to a non_entrant nmethod, we mark it.
+    if (nm->is_not_entrant()) {
+      nm->mark_as_seen_on_stack();
     }
   }
 };
@@ -178,10 +176,9 @@ static MarkActivationClosure mark_activation_closure;
 class SetHotnessClosure: public CodeBlobClosure {
 public:
   virtual void do_code_blob(CodeBlob* cb) {
-    if (cb->is_nmethod()) {
-      nmethod* nm = (nmethod*)cb;
-      nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
-    }
+    assert(cb->is_nmethod(), "CodeBlob should be nmethod");
+    nmethod* nm = (nmethod*)cb;
+    nm->set_hotness_counter(NMethodSweeper::hotness_counter_reset_val());
   }
 };
 static SetHotnessClosure set_hotness_closure;
@@ -194,7 +191,7 @@ int NMethodSweeper::hotness_counter_reset_val() {
   return _hotness_counter_reset_val;
 }
 bool NMethodSweeper::sweep_in_progress() {
-  return (_current != NULL);
+  return !_current.end();
 }
 
 // Scans the stacks of all Java threads and marks activations of not-entrant methods.
@@ -212,11 +209,13 @@ void NMethodSweeper::mark_active_nmethods() {
   _time_counter++;
 
   // Check for restart
-  assert(CodeCache::find_blob_unsafe(_current) == _current, "Sweeper nmethod cached state invalid");
+  assert(CodeCache::find_blob_unsafe(_current.method()) == _current.method(), "Sweeper nmethod cached state invalid");
   if (!sweep_in_progress()) {
     _seen = 0;
     _sweep_fractions_left = NmethodSweepFraction;
-    _current = CodeCache::first_nmethod();
+    _current = NMethodIterator();
+    // Initialize to first nmethod
+    _current.next();
     _traversals += 1;
     _total_time_this_sweep = Tickspan();
 
@@ -271,7 +270,9 @@ void NMethodSweeper::possibly_sweep() {
     // an unsigned type would cause an underflow (wait_until_next_sweep becomes a large positive
     // value) that disables the intended periodic sweeps.
     const int max_wait_time = ReservedCodeCacheSize / (16 * M);
-    double wait_until_next_sweep = max_wait_time - time_since_last_sweep - CodeCache::reverse_free_ratio();
+    double wait_until_next_sweep = max_wait_time - time_since_last_sweep -
+        MAX2(CodeCache::reverse_free_ratio(CodeBlobType::MethodProfiled),
+             CodeCache::reverse_free_ratio(CodeBlobType::MethodNonProfiled));
     assert(wait_until_next_sweep <= (double)max_wait_time, "Calculation of code cache sweeper interval is incorrect");
 
     if ((wait_until_next_sweep <= 0.0) || !CompileBroker::should_compile_new_jobs()) {
@@ -353,7 +354,7 @@ void NMethodSweeper::sweep_code_cache() {
     MutexLockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
 
     // The last invocation iterates until there are no more nmethods
-    for (int i = 0; (i < todo || _sweep_fractions_left == 1) && _current != NULL; i++) {
+    while ((swept_count < todo || _sweep_fractions_left == 1) && !_current.end()) {
       swept_count++;
       if (SafepointSynchronize::is_synchronizing()) { // Safepoint request
         if (PrintMethodFlushing && Verbose) {
@@ -369,19 +370,19 @@ void NMethodSweeper::sweep_code_cache() {
       // Since we will give up the CodeCache_lock, always skip ahead
       // to the next nmethod.  Other blobs can be deleted by other
       // threads but nmethods are only reclaimed by the sweeper.
-      nmethod* next = CodeCache::next_nmethod(_current);
+      nmethod* nm = _current.method();
+      _current.next();
 
       // Now ready to process nmethod and give up CodeCache_lock
       {
         MutexUnlockerEx mu(CodeCache_lock, Mutex::_no_safepoint_check_flag);
-        freed_memory += process_nmethod(_current);
+        freed_memory += process_nmethod(nm);
       }
       _seen++;
-      _current = next;
     }
   }
 
-  assert(_sweep_fractions_left > 1 || _current == NULL, "must have scanned the whole cache");
+  assert(_sweep_fractions_left > 1 || _current.end(), "must have scanned the whole cache");
 
   const Ticks sweep_end_counter = Ticks::now();
   const Tickspan sweep_time = sweep_end_counter - sweep_start_counter;
@@ -594,7 +595,8 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
       // ReservedCodeCacheSize
       int reset_val = hotness_counter_reset_val();
       int time_since_reset = reset_val - nm->hotness_counter();
-      double threshold = -reset_val + (CodeCache::reverse_free_ratio() * NmethodSweepActivity);
+      int code_blob_type = (CodeCache::get_code_blob_type(nm->comp_level()));
+      double threshold = -reset_val + (CodeCache::reverse_free_ratio(code_blob_type) * NmethodSweepActivity);
       // The less free space in the code cache we have - the bigger reverse_free_ratio() is.
       // I.e., 'threshold' increases with lower available space in the code cache and a higher
       // NmethodSweepActivity. If the current hotness counter - which decreases from its initial
