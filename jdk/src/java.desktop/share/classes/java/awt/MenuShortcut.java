@@ -76,7 +76,7 @@ public class MenuShortcut implements java.io.Serializable
     int key;
 
     /**
-     * Indicates whether the shft key was pressed.
+     * Indicates whether the shift key was pressed.
      * If true, the shift key was pressed.
      * If false, the shift key was not pressed
      *

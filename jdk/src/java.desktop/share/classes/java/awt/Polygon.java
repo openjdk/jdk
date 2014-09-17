@@ -145,8 +145,8 @@ public class Polygon implements Shape, java.io.Serializable {
      * @since 1.0
      */
     public Polygon(int xpoints[], int ypoints[], int npoints) {
-        // Fix 4489009: should throw IndexOutofBoundsException instead
-        // of OutofMemoryException if npoints is huge and > {x,y}points.length
+        // Fix 4489009: should throw IndexOutOfBoundsException instead
+        // of OutOfMemoryError if npoints is huge and > {x,y}points.length
         if (npoints > xpoints.length || npoints > ypoints.length) {
             throw new IndexOutOfBoundsException("npoints > xpoints.length || "+
                                                 "npoints > ypoints.length");
@@ -559,7 +559,7 @@ public class Polygon implements Shape, java.io.Serializable {
      *          coordinates as they are returned in the iteration, or
      *          <code>null</code> if untransformed coordinates are desired
      * @param flatness the maximum amount that the control points
-     *          for a given curve can vary from colinear before a subdivided
+     *          for a given curve can vary from collinear before a subdivided
      *          curve is replaced by a straight line connecting the
      *          endpoints.  Since polygons are already flat the
      *          <code>flatness</code> parameter is ignored.

@@ -233,7 +233,7 @@ MimeTypeParameterList(rawdata.substring(semIndex));
     /**
      * Remove any value associated with the given name.
      *
-     * @throw IllegalArgumentExcpetion if parameter may not be deleted
+     * @throw IllegalArgumentException if parameter may not be deleted
      */
     public void removeParameter(String name) {
         parameters.remove(name);

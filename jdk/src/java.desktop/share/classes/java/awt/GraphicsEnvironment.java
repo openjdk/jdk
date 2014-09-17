@@ -97,12 +97,13 @@ public abstract class GraphicsEnvironment {
 //          long t0 = System.currentTimeMillis();
             Class<?> geCls;
             try {
-                // First we try if the bootclassloader finds the requested
-                // class. This way we can avoid to run in a privileged block.
+                // First we try if the bootstrap class loader finds the
+                // requested class. This way we can avoid to run in a privileged
+                // block.
                 geCls = Class.forName(nm);
             } catch (ClassNotFoundException ex) {
-                // If the bootclassloader fails, we try again with the
-                // application classloader.
+                // If the bootstrap class loader fails, we try again with the
+                // application class loader.
                 ClassLoader cl = ClassLoader.getSystemClassLoader();
                 geCls = Class.forName(nm, true, cl);
             }

@@ -39,7 +39,7 @@ import java.util.EventListener;
  * using the <code>Window</code>'s <code>addWindowFocusListener</code> method.
  * When the <code>Window</code>'s
  * status changes by virtue of it being opened, closed, activated, deactivated,
- * iconified, or deiconified, or by focus being transfered into or out of the
+ * iconified, or deiconified, or by focus being transferred into or out of the
  * <code>Window</code>, the relevant method in the listener object is invoked,
  * and the <code>WindowEvent</code> is passed to it.
  *

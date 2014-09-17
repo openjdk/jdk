@@ -387,7 +387,7 @@ public class Desktop {
             return;
         }
 
-        // Calling thread doesn't have necessary priviledges.
+        // Calling thread doesn't have necessary privileges.
         // Delegate to DesktopBrowse so that it can work in
         // applet/webstart.
         URL url = null;

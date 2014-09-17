@@ -58,7 +58,7 @@ public final class ImageGraphicAttribute extends GraphicAttribute {
     private float fOriginX, fOriginY;
 
     /**
-     * Constucts an <code>ImageGraphicAttribute</code> from the specified
+     * Constructs an <code>ImageGraphicAttribute</code> from the specified
      * {@link Image}.  The origin is at (0,&nbsp;0).
      * @param image the <code>Image</code> rendered by this
      * <code>ImageGraphicAttribute</code>.
