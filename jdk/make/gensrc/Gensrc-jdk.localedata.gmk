@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2012, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -23,19 +23,16 @@
 # questions.
 #
 
-CLDRVERSION := 21.0.1
-CLDRSRCDIR := $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/cldr/resources/$(subst .,_,$(CLDRVERSION))
+include GensrcCommon.gmk
 
-GENSRC_DIR := $(JDK_OUTPUTDIR)/gensrc/jdk.localedata
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, gensrc/Gensrc-jdk.localedata.gmk))
 
-CLDR_METAINFO_FILE := $(GENSRC_DIR)/sun/util/resources/cldr/provider/CLDRLocaleDataMetaInfo.java
+include GensrcLocaleData.gmk
+include GensrcCLDR.gmk
 
-$(CLDR_METAINFO_FILE): $(wildcard $(CLDRSRCDIR)/common/dtd/*.dtd) \
-    $(wildcard $(CLDRSRCDIR)/common/main/*.xml) \
-    $(wildcard $(CLDRSRCDIR)/common/supplemental/*.xml) \
-    $(BUILD_TOOLS_JDK)
-	$(MKDIR) -p $(GENSRC_DIR)
-	$(TOOL_CLDRCONVERTER) -base $(CLDRSRCDIR) -o $(GENSRC_DIR)
+jdk.localedata: $(GENSRC_JDK_LOCALEDATA)
 
-GENSRC_CLDR := $(CLDR_METAINFO_FILE)
-GENSRC_JDK_LOCALEDATA += $(GENSRC_CLDR)
+all: jdk.localedata
+
+.PHONY: all jdk.localedata
