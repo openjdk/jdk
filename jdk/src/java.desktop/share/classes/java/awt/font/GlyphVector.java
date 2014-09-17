@@ -62,7 +62,7 @@ import java.awt.font.GlyphJustificationInfo;
  * A <code>GlyphVector</code> is associated with exactly one
  * <code>Font</code>, and can provide data useful only in relation to
  * this <code>Font</code>.  In addition, metrics obtained from a
- * <code>GlyphVector</code> are not generally geometrically scaleable
+ * <code>GlyphVector</code> are not generally geometrically scalable
  * since the pixelization and spacing are dependent on grid-fitting
  * algorithms within a <code>Font</code>.  To facilitate accurate
  * measurement of a <code>GlyphVector</code> and its component

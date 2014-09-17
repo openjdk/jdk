@@ -196,7 +196,7 @@ public interface InputMethod {
 
     /**
      * Dispatches the event to the input method. If input method support is
-     * enabled for the focussed component, incoming events of certain types
+     * enabled for the focused component, incoming events of certain types
      * are dispatched to the current input method for this component before
      * they are dispatched to the component's methods or event listeners.
      * The input method decides whether it needs to handle the event. If it

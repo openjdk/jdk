@@ -230,7 +230,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
      * If the Component is in a different AppContext, then the event is
      * posted to the other AppContext's EventQueue, and this method blocks
      * until the event is handled or target AppContext is disposed.
-     * Returns true if successfuly dispatched event, false if failed
+     * Returns true if successfully dispatched event, false if failed
      * to dispatch.
      */
     static boolean sendMessage(Component target, AWTEvent e) {
@@ -349,7 +349,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                 new WindowEvent(oldFocusedWindow,
                                                 WindowEvent.WINDOW_LOST_FOCUS,
                                                 newFocusedWindow));
-                    // Failed to dispatch, clear by ourselfves
+                    // Failed to dispatch, clear by ourselves
                     if (!isEventDispatched) {
                         setGlobalFocusOwner(null);
                         setGlobalFocusedWindow(null);
@@ -466,7 +466,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                 new WindowEvent(oldActiveWindow,
                                                 WindowEvent.WINDOW_DEACTIVATED,
                                                 newActiveWindow));
-                    // Failed to dispatch, clear by ourselfves
+                    // Failed to dispatch, clear by ourselves
                     if (!isEventDispatched) {
                         setGlobalActiveWindow(null);
                     }
@@ -513,7 +513,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                                                    FocusEvent.FOCUS_LOST,
                                                    fe.isTemporary(),
                                                    newFocusOwner, cause));
-                    // Failed to dispatch, clear by ourselfves
+                    // Failed to dispatch, clear by ourselves
                     if (!isEventDispatched) {
                         setGlobalFocusOwner(null);
                         if (!fe.isTemporary()) {
@@ -749,7 +749,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 typeAheadAssertions(currentFocusedWindow, we);
 
                 if (oppositeWindow == null) {
-                    // Then we need to deactive the active Window as well.
+                    // Then we need to deactivate the active Window as well.
                     // No need to synthesize in other cases, because
                     // WINDOW_ACTIVATED will handle it if necessary.
                     sendMessage(activeWindow,
@@ -954,7 +954,7 @@ public class DefaultKeyboardFocusManager extends KeyboardFocusManager {
                 // the Component which just gained focus. Then remove
                 // that marker, any markers which immediately follow
                 // and are tied to the same component, and all markers
-                // that preceed it. This handles the case where
+                // that precede it. This handles the case where
                 // multiple focus requests were made for the same
                 // Component in a row and when we lost some of the
                 // earlier requests. Since FOCUS_GAINED events will

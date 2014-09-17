@@ -1814,7 +1814,7 @@ public class KeyEvent extends InputEvent {
 
     /**
      * Sets new modifiers by the old ones. The key modifiers
-     * override overlaping mouse modifiers.
+     * override overlapping mouse modifiers.
      */
     private void setNewModifiers() {
         if ((modifiers & SHIFT_MASK) != 0) {
@@ -1863,7 +1863,7 @@ public class KeyEvent extends InputEvent {
 
     /**
      * Sets new modifiers by the old ones. The key modifiers
-     * override overlaping mouse modifiers.
+     * override overlapping mouse modifiers.
      * @serial
      */
     private void readObject(ObjectInputStream s)

@@ -106,7 +106,7 @@ public final class SecurityWarning {
      * the window. The "absolute" in this case means that the position of the
      * security warning is not effected by resizing of the window.
      * <p>
-     * Note that the security warning managment code guarantees that:
+     * Note that the security warning management code guarantees that:
      * <ul>
      * <li>The security warning cannot be located farther than two pixels from
      * the rectangular bounds of the window (see {@link Window#getBounds}), and

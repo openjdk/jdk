@@ -71,7 +71,7 @@ public class PageFormat implements Cloneable
 
     /**
      * The orientation of the current page. This will be
-     * one of the constants: PORTRIAT, LANDSCAPE, or
+     * one of the constants: PORTRAIT, LANDSCAPE, or
      * REVERSE_LANDSCAPE,
      */
     private int mOrientation = PORTRAIT;

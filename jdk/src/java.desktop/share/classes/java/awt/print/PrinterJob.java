@@ -524,7 +524,7 @@ public abstract class PrinterJob {
      * <p>
      * Note that some attributes may be set directly on the PrinterJob
      * by equivalent method calls, (for example), copies:
-     * <code>setcopies(int)</code>, job name: <code>setJobName(String)</code>
+     * <code>setCopies(int)</code>, job name: <code>setJobName(String)</code>
      * and specifying media size and orientation though the
      * <code>PageFormat</code> object.
      * <p>
