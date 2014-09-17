@@ -5095,7 +5095,11 @@ private:
       _num_entered_barrier(0)
   {
     nmethod::increase_unloading_clock();
-    _first_nmethod = CodeCache::alive_nmethod(CodeCache::first());
+    // Get first alive nmethod
+    NMethodIterator iter = NMethodIterator();
+    if(iter.next_alive()) {
+      _first_nmethod = iter.method();
+    }
     _claimed_nmethod = (volatile nmethod*)_first_nmethod;
   }
 
@@ -5138,27 +5142,26 @@ private:
 
   void claim_nmethods(nmethod** claimed_nmethods, int *num_claimed_nmethods) {
     nmethod* first;
-    nmethod* last;
+    NMethodIterator last;
 
     do {
       *num_claimed_nmethods = 0;
 
-      first = last = (nmethod*)_claimed_nmethod;
+      first = (nmethod*)_claimed_nmethod;
+      last = NMethodIterator(first);
 
       if (first != NULL) {
-        for (int i = 0; i < MaxClaimNmethods; i++) {
-          last = CodeCache::alive_nmethod(CodeCache::next(last));
 
-          if (last == NULL) {
+        for (int i = 0; i < MaxClaimNmethods; i++) {
+          if (!last.next_alive()) {
             break;
           }
-
-          claimed_nmethods[i] = last;
+          claimed_nmethods[i] = last.method();
           (*num_claimed_nmethods)++;
         }
       }
 
-    } while ((nmethod*)Atomic::cmpxchg_ptr(last, &_claimed_nmethod, first) != first);
+    } while ((nmethod*)Atomic::cmpxchg_ptr(last.method(), &_claimed_nmethod, first) != first);
   }
 
   nmethod* claim_postponed_nmethod() {
