@@ -298,4 +298,7 @@ sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 # 6456333
 sun/tools/jps/TestJpsJarRelative.java				generic-all
 
+# 8057732
+sun/jvmstat/monitor/MonitoredVm/MonitorVmStartTerminate.java    generic-all
+
 ############################################################################
