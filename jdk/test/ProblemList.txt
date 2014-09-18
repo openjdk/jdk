@@ -130,6 +130,9 @@ com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java
 # 8056143
 java/lang/management/MemoryMXBean/LowMemoryTest.java                                      generic-all
 
+# 8058492
+java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
+
 ############################################################################
 
 # jdk_jmx
