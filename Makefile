@@ -70,8 +70,8 @@ else
   # Run the makefile with an arbitrary SPEC using -p -q (quiet dry-run and dump rules) to find
   # available PHONY targets. Use this list as valid targets to pass on to the repeated calls.
   all_phony_targets := $(sort $(filter-out $(global_targets), $(strip $(shell \
-      cd $(root_dir)/make && $(MAKE) -f Main.gmk -p -q FRC SPEC=$(firstword $(SPEC)) | \
-      grep "^.PHONY:" | head -n 1 | cut -d " " -f 2-))))
+      cd $(root_dir)/make && $(MAKE) -f Main.gmk -p -q FRC SPEC=$(firstword $(SPEC)) \
+      -I $(root_dir)/make/common | grep "^.PHONY:" | head -n 1 | cut -d " " -f 2-))))
 
   # Loop through the configurations and call the main-wrapper for each one. The wrapper
   # target will execute with a single configuration loaded.
@@ -115,12 +115,12 @@ else
 
     main-wrapper:
         ifneq ($(SEQUENTIAL_TARGETS), )
-	  (cd $(root_dir)/make && $(MAKE) -f Main.gmk SPEC=$(SPEC) -j 1 \
+	  (cd $(SRC_ROOT)/make && $(MAKE) -f Main.gmk SPEC=$(SPEC) -j 1 \
 	      $(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $(SEQUENTIAL_TARGETS))
         endif
         ifneq ($(PARALLEL_TARGETS), )
 	  @$(call AtMakeStart)
-	  (cd $(root_dir)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -f Main.gmk SPEC=$(SPEC) -j $(JOBS) \
+	  (cd $(SRC_ROOT)/make && $(BUILD_LOG_WRAPPER) $(MAKE) -f Main.gmk SPEC=$(SPEC) -j $(JOBS) \
 	      $(VERBOSE) VERBOSE=$(VERBOSE) LOG_LEVEL=$(LOG_LEVEL) $(PARALLEL_TARGETS) \
 	      $(if $(filter true, $(OUTPUT_SYNC_SUPPORTED)), -O$(OUTPUT_SYNC)))
 	  @$(call AtMakeEnd)
