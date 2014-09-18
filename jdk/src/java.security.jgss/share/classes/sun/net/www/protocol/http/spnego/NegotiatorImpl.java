@@ -25,7 +25,6 @@
 
 package sun.net.www.protocol.http.spnego;
 
-import com.sun.security.jgss.ExtendedGSSContext;
 import java.io.IOException;
 
 import org.ietf.jgss.GSSContext;
@@ -36,6 +35,7 @@ import org.ietf.jgss.Oid;
 import sun.net.www.protocol.http.HttpCallerInfo;
 import sun.net.www.protocol.http.Negotiator;
 import sun.security.jgss.GSSManagerImpl;
+import sun.security.jgss.GSSContextImpl;
 import sun.security.jgss.GSSUtil;
 import sun.security.jgss.HttpCaller;
 
@@ -102,8 +102,8 @@ public class NegotiatorImpl extends Negotiator {
                                         GSSContext.DEFAULT_LIFETIME);
 
         // Always respect delegation policy in HTTP/SPNEGO.
-        if (context instanceof ExtendedGSSContext) {
-            ((ExtendedGSSContext)context).requestDelegPolicy(true);
+        if (context instanceof GSSContextImpl) {
+            ((GSSContextImpl)context).requestDelegPolicy(true);
         }
         oneToken = context.initSecContext(new byte[0], 0, 0);
     }
