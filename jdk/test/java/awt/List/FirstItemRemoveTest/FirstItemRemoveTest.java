@@ -65,7 +65,7 @@ public class FirstItemRemoveTest extends Applet
 
     private void test(){
 
-        if (sun.awt.OSInfo.getOSType() == sun.awt.OSInfo.OSType.MACOSX) {
+        if (jdk.testlibrary.OSInfo.getOSType() == jdk.testlibrary.OSInfo.OSType.MACOSX) {
             System.err.println("Skipped. This test is not for OS X.");
             return;
         }
