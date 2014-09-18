@@ -38,7 +38,7 @@ import java.applet.*;
 import java.awt.*;
 import java.awt.image.*;
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import test.java.awt.regtesthelpers.Sysout;
 
 public class DisposeInActionEventTest extends Applet {
