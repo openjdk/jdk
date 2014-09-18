@@ -43,8 +43,8 @@ inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
          err_msg("Cannot calculate region index for address "PTR_FORMAT" that is outside of the heap ["PTR_FORMAT", "PTR_FORMAT")",
-                 p2i(addr), p2i(_reserved.start()), p2i(_reserved.end())));
-  return (uint)(pointer_delta(addr, _reserved.start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
+                 p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end())));
+  return (uint)(pointer_delta(addr, reserved_region().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
