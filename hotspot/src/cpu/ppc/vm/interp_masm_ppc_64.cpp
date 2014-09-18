@@ -1166,9 +1166,9 @@ void InterpreterMacroAssembler::test_backedge_count_for_osr(Register backedge_co
   beq(CCR0, overflow_with_error);
 
   // Has the nmethod been invalidated already?
-  lwz(Rtmp, nmethod::entry_bci_offset(), R3_RET);
-  cmpwi(CCR0, Rtmp, InvalidOSREntryBci);
-  beq(CCR0, overflow_with_error);
+  lbz(Rtmp, nmethod::state_offset(), R3_RET);
+  cmpwi(CCR0, Rtmp, nmethod::in_use);
+  bne(CCR0, overflow_with_error);
 
   // Migrate the interpreter frame off of the stack.
   // We can use all registers because we will not return to interpreter from this point.
