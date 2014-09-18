@@ -1779,22 +1779,6 @@ void CompileBroker::compiler_thread_loop() {
     if (method()->number_of_breakpoints() == 0) {
       // Compile the method.
       if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
-#ifdef COMPILER1
-        // Allow repeating compilations for the purpose of benchmarking
-        // compile speed. This is not useful for customers.
-        if (CompilationRepeat != 0) {
-          int compile_count = CompilationRepeat;
-          while (compile_count > 0) {
-            invoke_compiler_on_method(task);
-            nmethod* nm = method->code();
-            if (nm != NULL) {
-              nm->make_zombie();
-              method->clear_code();
-            }
-            compile_count--;
-          }
-        }
-#endif /* COMPILER1 */
         invoke_compiler_on_method(task);
       } else {
         // After compilation is disabled, remove remaining methods from queue
