@@ -430,7 +430,7 @@ int Compile::frame_size_in_words() const {
 // removes the need to bang the stack in the deoptimization blob which
 // in turn simplifies stack overflow handling.
 int Compile::bang_size_in_bytes() const {
-  return MAX2(_interpreter_frame_size, frame_size_in_bytes());
+  return MAX2(frame_size_in_bytes() + os::extra_bang_size_in_bytes(), _interpreter_frame_size);
 }
 
 // ============================================================================

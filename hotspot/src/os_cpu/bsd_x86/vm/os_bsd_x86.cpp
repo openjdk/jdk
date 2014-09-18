@@ -1030,3 +1030,8 @@ void os::setup_fpu() {
 void os::verify_stack_alignment() {
 }
 #endif
+
+int os::extra_bang_size_in_bytes() {
+  // JDK-8050147 requires the full cache line bang for x86.
+  return VM_Version::L1_line_size();
+}

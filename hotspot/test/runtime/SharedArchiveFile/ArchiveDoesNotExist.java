@@ -61,7 +61,7 @@ public class ArchiveDoesNotExist {
            "-version");
 
         output = new OutputAnalyzer(pb.start());
-        output.shouldContain("java version");
+        output.shouldMatch("(java|openjdk) version");
         output.shouldNotContain("sharing");
         output.shouldHaveExitValue(0);
     }
