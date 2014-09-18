@@ -62,7 +62,7 @@ class InvokerBytecodeGenerator {
     private static final String CLL_SIG = "(L" + CLS + ";L" + OBJ + ";)L" + OBJ + ";";
 
     /** Name of its super class*/
-    private static final String superName = LF;
+    private static final String superName = OBJ;
 
     /** Name of new class */
     private final String className;
@@ -97,7 +97,7 @@ class InvokerBytecodeGenerator {
         if (DUMP_CLASS_FILES) {
             className = makeDumpableClassName(className);
         }
-        this.className  = superName + "$" + className;
+        this.className  = LF + "$" + className;
         this.sourceFile = "LambdaForm$" + className;
         this.lambdaForm = lambdaForm;
         this.invokerName = invokerName;
