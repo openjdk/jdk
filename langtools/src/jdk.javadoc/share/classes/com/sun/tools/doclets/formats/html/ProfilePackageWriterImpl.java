@@ -103,8 +103,7 @@ public class ProfilePackageWriterImpl extends HtmlDocletWriter
      * {@inheritDoc}
      */
     public Content getPackageHeader(String heading) {
-        String pkgName = packageDoc.name();
-        Content bodyTree = getBody(true, getWindowTitle(pkgName));
+        Content bodyTree = getBody(true, getWindowTitle(utils.getPackageName(packageDoc)));
         addTop(bodyTree);
         addNavLinks(true, bodyTree);
         HtmlTree div = new HtmlTree(HtmlTag.DIV);
