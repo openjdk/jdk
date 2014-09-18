@@ -582,6 +582,60 @@ public class ScopeTest {
         assertEquals(e.eval("x", newCtxt), 2);
     }
 
+    // @bug 8058422: Users should be able to overwrite "context" and "engine" variables
+    @Test
+    public static void contextOverwriteTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = new SimpleBindings();
+        b.put("context", "hello");
+        b.put("foo", 32);
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+        e.setContext(newCtxt);
+        assertEquals(e.eval("context"), "hello");
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+    }
+
+    // @bug 8058422: Users should be able to overwrite "context" and "engine" variables
+    @Test
+    public static void contextOverwriteInScriptTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.put("foo", 32);
+
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+        assertEquals(e.eval("context = 'bar'"), "bar");
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+    }
+
+    // @bug 8058422: Users should be able to overwrite "context" and "engine" variables
+    @Test
+    public static void engineOverwriteTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        final Bindings b = new SimpleBindings();
+        b.put("engine", "hello");
+        b.put("foo", 32);
+        final ScriptContext newCtxt = new SimpleScriptContext();
+        newCtxt.setBindings(b, ScriptContext.ENGINE_SCOPE);
+        e.setContext(newCtxt);
+        assertEquals(e.eval("engine"), "hello");
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+    }
+
+    // @bug 8058422: Users should be able to overwrite "context" and "engine" variables
+    @Test
+    public static void engineOverwriteInScriptTest() throws ScriptException {
+        final ScriptEngineManager m = new ScriptEngineManager();
+        final ScriptEngine e = m.getEngineByName("nashorn");
+        e.put("foo", 32);
+
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+        assertEquals(e.eval("engine = 'bar'"), "bar");
+        assertEquals(((Number)e.eval("foo")).intValue(), 32);
+    }
+
     // @bug 8044750: megamorphic getter for scope objects does not call __noSuchProperty__ hook
     @Test
     public static void testMegamorphicGetInGlobal() throws Exception {
