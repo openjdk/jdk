@@ -1206,6 +1206,12 @@ void CompileBroker::compile_method_base(methodHandle method,
     return;
   }
 
+  if (TieredCompilation) {
+    // Tiered policy requires MethodCounters to exist before adding a method to
+    // the queue. Create if we don't have them yet.
+    method->get_method_counters(thread);
+  }
+
   // Outputs from the following MutexLocker block:
   CompileTask* task     = NULL;
   bool         blocking = false;
