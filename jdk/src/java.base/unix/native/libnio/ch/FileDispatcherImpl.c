@@ -34,6 +34,10 @@
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
+#if defined(__linux__)
+#include <linux/fs.h>
+#include <sys/ioctl.h>
+#endif
 #include "nio.h"
 #include "nio_util.h"
 
@@ -177,10 +181,21 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 {
+    jint fd = fdval(env, fdo);
     struct stat64 fbuf;
 
-    if (fstat64(fdval(env, fdo), &fbuf) < 0)
+    if (fstat64(fd, &fbuf) < 0)
         return handle(env, -1, "Size failed");
+
+#ifdef BLKGETSIZE64
+    if (S_ISBLK(fbuf.st_mode)) {
+        uint64_t size;
+        if (ioctl(fd, BLKGETSIZE64, &size) < 0)
+            return handle(env, -1, "Size failed");
+        return (jlong)size;
+    }
+#endif
+
     return fbuf.st_size;
 }
 

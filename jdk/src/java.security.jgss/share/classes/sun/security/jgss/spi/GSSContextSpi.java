@@ -34,7 +34,6 @@ import org.ietf.jgss.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.security.Provider;
-import com.sun.security.jgss.*;
 
 /**
  * This interface is implemented by a mechanism specific instance of a GSS
@@ -403,6 +402,6 @@ public interface GSSContextSpi {
      * @throws GSSException see {@link ExtendedGSSContext#inquireSecContext}
      * for details
      */
-    public Object inquireSecContext(InquireType type)
+    public Object inquireSecContext(String type)
             throws GSSException;
 }

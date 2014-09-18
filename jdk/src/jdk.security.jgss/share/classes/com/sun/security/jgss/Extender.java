@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2008, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,18 +23,34 @@
  * questions.
  */
 
-#include "D3DPipeline.h"
+package com.sun.security.jgss;
 
-BOOL APIENTRY DllMain( HANDLE hModule,
-                       DWORD  ul_reason_for_call,
-                       LPVOID lpReserved)
-{
-    switch (ul_reason_for_call) {
-    case DLL_PROCESS_ATTACH:
-    case DLL_THREAD_ATTACH:
-    case DLL_THREAD_DETACH:
-    case DLL_PROCESS_DETACH:
-        break;
+import org.ietf.jgss.GSSContext;
+import org.ietf.jgss.GSSCredential;
+import sun.security.jgss.GSSContextImpl;
+import sun.security.jgss.GSSCredentialImpl;
+import sun.security.jgss.JgssExtender;
+
+// The com.sun.security.jgss extension to JGSS-API
+class Extender extends JgssExtender {
+
+    static {
+        JgssExtender.setExtender(new Extender());
     }
-    return TRUE;
+
+    public GSSCredential wrap(GSSCredential cred) {
+        if (cred instanceof ExtendedGSSCredential.ExtendedGSSCredentialImpl) {
+            return cred;
+        } else {
+            return new ExtendedGSSCredential.ExtendedGSSCredentialImpl((GSSCredentialImpl)cred);
+        }
+    }
+
+    public GSSContext wrap(GSSContext ctxt) {
+        if (ctxt instanceof ExtendedGSSContext.ExtendedGSSContextImpl) {
+            return ctxt;
+        } else {
+            return new ExtendedGSSContext.ExtendedGSSContextImpl((GSSContextImpl)ctxt);
+        }
+    }
 }

@@ -130,8 +130,8 @@ $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDa
 	$(PRINTF) "PREV_LOCALE_RESOURCES:=$(LOCALE_RESOURCES)" > $(JDK_OUTPUTDIR)/gensrc/_the.locale_resources
 	$(SED) $(SED_NONENARGS) $< > $@
 
-GENSRC_LOCALEDATAMETAINFO := $(JDK_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java \
-    $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java
+GENSRC_BASELOCALEDATA := $(JDK_OUTPUTDIR)/gensrc/java.base/sun/util/locale/provider/EnLocaleDataMetaInfo.java
+GENSRC_LOCALEDATA := $(JDK_OUTPUTDIR)/gensrc/jdk.localedata/sun/util/resources/provider/NonEnLocaleDataMetaInfo.java
 
 ################################################################################
 
@@ -145,7 +145,8 @@ $(GENSRC_CRBC_DST): $(JDK_TOPDIR)/src/java.base/share/classes/sun/util/CoreResou
 	$(MKDIR) -p $(@D)
 	NAWK="$(NAWK)" SED="$(SED)" $(SH) $(GENSRC_CRBC_CMD) "$(JRE_NONEXIST_LOCALES)" $< $@
 
-GENSRC_LOCALEDATAMETAINFO += $(GENSRC_CRBC_DST)
-GENSRC_JAVA_BASE += $(GENSRC_LOCALEDATAMETAINFO)
+GENSRC_BASELOCALEDATA += $(GENSRC_CRBC_DST)
+GENSRC_JAVA_BASE += $(GENSRC_BASELOCALEDATA)
+GENSRC_JDK_LOCALEDATA += $(GENSRC_LOCALEDATA)
 
 ################################################################################
