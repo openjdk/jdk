@@ -277,7 +277,7 @@ inline void CMTask::deal_with_reference(oop obj) {
   ++_refs_reached;
 
   HeapWord* objAddr = (HeapWord*) obj;
-  assert(obj->is_oop_or_null(true /* ignore mark word */), "Error");
+  assert(obj->is_oop_or_null(true /* ignore mark word */), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(obj)));
   if (_g1h->is_in_g1_reserved(objAddr)) {
     assert(obj != NULL, "null check is implicit");
     if (!_nextMarkBitMap->isMarked(objAddr)) {
