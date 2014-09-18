@@ -107,7 +107,6 @@ public class VM {
   private Runtime1     runtime1;
   /** These constants come from globalDefinitions.hpp */
   private int          invocationEntryBCI;
-  private int          invalidOSREntryBCI;
   private ReversePtrs  revPtrs;
   private VMRegImpl    vmregImpl;
   private int          reserveForAllocationPrefetch;
@@ -295,7 +294,6 @@ public class VM {
 
     stackBias    = db.lookupIntConstant("STACK_BIAS").intValue();
     invocationEntryBCI = db.lookupIntConstant("InvocationEntryBci").intValue();
-    invalidOSREntryBCI = db.lookupIntConstant("InvalidOSREntryBci").intValue();
 
     // We infer the presence of C1 or C2 from a couple of fields we
     // already have present in the type database
@@ -731,11 +729,6 @@ public class VM {
   /** FIXME: figure out where to stick this */
   public int getInvocationEntryBCI() {
     return invocationEntryBCI;
-  }
-
-  /** FIXME: figure out where to stick this */
-  public int getInvalidOSREntryBCI() {
-    return invalidOSREntryBCI;
   }
 
   // FIXME: figure out where to stick this
