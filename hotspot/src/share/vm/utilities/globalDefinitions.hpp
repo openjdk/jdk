@@ -66,6 +66,9 @@
 #ifndef ATTRIBUTE_PRINTF
 #define ATTRIBUTE_PRINTF(fmt, vargs)
 #endif
+#ifndef ATTRIBUTE_SCANF
+#define ATTRIBUTE_SCANF(fmt, vargs)
+#endif
 
 
 #include "utilities/macros.hpp"
