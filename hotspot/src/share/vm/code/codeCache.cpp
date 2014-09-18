@@ -55,6 +55,7 @@
 #ifdef COMPILER2
 #include "opto/c2compiler.hpp"
 #include "opto/compile.hpp"
+#include "opto/node.hpp"
 #endif
 
 // Helper class for printing in CodeCache
