@@ -304,13 +304,9 @@ public:
   virtual HeapWord* block_start_unsafe(const void* addr);
   virtual HeapWord* block_start_unsafe_const(const void* addr) const;
 
-  // Used by region verification. Checks that the contents of the
-  // BOT reflect that there's a single object that spans the address
-  // range [obj_start, obj_start + word_size); returns true if this is
-  // the case, returns false if it's not.
-  bool verify_for_object(HeapWord* obj_start, size_t word_size) const;
-
   void check_all_cards(size_t left_card, size_t right_card) const;
+
+  void verify() const;
 
   virtual void print_on(outputStream* out) PRODUCT_RETURN;
 };

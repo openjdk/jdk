@@ -448,7 +448,10 @@ class nmethod : public CodeBlob {
   // alive.  It is used when an uncommon trap happens.  Returns true
   // if this thread changed the state of the nmethod or false if
   // another thread performed the transition.
-  bool  make_not_entrant() { return make_not_entrant_or_zombie(not_entrant); }
+  bool  make_not_entrant() {
+    assert(!method()->is_method_handle_intrinsic(), "Cannot make MH intrinsic not entrant");
+    return make_not_entrant_or_zombie(not_entrant);
+  }
   bool  make_zombie()      { return make_not_entrant_or_zombie(zombie); }
 
   // used by jvmti to track if the unload event has been reported
