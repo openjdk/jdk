@@ -198,7 +198,7 @@ DATA_MODE/ppc64 = 64
 DATA_MODE = $(DATA_MODE/$(BUILDARCH))
 
 flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -285,7 +285,7 @@ flags.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	) > $@
 
 flags_vm.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -293,7 +293,7 @@ flags_vm.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
 	) > $@
 
 ../shared_dirs.lst:  $(BUILDTREE_MAKE) $(GAMMADIR)/src/share/vm
-	@echo Creating directory list $@
+	@echo $(LOG_INFO) Creating directory list $@
 	$(QUIETLY) if [ -d $(HS_ALT_SRC)/share/vm ]; then \
           find $(HS_ALT_SRC)/share/vm/* -prune \
 	  -type d \! \( $(TOPLEVEL_EXCLUDE_DIRS) \) -exec find {} \
@@ -304,7 +304,7 @@ flags_vm.make: $(BUILDTREE_MAKE) ../shared_dirs.lst
         \( $(ALWAYS_EXCLUDE_DIRS) \) -prune -o -type d -print \; >> $@
 
 Makefile: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -314,7 +314,7 @@ Makefile: $(BUILDTREE_MAKE)
 	) > $@
 
 vm.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -325,7 +325,7 @@ vm.make: $(BUILDTREE_MAKE)
 	) > $@
 
 adlc.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -335,7 +335,7 @@ adlc.make: $(BUILDTREE_MAKE)
 	) > $@
 
 jvmti.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -345,7 +345,7 @@ jvmti.make: $(BUILDTREE_MAKE)
 	) > $@
 
 trace.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -355,7 +355,7 @@ trace.make: $(BUILDTREE_MAKE)
 	) > $@
 
 sa.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
@@ -365,7 +365,7 @@ sa.make: $(BUILDTREE_MAKE)
 	) > $@
 
 dtrace.make: $(BUILDTREE_MAKE)
-	@echo Creating $@ ...
+	@echo $(LOG_INFO) Creating $@ ...
 	$(QUIETLY) ( \
 	$(BUILDTREE_COMMENT); \
 	echo; \
