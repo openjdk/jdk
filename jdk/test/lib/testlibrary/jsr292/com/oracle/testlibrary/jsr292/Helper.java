@@ -52,7 +52,7 @@ public class Helper {
     public static final long TEST_LIMIT;
     static {
         String str = System.getProperty("testLimit");
-        TEST_LIMIT = str != null ? Long.parseUnsignedLong(str) : 2_000L;
+        TEST_LIMIT = str != null ? Long.parseUnsignedLong(str) : 2000L;
         System.out.printf("-DtestLimit=%d%n", TEST_LIMIT);
     }
 
@@ -114,6 +114,48 @@ public class Helper {
     public static List<Object> getCalled(int lag) {
         int size = calledLog.size();
         return size <= lag ? null : calledLog.get(size - lag - 1);
+    }
+
+    public static List<Class<?>> randomClasses(Class<?>[] classes, int size) {
+        List<Class<?>> result = new ArrayList<>(size);
+        for (int i = 0; i < size; ++i) {
+            result.add(classes[RNG.nextInt(classes.length)]);
+        }
+        return result;
+    }
+
+    public static List<Class<?>> getParams(List<Class<?>> classes,
+            boolean isVararg, int argsCount) {
+        boolean unmodifiable = true;
+        List<Class<?>> result = classes.subList(0,
+                Math.min(argsCount, (MAX_ARITY / 2) - 1));
+        int extra = 0;
+        if (argsCount >= MAX_ARITY / 2) {
+            result = new ArrayList<>(result);
+            unmodifiable = false;
+            extra = (int) result.stream().filter(Helper::isDoubleCost).count();
+            int i = result.size();
+            while (result.size() + extra < argsCount) {
+                Class<?> aClass = classes.get(i);
+                if (Helper.isDoubleCost(aClass)) {
+                    ++extra;
+                    if (result.size() + extra >= argsCount) {
+                        break;
+                    }
+                }
+                result.add(aClass);
+            }
+        }
+        if (isVararg && result.size() > 0) {
+            if (unmodifiable) {
+                result = new ArrayList<>(result);
+            }
+            int last = result.size() - 1;
+            Class<?> aClass = result.get(last);
+            aClass = Array.newInstance(aClass, 2).getClass();
+            result.set(last, aClass);
+        }
+        return result;
     }
 
     public static MethodHandle addTrailingArgs(MethodHandle target, int nargs,
@@ -230,7 +272,7 @@ public class Helper {
         return randomArgs(params.toArray(new Class<?>[params.size()]));
     }
 
-    private static Object castToWrapper(Object value, Class<?> dst) {
+    public static Object castToWrapper(Object value, Class<?> dst) {
         Object wrap = null;
         if (value instanceof Number) {
             wrap = castToWrapperOrNull(((Number) value).longValue(), dst);
@@ -268,7 +310,7 @@ public class Helper {
         if (dst == byte.class || dst == Byte.class) {
             return (byte) (value);
         }
-        if (dst == boolean.class || dst == boolean.class) {
+        if (dst == boolean.class || dst == Boolean.class) {
             return ((value % 29) & 1) == 0;
         }
         return null;

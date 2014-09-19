@@ -43,9 +43,6 @@ public class CounterMonitorTest implements NotificationListener {
     // modulus number
     private Number modulus = new Integer(7);
 
-    // offset number
-    private int offset = 0;
-
     // difference mode flag
     private boolean differenceModeFlag = true;
 
@@ -57,9 +54,6 @@ public class CounterMonitorTest implements NotificationListener {
 
     // counter values
     private int[] values = new int[] {4, 6, 9, 11};
-
-    // time to wait for notification (in seconds)
-    private int timeout = 5;
 
     // flag to notify that a message has been received
     private volatile boolean messageReceived = false;
@@ -92,8 +86,9 @@ public class CounterMonitorTest implements NotificationListener {
                 echo("\t\t" + n.getObservedAttribute() +
                      " has reached or exceeded the threshold");
                 echo("\t\tDerived Gauge = " + n.getDerivedGauge());
-                messageReceived = true;
+
                 synchronized (this) {
+                    messageReceived = true;
                     notifyAll();
                 }
             } else {
@@ -205,21 +200,16 @@ public class CounterMonitorTest implements NotificationListener {
     }
 
     /*
-     * Wait until timeout reached
+     * Wait messageReceived to be true
      */
-    void doWait() {
-        for (int i = 0; i < timeout; i++) {
-            echo("\tdoWait: Waiting for " + timeout + " seconds. " +
-                 "i = " + i + ", messageReceived = " + messageReceived);
-            if (messageReceived) {
-                break;
-            }
+    synchronized void doWait() {
+        while (!messageReceived) {
             try {
-                synchronized (this) {
-                    wait(1000);
-                }
+                wait();
             } catch (InterruptedException e) {
-                // OK: Ignore...
+                System.err.println("Got unexpected exception: " + e);
+                e.printStackTrace();
+                break;
             }
         }
     }

@@ -1644,8 +1644,20 @@ static bool _print_ascii_file(const char* filename, outputStream* st) {
   return true;
 }
 
+int _print_dll_info_cb(const char * name, address base_address, address top_address, void * param) {
+  outputStream * out = (outputStream *) param;
+  out->print_cr(PTR_FORMAT " \t%s", base_address, name);
+  return 0;
+}
+
 void os::print_dll_info(outputStream *st) {
   st->print_cr("Dynamic libraries:");
+  if (get_loaded_modules_info(_print_dll_info_cb, (void *)st)) {
+    st->print_cr("Error: Cannot print dynamic libraries.");
+  }
+}
+
+int os::get_loaded_modules_info(os::LoadedModulesCallbackFunc callback, void *param) {
 #ifdef RTLD_DI_LINKMAP
   Dl_info dli;
   void *handle;
@@ -1654,36 +1666,41 @@ void os::print_dll_info(outputStream *st) {
 
   if (dladdr(CAST_FROM_FN_PTR(void *, os::print_dll_info), &dli) == 0 ||
       dli.dli_fname == NULL) {
-    st->print_cr("Error: Cannot print dynamic libraries.");
-    return;
+    return 1;
   }
   handle = dlopen(dli.dli_fname, RTLD_LAZY);
   if (handle == NULL) {
-    st->print_cr("Error: Cannot print dynamic libraries.");
-    return;
+    return 1;
   }
   dlinfo(handle, RTLD_DI_LINKMAP, &map);
   if (map == NULL) {
-    st->print_cr("Error: Cannot print dynamic libraries.");
-    return;
+    dlclose(handle);
+    return 1;
   }
 
   while (map->l_prev != NULL)
     map = map->l_prev;
 
   while (map != NULL) {
-    st->print_cr(PTR_FORMAT " \t%s", map->l_addr, map->l_name);
+    // Value for top_address is returned as 0 since we don't have any information about module size
+    if (callback(map->l_name, (address)map->l_addr, (address)0, param)) {
+      dlclose(handle);
+      return 1;
+    }
     map = map->l_next;
   }
 
   dlclose(handle);
 #elif defined(__APPLE__)
   for (uint32_t i = 1; i < _dyld_image_count(); i++) {
-    st->print_cr(PTR_FORMAT " \t%s", _dyld_get_image_header(i),
-        _dyld_get_image_name(i));
+    // Value for top_address is returned as 0 since we don't have any information about module size
+    if (callback(_dyld_get_image_name(i), (address)_dyld_get_image_header(i), (address)0, param)) {
+      return 1;
+    }
   }
+  return 0;
 #else
-  st->print_cr("Error: Cannot print dynamic libraries.");
+  return 1;
 #endif
 }
 

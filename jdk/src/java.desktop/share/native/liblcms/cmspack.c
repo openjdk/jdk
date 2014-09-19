@@ -883,6 +883,42 @@ cmsUInt8Number* UnrollXYZDoubleTo16(register _cmsTRANSFORM* info,
     }
 }
 
+// This is a conversion of XYZ float to 16 bits
+static
+cmsUInt8Number* UnrollXYZFloatTo16(register _cmsTRANSFORM* info,
+                                   register cmsUInt16Number wIn[],
+                                   register cmsUInt8Number* accum,
+                                   register cmsUInt32Number Stride)
+{
+    if (T_PLANAR(info -> InputFormat)) {
+
+        cmsFloat32Number* Pt = (cmsFloat32Number*) accum;
+        cmsCIEXYZ XYZ;
+
+        XYZ.X = Pt[0];
+        XYZ.Y = Pt[Stride];
+        XYZ.Z = Pt[Stride*2];
+        cmsFloat2XYZEncoded(wIn, &XYZ);
+
+        return accum + sizeof(cmsFloat32Number);
+
+    }
+
+    else {
+        cmsFloat32Number* Pt = (cmsFloat32Number*) accum;
+        cmsCIEXYZ XYZ;
+
+        XYZ.X = Pt[0];
+        XYZ.Y = Pt[1];
+        XYZ.Z = Pt[2];
+        cmsFloat2XYZEncoded(wIn, &XYZ);
+
+        accum += 3 * sizeof(cmsFloat32Number) + T_EXTRA(info ->InputFormat) * sizeof(cmsFloat32Number);
+
+        return accum;
+    }
+}
+
 // Check if space is marked as ink
 cmsINLINE cmsBool IsInkSpace(cmsUInt32Number Type)
 {
@@ -2334,6 +2370,39 @@ cmsUInt8Number* PackXYZDoubleFrom16(register _cmsTRANSFORM* Info,
 }
 
 static
+cmsUInt8Number* PackXYZFloatFrom16(register _cmsTRANSFORM* Info,
+                                   register cmsUInt16Number wOut[],
+                                   register cmsUInt8Number* output,
+                                   register cmsUInt32Number Stride)
+{
+    if (T_PLANAR(Info -> OutputFormat)) {
+
+        cmsCIEXYZ XYZ;
+        cmsFloat32Number* Out = (cmsFloat32Number*) output;
+        cmsXYZEncoded2Float(&XYZ, wOut);
+
+        Out[0]        = (cmsFloat32Number) XYZ.X;
+        Out[Stride]   = (cmsFloat32Number) XYZ.Y;
+        Out[Stride*2] = (cmsFloat32Number) XYZ.Z;
+
+        return output + sizeof(cmsFloat32Number);
+
+    }
+    else {
+
+        cmsCIEXYZ XYZ;
+        cmsFloat32Number* Out = (cmsFloat32Number*) output;
+        cmsXYZEncoded2Float(&XYZ, wOut);
+
+        Out[0] = (cmsFloat32Number) XYZ.X;
+        Out[1] = (cmsFloat32Number) XYZ.Y;
+        Out[2] = (cmsFloat32Number) XYZ.Z;
+
+        return output + (3 * sizeof(cmsFloat32Number) + T_EXTRA(Info ->OutputFormat) * sizeof(cmsFloat32Number));
+    }
+}
+
+static
 cmsUInt8Number* PackDoubleFrom16(register _cmsTRANSFORM* info,
                                 register cmsUInt16Number wOut[],
                                 register cmsUInt8Number* output,
@@ -2893,6 +2962,7 @@ static cmsFormatters16 InputFormatters16[] = {
     { TYPE_Lab_DBL,                                 ANYPLANAR|ANYEXTRA,   UnrollLabDoubleTo16},
     { TYPE_XYZ_DBL,                                 ANYPLANAR|ANYEXTRA,   UnrollXYZDoubleTo16},
     { TYPE_Lab_FLT,                                 ANYPLANAR|ANYEXTRA,   UnrollLabFloatTo16},
+    { TYPE_XYZ_FLT,                                 ANYPLANAR|ANYEXTRA,   UnrollXYZFloatTo16},
     { TYPE_GRAY_DBL,                                                 0,   UnrollDouble1Chan},
     { FLOAT_SH(1)|BYTES_SH(0), ANYCHANNELS|ANYPLANAR|ANYSWAPFIRST|ANYFLAVOR|
                                              ANYSWAP|ANYEXTRA|ANYSPACE,   UnrollDoubleTo16},
@@ -3027,6 +3097,7 @@ static cmsFormatters16 OutputFormatters16[] = {
     { TYPE_XYZ_DBL,                                      ANYPLANAR|ANYEXTRA,  PackXYZDoubleFrom16},
 
     { TYPE_Lab_FLT,                                      ANYPLANAR|ANYEXTRA,  PackLabFloatFrom16},
+    { TYPE_XYZ_FLT,                                      ANYPLANAR|ANYEXTRA,  PackXYZFloatFrom16},
 
     { FLOAT_SH(1)|BYTES_SH(0),      ANYFLAVOR|ANYSWAPFIRST|ANYSWAP|
                                     ANYCHANNELS|ANYPLANAR|ANYEXTRA|ANYSPACE,  PackDoubleFrom16},
@@ -3182,40 +3253,98 @@ typedef struct _cms_formatters_factory_list {
 
 } cmsFormattersFactoryList;
 
-static cmsFormattersFactoryList* FactoryList = NULL;
+_cmsFormattersPluginChunkType _cmsFormattersPluginChunk = { NULL };
+
+
+// Duplicates the zone of memory used by the plug-in in the new context
+static
+void DupFormatterFactoryList(struct _cmsContext_struct* ctx,
+                                               const struct _cmsContext_struct* src)
+{
+   _cmsFormattersPluginChunkType newHead = { NULL };
+   cmsFormattersFactoryList*  entry;
+   cmsFormattersFactoryList*  Anterior = NULL;
+   _cmsFormattersPluginChunkType* head = (_cmsFormattersPluginChunkType*) src->chunks[FormattersPlugin];
+
+     _cmsAssert(head != NULL);
+
+   // Walk the list copying all nodes
+   for (entry = head->FactoryList;
+       entry != NULL;
+       entry = entry ->Next) {
+
+           cmsFormattersFactoryList *newEntry = ( cmsFormattersFactoryList *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(cmsFormattersFactoryList));
+
+           if (newEntry == NULL)
+               return;
+
+           // We want to keep the linked list order, so this is a little bit tricky
+           newEntry -> Next = NULL;
+           if (Anterior)
+               Anterior -> Next = newEntry;
+
+           Anterior = newEntry;
+
+           if (newHead.FactoryList == NULL)
+               newHead.FactoryList = newEntry;
+   }
+
+   ctx ->chunks[FormattersPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsFormattersPluginChunkType));
+}
+
+// The interpolation plug-in memory chunk allocator/dup
+void _cmsAllocFormattersPluginChunk(struct _cmsContext_struct* ctx,
+                                    const struct _cmsContext_struct* src)
+{
+      _cmsAssert(ctx != NULL);
+
+     if (src != NULL) {
+
+         // Duplicate the LIST
+         DupFormatterFactoryList(ctx, src);
+     }
+     else {
+          static _cmsFormattersPluginChunkType FormattersPluginChunk = { NULL };
+          ctx ->chunks[FormattersPlugin] = _cmsSubAllocDup(ctx ->MemPool, &FormattersPluginChunk, sizeof(_cmsFormattersPluginChunkType));
+     }
+}
+
 
 
 // Formatters management
-cmsBool  _cmsRegisterFormattersPlugin(cmsContext id, cmsPluginBase* Data)
+cmsBool  _cmsRegisterFormattersPlugin(cmsContext ContextID, cmsPluginBase* Data)
 {
+    _cmsFormattersPluginChunkType* ctx = ( _cmsFormattersPluginChunkType*) _cmsContextGetClientChunk(ContextID, FormattersPlugin);
     cmsPluginFormatters* Plugin = (cmsPluginFormatters*) Data;
     cmsFormattersFactoryList* fl ;
 
-    // Reset
+    // Reset to built-in defaults
     if (Data == NULL) {
 
-          FactoryList = NULL;
+          ctx ->FactoryList = NULL;
           return TRUE;
     }
 
-    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(id, sizeof(cmsFormattersFactoryList));
+    fl = (cmsFormattersFactoryList*) _cmsPluginMalloc(ContextID, sizeof(cmsFormattersFactoryList));
     if (fl == NULL) return FALSE;
 
     fl ->Factory    = Plugin ->FormattersFactory;
 
-    fl ->Next = FactoryList;
-    FactoryList = fl;
+    fl ->Next = ctx -> FactoryList;
+    ctx ->FactoryList = fl;
 
     return TRUE;
 }
 
-cmsFormatter _cmsGetFormatter(cmsUInt32Number Type,         // Specific type, i.e. TYPE_RGB_8
+cmsFormatter _cmsGetFormatter(cmsContext ContextID,
+                             cmsUInt32Number Type,         // Specific type, i.e. TYPE_RGB_8
                              cmsFormatterDirection Dir,
                              cmsUInt32Number dwFlags)
 {
+    _cmsFormattersPluginChunkType* ctx = ( _cmsFormattersPluginChunkType*) _cmsContextGetClientChunk(ContextID, FormattersPlugin);
     cmsFormattersFactoryList* f;
 
-    for (f = FactoryList; f != NULL; f = f ->Next) {
+    for (f =ctx->FactoryList; f != NULL; f = f ->Next) {
 
         cmsFormatter fn = f ->Factory(Type, Dir, dwFlags);
         if (fn.Fmt16 != NULL) return fn;
