@@ -87,7 +87,11 @@ public class ReflectionExceptionTest implements NotificationListener {
                 echo("\tObservedAttribute: " + mn.getObservedAttribute());
                 echo("\tDerivedGauge: " + mn.getDerivedGauge());
                 echo("\tTrigger: " + mn.getTrigger());
-                messageReceived = true;
+
+                synchronized (this) {
+                    messageReceived = true;
+                    notifyAll();
+                }
             }
         }
     }
@@ -135,12 +139,9 @@ public class ReflectionExceptionTest implements NotificationListener {
             echo(">>> START the CounterMonitor");
             counterMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: CounterMonitor got RUNTIME_ERROR notification!");
             } else {
@@ -203,12 +204,9 @@ public class ReflectionExceptionTest implements NotificationListener {
             echo(">>> START the GaugeMonitor");
             gaugeMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: GaugeMonitor got RUNTIME_ERROR notification!");
             } else {
@@ -270,12 +268,9 @@ public class ReflectionExceptionTest implements NotificationListener {
             echo(">>> START the StringMonitor");
             stringMonitor.start();
 
-            // Wait for granularity period (multiplied by 2 for sure)
-            //
-            Thread.sleep(granularityperiod * 2);
-
             // Check if notification was received
             //
+            doWait();
             if (messageReceived) {
                 echo("\tOK: StringMonitor got RUNTIME_ERROR notification!");
             } else {
@@ -349,8 +344,23 @@ public class ReflectionExceptionTest implements NotificationListener {
         }
     }
 
+    /*
+     * Wait messageReceived to be true
+     */
+    synchronized void doWait() {
+        while (!messageReceived) {
+            try {
+                wait();
+            } catch (InterruptedException e) {
+                System.err.println("Got unexpected exception: " + e);
+                e.printStackTrace();
+                break;
+            }
+        }
+    }
+
     // Flag to notify that a message has been received
-    private boolean messageReceived = false;
+    private volatile boolean messageReceived = false;
 
     private MBeanServer server;
     private ObjectName obsObjName;

@@ -188,7 +188,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static MethodHandle makePairwiseConvert(MethodHandle target, MethodType srcType,
                                             boolean strict, boolean monobox) {
         MethodType dstType = target.type();
-        assert(dstType.parameterCount() == target.type().parameterCount());
         if (srcType == dstType)
             return target;
         if (USE_LAMBDA_FORM_EDITOR) {
@@ -265,6 +264,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
 
     static MethodHandle makePairwiseConvertIndirect(MethodHandle target, MethodType srcType,
                                                     boolean strict, boolean monobox) {
+        assert(target.type().parameterCount() == srcType.parameterCount());
         // Calculate extra arguments (temporaries) required in the names array.
         Object[] convSpecs = computeValueConversions(srcType, target.type(), strict, monobox);
         final int INARG_COUNT = srcType.parameterCount();

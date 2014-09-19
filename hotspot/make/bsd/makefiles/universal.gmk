@@ -25,6 +25,8 @@
 # macosx universal builds
 universal_product:
 	$(MAKE) MACOSX_UNIVERSAL=true all_product_universal
+universal_optimized:
+	$(MAKE) MACOSX_UNIVERSAL=true all_optimized_universal
 universal_fastdebug:
 	$(MAKE) MACOSX_UNIVERSAL=true all_fastdebug_universal
 universal_debug:
@@ -36,6 +38,10 @@ all_product_universal:
 #	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_PRODUCT_TARGETS)
 	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_PRODUCT_TARGETS)
 	$(QUIETLY) $(MAKE) BUILD_FLAVOR=product EXPORT_SUBDIR= universalize
+all_optimized_universal:
+#	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_OPTIMIZED_TARGETS)
+	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_OPTIMIZED_TARGETS)
+	$(QUIETLY) $(MAKE) BUILD_FLAVOR=optimized EXPORT_SUBDIR=/optimized universalize
 all_fastdebug_universal:
 #	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=32 $(COMMON_VM_FASTDEBUG_TARGETS)
 	$(QUIETLY) $(MAKE) ARCH_DATA_MODEL=64 $(COMMON_VM_FASTDEBUG_TARGETS)
@@ -98,13 +104,15 @@ copy_universal:
 export_product_jdk::
 	$(MAKE) EXPORT_SUBDIR=           export_universal
 export_optimized_jdk::
-	$(MAKE) EXPORT_SUBDIR=           export_universal
+	$(MAKE) EXPORT_SUBDIR=/optimized export_universal
 export_fastdebug_jdk::
 	$(MAKE) EXPORT_SUBDIR=/fastdebug export_universal
 export_debug_jdk::
 	$(MAKE) EXPORT_SUBDIR=/debug     export_universal
 copy_product_jdk::
 	$(MAKE) COPY_SUBDIR=             copy_universal
+copy_optimized_jdk::
+	$(MAKE) COPY_SUBDIR=/optimized   copy_universal
 copy_fastdebug_jdk::
 	$(MAKE) COPY_SUBDIR=/fastdebug   copy_universal
 copy_debug_jdk::
@@ -112,5 +120,6 @@ copy_debug_jdk::
 
 .PHONY:	universal_product universal_fastdebug universal_debug \
 	all_product_universal all_fastdebug_universal all_debug_universal \
+	universal_optimized all_optimized_universal \
 	universalize export_universal copy_universal \
 	$(UNIVERSAL_LIPO_LIST) $(UNIVERSAL_COPY_LIST)

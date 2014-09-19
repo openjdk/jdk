@@ -27,11 +27,11 @@ package sun.security.jgss;
 
 import org.ietf.jgss.*;
 import sun.security.jgss.spi.*;
+
 import java.util.*;
-import com.sun.security.jgss.*;
 import sun.security.jgss.spnego.SpNegoCredElement;
 
-public class GSSCredentialImpl implements ExtendedGSSCredential {
+public class GSSCredentialImpl implements GSSCredential {
 
     private GSSManagerImpl gssManager = null;
     private boolean destroyed = false;
@@ -46,6 +46,18 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
 
     // XXX Optimization for single mech usage
     private GSSCredentialSpi tempCred = null;
+
+    public GSSCredentialImpl() {
+        // Useless
+    }
+
+    // Used by new ExtendedGSSCredential.ExtendedGSSCredentialImpl(cred)
+    protected GSSCredentialImpl(GSSCredentialImpl src) {
+        this.gssManager = src.gssManager;
+        this.destroyed = src.destroyed;
+        this.hashtable = src.hashtable;
+        this.tempCred = src.tempCred;
+    }
 
     GSSCredentialImpl(GSSManagerImpl gssManager, int usage)
         throws GSSException {
@@ -140,7 +152,7 @@ public class GSSCredentialImpl implements ExtendedGSSCredential {
                                   ((GSSNameImpl)name).getElement(mech));
         GSSCredentialSpi cred = tempCred.impersonate(nameElement);
         return (cred == null ?
-            null : new GSSCredentialImpl(gssManager, cred));
+            null : GSSManagerImpl.wrap(new GSSCredentialImpl(gssManager, cred)));
     }
 
     public GSSName getName() throws GSSException {

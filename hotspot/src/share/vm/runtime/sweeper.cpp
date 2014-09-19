@@ -618,7 +618,7 @@ void NMethodSweeper::possibly_flush(nmethod* nm) {
         if (mc == NULL) {
           // Sometimes we can get here without MethodCounters. For example if we run with -Xcomp.
           // Try to allocate them.
-          mc = Method::build_method_counters(nm->method(), Thread::current());
+          mc = nm->method()->get_method_counters(Thread::current());
         }
         if (mc != NULL) {
           // Snapshot the value as it's changed concurrently
