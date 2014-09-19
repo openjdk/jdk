@@ -196,7 +196,8 @@ public abstract class URLStreamHandler {
                                 ++ind ;
                                 // port can be null according to RFC2396
                                 if (nhost.length() > (ind + 1)) {
-                                    port = Integer.parseInt(nhost.substring(ind+1));
+                                    port = Integer.parseInt(nhost, ind + 1,
+                                        nhost.length(), 10);
                                 }
                             } else {
                                 throw new IllegalArgumentException(
@@ -213,7 +214,8 @@ public abstract class URLStreamHandler {
                     if (ind >= 0) {
                         // port can be null according to RFC2396
                         if (host.length() > (ind + 1)) {
-                            port = Integer.parseInt(host.substring(ind + 1));
+                            port = Integer.parseInt(host, ind + 1,
+                                    host.length(), 10);
                         }
                         host = host.substring(0, ind);
                     }

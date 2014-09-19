@@ -80,7 +80,7 @@ public class TransferProtocolClient extends NetworkClient {
                 code = -1;
             } else {
                 try {
-                    code = Integer.parseInt(response.substring(0, 3));
+                    code = Integer.parseInt(response, 0, 3, 10);
                 } catch (NumberFormatException e) {
                     code = -1;
                 } catch (StringIndexOutOfBoundsException e) {
