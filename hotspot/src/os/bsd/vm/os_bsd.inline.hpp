@@ -274,4 +274,8 @@ inline bool os::supports_monotonic_clock() {
 #endif
 }
 
+inline void os::exit(int num) {
+  ::exit(num);
+}
+
 #endif // OS_BSD_VM_OS_BSD_INLINE_HPP

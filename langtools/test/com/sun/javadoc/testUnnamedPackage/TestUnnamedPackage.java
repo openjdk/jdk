@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      4904075 4774450 5015144
+ * @bug      4904075 4774450 5015144 8043698
  * @summary  Reference unnamed package as "Unnamed", not empty string.
  *           Generate a package summary for the unnamed package.
  * @author   jamieh
@@ -50,6 +50,9 @@ public class TestUnnamedPackage extends JavadocTester {
                 "<h1 title=\"Package\" class=\"title\">Package&nbsp;&lt;Unnamed&gt;</h1>",
                 "This is a package comment for the unnamed package.",
                 "This is a class in the unnamed package.");
+
+        checkOutput("package-summary.html", true,
+                "<title>&lt;Unnamed&gt;</title>");
 
         checkOutput("package-tree.html", true,
                 "<h1 class=\"title\">Hierarchy For Package &lt;Unnamed&gt;</h1>");

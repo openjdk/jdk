@@ -176,15 +176,17 @@ public:
 class RemoveSelfForwardPtrHRClosure: public HeapRegionClosure {
   G1CollectedHeap* _g1h;
   ConcurrentMark* _cm;
-  OopsInHeapRegionClosure *_update_rset_cl;
   uint _worker_id;
+
+  DirtyCardQueue _dcq;
+  UpdateRSetDeferred _update_rset_cl;
 
 public:
   RemoveSelfForwardPtrHRClosure(G1CollectedHeap* g1h,
-                                OopsInHeapRegionClosure* update_rset_cl,
                                 uint worker_id) :
-    _g1h(g1h), _update_rset_cl(update_rset_cl),
-    _worker_id(worker_id), _cm(_g1h->concurrent_mark()) { }
+    _g1h(g1h), _dcq(&g1h->dirty_card_queue_set()), _update_rset_cl(g1h, &_dcq),
+    _worker_id(worker_id), _cm(_g1h->concurrent_mark()) {
+    }
 
   bool doHeapRegion(HeapRegion *hr) {
     bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
@@ -195,7 +197,7 @@ public:
 
     if (hr->claimHeapRegion(HeapRegion::ParEvacFailureClaimValue)) {
       if (hr->evacuation_failed()) {
-        RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, _update_rset_cl,
+        RemoveSelfForwardPtrObjClosure rspc(_g1h, _cm, hr, &_update_rset_cl,
                                             during_initial_mark,
                                             during_conc_mark,
                                             _worker_id);
@@ -214,7 +216,7 @@ public:
         // whenever this might be required in the future.
         hr->rem_set()->reset_for_par_iteration();
         hr->reset_bot();
-        _update_rset_cl->set_region(hr);
+        _update_rset_cl.set_region(hr);
         hr->object_iterate(&rspc);
 
         hr->rem_set()->clean_strong_code_roots(hr);
@@ -238,16 +240,7 @@ public:
     _g1h(g1h) { }
 
   void work(uint worker_id) {
-    UpdateRSetImmediate immediate_update(_g1h->g1_rem_set());
-    DirtyCardQueue dcq(&_g1h->dirty_card_queue_set());
-    UpdateRSetDeferred deferred_update(_g1h, &dcq);
-
-    OopsInHeapRegionClosure *update_rset_cl = &deferred_update;
-    if (!G1DeferredRSUpdate) {
-      update_rset_cl = &immediate_update;
-    }
-
-    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, update_rset_cl, worker_id);
+    RemoveSelfForwardPtrHRClosure rsfp_cl(_g1h, worker_id);
 
     HeapRegion* hr = _g1h->start_cset_region_for_worker(worker_id);
     _g1h->collection_set_iterate_from(hr, &rsfp_cl);

@@ -108,9 +108,6 @@
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
                                                                             \
-  develop(bool, G1DeferredRSUpdate, true,                                   \
-          "If true, use deferred RS updates")                               \
-                                                                            \
   develop(bool, G1RSLogCheckCardTable, false,                               \
           "If true, verify that no dirty cards remain after RS log "        \
           "processing.")                                                    \

@@ -37,8 +37,6 @@ import java.util.Map;
  * support infrastructure to invoke a java class from the command line
  */
 class LUtils {
-    static final sun.tools.jar.Main jarTool =
-            new sun.tools.jar.Main(System.out, System.err, "jar-tool");
     static final com.sun.tools.javac.Main javac =
             new com.sun.tools.javac.Main();
     static final File cwd = new File(".").getAbsoluteFile();
@@ -49,6 +47,10 @@ class LUtils {
     static final File JAVA_BIN_FILE = new File(JAVAHOME, "bin");
     static final File JAVA_CMD = new File(JAVA_BIN_FILE,
             isWindows ? "java.exe" : "java");
+    static final File JAR_BIN_FILE =
+            new File(new File(JAVAHOME).getParentFile(), "bin");
+    static final File JAR_CMD = new File(JAR_BIN_FILE,
+            isWindows ? "jar.exe" : "jar");
 
     protected LUtils() {
     }

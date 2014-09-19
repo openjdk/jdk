@@ -43,6 +43,7 @@ import java.io.IOException;
 import java.beans.PropertyVetoException;
 import java.util.Set;
 import java.util.TreeSet;
+import java.util.LinkedHashSet;
 /**
  * A container used to create a multiple-document interface or a virtual desktop.
  * You create <code>JInternalFrame</code> objects and add them to the
@@ -271,7 +272,7 @@ public class JDesktopPane extends JLayeredPane implements Accessible
 
     private static Collection<JInternalFrame> getAllFrames(Container parent) {
         int i, count;
-        Collection<JInternalFrame> results = new ArrayList<JInternalFrame>();
+        Collection<JInternalFrame> results = new LinkedHashSet<>();
         count = parent.getComponentCount();
         for (i = 0; i < count; i++) {
             Component next = parent.getComponent(i);

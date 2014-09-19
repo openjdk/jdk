@@ -131,11 +131,16 @@ final class NashornBottomLinker implements GuardingDynamicLinker, GuardingTypeCo
             }
             return getInvocation(EMPTY_ELEM_GETTER, self, linkerServices, desc);
         case "setProp":
-        case "setElem":
+        case "setElem": {
+            final boolean strict = NashornCallSiteDescriptor.isStrict(desc);
+            if (strict) {
+                throw typeError("cant.set.property", getArgument(linkRequest), ScriptRuntime.safeToString(self));
+            }
             if (desc.getOperand() != null) {
                 return getInvocation(EMPTY_PROP_SETTER, self, linkerServices, desc);
             }
             return getInvocation(EMPTY_ELEM_SETTER, self, linkerServices, desc);
+        }
         default:
             break;
         }

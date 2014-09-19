@@ -232,7 +232,8 @@ void CodeCache::initialize_heaps() {
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
   // Determine alignment
   const size_t page_size = os::can_execute_large_page_memory() ?
-          os::page_size_for_region(InitialCodeCacheSize, size, 8) :
+          MIN2(os::page_size_for_region(InitialCodeCacheSize, 8),
+               os::page_size_for_region(size, 8)) :
           os::vm_page_size();
   const size_t granularity = os::vm_allocation_granularity();
   const size_t r_align = MAX2(page_size, granularity);

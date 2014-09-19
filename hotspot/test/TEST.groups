@@ -577,7 +577,8 @@ hotspot_runtime = \
  -runtime/Unsafe/RangeCheck.java \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
- -runtime/Thread/CancellableThreadTest.java
+ -runtime/Thread/CancellableThreadTest.java \
+ -runtime/runtime/7158988/FieldMonitor.java
 
 hotspot_runtime_closed = \
   sanity/ExecuteInternalVMTests.java

@@ -82,7 +82,6 @@ typedef struct _cmsParametricCurvesCollection_st {
 
 } _cmsParametricCurvesCollection;
 
-
 // This is the default (built-in) evaluator
 static cmsFloat64Number DefaultEvalParametricFn(cmsInt32Number Type, const cmsFloat64Number Params[], cmsFloat64Number R);
 
@@ -95,22 +94,77 @@ static _cmsParametricCurvesCollection DefaultCurves = {
     NULL                                // Next in chain
 };
 
+// Duplicates the zone of memory used by the plug-in in the new context
+static
+void DupPluginCurvesList(struct _cmsContext_struct* ctx,
+                                               const struct _cmsContext_struct* src)
+{
+   _cmsCurvesPluginChunkType newHead = { NULL };
+   _cmsParametricCurvesCollection*  entry;
+   _cmsParametricCurvesCollection*  Anterior = NULL;
+   _cmsCurvesPluginChunkType* head = (_cmsCurvesPluginChunkType*) src->chunks[CurvesPlugin];
+
+    _cmsAssert(head != NULL);
+
+    // Walk the list copying all nodes
+   for (entry = head->ParametricCurves;
+        entry != NULL;
+        entry = entry ->Next) {
+
+            _cmsParametricCurvesCollection *newEntry = ( _cmsParametricCurvesCollection *) _cmsSubAllocDup(ctx ->MemPool, entry, sizeof(_cmsParametricCurvesCollection));
+
+            if (newEntry == NULL)
+                return;
+
+            // We want to keep the linked list order, so this is a little bit tricky
+            newEntry -> Next = NULL;
+            if (Anterior)
+                Anterior -> Next = newEntry;
+
+            Anterior = newEntry;
+
+            if (newHead.ParametricCurves == NULL)
+                newHead.ParametricCurves = newEntry;
+    }
+
+  ctx ->chunks[CurvesPlugin] = _cmsSubAllocDup(ctx->MemPool, &newHead, sizeof(_cmsCurvesPluginChunkType));
+}
+
+// The allocator have to follow the chain
+void _cmsAllocCurvesPluginChunk(struct _cmsContext_struct* ctx,
+                                const struct _cmsContext_struct* src)
+{
+    _cmsAssert(ctx != NULL);
+
+    if (src != NULL) {
+
+        // Copy all linked list
+       DupPluginCurvesList(ctx, src);
+    }
+    else {
+        static _cmsCurvesPluginChunkType CurvesPluginChunk = { NULL };
+        ctx ->chunks[CurvesPlugin] = _cmsSubAllocDup(ctx ->MemPool, &CurvesPluginChunk, sizeof(_cmsCurvesPluginChunkType));
+    }
+}
+
+
 // The linked list head
-static _cmsParametricCurvesCollection* ParametricCurves = &DefaultCurves;
+_cmsCurvesPluginChunkType _cmsCurvesPluginChunk = { NULL };
 
 // As a way to install new parametric curves
-cmsBool _cmsRegisterParametricCurvesPlugin(cmsContext id, cmsPluginBase* Data)
+cmsBool _cmsRegisterParametricCurvesPlugin(cmsContext ContextID, cmsPluginBase* Data)
 {
+    _cmsCurvesPluginChunkType* ctx = ( _cmsCurvesPluginChunkType*) _cmsContextGetClientChunk(ContextID, CurvesPlugin);
     cmsPluginParametricCurves* Plugin = (cmsPluginParametricCurves*) Data;
     _cmsParametricCurvesCollection* fl;
 
     if (Data == NULL) {
 
-          ParametricCurves =  &DefaultCurves;
+          ctx -> ParametricCurves =  NULL;
           return TRUE;
     }
 
-    fl = (_cmsParametricCurvesCollection*) _cmsPluginMalloc(id, sizeof(_cmsParametricCurvesCollection));
+    fl = (_cmsParametricCurvesCollection*) _cmsPluginMalloc(ContextID, sizeof(_cmsParametricCurvesCollection));
     if (fl == NULL) return FALSE;
 
     // Copy the parameters
@@ -126,8 +180,8 @@ cmsBool _cmsRegisterParametricCurvesPlugin(cmsContext id, cmsPluginBase* Data)
     memmove(fl->ParameterCount, Plugin ->ParameterCount,  fl->nFunctions * sizeof(cmsUInt32Number));
 
     // Keep linked list
-    fl ->Next = ParametricCurves;
-    ParametricCurves = fl;
+    fl ->Next = ctx->ParametricCurves;
+    ctx->ParametricCurves = fl;
 
     // All is ok
     return TRUE;
@@ -149,12 +203,24 @@ int IsInSet(int Type, _cmsParametricCurvesCollection* c)
 
 // Search for the collection which contains a specific type
 static
-_cmsParametricCurvesCollection *GetParametricCurveByType(int Type, int* index)
+_cmsParametricCurvesCollection *GetParametricCurveByType(cmsContext ContextID, int Type, int* index)
 {
     _cmsParametricCurvesCollection* c;
     int Position;
+    _cmsCurvesPluginChunkType* ctx = ( _cmsCurvesPluginChunkType*) _cmsContextGetClientChunk(ContextID, CurvesPlugin);
 
-    for (c = ParametricCurves; c != NULL; c = c ->Next) {
+    for (c = ctx->ParametricCurves; c != NULL; c = c ->Next) {
+
+        Position = IsInSet(Type, c);
+
+        if (Position != -1) {
+            if (index != NULL)
+                *index = Position;
+            return c;
+        }
+    }
+    // If none found, revert for defaults
+    for (c = &DefaultCurves; c != NULL; c = c ->Next) {
 
         Position = IsInSet(Type, c);
 
@@ -251,7 +317,7 @@ cmsToneCurve* AllocateToneCurveStruct(cmsContext ContextID, cmsInt32Number nEntr
                 p ->Segments[i].SampledPoints = NULL;
 
 
-            c = GetParametricCurveByType(Segments[i].Type, NULL);
+            c = GetParametricCurveByType(ContextID, Segments[i].Type, NULL);
             if (c != NULL)
                     p ->Evals[i] = c ->Evaluator;
         }
@@ -677,12 +743,12 @@ cmsToneCurve* CMSEXPORT cmsBuildParametricToneCurve(cmsContext ContextID, cmsInt
     cmsCurveSegment Seg0;
     int Pos = 0;
     cmsUInt32Number size;
-    _cmsParametricCurvesCollection* c = GetParametricCurveByType(Type, &Pos);
+    _cmsParametricCurvesCollection* c = GetParametricCurveByType(ContextID, Type, &Pos);
 
     _cmsAssert(Params != NULL);
 
     if (c == NULL) {
-         cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Invalid parametric curve type %d", Type);
+        cmsSignalError(ContextID, cmsERROR_UNKNOWN_EXTENSION, "Invalid parametric curve type %d", Type);
         return NULL;
     }
 
@@ -872,7 +938,10 @@ cmsToneCurve* CMSEXPORT cmsReverseToneCurveEx(cmsInt32Number nResultSamples, con
     _cmsAssert(InCurve != NULL);
 
     // Try to reverse it analytically whatever possible
-    if (InCurve ->nSegments == 1 && InCurve ->Segments[0].Type > 0 && InCurve -> Segments[0].Type <= 5) {
+
+    if (InCurve ->nSegments == 1 && InCurve ->Segments[0].Type > 0 &&
+        /* InCurve -> Segments[0].Type <= 5 */
+        GetParametricCurveByType(InCurve ->InterpParams->ContextID, InCurve ->Segments[0].Type, NULL) != NULL) {
 
         return cmsBuildParametricToneCurve(InCurve ->InterpParams->ContextID,
                                        -(InCurve -> Segments[0].Type),

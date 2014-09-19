@@ -211,7 +211,10 @@ void YoungList::empty_list(HeapRegion* list) {
     HeapRegion* next = list->get_next_young_region();
     list->set_next_young_region(NULL);
     list->uninstall_surv_rate_group();
-    list->set_not_young();
+    // This is called before a Full GC and all the non-empty /
+    // non-humongous regions at the end of the Full GC will end up as
+    // old anyway.
+    list->set_old();
     list = next;
   }
 }
@@ -370,7 +373,7 @@ void YoungList::print() {
     if (curr == NULL)
       gclog_or_tty->print_cr("  empty");
     while (curr != NULL) {
-      gclog_or_tty->print_cr("  "HR_FORMAT", P: "PTR_FORMAT "N: "PTR_FORMAT", age: %4d",
+      gclog_or_tty->print_cr("  "HR_FORMAT", P: "PTR_FORMAT ", N: "PTR_FORMAT", age: %4d",
                              HR_FORMAT_PARAMS(curr),
                              curr->prev_top_at_mark_start(),
                              curr->next_top_at_mark_start(),
@@ -802,6 +805,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size) {
 #ifdef ASSERT
       for (uint i = first; i < first + obj_regions; ++i) {
         HeapRegion* hr = region_at(i);
+        assert(hr->is_free(), "sanity");
         assert(hr->is_empty(), "sanity");
         assert(is_on_master_free_list(hr), "sanity");
       }
@@ -1225,21 +1229,21 @@ private:
 public:
   bool doHeapRegion(HeapRegion* hr) {
     assert(!hr->is_young(), "not expecting to find young regions");
-    // We only generate output for non-empty regions.
-    if (!hr->is_empty()) {
-      if (!hr->isHumongous()) {
-        _hr_printer->post_compaction(hr, G1HRPrinter::Old);
-      } else if (hr->startsHumongous()) {
-        if (hr->region_num() == 1) {
-          // single humongous region
-          _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
-        } else {
-          _hr_printer->post_compaction(hr, G1HRPrinter::StartsHumongous);
-        }
+    if (hr->is_free()) {
+      // We only generate output for non-empty regions.
+    } else if (hr->startsHumongous()) {
+      if (hr->region_num() == 1) {
+        // single humongous region
+        _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
       } else {
-        assert(hr->continuesHumongous(), "only way to get here");
-        _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
+        _hr_printer->post_compaction(hr, G1HRPrinter::StartsHumongous);
       }
+    } else if (hr->continuesHumongous()) {
+      _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
+    } else if (hr->is_old()) {
+      _hr_printer->post_compaction(hr, G1HRPrinter::Old);
+    } else {
+      ShouldNotReachHere();
     }
     return false;
   }
@@ -1477,9 +1481,7 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
 
       // Discard all rset updates
       JavaThread::dirty_card_queue_set().abandon_logs();
-      assert(!G1DeferredRSUpdate
-             || (G1DeferredRSUpdate &&
-                (dirty_card_queue_set().completed_buffers_num() == 0)), "Should not be any");
+      assert(dirty_card_queue_set().completed_buffers_num() == 0, "DCQS should be empty");
 
       _young_list->reset_sampled_info();
       // At this point there should be no regions in the
@@ -2090,15 +2092,13 @@ jint G1CollectedHeap::initialize() {
                                                 concurrent_g1_refine()->red_zone(),
                                                 Shared_DirtyCardQ_lock);
 
-  if (G1DeferredRSUpdate) {
-    dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
-                                      DirtyCardQ_CBL_mon,
-                                      DirtyCardQ_FL_lock,
-                                      -1, // never trigger processing
-                                      -1, // no limit on length
-                                      Shared_DirtyCardQ_lock,
-                                      &JavaThread::dirty_card_queue_set());
-  }
+  dirty_card_queue_set().initialize(NULL, // Should never be called by the Java code
+                                    DirtyCardQ_CBL_mon,
+                                    DirtyCardQ_FL_lock,
+                                    -1, // never trigger processing
+                                    -1, // no limit on length
+                                    Shared_DirtyCardQ_lock,
+                                    &JavaThread::dirty_card_queue_set());
 
   // Initialize the card queue set used to hold cards containing
   // references into the collection set.
@@ -2121,8 +2121,8 @@ jint G1CollectedHeap::initialize() {
   // We'll re-use the same region whether the alloc region will
   // require BOT updates or not and, if it doesn't, then a non-young
   // region will complain that it cannot support allocations without
-  // BOT updates. So we'll tag the dummy region as young to avoid that.
-  dummy_region->set_young();
+  // BOT updates. So we'll tag the dummy region as eden to avoid that.
+  dummy_region->set_eden();
   // Make sure it's full.
   dummy_region->set_top(dummy_region->end());
   G1AllocRegion::setup(this, dummy_region);
@@ -4031,14 +4031,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
         if (_hr_printer.is_active()) {
           HeapRegion* hr = g1_policy()->collection_set();
           while (hr != NULL) {
-            G1HRPrinter::RegionType type;
-            if (!hr->is_young()) {
-              type = G1HRPrinter::Old;
-            } else if (hr->is_survivor()) {
-              type = G1HRPrinter::Survivor;
-            } else {
-              type = G1HRPrinter::Eden;
-            }
             _hr_printer.cset(hr);
             hr = hr->next_in_collection_set();
           }
@@ -5396,7 +5388,6 @@ class G1RedirtyLoggedCardsTask : public AbstractGangTask {
 };
 
 void G1CollectedHeap::redirty_logged_cards() {
-  guarantee(G1DeferredRSUpdate, "Must only be called when using deferred RS updates.");
   double redirty_logged_cards_start = os::elapsedTime();
 
   uint n_workers = (G1CollectedHeap::use_parallel_gc_threads() ?
@@ -5451,9 +5442,10 @@ public:
   void do_oop(narrowOop* p) { guarantee(false, "Not needed"); }
   void do_oop(oop* p) {
     oop obj = *p;
+    assert(obj != NULL, "the caller should have filtered out NULL values");
 
     G1CollectedHeap::in_cset_state_t cset_state = _g1->in_cset_state(obj);
-    if (obj == NULL || cset_state == G1CollectedHeap::InNeither) {
+    if (cset_state == G1CollectedHeap::InNeither) {
       return;
     }
     if (cset_state == G1CollectedHeap::InCSet) {
@@ -6055,9 +6047,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   // RSets.
   enqueue_discovered_references(n_workers);
 
-  if (G1DeferredRSUpdate) {
-    redirty_logged_cards();
-  }
+  redirty_logged_cards();
   COMPILER2_PRESENT(DerivedPointerTable::update_pointers());
 }
 
@@ -6065,7 +6055,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
                                   FreeRegionList* free_list,
                                   bool par,
                                   bool locked) {
-  assert(!hr->isHumongous(), "this is only for non-humongous regions");
+  assert(!hr->is_free(), "the region should not be free");
   assert(!hr->is_empty(), "the region should not be empty");
   assert(_hrm.is_available(hr->hrm_index()), "region should be committed");
   assert(free_list != NULL, "pre-condition");
@@ -6095,14 +6085,14 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   // We need to read this before we make the region non-humongous,
   // otherwise the information will be gone.
   uint last_index = hr->last_hc_index();
-  hr->set_notHumongous();
+  hr->clear_humongous();
   free_region(hr, free_list, par);
 
   uint i = hr->hrm_index() + 1;
   while (i < last_index) {
     HeapRegion* curr_hr = region_at(i);
     assert(curr_hr->continuesHumongous(), "invariant");
-    curr_hr->set_notHumongous();
+    curr_hr->clear_humongous();
     free_region(curr_hr, free_list, par);
     i += 1;
   }
@@ -6410,9 +6400,9 @@ void G1CollectedHeap::free_collection_set(HeapRegion* cs_head, EvacuationInfo& e
       if (cur->is_young()) {
         cur->set_young_index_in_cset(-1);
       }
-      cur->set_not_young();
       cur->set_evacuation_failed(false);
       // The region is now considered to be old.
+      cur->set_old();
       _old_set.add(cur);
       evacuation_info.increment_collectionset_used_after(cur->used());
     }
@@ -6699,16 +6689,15 @@ public:
   TearDownRegionSetsClosure(HeapRegionSet* old_set) : _old_set(old_set) { }
 
   bool doHeapRegion(HeapRegion* r) {
-    if (r->is_empty()) {
-      // We ignore empty regions, we'll empty the free list afterwards
-    } else if (r->is_young()) {
-      // We ignore young regions, we'll empty the young list afterwards
-    } else if (r->isHumongous()) {
-      // We ignore humongous regions, we're not tearing down the
-      // humongous region set
-    } else {
-      // The rest should be old
+    if (r->is_old()) {
       _old_set->remove(r);
+    } else {
+      // We ignore free regions, we'll empty the free list afterwards.
+      // We ignore young regions, we'll empty the young list afterwards.
+      // We ignore humongous regions, we're not tearing down the
+      // humongous regions set.
+      assert(r->is_free() || r->is_young() || r->isHumongous(),
+             "it cannot be another type");
     }
     return false;
   }
@@ -6758,6 +6747,7 @@ public:
 
     if (r->is_empty()) {
       // Add free regions to the free list
+      r->set_free();
       _hrm->insert_into_free_list(r);
     } else if (!_free_list_only) {
       assert(!r->is_young(), "we should not come across young regions");
@@ -6765,7 +6755,11 @@ public:
       if (r->isHumongous()) {
         // We ignore humongous regions, we left the humongous set unchanged
       } else {
-        // The rest should be old, add them to the old set
+        // Objects that were compacted would have ended up on regions
+        // that were previously old or free.
+        assert(r->is_free() || r->is_old(), "invariant");
+        // We now consider them old, so register as such.
+        r->set_old();
         _old_set->add(r);
       }
       _total_used += r->used();
@@ -6832,7 +6826,7 @@ HeapRegion* G1CollectedHeap::new_mutator_alloc_region(size_t word_size,
 void G1CollectedHeap::retire_mutator_alloc_region(HeapRegion* alloc_region,
                                                   size_t allocated_bytes) {
   assert_heap_locked_or_at_safepoint(true /* should_be_vm_thread */);
-  assert(alloc_region->is_young(), "all mutator alloc regions should be young");
+  assert(alloc_region->is_eden(), "all mutator alloc regions should be eden");
 
   g1_policy()->add_region_to_incremental_cset_lhs(alloc_region);
   _summary_bytes_used += allocated_bytes;
@@ -6891,6 +6885,7 @@ HeapRegion* G1CollectedHeap::new_gc_alloc_region(size_t word_size,
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Survivor);
         check_bitmaps("Survivor Region Allocation", new_alloc_region);
       } else {
+        new_alloc_region->set_old();
         _hr_printer.alloc(new_alloc_region, G1HRPrinter::Old);
         check_bitmaps("Old Region Allocation", new_alloc_region);
       }
@@ -7002,9 +6997,11 @@ public:
     } else if (hr->is_empty()) {
       assert(_hrm->is_free(hr), err_msg("Heap region %u is empty but not on the free list.", hr->hrm_index()));
       _free_count.increment(1u, hr->capacity());
-    } else {
+    } else if (hr->is_old()) {
       assert(hr->containing_set() == _old_set, err_msg("Heap region %u is old but not in the old set.", hr->hrm_index()));
       _old_count.increment(1u, hr->capacity());
+    } else {
+      ShouldNotReachHere();
     }
     return false;
   }
