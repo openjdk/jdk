@@ -1636,8 +1636,8 @@ void TemplateTable::branch(bool is_jsr, bool is_wide) {
       __ br_null_short(O0, Assembler::pn, Lforward);
 
       // Has the nmethod been invalidated already?
-      __ ld(O0, nmethod::entry_bci_offset(), O2);
-      __ cmp_and_br_short(O2, InvalidOSREntryBci, Assembler::equal, Assembler::pn, Lforward);
+      __ ldub(O0, nmethod::state_offset(), O2);
+      __ cmp_and_br_short(O2, nmethod::in_use, Assembler::notEqual, Assembler::pn, Lforward);
 
       // migrate the interpreter frame off of the stack
 

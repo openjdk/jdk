@@ -87,18 +87,18 @@ class ObjectMonitor {
  public:
   // TODO-FIXME: the "offset" routines should return a type of off_t instead of int ...
   // ByteSize would also be an appropriate type.
-  static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header);     }
-  static int object_offset_in_bytes()      { return offset_of(ObjectMonitor, _object);     }
-  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner);      }
-  static int count_offset_in_bytes()       { return offset_of(ObjectMonitor, _count);      }
+  static int header_offset_in_bytes()      { return offset_of(ObjectMonitor, _header); }
+  static int object_offset_in_bytes()      { return offset_of(ObjectMonitor, _object); }
+  static int owner_offset_in_bytes()       { return offset_of(ObjectMonitor, _owner); }
+  static int count_offset_in_bytes()       { return offset_of(ObjectMonitor, _count); }
   static int recursions_offset_in_bytes()  { return offset_of(ObjectMonitor, _recursions); }
-  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq);       }
-  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ);      }
-  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList);  }
-  static int FreeNext_offset_in_bytes()    { return offset_of(ObjectMonitor, FreeNext);    }
-  static int WaitSet_offset_in_bytes()     { return offset_of(ObjectMonitor, _WaitSet);   }
+  static int cxq_offset_in_bytes()         { return offset_of(ObjectMonitor, _cxq); }
+  static int succ_offset_in_bytes()        { return offset_of(ObjectMonitor, _succ); }
+  static int EntryList_offset_in_bytes()   { return offset_of(ObjectMonitor, _EntryList); }
+  static int FreeNext_offset_in_bytes()    { return offset_of(ObjectMonitor, FreeNext); }
+  static int WaitSet_offset_in_bytes()     { return offset_of(ObjectMonitor, _WaitSet); }
   static int Responsible_offset_in_bytes() { return offset_of(ObjectMonitor, _Responsible); }
-  static int Spinner_offset_in_bytes()     { return offset_of(ObjectMonitor, _Spinner);    }
+  static int Spinner_offset_in_bytes()     { return offset_of(ObjectMonitor, _Spinner); }
 
  public:
   // Eventually we'll make provisions for multiple callbacks, but
@@ -140,7 +140,7 @@ class ObjectMonitor {
   ObjectMonitor() {
     _header       = NULL;
     _count        = 0;
-    _waiters      = 0,
+    _waiters      = 0;
     _recursions   = 0;
     _object       = NULL;
     _owner        = NULL;
@@ -158,12 +158,12 @@ class ObjectMonitor {
   }
 
   ~ObjectMonitor() {
-   // TODO: Add asserts ...
-   // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
-   // _count == 0 _EntryList  == NULL etc
+    // TODO: Add asserts ...
+    // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
+    // _count == 0 _EntryList  == NULL etc
   }
 
-private:
+ private:
   void Recycle() {
     // TODO: add stronger asserts ...
     // _cxq == 0 _succ == NULL _owner == NULL _waiters == 0
@@ -180,7 +180,7 @@ private:
     OwnerIsThread  = 0;
   }
 
-public:
+ public:
 
   void*     object() const;
   void*     object_addr();
@@ -225,9 +225,9 @@ public:
   void      ExitEpilog(Thread * Self, ObjectWaiter * Wakee);
   bool      ExitSuspendEquivalent(JavaThread * Self);
   void      post_monitor_wait_event(EventJavaMonitorWait * event,
-                                                   jlong notifier_tid,
-                                                   jlong timeout,
-                                                   bool timedout);
+                                    jlong notifier_tid,
+                                    jlong timeout,
+                                    bool timedout);
 
  private:
   friend class ObjectSynchronizer;
@@ -240,7 +240,7 @@ public:
   volatile markOop   _header;       // displaced object header word - mark
   void*     volatile _object;       // backward object pointer - strong root
 
-  double SharingPad[1];           // temp to reduce false sharing
+  double SharingPad[1];             // temp to reduce false sharing
 
   // All the following fields must be machine word aligned
   // The VM assumes write ordering wrt these fields, which can be
@@ -248,25 +248,25 @@ public:
 
  protected:                         // protected for jvmtiRawMonitor
   void *  volatile _owner;          // pointer to owning thread OR BasicLock
-  volatile jlong _previous_owner_tid; // thread id of the previous owner of the monitor
+  volatile jlong _previous_owner_tid;  // thread id of the previous owner of the monitor
   volatile intptr_t  _recursions;   // recursion count, 0 for first entry
  private:
-  int OwnerIsThread;               // _owner is (Thread *) vs SP/BasicLock
-  ObjectWaiter * volatile _cxq;    // LL of recently-arrived threads blocked on entry.
+  int OwnerIsThread;                // _owner is (Thread *) vs SP/BasicLock
+  ObjectWaiter * volatile _cxq;     // LL of recently-arrived threads blocked on entry.
                                     // The list is actually composed of WaitNodes, acting
                                     // as proxies for Threads.
  protected:
-  ObjectWaiter * volatile _EntryList;     // Threads blocked on entry or reentry.
+  ObjectWaiter * volatile _EntryList;  // Threads blocked on entry or reentry.
  private:
   Thread * volatile _succ;          // Heir presumptive thread - used for futile wakeup throttling
   Thread * volatile _Responsible;
-  int _PromptDrain;                // rqst to drain cxq into EntryList ASAP
+  int _PromptDrain;                 // rqst to drain cxq into EntryList ASAP
 
-  volatile int _Spinner;           // for exit->spinner handoff optimization
-  volatile int _SpinFreq;          // Spin 1-out-of-N attempts: success rate
+  volatile int _Spinner;            // for exit->spinner handoff optimization
+  volatile int _SpinFreq;           // Spin 1-out-of-N attempts: success rate
   volatile int _SpinClock;
   volatile int _SpinDuration;
-  volatile intptr_t _SpinState;    // MCS/CLH list of spinners
+  volatile intptr_t _SpinState;     // MCS/CLH list of spinners
 
   // TODO-FIXME: _count, _waiters and _recursions should be of
   // type int, or int32_t but not intptr_t.  There's no reason
@@ -284,8 +284,8 @@ public:
   volatile int _WaitSetLock;        // protects Wait Queue - simple spinlock
 
  public:
-  int _QMix;                       // Mixed prepend queue discipline
-  ObjectMonitor * FreeNext;        // Free list linkage
+  int _QMix;                        // Mixed prepend queue discipline
+  ObjectMonitor * FreeNext;         // Free list linkage
   intptr_t StatA, StatsB;
 
  public:
@@ -328,9 +328,17 @@ public:
 };
 
 #undef TEVENT
-#define TEVENT(nom) {if (SyncVerbose) FEVENT(nom); }
+#define TEVENT(nom) { if (SyncVerbose) FEVENT(nom); }
 
-#define FEVENT(nom) { static volatile int ctr = 0; int v = ++ctr; if ((v & (v-1)) == 0) { ::printf (#nom " : %d \n", v); ::fflush(stdout); }}
+#define FEVENT(nom)                 \
+  {                                 \
+    static volatile int ctr = 0;    \
+    int v = ++ctr;                  \
+    if ((v & (v - 1)) == 0) {       \
+      ::printf(#nom " : %d\n", v);  \
+      ::fflush(stdout);             \
+    }                               \
+  }
 
 #undef  TEVENT
 #define TEVENT(nom) {;}

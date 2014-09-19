@@ -269,7 +269,7 @@ LFLAGS_VM += -bloadmap:libjvm.loadmap
 
 # rule for building precompiled header
 $(PRECOMPILED_HEADER):
-	$(QUIETLY) echo Generating precompiled header $@
+	$(QUIETLY) echo $(LOG_INFO) Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
 	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
 
@@ -300,7 +300,7 @@ endif
 # details in bug 6538311.
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                      \
-	    echo Linking vm...;                                           \
+	    echo $(LOG_INFO) Linking vm...;                                           \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                      \
 	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                  \
 		       $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM); \

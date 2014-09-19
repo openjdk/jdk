@@ -27,7 +27,6 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1HotCardCache.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
 #include "runtime/atomic.inline.hpp"
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
@@ -136,7 +135,6 @@ void G1HotCardCache::drain(uint worker_i,
 }
 
 void G1HotCardCache::reset_card_counts(HeapRegion* hr) {
-  assert(!hr->isHumongous(), "Should have been cleared");
   _card_counts.clear_region(hr);
 }
 
