@@ -313,7 +313,7 @@ class ChunkedInputStream extends InputStream implements Hurryable {
                             break;
                     }
                     try {
-                        chunkSize = Integer.parseInt(header.substring(0, i), 16);
+                        chunkSize = Integer.parseInt(header, 0, i, 16);
                     } catch (NumberFormatException e) {
                         error = true;
                         throw new IOException("Bogus chunk size");
