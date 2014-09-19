@@ -783,18 +783,22 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 
 
 void CompileBroker::print_compile_queues(outputStream* st) {
-  _c1_compile_queue->print(st);
-  _c2_compile_queue->print(st);
+  MutexLocker locker(MethodCompileQueue_lock);
+  if (_c1_compile_queue != NULL) {
+    _c1_compile_queue->print(st);
+  }
+  if (_c2_compile_queue != NULL) {
+    _c2_compile_queue->print(st);
+  }
 }
 
-
 void CompileQueue::print(outputStream* st) {
-  assert_locked_or_safepoint(lock());
+  assert(lock()->owned_by_self(), "must own lock");
   st->print_cr("Contents of %s", name());
   st->print_cr("----------------------------");
   CompileTask* task = _first;
   if (task == NULL) {
-    st->print_cr("Empty");;
+    st->print_cr("Empty");
   } else {
     while (task != NULL) {
       task->print_compilation(st, NULL, true, true);
