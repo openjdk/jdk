@@ -139,9 +139,6 @@ com/sun/management/OperatingSystemMXBean/GetProcessCpuLoad.java aix-all
 com/sun/management/OperatingSystemMXBean/GetSystemCpuLoad.java  aix-all
 javax/management/MBeanServer/OldMBeanServerTest.java            aix-all
 
-# 8050115
-javax/management/monitor/GaugeMonitorDeadlockTest.java          generic-all
-
 ############################################################################
 
 # jdk_math

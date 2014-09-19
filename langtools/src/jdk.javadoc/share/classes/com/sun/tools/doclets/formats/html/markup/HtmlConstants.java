@@ -220,4 +220,9 @@ public class HtmlConstants {
      * Html tag for the member heading.
      */
     public static final HtmlTag MEMBER_HEADING = HtmlTag.H4;
+
+    /**
+     * Default charset for HTML.
+     */
+    public static final String HTML_DEFAULT_CHARSET = "utf-8";
 }

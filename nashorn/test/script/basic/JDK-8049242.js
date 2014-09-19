@@ -29,14 +29,14 @@
  */
 
 // call explicit constructor
-print(new (Java.type("java.awt.Color")["(int,int,int)"])(255,0,255));
+print(new (Java.type("java.lang.String")["(char[],int,int)"])(['a', 'b', 'c'],0, 3));
 // print the constructor itself
-print(Java.type("java.awt.Color")["(int,int,int)"]);
+print(Java.type("java.lang.String")["(char[],int,int)"]);
 
 // store constructor to call later
-var Color = Java.type("java.awt.Color")["(int,int,int)"];
+var Color = Java.type("java.lang.String")["(char[],int,int)"];
 // call stored constructor
-print(new Color(33, 233, 2))
+print(new Color(['j', 'a', 'v', 'a'], 1, 3))
 
 // check if default constructor works
 var obj = new (Java.type("java.lang.Object")["()"])();

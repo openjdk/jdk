@@ -2518,7 +2518,6 @@ typedef TwoOopHashtable<Symbol*, mtClass>     SymbolTwoOopHashtable;
   /*********************************************/                         \
                                                                           \
   declare_constant(InvocationEntryBci)                                    \
-  declare_constant(InvalidOSREntryBci)                                    \
                                                                           \
   /***************/                                                       \
   /* OopMapValue */                                                       \

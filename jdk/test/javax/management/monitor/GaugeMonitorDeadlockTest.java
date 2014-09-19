@@ -36,8 +36,9 @@
  */
 
 import java.lang.management.ManagementFactory;
+import java.lang.management.ThreadInfo;
+import java.lang.management.ThreadMXBean;
 import java.util.concurrent.atomic.AtomicInteger;
-import javax.management.Attribute;
 import javax.management.JMX;
 import javax.management.MBeanServer;
 import javax.management.Notification;
@@ -47,18 +48,22 @@ import javax.management.monitor.GaugeMonitor;
 import javax.management.monitor.GaugeMonitorMBean;
 
 public class GaugeMonitorDeadlockTest {
+    private static enum When {IN_GET_ATTRIBUTE, IN_NOTIFY};
+    private static long checkingTime;
 
     public static void main(String[] args) throws Exception {
         if (args.length != 1)
             throw new Exception("Arg should be test number");
+        double factor = Double.parseDouble(System.getProperty("test.timeout.factor", "1.0"));
+        checkingTime = (long)factor*1000;
+        System.out.println("=== checkingTime = " + checkingTime + "ms");
+
         int testNo = Integer.parseInt(args[0]) - 1;
         TestCase test = testCases[testNo];
         System.out.println("Test: " + test.getDescription());
         test.run();
         System.out.println("Test passed");
     }
-
-    private static enum When {IN_GET_ATTRIBUTE, IN_NOTIFY};
 
     private static abstract class TestCase {
         TestCase(String description, When when) {
@@ -98,16 +103,29 @@ public class GaugeMonitorDeadlockTest {
             monitorProxy.setNotifyLow(true);
             monitorProxy.start();
 
+            System.out.println("=== Waiting observedProxy.getGetCount() to be "
+                    + "changed, presumable deadlock if timeout?");
             final int initGetCount = observedProxy.getGetCount();
-            int getCount = initGetCount;
-            for (int i = 0; i < 2000; i++) { // 2000 * 10 = 20 seconds
-                getCount = observedProxy.getGetCount();
-                if (getCount != initGetCount)
-                    break;
-                Thread.sleep(10);
+            long checkedTime = System.currentTimeMillis();
+            long nowTime;
+            ThreadMXBean threadMXBean = ManagementFactory.getThreadMXBean();
+            while (observedProxy.getGetCount() == initGetCount) {
+                Thread.sleep(100);
+
+                nowTime = System.currentTimeMillis();
+                if (nowTime - checkedTime >= checkingTime) {
+                    System.out.println("=== Checking deadlocked ...");
+                    if (threadMXBean.findDeadlockedThreads() != null) {
+                        for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true)) {
+                            System.out.println(info);
+                        }
+                        throw new Error("Found deadlocked threads: "
+                                + threadMXBean.findDeadlockedThreads().length);
+                    }
+                    checkedTime = System.currentTimeMillis();
+                }
             }
-            if (getCount <= initGetCount)
-                throw new Exception("Test failed: presumable deadlock");
+
             // This won't show up as a deadlock in CTRL-\ or in
             // ThreadMXBean.findDeadlockedThreads(), because they don't
             // see that thread A is waiting for thread B (B.join()), and
@@ -117,13 +135,13 @@ public class GaugeMonitorDeadlockTest {
             // so if we want to test notify behaviour we can trigger by
             // exceeding the threshold.
             if (when == When.IN_NOTIFY) {
+                final Thread testedThread = new Thread(sensitiveThing);
                 final AtomicInteger notifCount = new AtomicInteger();
                 final NotificationListener listener = new NotificationListener() {
                     public void handleNotification(Notification n, Object h) {
-                        Thread t = new Thread(sensitiveThing);
-                        t.start();
+                        testedThread.start();
                         try {
-                            t.join();
+                            testedThread.join();
                         } catch (InterruptedException e) {
                             throw new RuntimeException(e);
                         }
@@ -132,12 +150,36 @@ public class GaugeMonitorDeadlockTest {
                 };
                 mbs.addNotificationListener(monitorName, listener, null, null);
                 observedProxy.setThing(1000);
-                for (int i = 0; i < 2000 && notifCount.get() == 0; i++)
-                    Thread.sleep(10);
-                if (notifCount.get() == 0)
-                    throw new Exception("Test failed: presumable deadlock");
-            }
+                System.out.println("=== Waiting notifications, presumable "
+                        + "deadlock if timeout?");
+                long startTime = System.currentTimeMillis();
+                checkedTime = startTime;
+                while (notifCount.get() == 0) {
+                    Thread.sleep(100);
 
+                    nowTime = System.currentTimeMillis();
+                    if (nowTime - checkedTime >= checkingTime) {
+                        System.out.println("=== Checking the thread state ...");
+                        if (testedThread.isAlive()) {
+                            System.out.println("=== Waiting testedThread to die "
+                                    + "after " + (nowTime - startTime) + "ms");
+
+                            ThreadInfo tinfo = threadMXBean.getThreadInfo(testedThread.getId());
+                            if (Thread.State.BLOCKED.equals(tinfo.getThreadState())) {
+                                for (ThreadInfo info : threadMXBean.dumpAllThreads(true, true)) {
+                                    System.out.println(info);
+                                }
+                            } else {
+                                System.out.println(tinfo);
+                            }
+                        } else {
+                            System.out.println("=== The testedThread is dead as wished, "
+                                    + "the test must be passed soon.");
+                        }
+                        checkedTime = System.currentTimeMillis();
+                    }
+                }
+            }
         }
 
         abstract void doSensitiveThing(GaugeMonitorMBean monitorProxy,
