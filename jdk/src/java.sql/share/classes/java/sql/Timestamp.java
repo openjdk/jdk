@@ -284,20 +284,32 @@ public class Timestamp extends java.util.Date {
             }
         }
 
-        char[] buf = new char[29 - trailingZeros];
-        Date.formatDecimalInt(year, buf, 0, 4);
-        buf[4] = '-';
-        Date.formatDecimalInt(month, buf, 5, 2);
-        buf[7] = '-';
-        Date.formatDecimalInt(day, buf, 8, 2);
-        buf[10] = ' ';
-        Date.formatDecimalInt(hour, buf, 11, 2);
-        buf[13] = ':';
-        Date.formatDecimalInt(minute, buf, 14, 2);
-        buf[16] = ':';
-        Date.formatDecimalInt(second, buf, 17, 2);
-        buf[19] = '.';
-        Date.formatDecimalInt(tmpNanos, buf, 20, 9 - trailingZeros);
+        // 8058429: To comply with current JCK tests, we need to deal with year
+        // being any number between 0 and 292278995
+        int count = 10000;
+        int yearSize = 4;
+        do {
+            if (year < count) {
+                break;
+            }
+            yearSize++;
+            count *= 10;
+        } while (count < 1000000000);
+
+        char[] buf = new char[25 + yearSize - trailingZeros];
+        Date.formatDecimalInt(year, buf, 0, yearSize);
+        buf[yearSize] = '-';
+        Date.formatDecimalInt(month, buf, yearSize + 1, 2);
+        buf[yearSize + 3] = '-';
+        Date.formatDecimalInt(day, buf, yearSize + 4, 2);
+        buf[yearSize + 6] = ' ';
+        Date.formatDecimalInt(hour, buf, yearSize + 7, 2);
+        buf[yearSize + 9] = ':';
+        Date.formatDecimalInt(minute, buf, yearSize + 10, 2);
+        buf[yearSize + 12] = ':';
+        Date.formatDecimalInt(second, buf, yearSize + 13, 2);
+        buf[yearSize + 15] = '.';
+        Date.formatDecimalInt(tmpNanos, buf, yearSize + 16, 9 - trailingZeros);
 
         return jla.newStringUnsafe(buf);
     }

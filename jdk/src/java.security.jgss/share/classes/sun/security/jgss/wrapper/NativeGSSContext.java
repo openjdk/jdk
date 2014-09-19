@@ -36,7 +36,6 @@ import sun.security.util.ObjectIdentifier;
 import sun.security.jgss.spnego.NegTokenInit;
 import sun.security.jgss.spnego.NegTokenTarg;
 import javax.security.auth.kerberos.DelegationPermission;
-import com.sun.security.jgss.InquireType;
 import java.io.*;
 
 
@@ -623,7 +622,7 @@ class NativeGSSContext implements GSSContextSpi {
         dispose();
     }
 
-    public Object inquireSecContext(InquireType type)
+    public Object inquireSecContext(String type)
             throws GSSException {
         throw new GSSException(GSSException.UNAVAILABLE, -1,
                 "Inquire type not supported.");

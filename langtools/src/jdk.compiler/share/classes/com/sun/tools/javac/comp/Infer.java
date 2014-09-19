@@ -358,11 +358,9 @@ public class Infer {
             for (Type aLowerBound : from.getBounds(InferenceBound.LOWER)) {
                 for (Type anotherLowerBound : from.getBounds(InferenceBound.LOWER)) {
                     if (aLowerBound != anotherLowerBound &&
-                        commonSuperWithDiffParameterization(aLowerBound, anotherLowerBound)) {
-                        /* self comment check if any lower bound may be and undetVar,
-                         * in that case the result of this call may be a false positive.
-                         * Should this be restricted to non free types?
-                         */
+                            !inferenceContext.free(aLowerBound) &&
+                            !inferenceContext.free(anotherLowerBound) &&
+                            commonSuperWithDiffParameterization(aLowerBound, anotherLowerBound)) {
                         return generateReferenceToTargetConstraint(tree, from, to,
                             resultInfo, inferenceContext);
                     }

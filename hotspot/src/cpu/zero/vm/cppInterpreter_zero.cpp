@@ -820,14 +820,10 @@ address InterpreterGenerator::generate_Reference_get_entry(void) {
 }
 
 address InterpreterGenerator::generate_native_entry(bool synchronized) {
-  assert(synchronized == false, "should be");
-
   return generate_entry((address) CppInterpreter::native_entry);
 }
 
 address InterpreterGenerator::generate_normal_entry(bool synchronized) {
-  assert(synchronized == false, "should be");
-
   return generate_entry((address) CppInterpreter::normal_entry);
 }
 

@@ -25,7 +25,6 @@
 
 package org.ietf.jgss;
 
-import sun.security.jgss.spi.*;
 import java.io.InputStream;
 import java.io.OutputStream;
 
