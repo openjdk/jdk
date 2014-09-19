@@ -97,6 +97,8 @@ class Solaris {
   static meminfo_func_t _meminfo;
 
   // Large Page Support
+  static bool is_valid_page_size(size_t bytes);
+  static size_t page_size_for_alignment(size_t alignment);
   static bool setup_large_pages(caddr_t start, size_t bytes, size_t align);
 
   static void init_thread_fpu_state(void);

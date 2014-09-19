@@ -299,13 +299,13 @@ public:
   // Accessors
 
   void set_region_eden(HeapRegion* hr, int young_index_in_cset) {
-    hr->set_young();
+    hr->set_eden();
     hr->install_surv_rate_group(_short_lived_surv_rate_group);
     hr->set_young_index_in_cset(young_index_in_cset);
   }
 
   void set_region_survivor(HeapRegion* hr, int young_index_in_cset) {
-    assert(hr->is_young() && hr->is_survivor(), "pre-condition");
+    assert(hr->is_survivor(), "pre-condition");
     hr->install_surv_rate_group(_survivor_surv_rate_group);
     hr->set_young_index_in_cset(young_index_in_cset);
   }

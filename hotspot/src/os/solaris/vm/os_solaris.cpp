@@ -2539,29 +2539,30 @@ void os::pd_commit_memory_or_exit(char* addr, size_t bytes, bool exec,
   }
 }
 
+size_t os::Solaris::page_size_for_alignment(size_t alignment) {
+  assert(is_size_aligned(alignment, (size_t) vm_page_size()),
+         err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT,
+                 alignment, (size_t) vm_page_size()));
+
+  for (int i = 0; _page_sizes[i] != 0; i++) {
+    if (is_size_aligned(alignment, _page_sizes[i])) {
+      return _page_sizes[i];
+    }
+  }
+
+  return (size_t) vm_page_size();
+}
+
 int os::Solaris::commit_memory_impl(char* addr, size_t bytes,
                                     size_t alignment_hint, bool exec) {
   int err = Solaris::commit_memory_impl(addr, bytes, exec);
-  if (err == 0) {
-    if (UseLargePages && (alignment_hint > (size_t)vm_page_size())) {
-      // If the large page size has been set and the VM
-      // is using large pages, use the large page size
-      // if it is smaller than the alignment hint. This is
-      // a case where the VM wants to use a larger alignment size
-      // for its own reasons but still want to use large pages
-      // (which is what matters to setting the mpss range.
-      size_t page_size = 0;
-      if (large_page_size() < alignment_hint) {
-        assert(UseLargePages, "Expected to be here for large page use only");
-        page_size = large_page_size();
-      } else {
-        // If the alignment hint is less than the large page
-        // size, the VM wants a particular alignment (thus the hint)
-        // for internal reasons.  Try to set the mpss range using
-        // the alignment_hint.
-        page_size = alignment_hint;
-      }
-      // Since this is a hint, ignore any failures.
+  if (err == 0 && UseLargePages && alignment_hint > 0) {
+    assert(is_size_aligned(bytes, alignment_hint),
+           err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, alignment_hint));
+
+    // The syscall memcntl requires an exact page size (see man memcntl for details).
+    size_t page_size = page_size_for_alignment(alignment_hint);
+    if (page_size > (size_t) vm_page_size()) {
       (void)Solaris::setup_large_pages(addr, bytes, page_size);
     }
   }
@@ -3098,8 +3099,22 @@ void os::large_page_init() {
   }
 }
 
-bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes,
-                                    size_t align) {
+bool os::Solaris::is_valid_page_size(size_t bytes) {
+  for (int i = 0; _page_sizes[i] != 0; i++) {
+    if (_page_sizes[i] == bytes) {
+      return true;
+    }
+  }
+  return false;
+}
+
+bool os::Solaris::setup_large_pages(caddr_t start, size_t bytes, size_t align) {
+  assert(is_valid_page_size(align), err_msg(SIZE_FORMAT " is not a valid page size", align));
+  assert(is_ptr_aligned((void*) start, align),
+         err_msg(PTR_FORMAT " is not aligned to " SIZE_FORMAT, p2i((void*) start), align));
+  assert(is_size_aligned(bytes, align),
+         err_msg(SIZE_FORMAT " is not aligned to " SIZE_FORMAT, bytes, align));
+
   // Signal to OS that we want large pages for addresses
   // from addr, addr + bytes
   struct memcntl_mha mpss_struct;
@@ -4768,29 +4783,6 @@ void os::make_polling_page_readable(void) {
 // OS interface.
 
 bool os::check_heap(bool force) { return true; }
-
-typedef int (*vsnprintf_t)(char* buf, size_t count, const char* fmt, va_list argptr);
-static vsnprintf_t sol_vsnprintf = NULL;
-
-int local_vsnprintf(char* buf, size_t count, const char* fmt, va_list argptr) {
-  if (!sol_vsnprintf) {
-    //search  for the named symbol in the objects that were loaded after libjvm
-    void* where = RTLD_NEXT;
-    if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL) {
-      sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
-    }
-    if (!sol_vsnprintf){
-      //search  for the named symbol in the objects that were loaded before libjvm
-      where = RTLD_DEFAULT;
-      if ((sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "__vsnprintf"))) == NULL) {
-        sol_vsnprintf = CAST_TO_FN_PTR(vsnprintf_t, dlsym(where, "vsnprintf"));
-      }
-      assert(sol_vsnprintf != NULL, "vsnprintf not found");
-    }
-  }
-  return (*sol_vsnprintf)(buf, count, fmt, argptr);
-}
-
 
 // Is a (classpath) directory empty?
 bool os::dir_is_empty(const char* path) {

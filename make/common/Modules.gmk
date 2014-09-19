@@ -26,6 +26,9 @@
 ifndef _MODULES_GMK
 _MODULES_GMK := 1
 
+include JavaCompilation.gmk
+include SetupJavaCompilers.gmk
+
 ################################################################################
 # Module list macros
 
@@ -50,8 +53,32 @@ define FindJavaModules
           $(patsubst %,%/*/$(OPENJDK_TARGET_OS)/classes/*, $(ALL_TOP_SRC_DIRS))))))))))))
 endef
 
-MODULES_LIST_FILE := $(SRC_ROOT)/make/common/modules.list
-MODULE_DEPS_MAKEFILE := $(OUTPUT_ROOT)/module-deps.gmk
+# Find all modules with source for the target platform.
+define FindAllModules
+  $(sort $(filter-out closed demo sample, $(notdir $(patsubst %/,%, $(dir \
+      $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
+      $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
+      $(patsubst %, %/*/$(OPENJDK_TARGET_OS_API_DIR), $(ALL_TOP_SRC_DIRS))))))))
+endef
+
+################################################################################
+
+$(eval $(call SetupJavaCompilation,BUILD_GENMODULESLIST, \
+    SETUP := BOOT_JAVAC, \
+    SRC := $(JDK_TOPDIR)/make/src/classes, \
+    INCLUDES := build/tools/module, \
+    BIN := $(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist))
+
+TOOL_GENMODULESLIST = $(JAVA_SMALL) \
+    -cp "$(MAKESUPPORT_OUTPUTDIR)/bt_classes_moduleslist" \
+    build.tools.module.GenModulesList
+
+MODULES_LIST_FILE := $(MAKESUPPORT_OUTPUTDIR)/modules.list
+MODULE_DEPS_MAKEFILE := $(MAKESUPPORT_OUTPUTDIR)/module-deps.gmk
+
+$(MODULES_LIST_FILE): $(SRC_ROOT)/modules.xml \
+    $(BUILD_GENMODULESLIST)
+	$(TOOL_GENMODULESLIST) -o $@ $(filter %.xml, $^)
 
 $(MODULE_DEPS_MAKEFILE): $(MODULES_LIST_FILE)
 	$(CAT) $^ | $(SED) -e 's/^\([^:]*\):/DEPS_\1 :=/g' > $@
@@ -61,14 +88,6 @@ $(MODULE_DEPS_MAKEFILE): $(MODULES_LIST_FILE)
 # Param 1: Module to find deps for
 define FindDepsForModule
   $(DEPS_$(strip $1))
-endef
-
-# Find all modules with source for the target platform.
-define FindAllModules
-  $(sort $(filter-out closed demo sample, $(notdir $(patsubst %/,%, $(dir \
-      $(wildcard $(patsubst %, %/*/share, $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS), $(ALL_TOP_SRC_DIRS)) \
-      $(patsubst %, %/*/$(OPENJDK_TARGET_OS_API_DIR), $(ALL_TOP_SRC_DIRS))))))))
 endef
 
 ################################################################################

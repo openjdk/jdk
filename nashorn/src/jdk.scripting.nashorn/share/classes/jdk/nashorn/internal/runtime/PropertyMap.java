@@ -568,9 +568,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
         for (final Property property : otherProperties) {
             // This method is only safe to use with non-slotted, native getter/setter properties
             assert property.getSlot() == -1;
-            if (isValidArrayIndex(getArrayIndex(property.getKey()))) {
-                newMap.setContainsArrayKeys();
-            }
+            assert !(isValidArrayIndex(getArrayIndex(property.getKey())));
         }
 
         return newMap;

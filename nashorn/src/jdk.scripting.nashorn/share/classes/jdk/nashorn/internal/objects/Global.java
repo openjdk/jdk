@@ -439,8 +439,8 @@ public final class Global extends ScriptObject implements Scope {
 
     // current ScriptContext to use - can be null.
     private ScriptContext scontext;
-    // associated Property object for "context" property.
-    private jdk.nashorn.internal.runtime.Property scontextProperty;
+    // current ScriptEngine associated - can be null.
+    private ScriptEngine engine;
 
     /**
      * Set the current script context
@@ -448,7 +448,6 @@ public final class Global extends ScriptObject implements Scope {
      */
     public void setScriptContext(final ScriptContext scontext) {
         this.scontext = scontext;
-        scontextProperty.setValue(this, this, scontext, false);
     }
 
     // global constants for this global - they can be replaced with MethodHandle.constant until invalidated
@@ -581,6 +580,7 @@ public final class Global extends ScriptObject implements Scope {
             return;
         }
 
+        this.engine = engine;
         init(engine);
     }
 
@@ -915,6 +915,13 @@ public final class Global extends ScriptObject implements Scope {
             if (scope != -1) {
                 return ScriptObjectMirror.unwrap(sctxt.getAttribute(nameStr, scope), global);
             }
+        }
+
+        switch (nameStr) {
+            case "context":
+                return sctxt;
+            case "engine":
+                return global.engine;
         }
 
         if (self == UNDEFINED) {
@@ -1789,9 +1796,6 @@ public final class Global extends ScriptObject implements Scope {
         }
 
         if (engine != null) {
-            final int NOT_ENUMERABLE_NOT_CONFIG = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE;
-            scontextProperty = addOwnProperty("context", NOT_ENUMERABLE_NOT_CONFIG, null);
-            addOwnProperty("engine", NOT_ENUMERABLE_NOT_CONFIG, engine);
             // default file name
             addOwnProperty(ScriptEngine.FILENAME, Attribute.NOT_ENUMERABLE, null);
             // __noSuchProperty__ hook for ScriptContext search of missing variables
