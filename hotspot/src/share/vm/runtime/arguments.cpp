@@ -88,6 +88,8 @@ const char*  Arguments::_gc_log_filename        = NULL;
 bool   Arguments::_has_profile                  = false;
 size_t Arguments::_conservative_max_heap_alignment = 0;
 uintx  Arguments::_min_heap_size                = 0;
+uintx  Arguments::_min_heap_free_ratio          = 0;
+uintx  Arguments::_max_heap_free_ratio          = 0;
 Arguments::Mode Arguments::_mode                = _mixed;
 bool   Arguments::_java_compiler                = false;
 bool   Arguments::_xdebug_mode                  = false;
@@ -1630,9 +1632,11 @@ void Arguments::set_parallel_gc_flags() {
     // unless the user actually sets these flags.
     if (FLAG_IS_DEFAULT(MinHeapFreeRatio)) {
       FLAG_SET_DEFAULT(MinHeapFreeRatio, 0);
+      _min_heap_free_ratio = MinHeapFreeRatio;
     }
     if (FLAG_IS_DEFAULT(MaxHeapFreeRatio)) {
       FLAG_SET_DEFAULT(MaxHeapFreeRatio, 100);
+      _max_heap_free_ratio = MaxHeapFreeRatio;
     }
   }
 
@@ -2025,6 +2029,8 @@ bool Arguments::verify_MinHeapFreeRatio(FormatBuffer<80>& err_msg, uintx min_hea
                   MaxHeapFreeRatio);
     return false;
   }
+  // This does not set the flag itself, but stores the value in a safe place for later usage.
+  _min_heap_free_ratio = min_heap_free_ratio;
   return true;
 }
 
@@ -2039,6 +2045,8 @@ bool Arguments::verify_MaxHeapFreeRatio(FormatBuffer<80>& err_msg, uintx max_hea
                   MinHeapFreeRatio);
     return false;
   }
+  // This does not set the flag itself, but stores the value in a safe place for later usage.
+  _max_heap_free_ratio = max_heap_free_ratio;
   return true;
 }
 
