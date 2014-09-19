@@ -48,6 +48,7 @@
  * @summary Support OK-AS-DELEGATE flag
  */
 import com.sun.security.jgss.ExtendedGSSContext;
+import org.ietf.jgss.GSSContext;
 import org.ietf.jgss.GSSCredential;
 import org.ietf.jgss.GSSException;
 import org.ietf.jgss.Oid;
@@ -102,7 +103,7 @@ public class OkAsDelegate {
         cx.requestCredDeleg(requestDelegState);
         cx.requestDelegPolicy(requestDelegPolicyState);
         s.startAsServer(mech);
-        ExtendedGSSContext sx = (ExtendedGSSContext)s.x();
+        GSSContext sx = s.x();
 
         Context.handshake(c, s);
 

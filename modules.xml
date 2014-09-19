@@ -251,6 +251,7 @@
       <to>jdk.jvmstat</to>
       <to>jdk.runtime</to>
       <to>jdk.security.auth</to>
+      <to>jdk.security.jgss</to>
     </export>
     <export>
       <name>sun.net.dns</name>
@@ -327,6 +328,7 @@
     </export>
     <export>
       <name>sun.security.internal.spec</name>
+      <to>jdk.crypto.mscapi</to>
       <to>jdk.crypto.pkcs11</to>
       <to>jdk.crypto.ucrypto</to>
     </export>
@@ -731,6 +733,10 @@
     <export>
       <name>javax.swing.undo</name>
     </export>
+    <export>
+      <name>sun.awt</name>
+      <to>oracle.accessbridge</to>
+    </export>
   </module>
   <module>
     <name>java.instrument</name>
@@ -901,12 +907,7 @@
   <module>
     <name>java.security.jgss</name>
     <depend>java.base</depend>
-    <depend>java.logging</depend>
     <depend>java.naming</depend>
-    <depend>java.security.sasl</depend>
-    <export>
-      <name>com.sun.security.jgss</name>
-    </export>
     <export>
       <name>javax.security.auth.kerberos</name>
     </export>
@@ -925,6 +926,14 @@
       <name>sun.security.krb5.internal.ktab</name>
       <to>jdk.security.auth</to>
     </export>
+    <export>
+      <name>sun.security.jgss</name>
+      <to>jdk.security.jgss</to>
+    </export>
+    <export>
+      <name>sun.security.krb5.internal</name>
+      <to>jdk.security.jgss</to>
+    </export>
   </module>
   <module>
     <name>java.security.sasl</name>
@@ -935,7 +944,7 @@
     </export>
     <export>
       <name>com.sun.security.sasl.util</name>
-      <to>java.security.jgss</to>
+      <to>jdk.security.jgss</to>
     </export>
   </module>
   <module>
@@ -1571,6 +1580,10 @@
     </export>
   </module>
   <module>
+    <name>jdk.crypto.mscapi</name>
+    <depend>java.base</depend>
+  </module>
+  <module>
     <name>jdk.crypto.pkcs11</name>
     <depend>java.base</depend>
     <depend>jdk.crypto.ec</depend>
@@ -1750,6 +1763,16 @@
     </export>
     <export>
       <name>com.sun.security.auth.module</name>
+    </export>
+  </module>
+  <module>
+    <name>jdk.security.jgss</name>
+    <depend>java.base</depend>
+    <depend>java.logging</depend>
+    <depend re-exports="true">java.security.jgss</depend>
+    <depend>java.security.sasl</depend>
+    <export>
+      <name>com.sun.security.jgss</name>
     </export>
   </module>
   <module>

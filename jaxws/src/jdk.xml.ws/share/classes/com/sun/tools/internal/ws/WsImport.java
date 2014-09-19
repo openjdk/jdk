@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -35,8 +35,7 @@ import com.sun.tools.internal.ws.wscompile.WsimportTool;
  */
 public class WsImport {
     /**
-     * CLI entry point. Use {@link Invoker} to
-     * load tools.jar
+     * CLI entry point. Use {@link Invoker} to load proper API version
      */
     public static void main(String[] args) throws Throwable {
         System.exit(Invoker.invoke("com.sun.tools.internal.ws.wscompile.WsimportTool", args));
@@ -50,7 +49,7 @@ public class WsImport {
      * it doesn't invoke {@link System#exit(int)}. This method
      * also doesn't play with classloaders. It's the caller's
      * responsibility to set up the classloader to load all jars
-     * needed to run the tool, including <tt>$JAVA_HOME/lib/tools.jar</tt>
+     * needed to run the tool.
      *
      * @return
      *      0 if the tool runs successfully.

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014 Oracle and/or its affiliates. All rights reserved.
 
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
@@ -31,12 +31,14 @@ public class XRSolidSrcPict {
 
     XRSurfaceData srcPict;
     XRColor xrCol;
-    int curPixVal = -1;
+    int curPixVal;
 
     public XRSolidSrcPict(XRBackend con, int parentXid) {
         this.con = con;
 
         xrCol = new XRColor();
+        curPixVal = 0xFF000000;
+
         int solidPixmap = con.createPixmap(parentXid, 32, 1, 1);
         int solidSrcPictXID = con.createPicture(solidPixmap, XRUtils.PictStandardARGB32);
         con.setPictureRepeat(solidSrcPictXID, XRUtils.RepeatNormal);

@@ -54,6 +54,7 @@ import static jdk.nashorn.internal.parser.TokenType.SEMICOLON;
 import static jdk.nashorn.internal.parser.TokenType.TERNARY;
 import static jdk.nashorn.internal.parser.TokenType.WHILE;
 
+import java.io.Serializable;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -2977,10 +2978,12 @@ loop:
      * Encapsulates part of the state of the parser, enough to reconstruct the state of both parser and lexer
      * for resuming parsing after skipping a function body.
      */
-    private static class ParserState {
+    private static class ParserState implements Serializable {
         private final int position;
         private final int line;
         private final int linePosition;
+
+        private static final long serialVersionUID = -2382565130754093694L;
 
         ParserState(final int position, final int line, final int linePosition) {
             this.position = position;

@@ -215,6 +215,9 @@ void os::Posix::print_uname_info(outputStream* st) {
   struct utsname name;
   uname(&name);
   st->print("%s ", name.sysname);
+#ifdef ASSERT
+  st->print("%s ", name.nodename);
+#endif
   st->print("%s ", name.release);
   st->print("%s ", name.version);
   st->print("%s", name.machine);

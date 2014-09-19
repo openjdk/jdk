@@ -166,7 +166,7 @@ class CompilationLog : public StringEventLog {
     StringLogMessage lm;
     stringStream sstr = lm.stream();
     // msg.time_stamp().update_to(tty->time_stamp().ticks());
-    task->print_compilation(&sstr, NULL, true);
+    task->print_compilation(&sstr, NULL, true, false);
     log(thread, "%s", (const char*)lm);
   }
 
@@ -328,7 +328,6 @@ void CompileTask::set_code(nmethod* nm) {
   if (nm == NULL)  _code_handle = NULL;  // drop the handle also
 }
 
-
 void CompileTask::mark_on_stack() {
   // Mark these methods as something redefine classes cannot remove.
   _method->set_on_stack(true);
@@ -336,18 +335,6 @@ void CompileTask::mark_on_stack() {
     _hot_method->set_on_stack(true);
   }
 }
-
-// ------------------------------------------------------------------
-// CompileTask::print
-void CompileTask::print() {
-  tty->print("<CompileTask compile_id=%d ", _compile_id);
-  tty->print("method=");
-  _method->print_name(tty);
-  tty->print_cr(" osr_bci=%d is_blocking=%s is_complete=%s is_success=%s>",
-             _osr_bci, bool_to_str(_is_blocking),
-             bool_to_str(_is_complete), bool_to_str(_is_success));
-}
-
 
 // ------------------------------------------------------------------
 // CompileTask::print_line_on_error
@@ -367,19 +354,18 @@ void CompileTask::print_line_on_error(outputStream* st, char* buf, int buflen) {
 
 // ------------------------------------------------------------------
 // CompileTask::print_line
-void CompileTask::print_line() {
+void CompileTask::print_tty() {
   ttyLocker ttyl;  // keep the following output all in one block
   // print compiler name if requested
   if (CIPrintCompilerName) tty->print("%s:", CompileBroker::compiler_name(comp_level()));
-  print_compilation();
+    print_compilation(tty);
 }
-
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation_impl
 void CompileTask::print_compilation_impl(outputStream* st, Method* method, int compile_id, int comp_level,
                                          bool is_osr_method, int osr_bci, bool is_blocking,
-                                         const char* msg, bool short_form) {
+                                         const char* msg, bool short_form, bool cr) {
   if (!short_form) {
     st->print("%7d ", (int) st->time_stamp().milliseconds());  // print timestamp
   }
@@ -428,7 +414,7 @@ void CompileTask::print_compilation_impl(outputStream* st, Method* method, int c
   if (msg != NULL) {
     st->print("   %s", msg);
   }
-  if (!short_form) {
+  if (cr) {
     st->cr();
   }
 }
@@ -494,9 +480,9 @@ void CompileTask::print_inline_indent(int inline_level, outputStream* st) {
 
 // ------------------------------------------------------------------
 // CompileTask::print_compilation
-void CompileTask::print_compilation(outputStream* st, const char* msg, bool short_form) {
+void CompileTask::print_compilation(outputStream* st, const char* msg, bool short_form, bool cr) {
   bool is_osr_method = osr_bci() != InvocationEntryBci;
-  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form);
+  print_compilation_impl(st, method(), compile_id(), comp_level(), is_osr_method, osr_bci(), is_blocking(), msg, short_form, cr);
 }
 
 // ------------------------------------------------------------------
@@ -621,7 +607,9 @@ void CompileQueue::add(CompileTask* task) {
   // Mark the method as being in the compile queue.
   task->method()->set_queued_for_compilation();
 
-  NOT_PRODUCT(print();)
+  if (CIPrintCompileQueue) {
+    print_tty();
+  }
 
   if (LogCompilation && xtty != NULL) {
     task->log_task_queued();
@@ -786,24 +774,40 @@ void CompileQueue::mark_on_stack() {
   }
 }
 
-#ifndef PRODUCT
-/**
- * Print entire compilation queue.
- */
-void CompileQueue::print() {
-  if (CIPrintCompileQueue) {
-    ttyLocker ttyl;
-    tty->print_cr("Contents of %s", name());
-    tty->print_cr("----------------------");
-    CompileTask* task = _first;
+
+CompileQueue* CompileBroker::compile_queue(int comp_level) {
+  if (is_c2_compile(comp_level)) return _c2_compile_queue;
+  if (is_c1_compile(comp_level)) return _c1_compile_queue;
+  return NULL;
+}
+
+
+void CompileBroker::print_compile_queues(outputStream* st) {
+  _c1_compile_queue->print(st);
+  _c2_compile_queue->print(st);
+}
+
+
+void CompileQueue::print(outputStream* st) {
+  assert_locked_or_safepoint(lock());
+  st->print_cr("Contents of %s", name());
+  st->print_cr("----------------------------");
+  CompileTask* task = _first;
+  if (task == NULL) {
+    st->print_cr("Empty");;
+  } else {
     while (task != NULL) {
-      task->print_line();
+      task->print_compilation(st, NULL, true, true);
       task = task->next();
     }
-    tty->print_cr("----------------------");
   }
+  st->print_cr("----------------------------");
 }
-#endif // PRODUCT
+
+void CompileQueue::print_tty() {
+  ttyLocker ttyl;
+  print(tty);
+}
 
 CompilerCounters::CompilerCounters(const char* thread_name, int instance, TRAPS) {
 
@@ -1068,11 +1072,11 @@ void CompileBroker::init_compiler_threads(int c1_compiler_count, int c2_compiler
 #endif // !ZERO && !SHARK
   // Initialize the compilation queue
   if (c2_compiler_count > 0) {
-    _c2_compile_queue  = new CompileQueue("C2 CompileQueue",  MethodCompileQueue_lock);
+    _c2_compile_queue  = new CompileQueue("C2 compile queue",  MethodCompileQueue_lock);
     _compilers[1]->set_num_compiler_threads(c2_compiler_count);
   }
   if (c1_compiler_count > 0) {
-    _c1_compile_queue  = new CompileQueue("C1 CompileQueue",  MethodCompileQueue_lock);
+    _c1_compile_queue  = new CompileQueue("C1 compile queue",  MethodCompileQueue_lock);
     _compilers[0]->set_num_compiler_threads(c1_compiler_count);
   }
 
@@ -1892,7 +1896,7 @@ static void codecache_print(bool detailed)
 void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
   if (PrintCompilation) {
     ResourceMark rm;
-    task->print_line();
+    task->print_tty();
   }
   elapsedTimer time;
 

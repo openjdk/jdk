@@ -27,8 +27,6 @@ package sun.security.jgss.spnego;
 import org.ietf.jgss.*;
 import java.security.Provider;
 import sun.security.jgss.GSSUtil;
-import sun.security.jgss.ProviderList;
-import sun.security.jgss.GSSCredentialImpl;
 import sun.security.jgss.spi.GSSNameSpi;
 import sun.security.jgss.spi.GSSCredentialSpi;
 

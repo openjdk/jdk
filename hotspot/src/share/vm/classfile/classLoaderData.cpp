@@ -746,7 +746,7 @@ bool ClassLoaderDataGraph::do_unloading(BoolObjectClosure* is_alive_closure) {
   // mark metadata seen on the stack and code cache so we can delete
   // unneeded entries.
   bool has_redefined_a_class = JvmtiExport::has_redefined_a_class();
-  MetadataOnStackMark md_on_stack;
+  MetadataOnStackMark md_on_stack(has_redefined_a_class);
   if (has_redefined_a_class) {
     // purge_previous_versions also cleans weak method links. Because
     // one method's MDO can reference another method from another

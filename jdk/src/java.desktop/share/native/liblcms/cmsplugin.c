@@ -544,22 +544,31 @@ cmsBool CMSEXPORT _cmsIOPrintf(cmsIOHANDLER* io, const char* frm, ...)
 
 // Plugin memory management -------------------------------------------------------------------------------------------------
 
-static _cmsSubAllocator* PluginPool = NULL;
-
 // Specialized malloc for plug-ins, that is freed upon exit.
-void* _cmsPluginMalloc(cmsContext id, cmsUInt32Number size)
+void* _cmsPluginMalloc(cmsContext ContextID, cmsUInt32Number size)
 {
-    if (PluginPool == NULL)
-        PluginPool = _cmsCreateSubAlloc(id, 4*1024);
+    struct _cmsContext_struct* ctx = _cmsGetContext(ContextID);
 
-    return _cmsSubAlloc(PluginPool, size);
+    if (ctx ->MemPool == NULL) {
+
+        if (ContextID == NULL) {
+
+            ctx->MemPool = _cmsCreateSubAlloc(0, 2*1024);
+        }
+        else {
+            cmsSignalError(ContextID, cmsERROR_CORRUPTION_DETECTED, "NULL memory pool on context");
+            return NULL;
+        }
+    }
+
+    return _cmsSubAlloc(ctx->MemPool, size);
 }
 
 
 // Main plug-in dispatcher
 cmsBool CMSEXPORT cmsPlugin(void* Plug_in)
 {
-  return cmsPluginTHR(NULL, Plug_in);
+    return cmsPluginTHR(NULL, Plug_in);
 }
 
 cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
@@ -571,12 +580,12 @@ cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
          Plugin = Plugin -> Next) {
 
             if (Plugin -> Magic != cmsPluginMagicNumber) {
-                cmsSignalError(0, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin");
+                cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin");
                 return FALSE;
             }
 
             if (Plugin ->ExpectedVersion > LCMS_VERSION) {
-                cmsSignalError(0, cmsERROR_UNKNOWN_EXTENSION, "plugin needs Little CMS %d, current  version is %d",
+                cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "plugin needs Little CMS %d, current version is %d",
                     Plugin ->ExpectedVersion, LCMS_VERSION);
                 return FALSE;
             }
@@ -584,11 +593,11 @@ cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
             switch (Plugin -> Type) {
 
                 case cmsPluginMemHandlerSig:
-                    if (!_cmsRegisterMemHandlerPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterMemHandlerPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginInterpolationSig:
-                    if (!_cmsRegisterInterpPlugin(Plugin)) return FALSE;
+                    if (!_cmsRegisterInterpPlugin(id, Plugin)) return FALSE;
                     break;
 
                 case cmsPluginTagTypeSig:
@@ -623,8 +632,12 @@ cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
                     if (!_cmsRegisterTransformPlugin(id, Plugin)) return FALSE;
                     break;
 
+                case cmsPluginMutexSig:
+                    if (!_cmsRegisterMutexPlugin(id, Plugin)) return FALSE;
+                    break;
+
                 default:
-                    cmsSignalError(0, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin type '%X'", Plugin -> Type);
+                    cmsSignalError(id, cmsERROR_UNKNOWN_EXTENSION, "Unrecognized plugin type '%X'", Plugin -> Type);
                     return FALSE;
             }
     }
@@ -637,19 +650,337 @@ cmsBool CMSEXPORT cmsPluginTHR(cmsContext id, void* Plug_in)
 // Revert all plug-ins to default
 void CMSEXPORT cmsUnregisterPlugins(void)
 {
-    _cmsRegisterMemHandlerPlugin(NULL);
-    _cmsRegisterInterpPlugin(NULL);
-    _cmsRegisterTagTypePlugin(NULL, NULL);
-    _cmsRegisterTagPlugin(NULL, NULL);
-    _cmsRegisterFormattersPlugin(NULL, NULL);
-    _cmsRegisterRenderingIntentPlugin(NULL, NULL);
-    _cmsRegisterParametricCurvesPlugin(NULL, NULL);
-    _cmsRegisterMultiProcessElementPlugin(NULL, NULL);
-    _cmsRegisterOptimizationPlugin(NULL, NULL);
-    _cmsRegisterTransformPlugin(NULL, NULL);
-
-    if (PluginPool != NULL)
-        _cmsSubAllocDestroy(PluginPool);
-
-    PluginPool = NULL;
+    cmsUnregisterPluginsTHR(NULL);
 }
+
+
+// The Global storage for system context. This is the one and only global variable
+// pointers structure. All global vars are referenced here.
+static struct _cmsContext_struct globalContext = {
+
+    NULL,                              // Not in the linked list
+    NULL,                              // No suballocator
+    {
+        NULL,                          //  UserPtr,
+        &_cmsLogErrorChunk,            //  Logger,
+        &_cmsAlarmCodesChunk,          //  AlarmCodes,
+        &_cmsAdaptationStateChunk,     //  AdaptationState,
+        &_cmsMemPluginChunk,           //  MemPlugin,
+        &_cmsInterpPluginChunk,        //  InterpPlugin,
+        &_cmsCurvesPluginChunk,        //  CurvesPlugin,
+        &_cmsFormattersPluginChunk,    //  FormattersPlugin,
+        &_cmsTagTypePluginChunk,       //  TagTypePlugin,
+        &_cmsTagPluginChunk,           //  TagPlugin,
+        &_cmsIntentsPluginChunk,       //  IntentPlugin,
+        &_cmsMPETypePluginChunk,       //  MPEPlugin,
+        &_cmsOptimizationPluginChunk,  //  OptimizationPlugin,
+        &_cmsTransformPluginChunk,     //  TransformPlugin,
+        &_cmsMutexPluginChunk          //  MutexPlugin
+    },
+
+    { NULL, NULL, NULL, NULL, NULL, NULL } // The default memory allocator is not used for context 0
+};
+
+
+// The context pool (linked list head)
+static _cmsMutex _cmsContextPoolHeadMutex = CMS_MUTEX_INITIALIZER;
+static struct _cmsContext_struct* _cmsContextPoolHead = NULL;
+
+// Internal, get associated pointer, with guessing. Never returns NULL.
+struct _cmsContext_struct* _cmsGetContext(cmsContext ContextID)
+{
+    struct _cmsContext_struct* id = (struct _cmsContext_struct*) ContextID;
+    struct _cmsContext_struct* ctx;
+
+
+    // On 0, use global settings
+    if (id == NULL)
+        return &globalContext;
+
+    // Search
+    for (ctx = _cmsContextPoolHead;
+         ctx != NULL;
+         ctx = ctx ->Next) {
+
+            // Found it?
+            if (id == ctx)
+                return ctx; // New-style context,
+    }
+
+    return &globalContext;
+}
+
+
+// Internal: get the memory area associanted with each context client
+// Returns the block assigned to the specific zone.
+void* _cmsContextGetClientChunk(cmsContext ContextID, _cmsMemoryClient mc)
+{
+    struct _cmsContext_struct* ctx;
+    void *ptr;
+
+    if (mc < 0 || mc >= MemoryClientMax) {
+        cmsSignalError(ContextID, cmsERROR_RANGE, "Bad context client");
+        return NULL;
+    }
+
+    ctx = _cmsGetContext(ContextID);
+    ptr = ctx ->chunks[mc];
+
+    if (ptr != NULL)
+        return ptr;
+
+    // A null ptr means no special settings for that context, and this
+    // reverts to Context0 globals
+    return globalContext.chunks[mc];
+}
+
+
+// This function returns the given context its default pristine state,
+// as no plug-ins were declared. There is no way to unregister a single
+// plug-in, as a single call to cmsPluginTHR() function may register
+// many different plug-ins simultaneously, then there is no way to
+// identify which plug-in to unregister.
+void CMSEXPORT cmsUnregisterPluginsTHR(cmsContext ContextID)
+{
+    _cmsRegisterMemHandlerPlugin(ContextID, NULL);
+    _cmsRegisterInterpPlugin(ContextID, NULL);
+    _cmsRegisterTagTypePlugin(ContextID, NULL);
+    _cmsRegisterTagPlugin(ContextID, NULL);
+    _cmsRegisterFormattersPlugin(ContextID, NULL);
+    _cmsRegisterRenderingIntentPlugin(ContextID, NULL);
+    _cmsRegisterParametricCurvesPlugin(ContextID, NULL);
+    _cmsRegisterMultiProcessElementPlugin(ContextID, NULL);
+    _cmsRegisterOptimizationPlugin(ContextID, NULL);
+    _cmsRegisterTransformPlugin(ContextID, NULL);
+    _cmsRegisterMutexPlugin(ContextID, NULL);
+}
+
+
+// Returns the memory manager plug-in, if any, from the Plug-in bundle
+static
+cmsPluginMemHandler* _cmsFindMemoryPlugin(void* PluginBundle)
+{
+    cmsPluginBase* Plugin;
+
+    for (Plugin = (cmsPluginBase*) PluginBundle;
+        Plugin != NULL;
+        Plugin = Plugin -> Next) {
+
+            if (Plugin -> Magic == cmsPluginMagicNumber &&
+                Plugin -> ExpectedVersion <= LCMS_VERSION &&
+                Plugin -> Type == cmsPluginMemHandlerSig) {
+
+                    // Found!
+                    return (cmsPluginMemHandler*) Plugin;
+            }
+    }
+
+    // Nope, revert to defaults
+    return NULL;
+}
+
+
+// Creates a new context with optional associated plug-ins. Caller may also specify an optional pointer to user-defined
+// data that will be forwarded to plug-ins and logger.
+cmsContext CMSEXPORT cmsCreateContext(void* Plugin, void* UserData)
+{
+    struct _cmsContext_struct* ctx;
+    struct _cmsContext_struct  fakeContext;
+
+    _cmsInstallAllocFunctions(_cmsFindMemoryPlugin(Plugin), &fakeContext.DefaultMemoryManager);
+
+    fakeContext.chunks[UserPtr]     = UserData;
+    fakeContext.chunks[MemPlugin]   = &fakeContext.DefaultMemoryManager;
+
+    // Create the context structure.
+    ctx = (struct _cmsContext_struct*) _cmsMalloc(&fakeContext, sizeof(struct _cmsContext_struct));
+    if (ctx == NULL)
+        return NULL;     // Something very wrong happened!
+
+    // Init the structure and the memory manager
+    memset(ctx, 0, sizeof(struct _cmsContext_struct));
+
+    // Keep memory manager
+    memcpy(&ctx->DefaultMemoryManager, &fakeContext.DefaultMemoryManager, sizeof(_cmsMemPluginChunk));
+
+    // Maintain the linked list (with proper locking)
+    _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+       ctx ->Next = _cmsContextPoolHead;
+       _cmsContextPoolHead = ctx;
+    _cmsLeaveCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+
+    ctx ->chunks[UserPtr]     = UserData;
+    ctx ->chunks[MemPlugin]   = &ctx->DefaultMemoryManager;
+
+    // Now we can allocate the pool by using default memory manager
+    ctx ->MemPool = _cmsCreateSubAlloc(ctx, 22 * sizeof(void*));  // default size about 32 pointers
+    if (ctx ->MemPool == NULL) {
+
+         cmsDeleteContext(ctx);
+        return NULL;
+    }
+
+    _cmsAllocLogErrorChunk(ctx, NULL);
+    _cmsAllocAlarmCodesChunk(ctx, NULL);
+    _cmsAllocAdaptationStateChunk(ctx, NULL);
+    _cmsAllocMemPluginChunk(ctx, NULL);
+    _cmsAllocInterpPluginChunk(ctx, NULL);
+    _cmsAllocCurvesPluginChunk(ctx, NULL);
+    _cmsAllocFormattersPluginChunk(ctx, NULL);
+    _cmsAllocTagTypePluginChunk(ctx, NULL);
+    _cmsAllocMPETypePluginChunk(ctx, NULL);
+    _cmsAllocTagPluginChunk(ctx, NULL);
+    _cmsAllocIntentsPluginChunk(ctx, NULL);
+    _cmsAllocOptimizationPluginChunk(ctx, NULL);
+    _cmsAllocTransformPluginChunk(ctx, NULL);
+    _cmsAllocMutexPluginChunk(ctx, NULL);
+
+    // Setup the plug-ins
+    if (!cmsPluginTHR(ctx, Plugin)) {
+
+        cmsDeleteContext(ctx);
+        return NULL;
+    }
+
+    return (cmsContext) ctx;
+}
+
+// Duplicates a context with all associated plug-ins.
+// Caller may specify an optional pointer to user-defined
+// data that will be forwarded to plug-ins and logger.
+cmsContext CMSEXPORT cmsDupContext(cmsContext ContextID, void* NewUserData)
+{
+    int i;
+    struct _cmsContext_struct* ctx;
+    const struct _cmsContext_struct* src = _cmsGetContext(ContextID);
+
+    void* userData = (NewUserData != NULL) ? NewUserData : src -> chunks[UserPtr];
+
+
+    ctx = (struct _cmsContext_struct*) _cmsMalloc(ContextID, sizeof(struct _cmsContext_struct));
+    if (ctx == NULL)
+        return NULL;     // Something very wrong happened
+
+    // Setup default memory allocators
+    memcpy(&ctx->DefaultMemoryManager, &src->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
+
+    // Maintain the linked list
+    _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+       ctx ->Next = _cmsContextPoolHead;
+       _cmsContextPoolHead = ctx;
+    _cmsLeaveCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+
+    ctx ->chunks[UserPtr]    = userData;
+    ctx ->chunks[MemPlugin]  = &ctx->DefaultMemoryManager;
+
+    ctx ->MemPool = _cmsCreateSubAlloc(ctx, 22 * sizeof(void*));
+    if (ctx ->MemPool == NULL) {
+
+         cmsDeleteContext(ctx);
+        return NULL;
+    }
+
+    // Allocate all required chunks.
+    _cmsAllocLogErrorChunk(ctx, src);
+    _cmsAllocAlarmCodesChunk(ctx, src);
+    _cmsAllocAdaptationStateChunk(ctx, src);
+    _cmsAllocMemPluginChunk(ctx, src);
+    _cmsAllocInterpPluginChunk(ctx, src);
+    _cmsAllocCurvesPluginChunk(ctx, src);
+    _cmsAllocFormattersPluginChunk(ctx, src);
+    _cmsAllocTagTypePluginChunk(ctx, src);
+    _cmsAllocMPETypePluginChunk(ctx, src);
+    _cmsAllocTagPluginChunk(ctx, src);
+    _cmsAllocIntentsPluginChunk(ctx, src);
+    _cmsAllocOptimizationPluginChunk(ctx, src);
+    _cmsAllocTransformPluginChunk(ctx, src);
+    _cmsAllocMutexPluginChunk(ctx, src);
+
+    // Make sure no one failed
+    for (i=Logger; i < MemoryClientMax; i++) {
+
+        if (src ->chunks[i] == NULL) {
+            cmsDeleteContext((cmsContext) ctx);
+            return NULL;
+        }
+    }
+
+    return (cmsContext) ctx;
+}
+
+
+
+static
+struct _cmsContext_struct* FindPrev(struct _cmsContext_struct* id)
+{
+    struct _cmsContext_struct* prev;
+
+    // Search for previous
+    for (prev = _cmsContextPoolHead;
+             prev != NULL;
+             prev = prev ->Next)
+    {
+        if (prev ->Next == id)
+            return prev;
+    }
+
+    return NULL;  // List is empty or only one element!
+}
+
+// Frees any resources associated with the given context,
+// and destroys the context placeholder.
+// The ContextID can no longer be used in any THR operation.
+void CMSEXPORT cmsDeleteContext(cmsContext ContextID)
+{
+    if (ContextID != NULL) {
+
+        struct _cmsContext_struct* ctx = (struct _cmsContext_struct*) ContextID;
+        struct _cmsContext_struct  fakeContext;
+        struct _cmsContext_struct* prev;
+
+        memcpy(&fakeContext.DefaultMemoryManager, &ctx->DefaultMemoryManager, sizeof(ctx->DefaultMemoryManager));
+
+        fakeContext.chunks[UserPtr]     = ctx ->chunks[UserPtr];
+        fakeContext.chunks[MemPlugin]   = &fakeContext.DefaultMemoryManager;
+
+        // Get rid of plugins
+        cmsUnregisterPluginsTHR(ContextID);
+
+        // Since all memory is allocated in the private pool, all what we need to do is destroy the pool
+        if (ctx -> MemPool != NULL)
+              _cmsSubAllocDestroy(ctx ->MemPool);
+        ctx -> MemPool = NULL;
+
+        // Maintain list
+        _cmsEnterCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+        if (_cmsContextPoolHead == ctx) {
+
+            _cmsContextPoolHead = ctx->Next;
+        }
+        else {
+
+            // Search for previous
+            for (prev = _cmsContextPoolHead;
+                prev != NULL;
+                prev = prev ->Next)
+            {
+                if (prev -> Next == ctx) {
+                    prev -> Next = ctx ->Next;
+                    break;
+                }
+            }
+        }
+        _cmsLeaveCriticalSectionPrimitive(&_cmsContextPoolHeadMutex);
+
+        // free the memory block itself
+        _cmsFree(&fakeContext, ctx);
+    }
+}
+
+// Returns the user data associated to the given ContextID, or NULL if no user data was attached on context creation
+void* CMSEXPORT cmsGetContextUserData(cmsContext ContextID)
+{
+    return _cmsContextGetClientChunk(ContextID, UserPtr);
+}
+
+

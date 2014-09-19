@@ -200,24 +200,24 @@ check_j2se_version:
 
 $(SUBDIRS_TIERED): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=tiered
+	+$(BUILDTREE) VARIANT=tiered
 
 $(SUBDIRS_C2): $(BUILDTREE_MAKE)
 ifeq ($(FORCE_TIERED),1)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-		$(BUILDTREE) VARIANT=tiered FORCE_TIERED=1
+	+$(BUILDTREE) VARIANT=tiered FORCE_TIERED=1
 else
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-		$(BUILDTREE) VARIANT=compiler2
+	+$(BUILDTREE) VARIANT=compiler2
 endif
 
 $(SUBDIRS_C1): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=compiler1
+	+$(BUILDTREE) VARIANT=compiler1
 
 $(SUBDIRS_CORE): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=core
+	+$(BUILDTREE) VARIANT=core
 
 # Define INSTALL=y at command line to automatically copy JVM into JAVA_HOME
 
@@ -292,3 +292,5 @@ include $(GAMMADIR)/make/cscope.make
 .PHONY: all compiler1 compiler2 core
 .PHONY: clean clean_compiler1 clean_compiler2 clean_core docs clean_docs
 .PHONY: checks check_os_version check_j2se_version
+
+.NOTPARALLEL:
