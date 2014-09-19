@@ -25,10 +25,6 @@
 
 package org.ietf.jgss;
 
-import sun.security.jgss.spi.*;
-import java.util.Vector;
-import java.util.Enumeration;
-
 /**
  * This interface encapsulates a single GSS-API principal entity. The
  * application obtains an implementation of this interface

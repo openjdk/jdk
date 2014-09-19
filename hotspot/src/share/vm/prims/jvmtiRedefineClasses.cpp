@@ -135,7 +135,7 @@ void VM_RedefineClasses::doit() {
 
   // Mark methods seen on stack and everywhere else so old methods are not
   // cleaned up if they're on the stack.
-  MetadataOnStackMark md_on_stack;
+  MetadataOnStackMark md_on_stack(true);
   HandleMark hm(thread);   // make sure any handles created are deleted
                            // before the stack walk again.
 
@@ -2826,11 +2826,10 @@ void VM_RedefineClasses::AdjustCpoolCacheAndVtable::do_klass(Klass* k) {
     }
 
     // the previous versions' constant pool caches may need adjustment
-    PreviousVersionWalker pvw(_thread, ik);
-    for (PreviousVersionNode * pv_node = pvw.next_previous_version();
-         pv_node != NULL; pv_node = pvw.next_previous_version()) {
-      other_cp = pv_node->prev_constant_pool();
-      cp_cache = other_cp->cache();
+    for (InstanceKlass* pv_node = ik->previous_versions();
+         pv_node != NULL;
+         pv_node = pv_node->previous_versions()) {
+      cp_cache = pv_node->constants()->cache();
       if (cp_cache != NULL) {
         cp_cache->adjust_method_entries(_matching_old_methods,
                                         _matching_new_methods,
@@ -2855,9 +2854,8 @@ void VM_RedefineClasses::update_jmethod_ids() {
   }
 }
 
-void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
-       BitMap *emcp_methods, int * emcp_method_count_p) {
-  *emcp_method_count_p = 0;
+int VM_RedefineClasses::check_methods_and_mark_as_obsolete() {
+  int emcp_method_count = 0;
   int obsolete_count = 0;
   int old_index = 0;
   for (int j = 0; j < _matching_methods_length; ++j, ++old_index) {
@@ -2931,9 +2929,9 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
       // that we get from effectively overwriting the old methods
       // when the new methods are attached to the_class.
 
-      // track which methods are EMCP for add_previous_version() call
-      emcp_methods->set_bit(old_index);
-      (*emcp_method_count_p)++;
+      // Count number of methods that are EMCP.  The method will be marked
+      // old but not obsolete if it is EMCP.
+      emcp_method_count++;
 
       // An EMCP method is _not_ obsolete. An obsolete method has a
       // different jmethodID than the current method. An EMCP method
@@ -2982,10 +2980,11 @@ void VM_RedefineClasses::check_methods_and_mark_as_obsolete(
                           old_method->name()->as_C_string(),
                           old_method->signature()->as_C_string()));
   }
-  assert((*emcp_method_count_p + obsolete_count) == _old_methods->length(),
+  assert((emcp_method_count + obsolete_count) == _old_methods->length(),
     "sanity check");
-  RC_TRACE(0x00000100, ("EMCP_cnt=%d, obsolete_cnt=%d", *emcp_method_count_p,
+  RC_TRACE(0x00000100, ("EMCP_cnt=%d, obsolete_cnt=%d", emcp_method_count,
     obsolete_count));
+  return emcp_method_count;
 }
 
 // This internal class transfers the native function registration from old methods
@@ -3379,11 +3378,8 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
   old_constants->set_pool_holder(scratch_class());
 #endif
 
-  // track which methods are EMCP for add_previous_version() call below
-  BitMap emcp_methods(_old_methods->length());
-  int emcp_method_count = 0;
-  emcp_methods.clear();  // clears 0..(length() - 1)
-  check_methods_and_mark_as_obsolete(&emcp_methods, &emcp_method_count);
+  // track number of methods that are EMCP for add_previous_version() call below
+  int emcp_method_count = check_methods_and_mark_as_obsolete();
   transfer_old_native_function_registrations(the_class);
 
   // The class file bytes from before any retransformable agents mucked
@@ -3471,9 +3467,10 @@ void VM_RedefineClasses::redefine_single_class(jclass the_jclass,
     scratch_class->enclosing_method_method_index());
   scratch_class->set_enclosing_method_indices(old_class_idx, old_method_idx);
 
+  the_class->set_has_been_redefined();
+
   // keep track of previous versions of this class
-  the_class->add_previous_version(scratch_class, &emcp_methods,
-    emcp_method_count);
+  the_class->add_previous_version(scratch_class, emcp_method_count);
 
   RC_TIMER_STOP(_timer_rsc_phase1);
   RC_TIMER_START(_timer_rsc_phase2);

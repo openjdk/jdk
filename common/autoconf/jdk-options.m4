@@ -234,7 +234,7 @@ AC_DEFUN_ONCE([JDKOPT_SETUP_DEBUG_LEVEL],
       FASTDEBUG="false"
       DEBUG_CLASSFILES="true"
       BUILD_VARIANT_RELEASE="-debug"
-      HOTSPOT_DEBUG_LEVEL="jvmg"
+      HOTSPOT_DEBUG_LEVEL="debug"
       HOTSPOT_EXPORT="debug"
       ;;
     optimized )

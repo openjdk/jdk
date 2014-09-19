@@ -1082,86 +1082,60 @@ static int allocateSpaceForGP(GPData* gpdata, int npoints, int ncontours) {
         return 1;
 }
 
+static void addSeg(GPData *gp, jbyte type) {
+    gp->pointTypes[gp->numTypes++] = type;
+}
+
+static void addCoords(GPData *gp, FT_Vector *p) {
+    gp->pointCoords[gp->numCoords++] =  F26Dot6ToFloat(p->x);
+    gp->pointCoords[gp->numCoords++] = -F26Dot6ToFloat(p->y);
+}
+
+static int moveTo(FT_Vector *to, GPData *gp) {
+    if (gp->numCoords)
+        addSeg(gp, SEG_CLOSE);
+    addCoords(gp, to);
+    addSeg(gp, SEG_MOVETO);
+    return FT_Err_Ok;
+}
+
+static int lineTo(FT_Vector *to, GPData *gp) {
+    addCoords(gp, to);
+    addSeg(gp, SEG_LINETO);
+    return FT_Err_Ok;
+}
+
+static int conicTo(FT_Vector *control, FT_Vector *to, GPData *gp) {
+    addCoords(gp, control);
+    addCoords(gp, to);
+    addSeg(gp, SEG_QUADTO);
+    return FT_Err_Ok;
+}
+
+static int cubicTo(FT_Vector *control1,
+                   FT_Vector *control2,
+                   FT_Vector *to,
+                   GPData    *gp) {
+    addCoords(gp, control1);
+    addCoords(gp, control2);
+    addCoords(gp, to);
+    addSeg(gp, SEG_CUBICTO);
+    return FT_Err_Ok;
+}
+
 static void addToGP(GPData* gpdata, FT_Outline*outline) {
-    jbyte current_type=SEG_UNKNOWN;
-    int i, j;
-    jfloat x, y;
+    static const FT_Outline_Funcs outline_funcs = {
+        (FT_Outline_MoveToFunc) moveTo,
+        (FT_Outline_LineToFunc) lineTo,
+        (FT_Outline_ConicToFunc) conicTo,
+        (FT_Outline_CubicToFunc) cubicTo,
+        0, /* shift */
+        0, /* delta */
+    };
 
-    j = 0;
-    for(i=0; i<outline->n_points; i++) {
-        x =  F26Dot6ToFloat(outline->points[i].x);
-        y = -F26Dot6ToFloat(outline->points[i].y);
-
-        if (FT_CURVE_TAG(outline->tags[i]) == FT_CURVE_TAG_ON) {
-            /* If bit 0 is unset, the point is "off" the curve,
-             i.e., a Bezier control point, while it is "on" when set. */
-            if (current_type == SEG_UNKNOWN) { /* special case:
-                                                  very first point */
-                /* add segment */
-                gpdata->pointTypes[gpdata->numTypes++] = SEG_MOVETO;
-                current_type = SEG_LINETO;
-            } else {
-                gpdata->pointTypes[gpdata->numTypes++] = current_type;
-                current_type = SEG_LINETO;
-            }
-        } else {
-            if (current_type == SEG_UNKNOWN) { /* special case:
-                                                   very first point */
-                if (FT_CURVE_TAG(outline->tags[i+1]) == FT_CURVE_TAG_ON) {
-                    /* just skip first point. Adhoc heuristic? */
-                    continue;
-                } else {
-                    x = (x + F26Dot6ToFloat(outline->points[i+1].x))/2;
-                    y = (y - F26Dot6ToFloat(outline->points[i+1].y))/2;
-                    gpdata->pointTypes[gpdata->numTypes++] = SEG_MOVETO;
-                    current_type = SEG_LINETO;
-                }
-            } else if (FT_CURVE_TAG(outline->tags[i]) == FT_CURVE_TAG_CUBIC) {
-                /* Bit 1 is meaningful for 'off' points only.
-                   If set, it indicates a third-order Bezier arc control
-                   point; and a second-order control point if unset.  */
-                current_type = SEG_CUBICTO;
-            } else {
-                /* two successive conic "off" points forces the rasterizer
-                   to create (during the scan-line conversion process
-                   exclusively) a virtual "on" point amidst them, at their
-                   exact middle. This greatly facilitates the definition of
-                   successive conic Bezier arcs.  Moreover, it is the way
-                   outlines are described in the TrueType specification. */
-                if (current_type == SEG_QUADTO) {
-                    gpdata->pointCoords[gpdata->numCoords++] =
-                        F26Dot6ToFloat(outline->points[i].x +
-                        outline->points[i-1].x)/2;
-                    gpdata->pointCoords[gpdata->numCoords++] =
-                        - F26Dot6ToFloat(outline->points[i].y +
-                        outline->points[i-1].y)/2;
-                    gpdata->pointTypes[gpdata->numTypes++] = SEG_QUADTO;
-                }
-                current_type = SEG_QUADTO;
-            }
-        }
-        gpdata->pointCoords[gpdata->numCoords++] = x;
-        gpdata->pointCoords[gpdata->numCoords++] = y;
-        if (outline->contours[j] == i) { //end of contour
-            int start = j > 0 ? outline->contours[j-1]+1 : 0;
-            gpdata->pointTypes[gpdata->numTypes++] = current_type;
-            if (current_type == SEG_QUADTO &&
-            FT_CURVE_TAG(outline->tags[start]) != FT_CURVE_TAG_ON) {
-                gpdata->pointCoords[gpdata->numCoords++] =
-                            (F26Dot6ToFloat(outline->points[start].x) + x)/2;
-                gpdata->pointCoords[gpdata->numCoords++] =
-                            (-F26Dot6ToFloat(outline->points[start].y) + y)/2;
-            } else {
-                gpdata->pointCoords[gpdata->numCoords++] =
-                            F26Dot6ToFloat(outline->points[start].x);
-                gpdata->pointCoords[gpdata->numCoords++] =
-                            -F26Dot6ToFloat(outline->points[start].y);
-            }
-            gpdata->pointTypes[gpdata->numTypes++] = SEG_CLOSE;
-            current_type = SEG_UNKNOWN;
-            j++;
-        }
-    }
+    FT_Outline_Decompose(outline, &outline_funcs, gpdata);
+    if (gpdata->numCoords)
+        addSeg(gpdata, SEG_CLOSE);
 
     /* If set to 1, the outline will be filled using the even-odd fill rule */
     if (outline->flags & FT_OUTLINE_EVEN_ODD_FILL) {

@@ -186,13 +186,13 @@ public class SSL extends SecurityManager {
             // Client checks "initiate", then server gets the name
             // and checks "accept". Second connection resume.
             if (!permChecks.equals("IA")) {
-                throw new Exception();
+                throw new Exception(permChecks);
             }
         } else {
             // For bound, JAAS checks "accept" once. Server checks again,
             // client then checks "initiate". Second connection resume.
             if (!permChecks.equals("AAI")) {
-                throw new Exception();
+                throw new Exception(permChecks);
             }
         }
     }

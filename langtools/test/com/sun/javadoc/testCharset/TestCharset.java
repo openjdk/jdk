@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      7052170
+ * @bug      7052170 8047745
  * @summary  Run a test on -charset to make sure the charset gets generated as a
  *           part of the meta tag.
  * @author   Bhavesh Patel
@@ -42,19 +42,32 @@ public class TestCharset extends JavadocTester {
     @Test
     void test() {
         javadoc("-d", "out",
-                "-charset", "UTF-8",
+                "-charset", "ISO-8859-1",
                 "-sourcepath", testSrc,
                 "pkg");
         checkExit(Exit.OK);
 
         checkOutput("index.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">");
         checkOutput("pkg/Foo.html", true,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=UTF-8\">");
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=ISO-8859-1\">");
 
         checkOutput("index.html", false,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">");
+            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"ISO-8859-1\">");
         checkOutput("pkg/Foo.html", false,
-            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"UTF-8\">");
+            "<meta http-equiv=\"Content-Type\" content=\"text/html\" charset=\"ISO-8859-1\">");
+    }
+
+    @Test
+    void test1() {
+        javadoc("-d", "out-1",
+                "-sourcepath", testSrc,
+                "pkg");
+        checkExit(Exit.OK);
+
+        checkOutput("index.html", true,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">");
+        checkOutput("pkg/Foo.html", true,
+            "<meta http-equiv=\"Content-Type\" content=\"text/html; charset=utf-8\">");
     }
 }
