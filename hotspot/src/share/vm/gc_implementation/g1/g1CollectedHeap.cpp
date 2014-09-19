@@ -1960,15 +1960,10 @@ jint G1CollectedHeap::initialize() {
   ReservedSpace heap_rs = Universe::reserve_heap(max_byte_size,
                                                  heap_alignment);
 
-  // It is important to do this in a way such that concurrent readers can't
-  // temporarily think something is in the heap.  (I've actually seen this
-  // happen in asserts: DLD.)
-  _reserved.set_word_size(0);
-  _reserved.set_start((HeapWord*)heap_rs.base());
-  _reserved.set_end((HeapWord*)(heap_rs.base() + heap_rs.size()));
+  initialize_reserved_region((HeapWord*)heap_rs.base(), (HeapWord*)(heap_rs.base() + heap_rs.size()));
 
   // Create the gen rem set (and barrier set) for the entire reserved region.
-  _rem_set = collector_policy()->create_rem_set(_reserved, 2);
+  _rem_set = collector_policy()->create_rem_set(reserved_region(), 2);
   set_barrier_set(rem_set()->bs());
   if (!barrier_set()->is_a(BarrierSet::G1SATBCTLogging)) {
     vm_exit_during_initialization("G1 requires a G1SATBLoggingCardTableModRefBS");
@@ -2052,7 +2047,7 @@ jint G1CollectedHeap::initialize() {
 
   FreeRegionList::set_unrealistically_long_length(max_regions() + 1);
 
-  _bot_shared = new G1BlockOffsetSharedArray(_reserved, bot_storage);
+  _bot_shared = new G1BlockOffsetSharedArray(reserved_region(), bot_storage);
 
   _g1h = this;
 
