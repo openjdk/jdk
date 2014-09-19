@@ -226,9 +226,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
 
   // For a humongous region, region in which it starts.
   HeapRegion* _humongous_start_region;
-  // For the start region of a humongous sequence, it's original end().
-  HeapWord* _orig_end;
-
   // True iff the region is in current collection_set.
   bool _in_collection_set;
 
@@ -452,7 +449,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // their _end set up to be the end of the last continues region of the
   // corresponding humongous object.
   bool is_in_reserved_raw(const void* p) const {
-    return _bottom <= p && p < _orig_end;
+    return _bottom <= p && p < orig_end();
   }
 
   // Makes the current region be a "starts humongous" region, i.e.,
@@ -556,7 +553,8 @@ class HeapRegion: public G1OffsetTableContigSpace {
   void set_next_dirty_cards_region(HeapRegion* hr) { _next_dirty_cards_region = hr; }
   bool is_on_dirty_cards_region_list() const { return get_next_dirty_cards_region() != NULL; }
 
-  HeapWord* orig_end() const { return _orig_end; }
+  // For the start region of a humongous sequence, it's original end().
+  HeapWord* orig_end() const { return _bottom + GrainWords; }
 
   // Reset HR stuff to default values.
   void hr_clear(bool par, bool clear_space, bool locked = false);
