@@ -27,6 +27,7 @@ package jdk.nashorn.internal.runtime;
 
 import java.io.Serializable;
 import java.util.Arrays;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
@@ -83,7 +84,11 @@ public final class StoredScript implements Serializable {
      * @return map of class bytes
      */
     public Map<String, byte[]> getClassBytes() {
-        return classBytes;
+        final Map<String, byte[]> clonedMap = new LinkedHashMap<>();
+        for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
+            clonedMap.put(entry.getKey(), entry.getValue().clone());
+        }
+        return clonedMap;
     }
 
     /**
@@ -91,11 +96,19 @@ public final class StoredScript implements Serializable {
      * @return constants array
      */
     public Object[] getConstants() {
-        return constants;
+        return constants.clone();
     }
 
-    Map<Integer, FunctionInitializer> getInitializers() {
-        return initializers;
+    /**
+     * Returns the function initializers map.
+     * @return The initializers map.
+     */
+    public Map<Integer, FunctionInitializer> getInitializers() {
+        final Map<Integer, FunctionInitializer> clonedMap = new LinkedHashMap<>();
+        for (final Map.Entry<Integer, FunctionInitializer> entry : initializers.entrySet()) {
+            clonedMap.put(entry.getKey(), new FunctionInitializer(entry.getValue()));
+        }
+        return clonedMap;
     }
 
     @Override

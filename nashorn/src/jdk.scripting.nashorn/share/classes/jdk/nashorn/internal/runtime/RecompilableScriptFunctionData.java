@@ -491,14 +491,15 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
     private FunctionInitializer install(final StoredScript script) {
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final Map<String, byte[]>   classBytes       = script.getClassBytes();
         final String   mainClassName   = script.getMainClassName();
-        final byte[]   mainClassBytes  = script.getClassBytes().get(mainClassName);
+        final byte[]   mainClassBytes  = classBytes.get(mainClassName);
 
         final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
 
         installedClasses.put(mainClassName, mainClass);
 
-        for (final Map.Entry<String, byte[]> entry : script.getClassBytes().entrySet()) {
+        for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             final String className = entry.getKey();
             final byte[] code = entry.getValue();
 
