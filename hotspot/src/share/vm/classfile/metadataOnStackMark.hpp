@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -37,7 +37,7 @@ class Metadata;
 class MetadataOnStackMark : public StackObj {
   NOT_PRODUCT(static bool _is_active;)
  public:
-  MetadataOnStackMark();
+  MetadataOnStackMark(bool has_redefined_a_class);
   ~MetadataOnStackMark();
   static void record(Metadata* m);
 };

@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,10 +25,14 @@
 
 include GensrcCommon.gmk
 
-include GensrcProviders.gmk
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, gensrc/Gensrc-jdk.localedata.gmk))
 
-jdk.attach: $(GENSRC_JDK_ATTACH)
+include GensrcLocaleData.gmk
+include GensrcCLDR.gmk
 
-all: jdk.attach
+jdk.localedata: $(GENSRC_JDK_LOCALEDATA)
 
-.PHONY: all jdk.attach
+all: jdk.localedata
+
+.PHONY: all jdk.localedata
