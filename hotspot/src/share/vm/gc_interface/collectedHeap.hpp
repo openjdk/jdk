@@ -85,6 +85,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   friend class VMStructs;
   friend class IsGCActiveMark; // Block structured external access to _is_gc_active
 
+ private:
 #ifdef ASSERT
   static int       _fire_out_of_memory_count;
 #endif
@@ -97,8 +98,9 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Used in support of ReduceInitialCardMarks; only consulted if COMPILER2 is being used
   bool _defer_initial_card_mark;
 
- protected:
   MemRegion _reserved;
+
+ protected:
   BarrierSet* _barrier_set;
   bool _is_gc_active;
   uint _n_par_threads;
@@ -211,6 +213,7 @@ class CollectedHeap : public CHeapObj<mtInternal> {
   // Stop any onging concurrent work and prepare for exit.
   virtual void stop() {}
 
+  void initialize_reserved_region(HeapWord *start, HeapWord *end);
   MemRegion reserved_region() const { return _reserved; }
   address base() const { return (address)reserved_region().start(); }
 
