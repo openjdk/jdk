@@ -108,7 +108,7 @@ GENERATEDFILES = $(GENERATEDNAMES:%=$(OUTDIR)/%)
 all: $(EXEC)
 
 $(EXEC) : $(OBJECTS)
-	@echo Making adlc
+	@echo $(LOG_INFO) Making adlc
 	$(QUIETLY) $(HOST.LINK_NOPROF.CXX) -o $(EXEC) $(OBJECTS)
 
 # Random dependencies:
@@ -191,7 +191,7 @@ refresh_adfiles: $(EXEC) $(SOURCE.AD) $(ADLC_UPDATER)
 	$(QUIETLY) ./$(ADLC_UPDATER) adGlobals_$(Platform_arch_model).hpp $(TEMPDIR) $(OUTDIR)
 	$(QUIETLY) ./$(ADLC_UPDATER) dfa_$(Platform_arch_model).cpp $(TEMPDIR) $(OUTDIR)
 	$(QUIETLY) [ -f $(TEMPDIR)/made-change ] \
-		|| echo "Rescanned $(SOURCE.AD) but encountered no changes."
+		|| echo $(LOG_INFO) "Rescanned $(SOURCE.AD) but encountered no changes."
 	$(QUIETLY) rm -rf $(TEMPDIR)
 
 
@@ -209,14 +209,14 @@ PROCESS_AD_FILES = awk '{ \
     print }'
 
 $(OUTDIR)/%.o: %.cpp
-	@echo Compiling $<
+	@echo $(LOG_INFO) Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(HOST.COMPILE.CXX) -o $@ $< $(COMPILE_DONE)
 
 # Some object files are given a prefix, to disambiguate
 # them from objects of the same name built for the VM.
 $(OUTDIR)/adlc-%.o: %.cpp
-	@echo Compiling $<
+	@echo $(LOG_INFO) Compiling $<
 	$(QUIETLY) $(REMOVE_TARGET)
 	$(QUIETLY) $(HOST.COMPILE.CXX) -o $@ $< $(COMPILE_DONE)
 

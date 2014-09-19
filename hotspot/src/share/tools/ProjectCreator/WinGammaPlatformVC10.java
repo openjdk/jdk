@@ -33,7 +33,7 @@ import java.util.LinkedList;
 import java.util.UUID;
 import java.util.Vector;
 
-public class WinGammaPlatformVC10 extends WinGammaPlatformVC7 {
+public class WinGammaPlatformVC10 extends WinGammaPlatform {
 
 
    LinkedList <String>filters = new LinkedList<String>();

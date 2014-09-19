@@ -330,7 +330,7 @@
         if (do_OSR) {                                                                               \
           nmethod* osr_nmethod;                                                                     \
           OSR_REQUEST(osr_nmethod, branch_pc);                                                      \
-          if (osr_nmethod != NULL && osr_nmethod->osr_entry_bci() != InvalidOSREntryBci) {          \
+          if (osr_nmethod != NULL && osr_nmethod->is_in_use()) {                                    \
             intptr_t* buf;                                                                          \
             /* Call OSR migration with last java frame only, no checks. */                          \
             CALL_VM_NAKED_LJF(buf=SharedRuntime::OSR_migration_begin(THREAD));                      \

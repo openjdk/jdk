@@ -157,4 +157,8 @@ inline bool os::supports_monotonic_clock() {
   return true;
 }
 
+inline void os::exit(int num) {
+  ::exit(num);
+}
+
 #endif // OS_SOLARIS_VM_OS_SOLARIS_INLINE_HPP

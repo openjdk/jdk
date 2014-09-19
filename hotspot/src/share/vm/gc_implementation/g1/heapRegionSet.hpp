@@ -81,7 +81,7 @@ class HeapRegionSetBase VALUE_OBJ_CLASS_SPEC {
   friend class VMStructs;
 private:
   bool _is_humongous;
-  bool _is_empty;
+  bool _is_free;
   HRSMtSafeChecker* _mt_safety_checker;
 
 protected:
@@ -102,9 +102,9 @@ protected:
   // not. Only used during verification.
   bool regions_humongous() { return _is_humongous; }
 
-  // Indicates whether all regions in the set should be empty or
+  // Indicates whether all regions in the set should be free or
   // not. Only used during verification.
-  bool regions_empty() { return _is_empty; }
+  bool regions_free() { return _is_free; }
 
   void check_mt_safety() {
     if (_mt_safety_checker != NULL) {
@@ -114,7 +114,7 @@ protected:
 
   virtual void fill_in_ext_msg_extra(hrs_ext_msg* msg) { }
 
-  HeapRegionSetBase(const char* name, bool humongous, bool empty, HRSMtSafeChecker* mt_safety_checker);
+  HeapRegionSetBase(const char* name, bool humongous, bool free, HRSMtSafeChecker* mt_safety_checker);
 
 public:
   const char* name() { return _name; }
@@ -171,7 +171,7 @@ public:
   do {                                                                        \
     assert(((_set1_)->regions_humongous() ==                                  \
                                             (_set2_)->regions_humongous()) && \
-           ((_set1_)->regions_empty() == (_set2_)->regions_empty()),          \
+           ((_set1_)->regions_free() == (_set2_)->regions_free()),            \
            hrs_err_msg("the contents of set %s and set %s should match",      \
                        (_set1_)->name(), (_set2_)->name()));                  \
   } while (0)
@@ -184,7 +184,7 @@ public:
 class HeapRegionSet : public HeapRegionSetBase {
 public:
   HeapRegionSet(const char* name, bool humongous, HRSMtSafeChecker* mt_safety_checker):
-    HeapRegionSetBase(name, humongous, false /* empty */, mt_safety_checker) { }
+    HeapRegionSetBase(name, humongous, false /* free */, mt_safety_checker) { }
 
   void bulk_remove(const HeapRegionSetCount& removed) {
     _count.decrement(removed.length(), removed.capacity());

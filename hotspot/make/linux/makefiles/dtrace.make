@@ -78,13 +78,13 @@ CFLAGS += -DDTRACE_ENABLED
 dtrace_gen_headers: $(DtraceOutDir)/hotspot.h $(DtraceOutDir)/hotspot_jni.h $(DtraceOutDir)/hs_private.h
 else
 dtrace_gen_headers:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled: $(REASON)"
+	$(QUIETLY) $(LOG_INFO) echo "**NOTICE** Dtrace support disabled: $(REASON)"
 endif
 
 # Phony target used in vm.make build target to check whether enabled.
 ifeq ($(DTRACE_ENABLED),)
 dtraceCheck:
-	$(QUIETLY) echo "**NOTICE** Dtrace support disabled: $(REASON)"
+	$(QUIETLY) $(LOG_INFO) echo "**NOTICE** Dtrace support disabled: $(REASON)"
 else
 dtraceCheck:
 endif
