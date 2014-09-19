@@ -80,22 +80,15 @@ public class CodeCacheTest {
         line = r.readLine();
         m = line2.matcher(line);
         if (m.matches()) {
-            long start = Long.parseLong(m.group(1), 16);
-            if (start < 0) {
+            String start = m.group(1);
+            String mark  = m.group(2);
+            String top   = m.group(3);
+
+            // Lexical compare of hex numbers to check that they look sane.
+            if (start.compareTo(mark) > 1) {
                 throw new Exception("Failed parsing dcmd codecache output");
             }
-            long mark = Long.parseLong(m.group(2), 16);
-            if (mark < 0) {
-                throw new Exception("Failed parsing dcmd codecache output");
-            }
-            long top = Long.parseLong(m.group(3), 16);
-            if (top < 0) {
-                throw new Exception("Failed parsing dcmd codecache output");
-            }
-            if (start > mark) {
-                throw new Exception("Failed parsing dcmd codecache output");
-            }
-            if (mark > top) {
+            if (mark.compareTo(top) > 1) {
                 throw new Exception("Failed parsing dcmd codecache output");
             }
         } else {
