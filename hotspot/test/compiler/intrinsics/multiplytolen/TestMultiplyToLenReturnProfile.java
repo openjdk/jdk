@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1999, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,37 +22,31 @@
  *
  */
 
-#ifndef SHARE_VM_OPTO_C2COMPILER_HPP
-#define SHARE_VM_OPTO_C2COMPILER_HPP
+/**
+ * @test
+ * @bug 8057758
+ * @summary MultiplyToLen sets its return type to have a bottom offset which confuses code generation
+ * @run main/othervm -XX:-TieredCompilation -XX:-BackgroundCompilation -XX:-UseOnStackReplacement -XX:TypeProfileLevel=222 TestMultiplyToLenReturnProfile
+ *
+ */
 
-#include "compiler/abstractCompiler.hpp"
 
-class C2Compiler : public AbstractCompiler {
- private:
-  static bool init_c2_runtime();
+import java.math.*;
 
-public:
-  C2Compiler() : AbstractCompiler(c2) {}
+public class TestMultiplyToLenReturnProfile {
 
-  // Name
-  const char *name() { return "C2"; }
+    static BigInteger m(BigInteger i1, BigInteger i2) {
+        BigInteger res = BigInteger.valueOf(0);
+        for (int i = 0; i < 100; i++) {
+            res.add(i1.multiply(i2));
+        }
+        return res;
+    }
 
-  void initialize();
-
-  // Compilation entry point for methods
-  void compile_method(ciEnv* env,
-                      ciMethod* target,
-                      int entry_bci);
-
-  // sentinel value used to trigger backtracking in compile_method().
-  static const char* retry_no_subsuming_loads();
-  static const char* retry_no_escape_analysis();
-
-  // Print compilation timers and statistics
-  void print_timers();
-
-  // Initial size of the code buffer (may be increased at runtime)
-  static int initial_code_buffer_size();
-};
-
-#endif // SHARE_VM_OPTO_C2COMPILER_HPP
+    static public void main(String[] args) {
+        BigInteger v = BigInteger.valueOf(Integer.MAX_VALUE).pow(2);
+        for (int i = 0; i < 20000; i++) {
+            m(v, v.add(BigInteger.valueOf(1)));
+        }
+    }
+}
