@@ -43,7 +43,9 @@
 
 extern pointer __JvmOffsets;
 
-extern pointer __1cJCodeCacheF_heap_;
+/* GrowableArray<CodeHeaps*>* */
+extern pointer __1cJCodeCacheG_heaps_;
+
 extern pointer __1cIUniverseO_collectedHeap_;
 
 extern pointer __1cHnmethodG__vtbl_;
@@ -95,8 +97,8 @@ dtrace:helper:ustack:
 /!init_done && !this->done/
 {
   MARK_LINE;
-  init_done = 1;
-
+  
+  copyin_offset(POINTER_SIZE);
   copyin_offset(COMPILER);
   copyin_offset(OFFSET_CollectedHeap_reserved);
   copyin_offset(OFFSET_MemRegion_start);
@@ -121,6 +123,9 @@ dtrace:helper:ustack:
   copyin_offset(OFFSET_CodeHeap_memory);
   copyin_offset(OFFSET_CodeHeap_segmap);
   copyin_offset(OFFSET_CodeHeap_log2_segment_size);
+
+  copyin_offset(OFFSET_GrowableArray_CodeHeap_data);
+  copyin_offset(OFFSET_GrowableArray_CodeHeap_len);
 
   copyin_offset(OFFSET_VirtualSpace_low);
   copyin_offset(OFFSET_VirtualSpace_high);
@@ -152,24 +157,13 @@ dtrace:helper:ustack:
 #error "Don't know architecture"
 #endif
 
-  this->CodeCache_heap_address = copyin_ptr(&``__1cJCodeCacheF_heap_);
+  /* Read address of GrowableArray<CodeHeaps*> */
+  this->code_heaps_address = copyin_ptr(&``__1cJCodeCacheG_heaps_);
+  /* Read address of _data array field in GrowableArray */
+  this->code_heaps_array_address = copyin_ptr(this->code_heaps_address + OFFSET_GrowableArray_CodeHeap_data);
+  this->number_of_heaps = copyin_uint32(this->code_heaps_address + OFFSET_GrowableArray_CodeHeap_len);
 
-  this->CodeCache_low = copyin_ptr(this->CodeCache_heap_address + 
-      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
-
-  this->CodeCache_high = copyin_ptr(this->CodeCache_heap_address +
-      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
-
-  this->CodeCache_segmap_low = copyin_ptr(this->CodeCache_heap_address +
-      OFFSET_CodeHeap_segmap + OFFSET_VirtualSpace_low);
-
-  this->CodeCache_segmap_high = copyin_ptr(this->CodeCache_heap_address +
-      OFFSET_CodeHeap_segmap + OFFSET_VirtualSpace_high);
-
-  this->CodeHeap_log2_segment_size = copyin_uint32(
-      this->CodeCache_heap_address + OFFSET_CodeHeap_log2_segment_size);
-
-  this->Method_vtbl             = (pointer) &``__1cGMethodG__vtbl_;
+  this->Method_vtbl = (pointer) &``__1cGMethodG__vtbl_;
 
   /*
    * Get Java heap bounds
@@ -186,21 +180,152 @@ dtrace:helper:ustack:
   this->heap_end = this->heap_start + this->heap_size;
 }
 
+/*
+ * IMPORTANT: At the moment the ustack helper supports up to 5 code heaps in 
+ * the code cache. If more code heaps are added the following probes have to 
+ * be extended. This is done by simply adding a probe to get the heap bounds
+ * and another probe to set the code heap address of the newly created heap.
+ */
+
+/*
+ * ----- BEGIN: Get bounds of code heaps -----
+ */
 dtrace:helper:ustack:
-/!this->done &&
-this->CodeCache_low <= this->pc && this->pc < this->CodeCache_high/
+/init_done < 1 && this->number_of_heaps >= 1 && !this->done/
+{
+  MARK_LINE;
+  /* CodeHeap 1 */
+  init_done = 1;
+  this->code_heap1_address = copyin_ptr(this->code_heaps_array_address);
+  this->code_heap1_low = copyin_ptr(this->code_heap1_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap1_high = copyin_ptr(this->code_heap1_address +
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
+}
+
+dtrace:helper:ustack:
+/init_done < 2 && this->number_of_heaps >= 2 && !this->done/
+{
+  MARK_LINE;
+  /* CodeHeap 2 */
+  init_done = 2;
+  this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
+  this->code_heap2_address = copyin_ptr(this->code_heaps_array_address);
+  this->code_heap2_low = copyin_ptr(this->code_heap2_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap2_high = copyin_ptr(this->code_heap2_address +
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
+}
+
+dtrace:helper:ustack:
+/init_done < 3 && this->number_of_heaps >= 3 && !this->done/
+{
+  /* CodeHeap 3 */
+  init_done = 3;
+  this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
+  this->code_heap3_address = copyin_ptr(this->code_heaps_array_address);
+  this->code_heap3_low = copyin_ptr(this->code_heap3_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap3_high = copyin_ptr(this->code_heap3_address +
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
+}
+
+dtrace:helper:ustack:
+/init_done < 4 && this->number_of_heaps >= 4 && !this->done/
+{
+  /* CodeHeap 4 */
+  init_done = 4;
+  this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
+  this->code_heap4_address = copyin_ptr(this->code_heaps_array_address);
+  this->code_heap4_low = copyin_ptr(this->code_heap4_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap4_high = copyin_ptr(this->code_heap4_address +
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
+}
+
+dtrace:helper:ustack:
+/init_done < 5 && this->number_of_heaps >= 5 && !this->done/
+{
+  /* CodeHeap 5 */
+  init_done = 5;
+  this->code_heaps_array_address = this->code_heaps_array_address + POINTER_SIZE;
+  this->code_heap5_address = copyin_ptr(this->code_heaps_array_address);
+  this->code_heap5_low = copyin_ptr(this->code_heap5_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap5_high = copyin_ptr(this->code_heap5_address +
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_high);
+}
+/*
+ * ----- END: Get bounds of code heaps -----
+ */
+
+/*
+ * ----- BEGIN: Get address of the code heap pc points to -----
+ */
+dtrace:helper:ustack:
+/!this->done && this->number_of_heaps >= 1 && this->code_heap1_low <= this->pc && this->pc < this->code_heap1_high/
 {
   MARK_LINE;
   this->codecache = 1;
+  this->code_heap_address = this->code_heap1_address;
+}
+
+dtrace:helper:ustack:
+/!this->done && this->number_of_heaps >= 2 && this->code_heap2_low <= this->pc && this->pc < this->code_heap2_high/
+{
+  MARK_LINE;
+  this->codecache = 1;
+  this->code_heap_address = this->code_heap2_address;
+}
+
+dtrace:helper:ustack:
+/!this->done && this->number_of_heaps >= 3 && this->code_heap3_low <= this->pc && this->pc < this->code_heap3_high/
+{
+  MARK_LINE;
+  this->codecache = 1;
+  this->code_heap_address = this->code_heap3_address;
+}
+
+dtrace:helper:ustack:
+/!this->done && this->number_of_heaps >= 4 && this->code_heap4_low <= this->pc && this->pc < this->code_heap4_high/
+{
+  MARK_LINE;
+  this->codecache = 1;
+  this->code_heap_address = this->code_heap4_address;
+}
+
+dtrace:helper:ustack:
+/!this->done && this->number_of_heaps >= 5 && this->code_heap5_low <= this->pc && this->pc < this->code_heap5_high/
+{
+  MARK_LINE;
+  this->codecache = 1;
+  this->code_heap_address = this->code_heap5_address;
+}
+/*
+ * ----- END: Get address of the code heap pc points to -----
+ */
+
+dtrace:helper:ustack:
+/!this->done && this->codecache/
+{
+  MARK_LINE;
+  /* 
+   * Get code heap configuration
+   */
+  this->code_heap_low = copyin_ptr(this->code_heap_address + 
+      OFFSET_CodeHeap_memory + OFFSET_VirtualSpace_low);
+  this->code_heap_segmap_low = copyin_ptr(this->code_heap_address +
+      OFFSET_CodeHeap_segmap + OFFSET_VirtualSpace_low);
+  this->code_heap_log2_segment_size = copyin_uint32(
+      this->code_heap_address + OFFSET_CodeHeap_log2_segment_size);
 
   /*
-   * Find start.
+   * Find start
    */
-  this->segment = (this->pc - this->CodeCache_low) >>
-    this->CodeHeap_log2_segment_size;
-  this->block = this->CodeCache_segmap_low;
+  this->segment = (this->pc - this->code_heap_low) >>
+    this->code_heap_log2_segment_size;
+  this->block = this->code_heap_segmap_low;
   this->tag = copyin_uchar(this->block + this->segment);
-  "second";
 }
 
 dtrace:helper:ustack:
@@ -255,8 +380,8 @@ dtrace:helper:ustack:
 /!this->done && this->codecache/
 {
   MARK_LINE;
-  this->block = this->CodeCache_low +
-    (this->segment << this->CodeHeap_log2_segment_size);
+  this->block = this->code_heap_low +
+    (this->segment << this->code_heap_log2_segment_size);
   this->used = copyin_uint32(this->block + OFFSET_HeapBlockHeader_used);
 }
 
