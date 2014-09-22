@@ -285,7 +285,11 @@ class Arguments : AllStatic {
   // Value of the conservative maximum heap alignment needed
   static size_t  _conservative_max_heap_alignment;
 
-  static uintx  _min_heap_size;
+  static uintx _min_heap_size;
+
+  // Used to store original flag values
+  static uintx _min_heap_free_ratio;
+  static uintx _max_heap_free_ratio;
 
   // -Xrun arguments
   static AgentLibraryList _libraryList;
@@ -515,6 +519,10 @@ class Arguments : AllStatic {
   // -Xms
   static uintx min_heap_size()              { return _min_heap_size; }
   static void  set_min_heap_size(uintx v)   { _min_heap_size = v;  }
+
+  // Returns the original values of -XX:MinHeapFreeRatio and -XX:MaxHeapFreeRatio
+  static uintx min_heap_free_ratio()        { return _min_heap_free_ratio; }
+  static uintx max_heap_free_ratio()        { return _max_heap_free_ratio; }
 
   // -Xrun
   static AgentLibrary* libraries()          { return _libraryList.first(); }

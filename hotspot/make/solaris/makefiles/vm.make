@@ -249,11 +249,12 @@ JVM_OBJ_FILES = $(Obj_Files) $(DTRACE_OBJS)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def
+mapfile : $(MAPFILE) $(MAPFILE_DTRACE_OPT) vm.def mapfile_ext
 	rm -f $@
 	cat $(MAPFILE) $(MAPFILE_DTRACE_OPT) \
 	    | $(NAWK) '{                                         \
 	              if ($$0 ~ "INSERT VTABLE SYMBOLS HERE") {  \
+	                  system ("cat mapfile_ext");            \
 	                  system ("cat vm.def");                 \
 	              } else {                                   \
 	                  print $$0;                             \
@@ -266,6 +267,13 @@ mapfile_extended : mapfile $(MAPFILE_DTRACE_OPT)
 
 vm.def: $(Obj_Files)
 	sh $(GAMMADIR)/make/solaris/makefiles/build_vm_def.sh *.o > $@
+
+mapfile_ext:
+	rm -f $@
+	touch $@
+	if [ -f $(HS_ALT_MAKE)/solaris/makefiles/mapfile-ext ]; then \
+	  cat $(HS_ALT_MAKE)/solaris/makefiles/mapfile-ext > $@; \
+	fi
 
 ifeq ($(LINK_INTO),AOUT)
   LIBJVM.o                 =
