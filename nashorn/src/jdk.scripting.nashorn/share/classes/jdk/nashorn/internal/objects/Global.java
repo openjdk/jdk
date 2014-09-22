@@ -1825,10 +1825,10 @@ public final class Global extends ScriptObject implements Scope {
 
         // ECMA 15.11.4.2 Error.prototype.name
         // Error.prototype.name = "Error";
-        errorProto.set(NativeError.NAME, "Error", false);
+        errorProto.set(NativeError.NAME, "Error", 0);
         // ECMA 15.11.4.3 Error.prototype.message
         // Error.prototype.message = "";
-        errorProto.set(NativeError.MESSAGE, "", false);
+        errorProto.set(NativeError.MESSAGE, "", 0);
 
         this.builtinEvalError = initErrorSubtype("EvalError", errorProto);
         this.builtinRangeError = initErrorSubtype("RangeError", errorProto);
@@ -1841,8 +1841,8 @@ public final class Global extends ScriptObject implements Scope {
     private ScriptFunction initErrorSubtype(final String name, final ScriptObject errorProto) {
         final ScriptFunction cons = initConstructor(name, ScriptFunction.class);
         final ScriptObject prototype = ScriptFunction.getPrototype(cons);
-        prototype.set(NativeError.NAME, name, false);
-        prototype.set(NativeError.MESSAGE, "", false);
+        prototype.set(NativeError.NAME, name, 0);
+        prototype.set(NativeError.MESSAGE, "", 0);
         prototype.setInitialProto(errorProto);
         return cons;
     }
@@ -1902,7 +1902,7 @@ public final class Global extends ScriptObject implements Scope {
     private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
         for (final Field f : scriptEnv.getClass().getFields()) {
             try {
-                options.set(f.getName(), f.get(scriptEnv), false);
+                options.set(f.getName(), f.get(scriptEnv), 0);
             } catch (final IllegalArgumentException | IllegalAccessException exp) {
                 throw new RuntimeException(exp);
             }
@@ -2046,7 +2046,7 @@ public final class Global extends ScriptObject implements Scope {
         // <anon-function>
         builtinFunction.setInitialProto(anon);
         builtinFunction.setPrototype(anon);
-        anon.set("constructor", builtinFunction, false);
+        anon.set("constructor", builtinFunction, 0);
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
 
         // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3

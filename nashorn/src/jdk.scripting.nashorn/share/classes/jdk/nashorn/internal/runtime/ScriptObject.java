@@ -198,10 +198,10 @@ public abstract class ScriptObject implements PropertyAccess {
     public static final Call SET_USER_ACCESSORS = virtualCall(MethodHandles.lookup(), ScriptObject.class, "setUserAccessors", void.class, String.class, ScriptFunction.class, ScriptFunction.class);
 
     static final MethodHandle[] SET_SLOW = new MethodHandle[] {
-        findOwnMH_V("set", void.class, Object.class, int.class, boolean.class),
-        findOwnMH_V("set", void.class, Object.class, long.class, boolean.class),
-        findOwnMH_V("set", void.class, Object.class, double.class, boolean.class),
-        findOwnMH_V("set", void.class, Object.class, Object.class, boolean.class)
+        findOwnMH_V("set", void.class, Object.class, int.class, int.class),
+        findOwnMH_V("set", void.class, Object.class, long.class, int.class),
+        findOwnMH_V("set", void.class, Object.class, double.class, int.class),
+        findOwnMH_V("set", void.class, Object.class, Object.class, int.class)
     };
 
     /** Method handle to reset the map of this ScriptObject */
@@ -593,7 +593,7 @@ public abstract class ScriptObject implements PropertyAccess {
             if (newValue && property != null) {
                 // Temporarily clear flags.
                 property = modifyOwnProperty(property, 0);
-                set(key, value, false);
+                set(key, value, 0);
                 //this might change the map if we change types of the property
                 //hence we need to read it again. note that we should probably
                 //have the setter return the new property throughout and in
@@ -758,7 +758,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return FindPropertyData or null if not found.
      */
     public final FindProperty findProperty(final String key, final boolean deep) {
-        return findProperty(key, deep, false, this);
+        return findProperty(key, deep, this);
     }
 
     /**
@@ -775,16 +775,11 @@ public abstract class ScriptObject implements PropertyAccess {
      *
      * @param key  Property key.
      * @param deep Whether the search should look up proto chain.
-     * @param stopOnNonScope should a deep search stop on the first non-scope object?
      * @param start the object on which the lookup was originally initiated
      *
      * @return FindPropertyData or null if not found.
      */
-    FindProperty findProperty(final String key, final boolean deep, final boolean stopOnNonScope, final ScriptObject start) {
-        // if doing deep search, stop search on the first non-scope object if asked to do so
-        if (stopOnNonScope && start != this && !isScope()) {
-            return null;
-        }
+    FindProperty findProperty(final String key, final boolean deep, final ScriptObject start) {
 
         final PropertyMap selfMap  = getMap();
         final Property    property = selfMap.findProperty(key);
@@ -796,7 +791,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (deep) {
             final ScriptObject myProto = getProto();
             if (myProto != null) {
-                return myProto.findProperty(key, deep, stopOnNonScope, start);
+                return myProto.findProperty(key, deep, start);
             }
         }
 
@@ -1164,7 +1159,7 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param value the value to write at the given index
      */
     public void setArgument(final int key, final Object value) {
-        set(key, value, false);
+        set(key, value, 0);
     }
 
     /**
@@ -1725,7 +1720,8 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     public Object put(final Object key, final Object value, final boolean strict) {
         final Object oldValue = get(key);
-        set(key, value, strict);
+        final int flags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
+        set(key, value, flags);
         return oldValue;
     }
 
@@ -1738,8 +1734,9 @@ public abstract class ScriptObject implements PropertyAccess {
      * @param strict strict mode or not
      */
     public void putAll(final Map<?, ?> otherMap, final boolean strict) {
+        final int flags = strict ? NashornCallSiteDescriptor.CALLSITE_STRICT : 0;
         for (final Map.Entry<?, ?> entry : otherMap.entrySet()) {
-            set(entry.getKey(), entry.getValue(), strict);
+            set(entry.getKey(), entry.getValue(), flags);
         }
     }
 
@@ -2042,7 +2039,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
         final PropertyMap newMap = map.replaceProperty(property, property.removeFlags(Property.NEEDS_DECLARATION));
         setMap(newMap);
-        set(key, value, true);
+        set(key, value, 0);
     }
 
     /**
@@ -2135,7 +2132,6 @@ public abstract class ScriptObject implements PropertyAccess {
             return findMegaMorphicSetMethod(desc, name);
         }
 
-        final boolean scope                   = isScope();
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
 
         /*
@@ -2145,16 +2141,18 @@ public abstract class ScriptObject implements PropertyAccess {
          *
          * toString = function() { print("global toString"); } // don't affect Object.prototype.toString
          */
-        FindProperty find = findProperty(name, true, scope, this);
+        FindProperty find = findProperty(name, true, this);
 
         // If it's not a scope search, then we don't want any inherited properties except those with user defined accessors.
-        if (!scope && find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
+        if (find != null && find.isInherited() && !(find.getProperty() instanceof UserAccessorProperty)) {
             // We should still check if inherited data property is not writable
             if (isExtensible() && !find.getProperty().isWritable()) {
-                return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", false);
+                return createEmptySetMethod(desc, explicitInstanceOfCheck, "property.not.writable", true);
             }
-            // Otherwise, forget the found property
-            find = null;
+            // Otherwise, forget the found property unless this is a scope callsite and the owner is a scope object as well.
+            if (!NashornCallSiteDescriptor.isScope(desc) || !find.getOwner().isScope()) {
+                find = null;
+            }
         }
 
         if (find != null) {
@@ -2180,8 +2178,8 @@ public abstract class ScriptObject implements PropertyAccess {
 
     private GuardedInvocation createEmptySetMethod(final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final String strictErrorMessage, final boolean canBeFastScope) {
         final String  name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-         if (NashornCallSiteDescriptor.isStrict(desc)) {
-           throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString(this));
+        if (NashornCallSiteDescriptor.isStrict(desc)) {
+            throw typeError(strictErrorMessage, name, ScriptRuntime.safeToString(this));
         }
         assert canBeFastScope || !NashornCallSiteDescriptor.isFastScope(desc);
         return new GuardedInvocation(
@@ -2207,7 +2205,7 @@ public abstract class ScriptObject implements PropertyAccess {
     private GuardedInvocation findMegaMorphicSetMethod(final CallSiteDescriptor desc, final String name) {
         final MethodType        type = desc.getMethodType().insertParameterTypes(1, Object.class);
         //never bother with ClassCastExceptionGuard for megamorphic callsites
-        final GuardedInvocation inv = findSetIndexMethod(getClass(), false, type, NashornCallSiteDescriptor.isStrict(desc));
+        final GuardedInvocation inv = findSetIndexMethod(getClass(), desc, false, type);
         return inv.replaceMethods(MH.insertArguments(inv.getInvocation(), 1, name), inv.getGuard());
     }
 
@@ -2230,24 +2228,26 @@ public abstract class ScriptObject implements PropertyAccess {
      * @return GuardedInvocation to be invoked at call site.
      */
     protected GuardedInvocation findSetIndexMethod(final CallSiteDescriptor desc, final LinkRequest request) { // array, index, value
-        return findSetIndexMethod(getClass(), explicitInstanceOfCheck(desc, request), desc.getMethodType(), NashornCallSiteDescriptor.isStrict(desc));
+        return findSetIndexMethod(getClass(), desc, explicitInstanceOfCheck(desc, request), desc.getMethodType());
     }
 
     /**
      * Find the appropriate SETINDEX method for an invoke dynamic call.
      *
+     * @param clazz the receiver class
+     * @param desc  the call site descriptor
+     * @param explicitInstanceOfCheck add an explicit instanceof check?
      * @param callType the method type at the call site
-     * @param isStrict are we in strict mode?
      *
      * @return GuardedInvocation to be invoked at call site.
      */
-    private static GuardedInvocation findSetIndexMethod(final Class<? extends ScriptObject> clazz, final boolean explicitInstanceOfCheck, final MethodType callType, final boolean isStrict) {
+    private static GuardedInvocation findSetIndexMethod(final Class<? extends ScriptObject> clazz, final CallSiteDescriptor desc, final boolean explicitInstanceOfCheck, final MethodType callType) {
         assert callType.parameterCount() == 3;
         final Class<?> keyClass   = callType.parameterType(1);
         final Class<?> valueClass = callType.parameterType(2);
 
-        MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, boolean.class);
-        methodHandle = MH.insertArguments(methodHandle, 3, isStrict);
+        MethodHandle methodHandle = findOwnMH_V(clazz, "set", void.class, keyClass, valueClass, int.class);
+        methodHandle = MH.insertArguments(methodHandle, 3, NashornCallSiteDescriptor.getFlags(desc));
 
         return new GuardedInvocation(methodHandle, getScriptObjectGuard(callType, explicitInstanceOfCheck), (SwitchPoint)null, explicitInstanceOfCheck ? null : ClassCastException.class);
     }
@@ -2672,7 +2672,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, false, this);
+                    final FindProperty find = object.findProperty(key, false, this);
 
                     if (find != null) {
                         return getIntValue(find, programPoint);
@@ -2755,7 +2755,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, false, this);
+                    final FindProperty find = object.findProperty(key, false, this);
                     if (find != null) {
                         return getLongValue(find, programPoint);
                     }
@@ -2837,7 +2837,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, false, this);
+                    final FindProperty find = object.findProperty(key, false, this);
                     if (find != null) {
                         return getDoubleValue(find, programPoint);
                     }
@@ -2919,7 +2919,7 @@ public abstract class ScriptObject implements PropertyAccess {
         if (isValidArrayIndex(index)) {
             for (ScriptObject object = this; ; ) {
                 if (object.getMap().containsArrayKeys()) {
-                    final FindProperty find = object.findProperty(key, false, false, this);
+                    final FindProperty find = object.findProperty(key, false, this);
 
                     if (find != null) {
                         return find.getObjectValue();
@@ -2996,48 +2996,48 @@ public abstract class ScriptObject implements PropertyAccess {
         return get(index, JSType.toString(key));
     }
 
-    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final int value, final boolean strict) {
+    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final int value, final int callSiteFlags) {
         if (getMap().containsArrayKeys()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
-                setObject(find, strict, key, value);
+                setObject(find, callSiteFlags, key, value);
                 return true;
             }
         }
         return false;
     }
 
-    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final long value, final boolean strict) {
+    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final long value, final int callSiteFlags) {
         if (getMap().containsArrayKeys()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
-                setObject(find, strict, key, value);
+                setObject(find, callSiteFlags, key, value);
                 return true;
             }
         }
         return false;
     }
 
-    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final double value, final boolean strict) {
+    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final double value, final int callSiteFlags) {
          if (getMap().containsArrayKeys()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
-                setObject(find, strict, key, value);
+                setObject(find, callSiteFlags, key, value);
                 return true;
             }
         }
         return false;
     }
 
-    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final Object value, final boolean strict) {
+    private boolean doesNotHaveCheckArrayKeys(final long longIndex, final Object value, final int callSiteFlags) {
         if (getMap().containsArrayKeys()) {
             final String       key  = JSType.toString(longIndex);
             final FindProperty find = findProperty(key, true);
             if (find != null) {
-                setObject(find, strict, key, value);
+                setObject(find, callSiteFlags, key, value);
                 return true;
             }
         }
@@ -3045,10 +3045,10 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     //value agnostic
-    private boolean doesNotHaveEnsureLength(final long longIndex, final long oldLength, final boolean strict) {
+    private boolean doesNotHaveEnsureLength(final long longIndex, final long oldLength, final int callSiteFlags) {
         if (longIndex >= oldLength) {
             if (!isExtensible()) {
-                if (strict) {
+                if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
                     throw typeError("object.non.extensible", JSType.toString(longIndex), ScriptRuntime.safeToString(this));
                 }
                 return true;
@@ -3068,37 +3068,41 @@ public abstract class ScriptObject implements PropertyAccess {
         }
     }
 
-    private void doesNotHave(final int index, final int value, final boolean strict) {
+    private void doesNotHave(final int index, final int value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (!doesNotHaveCheckArrayKeys(longIndex, value, strict) && !doesNotHaveEnsureLength(longIndex, oldLength, strict)) {
+        if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
+            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
     }
 
-    private void doesNotHave(final int index, final long value, final boolean strict) {
+    private void doesNotHave(final int index, final long value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (!doesNotHaveCheckArrayKeys(longIndex, value, strict) && !doesNotHaveEnsureLength(longIndex, oldLength, strict)) {
+        if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
+            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
     }
 
-    private void doesNotHave(final int index, final double value, final boolean strict) {
+    private void doesNotHave(final int index, final double value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (!doesNotHaveCheckArrayKeys(longIndex, value, strict) && !doesNotHaveEnsureLength(longIndex, oldLength, strict)) {
+        if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
+            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
     }
 
-    private void doesNotHave(final int index, final Object value, final boolean strict) {
+    private void doesNotHave(final int index, final Object value, final int callSiteFlags) {
         final long oldLength = getArray().length();
         final long longIndex = ArrayIndex.toLongIndex(index);
-        if (!doesNotHaveCheckArrayKeys(longIndex, value, strict) && !doesNotHaveEnsureLength(longIndex, oldLength, strict)) {
+        if (!doesNotHaveCheckArrayKeys(longIndex, value, callSiteFlags) && !doesNotHaveEnsureLength(longIndex, oldLength, callSiteFlags)) {
+            final boolean strict = NashornCallSiteDescriptor.isStrictFlag(callSiteFlags);
             setArray(getArray().set(index, value, strict));
             doesNotHaveEnsureDelete(longIndex, oldLength, strict);
         }
@@ -3108,32 +3112,47 @@ public abstract class ScriptObject implements PropertyAccess {
      * This is the most generic of all Object setters. Most of the others use this in some form.
      * TODO: should be further specialized
      *
-     * @param find    found property
-     * @param strict  are we in strict mode
-     * @param key     property key
-     * @param value   property value
+     * @param find          found property
+     * @param callSiteFlags callsite flags
+     * @param key           property key
+     * @param value         property value
      */
-    public final void setObject(final FindProperty find, final boolean strict, final String key, final Object value) {
+    public final void setObject(final FindProperty find, final int callSiteFlags, final String key, final Object value) {
         FindProperty f = find;
 
-        if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty) && !isScope()) {
-            // Setting a property should not modify the property in prototype unless this is a scope object.
-            f = null;
+        if (f != null && f.isInherited() && !(f.getProperty() instanceof UserAccessorProperty)) {
+            final boolean isScope = NashornCallSiteDescriptor.isScopeFlag(callSiteFlags);
+            // If the start object of the find is not this object it means the property was found inside a
+            // 'with' statement expression (see WithObject.findProperty()). In this case we forward the 'set'
+            // to the 'with' object.
+            // Note that although a 'set' operation involving a with statement follows scope rules outside
+            // the 'with' expression (the 'set' operation is performed on the owning prototype if it exists),
+            // it follows non-scope rules inside the 'with' expression (set is performed on the top level object).
+            // This is why we clear the callsite flags and FindProperty in the forward call to the 'with' object.
+            if (isScope && f.getSelf() != this) {
+                f.getSelf().setObject(null, 0, key, value);
+                return;
+            }
+            // Setting a property should not modify the property in prototype unless this is a scope callsite
+            // and the owner is a scope object as well (with the exception of 'with' statement handled above).
+            if (!isScope || !f.getOwner().isScope()) {
+                f = null;
+            }
         }
 
         if (f != null) {
             if (!f.getProperty().isWritable()) {
-                if (strict) {
+                if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
                     throw typeError("property.not.writable", key, ScriptRuntime.safeToString(this));
                 }
 
                 return;
             }
 
-            f.setValue(value, strict);
+            f.setValue(value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags));
 
         } else if (!isExtensible()) {
-            if (strict) {
+            if (NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)) {
                 throw typeError("object.non.extensible", key, ScriptRuntime.safeToString(this));
             }
         } else {
@@ -3153,293 +3172,293 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     @Override
-    public void set(final Object key, final int value, final boolean strict) {
+    public void set(final Object key, final int value, final int callSiteFlags) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int    index        = getArrayIndex(primitiveKey);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(primitiveKey);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final Object key, final long value, final boolean strict) {
+    public void set(final Object key, final long value, final int callSiteFlags) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int    index        = getArrayIndex(primitiveKey);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(primitiveKey);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final Object key, final double value, final boolean strict) {
+    public void set(final Object key, final double value, final int callSiteFlags) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int    index        = getArrayIndex(primitiveKey);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(primitiveKey);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final Object key, final Object value, final boolean strict) {
+    public void set(final Object key, final Object value, final int callSiteFlags) {
         final Object primitiveKey = JSType.toPrimitive(key, String.class);
         final int    index        = getArrayIndex(primitiveKey);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(primitiveKey);
-        setObject(findProperty(propName, true), strict, propName, value);
+        setObject(findProperty(propName, true), callSiteFlags, propName, value);
     }
 
     @Override
-    public void set(final double key, final int value, final boolean strict) {
+    public void set(final double key, final int value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final double key, final long value, final boolean strict) {
+    public void set(final double key, final long value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final double key, final double value, final boolean strict) {
+    public void set(final double key, final double value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final double key, final Object value, final boolean strict) {
+    public void set(final double key, final Object value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, value);
+        setObject(findProperty(propName, true), callSiteFlags, propName, value);
     }
 
     @Override
-    public void set(final long key, final int value, final boolean strict) {
+    public void set(final long key, final int value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final long key, final long value, final boolean strict) {
+    public void set(final long key, final long value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final long key, final double value, final boolean strict) {
+    public void set(final long key, final double value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final long key, final Object value, final boolean strict) {
+    public void set(final long key, final Object value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, value);
+        setObject(findProperty(propName, true), callSiteFlags, propName, value);
     }
 
     @Override
-    public void set(final int key, final int value, final boolean strict) {
+    public void set(final int key, final int value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final int key, final long value, final boolean strict) {
+    public void set(final int key, final long value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
-            }
-
-            return;
-        }
-
-        final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
-    }
-
-    @Override
-    public void set(final int key, final double value, final boolean strict) {
-        final int index = getArrayIndex(key);
-
-        if (isValidArrayIndex(index)) {
-            if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
-            } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, JSType.toObject(value));
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
     }
 
     @Override
-    public void set(final int key, final Object value, final boolean strict) {
+    public void set(final int key, final double value, final int callSiteFlags) {
         final int index = getArrayIndex(key);
 
         if (isValidArrayIndex(index)) {
             if (getArray().has(index)) {
-                setArray(getArray().set(index, value, strict));
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
             } else {
-                doesNotHave(index, value, strict);
+                doesNotHave(index, value, callSiteFlags);
             }
 
             return;
         }
 
         final String propName = JSType.toString(key);
-        setObject(findProperty(propName, true), strict, propName, value);
+        setObject(findProperty(propName, true), callSiteFlags, propName, JSType.toObject(value));
+    }
+
+    @Override
+    public void set(final int key, final Object value, final int callSiteFlags) {
+        final int index = getArrayIndex(key);
+
+        if (isValidArrayIndex(index)) {
+            if (getArray().has(index)) {
+                setArray(getArray().set(index, value, NashornCallSiteDescriptor.isStrictFlag(callSiteFlags)));
+            } else {
+                doesNotHave(index, value, callSiteFlags);
+            }
+
+            return;
+        }
+
+        final String propName = JSType.toString(key);
+        setObject(findProperty(propName, true), callSiteFlags, propName, value);
     }
 
     @Override
