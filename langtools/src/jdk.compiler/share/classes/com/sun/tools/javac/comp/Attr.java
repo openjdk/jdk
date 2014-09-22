@@ -3195,8 +3195,9 @@ public class Attr extends JCTree.Visitor {
                 elt = ((ArrayType)elt).elemtype;
             if (elt.hasTag(TYPEVAR)) {
                 log.error(tree.pos(), "type.var.cant.be.deref");
-                result = types.createErrorType(tree.type);
-                return;
+                result = tree.type = types.createErrorType(tree.name, site.tsym, site);
+                tree.sym = tree.type.tsym;
+                return ;
             }
         }
 
