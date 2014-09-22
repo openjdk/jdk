@@ -32,6 +32,7 @@ import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.arrayLikeIterator;
 import static jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator.reverseArrayLikeIterator;
+import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_STRICT;
 
 import java.lang.invoke.MethodHandle;
 import java.util.ArrayList;
@@ -69,6 +70,7 @@ import jdk.nashorn.internal.runtime.arrays.ArrayLikeIterator;
 import jdk.nashorn.internal.runtime.arrays.IteratorAction;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Runtime representation of a JavaScript array. NativeArray only holds numeric
@@ -341,7 +343,7 @@ public final class NativeArray extends ScriptObject {
             if (!newWritable) {
                 // make 'length' property not writable
                 final ScriptObject newDesc = Global.newEmptyInstance();
-                newDesc.set(WRITABLE, false, false);
+                newDesc.set(WRITABLE, false, 0);
                 return super.defineOwnProperty("length", newDesc, false);
             }
 
@@ -808,7 +810,7 @@ public final class NativeArray extends ScriptObject {
             final long len = JSType.toUint32(sobj.getLength());
 
             if (len == 0) {
-                sobj.set("length", 0, true);
+                sobj.set("length", 0, CALLSITE_STRICT);
                 return ScriptRuntime.UNDEFINED;
             }
 
@@ -816,7 +818,7 @@ public final class NativeArray extends ScriptObject {
             final Object element = sobj.get(index);
 
             sobj.delete(index, true);
-            sobj.set("length", index, true);
+            sobj.set("length", index, CALLSITE_STRICT);
 
             return element;
         } catch (final ClassCastException | NullPointerException e) {
@@ -844,9 +846,9 @@ public final class NativeArray extends ScriptObject {
 
             long len = JSType.toUint32(sobj.getLength());
             for (final Object element : args) {
-                sobj.set(len++, element, true);
+                sobj.set(len++, element, CALLSITE_STRICT);
             }
-            sobj.set("length", len, true);
+            sobj.set("length", len, CALLSITE_STRICT);
 
             return len;
         } catch (final ClassCastException | NullPointerException e) {
@@ -928,8 +930,8 @@ public final class NativeArray extends ScriptObject {
             }
 
             long len = JSType.toUint32(sobj.getLength());
-            sobj.set(len++, arg, true);
-            sobj.set("length", len, true);
+            sobj.set(len++, arg, CALLSITE_STRICT);
+            sobj.set("length", len, CALLSITE_STRICT);
             return len;
         } catch (final ClassCastException | NullPointerException e) {
             throw typeError("not.an.object", ScriptRuntime.safeToString(self));
@@ -957,14 +959,14 @@ public final class NativeArray extends ScriptObject {
                 final boolean upperExists = sobj.has(upper);
 
                 if (lowerExists && upperExists) {
-                    sobj.set(lower, upperValue, true);
-                    sobj.set(upper, lowerValue, true);
+                    sobj.set(lower, upperValue, CALLSITE_STRICT);
+                    sobj.set(upper, lowerValue, CALLSITE_STRICT);
                 } else if (!lowerExists && upperExists) {
-                    sobj.set(lower, upperValue, true);
+                    sobj.set(lower, upperValue, CALLSITE_STRICT);
                     sobj.delete(upper, true);
                 } else if (lowerExists && !upperExists) {
                     sobj.delete(lower, true);
-                    sobj.set(upper, lowerValue, true);
+                    sobj.set(upper, lowerValue, CALLSITE_STRICT);
                 }
             }
             return sobj;
@@ -1003,7 +1005,7 @@ public final class NativeArray extends ScriptObject {
                 for (long k = 1; k < len; k++) {
                     final boolean hasCurrent = sobj.has(k);
                     if (hasCurrent) {
-                        sobj.set(k - 1, sobj.get(k), true);
+                        sobj.set(k - 1, sobj.get(k), CALLSITE_STRICT);
                     } else if (hasPrevious) {
                         sobj.delete(k - 1, true);
                     }
@@ -1015,7 +1017,7 @@ public final class NativeArray extends ScriptObject {
             len = 0;
         }
 
-        sobj.set("length", len, true);
+        sobj.set("length", len, CALLSITE_STRICT);
 
         return first;
     }
@@ -1226,7 +1228,7 @@ public final class NativeArray extends ScriptObject {
                 final long to   = k + items.length;
 
                 if (sobj.has(from)) {
-                    sobj.set(to, sobj.get(from), true);
+                    sobj.set(to, sobj.get(from), CALLSITE_STRICT);
                 } else {
                     sobj.delete(to, true);
                 }
@@ -1242,7 +1244,7 @@ public final class NativeArray extends ScriptObject {
 
                 if (sobj.has(from)) {
                     final Object fromValue = sobj.get(from);
-                    sobj.set(to, fromValue, true);
+                    sobj.set(to, fromValue, CALLSITE_STRICT);
                 } else {
                     sobj.delete(to, true);
                 }
@@ -1251,11 +1253,11 @@ public final class NativeArray extends ScriptObject {
 
         long k = start;
         for (int i = 0; i < items.length; i++, k++) {
-            sobj.set(k, items[i], true);
+            sobj.set(k, items[i], CALLSITE_STRICT);
         }
 
         final long newLength = len - deleteCount + items.length;
-        sobj.set("length", newLength, true);
+        sobj.set("length", newLength, CALLSITE_STRICT);
 
         return array;
     }
@@ -1295,19 +1297,19 @@ public final class NativeArray extends ScriptObject {
 
                 if (sobj.has(from)) {
                     final Object fromValue = sobj.get(from);
-                    sobj.set(to, fromValue, true);
+                    sobj.set(to, fromValue, CALLSITE_STRICT);
                 } else {
                     sobj.delete(to, true);
                 }
             }
 
             for (int j = 0; j < items.length; j++) {
-                sobj.set(j, items[j], true);
+                sobj.set(j, items[j], CALLSITE_STRICT);
             }
         }
 
         final long newLength = len + items.length;
-        sobj.set("length", newLength, true);
+        sobj.set("length", newLength, CALLSITE_STRICT);
 
         return newLength;
     }

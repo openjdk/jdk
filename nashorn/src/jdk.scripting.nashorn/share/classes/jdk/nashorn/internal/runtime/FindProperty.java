@@ -139,6 +139,17 @@ public final class FindProperty {
     }
 
     /**
+     * Return the {@code ScriptObject} where the search started. This is usually the ScriptObject the
+     * operation was started on, except for properties found inside a 'with' statement, where it is the
+     * top-level 'with' expression object.
+     *
+     * @return the start object.
+     */
+    public ScriptObject getSelf() {
+        return self;
+    }
+
+    /**
      * Return the appropriate receiver for a getter.
      * @return appropriate receiver
      */

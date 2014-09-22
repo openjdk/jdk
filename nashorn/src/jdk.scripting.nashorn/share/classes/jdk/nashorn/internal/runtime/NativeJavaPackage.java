@@ -256,7 +256,7 @@ public final class NativeJavaPackage extends ScriptObject {
             final Object constructor = BeansLinker.getConstructorMethod(
                     javaClass, propertyName.substring(openBrace + 1, lastChar));
             if (constructor != null) {
-                set(propertyName, constructor, false);
+                set(propertyName, constructor, 0);
                 return constructor;
             }
             // we didn't find a matching constructor!
@@ -270,7 +270,7 @@ public final class NativeJavaPackage extends ScriptObject {
             propertyValue = StaticClass.forClass(javaClass);
         }
 
-        set(propertyName, propertyValue, false);
+        set(propertyName, propertyValue, 0);
         return propertyValue;
     }
 }

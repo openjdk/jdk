@@ -205,7 +205,7 @@ final class SetMethodCreator {
 
         //slow setter, that calls ScriptObject.set with appropraite type and key name
         MethodHandle slowSetter = ScriptObject.SET_SLOW[getAccessorTypeIndex(type)];
-        slowSetter = MH.insertArguments(slowSetter, 3, NashornCallSiteDescriptor.isStrict(desc));
+        slowSetter = MH.insertArguments(slowSetter, 3, NashornCallSiteDescriptor.getFlags(desc));
         slowSetter = MH.insertArguments(slowSetter, 1, name);
         slowSetter = MH.asType(slowSetter, slowSetter.type().changeParameterType(0, Object.class));
 
