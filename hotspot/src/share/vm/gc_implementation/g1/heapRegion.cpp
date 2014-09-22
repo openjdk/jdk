@@ -213,7 +213,7 @@ void HeapRegion::reset_after_compaction() {
 void HeapRegion::hr_clear(bool par, bool clear_space, bool locked) {
   assert(_humongous_start_region == NULL,
          "we should have already filtered out humongous regions");
-  assert(_end == _orig_end,
+  assert(_end == orig_end(),
          "we should have already filtered out humongous regions");
 
   _in_collection_set = false;
@@ -266,7 +266,7 @@ void HeapRegion::calc_gc_efficiency() {
 
 void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
   assert(!isHumongous(), "sanity / pre-condition");
-  assert(end() == _orig_end,
+  assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
   assert(bottom() <= new_top && new_top <= new_end, "pre-condition");
@@ -280,7 +280,7 @@ void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
 
 void HeapRegion::set_continuesHumongous(HeapRegion* first_hr) {
   assert(!isHumongous(), "sanity / pre-condition");
-  assert(end() == _orig_end,
+  assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
   assert(first_hr->startsHumongous(), "pre-condition");
@@ -294,14 +294,14 @@ void HeapRegion::clear_humongous() {
 
   if (startsHumongous()) {
     assert(top() <= end(), "pre-condition");
-    set_end(_orig_end);
+    set_end(orig_end());
     if (top() > end()) {
       // at least one "continues humongous" region after it
       set_top(end());
     }
   } else {
     // continues humongous
-    assert(end() == _orig_end, "sanity");
+    assert(end() == orig_end(), "sanity");
   }
 
   assert(capacity() == HeapRegion::GrainBytes, "pre-condition");
@@ -326,7 +326,7 @@ HeapRegion::HeapRegion(uint hrm_index,
     _hrm_index(hrm_index),
     _humongous_start_region(NULL),
     _in_collection_set(false),
-    _next_in_special_set(NULL), _orig_end(NULL),
+    _next_in_special_set(NULL),
     _claimed(InitialClaimValue), _evacuation_failed(false),
     _prev_marked_bytes(0), _next_marked_bytes(0), _gc_efficiency(0.0),
     _next_young_region(NULL),
@@ -349,10 +349,14 @@ void HeapRegion::initialize(MemRegion mr, bool clear_space, bool mangle_space) {
 
   G1OffsetTableContigSpace::initialize(mr, clear_space, mangle_space);
 
-  _orig_end = mr.end();
   hr_clear(false /*par*/, false /*clear_space*/);
   set_top(bottom());
   record_top_and_timestamp();
+
+  assert(mr.end() == orig_end(),
+         err_msg("Given region end address " PTR_FORMAT " should match exactly "
+                 "bottom plus one region size, i.e. " PTR_FORMAT,
+                 p2i(mr.end()), p2i(orig_end())));
 }
 
 CompactibleSpace* HeapRegion::next_compaction_space() const {
