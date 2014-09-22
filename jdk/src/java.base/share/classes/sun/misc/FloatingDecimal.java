@@ -1992,21 +1992,32 @@ public class FloatingDecimal{
                         break expLoop; // stop parsing exponent.
                     }
                 }
-                int expLimit = BIG_DECIMAL_EXPONENT+nDigits+nTrailZero;
-                if ( expOverflow || ( expVal > expLimit ) ){
-                    //
-                    // The intent here is to end up with
-                    // infinity or zero, as appropriate.
-                    // The reason for yielding such a small decExponent,
-                    // rather than something intuitive such as
-                    // expSign*Integer.MAX_VALUE, is that this value
-                    // is subject to further manipulation in
-                    // doubleValue() and floatValue(), and I don't want
-                    // it to be able to cause overflow there!
-                    // (The only way we can get into trouble here is for
-                    // really outrageous nDigits+nTrailZero, such as 2 billion. )
-                    //
-                    decExp = expSign*expLimit;
+                int expLimit = BIG_DECIMAL_EXPONENT + nDigits + nTrailZero;
+                if (expOverflow || (expVal > expLimit)) {
+                    // There is still a chance that the exponent will be safe to
+                    // use: if it would eventually decrease due to a negative
+                    // decExp, and that number is below the limit.  We check for
+                    // that here.
+                    if (!expOverflow && (expSign == 1 && decExp < 0)
+                            && (expVal + decExp) < expLimit) {
+                        // Cannot overflow: adding a positive and negative number.
+                        decExp += expVal;
+                    } else {
+                        //
+                        // The intent here is to end up with
+                        // infinity or zero, as appropriate.
+                        // The reason for yielding such a small decExponent,
+                        // rather than something intuitive such as
+                        // expSign*Integer.MAX_VALUE, is that this value
+                        // is subject to further manipulation in
+                        // doubleValue() and floatValue(), and I don't want
+                        // it to be able to cause overflow there!
+                        // (The only way we can get into trouble here is for
+                        // really outrageous nDigits+nTrailZero, such as 2
+                        // billion.)
+                        //
+                        decExp = expSign * expLimit;
+                    }
                 } else {
                     // this should not overflow, since we tested
                     // for expVal > (MAX+N), where N >= abs(decExp)
