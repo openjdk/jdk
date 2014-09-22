@@ -161,7 +161,7 @@ public class ParseUtil {
      * Un-escape and return the character at position i in string s.
      */
     private static byte unescape(String s, int i) {
-        return (byte) Integer.parseInt(s.substring(i+1,i+3),16);
+        return (byte) Integer.parseInt(s, i + 1, i + 3, 16);
     }
 
 
