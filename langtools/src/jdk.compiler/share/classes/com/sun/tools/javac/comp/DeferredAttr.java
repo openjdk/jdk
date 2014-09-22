@@ -137,15 +137,15 @@ public class DeferredAttr extends JCTree.Visitor {
         SpeculativeCache speculativeCache;
 
         DeferredType(JCExpression tree, Env<AttrContext> env) {
-            super(null, noAnnotations);
+            super(null, TypeMetadata.empty);
             this.tree = tree;
             this.env = attr.copyEnv(env);
             this.speculativeCache = new SpeculativeCache();
         }
 
         @Override
-        public DeferredType annotatedType(List<Attribute.TypeCompound> typeAnnotations) {
-            throw new AssertionError("Cannot annotate a deferred type");
+        public DeferredType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a deferred type");
         }
 
         @Override

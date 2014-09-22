@@ -403,8 +403,7 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
      *  to the symbol table.
      */
     private void addEnumMembers(JCClassDecl tree, Env<AttrContext> env) {
-        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, syms.arrayClass,
-                                                          Type.noAnnotations));
+        JCExpression valuesType = make.Type(new ArrayType(tree.sym.type, syms.arrayClass));
 
         // public static T[] values() { return ???; }
         JCMethodDecl values = make.
@@ -1234,13 +1233,12 @@ public class MemberEnter extends JCTree.Visitor implements Completer {
             ClassType ct = (ClassType) sym.type;
             Assert.check(ct.typarams_field.isEmpty());
             if (n == 1) {
-                TypeVar v = new TypeVar(names.fromString("T"), sym, syms.botType,
-                                        Type.noAnnotations);
+                TypeVar v = new TypeVar(names.fromString("T"), sym, syms.botType);
                 ct.typarams_field = ct.typarams_field.prepend(v);
             } else {
                 for (int i = n; i > 0; i--) {
                     TypeVar v = new TypeVar(names.fromString("T" + i), sym,
-                                            syms.botType, Type.noAnnotations);
+                                            syms.botType);
                     ct.typarams_field = ct.typarams_field.prepend(v);
                 }
             }

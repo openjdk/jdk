@@ -43,24 +43,24 @@ class UninitializedType extends Type.DelegatedType {
 
     public static UninitializedType uninitializedThis(Type qtype) {
         return new UninitializedType(UNINITIALIZED_THIS, qtype, -1,
-                                     qtype.getAnnotationMirrors());
+                                     qtype.getMetadata());
     }
 
     public static UninitializedType uninitializedObject(Type qtype, int offset) {
         return new UninitializedType(UNINITIALIZED_OBJECT, qtype, offset,
-                                     qtype.getAnnotationMirrors());
+                                     qtype.getMetadata());
     }
 
     public final int offset; // PC where allocation took place
     private UninitializedType(TypeTag tag, Type qtype, int offset,
-                              List<Attribute.TypeCompound> typeAnnotations) {
-        super(tag, qtype, typeAnnotations);
+                              TypeMetadata metadata) {
+        super(tag, qtype, metadata);
         this.offset = offset;
     }
 
     @Override
-    public UninitializedType annotatedType(List<Attribute.TypeCompound> typeAnnotations) {
-        return new UninitializedType(tag, qtype, offset, typeAnnotations);
+    public UninitializedType clone(final TypeMetadata md) {
+        return new UninitializedType(tag, qtype, offset, md);
     }
 
     Type initializedType() {
