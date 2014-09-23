@@ -1288,6 +1288,22 @@ void ConcurrentMark::markFromRoots() {
   print_stats();
 }
 
+// Helper class to get rid of some boilerplate code.
+class G1CMTraceTime : public GCTraceTime {
+  static bool doit_and_prepend(bool doit) {
+    if (doit) {
+      gclog_or_tty->put(' ');
+    }
+    return doit;
+  }
+
+ public:
+  G1CMTraceTime(const char* title, bool doit)
+    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
+        G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
+  }
+};
+
 void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
   // world is stopped at this checkpoint
   assert(SafepointSynchronize::is_at_safepoint(),
@@ -1341,9 +1357,13 @@ void ConcurrentMark::checkpointRootsFinal(bool clear_all_soft_refs) {
     // marking due to overflowing the global mark stack.
     reset_marking_state();
   } else {
-    // Aggregate the per-task counting data that we have accumulated
-    // while marking.
-    aggregate_count_data();
+    {
+      G1CMTraceTime trace("GC aggregate-data", G1Log::finer());
+
+      // Aggregate the per-task counting data that we have accumulated
+      // while marking.
+      aggregate_count_data();
+    }
 
     SATBMarkQueueSet& satb_mq_set = JavaThread::satb_mark_queue_set();
     // We're done with marking.
@@ -2466,22 +2486,6 @@ void ConcurrentMark::weakRefsWorkParallelPart(BoolObjectClosure* is_alive, bool 
   G1CollectedHeap::heap()->parallel_cleaning(is_alive, true, true, purged_classes);
 }
 
-// Helper class to get rid of some boilerplate code.
-class G1RemarkGCTraceTime : public GCTraceTime {
-  static bool doit_and_prepend(bool doit) {
-    if (doit) {
-      gclog_or_tty->put(' ');
-    }
-    return doit;
-  }
-
- public:
-  G1RemarkGCTraceTime(const char* title, bool doit)
-    : GCTraceTime(title, doit_and_prepend(doit), false, G1CollectedHeap::heap()->gc_timer_cm(),
-        G1CollectedHeap::heap()->concurrent_mark()->concurrent_gc_id()) {
-  }
-};
-
 void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   if (has_overflown()) {
     // Skip processing the discovered references if we have
@@ -2504,10 +2508,7 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
   // Inner scope to exclude the cleaning of the string and symbol
   // tables from the displayed time.
   {
-    if (G1Log::finer()) {
-      gclog_or_tty->put(' ');
-    }
-    GCTraceTime t("GC ref-proc", G1Log::finer(), false, g1h->gc_timer_cm(), concurrent_gc_id());
+    G1CMTraceTime t("GC ref-proc", G1Log::finer());
 
     ReferenceProcessor* rp = g1h->ref_processor_cm();
 
@@ -2598,24 +2599,24 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
 
   // Unload Klasses, String, Symbols, Code Cache, etc.
   {
-    G1RemarkGCTraceTime trace("Unloading", G1Log::finer());
+    G1CMTraceTime trace("Unloading", G1Log::finer());
 
     if (ClassUnloadingWithConcurrentMark) {
       bool purged_classes;
 
       {
-        G1RemarkGCTraceTime trace("System Dictionary Unloading", G1Log::finest());
+        G1CMTraceTime trace("System Dictionary Unloading", G1Log::finest());
         purged_classes = SystemDictionary::do_unloading(&g1_is_alive);
       }
 
       {
-        G1RemarkGCTraceTime trace("Parallel Unloading", G1Log::finest());
+        G1CMTraceTime trace("Parallel Unloading", G1Log::finest());
         weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
       }
     }
 
     if (G1StringDedup::is_enabled()) {
-      G1RemarkGCTraceTime trace("String Deduplication Unlink", G1Log::finest());
+      G1CMTraceTime trace("String Deduplication Unlink", G1Log::finest());
       G1StringDedup::unlink(&g1_is_alive);
     }
   }
@@ -2719,7 +2720,7 @@ void ConcurrentMark::checkpointRootsFinalWork() {
   HandleMark   hm;
   G1CollectedHeap* g1h = G1CollectedHeap::heap();
 
-  G1RemarkGCTraceTime trace("Finalize Marking", G1Log::finer());
+  G1CMTraceTime trace("Finalize Marking", G1Log::finer());
 
   g1h->ensure_parsability(false);
 
