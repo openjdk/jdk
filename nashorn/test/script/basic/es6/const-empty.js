@@ -33,5 +33,5 @@ try {
     eval('"use strict";\n' +
         'const x;\n');
 } catch (e) {
-    print(e);
+    print(String(e).replace(/\\/g, "/"));
 }
