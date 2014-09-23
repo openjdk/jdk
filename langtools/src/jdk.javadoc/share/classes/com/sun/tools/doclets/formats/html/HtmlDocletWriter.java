@@ -397,20 +397,19 @@ public class HtmlDocletWriter extends HtmlDocWriter {
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!configuration.notimestamp));
-        if (configuration.charset.length() > 0) {
-            Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
-                    configuration.charset);
-            head.addContent(meta);
-        }
         head.addContent(getTitle());
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
+                (configuration.charset.length() > 0) ?
+                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        head.addContent(meta);
         if (!configuration.notimestamp) {
             SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd");
-            Content meta = HtmlTree.META("date", dateFormat.format(new Date()));
+            meta = HtmlTree.META("date", dateFormat.format(new Date()));
             head.addContent(meta);
         }
         if (metakeywords != null) {
             for (String metakeyword : metakeywords) {
-                Content meta = HtmlTree.META("keywords", metakeyword);
+                meta = HtmlTree.META("keywords", metakeyword);
                 head.addContent(meta);
             }
         }

@@ -311,13 +311,12 @@ public abstract class HtmlDocWriter extends HtmlWriter {
         Content htmlComment = new Comment(configuration.getText("doclet.New_Page"));
         Content head = new HtmlTree(HtmlTag.HEAD);
         head.addContent(getGeneratedBy(!noTimeStamp));
-        if (configuration.charset.length() > 0) {
-            Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
-                    configuration.charset);
-            head.addContent(meta);
-        }
         Content windowTitle = HtmlTree.TITLE(new StringContent(title));
         head.addContent(windowTitle);
+        Content meta = HtmlTree.META("Content-Type", CONTENT_TYPE,
+                (configuration.charset.length() > 0) ?
+                        configuration.charset : HtmlConstants.HTML_DEFAULT_CHARSET);
+        head.addContent(meta);
         head.addContent(getFramesetJavaScript());
         Content htmlTree = HtmlTree.HTML(configuration.getLocale().getLanguage(),
                 head, frameset);

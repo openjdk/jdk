@@ -48,6 +48,7 @@ class CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
     return hash ^ (hash >> 7); // code heap blocks are 128byte aligned
   }
 
+  void remove_entry(Entry* e, Entry* previous);
   Entry* new_entry(nmethod* nm);
 
  public:
@@ -67,7 +68,7 @@ class CodeRootSetTable : public Hashtable<nmethod*, mtGC> {
   void nmethods_do(CodeBlobClosure* blk);
 
   template<typename CB>
-  void remove_if(CB& should_remove);
+  int remove_if(CB& should_remove);
 
   static void purge_list_append(CodeRootSetTable* tbl);
   static void purge();
@@ -89,6 +90,18 @@ CodeRootSetTable::Entry* CodeRootSetTable::new_entry(nmethod* nm) {
   entry->set_hash(hash);
   entry->set_literal(nm);
   return entry;
+}
+
+void CodeRootSetTable::remove_entry(Entry* e, Entry* previous) {
+  int index = hash_to_index(e->hash());
+  assert((e == bucket(index)) == (previous == NULL), "if e is the first entry then previous should be null");
+
+  if (previous == NULL) {
+    set_entry(index, e->next());
+  } else {
+    previous->set_next(e->next());
+  }
+  free_entry(e);
 }
 
 CodeRootSetTable::~CodeRootSetTable() {
@@ -133,12 +146,7 @@ bool CodeRootSetTable::remove(nmethod* nm) {
   Entry* previous = NULL;
   for (Entry* e = bucket(index); e != NULL; previous = e, e = e->next()) {
     if (e->literal() == nm) {
-      if (previous != NULL) {
-        previous->set_next(e->next());
-      } else {
-        set_entry(index, e->next());
-      }
-      free_entry(e);
+      remove_entry(e, previous);
       return true;
     }
   }
@@ -163,25 +171,23 @@ void CodeRootSetTable::nmethods_do(CodeBlobClosure* blk) {
 }
 
 template<typename CB>
-void CodeRootSetTable::remove_if(CB& should_remove) {
+int CodeRootSetTable::remove_if(CB& should_remove) {
+  int num_removed = 0;
   for (int index = 0; index < table_size(); ++index) {
     Entry* previous = NULL;
     Entry* e = bucket(index);
     while (e != NULL) {
       Entry* next = e->next();
       if (should_remove(e->literal())) {
-        if (previous != NULL) {
-          previous->set_next(next);
-        } else {
-          set_entry(index, next);
-        }
-        free_entry(e);
+        remove_entry(e, previous);
+        ++num_removed;
       } else {
         previous = e;
       }
       e = next;
     }
   }
+  return num_removed;
 }
 
 G1CodeRootSet::~G1CodeRootSet() {
@@ -320,14 +326,19 @@ class CleanCallback : public StackObj {
   bool operator() (nmethod* nm) {
     _detector._points_into = false;
     _blobs.do_code_blob(nm);
-    return _detector._points_into;
+    return !_detector._points_into;
   }
 };
 
 void G1CodeRootSet::clean(HeapRegion* owner) {
   CleanCallback should_clean(owner);
   if (_table != NULL) {
-    _table->remove_if(should_clean);
+    int removed = _table->remove_if(should_clean);
+    assert((size_t)removed <= _length, "impossible");
+    _length -= removed;
+  }
+  if (_length == 0) {
+    clear();
   }
 }
 

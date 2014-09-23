@@ -298,7 +298,9 @@ ALL_TARGETS += test test-make
 # Verification targets
 
 verify-modules:
+	@$(call TargetEnter)
 	+($(CD) $(SRC_ROOT)/make && $(MAKE) $(MAKE_ARGS) -f CheckModules.gmk)
+	@$(call TargetExit)
 
 ALL_TARGETS += verify-modules
 
@@ -404,7 +406,7 @@ else
     main-jars: java.security.jgss-libs
   endif
 
-  images: jars demos samples exploded-image source-tips
+  images: jars demos samples exploded-image verify-modules source-tips
 
   bootcycle-images: images
 
@@ -480,7 +482,7 @@ ALL_TARGETS += gensrc gendata copy java rmic libs launchers \
 
 ################################################################################
 
-all: images docs verify-modules
+all: images docs
 default: exploded-image
 
 ALL_TARGETS += default all
@@ -495,7 +497,7 @@ ALL_TARGETS += default all
 # file.
 
 CLEAN_COMPONENTS += langtools corba hotspot jdk nashorn images \
-    bootcycle-build docs docstemp test
+    bootcycle-build docs docstemp test make-support
 CLEAN_TARGETS := $(addprefix clean-, $(CLEAN_COMPONENTS))
 
 # Remove everything, except the output from configure.

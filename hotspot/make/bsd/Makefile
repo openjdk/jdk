@@ -250,36 +250,36 @@ check_j2se_version:
 
 $(SUBDIRS_TIERED): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=tiered
+	+$(BUILDTREE) VARIANT=tiered
 
 $(SUBDIRS_C2): $(BUILDTREE_MAKE)
 ifeq ($(FORCE_TIERED),1)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-		$(BUILDTREE) VARIANT=tiered FORCE_TIERED=1
+	+$(BUILDTREE) VARIANT=tiered FORCE_TIERED=1
 else
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-		$(BUILDTREE) VARIANT=compiler2
+	+$(BUILDTREE) VARIANT=compiler2
 endif
 
 $(SUBDIRS_C1): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=compiler1
+	+$(BUILDTREE) VARIANT=compiler1
 
 $(SUBDIRS_CORE): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=core
+	+$(BUILDTREE) VARIANT=core
 
 $(SUBDIRS_ZERO): $(BUILDTREE_MAKE) platform_zero
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=zero VARIANTARCH=$(VARIANTARCH)
+	+$(BUILDTREE) VARIANT=zero VARIANTARCH=$(VARIANTARCH)
 
 $(SUBDIRS_SHARK): $(BUILDTREE_MAKE) platform_zero
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=shark VARIANTARCH=$(VARIANTARCH)
+	+$(BUILDTREE) VARIANT=shark VARIANTARCH=$(VARIANTARCH)
 
 $(SUBDIRS_MINIMAL1): $(BUILDTREE_MAKE)
 	$(QUIETLY) $(MAKE) -f $(GAMMADIR)/make/$(OSNAME)/Makefile checks
-	$(BUILDTREE) VARIANT=minimal1
+	+$(BUILDTREE) VARIANT=minimal1
 
 platform_zero: $(GAMMADIR)/make/$(OSNAME)/platform_zero.in
 	$(SED) 's/@ZERO_ARCHDEF@/$(ZERO_ARCHDEF)/g;s/@ZERO_LIBARCH@/$(ZERO_LIBARCH)/g;' < $< > $@
@@ -392,3 +392,5 @@ include $(GAMMADIR)/make/cscope.make
 .PHONY: clean clean_compiler1 clean_compiler2 clean_core clean_zero clean_shark docs clean_docs
 .PHONY: checks check_os_version check_j2se_version
 .PHONY: $(HS_ALT_MAKE)/$(OSNAME)/Makefile.make
+
+.NOTPARALLEL:
