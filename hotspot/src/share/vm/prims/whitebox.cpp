@@ -257,7 +257,7 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   oop result = JNIHandles::resolve(obj);
   const HeapRegion* hr = g1->heap_region_containing(result);
-  return hr->isHumongous();
+  return hr->is_humongous();
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))

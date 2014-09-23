@@ -910,7 +910,7 @@ bool ConcurrentMark::nextMarkBitmapIsClear() {
 class NoteStartOfMarkHRClosure: public HeapRegionClosure {
 public:
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->note_start_of_marking();
     }
     return false;
@@ -1398,10 +1398,10 @@ protected:
   // to 1 the bits on the region bitmap that correspond to its
   // associated "continues humongous" regions.
   void set_bit_for_region(HeapRegion* hr) {
-    assert(!hr->continuesHumongous(), "should have filtered those out");
+    assert(!hr->is_continues_humongous(), "should have filtered those out");
 
     BitMap::idx_t index = (BitMap::idx_t) hr->hrm_index();
-    if (!hr->startsHumongous()) {
+    if (!hr->is_starts_humongous()) {
       // Normal (non-humongous) case: just set the bit.
       _region_bm->par_at_put(index, true);
     } else {
@@ -1434,7 +1434,7 @@ public:
 
   bool doHeapRegion(HeapRegion* hr) {
 
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1556,7 +1556,7 @@ public:
   int failures() const { return _failures; }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1731,7 +1731,7 @@ class FinalCountDataUpdateClosure: public CMCountDataClosureBase {
 
   bool doHeapRegion(HeapRegion* hr) {
 
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed (see
       // set_bit_for_heap_region()). Note that we cannot rely on their
@@ -1861,7 +1861,7 @@ public:
   const HeapRegionSetCount& humongous_regions_removed() { return _humongous_regions_removed; }
 
   bool doHeapRegion(HeapRegion *hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       return false;
     }
     // We use a claim value of zero here because all regions
@@ -1875,8 +1875,8 @@ public:
     if (hr->used() > 0 && hr->max_live_bytes() == 0 && !hr->is_young()) {
       _freed_bytes += hr->used();
       hr->set_containing_set(NULL);
-      if (hr->isHumongous()) {
-        assert(hr->startsHumongous(), "we should only see starts humongous");
+      if (hr->is_humongous()) {
+        assert(hr->is_starts_humongous(), "we should only see starts humongous");
         _humongous_regions_removed.increment(1u, hr->capacity());
         _g1->free_humongous_region(hr, _local_cleanup_list, true);
       } else {
@@ -3191,7 +3191,7 @@ class AggregateCountDataHRClosure: public HeapRegionClosure {
     _cm_card_bm(cm_card_bm), _max_worker_id(max_worker_id) { }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       // We will ignore these here and process them when their
       // associated "starts humongous" region is processed.
       // Note that we cannot rely on their associated
@@ -3563,7 +3563,7 @@ G1CMOopClosure::G1CMOopClosure(G1CollectedHeap* g1h,
 void CMTask::setup_for_region(HeapRegion* hr) {
   assert(hr != NULL,
         "claim_region() should have filtered out NULL regions");
-  assert(!hr->continuesHumongous(),
+  assert(!hr->is_continues_humongous(),
         "claim_region() should have filtered out continues humongous regions");
 
   if (_cm->verbose_low()) {
@@ -4288,7 +4288,7 @@ void CMTask::do_marking_step(double time_target_ms,
                                HR_FORMAT_PARAMS(_curr_region));
       }
 
-      assert(!_curr_region->isHumongous() || mr.start() == _curr_region->bottom(),
+      assert(!_curr_region->is_humongous() || mr.start() == _curr_region->bottom(),
              "humongous regions should go around loop once only");
 
       // Some special cases:
@@ -4302,7 +4302,7 @@ void CMTask::do_marking_step(double time_target_ms,
       if (mr.is_empty()) {
         giveup_current_region();
         regular_clock_call();
-      } else if (_curr_region->isHumongous() && mr.start() == _curr_region->bottom()) {
+      } else if (_curr_region->is_humongous() && mr.start() == _curr_region->bottom()) {
         if (_nextMarkBitMap->isMarked(mr.start())) {
           // The object is marked - apply the closure
           BitMap::idx_t offset = _nextMarkBitMap->heapWordToOffset(mr.start());
@@ -4749,7 +4749,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
   size_t remset_bytes    = r->rem_set()->mem_size();
   size_t strong_code_roots_bytes = r->rem_set()->strong_code_roots_mem_size();
 
-  if (r->startsHumongous()) {
+  if (r->is_starts_humongous()) {
     assert(_hum_used_bytes == 0 && _hum_capacity_bytes == 0 &&
            _hum_prev_live_bytes == 0 && _hum_next_live_bytes == 0,
            "they should have been zeroed after the last time we used them");
@@ -4761,7 +4761,7 @@ bool G1PrintRegionLivenessInfoClosure::doHeapRegion(HeapRegion* r) {
     get_hum_bytes(&used_bytes, &capacity_bytes,
                   &prev_live_bytes, &next_live_bytes);
     end = bottom + HeapRegion::GrainWords;
-  } else if (r->continuesHumongous()) {
+  } else if (r->is_continues_humongous()) {
     get_hum_bytes(&used_bytes, &capacity_bytes,
                   &prev_live_bytes, &next_live_bytes);
     assert(end == bottom + HeapRegion::GrainWords, "invariant");

@@ -417,9 +417,9 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool is_eden()     const { return _type.is_eden();     }
   bool is_survivor() const { return _type.is_survivor(); }
 
-  bool isHumongous() const { return _type.is_humongous(); }
-  bool startsHumongous() const { return _type.is_starts_humongous(); }
-  bool continuesHumongous() const { return _type.is_continues_humongous();   }
+  bool is_humongous() const { return _type.is_humongous(); }
+  bool is_starts_humongous() const { return _type.is_starts_humongous(); }
+  bool is_continues_humongous() const { return _type.is_continues_humongous();   }
 
   bool is_old() const { return _type.is_old(); }
 
@@ -431,10 +431,10 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Return the number of distinct regions that are covered by this region:
   // 1 if the region is not humongous, >= 1 if the region is humongous.
   uint region_num() const {
-    if (!isHumongous()) {
+    if (!is_humongous()) {
       return 1U;
     } else {
-      assert(startsHumongous(), "doesn't make sense on HC regions");
+      assert(is_starts_humongous(), "doesn't make sense on HC regions");
       assert(capacity() % HeapRegion::GrainBytes == 0, "sanity");
       return (uint) (capacity() >> HeapRegion::LogOfHRGrainBytes);
     }
@@ -443,7 +443,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // Return the index + 1 of the last HC regions that's associated
   // with this HS region.
   uint last_hc_index() const {
-    assert(startsHumongous(), "don't call this otherwise");
+    assert(is_starts_humongous(), "don't call this otherwise");
     return hrm_index() + region_num();
   }
 
@@ -478,12 +478,12 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // humongous regions can be calculated by just looking at the
   // "starts humongous" regions and by ignoring the "continues
   // humongous" regions.
-  void set_startsHumongous(HeapWord* new_top, HeapWord* new_end);
+  void set_starts_humongous(HeapWord* new_top, HeapWord* new_end);
 
   // Makes the current region be a "continues humongous'
   // region. first_hr is the "start humongous" region of the series
   // which this region will be part of.
-  void set_continuesHumongous(HeapRegion* first_hr);
+  void set_continues_humongous(HeapRegion* first_hr);
 
   // Unsets the humongous-related fields on the region.
   void clear_humongous();
@@ -612,7 +612,7 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool is_marked() { return _prev_top_at_mark_start != bottom(); }
 
   void reset_during_compaction() {
-    assert(isHumongous() && startsHumongous(),
+    assert(is_starts_humongous(),
            "should only be called for starts humongous regions");
 
     zero_marked_bytes();

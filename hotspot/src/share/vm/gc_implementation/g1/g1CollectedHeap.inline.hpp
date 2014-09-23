@@ -67,7 +67,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing_raw(const T addr) con
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   HeapRegion* hr = heap_region_containing_raw(addr);
-  if (hr->continuesHumongous()) {
+  if (hr->is_continues_humongous()) {
     return hr->humongous_start_region();
   }
   return hr;
@@ -99,7 +99,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
                                                      unsigned int* gc_count_before_ret,
                                                      int* gclocker_retry_count_ret) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "attempt_allocation() should not "
+  assert(!is_humongous(word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
   AllocationContext_t context = AllocationContext::current();
@@ -120,7 +120,7 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
 
 inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t word_size,
                                                               AllocationContext_t context) {
-  assert(!isHumongous(word_size),
+  assert(!is_humongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
   HeapWord* result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation(word_size,
@@ -138,7 +138,7 @@ inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t word_size,
 
 inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size,
                                                          AllocationContext_t context) {
-  assert(!isHumongous(word_size),
+  assert(!is_humongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
   HeapWord* result = _allocator->old_gc_alloc_region(context)->attempt_allocation(word_size,
@@ -166,7 +166,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");
-  assert(!containing_hr->isHumongous(), "it should not be humongous");
+  assert(!containing_hr->is_humongous(), "it should not be humongous");
 
   HeapWord* end = start + word_size;
   assert(containing_hr->is_in(end - 1), "it should also contain end - 1");

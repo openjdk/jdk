@@ -1512,7 +1512,7 @@ public:
   virtual inline bool can_elide_initializing_store_barrier(oop new_obj);
 
   // Returns "true" iff the given word_size is "very large".
-  static bool isHumongous(size_t word_size) {
+  static bool is_humongous(size_t word_size) {
     // Note this has to be strictly greater-than as the TLABs
     // are capped at the humongous threshold and we want to
     // ensure that we don't try to allocate a TLAB as
