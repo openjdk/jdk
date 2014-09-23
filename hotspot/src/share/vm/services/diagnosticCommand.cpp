@@ -60,6 +60,9 @@ void DCmdRegistrant::register_dcmds(){
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ThreadDumpDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<RotateGCLogDCmd>(full_export, true, false));
   DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<ClassLoaderStatsDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CompileQueueDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeListDCmd>(full_export, true, false));
+  DCmdFactory::register_DCmdFactory(new DCmdFactoryImpl<CodeCacheDCmd>(full_export, true, false));
 
   // Enhanced JMX Agent Support
   // These commands won't be exported via the DiagnosticCommandMBean until an
@@ -672,5 +675,20 @@ void RotateGCLogDCmd::execute(DCmdSource source, TRAPS) {
   } else {
     output()->print_cr("Target VM does not support GC log file rotation.");
   }
+}
+
+void CompileQueueDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintCompileQueue printCompileQueueOp(output());
+  VMThread::execute(&printCompileQueueOp);
+}
+
+void CodeListDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintCodeList printCodeListOp(output());
+  VMThread::execute(&printCodeListOp);
+}
+
+void CodeCacheDCmd::execute(DCmdSource source, TRAPS) {
+  VM_PrintCodeCache printCodeCacheOp(output());
+  VMThread::execute(&printCodeCacheOp);
 }
 

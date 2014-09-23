@@ -752,3 +752,8 @@ size_t os::Linux::default_guard_size(os::ThreadType thr_type) {
 void os::verify_stack_alignment() {
 }
 #endif
+
+int os::extra_bang_size_in_bytes() {
+  // SPARC does not require the additional stack bang.
+  return 0;
+}

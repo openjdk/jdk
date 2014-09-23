@@ -4327,7 +4327,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1410377275
+DATE_WHEN_GENERATED=1410791401
 
 ###############################################################################
 #
@@ -14642,7 +14642,7 @@ $as_echo "$DEBUG_LEVEL" >&6; }
       FASTDEBUG="false"
       DEBUG_CLASSFILES="true"
       BUILD_VARIANT_RELEASE="-debug"
-      HOTSPOT_DEBUG_LEVEL="jvmg"
+      HOTSPOT_DEBUG_LEVEL="debug"
       HOTSPOT_EXPORT="debug"
       ;;
     optimized )
