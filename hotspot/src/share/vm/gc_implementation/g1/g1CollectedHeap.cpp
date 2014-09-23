@@ -469,7 +469,7 @@ bool G1CollectedHeap::is_in_partial_collection(const void* p) {
 // can move in an incremental collection.
 bool G1CollectedHeap::is_scavengable(const void* p) {
   HeapRegion* hr = heap_region_containing(p);
-  return !hr->isHumongous();
+  return !hr->is_humongous();
 }
 
 void G1CollectedHeap::check_ct_logs_at_safepoint() {
@@ -560,7 +560,7 @@ G1CollectedHeap::new_region_try_secondary_free_list(bool is_old) {
 }
 
 HeapRegion* G1CollectedHeap::new_region(size_t word_size, bool is_old, bool do_expand) {
-  assert(!isHumongous(word_size) || word_size <= HeapRegion::GrainWords,
+  assert(!is_humongous(word_size) || word_size <= HeapRegion::GrainWords,
          "the only time we use this to allocate a humongous region is "
          "when we are allocating a single humongous region");
 
@@ -618,7 +618,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
                                                            size_t word_size,
                                                            AllocationContext_t context) {
   assert(first != G1_NO_HRM_INDEX, "pre-condition");
-  assert(isHumongous(word_size), "word_size should be humongous");
+  assert(is_humongous(word_size), "word_size should be humongous");
   assert(num_regions * HeapRegion::GrainWords >= word_size, "pre-condition");
 
   // Index of last region in the series + 1.
@@ -667,14 +667,14 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // will also update the BOT covering all the regions to reflect
   // that there is a single object that starts at the bottom of the
   // first region.
-  first_hr->set_startsHumongous(new_top, new_end);
+  first_hr->set_starts_humongous(new_top, new_end);
   first_hr->set_allocation_context(context);
   // Then, if there are any, we will set up the "continues
   // humongous" regions.
   HeapRegion* hr = NULL;
   for (uint i = first + 1; i < last; ++i) {
     hr = region_at(i);
-    hr->set_continuesHumongous(first_hr);
+    hr->set_continues_humongous(first_hr);
     hr->set_allocation_context(context);
   }
   // If we have "continues humongous" regions (hr != NULL), then the
@@ -713,7 +713,7 @@ G1CollectedHeap::humongous_obj_allocate_initialize_regions(uint first,
   // G1. For example, the code that looks for a consecutive number
   // of empty regions will consider them empty and try to
   // re-allocate them. We can extend is_empty() to also include
-  // !continuesHumongous(), but it is easier to just update the top
+  // !is_continues_humongous(), but it is easier to just update the top
   // fields here. The way we set top for all regions (i.e., top ==
   // end for all regions but the last one, top == new_top for the
   // last one) is actually used when we will free up the humongous
@@ -837,7 +837,7 @@ HeapWord* G1CollectedHeap::humongous_obj_allocate(size_t word_size, AllocationCo
 
 HeapWord* G1CollectedHeap::allocate_new_tlab(size_t word_size) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "we do not allow humongous TLABs");
+  assert(!is_humongous(word_size), "we do not allow humongous TLABs");
 
   unsigned int dummy_gc_count_before;
   int dummy_gclocker_retry_count = 0;
@@ -854,7 +854,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
     unsigned int gc_count_before;
 
     HeapWord* result = NULL;
-    if (!isHumongous(word_size)) {
+    if (!is_humongous(word_size)) {
       result = attempt_allocation(word_size, &gc_count_before, &gclocker_retry_count);
     } else {
       result = attempt_allocation_humongous(word_size, &gc_count_before, &gclocker_retry_count);
@@ -875,7 +875,7 @@ G1CollectedHeap::mem_allocate(size_t word_size,
       // if it is NULL. If the allocation attempt failed immediately
       // after a Full GC, it's unlikely we'll be able to allocate now.
       HeapWord* result = op.result();
-      if (result != NULL && !isHumongous(word_size)) {
+      if (result != NULL && !is_humongous(word_size)) {
         // Allocations that take place on VM operations do not do any
         // card dirtying and we have to do it here. We only have to do
         // this for non-humongous allocations, though.
@@ -908,7 +908,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_slow(size_t word_size,
   // Make sure you read the note in attempt_allocation_humongous().
 
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "attempt_allocation_slow() should not "
+  assert(!is_humongous(word_size), "attempt_allocation_slow() should not "
          "be called for humongous allocation requests");
 
   // We should only get here after the first-level allocation attempt
@@ -1033,7 +1033,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_humongous(size_t word_size,
   // much as possible.
 
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(isHumongous(word_size), "attempt_allocation_humongous() "
+  assert(is_humongous(word_size), "attempt_allocation_humongous() "
          "should only be called for humongous allocations");
 
   // Humongous objects can exhaust the heap quickly, so we should check if we
@@ -1144,7 +1144,7 @@ HeapWord* G1CollectedHeap::attempt_allocation_at_safepoint(size_t word_size,
                                              !expect_null_mutator_alloc_region,
          "the current alloc region was unexpectedly found to be non-NULL");
 
-  if (!isHumongous(word_size)) {
+  if (!is_humongous(word_size)) {
     return _allocator->mutator_alloc_region(context)->attempt_allocation_locked(word_size,
                                                       false /* bot_updates */);
   } else {
@@ -1168,7 +1168,7 @@ public:
   bool doHeapRegion(HeapRegion* r) {
     HeapRegionRemSet* hrrs = r->rem_set();
 
-    if (r->continuesHumongous()) {
+    if (r->is_continues_humongous()) {
       // We'll assert that the strong code root list and RSet is empty
       assert(hrrs->strong_code_roots_list_length() == 0, "sanity");
       assert(hrrs->occupied() == 0, "RSet should be empty");
@@ -1205,7 +1205,7 @@ public:
   { }
 
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       _cl.set_from(r);
       r->oop_iterate(&_cl);
     }
@@ -1237,14 +1237,14 @@ public:
     assert(!hr->is_young(), "not expecting to find young regions");
     if (hr->is_free()) {
       // We only generate output for non-empty regions.
-    } else if (hr->startsHumongous()) {
+    } else if (hr->is_starts_humongous()) {
       if (hr->region_num() == 1) {
         // single humongous region
         _hr_printer->post_compaction(hr, G1HRPrinter::SingleHumongous);
       } else {
         _hr_printer->post_compaction(hr, G1HRPrinter::StartsHumongous);
       }
-    } else if (hr->continuesHumongous()) {
+    } else if (hr->is_continues_humongous()) {
       _hr_printer->post_compaction(hr, G1HRPrinter::ContinuesHumongous);
     } else if (hr->is_old()) {
       _hr_printer->post_compaction(hr, G1HRPrinter::Old);
@@ -2243,14 +2243,14 @@ size_t G1CollectedHeap::capacity() const {
 }
 
 void G1CollectedHeap::reset_gc_time_stamps(HeapRegion* hr) {
-  assert(!hr->continuesHumongous(), "pre-condition");
+  assert(!hr->is_continues_humongous(), "pre-condition");
   hr->reset_gc_time_stamp();
-  if (hr->startsHumongous()) {
+  if (hr->is_starts_humongous()) {
     uint first_index = hr->hrm_index() + 1;
     uint last_index = hr->last_hc_index();
     for (uint i = first_index; i < last_index; i += 1) {
       HeapRegion* chr = region_at(i);
-      assert(chr->continuesHumongous(), "sanity");
+      assert(chr->is_continues_humongous(), "sanity");
       chr->reset_gc_time_stamp();
     }
   }
@@ -2320,7 +2320,7 @@ class SumUsedClosure: public HeapRegionClosure {
 public:
   SumUsedClosure() : _used(0) {}
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       _used += r->used();
     }
     return false;
@@ -2352,7 +2352,7 @@ void G1CollectedHeap::allocate_dummy_regions() {
   // Let's fill up most of the region
   size_t word_size = HeapRegion::GrainWords - 1024;
   // And as a result the region we'll allocate will be humongous.
-  guarantee(isHumongous(word_size), "sanity");
+  guarantee(is_humongous(word_size), "sanity");
 
   for (uintx i = 0; i < G1DummyRegionsPerGC; ++i) {
     // Let's use the existing mechanism for the allocation
@@ -2580,7 +2580,7 @@ class IterateOopClosureRegionClosure: public HeapRegionClosure {
 public:
   IterateOopClosureRegionClosure(ExtendedOopClosure* cl) : _cl(cl) {}
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->oop_iterate(_cl);
     }
     return false;
@@ -2599,7 +2599,7 @@ class IterateObjectClosureRegionClosure: public HeapRegionClosure {
 public:
   IterateObjectClosureRegionClosure(ObjectClosure* cl) : _cl(cl) {}
   bool doHeapRegion(HeapRegion* r) {
-    if (! r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->object_iterate(_cl);
     }
     return false;
@@ -2681,11 +2681,11 @@ public:
                              r->claim_value(), _claim_value);
       ++_failures;
     }
-    if (!r->isHumongous()) {
+    if (!r->is_humongous()) {
       _sh_region = NULL;
-    } else if (r->startsHumongous()) {
+    } else if (r->is_starts_humongous()) {
       _sh_region = r;
-    } else if (r->continuesHumongous()) {
+    } else if (r->is_continues_humongous()) {
       if (r->humongous_start_region() != _sh_region) {
         gclog_or_tty->print_cr("Region " HR_FORMAT ", "
                                "HS = "PTR_FORMAT", should be "PTR_FORMAT,
@@ -2719,7 +2719,7 @@ public:
 
   bool doHeapRegion(HeapRegion* hr) {
     assert(hr->in_collection_set(), "how?");
-    assert(!hr->isHumongous(), "H-region in CSet");
+    assert(!hr->is_humongous(), "H-region in CSet");
     if (hr->claim_value() != _claim_value) {
       gclog_or_tty->print_cr("CSet Region " HR_FORMAT ", "
                              "claim value = %d, should be %d",
@@ -2858,7 +2858,7 @@ void G1CollectedHeap::collection_set_iterate_from(HeapRegion* r,
 
 HeapRegion* G1CollectedHeap::next_compaction_region(const HeapRegion* from) const {
   HeapRegion* result = _hrm.next_region_in_heap(from);
-  while (result != NULL && result->isHumongous()) {
+  while (result != NULL && result->is_humongous()) {
     result = _hrm.next_region_in_heap(result);
   }
   return result;
@@ -3218,7 +3218,7 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       bool failures = false;
       r->verify(_vo, &failures);
       if (failures) {
@@ -3678,7 +3678,7 @@ size_t G1CollectedHeap::cards_scanned() {
 
 bool G1CollectedHeap::humongous_region_is_always_live(uint index) {
   HeapRegion* region = region_at(index);
-  assert(region->startsHumongous(), "Must start a humongous object");
+  assert(region->is_starts_humongous(), "Must start a humongous object");
   return oop(region->bottom())->is_objArray() || !region->rem_set()->is_empty();
 }
 
@@ -3691,7 +3691,7 @@ class RegisterHumongousWithInCSetFastTestClosure : public HeapRegionClosure {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
-    if (!r->startsHumongous()) {
+    if (!r->is_starts_humongous()) {
       return false;
     }
     G1CollectedHeap* g1h = G1CollectedHeap::heap();
@@ -6001,7 +6001,7 @@ void G1CollectedHeap::free_region(HeapRegion* hr,
 void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
                                      FreeRegionList* free_list,
                                      bool par) {
-  assert(hr->startsHumongous(), "this is only for starts humongous regions");
+  assert(hr->is_starts_humongous(), "this is only for starts humongous regions");
   assert(free_list != NULL, "pre-condition");
 
   size_t hr_capacity = hr->capacity();
@@ -6014,7 +6014,7 @@ void G1CollectedHeap::free_humongous_region(HeapRegion* hr,
   uint i = hr->hrm_index() + 1;
   while (i < last_index) {
     HeapRegion* curr_hr = region_at(i);
-    assert(curr_hr->continuesHumongous(), "invariant");
+    assert(curr_hr->is_continues_humongous(), "invariant");
     curr_hr->clear_humongous();
     free_region(curr_hr, free_list, par);
     i += 1;
@@ -6182,7 +6182,7 @@ public:
   bool failures() { return _failures; }
 
   virtual bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) return false;
+    if (hr->is_continues_humongous()) return false;
 
     bool result = _g1h->verify_bitmaps(_caller, hr);
     if (!result) {
@@ -6361,7 +6361,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
   }
 
   virtual bool doHeapRegion(HeapRegion* r) {
-    if (!r->startsHumongous()) {
+    if (!r->is_starts_humongous()) {
       return false;
     }
 
@@ -6407,7 +6407,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
       if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
         gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
-                               r->isHumongous(),
+                               r->is_humongous(),
                                region_idx,
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
@@ -6426,7 +6426,7 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 
     if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
       gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
-                             r->isHumongous(),
+                             r->is_humongous(),
                              r->bottom(),
                              region_idx,
                              r->region_num(),
@@ -6616,7 +6616,7 @@ public:
       // We ignore young regions, we'll empty the young list afterwards.
       // We ignore humongous regions, we're not tearing down the
       // humongous regions set.
-      assert(r->is_free() || r->is_young() || r->isHumongous(),
+      assert(r->is_free() || r->is_young() || r->is_humongous(),
              "it cannot be another type");
     }
     return false;
@@ -6661,7 +6661,7 @@ public:
   }
 
   bool doHeapRegion(HeapRegion* r) {
-    if (r->continuesHumongous()) {
+    if (r->is_continues_humongous()) {
       return false;
     }
 
@@ -6673,7 +6673,7 @@ public:
     } else if (!_free_list_only) {
       assert(!r->is_young(), "we should not come across young regions");
 
-      if (r->isHumongous()) {
+      if (r->is_humongous()) {
         // We ignore humongous regions, we left the humongous set unchanged
       } else {
         // Objects that were compacted would have ended up on regions
@@ -6844,13 +6844,13 @@ public:
     _old_count(), _humongous_count(), _free_count(){ }
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->continuesHumongous()) {
+    if (hr->is_continues_humongous()) {
       return false;
     }
 
     if (hr->is_young()) {
       // TODO
-    } else if (hr->startsHumongous()) {
+    } else if (hr->is_starts_humongous()) {
       assert(hr->containing_set() == _humongous_set, err_msg("Heap region %u is starts humongous but not in humongous set.", hr->hrm_index()));
       _humongous_count.increment(1u, hr->capacity());
     } else if (hr->is_empty()) {
@@ -6931,7 +6931,7 @@ class RegisterNMethodOopClosure: public OopClosure {
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
-      assert(!hr->continuesHumongous(),
+      assert(!hr->is_continues_humongous(),
              err_msg("trying to add code root "PTR_FORMAT" in continuation of humongous region "HR_FORMAT
                      " starting at "HR_FORMAT,
                      _nm, HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region())));
@@ -6958,7 +6958,7 @@ class UnregisterNMethodOopClosure: public OopClosure {
     if (!oopDesc::is_null(heap_oop)) {
       oop obj = oopDesc::decode_heap_oop_not_null(heap_oop);
       HeapRegion* hr = _g1h->heap_region_containing(obj);
-      assert(!hr->continuesHumongous(),
+      assert(!hr->is_continues_humongous(),
              err_msg("trying to remove code root "PTR_FORMAT" in continuation of humongous region "HR_FORMAT
                      " starting at "HR_FORMAT,
                      _nm, HR_FORMAT_PARAMS(hr), HR_FORMAT_PARAMS(hr->humongous_start_region())));

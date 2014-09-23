@@ -250,8 +250,8 @@ void HeapRegion::calc_gc_efficiency() {
   _gc_efficiency = (double) reclaimable_bytes() / region_elapsed_time_ms;
 }
 
-void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
-  assert(!isHumongous(), "sanity / pre-condition");
+void HeapRegion::set_starts_humongous(HeapWord* new_top, HeapWord* new_end) {
+  assert(!is_humongous(), "sanity / pre-condition");
   assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
@@ -264,21 +264,21 @@ void HeapRegion::set_startsHumongous(HeapWord* new_top, HeapWord* new_end) {
   _offsets.set_for_starts_humongous(new_top);
 }
 
-void HeapRegion::set_continuesHumongous(HeapRegion* first_hr) {
-  assert(!isHumongous(), "sanity / pre-condition");
+void HeapRegion::set_continues_humongous(HeapRegion* first_hr) {
+  assert(!is_humongous(), "sanity / pre-condition");
   assert(end() == orig_end(),
          "Should be normal before the humongous object allocation");
   assert(top() == bottom(), "should be empty");
-  assert(first_hr->startsHumongous(), "pre-condition");
+  assert(first_hr->is_starts_humongous(), "pre-condition");
 
   _type.set_continues_humongous();
   _humongous_start_region = first_hr;
 }
 
 void HeapRegion::clear_humongous() {
-  assert(isHumongous(), "pre-condition");
+  assert(is_humongous(), "pre-condition");
 
-  if (startsHumongous()) {
+  if (is_starts_humongous()) {
     assert(top() <= end(), "pre-condition");
     set_end(orig_end());
     if (top() > end()) {
@@ -654,7 +654,7 @@ void HeapRegion::verify_strong_code_roots(VerifyOption vo, bool* failures) const
     return;
   }
 
-  if (continuesHumongous()) {
+  if (is_continues_humongous()) {
     if (strong_code_roots_length > 0) {
       gclog_or_tty->print_cr("region "HR_FORMAT" is a continuation of a humongous "
                              "region but has "SIZE_FORMAT" code root entries",
@@ -781,7 +781,7 @@ public:
         HeapRegion* to   = _g1h->heap_region_containing(obj);
         if (from != NULL && to != NULL &&
             from != to &&
-            !to->isHumongous()) {
+            !to->is_humongous()) {
           jbyte cv_obj = *_bs->byte_for_const(_containing_obj);
           jbyte cv_field = *_bs->byte_for_const(p);
           const jbyte dirty = CardTableModRefBS::dirty_card_val();
@@ -835,19 +835,19 @@ void HeapRegion::verify(VerifyOption vo,
   HeapWord* p = bottom();
   HeapWord* prev_p = NULL;
   VerifyLiveClosure vl_cl(g1, vo);
-  bool is_humongous = isHumongous();
+  bool is_region_humongous = is_humongous();
   size_t object_num = 0;
   while (p < top()) {
     oop obj = oop(p);
     size_t obj_size = block_size(p);
     object_num += 1;
 
-    if (is_humongous != g1->isHumongous(obj_size) &&
+    if (is_region_humongous != g1->is_humongous(obj_size) &&
         !g1->is_obj_dead(obj, this)) { // Dead objects may have bigger block_size since they span several objects.
       gclog_or_tty->print_cr("obj "PTR_FORMAT" is of %shumongous size ("
                              SIZE_FORMAT" words) in a %shumongous region",
-                             p, g1->isHumongous(obj_size) ? "" : "non-",
-                             obj_size, is_humongous ? "" : "non-");
+                             p, g1->is_humongous(obj_size) ? "" : "non-",
+                             obj_size, is_region_humongous ? "" : "non-");
        *failures = true;
        return;
     }
@@ -956,7 +956,7 @@ void HeapRegion::verify(VerifyOption vo,
     }
   }
 
-  if (is_humongous && object_num > 1) {
+  if (is_region_humongous && object_num > 1) {
     gclog_or_tty->print_cr("region ["PTR_FORMAT","PTR_FORMAT"] is humongous "
                            "but has "SIZE_FORMAT", objects",
                            bottom(), end(), object_num);

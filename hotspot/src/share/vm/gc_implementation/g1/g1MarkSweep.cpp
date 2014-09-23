@@ -210,8 +210,8 @@ void G1MarkSweep::mark_sweep_phase2() {
 class G1AdjustPointersClosure: public HeapRegionClosure {
  public:
   bool doHeapRegion(HeapRegion* r) {
-    if (r->isHumongous()) {
-      if (r->startsHumongous()) {
+    if (r->is_humongous()) {
+      if (r->is_starts_humongous()) {
         // We must adjust the pointers on the single H object.
         oop obj = oop(r->bottom());
         // point all the oops to the new location
@@ -266,8 +266,8 @@ public:
   G1SpaceCompactClosure() {}
 
   bool doHeapRegion(HeapRegion* hr) {
-    if (hr->isHumongous()) {
-      if (hr->startsHumongous()) {
+    if (hr->is_humongous()) {
+      if (hr->is_starts_humongous()) {
         oop obj = oop(hr->bottom());
         if (obj->is_gc_marked()) {
           obj->init_mark();
@@ -310,7 +310,7 @@ void G1PrepareCompactClosure::free_humongous_region(HeapRegion* hr) {
   HeapWord* end = hr->end();
   FreeRegionList dummy_free_list("Dummy Free List for G1MarkSweep");
 
-  assert(hr->startsHumongous(),
+  assert(hr->is_starts_humongous(),
          "Only the start of a humongous region should be freed.");
 
   hr->set_containing_set(NULL);
@@ -348,8 +348,8 @@ void G1PrepareCompactClosure::update_sets() {
 }
 
 bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {
-  if (hr->isHumongous()) {
-    if (hr->startsHumongous()) {
+  if (hr->is_humongous()) {
+    if (hr->is_starts_humongous()) {
       oop obj = oop(hr->bottom());
       if (obj->is_gc_marked()) {
         obj->forward_to(obj);
@@ -357,7 +357,7 @@ bool G1PrepareCompactClosure::doHeapRegion(HeapRegion* hr) {
         free_humongous_region(hr);
       }
     } else {
-      assert(hr->continuesHumongous(), "Invalid humongous.");
+      assert(hr->is_continues_humongous(), "Invalid humongous.");
     }
   } else {
     prepare_for_compaction(hr, hr->end());

@@ -88,7 +88,7 @@ inline void ConcurrentMark::count_region(MemRegion mr, HeapRegion* hr,
   size_t region_size_bytes = mr.byte_size();
   uint index = hr->hrm_index();
 
-  assert(!hr->continuesHumongous(), "should not be HC region");
+  assert(!hr->is_continues_humongous(), "should not be HC region");
   assert(hr == g1h->heap_region_containing(start), "sanity");
   assert(hr == g1h->heap_region_containing(mr.last()), "sanity");
   assert(marked_bytes_array != NULL, "pre-condition");
@@ -366,7 +366,7 @@ inline void ConcurrentMark::grayRoot(oop obj, size_t word_size,
   assert(hr != NULL, "sanity");
   // Given that we're looking for a region that contains an object
   // header it's impossible to get back a HC region.
-  assert(!hr->continuesHumongous(), "sanity");
+  assert(!hr->is_continues_humongous(), "sanity");
 
   // We cannot assert that word_size == obj->size() given that obj
   // might not be in a consistent state (another thread might be in
