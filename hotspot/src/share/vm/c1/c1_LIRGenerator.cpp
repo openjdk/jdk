@@ -2045,6 +2045,8 @@ void LIRGenerator::do_RoundFP(RoundFP* x) {
   }
 }
 
+// Here UnsafeGetRaw may have x->base() and x->index() be int or long
+// on both 64 and 32 bits. Expecting x->base() to be always long on 64bit.
 void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
   LIRItem base(x->base(), this);
   LIRItem idx(this);
@@ -2059,50 +2061,73 @@ void LIRGenerator::do_UnsafeGetRaw(UnsafeGetRaw* x) {
 
   int   log2_scale = 0;
   if (x->has_index()) {
-    assert(x->index()->type()->tag() == intTag, "should not find non-int index");
     log2_scale = x->log2_scale();
   }
 
   assert(!x->has_index() || idx.value() == x->index(), "should match");
 
   LIR_Opr base_op = base.result();
+  LIR_Opr index_op = idx.result();
 #ifndef _LP64
   if (x->base()->type()->tag() == longTag) {
     base_op = new_register(T_INT);
     __ convert(Bytecodes::_l2i, base.result(), base_op);
-  } else {
-    assert(x->base()->type()->tag() == intTag, "must be");
   }
+  if (x->has_index()) {
+    if (x->index()->type()->tag() == longTag) {
+      LIR_Opr long_index_op = index_op;
+      if (x->index()->type()->is_constant()) {
+        long_index_op = new_register(T_LONG);
+        __ move(index_op, long_index_op);
+      }
+      index_op = new_register(T_INT);
+      __ convert(Bytecodes::_l2i, long_index_op, index_op);
+    } else {
+      assert(x->index()->type()->tag() == intTag, "must be");
+    }
+  }
+  // At this point base and index should be all ints.
+  assert(base_op->type() == T_INT && !base_op->is_constant(), "base should be an non-constant int");
+  assert(!x->has_index() || index_op->type() == T_INT, "index should be an int");
+#else
+  if (x->has_index()) {
+    if (x->index()->type()->tag() == intTag) {
+      if (!x->index()->type()->is_constant()) {
+        index_op = new_register(T_LONG);
+        __ convert(Bytecodes::_i2l, idx.result(), index_op);
+      }
+    } else {
+      assert(x->index()->type()->tag() == longTag, "must be");
+      if (x->index()->type()->is_constant()) {
+        index_op = new_register(T_LONG);
+        __ move(idx.result(), index_op);
+      }
+    }
+  }
+  // At this point base is a long non-constant
+  // Index is a long register or a int constant.
+  // We allow the constant to stay an int because that would allow us a more compact encoding by
+  // embedding an immediate offset in the address expression. If we have a long constant, we have to
+  // move it into a register first.
+  assert(base_op->type() == T_LONG && !base_op->is_constant(), "base must be a long non-constant");
+  assert(!x->has_index() || (index_op->type() == T_INT && index_op->is_constant()) ||
+                            (index_op->type() == T_LONG && !index_op->is_constant()), "unexpected index type");
 #endif
 
   BasicType dst_type = x->basic_type();
-  LIR_Opr index_op = idx.result();
 
   LIR_Address* addr;
   if (index_op->is_constant()) {
     assert(log2_scale == 0, "must not have a scale");
+    assert(index_op->type() == T_INT, "only int constants supported");
     addr = new LIR_Address(base_op, index_op->as_jint(), dst_type);
   } else {
 #ifdef X86
-#ifdef _LP64
-    if (!index_op->is_illegal() && index_op->type() == T_INT) {
-      LIR_Opr tmp = new_pointer_register();
-      __ convert(Bytecodes::_i2l, index_op, tmp);
-      index_op = tmp;
-    }
-#endif
     addr = new LIR_Address(base_op, index_op, LIR_Address::Scale(log2_scale), 0, dst_type);
 #elif defined(ARM)
     addr = generate_address(base_op, index_op, log2_scale, 0, dst_type);
 #else
     if (index_op->is_illegal() || log2_scale == 0) {
-#ifdef _LP64
-      if (!index_op->is_illegal() && index_op->type() == T_INT) {
-        LIR_Opr tmp = new_pointer_register();
-        __ convert(Bytecodes::_i2l, index_op, tmp);
-        index_op = tmp;
-      }
-#endif
       addr = new LIR_Address(base_op, index_op, dst_type);
     } else {
       LIR_Opr tmp = new_pointer_register();
@@ -2129,7 +2154,6 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
   BasicType type = x->basic_type();
 
   if (x->has_index()) {
-    assert(x->index()->type()->tag() == intTag, "should not find non-int index");
     log2_scale = x->log2_scale();
   }
 
@@ -2152,38 +2176,39 @@ void LIRGenerator::do_UnsafePutRaw(UnsafePutRaw* x) {
   set_no_result(x);
 
   LIR_Opr base_op = base.result();
+  LIR_Opr index_op = idx.result();
+
 #ifndef _LP64
   if (x->base()->type()->tag() == longTag) {
     base_op = new_register(T_INT);
     __ convert(Bytecodes::_l2i, base.result(), base_op);
-  } else {
-    assert(x->base()->type()->tag() == intTag, "must be");
   }
+  if (x->has_index()) {
+    if (x->index()->type()->tag() == longTag) {
+      index_op = new_register(T_INT);
+      __ convert(Bytecodes::_l2i, idx.result(), index_op);
+    }
+  }
+  // At this point base and index should be all ints and not constants
+  assert(base_op->type() == T_INT && !base_op->is_constant(), "base should be an non-constant int");
+  assert(!x->has_index() || (index_op->type() == T_INT && !index_op->is_constant()), "index should be an non-constant int");
+#else
+  if (x->has_index()) {
+    if (x->index()->type()->tag() == intTag) {
+      index_op = new_register(T_LONG);
+      __ convert(Bytecodes::_i2l, idx.result(), index_op);
+    }
+  }
+  // At this point base and index are long and non-constant
+  assert(base_op->type() == T_LONG && !base_op->is_constant(), "base must be a non-constant long");
+  assert(!x->has_index() || (index_op->type() == T_LONG && !index_op->is_constant()), "index must be a non-constant long");
 #endif
 
-  LIR_Opr index_op = idx.result();
   if (log2_scale != 0) {
     // temporary fix (platform dependent code without shift on Intel would be better)
-    index_op = new_pointer_register();
-#ifdef _LP64
-    if(idx.result()->type() == T_INT) {
-      __ convert(Bytecodes::_i2l, idx.result(), index_op);
-    } else {
-#endif
-      // TODO: ARM also allows embedded shift in the address
-      __ move(idx.result(), index_op);
-#ifdef _LP64
-    }
-#endif
+    // TODO: ARM also allows embedded shift in the address
     __ shift_left(index_op, log2_scale, index_op);
   }
-#ifdef _LP64
-  else if(!index_op->is_illegal() && index_op->type() == T_INT) {
-    LIR_Opr tmp = new_pointer_register();
-    __ convert(Bytecodes::_i2l, index_op, tmp);
-    index_op = tmp;
-  }
-#endif
 
   LIR_Address* addr = new LIR_Address(base_op, index_op, x->basic_type());
   __ move(value.result(), addr);
