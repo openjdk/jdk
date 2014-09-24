@@ -321,6 +321,17 @@ PHONY_LIST += hotspot_clienttest clienttest
 
 ################################################################
 
+# minimaltest (make sure various basic java minimal options work)
+
+hotspot_minimaltest minimaltest: prep $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+
+PHONY_LIST += hotspot_minimaltest minimaltest
+
+################################################################
+
 # servertest (make sure various basic java server options work)
 
 hotspot_servertest servertest: prep $(PRODUCT_HOME)
