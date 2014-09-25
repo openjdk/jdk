@@ -36,12 +36,10 @@ import java.util.concurrent.CountDownLatch;
 import java.util.Map;
 import java.util.concurrent.ExecutionException;
 import java.util.concurrent.Future;
-import java.util.concurrent.Phaser;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.TimeoutException;
 import java.util.function.Predicate;
 import java.util.function.Consumer;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 
 import sun.management.VMManagement;
@@ -177,6 +175,11 @@ public final class ProcessTools {
             for(Map.Entry<Thread, StackTraceElement[]> s : Thread.getAllStackTraces().entrySet()) {
                 printStack(s.getKey(), s.getValue());
             }
+
+            if (p.isAlive()) {
+                p.destroyForcibly();
+            }
+
             stdoutTask.cancel(true);
             stderrTask.cancel(true);
             throw e;

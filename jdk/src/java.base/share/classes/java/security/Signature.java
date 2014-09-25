@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -120,6 +120,11 @@ public abstract class Signature extends SignatureSpi {
 
     private static final Debug debug =
                         Debug.getInstance("jca", "Signature");
+
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("signature");
 
     /*
      * The algorithm for this signature object.
@@ -451,6 +456,11 @@ public abstract class Signature extends SignatureSpi {
             throws InvalidKeyException {
         engineInitVerify(publicKey);
         state = VERIFY;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " verification algorithm from: " + this.provider.getName());
+        }
     }
 
     /**
@@ -495,6 +505,11 @@ public abstract class Signature extends SignatureSpi {
         PublicKey publicKey = certificate.getPublicKey();
         engineInitVerify(publicKey);
         state = VERIFY;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " verification algorithm from: " + this.provider.getName());
+        }
     }
 
     /**
@@ -511,6 +526,11 @@ public abstract class Signature extends SignatureSpi {
             throws InvalidKeyException {
         engineInitSign(privateKey);
         state = SIGN;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " signing algorithm from: " + this.provider.getName());
+        }
     }
 
     /**
@@ -529,6 +549,11 @@ public abstract class Signature extends SignatureSpi {
             throws InvalidKeyException {
         engineInitSign(privateKey, random);
         state = SIGN;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Signature." + algorithm +
+                " signing algorithm from: " + this.provider.getName());
+        }
     }
 
     /**

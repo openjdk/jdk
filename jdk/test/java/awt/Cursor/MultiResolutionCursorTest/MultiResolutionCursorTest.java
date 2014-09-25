@@ -36,7 +36,7 @@ import java.awt.image.BufferedImage;
 import java.util.LinkedList;
 import java.util.List;
 import javax.swing.JApplet;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 import sun.awt.image.MultiResolutionImage;
 
 /**
@@ -44,6 +44,8 @@ import sun.awt.image.MultiResolutionImage;
  * @bug 8028212
  * @summary [macosx] Custom Cursor HiDPI support
  * @author Alexander Scherbatiy
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
  * @run applet/manual=yesno MultiResolutionCursorTest.html
  */
 public class MultiResolutionCursorTest extends JApplet {

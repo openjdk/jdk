@@ -26,8 +26,10 @@
   @bug 7075105
   @summary WIN: Provide a way to format HTML on drop
   @author Denis Fokin: area=datatransfer
+  @library ../../../../lib/testlibrary
   @build HtmlTransferable PutAllHtmlFlavorsOnClipboard
   @build PutOnlyAllHtmlFlavorOnClipboard PutSelectionAndFragmentHtmlFlavorsOnClipboard
+  @build jdk.testlibrary.OSInfo
   @run main HTMLDataFlavorTest
 */
 
@@ -43,7 +45,7 @@ public class HTMLDataFlavorTest {
 
     public static void main(String[] args) throws IOException, UnsupportedFlavorException {
 
-        if (sun.awt.OSInfo.getOSType() != sun.awt.OSInfo.OSType.WINDOWS) {
+        if (jdk.testlibrary.OSInfo.getOSType() != jdk.testlibrary.OSInfo.OSType.WINDOWS) {
             System.err.println("This test is for MS Windows only. Considered passed.");
             return;
         }

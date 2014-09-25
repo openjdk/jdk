@@ -171,7 +171,7 @@ public class URLDecoder {
 
                     while ( ((i+2) < numChars) &&
                             (c=='%')) {
-                        int v = Integer.parseInt(s.substring(i+1,i+3),16);
+                        int v = Integer.parseInt(s, i + 1, i + 3, 16);
                         if (v < 0)
                             throw new IllegalArgumentException("URLDecoder: Illegal hex characters in escape (%) pattern - negative value");
                         bytes[pos++] = (byte) v;

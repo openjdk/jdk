@@ -260,7 +260,7 @@ public class Dialog extends Window {
          * The "toolkitModality" <code>AWTPermission</code> must be granted
          * for this exclusion. If an exclusion property is being changed to
          * <code>TOOLKIT_EXCLUDE</code> and this permission is not granted, a
-         * <code>SecurityEcxeption</code> will be thrown, and the exclusion
+         * <code>SecurityException</code> will be thrown, and the exclusion
          * property will be left unchanged.
          */
         TOOLKIT_EXCLUDE
@@ -554,7 +554,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendents or <code>null</code>
+     *     of their descendants or <code>null</code>
      *
      * @exception java.lang.IllegalArgumentException if the <code>owner</code>
      *     is not an instance of {@link java.awt.Dialog Dialog} or {@link
@@ -578,7 +578,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *    {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *    of their descendents or <code>null</code>
+     *    of their descendants or <code>null</code>
      * @param title the title of the dialog or <code>null</code> if this dialog
      *    has no title
      *
@@ -604,7 +604,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *    {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *    of their descendents or <code>null</code>
+     *    of their descendants or <code>null</code>
      * @param modalityType specifies whether dialog blocks input to other
      *    windows when shown. <code>null</code> value and unsupported modality
      *    types are equivalent to <code>MODELESS</code>
@@ -637,7 +637,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendents or <code>null</code>
+     *     of their descendants or <code>null</code>
      * @param title the title of the dialog or <code>null</code> if this dialog
      *     has no title
      * @param modalityType specifies whether dialog blocks input to other
@@ -685,7 +685,7 @@ public class Dialog extends Window {
      *
      * @param owner the owner of the dialog. The owner must be an instance of
      *     {@link java.awt.Dialog Dialog}, {@link java.awt.Frame Frame}, any
-     *     of their descendents or <code>null</code>
+     *     of their descendants or <code>null</code>
      * @param title the title of the dialog or <code>null</code> if this dialog
      *     has no title
      * @param modalityType specifies whether dialog blocks input to other
@@ -796,7 +796,7 @@ public class Dialog extends Window {
      * @param modal specifies whether dialog blocks input to other windows
      *     when shown; calling to <code>setModal(true)</code> is equivalent to
      *     <code>setModalityType(Dialog.DEFAULT_MODALITY_TYPE)</code>, and
-     *     calling to <code>setModal(false)</code> is equvivalent to
+     *     calling to <code>setModal(false)</code> is equivalent to
      *     <code>setModalityType(Dialog.ModalityType.MODELESS)</code>
      *
      * @see       java.awt.Dialog#DEFAULT_MODALITY_TYPE
@@ -926,7 +926,7 @@ public class Dialog extends Window {
                 if (toFocus != null && time != null && isFocusable() &&
                     isEnabled() && !isModalBlocked()) {
                     // keep the KeyEvents from being dispatched
-                    // until the focus has been transfered
+                    // until the focus has been transferred
                     time.set(Toolkit.getEventQueue().getMostRecentKeyEventTime());
                     KeyboardFocusManager.getCurrentKeyboardFocusManager().
                         enqueueKeyEvents(time.get(), toFocus);

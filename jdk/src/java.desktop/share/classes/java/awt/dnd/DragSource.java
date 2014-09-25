@@ -547,7 +547,7 @@ public class DragSource implements Serializable {
     /**
      * Adds the specified <code>DragSourceListener</code> to this
      * <code>DragSource</code> to receive drag source events during drag
-     * operations intiated with this <code>DragSource</code>.
+     * operations initiated with this <code>DragSource</code>.
      * If a <code>null</code> listener is specified, no action is taken and no
      * exception is thrown.
      *
@@ -607,7 +607,7 @@ public class DragSource implements Serializable {
     /**
      * Adds the specified <code>DragSourceMotionListener</code> to this
      * <code>DragSource</code> to receive drag motion events during drag
-     * operations intiated with this <code>DragSource</code>.
+     * operations initiated with this <code>DragSource</code>.
      * If a <code>null</code> listener is specified, no action is taken and no
      * exception is thrown.
      *

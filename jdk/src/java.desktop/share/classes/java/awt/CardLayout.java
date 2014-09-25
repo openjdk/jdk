@@ -109,7 +109,7 @@ public class CardLayout implements LayoutManager2,
 
     /**
      * @serialField tab         Hashtable
-     *      deprectated, for forward compatibility only
+     *      deprecated, for forward compatibility only
      * @serialField hgap        int
      * @serialField vgap        int
      * @serialField vector      Vector

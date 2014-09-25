@@ -38,7 +38,7 @@ import java.security.AccessController;
 
 /**
  * The root event class for all AWT events.
- * This class and its subclasses supercede the original
+ * This class and its subclasses supersede the original
  * java.awt.Event class.
  * Subclasses of this root AWTEvent class defined outside of the
  * java.awt.event package should define event ID values greater than

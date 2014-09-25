@@ -293,6 +293,7 @@ public final class SplashScreen {
      */
     public Graphics2D createGraphics() throws IllegalStateException {
         synchronized (SplashScreen.class) {
+            checkVisible();
             if (image==null) {
                 // get unscaled splash image size
                 Dimension dim = _getBounds(splashPtr).getSize();
@@ -419,4 +420,4 @@ public final class SplashScreen {
     private native static boolean _setImageData(long SplashPtr, byte[] data);
     private native static float _getScaleFactor(long SplashPtr);
 
-};
+}

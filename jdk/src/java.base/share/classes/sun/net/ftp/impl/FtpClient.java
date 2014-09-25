@@ -260,8 +260,8 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                 if (d != null && time != null) {
                     int c = time.indexOf(':');
                     now.setTime(d);
-                    now.set(Calendar.HOUR, Integer.parseInt(time.substring(0, c)));
-                    now.set(Calendar.MINUTE, Integer.parseInt(time.substring(c + 1)));
+                    now.set(Calendar.HOUR, Integer.parseInt(time, 0, c, 10));
+                    now.set(Calendar.MINUTE, Integer.parseInt(time, c + 1, time.length(), 10));
                     d = now.getTime();
                 }
                 // see if it's a symbolic link, i.e. the name if followed
@@ -437,7 +437,7 @@ public class FtpClient extends sun.net.ftp.FtpClient {
                 code = -1;
             } else {
                 try {
-                    code = Integer.parseInt(response.substring(0, 3));
+                    code = Integer.parseInt(response, 0, 3, 10);
                 } catch (NumberFormatException e) {
                     code = -1;
                 } catch (StringIndexOutOfBoundsException e) {

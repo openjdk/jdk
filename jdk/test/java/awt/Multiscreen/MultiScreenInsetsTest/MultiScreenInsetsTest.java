@@ -27,6 +27,8 @@
   @summary Frame is not created on the specified GraphicsDevice with two
 monitors
   @author Oleg Pekhovskiy
+  @library ../../../../lib/testlibrary
+  @build jdk.testlibrary.OSInfo
   @run main MultiScreenInsetsTest
  */
 
@@ -37,7 +39,7 @@ import java.awt.GraphicsEnvironment;
 import java.awt.Insets;
 import java.awt.Rectangle;
 import java.awt.Toolkit;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 public class MultiScreenInsetsTest {
     private static final int SIZE = 100;

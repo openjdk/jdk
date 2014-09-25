@@ -415,7 +415,7 @@ public interface ComponentPeer {
     boolean prepareImage(Image img, int w, int h, ImageObserver o);
 
     /**
-     * Determines the status of the construction of the screen representaion
+     * Determines the status of the construction of the screen representation
      * of the specified image.
      *
      * @param img the image to check

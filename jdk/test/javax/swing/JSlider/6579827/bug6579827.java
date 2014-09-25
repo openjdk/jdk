@@ -25,10 +25,12 @@
  * @bug 6579827
  * @summary vista : JSlider on JColorchooser is not properly render or can't be seen completely
  * @author Pavel Porvatov
+ * @library ../../../../lib/testlibrary
+ * @build jdk.testlibrary.OSInfo
    @run main bug6579827
  */
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 import javax.swing.*;
 import java.awt.*;

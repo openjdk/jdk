@@ -108,6 +108,7 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
     // BMP variables
     private long bitmapFileSize;
     private long bitmapOffset;
+    private long bitmapStart;
     private long compression;
     private long imageSize;
     private byte palette[];
@@ -677,6 +678,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
         //start of image data
         iis.reset();
         iis.skipBytes(bitmapOffset);
+        bitmapStart = iis.getStreamPosition();
+
         gotHeader = true;
     }
 
@@ -812,6 +815,8 @@ public class BMPImageReader extends ImageReader implements BMPConstants {
             else if (sampleModel.getDataType() == DataBuffer.TYPE_INT)
                 idata = ((DataBufferInt)raster.getDataBuffer()).getData();
         }
+
+        iis.seek(bitmapStart);
 
         // There should only be one tile.
         switch(imageType) {
