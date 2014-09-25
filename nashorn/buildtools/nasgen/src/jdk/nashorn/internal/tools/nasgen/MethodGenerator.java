@@ -85,7 +85,6 @@ import java.util.List;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
 import jdk.internal.org.objectweb.asm.Type;
-import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
 
 /**
  * Base class for all method generating classes.
@@ -98,7 +97,7 @@ public class MethodGenerator extends MethodVisitor {
     private final Type returnType;
     private final Type[] argumentTypes;
 
-    static final Type EMPTY_LINK_LOGIC_TYPE = Type.getType(LinkLogic.getEmptyLinkLogicClass());
+    static final Type EMPTY_LINK_LOGIC_TYPE = Type.getType("Ljdk/nashorn/internal/objects/annotations/SpecializedFunction$LinkLogic$Empty;");
 
     MethodGenerator(final MethodVisitor mv, final int access, final String name, final String descriptor) {
         super(Main.ASM_VERSION, mv);
