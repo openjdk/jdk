@@ -130,7 +130,7 @@ ifeq ($(shell expr $(COMPILER_REV_NUMERIC) \>= 505), 1)
 # Not sure what the 'designed for' comment is referring too above.
 #   The order may not be too significant anymore, but I have placed this
 #   older libm before libCrun, just to make sure it's found and used first.
-LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc -ldemangle
+LIBS += -lsocket -lsched -ldl $(LIBM) -lCrun -lthread -ldoor -lc -ldemangle -lnsl
 else
 ifeq ($(COMPILER_REV_NUMERIC), 502)
 # SC6.1 has it's own libm.so: specifying anything else provokes a name conflict.
@@ -284,6 +284,7 @@ else
   LIBJVM_MAPFILE$(LDNOMAP) = mapfile_extended
   LFLAGS_VM$(LDNOMAP)      += $(MAPFLAG:FILENAME=$(LIBJVM_MAPFILE))
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
+  LFLAGS_VM                += -Wl,-z,defs
 ifndef USE_GCC
   LIBS_VM                  = $(LIBS)
 else

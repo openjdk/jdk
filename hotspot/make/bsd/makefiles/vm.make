@@ -272,6 +272,8 @@ else
     LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
     LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
     LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+  else
+    LFLAGS_VM                += -Wl,-z,defs
   endif
 
   # JVM is statically linked with libgcc[_s] and libstdc++; this is needed to
