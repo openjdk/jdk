@@ -147,7 +147,7 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
 
 
 void C2Compiler::print_timers() {
-  // do nothing
+  Compile::print_timers();
 }
 
 int C2Compiler::initial_code_buffer_size() {

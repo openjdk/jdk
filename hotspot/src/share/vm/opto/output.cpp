@@ -1887,7 +1887,7 @@ void Compile::ScheduleAndBundle() {
   if (max_vector_size() > 8)
     return;
 
-  NOT_PRODUCT( TracePhase t2("isched", &_t_instrSched, TimeCompiler); )
+  TracePhase tp("isched", &timers[_t_instrSched]);
 
   // Create a data structure for all the scheduling information
   Scheduling scheduling(Thread::current()->resource_area(), *this);
