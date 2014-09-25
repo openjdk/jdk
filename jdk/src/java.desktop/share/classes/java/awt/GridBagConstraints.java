@@ -556,7 +556,7 @@ public class GridBagConstraints implements Cloneable, java.io.Serializable {
     transient int ascent;
     transient int descent;
     transient Component.BaselineResizeBehavior baselineResizeBehavior;
-    // The folllowing two fields are used if the baseline type is
+    // The following two fields are used if the baseline type is
     // CENTER_OFFSET.
     // centerPadding is either 0 or 1 and indicates if
     // the height needs to be padded by one when calculating where the

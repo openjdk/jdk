@@ -167,7 +167,7 @@ public abstract class InputEvent extends ComponentEvent {
     private static final int [] BUTTON_DOWN_MASK = new int [] { BUTTON1_DOWN_MASK,
                                                                BUTTON2_DOWN_MASK,
                                                                BUTTON3_DOWN_MASK,
-                                                               1<<14, //4th phisical button (this is not a wheel!)
+                                                               1<<14, //4th physical button (this is not a wheel!)
                                                                1<<15, //(this is not a wheel!)
                                                                1<<16,
                                                                1<<17,
@@ -245,7 +245,7 @@ public abstract class InputEvent extends ComponentEvent {
      */
     public static int getMaskForButton(int button) {
         if (button <= 0 || button > BUTTON_DOWN_MASK.length) {
-            throw new IllegalArgumentException("button doesn\'t exist " + button);
+            throw new IllegalArgumentException("button doesn't exist " + button);
         }
         return BUTTON_DOWN_MASK[button - 1];
     }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -24,8 +24,10 @@
 /* @test
    @bug 8016356
    @summary Any swing frame resizes ugly.
-   @run main bug8016356
    @author Oleg Pekhovskiy
+   @library ../../../../lib/testlibrary
+   @build jdk.testlibrary.OSInfo
+   @run main bug8016356
 */
 
 import java.awt.AWTException;
@@ -42,7 +44,7 @@ import java.awt.event.InputEvent;
 import javax.swing.JFrame;
 import javax.swing.JPanel;
 import javax.swing.SwingUtilities;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 public class bug8016356 {
     private static JFrame frame;

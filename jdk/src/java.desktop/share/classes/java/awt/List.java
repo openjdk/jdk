@@ -1652,7 +1652,7 @@ public class List extends Component implements ItemSelectable, Accessible {
 
 
             //
-            // AccessibleComponent delegatation to parent List
+            // AccessibleComponent delegation to parent List
             //
 
             /**
@@ -1859,7 +1859,7 @@ public class List extends Component implements ItemSelectable, Accessible {
              * screen's coordinate space.
              *
              * @return An instance of Point representing the top-left corner of
-             * the objects's bounds in the coordinate space of the screen; null
+             * the object's bounds in the coordinate space of the screen; null
              * if this object or its parent are not on the screen
              * @see #getBounds
              * @see #getLocationOnScreen
@@ -1907,7 +1907,7 @@ public class List extends Component implements ItemSelectable, Accessible {
             /**
              * Returns the size of this object in the form of a Dimension
              * object.  The height field of the Dimension object contains this
-             * objects's height, and the width field of the Dimension object
+             * object's height, and the width field of the Dimension object
              * contains this object's width.
              *
              * @return A Dimension object that indicates the size of this

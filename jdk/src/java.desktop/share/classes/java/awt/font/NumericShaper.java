@@ -89,7 +89,7 @@ import sun.misc.SharedSecrets;
  * or creating a {@code Set} with the {@link NumericShaper.Range}
  * constants, such as:
  * <blockquote><pre>
- * EnumSet.of(NumericShaper.Scirpt.ARABIC, NumericShaper.Range.TAMIL)
+ * EnumSet.of(NumericShaper.Range.ARABIC, NumericShaper.Range.TAMIL)
  * </pre></blockquote>
  * The enum-based ranges are a super set of the bit mask-based ones.
  *
@@ -475,7 +475,7 @@ public final class NumericShaper implements java.io.Serializable {
     /** Identifies all ranges, for full contextual shaping.
      *
      * <p>This constant specifies all of the bit mask-based
-     * ranges. Use {@code EmunSet.allOf(NumericShaper.Range.class)} to
+     * ranges. Use {@code EnumSet.allOf(NumericShaper.Range.class)} to
      * specify all of the enum-based ranges.
      */
     public static final int ALL_RANGES = 0x0007ffff;
@@ -1068,14 +1068,14 @@ public final class NumericShaper implements java.io.Serializable {
         shapingRange = defaultContext;
         rangeSet = EnumSet.copyOf(ranges); // throws NPE if ranges is null.
 
-        // Give precedance to EASTERN_ARABIC if both ARABIC and
+        // Give precedence to EASTERN_ARABIC if both ARABIC and
         // EASTERN_ARABIC are specified.
         if (rangeSet.contains(Range.EASTERN_ARABIC)
             && rangeSet.contains(Range.ARABIC)) {
             rangeSet.remove(Range.ARABIC);
         }
 
-        // As well as the above case, give precedance to TAI_THAM_THAM if both
+        // As well as the above case, give precedence to TAI_THAM_THAM if both
         // TAI_THAM_HORA and TAI_THAM_THAM are specified.
         if (rangeSet.contains(Range.TAI_THAM_THAM)
             && rangeSet.contains(Range.TAI_THAM_HORA)) {

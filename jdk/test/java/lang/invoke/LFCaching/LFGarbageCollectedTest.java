@@ -31,14 +31,13 @@
  * @build TestMethods
  * @build LambdaFormTestCase
  * @build LFGarbageCollectedTest
- * @run main/othervm/timeout=600 -Djava.lang.invoke.MethodHandle.USE_LF_EDITOR=true -DtestLimit=150 -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI LFGarbageCollectedTest
+ * @run main/othervm/timeout=600 -Djava.lang.invoke.MethodHandle.USE_LF_EDITOR=true -DtestLimit=150 LFGarbageCollectedTest
  */
 
 import java.lang.invoke.MethodHandle;
 import java.lang.ref.PhantomReference;
 import java.lang.ref.ReferenceQueue;
 import java.lang.reflect.InvocationTargetException;
-import java.util.Arrays;
 import java.util.EnumSet;
 import java.util.Map;
 
@@ -94,10 +93,16 @@ public final class LFGarbageCollectedTest extends LambdaFormTestCase {
      * @param args Accepts no arguments.
      */
     public static void main(String[] args) {
-        // The "identity" and "constant" methods should be removed from this test,
-        // because their lambda forms are stored in a static filed and are not GC'ed.
-        // There can be only 5 such LFs for each method, so no memory leak happens.
-        EnumSet<TestMethods> testMethods = EnumSet.complementOf(EnumSet.of(TestMethods.IDENTITY, TestMethods.CONSTANT));
+        // The "identity", "constant", "arrayElementGetter" and "arrayElementSetter"
+        // methods should be removed from this test,
+        // because their lambda forms are stored in a static field and are not GC'ed.
+        // There can be only a finite number of such LFs for each method,
+        // so no memory leak happens.
+        EnumSet<TestMethods> testMethods = EnumSet.complementOf(EnumSet.of(
+                TestMethods.IDENTITY,
+                TestMethods.CONSTANT,
+                TestMethods.ARRAY_ELEMENT_GETTER,
+                TestMethods.ARRAY_ELEMENT_SETTER));
         LambdaFormTestCase.runTests(LFGarbageCollectedTest::new, testMethods);
     }
 }

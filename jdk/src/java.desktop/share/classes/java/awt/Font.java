@@ -335,7 +335,7 @@ public class Font implements java.io.Serializable
     public static final int CENTER_BASELINE = 1;
 
     /**
-     * The baseline used in Devanigiri and similar scripts when laying
+     * The baseline used in Devanagari and similar scripts when laying
      * out text.
      */
     public static final int HANGING_BASELINE = 2;
@@ -852,7 +852,7 @@ public class Font implements java.io.Serializable
      * <p>
      * To make the <code>Font</code> available to Font constructors the
      * returned <code>Font</code> must be registered in the
-     * <code>GraphicsEnviroment</code> by calling
+     * <code>GraphicsEnvironment</code> by calling
      * {@link GraphicsEnvironment#registerFont(Font) registerFont(Font)}.
      * @param fontFormat the type of the <code>Font</code>, which is
      * {@link #TRUETYPE_FONT TRUETYPE_FONT} if a TrueType resource is specified.
@@ -1018,7 +1018,7 @@ public class Font implements java.io.Serializable
      * <p>
      * To make the <code>Font</code> available to Font constructors the
      * returned <code>Font</code> must be registered in the
-     * <code>GraphicsEnviroment</code> by calling
+     * <code>GraphicsEnvironment</code> by calling
      * {@link GraphicsEnvironment#registerFont(Font) registerFont(Font)}.
      * @param fontFile a <code>File</code> object representing the
      * input data for the font.
@@ -1685,7 +1685,7 @@ public class Font implements java.io.Serializable
 
 
     /** Serialization support.  A <code>readObject</code>
-     *  method is neccessary because the constructor creates
+     *  method is necessary because the constructor creates
      *  the font's peer, and we can't serialize the peer.
      *  Similarly the computed font "family" may be different
      *  at <code>readObject</code> time than at

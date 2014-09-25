@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -59,6 +59,9 @@ public class EncryptedPrivateKeyInfo {
 
     // the "encryptionAlgorithm" field
     private AlgorithmId algid;
+
+    // the algorithm name of the encrypted private key
+    private String keyAlg;
 
     // the "encryptedData" field
     private byte[] encryptedData;
@@ -255,7 +258,7 @@ public class EncryptedPrivateKeyInfo {
             throw new InvalidKeySpecException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded);
+        return new PKCS8EncodedKeySpec(encoded, keyAlg);
     }
 
     private PKCS8EncodedKeySpec getKeySpecImpl(Key decryptKey,
@@ -280,7 +283,7 @@ public class EncryptedPrivateKeyInfo {
             throw new InvalidKeyException(
                     "Cannot retrieve the PKCS8EncodedKeySpec", ex);
         }
-        return new PKCS8EncodedKeySpec(encoded);
+        return new PKCS8EncodedKeySpec(encoded, keyAlg);
     }
 
     /**
@@ -405,7 +408,7 @@ public class EncryptedPrivateKeyInfo {
     }
 
     @SuppressWarnings("fallthrough")
-    private static void checkPKCS8Encoding(byte[] encodedKey)
+    private void checkPKCS8Encoding(byte[] encodedKey)
         throws IOException {
         DerInputStream in = new DerInputStream(encodedKey);
         DerValue[] values = in.getSequence(3);
@@ -416,11 +419,7 @@ public class EncryptedPrivateKeyInfo {
             /* fall through */
         case 3:
             checkTag(values[0], DerValue.tag_Integer, "version");
-            DerInputStream algid = values[1].toDerInputStream();
-            algid.getOID();
-            if (algid.available() != 0) {
-                algid.getDerValue();
-            }
+            keyAlg = AlgorithmId.parse(values[1]).getName();
             checkTag(values[2], DerValue.tag_OctetString, "privateKey");
             break;
         default:
