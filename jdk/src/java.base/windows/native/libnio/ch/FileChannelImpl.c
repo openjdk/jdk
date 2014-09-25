@@ -140,24 +140,25 @@ JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileChannelImpl_position0(JNIEnv *env, jobject this,
                                           jobject fdo, jlong offset)
 {
-    DWORD lowPos = 0;
-    long highPos = 0;
+    BOOL result = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
+    LARGE_INTEGER where;
+    DWORD whence;
 
     if (offset < 0) {
-        lowPos = SetFilePointer(h, 0, &highPos, FILE_CURRENT);
+        where.QuadPart = 0;
+        whence = FILE_CURRENT;
     } else {
-        lowPos = (DWORD)offset;
-        highPos = (long)(offset >> 32);
-        lowPos = SetFilePointer(h, lowPos, &highPos, FILE_BEGIN);
+        where.QuadPart = offset;
+        whence = FILE_BEGIN;
     }
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
+
+    result = SetFilePointerEx(h, where, &where, whence);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        return IOS_THROWN;
     }
-    return (((jlong)highPos) << 32) | lowPos;
+    return (jlong)where.QuadPart;
 }
 
 JNIEXPORT void JNICALL
