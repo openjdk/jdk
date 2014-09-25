@@ -2487,6 +2487,9 @@ class CommandLineFlags {
   product(bool, CITime, false,                                              \
           "collect timing information for compilation")                     \
                                                                             \
+  develop(bool, CITimeVerbose, false,                                       \
+          "be more verbose in compilation timings")                         \
+                                                                            \
   develop(bool, CITimeEach, false,                                          \
           "display timing information after each successful compilation")   \
                                                                             \
@@ -2573,9 +2576,6 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseTypeProfile, true,                                       \
           "Check interpreter profile for historically monomorphic calls")   \
-                                                                            \
-  notproduct(bool, TimeCompiler, false,                                     \
-          "Time the compiler")                                              \
                                                                             \
   diagnostic(bool, PrintInlining, false,                                    \
           "Print inlining optimizations")                                   \

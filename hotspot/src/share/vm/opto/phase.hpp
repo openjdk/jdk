@@ -60,63 +60,65 @@ public:
     Peephole,                   // Apply peephole optimizations
     last_phase
   };
+
+  enum PhaseTraceId {
+    _t_parser,
+    _t_optimizer,
+      _t_escapeAnalysis,
+        _t_connectionGraph,
+        _t_macroEliminate,
+      _t_iterGVN,
+      _t_incrInline,
+        _t_incrInline_ideal,
+        _t_incrInline_igvn,
+        _t_incrInline_pru,
+        _t_incrInline_inline,
+      _t_idealLoop,
+      _t_idealLoopVerify,
+      _t_ccp,
+      _t_iterGVN2,
+      _t_macroExpand,
+      _t_graphReshaping,
+    _t_matcher,
+    _t_scheduler,
+    _t_registerAllocation,
+      _t_ctorChaitin,
+      _t_buildIFGvirtual,
+      _t_buildIFGphysical,
+      _t_computeLive,
+      _t_regAllocSplit,
+      _t_postAllocCopyRemoval,
+      _t_fixupSpills,
+      _t_chaitinCompact,
+      _t_chaitinCoalesce1,
+      _t_chaitinCoalesce2,
+      _t_chaitinCoalesce3,
+      _t_chaitinCacheLRG,
+      _t_chaitinSimplify,
+      _t_chaitinSelect,
+    _t_blockOrdering,
+    _t_peephole,
+    _t_postalloc_expand,
+    _t_output,
+       _t_instrSched,
+       _t_buildOopMaps,
+    _t_registerMethod,
+    _t_temporaryTimer1,
+    _t_temporaryTimer2,
+    max_phase_timers
+   };
+
+  static elapsedTimer timers[max_phase_timers];
+
 protected:
   enum PhaseNumber _pnum;       // Phase number (for stat gathering)
 
-#ifndef PRODUCT
   static int _total_bytes_compiled;
 
   // accumulated timers
   static elapsedTimer _t_totalCompilation;
   static elapsedTimer _t_methodCompilation;
   static elapsedTimer _t_stubCompilation;
-#endif
-
-// The next timers used for LogCompilation
-  static elapsedTimer _t_parser;
-  static elapsedTimer _t_optimizer;
-public:
-  // ConnectionGraph can't be Phase since it is used after EA done.
-  static elapsedTimer   _t_escapeAnalysis;
-  static elapsedTimer     _t_connectionGraph;
-protected:
-  static elapsedTimer   _t_idealLoop;
-  static elapsedTimer   _t_ccp;
-  static elapsedTimer _t_matcher;
-  static elapsedTimer _t_registerAllocation;
-  static elapsedTimer _t_output;
-
-#ifndef PRODUCT
-  static elapsedTimer _t_graphReshaping;
-  static elapsedTimer _t_scheduler;
-  static elapsedTimer _t_blockOrdering;
-  static elapsedTimer _t_macroEliminate;
-  static elapsedTimer _t_macroExpand;
-  static elapsedTimer _t_peephole;
-  static elapsedTimer _t_postalloc_expand;
-  static elapsedTimer _t_codeGeneration;
-  static elapsedTimer _t_registerMethod;
-  static elapsedTimer _t_temporaryTimer1;
-  static elapsedTimer _t_temporaryTimer2;
-  static elapsedTimer _t_idealLoopVerify;
-
-// Subtimers for _t_optimizer
-  static elapsedTimer   _t_iterGVN;
-  static elapsedTimer   _t_iterGVN2;
-  static elapsedTimer   _t_incrInline;
-
-// Subtimers for _t_registerAllocation
-  static elapsedTimer   _t_ctorChaitin;
-  static elapsedTimer   _t_buildIFGphysical;
-  static elapsedTimer   _t_computeLive;
-  static elapsedTimer   _t_regAllocSplit;
-  static elapsedTimer   _t_postAllocCopyRemoval;
-  static elapsedTimer   _t_fixupSpills;
-
-// Subtimers for _t_output
-  static elapsedTimer   _t_instrSched;
-  static elapsedTimer   _t_buildOopMaps;
-#endif
 
   // Generate a subtyping check.  Takes as input the subtype and supertype.
   // Returns 2 values: sets the default control() to the true path and
@@ -131,9 +133,7 @@ public:
   Compile * C;
   Phase( PhaseNumber pnum );
 
-#ifndef PRODUCT
   static void print_timers();
-#endif
 };
 
 #endif // SHARE_VM_OPTO_PHASE_HPP

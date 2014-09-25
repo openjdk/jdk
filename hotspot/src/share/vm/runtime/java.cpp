@@ -272,9 +272,6 @@ void print_statistics() {
 
   print_method_profiling_data();
 
-  if (TimeCompiler) {
-    COMPILER2_PRESENT(Compile::print_timers();)
-  }
   if (TimeCompilationPolicy) {
     CompilationPolicy::policy()->print_time();
   }

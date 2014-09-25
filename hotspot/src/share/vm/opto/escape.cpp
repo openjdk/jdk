@@ -82,7 +82,7 @@ bool ConnectionGraph::has_candidates(Compile *C) {
 }
 
 void ConnectionGraph::do_analysis(Compile *C, PhaseIterGVN *igvn) {
-  Compile::TracePhase t2("escapeAnalysis", &Phase::_t_escapeAnalysis, true);
+  Compile::TracePhase tp("escapeAnalysis", &Phase::timers[Phase::_t_escapeAnalysis]);
   ResourceMark rm;
 
   // Add ConP#NULL and ConN#NULL nodes before ConnectionGraph construction
@@ -117,7 +117,7 @@ bool ConnectionGraph::compute_escape() {
   GrowableArray<FieldNode*>      oop_fields_worklist;
   DEBUG_ONLY( GrowableArray<Node*> addp_worklist; )
 
-  { Compile::TracePhase t3("connectionGraph", &Phase::_t_connectionGraph, true);
+  { Compile::TracePhase tp("connectionGraph", &Phase::timers[Phase::_t_connectionGraph]);
 
   // 1. Populate Connection Graph (CG) with PointsTo nodes.
   ideal_nodes.map(C->live_nodes(), NULL);  // preallocate space

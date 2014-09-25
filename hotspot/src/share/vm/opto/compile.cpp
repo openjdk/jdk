@@ -667,16 +667,18 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
   C = this;
 
   CompileWrapper cw(this);
-#ifndef PRODUCT
-  if (TimeCompiler2) {
+
+  if (CITimeVerbose) {
     tty->print(" ");
     target->holder()->name()->print();
     tty->print(".");
     target->print_short_name();
     tty->print("  ");
   }
-  TraceTime t1("Total compilation time", &_t_totalCompilation, TimeCompiler, TimeCompiler2);
-  TraceTime t2(NULL, &_t_methodCompilation, TimeCompiler, false);
+  TraceTime t1("Total compilation time", &_t_totalCompilation, CITime, CITimeVerbose);
+  TraceTime t2(NULL, &_t_methodCompilation, CITime, false);
+
+#ifndef PRODUCT
   bool print_opto_assembly = PrintOptoAssembly || _method->has_option("PrintOptoAssembly");
   if (!print_opto_assembly) {
     bool print_assembly = (PrintAssembly || _method->should_print_assembly());
@@ -726,7 +728,7 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
 
   print_inlining_init();
   { // Scope for timing the parser
-    TracePhase t3("parse", &_t_parser, true);
+    TracePhase tp("parse", &timers[_t_parser]);
 
     // Put top into the hash table ASAP.
     initial_gvn()->transform_no_reclaim(top());
@@ -888,8 +890,8 @@ Compile::Compile( ciEnv* ci_env, C2Compiler* compiler, ciMethod* target, int osr
       record_method_not_compilable("+OptoNoExecute");  // Flag as failed
       return;
     }
-    TracePhase t2("install_code", &_t_registerMethod, TimeCompiler);
 #endif
+    TracePhase tp("install_code", &timers[_t_registerMethod]);
 
     if (is_osr_compilation()) {
       _code_offsets.set_value(CodeOffsets::Verified_Entry, 0);
@@ -977,9 +979,10 @@ Compile::Compile( ciEnv* ci_env,
     _interpreter_frame_size(0) {
   C = this;
 
+  TraceTime t1(NULL, &_t_totalCompilation, CITime, false);
+  TraceTime t2(NULL, &_t_stubCompilation, CITime, false);
+
 #ifndef PRODUCT
-  TraceTime t1(NULL, &_t_totalCompilation, TimeCompiler, false);
-  TraceTime t2(NULL, &_t_stubCompilation, TimeCompiler, false);
   set_print_assembly(PrintFrameConverterAssembly);
   set_parsed_irreducible_loop(false);
 #endif
@@ -1949,30 +1952,38 @@ void Compile::inline_incrementally_one(PhaseIterGVN& igvn) {
   for_igvn()->clear();
   gvn->replace_with(&igvn);
 
-  int i = 0;
-
-  for (; i <_late_inlines.length() && !inlining_progress(); i++) {
-    CallGenerator* cg = _late_inlines.at(i);
-    _late_inlines_pos = i+1;
-    cg->do_late_inline();
-    if (failing())  return;
+  {
+    TracePhase tp("incrementalInline_inline", &timers[_t_incrInline_inline]);
+    int i = 0;
+    for (; i <_late_inlines.length() && !inlining_progress(); i++) {
+      CallGenerator* cg = _late_inlines.at(i);
+      _late_inlines_pos = i+1;
+      cg->do_late_inline();
+      if (failing())  return;
+    }
+    int j = 0;
+    for (; i < _late_inlines.length(); i++, j++) {
+      _late_inlines.at_put(j, _late_inlines.at(i));
+    }
+    _late_inlines.trunc_to(j);
   }
-  int j = 0;
-  for (; i < _late_inlines.length(); i++, j++) {
-    _late_inlines.at_put(j, _late_inlines.at(i));
-  }
-  _late_inlines.trunc_to(j);
 
   {
+    TracePhase tp("incrementalInline_pru", &timers[_t_incrInline_pru]);
     ResourceMark rm;
     PhaseRemoveUseless pru(gvn, for_igvn());
   }
 
-  igvn = PhaseIterGVN(gvn);
+  {
+    TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
+    igvn = PhaseIterGVN(gvn);
+  }
 }
 
 // Perform incremental inlining until bound on number of live nodes is reached
 void Compile::inline_incrementally(PhaseIterGVN& igvn) {
+  TracePhase tp("incrementalInline", &timers[_t_incrInline]);
+
   PhaseGVN* gvn = initial_gvn();
 
   set_inlining_incrementally(true);
@@ -1983,6 +1994,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     if (live_nodes() > (uint)LiveNodeCountInliningCutoff) {
       if (low_live_nodes < (uint)LiveNodeCountInliningCutoff * 8 / 10) {
+        TracePhase tp("incrementalInline_ideal", &timers[_t_incrInline_ideal]);
         // PhaseIdealLoop is expensive so we only try it once we are
         // out of live nodes and we only try it again if the previous
         // helped got the number of nodes down significantly
@@ -2001,7 +2013,10 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 
     if (failing())  return;
 
-    igvn.optimize();
+    {
+      TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
+      igvn.optimize();
+    }
 
     if (failing())  return;
   }
@@ -2018,13 +2033,16 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
     if (failing())  return;
 
     {
+      TracePhase tp("incrementalInline_pru", &timers[_t_incrInline_pru]);
       ResourceMark rm;
       PhaseRemoveUseless pru(initial_gvn(), for_igvn());
     }
 
-    igvn = PhaseIterGVN(gvn);
-
-    igvn.optimize();
+    {
+      TracePhase tp("incrementalInline_igvn", &timers[_t_incrInline_igvn]);
+      igvn = PhaseIterGVN(gvn);
+      igvn.optimize();
+    }
   }
 
   set_inlining_incrementally(false);
@@ -2034,7 +2052,7 @@ void Compile::inline_incrementally(PhaseIterGVN& igvn) {
 //------------------------------Optimize---------------------------------------
 // Given a graph, optimize it.
 void Compile::Optimize() {
-  TracePhase t1("optimizer", &_t_optimizer, true);
+  TracePhase tp("optimizer", &timers[_t_optimizer]);
 
 #ifndef PRODUCT
   if (env()->break_at_compile()) {
@@ -2060,7 +2078,7 @@ void Compile::Optimize() {
   _modified_nodes = new (comp_arena()) Unique_Node_List(comp_arena());
 #endif
   {
-    NOT_PRODUCT( TracePhase t2("iterGVN", &_t_iterGVN, TimeCompiler); )
+    TracePhase tp("iterGVN", &timers[_t_iterGVN]);
     igvn.optimize();
   }
 
@@ -2068,17 +2086,13 @@ void Compile::Optimize() {
 
   if (failing())  return;
 
-  {
-    NOT_PRODUCT( TracePhase t2("incrementalInline", &_t_incrInline, TimeCompiler); )
-    inline_incrementally(igvn);
-  }
+  inline_incrementally(igvn);
 
   print_method(PHASE_INCREMENTAL_INLINE, 2);
 
   if (failing())  return;
 
   if (eliminate_boxing()) {
-    NOT_PRODUCT( TracePhase t2("incrementalInline", &_t_incrInline, TimeCompiler); )
     // Inline valueOf() methods now.
     inline_boxing_calls(igvn);
 
@@ -2105,7 +2119,7 @@ void Compile::Optimize() {
   if (_do_escape_analysis && ConnectionGraph::has_candidates(this)) {
     if (has_loops()) {
       // Cleanup graph (remove dead nodes).
-      TracePhase t2("idealLoop", &_t_idealLoop, true);
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop( igvn, false, true );
       if (major_progress()) print_method(PHASE_PHASEIDEAL_BEFORE_EA, 2);
       if (failing())  return;
@@ -2121,7 +2135,7 @@ void Compile::Optimize() {
     if (failing())  return;
 
     if (congraph() != NULL && macro_count() > 0) {
-      NOT_PRODUCT( TracePhase t2("macroEliminate", &_t_macroEliminate, TimeCompiler); )
+      TracePhase tp("macroEliminate", &timers[_t_macroEliminate]);
       PhaseMacroExpand mexp(igvn);
       mexp.eliminate_macro_nodes();
       igvn.set_delay_transform(false);
@@ -2140,7 +2154,7 @@ void Compile::Optimize() {
   loop_opts_cnt = num_loop_opts();
   if((loop_opts_cnt > 0) && (has_loops() || has_split_ifs())) {
     {
-      TracePhase t2("idealLoop", &_t_idealLoop, true);
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop( igvn, true );
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP1, 2);
@@ -2148,7 +2162,7 @@ void Compile::Optimize() {
     }
     // Loop opts pass if partial peeling occurred in previous pass
     if(PartialPeelLoop && major_progress() && (loop_opts_cnt > 0)) {
-      TracePhase t3("idealLoop", &_t_idealLoop, true);
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP2, 2);
@@ -2156,14 +2170,14 @@ void Compile::Optimize() {
     }
     // Loop opts pass for loop-unrolling before CCP
     if(major_progress() && (loop_opts_cnt > 0)) {
-      TracePhase t4("idealLoop", &_t_idealLoop, true);
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       PhaseIdealLoop ideal_loop( igvn, false );
       loop_opts_cnt--;
       if (major_progress()) print_method(PHASE_PHASEIDEALLOOP3, 2);
     }
     if (!failing()) {
       // Verify that last round of loop opts produced a valid graph
-      NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+      TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
       PhaseIdealLoop::verify(igvn);
     }
   }
@@ -2173,7 +2187,7 @@ void Compile::Optimize() {
   PhaseCCP ccp( &igvn );
   assert( true, "Break here to ccp.dump_nodes_and_types(_root,999,1)");
   {
-    TracePhase t2("ccp", &_t_ccp, true);
+    TracePhase tp("ccp", &timers[_t_ccp]);
     ccp.do_transform();
   }
   print_method(PHASE_CPP1, 2);
@@ -2182,7 +2196,7 @@ void Compile::Optimize() {
 
   // Iterative Global Value Numbering, including ideal transforms
   {
-    NOT_PRODUCT( TracePhase t2("iterGVN2", &_t_iterGVN2, TimeCompiler); )
+    TracePhase tp("iterGVN2", &timers[_t_iterGVN2]);
     igvn = ccp;
     igvn.optimize();
   }
@@ -2196,7 +2210,7 @@ void Compile::Optimize() {
   if(loop_opts_cnt > 0) {
     debug_only( int cnt = 0; );
     while(major_progress() && (loop_opts_cnt > 0)) {
-      TracePhase t2("idealLoop", &_t_idealLoop, true);
+      TracePhase tp("idealLoop", &timers[_t_idealLoop]);
       assert( cnt++ < 40, "infinite cycle in loop optimization" );
       PhaseIdealLoop ideal_loop( igvn, true);
       loop_opts_cnt--;
@@ -2208,12 +2222,12 @@ void Compile::Optimize() {
   {
     // Verify that all previous optimizations produced a valid graph
     // at least to this point, even if no loop optimizations were done.
-    NOT_PRODUCT( TracePhase t2("idealLoopVerify", &_t_idealLoopVerify, TimeCompiler); )
+    TracePhase tp("idealLoopVerify", &timers[_t_idealLoopVerify]);
     PhaseIdealLoop::verify(igvn);
   }
 
   {
-    NOT_PRODUCT( TracePhase t2("macroExpand", &_t_macroExpand, TimeCompiler); )
+    TracePhase tp("macroExpand", &timers[_t_macroExpand]);
     PhaseMacroExpand  mex(igvn);
     if (mex.expand_macro_nodes()) {
       assert(failing(), "must bail out w/ explicit message");
@@ -2227,7 +2241,7 @@ void Compile::Optimize() {
   process_print_inlining();
   // A method with only infinite loops has no edges entering loops from root
   {
-    NOT_PRODUCT( TracePhase t2("graphReshape", &_t_graphReshaping, TimeCompiler); )
+    TracePhase tp("graphReshape", &timers[_t_graphReshaping]);
     if (final_graph_reshaping()) {
       assert(failing(), "must bail out w/ explicit message");
       return;
@@ -2258,7 +2272,7 @@ void Compile::Code_Gen() {
   Matcher matcher;
   _matcher = &matcher;
   {
-    TracePhase t2("matcher", &_t_matcher, true);
+    TracePhase tp("matcher", &timers[_t_matcher]);
     matcher.match();
   }
   // In debug mode can dump m._nodes.dump() for mapping of ideal to machine
@@ -2275,7 +2289,7 @@ void Compile::Code_Gen() {
   PhaseCFG cfg(node_arena(), root(), matcher);
   _cfg = &cfg;
   {
-    NOT_PRODUCT( TracePhase t2("scheduler", &_t_scheduler, TimeCompiler); )
+    TracePhase tp("scheduler", &timers[_t_scheduler]);
     bool success = cfg.do_global_code_motion();
     if (!success) {
       return;
@@ -2289,7 +2303,7 @@ void Compile::Code_Gen() {
   PhaseChaitin regalloc(unique(), cfg, matcher);
   _regalloc = &regalloc;
   {
-    TracePhase t2("regalloc", &_t_registerAllocation, true);
+    TracePhase tp("regalloc", &timers[_t_registerAllocation]);
     // Perform register allocation.  After Chaitin, use-def chains are
     // no longer accurate (at spill code) and so must be ignored.
     // Node->LRG->reg mappings are still accurate.
@@ -2306,7 +2320,7 @@ void Compile::Code_Gen() {
   // are not adding any new instructions.  If any basic block is empty, we
   // can now safely remove it.
   {
-    NOT_PRODUCT( TracePhase t2("blockOrdering", &_t_blockOrdering, TimeCompiler); )
+    TracePhase tp("blockOrdering", &timers[_t_blockOrdering]);
     cfg.remove_empty_blocks();
     if (do_freq_based_layout()) {
       PhaseBlockLayout layout(cfg);
@@ -2318,22 +2332,20 @@ void Compile::Code_Gen() {
 
   // Apply peephole optimizations
   if( OptoPeephole ) {
-    NOT_PRODUCT( TracePhase t2("peephole", &_t_peephole, TimeCompiler); )
+    TracePhase tp("peephole", &timers[_t_peephole]);
     PhasePeephole peep( _regalloc, cfg);
     peep.do_transform();
   }
 
   // Do late expand if CPU requires this.
   if (Matcher::require_postalloc_expand) {
-    NOT_PRODUCT(TracePhase t2c("postalloc_expand", &_t_postalloc_expand, true));
+    TracePhase tp("postalloc_expand", &timers[_t_postalloc_expand]);
     cfg.postalloc_expand(_regalloc);
   }
 
   // Convert Nodes to instruction bits in a buffer
   {
-    // %%%% workspace merge brought two timers together for one job
-    TracePhase t2a("output", &_t_output, true);
-    NOT_PRODUCT( TraceTime t2b(NULL, &_t_codeGeneration, TimeCompiler, false); )
+    TraceTime tp("output", &timers[_t_output], CITime);
     Output();
   }
 
@@ -3538,11 +3550,11 @@ void Compile::record_failure(const char* reason) {
   _root = NULL;  // flush the graph, too
 }
 
-Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator, bool dolog)
-  : TraceTime(NULL, accumulator, false NOT_PRODUCT( || TimeCompiler ), false),
-    _phase_name(name), _dolog(dolog)
+Compile::TracePhase::TracePhase(const char* name, elapsedTimer* accumulator)
+  : TraceTime(name, accumulator, CITime, CITimeVerbose),
+    _phase_name(name), _dolog(CITimeVerbose)
 {
-  if (dolog) {
+  if (_dolog) {
     C = Compile::current();
     _log = C->log();
   } else {
