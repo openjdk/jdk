@@ -47,7 +47,6 @@ import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.getArrayIndex;
 import static jdk.nashorn.internal.runtime.arrays.ArrayIndex.isValidArrayIndex;
 import static jdk.nashorn.internal.runtime.linker.NashornGuards.explicitInstanceOfCheck;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -820,6 +819,19 @@ public abstract class ScriptObject implements PropertyAccess {
         return false;
     }
 
+    private SwitchPoint findBuiltinSwitchPoint(final String key) {
+        for (ScriptObject myProto = getProto(); myProto != null; myProto = myProto.getProto()) {
+            final Property prop = myProto.getMap().findProperty(key);
+            if (prop != null) {
+                final SwitchPoint sp = prop.getBuiltinSwitchPoint();
+                if (sp != null && !sp.hasBeenInvalidated()) {
+                    return sp;
+                }
+            }
+        }
+        return null;
+    }
+
     /**
      * Add a new property to the object.
      * <p>
@@ -1514,6 +1526,23 @@ public abstract class ScriptObject implements PropertyAccess {
     }
 
     /**
+     * Get the {@link ArrayData}, for this ScriptObject, ensuring it is of a type
+     * that can handle elementType
+     * @param elementType elementType
+     * @return array data
+     */
+    public final ArrayData getArray(final Class<?> elementType) {
+        if (elementType == null) {
+            return arrayData;
+        }
+        final ArrayData newArrayData = arrayData.convert(elementType);
+        if (newArrayData != arrayData) {
+            arrayData = newArrayData;
+        }
+        return newArrayData;
+    }
+
+    /**
      * Get the {@link ArrayData} for this ScriptObject if it is an array
      * @return array data
      */
@@ -1916,17 +1945,6 @@ public abstract class ScriptObject implements PropertyAccess {
         return MH.filterArguments(methodHandle, 0, filter.asType(filter.type().changeReturnType(methodHandle.type().parameterType(0))));
     }
 
-    //this will only return true if apply is still builtin
-    private static SwitchPoint checkReservedName(final CallSiteDescriptor desc, final LinkRequest request) {
-        final boolean isApplyToCall = NashornCallSiteDescriptor.isApplyToCall(desc);
-        final String name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
-        if ("apply".equals(name) && isApplyToCall && Global.instance().isSpecialNameValid(name)) {
-            assert Global.instance().getChangeCallback("apply") == Global.instance().getChangeCallback("call");
-            return Global.instance().getChangeCallback("apply");
-        }
-        return null;
-    }
-
     /**
      * Find the appropriate GET method for an invoke dynamic call.
      *
@@ -1938,14 +1956,13 @@ public abstract class ScriptObject implements PropertyAccess {
      */
     protected GuardedInvocation findGetMethod(final CallSiteDescriptor desc, final LinkRequest request, final String operator) {
         final boolean explicitInstanceOfCheck = explicitInstanceOfCheck(desc, request);
-        final String name;
-        final SwitchPoint reservedNameSwitchPoint;
 
-        reservedNameSwitchPoint = checkReservedName(desc, request);
-        if (reservedNameSwitchPoint != null) {
-            name = "call"; //turn apply into call, it is the builtin apply and has been modified to explode args
-        } else {
-            name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        String name;
+        name = desc.getNameToken(CallSiteDescriptor.NAME_OPERAND);
+        if (NashornCallSiteDescriptor.isApplyToCall(desc)) {
+            if (Global.isBuiltinFunctionPrototypeApply()) {
+                name = "call";
+            }
         }
 
         if (request.isCallSiteUnstable() || hasWithScope()) {
@@ -2006,7 +2023,7 @@ public abstract class ScriptObject implements PropertyAccess {
         assert OBJECT_FIELDS_ONLY || guard != null : "we always need a map guard here";
 
         final GuardedInvocation inv = new GuardedInvocation(mh, guard, protoSwitchPoint, exception);
-        return inv.addSwitchPoint(reservedNameSwitchPoint);
+        return inv.addSwitchPoint(findBuiltinSwitchPoint(name));
     }
 
     private static GuardedInvocation findMegaMorphicGetMethod(final CallSiteDescriptor desc, final String name, final boolean isMethod) {
@@ -2166,7 +2183,7 @@ public abstract class ScriptObject implements PropertyAccess {
             }
         }
 
-        final GuardedInvocation inv = new SetMethodCreator(this, find, desc, request).createGuardedInvocation();
+        final GuardedInvocation inv = new SetMethodCreator(this, find, desc, request).createGuardedInvocation(findBuiltinSwitchPoint(name));
 
         final GuardedInvocation cinv = Global.getConstants().findSetMethod(find, this, inv, desc, request);
         if (cinv != null) {
@@ -2429,7 +2446,7 @@ public abstract class ScriptObject implements PropertyAccess {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("remove");
         }
     }
 

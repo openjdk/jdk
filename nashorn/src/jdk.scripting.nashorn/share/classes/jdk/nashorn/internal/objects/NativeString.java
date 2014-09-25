@@ -29,7 +29,6 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.JSType.isRepresentableAsInt;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -49,11 +48,12 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.ConsString;
 import jdk.nashorn.internal.runtime.JSType;
+import jdk.nashorn.internal.runtime.OptimisticBuiltins;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -67,7 +67,7 @@ import jdk.nashorn.internal.runtime.linker.PrimitiveLookup;
  * ECMA 15.5 String Objects.
  */
 @ScriptClass("String")
-public final class NativeString extends ScriptObject {
+public final class NativeString extends ScriptObject implements OptimisticBuiltins {
 
     private final CharSequence value;
 
@@ -568,6 +568,14 @@ public final class NativeString extends ScriptObject {
         return pos < 0 || pos >= str.length() ? "" : String.valueOf(str.charAt(pos));
     }
 
+    private static int getValidChar(final Object self, final int pos) {
+        try {
+            return ((CharSequence)self).charAt(pos);
+        } catch (final IndexOutOfBoundsException e) {
+            throw new ClassCastException();
+        }
+    }
+
     /**
      * ECMA 15.5.4.5 String.prototype.charCodeAt (pos)
      * @param self self reference
@@ -576,7 +584,9 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static double charCodeAt(final Object self, final Object pos) {
-        return charCodeAtImpl(checkObjectToString(self), JSType.toInteger(pos));
+        final String str = checkObjectToString(self);
+        final int    idx = JSType.toInteger(pos);
+        return idx < 0 || idx >= str.length() ? Double.NaN : str.charAt(idx);
     }
 
     /**
@@ -585,9 +595,20 @@ public final class NativeString extends ScriptObject {
      * @param pos  position in string
      * @return number representing charcode at position
      */
-    @SpecializedFunction
-    public static double charCodeAt(final Object self, final double pos) {
-        return charCodeAt(self, (int) pos);
+    @SpecializedFunction(linkLogic=CharCodeAtLinkLogic.class)
+    public static int charCodeAt(final Object self, final double pos) {
+        return charCodeAt(self, (int)pos); //toInt pos is ok
+    }
+
+    /**
+     * ECMA 15.5.4.5 String.prototype.charCodeAt (pos) - specialized version for long position
+     * @param self self reference
+     * @param pos  position in string
+     * @return number representing charcode at position
+     */
+    @SpecializedFunction(linkLogic=CharCodeAtLinkLogic.class)
+    public static int charCodeAt(final Object self, final long pos) {
+        return charCodeAt(self, (int)pos);
     }
 
     /**
@@ -596,13 +617,10 @@ public final class NativeString extends ScriptObject {
      * @param pos  position in string
      * @return number representing charcode at position
      */
-    @SpecializedFunction
-    public static double charCodeAt(final Object self, final int pos) {
-        return charCodeAtImpl(checkObjectToString(self), pos);
-    }
 
-    private static double charCodeAtImpl(final String str, final int pos) {
-        return pos < 0 || pos >= str.length() ? Double.NaN : str.charAt(pos);
+    @SpecializedFunction(linkLogic=CharCodeAtLinkLogic.class)
+    public static int charCodeAt(final Object self, final int pos) {
+        return getValidChar(self, pos);
     }
 
     /**
@@ -1097,7 +1115,6 @@ public final class NativeString extends ScriptObject {
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static String trim(final Object self) {
-
         final String str = checkObjectToString(self);
         int start = 0;
         int end   = str.length() - 1;
@@ -1181,7 +1198,7 @@ public final class NativeString extends ScriptObject {
      *
      * @return new NativeString ("")
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static Object constructor(final boolean newObj, final Object self) {
         return newObj ? newObj("") : "";
     }
@@ -1197,7 +1214,7 @@ public final class NativeString extends ScriptObject {
      *
      * @return new NativeString (arg)
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static Object constructor(final boolean newObj, final Object self, final Object arg) {
         final CharSequence str = JSType.toCharSequence(arg);
         return newObj ? newObj(str) : str.toString();
@@ -1214,8 +1231,42 @@ public final class NativeString extends ScriptObject {
      *
      * @return new NativeString containing the string representation of the arg
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static Object constructor(final boolean newObj, final Object self, final int arg) {
+        final String str = Integer.toString(arg);
+        return newObj ? newObj(str) : str;
+    }
+
+    /**
+     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code int} arg
+     *
+     * Constructor
+     *
+     * @param newObj is this constructor invoked with the new operator
+     * @param self   self reference
+     * @param arg    the arg
+     *
+     * @return new NativeString containing the string representation of the arg
+     */
+    @SpecializedFunction(isConstructor=true)
+    public static Object constructor(final boolean newObj, final Object self, final long arg) {
+        final String str = Long.toString(arg);
+        return newObj ? newObj(str) : str;
+    }
+
+    /**
+     * ECMA 15.5.2.1 new String ( [ value ] ) - special version with exactly one {@code int} arg
+     *
+     * Constructor
+     *
+     * @param newObj is this constructor invoked with the new operator
+     * @param self   self reference
+     * @param arg    the arg
+     *
+     * @return new NativeString containing the string representation of the arg
+     */
+    @SpecializedFunction(isConstructor=true)
+    public static Object constructor(final boolean newObj, final Object self, final double arg) {
         final String str = JSType.toString(arg);
         return newObj ? newObj(str) : str;
     }
@@ -1231,9 +1282,9 @@ public final class NativeString extends ScriptObject {
      *
      * @return new NativeString containing the string representation of the arg
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static Object constructor(final boolean newObj, final Object self, final boolean arg) {
-        final String str = JSType.toString(arg);
+        final String str = Boolean.toString(arg);
         return newObj ? newObj(str) : str;
     }
 
@@ -1281,7 +1332,7 @@ public final class NativeString extends ScriptObject {
         } else if (self != null && self == Global.instance().getStringPrototype()) {
             return "";
         } else {
-            throw typeError( "not.a.string", ScriptRuntime.safeToString(self));
+            throw typeError("not.a.string", ScriptRuntime.safeToString(self));
         }
     }
 
@@ -1310,4 +1361,50 @@ public final class NativeString extends ScriptObject {
         return MH.findStatic(MethodHandles.lookup(), NativeString.class, name, type);
     }
 
+    @Override
+    public LinkLogic getLinkLogic(final Class<? extends LinkLogic> clazz) {
+        if (clazz == CharCodeAtLinkLogic.class) {
+            return CharCodeAtLinkLogic.INSTANCE;
+        }
+        return null;
+    }
+
+    @Override
+    public boolean hasPerInstanceAssumptions() {
+        return false;
+    }
+
+    /**
+     * This is linker logic charCodeAt - when we specialize further methods in NativeString
+     * It may be expanded. It's link check makes sure that we are dealing with a char
+     * sequence and that we are in range
+     */
+    private static final class CharCodeAtLinkLogic extends SpecializedFunction.LinkLogic {
+
+        private static final CharCodeAtLinkLogic INSTANCE = new CharCodeAtLinkLogic();
+
+        @Override
+        public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
+            try {
+                //check that it's a char sequence or throw cce
+                final CharSequence cs = (CharSequence)self;
+                //check that the index, representable as an int, is inside the array
+                final int intIndex = JSType.toInteger(request.getArguments()[1]);
+                return intIndex >= 0 && intIndex < cs.length(); //can link
+            } catch (final ClassCastException | IndexOutOfBoundsException e) {
+                //fallthru
+            }
+            return false;
+        }
+
+        /**
+         * charCodeAt callsites can throw ClassCastException as a mechanism to have them
+         * relinked - this enabled fast checks of the kind of ((IntArrayData)arrayData).push(x)
+         * for an IntArrayData only push - if this fails, a CCE will be thrown and we will relink
+         */
+        @Override
+        public Class<? extends Throwable> getRelinkException() {
+            return ClassCastException.class;
+        }
+    }
 }

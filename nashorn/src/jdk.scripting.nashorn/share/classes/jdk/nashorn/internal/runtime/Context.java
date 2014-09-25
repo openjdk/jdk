@@ -40,6 +40,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -63,7 +64,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+
 import javax.script.ScriptEngine;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -126,6 +129,16 @@ public final class Context {
 
     private static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static MethodType CREATE_PROGRAM_FUNCTION_TYPE = MethodType.methodType(ScriptFunction.class, ScriptObject.class);
+
+    /**
+     * Keeps track of which builtin prototypes and properties have been relinked
+     * Currently we are conservative and associate the name of a builtin class with all
+     * its properties, so it's enough to invalidate a property to break all assumptions
+     * about a prototype. This can be changed to a more fine grained approach, but no one
+     * ever needs this, given the very rare occurance of swapping out only parts of
+     * a builtin v.s. the entire builtin object
+     */
+    private final Map<String, SwitchPoint> builtinSwitchPoints = new HashMap<>();
 
     /* Force DebuggerSupport to be loaded. */
     static {
@@ -1369,6 +1382,36 @@ public final class Context {
         }
         assert false;
         return null;
+    }
+
+    /**
+     * This is a special kind of switchpoint used to guard builtin
+     * properties and prototypes. In the future it might contain
+     * logic to e.g. multiple switchpoint classes.
+     */
+    public static final class BuiltinSwitchPoint extends SwitchPoint {
+
+    }
+
+    /**
+     * Create a new builtin switchpoint and return it
+     * @param name key name
+     * @return new builtin switchpoint
+     */
+    public SwitchPoint newBuiltinSwitchPoint(final String name) {
+        assert builtinSwitchPoints.get(name) == null;
+        final SwitchPoint sp = new BuiltinSwitchPoint();
+        builtinSwitchPoints.put(name, sp);
+        return sp;
+    }
+
+    /**
+     * Return the builtin switchpoint for a particular key name
+     * @param name key name
+     * @return builtin switchpoint or null if none
+     */
+    public SwitchPoint getBuiltinSwitchPoint(final String name) {
+        return builtinSwitchPoints.get(name);
     }
 
 }

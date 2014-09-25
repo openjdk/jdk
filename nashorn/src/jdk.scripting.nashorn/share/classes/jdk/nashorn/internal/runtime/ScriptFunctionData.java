@@ -28,13 +28,13 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Collection;
 import java.util.LinkedList;
 import java.util.List;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
@@ -136,7 +136,7 @@ public abstract class ScriptFunctionData implements Serializable {
         final MethodHandle boundInvoker = bindInvokeHandle(originalInv.createComposableInvoker(), fn, self, args);
 
         if (isConstructor()) {
-            return new CompiledFunction(boundInvoker, bindConstructHandle(originalInv.createComposableConstructor(), fn, args));
+            return new CompiledFunction(boundInvoker, bindConstructHandle(originalInv.createComposableConstructor(), fn, args), null);
         }
 
         return new CompiledFunction(boundInvoker);
@@ -224,18 +224,22 @@ public abstract class ScriptFunctionData implements Serializable {
      * @param callSiteType callsite type
      * @return compiled function object representing the best invoker.
      */
-     final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope) {
-        final CompiledFunction cf = getBest(callSiteType, runtimeScope);
+    final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope) {
+        return getBestInvoker(callSiteType, runtimeScope, CompiledFunction.NO_FUNCTIONS);
+    }
+
+    final CompiledFunction getBestInvoker(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
+        final CompiledFunction cf = getBest(callSiteType, runtimeScope, forbidden);
         assert cf != null;
         return cf;
     }
 
-    final CompiledFunction getBestConstructor(final MethodType callSiteType, final ScriptObject runtimeScope) {
+    final CompiledFunction getBestConstructor(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
         if (!isConstructor()) {
             throw typeError("not.a.constructor", toSource());
         }
         // Constructor call sites don't have a "this", but getBest is meant to operate on "callee, this, ..." style
-        final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class), runtimeScope);
+        final CompiledFunction cf = getBest(callSiteType.insertParameterTypes(1, Object.class), runtimeScope, forbidden);
         return cf;
     }
 
@@ -350,7 +354,7 @@ public abstract class ScriptFunctionData implements Serializable {
      * scope is not known, but that might cause compilation of code that will need more deoptimization passes.
      * @return the best function for the specified call site type.
      */
-    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope) {
+    CompiledFunction getBest(final MethodType callSiteType, final ScriptObject runtimeScope, final Collection<CompiledFunction> forbidden) {
         assert callSiteType.parameterCount() >= 2 : callSiteType; // Must have at least (callee, this)
         assert callSiteType.parameterType(0).isAssignableFrom(ScriptFunction.class) : callSiteType; // Callee must be assignable from script function
 
@@ -363,8 +367,8 @@ public abstract class ScriptFunctionData implements Serializable {
         }
 
         CompiledFunction best = null;
-        for(final CompiledFunction candidate: code) {
-            if(candidate.betterThanFinal(best, callSiteType)) {
+        for (final CompiledFunction candidate: code) {
+            if (!forbidden.contains(candidate) && candidate.betterThanFinal(best, callSiteType)) {
                 best = candidate;
             }
         }
@@ -376,7 +380,7 @@ public abstract class ScriptFunctionData implements Serializable {
     abstract boolean isRecompilable();
 
     CompiledFunction getGeneric(final ScriptObject runtimeScope) {
-        return getBest(getGenericType(), runtimeScope);
+        return getBest(getGenericType(), runtimeScope, CompiledFunction.NO_FUNCTIONS);
     }
 
     /**
@@ -420,7 +424,7 @@ public abstract class ScriptFunctionData implements Serializable {
 
         final List<CompiledFunction> boundList = new LinkedList<>();
         final ScriptObject runtimeScope = fn.getScope();
-        final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(runtimeScope), getGenericConstructor(runtimeScope));
+        final CompiledFunction bindTarget = new CompiledFunction(getGenericInvoker(runtimeScope), getGenericConstructor(runtimeScope), null);
         boundList.add(bind(bindTarget, fn, self, allArgs));
 
         return new FinalScriptFunctionData(name, Math.max(0, getArity() - length), boundList, boundFlags);

@@ -33,13 +33,14 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.Callable;
+
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Getter;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.objects.annotations.Where;
 import jdk.nashorn.internal.runtime.BitVector;
 import jdk.nashorn.internal.runtime.JSType;
@@ -143,7 +144,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param self  self reference
      * @return new NativeRegExp
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static NativeRegExp constructor(final boolean isNew, final Object self) {
         return new NativeRegExp("", "");
     }
@@ -158,7 +159,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param pattern pattern
      * @return new NativeRegExp
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static NativeRegExp constructor(final boolean isNew, final Object self, final Object pattern) {
         return newRegExp(pattern, UNDEFINED);
     }
@@ -174,7 +175,7 @@ public final class NativeRegExp extends ScriptObject {
      * @param flags  flags
      * @return new NativeRegExp
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static NativeRegExp constructor(final boolean isNew, final Object self, final Object pattern, final Object flags) {
         return newRegExp(pattern, flags);
     }
