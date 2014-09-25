@@ -268,6 +268,7 @@ else
   LIBJVM_MAPFILE$(LDNOMAP) = mapfile_reorder
   LFLAGS_VM$(LDNOMAP)      += $(MAPFLAG:FILENAME=$(LIBJVM_MAPFILE))
   LFLAGS_VM                += $(SONAMEFLAG:SONAME=$(LIBJVM))
+  LFLAGS_VM                += -Wl,-z,defs
 
   # JVM is statically linked with libgcc[_s] and libstdc++; this is needed to
   # get around library dependency and compatibility issues. Must use gcc not
