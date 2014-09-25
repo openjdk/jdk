@@ -517,6 +517,13 @@ implements CRTFlags {
             result = sr;
         }
 
+        @Override
+        public void visitTypeUnion(JCTypeUnion tree) {
+            SourceRange sr = new SourceRange(startPos(tree), endPos(tree));
+            sr.mergeWith(csp(tree.alternatives));
+            result = sr;
+        }
+
         public void visitWildcard(JCWildcard tree) {
             result = null;
         }
