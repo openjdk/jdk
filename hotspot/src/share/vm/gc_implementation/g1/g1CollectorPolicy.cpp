@@ -1665,7 +1665,7 @@ G1CollectorPolicy::record_concurrent_mark_cleanup_end(int no_of_gc_threads) {
 // Add the heap region at the head of the non-incremental collection set
 void G1CollectorPolicy::add_old_region_to_cset(HeapRegion* hr) {
   assert(_inc_cset_build_state == Active, "Precondition");
-  assert(!hr->is_young(), "non-incremental add of young region");
+  assert(hr->is_old(), "the region should be old");
 
   assert(!hr->in_collection_set(), "should not already be in the CSet");
   hr->set_in_collection_set(true);
@@ -1811,7 +1811,7 @@ void G1CollectorPolicy::add_region_to_incremental_cset_common(HeapRegion* hr) {
 // Add the region at the RHS of the incremental cset
 void G1CollectorPolicy::add_region_to_incremental_cset_rhs(HeapRegion* hr) {
   // We should only ever be appending survivors at the end of a pause
-  assert( hr->is_survivor(), "Logic");
+  assert(hr->is_survivor(), "Logic");
 
   // Do the 'common' stuff
   add_region_to_incremental_cset_common(hr);
@@ -1829,7 +1829,7 @@ void G1CollectorPolicy::add_region_to_incremental_cset_rhs(HeapRegion* hr) {
 // Add the region to the LHS of the incremental cset
 void G1CollectorPolicy::add_region_to_incremental_cset_lhs(HeapRegion* hr) {
   // Survivors should be added to the RHS at the end of a pause
-  assert(!hr->is_survivor(), "Logic");
+  assert(hr->is_eden(), "Logic");
 
   // Do the 'common' stuff
   add_region_to_incremental_cset_common(hr);
@@ -1989,7 +1989,11 @@ void G1CollectorPolicy::finalize_cset(double target_pause_time_ms, EvacuationInf
   HeapRegion* hr = young_list->first_survivor_region();
   while (hr != NULL) {
     assert(hr->is_survivor(), "badly formed young list");
-    hr->set_young();
+    // There is a convention that all the young regions in the CSet
+    // are tagged as "eden", so we do this for the survivors here. We
+    // use the special set_eden_pre_gc() as it doesn't check that the
+    // region is free (which is not the case here).
+    hr->set_eden_pre_gc();
     hr = hr->get_next_young_region();
   }
 

@@ -193,18 +193,4 @@ public:
   bool apply_to_weak_ref_discovered_field() { return true; }
 };
 
-class UpdateRSetImmediate: public OopsInHeapRegionClosure {
-private:
-  G1RemSet* _g1_rem_set;
-
-  template <class T> void do_oop_work(T* p);
-public:
-  UpdateRSetImmediate(G1RemSet* rs) :
-    _g1_rem_set(rs) {}
-
-  virtual void do_oop(narrowOop* p) { do_oop_work(p); }
-  virtual void do_oop(      oop* p) { do_oop_work(p); }
-};
-
-
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_HPP

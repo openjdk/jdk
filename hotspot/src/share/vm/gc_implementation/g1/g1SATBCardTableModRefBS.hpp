@@ -31,8 +31,6 @@
 #include "oops/oop.inline.hpp"
 #include "utilities/macros.hpp"
 
-#if INCLUDE_ALL_GCS
-
 class DirtyCardQueueSet;
 class G1SATBCardTableLoggingModRefBS;
 
@@ -179,8 +177,5 @@ class G1SATBCardTableLoggingModRefBS: public G1SATBCardTableModRefBS {
   void write_region_work(MemRegion mr)    { invalidate(mr); }
   void write_ref_array_work(MemRegion mr) { invalidate(mr); }
 };
-
-
-#endif // INCLUDE_ALL_GCS
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1SATBCARDTABLEMODREFBS_HPP
