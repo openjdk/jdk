@@ -68,6 +68,15 @@ class frame VALUE_OBJ_CLASS_SPEC {
   // Constructors
   frame();
 
+#ifndef PRODUCT
+  // This is a generic constructor which is only used by pns() in debug.cpp.
+  // pns (i.e. print native stack) uses this constructor to create a starting
+  // frame for stack walking. The implementation of this constructor is platform
+  // dependent (i.e. SPARC doesn't need an 'fp' argument an will ignore it) but
+  // we want to keep the signature generic because pns() is shared code.
+  frame(void* sp, void* fp, void* pc);
+#endif
+
   // Accessors
 
   // pc: Returns the pc at which this frame will continue normally.
