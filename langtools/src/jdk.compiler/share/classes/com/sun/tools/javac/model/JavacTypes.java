@@ -184,8 +184,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         case PACKAGE:
             throw new IllegalArgumentException(componentType.toString());
         }
-        return new Type.ArrayType((Type) componentType, syms.arrayClass,
-                                  Type.noAnnotations);
+        return new Type.ArrayType((Type) componentType, syms.arrayClass);
     }
 
     @DefinedBy(Api.LANGUAGE_MODEL)
@@ -211,8 +210,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
         case DECLARED:
         case ERROR:
         case TYPEVAR:
-            return new Type.WildcardType(bound, bkind, syms.boundClass,
-                                         Type.noAnnotations);
+            return new Type.WildcardType(bound, bkind, syms.boundClass);
         default:
             throw new IllegalArgumentException(bound.toString());
         }
@@ -264,8 +262,7 @@ public class JavacTypes implements javax.lang.model.util.Types {
             }
             // TODO: Would like a way to check that type args match formals.
 
-            return (DeclaredType) new Type.ClassType(outer, targs.toList(), sym,
-                                                     Type.noAnnotations);
+            return (DeclaredType) new Type.ClassType(outer, targs.toList(), sym);
         }
 
     /**
