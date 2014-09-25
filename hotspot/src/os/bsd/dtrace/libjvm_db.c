@@ -595,7 +595,7 @@ static int nmethod_info(Nmethod_t *N)
   /* scopes_pcs */
   err = ps_pread(J->P, nm + OFFSET_nmethod_scopes_pcs_offset, &N->scopes_pcs_beg, SZ32);
   CHECK_FAIL(err);
-  err = ps_pread(J->P, nm + OFFSET_nmethod_handler_table_offset, &N->scopes_pcs_end, SZ32);
+  err = ps_pread(J->P, nm + OFFSET_nmethod_dependencies_offset, &N->scopes_pcs_end, SZ32);
   CHECK_FAIL(err);
 
   /* scopes_data */

@@ -295,7 +295,7 @@ endif
 # making the library:
 $(LIBJVM): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(LIBJVM.o) $(LIBJVM_MAPFILE)
 ifeq ($(filter -sbfast -xsbfast, $(CFLAGS_BROWSE)),)
-	@echo Linking vm...
+	@echo $(LOG_INFO) Linking vm...
 	$(QUIETLY) $(LINK_LIB.CXX/PRE_HOOK)
 	$(QUIETLY) $(LINK_VM) $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM)
 	$(QUIETLY) $(LINK_LIB.CXX/POST_HOOK)
