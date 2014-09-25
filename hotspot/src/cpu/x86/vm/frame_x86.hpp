@@ -187,6 +187,8 @@
 
   frame(intptr_t* sp, intptr_t* fp);
 
+  void init(intptr_t* sp, intptr_t* fp, address pc);
+
   // accessors for the instance variables
   // Note: not necessarily the real 'frame pointer' (see real_fp)
   intptr_t*   fp() const { return _fp; }
