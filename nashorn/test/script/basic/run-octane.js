@@ -54,7 +54,7 @@ function load_bench(arg) {
         }
     }
 
-    print_verbose(arg, "loading '" + arg.name + "' [" + f + "]...");
+    print_verbose(arg, "loading '" + arg.name + "' [" + f + "]... " + file_name);
     load(file_name);
     }
 
@@ -139,7 +139,7 @@ function run_one_benchmark(arg, iters) {
     mean_score /= iters;
     } catch (e) {
     print_always(arg, "*** Aborted and setting score to zero. Reason: " + e);
-    if (e instanceof java.lang.Throwable) {
+    if (is_this_nashorn() && e instanceof java.lang.Throwable) {
         e.printStackTrace();
     }
     mean_score = min_score = max_score = 0;
@@ -148,7 +148,7 @@ function run_one_benchmark(arg, iters) {
 
     var res = mean_score.toFixed(0);
     if (verbose) {
-    res += " ops/minute (" + min_score.toFixed(0) + "-" + max_score.toFixed(0) + "), warmup=" + scores[0].toFixed(0);
+	res += " ops/minute (" + min_score.toFixed(0) + "-" + max_score.toFixed(0) + "), warmup=" + scores[0].toFixed(0);
     }
     print_always(arg, res);
 }

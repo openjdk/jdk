@@ -309,7 +309,7 @@ public final class GlobalConstants implements Loggable {
      *
      * @param find    property lookup
      * @param inv     normal guarded invocation for this setter, as computed by the ScriptObject linker
-     * @param desc    callsite descriptr
+     * @param desc    callsite descriptor
      * @param request link request
      *
      * @return null if failed to set up constant linkage
@@ -358,8 +358,12 @@ public final class GlobalConstants implements Loggable {
      * @param c constant value
      * @return method handle (with dummy receiver) that returns this constant
      */
+    public static MethodHandle staticConstantGetter(final Object c) {
+        return MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+    }
+
     private MethodHandle constantGetter(final Object c) {
-        final MethodHandle mh = MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+        final MethodHandle mh = staticConstantGetter(c);
         if (log.isEnabled()) {
             return MethodHandleFactory.addDebugPrintout(log, Level.FINEST, mh, "getting as constant");
         }
@@ -376,8 +380,12 @@ public final class GlobalConstants implements Loggable {
      * @return resulting getter, or null if failed to create constant
      */
     synchronized GuardedInvocation findGetMethod(final FindProperty find, final ScriptObject receiver, final CallSiteDescriptor desc) {
-        // Also return null if property may have side effects
-        if ((GLOBAL_ONLY && !find.getOwner().isGlobal()) || find.getProperty() instanceof UserAccessorProperty) {
+        // Only use constant getter for fast scope access, because the receiver may change between invocations
+        // for slow-scope and non-scope callsites.
+        // Also return null for user accessor properties as they may have side effects.
+        if (!NashornCallSiteDescriptor.isFastScope(desc)
+                || (GLOBAL_ONLY && !find.getOwner().isGlobal())
+                || find.getProperty() instanceof UserAccessorProperty) {
             return null;
         }
 

@@ -429,7 +429,6 @@ public final class OptimisticTypesPersistence {
     }
 
     private static void doCleanup() throws IOException {
-        final long start = System.nanoTime();
         final Path[] files = getAllRegularFilesInLastModifiedOrder();
         final int nFiles = files.length;
         final int filesToDelete = Math.max(0, nFiles - MAX_FILES);
@@ -445,7 +444,6 @@ public final class OptimisticTypesPersistence {
             }
             files[i] = null; // gc eligible
         };
-        final long duration = System.nanoTime() - start;
     }
 
     private static Path[] getAllRegularFilesInLastModifiedOrder() throws IOException {
@@ -497,7 +495,7 @@ public final class OptimisticTypesPersistence {
         private static long getTime(final Path path) {
             try {
                 return Files.getLastModifiedTime(path).toMillis();
-            } catch (IOException e) {
+            } catch (final IOException e) {
                 // All files for which we can't retrieve the last modified date will be considered oldest.
                 return -1L;
             }

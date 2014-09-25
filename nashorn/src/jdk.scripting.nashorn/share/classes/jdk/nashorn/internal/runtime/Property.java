@@ -28,7 +28,6 @@ package jdk.nashorn.internal.runtime;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.CONFIGURABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.ENUMERABLE;
 import static jdk.nashorn.internal.runtime.PropertyDescriptor.WRITABLE;
-
 import java.io.Serializable;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.SwitchPoint;
@@ -84,6 +83,9 @@ public abstract class Property implements Serializable {
      */
     public static final int IS_NASGEN_PRIMITIVE     = 1 << 6;
 
+    /** Is this a builtin property, e.g. Function.prototype.apply */
+    public static final int IS_BUILTIN = 1 << 7;
+
     /** Is this property bound to a receiver? This means get/set operations will be delegated to
      *  a statically defined object instead of the object passed as callsite parameter. */
     public static final int IS_BOUND                = 1 << 7;
@@ -101,7 +103,7 @@ public abstract class Property implements Serializable {
     private final int slot;
 
     /** SwitchPoint that is invalidated when property is changed, optional */
-    protected transient SwitchPoint changeCallback;
+    protected transient SwitchPoint builtinSwitchPoint;
 
     private static final long serialVersionUID = 2099814273074501176L;
 
@@ -125,10 +127,10 @@ public abstract class Property implements Serializable {
      * @param property source property
      */
     Property(final Property property, final int flags) {
-        this.key            = property.key;
-        this.slot           = property.slot;
-        this.changeCallback = property.changeCallback;
-        this.flags          = flags;
+        this.key                = property.key;
+        this.slot               = property.slot;
+        this.builtinSwitchPoint = property.builtinSwitchPoint;
+        this.flags              = flags;
     }
 
     /**
@@ -182,8 +184,26 @@ public abstract class Property implements Serializable {
      * changed
      * @param sp SwitchPoint to use for change callback
      */
-    public final void setChangeCallback(final SwitchPoint sp) {
-        this.changeCallback = sp;
+    public final void setBuiltinSwitchPoint(final SwitchPoint sp) {
+        this.builtinSwitchPoint = sp;
+    }
+
+    /**
+     * Builtin properties have an invalidation switchpoint that is
+     * invalidated when they are set, this is a getter for it
+     * @return builtin switchpoint, or null if none
+     */
+    public final SwitchPoint getBuiltinSwitchPoint() {
+        return builtinSwitchPoint;
+    }
+
+    /**
+     * Checks if this is a builtin property, this means that it has
+     * a builtin switchpoint that hasn't been invalidated by a setter
+     * @return true if builtin, untouched (unset) property
+     */
+    public boolean isBuiltin() {
+        return builtinSwitchPoint != null && !builtinSwitchPoint.hasBeenInvalidated();
     }
 
     /**
