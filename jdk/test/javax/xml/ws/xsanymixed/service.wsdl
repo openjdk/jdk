@@ -1,0 +1,87 @@
+<?xml version="1.0" encoding="UTF-8" standalone="no"?>
+<!--
+  Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+  DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
+
+  This code is free software; you can redistribute it and/or modify it
+  under the terms of the GNU General Public License version 2 only, as
+  published by the Free Software Foundation.
+
+  This code is distributed in the hope that it will be useful, but WITHOUT
+  ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
+  FITNESS FOR A PARTICULAR PURPOSE.  See the GNU General Public License
+  version 2 for more details (a copy is included in the LICENSE file that
+  accompanied this code).
+
+  You should have received a copy of the GNU General Public License version
+  2 along with this work; if not, write to the Free Software Foundation,
+  Inc., 51 Franklin St, Fifth Floor, Boston, MA 02110-1301 USA.
+
+  Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
+  or visit www.oracle.com if you need additional information or have any
+  questions.
+-->
+<definitions xmlns="http://schemas.xmlsoap.org/wsdl/"
+             xmlns:soap="http://schemas.xmlsoap.org/wsdl/soap/"
+             xmlns:tns="http://ws.somewhere.org/"
+             xmlns:xsd="http://www.w3.org/2001/XMLSchema"
+             xmlns:wsam="http://www.w3.org/2007/05/addressing/metadata"
+             name="TestService"
+             targetNamespace="http://ws.somewhere.org/">
+
+    <types>
+        <xsd:schema targetNamespace="http://ws.somewhere.org/" version="1.0"
+                    xmlns:xsd="http://www.w3.org/2001/XMLSchema" xmlns:tns="http://ws.somewhere.org/">
+
+            <xsd:element type="tns:echoRequest" name="echoRequest"/>
+            <xsd:element type="tns:echoResponse" name="echoResponse"/>
+
+            <xsd:complexType name="echoRequest" mixed="true">
+                <xsd:sequence>
+                    <xsd:any namespace="##any" processContents="skip" minOccurs="1" maxOccurs="10"/>
+                </xsd:sequence>
+            </xsd:complexType>
+
+            <xsd:complexType name="echoResponse" mixed="true">
+                <xsd:sequence>
+                    <xsd:any namespace="##any" processContents="skip" minOccurs="1" maxOccurs="10"/>
+                </xsd:sequence>
+            </xsd:complexType>
+        </xsd:schema>
+    </types>
+
+    <message name="echoRequest">
+        <part element="tns:echoRequest" name="parameters"/>
+    </message>
+    <message name="echoResponse">
+        <part element="tns:echoResponse" name="parameters"/>
+    </message>
+
+    <portType name="TestPort">
+        <operation name="echo">
+            <input message="tns:echoRequest" wsam:Action="http://ws.somewhere.org/tester/echoRequest"/>
+            <output message="tns:echoResponse" wsam:Action="http://ws.somewhere.org/tester/echoResponse"/>
+        </operation>
+    </portType>
+
+    <binding name="TestServicePortBinding" type="tns:TestPort">
+        <soap:binding style="document"
+                      transport="http://schemas.xmlsoap.org/soap/http"/>
+
+        <operation name="echo">
+            <soap:operation soapAction=""/>
+            <input>
+                <soap:body use="literal"/>
+            </input>
+            <output>
+                <soap:body use="literal"/>
+            </output>
+        </operation>
+    </binding>
+
+    <service name="TestService">
+        <port binding="tns:TestServicePortBinding" name="TestPort">
+            <soap:address location="http://localhost/ws/tester"/>
+        </port>
+    </service>
+</definitions>

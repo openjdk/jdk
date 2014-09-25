@@ -126,39 +126,30 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
     DWORD read = 0;
     BOOL result = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
-    DWORD lowPos = 0;
-    long highPos = 0;
-    DWORD lowOffset = 0;
-    long highOffset = 0;
+    LARGE_INTEGER currPos;
+    OVERLAPPED ov;
 
     if (h == INVALID_HANDLE_VALUE) {
         JNU_ThrowIOExceptionWithLastError(env, "Invalid handle");
         return IOS_THROWN;
     }
 
-    lowPos = SetFilePointer(h, 0, &highPos, FILE_CURRENT);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
+    currPos.QuadPart = 0;
+    result = SetFilePointerEx(h, currPos, &currPos, FILE_CURRENT);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        return IOS_THROWN;
     }
 
-    lowOffset = (DWORD)offset;
-    highOffset = (DWORD)(offset >> 32);
-    lowOffset = SetFilePointer(h, lowOffset, &highOffset, FILE_BEGIN);
-    if (lowOffset == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
-    }
+    ZeroMemory(&ov, sizeof(ov));
+    ov.Offset = (DWORD)offset;
+    ov.OffsetHigh = (DWORD)(offset >> 32);
 
     result = ReadFile(h,                /* File handle to read */
                       (LPVOID)address,  /* address to put data */
                       len,              /* number of bytes to read */
                       &read,            /* number of bytes read */
-                      NULL);              /* struct with offset */
+                      &ov);             /* position to read from */
 
     if (result == 0) {
         int error = GetLastError();
@@ -168,17 +159,18 @@ Java_sun_nio_ch_FileDispatcherImpl_pread0(JNIEnv *env, jclass clazz, jobject fdo
         if (error == ERROR_NO_DATA) {
             return IOS_UNAVAILABLE;
         }
-        JNU_ThrowIOExceptionWithLastError(env, "Read failed");
-        return IOS_THROWN;
-    }
-
-    lowPos = SetFilePointer(h, lowPos, &highPos, FILE_BEGIN);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        if (error != ERROR_HANDLE_EOF) {
+            JNU_ThrowIOExceptionWithLastError(env, "Read failed");
             return IOS_THROWN;
         }
     }
+
+    result = SetFilePointerEx(h, currPos, NULL, FILE_BEGIN);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        return IOS_THROWN;
+    }
+
     return convertReturnVal(env, (jint)read, JNI_TRUE);
 }
 
@@ -194,18 +186,18 @@ Java_sun_nio_ch_FileDispatcherImpl_write0(JNIEnv *env, jclass clazz, jobject fdo
         OVERLAPPED ov;
         LPOVERLAPPED lpOv;
         if (append == JNI_TRUE) {
+            ZeroMemory(&ov, sizeof(ov));
             ov.Offset = (DWORD)0xFFFFFFFF;
             ov.OffsetHigh = (DWORD)0xFFFFFFFF;
-            ov.hEvent = NULL;
             lpOv = &ov;
         } else {
             lpOv = NULL;
         }
-        result = WriteFile(h,           /* File handle to write */
-                      (LPCVOID)address, /* pointers to the buffers */
-                      len,              /* number of bytes to write */
-                      &written,         /* receives number of bytes written */
-                      lpOv);            /* overlapped struct */
+        result = WriteFile(h,                /* File handle to write */
+                           (LPCVOID)address, /* pointer to the buffer */
+                           len,              /* number of bytes to write */
+                           &written,         /* receives number of bytes written */
+                           lpOv);            /* overlapped struct */
     }
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
@@ -232,9 +224,9 @@ Java_sun_nio_ch_FileDispatcherImpl_writev0(JNIEnv *env, jclass clazz, jobject fd
         OVERLAPPED ov;
         LPOVERLAPPED lpOv;
         if (append == JNI_TRUE) {
+            ZeroMemory(&ov, sizeof(ov));
             ov.Offset = (DWORD)0xFFFFFFFF;
             ov.OffsetHigh = (DWORD)0xFFFFFFFF;
-            ov.hEvent = NULL;
             lpOv = &ov;
         } else {
             lpOv = NULL;
@@ -270,46 +262,35 @@ Java_sun_nio_ch_FileDispatcherImpl_pwrite0(JNIEnv *env, jclass clazz, jobject fd
     BOOL result = 0;
     DWORD written = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
-    DWORD lowPos = 0;
-    long highPos = 0;
-    DWORD lowOffset = 0;
-    long highOffset = 0;
+    LARGE_INTEGER currPos;
+    OVERLAPPED ov;
 
-    lowPos = SetFilePointer(h, 0, &highPos, FILE_CURRENT);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
+    currPos.QuadPart = 0;
+    result = SetFilePointerEx(h, currPos, &currPos, FILE_CURRENT);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        return IOS_THROWN;
     }
 
-    lowOffset = (DWORD)offset;
-    highOffset = (DWORD)(offset >> 32);
-    lowOffset = SetFilePointer(h, lowOffset, &highOffset, FILE_BEGIN);
-    if (lowOffset == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
-    }
+    ZeroMemory(&ov, sizeof(ov));
+    ov.Offset = (DWORD)offset;
+    ov.OffsetHigh = (DWORD)(offset >> 32);
 
-    result = WriteFile(h,               /* File handle to write */
-                      (LPCVOID)address, /* pointers to the buffers */
-                      len,              /* number of bytes to write */
-                      &written,         /* receives number of bytes written */
-                      NULL);            /* no overlapped struct */
+    result = WriteFile(h,                /* File handle to write */
+                       (LPCVOID)address, /* pointer to the buffer */
+                       len,              /* number of bytes to write */
+                       &written,         /* receives number of bytes written */
+                       &ov);             /* position to write at */
 
     if ((h == INVALID_HANDLE_VALUE) || (result == 0)) {
         JNU_ThrowIOExceptionWithLastError(env, "Write failed");
         return IOS_THROWN;
     }
 
-    lowPos = SetFilePointer(h, lowPos, &highPos, FILE_BEGIN);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
-            return IOS_THROWN;
-        }
+    result = SetFilePointerEx(h, currPos, NULL, FILE_BEGIN);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Seek failed");
+        return IOS_THROWN;
     }
 
     return convertReturnVal(env, (jint)written, JNI_FALSE);
@@ -342,20 +323,17 @@ JNIEXPORT jint JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
                                              jobject fdo, jlong size)
 {
-    DWORD lowPos = 0;
-    long highPos = 0;
     BOOL result = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
+    LARGE_INTEGER offset;
 
-    lowPos = (DWORD)size;
-    highPos = (long)(size >> 32);
-    lowPos = SetFilePointer(h, lowPos, &highPos, FILE_BEGIN);
-    if (lowPos == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
-            return IOS_THROWN;
-        }
+    offset.QuadPart = size;
+    result = SetFilePointerEx(h, offset, NULL, FILE_BEGIN);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
+        return IOS_THROWN;
     }
+
     result = SetEndOfFile(h);
     if (result == 0) {
         JNU_ThrowIOExceptionWithLastError(env, "Truncation failed");
@@ -367,18 +345,16 @@ Java_sun_nio_ch_FileDispatcherImpl_truncate0(JNIEnv *env, jobject this,
 JNIEXPORT jlong JNICALL
 Java_sun_nio_ch_FileDispatcherImpl_size0(JNIEnv *env, jobject this, jobject fdo)
 {
-    DWORD sizeLow = 0;
-    DWORD sizeHigh = 0;
+    BOOL result = 0;
     HANDLE h = (HANDLE)(handleval(env, fdo));
+    LARGE_INTEGER size;
 
-    sizeLow = GetFileSize(h, &sizeHigh);
-    if (sizeLow == ((DWORD)-1)) {
-        if (GetLastError() != ERROR_SUCCESS) {
-            JNU_ThrowIOExceptionWithLastError(env, "Size failed");
-            return IOS_THROWN;
-        }
+    result = GetFileSizeEx(h, &size);
+    if (result == 0) {
+        JNU_ThrowIOExceptionWithLastError(env, "Size failed");
+        return IOS_THROWN;
     }
-    return (((jlong)sizeHigh) << 32) | sizeLow;
+    return (jlong)size.QuadPart;
 }
 
 JNIEXPORT jint JNICALL
@@ -407,7 +383,7 @@ Java_sun_nio_ch_FileDispatcherImpl_lock0(JNIEnv *env, jobject this, jobject fdo,
     if (result == 0) {
         int error = GetLastError();
         if (error == ERROR_IO_PENDING) {
-            LPDWORD dwBytes;
+            DWORD dwBytes;
             result = GetOverlappedResult(h, &o, &dwBytes, TRUE);
             if (result != 0) {
                 return sun_nio_ch_FileDispatcherImpl_LOCKED;
@@ -442,8 +418,19 @@ Java_sun_nio_ch_FileDispatcherImpl_release0(JNIEnv *env, jobject this,
     o.Offset = lowPos;
     o.OffsetHigh = highPos;
     result = UnlockFileEx(h, 0, lowNumBytes, highNumBytes, &o);
-    if (result == 0 && GetLastError() != ERROR_NOT_LOCKED) {
-        JNU_ThrowIOExceptionWithLastError(env, "Release failed");
+    if (result == 0) {
+        int error = GetLastError();
+        if (error == ERROR_IO_PENDING) {
+            DWORD dwBytes;
+            result = GetOverlappedResult(h, &o, &dwBytes, TRUE);
+            if (result == 0) {
+                return;
+            }
+            error = GetLastError();
+        }
+        if (error != ERROR_NOT_LOCKED) {
+            JNU_ThrowIOExceptionWithLastError(env, "Release failed");
+        }
     }
 }
 
@@ -464,8 +451,7 @@ Java_sun_nio_ch_FileDispatcherImpl_close0(JNIEnv *env, jclass clazz, jobject fdo
 }
 
 JNIEXPORT void JNICALL
-Java_sun_nio_ch_FileDispatcherImpl_closeByHandle(JNIEnv *env, jclass clazz,
-                                             jlong fd)
+Java_sun_nio_ch_FileDispatcherImpl_closeByHandle(JNIEnv *env, jclass clazz, jlong fd)
 {
     closeFile(env, fd);
 }

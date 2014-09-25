@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -76,6 +76,11 @@ public class Mac implements Cloneable {
 
     private static final Debug debug =
                         Debug.getInstance("jca", "Mac");
+
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("mac");
 
     // The provider
     private Provider provider;
@@ -413,6 +418,11 @@ public class Mac implements Cloneable {
             throw new InvalidKeyException("init() failed", e);
         }
         initialized = true;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Mac." + algorithm + " algorithm from: " +
+                this.provider.getName());
+        }
     }
 
     /**
@@ -435,6 +445,11 @@ public class Mac implements Cloneable {
             chooseProvider(key, params);
         }
         initialized = true;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("Mac." + algorithm + " algorithm from: " +
+                this.provider.getName());
+        }
     }
 
     /**

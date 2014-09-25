@@ -37,6 +37,8 @@ import javax.crypto.SecretKey;
 import javax.security.auth.DestroyFailedException;
 import javax.security.auth.callback.*;
 
+import sun.security.util.Debug;
+
 /**
  * This class represents a storage facility for cryptographic
  * keys and certificates.
@@ -176,6 +178,11 @@ import javax.security.auth.callback.*;
  */
 
 public class KeyStore {
+
+    private static final Debug pdebug =
+                        Debug.getInstance("provider", "Provider");
+    private static final boolean skipDebug =
+        Debug.isOn("engine=") && !Debug.isOn("keystore");
 
     /*
      * Constant to lookup in the Security properties file to determine
@@ -801,6 +808,11 @@ public class KeyStore {
         this.keyStoreSpi = keyStoreSpi;
         this.provider = provider;
         this.type = type;
+
+        if (!skipDebug && pdebug != null) {
+            pdebug.println("KeyStore." + type.toUpperCase() + " type from: " +
+                this.provider.getName());
+        }
     }
 
     /**
