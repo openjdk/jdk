@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -104,7 +104,15 @@ public class Debug {
         System.err.println("codebase=<URL>");
         System.err.println("              only dump output if specified codebase");
         System.err.println("              is being checked");
-
+        System.err.println();
+        System.err.println("The following can be used with provider:");
+        System.err.println();
+        System.err.println("engine=<engines>");
+        System.err.println("              only dump output for the specified list");
+        System.err.println("              of JCA engines. Supported values:");
+        System.err.println("              Cipher, KeyAgreement, KeyGenerator,");
+        System.err.println("              KeyPairGenerator, KeyStore, Mac,");
+        System.err.println("              MessageDigest, SecureRandom, Signature.");
         System.err.println();
         System.err.println("Note: Separate multiple options with a comma");
         System.exit(0);
