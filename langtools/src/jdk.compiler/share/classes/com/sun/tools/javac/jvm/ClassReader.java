@@ -543,18 +543,16 @@ public class ClassReader {
         case '+': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.EXTENDS, syms.boundClass,
-                                    Type.noAnnotations);
+            return new WildcardType(t, BoundKind.EXTENDS, syms.boundClass);
         }
         case '*':
             sigp++;
             return new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                    syms.boundClass, Type.noAnnotations);
+                                    syms.boundClass);
         case '-': {
             sigp++;
             Type t = sigToType();
-            return new WildcardType(t, BoundKind.SUPER, syms.boundClass,
-                                    Type.noAnnotations);
+            return new WildcardType(t, BoundKind.SUPER, syms.boundClass);
         }
         case 'B':
             sigp++;
@@ -599,8 +597,7 @@ public class ClassReader {
             return syms.booleanType;
         case '[':
             sigp++;
-            return new ArrayType(sigToType(), syms.arrayClass,
-                                 Type.noAnnotations);
+            return new ArrayType(sigToType(), syms.arrayClass);
         case '(':
             sigp++;
             List<Type> argtypes = sigToTypes(')');
@@ -655,8 +652,7 @@ public class ClassReader {
                 try {
                     return (outer == Type.noType) ?
                             t.erasure(types) :
-                        new ClassType(outer, List.<Type>nil(), t,
-                                      Type.noAnnotations);
+                        new ClassType(outer, List.<Type>nil(), t);
                 } finally {
                     sbp = startSbp;
                 }
@@ -666,8 +662,7 @@ public class ClassReader {
                 ClassSymbol t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                          startSbp,
                                                          sbp - startSbp));
-                outer = new ClassType(outer, sigToTypes('>'), t,
-                                      Type.noAnnotations) {
+                outer = new ClassType(outer, sigToTypes('>'), t) {
                         boolean completed = false;
                         @Override @DefinedBy(Api.LANGUAGE_MODEL)
                         public Type getEnclosingType() {
@@ -730,8 +725,7 @@ public class ClassReader {
                     t = syms.enterClass(names.fromUtf(signatureBuffer,
                                                  startSbp,
                                                  sbp - startSbp));
-                    outer = new ClassType(outer, List.<Type>nil(), t,
-                                          Type.noAnnotations);
+                    outer = new ClassType(outer, List.<Type>nil(), t);
                 }
                 signatureBuffer[sbp++] = (byte)'$';
                 continue;
@@ -794,8 +788,7 @@ public class ClassReader {
         Name name = names.fromUtf(signature, start, sigp - start);
         TypeVar tvar;
         if (sigEnterPhase) {
-            tvar = new TypeVar(name, currentOwner, syms.botType,
-                               Type.noAnnotations);
+            tvar = new TypeVar(name, currentOwner, syms.botType);
             typevars.enter(tvar.tsym);
         } else {
             tvar = (TypeVar)findTypeVar(name);
@@ -834,8 +827,7 @@ public class ClassReader {
                 // we don't know for sure if this owner is correct.  It could
                 // be a method and there is no way to tell before reading the
                 // enclosing method attribute.
-                TypeVar t = new TypeVar(name, currentOwner, syms.botType,
-                                        Type.noAnnotations);
+                TypeVar t = new TypeVar(name, currentOwner, syms.botType);
                 missingTypeVariables = missingTypeVariables.prepend(t);
                 // System.err.println("Missing type var " + name);
                 return t;

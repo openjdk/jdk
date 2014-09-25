@@ -396,8 +396,7 @@ public class TypeAnnotations {
             }
             if (type.hasTag(TypeTag.ARRAY)) {
                 Type.ArrayType arType = (Type.ArrayType) type;
-                Type.ArrayType tomodify = new Type.ArrayType(null, arType.tsym,
-                                                             Type.noAnnotations);
+                Type.ArrayType tomodify = new Type.ArrayType(null, arType.tsym);
                 Type toreturn;
                 if (type.isAnnotated()) {
                     toreturn = tomodify.annotatedType(type.getAnnotationMirrors());
@@ -414,13 +413,11 @@ public class TypeAnnotations {
                         Type aelemtype = arType.elemtype;
                         arType = (Type.ArrayType) aelemtype;
                         ArrayType prevToMod = tomodify;
-                        tomodify = new Type.ArrayType(null, arType.tsym,
-                                                      Type.noAnnotations);
+                        tomodify = new Type.ArrayType(null, arType.tsym);
                         prevToMod.elemtype = tomodify.annotatedType(arType.elemtype.getAnnotationMirrors());
                     } else {
                         arType = (Type.ArrayType) arType.elemtype;
-                        tomodify.elemtype = new Type.ArrayType(null, arType.tsym,
-                                                               Type.noAnnotations);
+                        tomodify.elemtype = new Type.ArrayType(null, arType.tsym);
                         tomodify = (Type.ArrayType) tomodify.elemtype;
                     }
                     arTree = arrayTypeTree(arTree.elemtype);
@@ -582,7 +579,7 @@ public class TypeAnnotations {
                     } else {
                         ClassType ret = new ClassType(t.getEnclosingType().accept(this, s),
                                                       t.typarams_field, t.tsym,
-                                                      t.getAnnotationMirrors());
+                                                      t.getMetadata());
                         ret.all_interfaces_field = t.all_interfaces_field;
                         ret.allparams_field = t.allparams_field;
                         ret.interfaces_field = t.interfaces_field;
@@ -600,7 +597,7 @@ public class TypeAnnotations {
                 @Override
                 public Type visitArrayType(ArrayType t, List<TypeCompound> s) {
                     ArrayType ret = new ArrayType(t.elemtype.accept(this, s), t.tsym,
-                                                  t.getAnnotationMirrors());
+                                                  t.getMetadata());
                     return ret;
                 }
 

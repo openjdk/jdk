@@ -72,6 +72,24 @@ import static com.sun.tools.javac.code.TypeTag.*;
  */
 public abstract class Type extends AnnoConstruct implements TypeMirror {
 
+    /**
+     * Type metadata,  Should be {@code null} for the default value.
+     *
+     * Note: it is an invariant that for any {@code TypeMetadata}
+     * class, a given {@code Type} may have at most one metadata array
+     * entry of that class.
+     */
+    protected final TypeMetadata metadata;
+
+    public TypeMetadata getMetadata() {
+        return metadata;
+    }
+
+    public TypeMetadata.Element getMetadataOfKind(final TypeMetadata.Element.Kind kind) {
+        return metadata != null ? metadata.get(kind) : null;
+    }
+
+
     /** Constant type: no type at all. */
     public static final JCNoType noType = new JCNoType() {
         @Override @DefinedBy(Api.LANGUAGE_MODEL)
@@ -96,9 +114,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
     };
 
-    public static final List<Attribute.TypeCompound> noAnnotations =
-        List.nil();
-
     /** If this switch is turned on, the names of type variables
      *  and anonymous classes are printed with hashcodes appended.
      */
@@ -107,10 +122,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     /** The defining class / interface / package / type variable.
      */
     public TypeSymbol tsym;
-
-    /** The type annotations on this type.
-     */
-    protected final List<Attribute.TypeCompound> annos;
 
     /**
      * Checks if the current type tag is equal to the given tag.
@@ -198,13 +209,11 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     /** Define a type given its tag, type symbol, and type annotations
      */
-    public Type(TypeSymbol tsym, List<Attribute.TypeCompound> annos) {
-        if(annos == null) {
-            Assert.error("Attempting to create type " + tsym + " with null type annotations");
-        }
 
+    public Type(TypeSymbol tsym, TypeMetadata metadata) {
+        Assert.checkNonNull(metadata);
         this.tsym = tsym;
-        this.annos = annos;
+        this.metadata = metadata;
     }
 
     /** An abstract class for mappings from types to types
@@ -253,15 +262,39 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         return this;
     }
 
-    public abstract Type annotatedType(List<Attribute.TypeCompound> annos);
+    /**
+     * Create a new type with exactly the given metadata.  The
+     * argument is guaranteed to always be non-empty, and should have
+     * already been copied/combined with the current type's metadata.
+     * This is used internally by other methods.
+     *
+     */
+    public abstract Type clone(TypeMetadata md);
+
+    public Type combineMetadata(final TypeMetadata.Element md) {
+        return clone(metadata.combine(md));
+    }
+
+    public Type annotatedType(final List<Attribute.TypeCompound> annos) {
+        final TypeMetadata.Element annoMetadata = new TypeMetadata.Annotations(annos);
+        return combineMetadata(annoMetadata);
+    }
 
     public boolean isAnnotated() {
-        return !annos.isEmpty();
+        final TypeMetadata.Annotations metadata =
+            (TypeMetadata.Annotations)getMetadataOfKind(TypeMetadata.Element.Kind.ANNOTATIONS);
+
+        return null != metadata && !metadata.getAnnotations().isEmpty();
     }
+
+    private static final List<Attribute.TypeCompound> noAnnotations = List.nil();
 
     @Override @DefinedBy(Api.LANGUAGE_MODEL)
     public List<Attribute.TypeCompound> getAnnotationMirrors() {
-        return annos;
+        final TypeMetadata.Annotations metadata =
+            (TypeMetadata.Annotations)getMetadataOfKind(TypeMetadata.Element.Kind.ANNOTATIONS);
+
+        return metadata == null ? noAnnotations : metadata.getAnnotations();
     }
 
 
@@ -296,7 +329,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             if (prefix) {
                 sb.append(" ");
             }
-            sb.append(annos);
+            sb.append(getAnnotationMirrors());
             sb.append(" ");
         }
     }
@@ -524,19 +557,19 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         TypeTag tag;
 
         public JCPrimitiveType(TypeTag tag, TypeSymbol tsym) {
-            this(tag, tsym, noAnnotations);
+            this(tag, tsym, TypeMetadata.empty);
         }
 
-        public JCPrimitiveType(TypeTag tag, TypeSymbol tsym,
-                               List<Attribute.TypeCompound> annos) {
-            super(tsym, annos);
+        private JCPrimitiveType(TypeTag tag, TypeSymbol tsym,
+                                TypeMetadata metadata) {
+            super(tsym, metadata);
             this.tag = tag;
             Assert.check(tag.isPrimitive);
         }
 
         @Override
-        public Type annotatedType(List<Attribute.TypeCompound> annos) {
-            return new JCPrimitiveType(tag, tsym, annos);
+        public JCPrimitiveType clone(TypeMetadata md) {
+            return new JCPrimitiveType(tag, tsym, md);
         }
 
         @Override
@@ -565,7 +598,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         @Override
         public Type constType(Object constValue) {
             final Object value = constValue;
-            return new JCPrimitiveType(tag, tsym, annos) {
+            return new JCPrimitiveType(tag, tsym, metadata) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -649,35 +682,30 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym) {
-            this(type, kind, tsym, null, noAnnotations);
+            this(type, kind, tsym, null, TypeMetadata.empty);
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
-                            List<Attribute.TypeCompound> annos) {
-            this(type, kind, tsym, null, annos);
-        }
-
-        public WildcardType(WildcardType t, TypeVar bound,
-                            List<Attribute.TypeCompound> annos) {
-            this(t.type, t.kind, t.tsym, bound, annos);
+                            TypeMetadata metadata) {
+            this(type, kind, tsym, null, metadata);
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
                             TypeVar bound) {
-            this(type, kind, tsym, noAnnotations);
+            this(type, kind, tsym, bound, TypeMetadata.empty);
         }
 
         public WildcardType(Type type, BoundKind kind, TypeSymbol tsym,
-                            TypeVar bound, List<Attribute.TypeCompound> annos) {
-            super(tsym, annos);
+                            TypeVar bound, TypeMetadata metadata) {
+            super(tsym, metadata);
             this.type = Assert.checkNonNull(type);
             this.kind = kind;
             this.bound = bound;
         }
 
         @Override
-        public WildcardType annotatedType(List<Attribute.TypeCompound> annos) {
-            return new WildcardType(type, kind, tsym, bound, annos);
+        public WildcardType clone(TypeMetadata md) {
+            return new WildcardType(type, kind, tsym, bound, md);
         }
 
         @Override
@@ -747,7 +775,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             if (t == type)
                 return this;
             else
-                return new WildcardType(t, kind, tsym, bound, annos);
+                return new WildcardType(t, kind, tsym, bound, metadata);
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -808,31 +836,23 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public List<Type> all_interfaces_field;
 
         public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym) {
-            this(outer, typarams, tsym, noAnnotations);
+            this(outer, typarams, tsym, TypeMetadata.empty);
         }
 
         public ClassType(Type outer, List<Type> typarams, TypeSymbol tsym,
-                         List<Attribute.TypeCompound> annos) {
-            super(tsym, annos);
+                         TypeMetadata metadata) {
+            super(tsym, metadata);
             this.outer_field = outer;
             this.typarams_field = typarams;
             this.allparams_field = null;
             this.supertype_field = null;
             this.interfaces_field = null;
-            /*
-            // this can happen during error recovery
-            assert
-                outer.isParameterized() ?
-                typarams.length() == tsym.type.typarams().length() :
-                outer.isRaw() ?
-                typarams.length() == 0 :
-                true;
-            */
         }
 
         @Override
-        public ClassType annotatedType(List<Attribute.TypeCompound> annos) {
-            final ClassType out = new ClassType(outer_field, typarams_field, tsym, annos);
+        public ClassType clone(TypeMetadata md) {
+            final ClassType out =
+                new ClassType(outer_field, typarams_field, tsym, md);
             out.allparams_field = allparams_field;
             out.supertype_field = supertype_field;
             out.interfaces_field = interfaces_field;
@@ -851,7 +871,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public Type constType(Object constValue) {
             final Object value = constValue;
-            return new ClassType(getEnclosingType(), typarams_field, tsym, annos) {
+            return new ClassType(getEnclosingType(), typarams_field, tsym, metadata) {
                     @Override
                     public Object constValue() {
                         return value;
@@ -987,7 +1007,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             List<Type> typarams = getTypeArguments();
             List<Type> typarams1 = map(typarams, f);
             if (outer1 == outer && typarams1 == typarams) return this;
-            else return new ClassType(outer1, typarams1, tsym, annos);
+            else return new ClassType(outer1, typarams1, tsym, metadata);
         }
 
         public boolean contains(Type elem) {
@@ -1016,12 +1036,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
     public static class ErasedClassType extends ClassType {
         public ErasedClassType(Type outer, TypeSymbol tsym) {
-            this(outer, tsym, noAnnotations);
+            super(outer, List.<Type>nil(), tsym);
         }
 
         public ErasedClassType(Type outer, TypeSymbol tsym,
-                               List<Attribute.TypeCompound> annos) {
-            super(outer, List.<Type>nil(), tsym, annos);
+                               TypeMetadata metadata) {
+            super(outer, List.<Type>nil(), tsym, metadata);
         }
 
         @Override
@@ -1037,12 +1057,17 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public UnionClassType(ClassType ct, List<? extends Type> alternatives) {
             // Presently no way to refer to this type directly, so we
             // cannot put annotations directly on it.
-            super(ct.outer_field, ct.typarams_field, ct.tsym, noAnnotations);
+            super(ct.outer_field, ct.typarams_field, ct.tsym);
             allparams_field = ct.allparams_field;
             supertype_field = ct.supertype_field;
             interfaces_field = ct.interfaces_field;
             all_interfaces_field = ct.interfaces_field;
             alternatives_field = alternatives;
+        }
+
+        @Override
+        public UnionClassType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a union type");
         }
 
         public Type getLub() {
@@ -1077,13 +1102,18 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public IntersectionClassType(List<Type> bounds, ClassSymbol csym, boolean allInterfaces) {
             // Presently no way to refer to this type directly, so we
             // cannot put annotations directly on it.
-            super(Type.noType, List.<Type>nil(), csym, noAnnotations);
+            super(Type.noType, List.<Type>nil(), csym);
             this.allInterfaces = allInterfaces;
             Assert.check((csym.flags() & COMPOUND) != 0);
             supertype_field = bounds.head;
             interfaces_field = bounds.tail;
             Assert.check(supertype_field.tsym.completer != null ||
                     !supertype_field.isInterface(), supertype_field);
+        }
+
+        @Override
+        public IntersectionClassType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to an intersection type");
         }
 
         @DefinedBy(Api.LANGUAGE_MODEL)
@@ -1118,18 +1148,18 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type elemtype;
 
         public ArrayType(Type elemtype, TypeSymbol arrayClass) {
-            this(elemtype, arrayClass, noAnnotations);
+            this(elemtype, arrayClass, TypeMetadata.empty);
         }
 
         public ArrayType(Type elemtype, TypeSymbol arrayClass,
-                         List<Attribute.TypeCompound> annos) {
-            super(arrayClass, annos);
+                         TypeMetadata metadata) {
+            super(arrayClass, metadata);
             this.elemtype = elemtype;
         }
 
         @Override
-        public ArrayType annotatedType(List<Attribute.TypeCompound> annos) {
-            return new ArrayType(elemtype, tsym, annos);
+        public ArrayType clone(TypeMetadata md) {
+            return new ArrayType(elemtype, tsym, md);
         }
 
         @Override
@@ -1192,7 +1222,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         public ArrayType makeVarargs() {
-            return new ArrayType(elemtype, tsym, annos) {
+            return new ArrayType(elemtype, tsym, metadata) {
                 @Override
                 public boolean isVarargs() {
                     return true;
@@ -1203,7 +1233,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type map(Mapping f) {
             Type elemtype1 = f.apply(elemtype);
             if (elemtype1 == elemtype) return this;
-            else return new ArrayType(elemtype1, tsym, annos);
+            else return new ArrayType(elemtype1, tsym, metadata);
         }
 
         public boolean contains(Type elem) {
@@ -1246,15 +1276,15 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                           TypeSymbol methodClass) {
             // Presently no way to refer to a method type directly, so
             // we cannot put type annotations on it.
-            super(methodClass, noAnnotations);
+            super(methodClass, TypeMetadata.empty);
             this.argtypes = argtypes;
             this.restype = restype;
             this.thrown = thrown;
         }
 
         @Override
-        public MethodType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate a method type");
+        public MethodType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a method type");
         }
 
         @Override
@@ -1346,12 +1376,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         PackageType(TypeSymbol tsym) {
             // Package types cannot be annotated
-            super(tsym, noAnnotations);
+            super(tsym, TypeMetadata.empty);
         }
 
         @Override
-        public PackageType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate a package type");
+        public PackageType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a package type");
         }
 
         @Override
@@ -1402,26 +1432,26 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public Type lower;
 
         public TypeVar(Name name, Symbol owner, Type lower) {
-            this(name, owner, lower, noAnnotations);
-        }
-
-        public TypeVar(Name name, Symbol owner, Type lower,
-                       List<Attribute.TypeCompound> annos) {
-            super(null, annos);
+            super(null, TypeMetadata.empty);
             tsym = new TypeVariableSymbol(0, name, this, owner);
+            this.bound = bound;
             this.lower = lower;
         }
 
+        public TypeVar(TypeSymbol tsym, Type bound, Type lower) {
+            this(tsym, bound, lower, TypeMetadata.empty);
+        }
+
         public TypeVar(TypeSymbol tsym, Type bound, Type lower,
-                       List<Attribute.TypeCompound> annos) {
-            super(tsym, annos);
+                       TypeMetadata metadata) {
+            super(tsym, metadata);
             this.bound = bound;
             this.lower = lower;
         }
 
         @Override
-        public TypeVar annotatedType(List<Attribute.TypeCompound> annos) {
-            return new TypeVar(tsym, bound, lower, annos);
+        public TypeVar clone(TypeMetadata md) {
+            return new TypeVar(tsym, bound, lower, md);
         }
 
         @Override
@@ -1486,9 +1516,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                             Symbol owner,
                             Type upper,
                             Type lower,
-                            WildcardType wildcard,
-                            List<Attribute.TypeCompound> annos) {
-            super(name, owner, lower, annos);
+                            WildcardType wildcard) {
+            super(name, owner, lower);
             this.lower = Assert.checkNonNull(lower);
             this.bound = upper;
             this.wildcard = wildcard;
@@ -1499,14 +1528,14 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
                             Type upper,
                             Type lower,
                             WildcardType wildcard,
-                            List<Attribute.TypeCompound> annos) {
-            super(tsym, bound, lower, annos);
+                            TypeMetadata metadata) {
+            super(tsym, bound, lower, metadata);
             this.wildcard = wildcard;
         }
 
         @Override
-        public CapturedType annotatedType(List<Attribute.TypeCompound> annos) {
-            return new CapturedType(tsym, bound, bound, lower, wildcard, annos);
+        public CapturedType clone(TypeMetadata md) {
+            return new CapturedType(tsym, bound, bound, lower, wildcard, md);
         }
 
         @Override
@@ -1534,12 +1563,18 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     public static abstract class DelegatedType extends Type {
         public Type qtype;
         public TypeTag tag;
+
+        public DelegatedType(TypeTag tag, Type qtype) {
+            this(tag, qtype, TypeMetadata.empty);
+        }
+
         public DelegatedType(TypeTag tag, Type qtype,
-                             List<Attribute.TypeCompound> annos) {
-            super(qtype.tsym, annos);
+                             TypeMetadata metadata) {
+            super(qtype.tsym, metadata);
             this.tag = tag;
             this.qtype = qtype;
         }
+
         public TypeTag getTag() { return tag; }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() { return qtype.toString(); }
@@ -1563,13 +1598,13 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public List<Type> tvars;
 
         public ForAll(List<Type> tvars, Type qtype) {
-            super(FORALL, (MethodType)qtype, noAnnotations);
+            super(FORALL, (MethodType)qtype);
             this.tvars = tvars;
         }
 
         @Override
-        public ForAll annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate forall type");
+        public ForAll clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a forall type");
         }
 
         @Override
@@ -1685,7 +1720,7 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public UndetVar(TypeVar origin, Types types) {
             // This is a synthesized internal type, so we cannot annotate it.
-            super(UNDETVAR, origin, noAnnotations);
+            super(UNDETVAR, origin);
             bounds = new EnumMap<>(InferenceBound.class);
             List<Type> declaredBounds = types.getBounds(origin);
             declaredCount = declaredBounds.length();
@@ -1722,8 +1757,8 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         }
 
         @Override
-        public UndetVar annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate an UndetVar type");
+        public UndetVar clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to an UndetVar type");
         }
 
         @Override
@@ -1882,12 +1917,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             // Need to use List.nil(), because JCNoType constructor
             // gets called in static initializers in Type, where
             // noAnnotations is also defined.
-            super(null, List.<Attribute.TypeCompound>nil());
+            super(null, TypeMetadata.empty);
         }
 
         @Override
-        public JCNoType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate JCNoType");
+        public JCNoType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a JCNoType");
         }
 
         @Override
@@ -1915,12 +1950,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         public JCVoidType() {
             // Void cannot be annotated
-            super(null, noAnnotations);
+            super(null, TypeMetadata.empty);
         }
 
         @Override
-        public JCVoidType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate void type");
+        public JCVoidType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a void type");
         }
 
         @Override
@@ -1950,12 +1985,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
     static class BottomType extends Type implements NullType {
         public BottomType() {
             // Bottom is a synthesized internal type, so it cannot be annotated
-            super(null, noAnnotations);
+            super(null, TypeMetadata.empty);
         }
 
         @Override
-        public BottomType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate bottom type");
+        public BottomType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to a bottom type");
         }
 
         @Override
@@ -1998,17 +2033,6 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
 
         private Type originalType = null;
 
-        public ErrorType(Type originalType, TypeSymbol tsym) {
-            this(originalType, tsym, noAnnotations);
-        }
-
-        public ErrorType(Type originalType, TypeSymbol tsym,
-                         List<Attribute.TypeCompound> typeAnnotations) {
-            super(noType, List.<Type>nil(), null, typeAnnotations);
-            this.tsym = tsym;
-            this.originalType = (originalType == null ? noType : originalType);
-        }
-
         public ErrorType(ClassSymbol c, Type originalType) {
             this(originalType, c);
             c.type = this;
@@ -2016,9 +2040,22 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
             c.members_field = new Scope.ErrorScope(c);
         }
 
+        public ErrorType(Type originalType, TypeSymbol tsym) {
+            super(noType, List.<Type>nil(), null);
+            this.tsym = tsym;
+            this.originalType = (originalType == null ? noType : originalType);
+        }
+
+        private ErrorType(Type originalType, TypeSymbol tsym,
+                          TypeMetadata metadata) {
+            super(noType, List.<Type>nil(), null, metadata);
+            this.tsym = tsym;
+            this.originalType = (originalType == null ? noType : originalType);
+        }
+
         @Override
-        public ErrorType annotatedType(List<Attribute.TypeCompound> annos) {
-            return new ErrorType(originalType, tsym, annos);
+        public ErrorType clone(TypeMetadata md) {
+            return new ErrorType(originalType, tsym, md);
         }
 
         @Override
@@ -2086,12 +2123,12 @@ public abstract class Type extends AnnoConstruct implements TypeMirror {
         public UnknownType() {
             // Unknown is a synthesized internal type, so it cannot be
             // annotated.
-            super(null, noAnnotations);
+            super(null, TypeMetadata.empty);
         }
 
         @Override
-        public UnknownType annotatedType(List<Attribute.TypeCompound> annos) {
-            throw new AssertionError("Cannot annotate unknown type");
+        public UnknownType clone(TypeMetadata md) {
+            throw new AssertionError("Cannot add metadata to an unknown type");
         }
 
         @Override
