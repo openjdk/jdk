@@ -79,6 +79,8 @@ public final class FindProperty {
      *
      * @param type type of getter, e.g. int.class if we want a function with {@code get()I} signature
      * @param programPoint program point, or INVALID_PROGRAM_POINT if pessimistic
+     * @param request link request
+     *
      * @return method handle for the getter
      */
     public MethodHandle getGetter(final Class<?> type, final int programPoint, final LinkRequest request) {
@@ -102,6 +104,7 @@ public final class FindProperty {
      *
      * @param type type of setter, e.g. int.class if we want a function with {@code set(I)V} signature
      * @param strict are we in strict mode
+     * @param request link request
      *
      * @return method handle for the getter
      */

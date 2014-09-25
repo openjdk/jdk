@@ -71,7 +71,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.virtualCallNoLookup
 import static jdk.nashorn.internal.codegen.ObjectClassGenerator.PRIMITIVE_FIELD_TYPE;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_OPTIMISTIC;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_PROGRAM_POINT_SHIFT;
-
 import java.io.PrintStream;
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -99,13 +98,13 @@ import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TryNode;
-import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.RewriteException;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -179,9 +178,6 @@ public class MethodEmitter implements Emitter {
 
     /** Bootstrap for array populators */
     private static final Handle POPULATE_ARRAY_BOOTSTRAP = new Handle(H_INVOKESTATIC, RewriteException.BOOTSTRAP.className(), RewriteException.BOOTSTRAP.name(), RewriteException.BOOTSTRAP.descriptor());
-
-    /** Bootstrap for global name invalidation */
-    private static final Handle INVALIDATE_NAME_BOOTSTRAP = new Handle(H_INVOKESTATIC, Global.BOOTSTRAP.className(), Global.BOOTSTRAP.name(), Global.BOOTSTRAP.descriptor());
 
     /**
      * Constructor - internal use from ClassEmitter only
@@ -2131,10 +2127,13 @@ public class MethodEmitter implements Emitter {
     }
 
     MethodEmitter invalidateSpecialName(final String name) {
-        //this is a nop if the global hasn't registered this as a special name - we can just ignore it
-        if (Global.instance().isSpecialName(name)) {
-            debug("dynamic_invalidate_name", "name=", name);
-            method.visitInvokeDynamicInsn(name, "()V", INVALIDATE_NAME_BOOTSTRAP);
+        switch (name) {
+        case "apply":
+        case "call":
+            debug("invalidate_name", "name=", name);
+            load("Function");
+            invoke(ScriptRuntime.INVALIDATE_RESERVED_BUILTIN_NAME);
+            break;
         }
         return this;
     }

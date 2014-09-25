@@ -358,8 +358,12 @@ public final class GlobalConstants implements Loggable {
      * @param c constant value
      * @return method handle (with dummy receiver) that returns this constant
      */
+    public static MethodHandle staticConstantGetter(final Object c) {
+        return MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+    }
+
     private MethodHandle constantGetter(final Object c) {
-        final MethodHandle mh = MH.dropArguments(JSType.unboxConstant(c), 0, Object.class);
+        final MethodHandle mh = staticConstantGetter(c);
         if (log.isEnabled()) {
             return MethodHandleFactory.addDebugPrintout(log, Level.FINEST, mh, "getting as constant");
         }

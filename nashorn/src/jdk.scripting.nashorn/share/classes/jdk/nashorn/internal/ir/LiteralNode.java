@@ -237,6 +237,10 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
         return value;
     }
 
+    private static Expression[] valueToArray(final List<Expression> value) {
+        return value.toArray(new Expression[value.size()]);
+    }
+
     /**
      * Create a new null literal
      *
@@ -981,9 +985,8 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<Expression[]> newInstance(final long token, final int finish, final List<Expression> value) {
-        return new ArrayLiteralNode(token, finish, value.toArray(new Expression[value.size()]));
+        return new ArrayLiteralNode(token, finish, valueToArray(value));
     }
-
 
     /**
      * Create a new array literal based on a parent node (source, token, finish)
@@ -994,7 +997,7 @@ public abstract class LiteralNode<T> extends Expression implements PropertyKey {
      * @return the new literal node
      */
     public static LiteralNode<?> newInstance(final Node parent, final List<Expression> value) {
-        return new ArrayLiteralNode(parent.getToken(), parent.getFinish(), value.toArray(new Expression[value.size()]));
+        return new ArrayLiteralNode(parent.getToken(), parent.getFinish(), valueToArray(value));
     }
 
     /**
