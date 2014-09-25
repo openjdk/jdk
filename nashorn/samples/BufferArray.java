@@ -52,41 +52,49 @@ public class BufferArray extends AbstractJSObject {
     // underlying nio buffer
     private final DoubleBuffer buf;
 
-    public BufferArray(int size) {
+    /**
+     * Constructor
+     * @param size initial size
+     */
+    public BufferArray(final int size) {
         buf = DoubleBuffer.allocate(size);
     }
 
-    public BufferArray(DoubleBuffer buf) {
+    /**
+     * Constructur
+     * @param buf {@link DoubleBuffer} to link to
+     */
+    public BufferArray(final DoubleBuffer buf) {
         this.buf = buf;
     }
 
     // called to check if indexed property exists
     @Override
-    public boolean hasSlot(int index) {
+    public boolean hasSlot(final int index) {
         return index > 0 && index < buf.capacity();
     }
 
     // get the value from that index
     @Override
-    public Object getSlot(int index) {
+    public Object getSlot(final int index) {
        return buf.get(index);
     }
 
     // set the value at that index
     @Override
-    public void setSlot(int index, Object value) {
+    public void setSlot(final int index, final Object value) {
        buf.put(index, ((Number)value).doubleValue());
     }
 
     // do you have a property of that given name?
     @Override
-    public boolean hasMember(String name) {
+    public boolean hasMember(final String name) {
        return "length".equals(name) || "buf".equals(name);
     }
 
     // get the value of that named property
     @Override
-    public Object getMember(String name) {
+    public Object getMember(final String name) {
        switch (name) {
           case "length":
               return buf.capacity();
@@ -94,7 +102,7 @@ public class BufferArray extends AbstractJSObject {
               // return a 'function' value for this property
               return new AbstractJSObject() {
                   @Override
-                  public Object call(Object thiz, Object... args) {
+                  public Object call(final Object thiz, final Object... args) {
                       return BufferArray.this.buf;
                   }
 

@@ -55,6 +55,7 @@ import static jdk.internal.org.objectweb.asm.Opcodes.H_INVOKESTATIC;
 import static jdk.internal.org.objectweb.asm.Opcodes.IALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.IASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_0;
+import static jdk.internal.org.objectweb.asm.Opcodes.ICONST_1;
 import static jdk.internal.org.objectweb.asm.Opcodes.ILOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKEINTERFACE;
 import static jdk.internal.org.objectweb.asm.Opcodes.INVOKESPECIAL;
@@ -75,9 +76,11 @@ import static jdk.internal.org.objectweb.asm.Opcodes.SALOAD;
 import static jdk.internal.org.objectweb.asm.Opcodes.SASTORE;
 import static jdk.internal.org.objectweb.asm.Opcodes.SIPUSH;
 import static jdk.internal.org.objectweb.asm.Opcodes.SWAP;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.METHODHANDLE_TYPE;
-import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_METHODHANDLE;
-
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.INIT;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SPECIALIZATION_INIT2;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SPECIALIZATION_INIT3;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.SPECIALIZATION_TYPE;
+import static jdk.nashorn.internal.tools.nasgen.StringConstants.TYPE_SPECIALIZATION;
 import java.util.List;
 import jdk.internal.org.objectweb.asm.Handle;
 import jdk.internal.org.objectweb.asm.MethodVisitor;
@@ -93,6 +96,8 @@ public class MethodGenerator extends MethodVisitor {
     private final String descriptor;
     private final Type returnType;
     private final Type[] argumentTypes;
+
+    static final Type EMPTY_LINK_LOGIC_TYPE = Type.getType("Ljdk/nashorn/internal/objects/annotations/SpecializedFunction$LinkLogic$Empty;");
 
     MethodGenerator(final MethodVisitor mv, final int access, final String name, final String descriptor) {
         super(Main.ASM_VERSION, mv);
@@ -379,6 +384,11 @@ public class MethodGenerator extends MethodVisitor {
         super.visitFieldInsn(GETFIELD, owner, field, desc);
     }
 
+    private static boolean linkLogicIsEmpty(final Type type) {
+        assert EMPTY_LINK_LOGIC_TYPE != null; //type is ok for null if we are a @SpecializedFunction without any attribs
+        return EMPTY_LINK_LOGIC_TYPE.equals(type);
+    }
+
     void memberInfoArray(final String className, final List<MemberInfo> mis) {
         if (mis.isEmpty()) {
             pushNull();
@@ -387,12 +397,22 @@ public class MethodGenerator extends MethodVisitor {
 
         int pos = 0;
         push(mis.size());
-        newObjectArray(METHODHANDLE_TYPE);
+        newObjectArray(SPECIALIZATION_TYPE);
         for (final MemberInfo mi : mis) {
             dup();
             push(pos++);
+            visitTypeInsn(NEW, SPECIALIZATION_TYPE);
+            dup();
             visitLdcInsn(new Handle(H_INVOKESTATIC, className, mi.getJavaName(), mi.getJavaDesc()));
-            arrayStore(TYPE_METHODHANDLE);
+            final Type    linkLogicClass = mi.getLinkLogicClass();
+            final boolean linkLogic      = !linkLogicIsEmpty(linkLogicClass);
+            final String  ctor           = linkLogic ? SPECIALIZATION_INIT3 : SPECIALIZATION_INIT2;
+            if (linkLogic) {
+                visitLdcInsn(linkLogicClass);
+            }
+            visitInsn(mi.isOptimistic() ? ICONST_1 : ICONST_0);
+            visitMethodInsn(INVOKESPECIAL, SPECIALIZATION_TYPE, INIT, ctor, false);
+            arrayStore(TYPE_SPECIALIZATION);
         }
     }
 

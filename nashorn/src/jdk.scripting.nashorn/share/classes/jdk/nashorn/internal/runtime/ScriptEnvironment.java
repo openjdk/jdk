@@ -181,9 +181,6 @@ public final class ScriptEnvironment {
     /** print symbols and their contents for the script */
     public final boolean _print_symbols;
 
-    /** range analysis for known types */
-    public final boolean _range_analysis;
-
     /** is this environment in scripting mode? */
     public final boolean _scripting;
 
@@ -255,7 +252,6 @@ public final class ScriptEnvironment {
         _print_parse          = options.getBoolean("print.parse");
         _print_lower_parse    = options.getBoolean("print.lower.parse");
         _print_symbols        = options.getBoolean("print.symbols");
-        _range_analysis       = options.getBoolean("range.analysis");
         _scripting            = options.getBoolean("scripting");
         _strict               = options.getBoolean("strict");
         _version              = options.getBoolean("version");
