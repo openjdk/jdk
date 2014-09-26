@@ -406,12 +406,19 @@ class ClassVerifier : public StackObj {
   }
 
   // Keep a list of temporary symbols created during verification because
-  // their reference counts need to be decrememented when the verifier object
+  // their reference counts need to be decremented when the verifier object
   // goes out of scope.  Since these symbols escape the scope in which they're
   // created, we can't use a TempNewSymbol.
-  Symbol* create_temporary_symbol(
-      const Symbol* s, int begin, int end, TRAPS);
+  Symbol* create_temporary_symbol(const Symbol* s, int begin, int end, TRAPS);
   Symbol* create_temporary_symbol(const char *s, int length, TRAPS);
+
+  Symbol* create_temporary_symbol(Symbol* s) {
+    // This version just updates the reference count and saves the symbol to be
+    // dereferenced later.
+    s->increment_refcount();
+    _symbols->push(s);
+    return s;
+  }
 
   TypeOrigin ref_ctx(const char* str, TRAPS);
 
@@ -425,10 +432,8 @@ inline int ClassVerifier::change_sig_to_verificationType(
     case T_ARRAY:
       {
         Symbol* name = sig_type->as_symbol(CHECK_0);
-        // Create another symbol to save as signature stream unreferences
-        // this symbol.
-        Symbol* name_copy =
-          create_temporary_symbol(name, 0, name->utf8_length(), CHECK_0);
+        // Create another symbol to save as signature stream unreferences this symbol.
+        Symbol* name_copy = create_temporary_symbol(name);
         assert(name_copy == name, "symbols don't match");
         *inference_type =
           VerificationType::reference_type(name_copy);
