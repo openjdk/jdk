@@ -37,14 +37,18 @@
 
 // Inline functions for G1CollectedHeap
 
+inline AllocationContextStats& G1CollectedHeap::allocation_context_stats() {
+  return _allocation_context_stats;
+}
+
 // Return the region with the given index. It assumes the index is valid.
 inline HeapRegion* G1CollectedHeap::region_at(uint index) const { return _hrm.at(index); }
 
 inline uint G1CollectedHeap::addr_to_region(HeapWord* addr) const {
   assert(is_in_reserved(addr),
          err_msg("Cannot calculate region index for address "PTR_FORMAT" that is outside of the heap ["PTR_FORMAT", "PTR_FORMAT")",
-                 p2i(addr), p2i(_reserved.start()), p2i(_reserved.end())));
-  return (uint)(pointer_delta(addr, _reserved.start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
+                 p2i(addr), p2i(reserved_region().start()), p2i(reserved_region().end())));
+  return (uint)(pointer_delta(addr, reserved_region().start(), sizeof(uint8_t)) >> HeapRegion::LogOfHRGrainBytes);
 }
 
 inline HeapWord* G1CollectedHeap::bottom_addr_for_region(uint index) const {
@@ -63,7 +67,7 @@ inline HeapRegion* G1CollectedHeap::heap_region_containing_raw(const T addr) con
 template <class T>
 inline HeapRegion* G1CollectedHeap::heap_region_containing(const T addr) const {
   HeapRegion* hr = heap_region_containing_raw(addr);
-  if (hr->continuesHumongous()) {
+  if (hr->is_continues_humongous()) {
     return hr->humongous_start_region();
   }
   return hr;
@@ -95,13 +99,15 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
                                                      unsigned int* gc_count_before_ret,
                                                      int* gclocker_retry_count_ret) {
   assert_heap_not_locked_and_not_at_safepoint();
-  assert(!isHumongous(word_size), "attempt_allocation() should not "
+  assert(!is_humongous(word_size), "attempt_allocation() should not "
          "be called for humongous allocation requests");
 
-  HeapWord* result = _mutator_alloc_region.attempt_allocation(word_size,
-                                                      false /* bot_updates */);
+  AllocationContext_t context = AllocationContext::current();
+  HeapWord* result = _allocator->mutator_alloc_region(context)->attempt_allocation(word_size,
+                                                                                   false /* bot_updates */);
   if (result == NULL) {
     result = attempt_allocation_slow(word_size,
+                                     context,
                                      gc_count_before_ret,
                                      gclocker_retry_count_ret);
   }
@@ -112,17 +118,17 @@ inline HeapWord* G1CollectedHeap::attempt_allocation(size_t word_size,
   return result;
 }
 
-inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
-                                                              word_size) {
-  assert(!isHumongous(word_size),
+inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t word_size,
+                                                              AllocationContext_t context) {
+  assert(!is_humongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = _survivor_gc_alloc_region.attempt_allocation(word_size,
-                                                      false /* bot_updates */);
+  HeapWord* result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                                       false /* bot_updates */);
   if (result == NULL) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _survivor_gc_alloc_region.attempt_allocation_locked(word_size,
-                                                      false /* bot_updates */);
+    result = _allocator->survivor_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                                      false /* bot_updates */);
   }
   if (result != NULL) {
     dirty_young_block(result, word_size);
@@ -130,16 +136,17 @@ inline HeapWord* G1CollectedHeap::survivor_attempt_allocation(size_t
   return result;
 }
 
-inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size) {
-  assert(!isHumongous(word_size),
+inline HeapWord* G1CollectedHeap::old_attempt_allocation(size_t word_size,
+                                                         AllocationContext_t context) {
+  assert(!is_humongous(word_size),
          "we should not be seeing humongous-size allocations in this path");
 
-  HeapWord* result = _old_gc_alloc_region.attempt_allocation(word_size,
-                                                       true /* bot_updates */);
+  HeapWord* result = _allocator->old_gc_alloc_region(context)->attempt_allocation(word_size,
+                                                                                  true /* bot_updates */);
   if (result == NULL) {
     MutexLockerEx x(FreeList_lock, Mutex::_no_safepoint_check_flag);
-    result = _old_gc_alloc_region.attempt_allocation_locked(word_size,
-                                                       true /* bot_updates */);
+    result = _allocator->old_gc_alloc_region(context)->attempt_allocation_locked(word_size,
+                                                                                 true /* bot_updates */);
   }
   return result;
 }
@@ -159,7 +166,7 @@ G1CollectedHeap::dirty_young_block(HeapWord* start, size_t word_size) {
   assert(word_size > 0, "pre-condition");
   assert(containing_hr->is_in(start), "it should contain start");
   assert(containing_hr->is_young(), "it should be young");
-  assert(!containing_hr->isHumongous(), "it should not be humongous");
+  assert(!containing_hr->is_humongous(), "it should not be humongous");
 
   HeapWord* end = start + word_size;
   assert(containing_hr->is_in(end - 1), "it should also contain end - 1");

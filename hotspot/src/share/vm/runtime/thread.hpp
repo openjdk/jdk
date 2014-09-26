@@ -40,6 +40,7 @@
 #include "runtime/safepoint.hpp"
 #include "runtime/stubRoutines.hpp"
 #include "runtime/threadLocalStorage.hpp"
+#include "runtime/thread_ext.hpp"
 #include "runtime/unhandledOops.hpp"
 #include "utilities/macros.hpp"
 
@@ -256,6 +257,8 @@ class Thread: public ThreadShadow {
 
   TRACE_DATA _trace_data;                       // Thread-local data for tracing
 
+  ThreadExt _ext;
+
   int   _vm_operation_started_count;            // VM_Operation support
   int   _vm_operation_completed_count;          // VM_Operation support
 
@@ -408,6 +411,9 @@ class Thread: public ThreadShadow {
   inline jlong cooked_allocated_bytes();
 
   TRACE_DATA* trace_data()              { return &_trace_data; }
+
+  const ThreadExt& ext() const          { return _ext; }
+  ThreadExt& ext()                      { return _ext; }
 
   // VM operation support
   int vm_operation_ticket()                      { return ++_vm_operation_started_count; }
@@ -978,6 +984,7 @@ class JavaThread: public Thread {
   // not specified, use the priority of the thread object. Threads_lock
   // must be held while this function is called.
   void prepare(jobject jni_thread, ThreadPriority prio=NoPriority);
+  void prepare_ext();
 
   void set_saved_exception_pc(address pc)        { _saved_exception_pc = pc; }
   address saved_exception_pc()                   { return _saved_exception_pc; }
@@ -1909,6 +1916,8 @@ class Threads: AllStatic {
 
   // Deoptimizes all frames tied to marked nmethods
   static void deoptimized_wrt_marked_nmethods();
+
+  static JavaThread* find_java_thread_from_java_tid(jlong java_tid);
 
 };
 

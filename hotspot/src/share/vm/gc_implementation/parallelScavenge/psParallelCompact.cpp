@@ -2882,7 +2882,7 @@ void PSParallelCompact::update_deferred_objects(ParCompactionManager* cm,
         start_array->allocate_block(addr);
       }
       oop(addr)->update_contents(cm);
-      assert(oop(addr)->is_oop_or_null(), "should be an oop now");
+      assert(oop(addr)->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(oop(addr))));
     }
   }
 }
@@ -3366,7 +3366,7 @@ MoveAndUpdateClosure::do_addr(HeapWord* addr, size_t words) {
 
   oop moved_oop = (oop) destination();
   moved_oop->update_contents(compaction_manager());
-  assert(moved_oop->is_oop_or_null(), "Object should be whole at this point");
+  assert(moved_oop->is_oop_or_null(), err_msg("Expected an oop or NULL at " PTR_FORMAT, p2i(moved_oop)));
 
   update_state(words);
   assert(destination() == (HeapWord*)moved_oop + moved_oop->size(), "sanity");

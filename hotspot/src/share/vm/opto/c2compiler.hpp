@@ -50,6 +50,9 @@ public:
 
   // Print compilation timers and statistics
   void print_timers();
+
+  // Initial size of the code buffer (may be increased at runtime)
+  static int initial_code_buffer_size();
 };
 
 #endif // SHARE_VM_OPTO_C2COMPILER_HPP

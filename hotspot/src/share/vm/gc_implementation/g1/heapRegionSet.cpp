@@ -41,7 +41,7 @@ void HeapRegionSetBase::fill_in_ext_msg(hrs_ext_msg* msg, const char* message) {
 void HeapRegionSetBase::verify_region(HeapRegion* hr) {
   assert(hr->containing_set() == this, err_msg("Inconsistent containing set for %u", hr->hrm_index()));
   assert(!hr->is_young(), err_msg("Adding young region %u", hr->hrm_index())); // currently we don't use these sets for young regions
-  assert(hr->isHumongous() == regions_humongous(), err_msg("Wrong humongous state for region %u and set %s", hr->hrm_index(), name()));
+  assert(hr->is_humongous() == regions_humongous(), err_msg("Wrong humongous state for region %u and set %s", hr->hrm_index(), name()));
   assert(hr->is_free() == regions_free(), err_msg("Wrong free state for region %u and set %s", hr->hrm_index(), name()));
   assert(!hr->is_free() || hr->is_empty(), err_msg("Free region %u is not empty for set %s", hr->hrm_index(), name()));
   assert(!hr->is_empty() || hr->is_free(), err_msg("Empty region %u is not free for set %s", hr->hrm_index(), name()));

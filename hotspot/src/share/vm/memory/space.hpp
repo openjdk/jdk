@@ -331,10 +331,9 @@ public:
   CompactibleSpace* space;
   HeapWord* threshold;
 
-  CompactPoint(Generation* _gen) :
-    gen(_gen), space(NULL), threshold(0) {}
+  CompactPoint(Generation* g = NULL) :
+    gen(g), space(NULL), threshold(0) {}
 };
-
 
 // A space that supports compaction operations.  This is usually, but not
 // necessarily, a space that is normally contiguous.  But, for example, a

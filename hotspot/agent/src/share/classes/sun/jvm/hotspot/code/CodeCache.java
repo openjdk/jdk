@@ -32,11 +32,9 @@ import sun.jvm.hotspot.types.*;
 import sun.jvm.hotspot.utilities.*;
 
 public class CodeCache {
-  private static AddressField       heapField;
-  private static AddressField       scavengeRootNMethodsField;
+  private static GrowableArray<CodeHeap> heapArray;
+  private static AddressField scavengeRootNMethodsField;
   private static VirtualConstructor virtualConstructor;
-
-  private CodeHeap heap;
 
   static {
     VM.registerVMInitializedObserver(new Observer() {
@@ -49,7 +47,10 @@ public class CodeCache {
   private static synchronized void initialize(TypeDataBase db) {
     Type type = db.lookupType("CodeCache");
 
-    heapField = type.getAddressField("_heap");
+    // Get array of CodeHeaps
+    AddressField heapsField = type.getAddressField("_heaps");
+    heapArray = GrowableArray.create(heapsField.getValue(), new StaticBaseConstructor<CodeHeap>(CodeHeap.class));
+
     scavengeRootNMethodsField = type.getAddressField("_scavenge_root_nmethods");
 
     virtualConstructor = new VirtualConstructor(db);
@@ -67,16 +68,17 @@ public class CodeCache {
     }
   }
 
-  public CodeCache() {
-    heap = (CodeHeap) VMObjectFactory.newObject(CodeHeap.class, heapField.getValue());
-  }
-
   public NMethod scavengeRootMethods() {
     return (NMethod) VMObjectFactory.newObject(NMethod.class, scavengeRootNMethodsField.getValue());
   }
 
   public boolean contains(Address p) {
-    return getHeap().contains(p);
+    for (int i = 0; i < heapArray.length(); ++i) {
+      if (heapArray.at(i).contains(p)) {
+        return true;
+      }
+    }
+    return false;
   }
 
   /** When VM.getVM().isDebugging() returns true, this behaves like
@@ -97,14 +99,24 @@ public class CodeCache {
 
   public CodeBlob findBlobUnsafe(Address start) {
     CodeBlob result = null;
+    CodeHeap containing_heap = null;
+    for (int i = 0; i < heapArray.length(); ++i) {
+      if (heapArray.at(i).contains(start)) {
+        containing_heap = heapArray.at(i);
+        break;
+      }
+    }
+    if (containing_heap == null) {
+      return null;
+    }
 
     try {
-      result = (CodeBlob) virtualConstructor.instantiateWrapperFor(getHeap().findStart(start));
+      result = (CodeBlob) virtualConstructor.instantiateWrapperFor(containing_heap.findStart(start));
     }
     catch (WrongTypeException wte) {
       Address cbAddr = null;
       try {
-        cbAddr = getHeap().findStart(start);
+        cbAddr = containing_heap.findStart(start);
       }
       catch (Exception findEx) {
         findEx.printStackTrace();
@@ -167,31 +179,32 @@ public class CodeCache {
   }
 
   public void iterate(CodeCacheVisitor visitor) {
-    CodeHeap heap = getHeap();
-    Address ptr = heap.begin();
-    Address end = heap.end();
-
-    visitor.prologue(ptr, end);
+    visitor.prologue(lowBound(), highBound());
     CodeBlob lastBlob = null;
-    while (ptr != null && ptr.lessThan(end)) {
-      try {
-        // Use findStart to get a pointer inside blob other findBlob asserts
-        CodeBlob blob = findBlobUnsafe(heap.findStart(ptr));
-        if (blob != null) {
-          visitor.visit(blob);
-          if (blob == lastBlob) {
-            throw new InternalError("saw same blob twice");
+
+    for (int i = 0; i < heapArray.length(); ++i) {
+      CodeHeap current_heap = heapArray.at(i);
+      Address ptr = current_heap.begin();
+      while (ptr != null && ptr.lessThan(current_heap.end())) {
+        try {
+          // Use findStart to get a pointer inside blob other findBlob asserts
+          CodeBlob blob = findBlobUnsafe(current_heap.findStart(ptr));
+          if (blob != null) {
+            visitor.visit(blob);
+            if (blob == lastBlob) {
+              throw new InternalError("saw same blob twice");
+            }
+            lastBlob = blob;
           }
-          lastBlob = blob;
+        } catch (RuntimeException e) {
+          e.printStackTrace();
         }
-      } catch (RuntimeException e) {
-        e.printStackTrace();
+        Address next = current_heap.nextBlock(ptr);
+        if (next != null && next.lessThan(ptr)) {
+          throw new InternalError("pointer moved backwards");
+        }
+        ptr = next;
       }
-      Address next = heap.nextBlock(ptr);
-      if (next != null && next.lessThan(ptr)) {
-        throw new InternalError("pointer moved backwards");
-      }
-      ptr = next;
     }
     visitor.epilogue();
   }
@@ -200,7 +213,23 @@ public class CodeCache {
   // Internals only below this point
   //
 
-  private CodeHeap getHeap() {
-    return heap;
+  private Address lowBound() {
+    Address low = heapArray.at(0).begin();
+    for (int i = 1; i < heapArray.length(); ++i) {
+      if (heapArray.at(i).begin().lessThan(low)) {
+        low = heapArray.at(i).begin();
+      }
+    }
+    return low;
+  }
+
+  private Address highBound() {
+    Address high = heapArray.at(0).end();
+    for (int i = 1; i < heapArray.length(); ++i) {
+      if (heapArray.at(i).end().greaterThan(high)) {
+        high = heapArray.at(i).end();
+      }
+    }
+    return high;
   }
 }

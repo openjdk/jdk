@@ -43,7 +43,7 @@ class ReferenceProcessor;
 // compaction.
 //
 // Class unloading will only occur when a full gc is invoked.
-
+class G1PrepareCompactClosure;
 
 class G1MarkSweep : AllStatic {
   friend class VM_G1MarkSweep;
@@ -70,6 +70,30 @@ class G1MarkSweep : AllStatic {
   static void mark_sweep_phase4();
 
   static void allocate_stacks();
+  static void prepare_compaction();
+  static void prepare_compaction_work(G1PrepareCompactClosure* blk);
+};
+
+class G1PrepareCompactClosure : public HeapRegionClosure {
+ protected:
+  G1CollectedHeap* _g1h;
+  ModRefBarrierSet* _mrbs;
+  CompactPoint _cp;
+  HeapRegionSetCount _humongous_regions_removed;
+
+  virtual void prepare_for_compaction(HeapRegion* hr, HeapWord* end);
+  void prepare_for_compaction_work(CompactPoint* cp, HeapRegion* hr, HeapWord* end);
+  void free_humongous_region(HeapRegion* hr);
+  bool is_cp_initialized() const { return _cp.space != NULL; }
+
+ public:
+  G1PrepareCompactClosure() :
+    _g1h(G1CollectedHeap::heap()),
+    _mrbs(_g1h->g1_barrier_set()),
+    _humongous_regions_removed() { }
+
+  void update_sets();
+  bool doHeapRegion(HeapRegion* hr);
 };
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1MARKSWEEP_HPP
