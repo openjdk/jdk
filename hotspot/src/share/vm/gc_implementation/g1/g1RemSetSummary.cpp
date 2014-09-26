@@ -263,7 +263,7 @@ public:
       current = &_free;
     } else if (r->is_young()) {
       current = &_young;
-    } else if (r->isHumongous()) {
+    } else if (r->is_humongous()) {
       current = &_humonguous;
     } else if (r->is_old()) {
       current = &_old;
