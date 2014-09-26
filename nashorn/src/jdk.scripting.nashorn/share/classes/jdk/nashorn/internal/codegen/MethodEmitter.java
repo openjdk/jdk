@@ -2134,6 +2134,8 @@ public class MethodEmitter implements Emitter {
             load("Function");
             invoke(ScriptRuntime.INVALIDATE_RESERVED_BUILTIN_NAME);
             break;
+        default:
+            break;
         }
         return this;
     }

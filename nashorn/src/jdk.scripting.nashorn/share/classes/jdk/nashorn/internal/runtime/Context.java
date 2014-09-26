@@ -33,7 +33,6 @@ import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -64,9 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
-
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -1390,7 +1387,7 @@ public final class Context {
      * logic to e.g. multiple switchpoint classes.
      */
     public static final class BuiltinSwitchPoint extends SwitchPoint {
-
+        //empty
     }
 
     /**
