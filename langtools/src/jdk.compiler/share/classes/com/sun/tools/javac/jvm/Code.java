@@ -2032,12 +2032,11 @@ public class Code {
 
     void adjustAliveRanges(int oldCP, int delta) {
         for (LocalVar localVar: lvar) {
-            if (localVar == null) {
-                return;
-            }
-            for (LocalVar.Range range: localVar.aliveRanges) {
-                if (range.closed() && range.start_pc + range.length >= oldCP) {
-                    range.length += delta;
+            if (localVar != null) {
+                for (LocalVar.Range range: localVar.aliveRanges) {
+                    if (range.closed() && range.start_pc + range.length >= oldCP) {
+                        range.length += delta;
+                    }
                 }
             }
         }
