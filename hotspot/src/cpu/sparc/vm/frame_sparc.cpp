@@ -343,7 +343,7 @@ bool frame::safe_for_sender(JavaThread *thread) {
 // constructors
 
 // Construct an unpatchable, deficient frame
-frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
+void frame::init(intptr_t* sp, address pc, CodeBlob* cb) {
 #ifdef _LP64
   assert( (((intptr_t)sp & (wordSize-1)) == 0), "frame constructor passed an invalid sp");
 #endif
@@ -363,6 +363,10 @@ frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
     assert(!((nmethod*)_cb)->is_deopt_pc(_pc), "invariant broken");
   }
 #endif // ASSERT
+}
+
+frame::frame(intptr_t* sp, unpatchable_t, address pc, CodeBlob* cb) {
+  init(sp, pc, cb);
 }
 
 frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpreted) :
@@ -418,6 +422,13 @@ frame::frame(intptr_t* sp, intptr_t* younger_sp, bool younger_frame_is_interpret
     }
   }
 }
+
+#ifndef PRODUCT
+// This is a generic constructor which is only used by pns() in debug.cpp.
+frame::frame(void* sp, void* fp, void* pc) {
+  init((intptr_t*)sp, (address)pc, NULL);
+}
+#endif
 
 bool frame::is_interpreted_frame() const  {
   return Interpreter::contains(pc());
