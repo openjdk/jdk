@@ -58,19 +58,19 @@ final class NoTypeArrayData extends ArrayData {
 
     @Override
     public ArrayData convert(final Class<?> type) {
-        final long length = length();
+        final long len = length;
         final ArrayData arrayData;
         if (type == Long.class) {
-            arrayData = new LongArrayData(new long[ArrayData.nextSize((int)length)], (int)length);
+            arrayData = new LongArrayData(new long[ArrayData.nextSize((int)len)], (int)len);
         } else if (type == Double.class) {
-            arrayData = new NumberArrayData(new double[ArrayData.nextSize((int)length)], (int)length);
+            arrayData = new NumberArrayData(new double[ArrayData.nextSize((int)len)], (int)len);
         } else if (type == Integer.class) {
-            arrayData = new IntArrayData(new int[ArrayData.nextSize((int)length)], (int)length);
+            arrayData = new IntArrayData(new int[ArrayData.nextSize((int)len)], (int)len);
         } else {
             assert !type.isPrimitive();
-            arrayData = new ObjectArrayData(new Object[ArrayData.nextSize((int)length)], (int)length);
+            arrayData = new ObjectArrayData(new Object[ArrayData.nextSize((int)len)], (int)len);
         }
-        return length == 0 ? arrayData : new DeletedRangeArrayFilter(arrayData, 0, length - 1);
+        return length == 0 ? arrayData : new DeletedRangeArrayFilter(arrayData, 0, len - 1);
     }
 
     @Override
@@ -90,11 +90,11 @@ final class NoTypeArrayData extends ArrayData {
         }
 
         // Don't trample the shared EMPTY_ARRAY.
-        if (length() == 0) {
-            return new NoTypeArrayData(Math.max(safeIndex + 1, length()));
+        if (length == 0) {
+            return new NoTypeArrayData(Math.max(safeIndex + 1, length));
         }
 
-        setLength(Math.max(safeIndex + 1, length()));
+        setLength(Math.max(safeIndex + 1, length));
         return this;
     }
 

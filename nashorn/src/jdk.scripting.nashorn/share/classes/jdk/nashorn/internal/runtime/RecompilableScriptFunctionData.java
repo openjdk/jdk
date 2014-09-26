@@ -501,13 +501,13 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
 
         for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             final String className = entry.getKey();
-            final byte[] code = entry.getValue();
+            final byte[] bytecode = entry.getValue();
 
             if (className.equals(mainClassName)) {
                 continue;
             }
 
-            installedClasses.put(className, installer.install(className, code));
+            installedClasses.put(className, installer.install(className, bytecode));
         }
 
         final Map<Integer, FunctionInitializer> initializers = script.getInitializers();
@@ -588,9 +588,9 @@ public final class RecompilableScriptFunctionData extends ScriptFunctionData imp
         return lookupCodeMethod(fn.getCompileUnit().getCode(), type);
     }
 
-    MethodHandle lookupCodeMethod(final Class<?> code, final MethodType targetType) {
+    MethodHandle lookupCodeMethod(final Class<?> codeClass, final MethodType targetType) {
         log.info("Looking up ", DebugLogger.quote(name), " type=", targetType);
-        return MH.findStatic(LOOKUP, code, functionName, targetType);
+        return MH.findStatic(LOOKUP, codeClass, functionName, targetType);
     }
 
     /**

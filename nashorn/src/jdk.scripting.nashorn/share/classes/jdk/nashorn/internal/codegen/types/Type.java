@@ -47,7 +47,6 @@ import static jdk.internal.org.objectweb.asm.Opcodes.T_DOUBLE;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_INT;
 import static jdk.internal.org.objectweb.asm.Opcodes.T_LONG;
 import static jdk.nashorn.internal.codegen.CompilerConstants.staticCallNoLookup;
-
 import java.io.DataInput;
 import java.io.DataOutput;
 import java.io.IOException;
@@ -299,7 +298,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      *
      * @param typeMap the type map
      * @param output data output
-     * @throws IOException
+     * @throws IOException if write cannot be completed
      */
     public static void writeTypeMap(final Map<Integer, Type> typeMap, final DataOutput output) throws IOException {
         if (typeMap == null) {
@@ -329,7 +328,7 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      *
      * @param input data input
      * @return type map
-     * @throws IOException
+     * @throws IOException if read cannot be completed
      */
     public static Map<Integer, Type> readTypeMap(final DataInput input) throws IOException {
         final int size = input.readInt();
