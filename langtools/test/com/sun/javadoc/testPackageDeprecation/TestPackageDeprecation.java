@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug      6492694 8026567
+ * @bug      6492694 8026567 8048351
  * @summary  Test package deprecation.
  * @author   bpatel
  * @library  ../lib/
@@ -70,6 +70,8 @@ public class TestPackageDeprecation extends JavadocTester {
                 "pkg1");
         checkOutput("allclasses-frame.html", false,
                 "FooDepr");
+        checkOutput("class-use/C2.ModalExclusionType.html", true,
+                "<td class=\"colFirst\"><a href=\"#unnamed.package\">&lt;Unnamed&gt;</a></td>");
 
         checkFiles(false,
                 "pkg1/package-summary.html",
