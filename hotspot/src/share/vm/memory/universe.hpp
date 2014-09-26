@@ -178,6 +178,8 @@ class Universe: AllStatic {
   // the vm thread.
   static oop          _vm_exception;
 
+  static oop          _allocation_context_notification_obj;
+
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
 
@@ -307,6 +309,10 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
+
+  static inline oop   allocation_context_notification_obj();
+  static inline void  set_allocation_context_notification_obj(oop obj);
+
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error; }
 
   static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2010, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,31 +22,18 @@
  *
  */
 
-#ifndef SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
-#define SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
+#ifndef SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
+#define SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
 
-#include "memory/universe.hpp"
+#include "utilities/exceptions.hpp"
 
-// Check whether an element of a typeArrayOop with the given type must be
-// aligned 0 mod 8.  The typeArrayOop itself must be aligned at least this
-// strongly.
+class AllocationContextService: public AllStatic {
+public:
+  static inline bool should_notify();
+  static inline void notify(TRAPS);
+};
 
-inline bool Universe::element_type_should_be_aligned(BasicType type) {
-  return type == T_DOUBLE || type == T_LONG;
-}
+bool AllocationContextService::should_notify() { return false; }
+void AllocationContextService::notify(TRAPS) { }
 
-// Check whether an object field (static/non-static) of the given type must be aligned 0 mod 8.
-
-inline bool Universe::field_type_should_be_aligned(BasicType type) {
-  return type == T_DOUBLE || type == T_LONG;
-}
-
-inline oop Universe::allocation_context_notification_obj() {
-  return _allocation_context_notification_obj;
-}
-
-inline void Universe::set_allocation_context_notification_obj(oop obj) {
-  _allocation_context_notification_obj = obj;
-}
-
-#endif // SHARE_VM_MEMORY_UNIVERSE_INLINE_HPP
+#endif // SHARE_VM_SERVICES_ALLOCATION_CONTEXT_SERVICE_HPP
