@@ -58,4 +58,18 @@ public class TestCaseIf {
         }
         o = "";
     }
+
+    @AliveRange(varName="finalLocal", bytecodeStart=11, bytecodeLength=6)
+    @AliveRange(varName="used", bytecodeStart=13, bytecodeLength=4)
+    void m5(Object o) {
+        if (o != null) {
+            Object notUsed;
+            Object used;
+            if (o != null) {
+                final Object finalLocal = null;
+                used = null;
+                if (o == null) {}
+            }
+        }
+    }
 }

@@ -43,7 +43,7 @@ import sun.awt.dnd.SunDragSourceContextPeer;
  * pumpEvents(Conditional) in its run() method. Event handlers can choose to
  * block this event pump at any time, but should start a new pump (<b>not</b>
  * a new EventDispatchThread) by again calling pumpEvents(Conditional). This
- * secondary event pump will exit automatically as soon as the Condtional
+ * secondary event pump will exit automatically as soon as the Conditional
  * evaluate()s to false and an additional Event is pumped and dispatched.
  *
  * @author Tom Ball

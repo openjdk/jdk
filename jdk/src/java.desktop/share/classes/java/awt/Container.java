@@ -547,8 +547,8 @@ public class Container extends Component {
     }
 
     /**
-     * Removes component comp from this container without making unneccessary changes
-     * and generating unneccessary events. This function intended to perform optimized
+     * Removes component comp from this container without making unnecessary changes
+     * and generating unnecessary events. This function intended to perform optimized
      * remove, for example, if newParent and current parent are the same it just changes
      * index without calling removeNotify.
      * Note: Should be called while holding treeLock
@@ -1407,11 +1407,11 @@ public class Container extends Component {
             return;
 
         descendantsCount += num;
-        adjustDecendantsOnParent(num);
+        adjustDescendantsOnParent(num);
     }
 
     // Should only be called while holding tree lock
-    void adjustDecendantsOnParent(int num) {
+    void adjustDescendantsOnParent(int num) {
         if (parent != null) {
             parent.adjustDescendants(num);
         }
@@ -2338,7 +2338,7 @@ public class Container extends Component {
     }
 
     /**
-     * Fetchs the top-most (deepest) lightweight component that is interested
+     * Fetches the top-most (deepest) lightweight component that is interested
      * in receiving mouse events.
      */
     Component getMouseEventTarget(int x, int y, boolean includeSelf) {
@@ -2887,7 +2887,7 @@ public class Container extends Component {
         modalAppContext = AppContext.getAppContext();
 
         // keep the KeyEvents from being dispatched
-        // until the focus has been transfered
+        // until the focus has been transferred
         long time = Toolkit.getEventQueue().getMostRecentKeyEventTime();
         Component predictedFocusOwner = (Component.isInstanceOf(this, "javax.swing.JInternalFrame")) ? ((javax.swing.JInternalFrame)(this)).getMostRecentFocusOwner() : null;
         if (predictedFocusOwner != null) {
@@ -3673,7 +3673,7 @@ public class Container extends Component {
      * <ul>
      *    <li>Writes default serializable fields to the stream.</li>
      *    <li>Writes a list of serializable ContainerListener(s) as optional
-     *        data. The non-serializable ContainerListner(s) are detected and
+     *        data. The non-serializable ContainerListener(s) are detected and
      *        no attempt is made to serialize them.</li>
      *    <li>Write this Container's FocusTraversalPolicy if and only if it
      *        is Serializable; otherwise, <code>null</code> is written.</li>

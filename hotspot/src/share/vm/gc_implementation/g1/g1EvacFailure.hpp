@@ -192,7 +192,7 @@ public:
     bool during_initial_mark = _g1h->g1_policy()->during_initial_mark_pause();
     bool during_conc_mark = _g1h->mark_in_progress();
 
-    assert(!hr->isHumongous(), "sanity");
+    assert(!hr->is_humongous(), "sanity");
     assert(hr->in_collection_set(), "bad CS");
 
     if (hr->claimHeapRegion(HeapRegion::ParEvacFailureClaimValue)) {

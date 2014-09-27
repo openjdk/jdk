@@ -29,6 +29,7 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.CONSTANTS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.CREATE_PROGRAM_FUNCTION;
 import static jdk.nashorn.internal.codegen.CompilerConstants.SOURCE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.STRICT_MODE;
+import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
@@ -39,6 +40,7 @@ import java.io.PrintWriter;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.lang.invoke.SwitchPoint;
 import java.lang.ref.ReferenceQueue;
 import java.lang.ref.SoftReference;
 import java.lang.reflect.Field;
@@ -62,7 +64,9 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
+
 import javax.script.ScriptEngine;
+
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -125,6 +129,16 @@ public final class Context {
 
     private static MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
     private static MethodType CREATE_PROGRAM_FUNCTION_TYPE = MethodType.methodType(ScriptFunction.class, ScriptObject.class);
+
+    /**
+     * Keeps track of which builtin prototypes and properties have been relinked
+     * Currently we are conservative and associate the name of a builtin class with all
+     * its properties, so it's enough to invalidate a property to break all assumptions
+     * about a prototype. This can be changed to a more fine grained approach, but no one
+     * ever needs this, given the very rare occurance of swapping out only parts of
+     * a builtin v.s. the entire builtin object
+     */
+    private final Map<String, SwitchPoint> builtinSwitchPoints = new HashMap<>();
 
     /* Force DebuggerSupport to be loaded. */
     static {
@@ -200,14 +214,14 @@ public final class Context {
                                 final Map<String,byte[]> classBytes, final Map<Integer, FunctionInitializer> initializers,
                                 final Object[] constants, final int compilationId) {
             if (context.codeStore != null) {
-                context.codeStore.storeScript(cacheKey, source, mainClassName, classBytes, initializers, constants, compilationId);
+                context.codeStore.store(cacheKey, source, mainClassName, classBytes, initializers, constants, compilationId);
             }
         }
 
         @Override
         public StoredScript loadScript(final Source source, final String functionKey) {
             if (context.codeStore != null) {
-                return context.codeStore.loadScript(source, functionKey);
+                return context.codeStore.load(source, functionKey);
             }
             return null;
         }
@@ -463,8 +477,7 @@ public final class Context {
 
         if (env._persistent_cache) {
             try {
-                final String cacheDir = Options.getStringProperty("nashorn.persistent.code.cache", "nashorn_code_cache");
-                codeStore = new CodeStore(this, cacheDir);
+                codeStore = newCodeStore(this);
             } catch (final IOException e) {
                 throw new RuntimeException("Error initializing code cache", e);
             }
@@ -1117,7 +1130,7 @@ public final class Context {
         final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
         if (useCodeStore) {
-            storedScript = codeStore.loadScript(source, cacheKey);
+            storedScript = codeStore.load(source, cacheKey);
         }
 
         if (storedScript == null) {
@@ -1194,15 +1207,16 @@ public final class Context {
     private static Class<?> install(final StoredScript storedScript, final Source source, final CodeInstaller<ScriptEnvironment> installer) {
 
         final Map<String, Class<?>> installedClasses = new HashMap<>();
+        final Map<String, byte[]>   classBytes       = storedScript.getClassBytes();
         final Object[] constants       = storedScript.getConstants();
         final String   mainClassName   = storedScript.getMainClassName();
-        final byte[]   mainClassBytes  = storedScript.getClassBytes().get(mainClassName);
+        final byte[]   mainClassBytes  = classBytes.get(mainClassName);
         final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
         final Map<Integer, FunctionInitializer> initialzers = storedScript.getInitializers();
 
         installedClasses.put(mainClassName, mainClass);
 
-        for (final Map.Entry<String, byte[]> entry : storedScript.getClassBytes().entrySet()) {
+        for (final Map.Entry<String, byte[]> entry : classBytes.entrySet()) {
             final String className = entry.getKey();
             if (className.equals(mainClassName)) {
                 continue;
@@ -1368,6 +1382,36 @@ public final class Context {
         }
         assert false;
         return null;
+    }
+
+    /**
+     * This is a special kind of switchpoint used to guard builtin
+     * properties and prototypes. In the future it might contain
+     * logic to e.g. multiple switchpoint classes.
+     */
+    public static final class BuiltinSwitchPoint extends SwitchPoint {
+
+    }
+
+    /**
+     * Create a new builtin switchpoint and return it
+     * @param name key name
+     * @return new builtin switchpoint
+     */
+    public SwitchPoint newBuiltinSwitchPoint(final String name) {
+        assert builtinSwitchPoints.get(name) == null;
+        final SwitchPoint sp = new BuiltinSwitchPoint();
+        builtinSwitchPoints.put(name, sp);
+        return sp;
+    }
+
+    /**
+     * Return the builtin switchpoint for a particular key name
+     * @param name key name
+     * @return builtin switchpoint or null if none
+     */
+    public SwitchPoint getBuiltinSwitchPoint(final String name) {
+        return builtinSwitchPoints.get(name);
     }
 
 }

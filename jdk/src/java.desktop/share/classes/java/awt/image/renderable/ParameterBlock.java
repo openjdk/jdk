@@ -370,7 +370,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *         the specified parameter.
      */
     public ParameterBlock add(int i) {
-        return add(i);
+        return add(Integer.valueOf(i));
     }
 
     /**
@@ -489,7 +489,7 @@ public class ParameterBlock implements Cloneable, Serializable {
      *        the specified parameter.
      */
     public ParameterBlock set(int i, int index) {
-        return set(i, index);
+        return set(Integer.valueOf(i), index);
     }
 
     /**

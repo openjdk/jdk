@@ -37,7 +37,7 @@ package java.awt.image;
 import java.awt.Point;
 
 /**
- * WriteableRenderedImage is a common interface for objects which
+ * WritableRenderedImage is a common interface for objects which
  * contain or can produce image data in the form of Rasters and
  * which can be modified and/or written over.  The image
  * data may be stored/produced as a single tile or a regular array

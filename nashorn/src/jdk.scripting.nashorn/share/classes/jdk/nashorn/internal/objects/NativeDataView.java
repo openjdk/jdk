@@ -27,7 +27,6 @@ package jdk.nashorn.internal.objects;
 import static jdk.nashorn.internal.runtime.ECMAErrors.rangeError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.nio.ByteBuffer;
 import java.nio.ByteOrder;
 import jdk.nashorn.internal.objects.annotations.Attribute;
@@ -35,7 +34,6 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.Property;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
-import jdk.nashorn.internal.objects.annotations.SpecializedConstructor;
 import jdk.nashorn.internal.objects.annotations.SpecializedFunction;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.PropertyMap;
@@ -156,7 +154,7 @@ public class NativeDataView extends ScriptObject {
      * @param offset offset in bytes from the start of the ArrayBuffer
      * @return newly constructed DataView object
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static NativeDataView constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset) {
         if (!(arrBuf instanceof NativeArrayBuffer)) {
             throw typeError("not.an.arraybuffer.in.dataview");
@@ -174,7 +172,7 @@ public class NativeDataView extends ScriptObject {
      * @param length is the number of bytes from the offset that this DataView will reference
      * @return newly constructed DataView object
      */
-    @SpecializedConstructor
+    @SpecializedFunction(isConstructor=true)
     public static NativeDataView constructor(final boolean newObj, final Object self, final Object arrBuf, final int offset, final int length) {
         if (!(arrBuf instanceof NativeArrayBuffer)) {
             throw typeError("not.an.arraybuffer.in.dataview");

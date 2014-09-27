@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2008, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,10 +26,12 @@
   @bug 6315717
   @summary verifies that modifiers are correct for extra buttons
   @author Andrei Dmitriev : area=awt.mouse
+  @library ../../../../lib/testlibrary
+  @build jdk.testlibrary.OSInfo
   @run main MouseModifiersUnitTest_Extra
  */
 
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 import java.awt.*;
 import java.awt.event.*;

@@ -304,7 +304,7 @@ import sun.java2d.SunCompositeContext;
  * <p>
  * Alternately, an implementation that uses floating point math
  * might produce more accurate results and end up returning to the
- * original pixel value with little, if any, roundoff error.
+ * original pixel value with little, if any, round-off error.
  * Or, an implementation using integer math might decide that since
  * the equations boil down to a virtual NOP on the color values
  * if performed in a floating point space, it can transfer the

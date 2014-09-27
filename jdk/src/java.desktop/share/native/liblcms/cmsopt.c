@@ -1181,14 +1181,28 @@ static
 void* CurvesDup(cmsContext ContextID, const void* ptr)
 {
     Curves16Data* Data = _cmsDupMem(ContextID, ptr, sizeof(Curves16Data));
-    int i;
+    int i, j;
 
     if (Data == NULL) return NULL;
 
     Data ->Curves = _cmsDupMem(ContextID, Data ->Curves, Data ->nCurves * sizeof(cmsUInt16Number*));
+    if (Data -> Curves == NULL) {
+        _cmsFree(ContextID, Data);
+        return NULL;
+    }
 
     for (i=0; i < Data -> nCurves; i++) {
         Data ->Curves[i] = _cmsDupMem(ContextID, Data ->Curves[i], Data -> nElements * sizeof(cmsUInt16Number));
+        if (Data->Curves[i] == NULL) {
+
+            for (j=0; j < i; j++) {
+                _cmsFree(ContextID, Data->Curves[j]);
+            }
+            _cmsFree(ContextID, Data->Curves);
+            _cmsFree(ContextID, Data);
+            return NULL;
+        }
+
     }
 
     return (void*) Data;

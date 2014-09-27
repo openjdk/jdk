@@ -448,14 +448,25 @@ public final class Symbol implements Comparable<Symbol> {
         return (flags & IS_FUNCTION_SELF) != 0;
     }
 
+    /**
+     * Is this a block scoped symbol
+     * @return true if block scoped
+     */
     public boolean isBlockScoped() {
         return isLet() || isConst();
     }
 
+    /**
+     * Has this symbol been declared
+     * @return true if declared
+     */
     public boolean hasBeenDeclared() {
         return (flags & HAS_BEEN_DECLARED) != 0;
     }
 
+    /**
+     * Mark this symbol as declared
+     */
     public void setHasBeenDeclared() {
         if (!hasBeenDeclared()) {
             flags |= HAS_BEEN_DECLARED;

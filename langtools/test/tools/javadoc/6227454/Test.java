@@ -38,28 +38,29 @@ public class Test extends Doclet {
     }
 
     void run() throws Exception {
-        String docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
-                         + "\"http://www.w3.org/TR/html4/loose.dtd\">";
-        String headTag = "<head><title>Title </title></head>";
-        test(docType+"<html><body>ABC      XYZ</body></html>");
-        test(docType+"<html><body>ABC      XYZ</BODY></html>");
-        test(docType+"<html><BODY>ABC      XYZ</body></html>");
-        test(docType+"<html><BODY>ABC      XYZ</BODY></html>");
-        test(docType+"<html><BoDy>ABC      XYZ</bOdY></html>");
-        test(docType+"<html>"+headTag+"      ABC      XYZ</bOdY></html>", "Body tag missing from HTML");
-        test(docType+"<html><body>ABC      XYZ       </html>", "Close body tag missing from HTML");
-        test(docType+"<html>"+headTag+"      ABC      XYZ       </html>", "Body tag missing from HTML");
-        test(docType+"<html><body>ABC" + bigText(8192, 40) + "XYZ</body></html>");
+        test("<body>ABC      XYZ</body>");
+        test("<body>ABC      XYZ</BODY>");
+        test("<BODY>ABC      XYZ</body>");
+        test("<BODY>ABC      XYZ</BODY>");
+        test("<BoDy>ABC      XYZ</bOdY>");
+        test("      ABC      XYZ</bOdY>", "Body tag missing from HTML");
+        test("<body>ABC      XYZ       ", "Close body tag missing from HTML");
+        test("      ABC      XYZ       ", "Body tag missing from HTML");
+        test("<body>ABC" + bigText(8192, 40) + "XYZ</body>");
 
         if (errors > 0)
             throw new Exception(errors + " errors occurred");
     }
 
-    void test(String text) throws IOException {
-        test(text, null);
+    void test(String body) throws IOException {
+        test(body, null);
     }
 
-    void test(String text, String expectError) throws IOException {
+    void test(String body, String expectError) throws IOException {
+        String docType = "<!DOCTYPE HTML PUBLIC \"-//W3C//DTD HTML 4.01 Transitional//EN\" "
+                         + "\"http://www.w3.org/TR/html4/loose.dtd\">";
+        String headTag = "<head><title>Title </title></head>";
+        String text = docType + "<html>" + headTag + body + "</html>";
         testNum++;
         System.err.println("test " + testNum);
         File file = writeFile("overview" + testNum + ".html", text);

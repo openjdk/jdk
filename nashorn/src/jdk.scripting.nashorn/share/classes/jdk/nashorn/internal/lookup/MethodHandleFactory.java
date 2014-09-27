@@ -116,6 +116,10 @@ public final class MethodHandleFactory {
 
     private static final String VOID_TAG = "[VOID]";
 
+    private static void err(final String str) {
+        Context.getContext().getErr().println(str);
+    }
+
     /**
      * Tracer that is applied before a value is returned from the traced function. It will output the return
      * value and its class
@@ -124,13 +128,16 @@ public final class MethodHandleFactory {
      * @return return value unmodified
      */
     static Object traceReturn(final DebugLogger logger, final Object value) {
-        if (logger.isEnabled()) {
-            final String str = "    return" +
-                    (VOID_TAG.equals(value) ?
-                        ";" :
-                        " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
+        final String str = "    return" +
+                (VOID_TAG.equals(value) ?
+                    ";" :
+                    " " + stripName(value) + "; // [type=" + (value == null ? "null]" : stripName(value.getClass()) + ']'));
+        if (logger == null) {
+            err(str);
+        } else if (logger.isEnabled()) {
             logger.log(TRACE_LEVEL, str);
         }
+
         return value;
     }
 
@@ -169,8 +176,11 @@ public final class MethodHandleFactory {
             }
         }
 
-        assert logger != null;
-        logger.log(TRACE_LEVEL, sb);
+        if (logger == null) {
+            err(sb.toString());
+        } else {
+            logger.log(TRACE_LEVEL, sb);
+        }
         stacktrace(logger);
     }
 
@@ -181,7 +191,12 @@ public final class MethodHandleFactory {
         final ByteArrayOutputStream baos = new ByteArrayOutputStream();
         final PrintStream ps = new PrintStream(baos);
         new Throwable().printStackTrace(ps);
-        logger.log(TRACE_LEVEL, baos.toString());
+        final String st = baos.toString();
+        if (logger == null) {
+            err(st);
+        } else {
+            logger.log(TRACE_LEVEL, st);
+        }
     }
 
     private static String argString(final Object arg) {
@@ -201,10 +216,22 @@ public final class MethodHandleFactory {
         if (arg instanceof ScriptObject) {
             return arg.toString() +
                 " (map=" + Debug.id(((ScriptObject)arg).getMap()) +
-                ")";
+                ')';
         }
 
         return arg.toString();
+    }
+
+    /**
+     * Add a debug printout to a method handle, tracing parameters and return values
+     * Output will be unconditional to stderr
+     *
+     * @param mh  method handle to trace
+     * @param tag start of trace message
+     * @return traced method handle
+     */
+    public static MethodHandle addDebugPrintout(final MethodHandle mh, final Object tag) {
+        return addDebugPrintout(null, Level.OFF, mh, 0, true, tag);
     }
 
     /**
@@ -221,6 +248,20 @@ public final class MethodHandleFactory {
     }
 
     /**
+     * Add a debug printout to a method handle, tracing parameters and return values
+     * Output will be unconditional to stderr
+     *
+     * @param mh  method handle to trace
+     * @param paramStart first param to print/trace
+     * @param printReturnValue should we print/trace return value if available?
+     * @param tag start of trace message
+     * @return  traced method handle
+     */
+    public static MethodHandle addDebugPrintout(final MethodHandle mh, final int paramStart, final boolean printReturnValue, final Object tag) {
+        return addDebugPrintout(null, Level.OFF, mh, paramStart, printReturnValue, tag);
+    }
+
+     /**
      * Add a debug printout to a method handle, tracing parameters and return values
      *
      * @param logger a specific logger to which to write the output
@@ -240,7 +281,6 @@ public final class MethodHandleFactory {
             return mh;
         }
 
-        assert logger != null;
         assert TRACE != null;
 
         MethodHandle trace = MethodHandles.insertArguments(TRACE, 0, logger, tag, paramStart);
@@ -425,6 +465,12 @@ public final class MethodHandleFactory {
         public MethodHandle constant(final Class<?> type, final Object value) {
             final MethodHandle mh = MethodHandles.constant(type, value);
             return debug(mh, "constant", type, value);
+        }
+
+        @Override
+        public MethodHandle identity(final Class<?> type) {
+            final MethodHandle mh = MethodHandles.identity(type);
+            return debug(mh, "identity", type);
         }
 
         @Override
