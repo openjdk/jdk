@@ -1797,10 +1797,9 @@ public class Attr extends JCTree.Visitor {
                 return new ClassType(restype.getEnclosingType(),
                               List.<Type>of(new WildcardType(types.erasure(qualifierType),
                                                                BoundKind.EXTENDS,
-                                                             syms.boundClass,
-                                                             Type.noAnnotations)),
+                                                             syms.boundClass)),
                                      restype.tsym,
-                                     restype.getAnnotationMirrors());
+                                     restype.getMetadata());
             } else {
                 return restype;
             }
@@ -1970,7 +1969,7 @@ public class Attr extends JCTree.Visitor {
                 ClassType site = new ClassType(clazztype.getEnclosingType(),
                             clazztype.tsym.type.getTypeArguments(),
                                                clazztype.tsym,
-                                               clazztype.getAnnotationMirrors());
+                                               clazztype.getMetadata());
 
                 Env<AttrContext> diamondEnv = localEnv.dup(tree);
                 diamondEnv.info.selectSuper = cdef != null;
@@ -2189,8 +2188,7 @@ public class Attr extends JCTree.Visitor {
             owntype = elemtype;
             for (List<JCExpression> l = tree.dims; l.nonEmpty(); l = l.tail) {
                 attribExpr(l.head, localEnv, syms.intType);
-                owntype = new ArrayType(owntype, syms.arrayClass,
-                                        Type.noAnnotations);
+                owntype = new ArrayType(owntype, syms.arrayClass);
             }
         } else {
             // we are seeing an untyped aggregate { ... }
@@ -2207,8 +2205,7 @@ public class Attr extends JCTree.Visitor {
         }
         if (tree.elems != null) {
             attribExprs(tree.elems, localEnv, elemtype);
-            owntype = new ArrayType(elemtype, syms.arrayClass,
-                                    Type.noAnnotations);
+            owntype = new ArrayType(elemtype, syms.arrayClass);
         }
         if (!types.isReifiable(elemtype))
             log.error(tree.pos(), "generic.array.creation");
@@ -3195,8 +3192,9 @@ public class Attr extends JCTree.Visitor {
                 elt = ((ArrayType)elt).elemtype;
             if (elt.hasTag(TYPEVAR)) {
                 log.error(tree.pos(), "type.var.cant.be.deref");
-                result = types.createErrorType(tree.type);
-                return;
+                result = tree.type = types.createErrorType(tree.name, site.tsym, site);
+                tree.sym = tree.type.tsym;
+                return ;
             }
         }
 
@@ -3508,7 +3506,7 @@ public class Attr extends JCTree.Visitor {
                         if (normOuter != ownOuter)
                             owntype = new ClassType(
                                 normOuter, List.<Type>nil(), owntype.tsym,
-                                owntype.getAnnotationMirrors());
+                                owntype.getMetadata());
                     }
                 }
                 break;
@@ -3829,7 +3827,7 @@ public class Attr extends JCTree.Visitor {
 
     public void visitTypeArray(JCArrayTypeTree tree) {
         Type etype = attribType(tree.elemtype, env);
-        Type type = new ArrayType(etype, syms.arrayClass, Type.noAnnotations);
+        Type type = new ArrayType(etype, syms.arrayClass);
         result = check(tree, type, TYP, resultInfo);
     }
 
@@ -3878,7 +3876,7 @@ public class Attr extends JCTree.Visitor {
                     }
                 }
                 owntype = new ClassType(clazzOuter, actuals, clazztype.tsym,
-                                        clazztype.getAnnotationMirrors());
+                                        clazztype.getMetadata());
             } else {
                 if (formals.length() != 0) {
                     log.error(tree.pos(), "wrong.number.type.args",
@@ -4029,8 +4027,7 @@ public class Attr extends JCTree.Visitor {
             : attribType(tree.inner, env);
         result = check(tree, new WildcardType(chk.checkRefType(tree.pos(), type),
                                               tree.kind.kind,
-                                              syms.boundClass,
-                                              Type.noAnnotations),
+                                              syms.boundClass),
                        TYP, resultInfo);
     }
 

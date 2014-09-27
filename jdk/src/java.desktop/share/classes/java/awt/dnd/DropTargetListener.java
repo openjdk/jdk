@@ -117,7 +117,7 @@ public interface DropTargetListener extends EventListener {
      * gesture. The <code>DropTargetDropEvent</code>
      * provides a means to obtain a <code>Transferable</code>
      * object that represents the data object(s) to
-     * be transfered.<P>
+     * be transferred.<P>
      * From this method, the <code>DropTargetListener</code>
      * shall accept or reject the drop via the
      * acceptDrop(int dropAction) or rejectDrop() methods of the

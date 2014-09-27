@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -52,16 +52,40 @@ package java.security.spec;
 public class X509EncodedKeySpec extends EncodedKeySpec {
 
     /**
-     * Creates a new X509EncodedKeySpec with the given encoded key.
+     * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
      *
      * @param encodedKey the key, which is assumed to be
      * encoded according to the X.509 standard. The contents of the
      * array are copied to protect against subsequent modification.
-     * @exception NullPointerException if {@code encodedKey}
+     * @throws NullPointerException if {@code encodedKey}
      * is null.
      */
     public X509EncodedKeySpec(byte[] encodedKey) {
         super(encodedKey);
+    }
+
+    /**
+     * Creates a new {@code X509EncodedKeySpec} with the given encoded key.
+     * This constructor is useful when subsequent callers of the
+     * {@code X509EncodedKeySpec} object might not know the algorithm
+     * of the key.
+     *
+     * @param encodedKey the key, which is assumed to be
+     * encoded according to the X.509 standard. The contents of the
+     * array are copied to protect against subsequent modification.
+     * @param algorithm the algorithm name of the encoded public key
+     * See the KeyFactory section in the <a href=
+     * "{@docRoot}/../technotes/guides/security/StandardNames.html#KeyFactory">
+     * Java Cryptography Architecture Standard Algorithm Name Documentation</a>
+     * for information about standard algorithm names.
+     * @throws NullPointerException if {@code encodedKey}
+     * or {@code algorithm} is null.
+     * @throws IllegalArgumentException if {@code algorithm} is
+     * the empty string {@code ""}
+     * @since 1.9
+     */
+    public X509EncodedKeySpec(byte[] encodedKey, String algorithm) {
+        super(encodedKey, algorithm);
     }
 
     /**

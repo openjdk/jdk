@@ -348,7 +348,7 @@ public class Frame extends Window implements MenuContainer {
 
     /*
      * The Windows owned by the Frame.
-     * Note: in 1.2 this has been superceded by Window.ownedWindowList
+     * Note: in 1.2 this has been superseded by Window.ownedWindowList
      *
      * @serial
      * @see java.awt.Window#ownedWindowList

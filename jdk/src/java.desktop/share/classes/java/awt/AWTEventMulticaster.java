@@ -379,7 +379,7 @@ public class AWTEventMulticaster implements
     }
 
     /**
-     * Handles the windowDeiconfied event by invoking the
+     * Handles the windowDeiconified event by invoking the
      * windowDeiconified methods on listener-a and listener-b.
      * @param e the window event
      */
@@ -1053,7 +1053,7 @@ public class AWTEventMulticaster implements
     }
 
     /*
-     * Recusive method which populates EventListener array a with EventListeners
+     * Recursive method which populates EventListener array a with EventListeners
      * from l.  l is usually an AWTEventMulticaster.  Bug 4513402 revealed that
      * if l differed in type from the element type of a, an ArrayStoreException
      * would occur.  Now l is only inserted into a if it's of the appropriate

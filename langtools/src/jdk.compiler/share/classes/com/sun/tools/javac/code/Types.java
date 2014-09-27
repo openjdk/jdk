@@ -258,8 +258,7 @@ public class Types {
                         ListBuffer<Type> qs = new ListBuffer<>();
                         for (List<Type> iter = opens; iter.nonEmpty(); iter = iter.tail) {
                             qs.append(new WildcardType(syms.objectType, BoundKind.UNBOUND,
-                                                       syms.boundClass, (TypeVar) iter.head,
-                                                       Type.noAnnotations));
+                                                       syms.boundClass, (TypeVar) iter.head));
                         }
                         res = subst(res, opens, qs.toList());
                     }
@@ -631,8 +630,7 @@ public class Types {
         csym.members_field = WriteableScope.create(csym);
         MethodSymbol instDescSym = new MethodSymbol(descSym.flags(), descSym.name, descType, csym);
         csym.members_field.enter(instDescSym);
-        Type.ClassType ctype = new Type.ClassType(Type.noType, List.<Type>nil(), csym,
-                                                  Type.noAnnotations);
+        Type.ClassType ctype = new Type.ClassType(Type.noType, List.<Type>nil(), csym);
         ctype.supertype_field = syms.objectType;
         ctype.interfaces_field = targets;
         csym.type = ctype;
@@ -881,13 +879,13 @@ public class Types {
                         s = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
                                              syms.boundClass,
-                                             s.getAnnotationMirrors());
+                                             s.getMetadata());
                         changed = true;
                     } else if (s != orig) {
                         s = new WildcardType(wildUpperBound(s),
                                              BoundKind.EXTENDS,
                                              syms.boundClass,
-                                             s.getAnnotationMirrors());
+                                             s.getMetadata());
                         changed = true;
                     }
                     rewrite.append(s);
@@ -1916,7 +1914,7 @@ public class Types {
         if (t.hasTag(VOID) || t.hasTag(PACKAGE)) {
             Assert.error("Type t must not be a VOID or PACKAGE type, " + t.toString());
         }
-        return new ArrayType(t, syms.arrayClass, Type.noAnnotations);
+        return new ArrayType(t, syms.arrayClass);
     }
     // </editor-fold>
 
@@ -2182,40 +2180,50 @@ public class Types {
         }
     // where
         private SimpleVisitor<Type, Boolean> erasure = new SimpleVisitor<Type, Boolean>() {
+            private Type combineMetadata(final Type ty,
+                                         final TypeMetadata md) {
+                if (!md.isEmpty()) {
+                    switch (ty.getKind()) {
+                    default: return ty.clone(ty.metadata.combine(md));
+                    case OTHER:
+                    case UNION:
+                    case INTERSECTION:
+                    case PACKAGE:
+                    case EXECUTABLE:
+                    case NONE:
+                    case VOID:
+                    case ERROR:
+                        return ty;
+                    }
+                } else {
+                    return ty;
+                }
+            }
+
             public Type visitType(Type t, Boolean recurse) {
                 if (t.isPrimitive())
                     return t; /*fast special case*/
                 else {
-                    final List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();
                     Type erased = t.map(recurse ? erasureRecFun : erasureFun);
-                    if (!annos.isEmpty()) {
-                        erased = erased.annotatedType(annos);
-                    }
-                    return erased;
+                    return combineMetadata(erased, t.getMetadata());
                 }
             }
 
             @Override
             public Type visitClassType(ClassType t, Boolean recurse) {
                 Type erased = t.tsym.erasure(Types.this);
-                List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();
                 if (recurse) {
-                    erased = new ErasedClassType(erased.getEnclosingType(),erased.tsym);
+                    erased = new ErasedClassType(erased.getEnclosingType(),erased.tsym, t.getMetadata());
+                    return erased;
+                } else {
+                    return combineMetadata(erased, t.getMetadata());
                 }
-                if (!annos.isEmpty()) {
-                    erased = erased.annotatedType(annos);
-                }
-                return erased;
             }
 
             @Override
             public Type visitTypeVar(TypeVar t, Boolean recurse) {
-                final List<Attribute.TypeCompound> annos = t.getAnnotationMirrors();
                 Type erased = erasure(t.bound, recurse);
-                if (!annos.isEmpty()) {
-                    erased = erased.annotatedType(annos);
-                }
-                return erased;
+                return combineMetadata(erased, t.getMetadata());
             }
 
             @Override
@@ -2547,7 +2555,7 @@ public class Types {
                 Type outer1 = classBound(t.getEnclosingType());
                 if (outer1 != t.getEnclosingType())
                     return new ClassType(outer1, t.getTypeArguments(), t.tsym,
-                                         t.getAnnotationMirrors());
+                                         t.getMetadata());
                 else
                     return t;
             }
@@ -2967,7 +2975,7 @@ public class Types {
                     return t;
                 else
                     return new ClassType(outer1, typarams1, t.tsym,
-                                         t.getAnnotationMirrors());
+                                         t.getMetadata());
             } else {
                 Type st = subst(supertype(t));
                 List<Type> is = subst(interfaces(t));
@@ -2989,7 +2997,7 @@ public class Types {
                 if (t.isExtendsBound() && bound.isExtendsBound())
                     bound = wildUpperBound(bound);
                 return new WildcardType(bound, t.kind, syms.boundClass,
-                                        t.bound, t.getAnnotationMirrors());
+                                        t.bound, t.getMetadata());
             }
         }
 
@@ -2999,7 +3007,7 @@ public class Types {
             if (elemtype == t.elemtype)
                 return t;
             else
-                return new ArrayType(elemtype, t.tsym, t.getAnnotationMirrors());
+                return new ArrayType(elemtype, t.tsym, t.getMetadata());
         }
 
         @Override
@@ -3050,7 +3058,7 @@ public class Types {
         // create new type variables without bounds
         for (Type t : tvars) {
             newTvars.append(new TypeVar(t.tsym, null, syms.botType,
-                                        t.getAnnotationMirrors()));
+                                        t.getMetadata()));
         }
         // the new bounds should use the new type variables in place
         // of the old
@@ -3077,7 +3085,7 @@ public class Types {
         else {
             // create new type variable without bounds
             TypeVar tv = new TypeVar(t.tsym, null, syms.botType,
-                                     t.getAnnotationMirrors());
+                                     t.getMetadata());
             // the new bound should use the new type variable in place
             // of the old
             tv.bound = subst(bound1, List.<Type>of(t), List.<Type>of(tv));
@@ -3118,7 +3126,7 @@ public class Types {
         return tvars1;
     }
     private static final Mapping newInstanceFun = new Mapping("newInstanceFun") {
-            public Type apply(Type t) { return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound(), t.getAnnotationMirrors()); }
+            public Type apply(Type t) { return new TypeVar(t.tsym, t.getUpperBound(), t.getLowerBound(), t.getMetadata()); }
         };
     // </editor-fold>
 
@@ -3451,14 +3459,12 @@ public class Types {
                         m = new WildcardType(lub(wildUpperBound(act1.head),
                                                  wildUpperBound(act2.head)),
                                              BoundKind.EXTENDS,
-                                             syms.boundClass,
-                                             Type.noAnnotations);
+                                             syms.boundClass);
                         mergeCache.remove(pair);
                     } else {
                         m = new WildcardType(syms.objectType,
                                              BoundKind.UNBOUND,
-                                             syms.boundClass,
-                                             Type.noAnnotations);
+                                             syms.boundClass);
                     }
                     merged.append(m.withTypeVar(typarams.head));
                 }
@@ -3470,7 +3476,7 @@ public class Types {
             // There is no spec detailing how type annotations are to
             // be inherited.  So set it to noAnnotations for now
             return new ClassType(class1.getEnclosingType(), merged.toList(),
-                                 class1.tsym, Type.noAnnotations);
+                                 class1.tsym);
         }
 
     /**
@@ -3588,8 +3594,7 @@ public class Types {
                 }
             }
             // lub(A[], B[]) is lub(A, B)[]
-            return new ArrayType(lub(elements), syms.arrayClass,
-                                 Type.noAnnotations);
+            return new ArrayType(lub(elements), syms.arrayClass);
 
         case CLASS_BOUND:
             // calculate lub(A, B)
@@ -3999,7 +4004,7 @@ public class Types {
 
         if (captured)
             return new ClassType(cls.getEnclosingType(), S, cls.tsym,
-                                 cls.getAnnotationMirrors());
+                                 cls.getMetadata());
         else
             return t;
     }
@@ -4015,8 +4020,7 @@ public class Types {
                                                    syms.noSymbol,
                                                    bound,
                                                    syms.botType,
-                                                   (WildcardType)t,
-                                                   Type.noAnnotations));
+                                                   (WildcardType)t));
                 } else {
                     result.append(t);
                 }
@@ -4375,14 +4379,12 @@ public class Types {
             return new WildcardType(syms.objectType,
                                     BoundKind.UNBOUND,
                                     syms.boundClass,
-                                    formal,
-                                    Type.noAnnotations);
+                                    formal);
         } else {
             return new WildcardType(bound,
                                     BoundKind.EXTENDS,
                                     syms.boundClass,
-                                    formal,
-                                    Type.noAnnotations);
+                                    formal);
         }
     }
 
@@ -4399,14 +4401,12 @@ public class Types {
             return new WildcardType(syms.objectType,
                                     BoundKind.UNBOUND,
                                     syms.boundClass,
-                                    formal,
-                                    Type.noAnnotations);
+                                    formal);
         } else {
             return new WildcardType(bound,
                                     BoundKind.SUPER,
                                     syms.boundClass,
-                                    formal,
-                                    Type.noAnnotations);
+                                    formal);
         }
     }
 

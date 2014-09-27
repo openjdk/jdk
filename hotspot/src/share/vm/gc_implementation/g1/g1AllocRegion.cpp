@@ -129,8 +129,7 @@ HeapWord* G1AllocRegion::new_alloc_region_and_allocate(size_t word_size,
     // Note that we first perform the allocation and then we store the
     // region in _alloc_region. This is the reason why an active region
     // can never be empty.
-    _alloc_region = new_alloc_region;
-    _count += 1;
+    update_alloc_region(new_alloc_region);
     trace("region allocation successful");
     return result;
   } else {
@@ -170,6 +169,19 @@ void G1AllocRegion::set(HeapRegion* alloc_region) {
   _alloc_region = alloc_region;
   _count += 1;
   trace("set");
+}
+
+void G1AllocRegion::update_alloc_region(HeapRegion* alloc_region) {
+  trace("update");
+  // We explicitly check that the region is not empty to make sure we
+  // maintain the "the alloc region cannot be empty" invariant.
+  assert(alloc_region != NULL && !alloc_region->is_empty(),
+         ar_ext_msg(this, "pre-condition"));
+
+  _alloc_region = alloc_region;
+  _alloc_region->set_allocation_context(allocation_context());
+  _count += 1;
+  trace("updated");
 }
 
 HeapRegion* G1AllocRegion::release() {
@@ -225,5 +237,70 @@ void G1AllocRegion::trace(const char* str, size_t word_size, HeapWord* result) {
 G1AllocRegion::G1AllocRegion(const char* name,
                              bool bot_updates)
   : _name(name), _bot_updates(bot_updates),
-    _alloc_region(NULL), _count(0), _used_bytes_before(0) { }
+    _alloc_region(NULL), _count(0), _used_bytes_before(0),
+    _allocation_context(AllocationContext::system()) { }
+
+
+HeapRegion* MutatorAllocRegion::allocate_new_region(size_t word_size,
+                                                    bool force) {
+  return _g1h->new_mutator_alloc_region(word_size, force);
+}
+
+void MutatorAllocRegion::retire_region(HeapRegion* alloc_region,
+                                       size_t allocated_bytes) {
+  _g1h->retire_mutator_alloc_region(alloc_region, allocated_bytes);
+}
+
+HeapRegion* SurvivorGCAllocRegion::allocate_new_region(size_t word_size,
+                                                       bool force) {
+  assert(!force, "not supported for GC alloc regions");
+  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForSurvived);
+}
+
+void SurvivorGCAllocRegion::retire_region(HeapRegion* alloc_region,
+                                          size_t allocated_bytes) {
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
+                               GCAllocForSurvived);
+}
+
+HeapRegion* OldGCAllocRegion::allocate_new_region(size_t word_size,
+                                                  bool force) {
+  assert(!force, "not supported for GC alloc regions");
+  return _g1h->new_gc_alloc_region(word_size, count(), GCAllocForTenured);
+}
+
+void OldGCAllocRegion::retire_region(HeapRegion* alloc_region,
+                                     size_t allocated_bytes) {
+  _g1h->retire_gc_alloc_region(alloc_region, allocated_bytes,
+                               GCAllocForTenured);
+}
+
+HeapRegion* OldGCAllocRegion::release() {
+  HeapRegion* cur = get();
+  if (cur != NULL) {
+    // Determine how far we are from the next card boundary. If it is smaller than
+    // the minimum object size we can allocate into, expand into the next card.
+    HeapWord* top = cur->top();
+    HeapWord* aligned_top = (HeapWord*)align_ptr_up(top, G1BlockOffsetSharedArray::N_bytes);
+
+    size_t to_allocate_words = pointer_delta(aligned_top, top, HeapWordSize);
+
+    if (to_allocate_words != 0) {
+      // We are not at a card boundary. Fill up, possibly into the next, taking the
+      // end of the region and the minimum object size into account.
+      to_allocate_words = MIN2(pointer_delta(cur->end(), cur->top(), HeapWordSize),
+                               MAX2(to_allocate_words, G1CollectedHeap::min_fill_size()));
+
+      // Skip allocation if there is not enough space to allocate even the smallest
+      // possible object. In this case this region will not be retained, so the
+      // original problem cannot occur.
+      if (to_allocate_words >= G1CollectedHeap::min_fill_size()) {
+        HeapWord* dummy = attempt_allocation(to_allocate_words, true /* bot_updates */);
+        CollectedHeap::fill_with_object(dummy, to_allocate_words);
+      }
+    }
+  }
+  return G1AllocRegion::release();
+}
+
 

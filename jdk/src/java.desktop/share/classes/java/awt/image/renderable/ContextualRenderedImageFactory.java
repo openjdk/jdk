@@ -61,7 +61,7 @@ public interface ContextualRenderedImageFactory extends RenderedImageFactory {
      * alterations in the RenderContext, such as an affine mapping, or
      * operations that wish to obtain lower quality renderings of
      * their sources in order to save processing effort or
-     * transmission bandwith.  Some operations, such as blur, can also
+     * transmission bandwidth.  Some operations, such as blur, can also
      * use this mechanism to avoid obtaining sources of higher quality
      * than necessary.
      *

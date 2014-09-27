@@ -26,105 +26,117 @@
 #define SHARE_VM_CODE_CODECACHE_HPP
 
 #include "code/codeBlob.hpp"
+#include "code/nmethod.hpp"
 #include "memory/allocation.hpp"
 #include "memory/heap.hpp"
 #include "oops/instanceKlass.hpp"
 #include "oops/oopsHierarchy.hpp"
+#include "runtime/mutexLocker.hpp"
 
 // The CodeCache implements the code cache for various pieces of generated
 // code, e.g., compiled java methods, runtime stubs, transition frames, etc.
 // The entries in the CodeCache are all CodeBlob's.
 
-// Implementation:
-//   - Each CodeBlob occupies one chunk of memory.
-//   - Like the offset table in oldspace the zone has at table for
-//     locating a method given a addess of an instruction.
+// -- Implementation --
+// The CodeCache consists of one or more CodeHeaps, each of which contains
+// CodeBlobs of a specific CodeBlobType. Currently heaps for the following
+// types are available:
+//  - Non-methods: Non-methods like Buffers, Adapters and Runtime Stubs
+//  - Profiled nmethods: nmethods that are profiled, i.e., those
+//    executed at level 2 or 3
+//  - Non-Profiled nmethods: nmethods that are not profiled, i.e., those
+//    executed at level 1 or 4 and native methods
+//  - All: Used for code of all types if code cache segmentation is disabled.
+//
+// In the rare case of the non-method code heap getting full, non-method code
+// will be stored in the non-profiled code heap as a fallback solution.
+//
+// Depending on the availability of compilers and TieredCompilation there
+// may be fewer heaps. The size of the code heaps depends on the values of
+// ReservedCodeCacheSize, NonProfiledCodeHeapSize and ProfiledCodeHeapSize
+// (see CodeCache::heap_available(..) and CodeCache::initialize_heaps(..)
+// for details).
+//
+// Code cache segmentation is controlled by the flag SegmentedCodeCache.
+// If turned off, all code types are stored in a single code heap. By default
+// code cache segmentation is turned on if TieredCompilation is enabled and
+// ReservedCodeCacheSize >= 240 MB.
+//
+// All methods of the CodeCache accepting a CodeBlobType only apply to
+// CodeBlobs of the given type. For example, iteration over the
+// CodeBlobs of a specific type can be done by using CodeCache::first_blob(..)
+// and CodeCache::next_blob(..) and providing the corresponding CodeBlobType.
+//
+// IMPORTANT: If you add new CodeHeaps to the code cache or change the
+// existing ones, make sure to adapt the dtrace scripts (jhelper.d) for
+// Solaris and BSD.
 
 class OopClosure;
 class DepChange;
 
 class CodeCache : AllStatic {
   friend class VMStructs;
+  friend class NMethodIterator;
  private:
-  // CodeHeap is malloc()'ed at startup and never deleted during shutdown,
-  // so that the generated assembly code is always there when it's needed.
-  // This may cause memory leak, but is necessary, for now. See 4423824,
-  // 4422213 or 4436291 for details.
-  static CodeHeap * _heap;
-  static int _number_of_blobs;
-  static int _number_of_adapters;
-  static int _number_of_nmethods;
-  static int _number_of_nmethods_with_dependencies;
-  static bool _needs_cache_clean;
-  static nmethod* _scavenge_root_nmethods;  // linked via nm->scavenge_root_link()
+  // CodeHeaps of the cache
+  static GrowableArray<CodeHeap*>* _heaps;
+
+  static address _low_bound;                            // Lower bound of CodeHeap addresses
+  static address _high_bound;                           // Upper bound of CodeHeap addresses
+  static int _number_of_blobs;                          // Total number of CodeBlobs in the cache
+  static int _number_of_adapters;                       // Total number of Adapters in the cache
+  static int _number_of_nmethods;                       // Total number of nmethods in the cache
+  static int _number_of_nmethods_with_dependencies;     // Total number of nmethods with dependencies
+  static bool _needs_cache_clean;                       // True if inline caches of the nmethods needs to be flushed
+  static nmethod* _scavenge_root_nmethods;              // linked via nm->scavenge_root_link()
+  static int _codemem_full_count;                       // Number of times a CodeHeap in the cache was full
 
   static void mark_scavenge_root_nmethods() PRODUCT_RETURN;
   static void verify_perm_nmethods(CodeBlobClosure* f_or_null) PRODUCT_RETURN;
 
-  static int _codemem_full_count;
-  static size_t bytes_allocated_in_freelist() { return _heap->allocated_in_freelist(); }
-  static int    allocated_segments()          { return _heap->allocated_segments(); }
-  static size_t freelist_length()             { return _heap->freelist_length(); }
+  // CodeHeap management
+  static void initialize_heaps();                             // Initializes the CodeHeaps
+  // Creates a new heap with the given name and size, containing CodeBlobs of the given type
+  static void add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type);
+  static CodeHeap* get_code_heap(CodeBlob* cb);               // Returns the CodeHeap for the given CodeBlob
+  static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
+  static bool heap_available(int code_blob_type);             // Returns true if a CodeHeap for the given CodeBlobType is available
+  static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
+
+  // Iteration
+  static CodeBlob* first_blob(CodeHeap* heap);                // Returns the first CodeBlob on the given CodeHeap
+  static CodeBlob* first_blob(int code_blob_type);            // Returns the first CodeBlob of the given type
+  static CodeBlob* next_blob(CodeHeap* heap, CodeBlob* cb);   // Returns the first alive CodeBlob on the given CodeHeap
+  static CodeBlob* next_blob(CodeBlob* cb);                   // Returns the next CodeBlob of the given type succeeding the given CodeBlob
+
+  static size_t bytes_allocated_in_freelists();
+  static int    allocated_segments();
+  static size_t freelists_length();
 
  public:
-
   // Initialization
   static void initialize();
 
-  static void report_codemem_full();
-
   // Allocation/administration
-  static CodeBlob* allocate(int size, bool is_critical = false); // allocates a new CodeBlob
-  static void commit(CodeBlob* cb);                 // called when the allocated CodeBlob has been filled
-  static int alignment_unit();                      // guaranteed alignment of all CodeBlobs
-  static int alignment_offset();                    // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
-  static void free(CodeBlob* cb);                   // frees a CodeBlob
-  static bool contains(void *p);                    // returns whether p is included
-  static void blobs_do(void f(CodeBlob* cb));       // iterates over all CodeBlobs
-  static void blobs_do(CodeBlobClosure* f);         // iterates over all CodeBlobs
-  static void nmethods_do(void f(nmethod* nm));     // iterates over all nmethods
-  static void alive_nmethods_do(void f(nmethod* nm)); // iterates over all alive nmethods
+  static CodeBlob* allocate(int size, int code_blob_type, bool is_critical = false); // allocates a new CodeBlob
+  static void commit(CodeBlob* cb);                     // called when the allocated CodeBlob has been filled
+  static int  alignment_unit();                         // guaranteed alignment of all CodeBlobs
+  static int  alignment_offset();                       // guaranteed offset of first CodeBlob byte within alignment unit (i.e., allocation header)
+  static void free(CodeBlob* cb);                       // frees a CodeBlob
+  static bool contains(void *p);                        // returns whether p is included
+  static void blobs_do(void f(CodeBlob* cb));           // iterates over all CodeBlobs
+  static void blobs_do(CodeBlobClosure* f);             // iterates over all CodeBlobs
+  static void nmethods_do(void f(nmethod* nm));         // iterates over all nmethods
+  static void alive_nmethods_do(void f(nmethod* nm));   // iterates over all alive nmethods
 
   // Lookup
-  static CodeBlob* find_blob(void* start);
-  static nmethod*  find_nmethod(void* start);
+  static CodeBlob* find_blob(void* start);              // Returns the CodeBlob containing the given address
+  static CodeBlob* find_blob_unsafe(void* start);       // Same as find_blob but does not fail if looking up a zombie method
+  static nmethod*  find_nmethod(void* start);           // Returns the nmethod containing the given address
 
-  // Lookup that does not fail if you lookup a zombie method (if you call this, be sure to know
-  // what you are doing)
-  static CodeBlob* find_blob_unsafe(void* start) {
-    // NMT can walk the stack before code cache is created
-    if (_heap == NULL) return NULL;
-
-    CodeBlob* result = (CodeBlob*)_heap->find_start(start);
-    // this assert is too strong because the heap code will return the
-    // heapblock containing start. That block can often be larger than
-    // the codeBlob itself. If you look up an address that is within
-    // the heapblock but not in the codeBlob you will assert.
-    //
-    // Most things will not lookup such bad addresses. However
-    // AsyncGetCallTrace can see intermediate frames and get that kind
-    // of invalid address and so can a developer using hsfind.
-    //
-    // The more correct answer is to return NULL if blob_contains() returns
-    // false.
-    // assert(result == NULL || result->blob_contains((address)start), "found wrong CodeBlob");
-
-    if (result != NULL && !result->blob_contains((address)start)) {
-      result = NULL;
-    }
-    return result;
-  }
-
-  // Iteration
-  static CodeBlob* first();
-  static CodeBlob* next (CodeBlob* cb);
-  static CodeBlob* alive(CodeBlob *cb);
-  static nmethod* alive_nmethod(CodeBlob *cb);
-  static nmethod* first_nmethod();
-  static nmethod* next_nmethod (CodeBlob* cb);
-  static int       nof_blobs()                 { return _number_of_blobs; }
-  static int       nof_adapters()              { return _number_of_adapters; }
-  static int       nof_nmethods()              { return _number_of_nmethods; }
+  static int       nof_blobs()      { return _number_of_blobs; }      // Returns the total number of CodeBlobs in the cache
+  static int       nof_adapters()   { return _number_of_adapters; }   // Returns the total number of Adapters in the cache
+  static int       nof_nmethods()   { return _number_of_nmethods; }   // Returns the total number of nmethods in the cache
 
   // GC support
   static void gc_epilogue();
@@ -137,7 +149,7 @@ class CodeCache : AllStatic {
   static void asserted_non_scavengable_nmethods_do(CodeBlobClosure* f = NULL) PRODUCT_RETURN;
   static void scavenge_root_nmethods_do(CodeBlobClosure* f);
 
-  static nmethod* scavenge_root_nmethods()          { return _scavenge_root_nmethods; }
+  static nmethod* scavenge_root_nmethods()            { return _scavenge_root_nmethods; }
   static void set_scavenge_root_nmethods(nmethod* nm) { _scavenge_root_nmethods = nm; }
   static void add_scavenge_root_nmethod(nmethod* nm);
   static void drop_scavenge_root_nmethod(nmethod* nm);
@@ -151,27 +163,47 @@ class CodeCache : AllStatic {
   static void print_trace(const char* event, CodeBlob* cb, int size = 0) PRODUCT_RETURN;
   static void print_summary(outputStream* st, bool detailed = true); // Prints a summary of the code cache usage
   static void log_state(outputStream* st);
+  static const char* get_code_heap_name(int code_blob_type)  { return (heap_available(code_blob_type) ? get_code_heap(code_blob_type)->name() : "Unused"); }
+  static void report_codemem_full(int code_blob_type, bool print);
 
   // Dcmd (Diagnostic commands)
   static void print_codelist(outputStream* st);
   static void print_layout(outputStream* st);
 
   // The full limits of the codeCache
-  static address  low_bound()                    { return (address) _heap->low_boundary(); }
-  static address  high_bound()                   { return (address) _heap->high_boundary(); }
-  static address  high()                         { return (address) _heap->high(); }
+  static address low_bound()                          { return _low_bound; }
+  static address high_bound()                         { return _high_bound; }
 
   // Profiling
-  static address first_address();                // first address used for CodeBlobs
-  static address last_address();                 // last  address used for CodeBlobs
-  static size_t  capacity()                      { return _heap->capacity(); }
-  static size_t  max_capacity()                  { return _heap->max_capacity(); }
-  static size_t  unallocated_capacity()          { return _heap->unallocated_capacity(); }
-  static double  reverse_free_ratio();
+  static size_t capacity(int code_blob_type)             { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->capacity() : 0; }
+  static size_t capacity();
+  static size_t unallocated_capacity(int code_blob_type) { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->unallocated_capacity() : 0; }
+  static size_t unallocated_capacity();
+  static size_t max_capacity(int code_blob_type)         { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->max_capacity() : 0; }
+  static size_t max_capacity();
 
-  static bool needs_cache_clean()                { return _needs_cache_clean; }
-  static void set_needs_cache_clean(bool v)      { _needs_cache_clean = v;    }
-  static void clear_inline_caches();             // clear all inline caches
+  static bool   is_full(int* code_blob_type);
+  static double reverse_free_ratio(int code_blob_type);
+
+  static bool needs_cache_clean()                     { return _needs_cache_clean; }
+  static void set_needs_cache_clean(bool v)           { _needs_cache_clean = v;    }
+  static void clear_inline_caches();                  // clear all inline caches
+
+  // Returns the CodeBlobType for nmethods of the given compilation level
+  static int get_code_blob_type(int comp_level) {
+    if (comp_level == CompLevel_none ||
+        comp_level == CompLevel_simple ||
+        comp_level == CompLevel_full_optimization) {
+      // Non profiled methods
+      return CodeBlobType::MethodNonProfiled;
+    } else if (comp_level == CompLevel_limited_profile ||
+               comp_level == CompLevel_full_profile) {
+      // Profiled methods
+      return CodeBlobType::MethodProfiled;
+    }
+    ShouldNotReachHere();
+    return 0;
+  }
 
   static void verify_clean_inline_caches();
   static void verify_icholder_relocations();
@@ -187,10 +219,87 @@ class CodeCache : AllStatic {
   static void make_marked_nmethods_zombies();
   static void make_marked_nmethods_not_entrant();
 
-    // tells how many nmethods have dependencies
+  // tells how many nmethods have dependencies
   static int number_of_nmethods_with_dependencies();
 
   static int get_codemem_full_count() { return _codemem_full_count; }
+};
+
+
+// Iterator to iterate over nmethods in the CodeCache.
+class NMethodIterator : public StackObj {
+ private:
+  CodeBlob* _code_blob;   // Current CodeBlob
+  int _code_blob_type;    // Refers to current CodeHeap
+
+ public:
+  NMethodIterator() {
+    initialize(NULL); // Set to NULL, initialized by first call to next()
+  }
+
+  NMethodIterator(nmethod* nm) {
+    initialize(nm);
+  }
+
+  // Advance iterator to next nmethod
+  bool next() {
+    assert_locked_or_safepoint(CodeCache_lock);
+    assert(_code_blob_type < CodeBlobType::NumTypes, "end reached");
+
+    bool result = next_nmethod();
+    while (!result && (_code_blob_type < CodeBlobType::MethodProfiled)) {
+      // Advance to next code heap if segmented code cache
+      _code_blob_type++;
+      result = next_nmethod();
+    }
+    return result;
+  }
+
+  // Advance iterator to next alive nmethod
+  bool next_alive() {
+    bool result = next();
+    while(result && !_code_blob->is_alive()) {
+      result = next();
+    }
+    return result;
+  }
+
+  bool end()        const   { return _code_blob == NULL; }
+  nmethod* method() const   { return (nmethod*)_code_blob; }
+
+private:
+  // Initialize iterator to given nmethod
+  void initialize(nmethod* nm) {
+    _code_blob = (CodeBlob*)nm;
+    if (!SegmentedCodeCache) {
+      // Iterate over all CodeBlobs
+      _code_blob_type = CodeBlobType::All;
+    } else if (nm != NULL) {
+      _code_blob_type = CodeCache::get_code_blob_type(nm->comp_level());
+    } else {
+      // Only iterate over method code heaps, starting with non-profiled
+      _code_blob_type = CodeBlobType::MethodNonProfiled;
+    }
+  }
+
+  // Advance iterator to the next nmethod in the current code heap
+  bool next_nmethod() {
+    // Get first method CodeBlob
+    if (_code_blob == NULL) {
+      _code_blob = CodeCache::first_blob(_code_blob_type);
+      if (_code_blob == NULL) {
+        return false;
+      } else if (_code_blob->is_nmethod()) {
+        return true;
+      }
+    }
+    // Search for next method CodeBlob
+    _code_blob = CodeCache::next_blob(_code_blob);
+    while (_code_blob != NULL && !_code_blob->is_nmethod()) {
+      _code_blob = CodeCache::next_blob(_code_blob);
+    }
+    return _code_blob != NULL;
+  }
 };
 
 #endif // SHARE_VM_CODE_CODECACHE_HPP

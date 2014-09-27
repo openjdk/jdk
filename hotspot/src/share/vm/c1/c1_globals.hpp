@@ -287,9 +287,6 @@
   develop(bool, InstallMethods, true,                                       \
           "Install methods at the end of successful compilations")          \
                                                                             \
-  product(intx, CompilationRepeat, 0,                                       \
-          "Number of times to recompile method before returning result")    \
-                                                                            \
   develop(intx, NMethodSizeLimit, (64*K)*wordSize,                          \
           "Maximum size of a compiled method.")                             \
                                                                             \

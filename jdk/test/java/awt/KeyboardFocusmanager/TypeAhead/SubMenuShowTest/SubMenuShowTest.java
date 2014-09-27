@@ -36,7 +36,7 @@ import java.applet.Applet;
 import java.util.concurrent.atomic.AtomicBoolean;
 import java.lang.reflect.InvocationTargetException;
 import test.java.awt.regtesthelpers.Util;
-import sun.awt.OSInfo;
+import jdk.testlibrary.OSInfo;
 
 public class SubMenuShowTest extends Applet {
     Robot robot;

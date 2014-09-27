@@ -60,6 +60,10 @@ public final class CompileUnit implements Comparable<CompileUnit> {
         emittedUnitCount++;
     }
 
+    /**
+     * Get the amount of emitted compile units so far in the system
+     * @return emitted compile unit count
+     */
     public static int getEmittedUnitCount() {
         return emittedUnitCount;
     }
@@ -72,6 +76,10 @@ public final class CompileUnit implements Comparable<CompileUnit> {
         return isUsed;
     }
 
+    /**
+     * Check if a compile unit has code, not counting inits and clinits
+     * @return true of if there is "real code" in the compile unit
+     */
     public boolean hasCode() {
         return (classEmitter.getMethodCount() - classEmitter.getInitCount() - classEmitter.getClinitCount()) > 0;
     }

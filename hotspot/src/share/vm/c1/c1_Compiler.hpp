@@ -54,6 +54,9 @@ class Compiler: public AbstractCompiler {
 
   // Print compilation timers and statistics
   virtual void print_timers();
+
+  // Size of the code buffer
+  static int code_buffer_size();
 };
 
 #endif // SHARE_VM_C1_C1_COMPILER_HPP

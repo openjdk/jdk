@@ -368,7 +368,7 @@ public class CookieManager extends CookieHandler
         int val = -1;
         while (i > 0) {
             try {
-                val = Integer.parseInt(lst.substring(0, i));
+                val = Integer.parseInt(lst, 0, i, 10);
                 if (val == port) {
                     return true;
                 }

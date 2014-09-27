@@ -1989,7 +1989,7 @@ void Matcher::pd_implicit_null_fixup(MachNode *node, uint idx) {
 // to implement the UseStrictFP mode.
 const bool Matcher::strict_fp_requires_explicit_rounding = false;
 
-// Are floats conerted to double when stored to stack during deoptimization?
+// Are floats converted to double when stored to stack during deoptimization?
 // Sparc does not handle callee-save floats.
 bool Matcher::float_in_double() { return false; }
 
@@ -3218,7 +3218,7 @@ enc_class enc_Array_Equals(o0RegP ary1, o1RegP ary2, g3RegP tmp1, notemp_iRegI r
 //         are owned by the CALLEE.  Holes should not be nessecary in the
 //         incoming area, as the Java calling convention is completely under
 //         the control of the AD file.  Doubles can be sorted and packed to
-//         avoid holes.  Holes in the outgoing arguments may be nessecary for
+//         avoid holes.  Holes in the outgoing arguments may be necessary for
 //         varargs C calling conventions.
 // Note 3: Region 0-3 is even aligned, with pad2 as needed.  Region 3-5 is
 //         even aligned with pad0 as needed.
@@ -3284,7 +3284,7 @@ frame %{
   %}
 
   // Body of function which returns an OptoRegs array locating
-  // arguments either in registers or in stack slots for callin
+  // arguments either in registers or in stack slots for calling
   // C.
   c_calling_convention %{
     // This is obviously always outgoing

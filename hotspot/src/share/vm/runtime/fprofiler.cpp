@@ -165,7 +165,7 @@ void PCRecorder::init() {
   for (int index = 0; index < s; index++) {
     counters[index] = 0;
   }
-  base = CodeCache::first_address();
+  base = CodeCache::low_bound();
 }
 
 void PCRecorder::record(address pc) {

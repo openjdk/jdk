@@ -163,6 +163,8 @@
   enum unpatchable_t { unpatchable };
   frame(intptr_t* sp, unpatchable_t, address pc = NULL, CodeBlob* cb = NULL);
 
+  void init(intptr_t* sp, address pc, CodeBlob* cb);
+
   // Walk from sp outward looking for old_sp, and return old_sp's predecessor
   // (i.e. return the sp from the frame where old_sp is the fp).
   // Register windows are assumed to be flushed for the stack in question.

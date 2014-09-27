@@ -36,7 +36,6 @@ import static jdk.nashorn.internal.lookup.MethodHandleFactory.stripName;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.JSType.getNumberOfAccessorTypes;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.lang.invoke.MethodHandle;
@@ -57,9 +56,7 @@ public class AccessorProperty extends Property {
     private static final MethodHandles.Lookup LOOKUP = MethodHandles.lookup();
 
     private static final MethodHandle REPLACE_MAP   = findOwnMH_S("replaceMap", Object.class, Object.class, PropertyMap.class);
-    private static final MethodHandle INVALIDATE_SP = findOwnMH_S("invalidateSwitchPoint", Object.class, Object.class, SwitchPoint.class);
-
-    private static final SwitchPoint NO_CHANGE_CALLBACK = new SwitchPoint();
+    private static final MethodHandle INVALIDATE_SP = findOwnMH_S("invalidateSwitchPoint", Object.class, AccessorProperty.class, Object.class);
 
     private static final int NOOF_TYPES = getNumberOfAccessorTypes();
     private static final long serialVersionUID = 3371720170182154920L;
@@ -221,7 +218,7 @@ public class AccessorProperty extends Property {
      * @param setter the property setter or null if non writable, non configurable
      */
     private AccessorProperty(final String key, final int flags, final int slot, final MethodHandle getter, final MethodHandle setter) {
-        super(key, flags | (getter.type().returnType().isPrimitive() ? IS_NASGEN_PRIMITIVE : 0), slot);
+        super(key, flags | IS_BUILTIN | (getter.type().returnType().isPrimitive() ? IS_NASGEN_PRIMITIVE : 0), slot);
         assert !isSpill();
 
         // we don't need to prep the setters these will never be invalidated as this is a nasgen
@@ -602,7 +599,6 @@ public class AccessorProperty extends Property {
 
     private Property getWiderProperty(final Class<?> type) {
         return copy(type); //invalidate cache of new property
-
     }
 
     private PropertyMap getWiderMap(final PropertyMap oldMap, final Property newProperty) {
@@ -627,8 +623,10 @@ public class AccessorProperty extends Property {
     }
 
     @SuppressWarnings("unused")
-    private static Object invalidateSwitchPoint(final Object obj, final SwitchPoint sp) {
-        SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
+    private static Object invalidateSwitchPoint(final AccessorProperty property, final Object obj) {
+         if (!property.builtinSwitchPoint.hasBeenInvalidated()) {
+            SwitchPoint.invalidateAll(new SwitchPoint[] { property.builtinSwitchPoint });
+        }
         return obj;
     }
 
@@ -668,36 +666,13 @@ public class AccessorProperty extends Property {
             mh = generateSetter(!forType.isPrimitive() ? Object.class : forType, type);
         }
 
-        /**
-         * Check if this is a special global name that requires switchpoint invalidation
-         */
-        final SwitchPoint ccb = getChangeCallback();
-        if (ccb != null && ccb != NO_CHANGE_CALLBACK) {
-            mh = MH.filterArguments(mh, 0, MH.insertArguments(debugInvalidate(getKey(), ccb), 1, changeCallback));
+        if (isBuiltin()) {
+           mh = MH.filterArguments(mh, 0, debugInvalidate(MH.insertArguments(INVALIDATE_SP, 0, this), getKey()));
         }
 
         assert mh.type().returnType() == void.class : mh.type();
 
         return mh;
-    }
-
-    /**
-     * Get the change callback for this property
-     * @return switchpoint that is invalidated when property changes
-     */
-    protected SwitchPoint getChangeCallback() {
-        if (changeCallback == null) {
-            try {
-                changeCallback = Global.instance().getChangeCallback(getKey());
-            } catch (final NullPointerException e) {
-                assert !"apply".equals(getKey()) && !"call".equals(getKey());
-                //empty
-            }
-            if (changeCallback == null) {
-                changeCallback = NO_CHANGE_CALLBACK;
-            }
-        }
-        return changeCallback;
     }
 
     @Override
@@ -723,7 +698,6 @@ public class AccessorProperty extends Property {
     public Class<?> getCurrentType() {
         return currentType;
     }
-
 
     private MethodHandle debug(final MethodHandle mh, final Class<?> forType, final Class<?> type, final String tag) {
         if (!Context.DEBUG || !Global.hasInstance()) {
@@ -780,9 +754,9 @@ public class AccessorProperty extends Property {
         return mh;
     }
 
-    private static MethodHandle debugInvalidate(final String key, final SwitchPoint sp) {
+    private static MethodHandle debugInvalidate(final MethodHandle invalidator, final String key) {
         if (!Context.DEBUG || !Global.hasInstance()) {
-            return INVALIDATE_SP;
+            return invalidator;
         }
 
         final Context context = Context.getContextTrusted();
@@ -790,11 +764,11 @@ public class AccessorProperty extends Property {
 
         return context.addLoggingToHandle(
                 ObjectClassGenerator.class,
-                INVALIDATE_SP,
+                invalidator,
                 new Supplier<String>() {
                     @Override
                     public String get() {
-                        return "Field change callback for " + key + " triggered: " + sp;
+                        return "Field change callback for " + key + " triggered ";
                     }
                 });
     }

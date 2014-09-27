@@ -614,20 +614,34 @@ public class JMXStartStopTest {
             try (ServerSocket ss = new ServerSocket(0))
             {
                 busyPort = ss.getLocalPort();
-                jcmd(
-                    line -> {
-                        boolean match = line.contains("Port already in use: " +
-                                                      busyPort);
-                        System.out.println("[match] " + line + " => "  + match);
-                        if (match) {
-                            checks.getAndUpdate((op) -> op | 4);
-                        }
-                    },
-                    CMD_START,
-                    "jmxremote.port=" + ss.getLocalPort(),
-                    "jmxremote.rmi.port=" + pa.getPort2(),
-                    "jmxremote.authenticate=false",
-                    "jmxremote.ssl=false");
+                int retryCntr = 1;
+                do {
+                    final boolean[] retry = new boolean[]{false};
+                    jcmd(
+                        line -> {
+                            boolean match = line.contains("Port already in use: " +
+                                                          busyPort);
+                            System.out.println("[match] " + line + " => "  + match);
+                            if (match) {
+                                checks.getAndUpdate((op) -> op | 4);
+                                retry[0] = false;
+                            } else if (line.contains("Exception thrown by the agent")) {
+                                retry[0] = true;
+                            }
+                        },
+                        CMD_START,
+                        "jmxremote.port=" + ss.getLocalPort(),
+                        "jmxremote.rmi.port=" + pa.getPort2(),
+                        "jmxremote.authenticate=false",
+                        "jmxremote.ssl=false"
+                    );
+                    if (!retry[0]) {
+                        break;
+                    }
+                    System.out.println("Attempt " + retryCntr + " >>>");
+                    System.out.println("Unexpected reply from the agent. Retrying in 500ms ...");
+                    Thread.sleep(500);
+                } while (retryCntr++ < 10);
             }
             if ((checks.get() & 1) == 0) {
                 throw new Exception("Starting agent on port " + pa.getPort1() + " should " +

@@ -23,6 +23,7 @@
  * questions.
  */
 #include <windows.h>
+#include <Sddl.h>
 #include <string.h>
 
 #include "jni.h"
@@ -258,6 +259,25 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
     HANDLE hPipe;
     char name[MAX_PIPE_NAME_LENGTH];
 
+    SECURITY_ATTRIBUTES sa;
+    LPSECURITY_ATTRIBUTES lpSA = NULL;
+    // Custom Security Descriptor is required here to "get" Medium Integrity Level.
+    // In order to allow Medium Integrity Level clients to open
+    // and use a NamedPipe created by an High Integrity Level process.
+    TCHAR *szSD = TEXT("D:")                  // Discretionary ACL
+                  TEXT("(A;OICI;GRGW;;;WD)")  // Allow read/write to Everybody
+                  TEXT("(A;OICI;GA;;;SY)")    // Allow full control to System
+                  TEXT("(A;OICI;GA;;;BA)");   // Allow full control to Administrators
+
+    sa.nLength = sizeof(SECURITY_ATTRIBUTES);
+    sa.bInheritHandle = FALSE;
+    sa.lpSecurityDescriptor = NULL;
+
+    if (ConvertStringSecurityDescriptorToSecurityDescriptor
+          (szSD, SDDL_REVISION_1, &(sa.lpSecurityDescriptor), NULL)) {
+        lpSA = &sa;
+    }
+
     jstring_to_cstring(env, pipename, name, MAX_PIPE_NAME_LENGTH);
 
     hPipe = CreateNamedPipe(
@@ -270,7 +290,9 @@ JNIEXPORT jlong JNICALL Java_sun_tools_attach_VirtualMachineImpl_createPipe
           128,                          // output buffer size
           8192,                         // input buffer size
           NMPWAIT_USE_DEFAULT_WAIT,     // client time-out
-          NULL);                        // default security attribute
+          lpSA);        // security attributes
+
+    LocalFree(sa.lpSecurityDescriptor);
 
     if (hPipe == INVALID_HANDLE_VALUE) {
         char msg[256];

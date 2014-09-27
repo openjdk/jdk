@@ -610,6 +610,9 @@ public class DocFlavor implements Serializable, Cloneable {
 
     /**
      * Write the instance to a stream (ie serialize the object).
+     *
+     * @throws IOException if I/O errors occur while writing to the underlying
+     * stream
      */
     private void writeObject(ObjectOutputStream s) throws IOException {
 
@@ -620,6 +623,10 @@ public class DocFlavor implements Serializable, Cloneable {
     /**
      * Reconstitute an instance from a stream (that is, deserialize it).
      *
+     * @throws ClassNotFoundException if the class of a serialized object could
+     * not be found.
+     * @throws IOException if I/O errors occur while reading from the underlying
+     * stream
      * @serialData
      * The serialised form of a DocFlavor is the String naming the
      * representation class followed by the String representing the canonical
