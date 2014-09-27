@@ -77,10 +77,14 @@ PROFILE_1_JRE_LIB_FILES := \
     security/java.security \
     security/local_policy.jar \
     security/trusted.libraries \
+    tzdb.dat
+
+ifndef OPENJDK
+PROFILE_1_JRE_LIB_FILES += \
     security/unlimited_policy/README.txt \
     security/unlimited_policy/US_export_policy.jar \
-    security/unlimited_policy/local_policy.jar \
-    tzdb.dat
+    security/unlimited_policy/local_policy.jar
+endif
 
 PROFILE_1_JRE_OTHER_FILES := \
     COPYRIGHT \
@@ -100,9 +104,13 @@ PROFILE_1_JRE_JAR_FILES := \
     resources.jar \
     rt.jar \
     security/US_export_policy.jar \
-    security/local_policy.jar \
+    security/local_policy.jar
+
+ifndef OPENJDK
+PROFILE_1_JRE_JAR_FILES += \
     security/unlimited_policy/US_export_policy.jar \
     security/unlimited_policy/local_policy.jar
+endif
 
 PROFILE_2_JRE_BIN_FILES := \
     rmid$(EXE_SUFFIX) \
