@@ -128,9 +128,7 @@ void ConcurrentG1Refine::worker_threads_do(ThreadClosure * tc) {
 }
 
 uint ConcurrentG1Refine::thread_num() {
-  uint n_threads = (G1ConcRefinementThreads > 0) ? G1ConcRefinementThreads
-                                                : ParallelGCThreads;
-  return MAX2<uint>(n_threads, 1);
+  return G1ConcRefinementThreads;
 }
 
 void ConcurrentG1Refine::print_worker_threads_on(outputStream* st) const {
