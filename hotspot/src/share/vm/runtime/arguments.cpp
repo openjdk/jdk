@@ -1697,6 +1697,12 @@ void Arguments::set_g1_gc_flags() {
                      Abstract_VM_Version::parallel_worker_threads());
   }
 
+#if INCLUDE_ALL_GCS
+  if (G1ConcRefinementThreads == 0) {
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  }
+#endif
+
   // MarkStackSize will be set (if it hasn't been set by the user)
   // when concurrent marking is initialized.
   // Its value will be based upon the number of parallel marking threads.
