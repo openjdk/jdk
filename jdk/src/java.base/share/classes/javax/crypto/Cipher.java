@@ -263,9 +263,9 @@ public class Cipher {
                      Provider provider,
                      String transformation) {
         // See bug 4341369 & 4334690 for more info.
-        // If the caller is trusted, then okey.
+        // If the caller is trusted, then okay.
         // Otherwise throw a NullPointerException.
-        if (!JceSecurityManager.INSTANCE.isCallerTrusted()) {
+        if (!JceSecurityManager.INSTANCE.isCallerTrusted(provider)) {
             throw new NullPointerException();
         }
         this.spi = cipherSpi;
