@@ -577,6 +577,7 @@ public:
 
   // Inline cache support
   void clear_inline_caches();
+  void clear_ic_stubs();
   void cleanup_inline_caches();
   bool inlinecache_check_contains(address addr) const {
     return (addr >= code_begin() && addr < verified_entry_point());
