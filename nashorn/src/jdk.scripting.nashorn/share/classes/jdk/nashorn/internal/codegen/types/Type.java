@@ -54,8 +54,10 @@ import java.lang.invoke.CallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
+import java.util.Collections;
 import java.util.Map;
 import java.util.TreeMap;
+import java.util.WeakHashMap;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.ConcurrentMap;
 import jdk.internal.org.objectweb.asm.Handle;
@@ -103,6 +105,16 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     /** The class for this type */
     private final Class<?> clazz;
 
+    /**
+     * Cache for internal types - this is a query that requires complex stringbuilding inside
+     * ASM and it saves startup time to cache the type mappings
+     */
+    private static final Map<Class<?>, jdk.internal.org.objectweb.asm.Type> INTERNAL_TYPE_CACHE =
+            Collections.synchronizedMap(new WeakHashMap<Class<?>, jdk.internal.org.objectweb.asm.Type>());
+
+    /** Internal ASM type for this Type - computed once at construction */
+    private final jdk.internal.org.objectweb.asm.Type internalType;
+
     /** Weights are used to decide which types are "wider" than other types */
     protected static final int MIN_WEIGHT = -1;
 
@@ -121,12 +133,13 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
      * @param slots       how many bytecode slots the type takes up
      */
     Type(final String name, final Class<?> clazz, final int weight, final int slots) {
-        this.name       = name;
-        this.clazz      = clazz;
-        this.descriptor = jdk.internal.org.objectweb.asm.Type.getDescriptor(clazz);
-        this.weight     = weight;
+        this.name         = name;
+        this.clazz        = clazz;
+        this.descriptor   = jdk.internal.org.objectweb.asm.Type.getDescriptor(clazz);
+        this.weight       = weight;
         assert weight >= MIN_WEIGHT && weight <= MAX_WEIGHT : "illegal type weight: " + weight;
-        this.slots      = slots;
+        this.slots        = slots;
+        this.internalType = getInternalType(clazz);
     }
 
     /**
@@ -356,11 +369,22 @@ public abstract class Type implements Comparable<Type>, BytecodeOps {
     }
 
     private jdk.internal.org.objectweb.asm.Type getInternalType() {
-        return jdk.internal.org.objectweb.asm.Type.getType(getTypeClass());
+        return internalType;
+    }
+
+    private static jdk.internal.org.objectweb.asm.Type lookupInternalType(final Class<?> type) {
+        final Map<Class<?>, jdk.internal.org.objectweb.asm.Type> cache = INTERNAL_TYPE_CACHE;
+        jdk.internal.org.objectweb.asm.Type itype = cache.get(type);
+        if (itype != null) {
+            return itype;
+        }
+        itype = jdk.internal.org.objectweb.asm.Type.getType(type);
+        cache.put(type, itype);
+        return itype;
     }
 
     private static jdk.internal.org.objectweb.asm.Type getInternalType(final Class<?> type) {
-        return jdk.internal.org.objectweb.asm.Type.getType(type);
+        return lookupInternalType(type);
     }
 
     static void invokestatic(final MethodVisitor method, final Call call) {
