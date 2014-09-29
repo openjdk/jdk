@@ -134,6 +134,13 @@ needs_compact3 = \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/arguments/TestDynMinHeapFreeRatio.java \
   gc/arguments/TestDynMaxHeapFreeRatio.java \
+  gc/g1/TestShrinkAuxiliaryData00.java \
+  gc/g1/TestShrinkAuxiliaryData05.java \
+  gc/g1/TestShrinkAuxiliaryData10.java \
+  gc/g1/TestShrinkAuxiliaryData15.java \
+  gc/g1/TestShrinkAuxiliaryData20.java \
+  gc/g1/TestShrinkAuxiliaryData25.java \
+  gc/g1/TestShrinkAuxiliaryData30.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
 
