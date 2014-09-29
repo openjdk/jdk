@@ -402,6 +402,14 @@ public class FileHandler extends StreamHandler {
         openFiles();
     }
 
+    private  boolean isParentWritable(Path path) {
+        Path parent = path.getParent();
+        if (parent == null) {
+            parent = path.toAbsolutePath().getParent();
+        }
+        return parent != null && Files.isWritable(parent);
+    }
+
     /**
      * Open the set of output files, based on the configured
      * instance variables.
@@ -458,7 +466,7 @@ public class FileHandler extends StreamHandler {
                         // Note that this is a situation that may happen,
                         // but not too frequently.
                         if (Files.isRegularFile(lockFilePath, LinkOption.NOFOLLOW_LINKS)
-                            && Files.isWritable(lockFilePath.getParent())) {
+                            && isParentWritable(lockFilePath)) {
                             try {
                                 channel = FileChannel.open(lockFilePath,
                                     WRITE, APPEND);
