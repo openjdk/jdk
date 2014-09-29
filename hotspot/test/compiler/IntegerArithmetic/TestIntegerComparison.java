@@ -25,7 +25,7 @@
  * @test TestIntegerComparison
  * @bug 8043284 8042786
  * @summary "Tests optimizations of signed and unsigned integer comparison."
- * @run main/othervm -server -Xcomp -XX:+IgnoreUnrecognizedVMOptions -XX:-TieredCompilation -XX:CompileOnly=TestIntegerComparison::testSigned,TestIntegerComparison::testUnsigned TestIntegerComparison
+ * @run main/othervm -Xcomp -XX:CompileOnly=TestIntegerComparison::testSigned,TestIntegerComparison::testUnsigned TestIntegerComparison
  */
 public class TestIntegerComparison {
   /**
