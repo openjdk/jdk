@@ -222,11 +222,11 @@ void CodeCache::initialize_heaps() {
   ReservedSpace non_profiled_space  = rest.last_part(profiled_size);
 
   // Non-methods (stubs, adapters, ...)
-  add_heap(non_method_space, "non-methods", init_non_method_size, CodeBlobType::NonMethod);
+  add_heap(non_method_space, "Code Heap 'non-methods'", init_non_method_size, CodeBlobType::NonMethod);
   // Tier 2 and tier 3 (profiled) methods
-  add_heap(profiled_space, "profiled nmethods", init_profiled_size, CodeBlobType::MethodProfiled);
+  add_heap(profiled_space, "Code Heap 'profiled nmethods'", init_profiled_size, CodeBlobType::MethodProfiled);
   // Tier 1 and tier 4 (non-profiled) methods and native methods
-  add_heap(non_profiled_space, "non-profiled nmethods", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
+  add_heap(non_profiled_space, "Code Heap 'non-profiled nmethods'", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
@@ -364,9 +364,9 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
     if (PrintCodeCacheExtension) {
       ResourceMark rm;
       if (SegmentedCodeCache) {
-        tty->print("Code heap '%s'", heap->name());
+        tty->print("%s", heap->name());
       } else {
-        tty->print("Code cache");
+        tty->print("Code Cache");
       }
       tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
@@ -820,7 +820,7 @@ void CodeCache::initialize() {
   } else {
     // Use a single code heap
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
-    add_heap(rs, "Code heap", InitialCodeCacheSize, CodeBlobType::All);
+    add_heap(rs, "Code Cache", InitialCodeCacheSize, CodeBlobType::All);
   }
 
   // Initialize ICache flush mechanism
@@ -1006,7 +1006,7 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     // Not yet reported for this heap, report
     heap->report_full();
     if (SegmentedCodeCache) {
-      warning("CodeHeap for %s is full. Compiler has been disabled.", CodeCache::get_code_heap_name(code_blob_type));
+      warning("%s is full. Compiler has been disabled.", CodeCache::get_code_heap_name(code_blob_type));
       warning("Try increasing the code heap size using -XX:%s=",
           (code_blob_type == CodeBlobType::MethodNonProfiled) ? "NonProfiledCodeHeapSize" : "ProfiledCodeHeapSize");
     } else {
@@ -1090,7 +1090,7 @@ void CodeCache::print_internals() {
   int i = 0;
   FOR_ALL_HEAPS(heap) {
     if (SegmentedCodeCache && Verbose) {
-      tty->print_cr("-- Code heap '%s' --", (*heap)->name());
+      tty->print_cr("-- %s --", (*heap)->name());
     }
     FOR_ALL_BLOBS(cb, *heap) {
       total++;
@@ -1239,9 +1239,9 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     CodeHeap* heap = (*heap_iterator);
     size_t total = (heap->high_boundary() - heap->low_boundary());
     if (SegmentedCodeCache) {
-      st->print("CodeHeap '%s':", heap->name());
+      st->print("%s:", heap->name());
     } else {
-      st->print("CodeCache:");
+      st->print("Code Cache:");
     }
     st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
                  "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
