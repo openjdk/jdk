@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,11 +22,10 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+
 package com.sun.media.sound;
 
-import java.util.Arrays;
 import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiDevice.Info;
 import javax.sound.midi.spi.MidiDeviceProvider;
 
 /**
@@ -36,17 +35,16 @@ import javax.sound.midi.spi.MidiDeviceProvider;
  */
 public final class SoftProvider extends MidiDeviceProvider {
 
-    static final Info softinfo = SoftSynthesizer.info;
-    private static final Info[] softinfos = {softinfo};
-
+    @Override
     public MidiDevice.Info[] getDeviceInfo() {
-        return Arrays.copyOf(softinfos, softinfos.length);
+        return new MidiDevice.Info[]{SoftSynthesizer.info};
     }
 
-    public MidiDevice getDevice(MidiDevice.Info info) {
-        if (info == softinfo) {
+    @Override
+    public MidiDevice getDevice(final MidiDevice.Info info) {
+        if (SoftSynthesizer.info.equals(info)) {
             return new SoftSynthesizer();
         }
-        return null;
+        throw MidiUtils.unsupportedDevice(info);
     }
 }
