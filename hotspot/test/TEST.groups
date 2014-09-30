@@ -489,6 +489,7 @@ hotspot_compiler_3 = \
   compiler/uncommontrap/TestStackBangMonitorOwned.java \
   compiler/uncommontrap/TestStackBangRbp.java \
   compiler/unsafe/GetUnsafeObjectG1PreBarrier.java
+  
 
 hotspot_compiler_closed = \
   closed/compiler/4292742/Test.java \
@@ -583,7 +584,8 @@ hotspot_runtime_closed = \
   sanity/ExecuteInternalVMTests.java
 
 hotspot_serviceability = \
-  sanity/ExecuteInternalVMTests.java
+  sanity/ExecuteInternalVMTests.java \
+  serviceability/dcmd/compiler
 
 hotspot_all = \
   :hotspot_compiler_1 \
