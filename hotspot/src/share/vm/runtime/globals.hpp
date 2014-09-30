@@ -188,7 +188,7 @@ define_pd_global(intx, InitialCodeCacheSize,         160*K);
 define_pd_global(intx, ReservedCodeCacheSize,        32*M);
 define_pd_global(intx, NonProfiledCodeHeapSize,      0);
 define_pd_global(intx, ProfiledCodeHeapSize,         0);
-define_pd_global(intx, NonMethodCodeHeapSize,        32*M);
+define_pd_global(intx, NonNMethodCodeHeapSize,        32*M);
 
 define_pd_global(intx, CodeCacheExpansionSize,       32*K);
 define_pd_global(intx, CodeCacheMinBlockLength,      1);
@@ -3370,8 +3370,8 @@ class CommandLineFlags {
   product_pd(uintx, ProfiledCodeHeapSize,                                   \
           "Size of code heap with profiled methods (in bytes)")             \
                                                                             \
-  product_pd(uintx, NonMethodCodeHeapSize,                                  \
-          "Size of code heap with non-methods (in bytes)")                  \
+  product_pd(uintx, NonNMethodCodeHeapSize,                                 \
+          "Size of code heap with non-nmethods (in bytes)")                 \
                                                                             \
   product(uintx, CodeCacheMinimumFreeSpace, 500*K,                          \
           "When less than X space left, we stop compiling")                 \
