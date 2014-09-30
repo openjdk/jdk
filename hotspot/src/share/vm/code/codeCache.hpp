@@ -41,14 +41,14 @@
 // The CodeCache consists of one or more CodeHeaps, each of which contains
 // CodeBlobs of a specific CodeBlobType. Currently heaps for the following
 // types are available:
-//  - Non-methods: Non-methods like Buffers, Adapters and Runtime Stubs
+//  - Non-nmethods: Non-nmethods like Buffers, Adapters and Runtime Stubs
 //  - Profiled nmethods: nmethods that are profiled, i.e., those
 //    executed at level 2 or 3
 //  - Non-Profiled nmethods: nmethods that are not profiled, i.e., those
 //    executed at level 1 or 4 and native methods
 //  - All: Used for code of all types if code cache segmentation is disabled.
 //
-// In the rare case of the non-method code heap getting full, non-method code
+// In the rare case of the non-nmethod code heap getting full, non-nmethod code
 // will be stored in the non-profiled code heap as a fallback solution.
 //
 // Depending on the availability of compilers and TieredCompilation there

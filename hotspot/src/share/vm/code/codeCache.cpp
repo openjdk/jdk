@@ -158,23 +158,23 @@ void CodeCache::initialize_heaps() {
 #endif
 
   // Calculate default CodeHeap sizes if not set by user
-  if (!FLAG_IS_CMDLINE(NonMethodCodeHeapSize) && !FLAG_IS_CMDLINE(ProfiledCodeHeapSize)
+  if (!FLAG_IS_CMDLINE(NonNMethodCodeHeapSize) && !FLAG_IS_CMDLINE(ProfiledCodeHeapSize)
       && !FLAG_IS_CMDLINE(NonProfiledCodeHeapSize)) {
-    // Increase default NonMethodCodeHeapSize to account for compiler buffers
-    FLAG_SET_ERGO(uintx, NonMethodCodeHeapSize, NonMethodCodeHeapSize + code_buffers_size);
+    // Increase default NonNMethodCodeHeapSize to account for compiler buffers
+    FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, NonNMethodCodeHeapSize + code_buffers_size);
 
-    // Check if we have enough space for the non-method code heap
-    if (ReservedCodeCacheSize > NonMethodCodeHeapSize) {
-      // Use the default value for NonMethodCodeHeapSize and one half of the
+    // Check if we have enough space for the non-nmethod code heap
+    if (ReservedCodeCacheSize > NonNMethodCodeHeapSize) {
+      // Use the default value for NonNMethodCodeHeapSize and one half of the
       // remaining size for non-profiled methods and one half for profiled methods
-      size_t remaining_size = ReservedCodeCacheSize - NonMethodCodeHeapSize;
+      size_t remaining_size = ReservedCodeCacheSize - NonNMethodCodeHeapSize;
       size_t profiled_size = remaining_size / 2;
       size_t non_profiled_size = remaining_size - profiled_size;
       FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, profiled_size);
       FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, non_profiled_size);
     } else {
-      // Use all space for the non-method heap and set other heaps to minimal size
-      FLAG_SET_ERGO(uintx, NonMethodCodeHeapSize, ReservedCodeCacheSize - os::vm_page_size() * 2);
+      // Use all space for the non-nmethod heap and set other heaps to minimal size
+      FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, ReservedCodeCacheSize - os::vm_page_size() * 2);
       FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, os::vm_page_size());
       FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, os::vm_page_size());
     }
@@ -185,21 +185,21 @@ void CodeCache::initialize_heaps() {
     FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize + ProfiledCodeHeapSize);
     FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, 0);
   }
-  // We do not need the non-profiled CodeHeap, use all space for the non-method CodeHeap
+  // We do not need the non-profiled CodeHeap, use all space for the non-nmethod CodeHeap
   if(!heap_available(CodeBlobType::MethodNonProfiled)) {
-    FLAG_SET_ERGO(uintx, NonMethodCodeHeapSize, NonMethodCodeHeapSize + NonProfiledCodeHeapSize);
+    FLAG_SET_ERGO(uintx, NonNMethodCodeHeapSize, NonNMethodCodeHeapSize + NonProfiledCodeHeapSize);
     FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, 0);
   }
 
   // Make sure we have enough space for VM internal code
   uint min_code_cache_size = (CodeCacheMinimumUseSpace DEBUG_ONLY(* 3)) + CodeCacheMinimumFreeSpace;
-  if (NonMethodCodeHeapSize < (min_code_cache_size + code_buffers_size)) {
-    vm_exit_during_initialization("Not enough space in non-method code heap to run VM.");
+  if (NonNMethodCodeHeapSize < (min_code_cache_size + code_buffers_size)) {
+    vm_exit_during_initialization("Not enough space in non-nmethod code heap to run VM.");
   }
-  guarantee(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonMethodCodeHeapSize <= ReservedCodeCacheSize, "Size check");
+  guarantee(NonProfiledCodeHeapSize + ProfiledCodeHeapSize + NonNMethodCodeHeapSize <= ReservedCodeCacheSize, "Size check");
 
   // Align reserved sizes of CodeHeaps
-  size_t non_method_size    = ReservedCodeSpace::allocation_align_size_up(NonMethodCodeHeapSize);
+  size_t non_method_size    = ReservedCodeSpace::allocation_align_size_up(NonNMethodCodeHeapSize);
   size_t profiled_size      = ReservedCodeSpace::allocation_align_size_up(ProfiledCodeHeapSize);
   size_t non_profiled_size  = ReservedCodeSpace::allocation_align_size_up(NonProfiledCodeHeapSize);
 
@@ -213,7 +213,7 @@ void CodeCache::initialize_heaps() {
   // ---------- high -----------
   //    Non-profiled nmethods
   //      Profiled nmethods
-  //         Non-methods
+  //         Non-nmethods
   // ---------- low ------------
   ReservedCodeSpace rs = reserve_heap_memory(non_profiled_size + profiled_size + non_method_size);
   ReservedSpace non_method_space    = rs.first_part(non_method_size);
@@ -221,12 +221,12 @@ void CodeCache::initialize_heaps() {
   ReservedSpace profiled_space      = rest.first_part(profiled_size);
   ReservedSpace non_profiled_space  = rest.last_part(profiled_size);
 
-  // Non-methods (stubs, adapters, ...)
-  add_heap(non_method_space, "Code Heap 'non-methods'", init_non_method_size, CodeBlobType::NonMethod);
+  // Non-nmethods (stubs, adapters, ...)
+  add_heap(non_method_space, "CodeHeap 'non-nmethods'", init_non_method_size, CodeBlobType::NonNMethod);
   // Tier 2 and tier 3 (profiled) methods
-  add_heap(profiled_space, "Code Heap 'profiled nmethods'", init_profiled_size, CodeBlobType::MethodProfiled);
+  add_heap(profiled_space, "CodeHeap 'profiled nmethods'", init_profiled_size, CodeBlobType::MethodProfiled);
   // Tier 1 and tier 4 (non-profiled) methods and native methods
-  add_heap(non_profiled_space, "Code Heap 'non-profiled nmethods'", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
+  add_heap(non_profiled_space, "CodeHeap 'non-profiled nmethods'", init_non_profiled_size, CodeBlobType::MethodNonProfiled);
 }
 
 ReservedCodeSpace CodeCache::reserve_heap_memory(size_t size) {
@@ -257,13 +257,13 @@ bool CodeCache::heap_available(int code_blob_type) {
   } else if ((Arguments::mode() == Arguments::_int) ||
              (TieredStopAtLevel == CompLevel_none)) {
     // Interpreter only: we don't need any method code heaps
-    return (code_blob_type == CodeBlobType::NonMethod);
+    return (code_blob_type == CodeBlobType::NonNMethod);
   } else if (TieredCompilation && (TieredStopAtLevel > CompLevel_simple)) {
     // Tiered compilation: use all code heaps
     return (code_blob_type < CodeBlobType::All);
   } else {
-    // No TieredCompilation: we only need the non-method and non-profiled code heap
-    return (code_blob_type == CodeBlobType::NonMethod) ||
+    // No TieredCompilation: we only need the non-nmethod and non-profiled code heap
+    return (code_blob_type == CodeBlobType::NonNMethod) ||
            (code_blob_type == CodeBlobType::MethodNonProfiled);
   }
 }
@@ -355,8 +355,8 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
     if (cb != NULL) break;
     if (!heap->expand_by(CodeCacheExpansionSize)) {
       // Expansion failed
-      if (SegmentedCodeCache && (code_blob_type == CodeBlobType::NonMethod)) {
-        // Fallback solution: Store non-method code in the non-profiled code heap
+      if (SegmentedCodeCache && (code_blob_type == CodeBlobType::NonNMethod)) {
+        // Fallback solution: Store non-nmethod code in the non-profiled code heap
         return allocate(size, CodeBlobType::MethodNonProfiled, is_critical);
       }
       return NULL;
@@ -366,7 +366,7 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
       if (SegmentedCodeCache) {
         tty->print("%s", heap->name());
       } else {
-        tty->print("Code Cache");
+        tty->print("CodeCache");
       }
       tty->print_cr(" extended to [" INTPTR_FORMAT ", " INTPTR_FORMAT "] (" SSIZE_FORMAT " bytes)",
                     (intptr_t)heap->low_boundary(), (intptr_t)heap->high(),
@@ -820,7 +820,7 @@ void CodeCache::initialize() {
   } else {
     // Use a single code heap
     ReservedCodeSpace rs = reserve_heap_memory(ReservedCodeCacheSize);
-    add_heap(rs, "Code Cache", InitialCodeCacheSize, CodeBlobType::All);
+    add_heap(rs, "CodeCache", InitialCodeCacheSize, CodeBlobType::All);
   }
 
   // Initialize ICache flush mechanism
@@ -1241,7 +1241,7 @@ void CodeCache::print_summary(outputStream* st, bool detailed) {
     if (SegmentedCodeCache) {
       st->print("%s:", heap->name());
     } else {
-      st->print("Code Cache:");
+      st->print("CodeCache:");
     }
     st->print_cr(" size=" SIZE_FORMAT "Kb used=" SIZE_FORMAT
                  "Kb max_used=" SIZE_FORMAT "Kb free=" SIZE_FORMAT "Kb",
