@@ -1603,6 +1603,9 @@
     <depend>jdk.rmic</depend>
     <depend>jdk.xml.bind</depend>
     <depend>jdk.xml.ws</depend>
+    <export>
+      <name>com.sun.jarsigner</name>
+    </export>
   </module>
   <module>
     <name>jdk.hotspot.agent</name>
