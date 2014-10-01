@@ -1152,19 +1152,19 @@ void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
     FLAG_SET_ERGO(bool, SegmentedCodeCache, true);
 
-    // Multiply sizes by 5 but fix NonMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
+    // Multiply sizes by 5 but fix NonNMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
     if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-      FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonMethodCodeHeapSize * 2);
+      FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
     }
     if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-      FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonMethodCodeHeapSize * 2);
+      FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
     }
     // Check consistency of code heap sizes
-    if ((NonMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
+    if ((NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
       jio_fprintf(defaultStream::error_stream(),
-                  "Invalid code heap sizes: NonMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                  NonMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                  (NonMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
+                  "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
+                  NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
+                  (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
       vm_exit(1);
     }
   }
@@ -2502,17 +2502,17 @@ bool Arguments::check_vm_args_consistency() {
                 "Invalid ReservedCodeCacheSize=%dM. Must be at most %uM.\n", ReservedCodeCacheSize/M,
                 (2*G)/M);
     status = false;
-  } else if (NonMethodCodeHeapSize < min_code_cache_size){
+  } else if (NonNMethodCodeHeapSize < min_code_cache_size){
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid NonMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonMethodCodeHeapSize/K,
+                "Invalid NonNMethodCodeHeapSize=%dK. Must be at least %uK.\n", NonNMethodCodeHeapSize/K,
                 min_code_cache_size/K);
     status = false;
-  } else if ((!FLAG_IS_DEFAULT(NonMethodCodeHeapSize) || !FLAG_IS_DEFAULT(ProfiledCodeHeapSize) || !FLAG_IS_DEFAULT(NonProfiledCodeHeapSize))
-             && (NonMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
+  } else if ((!FLAG_IS_DEFAULT(NonNMethodCodeHeapSize) || !FLAG_IS_DEFAULT(ProfiledCodeHeapSize) || !FLAG_IS_DEFAULT(NonProfiledCodeHeapSize))
+             && (NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
     jio_fprintf(defaultStream::error_stream(),
-                "Invalid code heap sizes: NonMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                NonMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                (NonMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
+                "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
+                NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
+                (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
     status = false;
   }
 
@@ -2938,17 +2938,17 @@ jint Arguments::parse_each_vm_init_arg(const JavaVMInitArgs* args,
         return JNI_EINVAL;
       }
       FLAG_SET_CMDLINE(uintx, ReservedCodeCacheSize, (uintx)long_ReservedCodeCacheSize);
-      // -XX:NonMethodCodeHeapSize=
-    } else if (match_option(option, "-XX:NonMethodCodeHeapSize=", &tail)) {
-      julong long_NonMethodCodeHeapSize = 0;
+      // -XX:NonNMethodCodeHeapSize=
+    } else if (match_option(option, "-XX:NonNMethodCodeHeapSize=", &tail)) {
+      julong long_NonNMethodCodeHeapSize = 0;
 
-      ArgsRange errcode = parse_memory_size(tail, &long_NonMethodCodeHeapSize, 1);
+      ArgsRange errcode = parse_memory_size(tail, &long_NonNMethodCodeHeapSize, 1);
       if (errcode != arg_in_range) {
         jio_fprintf(defaultStream::error_stream(),
-                    "Invalid maximum non-method code heap size: %s.\n", option->optionString);
+                    "Invalid maximum non-nmethod code heap size: %s.\n", option->optionString);
         return JNI_EINVAL;
       }
-      FLAG_SET_CMDLINE(uintx, NonMethodCodeHeapSize, (uintx)long_NonMethodCodeHeapSize);
+      FLAG_SET_CMDLINE(uintx, NonNMethodCodeHeapSize, (uintx)long_NonNMethodCodeHeapSize);
       // -XX:ProfiledCodeHeapSize=
     } else if (match_option(option, "-XX:ProfiledCodeHeapSize=", &tail)) {
       julong long_ProfiledCodeHeapSize = 0;

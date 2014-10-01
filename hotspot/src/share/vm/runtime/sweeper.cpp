@@ -543,6 +543,10 @@ int NMethodSweeper::process_nmethod(nmethod *nm) {
       if (PrintMethodFlushing && Verbose) {
         tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (not entrant) being made zombie", nm->compile_id(), nm);
       }
+      // Clear ICStubs to prevent back patching stubs of zombie or unloaded
+      // nmethods during the next safepoint (see ICStub::finalize).
+      MutexLocker cl(CompiledIC_lock);
+      nm->clear_ic_stubs();
       // Code cache state change is tracked in make_zombie()
       nm->make_zombie();
       _zombified_count++;

@@ -25,7 +25,7 @@
  * @test
  * @bug 8032207
  * @summary Invalid node sizing for loadUS2L_immI16 and loadI2L_immI
- * @run main/othervm -server -Xbatch -XX:-TieredCompilation -XX:CompileCommand=compileonly,LoadWithMask.foo LoadWithMask
+ * @run main/othervm -Xbatch -XX:CompileCommand=compileonly,LoadWithMask.foo LoadWithMask
  *
  */
 public class LoadWithMask {

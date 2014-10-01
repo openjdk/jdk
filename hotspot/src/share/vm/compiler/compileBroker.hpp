@@ -322,6 +322,8 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_total_compilation;
   static elapsedTimer _t_osr_compilation;
   static elapsedTimer _t_standard_compilation;
+  static elapsedTimer _t_invalidated_compilation;
+  static elapsedTimer _t_bailedout_compilation;
 
   static int _total_compile_count;
   static int _total_bailout_count;
