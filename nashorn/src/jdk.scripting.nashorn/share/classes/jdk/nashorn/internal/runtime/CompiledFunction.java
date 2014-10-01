@@ -814,8 +814,6 @@ final class CompiledFunction {
             compiler.persistClassInfo(cacheKey, normalFn);
         }
 
-        FunctionNode fn2 = effectiveOptInfo.reparse();
-        fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Done.");
 
         final boolean canBeDeoptimized = normalFn.canBeDeoptimized();
