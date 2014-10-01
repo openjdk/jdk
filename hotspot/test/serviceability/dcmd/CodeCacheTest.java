@@ -52,7 +52,7 @@ public class CodeCacheTest {
      *
      * Expected output with code cache segmentation (number of segments may change):
      *
-     * CodeHeap 'non-methods': size=5696Kb used=2236Kb max_used=2238Kb free=3459Kb
+     * CodeHeap 'non-nmethods': size=5696Kb used=2236Kb max_used=2238Kb free=3459Kb
      *  bounds [0x00007fa0f0ffe000, 0x00007fa0f126e000, 0x00007fa0f158e000]
      * CodeHeap 'profiled nmethods': size=120036Kb used=8Kb max_used=8Kb free=120027Kb
      *  bounds [0x00007fa0f158e000, 0x00007fa0f17fe000, 0x00007fa0f8ac7000]
@@ -95,7 +95,7 @@ public class CodeCacheTest {
           // Tiered compilation: use all segments
           segmentsCount = 3;
         } else {
-          // No TieredCompilation: only non-method and non-profiled segment
+          // No TieredCompilation: only non-nmethod and non-profiled segment
           segmentsCount = 2;
         }
 

@@ -567,12 +567,16 @@ void Dependencies::print_dependency(DepType dept, GrowableArray<DepArgument>* ar
       what = "object ";
     }
     tty->print("  %s = %s", what, (put_star? "*": ""));
-    if (arg.is_klass())
+    if (arg.is_klass()) {
       tty->print("%s", ((Klass*)arg.metadata_value())->external_name());
-    else if (arg.is_method())
+    } else if (arg.is_method()) {
       ((Method*)arg.metadata_value())->print_value();
-    else
+    } else if (arg.is_oop()) {
+      arg.oop_value()->print_value_on(tty);
+    } else {
       ShouldNotReachHere(); // Provide impl for this type.
+    }
+
     tty->cr();
   }
   if (witness != NULL) {
@@ -609,7 +613,11 @@ void Dependencies::DepStream::print_dependency(Klass* witness, bool verbose) {
   int nargs = argument_count();
   GrowableArray<DepArgument>* args = new GrowableArray<DepArgument>(nargs);
   for (int j = 0; j < nargs; j++) {
-    args->push(argument(j));
+    if (type() == call_site_target_value) {
+      args->push(argument_oop(j));
+    } else {
+      args->push(argument(j));
+    }
   }
   int argslen = args->length();
   Dependencies::print_dependency(type(), args, witness);
