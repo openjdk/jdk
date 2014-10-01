@@ -104,6 +104,7 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
+import jdk.nashorn.internal.ir.JumpStatement;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -1204,17 +1205,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterBreakNode(final BreakNode breakNode) {
+        return enterJumpStatement(breakNode);
+    }
+
+    private boolean enterJumpStatement(final JumpStatement jump) {
         if(!method.isReachable()) {
             return false;
         }
-        enterStatement(breakNode);
+        enterStatement(jump);
 
-        method.beforeJoinPoint(breakNode);
-        final BreakableNode breakFrom = lc.getBreakable(breakNode.getLabelName());
-        popScopesUntil(breakFrom);
-        final Label breakLabel = breakFrom.getBreakLabel();
-        breakLabel.markAsBreakTarget();
-        method.splitAwareGoto(lc, breakLabel, breakFrom);
+        method.beforeJoinPoint(jump);
+        final BreakableNode target = jump.getTarget(lc);
+        popScopesUntil(target);
+        final Label targetLabel = jump.getTargetLabel(target);
+        targetLabel.markAsBreakTarget();
+        method.splitAwareGoto(lc, targetLabel, target);
 
         return false;
     }
@@ -1517,19 +1522,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
-        if(!method.isReachable()) {
-            return false;
-        }
-        enterStatement(continueNode);
-        method.beforeJoinPoint(continueNode);
-
-        final LoopNode continueTo = lc.getContinueTo(continueNode.getLabelName());
-        popScopesUntil(continueTo);
-        final Label continueLabel = continueTo.getContinueLabel();
-        continueLabel.markAsBreakTarget();
-        method.splitAwareGoto(lc, continueLabel, continueTo);
-
-        return false;
+        return enterJumpStatement(continueNode);
     }
 
     @Override
