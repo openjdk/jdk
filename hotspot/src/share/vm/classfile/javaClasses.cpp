@@ -636,6 +636,7 @@ void java_lang_Class::create_mirror(KlassHandle k, Handle class_loader,
     }
 
     // set the classLoader field in the java_lang_Class instance
+    assert(class_loader() == k->class_loader(), "should be same");
     set_class_loader(mirror(), class_loader());
 
     // Setup indirection from klass->mirror last
