@@ -24,9 +24,11 @@
 /*
  * @test CodeCacheTest
  * @bug 8054889
+ * @library ..
  * @build DcmdUtil CodeCacheTest
  * @run main/othervm -XX:+SegmentedCodeCache CodeCacheTest
  * @run main/othervm -XX:-SegmentedCodeCache CodeCacheTest
+ * @run main/othervm -Xint -XX:+SegmentedCodeCache CodeCacheTest
  * @summary Test of diagnostic command Compiler.codecache
  */
 

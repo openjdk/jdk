@@ -347,8 +347,8 @@ CodeBlob* CodeCache::allocate(int size, int code_blob_type, bool is_critical) {
   CodeBlob* cb = NULL;
 
   // Get CodeHeap for the given CodeBlobType
-  CodeHeap* heap = get_code_heap(SegmentedCodeCache ? code_blob_type : CodeBlobType::All);
-  assert (heap != NULL, "heap is null");
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  assert(heap != NULL, "heap is null");
 
   while (true) {
     cb = (CodeBlob*)heap->allocate(size, is_critical);
@@ -734,6 +734,11 @@ size_t CodeCache::capacity() {
   return cap;
 }
 
+size_t CodeCache::unallocated_capacity(int code_blob_type) {
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  return (heap != NULL) ? heap->unallocated_capacity() : 0;
+}
+
 size_t CodeCache::unallocated_capacity() {
   size_t unallocated_cap = 0;
   FOR_ALL_HEAPS(heap) {
@@ -1000,7 +1005,8 @@ void CodeCache::verify() {
 // A CodeHeap is full. Print out warning and report event.
 void CodeCache::report_codemem_full(int code_blob_type, bool print) {
   // Get nmethod heap for the given CodeBlobType and build CodeCacheFull event
-  CodeHeap* heap = get_code_heap(SegmentedCodeCache ? code_blob_type : CodeBlobType::All);
+  CodeHeap* heap = get_code_heap(code_blob_type);
+  assert(heap != NULL, "heap is null");
 
   if (!heap->was_full() || print) {
     // Not yet reported for this heap, report
