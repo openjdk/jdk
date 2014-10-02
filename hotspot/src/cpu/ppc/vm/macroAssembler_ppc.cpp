@@ -2366,7 +2366,7 @@ void MacroAssembler::g1_write_barrier_post(Register Rstore_addr, Register Rnew_v
 #endif // INCLUDE_ALL_GCS
 
 // Values for last_Java_pc, and last_Java_sp must comply to the rules
-// in frame_ppc64.hpp.
+// in frame_ppc.hpp.
 void MacroAssembler::set_last_Java_frame(Register last_Java_sp, Register last_Java_pc) {
   // Always set last_Java_pc and flags first because once last_Java_sp
   // is visible has_last_Java_frame is true and users will look at the
@@ -2493,6 +2493,7 @@ int MacroAssembler::instr_size_for_decode_klass_not_null() {
 }
 
 void MacroAssembler::decode_klass_not_null(Register dst, Register src) {
+  assert(dst != R0, "Dst reg may not be R0, as R0 is used here.");
   if (src == noreg) src = dst;
   Register shifted_src = src;
   if (Universe::narrow_klass_shift() != 0 ||
@@ -2527,14 +2528,11 @@ void MacroAssembler::load_klass_with_trap_null_check(Register dst, Register src)
 
 void MacroAssembler::reinit_heapbase(Register d, Register tmp) {
   if (Universe::heap() != NULL) {
-    if (Universe::narrow_oop_base() == NULL) {
-      Assembler::xorr(R30, R30, R30);
-    } else {
-      load_const(R30, Universe::narrow_ptrs_base(), tmp);
-    }
+    load_const_optimized(R30, Universe::narrow_ptrs_base(), tmp);
   } else {
-    load_const(R30, Universe::narrow_ptrs_base_addr(), tmp);
-    ld(R30, 0, R30);
+    // Heap not yet allocated. Load indirectly.
+    int simm16_offset = load_const_optimized(R30, Universe::narrow_ptrs_base_addr(), tmp, true);
+    ld(R30, simm16_offset, R30);
   }
 }
 
