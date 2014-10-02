@@ -268,8 +268,35 @@ class Assembler : public AbstractAssembler {
 
     ISEL_OPCODE   = (31u << OPCODE_SHIFT |  15u << 1),
 
-    MTLR_OPCODE   = (31u << OPCODE_SHIFT | 467u << 1 | 8 << SPR_0_4_SHIFT),
-    MFLR_OPCODE   = (31u << OPCODE_SHIFT | 339u << 1 | 8 << SPR_0_4_SHIFT),
+    // Special purpose registers
+    MTSPR_OPCODE  = (31u << OPCODE_SHIFT | 467u << 1),
+    MFSPR_OPCODE  = (31u << OPCODE_SHIFT | 339u << 1),
+
+    MTXER_OPCODE  = (MTSPR_OPCODE | 1 << SPR_0_4_SHIFT),
+    MFXER_OPCODE  = (MFSPR_OPCODE | 1 << SPR_0_4_SHIFT),
+
+    MTDSCR_OPCODE = (MTSPR_OPCODE | 3 << SPR_0_4_SHIFT),
+    MFDSCR_OPCODE = (MFSPR_OPCODE | 3 << SPR_0_4_SHIFT),
+
+    MTLR_OPCODE   = (MTSPR_OPCODE | 8 << SPR_0_4_SHIFT),
+    MFLR_OPCODE   = (MFSPR_OPCODE | 8 << SPR_0_4_SHIFT),
+
+    MTCTR_OPCODE  = (MTSPR_OPCODE | 9 << SPR_0_4_SHIFT),
+    MFCTR_OPCODE  = (MFSPR_OPCODE | 9 << SPR_0_4_SHIFT),
+
+    MTTFHAR_OPCODE   = (MTSPR_OPCODE | 128 << SPR_0_4_SHIFT),
+    MFTFHAR_OPCODE   = (MFSPR_OPCODE | 128 << SPR_0_4_SHIFT),
+    MTTFIAR_OPCODE   = (MTSPR_OPCODE | 129 << SPR_0_4_SHIFT),
+    MFTFIAR_OPCODE   = (MFSPR_OPCODE | 129 << SPR_0_4_SHIFT),
+    MTTEXASR_OPCODE  = (MTSPR_OPCODE | 130 << SPR_0_4_SHIFT),
+    MFTEXASR_OPCODE  = (MFSPR_OPCODE | 130 << SPR_0_4_SHIFT),
+    MTTEXASRU_OPCODE = (MTSPR_OPCODE | 131 << SPR_0_4_SHIFT),
+    MFTEXASRU_OPCODE = (MFSPR_OPCODE | 131 << SPR_0_4_SHIFT),
+
+    MTVRSAVE_OPCODE  = (MTSPR_OPCODE | 256 << SPR_0_4_SHIFT),
+    MFVRSAVE_OPCODE  = (MFSPR_OPCODE | 256 << SPR_0_4_SHIFT),
+
+    MFTB_OPCODE   = (MFSPR_OPCODE | 268 << SPR_0_4_SHIFT),
 
     MTCRF_OPCODE  = (31u << OPCODE_SHIFT | 144u << 1),
     MFCR_OPCODE   = (31u << OPCODE_SHIFT | 19u << 1),
@@ -291,9 +318,6 @@ class Assembler : public AbstractAssembler {
 
     // CTR-related opcodes
     BCCTR_OPCODE  = (19u << OPCODE_SHIFT | 528u << 1),
-    MTCTR_OPCODE  = (31u << OPCODE_SHIFT | 467u << 1 | 9 << SPR_0_4_SHIFT),
-    MFCTR_OPCODE  = (31u << OPCODE_SHIFT | 339u << 1 | 9 << SPR_0_4_SHIFT),
-
 
     LWZ_OPCODE   = (32u << OPCODE_SHIFT),
     LWZX_OPCODE  = (31u << OPCODE_SHIFT |  23u << 1),
@@ -584,6 +608,37 @@ class Assembler : public AbstractAssembler {
     // Vector Status and Control
     MTVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1604u     ),
     MFVSCR_OPCODE  = (4u  << OPCODE_SHIFT | 1540u     ),
+
+    // AES (introduced with Power 8)
+    VCIPHER_OPCODE      = (4u  << OPCODE_SHIFT | 1288u),
+    VCIPHERLAST_OPCODE  = (4u  << OPCODE_SHIFT | 1289u),
+    VNCIPHER_OPCODE     = (4u  << OPCODE_SHIFT | 1352u),
+    VNCIPHERLAST_OPCODE = (4u  << OPCODE_SHIFT | 1353u),
+    VSBOX_OPCODE        = (4u  << OPCODE_SHIFT | 1480u),
+
+    // SHA (introduced with Power 8)
+    VSHASIGMAD_OPCODE   = (4u  << OPCODE_SHIFT | 1730u),
+    VSHASIGMAW_OPCODE   = (4u  << OPCODE_SHIFT | 1666u),
+
+    // Vector Binary Polynomial Multiplication (introduced with Power 8)
+    VPMSUMB_OPCODE      = (4u  << OPCODE_SHIFT | 1032u),
+    VPMSUMD_OPCODE      = (4u  << OPCODE_SHIFT | 1224u),
+    VPMSUMH_OPCODE      = (4u  << OPCODE_SHIFT | 1096u),
+    VPMSUMW_OPCODE      = (4u  << OPCODE_SHIFT | 1160u),
+
+    // Vector Permute and Xor (introduced with Power 8)
+    VPERMXOR_OPCODE     = (4u  << OPCODE_SHIFT |   45u),
+
+    // Transactional Memory instructions (introduced with Power 8)
+    TBEGIN_OPCODE    = (31u << OPCODE_SHIFT |  654u << 1),
+    TEND_OPCODE      = (31u << OPCODE_SHIFT |  686u << 1),
+    TABORT_OPCODE    = (31u << OPCODE_SHIFT |  910u << 1),
+    TABORTWC_OPCODE  = (31u << OPCODE_SHIFT |  782u << 1),
+    TABORTWCI_OPCODE = (31u << OPCODE_SHIFT |  846u << 1),
+    TABORTDC_OPCODE  = (31u << OPCODE_SHIFT |  814u << 1),
+    TABORTDCI_OPCODE = (31u << OPCODE_SHIFT |  878u << 1),
+    TSR_OPCODE       = (31u << OPCODE_SHIFT |  750u << 1),
+    TCHECK_OPCODE    = (31u << OPCODE_SHIFT |  718u << 1),
 
     // Icache and dcache related instructions
     DCBA_OPCODE    = (31u << OPCODE_SHIFT |  758u << 1),
@@ -1420,6 +1475,25 @@ class Assembler : public AbstractAssembler {
   inline void mcrf( ConditionRegister crd, ConditionRegister cra);
   inline void mtcr( Register s);
 
+  // Special purpose registers
+  // Exception Register
+  inline void mtxer(Register s1);
+  inline void mfxer(Register d);
+  // Vector Register Save Register
+  inline void mtvrsave(Register s1);
+  inline void mfvrsave(Register d);
+  // Timebase
+  inline void mftb(Register d);
+  // Introduced with Power 8:
+  // Data Stream Control Register
+  inline void mtdscr(Register s1);
+  inline void mfdscr(Register d );
+  // Transactional Memory Registers
+  inline void mftfhar(Register d);
+  inline void mftfiar(Register d);
+  inline void mftexasr(Register d);
+  inline void mftexasru(Register d);
+
   // PPC 1, section 2.4.1 Branch Instructions
   inline void b(  address a, relocInfo::relocType rt = relocInfo::none);
   inline void b(  Label& L);
@@ -1859,6 +1933,39 @@ class Assembler : public AbstractAssembler {
   // Vector Floating-Point not implemented yet
   inline void mtvscr(   VectorRegister b);
   inline void mfvscr(   VectorRegister d);
+
+  // AES (introduced with Power 8)
+  inline void vcipher(     VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vcipherlast( VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vncipher(    VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vncipherlast(VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vsbox(       VectorRegister d, VectorRegister a);
+
+  // SHA (introduced with Power 8)
+  // Not yet implemented.
+
+  // Vector Binary Polynomial Multiplication (introduced with Power 8)
+  inline void vpmsumb(  VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vpmsumd(  VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vpmsumh(  VectorRegister d, VectorRegister a, VectorRegister b);
+  inline void vpmsumw(  VectorRegister d, VectorRegister a, VectorRegister b);
+
+  // Vector Permute and Xor (introduced with Power 8)
+  inline void vpermxor( VectorRegister d, VectorRegister a, VectorRegister b, VectorRegister c);
+
+  // Transactional Memory instructions (introduced with Power 8)
+  inline void tbegin_();    // R=0
+  inline void tbeginrot_(); // R=1 Rollback-Only Transaction
+  inline void tend_();    // A=0
+  inline void tendall_(); // A=1
+  inline void tabort_(Register a);
+  inline void tabortwc_(int t, Register a, Register b);
+  inline void tabortwci_(int t, Register a, int si);
+  inline void tabortdc_(int t, Register a, Register b);
+  inline void tabortdci_(int t, Register a, int si);
+  inline void tsuspend_(); // tsr with L=0
+  inline void tresume_();  // tsr with L=1
+  inline void tcheck(int f);
 
   // The following encoders use r0 as second operand. These instructions
   // read r0 as '0'.
