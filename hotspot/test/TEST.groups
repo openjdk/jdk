@@ -134,6 +134,13 @@ needs_compact3 = \
   gc/metaspace/TestMetaspaceMemoryPool.java \
   gc/arguments/TestDynMinHeapFreeRatio.java \
   gc/arguments/TestDynMaxHeapFreeRatio.java \
+  gc/g1/TestShrinkAuxiliaryData00.java \
+  gc/g1/TestShrinkAuxiliaryData05.java \
+  gc/g1/TestShrinkAuxiliaryData10.java \
+  gc/g1/TestShrinkAuxiliaryData15.java \
+  gc/g1/TestShrinkAuxiliaryData20.java \
+  gc/g1/TestShrinkAuxiliaryData25.java \
+  gc/g1/TestShrinkAuxiliaryData30.java \
   runtime/InternalApi/ThreadCpuTimesDeadlock.java \
   serviceability/threads/TestFalseDeadLock.java \
 
@@ -221,6 +228,7 @@ needs_g1gc = \
   gc/arguments/TestG1HeapSizeFlags.java \
   gc/arguments/TestMaxHeapSizeTools.java \
   gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestG1ClassUnloadingHWM.java \
   gc/g1/ \
@@ -248,6 +256,7 @@ needs_parallelgc = \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestMinInitialErgonomics.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/parallelScavenge/ \
@@ -262,6 +271,7 @@ needs_cmsgc = \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestCMSHeapSizeFlags.java \
   gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
   gc/concurrentMarkSweep/ \

@@ -1690,12 +1690,17 @@ void Arguments::set_g1_gc_flags() {
 #ifdef COMPILER1
   FastTLABRefill = false;
 #endif
-  FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
+  FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
-    FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
+    assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
+    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
   }
+
+#if INCLUDE_ALL_GCS
+  if (G1ConcRefinementThreads == 0) {
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  }
+#endif
 
   // MarkStackSize will be set (if it hasn't been set by the user)
   // when concurrent marking is initialized.
