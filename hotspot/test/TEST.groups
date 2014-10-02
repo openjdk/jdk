@@ -440,7 +440,7 @@ hotspot_compiler_3 = \
   compiler/codegen/ \
   compiler/cpuflags/RestoreMXCSR.java \
   compiler/EscapeAnalysis/ \
-  compiler/exceptions/TestRecursiveReplacedException.java \
+  compiler/exceptions/ \
   compiler/floatingpoint/ModNaN.java \
   compiler/gcbarriers/G1CrashTest.java \
   compiler/inlining/ \
