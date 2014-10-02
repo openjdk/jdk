@@ -360,6 +360,14 @@ abstract class Handshaker {
         }
     }
 
+    final boolean receivedChangeCipherSpec() {
+        if (conn != null) {
+            return conn.receivedChangeCipherSpec();
+        } else {
+            return engine.receivedChangeCipherSpec();
+        }
+    }
+
     String getEndpointIdentificationAlgorithmSE() {
         SSLParameters paras;
         if (conn != null) {
