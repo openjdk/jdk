@@ -117,7 +117,6 @@ SUNWprivate_1.1 {
                 JVM_GetClassDeclaredMethods;
                 JVM_GetClassFieldsCount;
                 JVM_GetClassInterfaces;
-                JVM_GetClassLoader;
                 JVM_GetClassMethodsCount;
                 JVM_GetClassModifiers;
                 JVM_GetClassName;
