@@ -33,6 +33,7 @@ import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -158,7 +159,7 @@ public final class Context {
         }
 
         /**
-         * Return the context for this installer
+         * Return the script environment for this installer
          * @return ScriptEnvironment
          */
         @Override
@@ -221,6 +222,20 @@ public final class Context {
                 return context.codeStore.load(source, functionKey);
             }
             return null;
+        }
+
+        @Override
+        public CodeInstaller<ScriptEnvironment> withNewLoader() {
+            return new ContextCodeInstaller(context, context.createNewLoader(), codeSource);
+        }
+
+        @Override
+        public boolean isCompatibleWith(final CodeInstaller<ScriptEnvironment> other) {
+            if (other instanceof ContextCodeInstaller) {
+                final ContextCodeInstaller cci = (ContextCodeInstaller)other;
+                return cci.context == context && cci.codeSource == codeSource;
+            }
+            return false;
         }
     }
 
