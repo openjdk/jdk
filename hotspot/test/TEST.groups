@@ -229,6 +229,7 @@ needs_g1gc = \
   gc/arguments/TestG1HeapSizeFlags.java \
   gc/arguments/TestMaxHeapSizeTools.java \
   gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestG1ClassUnloadingHWM.java \
   gc/g1/ \
@@ -256,6 +257,7 @@ needs_parallelgc = \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestMaxNewSize.java \
   gc/arguments/TestMinInitialErgonomics.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/parallelScavenge/ \
@@ -270,6 +272,7 @@ needs_cmsgc = \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestCMSHeapSizeFlags.java \
   gc/arguments/TestMaxNewSize.java \
+  gc/arguments/TestParallelGCThreads.java \
   gc/arguments/TestUseCompressedOopsErgo.java \
   gc/class_unloading/TestCMSClassUnloadingEnabledHWM.java \
   gc/concurrentMarkSweep/ \
