@@ -23,6 +23,7 @@
  */
 
 #include "precompiled.hpp"
+#include "classfile/metadataOnStackMark.hpp"
 #include "classfile/symbolTable.hpp"
 #include "code/codeCache.hpp"
 #include "gc_implementation/g1/concurrentMark.inline.hpp"
@@ -2564,16 +2565,26 @@ void ConcurrentMark::weakRefsWork(bool clear_all_soft_refs) {
     G1CMTraceTime trace("Unloading", G1Log::finer());
 
     if (ClassUnloadingWithConcurrentMark) {
+      // Cleaning of klasses depends on correct information from MetadataMarkOnStack. The CodeCache::mark_on_stack
+      // part is too slow to be done serially, so it is handled during the weakRefsWorkParallelPart phase.
+      // Defer the cleaning until we have complete on_stack data.
+      MetadataOnStackMark md_on_stack(false /* Don't visit the code cache at this point */);
+
       bool purged_classes;
 
       {
         G1CMTraceTime trace("System Dictionary Unloading", G1Log::finest());
-        purged_classes = SystemDictionary::do_unloading(&g1_is_alive);
+        purged_classes = SystemDictionary::do_unloading(&g1_is_alive, false /* Defer klass cleaning */);
       }
 
       {
         G1CMTraceTime trace("Parallel Unloading", G1Log::finest());
         weakRefsWorkParallelPart(&g1_is_alive, purged_classes);
+      }
+
+      {
+        G1CMTraceTime trace("Deallocate Metadata", G1Log::finest());
+        ClassLoaderDataGraph::free_deallocate_lists();
       }
     }
 
