@@ -115,7 +115,6 @@
                 _JVM_GetClassDeclaredMethods
                 _JVM_GetClassFieldsCount
                 _JVM_GetClassInterfaces
-                _JVM_GetClassLoader
                 _JVM_GetClassMethodsCount
                 _JVM_GetClassModifiers
                 _JVM_GetClassName
