@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
-
 import java.io.File;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
@@ -152,6 +151,13 @@ public final class Compiler implements Loggable {
      * TODO: make this immutable, propagate it through the CompilationPhases
      */
     private RecompilableScriptFunctionData compiledFunction;
+
+    /**
+     * Most compile unit names are longer than the default StringBuilder buffer,
+     * worth startup performance when massive class generation is going on to increase
+     * this
+     */
+    private static final int COMPILE_UNIT_NAME_BUFFER_SIZE = 32;
 
     /**
      * Compilation phases that a compilation goes through
@@ -631,7 +637,8 @@ public final class Compiler implements Loggable {
     }
 
     String nextCompileUnitName() {
-        final StringBuilder sb = new StringBuilder(firstCompileUnitName);
+        final StringBuilder sb = new StringBuilder(COMPILE_UNIT_NAME_BUFFER_SIZE);
+        sb.append(firstCompileUnitName);
         final int cuid = nextCompileUnitId.getAndIncrement();
         if (cuid > 0) {
             sb.append("$cu").append(cuid);
