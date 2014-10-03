@@ -1166,7 +1166,7 @@ CodeBuffer* Compile::init_buffer(uint* blk_starts) {
   // Have we run out of code space?
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     C->record_failure("CodeCache is full");
-    CompileBroker::handle_full_code_cache();
+    CompileBroker::handle_full_code_cache(CodeBlobType::NonMethod);
     return NULL;
   }
   // Configure the code buffer.
@@ -1491,7 +1491,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
       cb->insts()->maybe_expand_to_ensure_remaining(MAX_inst_size);
       if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
         C->record_failure("CodeCache is full");
-        CompileBroker::handle_full_code_cache();
+        CompileBroker::handle_full_code_cache(CodeBlobType::NonMethod);
         return;
       }
 
@@ -1648,7 +1648,7 @@ void Compile::fill_buffer(CodeBuffer* cb, uint* blk_starts) {
   // One last check for failed CodeBuffer::expand:
   if ((cb->blob() == NULL) || (!CompileBroker::should_compile_new_jobs())) {
     C->record_failure("CodeCache is full");
-    CompileBroker::handle_full_code_cache();
+    CompileBroker::handle_full_code_cache(CodeBlobType::NonMethod);
     return;
   }
 

@@ -93,7 +93,7 @@ Method::Method(ConstMethod* xconst, AccessFlags access_flags, int size) {
   set_hidden(false);
   set_dont_inline(false);
   set_method_data(NULL);
-  set_method_counters(NULL);
+  clear_method_counters();
   set_vtable_index(Method::garbage_vtable_index);
 
   // Fix and bury in Method*
@@ -117,7 +117,7 @@ void Method::deallocate_contents(ClassLoaderData* loader_data) {
   MetadataFactory::free_metadata(loader_data, method_data());
   set_method_data(NULL);
   MetadataFactory::free_metadata(loader_data, method_counters());
-  set_method_counters(NULL);
+  clear_method_counters();
   // The nmethod will be gone when we get here.
   if (code() != NULL) _code = NULL;
 }
@@ -395,9 +395,7 @@ MethodCounters* Method::build_method_counters(Method* m, TRAPS) {
   methodHandle mh(m);
   ClassLoaderData* loader_data = mh->method_holder()->class_loader_data();
   MethodCounters* counters = MethodCounters::allocate(loader_data, CHECK_NULL);
-  if (mh->method_counters() == NULL) {
-    mh->set_method_counters(counters);
-  } else {
+  if (!mh->init_method_counters(counters)) {
     MetadataFactory::free_metadata(loader_data, counters);
   }
   return mh->method_counters();
@@ -859,7 +857,7 @@ void Method::unlink_method() {
   assert(!DumpSharedSpaces || _method_data == NULL, "unexpected method data?");
 
   set_method_data(NULL);
-  set_method_counters(NULL);
+  clear_method_counters();
 }
 
 // Called when the method_holder is getting linked. Setup entrypoints so the method

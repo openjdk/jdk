@@ -170,6 +170,11 @@ Now we can use the content + data type in declaring event fields.
                   type="U1" jvm_type="FLAGVALUEORIGIN">
       <value type="UTF8" field="origin" label="origin" />
     </content_type>
+    
+    <content_type id="CodeBlobType" hr_name="Code Blob Type"
+                  type="U1" jvm_type="CODEBLOBTYPE">
+      <value type="UTF8" field="type" label="type" />
+    </content_type>
 
   </content_types>
 
@@ -371,6 +376,10 @@ Now we can use the content + data type in declaring event fields.
     <!-- FLAGVALUEORIGIN -->
     <primary_type symbol="FLAGVALUEORIGIN" datatype="U1"
                   contenttype="FLAGVALUEORIGIN" type="u1" sizeop="sizeof(u1)" />
+                  
+    <!-- CODEBLOBTYPE -->
+    <primary_type symbol="CODEBLOBTYPE" datatype="U1"
+                  contenttype="CODEBLOBTYPE" type="u1" sizeop="sizeof(u1)" />
 
   </primary_types>
 </types>

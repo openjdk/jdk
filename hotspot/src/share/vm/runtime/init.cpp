@@ -49,6 +49,7 @@ void perfMemory_init();
 void management_init();
 void bytecodes_init();
 void classLoader_init();
+void compilationPolicy_init();
 void codeCache_init();
 void VM_Version_init();
 void os_init_globals();        // depends on VM_Version_init, before universe_init
@@ -68,7 +69,6 @@ void vmStructs_init();
 void vtableStubs_init();
 void InlineCacheBuffer_init();
 void compilerOracle_init();
-void compilationPolicy_init();
 void compileBroker_init();
 
 // Initialization after compiler initialization
@@ -97,6 +97,7 @@ jint init_globals() {
   management_init();
   bytecodes_init();
   classLoader_init();
+  compilationPolicy_init();
   codeCache_init();
   VM_Version_init();
   os_init_globals();
@@ -123,7 +124,6 @@ jint init_globals() {
   vtableStubs_init();
   InlineCacheBuffer_init();
   compilerOracle_init();
-  compilationPolicy_init();
   compileBroker_init();
   VMRegImpl::set_regName();
 
