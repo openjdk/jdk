@@ -403,7 +403,7 @@ bool PhaseChaitin::eliminate_copy_of_constant(Node* val, Node* n,
 // When we see a use from a reg-reg Copy, we will attempt to use the copy's
 // source directly and make the copy go dead.
 void PhaseChaitin::post_allocate_copy_removal() {
-  NOT_PRODUCT( Compile::TracePhase t3("postAllocCopyRemoval", &_t_postAllocCopyRemoval, TimeCompiler); )
+  Compile::TracePhase tp("postAllocCopyRemoval", &timers[_t_postAllocCopyRemoval]);
   ResourceMark rm;
 
   // Need a mapping from basic block Node_Lists.  We need a Node_List to
