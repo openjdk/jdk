@@ -259,8 +259,8 @@ ifdef CONCURRENCY
   EXTRA_JTREG_OPTIONS += -concurrency:$(CONCURRENCY)
 endif
 
-# Default JTREG to run (win32 script works for everybody)
-JTREG = $(JT_HOME)/win32/bin/jtreg
+# Default JTREG to run
+JTREG = $(JT_HOME)/bin/jtreg
 
 # Only run automatic tests
 JTREG_BASIC_OPTIONS += -a
@@ -318,6 +318,17 @@ hotspot_clienttest clienttest: prep $(PRODUCT_HOME)
 	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -Xshare:dump
 
 PHONY_LIST += hotspot_clienttest clienttest
+
+################################################################
+
+# minimaltest (make sure various basic java minimal options work)
+
+hotspot_minimaltest minimaltest: prep $(PRODUCT_HOME)
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -version
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -help
+	$(PRODUCT_HOME)/bin/java $(JAVA_OPTIONS) -X
+
+PHONY_LIST += hotspot_minimaltest minimaltest
 
 ################################################################
 

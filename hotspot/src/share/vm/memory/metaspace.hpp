@@ -87,6 +87,7 @@ class Metaspace : public CHeapObj<mtClass> {
   friend class VM_CollectForMetadataAllocation;
   friend class MetaspaceGC;
   friend class MetaspaceAux;
+  friend class CollectorPolicy;
 
  public:
   enum MetadataType {
@@ -143,6 +144,8 @@ class Metaspace : public CHeapObj<mtClass> {
   // within a Metachunk and is used by
   //   allocate(ClassLoaderData*, size_t, bool, MetadataType, TRAPS)
   MetaWord* allocate(size_t word_size, MetadataType mdtype);
+
+  MetaWord* expand_and_allocate(size_t size, MetadataType mdtype);
 
   // Virtual Space lists for both classes and other metadata
   static VirtualSpaceList* _space_list;
@@ -233,9 +236,6 @@ class Metaspace : public CHeapObj<mtClass> {
   static MetaWord* allocate(ClassLoaderData* loader_data, size_t word_size,
                             bool read_only, MetaspaceObj::Type type, TRAPS);
   void deallocate(MetaWord* ptr, size_t byte_size, bool is_class);
-
-  MetaWord* expand_and_allocate(size_t size,
-                                MetadataType mdtype);
 
   static bool contains(const void* ptr);
 
@@ -407,7 +407,9 @@ class MetaspaceGC : AllStatic {
   static void post_initialize();
 
   static size_t capacity_until_GC();
-  static size_t inc_capacity_until_GC(size_t v);
+  static bool inc_capacity_until_GC(size_t v,
+                                    size_t* new_cap_until_GC = NULL,
+                                    size_t* old_cap_until_GC = NULL);
   static size_t dec_capacity_until_GC(size_t v);
 
   static bool should_concurrent_collect() { return _should_concurrent_collect; }
