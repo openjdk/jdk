@@ -155,9 +155,6 @@ class PerfMemory : AllStatic {
       }
     }
 
-    // filename of backing store or NULL if none.
-    static char* backing_store_filename();
-
     // returns the complete file path of hsperfdata.
     // the caller is expected to free the allocated memory.
     static char* get_perfdata_file_path();
