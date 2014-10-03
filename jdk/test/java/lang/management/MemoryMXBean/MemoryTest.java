@@ -59,13 +59,13 @@ public class MemoryTest {
     // (or equivalent for other collectors)
     // Number of GC memory managers = 2
 
-    // Hotspot VM 1.8+ after perm gen removal is expected to have two or
-    // three non-heap memory pools:
-    // - Code cache
+    // Hotspot VM 1.8+ after perm gen removal is expected to have between two
+    // or five non-heap memory pools:
+    // - Code cache (between one and three depending on the -XX:SegmentedCodeCache option)
     // - Metaspace
     // - Compressed Class Space (if compressed class pointers are used)
     private static int[] expectedMinNumPools = {3, 2};
-    private static int[] expectedMaxNumPools = {3, 3};
+    private static int[] expectedMaxNumPools = {3, 5};
     private static int expectedNumGCMgrs = 2;
     private static int expectedNumMgrs = expectedNumGCMgrs + 2;
     private static String[] types = { "heap", "non-heap" };
