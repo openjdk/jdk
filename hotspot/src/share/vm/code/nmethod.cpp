@@ -1130,6 +1130,18 @@ void nmethod::clear_inline_caches() {
   }
 }
 
+// Clear ICStubs of all compiled ICs
+void nmethod::clear_ic_stubs() {
+  assert_locked_or_safepoint(CompiledIC_lock);
+  RelocIterator iter(this);
+  while(iter.next()) {
+    if (iter.type() == relocInfo::virtual_call_type) {
+      CompiledIC* ic = CompiledIC_at(&iter);
+      ic->clear_ic_stub();
+    }
+  }
+}
+
 
 void nmethod::cleanup_inline_caches() {
 
