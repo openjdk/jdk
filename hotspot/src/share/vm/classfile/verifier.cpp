@@ -98,6 +98,14 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   HandleMark hm;
   ResourceMark rm(THREAD);
 
+  if (!is_eligible_for_verification(klass, should_verify_class)) {
+    return true;
+  }
+
+  // If the class should be verified, first see if we can use the split
+  // verifier.  If not, or if verification fails and FailOverToOldVerifier
+  // is set, then call the inference verifier.
+
   Symbol* exception_name = NULL;
   const size_t message_buffer_len = klass->name()->utf8_length() + 1024;
   char* message_buffer = NEW_RESOURCE_ARRAY(char, message_buffer_len);
@@ -105,47 +113,42 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
 
   const char* klassName = klass->external_name();
   bool can_failover = FailOverToOldVerifier &&
-      klass->major_version() < NOFAILOVER_MAJOR_VERSION;
+     klass->major_version() < NOFAILOVER_MAJOR_VERSION;
 
-  // If the class should be verified, first see if we can use the split
-  // verifier.  If not, or if verification fails and FailOverToOldVerifier
-  // is set, then call the inference verifier.
-  if (is_eligible_for_verification(klass, should_verify_class)) {
-    if (TraceClassInitialization) {
-      tty->print_cr("Start class verification for: %s", klassName);
-    }
-    if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
-      ClassVerifier split_verifier(klass, THREAD);
-      split_verifier.verify_class(THREAD);
-      exception_name = split_verifier.result();
-      if (can_failover && !HAS_PENDING_EXCEPTION &&
-          (exception_name == vmSymbols::java_lang_VerifyError() ||
-           exception_name == vmSymbols::java_lang_ClassFormatError())) {
-        if (TraceClassInitialization || VerboseVerification) {
-          tty->print_cr(
-            "Fail over class verification to old verifier for: %s", klassName);
-        }
-        exception_name = inference_verify(
-          klass, message_buffer, message_buffer_len, THREAD);
+  if (TraceClassInitialization) {
+    tty->print_cr("Start class verification for: %s", klassName);
+  }
+  if (klass->major_version() >= STACKMAP_ATTRIBUTE_MAJOR_VERSION) {
+    ClassVerifier split_verifier(klass, THREAD);
+    split_verifier.verify_class(THREAD);
+    exception_name = split_verifier.result();
+    if (can_failover && !HAS_PENDING_EXCEPTION &&
+        (exception_name == vmSymbols::java_lang_VerifyError() ||
+         exception_name == vmSymbols::java_lang_ClassFormatError())) {
+      if (TraceClassInitialization || VerboseVerification) {
+        tty->print_cr(
+          "Fail over class verification to old verifier for: %s", klassName);
       }
-      if (exception_name != NULL) {
-        exception_message = split_verifier.exception_message();
-      }
-    } else {
       exception_name = inference_verify(
-          klass, message_buffer, message_buffer_len, THREAD);
+        klass, message_buffer, message_buffer_len, THREAD);
     }
+    if (exception_name != NULL) {
+      exception_message = split_verifier.exception_message();
+    }
+  } else {
+    exception_name = inference_verify(
+        klass, message_buffer, message_buffer_len, THREAD);
+  }
 
-    if (TraceClassInitialization || VerboseVerification) {
-      if (HAS_PENDING_EXCEPTION) {
-        tty->print("Verification for %s has", klassName);
-        tty->print_cr(" exception pending %s ",
-          InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
-      } else if (exception_name != NULL) {
-        tty->print_cr("Verification for %s failed", klassName);
-      }
-      tty->print_cr("End class verification for: %s", klassName);
+  if (TraceClassInitialization || VerboseVerification) {
+    if (HAS_PENDING_EXCEPTION) {
+      tty->print("Verification for %s has", klassName);
+      tty->print_cr(" exception pending %s ",
+        InstanceKlass::cast(PENDING_EXCEPTION->klass())->external_name());
+    } else if (exception_name != NULL) {
+      tty->print_cr("Verification for %s failed", klassName);
     }
+    tty->print_cr("End class verification for: %s", klassName);
   }
 
   if (HAS_PENDING_EXCEPTION) {
