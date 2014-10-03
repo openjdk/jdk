@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,7 +31,8 @@ import java.security.*;
 import java.util.jar.*;
 
 /**
- * This class verifies JAR files (and any supporting JAR files), and
+ * This class verifies Provider/Policy resources found at a URL
+ * (currently only JAR files and any supporting JAR files), and
  * determines whether they may be used in this implementation.
  *
  * The JCE in OpenJDK has an open cryptographic interface, meaning it
@@ -42,22 +43,36 @@ import java.util.jar.*;
  *
  * @since 1.7
  */
-final class JarVerifier {
+final class ProviderVerifier {
 
     // The URL for the JAR file we want to verify.
     private URL jarURL;
+    private Provider provider;
     private boolean savePerms;
     private CryptoPermissions appPerms = null;
 
     /**
-     * Creates a JarVerifier object to verify the given URL.
+     * Creates a ProviderVerifier object to verify the given URL.
      *
      * @param jarURL the JAR file to be verified.
      * @param savePerms if true, save the permissions allowed by the
      *          exemption mechanism
      */
-    JarVerifier(URL jarURL, boolean savePerms) {
+    ProviderVerifier(URL jarURL, boolean savePerms) {
+        this(jarURL, null, savePerms);
+    }
+
+    /**
+     * Creates a ProviderVerifier object to verify the given URL.
+     *
+     * @param jarURL the JAR file to be verified
+     * @param provider the corresponding provider.
+     * @param savePerms if true, save the permissions allowed by the
+     *          exemption mechanism
+     */
+    ProviderVerifier(URL jarURL, Provider provider, boolean savePerms) {
         this.jarURL = jarURL;
+        this.provider = provider;
         this.savePerms = savePerms;
     }
 
@@ -68,7 +83,7 @@ final class JarVerifier {
      * In OpenJDK, we just need to examine the "cryptoperms" file to see
      * if any permissions were bundled together with this jar file.
      */
-    void verify() throws JarException, IOException {
+    void verify() throws IOException {
 
         // Short-circuit.  If we weren't asked to save any, we're done.
         if (!savePerms) {
@@ -98,7 +113,8 @@ final class JarVerifier {
                              }
                          });
             } catch (java.security.PrivilegedActionException pae) {
-                throw new SecurityException("Cannot load " + url.toString(), pae);
+                throw new SecurityException("Cannot load " + url.toString(),
+                    pae.getCause());
             }
 
             if (jf != null) {
@@ -144,7 +160,7 @@ final class JarVerifier {
      * Returns the permissions which are bundled with the JAR file,
      * aka the "cryptoperms" file.
      *
-     * NOTE: if this JarVerifier instance is constructed with "savePerms"
+     * NOTE: if this ProviderVerifier instance is constructed with "savePerms"
      * equal to false, then this method would always return null.
      */
     CryptoPermissions getPermissions() {
