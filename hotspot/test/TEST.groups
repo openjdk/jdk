@@ -61,7 +61,6 @@ jdk = \
 # can be resolved in some cases by using tools from the compile-jdk.
 #
 needs_jdk = \
-  gc/TestG1ZeroPGCTJcmdThreadPrint.java \
   gc/metaspace/CompressedClassSpaceSizeInJmapHeap.java \
   gc/metaspace/TestMetaspacePerfCounters.java \
   gc/metaspace/TestPerfCountersAndMemoryPools.java \
@@ -220,8 +219,6 @@ compact1_minimal = \
 #
 needs_g1gc = \
   compiler/regalloc/C1ObjectSpillInLogicOp.java \
-  gc/8000311/Test8000311.java \
-  gc/TestG1ZeroPGCTJcmdThreadPrint.java \
   gc/TestSystemGC.java \
   gc/arguments/TestAlignmentToUseLargePages.java \
   gc/arguments/TestG1HeapRegionSize.java \
