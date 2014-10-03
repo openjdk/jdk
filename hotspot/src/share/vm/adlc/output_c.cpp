@@ -1715,13 +1715,14 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
     bool declared_def  = false;
     bool declared_kill = false;
 
-    while( (comp = node->_components.iter()) != NULL ) {
+    while ((comp = node->_components.iter()) != NULL) {
       // Lookup register class associated with operand type
-      Form        *form = (Form*)_globalNames[comp->_type];
-      assert( form, "component type must be a defined form");
-      OperandForm *op   = form->is_operand();
+      Form *form = (Form*)_globalNames[comp->_type];
+      assert(form, "component type must be a defined form");
+      OperandForm *op = form->is_operand();
 
-      if (comp->is(Component::TEMP)) {
+      if (comp->is(Component::TEMP) ||
+          comp->is(Component::TEMP_DEF)) {
         fprintf(fp, "  // TEMP %s\n", comp->_name);
         if (!declared_def) {
           // Define the variable "def" to hold new MachProjNodes
@@ -1750,7 +1751,7 @@ void ArchDesc::defineExpand(FILE *fp, InstructForm *node) {
           declared_kill = true;
         }
 
-        assert( op, "Support additional KILLS for base operands");
+        assert(op, "Support additional KILLS for base operands");
         const char *regmask    = reg_mask(*op);
         const char *ideal_type = op->ideal_type(_globalNames, _register);
 

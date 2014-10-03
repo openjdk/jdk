@@ -1152,20 +1152,22 @@ void Arguments::set_tiered_flags() {
   if (FLAG_IS_DEFAULT(SegmentedCodeCache) && ReservedCodeCacheSize >= 240*M) {
     FLAG_SET_ERGO(bool, SegmentedCodeCache, true);
 
-    // Multiply sizes by 5 but fix NonNMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
-    if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
-      FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-    }
-    if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
-      FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
-    }
-    // Check consistency of code heap sizes
-    if ((NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
-      jio_fprintf(defaultStream::error_stream(),
-                  "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
-                  NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
-                  (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
-      vm_exit(1);
+    if (FLAG_IS_DEFAULT(ReservedCodeCacheSize)) {
+      // Multiply sizes by 5 but fix NonNMethodCodeHeapSize (distribute among non-profiled and profiled code heap)
+      if (FLAG_IS_DEFAULT(ProfiledCodeHeapSize)) {
+        FLAG_SET_ERGO(uintx, ProfiledCodeHeapSize, ProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
+      }
+      if (FLAG_IS_DEFAULT(NonProfiledCodeHeapSize)) {
+        FLAG_SET_ERGO(uintx, NonProfiledCodeHeapSize, NonProfiledCodeHeapSize * 5 + NonNMethodCodeHeapSize * 2);
+      }
+      // Check consistency of code heap sizes
+      if ((NonNMethodCodeHeapSize + NonProfiledCodeHeapSize + ProfiledCodeHeapSize) != ReservedCodeCacheSize) {
+        jio_fprintf(defaultStream::error_stream(),
+                    "Invalid code heap sizes: NonNMethodCodeHeapSize(%dK) + ProfiledCodeHeapSize(%dK) + NonProfiledCodeHeapSize(%dK) = %dK. Must be equal to ReservedCodeCacheSize = %uK.\n",
+                    NonNMethodCodeHeapSize/K, ProfiledCodeHeapSize/K, NonProfiledCodeHeapSize/K,
+                    (NonNMethodCodeHeapSize + ProfiledCodeHeapSize + NonProfiledCodeHeapSize)/K, ReservedCodeCacheSize/K);
+        vm_exit(1);
+      }
     }
   }
   if (!UseInterpreter) { // -Xcomp
@@ -1690,12 +1692,17 @@ void Arguments::set_g1_gc_flags() {
 #ifdef COMPILER1
   FastTLABRefill = false;
 #endif
-  FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
+  FLAG_SET_DEFAULT(ParallelGCThreads, Abstract_VM_Version::parallel_worker_threads());
   if (ParallelGCThreads == 0) {
-    FLAG_SET_DEFAULT(ParallelGCThreads,
-                     Abstract_VM_Version::parallel_worker_threads());
+    assert(!FLAG_IS_DEFAULT(ParallelGCThreads), "The default value for ParallelGCThreads should not be 0.");
+    vm_exit_during_initialization("The flag -XX:+UseG1GC can not be combined with -XX:ParallelGCThreads=0", NULL);
   }
+
+#if INCLUDE_ALL_GCS
+  if (G1ConcRefinementThreads == 0) {
+    FLAG_SET_DEFAULT(G1ConcRefinementThreads, ParallelGCThreads);
+  }
+#endif
 
   // MarkStackSize will be set (if it hasn't been set by the user)
   // when concurrent marking is initialized.
