@@ -825,6 +825,10 @@ public class LambdaToMethod extends TreeTranslator {
             if (rcvr == null) return null;
             JCExpression rcvrExpr = make.Ident(rcvr);
             Type rcvrType = tree.sym.enclClass().type;
+            if (rcvrType == syms.arrayClass.type) {
+                // Map the receiver type to the actually type, not just "array"
+                rcvrType = tree.getQualifierExpression().type;
+            }
             if (!rcvr.type.tsym.isSubClass(rcvrType.tsym, types)) {
                 rcvrExpr = make.TypeCast(make.Type(rcvrType), rcvrExpr).setType(rcvrType);
             }
