@@ -394,6 +394,7 @@ Declares a structure type that can be used in other events.
 
     <event id="CodeCacheFull" path="vm/code_cache/full" label="Code Cache Full"
          has_thread="true" is_requestable="false" is_constant="false" is_instant="true">
+      <value type="CODEBLOBTYPE" field="codeBlobType" label="Code Heap"/>
       <value type="ADDRESS" field="startAddress" label="Start Address"/>
       <value type="ADDRESS" field="commitedTopAddress" label="Commited Top"/>
       <value type="ADDRESS" field="reservedTopAddress" label="Reserved Top"/>

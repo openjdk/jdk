@@ -51,7 +51,7 @@
  * <p> An attribute view provides a read-only or updatable view of the non-opaque
  * values, or <em>metadata</em>, associated with objects in a file system.
  * The {@link java.nio.file.attribute.FileAttributeView} interface is
- * extended by several other interfaces that that views to specific sets of file
+ * extended by several other interfaces that views to specific sets of file
  * attributes. {@code FileAttributeViews} are selected by invoking the {@link
  * java.nio.file.Files#getFileAttributeView} method with a
  * <em>type-token</em> to identify the required view. Views can also be identified

@@ -323,8 +323,243 @@ applicable_cmsgc = \
 hotspot_wbapitest = \
   sanity/
 
-hotspot_compiler = \
-  sanity/ExecuteInternalVMTests.java
+hotspot_compiler_1 = \
+  compiler/5057225/Test5057225.java \
+  compiler/5091921/Test5091921.java \
+  compiler/5091921/Test6186134.java \
+  compiler/5091921/Test6196102.java \
+  compiler/5091921/Test6357214.java \
+  compiler/5091921/Test6559156.java \
+  compiler/5091921/Test6753639.java \
+  compiler/5091921/Test6935022.java \
+  compiler/5091921/Test6959129.java \
+  compiler/5091921/Test6985295.java \
+  compiler/5091921/Test6992759.java \
+  compiler/5091921/Test7005594.java \
+  compiler/5091921/Test7020614.java \
+  compiler/6378821/Test6378821.java \
+  compiler/6431242/Test.java \
+  compiler/6443505/Test6443505.java \
+  compiler/6478991/NullCheckTest.java \
+  compiler/6539464/Test.java \
+  compiler/6579789/Test6579789.java \
+  compiler/6636138/ \
+  compiler/6646019/Test.java \
+  compiler/6659207/Test.java \
+  compiler/6661247/Test.java \
+  compiler/6663621/IVTest.java \
+  compiler/6689060/Test.java \
+  compiler/6695810/Test.java \
+  compiler/6700047/Test6700047.java \
+  compiler/6711100/Test.java \
+  compiler/6724218/Test.java \
+  compiler/6732154/Test6732154.java \
+  compiler/6758234/Test6758234.java \
+  compiler/6769124/ \
+  compiler/6772683/InterruptedTest.java \
+  compiler/6778657/Test.java \
+  compiler/6795161/Test.java \
+  compiler/6795362/Test6795362.java \
+  compiler/6795465/Test6795465.java \
+  compiler/6796786/Test6796786.java \
+  compiler/6799693/Test.java \
+  compiler/6805724/Test6805724.java \
+  compiler/6814842/Test6814842.java \
+  compiler/6823453/Test.java \
+  compiler/6833129/Test.java \
+  compiler/6837011/Test6837011.java \
+  compiler/6843752/Test.java \
+  compiler/6849574/Test.java \
+  compiler/6855164/Test.java \
+  compiler/6855215/Test6855215.java \
+  compiler/6857159/Test6857159.java \
+  compiler/6860469/Test.java \
+  compiler/6863155/Test6863155.java \
+  compiler/6863420/Test.java \
+  compiler/6865265/StackOverflowBug.java \
+  compiler/6879902/Test6879902.java \
+  compiler/6880034/Test6880034.java \
+  compiler/6891750/Test6891750.java \
+  compiler/6892265/Test.java \
+  compiler/6894807/IsInstanceTest.java \
+  compiler/6901572/Test.java \
+  compiler/6909839/Test6909839.java \
+  compiler/6910484/Test.java \
+  compiler/6910605/Test.java \
+  compiler/6910618/Test.java \
+  compiler/6916644/Test6916644.java \
+  compiler/6921969/TestMultiplyLongHiZero.java \
+  compiler/6930043/Test6930043.java \
+  compiler/6932496/Test6932496.java \
+  compiler/6956668/Test6956668.java \
+  compiler/6968348/Test6968348.java \
+  compiler/6973329/Test.java
+
+hotspot_compiler_2 = \
+  compiler/6982370/Test6982370.java \
+  compiler/7009231/Test7009231.java \
+  compiler/7009359/Test7009359.java \
+  compiler/7017746/Test.java \
+  compiler/7024475/Test7024475.java \
+  compiler/7041100/Test7041100.java \
+  compiler/7044738/Test7044738.java \
+  compiler/7046096/Test7046096.java \
+  compiler/7048332/Test7048332.java \
+  compiler/7068051/Test7068051.java \
+  compiler/7082949/Test7082949.java \
+  compiler/7088020/Test7088020.java \
+  compiler/7090976/Test7090976.java \
+  compiler/7103261/Test7103261.java \
+  compiler/7110586/Test7110586.java \
+  compiler/7119644/ \
+  compiler/7141637/SpreadNullArg.java \
+  compiler/7169782/Test7169782.java \
+  compiler/7174363/Test7174363.java \
+  compiler/7179138/ \
+  compiler/7190310/ \
+  compiler/7192963/ \
+  compiler/7200264/TestIntVect.java \
+  compiler/8000805/Test8000805.java \
+  compiler/8002069/Test8002069.java \
+  compiler/8004741/Test8004741.java \
+  compiler/8005033/Test8005033.java \
+  compiler/8005419/Test8005419.java \
+  compiler/8005956/PolynomialRoot.java \
+  compiler/8007294/Test8007294.java
+
+hotspot_compiler_3 = \
+  compiler/8007722/Test8007722.java \
+  compiler/8009761/Test8009761.java \
+  compiler/8010927/Test8010927.java \
+  compiler/8011706/Test8011706.java \
+  compiler/8011771/Test8011771.java \
+  compiler/8011901/Test8011901.java \
+  compiler/arraycopy/TestMissingControl.java \
+  compiler/ciReplay/TestVM_no_comp_level.sh \
+  compiler/classUnloading/anonymousClass/TestAnonymousClassUnloading.java \
+  compiler/codecache/CheckUpperLimit.java \
+  compiler/codegen/ \
+  compiler/cpuflags/RestoreMXCSR.java \
+  compiler/EscapeAnalysis/ \
+  compiler/exceptions/TestRecursiveReplacedException.java \
+  compiler/floatingpoint/ModNaN.java \
+  compiler/gcbarriers/G1CrashTest.java \
+  compiler/inlining/ \
+  compiler/IntegerArithmetic/TestIntegerComparison.java \
+  compiler/intrinsics/bmi/TestAndnI.java \
+  compiler/intrinsics/bmi/TestAndnI.java \
+  compiler/intrinsics/bmi/TestAndnL.java \
+  compiler/intrinsics/bmi/TestBlsiI.java \
+  compiler/intrinsics/bmi/TestBlsiL.java \
+  compiler/intrinsics/bmi/TestBlsmskI.java \
+  compiler/intrinsics/bmi/TestBlsmskL.java \
+  compiler/intrinsics/bmi/TestBlsrI.java \
+  compiler/intrinsics/bmi/TestBlsrL.java \
+  compiler/intrinsics/bmi/TestLzcntI.java \
+  compiler/intrinsics/bmi/TestLzcntL.java \
+  compiler/intrinsics/bmi/TestTzcntI.java \
+  compiler/intrinsics/bmi/TestTzcntL.java \
+  compiler/intrinsics/clone/TestObjectClone.java \
+  compiler/intrinsics/hashcode/TestHashCode.java \
+  compiler/intrinsics/mathexact/CompareTest.java \
+  compiler/intrinsics/mathexact/GVNTest.java \
+  compiler/intrinsics/mathexact/NegExactILoadTest.java \
+  compiler/intrinsics/mathexact/NegExactILoopDependentTest.java \
+  compiler/intrinsics/mathexact/NegExactINonConstantTest.java \
+  compiler/intrinsics/mathexact/SubExactICondTest.java \
+  compiler/intrinsics/mathexact/SubExactILoadTest.java \
+  compiler/intrinsics/mathexact/SubExactILoopDependentTest.java \
+  compiler/intrinsics/stringequals/TestStringEqualsBadLength.java \
+  compiler/intrinsics/unsafe/UnsafeGetAddressTest.java \
+  compiler/jsr292/ConcurrentClassLoadingTest.java \
+  compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java \
+  compiler/jsr292/CreatesInterfaceDotEqualsCallInfo.java \
+  compiler/loopopts/TestLogSum.java \
+  compiler/macronodes/TestEliminateAllocationPhi.java \
+  compiler/membars/TestMemBarAcquire.java \
+  compiler/osr/TestOSRWithNonEmptyStack.java \
+  compiler/profiling/TestMethodHandleInvokesIntrinsic.java \
+  compiler/profiling/TestSpecTrapClassUnloading.java \
+  compiler/profiling/TestUnexpectedProfilingMismatch.java \
+  compiler/regalloc/C1ObjectSpillInLogicOp.java \
+  compiler/startup/NumCompilerThreadsCheck.java \
+  compiler/startup/SmallCodeCacheStartup.java \
+  compiler/types/TestSpeculationFailedHigherEqual.java \
+  compiler/types/TypeSpeculation.java \
+  compiler/uncommontrap/StackOverflowGuardPagesOff.java \
+  compiler/uncommontrap/TestStackBangMonitorOwned.java \
+  compiler/uncommontrap/TestStackBangRbp.java \
+  compiler/unsafe/GetUnsafeObjectG1PreBarrier.java
+
+hotspot_compiler_closed = \
+  closed/compiler/4292742/Test.java \
+  closed/compiler/4474154/Test4474154.java \
+  closed/compiler/4482613/Test4482613.java \
+  closed/compiler/4490177/tctest.java \
+  closed/compiler/4495990/Application.java \
+  closed/compiler/4522874/Test4522874.sh \
+  closed/compiler/4629512/Test4629512.java \
+  closed/compiler/4647299/Looper.java \
+  closed/compiler/4655758/TestClass.java \
+  closed/compiler/4671453/LongCompTest.java \
+  closed/compiler/4671460/CharArrTest.java \
+  closed/compiler/4709105/StringTest2.java \
+  closed/compiler/4732721/Bug.java \
+  closed/compiler/4750681/ReadTest.java \
+  closed/compiler/4787943/LongCrash.java \
+  closed/compiler/4819903/Base64Test.java \
+  closed/compiler/4903383/Test.java \
+  closed/compiler/4906393/Test.java \
+  closed/compiler/4907999/Uidtest.java \
+  closed/compiler/4917709/Tester.java \
+  closed/compiler/4957832/Test.java \
+  closed/compiler/4965430/LoopTest.java \
+  closed/compiler/4979449/T4979449.java \
+  closed/compiler/5031274/Test.java \
+  closed/compiler/5043395/T5043395.java \
+  closed/compiler/5049410/Test.java \
+  closed/compiler/5098422/Test.java \
+  closed/compiler/6173783/Test.java \
+  closed/compiler/6272923/Test6272923.sh \
+  closed/compiler/6290963/Test.java \
+  closed/compiler/6305546/Test.java \
+  closed/compiler/6309806/Test.java \
+  closed/compiler/6311859/Test.java \
+  closed/compiler/6321689/Test.java \
+  closed/compiler/6326935/Test.java \
+  closed/compiler/6367889/Test.java \
+  closed/compiler/6371167/Test.java \
+  closed/compiler/6389127/Test.java \
+  closed/compiler/6397650/Test.java \
+  closed/compiler/6414932/Test.java \
+  closed/compiler/6421619/Test_6421619.java \
+  closed/compiler/6427750/UnsafeVolatile.java \
+  closed/compiler/6431243/Test.java \
+  closed/compiler/6433572/TestSyncJSR.java \
+  closed/compiler/6433840/clinit.java \
+  closed/compiler/6457854/Test.java \
+  closed/compiler/6476804/Test.java \
+  closed/compiler/6512111/CorruptFinalLong.java \
+  closed/compiler/6551887/Test.java \
+  closed/compiler/6571539/Test.java \
+  closed/compiler/6587132/Test.java \
+  closed/compiler/6588045/Test.java \
+  closed/compiler/6588598/etype.java \
+  closed/compiler/6661918/Test6661918.java \
+  closed/compiler/6707044/Test.java \
+  closed/compiler/6730716/Test.java \
+  closed/compiler/6772368/Test6772368.sh \
+  closed/compiler/6897150/Test6897150.java \
+  closed/compiler/6931567/Test6931567.java \
+  closed/compiler/7196857/Test7196857.java \
+  closed/compiler/8009699/Test8009699.java \
+  closed/compiler/8009699/Test8009699B.java \
+  closed/compiler/8014811/Test8014811.java \
+  closed/compiler/8029507/InvokePrivate.java \
+  closed/compiler/callingConvention/Arg9Double.java \
+  closed/compiler/deoptimization/DeoptArithmetic.java \
+  closed/compiler/deoptimization/TestDoubleLocals.java \
+  closed/compiler/deoptimization/TestDoubleMerge.java
 
 hotspot_gc = \
   sanity/ExecuteInternalVMTests.java
@@ -343,7 +578,7 @@ hotspot_runtime = \
  -runtime/SharedArchiveFile/CdsSameObjectAlignment.java \
  -runtime/SharedArchiveFile/DefaultUseWithClient.java \
  -runtime/Thread/CancellableThreadTest.java \
- -runtime/runtime/7158988/FieldMonitor.java
+ -runtime/7158988/FieldMonitor.java
 
 hotspot_runtime_closed = \
   sanity/ExecuteInternalVMTests.java
@@ -352,7 +587,10 @@ hotspot_serviceability = \
   sanity/ExecuteInternalVMTests.java
 
 hotspot_all = \
-  :hotspot_compiler \
+  :hotspot_compiler_1 \
+  :hotspot_compiler_2 \
+  :hotspot_compiler_3 \
+  :hotspot_compiler_closed \
   :hotspot_gc \
   :hotspot_runtime \
   :hotspot_serviceability

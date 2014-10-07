@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2012, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -23,8 +23,7 @@
  */
 
 #include "precompiled.hpp"
-#include "runtime/arguments.hpp"
 
-bool Arguments::check_vm_args_consistency_ext() {
-  return true;
-}
+#include "prims/whitebox.hpp"
+
+void WhiteBox::register_extended(JNIEnv* env, jclass wbclass, JavaThread* thread) { }

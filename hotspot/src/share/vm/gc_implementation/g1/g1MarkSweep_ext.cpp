@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -19,18 +19,13 @@
  * Please contact Oracle, 500 Oracle Parkway, Redwood Shores, CA 94065 USA
  * or visit www.oracle.com if you need additional information or have any
  * questions.
- */
-
-/*
- * @test
- * @bug 4097402
- * @summary Compiler used to allow this initialization, despite the overflow.
- * @author turnidge
  *
- * @compile/fail UncaughtOverflow2.java
  */
 
-public
-class UncaughtOverflow2 {
-    int i = -2147483649;
+#include "precompiled.hpp"
+#include "gc_implementation/g1/g1MarkSweep.hpp"
+
+void G1MarkSweep::prepare_compaction() {
+  G1PrepareCompactClosure blk;
+  G1MarkSweep::prepare_compaction_work(&blk);
 }

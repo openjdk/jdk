@@ -419,7 +419,7 @@ void OtherRegionsTable::print_from_card_cache() {
   FromCardCache::print();
 }
 
-void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
+void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, uint tid) {
   uint cur_hrm_ind = hr()->hrm_index();
 
   if (G1TraceHeapRegionRememberedSet) {
@@ -435,10 +435,10 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
   if (G1TraceHeapRegionRememberedSet) {
     gclog_or_tty->print_cr("Table for [" PTR_FORMAT "...): card %d (cache = %d)",
                   hr()->bottom(), from_card,
-                  FromCardCache::at((uint)tid, cur_hrm_ind));
+                  FromCardCache::at(tid, cur_hrm_ind));
   }
 
-  if (FromCardCache::contains_or_replace((uint)tid, cur_hrm_ind, from_card)) {
+  if (FromCardCache::contains_or_replace(tid, cur_hrm_ind, from_card)) {
     if (G1TraceHeapRegionRememberedSet) {
       gclog_or_tty->print_cr("  from-card cache hit.");
     }
@@ -493,7 +493,7 @@ void OtherRegionsTable::add_reference(OopOrNarrowOopStar from, int tid) {
         return;
       } else {
         if (G1TraceHeapRegionRememberedSet) {
-          gclog_or_tty->print_cr("   [tid %d] sparse table entry "
+          gclog_or_tty->print_cr("   [tid %u] sparse table entry "
                         "overflow(f: %d, t: %u)",
                         tid, from_hrm_ind, cur_hrm_ind);
         }
