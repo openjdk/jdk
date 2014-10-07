@@ -54,7 +54,8 @@ public class RowSetProviderTests extends BaseTest {
     private static String jarPath;
 
     /*
-     * Save off the original property value for javax.sql.rowset.RowSetFactory
+     * Save off the original property value for javax.sql.rowset.RowSetFactory,
+     * original classloader and define the path to the jars directory
      */
     @BeforeClass
     public static void setUpClass() throws Exception {
@@ -76,7 +77,8 @@ public class RowSetProviderTests extends BaseTest {
     }
 
     /*
-     * Clear the javax.sql.rowset.RowSetFactory property value
+     * Clear the javax.sql.rowset.RowSetFactory property value and
+     * reset the classloader to its original value
      */
     @AfterMethod
     public void tearDownMethod() throws Exception {
@@ -107,8 +109,8 @@ public class RowSetProviderTests extends BaseTest {
      * Validate that the correct RowSetFactory is returned by newFactory()
      * when specified by the javax.sql.rowset.RowSetFactory property.
      */
-    @Test
-    public void test2() throws SQLException {
+    @Test(enabled = false)
+    public void test02() throws SQLException {
         System.setProperty("javax.sql.rowset.RowSetFactory", STUB_FACTORY_CLASSNAME);
         validateProvider(RowSetProvider.newFactory(), STUB_FACTORY_CLASSNAME);
     }
@@ -119,7 +121,7 @@ public class RowSetProviderTests extends BaseTest {
      * javax.sql.rowset.RowSetFactory property is not valid.
      */
     @Test(expectedExceptions = SQLException.class)
-    public void test3() throws SQLException {
+    public void test03() throws SQLException {
         System.setProperty("javax.sql.rowset.RowSetFactory",
                 "invalid.RowSetFactoryImpl");
         RowSetFactory rsf = RowSetProvider.newFactory();
@@ -130,7 +132,7 @@ public class RowSetProviderTests extends BaseTest {
      * when specified by the ServiceLoader API.
      */
     @Test
-    public void test4() throws Exception {
+    public void test04() throws Exception {
         File f = new File(jarPath + "goodFactory.jar");
         URLClassLoader loader = new URLClassLoader(new URL[]{
             new URL(f.toURI().toString())}, getClass().getClassLoader());
@@ -140,16 +142,15 @@ public class RowSetProviderTests extends BaseTest {
 
     /*
      * Validate that a SQLException is thrown by newFactory() if the default
-     *RowSetFactory specified by the ServlceLoader API is not valid
+     * RowSetFactory specified by the ServlceLoader API is not valid
      */
     @Test(expectedExceptions = SQLException.class)
-    public void test5() throws Exception {
+    public void test05() throws Exception {
         File f = new File(jarPath + "badFactory.jar");
         URLClassLoader loader = new URLClassLoader(new URL[]{
             new URL(f.toURI().toString())}, getClass().getClassLoader());
         Thread.currentThread().setContextClassLoader(loader);
         RowSetProvider.newFactory();
-
     }
 
     /*
@@ -167,7 +168,6 @@ public class RowSetProviderTests extends BaseTest {
                 break;
             default:
         }
-
     }
 
     /*
@@ -177,12 +177,12 @@ public class RowSetProviderTests extends BaseTest {
     @DataProvider(name = "RowSetFactoryValues")
     private Object[][] RowSetFactoryValues() throws SQLException {
         RowSetFactory rsf = RowSetProvider.newFactory();
-        RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
+        //RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
         RowSetFactory rsf2 = RowSetProvider.newFactory(DEFFAULT_FACTORY_CLASSNAME, null);
         return new Object[][]{
             {rsf, NO_VALADATE_IMPL},
             {rsf, DEFFAULT_FACTORY_CLASSNAME},
-            {rsf1, STUB_FACTORY_CLASSNAME},
+            // {rsf1, STUB_FACTORY_CLASSNAME},
             {rsf2, DEFFAULT_FACTORY_CLASSNAME}
         };
     }

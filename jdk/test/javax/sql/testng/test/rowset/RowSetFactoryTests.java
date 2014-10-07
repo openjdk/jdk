@@ -50,7 +50,7 @@ public class RowSetFactoryTests extends BaseTest {
      * Validate that the RowSetFactory returned by RowSetProvider.newFactory()
      * returns the correct RowSet implementations
      */
-    @Test(dataProvider = "RowSetValues")
+    @Test(dataProvider = "RowSetValues", enabled = false)
     public void test(RowSetFactory rsf, String impl) throws SQLException {
         validateRowSetImpl(rsf, impl);
     }
