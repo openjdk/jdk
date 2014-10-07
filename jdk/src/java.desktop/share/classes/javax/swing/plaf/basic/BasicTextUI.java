@@ -1122,6 +1122,11 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                     Position.Bias b, int direction, Position.Bias[] biasRet)
                     throws BadLocationException{
         Document doc = editor.getDocument();
+
+        if (pos < -1 || pos > doc.getLength()) {
+            throw new BadLocationException("Invalid position", pos);
+        }
+
         if (doc instanceof AbstractDocument) {
             ((AbstractDocument)doc).readLock();
         }
@@ -1594,7 +1599,7 @@ public abstract class BasicTextUI extends TextUI implements ViewFactory {
                                              int direction,
                                              Position.Bias[] biasRet)
             throws BadLocationException {
-            if (pos < -1) {
+            if (pos < -1 || pos > getDocument().getLength()) {
                 throw new BadLocationException("invalid position", pos);
             }
             if( view != null ) {

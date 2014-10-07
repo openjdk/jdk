@@ -900,7 +900,7 @@ public class GlyphView extends View implements TabableView, Cloneable {
                                          Position.Bias[] biasRet)
         throws BadLocationException {
 
-        if (pos < -1) {
+        if (pos < -1 || pos > getDocument().getLength()) {
             throw new BadLocationException("invalid position", pos);
         }
         return painter.getNextVisualPositionFrom(this, pos, b, a, direction, biasRet);
