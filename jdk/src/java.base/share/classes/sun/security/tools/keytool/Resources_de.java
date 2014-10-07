@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_de extends java.util.ListResourceBundle {
         {"New.prompt.", "Neues {0}: "},
         {"Passwords.must.differ", "Kennw\u00F6rter m\u00FCssen sich unterscheiden"},
         {"Re.enter.new.prompt.", "Neues {0} erneut eingeben: "},
-        {"Re.enter.passpword.", "Geben Sie das Kennwort erneut ein: "},
+        {"Re.enter.password.", "Geben Sie das Kennwort erneut ein: "},
         {"Re.enter.new.password.", "Neues Kennwort erneut eingeben: "},
         {"They.don.t.match.Try.again", "Keine \u00DCbereinstimmung. Wiederholen Sie den Vorgang"},
         {"Enter.prompt.alias.name.", "{0}-Aliasnamen eingeben:  "},
