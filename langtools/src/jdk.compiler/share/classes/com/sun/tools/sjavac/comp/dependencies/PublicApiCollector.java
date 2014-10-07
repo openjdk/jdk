@@ -22,15 +22,40 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.sjavac.comp.dependencies;
 
-package com.sun.tools.sjavac.comp;
+import java.util.HashSet;
+import java.util.Set;
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public interface SjavacErrorHandler {
-    void logError(String msg);
+import com.sun.source.tree.Tree;
+import com.sun.source.util.TaskEvent;
+import com.sun.source.util.TaskListener;
+import com.sun.tools.javac.code.Symbol.ClassSymbol;
+import com.sun.tools.javac.tree.JCTree.JCClassDecl;
+import com.sun.tools.javac.util.DefinedBy;
+import com.sun.tools.javac.util.DefinedBy.Api;
+
+public class PublicApiCollector implements TaskListener {
+
+    final Set<ClassSymbol> classSymbols = new HashSet<>();
+
+    @Override
+    @DefinedBy(Api.COMPILER_TREE)
+    public void started(TaskEvent e) {
+    }
+
+    @Override
+    @DefinedBy(Api.COMPILER_TREE)
+    public void finished(TaskEvent e) {
+        if (e.getKind() == TaskEvent.Kind.ANALYZE) {
+            for (Tree t : e.getCompilationUnit().getTypeDecls()) {
+                if (t instanceof JCClassDecl)  // Can also be a JCSkip
+                    classSymbols.add(((JCClassDecl) t).sym);
+            }
+        }
+    }
+
+    public Set<ClassSymbol> getClassSymbols() {
+        return classSymbols;
+    }
 }
