@@ -501,7 +501,7 @@ public abstract class ScriptFunction extends ScriptObject {
      * @param linkLogicClass  linkLogicClass, or null if no link logic exists
      * @return link logic instance, or null if one could not be constructed for this receiver
      */
-    private LinkLogic getLinkLogic(final Object self, final Class<? extends LinkLogic> linkLogicClass) {
+    private static LinkLogic getLinkLogic(final Object self, final Class<? extends LinkLogic> linkLogicClass) {
         if (linkLogicClass == null) {
             return LinkLogic.EMPTY_INSTANCE; //always OK to link this, specialization but without special linking logic
         }

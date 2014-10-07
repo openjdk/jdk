@@ -70,6 +70,9 @@ class G1HotCardCache: public CHeapObj<mtGC> {
 
   G1CardCounts _card_counts;
 
+  // The number of cached cards a thread claims when flushing the cache
+  static const int ClaimChunkSize = 32;
+
   bool default_use_cache() const {
     return (G1ConcRSLogCacheSize > 0);
   }

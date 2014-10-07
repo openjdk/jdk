@@ -29,8 +29,8 @@
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
 
-import jdk.nashorn.api.scripting.AbstractJSObject;
 import java.nio.DoubleBuffer;
+import jdk.nashorn.api.scripting.AbstractJSObject;
 
 /**
  * Simple class demonstrating pluggable script object
@@ -112,6 +112,8 @@ public class BufferArray extends AbstractJSObject {
                       return true;
                   }
               };
+          default:
+              break;
        }
        return null;
     }

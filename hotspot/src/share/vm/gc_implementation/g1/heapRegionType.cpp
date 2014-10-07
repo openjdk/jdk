@@ -30,8 +30,8 @@ bool HeapRegionType::is_valid(Tag tag) {
     case FreeTag:
     case EdenTag:
     case SurvTag:
-    case HumStartsTag:
-    case HumContTag:
+    case StartsHumongousTag:
+    case ContinuesHumongousTag:
     case OldTag:
       return true;
   }
@@ -41,12 +41,12 @@ bool HeapRegionType::is_valid(Tag tag) {
 const char* HeapRegionType::get_str() const {
   hrt_assert_is_valid(_tag);
   switch (_tag) {
-    case FreeTag:      return "FREE";
-    case EdenTag:      return "EDEN";
-    case SurvTag:      return "SURV";
-    case HumStartsTag: return "HUMS";
-    case HumContTag:   return "HUMC";
-    case OldTag:       return "OLD";
+    case FreeTag:               return "FREE";
+    case EdenTag:               return "EDEN";
+    case SurvTag:               return "SURV";
+    case StartsHumongousTag:    return "HUMS";
+    case ContinuesHumongousTag: return "HUMC";
+    case OldTag:                return "OLD";
   }
   ShouldNotReachHere();
   // keep some compilers happy
@@ -56,12 +56,12 @@ const char* HeapRegionType::get_str() const {
 const char* HeapRegionType::get_short_str() const {
   hrt_assert_is_valid(_tag);
   switch (_tag) {
-    case FreeTag:      return "F";
-    case EdenTag:      return "E";
-    case SurvTag:      return "S";
-    case HumStartsTag: return "HS";
-    case HumContTag:   return "HC";
-    case OldTag:       return "O";
+    case FreeTag:               return "F";
+    case EdenTag:               return "E";
+    case SurvTag:               return "S";
+    case StartsHumongousTag:    return "HS";
+    case ContinuesHumongousTag: return "HC";
+    case OldTag:                return "O";
   }
   ShouldNotReachHere();
   // keep some compilers happy

@@ -52,18 +52,17 @@ public class UseCompressedOops {
                 .shouldContain("Compressed Oops mode")
                 .shouldHaveExitValue(0);
 
-            // Larger than 4gb heap should result in zero based with shift 3
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx5g")
-                .shouldContain("Zero based")
-                .shouldContain("Oop shift amount: 3")
-                .shouldHaveExitValue(0);
-
-            // Skip the following three test cases if we're on OSX or Solaris Sparc.
+            // Skip the following three test cases if we're on OSX or Solaris.
             //
-            // OSX doesn't seem to care about HeapBaseMinAddress and Solaris Sparc
+            // OSX doesn't seem to care about HeapBaseMinAddress and Solaris
             // puts the heap way up, forcing different behaviour.
+            if (!Platform.isOSX() && !Platform.isSolaris()) {
+                // Larger than 4gb heap should result in zero based with shift 3
+                testCompressedOops("-XX:+UseCompressedOops", "-Xmx5g")
+                    .shouldContain("Zero based")
+                    .shouldContain("Oop shift amount: 3")
+                    .shouldHaveExitValue(0);
 
-            if (!Platform.isOSX() && !(Platform.isSolaris() && Platform.isSparc())) {
                 // Small heap above 4gb should result in zero based with shift 3
                 testCompressedOops("-XX:+UseCompressedOops", "-Xmx32m", "-XX:HeapBaseMinAddress=4g")
                     .shouldContain("Zero based")
@@ -81,6 +80,12 @@ public class UseCompressedOops {
                 testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16",
                                "-XX:HeapBaseMinAddress=64g")
                     .shouldContain("Non-zero based")
+                    .shouldContain("Oop shift amount: 4")
+                    .shouldHaveExitValue(0);
+
+                // 32gb heap with object alignment set to 16 bytes should result in zero based with shift 4
+                testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16")
+                    .shouldContain("Zero based")
                     .shouldContain("Oop shift amount: 4")
                     .shouldHaveExitValue(0);
             }
@@ -104,12 +109,6 @@ public class UseCompressedOops {
             // 64gb heap and object alignment set to 16 bytes should result in a warning
             testCompressedOops("-XX:+UseCompressedOops", "-Xmx64g", "-XX:ObjectAlignmentInBytes=16")
                 .shouldContain("Max heap size too large for Compressed Oops")
-                .shouldHaveExitValue(0);
-
-            // 32gb heap with object alignment set to 16 bytes should result in zero based with shift 4
-            testCompressedOops("-XX:+UseCompressedOops", "-Xmx32g", "-XX:ObjectAlignmentInBytes=16")
-                .shouldContain("Zero based")
-                .shouldContain("Oop shift amount: 4")
                 .shouldHaveExitValue(0);
 
         } else {
