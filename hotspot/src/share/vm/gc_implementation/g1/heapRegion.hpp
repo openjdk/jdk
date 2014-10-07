@@ -254,9 +254,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   HeapRegionSetBase* _containing_set;
 #endif // ASSERT
 
-  // For parallel heapRegion traversal.
-  jint _claimed;
-
   // We use concurrent marking to determine the amount of live data
   // in each heap region.
   size_t _prev_marked_bytes;    // Bytes known to be live via last completed marking.
@@ -335,19 +332,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   // throughout the JVM's execution, therefore they should only be set
   // up once during initialization time.
   static void setup_heap_region_size(size_t initial_heap_size, size_t max_heap_size);
-
-  enum ClaimValues {
-    InitialClaimValue          = 0,
-    FinalCountClaimValue       = 1,
-    NoteEndClaimValue          = 2,
-    ScrubRemSetClaimValue      = 3,
-    ParVerifyClaimValue        = 4,
-    RebuildRSClaimValue        = 5,
-    ParEvacFailureClaimValue   = 6,
-    AggregateCountClaimValue   = 7,
-    VerifyCountClaimValue      = 8,
-    ParMarkRootClaimValue      = 9
-  };
 
   // All allocated blocks are occupied by objects in a HeapRegion
   bool block_is_obj(const HeapWord* p) const;
@@ -690,12 +674,6 @@ class HeapRegion: public G1OffsetTableContigSpace {
   bool obj_allocated_since_next_marking(oop obj) const {
     return (HeapWord *) obj >= next_top_at_mark_start();
   }
-
-  // For parallel heapRegion traversal.
-  bool claimHeapRegion(int claimValue);
-  jint claim_value() { return _claimed; }
-  // Use this carefully: only when you're sure no one is claiming...
-  void set_claim_value(int claimValue) { _claimed = claimValue; }
 
   // Returns the "evacuation_failed" property of the region.
   bool evacuation_failed() { return _evacuation_failed; }
