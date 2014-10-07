@@ -84,6 +84,11 @@ case "$OS" in
             "/usr/lib/nss/libsoftokn3.so"`
     fi
     ;;
+  Darwin )
+    LIBNAME=`find_one \
+            "/Applications/Firefox.app/Contents/MacOS/libsoftokn3.dylib" \
+            "/Applications/Thunderbird.app//Contents/MacOS/libsoftokn3.dylib"`
+    ;;
   * )
     echo "Will not run test on: ${OS}"
     exit 0;
@@ -93,6 +98,12 @@ esac
 if [ "$LIBNAME" = "" ]; then
   echo "Cannot find libsoftokn3.so"
   exit 0
+fi
+
+echo "Using NSS lib at $LIBNAME"
+
+if [ $OS = Darwin ]; then
+    export DYLD_LIBRARY_PATH=`dirname $LIBNAME`
 fi
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file \

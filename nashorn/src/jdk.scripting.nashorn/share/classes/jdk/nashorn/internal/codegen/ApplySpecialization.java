@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS_VAR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EXPLODED_ARGUMENT_PREFIX;
-
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -131,7 +129,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         @SuppressWarnings("serial")
         final UnsupportedOperationException uoe = new UnsupportedOperationException() {
             @Override
-            public Throwable fillInStackTrace() {
+            public synchronized Throwable fillInStackTrace() {
                 return null;
             }
         };

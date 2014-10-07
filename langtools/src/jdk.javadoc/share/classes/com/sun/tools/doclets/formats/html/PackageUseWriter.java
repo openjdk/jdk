@@ -207,7 +207,7 @@ public class PackageUseWriter extends SubWriterHolderWriter {
                 } else {
                     tr.addStyle(HtmlStyle.rowColor);
                 }
-                addClassRow(itc.next(), packageName, tr);
+                addClassRow(itc.next(), usingPackage, tr);
                 tbody.addContent(tr);
             }
             table.addContent(tbody);
@@ -220,15 +220,15 @@ public class PackageUseWriter extends SubWriterHolderWriter {
      * Add a row for the class that uses the given package.
      *
      * @param usedClass the class that uses the given package
-     * @param packageName the name of the package to which the class belongs
+     * @param pkg the package to which the class belongs
      * @param contentTree the content tree to which the row will be added
      */
-    protected void addClassRow(ClassDoc usedClass, String packageName,
+    protected void addClassRow(ClassDoc usedClass, PackageDoc pkg,
             Content contentTree) {
         DocPath dp = pathString(usedClass,
                 DocPaths.CLASS_USE.resolve(DocPath.forName(usedClass)));
         Content td = HtmlTree.TD(HtmlStyle.colOne,
-                getHyperLink(dp.fragment(packageName), new StringContent(usedClass.name())));
+                getHyperLink(dp.fragment(getPackageAnchorName(pkg)), new StringContent(usedClass.name())));
         addIndexComment(usedClass, td);
         contentTree.addContent(td);
     }

@@ -1,10 +1,12 @@
 /*
- * Copyright (c) 1998, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.
+ * published by the Free Software Foundation.  Oracle designates this
+ * particular file as subject to the "Classpath" exception as provided
+ * by Oracle in the LICENSE file that accompanied this code.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -20,17 +22,14 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
-
-/*
- * @test
- * @bug 4097402
- * @summary Compiler used to allow this initialization, despite the overflow.
- * @author turnidge
- *
- * @compile/fail UncaughtOverflow2.java
+/**
+ * This package comprises the interfaces and classes used to define the
+ * signing mechanism used by the <tt>jarsigner</tt> tool.
+ * <p>
+ * Clients may override the default signing mechanism of the <tt>jarsigner</tt>
+ * tool by supplying an alternative implementation of
+ * {@link com.sun.jarsigner.ContentSigner}.
  */
 
-public
-class UncaughtOverflow2 {
-    int i = -2147483649;
-}
+@jdk.Exported
+package com.sun.jarsigner;
