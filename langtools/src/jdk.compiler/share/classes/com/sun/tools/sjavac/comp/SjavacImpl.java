@@ -33,15 +33,17 @@ import java.util.List;
 import java.util.Set;
 import java.util.concurrent.atomic.AtomicBoolean;
 
-import javax.tools.JavaCompiler.CompilationTask;
 import javax.tools.JavaFileObject;
 import javax.tools.StandardJavaFileManager;
 
 import com.sun.tools.javac.api.JavacTaskImpl;
 import com.sun.tools.javac.api.JavacTool;
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
 import com.sun.tools.javac.util.Context;
 import com.sun.tools.javac.util.ListBuffer;
 import com.sun.tools.javac.util.Options;
+import com.sun.tools.sjavac.Util;
+import com.sun.tools.sjavac.comp.dependencies.DependencyCollector;
 import com.sun.tools.sjavac.server.CompilationResult;
 import com.sun.tools.sjavac.server.Sjavac;
 import com.sun.tools.sjavac.server.SysInfo;
@@ -76,8 +78,6 @@ public class SjavacImpl implements Sjavac {
         StandardJavaFileManager fileManager = compiler.getStandardFileManager(null, null, null);
         SmartFileManager smartFileManager = new SmartFileManager(fileManager);
         Context context = new Context();
-        ResolveWithDeps.preRegister(context);
-        AttrWithDeps.preRegister(context);
         JavaCompilerWithDeps.preRegister(context, new SjavacErrorHandler() {
             @Override
             public void logError(String msg) {
@@ -102,12 +102,15 @@ public class SjavacImpl implements Sjavac {
             compilationUnits.append(i);
         }
         forcedExit.set(false);
+
+
         // Create a new logger.
         StringWriter stdoutLog = new StringWriter();
         StringWriter stderrLog = new StringWriter();
         PrintWriter stdout = new PrintWriter(stdoutLog);
         PrintWriter stderr = new PrintWriter(stderrLog);
         com.sun.tools.javac.main.Main.Result rc = com.sun.tools.javac.main.Main.Result.OK;
+        DependencyCollector depsCollector = new DependencyCollector();
         try {
             if (compilationUnits.size() > 0) {
                 smartFileManager.setVisibleSources(visibleSources);
@@ -115,25 +118,32 @@ public class SjavacImpl implements Sjavac {
                 smartFileManager.setLog(stdout);
 
                 // Do the compilation!
-                CompilationTask task = compiler.getTask(stderr,
-                                                        smartFileManager,
-                                                        null,
-                                                        Arrays.asList(args),
-                                                        null,
-                                                        compilationUnits,
-                                                        context);
+                JavacTaskImpl task =
+                        (JavacTaskImpl) compiler.getTask(stderr,
+                                                         smartFileManager,
+                                                         null,
+                                                         Arrays.asList(args),
+                                                         null,
+                                                         compilationUnits,
+                                                         context);
                 smartFileManager.setSymbolFileEnabled(!Options.instance(context).isSet("ignore.symbol.file"));
-                rc = ((JavacTaskImpl) task).doCall();
+                task.addTaskListener(depsCollector);
+                rc = task.doCall();
                 smartFileManager.flush();
             }
         } catch (Exception e) {
-            stderrLog.append(e.getMessage());
+            stderrLog.append(Util.getStackTrace(e));
             forcedExit.set(true);
         }
 
         compilationResult.packageArtifacts = smartFileManager.getPackageArtifacts();
 
         Dependencies deps = Dependencies.instance(context);
+        for (PackageSymbol from : depsCollector.getSourcePackages()) {
+            for (PackageSymbol to : depsCollector.getDependenciesForPkg(from))
+                deps.collect(from.fullname, to.fullname);
+        }
+
         compilationResult.packageDependencies = deps.getDependencies();
         compilationResult.packagePubapis = deps.getPubapis();
 
