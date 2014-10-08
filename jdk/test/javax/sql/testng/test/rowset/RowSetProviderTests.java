@@ -109,7 +109,7 @@ public class RowSetProviderTests extends BaseTest {
      * Validate that the correct RowSetFactory is returned by newFactory()
      * when specified by the javax.sql.rowset.RowSetFactory property.
      */
-    @Test(enabled = false)
+    @Test(enabled = true)
     public void test02() throws SQLException {
         System.setProperty("javax.sql.rowset.RowSetFactory", STUB_FACTORY_CLASSNAME);
         validateProvider(RowSetProvider.newFactory(), STUB_FACTORY_CLASSNAME);
@@ -133,7 +133,7 @@ public class RowSetProviderTests extends BaseTest {
      */
     @Test
     public void test04() throws Exception {
-        File f = new File(jarPath + "goodFactory.jar");
+        File f = new File(jarPath + "goodFactory");
         URLClassLoader loader = new URLClassLoader(new URL[]{
             new URL(f.toURI().toString())}, getClass().getClassLoader());
         Thread.currentThread().setContextClassLoader(loader);
@@ -142,11 +142,11 @@ public class RowSetProviderTests extends BaseTest {
 
     /*
      * Validate that a SQLException is thrown by newFactory() if the default
-     * RowSetFactory specified by the ServlceLoader API is not valid
+     * RowSetFactory specified by the ServiceLoader API is not valid
      */
     @Test(expectedExceptions = SQLException.class)
     public void test05() throws Exception {
-        File f = new File(jarPath + "badFactory.jar");
+        File f = new File(jarPath + "badFactory");
         URLClassLoader loader = new URLClassLoader(new URL[]{
             new URL(f.toURI().toString())}, getClass().getClassLoader());
         Thread.currentThread().setContextClassLoader(loader);
@@ -177,12 +177,12 @@ public class RowSetProviderTests extends BaseTest {
     @DataProvider(name = "RowSetFactoryValues")
     private Object[][] RowSetFactoryValues() throws SQLException {
         RowSetFactory rsf = RowSetProvider.newFactory();
-        //RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
+        RowSetFactory rsf1 = RowSetProvider.newFactory(STUB_FACTORY_CLASSNAME, null);
         RowSetFactory rsf2 = RowSetProvider.newFactory(DEFFAULT_FACTORY_CLASSNAME, null);
         return new Object[][]{
             {rsf, NO_VALADATE_IMPL},
             {rsf, DEFFAULT_FACTORY_CLASSNAME},
-            // {rsf1, STUB_FACTORY_CLASSNAME},
+            {rsf1, STUB_FACTORY_CLASSNAME},
             {rsf2, DEFFAULT_FACTORY_CLASSNAME}
         };
     }
