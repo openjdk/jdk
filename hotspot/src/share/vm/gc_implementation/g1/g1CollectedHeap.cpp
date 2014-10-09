@@ -389,7 +389,9 @@ void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_
   OtherRegionsTable::invalidate(start_idx, num_regions);
 }
 
-void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions) {
+void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
+  // The from card cache is not the memory that is actually committed. So we cannot
+  // take advantage of the zero_filled parameter.
   reset_from_card_cache(start_idx, num_regions);
 }
 
