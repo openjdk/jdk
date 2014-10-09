@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1995, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1995, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -123,7 +123,7 @@ ZFILE_Open(const char *fname, int flags) {
         flagsAndAttributes, /* flags and attributes */
         NULL);
 #else
-    return JVM_Open(fname, flags, 0);
+    return open(fname, flags, 0);
 #endif
 }
 
@@ -136,7 +136,7 @@ ZFILE_Close(ZFILE zfd) {
 #ifdef WIN32
     CloseHandle((HANDLE) zfd);
 #else
-    JVM_Close(zfd);
+    close(zfd);
 #endif
 }
 
@@ -145,14 +145,6 @@ ZFILE_read(ZFILE zfd, char *buf, jint nbytes) {
 #ifdef WIN32
     return (int) IO_Read(zfd, buf, nbytes);
 #else
-    /*
-     * Calling JVM_Read will return JVM_IO_INTR when Thread.interrupt is called
-     * only on Solaris. Continue reading jar file in this case is the best
-     * thing to do since zip file reading is relatively fast and it is very onerous
-     * for a interrupted thread to deal with this kind of hidden I/O. However, handling
-     * JVM_IO_INTR is tricky and could cause undesired side effect. So we decided
-     * to simply call "read" on Solaris/Linux. See details in bug 6304463.
-     */
     return read(zfd, buf, nbytes);
 #endif
 }
@@ -198,9 +190,8 @@ readFully(ZFILE zfd, void *buf, jlong len) {
         if (n > 0) {
             bp += n;
             len -= n;
-        } else if (n == JVM_IO_ERR && errno == EINTR) {
-          /* Retry after EINTR (interrupted by signal).
-             We depend on the fact that JVM_IO_ERR == -1. */
+        } else if (n == -1 && errno == EINTR) {
+          /* Retry after EINTR (interrupted by signal). */
             continue;
         } else { /* EOF or IO error */
             return -1;
@@ -828,7 +819,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
     zip->lastModified = lastModified;
 
     if (zfd == -1) {
-        if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
+        if (pmsg && getLastErrorString(errbuf, sizeof(errbuf)) > 0)
             *pmsg = strdup(errbuf);
         freeZip(zip);
         return NULL;
@@ -849,7 +840,7 @@ ZIP_Put_In_Cache0(const char *name, ZFILE zfd, char **pmsg, jlong lastModified,
                 *pmsg = strdup("zip file is empty");
             }
         } else { /* error */
-            if (pmsg && JVM_GetLastErrorString(errbuf, sizeof(errbuf)) > 0)
+            if (pmsg && getLastErrorString(errbuf, sizeof(errbuf)) > 0)
                 *pmsg = strdup(errbuf);
         }
         ZFILE_Close(zfd);
