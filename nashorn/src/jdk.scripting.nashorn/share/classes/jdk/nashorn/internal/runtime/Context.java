@@ -33,7 +33,6 @@ import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
