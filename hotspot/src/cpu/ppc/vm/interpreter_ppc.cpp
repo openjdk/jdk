@@ -24,7 +24,6 @@
  */
 
 #include "precompiled.hpp"
-#include "asm/assembler.hpp"
 #include "asm/macroAssembler.inline.hpp"
 #include "interpreter/bytecodeHistogram.hpp"
 #include "interpreter/interpreter.hpp"
