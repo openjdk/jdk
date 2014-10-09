@@ -496,77 +496,65 @@ void SymbolTable::dump(outputStream* st) {
 void SymbolTable::print_histogram() {
   MutexLocker ml(SymbolTable_lock);
   const int results_length = 100;
-  int results[results_length];
+  int counts[results_length];
+  int sizes[results_length];
   int i,j;
 
   // initialize results to zero
   for (j = 0; j < results_length; j++) {
-    results[j] = 0;
+    counts[j] = 0;
+    sizes[j] = 0;
   }
 
-  int total = 0;
-  int max_symbols = 0;
-  int out_of_range = 0;
-  int memory_total = 0;
-  int count = 0;
+  int total_size = 0;
+  int total_count = 0;
+  int total_length = 0;
+  int max_length = 0;
+  int out_of_range_count = 0;
+  int out_of_range_size = 0;
   for (i = 0; i < the_table()->table_size(); i++) {
     HashtableEntry<Symbol*, mtSymbol>* p = the_table()->bucket(i);
     for ( ; p != NULL; p = p->next()) {
-      memory_total += p->literal()->size();
-      count++;
-      int counter = p->literal()->utf8_length();
-      total += counter;
-      if (counter < results_length) {
-        results[counter]++;
+      int size = p->literal()->size();
+      int len = p->literal()->utf8_length();
+      if (len < results_length) {
+        counts[len]++;
+        sizes[len] += size;
       } else {
-        out_of_range++;
+        out_of_range_count++;
+        out_of_range_size += size;
       }
-      max_symbols = MAX2(max_symbols, counter);
+      total_count++;
+      total_size += size;
+      total_length += len;
+      max_length = MAX2(max_length, len);
     }
   }
-  tty->print_cr("Symbol Table:");
-  tty->print_cr("Total number of symbols  %5d", count);
-  tty->print_cr("Total size in memory     %5dK",
-          (memory_total*HeapWordSize)/1024);
-  tty->print_cr("Total counted            %5d", _symbols_counted);
-  tty->print_cr("Total removed            %5d", _symbols_removed);
+  tty->print_cr("Symbol Table Histogram:");
+  tty->print_cr("  Total number of symbols  %7d", total_count);
+  tty->print_cr("  Total size in memory     %7dK",
+          (total_size*HeapWordSize)/1024);
+  tty->print_cr("  Total counted            %7d", _symbols_counted);
+  tty->print_cr("  Total removed            %7d", _symbols_removed);
   if (_symbols_counted > 0) {
-    tty->print_cr("Percent removed          %3.2f",
+    tty->print_cr("  Percent removed          %3.2f",
           ((float)_symbols_removed/(float)_symbols_counted)* 100);
   }
-  tty->print_cr("Reference counts         %5d", Symbol::_total_count);
-  tty->print_cr("Symbol arena size        %5d used %5d",
-                 arena()->size_in_bytes(), arena()->used());
-  tty->print_cr("Histogram of symbol length:");
-  tty->print_cr("%8s %5d", "Total  ", total);
-  tty->print_cr("%8s %5d", "Maximum", max_symbols);
-  tty->print_cr("%8s %3.2f", "Average",
-          ((float) total / (float) the_table()->table_size()));
-  tty->print_cr("%s", "Histogram:");
-  tty->print_cr(" %s %29s", "Length", "Number chains that length");
+  tty->print_cr("  Reference counts         %7d", Symbol::_total_count);
+  tty->print_cr("  Symbol arena used        %7dK", arena()->used()/1024);
+  tty->print_cr("  Symbol arena size        %7dK", arena()->size_in_bytes()/1024);
+  tty->print_cr("  Total symbol length      %7d", total_length);
+  tty->print_cr("  Maximum symbol length    %7d", max_length);
+  tty->print_cr("  Average symbol length    %7.2f", ((float) total_length / (float) total_count));
+  tty->print_cr("  Symbol length histogram:");
+  tty->print_cr("    %6s %10s %10s", "Length", "#Symbols", "Size");
   for (i = 0; i < results_length; i++) {
-    if (results[i] > 0) {
-      tty->print_cr("%6d %10d", i, results[i]);
+    if (counts[i] > 0) {
+      tty->print_cr("    %6d %10d %10dK", i, counts[i], (sizes[i]*HeapWordSize)/1024);
     }
   }
-  if (Verbose) {
-    int line_length = 70;
-    tty->print_cr("%s %30s", " Length", "Number chains that length");
-    for (i = 0; i < results_length; i++) {
-      if (results[i] > 0) {
-        tty->print("%4d", i);
-        for (j = 0; (j < results[i]) && (j < line_length);  j++) {
-          tty->print("%1s", "*");
-        }
-        if (j == line_length) {
-          tty->print("%1s", "+");
-        }
-        tty->cr();
-      }
-    }
-  }
-  tty->print_cr(" %s %d: %d\n", "Number chains longer than",
-                    results_length, out_of_range);
+  tty->print_cr("  >=%6d %10d %10dK\n", results_length,
+          out_of_range_count, (out_of_range_size*HeapWordSize)/1024);
 }
 
 void SymbolTable::print() {

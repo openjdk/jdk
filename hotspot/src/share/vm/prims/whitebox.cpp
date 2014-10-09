@@ -820,6 +820,33 @@ WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, j
   MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
+WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
+  if (inc < 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_IncMetaspaceCapacityUntilGC: inc is negative: " JLONG_FORMAT, inc));
+  }
+
+  jlong max_size_t = (jlong) ((size_t) -1);
+  if (inc > max_size_t) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_IncMetaspaceCapacityUntilGC: inc does not fit in size_t: " JLONG_FORMAT, inc));
+  }
+
+  size_t new_cap_until_GC = 0;
+  size_t aligned_inc = align_size_down((size_t) inc, Metaspace::commit_alignment());
+  bool success = MetaspaceGC::inc_capacity_until_GC(aligned_inc, &new_cap_until_GC);
+  if (!success) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(),
+                "WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC "
+                "due to contention with another thread");
+  }
+  return (jlong) new_cap_until_GC;
+WB_END
+
+WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
+  return (jlong) MetaspaceGC::capacity_until_GC();
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -991,6 +1018,8 @@ static JNINativeMethod methods[] = {
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
   {CC"freeMetaspace",
      CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
+  {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
+  {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },

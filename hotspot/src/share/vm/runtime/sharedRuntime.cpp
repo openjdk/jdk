@@ -2422,7 +2422,7 @@ AdapterHandlerEntry* AdapterHandlerLibrary::get_adapter(methodHandle method) {
       // Ought to log this but compile log is only per compile thread
       // and we're some non descript Java thread.
       MutexUnlocker mu(AdapterHandlerLibrary_lock);
-      CompileBroker::handle_full_code_cache(CodeBlobType::NonMethod);
+      CompileBroker::handle_full_code_cache(CodeBlobType::NonNMethod);
       return NULL; // Out of CodeCache space
     }
     entry->relocate(new_adapter->content_begin());

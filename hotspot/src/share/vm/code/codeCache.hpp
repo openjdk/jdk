@@ -41,14 +41,14 @@
 // The CodeCache consists of one or more CodeHeaps, each of which contains
 // CodeBlobs of a specific CodeBlobType. Currently heaps for the following
 // types are available:
-//  - Non-methods: Non-methods like Buffers, Adapters and Runtime Stubs
+//  - Non-nmethods: Non-nmethods like Buffers, Adapters and Runtime Stubs
 //  - Profiled nmethods: nmethods that are profiled, i.e., those
 //    executed at level 2 or 3
 //  - Non-Profiled nmethods: nmethods that are not profiled, i.e., those
 //    executed at level 1 or 4 and native methods
 //  - All: Used for code of all types if code cache segmentation is disabled.
 //
-// In the rare case of the non-method code heap getting full, non-method code
+// In the rare case of the non-nmethod code heap getting full, non-nmethod code
 // will be stored in the non-profiled code heap as a fallback solution.
 //
 // Depending on the availability of compilers and TieredCompilation there
@@ -100,7 +100,7 @@ class CodeCache : AllStatic {
   static void add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type);
   static CodeHeap* get_code_heap(CodeBlob* cb);               // Returns the CodeHeap for the given CodeBlob
   static CodeHeap* get_code_heap(int code_blob_type);         // Returns the CodeHeap for the given CodeBlobType
-  static bool heap_available(int code_blob_type);             // Returns true if a CodeHeap for the given CodeBlobType is available
+  static bool heap_available(int code_blob_type);             // Returns true if an own CodeHeap for the given CodeBlobType is available
   static ReservedCodeSpace reserve_heap_memory(size_t size);  // Reserves one continuous chunk of memory for the CodeHeaps
 
   // Iteration
@@ -175,11 +175,9 @@ class CodeCache : AllStatic {
   static address high_bound()                         { return _high_bound; }
 
   // Profiling
-  static size_t capacity(int code_blob_type)             { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->capacity() : 0; }
   static size_t capacity();
-  static size_t unallocated_capacity(int code_blob_type) { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->unallocated_capacity() : 0; }
+  static size_t unallocated_capacity(int code_blob_type);
   static size_t unallocated_capacity();
-  static size_t max_capacity(int code_blob_type)         { return heap_available(code_blob_type) ? get_code_heap(code_blob_type)->max_capacity() : 0; }
   static size_t max_capacity();
 
   static bool   is_full(int* code_blob_type);
