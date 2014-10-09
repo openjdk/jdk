@@ -93,23 +93,26 @@ Java_java_util_zip_ZipFile_open(JNIEnv *env, jclass cls, jstring name,
     jzfile *zip = 0;
 
     if (mode & OPEN_READ) flag |= O_RDONLY;
-    if (mode & OPEN_DELETE) flag |= JVM_O_DELETE;
 
     if (path != 0) {
         zip = ZIP_Get_From_Cache(path, &msg, lastModified);
         if (zip == 0 && msg == 0) {
             ZFILE zfd = 0;
 #ifdef WIN32
+            if (mode & OPEN_DELETE) flag |= O_TEMPORARY;
             zfd = winFileHandleOpen(env, name, flag);
             if (zfd == -1) {
                 /* Exception already pending. */
                 goto finally;
             }
 #else
-            zfd = JVM_Open(path, flag, 0);
+            zfd = open(path, flag, 0);
             if (zfd < 0) {
                 throwFileNotFoundException(env, name);
                 goto finally;
+            }
+            if (mode & OPEN_DELETE) {
+                unlink(path);
             }
 #endif
             zip = ZIP_Put_In_Cache0(path, zfd, &msg, lastModified, usemmap);
