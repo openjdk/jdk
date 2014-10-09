@@ -1415,10 +1415,31 @@ size_t MetaspaceGC::capacity_until_GC() {
   return value;
 }
 
-size_t MetaspaceGC::inc_capacity_until_GC(size_t v) {
+bool MetaspaceGC::inc_capacity_until_GC(size_t v, size_t* new_cap_until_GC, size_t* old_cap_until_GC) {
   assert_is_size_aligned(v, Metaspace::commit_alignment());
 
-  return (size_t)Atomic::add_ptr(v, &_capacity_until_GC);
+  size_t capacity_until_GC = (size_t) _capacity_until_GC;
+  size_t new_value = capacity_until_GC + v;
+
+  if (new_value < capacity_until_GC) {
+    // The addition wrapped around, set new_value to aligned max value.
+    new_value = align_size_down(max_uintx, Metaspace::commit_alignment());
+  }
+
+  intptr_t expected = (intptr_t) capacity_until_GC;
+  intptr_t actual = Atomic::cmpxchg_ptr((intptr_t) new_value, &_capacity_until_GC, expected);
+
+  if (expected != actual) {
+    return false;
+  }
+
+  if (new_cap_until_GC != NULL) {
+    *new_cap_until_GC = new_value;
+  }
+  if (old_cap_until_GC != NULL) {
+    *old_cap_until_GC = capacity_until_GC;
+  }
+  return true;
 }
 
 size_t MetaspaceGC::dec_capacity_until_GC(size_t v) {
@@ -1518,7 +1539,10 @@ void MetaspaceGC::compute_new_size() {
     expand_bytes = align_size_up(expand_bytes, Metaspace::commit_alignment());
     // Don't expand unless it's significant
     if (expand_bytes >= MinMetaspaceExpansion) {
-      size_t new_capacity_until_GC = MetaspaceGC::inc_capacity_until_GC(expand_bytes);
+      size_t new_capacity_until_GC = 0;
+      bool succeeded = MetaspaceGC::inc_capacity_until_GC(expand_bytes, &new_capacity_until_GC);
+      assert(succeeded, "Should always succesfully increment HWM when at safepoint");
+
       Metaspace::tracer()->report_gc_threshold(capacity_until_GC,
                                                new_capacity_until_GC,
                                                MetaspaceGCThresholdUpdater::ComputeNewSize);
@@ -3321,19 +3345,29 @@ MetaWord* Metaspace::expand_and_allocate(size_t word_size, MetadataType mdtype) 
   size_t delta_bytes = MetaspaceGC::delta_capacity_until_GC(word_size * BytesPerWord);
   assert(delta_bytes > 0, "Must be");
 
-  size_t after_inc = MetaspaceGC::inc_capacity_until_GC(delta_bytes);
+  size_t before = 0;
+  size_t after = 0;
+  MetaWord* res;
+  bool incremented;
 
-  // capacity_until_GC might be updated concurrently, must calculate previous value.
-  size_t before_inc = after_inc - delta_bytes;
+  // Each thread increments the HWM at most once. Even if the thread fails to increment
+  // the HWM, an allocation is still attempted. This is because another thread must then
+  // have incremented the HWM and therefore the allocation might still succeed.
+  do {
+    incremented = MetaspaceGC::inc_capacity_until_GC(delta_bytes, &after, &before);
+    res = allocate(word_size, mdtype);
+  } while (!incremented && res == NULL);
 
-  tracer()->report_gc_threshold(before_inc, after_inc,
-                                MetaspaceGCThresholdUpdater::ExpandAndAllocate);
-  if (PrintGCDetails && Verbose) {
-    gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
-        " to " SIZE_FORMAT, before_inc, after_inc);
+  if (incremented) {
+    tracer()->report_gc_threshold(before, after,
+                                  MetaspaceGCThresholdUpdater::ExpandAndAllocate);
+    if (PrintGCDetails && Verbose) {
+      gclog_or_tty->print_cr("Increase capacity to GC from " SIZE_FORMAT
+          " to " SIZE_FORMAT, before, after);
+    }
   }
 
-  return allocate(word_size, mdtype);
+  return res;
 }
 
 // Space allocated in the Metaspace.  This may
