@@ -458,11 +458,13 @@ public final class Compiler implements Loggable {
 
     @Override
     public DebugLogger initLogger(final Context ctxt) {
-        final boolean optimisticTypes = ctxt.getEnv()._optimistic_types;
+        final boolean optimisticTypes = env._optimistic_types;
+        final boolean lazyCompilation = env._lazy_compilation;
+
         return ctxt.getLogger(this.getClass(), new Consumer<DebugLogger>() {
             @Override
             public void accept(final DebugLogger newLogger) {
-                if (!Compiler.this.getScriptEnvironment()._lazy_compilation) {
+                if (!lazyCompilation) {
                     newLogger.warning("WARNING: Running with lazy compilation switched off. This is not a default setting.");
                 }
                 newLogger.warning("Optimistic types are ", optimisticTypes ? "ENABLED." : "DISABLED.");
@@ -544,7 +546,7 @@ public final class Compiler implements Loggable {
      */
     public FunctionNode compile(final FunctionNode functionNode, final CompilationPhases phases) throws CompilationException {
         if (log.isEnabled()) {
-            log.info("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
+            log.info(">> Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
             log.indent();
         }
 
@@ -591,7 +593,7 @@ public final class Compiler implements Loggable {
         log.unindent();
 
         if (info) {
-            final StringBuilder sb = new StringBuilder("Finished compile job for ");
+            final StringBuilder sb = new StringBuilder("<< Finished compile job for ");
             sb.append(newFunctionNode.getSource()).
                 append(':').
                 append(quote(newFunctionNode.getName()));
