@@ -56,7 +56,7 @@ import org.xml.sax.*;
  * organization. The SQL/XML definition is available at the following URI:
  * <ul>
  * <li>
- * <a href="http://standards.iso.org/iso/9075/2002/12/sqlxml">http://standards.iso.org/iso/9075/2002/12/sqlxml</a>
+ * <a href="http://standards.iso.org/iso/9075/2002/12/sqlxml.xsd">http://standards.iso.org/iso/9075/2002/12/sqlxml.xsd</a>
  * </li>
  * </ul>
  * The schema definition describes the internal data of a {@code RowSet} object
