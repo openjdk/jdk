@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import sun.security.x509.X509CertImpl;
  * CA such as a "root" CA.
  * <p>
  * More information can be found in
- * <a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280: Internet X.509
+ * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  * <p>
  * The ASN.1 definition of {@code tbsCertificate} is:
@@ -408,7 +408,7 @@ implements X509Extension {
      * Gets the {@code issuerUniqueID} value from the certificate.
      * The issuer unique identifier is present in the certificate
      * to handle the possibility of reuse of issuer names over time.
-     * RFC 3280 recommends that names not be reused and that
+     * RFC 5280 recommends that names not be reused and that
      * conforming certificates not make use of unique identifiers.
      * Applications conforming to that profile should be capable of
      * parsing unique identifiers and making comparisons.
@@ -459,7 +459,7 @@ implements X509Extension {
      *     encipherOnly            (7),
      *     decipherOnly            (8) }
      * </pre>
-     * RFC 3280 recommends that when used, this be marked
+     * RFC 5280 recommends that when used, this be marked
      * as a critical extension.
      *
      * @return the KeyUsage extension of this certificate, represented as
@@ -572,7 +572,7 @@ implements X509Extension {
      * <a href="http://www.ietf.org/rfc/rfc822.txt">RFC 822</a>, DNS, and URI
      * names are returned as {@code String}s,
      * using the well-established string formats for those types (subject to
-     * the restrictions included in RFC 3280). IPv4 address names are
+     * the restrictions included in RFC 5280). IPv4 address names are
      * returned using dotted quad notation. IPv6 address names are returned
      * in the form "a1:a2:...:a8", where a1-a8 are hexadecimal values
      * representing the eight 16-bit pieces of the address. OID names are
