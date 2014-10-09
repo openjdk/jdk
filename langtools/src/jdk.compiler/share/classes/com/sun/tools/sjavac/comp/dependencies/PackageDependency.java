@@ -22,15 +22,20 @@
  * or visit www.oracle.com if you need additional information or have any
  * questions.
  */
+package com.sun.tools.sjavac.comp.dependencies;
 
-package com.sun.tools.sjavac.comp;
+import java.util.Collections;
+import java.util.Set;
 
-/**
- *  <p><b>This is NOT part of any supported API.
- *  If you write code that depends on this, you do so at your own risk.
- *  This code and its internal interfaces are subject to change or
- *  deletion without notice.</b>
- */
-public interface SjavacErrorHandler {
-    void logError(String msg);
+import com.sun.tools.javac.code.Symbol.PackageSymbol;
+
+public class PackageDependency implements Dependency {
+    PackageSymbol ps;
+    public PackageDependency(PackageSymbol ps) {
+        this.ps = ps;
+    }
+    @Override
+    public Set<PackageSymbol> getPackages() {
+        return Collections.singleton(ps);
+    }
 }

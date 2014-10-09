@@ -172,7 +172,7 @@ public class SjavacClient implements Sjavac {
         } catch (IOException | ClassNotFoundException ex) {
             Log.error("Exception caught: " + ex);
             result = new CompilationResult(CompilationResult.ERROR_FATAL);
-            result.stderr = ex.getMessage();
+            result.stderr = Util.getStackTrace(ex);
         }
         return result;
     }
