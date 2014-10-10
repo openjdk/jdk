@@ -387,46 +387,6 @@ void print_statistics() {
 
 #endif
 
-
-// Helper class for registering on_exit calls through JVM_OnExit
-
-extern "C" {
-    typedef void (*__exit_proc)(void);
-}
-
-class ExitProc : public CHeapObj<mtInternal> {
- private:
-  __exit_proc _proc;
-  // void (*_proc)(void);
-  ExitProc* _next;
- public:
-  // ExitProc(void (*proc)(void)) {
-  ExitProc(__exit_proc proc) {
-    _proc = proc;
-    _next = NULL;
-  }
-  void evaluate()               { _proc(); }
-  ExitProc* next() const        { return _next; }
-  void set_next(ExitProc* next) { _next = next; }
-};
-
-
-// Linked list of registered on_exit procedures
-
-static ExitProc* exit_procs = NULL;
-
-
-extern "C" {
-  void register_on_exit_function(void (*func)(void)) {
-    ExitProc *entry = new ExitProc(func);
-    // Classic vm does not throw an exception in case the allocation failed,
-    if (entry != NULL) {
-      entry->set_next(exit_procs);
-      exit_procs = entry;
-    }
-  }
-}
-
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
@@ -455,16 +415,6 @@ void before_exit(JavaThread * thread) {
     case BEFORE_EXIT_DONE:
       return;
     }
-  }
-
-  // The only difference between this and Win32's _onexit procs is that
-  // this version is invoked before any threads get killed.
-  ExitProc* current = exit_procs;
-  while (current != NULL) {
-    ExitProc* next = current->next();
-    current->evaluate();
-    delete current;
-    current = next;
   }
 
   // Hang forever on exit if we're reporting an error.
