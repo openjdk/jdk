@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -66,6 +67,17 @@ public class ContinueNode extends JumpStatement {
     @Override
     String getStatementName() {
         return "continue";
+    }
+
+
+    @Override
+    public BreakableNode getTarget(final LexicalContext lc) {
+        return lc.getContinueTo(getLabelName());
+    }
+
+    @Override
+    public Label getTargetLabel(final BreakableNode target) {
+        return ((LoopNode)target).getContinueLabel();
     }
 }
 

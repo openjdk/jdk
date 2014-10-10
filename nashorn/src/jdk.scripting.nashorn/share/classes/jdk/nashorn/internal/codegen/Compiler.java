@@ -32,7 +32,6 @@ import static jdk.nashorn.internal.codegen.CompilerConstants.SCOPE;
 import static jdk.nashorn.internal.codegen.CompilerConstants.THIS;
 import static jdk.nashorn.internal.codegen.CompilerConstants.VARARGS;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
-
 import java.io.File;
 import java.lang.invoke.MethodType;
 import java.util.Arrays;
@@ -152,6 +151,13 @@ public final class Compiler implements Loggable {
      * TODO: make this immutable, propagate it through the CompilationPhases
      */
     private RecompilableScriptFunctionData compiledFunction;
+
+    /**
+     * Most compile unit names are longer than the default StringBuilder buffer,
+     * worth startup performance when massive class generation is going on to increase
+     * this
+     */
+    private static final int COMPILE_UNIT_NAME_BUFFER_SIZE = 32;
 
     /**
      * Compilation phases that a compilation goes through
@@ -452,12 +458,16 @@ public final class Compiler implements Loggable {
 
     @Override
     public DebugLogger initLogger(final Context ctxt) {
+        final boolean optimisticTypes = env._optimistic_types;
+        final boolean lazyCompilation = env._lazy_compilation;
+
         return ctxt.getLogger(this.getClass(), new Consumer<DebugLogger>() {
             @Override
             public void accept(final DebugLogger newLogger) {
-                if (!Compiler.this.getScriptEnvironment()._lazy_compilation) {
+                if (!lazyCompilation) {
                     newLogger.warning("WARNING: Running with lazy compilation switched off. This is not a default setting.");
                 }
+                newLogger.warning("Optimistic types are ", optimisticTypes ? "ENABLED." : "DISABLED.");
             }
         });
     }
@@ -535,9 +545,10 @@ public final class Compiler implements Loggable {
      * @throws CompilationException if error occurs during compilation
      */
     public FunctionNode compile(final FunctionNode functionNode, final CompilationPhases phases) throws CompilationException {
-
-        log.finest("Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
-        log.indent();
+        if (log.isEnabled()) {
+            log.info(">> Starting compile job for ", DebugLogger.quote(functionNode.getName()), " phases=", quote(phases.getDesc()));
+            log.indent();
+        }
 
         final String name = DebugLogger.quote(functionNode.getName());
 
@@ -554,7 +565,7 @@ public final class Compiler implements Loggable {
         long time = 0L;
 
         for (final CompilationPhase phase : phases) {
-            log.fine(phase, " starting for ", quote(name));
+            log.fine(phase, " starting for ", name);
 
             try {
                 newFunctionNode = phase.apply(this, phases, newFunctionNode);
@@ -582,8 +593,11 @@ public final class Compiler implements Loggable {
         log.unindent();
 
         if (info) {
-            final StringBuilder sb = new StringBuilder();
-            sb.append("Compile job for ").append(newFunctionNode.getSource()).append(':').append(quote(newFunctionNode.getName())).append(" finished");
+            final StringBuilder sb = new StringBuilder("<< Finished compile job for ");
+            sb.append(newFunctionNode.getSource()).
+                append(':').
+                append(quote(newFunctionNode.getName()));
+
             if (time > 0L && timeLogger != null) {
                 assert env.isTimingEnabled();
                 sb.append(" in ").append(time).append(" ms");
@@ -631,7 +645,8 @@ public final class Compiler implements Loggable {
     }
 
     String nextCompileUnitName() {
-        final StringBuilder sb = new StringBuilder(firstCompileUnitName);
+        final StringBuilder sb = new StringBuilder(COMPILE_UNIT_NAME_BUFFER_SIZE);
+        sb.append(firstCompileUnitName);
         final int cuid = nextCompileUnitId.getAndIncrement();
         if (cuid > 0) {
             sb.append("$cu").append(cuid);

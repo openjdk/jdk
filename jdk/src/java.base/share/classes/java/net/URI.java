@@ -397,7 +397,7 @@ import java.lang.NullPointerException;  // for javadoc
  * in all cases,
  * <pre>
  *     new URI(<i>u</i>.getScheme(),
- *             <i>u</i>.getUserInfo(), <i>u</i>.getAuthority(),
+ *             <i>u</i>.getAuthority(),
  *             <i>u</i>.getPath(), <i>u</i>.getQuery(),
  *             <i>u</i>.getFragment())
  *     .equals(<i>u</i>)</pre>

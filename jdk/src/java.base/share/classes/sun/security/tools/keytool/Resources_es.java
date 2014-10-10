@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_es extends java.util.ListResourceBundle {
         {"New.prompt.", "Nuevo {0}: "},
         {"Passwords.must.differ", "Las contrase\u00F1as deben ser distintas"},
         {"Re.enter.new.prompt.", "Vuelva a escribir el nuevo {0}: "},
-        {"Re.enter.passpword.", "Vuelva a introducir la contrase\u00F1a: "},
+        {"Re.enter.password.", "Vuelva a introducir la contrase\u00F1a: "},
         {"Re.enter.new.password.", "Volver a escribir la contrase\u00F1a nueva: "},
         {"They.don.t.match.Try.again", "No coinciden. Int\u00E9ntelo de nuevo"},
         {"Enter.prompt.alias.name.", "Escriba el nombre de alias de {0}:  "},

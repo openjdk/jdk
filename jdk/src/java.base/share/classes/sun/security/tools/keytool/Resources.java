@@ -337,7 +337,7 @@ public class Resources extends java.util.ListResourceBundle {
         {"New.prompt.", "New {0}: "},
         {"Passwords.must.differ", "Passwords must differ"},
         {"Re.enter.new.prompt.", "Re-enter new {0}: "},
-        {"Re.enter.passpword.", "Re-enter password: "},
+        {"Re.enter.password.", "Re-enter password: "},
         {"Re.enter.new.password.", "Re-enter new password: "},
         {"They.don.t.match.Try.again", "They don't match. Try again"},
         {"Enter.prompt.alias.name.", "Enter {0} alias name:  "},
