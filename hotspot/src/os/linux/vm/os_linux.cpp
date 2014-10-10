@@ -5086,22 +5086,12 @@ bool os::dir_is_empty(const char* path) {
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
-#ifndef O_DELETE
-  #define O_DELETE 0x10000
-#endif
-
-// Open a file. Unlink the file immediately after open returns
-// if the specified oflag has the O_DELETE flag set.
-// O_DELETE is used only in j2se/src/share/native/java/util/zip/ZipFile.c
-
 int os::open(const char *path, int oflag, int mode) {
   if (strlen(path) > MAX_PATH - 1) {
     errno = ENAMETOOLONG;
     return -1;
   }
   int fd;
-  int o_delete = (oflag & O_DELETE);
-  oflag = oflag & ~O_DELETE;
 
   fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
@@ -5154,9 +5144,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 #endif
 
-  if (o_delete != 0) {
-    ::unlink(path);
-  }
   return fd;
 }
 
