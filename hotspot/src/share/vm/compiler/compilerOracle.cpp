@@ -173,6 +173,7 @@ enum OptionType {
   UintxType,
   BoolType,
   CcstrType,
+  DoubleType,
   UnknownType
 };
 
@@ -196,6 +197,10 @@ template<> OptionType get_type_for<bool>() {
 
 template<> OptionType get_type_for<ccstr>() {
   return CcstrType;
+}
+
+template<> OptionType get_type_for<double>() {
+  return DoubleType;
 }
 
 template<typename T>
@@ -297,6 +302,15 @@ void TypedMethodOptionMatcher<ccstr>::print() {
   tty->cr();
 };
 
+template<>
+void TypedMethodOptionMatcher<double>::print() {
+  ttyLocker ttyl;
+  print_base();
+  tty->print(" double %s", _option);
+  tty->print(" = %f", _value);
+  tty->cr();
+};
+
 // this must parallel the command_names below
 enum OracleCommand {
   UnknownCommand = -1,
@@ -390,6 +404,7 @@ template bool CompilerOracle::has_option_value<intx>(methodHandle method, const 
 template bool CompilerOracle::has_option_value<uintx>(methodHandle method, const char* option, uintx& value);
 template bool CompilerOracle::has_option_value<bool>(methodHandle method, const char* option, bool& value);
 template bool CompilerOracle::has_option_value<ccstr>(methodHandle method, const char* option, ccstr& value);
+template bool CompilerOracle::has_option_value<double>(methodHandle method, const char* option, double& value);
 
 bool CompilerOracle::should_exclude(methodHandle method, bool& quietly) {
   quietly = true;
@@ -610,6 +625,20 @@ static MethodMatcher* scan_flag_and_value(const char* type, const char* line, in
       } else {
         jio_snprintf(errorbuf, sizeof(errorbuf), "  Value cannot be read for flag %s of type %s", flag, type);
       }
+    } else if (strcmp(type, "double") == 0) {
+      char buffer[2][256];
+      // Decimal separator '.' has been replaced with ' ' or '/' earlier,
+      // so read integer and fraction part of double value separately.
+      if (sscanf(line, "%*[ \t]%255[0-9]%*[ /\t]%255[0-9]%n", buffer[0], buffer[1], &bytes_read) == 2) {
+        char value[512] = "";
+        strncat(value, buffer[0], 255);
+        strcat(value, ".");
+        strncat(value, buffer[1], 255);
+        total_bytes_read += bytes_read;
+        return add_option_string(c_name, c_match, m_name, m_match, signature, flag, atof(value));
+      } else {
+        jio_snprintf(errorbuf, buf_size, "  Value cannot be read for flag %s of type %s", flag, type);
+      }
     } else {
       jio_snprintf(errorbuf, sizeof(errorbuf), "  Type %s not supported ", type);
     }
@@ -700,11 +729,10 @@ void CompilerOracle::parse_from_line(char* line) {
       // (1) CompileCommand=option,Klass::method,flag
       // (2) CompileCommand=option,Klass::method,type,flag,value
       //
-      // Type (1) is used to support ciMethod::has_option("someflag")
-      // (i.e., to check if a flag "someflag" is enabled for a method).
+      // Type (1) is used to enable a boolean flag for a method.
       //
       // Type (2) is used to support options with a value. Values can have the
-      // the following types: intx, uintx, bool, ccstr, and ccstrlist.
+      // the following types: intx, uintx, bool, ccstr, ccstrlist, and double.
       //
       // For future extensions: extend scan_flag_and_value()
       char option[256]; // stores flag for Type (1) and type of Type (2)
@@ -722,6 +750,7 @@ void CompilerOracle::parse_from_line(char* line) {
             || strcmp(option, "bool") == 0
             || strcmp(option, "ccstr") == 0
             || strcmp(option, "ccstrlist") == 0
+            || strcmp(option, "double") == 0
             ) {
 
           // Type (2) option: parse flag name and value.

@@ -454,7 +454,7 @@ class CommandLineFlags {
 // notproduct flags are settable / visible only during development and are not declared in the PRODUCT version
 
 // A flag must be declared with one of the following types:
-// bool, intx, uintx, ccstr.
+// bool, intx, uintx, ccstr, double, or uint64_t.
 // The type "ccstr" is an alias for "const char*" and is used
 // only in this file, because the macrology requires single-token type names.
 
