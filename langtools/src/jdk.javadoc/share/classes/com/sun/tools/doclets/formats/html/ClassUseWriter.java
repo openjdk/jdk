@@ -333,7 +333,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
         HtmlTree ul = new HtmlTree(HtmlTag.UL);
         ul.addStyle(HtmlStyle.blockList);
         for (PackageDoc pkg : pkgSet) {
-            Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(pkg.name()));
+            Content li = HtmlTree.LI(HtmlStyle.blockList, getMarkerAnchor(getPackageAnchorName(pkg)));
             Content link = getResource("doclet.ClassUse_Uses.of.0.in.1",
                                        getLink(new LinkInfoImpl(configuration, LinkInfoImpl.Kind.CLASS_USE_HEADER,
                                                                 classdoc)),
@@ -355,7 +355,7 @@ public class ClassUseWriter extends SubWriterHolderWriter {
      */
     protected void addPackageUse(PackageDoc pkg, Content contentTree) throws IOException {
         Content tdFirst = HtmlTree.TD(HtmlStyle.colFirst,
-                getHyperLink(pkg.name(), new StringContent(utils.getPackageName(pkg))));
+                getHyperLink(getPackageAnchorName(pkg), new StringContent(utils.getPackageName(pkg))));
         contentTree.addContent(tdFirst);
         HtmlTree tdLast = new HtmlTree(HtmlTag.TD);
         tdLast.addStyle(HtmlStyle.colLast);

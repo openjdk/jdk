@@ -104,6 +104,7 @@ import jdk.nashorn.internal.ir.IfNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.JoinPredecessor;
 import jdk.nashorn.internal.ir.JoinPredecessorExpression;
+import jdk.nashorn.internal.ir.JumpStatement;
 import jdk.nashorn.internal.ir.LabelNode;
 import jdk.nashorn.internal.ir.LexicalContext;
 import jdk.nashorn.internal.ir.LexicalContextNode;
@@ -1204,17 +1205,21 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterBreakNode(final BreakNode breakNode) {
+        return enterJumpStatement(breakNode);
+    }
+
+    private boolean enterJumpStatement(final JumpStatement jump) {
         if(!method.isReachable()) {
             return false;
         }
-        enterStatement(breakNode);
+        enterStatement(jump);
 
-        method.beforeJoinPoint(breakNode);
-        final BreakableNode breakFrom = lc.getBreakable(breakNode.getLabelName());
-        popScopesUntil(breakFrom);
-        final Label breakLabel = breakFrom.getBreakLabel();
-        breakLabel.markAsBreakTarget();
-        method.splitAwareGoto(lc, breakLabel, breakFrom);
+        method.beforeJoinPoint(jump);
+        final BreakableNode target = jump.getTarget(lc);
+        popScopesUntil(target);
+        final Label targetLabel = jump.getTargetLabel(target);
+        targetLabel.markAsBreakTarget();
+        method.splitAwareGoto(lc, targetLabel, target);
 
         return false;
     }
@@ -1517,19 +1522,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
 
     @Override
     public boolean enterContinueNode(final ContinueNode continueNode) {
-        if(!method.isReachable()) {
-            return false;
-        }
-        enterStatement(continueNode);
-        method.beforeJoinPoint(continueNode);
-
-        final LoopNode continueTo = lc.getContinueTo(continueNode.getLabelName());
-        popScopesUntil(continueTo);
-        final Label continueLabel = continueTo.getContinueLabel();
-        continueLabel.markAsBreakTarget();
-        method.splitAwareGoto(lc, continueLabel, continueTo);
-
-        return false;
+        return enterJumpStatement(continueNode);
     }
 
     @Override
@@ -2807,6 +2800,7 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
         final boolean hasReturn = method.hasReturn();
         final SplitMethodEmitter splitMethod = ((SplitMethodEmitter)method);
         final List<Label> targets = splitMethod.getExternalTargets();
+        final boolean hasControlFlow = hasReturn || !targets.isEmpty();
         final List<BreakableNode> targetNodes  = splitMethod.getExternalTargetNodes();
         final Type returnType = lc.getCurrentFunction().getReturnType();
 
@@ -2814,6 +2808,9 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             // Wrap up this method.
 
             if(method.isReachable()) {
+                if (hasControlFlow) {
+                    method.setSplitState(-1);
+                }
                 method.loadCompilerConstant(RETURN, returnType);
                 method._return(returnType);
             }
@@ -2831,17 +2828,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
             throw e;
         }
 
+        //no external jump targets or return in switch node
+        if (!hasControlFlow) {
+            return splitNode;
+        }
+
         // Handle return from split method if there was one.
         final MethodEmitter caller = method;
         final int     targetCount = targets.size();
 
-        //no external jump targets or return in switch node
-        if (!hasReturn && targets.isEmpty()) {
-            return splitNode;
-        }
-
-        caller.loadCompilerConstant(SCOPE);
-        caller.checkcast(Scope.class);
+        caller.loadScope();
         caller.invoke(Scope.GET_SPLIT_STATE);
 
         final Label breakLabel = new Label("no_split_state");
@@ -2873,19 +2869,16 @@ final class CodeGenerator extends NodeOperatorVisitor<CodeGeneratorLexicalContex
                     caller.loadCompilerConstant(RETURN, returnType);
                     caller._return(returnType);
                 } else {
-                    // Clear split state.
-                    caller.loadCompilerConstant(SCOPE);
-                    caller.checkcast(Scope.class);
-                    caller.load(-1);
-                    caller.invoke(Scope.SET_SPLIT_STATE);
                     final BreakableNode targetNode = targetNodes.get(i - 1);
                     final Label label = targets.get(i - 1);
-                    final JoinPredecessor jumpOrigin = splitNode.getJumpOrigin(label);
-                    if(jumpOrigin != null) {
-                        method.beforeJoinPoint(jumpOrigin);
+                    if (!lc.isExternalTarget(splitNode, targetNode)) {
+                        final JoinPredecessor jumpOrigin = splitNode.getJumpOrigin(label);
+                        if(jumpOrigin != null) {
+                            method.beforeJoinPoint(jumpOrigin);
+                        }
+                        popScopesUntil(targetNode);
                     }
-                    popScopesUntil(targetNode);
-                    caller.splitAwareGoto(lc, targets.get(i - 1), targetNode);
+                    caller.splitAwareGoto(lc, label, targetNode);
                 }
             }
             caller.label(breakLabel);

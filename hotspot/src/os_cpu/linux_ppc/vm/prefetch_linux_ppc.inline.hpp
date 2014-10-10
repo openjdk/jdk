@@ -47,4 +47,4 @@ inline void Prefetch::write(void *loc, intx interval) {
     );
 }
 
-#endif // OS_CPU_LINUX_PPC_VM_PREFETCH_LINUX_OJDKPPC_HPP
+#endif // OS_CPU_LINUX_PPC_VM_PREFETCH_LINUX_PPC_INLINE_HPP

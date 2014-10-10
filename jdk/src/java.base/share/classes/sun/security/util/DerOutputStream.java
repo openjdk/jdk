@@ -461,7 +461,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals a DER UTC time/date value.
      *
      * <P>YYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
-     * and with seconds (even if seconds=0) as per RFC 3280.
+     * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public void putUTCTime(Date d) throws IOException {
         putTime(d, DerValue.tag_UtcTime);
@@ -471,7 +471,7 @@ extends ByteArrayOutputStream implements DerEncoder {
      * Marshals a DER Generalized Time/date value.
      *
      * <P>YYYYMMDDhhmmss{Z|+hhmm|-hhmm} ... emits only using Zulu time
-     * and with seconds (even if seconds=0) as per RFC 3280.
+     * and with seconds (even if seconds=0) as per RFC 5280.
      */
     public void putGeneralizedTime(Date d) throws IOException {
         putTime(d, DerValue.tag_GeneralizedTime);

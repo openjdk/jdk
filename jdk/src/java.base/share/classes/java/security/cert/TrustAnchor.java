@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -78,7 +78,7 @@ public class TrustAnchor {
      * The name constraints are specified as a byte array. This byte array
      * should contain the DER encoded form of the name constraints, as they
      * would appear in the NameConstraints structure defined in
-     * <a href="http://www.ietf.org/rfc/rfc3280">RFC 3280</a>
+     * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280</a>
      * and X.509. The ASN.1 definition of this structure appears below.
      *
      * <pre>{@code
@@ -140,7 +140,7 @@ public class TrustAnchor {
      * <p>
      * The name constraints are specified as a byte array. This byte array
      * contains the DER encoded form of the name constraints, as they
-     * would appear in the NameConstraints structure defined in RFC 3280
+     * would appear in the NameConstraints structure defined in RFC 5280
      * and X.509. The ASN.1 notation for this structure is supplied in the
      * documentation for
      * {@link #TrustAnchor(X509Certificate, byte[])
@@ -179,7 +179,7 @@ public class TrustAnchor {
      * <p>
      * The name constraints are specified as a byte array. This byte array
      * contains the DER encoded form of the name constraints, as they
-     * would appear in the NameConstraints structure defined in RFC 3280
+     * would appear in the NameConstraints structure defined in RFC 5280
      * and X.509. The ASN.1 notation for this structure is supplied in the
      * documentation for
      * {@link #TrustAnchor(X509Certificate, byte[])
@@ -294,7 +294,7 @@ public class TrustAnchor {
      * <p>
      * The name constraints are returned as a byte array. This byte array
      * contains the DER encoded form of the name constraints, as they
-     * would appear in the NameConstraints structure defined in RFC 3280
+     * would appear in the NameConstraints structure defined in RFC 5280
      * and X.509. The ASN.1 notation for this structure is supplied in the
      * documentation for
      * {@link #TrustAnchor(X509Certificate, byte[])

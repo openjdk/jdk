@@ -25,6 +25,9 @@
 
 package jdk.nashorn.internal.runtime.regexp;
 
+import java.util.Collections;
+import java.util.Set;
+import java.util.WeakHashMap;
 import jdk.nashorn.internal.runtime.ParserException;
 import jdk.nashorn.internal.runtime.options.Options;
 
@@ -38,6 +41,15 @@ public class RegExpFactory {
 
     private final static String JDK  = "jdk";
     private final static String JONI = "joni";
+
+    /** Weak cache of already validated regexps - when reparsing, we don't, for example
+     *  need to recompile (reverify) all regexps that have previously been parsed by this
+     *  RegExpFactory in a previous compilation. This saves significant time in e.g. avatar
+     *  startup */
+    private static final Set<String> VALID_CACHE_SET =
+            Collections.newSetFromMap(
+                    Collections.synchronizedMap(
+                            new WeakHashMap<String, Boolean>()));
 
     static {
         final String impl = Options.getStringProperty("nashorn.regexp.impl", JONI);
@@ -88,7 +100,9 @@ public class RegExpFactory {
      */
     // @SuppressWarnings({"unused"})
     public static void validate(final String pattern, final String flags) throws ParserException {
-        instance.compile(pattern, flags);
+        if (VALID_CACHE_SET.add(pattern + flags)) {
+            instance.compile(pattern, flags);
+        }
     }
 
     /**
