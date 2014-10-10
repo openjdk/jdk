@@ -173,14 +173,14 @@ public class Locations {
      * Utility class to help evaluate a path option. Duplicate entries are ignored, jar class paths
      * can be expanded.
      */
-    private class Path extends LinkedHashSet<File> {
+    private class SearchPath extends LinkedHashSet<File> {
 
         private static final long serialVersionUID = 0;
 
         private boolean expandJarClassPaths = false;
         private final Set<File> canonicalValues = new HashSet<>();
 
-        public Path expandJarClassPaths(boolean x) {
+        public SearchPath expandJarClassPaths(boolean x) {
             expandJarClassPaths = x;
             return this;
         }
@@ -190,12 +190,12 @@ public class Locations {
          */
         private File emptyPathDefault = null;
 
-        public Path emptyPathDefault(File x) {
+        public SearchPath emptyPathDefault(File x) {
             emptyPathDefault = x;
             return this;
         }
 
-        public Path addDirectories(String dirs, boolean warn) {
+        public SearchPath addDirectories(String dirs, boolean warn) {
             boolean prev = expandJarClassPaths;
             expandJarClassPaths = true;
             try {
@@ -210,7 +210,7 @@ public class Locations {
             }
         }
 
-        public Path addDirectories(String dirs) {
+        public SearchPath addDirectories(String dirs) {
             return addDirectories(dirs, warn);
         }
 
@@ -235,18 +235,18 @@ public class Locations {
             }
         }
 
-        public Path addFiles(String files, boolean warn) {
+        public SearchPath addFiles(String files, boolean warn) {
             if (files != null) {
                 addFiles(getPathEntries(files, emptyPathDefault), warn);
             }
             return this;
         }
 
-        public Path addFiles(String files) {
+        public SearchPath addFiles(String files) {
             return addFiles(files, warn);
         }
 
-        public Path addFiles(Iterable<? extends File> files, boolean warn) {
+        public SearchPath addFiles(Iterable<? extends File> files, boolean warn) {
             if (files != null) {
                 for (File file : files) {
                     addFile(file, warn);
@@ -255,7 +255,7 @@ public class Locations {
             return this;
         }
 
-        public Path addFiles(Iterable<? extends File> files) {
+        public SearchPath addFiles(Iterable<? extends File> files) {
             return addFiles(files, warn);
         }
 
@@ -458,7 +458,7 @@ public class Locations {
 
         @Override
         void setLocation(Iterable<? extends File> files) {
-            Path p;
+            SearchPath p;
             if (files == null) {
                 p = computePath(null);
             } else {
@@ -467,12 +467,12 @@ public class Locations {
             searchPath = Collections.unmodifiableCollection(p);
         }
 
-        protected Path computePath(String value) {
+        protected SearchPath computePath(String value) {
             return createPath().addFiles(value);
         }
 
-        protected Path createPath() {
-            return new Path();
+        protected SearchPath createPath() {
+            return new SearchPath();
         }
     }
 
@@ -494,7 +494,7 @@ public class Locations {
         }
 
         @Override
-        protected Path computePath(String value) {
+        protected SearchPath computePath(String value) {
             String cp = value;
 
             // CLASSPATH environment variable when run from `javac'.
@@ -517,8 +517,8 @@ public class Locations {
         }
 
         @Override
-        protected Path createPath() {
-            return new Path()
+        protected SearchPath createPath() {
+            return new SearchPath()
                     .expandJarClassPaths(true) // Only search user jars for Class-Paths
                     .emptyPathDefault(new File("."));  // Empty path elt ==> current directory
         }
@@ -616,15 +616,15 @@ public class Locations {
             } else {
                 defaultBootClassPathRtJar = null;
                 isDefaultBootClassPath = false;
-                Path p = new Path().addFiles(files, false);
+                SearchPath p = new SearchPath().addFiles(files, false);
                 searchPath = Collections.unmodifiableCollection(p);
                 optionValues.clear();
             }
         }
 
-        Path computePath() {
+        SearchPath computePath() {
             defaultBootClassPathRtJar = null;
-            Path path = new Path();
+            SearchPath path = new SearchPath();
 
             String bootclasspathOpt = optionValues.get(BOOTCLASSPATH);
             String endorseddirsOpt = optionValues.get(ENDORSEDDIRS);
