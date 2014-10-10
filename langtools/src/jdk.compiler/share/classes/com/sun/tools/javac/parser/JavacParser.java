@@ -2271,9 +2271,11 @@ public class JavacParser implements Parser {
     }
 
     /*
-     * This method parses a statement treating it as a block, relaxing the
-     * JLS restrictions, allows us to parse more faulty code, doing so
-     * enables us to provide better and accurate diagnostics to the user.
+     * Parse a Statement (JLS 14.5). As an enhancement to improve error recovery,
+     * this method will also recognize variable and class declarations (which are
+     * not legal for a Statement) by delegating the parsing to BlockStatement (JLS 14.2).
+     * If any illegal declarations are found, they will be wrapped in an erroneous tree,
+     * and an error will be produced by this method.
      */
     JCStatement parseStatementAsBlock() {
         int pos = token.pos;
@@ -2302,6 +2304,8 @@ public class JavacParser implements Parser {
         }
     }
 
+    /**This method parses a statement appearing inside a block.
+     */
     List<JCStatement> blockStatement() {
         //todo: skip to anchor on error(?)
         int pos = token.pos;
@@ -2311,7 +2315,8 @@ public class JavacParser implements Parser {
         case LBRACE: case IF: case FOR: case WHILE: case DO: case TRY:
         case SWITCH: case SYNCHRONIZED: case RETURN: case THROW: case BREAK:
         case CONTINUE: case SEMI: case ELSE: case FINALLY: case CATCH:
-            return List.of(parseStatement());
+        case ASSERT:
+            return List.of(parseSimpleStatement());
         case MONKEYS_AT:
         case FINAL: {
             Comment dc = token.comment(CommentStyle.JAVADOC);
@@ -2343,14 +2348,12 @@ public class JavacParser implements Parser {
             error(token.pos, "local.enum");
             dc = token.comment(CommentStyle.JAVADOC);
             return List.of(classOrInterfaceOrEnumDeclaration(modifiersOpt(), dc));
-        case ASSERT:
-            return List.of(parseStatement());
         default:
             Token prevToken = token;
             JCExpression t = term(EXPR | TYPE);
             if (token.kind == COLON && t.hasTag(IDENT)) {
                 nextToken();
-                JCStatement stat = parseStatement();
+                JCStatement stat = parseStatementAsBlock();
                 return List.<JCStatement>of(F.at(pos).Labelled(prevToken.name(), stat));
             } else if ((lastmode & TYPE) != 0 && LAX_IDENTIFIER.accepts(token.kind)) {
                 pos = token.pos;
@@ -2389,10 +2392,8 @@ public class JavacParser implements Parser {
      *     | CONTINUE [Ident] ";"
      *     | ASSERT Expression [ ":" Expression ] ";"
      *     | ";"
-     *     | ExpressionStatement
-     *     | Ident ":" Statement
      */
-    public JCStatement parseStatement() {
+    JCStatement parseSimpleStatement() {
         int pos = token.pos;
         switch (token.kind) {
         case LBRACE:
@@ -2542,22 +2543,15 @@ public class JavacParser implements Parser {
             JCAssert t = toP(F.at(pos).Assert(assertion, message));
             return t;
         }
-        case ENUM:
         default:
-            Token prevToken = token;
-            JCExpression expr = parseExpression();
-            if (token.kind == COLON && expr.hasTag(IDENT)) {
-                nextToken();
-                JCStatement stat = parseStatement();
-                return F.at(pos).Labelled(prevToken.name(), stat);
-            } else {
-                // This Exec is an "ExpressionStatement"; it subsumes the terminating semicolon
-                expr = checkExprStat(expr);
-                accept(SEMI);
-                JCExpressionStatement stat = toP(F.at(pos).Exec(expr));
-                return stat;
-            }
+            Assert.error();
+            return null;
         }
+    }
+
+    @Override
+    public JCStatement parseStatement() {
+        return parseStatementAsBlock();
     }
 
     private JCStatement doRecover(int startPos, ErrorRecoveryAction action, String key) {

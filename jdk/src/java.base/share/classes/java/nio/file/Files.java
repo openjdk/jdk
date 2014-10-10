@@ -1480,7 +1480,7 @@ public final class Files {
      * <li>It is <i>transitive</i>: for three {@code Paths}
      *     {@code f}, {@code g}, and {@code h}, if {@code isSameFile(f,g)} returns
      *     {@code true} and {@code isSameFile(g,h)} returns {@code true}, then
-     *     {@code isSameFile(f,h)} will return return {@code true}.
+     *     {@code isSameFile(f,h)} will return {@code true}.
      * </ul>
      *
      * @param   path
@@ -2818,7 +2818,7 @@ public final class Files {
     /**
      * Opens or creates a file for writing, returning a {@code BufferedWriter}
      * that may be used to write text to the file in an efficient manner.
-     * The {@code options} parameter specifies how the the file is created or
+     * The {@code options} parameter specifies how the file is created or
      * opened. If no options are present then this method works as if the {@link
      * StandardOpenOption#CREATE CREATE}, {@link
      * StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING}, and {@link
@@ -3307,7 +3307,7 @@ public final class Files {
      * line.separator}. Characters are encoded into bytes using the specified
      * charset.
      *
-     * <p> The {@code options} parameter specifies how the the file is created
+     * <p> The {@code options} parameter specifies how the file is created
      * or opened. If no options are present then this method works as if the
      * {@link StandardOpenOption#CREATE CREATE}, {@link
      * StandardOpenOption#TRUNCATE_EXISTING TRUNCATE_EXISTING}, and {@link
