@@ -220,7 +220,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsSysV() {
         String command = "/usr/bin/lpstat -a " + printer;
-        String results[]= UnixPrintServiceLookup.execCmd(command);
+        String results[]= PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
             if (results[0].startsWith(printer + " accepting requests")) {
@@ -244,20 +244,20 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsBSD() {
-        if (UnixPrintServiceLookup.cmdIndex ==
-            UnixPrintServiceLookup.UNINITIALIZED) {
+        if (PrintServiceLookupProvider.cmdIndex ==
+            PrintServiceLookupProvider.UNINITIALIZED) {
 
-            UnixPrintServiceLookup.cmdIndex =
-                UnixPrintServiceLookup.getBSDCommandIndex();
+            PrintServiceLookupProvider.cmdIndex =
+                PrintServiceLookupProvider.getBSDCommandIndex();
         }
 
         String command = "/usr/sbin/lpc status " + printer
-            + lpcStatusCom[UnixPrintServiceLookup.cmdIndex];
-        String results[]= UnixPrintServiceLookup.execCmd(command);
+            + lpcStatusCom[PrintServiceLookupProvider.cmdIndex];
+        String results[]= PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
-            if (UnixPrintServiceLookup.cmdIndex ==
-                UnixPrintServiceLookup.BSD_LPD_NG) {
+            if (PrintServiceLookupProvider.cmdIndex ==
+                PrintServiceLookupProvider.BSD_LPD_NG) {
                 if (results[0].startsWith("enabled enabled")) {
                     return PrinterIsAcceptingJobs.ACCEPTING_JOBS ;
                 }
@@ -276,7 +276,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     // Filter the list of possible AIX Printers and remove header lines
     // and extra lines which have been added for remote printers.
-    // 'protected' because this method is also used from UnixPrintServiceLookup.
+    // 'protected' because this method is also used from PrintServiceLookupProvider.
     protected static String[] filterPrinterNamesAIX(String[] posPrinters) {
         ArrayList<String> printers = new ArrayList<>();
         String [] splitPart;
@@ -301,7 +301,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobsAIX() {
         // On AIX there should not be a blank after '-a'.
         String command = "/usr/bin/lpstat -a" + printer;
-        String results[]= UnixPrintServiceLookup.execCmd(command);
+        String results[]= PrintServiceLookupProvider.execCmd(command);
 
         // Remove headers and bogus entries added by remote printers.
         results = filterPrinterNamesAIX(results);
@@ -320,11 +320,11 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private PrinterIsAcceptingJobs getPrinterIsAcceptingJobs() {
-        if (UnixPrintServiceLookup.isSysV()) {
+        if (PrintServiceLookupProvider.isSysV()) {
             return getPrinterIsAcceptingJobsSysV();
-        } else if (UnixPrintServiceLookup.isBSD()) {
+        } else if (PrintServiceLookupProvider.isBSD()) {
             return getPrinterIsAcceptingJobsBSD();
-        } else if (UnixPrintServiceLookup.isAIX()) {
+        } else if (PrintServiceLookupProvider.isAIX()) {
             return getPrinterIsAcceptingJobsAIX();
         } else {
             return PrinterIsAcceptingJobs.ACCEPTING_JOBS;
@@ -351,29 +351,29 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
 
     private QueuedJobCount getQueuedJobCountSysV() {
         String command = "/usr/bin/lpstat -R " + printer;
-        String results[]= UnixPrintServiceLookup.execCmd(command);
+        String results[]= PrintServiceLookupProvider.execCmd(command);
         int qlen = (results == null) ? 0 : results.length;
 
         return new QueuedJobCount(qlen);
     }
 
     private QueuedJobCount getQueuedJobCountBSD() {
-        if (UnixPrintServiceLookup.cmdIndex ==
-            UnixPrintServiceLookup.UNINITIALIZED) {
+        if (PrintServiceLookupProvider.cmdIndex ==
+            PrintServiceLookupProvider.UNINITIALIZED) {
 
-            UnixPrintServiceLookup.cmdIndex =
-                UnixPrintServiceLookup.getBSDCommandIndex();
+            PrintServiceLookupProvider.cmdIndex =
+                PrintServiceLookupProvider.getBSDCommandIndex();
         }
 
         int qlen = 0;
         String command = "/usr/sbin/lpc status " + printer
-            + lpcQueueCom[UnixPrintServiceLookup.cmdIndex];
-        String results[] = UnixPrintServiceLookup.execCmd(command);
+            + lpcQueueCom[PrintServiceLookupProvider.cmdIndex];
+        String results[] = PrintServiceLookupProvider.execCmd(command);
 
         if (results != null && results.length > 0) {
             String queued;
-            if (UnixPrintServiceLookup.cmdIndex ==
-                UnixPrintServiceLookup.BSD_LPD_NG) {
+            if (PrintServiceLookupProvider.cmdIndex ==
+                PrintServiceLookupProvider.BSD_LPD_NG) {
                 queued = results[0];
             } else {
                 queued = results[3].trim();
@@ -396,7 +396,7 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     private QueuedJobCount getQueuedJobCountAIX() {
         // On AIX there should not be a blank after '-a'.
         String command = "/usr/bin/lpstat -a" + printer;
-        String results[]=  UnixPrintServiceLookup.execCmd(command);
+        String results[]=  PrintServiceLookupProvider.execCmd(command);
 
         // Remove headers and bogus entries added by remote printers.
         results = filterPrinterNamesAIX(results);
@@ -413,11 +413,11 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private QueuedJobCount getQueuedJobCount() {
-        if (UnixPrintServiceLookup.isSysV()) {
+        if (PrintServiceLookupProvider.isSysV()) {
             return getQueuedJobCountSysV();
-        } else if (UnixPrintServiceLookup.isBSD()) {
+        } else if (PrintServiceLookupProvider.isBSD()) {
             return getQueuedJobCountBSD();
-        } else if (UnixPrintServiceLookup.isAIX()) {
+        } else if (PrintServiceLookupProvider.isAIX()) {
             return getQueuedJobCountAIX();
         } else {
             return new QueuedJobCount(0);
@@ -468,9 +468,9 @@ public class UnixPrintService implements PrintService, AttributeUpdater,
     }
 
     private PrintServiceAttributeSet getDynamicAttributes() {
-        if (UnixPrintServiceLookup.isSysV()) {
+        if (PrintServiceLookupProvider.isSysV()) {
             return getSysVServiceAttributes();
-        } else if (UnixPrintServiceLookup.isAIX()) {
+        } else if (PrintServiceLookupProvider.isAIX()) {
             return getAIXServiceAttributes();
         } else {
             return getBSDServiceAttributes();
