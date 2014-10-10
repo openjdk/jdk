@@ -1116,6 +1116,7 @@ template bool ciMethod::has_option_value<intx>(const char* option, intx& value);
 template bool ciMethod::has_option_value<uintx>(const char* option, uintx& value);
 template bool ciMethod::has_option_value<bool>(const char* option, bool& value);
 template bool ciMethod::has_option_value<ccstr>(const char* option, ccstr& value);
+template bool ciMethod::has_option_value<double>(const char* option, double& value);
 
 // ------------------------------------------------------------------
 // ciMethod::can_be_compiled
