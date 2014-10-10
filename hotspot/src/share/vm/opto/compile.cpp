@@ -1153,12 +1153,18 @@ void Compile::init_start(StartNode* s) {
   assert(s == start(), "");
 }
 
+/**
+ * Return the 'StartNode'. We must not have a pending failure, since the ideal graph
+ * can be in an inconsistent state, i.e., we can get segmentation faults when traversing
+ * the ideal graph.
+ */
 StartNode* Compile::start() const {
-  assert(!failing(), "");
+  assert (!failing(), err_msg_res("Must not have pending failure. Reason is: %s", failure_reason()));
   for (DUIterator_Fast imax, i = root()->fast_outs(imax); i < imax; i++) {
     Node* start = root()->fast_out(i);
-    if( start->is_Start() )
+    if (start->is_Start()) {
       return start->as_Start();
+    }
   }
   fatal("Did not find Start node!");
   return NULL;

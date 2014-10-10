@@ -38,7 +38,6 @@ import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SCOPE_DEPTHS
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SPLIT;
 import static jdk.nashorn.internal.ir.FunctionNode.CompilationState.SYMBOLS_ASSIGNED;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
-
 import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.EnumSet;
@@ -48,7 +47,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Set;
-
 import jdk.nashorn.internal.AssertsEnabled;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
 import jdk.nashorn.internal.ir.FunctionNode;
@@ -627,7 +625,7 @@ enum CompilationPhase {
 
     /**
      * Start a compilation phase
-     * @param compiler
+     * @param compiler the compiler to use
      * @param functionNode function to compile
      * @return function node
      */

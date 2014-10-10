@@ -26,6 +26,8 @@
 package com.sun.tools.sjavac;
 
 import java.io.File;
+import java.io.PrintWriter;
+import java.io.StringWriter;
 import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.HashSet;
@@ -171,6 +173,20 @@ public class Util {
             }
         }
         return null;
+    }
+
+    public static <E> Set<E> union(Set<? extends E> s1,
+                                   Set<? extends E> s2) {
+        Set<E> union = new HashSet<>();
+        union.addAll(s1);
+        union.addAll(s2);
+        return union;
+    }
+
+    public static String getStackTrace(Throwable t) {
+        StringWriter sw = new StringWriter();
+        t.printStackTrace(new PrintWriter(sw));
+        return sw.toString();
     }
 
     // TODO: Remove when refactoring from java.io.File to java.nio.file.Path.

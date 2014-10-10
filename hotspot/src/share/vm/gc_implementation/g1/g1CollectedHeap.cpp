@@ -90,8 +90,8 @@ size_t G1CollectedHeap::_humongous_object_threshold_in_words = 0;
 
 // Notes on implementation of parallelism in different tasks.
 //
-// G1ParVerifyTask uses heap_region_par_iterate_chunked() for parallelism.
-// The number of GC workers is passed to heap_region_par_iterate_chunked().
+// G1ParVerifyTask uses heap_region_par_iterate() for parallelism.
+// The number of GC workers is passed to heap_region_par_iterate().
 // It does use run_task() which sets _n_workers in the task.
 // G1ParTask executes g1_process_roots() ->
 // SharedHeap::process_roots() which calls eventually to
@@ -1215,17 +1215,15 @@ public:
 
 class ParRebuildRSTask: public AbstractGangTask {
   G1CollectedHeap* _g1;
+  HeapRegionClaimer _hrclaimer;
+
 public:
-  ParRebuildRSTask(G1CollectedHeap* g1)
-    : AbstractGangTask("ParRebuildRSTask"),
-      _g1(g1)
-  { }
+  ParRebuildRSTask(G1CollectedHeap* g1) :
+      AbstractGangTask("ParRebuildRSTask"), _g1(g1), _hrclaimer(g1->workers()->active_workers()) {}
 
   void work(uint worker_id) {
     RebuildRSOutOfRegionClosure rebuild_rs(_g1, worker_id);
-    _g1->heap_region_par_iterate_chunked(&rebuild_rs, worker_id,
-                                          _g1->workers()->active_workers(),
-                                         HeapRegion::RebuildRSClaimValue);
+    _g1->heap_region_par_iterate(&rebuild_rs, worker_id, &_hrclaimer);
   }
 };
 
@@ -1455,8 +1453,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         set_par_threads(n_workers);
 
         ParRebuildRSTask rebuild_rs_task(this);
-        assert(check_heap_region_claim_values(
-               HeapRegion::InitialClaimValue), "sanity check");
         assert(UseDynamicNumberOfGCThreads ||
                workers()->active_workers() == workers()->total_workers(),
                "Unless dynamic should use total workers");
@@ -1466,9 +1462,6 @@ bool G1CollectedHeap::do_collection(bool explicit_gc,
         set_par_threads(workers()->active_workers());
         workers()->run_task(&rebuild_rs_task);
         set_par_threads(0);
-        assert(check_heap_region_claim_values(
-               HeapRegion::RebuildRSClaimValue), "sanity check");
-        reset_heap_region_claim_values();
       } else {
         RebuildRSOutOfRegionClosure rebuild_rs(this);
         heap_region_iterate(&rebuild_rs);
@@ -2343,6 +2336,7 @@ bool G1CollectedHeap::should_do_concurrent_full_gc(GCCause::Cause cause) {
     case GCCause::_gc_locker:               return GCLockerInvokesConcurrent;
     case GCCause::_java_lang_system_gc:     return ExplicitGCInvokesConcurrent;
     case GCCause::_g1_humongous_allocation: return true;
+    case GCCause::_update_allocation_context_stats_inc: return true;
     default:                                return false;
   }
 }
@@ -2633,110 +2627,11 @@ void G1CollectedHeap::heap_region_iterate(HeapRegionClosure* cl) const {
 }
 
 void
-G1CollectedHeap::heap_region_par_iterate_chunked(HeapRegionClosure* cl,
-                                                 uint worker_id,
-                                                 uint num_workers,
-                                                 jint claim_value) const {
-  _hrm.par_iterate(cl, worker_id, num_workers, claim_value);
+G1CollectedHeap::heap_region_par_iterate(HeapRegionClosure* cl,
+                                         uint worker_id,
+                                         HeapRegionClaimer *hrclaimer) const {
+  _hrm.par_iterate(cl, worker_id, hrclaimer);
 }
-
-class ResetClaimValuesClosure: public HeapRegionClosure {
-public:
-  bool doHeapRegion(HeapRegion* r) {
-    r->set_claim_value(HeapRegion::InitialClaimValue);
-    return false;
-  }
-};
-
-void G1CollectedHeap::reset_heap_region_claim_values() {
-  ResetClaimValuesClosure blk;
-  heap_region_iterate(&blk);
-}
-
-void G1CollectedHeap::reset_cset_heap_region_claim_values() {
-  ResetClaimValuesClosure blk;
-  collection_set_iterate(&blk);
-}
-
-#ifdef ASSERT
-// This checks whether all regions in the heap have the correct claim
-// value. I also piggy-backed on this a check to ensure that the
-// humongous_start_region() information on "continues humongous"
-// regions is correct.
-
-class CheckClaimValuesClosure : public HeapRegionClosure {
-private:
-  jint _claim_value;
-  uint _failures;
-  HeapRegion* _sh_region;
-
-public:
-  CheckClaimValuesClosure(jint claim_value) :
-    _claim_value(claim_value), _failures(0), _sh_region(NULL) { }
-  bool doHeapRegion(HeapRegion* r) {
-    if (r->claim_value() != _claim_value) {
-      gclog_or_tty->print_cr("Region " HR_FORMAT ", "
-                             "claim value = %d, should be %d",
-                             HR_FORMAT_PARAMS(r),
-                             r->claim_value(), _claim_value);
-      ++_failures;
-    }
-    if (!r->is_humongous()) {
-      _sh_region = NULL;
-    } else if (r->is_starts_humongous()) {
-      _sh_region = r;
-    } else if (r->is_continues_humongous()) {
-      if (r->humongous_start_region() != _sh_region) {
-        gclog_or_tty->print_cr("Region " HR_FORMAT ", "
-                               "HS = "PTR_FORMAT", should be "PTR_FORMAT,
-                               HR_FORMAT_PARAMS(r),
-                               r->humongous_start_region(),
-                               _sh_region);
-        ++_failures;
-      }
-    }
-    return false;
-  }
-  uint failures() { return _failures; }
-};
-
-bool G1CollectedHeap::check_heap_region_claim_values(jint claim_value) {
-  CheckClaimValuesClosure cl(claim_value);
-  heap_region_iterate(&cl);
-  return cl.failures() == 0;
-}
-
-class CheckClaimValuesInCSetHRClosure: public HeapRegionClosure {
-private:
-  jint _claim_value;
-  uint _failures;
-
-public:
-  CheckClaimValuesInCSetHRClosure(jint claim_value) :
-    _claim_value(claim_value), _failures(0) { }
-
-  uint failures() { return _failures; }
-
-  bool doHeapRegion(HeapRegion* hr) {
-    assert(hr->in_collection_set(), "how?");
-    assert(!hr->is_humongous(), "H-region in CSet");
-    if (hr->claim_value() != _claim_value) {
-      gclog_or_tty->print_cr("CSet Region " HR_FORMAT ", "
-                             "claim value = %d, should be %d",
-                             HR_FORMAT_PARAMS(hr),
-                             hr->claim_value(), _claim_value);
-      _failures += 1;
-    }
-    return false;
-  }
-};
-
-bool G1CollectedHeap::check_cset_heap_region_claim_values(jint claim_value) {
-  CheckClaimValuesInCSetHRClosure cl(claim_value);
-  collection_set_iterate(&cl);
-  return cl.failures() == 0;
-}
-#endif // ASSERT
 
 // Clear the cached CSet starting regions and (more importantly)
 // the time stamps. Called when we reset the GC time stamp.
@@ -3251,19 +3146,21 @@ public:
 
 class G1ParVerifyTask: public AbstractGangTask {
 private:
-  G1CollectedHeap* _g1h;
-  VerifyOption     _vo;
-  bool             _failures;
+  G1CollectedHeap*  _g1h;
+  VerifyOption      _vo;
+  bool              _failures;
+  HeapRegionClaimer _hrclaimer;
 
 public:
   // _vo == UsePrevMarking -> use "prev" marking information,
   // _vo == UseNextMarking -> use "next" marking information,
   // _vo == UseMarkWord    -> use mark word from object header.
   G1ParVerifyTask(G1CollectedHeap* g1h, VerifyOption vo) :
-    AbstractGangTask("Parallel verify task"),
-    _g1h(g1h),
-    _vo(vo),
-    _failures(false) { }
+      AbstractGangTask("Parallel verify task"),
+      _g1h(g1h),
+      _vo(vo),
+      _failures(false),
+      _hrclaimer(g1h->workers()->active_workers()) {}
 
   bool failures() {
     return _failures;
@@ -3272,9 +3169,7 @@ public:
   void work(uint worker_id) {
     HandleMark hm;
     VerifyRegionClosure blk(true, _vo);
-    _g1h->heap_region_par_iterate_chunked(&blk, worker_id,
-                                          _g1h->workers()->active_workers(),
-                                          HeapRegion::ParVerifyClaimValue);
+    _g1h->heap_region_par_iterate(&blk, worker_id, &_hrclaimer);
     if (blk.failures()) {
       _failures = true;
     }
@@ -3316,8 +3211,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
 
     if (!silent) { gclog_or_tty->print("HeapRegions "); }
     if (GCParallelVerificationEnabled && ParallelGCThreads > 1) {
-      assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
-             "sanity check");
 
       G1ParVerifyTask task(this, vo);
       assert(UseDynamicNumberOfGCThreads ||
@@ -3331,15 +3224,6 @@ void G1CollectedHeap::verify(bool silent, VerifyOption vo) {
         failures = true;
       }
 
-      // Checks that the expected amount of parallel work was done.
-      // The implication is that n_workers is > 0.
-      assert(check_heap_region_claim_values(HeapRegion::ParVerifyClaimValue),
-             "sanity check");
-
-      reset_heap_region_claim_values();
-
-      assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
-             "sanity check");
     } else {
       VerifyRegionClosure blk(false, vo);
       heap_region_iterate(&blk);
@@ -3926,8 +3810,6 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     }
 
     assert(check_young_list_well_formed(), "young list should be well formed");
-    assert(check_heap_region_claim_values(HeapRegion::InitialClaimValue),
-           "sanity check");
 
     // Don't dynamically change the number of GC threads this early.  A value of
     // 0 is used to indicate serial work.  When parallel work is done,
@@ -4288,26 +4170,12 @@ void G1CollectedHeap::finalize_for_evac_failure() {
 }
 
 void G1CollectedHeap::remove_self_forwarding_pointers() {
-  assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
-
   double remove_self_forwards_start = os::elapsedTime();
 
+  set_par_threads();
   G1ParRemoveSelfForwardPtrsTask rsfp_task(this);
-
-  if (G1CollectedHeap::use_parallel_gc_threads()) {
-    set_par_threads();
-    workers()->run_task(&rsfp_task);
-    set_par_threads(0);
-  } else {
-    rsfp_task.work(0);
-  }
-
-  assert(check_cset_heap_region_claim_values(HeapRegion::ParEvacFailureClaimValue), "sanity");
-
-  // Reset the claim values in the regions in the collection set.
-  reset_cset_heap_region_claim_values();
-
-  assert(check_cset_heap_region_claim_values(HeapRegion::InitialClaimValue), "sanity");
+  workers()->run_task(&rsfp_task);
+  set_par_threads(0);
 
   // Now restore saved marks, if any.
   assert(_objs_with_preserved_marks.size() ==
@@ -5947,11 +5815,6 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
   hot_card_cache->set_use_cache(true);
 
   purge_code_root_memory();
-
-  if (g1_policy()->during_initial_mark_pause()) {
-    // Reset the claim values set during marking the strong code roots
-    reset_heap_region_claim_values();
-  }
 
   finalize_for_evac_failure();
 

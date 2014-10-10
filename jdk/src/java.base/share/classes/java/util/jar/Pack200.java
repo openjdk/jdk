@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -93,8 +93,7 @@ import java.io.IOException;
  * The deployment applications can use "Accept-Encoding=pack200-gzip". This
  * indicates to the server that the client application desires a version of
  * the file encoded with Pack200 and further compressed with gzip. Please
- * refer to  <a href="{@docRoot}/../technotes/guides/deployment/deployment-guide/pack200.html">Java Deployment Guide</a> for more details and
- * techniques.
+ * refer to the Java Deployment Guide for techniques and details.
  * <p>
  * Unless otherwise noted, passing a <tt>null</tt> argument to a constructor or
  * method in this class will cause a {@link NullPointerException} to be thrown.
