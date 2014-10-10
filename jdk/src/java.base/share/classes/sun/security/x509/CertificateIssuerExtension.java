@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -44,7 +44,7 @@ import sun.security.util.DerOutputStream;
  * <p>
  * If used by conforming CRL issuers, this extension is always
  * critical.  If an implementation ignored this extension it could not
- * correctly attribute CRL entries to certificates.  PKIX (RFC 3280)
+ * correctly attribute CRL entries to certificates.  PKIX (RFC 5280)
  * RECOMMENDS that implementations recognize this extension.
  * <p>
  * The ASN.1 definition for this is:

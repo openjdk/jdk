@@ -84,6 +84,9 @@ case "$OS" in
             "/usr/lib/nss/libsoftokn3.so"`
     fi
     ;;
+  Darwin )
+    LIBNAME="$TESTSRC/../../pkcs11/nss/lib/macosx-x86_64/libsoftokn3.dylib"
+    ;;
   * )
     echo "Will not run test on: ${OS}"
     exit 0;
@@ -94,6 +97,8 @@ if [ "$LIBNAME" = "" ]; then
   echo "Cannot find libsoftokn3.so"
   exit 0
 fi
+
+echo "Using NSS lib at $LIBNAME"
 
 ${COMPILEJAVA}${FS}bin${FS}javac ${TESTJAVACOPTS} ${TESTTOOLVMOPTS} -d . -XDignore.symbol.file \
         ${TESTSRC}${FS}KeyToolTest.java || exit 10

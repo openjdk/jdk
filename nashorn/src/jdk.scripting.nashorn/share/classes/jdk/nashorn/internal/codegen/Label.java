@@ -590,8 +590,13 @@ public final class Label {
         return label.getOffset() > other.label.getOffset();
     }
 
+    private String str;
+
     @Override
     public String toString() {
-        return name + '_' + id;
+        if (str == null) {
+            str = name + '_' + id;
+        }
+        return str;
     }
 }

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1996, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1996, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -605,7 +605,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      * Returns a string form of the X.500 distinguished name.
      * The format of the string is from RFC 1779. The returned string
      * may contain non-standardised keywords for more readability
-     * (keywords from RFCs 1779, 2253, and 3280).
+     * (keywords from RFCs 1779, 2253, and 5280).
      */
     public String toString() {
         if (dn == null) {
@@ -866,7 +866,7 @@ public class X500Name implements GeneralNameInterface, Principal {
      *     O="Sue, Grabbit and Runn" or
      *     O=Sue\, Grabbit and Runn
      *
-     * This method can parse RFC 1779, 2253 or 4514 DNs and non-standard 3280
+     * This method can parse RFC 1779, 2253 or 4514 DNs and non-standard 5280
      * keywords. Additional keywords can be specified in the keyword/OID map.
      */
     private void parseDN(String input, Map<String, String> keywordMap)
@@ -1122,7 +1122,7 @@ public class X500Name implements GeneralNameInterface, Principal {
 
     /*
      * Selected OIDs from X.520
-     * Includes all those specified in RFC 3280 as MUST or SHOULD
+     * Includes all those specified in RFC 5280 as MUST or SHOULD
      * be recognized
      */
     private static final int commonName_data[] = { 2, 5, 4, 3 };
@@ -1220,7 +1220,7 @@ public class X500Name implements GeneralNameInterface, Principal {
         ipAddress_oid = intern(ObjectIdentifier.newInternal(ipAddress_data));
 
     /*
-     * Domain component OID from RFC 1274, RFC 2247, RFC 3280
+     * Domain component OID from RFC 1274, RFC 2247, RFC 5280
      */
 
     /*

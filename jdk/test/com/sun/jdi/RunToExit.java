@@ -184,7 +184,8 @@ public class RunToExit {
         if (exitCode == 0 && error_seen == 0) {
             System.out.println("Test passed - server debuggee cleanly terminated");
         } else {
-            throw new RuntimeException("Test failed - server debuggee generated an error when it terminated");
+            throw new RuntimeException("Test failed - server debuggee generated an error when it terminated, " +
+                "exit code was " + exitCode + ", " + error_seen + " error(s) seen in debugee output.");
         }
     }
 }

@@ -472,9 +472,9 @@ class RevocationChecker extends PKIXRevocationChecker {
                           " ---checking revocation status ...");
         }
 
-        // reject circular dependencies - RFC 3280 is not explicit on how
-        // to handle this, so we feel it is safest to reject them until
-        // the issue is resolved in the PKIX WG.
+        // Reject circular dependencies - RFC 5280 is not explicit on how
+        // to handle this, but does suggest that they can be a security
+        // risk and can create unresolvable dependencies
         if (stackedCerts != null && stackedCerts.contains(cert)) {
             if (debug != null) {
                 debug.println("RevocationChecker.checkCRLs()" +
@@ -628,7 +628,7 @@ class RevocationChecker extends PKIXRevocationChecker {
                 /*
                  * Abort CRL validation and throw exception if there are any
                  * unrecognized critical CRL entry extensions (see section
-                 * 5.3 of RFC 3280).
+                 * 5.3 of RFC 5280).
                  */
                 Set<String> unresCritExts = entry.getCriticalExtensionOIDs();
                 if (unresCritExts != null && !unresCritExts.isEmpty()) {
@@ -880,9 +880,9 @@ class RevocationChecker extends PKIXRevocationChecker {
                 " ---checking " + msg + "...");
         }
 
-        // reject circular dependencies - RFC 3280 is not explicit on how
-        // to handle this, so we feel it is safest to reject them until
-        // the issue is resolved in the PKIX WG.
+        // Reject circular dependencies - RFC 5280 is not explicit on how
+        // to handle this, but does suggest that they can be a security
+        // risk and can create unresolvable dependencies
         if ((stackedCerts != null) && stackedCerts.contains(cert)) {
             if (debug != null) {
                 debug.println(

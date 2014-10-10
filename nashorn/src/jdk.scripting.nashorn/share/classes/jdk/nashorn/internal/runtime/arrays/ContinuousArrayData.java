@@ -76,11 +76,11 @@ public abstract class ContinuousArrayData extends ArrayData {
      * array without reallocating, or if we are overwriting an already
      * allocated element
      *
-     * @param index
+     * @param index index to check
      * @return true if we don't need to do any array reallocation to fit an element at index
      */
     public final boolean hasRoomFor(final int index) {
-        return has(index) || (index == length() && ensure(index) == this);
+        return has(index) || (index == length && ensure(index) == this);
     }
 
     /**

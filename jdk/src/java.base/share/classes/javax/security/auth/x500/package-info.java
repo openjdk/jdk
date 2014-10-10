@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -31,15 +31,15 @@
  * <h2>Package Specification</h2>
  *
  * <ul>
- *   <li><a href="http://www.ietf.org/rfc/rfc1779.txt">
+ *   <li><a href="http://tools.ietf.org/html/rfc1779">
  *     RFC 1779: A String Representation of Distinguished Names</a></li>
- *   <li><a href="http://www.ietf.org/rfc/rfc2253.txt">
+ *   <li><a href="http://tools.ietf.org/html/rfc2253">
  *     RFC 2253: Lightweight Directory Access Protocol (v3):
  *     UTF-8 String Representation of Distinguished Names</a></li>
- *   <li><a href="http://www.ietf.org/rfc/rfc3280.txt">
- *     RFC 3280: Internet X.509 Public Key Infrastructure
+ *   <li><a href="http://tools.ietf.org/html/rfc5280">
+ *     RFC 5280: Internet X.509 Public Key Infrastructure
  *     Certificate and Certificate Revocation List (CRL) Profile</a></li>
- *   <li><a href="http://www.ietf.org/rfc/rfc4512.txt">
+ *   <li><a href="http://tools.ietf.org/html/rfc4512">
  *     RFC 4512: Lightweight Directory Access Protocol (LDAP):
  *     Directory Information Models</a></li>
  * </ul>
