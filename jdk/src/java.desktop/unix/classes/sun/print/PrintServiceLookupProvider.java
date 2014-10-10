@@ -58,7 +58,7 @@ import java.nio.file.Files;
  * Remind: This class uses solaris commands. We also need a linux
  * version
  */
-public class UnixPrintServiceLookup extends PrintServiceLookup
+public class PrintServiceLookupProvider extends PrintServiceLookup
     implements BackgroundServiceLookup, Runnable {
 
     /* Remind: the current implementation is static, as its assumed
@@ -70,7 +70,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     private PrintService defaultPrintService;
     private PrintService[] printServices; /* includes the default printer */
     private Vector<BackgroundLookupListener> lookupListeners = null;
-    private static String debugPrefix = "UnixPrintServiceLookup>> ";
+    private static String debugPrefix = "PrintServiceLookupProvider>> ";
     private static boolean pollServices = true;
     private static final int DEFAULT_MINREFRESH = 120;  // 2 minutes
     private static int minRefreshTime = DEFAULT_MINREFRESH;
@@ -208,7 +208,7 @@ public class UnixPrintServiceLookup extends PrintServiceLookup
     }
 
 
-    public UnixPrintServiceLookup() {
+    public PrintServiceLookupProvider() {
         // start the printer listener thread
         if (pollServices) {
             PrinterChangeListener thr = new PrinterChangeListener();
