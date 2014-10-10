@@ -1073,17 +1073,6 @@ JVM_ENTRY(jobjectArray, JVM_GetClassInterfaces(JNIEnv *env, jclass cls))
 JVM_END
 
 
-JVM_ENTRY(jobject, JVM_GetClassLoader(JNIEnv *env, jclass cls))
-  JVMWrapper("JVM_GetClassLoader");
-  if (java_lang_Class::is_primitive(JNIHandles::resolve_non_null(cls))) {
-    return NULL;
-  }
-  Klass* k = java_lang_Class::as_Klass(JNIHandles::resolve_non_null(cls));
-  oop loader = k->class_loader();
-  return JNIHandles::make_local(env, loader);
-JVM_END
-
-
 JVM_QUICK_ENTRY(jboolean, JVM_IsInterface(JNIEnv *env, jclass cls))
   JVMWrapper("JVM_IsInterface");
   oop mirror = JNIHandles::resolve_non_null(cls);

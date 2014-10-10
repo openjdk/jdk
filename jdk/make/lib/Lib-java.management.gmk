@@ -25,9 +25,12 @@
 
 include LibCommon.gmk
 
+# Hook to include the corresponding custom file, if present.
+$(eval $(call IncludeCustomExtension, jdk, lib/Lib-java.management.gmk))
+
 ################################################################################
 
-BUILD_LIBMANAGEMENT_SRC := $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
+BUILD_LIBMANAGEMENT_SRC += $(JDK_TOPDIR)/src/java.management/share/native/libmanagement \
     $(JDK_TOPDIR)/src/java.management/$(OPENJDK_TARGET_OS_API_DIR)/native/libmanagement
 BUILD_LIBMANAGEMENT_CFLAGS := -I$(JDK_TOPDIR)/src/java.management/share/native/include \
     $(addprefix -I,$(BUILD_LIBMANAGEMENT_SRC)) \
@@ -56,6 +59,9 @@ ifneq ($(findstring $(OPENJDK_TARGET_OS), solaris linux), )
   endif
 endif
 
+# Make it possible to override this variable
+LIBMANAGEMENT_MAPFILE ?= $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers
+
 $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     LIBRARY := management, \
     OUTPUT_DIR := $(INSTALL_LIBRARIES_HERE), \
@@ -64,7 +70,7 @@ $(eval $(call SetupNativeCompilation,BUILD_LIBMANAGEMENT, \
     LANG := C, \
     OPTIMIZATION := $(LIBMANAGEMENT_OPTIMIZATION), \
     CFLAGS := $(CFLAGS_JDKLIB) $(CFLAGS_WARNINGS_ARE_ERRORS) $(BUILD_LIBMANAGEMENT_CFLAGS), \
-    MAPFILE := $(JDK_TOPDIR)/make/mapfiles/libmanagement/mapfile-vers, \
+    MAPFILE := $(LIBMANAGEMENT_MAPFILE), \
     LDFLAGS := $(LDFLAGS_JDKLIB) \
         $(call SET_SHARED_LIBRARY_ORIGIN), \
     LDFLAGS_solaris := -lkstat, \

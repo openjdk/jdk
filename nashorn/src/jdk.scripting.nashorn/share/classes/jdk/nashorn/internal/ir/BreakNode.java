@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.codegen.Label;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
 
@@ -67,5 +68,15 @@ public final class BreakNode extends JumpStatement {
     @Override
     String getStatementName() {
         return "break";
+    }
+
+    @Override
+    public BreakableNode getTarget(final LexicalContext lc) {
+        return lc.getBreakable(getLabelName());
+    }
+
+    @Override
+    public Label getTargetLabel(final BreakableNode target) {
+        return target.getBreakLabel();
     }
 }

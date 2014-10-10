@@ -95,8 +95,9 @@ void VM_G1IncCollectionPause::doit() {
   assert(!_should_initiate_conc_mark ||
   ((_gc_cause == GCCause::_gc_locker && GCLockerInvokesConcurrent) ||
    (_gc_cause == GCCause::_java_lang_system_gc && ExplicitGCInvokesConcurrent) ||
-    _gc_cause == GCCause::_g1_humongous_allocation),
-         "only a GC locker, a System.gc() or a hum allocation induced GC should start a cycle");
+    _gc_cause == GCCause::_g1_humongous_allocation ||
+    _gc_cause == GCCause::_update_allocation_context_stats_inc),
+      "only a GC locker, a System.gc(), stats update or a hum allocation induced GC should start a cycle");
 
   if (_word_size > 0) {
     // An allocation has been requested. So, try to do that first.
