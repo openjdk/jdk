@@ -1220,14 +1220,17 @@ public class Gen extends JCTree.Visitor {
             }
 
             // Determine whether to issue a tableswitch or a lookupswitch
-            // instruction. The difference in computation cost is
-            // proportional to log(#cases), which is negligable, so we only
-            // consider the size of the bytecode.
-            // A discussion of the metric can be found here:
-            // http://mail.openjdk.java.net/pipermail/compiler-dev/2014-September/008987.html
-            long table_cost = 4 + ((long)hi - lo + 1); // words
-            long lookup_cost = 3 + 2 * (long)nlabels;
-            int opcode = table_cost <= lookup_cost ? tableswitch : lookupswitch;
+            // instruction.
+            long table_space_cost = 4 + ((long) hi - lo + 1); // words
+            long table_time_cost = 3; // comparisons
+            long lookup_space_cost = 3 + 2 * (long) nlabels;
+            long lookup_time_cost = nlabels;
+            int opcode =
+                nlabels > 0 &&
+                table_space_cost + 3 * table_time_cost <=
+                lookup_space_cost + 3 * lookup_time_cost
+                ?
+                tableswitch : lookupswitch;
 
             int startpc = code.curCP();    // the position of the selector operation
             code.emitop0(opcode);
