@@ -272,4 +272,12 @@ public final class VarNode extends Statement implements Assignment<IdentNode> {
     public boolean isFunctionDeclaration() {
         return init instanceof FunctionNode && ((FunctionNode)init).isDeclared();
     }
+
+    /**
+     * Returns true if this is an anonymous function declaration.
+     * @return true if this is an anonymous function declaration.
+     */
+    public boolean isAnonymousFunctionDeclaration() {
+        return isFunctionDeclaration() && ((FunctionNode)init).isAnonymous();
+    }
 }
