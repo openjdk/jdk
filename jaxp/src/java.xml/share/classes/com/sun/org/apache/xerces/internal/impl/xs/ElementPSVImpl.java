@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2000-2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -20,16 +21,19 @@
 
 package com.sun.org.apache.xerces.internal.impl.xs;
 
+import com.sun.org.apache.xerces.internal.impl.dv.ValidatedInfo;
+import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
+import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
+import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import com.sun.org.apache.xerces.internal.xs.ShortList;
 import com.sun.org.apache.xerces.internal.xs.StringList;
+import com.sun.org.apache.xerces.internal.xs.XSConstants;
 import com.sun.org.apache.xerces.internal.xs.XSElementDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSModel;
 import com.sun.org.apache.xerces.internal.xs.XSNotationDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
-import com.sun.org.apache.xerces.internal.impl.xs.util.StringListImpl;
-import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
-import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import com.sun.org.apache.xerces.internal.xs.XSValue;
 
 /**
  * Element PSV infoset augmentations implementation.
@@ -61,23 +65,11 @@ public class ElementPSVImpl implements ElementPSVI {
      */
     protected boolean fSpecified = false;
 
-    /** schema normalized value property */
-    protected String fNormalizedValue = null;
-
-    /** schema actual value */
-    protected Object fActualValue = null;
-
-    /** schema actual value type */
-    protected short fActualValueType = XSConstants.UNAVAILABLE_DT;
-
-    /** actual value types if the value is a list */
-    protected ShortList fItemValueTypes = null;
+    /** Schema value */
+    protected ValidatedInfo fValue = new ValidatedInfo();
 
     /** http://www.w3.org/TR/xmlschema-1/#e-notation*/
     protected XSNotationDeclaration fNotation = null;
-
-    /** member type definition against which element was validated */
-    protected XSSimpleTypeDefinition fMemberType = null;
 
     /** validation attempted: none, partial, full */
     protected short fValidationAttempted = ElementPSVI.VALIDATION_NONE;
@@ -85,8 +77,8 @@ public class ElementPSVImpl implements ElementPSVI {
     /** validity: valid, invalid, unknown */
     protected short fValidity = ElementPSVI.VALIDITY_NOTKNOWN;
 
-    /** error codes */
-    protected String[] fErrorCodes = null;
+    /** error codes and error messages */
+    protected String[] fErrors = null;
 
     /** validation context: could be QName or XPath expression*/
     protected String fValidationContext = null;
@@ -97,9 +89,64 @@ public class ElementPSVImpl implements ElementPSVI {
     /** the schema information property */
     protected XSModel fSchemaInformation = null;
 
+    /** true if this object is immutable **/
+    protected boolean fIsConstant;
+
+    public ElementPSVImpl() {}
+
+    public ElementPSVImpl(boolean isConstant, ElementPSVI elementPSVI) {
+        fDeclaration = elementPSVI.getElementDeclaration();
+        fTypeDecl = elementPSVI.getTypeDefinition();
+        fNil = elementPSVI.getNil();
+        fSpecified = elementPSVI.getIsSchemaSpecified();
+        fValue.copyFrom(elementPSVI.getSchemaValue());
+        fNotation = elementPSVI.getNotation();
+        fValidationAttempted = elementPSVI.getValidationAttempted();
+        fValidity = elementPSVI.getValidity();
+        fValidationContext = elementPSVI.getValidationContext();
+        if (elementPSVI instanceof ElementPSVImpl) {
+            final ElementPSVImpl elementPSVIImpl = (ElementPSVImpl) elementPSVI;
+            fErrors = (elementPSVIImpl.fErrors != null) ?
+                    (String[]) elementPSVIImpl.fErrors.clone() : null;
+            elementPSVIImpl.copySchemaInformationTo(this);
+        }
+        else {
+            final StringList errorCodes = elementPSVI.getErrorCodes();
+            final int length = errorCodes.getLength();
+            if (length > 0) {
+                final StringList errorMessages = elementPSVI.getErrorMessages();
+                final String[] errors = new String[length << 1];
+                for (int i = 0, j = 0; i < length; ++i) {
+                    errors[j++] = errorCodes.item(i);
+                    errors[j++] = errorMessages.item(i);
+                }
+                fErrors = errors;
+            }
+            fSchemaInformation = elementPSVI.getSchemaInformation();
+        }
+        fIsConstant = isConstant;
+    }
+
     //
     // ElementPSVI methods
     //
+
+    /* (non-Javadoc)
+     * @see org.apache.xerces.xs.ItemPSVI#constant()
+     */
+    public ItemPSVI constant() {
+        if (isConstant()) {
+            return this;
+        }
+        return new ElementPSVImpl(true, this);
+    }
+
+    /* (non-Javadoc)
+     * @see org.apache.xerces.xs.ItemPSVI#isConstant()
+     */
+    public boolean isConstant() {
+        return fIsConstant;
+    }
 
     /**
      * [schema default]
@@ -119,7 +166,7 @@ public class ElementPSVImpl implements ElementPSVI {
      * @return the normalized value of this item after validation
      */
     public String getSchemaNormalizedValue() {
-        return fNormalizedValue;
+        return fValue.getNormalizedValue();
     }
 
     /**
@@ -159,11 +206,24 @@ public class ElementPSVImpl implements ElementPSVI {
      * @return Array of error codes
      */
     public StringList getErrorCodes() {
-        if (fErrorCodes == null)
-            return null;
-        return new StringListImpl(fErrorCodes, fErrorCodes.length);
+        if (fErrors == null || fErrors.length == 0) {
+            return StringListImpl.EMPTY_LIST;
+        }
+        return new PSVIErrorList(fErrors, true);
     }
 
+    /**
+     * A list of error messages generated from the validation attempt or
+     * an empty <code>StringList</code> if no errors occurred during the
+     * validation attempt. The indices of error messages in this list are
+     * aligned with those in the <code>[schema error code]</code> list.
+     */
+    public StringList getErrorMessages() {
+        if (fErrors == null || fErrors.length == 0) {
+            return StringListImpl.EMPTY_LIST;
+        }
+        return new PSVIErrorList(fErrors, false);
+    }
 
     // This is the only information we can provide in a pipeline.
     public String getValidationContext() {
@@ -207,7 +267,7 @@ public class ElementPSVImpl implements ElementPSVI {
      * @return  a simple type declaration
      */
     public XSSimpleTypeDefinition getMemberTypeDefinition() {
-        return fMemberType;
+        return fValue.getMemberTypeDefinition();
     }
 
     /**
@@ -237,21 +297,28 @@ public class ElementPSVImpl implements ElementPSVI {
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValue()
      */
     public Object getActualNormalizedValue() {
-        return this.fActualValue;
+        return fValue.getActualValue();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getActualNormalizedValueType()
      */
     public short getActualNormalizedValueType() {
-        return this.fActualValueType;
+        return fValue.getActualValueType();
     }
 
     /* (non-Javadoc)
      * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getItemValueTypes()
      */
     public ShortList getItemValueTypes() {
-        return this.fItemValueTypes;
+        return fValue.getListValueTypes();
+    }
+
+    /* (non-Javadoc)
+     * @see com.sun.org.apache.xerces.internal.xs.ItemPSVI#getSchemaValue()
+     */
+    public XSValue getSchemaValue() {
+        return fValue;
     }
 
     /**
@@ -263,15 +330,15 @@ public class ElementPSVImpl implements ElementPSVI {
         fNil = false;
         fSpecified = false;
         fNotation = null;
-        fMemberType = null;
         fValidationAttempted = ElementPSVI.VALIDATION_NONE;
         fValidity = ElementPSVI.VALIDITY_NOTKNOWN;
-        fErrorCodes = null;
+        fErrors = null;
         fValidationContext = null;
-        fNormalizedValue = null;
-        fActualValue = null;
-        fActualValueType = XSConstants.UNAVAILABLE_DT;
-        fItemValueTypes = null;
+        fValue.reset();
     }
 
+    public void copySchemaInformationTo(ElementPSVImpl target) {
+        target.fGrammars = fGrammars;
+        target.fSchemaInformation = fSchemaInformation;
+    }
 }
