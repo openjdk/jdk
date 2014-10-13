@@ -1225,8 +1225,8 @@ public class Gen extends JCTree.Visitor {
             // consider the size of the bytecode.
             // A discussion of the metric can be found here:
             // http://mail.openjdk.java.net/pipermail/compiler-dev/2014-September/008987.html
-            int table_cost = 4 + (hi - lo + 1); // words
-            int lookup_cost = 3 + 2 * nlabels;
+            long table_cost = 4 + ((long)hi - lo + 1); // words
+            long lookup_cost = 3 + 2 * (long)nlabels;
             int opcode = table_cost <= lookup_cost ? tableswitch : lookupswitch;
 
             int startpc = code.curCP();    // the position of the selector operation
