@@ -25,6 +25,8 @@
  * JDK-8044798: API for debugging Nashorn
  *
  * @test
+ * @option -Dnashorn.mirror.always=false
+ * @fork
  * @run
  */
 

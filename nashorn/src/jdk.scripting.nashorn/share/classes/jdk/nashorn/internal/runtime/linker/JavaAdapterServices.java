@@ -47,7 +47,6 @@ import jdk.internal.org.objectweb.asm.ClassWriter;
 import jdk.internal.org.objectweb.asm.Opcodes;
 import jdk.internal.org.objectweb.asm.Type;
 import jdk.internal.org.objectweb.asm.commons.InstructionAdapter;
-import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
@@ -220,7 +219,7 @@ public final class JavaAdapterServices {
      * @return the filtered return value.
      */
     public static Object exportReturnValue(final Object obj) {
-        return ScriptUtils.wrap(NashornBeansLinker.exportArgument(obj));
+        return NashornBeansLinker.exportArgument(obj, true);
     }
 
     /**
