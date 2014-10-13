@@ -75,11 +75,8 @@ public final class ScriptUtils {
      * @param sync the object to synchronize on
      * @return a synchronizing wrapper function
      */
-    public static Object makeSynchronizedFunction(final Object func, final Object sync) {
-        if (func instanceof ScriptFunction) {
-           return ((ScriptFunction)func).makeSynchronizedFunction(sync);
-        }
-        throw typeError("not.a.function", ScriptRuntime.safeToString(func));
+    public static Object makeSynchronizedFunction(final ScriptFunction func, final Object sync) {
+        return func.makeSynchronizedFunction(unwrap(sync));
     }
 
     /**
@@ -88,12 +85,8 @@ public final class ScriptUtils {
      * @param obj object to be wrapped
      * @return wrapped object
      */
-    public static Object wrap(final Object obj) {
-        if (obj instanceof ScriptObject) {
-            return ScriptObjectMirror.wrap(obj, Context.getGlobal());
-        }
-
-        return obj;
+    public static ScriptObjectMirror wrap(final ScriptObject obj) {
+        return (ScriptObjectMirror) ScriptObjectMirror.wrap(obj, Context.getGlobal());
     }
 
     /**
@@ -160,14 +153,15 @@ public final class ScriptUtils {
         }
 
         final LinkerServices linker = Bootstrap.getLinkerServices();
-        final MethodHandle converter = linker.getTypeConverter(obj.getClass(),  clazz);
+        final Object objToConvert = unwrap(obj);
+        final MethodHandle converter = linker.getTypeConverter(objToConvert.getClass(),  clazz);
         if (converter == null) {
             // no supported conversion!
             throw new UnsupportedOperationException("conversion not supported");
         }
 
         try {
-            return converter.invoke(obj);
+            return converter.invoke(objToConvert);
         } catch (final RuntimeException | Error e) {
             throw e;
         } catch (final Throwable t) {
