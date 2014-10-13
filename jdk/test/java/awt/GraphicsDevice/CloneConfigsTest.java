@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug     6822057 7124400
+ * @bug     6822057 7124400 8059848
  *
  * @summary Test verifies that list of supported graphics configurations
  *          can not be changed via modification of elements of an array
