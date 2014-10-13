@@ -42,23 +42,23 @@ public class TestNormal {
     public static void main(String args[]) throws Exception {
         Properties p = System.getProperties();
         String java_home = p.getProperty("test.jdk");
-        String dtjar = java_home + File.separator + "lib"
-                + File.separator + "dt.jar";
+        File testJar = new File("test.jar");
+        Utils.jar("cvf", testJar.getName(), Utils.TEST_CLS_DIR.getAbsolutePath());
 
-        File folder = new File("dt");
+        File folder = new File("testdir");
         if (folder.exists()) {
             delete(folder);
         }
         folder.mkdir();
 
         try {
-            extractJar(new JarFile(dtjar), folder);
-            execJavaCommand(java_home, "jar cnf normalized.jar -C dt .");
-            execJavaCommand(java_home, "jar cf original.jar -C dt .");
+            extractJar(new JarFile(testJar), folder);
+            execJavaCommand(java_home, "jar cnf normalized.jar -C testdir .");
+            execJavaCommand(java_home, "jar cf original.jar -C testdir .");
             execJavaCommand(java_home, "pack200 -r repacked.jar original.jar");
             compareJars(new JarFile("normalized.jar"), new JarFile("repacked.jar"));
         } finally {
-            String[] cleanupList = {"dt", "normalized.jar", "original.jar", "repacked.jar"};
+            String[] cleanupList = {"testdir", "normalized.jar", "original.jar", "repacked.jar"};
             for (String s : cleanupList) {
                 delete(new File(s));
             }
