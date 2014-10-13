@@ -15,32 +15,21 @@
  * limitations under the License.
  */
 
+package validation.jdk8036951;
+
+
 import com.sun.org.apache.xerces.internal.dom.PSVIElementNSImpl;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-/**
- * The purpose of this test is to execute all of the isComparable calls in
- * XMLSchemaValidator. There are two calls in processElementContent and two
- * calls in processOneAttribute.
- *
- * @author peterjm
- */
-public class FixedAttrTest extends BaseTest {
+public class Xerces1128doc1Test extends BaseTest {
 
-    protected String getXMLDocument() {
-        return "fixedAttr.xml";
-    }
+    private final static String UNKNOWN_TYPE_ERROR = "cvc-type.1";
 
-    protected String getSchemaFile() {
-        return "base.xsd";
-    }
-
-    public FixedAttrTest(String name) {
-        super(name);
-    }
+    private final static String INVALID_DERIVATION_ERROR = "cvc-elt.4.3";
 
     @BeforeClass
     protected void setUp() throws Exception {
@@ -52,8 +41,28 @@ public class FixedAttrTest extends BaseTest {
         super.tearDown();
     }
 
+    protected String getXMLDocument() {
+        return "xerces1128_1.xml";
+    }
+
+    protected String getSchemaFile() {
+        return "xerces1128.xsd";
+    }
+
+    protected String[] getRelevantErrorIDs() {
+        return new String[] { UNKNOWN_TYPE_ERROR, INVALID_DERIVATION_ERROR };
+    }
+
+    public Xerces1128doc1Test(String name) {
+        super(name);
+    }
+
+
+    /**
+     * XERCESJ-1128 values for {validation attempted} property in PSVI
+     */
     @Test
-    public void testDefault() {
+    public void testDocument1() {
         try {
             reset();
             validateDocument();
@@ -61,21 +70,26 @@ public class FixedAttrTest extends BaseTest {
             fail("Validation failed: " + e.getMessage());
         }
 
-        assertValidity(ItemPSVI.VALIDITY_VALID, fRootNode.getValidity());
-        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
-                .getValidationAttempted());
-        assertElementName("A", fRootNode.getElementDeclaration().getName());
+        // default value of the feature is false
+        checkResult();
+    }
 
+    private void checkResult() {
         PSVIElementNSImpl child = super.getChild(1);
-        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
-        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
+        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_NONE, child
                 .getValidationAttempted());
-        assertElementName("B", child.getElementDeclaration().getName());
+        assertElementNull(child.getElementDeclaration());
+        assertTypeName("anyType", child.getTypeDefinition().getName());
+        assertTypeNamespace("http://www.w3.org/2001/XMLSchema",
+                child.getTypeDefinition().getNamespace());
 
         child = super.getChild(2);
         assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
                 .getValidationAttempted());
-        assertElementName("D", child.getElementDeclaration().getName());
+        assertElementNull(child.getElementDeclaration());
+        assertTypeName("X", child.getTypeDefinition().getName());
+        assertTypeNamespaceNull(child.getTypeDefinition().getNamespace());
     }
 }

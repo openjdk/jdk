@@ -14,13 +14,18 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package validation.jdk8037819;
 
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-public class UseGrammarPoolOnlyTest_True extends BaseTest {
+public class UseGrammarPoolOnlyTest_False extends BaseTest {
+    private final static String UNKNOWN_TYPE_ERROR = "cvc-type.1";
+
+    private final static String INVALID_DERIVATION_ERROR = "cvc-elt.4.3";
 
     protected String getXMLDocument() {
         return "otherNamespace.xml";
@@ -30,11 +35,15 @@ public class UseGrammarPoolOnlyTest_True extends BaseTest {
         return "base.xsd";
     }
 
-    protected boolean getUseGrammarPoolOnly() {
-        return true;
+    protected String[] getRelevantErrorIDs() {
+        return new String[] { UNKNOWN_TYPE_ERROR, INVALID_DERIVATION_ERROR };
     }
 
-    public UseGrammarPoolOnlyTest_True(String name) {
+    protected boolean getUseGrammarPoolOnly() {
+        return false;
+    }
+
+    public UseGrammarPoolOnlyTest_False(String name) {
         super(name);
     }
 
@@ -65,10 +74,14 @@ public class UseGrammarPoolOnlyTest_True extends BaseTest {
             fail("Validation failed: " + e.getMessage());
         }
 
-        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, fRootNode.getValidity());
-        assertValidationAttempted(ItemPSVI.VALIDATION_NONE, fRootNode
+        assertValidity(ItemPSVI.VALIDITY_VALID, fRootNode.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
                 .getValidationAttempted());
-        assertElementNull(fRootNode.getElementDeclaration());
-        assertAnyType(fRootNode.getTypeDefinition());
+        assertElementName("A", fRootNode.getElementDeclaration().getName());
+        assertElementNamespace("xslt.unittests", fRootNode
+                .getElementDeclaration().getNamespace());
+        assertTypeName("W", fRootNode.getTypeDefinition().getName());
+        assertTypeNamespace("xslt.unittests", fRootNode.getTypeDefinition()
+                .getNamespace());
     }
 }
