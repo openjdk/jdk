@@ -1,6 +1,5 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2011, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
  * Copyright 2003-2004 The Apache Software Foundation.
@@ -73,20 +72,24 @@ public class CMNodeFactory {
     public CMNodeFactory() {
     }
 
-    public void reset(XMLComponentManager componentManager){
+    public void reset(XMLComponentManager componentManager) {
         fErrorReporter = (XMLErrorReporter)componentManager.getProperty(ERROR_REPORTER);
         try {
             fSecurityManager = (XMLSecurityManager)componentManager.getProperty(SECURITY_MANAGER);
-            //we are setting the limit of number of nodes to 3times the maxOccur value..
-            if(fSecurityManager != null){
-                maxNodeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT) * MULTIPLICITY ;
-            }
+            reset();
         }
         catch (XMLConfigurationException e) {
             fSecurityManager = null;
         }
 
     }//reset()
+
+    public void reset() {
+        // we are setting the limit of number of nodes to 3 times the maxOccurs value.
+        if (fSecurityManager != null) {
+            maxNodeLimit = fSecurityManager.getLimit(XMLSecurityManager.Limit.MAX_OCCUR_NODE_LIMIT) * MULTIPLICITY ;
+        }
+    }
 
     public CMNode getCMLeafNode(int type, Object leaf, int id, int position) {
         return new XSCMLeaf(type, leaf, id, position) ;

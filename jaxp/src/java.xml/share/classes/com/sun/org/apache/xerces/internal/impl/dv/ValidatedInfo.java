@@ -1,4 +1,8 @@
 /*
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -17,8 +21,13 @@
 
 package com.sun.org.apache.xerces.internal.impl.dv;
 
+import com.sun.org.apache.xerces.internal.impl.xs.util.ShortListImpl;
+import com.sun.org.apache.xerces.internal.impl.xs.util.XSObjectListImpl;
 import com.sun.org.apache.xerces.internal.xs.ShortList;
 import com.sun.org.apache.xerces.internal.xs.XSConstants;
+import com.sun.org.apache.xerces.internal.xs.XSObjectList;
+import com.sun.org.apache.xerces.internal.xs.XSSimpleTypeDefinition;
+import com.sun.org.apache.xerces.internal.xs.XSValue;
 
 /**
  * Class to get the information back after content is validated. This info
@@ -29,7 +38,7 @@ import com.sun.org.apache.xerces.internal.xs.XSConstants;
  * @author Neeraj Bajaj, Sun Microsystems, inc.
  *
  */
-public class ValidatedInfo {
+public class ValidatedInfo implements XSValue {
 
     /**
      * The normalized value of a string value
@@ -49,6 +58,11 @@ public class ValidatedInfo {
      * (i.e. short instead of decimal or integer).
      */
     public short actualValueType;
+
+    /**
+     * The declared type of the value.
+     */
+    public XSSimpleType actualType;
 
     /**
      * If the type is a union type, then the member type which
@@ -79,8 +93,11 @@ public class ValidatedInfo {
     public void reset() {
         this.normalizedValue = null;
         this.actualValue = null;
+        this.actualValueType = XSConstants.UNAVAILABLE_DT;
+        this.actualType = null;
         this.memberType = null;
         this.memberTypes = null;
+        this.itemValueTypes = null;
     }
 
     /**
@@ -88,10 +105,12 @@ public class ValidatedInfo {
      * value, use toString; otherwise, use the normalized value.
      */
     public String stringValue() {
-        if (actualValue == null)
+        if (actualValue == null) {
             return normalizedValue;
-        else
+        }
+        else {
             return actualValue.toString();
+        }
     }
 
     /**
@@ -148,5 +167,73 @@ public class ValidatedInfo {
         }
         /** Other types. */
         return valueType;
+    }
+
+    // XSValue methods
+
+    public Object getActualValue() {
+        return actualValue;
+    }
+
+    public short getActualValueType() {
+        return actualValueType;
+    }
+
+    public ShortList getListValueTypes() {
+        return itemValueTypes == null ? ShortListImpl.EMPTY_LIST : itemValueTypes;
+    }
+
+    public XSObjectList getMemberTypeDefinitions() {
+        if (memberTypes == null) {
+            return XSObjectListImpl.EMPTY_LIST;
+        }
+        return new XSObjectListImpl(memberTypes, memberTypes.length);
+    }
+
+    public String getNormalizedValue() {
+        return normalizedValue;
+    }
+
+    public XSSimpleTypeDefinition getTypeDefinition() {
+        return actualType;
+    }
+
+    public XSSimpleTypeDefinition getMemberTypeDefinition() {
+        return memberType;
+    }
+
+    public void copyFrom(XSValue o) {
+        if (o == null) {
+            reset();
+        }
+        else if (o instanceof ValidatedInfo) {
+            ValidatedInfo other = (ValidatedInfo)o;
+            normalizedValue = other.normalizedValue;
+            actualValue = other.actualValue;
+            actualValueType = other.actualValueType;
+            actualType = other.actualType;
+            memberType = other.memberType;
+            memberTypes = other.memberTypes;
+            itemValueTypes = other.itemValueTypes;
+        }
+        else {
+            normalizedValue = o.getNormalizedValue();
+            actualValue = o.getActualValue();
+            actualValueType = o.getActualValueType();
+            actualType = (XSSimpleType)o.getTypeDefinition();
+            memberType = (XSSimpleType)o.getMemberTypeDefinition();
+            XSSimpleType realType = memberType == null ? actualType : memberType;
+            if (realType != null && realType.getBuiltInKind() == XSConstants.LISTOFUNION_DT) {
+                XSObjectList members = o.getMemberTypeDefinitions();
+                memberTypes = new XSSimpleType[members.getLength()];
+                for (int i = 0; i < members.getLength(); i++) {
+                    memberTypes[i] = (XSSimpleType)members.get(i);
+                }
+            }
+            else {
+                memberTypes = null;
+            }
+            itemValueTypes = o.getListValueTypes();
+        }
     }
 }
