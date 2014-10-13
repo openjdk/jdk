@@ -389,7 +389,9 @@ void G1RegionMappingChangedListener::reset_from_card_cache(uint start_idx, size_
   OtherRegionsTable::invalidate(start_idx, num_regions);
 }
 
-void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions) {
+void G1RegionMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
+  // The from card cache is not the memory that is actually committed. So we cannot
+  // take advantage of the zero_filled parameter.
   reset_from_card_cache(start_idx, num_regions);
 }
 
@@ -3610,7 +3612,7 @@ void G1CollectedHeap::register_humongous_regions_with_in_cset_fast_test() {
                                                                   cl.candidate_humongous());
   _has_humongous_reclaim_candidates = cl.candidate_humongous() > 0;
 
-  if (_has_humongous_reclaim_candidates) {
+  if (_has_humongous_reclaim_candidates || G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
     clear_humongous_is_live_table();
   }
 }
@@ -6272,9 +6274,10 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
         g1h->humongous_region_is_always_live(region_idx)) {
 
       if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-        gclog_or_tty->print_cr("Live humongous %d region %d with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
+        gclog_or_tty->print_cr("Live humongous %d region %d size "SIZE_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                                r->is_humongous(),
                                region_idx,
+                               obj->size()*HeapWordSize,
                                r->rem_set()->occupied(),
                                r->rem_set()->strong_code_roots_list_length(),
                                next_bitmap->isMarked(r->bottom()),
@@ -6291,8 +6294,9 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
                       r->bottom()));
 
     if (G1TraceReclaimDeadHumongousObjectsAtYoungGC) {
-      gclog_or_tty->print_cr("Reclaim humongous region %d start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
+      gclog_or_tty->print_cr("Reclaim humongous region %d size "SIZE_FORMAT" start "PTR_FORMAT" region %d length "UINT32_FORMAT" with remset "SIZE_FORMAT" code roots "SIZE_FORMAT" is marked %d live-other %d obj array %d",
                              r->is_humongous(),
+                             obj->size()*HeapWordSize,
                              r->bottom(),
                              region_idx,
                              r->region_num(),
@@ -6331,7 +6335,8 @@ class G1FreeHumongousRegionClosure : public HeapRegionClosure {
 void G1CollectedHeap::eagerly_reclaim_humongous_regions() {
   assert_at_safepoint(true);
 
-  if (!G1ReclaimDeadHumongousObjectsAtYoungGC || !_has_humongous_reclaim_candidates) {
+  if (!G1ReclaimDeadHumongousObjectsAtYoungGC ||
+      (!_has_humongous_reclaim_candidates && !G1TraceReclaimDeadHumongousObjectsAtYoungGC)) {
     g1_policy()->phase_times()->record_fast_reclaim_humongous_time_ms(0.0, 0);
     return;
   }
