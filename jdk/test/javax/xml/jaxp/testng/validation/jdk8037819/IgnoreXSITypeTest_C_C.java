@@ -14,31 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package validation.jdk8037819;
 
 import com.sun.org.apache.xerces.internal.dom.PSVIElementNSImpl;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-public class UnparsedEntityCheckingTest extends BaseTest {
-    public static final String UNDECLARED_ENTITY = "UndeclaredEntity";
+public class IgnoreXSITypeTest_C_C extends BaseTest {
 
     protected String getXMLDocument() {
-        return "unparsedEntity.xml";
+        return "xsitype_C_C.xml";
     }
 
     protected String getSchemaFile() {
         return "base.xsd";
     }
 
-    protected String[] getRelevantErrorIDs() {
-        return new String[] { UNDECLARED_ENTITY };
-    }
-
-    public UnparsedEntityCheckingTest(String name) {
+    public IgnoreXSITypeTest_C_C(String name) {
         super(name);
     }
+
 
     @BeforeClass
     protected void setUp() throws Exception {
@@ -51,7 +49,7 @@ public class UnparsedEntityCheckingTest extends BaseTest {
     }
 
     @Test
-    public void testDefaultValid() {
+    public void testDefaultDocument() {
         try {
             reset();
             validateDocument();
@@ -59,94 +57,104 @@ public class UnparsedEntityCheckingTest extends BaseTest {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkDefault();
+        // default value of the feature is false
+        checkFalseResult();
     }
 
     @Test
-    public void testSetFalseValid() {
+    public void testDefaultFragment() {
         try {
             reset();
-            fValidator.setFeature(UNPARSED_ENTITY_CHECKING, false);
-            validateDocument();
+            validateFragment();
         } catch (Exception e) {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkDefault();
+        // default value of the feature is false
+        checkFalseResult();
     }
 
     @Test
-    public void testSetTrueValid() {
+    public void testSetFalseDocument() {
         try {
             reset();
-            fValidator.setFeature(UNPARSED_ENTITY_CHECKING, true);
+            fValidator.setFeature(IGNORE_XSI_TYPE, false);
             validateDocument();
         } catch (Exception e) {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkDefault();
+        checkFalseResult();
     }
 
     @Test
-    public void testDefaultInvalid() {
+    public void testSetFalseFragment() {
         try {
             reset();
-            ((PSVIElementNSImpl) fRootNode).setAttributeNS(null,
-                    "unparsedEntityAttr", "invalid");
-            validateDocument();
+            fValidator.setFeature(IGNORE_XSI_TYPE, false);
+            validateFragment();
         } catch (Exception e) {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkInvalid();
+        checkFalseResult();
     }
 
     @Test
-    public void testSetFalseInvalid() {
+    public void testSetTrueDocument() {
         try {
             reset();
-            ((PSVIElementNSImpl) fRootNode).setAttributeNS(null,
-                    "unparsedEntityAttr", "invalid");
-            fValidator.setFeature(UNPARSED_ENTITY_CHECKING, false);
+            fValidator.setFeature(IGNORE_XSI_TYPE, true);
             validateDocument();
         } catch (Exception e) {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkDefault();
+        checkTrueResult();
     }
 
     @Test
-    public void testSetTrueInvalid() {
+    public void testSetTrueFragment() {
         try {
             reset();
-            ((PSVIElementNSImpl) fRootNode).setAttributeNS(null,
-                    "unparsedEntityAttr", "invalid");
-            fValidator.setFeature(UNPARSED_ENTITY_CHECKING, true);
-            validateDocument();
+            fValidator.setFeature(IGNORE_XSI_TYPE, true);
+            validateFragment();
         } catch (Exception e) {
             fail("Validation failed: " + e.getMessage());
         }
 
-        checkInvalid();
+        checkTrueResult();
     }
 
-    private void checkDefault() {
-        assertNoError(UNDECLARED_ENTITY);
+    private void checkTrueResult() {
+        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, fRootNode.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_NONE, fRootNode
+                .getValidationAttempted());
+        assertElementNull(fRootNode.getElementDeclaration());
+        assertAnyType(fRootNode.getTypeDefinition());
+
+        PSVIElementNSImpl child = super.getChild(1);
+        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_NONE, child
+                .getValidationAttempted());
+        assertElementNull(child.getElementDeclaration());
+        assertAnyType(child.getTypeDefinition());
+    }
+
+    private void checkFalseResult() {
         assertValidity(ItemPSVI.VALIDITY_VALID, fRootNode.getValidity());
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
                 .getValidationAttempted());
-        assertElementName("A", fRootNode.getElementDeclaration().getName());
-        assertTypeName("X", fRootNode.getTypeDefinition().getName());
-    }
+        assertElementNull(fRootNode.getElementDeclaration());
+        assertTypeName("Y", fRootNode.getTypeDefinition().getName());
+        assertTypeNamespaceNull(fRootNode.getTypeDefinition().getNamespace());
 
-    private void checkInvalid() {
-        assertError(UNDECLARED_ENTITY);
-        assertValidity(ItemPSVI.VALIDITY_INVALID, fRootNode.getValidity());
-        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
+        PSVIElementNSImpl child = super.getChild(1);
+        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
                 .getValidationAttempted());
-        assertElementName("A", fRootNode.getElementDeclaration().getName());
-        assertTypeName("X", fRootNode.getTypeDefinition().getName());
+        assertElementNull(child.getElementDeclaration());
+        assertTypeName("Y", child.getTypeDefinition().getName());
+        assertTypeNamespaceNull(child.getTypeDefinition().getNamespace());
     }
 }

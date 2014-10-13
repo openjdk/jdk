@@ -14,27 +14,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
+package validation.jdk8037819;
 
 import com.sun.org.apache.xerces.internal.dom.PSVIElementNSImpl;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-public class IgnoreXSITypeTest_A_A extends BaseTest {
+public class IgnoreXSITypeTest_A_C extends BaseTest {
 
     protected String getXMLDocument() {
-        return "xsitype_A_A.xml";
+        return "xsitype_A_C.xml";
     }
 
     protected String getSchemaFile() {
         return "base.xsd";
     }
 
-    public IgnoreXSITypeTest_A_A(String name) {
+    public IgnoreXSITypeTest_A_C(String name) {
         super(name);
     }
+
 
     @BeforeClass
     protected void setUp() throws Exception {
@@ -144,7 +146,7 @@ public class IgnoreXSITypeTest_A_A extends BaseTest {
         assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
                 .getValidationAttempted());
-        assertElementName("A", child.getElementDeclaration().getName());
+        assertElementNull(child.getElementDeclaration());
         assertTypeName("Y", child.getTypeDefinition().getName());
         assertTypeNamespaceNull(child.getTypeDefinition().getNamespace());
     }

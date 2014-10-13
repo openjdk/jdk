@@ -14,24 +14,26 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package validation.jdk8037819;
 
 import com.sun.org.apache.xerces.internal.dom.PSVIElementNSImpl;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-public class IgnoreXSITypeTest_A_C extends BaseTest {
+public class IgnoreXSITypeTest_C_AC extends BaseTest {
 
     protected String getXMLDocument() {
-        return "xsitype_A_C.xml";
+        return "xsitype_C_AC.xml";
     }
 
     protected String getSchemaFile() {
         return "base.xsd";
     }
 
-    public IgnoreXSITypeTest_A_C(String name) {
+    public IgnoreXSITypeTest_C_AC(String name) {
         super(name);
     }
 
@@ -125,22 +127,45 @@ public class IgnoreXSITypeTest_A_C extends BaseTest {
     }
 
     private void checkTrueResult() {
-        checkResult();
+        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, fRootNode.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_PARTIAL, fRootNode
+                .getValidationAttempted());
+        assertElementNull(fRootNode.getElementDeclaration());
+        assertAnyType(fRootNode.getTypeDefinition());
+
+        PSVIElementNSImpl child = super.getChild(1);
+        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
+                .getValidationAttempted());
+        assertElementName("A", child.getElementDeclaration().getName());
+        assertTypeName("Y", child.getTypeDefinition().getName());
+        assertTypeNamespaceNull(child.getTypeDefinition().getNamespace());
+
+        child = super.getChild(2);
+        assertValidity(ItemPSVI.VALIDITY_NOTKNOWN, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_NONE, child
+                .getValidationAttempted());
+        assertElementNull(child.getElementDeclaration());
+        assertAnyType(child.getTypeDefinition());
     }
 
     private void checkFalseResult() {
-        checkResult();
-    }
-
-    private void checkResult() {
         assertValidity(ItemPSVI.VALIDITY_VALID, fRootNode.getValidity());
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
                 .getValidationAttempted());
-        assertElementName("A", fRootNode.getElementDeclaration().getName());
+        assertElementNull(fRootNode.getElementDeclaration());
         assertTypeName("Y", fRootNode.getTypeDefinition().getName());
         assertTypeNamespaceNull(fRootNode.getTypeDefinition().getNamespace());
 
         PSVIElementNSImpl child = super.getChild(1);
+        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
+                .getValidationAttempted());
+        assertElementName("A", child.getElementDeclaration().getName());
+        assertTypeName("Y", child.getTypeDefinition().getName());
+        assertTypeNamespaceNull(child.getTypeDefinition().getNamespace());
+
+        child = super.getChild(2);
         assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
                 .getValidationAttempted());

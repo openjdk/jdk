@@ -1,21 +1,7 @@
-/*
- * Licensed to the Apache Software Foundation (ASF) under one or more
- * contributor license agreements.  See the NOTICE file distributed with
- * this work for additional information regarding copyright ownership.
- * The ASF licenses this file to You under the Apache License, Version 2.0
- * (the "License"); you may not use this file except in compliance with
- * the License.  You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- */
+package validation;
 
 import java.io.File;
+import java.io.FileNotFoundException;
 import java.net.URL;
 
 import javax.xml.XMLConstants;
@@ -37,6 +23,7 @@ import com.sun.org.apache.xerces.internal.xs.ElementPSVI;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import com.sun.org.apache.xerces.internal.xs.XSElementDeclaration;
 import com.sun.org.apache.xerces.internal.xs.XSTypeDefinition;
+import java.security.Policy;
 import javax.xml.transform.stream.StreamSource;
 import org.w3c.dom.Document;
 import org.w3c.dom.Node;
@@ -66,33 +53,30 @@ public abstract class BaseTest {
     protected final static String DOCUMENT_CLASS_NAME = Constants.XERCES_PROPERTY_PREFIX
             + Constants.DOCUMENT_CLASS_NAME_PROPERTY;
 
-    protected Schema schema;
-    protected Validator fValidator;
-
-    protected SpecialCaseErrorHandler fErrorHandler;
-
-    DocumentBuilder builder;
-    protected Document fDocument;
-
-    protected ElementPSVI fRootNode;
-
-    protected URL fDocumentURL;
-    protected String documentPath;
-    protected String fDocumentId;
-
-    static String errMessage;
-
-    int passed = 0, failed = 0;
-
     public static boolean isWindows = false;
     static {
         if (System.getProperty("os.name").indexOf("Windows")>-1) {
             isWindows = true;
         }
     };
-    public static final String USER_DIR = System.getProperty("user.dir", ".");
-    public static final String BASE_DIR = System.getProperty("test.src", USER_DIR)
-            .replaceAll("\\" + System.getProperty("file.separator"), "/");
+
+    protected Schema schema;
+    protected Validator fValidator;
+
+    protected SpecialCaseErrorHandler fErrorHandler;
+
+    protected DocumentBuilder builder;
+    protected Document fDocument;
+
+    protected ElementPSVI fRootNode;
+    protected URL fDocumentURL;
+    protected URL fSchemaURL;
+
+    static String errMessage;
+
+    int passed = 0, failed = 0;
+    private boolean hasSM;
+    private Policy orig;
 
     protected abstract String getSchemaFile();
 
@@ -103,6 +87,12 @@ public abstract class BaseTest {
     }
 
     protected void setUp() throws Exception {
+        if (System.getSecurityManager() != null) {
+            hasSM = true;
+            System.setSecurityManager(null);
+        }
+
+        orig = Policy.getPolicy();
 
         DocumentBuilderFactory docFactory = DocumentBuilderFactory
                 .newInstance();
@@ -110,41 +100,46 @@ public abstract class BaseTest {
                 "com.sun.org.apache.xerces.internal.dom.PSVIDocumentImpl");
         docFactory.setNamespaceAware(true);
         builder = docFactory.newDocumentBuilder();
+        // build the location URL of the document
+        String filepath = System.getProperty("test.src", ".");
+        String packageDir = this.getClass().getPackage().getName().replace('.',
+                '/');
+        String documentPath = filepath + "/" + packageDir + "/" + getXMLDocument();
+        String schemaPath = filepath + "/" + packageDir + "/" + getSchemaFile();
 
-        documentPath = BASE_DIR + "/" + getXMLDocument();
-System.out.println("documentPath:"+documentPath);
         if (isWindows) {
-            fDocumentId = "file:/" + documentPath;
+            fDocumentURL = new URL("file:/" + documentPath);
+            fSchemaURL = new URL("file:/" + schemaPath);
         } else {
-            fDocumentId = "file:" + documentPath;
+            fDocumentURL = new URL("file:" + documentPath);
+            fSchemaURL = new URL("file:" + schemaPath);
         }
-        //fDocumentURL = ClassLoader.getSystemResource(documentPath);
-        //fDocumentURL = getClass().getResource(documentPath);
-System.out.println("fDocumentId:"+fDocumentId);
-//System.out.println("fDocumentURL.toExternalForm:"+fDocumentURL.toExternalForm());
-/**
         if (fDocumentURL == null) {
             throw new FileNotFoundException("Couldn't find xml file for test: " + documentPath);
         }
-        fDocument = builder.parse(fDocumentURL.toExternalForm());
-        fRootNode = (ElementPSVI) fDocument.getDocumentElement();
-        */
+
         SchemaFactory sf = SchemaFactory
                 .newInstance(XMLConstants.W3C_XML_SCHEMA_NS_URI);
         sf.setFeature(USE_GRAMMAR_POOL_ONLY, getUseGrammarPoolOnly());
-        String schemaPath = BASE_DIR + "/" + getSchemaFile();
-        /**
-        URL schemaURL = ClassLoader.getSystemResource(schemaPath);
-        if (schemaURL == null) {
+
+        if (fSchemaURL == null) {
             throw new FileNotFoundException("Couldn't find schema file for test: " + schemaPath);
         }
-        */
-        schema = sf.newSchema(new StreamSource(new File(schemaPath)));
+        schema = sf.newSchema(fSchemaURL);
+
+//        String schemaPath = "./jaxp-ri/src/unit-test/apache/xerces/jdk8037819/" + getSchemaFile();
+//        Schema schema = sf.newSchema(new StreamSource(new File(schemaPath)));
     }
 
     protected void tearDown() throws Exception {
-        fValidator = null;
-        fDocument = null;
+        System.setSecurityManager(null);
+        Policy.setPolicy(orig);
+        if (hasSM) {
+            System.setSecurityManager(new SecurityManager());
+        }
+
+        builder = null;
+        schema = null;
         fRootNode = null;
         fErrorHandler.reset();
         System.out.println("\nNumber of tests passed: " + passed);
@@ -157,33 +152,27 @@ System.out.println("fDocumentId:"+fDocumentId);
 
     protected void validateDocument() throws Exception {
         Source source = new DOMSource(fDocument);
-        source.setSystemId(fDocumentId);
+        source.setSystemId(fDocumentURL.toExternalForm());
         Result result = new DOMResult(fDocument);
+
         fValidator.validate(source, result);
     }
 
     protected void validateFragment() throws Exception {
         Source source = new DOMSource((Node) fRootNode);
-        source.setSystemId(fDocumentId);
+        source.setSystemId(fDocumentURL.toExternalForm());
         Result result = new DOMResult((Node) fRootNode);
         fValidator.validate(source, result);
     }
 
     protected void reset() throws Exception {
-        try {
-System.out.println("new File(documentPath)" + new File(documentPath));
-
-        fDocument = builder.parse(new File(documentPath));
+//        fDocument = builder.parse(new File("./jaxp-ri/src/unit-test/apache/xerces/jdk8037819/" + getXMLDocument()));
+        fDocument = builder.parse(fDocumentURL.toExternalForm());
         fRootNode = (ElementPSVI) fDocument.getDocumentElement();
-System.out.println("fDocument" + fDocument);
-System.out.println("fRootNode" + fRootNode);
         fValidator = schema.newValidator();
         fErrorHandler.reset();
         fValidator.setErrorHandler(fErrorHandler);
         fValidator.setFeature(DYNAMIC_VALIDATION, false);
-        } catch (Exception e) {
-            e.printStackTrace();
-        }
     }
 
     protected PSVIElementNSImpl getChild(int n) {
@@ -303,21 +292,21 @@ System.out.println("fRootNode" + fRootNode);
             success(null);
         }
     }
-    void assertTrue(String msg, boolean value) {
+    public void assertTrue(String msg, boolean value) {
         if (!value) {
             fail(msg);
         } else {
             success(null);
         }
     }
-    void assertFalse(String msg, boolean value) {
+    public void assertFalse(String msg, boolean value) {
         if (value) {
             fail(msg);
         } else {
             success(null);
         }
     }
-    void fail(String errMsg) {
+    public void fail(String errMsg) {
         if (errMessage == null) {
             errMessage = errMsg;
         } else {
@@ -326,9 +315,8 @@ System.out.println("fRootNode" + fRootNode);
         failed++;
     }
 
-    void success(String msg) {
+    public void success(String msg) {
         passed++;
-        System.out.println(msg);
         if (msg != null) {
             if (msg.length() != 0) {
                 System.out.println(msg);

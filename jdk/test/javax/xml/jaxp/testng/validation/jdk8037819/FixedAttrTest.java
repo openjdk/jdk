@@ -14,34 +14,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+package validation.jdk8037819;
 
+import com.sun.org.apache.xerces.internal.dom.PSVIElementNSImpl;
 import com.sun.org.apache.xerces.internal.xs.ItemPSVI;
 import org.testng.annotations.AfterClass;
 import org.testng.annotations.BeforeClass;
 import org.testng.annotations.Test;
+import validation.BaseTest;
 
-public class UseGrammarPoolOnlyTest_False extends BaseTest {
-    private final static String UNKNOWN_TYPE_ERROR = "cvc-type.1";
-
-    private final static String INVALID_DERIVATION_ERROR = "cvc-elt.4.3";
+/**
+ * The purpose of this test is to execute all of the isComparable calls in
+ * XMLSchemaValidator. There are two calls in processElementContent and two
+ * calls in processOneAttribute.
+ *
+ * @author peterjm
+ */
+public class FixedAttrTest extends BaseTest {
 
     protected String getXMLDocument() {
-        return "otherNamespace.xml";
+        return "fixedAttr.xml";
     }
 
     protected String getSchemaFile() {
         return "base.xsd";
     }
 
-    protected String[] getRelevantErrorIDs() {
-        return new String[] { UNKNOWN_TYPE_ERROR, INVALID_DERIVATION_ERROR };
-    }
-
-    protected boolean getUseGrammarPoolOnly() {
-        return false;
-    }
-
-    public UseGrammarPoolOnlyTest_False(String name) {
+    public FixedAttrTest(String name) {
         super(name);
     }
 
@@ -55,16 +54,8 @@ public class UseGrammarPoolOnlyTest_False extends BaseTest {
         super.tearDown();
     }
 
-    /**
-     * The purpose of this test is to check if setting the USE_GRAMMAR_POOL_ONLY
-     * feature to true causes external schemas to not be read. This
-     * functionality already existed prior to adding the XSLT 2.0 validation
-     * features; however, because the class that controlled it changed, this
-     * test simply ensures that the existing functionality did not disappear.
-     * -PM
-     */
     @Test
-    public void testUsingOnlyGrammarPool() {
+    public void testDefault() {
         try {
             reset();
             validateDocument();
@@ -76,10 +67,17 @@ public class UseGrammarPoolOnlyTest_False extends BaseTest {
         assertValidationAttempted(ItemPSVI.VALIDATION_FULL, fRootNode
                 .getValidationAttempted());
         assertElementName("A", fRootNode.getElementDeclaration().getName());
-        assertElementNamespace("xslt.unittests", fRootNode
-                .getElementDeclaration().getNamespace());
-        assertTypeName("W", fRootNode.getTypeDefinition().getName());
-        assertTypeNamespace("xslt.unittests", fRootNode.getTypeDefinition()
-                .getNamespace());
+
+        PSVIElementNSImpl child = super.getChild(1);
+        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
+                .getValidationAttempted());
+        assertElementName("B", child.getElementDeclaration().getName());
+
+        child = super.getChild(2);
+        assertValidity(ItemPSVI.VALIDITY_VALID, child.getValidity());
+        assertValidationAttempted(ItemPSVI.VALIDATION_FULL, child
+                .getValidationAttempted());
+        assertElementName("D", child.getElementDeclaration().getName());
     }
 }
