@@ -155,7 +155,8 @@ final class ObjectArrayData extends ContinuousArrayData {
 
     @Override
     public ArrayData setEmpty(final long lo, final long hi) {
-        Arrays.fill(array, (int)Math.max(lo, 0L), (int)Math.min(hi, Integer.MAX_VALUE), ScriptRuntime.EMPTY);
+        // hi parameter is inclusive, but Arrays.fill toIndex parameter is exclusive
+        Arrays.fill(array, (int)Math.max(lo, 0L), (int)Math.min(hi + 1, Integer.MAX_VALUE), ScriptRuntime.EMPTY);
         return this;
     }
 

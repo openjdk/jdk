@@ -66,12 +66,12 @@ final class NumberArrayData extends ContinuousArrayData implements NumericElemen
 
     @Override
     public Object[] asObjectArray() {
-        return toObjectArray(array, (int)length);
+        return toObjectArray(true);
     }
 
-    private static Object[] toObjectArray(final double[] array, final int length) {
+    private Object[] toObjectArray(final boolean trim) {
         assert length <= array.length : "length exceeds internal array size";
-        final Object[] oarray = new Object[array.length];
+        final Object[] oarray = new Object[trim ? (int)length : array.length];
 
         for (int index = 0; index < length; index++) {
             oarray[index] = Double.valueOf(array[index]);
@@ -91,7 +91,7 @@ final class NumberArrayData extends ContinuousArrayData implements NumericElemen
     public ArrayData convert(final Class<?> type) {
         if (type != Double.class && type != Integer.class && type != Long.class) {
             final int len = (int)length;
-            return new ObjectArrayData(NumberArrayData.toObjectArray(array, len), len);
+            return new ObjectArrayData(toObjectArray(false), len);
         }
         return this;
     }

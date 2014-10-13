@@ -73,7 +73,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
 
     @Override
     public Object[] asObjectArray() {
-        return toObjectArray();
+        return toObjectArray(true);
     }
 
     @SuppressWarnings("unused")
@@ -116,9 +116,9 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
         return super.asArrayOfType(componentType);
     }
 
-    private Object[] toObjectArray() {
+    private Object[] toObjectArray(final boolean trim) {
         assert length <= array.length : "length exceeds internal array size";
-        final Object[] oarray = new Object[array.length];
+        final Object[] oarray = new Object[trim ? (int)length : array.length];
 
         for (int index = 0; index < length; index++) {
             oarray[index] = Integer.valueOf(array[index]);
@@ -158,7 +158,7 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
     }
 
     private ObjectArrayData convertToObject() {
-        return new ObjectArrayData(toObjectArray(), (int)length);
+        return new ObjectArrayData(toObjectArray(false), (int)length);
     }
 
     @Override
