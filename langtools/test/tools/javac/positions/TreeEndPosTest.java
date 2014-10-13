@@ -23,7 +23,7 @@
 
 /*
  * @test
- * @bug 8017216 8019422 8019421
+ * @bug 8017216 8019422 8019421 8054956
  * @summary verify start and end positions
  * @run main TreeEndPosTest
  */
@@ -102,6 +102,7 @@ public class TreeEndPosTest {
     public static void main(String... args) throws IOException {
         testUninitializedVariable();
         testMissingAnnotationValue();
+        testUnresolvableAnnotationAttribute();
         testFinalVariableWithDefaultConstructor();
         testFinalVariableWithConstructor();
     }
@@ -113,6 +114,11 @@ public class TreeEndPosTest {
     static void testMissingAnnotationValue() throws IOException {
         compile(JavaSource.createJavaSource("@Foo(\"vvvv\")",
                 null, "@interface Foo { }", "\"vvvv\""));
+    }
+
+    static void testUnresolvableAnnotationAttribute() throws IOException {
+        compile(JavaSource.createJavaSource("@Foo(value=\"vvvv\")",
+                null, "@interface Foo { }", "value"));
     }
 
     static void testFinalVariableWithDefaultConstructor() throws IOException {
