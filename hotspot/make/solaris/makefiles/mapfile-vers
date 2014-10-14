@@ -84,6 +84,7 @@ SUNWprivate_1.1 {
                 JVM_EnableCompiler;
                 JVM_Exit;
                 JVM_FillInStackTrace;
+                JVM_FindClassFromCaller;
                 JVM_FindClassFromClass;
                 JVM_FindClassFromClassLoader;
                 JVM_FindClassFromBootLoader;
