@@ -1,12 +1,10 @@
 /*
- * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
  * under the terms of the GNU General Public License version 2 only, as
- * published by the Free Software Foundation.  Oracle designates this
- * particular file as subject to the "Classpath" exception as provided
- * by Oracle in the LICENSE file that accompanied this code.
+ * published by the Free Software Foundation.
  *
  * This code is distributed in the hope that it will be useful, but WITHOUT
  * ANY WARRANTY; without even the implied warranty of MERCHANTABILITY or
@@ -23,28 +21,29 @@
  * questions.
  */
 
-package com.sun.media.sound;
+/*
+ * @test
+ * @bug 8059219
+ * @summary Should not be able to register null service.
+ * @run main RegisterNullService
+*/
 
-import javax.sound.midi.MidiDevice;
-import javax.sound.midi.spi.MidiDeviceProvider;
+import javax.print.PrintService;
+import javax.print.PrintServiceLookup;
 
-/**
- * Software synthesizer provider class.
- *
- * @author Karl Helgason
- */
-public final class SoftProvider extends MidiDeviceProvider {
+public class RegisterNullService {
+    public static void main (String [] args) throws RuntimeException {
 
-    @Override
-    public MidiDevice.Info[] getDeviceInfo() {
-        return new MidiDevice.Info[]{SoftSynthesizer.info};
-    }
-
-    @Override
-    public MidiDevice getDevice(final MidiDevice.Info info) {
-        if (SoftSynthesizer.info.equals(info)) {
-            return new SoftSynthesizer();
+        boolean registered = PrintServiceLookup.registerService(null);
+        if (registered) {
+           throw new RuntimeException("Null service was registered");
         }
-        throw MidiUtils.unsupportedDevice(info);
+        PrintService[] services =
+            PrintServiceLookup.lookupPrintServices(null, null);
+        for (int i = 0; i < services.length; i++) {
+            if (services[i] == null) {
+                throw new RuntimeException("Null service found.");
+            }
+        }
     }
 }

@@ -567,7 +567,10 @@ public class CPlatformWindow extends CFRetainedResource implements PlatformWindo
                     CWrapper.NSWindow.makeKeyWindow(nsWindowPtr);
                 }
             } else {
+                // immediately hide the window
                 CWrapper.NSWindow.orderOut(nsWindowPtr);
+                // process the close
+                CWrapper.NSWindow.close(nsWindowPtr);
             }
         } else {
             // otherwise, put it in a proper z-order
