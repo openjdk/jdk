@@ -4098,7 +4098,7 @@ G1CollectedHeap::do_collection_pause_at_safepoint(double target_pause_time_ms) {
     _hrm.verify_optional();
     verify_region_sets_optional();
 
-    TASKQUEUE_STATS_ONLY(if (ParallelGCVerbose) print_taskqueue_stats());
+    TASKQUEUE_STATS_ONLY(if (PrintTaskqueue) print_taskqueue_stats());
     TASKQUEUE_STATS_ONLY(reset_taskqueue_stats());
 
     print_heap_after_gc();
@@ -4668,7 +4668,7 @@ public:
       _g1h->g1_policy()->record_thread_age_table(pss.age_table());
       _g1h->update_surviving_young_words(pss.surviving_young_words()+1);
 
-      if (ParallelGCVerbose) {
+      if (PrintTerminationStats) {
         MutexLocker x(stats_lock());
         pss.print_termination_stats(worker_id);
       }
@@ -5762,7 +5762,7 @@ void G1CollectedHeap::evacuate_collection_set(EvacuationInfo& evacuation_info) {
 
     if (G1CollectedHeap::use_parallel_gc_threads()) {
       // The individual threads will set their evac-failure closures.
-      if (ParallelGCVerbose) G1ParScanThreadState::print_termination_stats_hdr();
+      if (PrintTerminationStats) G1ParScanThreadState::print_termination_stats_hdr();
       // These tasks use ShareHeap::_process_strong_tasks
       assert(UseDynamicNumberOfGCThreads ||
              workers()->active_workers() == workers()->total_workers(),
