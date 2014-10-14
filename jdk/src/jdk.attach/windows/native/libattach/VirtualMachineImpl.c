@@ -92,6 +92,10 @@ typedef struct {
  * Code copied to target process
  */
 #pragma check_stack (off)
+/* Switch off all runtime checks (checks caused by /RTC<x>). They cause the
+ * generated code to contain relative jumps to check functions which make
+ * the code position dependent. */
+#pragma runtime_checks ("scu", off)
 DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
 {
     HINSTANCE h;
@@ -122,7 +126,7 @@ DWORD WINAPI jvm_attach_thread_func(DataBlock *pData)
 void jvm_attach_thread_func_end (void) {
 }
 #pragma check_stack
-
+#pragma runtime_checks ("scu", restore)
 
 /*
  * Class:     sun_tools_attach_VirtualMachineImpl

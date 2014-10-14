@@ -37,6 +37,8 @@ const int StackAlignmentInBytes = 16;
 // signatures accordingly.
 const bool CCallingConventionRequiresIntsAsLongs = true;
 
+#define SUPPORTS_NATIVE_CX8
+
 // The PPC CPUs are NOT multiple-copy-atomic.
 #define CPU_NOT_MULTIPLE_COPY_ATOMIC
 

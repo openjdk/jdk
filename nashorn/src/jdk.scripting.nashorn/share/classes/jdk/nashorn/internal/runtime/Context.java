@@ -33,7 +33,6 @@ import static jdk.nashorn.internal.runtime.CodeStore.newCodeStore;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.Source.sourceFor;
-
 import java.io.File;
 import java.io.IOException;
 import java.io.PrintWriter;
@@ -64,9 +63,7 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import javax.script.ScriptEngine;
-
 import jdk.internal.org.objectweb.asm.ClassReader;
 import jdk.internal.org.objectweb.asm.util.CheckClassAdapter;
 import jdk.nashorn.api.scripting.ClassFilter;
@@ -161,7 +158,7 @@ public final class Context {
         }
 
         /**
-         * Return the context for this installer
+         * Return the script environment for this installer
          * @return ScriptEnvironment
          */
         @Override
@@ -224,6 +221,20 @@ public final class Context {
                 return context.codeStore.load(source, functionKey);
             }
             return null;
+        }
+
+        @Override
+        public CodeInstaller<ScriptEnvironment> withNewLoader() {
+            return new ContextCodeInstaller(context, context.createNewLoader(), codeSource);
+        }
+
+        @Override
+        public boolean isCompatibleWith(final CodeInstaller<ScriptEnvironment> other) {
+            if (other instanceof ContextCodeInstaller) {
+                final ContextCodeInstaller cci = (ContextCodeInstaller)other;
+                return cci.context == context && cci.codeSource == codeSource;
+            }
+            return false;
         }
     }
 
@@ -1126,6 +1137,9 @@ public final class Context {
 
         StoredScript storedScript = null;
         FunctionNode functionNode = null;
+        // We only use the code store here if optimistic types are disabled. With optimistic types,
+        // code is stored per function in RecompilableScriptFunctionData.
+        // TODO: This should really be triggered by lazy compilation, not optimistic types.
         final boolean useCodeStore = env._persistent_cache && !env._parse_only && !env._optimistic_types;
         final String cacheKey = useCodeStore ? CodeStore.getCacheKey(0, null) : null;
 
@@ -1212,7 +1226,7 @@ public final class Context {
         final String   mainClassName   = storedScript.getMainClassName();
         final byte[]   mainClassBytes  = classBytes.get(mainClassName);
         final Class<?> mainClass       = installer.install(mainClassName, mainClassBytes);
-        final Map<Integer, FunctionInitializer> initialzers = storedScript.getInitializers();
+        final Map<Integer, FunctionInitializer> initializers = storedScript.getInitializers();
 
         installedClasses.put(mainClassName, mainClass);
 
@@ -1232,8 +1246,8 @@ public final class Context {
             if (constant instanceof RecompilableScriptFunctionData) {
                 final RecompilableScriptFunctionData data = (RecompilableScriptFunctionData) constant;
                 data.initTransients(source, installer);
-                if (initialzers != null) {
-                    final FunctionInitializer initializer = initialzers.get(data.getFunctionNodeId());
+                final FunctionInitializer initializer = initializers.get(data.getFunctionNodeId());
+                if (initializer != null) {
                     initializer.setCode(installedClasses.get(initializer.getClassName()));
                     data.initializeCode(initializer);
                 }
@@ -1390,7 +1404,7 @@ public final class Context {
      * logic to e.g. multiple switchpoint classes.
      */
     public static final class BuiltinSwitchPoint extends SwitchPoint {
-
+        //empty
     }
 
     /**

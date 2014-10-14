@@ -443,26 +443,28 @@ bool VirtualMemoryTracker::remove_released_region(address addr, size_t size) {
 bool VirtualMemoryTracker::walk_virtual_memory(VirtualMemoryWalker* walker) {
   assert(_reserved_regions != NULL, "Sanity check");
   ThreadCritical tc;
-  LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();
-  while (head != NULL) {
-    const ReservedMemoryRegion* rgn = head->peek();
-    if (!walker->do_allocation_site(rgn)) {
-      return false;
+  // Check that the _reserved_regions haven't been deleted.
+  if (_reserved_regions != NULL) {
+    LinkedListNode<ReservedMemoryRegion>* head = _reserved_regions->head();
+    while (head != NULL) {
+      const ReservedMemoryRegion* rgn = head->peek();
+      if (!walker->do_allocation_site(rgn)) {
+        return false;
+      }
+      head = head->next();
     }
-    head = head->next();
-  }
+   }
   return true;
 }
 
 // Transition virtual memory tracking level.
 bool VirtualMemoryTracker::transition(NMT_TrackingLevel from, NMT_TrackingLevel to) {
-  if (from == NMT_minimal) {
-    assert(to == NMT_summary || to == NMT_detail, "Just check");
-    VirtualMemorySummary::reset();
-  } else if (to == NMT_minimal) {
+  assert (from != NMT_minimal, "cannot convert from the lowest tracking level to anything");
+  if (to == NMT_minimal) {
     assert(from == NMT_summary || from == NMT_detail, "Just check");
     // Clean up virtual memory tracking data structures.
     ThreadCritical tc;
+    // Check for potential race with other thread calling transition
     if (_reserved_regions != NULL) {
       delete _reserved_regions;
       _reserved_regions = NULL;

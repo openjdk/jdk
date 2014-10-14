@@ -25,6 +25,8 @@
 
 package jdk.nashorn.internal.ir;
 
+import jdk.nashorn.internal.codegen.Label;
+
 /**
  * Common base class for jump statements (e.g. {@code break} and {@code continue}).
  */
@@ -81,6 +83,24 @@ public abstract class JumpStatement extends Statement implements JoinPredecessor
     }
 
     abstract String getStatementName();
+
+    /**
+     * Finds the target for this jump statement in a lexical context.
+     * @param lc the lexical context
+     * @return the target, or null if not found
+     */
+    public abstract BreakableNode getTarget(final LexicalContext lc);
+
+    /**
+     * Returns the label corresponding to this kind of jump statement (either a break or continue label) in the target.
+     * @param target the target. Note that it need not be the target of this jump statement, as the method can retrieve
+     * a label on any passed target as long as the target has a label of the requisite kind. Of course, it is advisable
+     * to invoke the method on a jump statement that targets the breakable.
+     * @return the label of the target corresponding to the kind of jump statement.
+     * @throws ClassCastException if invoked on the kind of breakable node that this jump statement is not prepared to
+     * handle.
+     */
+    public abstract Label getTargetLabel(final BreakableNode target);
 
     @Override
     public JumpStatement setLocalVariableConversion(final LexicalContext lc, final LocalVariableConversion conversion) {

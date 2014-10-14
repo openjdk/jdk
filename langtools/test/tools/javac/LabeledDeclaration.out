@@ -1,3 +1,2 @@
-LabeledDeclaration.java:12:14: compiler.err.dot.class.expected
-LabeledDeclaration.java:12:10: compiler.err.not.stmt
-2 errors
+LabeledDeclaration.java:12:14: compiler.err.variable.not.allowed
+1 error

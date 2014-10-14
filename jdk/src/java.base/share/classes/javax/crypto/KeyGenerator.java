@@ -320,7 +320,7 @@ public class KeyGenerator {
 
     /**
      * Update the active spi of this class and return the next
-     * implementation for failover. If no more implemenations are
+     * implementation for failover. If no more implementations are
      * available, this method returns null. However, the active spi of
      * this class is never set to null.
      */

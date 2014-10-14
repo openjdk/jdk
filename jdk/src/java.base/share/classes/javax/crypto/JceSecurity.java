@@ -76,12 +76,14 @@ final class JceSecurity {
     static {
         try {
             AccessController.doPrivileged(
-                new PrivilegedExceptionAction<Object>() {
-                    public Object run() throws Exception {
+                new PrivilegedExceptionAction<Void> () {
+                    @Override
+                    public Void run() throws Exception {
                         setupJurisdictionPolicies();
                         return null;
                     }
-                });
+                }
+            );
 
             isRestricted = defaultPolicy.implies(
                 CryptoAllPermission.INSTANCE) ? false : true;
@@ -143,9 +145,9 @@ final class JceSecurity {
      * @throws Exception on error
      */
     static CryptoPermissions verifyExemptJar(URL codeBase) throws Exception {
-        JarVerifier jv = new JarVerifier(codeBase, true);
-        jv.verify();
-        return jv.getPermissions();
+        ProviderVerifier pv = new ProviderVerifier(codeBase, true);
+        pv.verify();
+        return pv.getPermissions();
     }
 
     /**
@@ -153,11 +155,11 @@ final class JceSecurity {
      *
      * @throws Exception on error
      */
-    static void verifyProviderJar(URL codeBase) throws Exception {
+    static void verifyProvider(URL codeBase, Provider p) throws Exception {
         // Verify the provider JAR file and all
         // supporting JAR files if there are any.
-        JarVerifier jv = new JarVerifier(codeBase, false);
-        jv.verify();
+        ProviderVerifier pv = new ProviderVerifier(codeBase, p, false);
+        pv.verify();
     }
 
     private final static Object PROVIDER_VERIFIED = Boolean.TRUE;
@@ -183,7 +185,7 @@ final class JceSecurity {
         try {
             verifyingProviders.put(p, Boolean.FALSE);
             URL providerURL = getCodeBase(p.getClass());
-            verifyProviderJar(providerURL);
+            verifyProvider(providerURL, p);
             // Verified ok, cache result
             verificationResults.put(p, PROVIDER_VERIFIED);
             return null;
@@ -222,18 +224,20 @@ final class JceSecurity {
         synchronized (codeBaseCacheRef) {
             URL url = codeBaseCacheRef.get(clazz);
             if (url == null) {
-                url = AccessController.doPrivileged(new PrivilegedAction<URL>() {
-                    public URL run() {
-                        ProtectionDomain pd = clazz.getProtectionDomain();
-                        if (pd != null) {
-                            CodeSource cs = pd.getCodeSource();
-                            if (cs != null) {
-                                return cs.getLocation();
+                url = AccessController.doPrivileged(
+                    new PrivilegedAction<URL>() {
+                        @Override
+                        public URL run() {
+                            ProtectionDomain pd = clazz.getProtectionDomain();
+                            if (pd != null) {
+                                CodeSource cs = pd.getCodeSource();
+                                if (cs != null) {
+                                    return cs.getLocation();
+                                }
                             }
+                            return NULL_URL;
                         }
-                        return NULL_URL;
-                    }
-                });
+                    });
                 codeBaseCacheRef.put(clazz, url);
             }
             return (url == NULL_URL) ? null : url;
@@ -315,7 +319,7 @@ final class JceSecurity {
             // Enforce the signer restraint, i.e. signer of JCE framework
             // jar should also be the signer of the two jurisdiction policy
             // jar files.
-            JarVerifier.verifyPolicySigned(je.getCertificates());
+            ProviderVerifier.verifyPolicySigned(je.getCertificates());
         }
         // Close and nullify the JarFile reference to help GC.
         jf.close();
