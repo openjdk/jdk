@@ -30,26 +30,29 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collection;
 import java.util.Collections;
-
+import java.util.HashSet;
+import java.util.List;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.internal.dynalink.support.Guards;
 import jdk.nashorn.internal.codegen.ApplySpecialization;
+import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.objects.Global;
 import jdk.nashorn.internal.objects.NativeFunction;
-import jdk.nashorn.internal.runtime.ScriptFunctionData;
-import jdk.nashorn.internal.runtime.ScriptObject;
-import jdk.nashorn.internal.runtime.ScriptRuntime;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
+import jdk.nashorn.internal.runtime.logging.DebugLogger;
 
 /**
  * Runtime representation of a JavaScript function.
@@ -114,7 +117,7 @@ public abstract class ScriptFunction extends ScriptObject {
             final MethodHandle methodHandle,
             final PropertyMap map,
             final ScriptObject scope,
-            final MethodHandle[] specs,
+            final Specialization[] specs,
             final int flags) {
 
         this(new FinalScriptFunctionData(name, methodHandle, specs, flags), map, scope);
@@ -468,13 +471,12 @@ public abstract class ScriptFunction extends ScriptObject {
     protected GuardedInvocation findNewMethod(final CallSiteDescriptor desc, final LinkRequest request) {
         final MethodType type = desc.getMethodType();
         assert desc.getMethodType().returnType() == Object.class && !NashornCallSiteDescriptor.isOptimistic(desc);
-        final CompiledFunction cf = data.getBestConstructor(type, scope);
+        final CompiledFunction cf = data.getBestConstructor(type, scope, CompiledFunction.NO_FUNCTIONS);
         final GuardedInvocation bestCtorInv = cf.createConstructorInvocation();
         //TODO - ClassCastException
         return new GuardedInvocation(pairArguments(bestCtorInv.getInvocation(), type), getFunctionGuard(this, cf.getFlags()), bestCtorInv.getSwitchPoints(), null);
     }
 
-    @SuppressWarnings("unused")
     private static Object wrapFilter(final Object obj) {
         if (obj instanceof ScriptObject || !ScriptFunctionData.isPrimitiveThis(obj)) {
             return obj;
@@ -487,6 +489,35 @@ public abstract class ScriptFunction extends ScriptObject {
     private static Object globalFilter(final Object object) {
         // replace whatever we get with the current global object
         return Context.getGlobal();
+    }
+
+    /**
+     * Some receivers are primitive, in that case, according to the Spec we create a new
+     * native object per callsite with the wrap filter. We can only apply optimistic builtins
+     * if there is no per instance state saved for these wrapped objects (e.g. currently NativeStrings),
+     * otherwise we can't create optimistic versions
+     *
+     * @param self            receiver
+     * @param linkLogicClass  linkLogicClass, or null if no link logic exists
+     * @return link logic instance, or null if one could not be constructed for this receiver
+     */
+    private static LinkLogic getLinkLogic(final Object self, final Class<? extends LinkLogic> linkLogicClass) {
+        if (linkLogicClass == null) {
+            return LinkLogic.EMPTY_INSTANCE; //always OK to link this, specialization but without special linking logic
+        }
+
+        if (!Context.getContextTrusted().getEnv()._optimistic_types) {
+            return null; //if optimistic types are off, optimistic builtins are too
+        }
+
+        final Object wrappedSelf = wrapFilter(self);
+        if (wrappedSelf instanceof OptimisticBuiltins) {
+            if (wrappedSelf != self && ((OptimisticBuiltins)wrappedSelf).hasPerInstanceAssumptions()) {
+                return null; //pessimistic - we created a wrapped object different from the primitive, but the assumptions have instance state
+            }
+            return ((OptimisticBuiltins)wrappedSelf).getLinkLogic(linkLogicClass);
+        }
+        return null;
     }
 
     /**
@@ -547,8 +578,53 @@ public abstract class ScriptFunction extends ScriptObject {
             }
         } //else just fall through and link as ordinary function or unstable apply
 
-        final int programPoint = NashornCallSiteDescriptor.isOptimistic(desc) ? NashornCallSiteDescriptor.getProgramPoint(desc) : INVALID_PROGRAM_POINT;
-        final CompiledFunction cf = data.getBestInvoker(type, scope);
+        int programPoint = INVALID_PROGRAM_POINT;
+        if (NashornCallSiteDescriptor.isOptimistic(desc)) {
+            programPoint = NashornCallSiteDescriptor.getProgramPoint(desc);
+        }
+
+        CompiledFunction cf = data.getBestInvoker(type, scope, CompiledFunction.NO_FUNCTIONS);
+        final Object self = request.getArguments()[1];
+        final Collection<CompiledFunction> forbidden = new HashSet<>();
+
+        //check for special fast versions of the compiled function
+        final List<SwitchPoint> sps = new ArrayList<>();
+        Class<? extends Throwable> exceptionGuard = null;
+
+        while (cf.isSpecialization()) {
+            final Class<? extends LinkLogic> linkLogicClass = cf.getLinkLogicClass();
+            //if linklogic is null, we can always link with the standard mechanism, it's still a specialization
+            final LinkLogic linkLogic = getLinkLogic(self, linkLogicClass);
+
+            if (linkLogic != null && linkLogic.checkLinkable(self, desc, request)) {
+                final DebugLogger log = Context.getContextTrusted().getLogger(Compiler.class);
+
+                if (log.isEnabled()) {
+                    log.info("Linking optimistic builtin function: '", name, "' args=", Arrays.toString(request.getArguments()), " desc=", desc);
+                }
+
+                final SwitchPoint[] msps = linkLogic.getModificationSwitchPoints();
+                if (msps != null) {
+                    for (final SwitchPoint sp : msps) {
+                        if (sp != null) {
+                            assert !sp.hasBeenInvalidated();
+                            sps.add(sp);
+                        }
+                    }
+                }
+
+                exceptionGuard = linkLogic.getRelinkException();
+
+                break;
+            }
+
+            //could not link this specialization because link check failed
+            forbidden.add(cf);
+            final CompiledFunction oldCf = cf;
+            cf = data.getBestInvoker(type, scope, forbidden);
+            assert oldCf != cf;
+        }
+
         final GuardedInvocation bestInvoker = cf.createFunctionInvocation(type.returnType(), programPoint);
         final MethodHandle callHandle = bestInvoker.getInvocation();
 
@@ -588,7 +664,20 @@ public abstract class ScriptFunction extends ScriptObject {
 
         boundHandle = pairArguments(boundHandle, type);
 
-        return new GuardedInvocation(boundHandle, guard == null ? getFunctionGuard(this, cf.getFlags()) : guard, bestInvoker.getSwitchPoints(), null);
+        if (bestInvoker.getSwitchPoints() != null) {
+            sps.addAll(Arrays.asList(bestInvoker.getSwitchPoints()));
+        }
+        final SwitchPoint[] spsArray = sps.isEmpty() ? null : sps.toArray(new SwitchPoint[sps.size()]);
+
+        return new GuardedInvocation(
+                boundHandle,
+                guard == null ?
+                        getFunctionGuard(
+                                this,
+                                cf.getFlags()) :
+                        guard,
+                        spsArray,
+                exceptionGuard);
     }
 
     private GuardedInvocation createApplyOrCallCall(final boolean isApply, final CallSiteDescriptor desc, final LinkRequest request, final Object[] args) {
@@ -610,7 +699,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         //box call back to apply
         CallSiteDescriptor appliedDesc = desc;
-        final SwitchPoint applyToCallSwitchPoint = Global.instance().getChangeCallback("apply");
+        final SwitchPoint applyToCallSwitchPoint = Global.getBuiltinFunctionApplySwitchPoint();
         //enough to change the proto switchPoint here
 
         final boolean isApplyToCall = NashornCallSiteDescriptor.isApplyToCall(desc);
@@ -656,7 +745,7 @@ public abstract class ScriptFunction extends ScriptObject {
             }
         }
 
-        appliedDesc = appliedDesc.changeMethodType(appliedType);
+        appliedDesc = appliedDesc.changeMethodType(appliedType); //no extra args
 
         // Create the same arguments for the delegate linking request that would be passed in an actual apply'd invocation
         final Object[] appliedArgs = new Object[isApply ? 3 : appliedType.parameterCount()];
@@ -681,6 +770,7 @@ public abstract class ScriptFunction extends ScriptObject {
 
         // Ask the linker machinery for an invocation of the target function
         final LinkRequest appliedRequest = request.replaceArguments(appliedDesc, appliedArgs);
+
         GuardedInvocation appliedInvocation;
         try {
             appliedInvocation = Bootstrap.getLinkerServices().getGuardedInvocation(appliedRequest);
@@ -742,7 +832,7 @@ public abstract class ScriptFunction extends ScriptObject {
         // We need to account for the dropped (apply|call) function argument.
         guard = MH.dropArguments(guard, 0, descType.parameterType(0));
         // Take the "isApplyFunction" guard, and bind it to this function.
-        MethodHandle applyFnGuard = MH.insertArguments(IS_APPLY_FUNCTION, 2, this);
+        MethodHandle applyFnGuard = MH.insertArguments(IS_APPLY_FUNCTION, 2, this); //TODO replace this with switchpoint
         // Adapt the guard to receive all the arguments that the original guard does.
         applyFnGuard = MH.dropArguments(applyFnGuard, 2, guardType.parameterArray());
         // Fold the original function guard into our apply guard.
@@ -894,6 +984,7 @@ public abstract class ScriptFunction extends ScriptObject {
         return self instanceof ScriptFunction && ((ScriptFunction)self).data == data && arg instanceof ScriptObject;
     }
 
+    //TODO this can probably be removed given that we have builtin switchpoints in the context
     @SuppressWarnings("unused")
     private static boolean isApplyFunction(final boolean appliedFnCondition, final Object self, final Object expectedSelf) {
         // NOTE: we're using self == expectedSelf as we're only using this with built-in functions apply() and call()

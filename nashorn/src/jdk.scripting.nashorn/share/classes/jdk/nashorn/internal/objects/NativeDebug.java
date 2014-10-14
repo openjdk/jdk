@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.io.PrintWriter;
 import java.util.LinkedList;
 import java.util.Objects;
@@ -42,6 +41,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.events.RuntimeEvent;
 import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
+import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
 
 /**
  * Nashorn specific debug utils. This is meant for Nashorn developers.
@@ -261,12 +261,12 @@ public final class NativeDebug extends ScriptObject {
 
     /**
      * Set the event queue capacity
-     * @param self
-     * @param newCapacity
+     * @param self an event queue
+     * @param newCapacity new capacity
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE, where = Where.CONSTRUCTOR)
     public static void setEventQueueCapacity(final Object self, final Object newCapacity) {
-        ((ScriptObject)self).set(EVENT_QUEUE_CAPACITY, newCapacity, true);
+        ((ScriptObject)self).set(EVENT_QUEUE_CAPACITY, newCapacity, NashornCallSiteDescriptor.CALLSITE_STRICT);
     }
 
     /**
@@ -355,7 +355,7 @@ public final class NativeDebug extends ScriptObject {
         if (sobj.has(EVENT_QUEUE)) {
             q = (LinkedList<RuntimeEvent<?>>)((ScriptObject)self).get(EVENT_QUEUE);
         } else {
-            ((ScriptObject)self).set(EVENT_QUEUE, q = new LinkedList<>(), true);
+            ((ScriptObject)self).set(EVENT_QUEUE, q = new LinkedList<>(), NashornCallSiteDescriptor.CALLSITE_STRICT);
         }
         return q;
     }

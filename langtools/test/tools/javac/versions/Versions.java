@@ -101,11 +101,16 @@ public class Versions {
         checksrc19("-target 1.9");
         checksrc19("-target 9");
 
-        fail("-source 7", "-target 1.6", "X.java");
-        fail("-source 8", "-target 1.6", "X.java");
-        fail("-source 8", "-target 1.7", "X.java");
-        fail("-source 9", "-target 1.7", "X.java");
-        fail("-source 9", "-target 1.8", "X.java");
+        fail("-source 7", "-target 1.6", "Base.java");
+        fail("-source 8", "-target 1.6", "Base.java");
+        fail("-source 8", "-target 1.7", "Base.java");
+        fail("-source 9", "-target 1.7", "Base.java");
+        fail("-source 9", "-target 1.8", "Base.java");
+
+        fail("-source 1.5", "-target 1.5", "Base.java");
+        fail("-source 1.4", "-target 1.4", "Base.java");
+        fail("-source 1.3", "-target 1.3", "Base.java");
+        fail("-source 1.2", "-target 1.2", "Base.java");
 
         if (failedCases > 0) {
             System.err.println("failedCases = " + String.valueOf(failedCases));
@@ -113,8 +118,6 @@ public class Versions {
         }
 
     }
-
-
 
     protected void printargs(String fname,String... args) {
         System.out.printf("test: %s", fname);
@@ -148,7 +151,7 @@ public class Versions {
             }
         }
 
-        boolean creturn = compile("X.java", jcargs);
+        boolean creturn = compile("Base.java", jcargs);
         if (!creturn) {
             // compilation errors note and return.. assume no class file
             System.err.println("check: Compilation Failed");
@@ -156,7 +159,7 @@ public class Versions {
             System.err.println("\t arguments:\t" + jcargs);
             failedCases++;
 
-        } else if (!checkClassFileVersion("X.class", major)) {
+        } else if (!checkClassFileVersion("Base.class", major)) {
             failedCases++;
         }
     }
@@ -166,9 +169,9 @@ public class Versions {
         int asize = args.length;
         String[] newargs = new String[asize + 1];
         System.arraycopy(args, 0, newargs, 0, asize);
-        newargs[asize] = "X.java";
+        newargs[asize] = "Base.java";
         pass(newargs);
-        newargs[asize] = "Y.java";
+        newargs[asize] = "New17.java";
         fail(newargs);
     }
 
@@ -177,20 +180,26 @@ public class Versions {
         int asize = args.length;
         String[] newargs = new String[asize+1];
         System.arraycopy(args, 0, newargs,0 , asize);
-        newargs[asize] = "X.java";
+        newargs[asize] = "New17.java";
         pass(newargs);
-        newargs[asize] = "Y.java";
-        pass(newargs);
+        newargs[asize] = "New18.java";
+        fail(newargs);
     }
 
     protected void checksrc18(String... args) {
         printargs("checksrc18", args);
-        checksrc17(args);
+        int asize = args.length;
+        String[] newargs = new String[asize+1];
+        System.arraycopy(args, 0, newargs,0 , asize);
+        newargs[asize] = "New17.java";
+        pass(newargs);
+        newargs[asize] = "New18.java";
+        pass(newargs);
     }
 
     protected void checksrc19(String... args) {
         printargs("checksrc19", args);
-        checksrc17(args);
+        checksrc18(args);
     }
 
     protected void pass(String... args) {
@@ -288,25 +297,36 @@ public class Versions {
         }
     }
 
+    protected void writeSourceFile(String fileName, String body) throws IOException{
+        try (Writer fw = new FileWriter(fileName)) {
+            fw.write(body);
+        }
+    }
 
     protected void genSourceFiles() throws IOException{
         /* Create a file that executes with all supported versions. */
-        File fsource = new File("X.java");
-        try (Writer fw = new FileWriter(fsource)) {
-            fw.write("public class X { }\n");
-            fw.flush();
-        }
+        writeSourceFile("Base.java","public class Base { }\n");
 
-        /* Create a file with feature not supported in deprecated version.
-         * New feature for 1.7, does not exist in 1.6.
+        /*
+         * Create a file with a new feature in 1.7, not in 1.6 : "<>"
          */
-        fsource = new File("Y.java");
-        try (Writer fw = new FileWriter(fsource)) {
-            fw.write("import java.util.List;\n");
-            fw.write("import java.util.ArrayList;\n");
-            fw.write("class Z { List<String> s = new ArrayList<>(); }\n");
-            fw.flush();
-        }
+        writeSourceFile("New17.java",
+            "import java.util.List;\n" +
+            "import java.util.ArrayList;\n" +
+            "class New17 { List<String> s = new ArrayList<>(); }\n"
+        );
+
+        /*
+         * Create a file with a new feature in 1.8, not in 1.7 : lambda
+         */
+        writeSourceFile("New18.java",
+            "public class New18 { \n" +
+            "    void m() { \n" +
+            "    new Thread(() -> { }); \n" +
+            "    } \n" +
+            "} \n"
+        );
+
     }
 
     protected boolean checkClassFileVersion

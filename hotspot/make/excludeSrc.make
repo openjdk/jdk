@@ -21,6 +21,9 @@
 # questions.
 #
 #
+
+include $(GAMMADIR)/make/altsrc.make
+
 ifeq ($(INCLUDE_JVMTI), false)
       CXXFLAGS += -DINCLUDE_JVMTI=0
       CFLAGS += -DINCLUDE_JVMTI=0
@@ -78,12 +81,12 @@ ifeq ($(INCLUDE_ALL_GCS), false)
       CXXFLAGS += -DINCLUDE_ALL_GCS=0
       CFLAGS += -DINCLUDE_ALL_GCS=0
 
-      gc_impl := $(GAMMADIR)/src/share/vm/gc_implementation
-      gc_exclude :=							\
-	$(notdir $(wildcard $(gc_impl)/concurrentMarkSweep/*.cpp))	\
-	$(notdir $(wildcard $(gc_impl)/g1/*.cpp))			\
-	$(notdir $(wildcard $(gc_impl)/parallelScavenge/*.cpp))		\
-	$(notdir $(wildcard $(gc_impl)/parNew/*.cpp))
+      gc_impl := $(HS_COMMON_SRC)/share/vm/gc_implementation
+      gc_impl_alt := $(HS_ALT_SRC)/share/vm/gc_implementation
+      gc_subdirs := concurrentMarkSweep g1 parallelScavenge parNew
+      gc_exclude := $(foreach gc,$(gc_subdirs),				\
+		     $(notdir $(wildcard $(gc_impl)/$(gc)/*.cpp))	\
+		     $(notdir $(wildcard $(gc_impl_alt)/$(gc)/*.cpp)))
       Src_Files_EXCLUDE += $(gc_exclude)
 
       # Exclude everything in $(gc_impl)/shared except the files listed

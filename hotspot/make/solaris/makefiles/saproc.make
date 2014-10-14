@@ -95,7 +95,7 @@ $(LIBSAPROC): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(SASRCFILES) $(SA
 	  echo "ALT_BOOTDIR, BOOTDIR or JAVA_HOME needs to be defined to build SA"; \
 	  exit 1; \
 	fi
-	@echo Making SA debugger back-end...
+	@echo $(LOG_INFO) Making SA debugger back-end...
 	           $(QUIETLY) $(CXX)                                    \
                    $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG)     \
 	           -I$(SASRCDIR)                                        \

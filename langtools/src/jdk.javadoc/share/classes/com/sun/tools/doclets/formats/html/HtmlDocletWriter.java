@@ -992,6 +992,16 @@ public class HtmlDocletWriter extends HtmlDocWriter {
     }
 
     /**
+     * Given a package, return the name to be used in HTML anchor tag.
+     * @param packageDoc the package.
+     * @return the name to be used in HTML anchor tag.
+     */
+    public String getPackageAnchorName(PackageDoc packageDoc) {
+        return packageDoc == null || packageDoc.name().length() == 0 ?
+            SectionName.UNNAMED_PACKAGE_ANCHOR.getName() : packageDoc.name();
+    }
+
+    /**
      * Return the link to the given package.
      *
      * @param pkg the package to link to.

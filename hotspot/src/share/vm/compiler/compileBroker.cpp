@@ -137,6 +137,8 @@ PerfVariable*       CompileBroker::_perf_last_invalidated_type = NULL;
 elapsedTimer CompileBroker::_t_total_compilation;
 elapsedTimer CompileBroker::_t_osr_compilation;
 elapsedTimer CompileBroker::_t_standard_compilation;
+elapsedTimer CompileBroker::_t_invalidated_compilation;
+elapsedTimer CompileBroker::_t_bailedout_compilation;
 
 int CompileBroker::_total_bailout_count          = 0;
 int CompileBroker::_total_invalidated_count      = 0;
@@ -783,18 +785,22 @@ CompileQueue* CompileBroker::compile_queue(int comp_level) {
 
 
 void CompileBroker::print_compile_queues(outputStream* st) {
-  _c1_compile_queue->print(st);
-  _c2_compile_queue->print(st);
+  MutexLocker locker(MethodCompileQueue_lock);
+  if (_c1_compile_queue != NULL) {
+    _c1_compile_queue->print(st);
+  }
+  if (_c2_compile_queue != NULL) {
+    _c2_compile_queue->print(st);
+  }
 }
 
-
 void CompileQueue::print(outputStream* st) {
-  assert_locked_or_safepoint(lock());
+  assert(lock()->owned_by_self(), "must own lock");
   st->print_cr("Contents of %s", name());
   st->print_cr("----------------------------");
   CompileTask* task = _first;
   if (task == NULL) {
-    st->print_cr("Empty");;
+    st->print_cr("Empty");
   } else {
     while (task != NULL) {
       task->print_compilation(st, NULL, true, true);
@@ -1204,6 +1210,12 @@ void CompileBroker::compile_method_base(methodHandle method,
   // by a compiler thread), and compiled method registration.
   if (InstanceRefKlass::owns_pending_list_lock(JavaThread::current())) {
     return;
+  }
+
+  if (TieredCompilation) {
+    // Tiered policy requires MethodCounters to exist before adding a method to
+    // the queue. Create if we don't have them yet.
+    method->get_method_counters(thread);
   }
 
   // Outputs from the following MutexLocker block:
@@ -1747,9 +1759,11 @@ void CompileBroker::compiler_thread_loop() {
     // We need this HandleMark to avoid leaking VM handles.
     HandleMark hm(thread);
 
-    if (CodeCache::unallocated_capacity() < CodeCacheMinimumFreeSpace) {
-      // the code cache is really full
-      handle_full_code_cache();
+    // Check if the CodeCache is full
+    int code_blob_type = 0;
+    if (CodeCache::is_full(&code_blob_type)) {
+      // The CodeHeap for code_blob_type is really full
+      handle_full_code_cache(code_blob_type);
     }
 
     CompileTask* task = queue->get();
@@ -1777,22 +1791,6 @@ void CompileBroker::compiler_thread_loop() {
     if (method()->number_of_breakpoints() == 0) {
       // Compile the method.
       if ((UseCompiler || AlwaysCompileLoopMethods) && CompileBroker::should_compile_new_jobs()) {
-#ifdef COMPILER1
-        // Allow repeating compilations for the purpose of benchmarking
-        // compile speed. This is not useful for customers.
-        if (CompilationRepeat != 0) {
-          int compile_count = CompilationRepeat;
-          while (compile_count > 0) {
-            invoke_compiler_on_method(task);
-            nmethod* nm = method->code();
-            if (nm != NULL) {
-              nm->make_zombie();
-              method->clear_code();
-            }
-            compile_count--;
-          }
-        }
-#endif /* COMPILER1 */
         invoke_compiler_on_method(task);
       } else {
         // After compilation is disabled, remove remaining methods from queue
@@ -2079,7 +2077,7 @@ void CompileBroker::invoke_compiler_on_method(CompileTask* task) {
  * The CodeCache is full.  Print out warning and disable compilation
  * or try code cache cleaning so compilation can continue later.
  */
-void CompileBroker::handle_full_code_cache() {
+void CompileBroker::handle_full_code_cache(int code_blob_type) {
   UseInterpreter = true;
   if (UseCompiler || AlwaysCompileLoopMethods ) {
     if (xtty != NULL) {
@@ -2095,8 +2093,6 @@ void CompileBroker::handle_full_code_cache() {
       xtty->stamp();
       xtty->end_elem();
     }
-
-    CodeCache::report_codemem_full();
 
 #ifndef PRODUCT
     if (CompileTheWorld || ExitOnFullCodeCache) {
@@ -2119,12 +2115,7 @@ void CompileBroker::handle_full_code_cache() {
       disable_compilation_forever();
     }
 
-    // Print warning only once
-    if (should_print_compiler_warning()) {
-      warning("CodeCache is full. Compiler has been disabled.");
-      warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
-      codecache_print(/* detailed= */ true);
-    }
+    CodeCache::report_codemem_full(code_blob_type, should_print_compiler_warning());
   }
 }
 
@@ -2247,6 +2238,11 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
   // _perf variables are production performance counters which are
   // updated regardless of the setting of the CITime and CITimeEach flags
   //
+
+  // account all time, including bailouts and failures in this counter;
+  // C1 and C2 counters are counting both successful and unsuccessful compiles
+  _t_total_compilation.add(time);
+
   if (!success) {
     _total_bailout_count++;
     if (UsePerfData) {
@@ -2254,6 +2250,7 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
       _perf_last_failed_type->set_value(counters->compile_type());
       _perf_total_bailout_count->inc();
     }
+    _t_bailedout_compilation.add(time);
   } else if (code == NULL) {
     if (UsePerfData) {
       _perf_last_invalidated_method->set_value(counters->current_method());
@@ -2261,14 +2258,13 @@ void CompileBroker::collect_statistics(CompilerThread* thread, elapsedTimer time
       _perf_total_invalidated_count->inc();
     }
     _total_invalidated_count++;
+    _t_invalidated_compilation.add(time);
   } else {
     // Compilation succeeded
 
     // update compilation ticks - used by the implementation of
     // java.lang.management.CompilationMBean
     _perf_total_compilation->inc(time.ticks());
-
-    _t_total_compilation.add(time);
     _peak_compilation_time = time.milliseconds() > _peak_compilation_time ? time.milliseconds() : _peak_compilation_time;
 
     if (CITime) {
@@ -2336,37 +2332,47 @@ const char* CompileBroker::compiler_name(int comp_level) {
 
 void CompileBroker::print_times() {
   tty->cr();
-  tty->print_cr("Accumulated compiler times (for compiled methods only)");
-  tty->print_cr("------------------------------------------------");
+  tty->print_cr("Accumulated compiler times");
+  tty->print_cr("----------------------------------------------------------");
                //0000000000111111111122222222223333333333444444444455555555556666666666
                //0123456789012345678901234567890123456789012345678901234567890123456789
-  tty->print_cr("  Total compilation time   : %6.3f s", CompileBroker::_t_total_compilation.seconds());
-  tty->print_cr("    Standard compilation   : %6.3f s, Average : %2.3f",
+  tty->print_cr("  Total compilation time   : %7.3f s", CompileBroker::_t_total_compilation.seconds());
+  tty->print_cr("    Standard compilation   : %7.3f s, Average : %2.3f s",
                 CompileBroker::_t_standard_compilation.seconds(),
                 CompileBroker::_t_standard_compilation.seconds() / CompileBroker::_total_standard_compile_count);
-  tty->print_cr("    On stack replacement   : %6.3f s, Average : %2.3f", CompileBroker::_t_osr_compilation.seconds(), CompileBroker::_t_osr_compilation.seconds() / CompileBroker::_total_osr_compile_count);
+  tty->print_cr("    Bailed out compilation : %7.3f s, Average : %2.3f s",
+                CompileBroker::_t_bailedout_compilation.seconds(),
+                CompileBroker::_t_bailedout_compilation.seconds() / CompileBroker::_total_bailout_count);
+  tty->print_cr("    On stack replacement   : %7.3f s, Average : %2.3f s",
+                CompileBroker::_t_osr_compilation.seconds(),
+                CompileBroker::_t_osr_compilation.seconds() / CompileBroker::_total_osr_compile_count);
+  tty->print_cr("    Invalidated            : %7.3f s, Average : %2.3f s",
+                CompileBroker::_t_invalidated_compilation.seconds(),
+                CompileBroker::_t_invalidated_compilation.seconds() / CompileBroker::_total_invalidated_count);
 
   AbstractCompiler *comp = compiler(CompLevel_simple);
   if (comp != NULL) {
+    tty->cr();
     comp->print_timers();
   }
   comp = compiler(CompLevel_full_optimization);
   if (comp != NULL) {
+    tty->cr();
     comp->print_timers();
   }
   tty->cr();
-  tty->print_cr("  Total compiled methods   : %6d methods", CompileBroker::_total_compile_count);
-  tty->print_cr("    Standard compilation   : %6d methods", CompileBroker::_total_standard_compile_count);
-  tty->print_cr("    On stack replacement   : %6d methods", CompileBroker::_total_osr_compile_count);
+  tty->print_cr("  Total compiled methods    : %8d methods", CompileBroker::_total_compile_count);
+  tty->print_cr("    Standard compilation    : %8d methods", CompileBroker::_total_standard_compile_count);
+  tty->print_cr("    On stack replacement    : %8d methods", CompileBroker::_total_osr_compile_count);
   int tcb = CompileBroker::_sum_osr_bytes_compiled + CompileBroker::_sum_standard_bytes_compiled;
-  tty->print_cr("  Total compiled bytecodes : %6d bytes", tcb);
-  tty->print_cr("    Standard compilation   : %6d bytes", CompileBroker::_sum_standard_bytes_compiled);
-  tty->print_cr("    On stack replacement   : %6d bytes", CompileBroker::_sum_osr_bytes_compiled);
+  tty->print_cr("  Total compiled bytecodes  : %8d bytes", tcb);
+  tty->print_cr("    Standard compilation    : %8d bytes", CompileBroker::_sum_standard_bytes_compiled);
+  tty->print_cr("    On stack replacement    : %8d bytes", CompileBroker::_sum_osr_bytes_compiled);
   int bps = (int)(tcb / CompileBroker::_t_total_compilation.seconds());
-  tty->print_cr("  Average compilation speed: %6d bytes/s", bps);
+  tty->print_cr("  Average compilation speed : %8d bytes/s", bps);
   tty->cr();
-  tty->print_cr("  nmethod code size        : %6d bytes", CompileBroker::_sum_nmethod_code_size);
-  tty->print_cr("  nmethod total size       : %6d bytes", CompileBroker::_sum_nmethod_size);
+  tty->print_cr("  nmethod code size         : %8d bytes", CompileBroker::_sum_nmethod_code_size);
+  tty->print_cr("  nmethod total size        : %8d bytes", CompileBroker::_sum_nmethod_size);
 }
 
 // Debugging output for failure

@@ -322,6 +322,8 @@ class CompileBroker: AllStatic {
   static elapsedTimer _t_total_compilation;
   static elapsedTimer _t_osr_compilation;
   static elapsedTimer _t_standard_compilation;
+  static elapsedTimer _t_invalidated_compilation;
+  static elapsedTimer _t_bailedout_compilation;
 
   static int _total_compile_count;
   static int _total_bailout_count;
@@ -434,7 +436,7 @@ class CompileBroker: AllStatic {
   static bool is_compilation_disabled_forever() {
     return _should_compile_new_jobs == shutdown_compilaton;
   }
-  static void handle_full_code_cache();
+  static void handle_full_code_cache(int code_blob_type);
   // Ensures that warning is only printed once.
   static bool should_print_compiler_warning() {
     jint old = Atomic::cmpxchg(1, &_print_compilation_warning, 0);

@@ -234,10 +234,10 @@ JVM_OBJ_FILES = $(Obj_Files)
 
 vm_version.o: $(filter-out vm_version.o,$(JVM_OBJ_FILES))
 
-mapfile : $(MAPFILE) vm.def
+mapfile : $(MAPFILE) vm.def mapfile_ext
 	rm -f $@
 	awk '{ if ($$0 ~ "INSERT VTABLE SYMBOLS HERE")	\
-                 { system ("cat vm.def"); }		\
+                 { system ("cat mapfile_ext"); system ("cat vm.def"); } \
                else					\
                  { print $$0 }				\
              }' > $@ < $(MAPFILE)
@@ -248,6 +248,13 @@ mapfile_reorder : mapfile $(REORDERFILE)
 
 vm.def: $(Res_Files) $(Obj_Files)
 	sh $(GAMMADIR)/make/bsd/makefiles/build_vm_def.sh *.o > $@
+
+mapfile_ext:
+	rm -f $@
+	touch $@
+	if [ -f $(HS_ALT_MAKE)/bsd/makefiles/mapfile-ext ]; then \
+	  cat $(HS_ALT_MAKE)/bsd/makefiles/mapfile-ext > $@; \
+	fi
 
 STATIC_CXX = false
 
@@ -265,6 +272,8 @@ else
     LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/.
     LFLAGS_VM += -Xlinker -rpath -Xlinker @loader_path/..
     LFLAGS_VM += -Xlinker -install_name -Xlinker @rpath/$(@F)
+  else
+    LFLAGS_VM                += -Wl,-z,defs
   endif
 
   # JVM is statically linked with libgcc[_s] and libstdc++; this is needed to
@@ -291,7 +300,7 @@ endif
 
 # rule for building precompiled header
 $(PRECOMPILED_HEADER):
-	$(QUIETLY) echo Generating precompiled header $@
+	$(QUIETLY) echo $(LOG_INFO) Generating precompiled header $@
 	$(QUIETLY) mkdir -p $(PRECOMPILED_HEADER_DIR)
 	$(QUIETLY) rm -f $@
 	$(QUIETLY) $(COMPILE.CXX) $(DEPFLAGS) -x c++-header $(PRECOMPILED_HEADER_SRC) -o $@ $(COMPILE_DONE)
@@ -318,7 +327,7 @@ endif
 
 $(LIBJVM): $(LIBJVM.o) $(LIBJVM_MAPFILE) $(LD_SCRIPT)
 	$(QUIETLY) {                                                    \
-	    echo Linking vm...;                                         \
+	    echo $(LOG_INFO) Linking vm...;                                         \
 	    $(LINK_LIB.CXX/PRE_HOOK)                                     \
 	    $(LINK_VM) $(LD_SCRIPT_FLAG)                                \
 		       $(LFLAGS_VM) -o $@ $(sort $(LIBJVM.o)) $(LIBS_VM); \

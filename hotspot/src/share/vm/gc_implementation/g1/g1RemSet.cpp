@@ -339,12 +339,8 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
   // are just discarded (there's no need to update the RSets of regions
   // that were in the collection set - after the pause these regions
   // are wholly 'free' of live objects. In the event of an evacuation
-  // failure the cards/buffers in this queue set are:
-  // * passed to the DirtyCardQueueSet that is used to manage deferred
-  //   RSet updates, or
-  // * scanned for references that point into the collection set
-  //   and the RSet of the corresponding region in the collection set
-  //   is updated immediately.
+  // failure the cards/buffers in this queue set are passed to the
+  // DirtyCardQueueSet that is used to manage RSet updates
   DirtyCardQueue into_cset_dcq(&_g1->into_cset_dirty_card_queue_set());
 
   assert((ParallelGCThreads > 0) || worker_i == 0, "invariant");
@@ -358,7 +354,6 @@ void G1RemSet::oops_into_collection_set_do(OopsInHeapRegionClosure* oc,
 
 void G1RemSet::prepare_for_oops_into_collection_set_do() {
   cleanupHRRS();
-  ConcurrentG1Refine* cg1r = _g1->concurrent_g1_refine();
   _g1->set_refine_cte_cl_concurrency(false);
   DirtyCardQueueSet& dcqs = JavaThread::dirty_card_queue_set();
   dcqs.concatenate_logs();
@@ -370,66 +365,6 @@ void G1RemSet::prepare_for_oops_into_collection_set_do() {
   }
   _total_cards_scanned = 0;
 }
-
-
-// This closure, applied to a DirtyCardQueueSet, is used to immediately
-// update the RSets for the regions in the CSet. For each card it iterates
-// through the oops which coincide with that card. It scans the reference
-// fields in each oop; when it finds an oop that points into the collection
-// set, the RSet for the region containing the referenced object is updated.
-class UpdateRSetCardTableEntryIntoCSetClosure: public CardTableEntryClosure {
-  G1CollectedHeap* _g1;
-  CardTableModRefBS* _ct_bs;
-public:
-  UpdateRSetCardTableEntryIntoCSetClosure(G1CollectedHeap* g1,
-                                          CardTableModRefBS* bs):
-    _g1(g1), _ct_bs(bs)
-  { }
-
-  bool do_card_ptr(jbyte* card_ptr, uint worker_i) {
-    // Construct the region representing the card.
-    HeapWord* start = _ct_bs->addr_for(card_ptr);
-    // And find the region containing it.
-    HeapRegion* r = _g1->heap_region_containing(start);
-
-    // Scan oops in the card looking for references into the collection set
-    // Don't use addr_for(card_ptr + 1) which can ask for
-    // a card beyond the heap.  This is not safe without a perm
-    // gen.
-    HeapWord* end   = start + CardTableModRefBS::card_size_in_words;
-    MemRegion scanRegion(start, end);
-
-    UpdateRSetImmediate update_rs_cl(_g1->g1_rem_set());
-    FilterIntoCSClosure update_rs_cset_oop_cl(NULL, _g1, &update_rs_cl);
-    FilterOutOfRegionClosure filter_then_update_rs_cset_oop_cl(r, &update_rs_cset_oop_cl);
-
-    // We can pass false as the "filter_young" parameter here as:
-    // * we should be in a STW pause,
-    // * the DCQS to which this closure is applied is used to hold
-    //   references that point into the collection set from the prior
-    //   RSet updating,
-    // * the post-write barrier shouldn't be logging updates to young
-    //   regions (but there is a situation where this can happen - see
-    //   the comment in G1RemSet::refine_card() below -
-    //   that should not be applicable here), and
-    // * during actual RSet updating, the filtering of cards in young
-    //   regions in HeapRegion::oops_on_card_seq_iterate_careful is
-    //   employed.
-    // As a result, when this closure is applied to "refs into cset"
-    // DCQS, we shouldn't see any cards in young regions.
-    update_rs_cl.set_region(r);
-    HeapWord* stop_point =
-      r->oops_on_card_seq_iterate_careful(scanRegion,
-                                          &filter_then_update_rs_cset_oop_cl,
-                                          false /* filter_young */,
-                                          NULL  /* card_ptr */);
-
-    // Since this is performed in the event of an evacuation failure, we
-    // we shouldn't see a non-null stop point
-    assert(stop_point == NULL, "saw an unallocated region");
-    return true;
-  }
-};
 
 void G1RemSet::cleanup_after_oops_into_collection_set_do() {
   guarantee( _cards_scanned != NULL, "invariant" );
@@ -451,25 +386,10 @@ void G1RemSet::cleanup_after_oops_into_collection_set_do() {
     double restore_remembered_set_start = os::elapsedTime();
 
     // Restore remembered sets for the regions pointing into the collection set.
-    if (G1DeferredRSUpdate) {
-      // If deferred RS updates are enabled then we just need to transfer
-      // the completed buffers from (a) the DirtyCardQueueSet used to hold
-      // cards that contain references that point into the collection set
-      // to (b) the DCQS used to hold the deferred RS updates
-      _g1->dirty_card_queue_set().merge_bufferlists(&into_cset_dcqs);
-    } else {
-
-      CardTableModRefBS* bs = (CardTableModRefBS*)_g1->barrier_set();
-      UpdateRSetCardTableEntryIntoCSetClosure update_rs_cset_immediate(_g1, bs);
-
-      int n_completed_buffers = 0;
-      while (into_cset_dcqs.apply_closure_to_completed_buffer(&update_rs_cset_immediate,
-                                                    0, 0, true)) {
-        n_completed_buffers++;
-      }
-      assert(n_completed_buffers == into_cset_n_buffers, "missed some buffers");
-    }
-
+    // We just need to transfer the completed buffers from the DirtyCardQueueSet
+    // used to hold cards that contain references that point into the collection set
+    // to the DCQS used to hold the deferred RS updates.
+    _g1->dirty_card_queue_set().merge_bufferlists(&into_cset_dcqs);
     _g1->g1_policy()->phase_times()->record_evac_fail_restore_remsets((os::elapsedTime() - restore_remembered_set_start) * 1000.0);
   }
 
@@ -493,7 +413,7 @@ public:
     _ctbs(_g1h->g1_barrier_set()) {}
 
   bool doHeapRegion(HeapRegion* r) {
-    if (!r->continuesHumongous()) {
+    if (!r->is_continues_humongous()) {
       r->rem_set()->scrub(_ctbs, _region_bm, _card_bm);
     }
     return false;

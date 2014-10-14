@@ -1694,8 +1694,6 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
   constantPoolHandle cp (THREAD, _method->constants());
 
   for(int i = 0; i < exlength; i++) {
-    //reacquire the table in case a GC happened
-    ExceptionTable exhandlers(_method());
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
     u2 handler_pc = exhandlers.handler_pc(i);
@@ -1803,8 +1801,6 @@ void ClassVerifier::verify_exception_handler_targets(u2 bci, bool this_uninit, S
   ExceptionTable exhandlers(_method());
   int exlength = exhandlers.length();
   for(int i = 0; i < exlength; i++) {
-    //reacquire the table in case a GC happened
-    ExceptionTable exhandlers(_method());
     u2 start_pc = exhandlers.start_pc(i);
     u2 end_pc = exhandlers.end_pc(i);
     u2 handler_pc = exhandlers.handler_pc(i);

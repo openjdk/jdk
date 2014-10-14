@@ -970,7 +970,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             this(
                 flags,
                 name,
-                new ClassType(Type.noType, null, null, Type.noAnnotations),
+                new ClassType(Type.noType, null, null),
                 owner);
             this.type.tsym = this;
         }
@@ -1007,7 +1007,7 @@ public abstract class Symbol extends AnnoConstruct implements Element {
             if (erasure_field == null)
                 erasure_field = new ClassType(types.erasure(type.getEnclosingType()),
                                               List.<Type>nil(), this,
-                                              type.getAnnotationMirrors());
+                                              type.getMetadata());
             return erasure_field;
         }
 

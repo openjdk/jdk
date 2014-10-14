@@ -24,7 +24,9 @@
 
 #include "precompiled.hpp"
 #include "opto/c2compiler.hpp"
+#include "opto/compile.hpp"
 #include "opto/optoreg.hpp"
+#include "opto/output.hpp"
 #include "opto/runtime.hpp"
 
 // register information defined by ADLC
@@ -145,5 +147,10 @@ void C2Compiler::compile_method(ciEnv* env, ciMethod* target, int entry_bci) {
 
 
 void C2Compiler::print_timers() {
-  // do nothing
+  Compile::print_timers();
+}
+
+int C2Compiler::initial_code_buffer_size() {
+  assert(SegmentedCodeCache, "Should be only used with a segmented code cache");
+  return Compile::MAX_inst_size + Compile::MAX_locs_size + initial_const_capacity;
 }

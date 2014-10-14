@@ -80,7 +80,7 @@ class BitMap VALUE_OBJ_CLASS_SPEC {
 
   // Set a word to a specified value or to all ones; clear a word.
   void set_word  (idx_t word, bm_word_t val) { _map[word] = val; }
-  void set_word  (idx_t word)            { set_word(word, ~(uintptr_t)0); }
+  void set_word  (idx_t word)            { set_word(word, ~(bm_word_t)0); }
   void clear_word(idx_t word)            { _map[word] = 0; }
 
   // Utilities for ranges of bits.  Ranges are half-open [beg, end).

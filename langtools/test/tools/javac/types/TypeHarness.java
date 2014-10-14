@@ -255,8 +255,7 @@ public class TypeHarness {
 
         public ClassType Class(long flags, Type... typeArgs) {
             ClassSymbol csym = new ClassSymbol(flags, syntheticName(), predef.noSymbol);
-            csym.type = new ClassType(Type.noType, List.from(typeArgs), csym,
-                                      Type.noAnnotations);
+            csym.type = new ClassType(Type.noType, List.from(typeArgs), csym);
             ((ClassType)csym.type).supertype_field = predef.objectType;
             return (ClassType)csym.type;
         }
@@ -302,7 +301,7 @@ public class TypeHarness {
         }
 
         public ArrayType Array(Type elemType) {
-            return new ArrayType(elemType, predef.arrayClass, Type.noAnnotations);
+            return new ArrayType(elemType, predef.arrayClass);
         }
 
         public TypeVar TypeVariable() {
@@ -311,16 +310,16 @@ public class TypeHarness {
 
         public TypeVar TypeVariable(Type bound) {
             TypeSymbol tvsym = new TypeVariableSymbol(0, syntheticName(), null, predef.noSymbol);
-            tvsym.type = new TypeVar(tvsym, bound, null, Type.noAnnotations);
+            tvsym.type = new TypeVar(tvsym, bound, null);
             return (TypeVar)tvsym.type;
         }
 
         public WildcardType Wildcard(BoundKind bk, Type bound) {
-            return new WildcardType(bound, bk, predef.boundClass, Type.noAnnotations);
+            return new WildcardType(bound, bk, predef.boundClass);
         }
 
         public CapturedType CapturedVariable(Type upper, Type lower) {
-            return new CapturedType(syntheticName(), predef.noSymbol, upper, lower, null, Type.noAnnotations);
+            return new CapturedType(syntheticName(), predef.noSymbol, upper, lower, null);
         }
 
         public ClassType Intersection(Type classBound, Type... intfBounds) {

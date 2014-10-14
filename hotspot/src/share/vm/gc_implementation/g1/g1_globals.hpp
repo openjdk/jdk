@@ -108,9 +108,6 @@
   develop(bool, G1RSBarrierRegionFilter, true,                              \
           "If true, generate region filtering code in RS barrier")          \
                                                                             \
-  develop(bool, G1DeferredRSUpdate, true,                                   \
-          "If true, use deferred RS updates")                               \
-                                                                            \
   develop(bool, G1RSLogCheckCardTable, false,                               \
           "If true, verify that no dirty cards remain after RS log "        \
           "processing.")                                                    \
@@ -265,12 +262,12 @@
           "Percentage (0-100) of the heap size to use as default "          \
           " maximum young gen size.")                                       \
                                                                             \
-  experimental(uintx, G1MixedGCLiveThresholdPercent, 65,                    \
+  experimental(uintx, G1MixedGCLiveThresholdPercent, 85,                    \
           "Threshold for regions to be considered for inclusion in the "    \
           "collection set of mixed GCs. "                                   \
           "Regions with live bytes exceeding this will not be collected.")  \
                                                                             \
-  product(uintx, G1HeapWastePercent, 10,                                    \
+  product(uintx, G1HeapWastePercent, 5,                                     \
           "Amount of space, expressed as a percentage of the heap size, "   \
           "that G1 is willing not to collect to avoid expensive GCs.")      \
                                                                             \

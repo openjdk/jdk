@@ -26,7 +26,6 @@
 package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.nio.ByteBuffer;
@@ -116,6 +115,11 @@ public final class NativeUint16Array extends ArrayBufferView {
         @Override
         public boolean isUnsigned() {
             return true;
+        }
+
+        @Override
+        public Class<?> getElementType() {
+            return int.class;
         }
 
         @Override

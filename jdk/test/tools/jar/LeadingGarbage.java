@@ -30,7 +30,6 @@ import java.io.IOException;
 import java.io.OutputStream;
 import java.nio.file.Files;
 import java.nio.file.Paths;
-import sun.tools.jar.Main;
 
 import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
@@ -54,9 +53,9 @@ public class LeadingGarbage {
     final File leadingGarbageZip = new File("leadingGarbage.zip");
 
     void createFile(File f) throws IOException {
-        OutputStream fos = new FileOutputStream(f);
-        fos.write(f.getName().getBytes("UTF-8"));
-        fos.close();
+        try (OutputStream fos = new FileOutputStream(f)) {
+            fos.write(f.getName().getBytes("UTF-8"));
+        }
     }
 
     void createFiles() throws IOException {
@@ -88,8 +87,9 @@ public class LeadingGarbage {
     void createZipWithLeadingGarbage() throws Throwable {
         createNormalZip();
         createFile(leadingGarbageZip);
-        OutputStream fos = new FileOutputStream(leadingGarbageZip, true);
-        Files.copy(normalZip.toPath(), fos);
+        try (OutputStream fos = new FileOutputStream(leadingGarbageZip, true)) {
+            Files.copy(normalZip.toPath(), fos);
+        }
         assertTrue(normalZip.length() < leadingGarbageZip.length());
         assertTrue(normalZip.delete());
     }
@@ -111,7 +111,7 @@ public class LeadingGarbage {
         a.shouldHaveExitValue(0);
         StringBuilder expected = new StringBuilder();
         for (File file : files)
-            expected.append(file.getName()).append('\n');
+            expected.append(file.getName()).append(System.lineSeparator());
         a.stdoutShouldMatch(expected.toString());
         a.stderrShouldMatch("\\A\\Z");
     }

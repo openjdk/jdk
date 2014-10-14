@@ -178,6 +178,8 @@ class Universe: AllStatic {
   // the vm thread.
   static oop          _vm_exception;
 
+  static oop          _allocation_context_notification_obj;
+
   // The particular choice of collected heap.
   static CollectedHeap* _collectedHeap;
 
@@ -307,6 +309,10 @@ class Universe: AllStatic {
   static oop          arithmetic_exception_instance() { return _arithmetic_exception_instance; }
   static oop          virtual_machine_error_instance() { return _virtual_machine_error_instance; }
   static oop          vm_exception()                  { return _vm_exception; }
+
+  static inline oop   allocation_context_notification_obj();
+  static inline void  set_allocation_context_notification_obj(oop obj);
+
   static Method*      throw_illegal_access_error()    { return _throw_illegal_access_error; }
 
   static Array<int>*       the_empty_int_array()    { return _the_empty_int_array; }
@@ -367,6 +373,8 @@ class Universe: AllStatic {
   static address* narrow_ptrs_base_addr()                 { return &_narrow_ptrs_base; }
   static void     set_narrow_ptrs_base(address a)         { _narrow_ptrs_base = a; }
   static address  narrow_ptrs_base()                      { return _narrow_ptrs_base; }
+
+  static void     print_compressed_oops_mode();
 
   // this is set in vm_version on sparc (and then reset in universe afaict)
   static void     set_narrow_oop_shift(int shift)         {

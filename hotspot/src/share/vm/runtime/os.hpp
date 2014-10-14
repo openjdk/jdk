@@ -214,13 +214,14 @@ class os: AllStatic {
 
   // Interface for detecting multiprocessor system
   static inline bool is_MP() {
-#if !INCLUDE_NMT
-    assert(_processor_count > 0, "invalid processor count");
-    return _processor_count > 1 || AssumeMP;
-#else
-    // NMT needs atomic operations before this initialization.
-    return true;
-#endif
+    // During bootstrap if _processor_count is not yet initialized
+    // we claim to be MP as that is safest. If any platform has a
+    // stub generator that might be triggered in this phase and for
+    // which being declared MP when in fact not, is a problem - then
+    // the bootstrap routine for the stub generator needs to check
+    // the processor count directly and leave the bootstrap routine
+    // in place until called after initialization has ocurred.
+    return (_processor_count != 1) || AssumeMP;
   }
   static julong available_memory();
   static julong physical_memory();
@@ -265,19 +266,11 @@ class os: AllStatic {
   // Return the default page size.
   static int    vm_page_size();
 
-  // Return the page size to use for a region of memory.  The min_pages argument
-  // is a hint intended to limit fragmentation; it says the returned page size
-  // should be <= region_max_size / min_pages.  Because min_pages is a hint,
-  // this routine may return a size larger than region_max_size / min_pages.
-  //
-  // The current implementation ignores min_pages if a larger page size is an
-  // exact multiple of both region_min_size and region_max_size.  This allows
-  // larger pages to be used when doing so would not cause fragmentation; in
-  // particular, a single page can be used when region_min_size ==
-  // region_max_size == a supported page size.
-  static size_t page_size_for_region(size_t region_min_size,
-                                     size_t region_max_size,
-                                     uint min_pages);
+  // Returns the page size to use for a region of memory.
+  // region_size / min_pages will always be greater than or equal to the
+  // returned value.
+  static size_t page_size_for_region(size_t region_size, size_t min_pages);
+
   // Return the largest page size that can be used
   static size_t max_page_size() {
     // The _page_sizes array is sorted in descending order.
@@ -481,8 +474,8 @@ class os: AllStatic {
   // run cmd in a separate process and return its exit code; or -1 on failures
   static int fork_and_exec(char *cmd);
 
-  // os::exit() is merged with vm_exit()
-  // static void exit(int num);
+  // Call ::exit() on all platforms but Windows
+  static void exit(int num);
 
   // Terminate the VM, but don't exit the process
   static void shutdown();

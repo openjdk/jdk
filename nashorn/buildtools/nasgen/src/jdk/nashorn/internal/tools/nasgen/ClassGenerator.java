@@ -292,7 +292,6 @@ public class ClassGenerator {
             mi.push(memInfo.getArity());
             mi.invokeVirtual(SCRIPTFUNCTION_TYPE, SCRIPTFUNCTION_SETARITY, SCRIPTFUNCTION_SETARITY_DESC);
         }
-
     }
 
     static void linkerAddGetterSetter(final MethodGenerator mi, final String className, final MemberInfo memInfo) {

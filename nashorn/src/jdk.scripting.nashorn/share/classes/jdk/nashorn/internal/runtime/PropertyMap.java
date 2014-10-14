@@ -950,7 +950,7 @@ public final class PropertyMap implements Iterable<Object>, Serializable {
 
         @Override
         public void remove() {
-            throw new UnsupportedOperationException();
+            throw new UnsupportedOperationException("remove");
         }
     }
 

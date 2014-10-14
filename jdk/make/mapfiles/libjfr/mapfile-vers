@@ -10,8 +10,13 @@ SUNWprivate_1.1 {
       Java_oracle_jrockit_jfr_Process_getpid;
       Java_oracle_jrockit_jfr_Timing_counterTime;
       Java_oracle_jrockit_jfr_Timing_init;
-      Java_oracle_jrockit_jfr_NativeLogger_output0;
-      Java_oracle_jrockit_jfr_VMJFR_isEnabled;
+      Java_oracle_jrockit_jfr_Logger_output0;
+      Java_oracle_jrockit_jfr_JFR_isCommercialFeaturesUnlocked;
+      Java_oracle_jrockit_jfr_JFR_isStarted;
+      Java_oracle_jrockit_jfr_JFR_isSupportedInVM;
+      Java_oracle_jrockit_jfr_JFR_startFlightRecorder;
+      Java_oracle_jrockit_jfr_JFR_isDisabledOnCommandLine;
+      Java_oracle_jrockit_jfr_JFR_isEnabled;
       Java_oracle_jrockit_jfr_VMJFR_options;
       Java_oracle_jrockit_jfr_VMJFR_init;
       Java_oracle_jrockit_jfr_VMJFR_addConstPool;
@@ -33,7 +38,6 @@ SUNWprivate_1.1 {
       Java_oracle_jrockit_jfr_VMJFR_setPeriod;
       Java_oracle_jrockit_jfr_VMJFR_getPeriod;
       Java_oracle_jrockit_jfr_VMJFR_descriptors;
-      Java_oracle_jrockit_jfr_VMJFR_redefineClass0;
       Java_oracle_jrockit_jfr_VMJFR_retransformClasses0;
       JNI_OnLoad;
   local:

@@ -27,7 +27,6 @@ package jdk.nashorn.internal.codegen;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.ARGUMENTS_VAR;
 import static jdk.nashorn.internal.codegen.CompilerConstants.EXPLODED_ARGUMENT_PREFIX;
-
 import java.lang.invoke.MethodType;
 import java.util.ArrayDeque;
 import java.util.ArrayList;
@@ -35,7 +34,6 @@ import java.util.Deque;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-
 import jdk.nashorn.internal.ir.AccessNode;
 import jdk.nashorn.internal.ir.CallNode;
 import jdk.nashorn.internal.ir.Expression;
@@ -131,11 +129,12 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
         @SuppressWarnings("serial")
         final UnsupportedOperationException uoe = new UnsupportedOperationException() {
             @Override
-            public Throwable fillInStackTrace() {
+            public synchronized Throwable fillInStackTrace() {
                 return null;
             }
         };
 
+        final Set<Expression> argumentsFound = new HashSet<>();
         final Deque<Set<Expression>> stack = new ArrayDeque<>();
         //ensure that arguments is only passed as arg to apply
         try {
@@ -145,7 +144,11 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
                 }
 
                 private boolean isArguments(final Expression expr) {
-                    return expr instanceof IdentNode && ARGUMENTS.equals(((IdentNode)expr).getName());
+                    if (expr instanceof IdentNode && ARGUMENTS.equals(((IdentNode)expr).getName())) {
+                        argumentsFound.add(expr);
+                        return true;
+                    }
+                    return false;
                 }
 
                 private boolean isParam(final String name) {
@@ -159,7 +162,7 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
 
                 @Override
                 public Node leaveIdentNode(final IdentNode identNode) {
-                    if (isParam(identNode.getName()) || ARGUMENTS.equals(identNode.getName()) && !isCurrentArg(identNode)) {
+                    if (isParam(identNode.getName()) || isArguments(identNode) && !isCurrentArg(identNode)) {
                         throw uoe; //avoid filling in stack trace
                     }
                     return identNode;
@@ -186,7 +189,9 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
                 }
             });
         } catch (final UnsupportedOperationException e) {
-            log.fine("'arguments' escapes, is not used in standard call dispatch, or is reassigned in '" + functionNode.getName() + "'. Aborting");
+            if (!argumentsFound.isEmpty()) {
+                log.fine("'arguments' is used but escapes, or is reassigned in '" + functionNode.getName() + "'. Aborting");
+            }
             return true; //bad
         }
 
@@ -267,9 +272,9 @@ public final class ApplySpecialization extends NodeVisitor<LexicalContext> imple
             return false;
         }
 
-        if (!Global.instance().isSpecialNameValid("apply")) {
+        if (!Global.isBuiltinFunctionPrototypeApply()) {
             log.fine("Apply transform disabled: apply/call overridden");
-            assert !Global.instance().isSpecialNameValid("call") : "call and apply should have the same SwitchPoint";
+            assert !Global.isBuiltinFunctionPrototypeCall() : "call and apply should have the same SwitchPoint";
             return false;
         }
 

@@ -81,13 +81,17 @@ public interface CodeInstaller<T> {
 
     /**
      * Store a compiled script for later reuse
+     *
+     * @param cacheKey key to use in cache
      * @param source the script source
      * @param mainClassName the main class name
      * @param classBytes map of class names to class bytes
+     * @param initializers compilation id -> FunctionInitializer map
      * @param constants constants array
+     * @param compilationId compilation id
      */
-    public void storeScript(String cacheKey, Source source, String mainClassName, Map<String, byte[]> classBytes,
-                            Map<Integer, FunctionInitializer> initializers, Object[] constants, int compilationId);
+    public void storeScript(final String cacheKey, final Source source, final String mainClassName, final Map<String, byte[]> classBytes,
+            final Map<Integer, FunctionInitializer> initializers, final Object[] constants, final int compilationId);
 
     /**
      * Load a previously compiled script
@@ -96,4 +100,21 @@ public interface CodeInstaller<T> {
      * @return compiled script data
      */
     public StoredScript loadScript(Source source, String functionKey);
+
+    /**
+     * Returns a new code installer that shares most of the functionality of this code installer, but uses a
+     * new, independent class loader.
+     * @return a new code installer with a new independent class loader.
+     */
+    public CodeInstaller<T> withNewLoader();
+
+    /**
+     * Returns true if this code installer is compatible with the other code installer. Compatibility is expected to be
+     * an equivalence relation, and installers are supposed to be compatible with those they create using
+     * {@link #withNewLoader()}.
+     * @param other the other code installer tested for compatibility with this code installer.
+     * @return true if this code installer is compatible with the other code installer.
+     */
+    public boolean isCompatibleWith(CodeInstaller<T> other);
+
 }

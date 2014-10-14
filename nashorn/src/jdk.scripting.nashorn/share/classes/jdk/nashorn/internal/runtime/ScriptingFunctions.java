@@ -221,9 +221,9 @@ public final class ScriptingFunctions {
         final String err = errBuffer.toString();
 
         // Set globals for secondary results.
-        global.set(OUT_NAME, out, false);
-        global.set(ERR_NAME, err, false);
-        global.set(EXIT_NAME, exit, false);
+        global.set(OUT_NAME, out, 0);
+        global.set(ERR_NAME, err, 0);
+        global.set(EXIT_NAME, exit, 0);
 
         // Propagate exception if present.
         for (final IOException element : exception) {

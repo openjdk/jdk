@@ -115,7 +115,7 @@ public interface SecureDirectoryStream<T>
      * channel.
      *
      * @param   path
-     *          the path of the file to open open or create
+     *          the path of the file to open or create
      * @param   options
      *          options specifying how the file is opened
      * @param   attrs

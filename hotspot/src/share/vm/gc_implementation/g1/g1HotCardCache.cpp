@@ -27,7 +27,6 @@
 #include "gc_implementation/g1/g1CollectedHeap.inline.hpp"
 #include "gc_implementation/g1/g1HotCardCache.hpp"
 #include "gc_implementation/g1/g1RemSet.hpp"
-#include "gc_implementation/g1/heapRegion.hpp"
 #include "runtime/atomic.inline.hpp"
 
 G1HotCardCache::G1HotCardCache(G1CollectedHeap *g1h):
@@ -44,9 +43,7 @@ void G1HotCardCache::initialize(G1RegionToSpaceMapper* card_counts_storage) {
     _hot_cache_idx = 0;
 
     // For refining the cards in the hot cache in parallel
-    uint n_workers = (ParallelGCThreads > 0 ?
-                        _g1h->workers()->total_workers() : 1);
-    _hot_cache_par_chunk_size = MAX2(1, _hot_cache_size / (int)n_workers);
+    _hot_cache_par_chunk_size = (ParallelGCThreads > 0 ? ClaimChunkSize : _hot_cache_size);
     _hot_cache_par_claimed_idx = 0;
 
     _card_counts.initialize(card_counts_storage);
@@ -136,7 +133,6 @@ void G1HotCardCache::drain(uint worker_i,
 }
 
 void G1HotCardCache::reset_card_counts(HeapRegion* hr) {
-  assert(!hr->isHumongous(), "Should have been cleared");
   _card_counts.clear_region(hr);
 }
 
