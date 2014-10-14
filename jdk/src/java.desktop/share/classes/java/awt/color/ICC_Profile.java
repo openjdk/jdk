@@ -48,6 +48,7 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
+import java.io.FilePermission;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.ObjectInputStream;
@@ -1857,7 +1858,13 @@ public class ICC_Profile implements Serializable {
      * returns null.
      */
     private static InputStream getStandardProfileInputStream(String fileName) {
-        return PCMM.class.getResourceAsStream("profiles/" + fileName);
+        return AccessController.doPrivileged(
+            new PrivilegedAction<InputStream>() {
+                public InputStream run () {
+                    return
+                        PCMM.class.getResourceAsStream("profiles/" + fileName);
+                }
+            }, null, new FilePermission("<<ALL FILES>>", "read"));
     }
 
     /**
