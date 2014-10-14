@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -336,7 +336,7 @@ public class Resources_ko extends java.util.ListResourceBundle {
         {"New.prompt.", "\uC0C8 {0}: "},
         {"Passwords.must.differ", "\uBE44\uBC00\uBC88\uD638\uB294 \uB2EC\uB77C\uC57C \uD569\uB2C8\uB2E4."},
         {"Re.enter.new.prompt.", "\uC0C8 {0} \uB2E4\uC2DC \uC785\uB825: "},
-        {"Re.enter.passpword.", "\uBE44\uBC00\uBC88\uD638  \uB2E4\uC2DC \uC785\uB825: "},
+        {"Re.enter.password.", "\uBE44\uBC00\uBC88\uD638  \uB2E4\uC2DC \uC785\uB825: "},
         {"Re.enter.new.password.", "\uC0C8 \uBE44\uBC00\uBC88\uD638 \uB2E4\uC2DC \uC785\uB825: "},
         {"They.don.t.match.Try.again", "\uC77C\uCE58\uD558\uC9C0 \uC54A\uC2B5\uB2C8\uB2E4. \uB2E4\uC2DC \uC2DC\uB3C4\uD558\uC2ED\uC2DC\uC624."},
         {"Enter.prompt.alias.name.", "{0} \uBCC4\uCE6D \uC774\uB984 \uC785\uB825:  "},

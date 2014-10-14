@@ -25,10 +25,10 @@
 
 package jdk.nashorn.internal.runtime;
 
-
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.NashornScriptEngineFactory;
 import jdk.nashorn.api.scripting.URLReader;
+import jdk.nashorn.internal.test.framework.TestFinder;
 import org.testng.annotations.Test;
 
 import javax.script.ScriptEngine;
@@ -126,9 +126,9 @@ public class ClassFilterTest {
     private void persistentCacheTestImpl() {
         NashornScriptEngineFactory factory = new NashornScriptEngineFactory();
         ScriptEngine engine = factory.getScriptEngine(
-                new String[]{"--persistent-code-cache"},
-                getClass().getClassLoader(),
-                getClassFilter()
+              TestFinder.addExplicitOptimisticTypes(new String[]{"--persistent-code-cache", "--optimistic-types=true"}),
+                  getClass().getClassLoader(),
+                  getClassFilter()
         );
         String testScript = "var a = Java.type('java.lang.String');" + generateCodeForPersistentStore();
         try {
@@ -137,7 +137,7 @@ public class ClassFilterTest {
             fail(exc.getMessage());
         }
         ScriptEngine engineSafe = factory.getScriptEngine(
-                new String[]{"--persistent-code-cache"},
+                TestFinder.addExplicitOptimisticTypes(new String[]{"--persistent-code-cache", "--optimistic-types=true"}),
                 getClass().getClassLoader(),
                 new ClassFilter() {
                     @Override
@@ -151,7 +151,7 @@ public class ClassFilterTest {
             fail("ClassNotFoundException should have been thrown");
         } catch (final Exception exc) {
             if (!(exc.getCause() instanceof ClassNotFoundException)) {
-                fail("ClassNotFoundException expected");
+                fail("ClassNotFoundException expected, got " + exc.getClass());
             }
         }
     }

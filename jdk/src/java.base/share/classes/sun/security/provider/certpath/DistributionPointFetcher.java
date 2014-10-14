@@ -434,7 +434,7 @@ public class DistributionPointFetcher {
                         }
                         if (indirectCRL) {
                             if (pointCrlIssuers.size() != 1) {
-                                // RFC 3280: there must be only 1 CRL issuer
+                                // RFC 5280: there must be only 1 CRL issuer
                                 // name when relativeName is present
                                 if (debug != null) {
                                     debug.println("must only be one CRL " +

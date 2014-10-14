@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -168,6 +168,9 @@ public class LogManager {
     private boolean initializedGlobalHandlers = true;
     // True if JVM death is imminent and the exit hook has been called.
     private boolean deathImminent;
+
+    private final Map<Object, Runnable> listeners =
+            Collections.synchronizedMap(new IdentityHashMap<>());
 
     static {
         manager = AccessController.doPrivileged(new PrivilegedAction<LogManager>() {
@@ -1168,7 +1171,8 @@ public class LogManager {
      * Any log level definitions in the new configuration file will be
      * applied using Logger.setLevel(), if the target Logger exists.
      * <p>
-     * A PropertyChangeEvent will be fired after the properties are read.
+     * Any {@linkplain #addConfigurationListener registered configuration
+     * listener} will be invoked after the properties are read.
      *
      * @exception  SecurityException  if a security manager exists and if
      *             the caller does not have LoggingPermission("control").
@@ -1302,7 +1306,8 @@ public class LogManager {
     /**
      * Reinitialize the logging properties and reread the logging configuration
      * from the given stream, which should be in java.util.Properties format.
-     * A PropertyChangeEvent will be fired after the properties are read.
+     * Any {@linkplain #addConfigurationListener registered configuration
+     * listener} will be invoked after the properties are read.
      * <p>
      * Any log level definitions in the new configuration file will be
      * applied using Logger.setLevel(), if the target Logger exists.
@@ -1335,10 +1340,14 @@ public class LogManager {
         // Set levels on any pre-existing loggers, based on the new properties.
         setLevelsOnExistingLoggers();
 
-        // Note that we need to reinitialize global handles when
-        // they are first referenced.
-        synchronized (this) {
-            initializedGlobalHandlers = false;
+        try {
+            invokeConfigurationListeners();
+        } finally {
+            // Note that we need to reinitialize global handles when
+            // they are first referenced.
+            synchronized (this) {
+                initializedGlobalHandlers = false;
+            }
         }
     }
 
@@ -1620,4 +1629,95 @@ public class LogManager {
         }
         return loggingMXBean;
     }
+
+    /**
+     * Adds a configuration listener to be invoked each time the logging
+     * configuration is read.
+     * If the listener is already registered the method does nothing.
+     * <p>
+     * The listener is invoked with privileges that are restricted by the
+     * calling context of this method.
+     * The order in which the listeners are invoked is unspecified.
+     * <p>
+     * It is recommended that listeners do not throw errors or exceptions.
+     *
+     * If a listener terminates with an uncaught error or exception then
+     * the first exception will be propagated to the caller of
+     * {@link #readConfiguration()} (or {@link #readConfiguration(java.io.InputStream)})
+     * after all listeners have been invoked.
+     *
+     * @implNote If more than one listener terminates with an uncaught error or
+     * exception, an implementation may record the additional errors or
+     * exceptions as {@linkplain Throwable#addSuppressed(java.lang.Throwable)
+     * suppressed exceptions}.
+     *
+     * @param listener A configuration listener that will be invoked after the
+     *        configuration changed.
+     * @return This LogManager.
+     * @throws SecurityException if a security manager exists and if the
+     * caller does not have LoggingPermission("control").
+     * @throws NullPointerException if the listener is null.
+     *
+     * @since 1.9
+     */
+    public LogManager addConfigurationListener(Runnable listener) {
+        final Runnable r = Objects.requireNonNull(listener);
+        checkPermission();
+        final SecurityManager sm = System.getSecurityManager();
+        final AccessControlContext acc =
+                sm == null ? null : AccessController.getContext();
+        final PrivilegedAction<Void> pa =
+                acc == null ? null : () -> { r.run() ; return null; };
+        final Runnable pr =
+                acc == null ? r : () -> AccessController.doPrivileged(pa, acc);
+        // Will do nothing if already registered.
+        listeners.putIfAbsent(r, pr);
+        return this;
+    }
+
+    /**
+     * Removes a previously registered configuration listener.
+     *
+     * Returns silently if the listener is not found.
+     *
+     * @param listener the configuration listener to remove.
+     * @throws NullPointerException if the listener is null.
+     * @throws SecurityException if a security manager exists and if the
+     * caller does not have LoggingPermission("control").
+     *
+     * @since 1.9
+     */
+    public void removeConfigurationListener(Runnable listener) {
+        final Runnable key = Objects.requireNonNull(listener);
+        checkPermission();
+        listeners.remove(key);
+    }
+
+    private void invokeConfigurationListeners() {
+        Throwable t = null;
+
+        // We're using an IdentityHashMap because we want to compare
+        // keys using identity (==).
+        // We don't want to loop within a block synchronized on 'listeners'
+        // to avoid invoking listeners from yet another synchronized block.
+        // So we're taking a snapshot of the values list to avoid the risk of
+        // ConcurrentModificationException while looping.
+        //
+        for (Runnable c : listeners.values().toArray(new Runnable[0])) {
+            try {
+                c.run();
+            } catch (ThreadDeath death) {
+                throw death;
+            } catch (Error | RuntimeException x) {
+                if (t == null) t = x;
+                else t.addSuppressed(x);
+            }
+        }
+        // Listeners are not supposed to throw exceptions, but if that
+        // happens, we will rethrow the first error or exception that is raised
+        // after all listeners have been invoked.
+        if (t instanceof Error) throw (Error)t;
+        if (t instanceof RuntimeException) throw (RuntimeException)t;
+    }
+
 }

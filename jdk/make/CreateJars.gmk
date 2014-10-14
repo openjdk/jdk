@@ -709,7 +709,18 @@ $(IMAGES_OUTPUTDIR)/lib/sa-jdi.jar: $(HOTSPOT_DIST)/lib/sa-jdi.jar
 #
 $(eval $(call SetupZipArchive,BUILD_SEC_BIN_ZIP, \
     SRC := $(JDK_OUTPUTDIR), \
-    INCLUDES := modules/java.base/javax/net \
+    INCLUDES := \
+        modules/java.base/javax/crypto \
+        modules/java.base/javax/crypto/spec \
+        modules/java.base/sun/security/internal/interfaces \
+        modules/java.base/sun/security/internal/spec \
+        modules/java.base/com/sun/crypto/provider \
+        modules/jdk.crypto.ec/sun/security/ec \
+        modules/jdk.crypto.mscapi/sun/security/mscapi \
+        modules/jdk.crypto.pkcs11/sun/security/pkcs11 \
+        modules/jdk.crypto.pkcs11/sun/security/pkcs11/wrapper \
+        modules/jdk.crypto.ucrypto/com/oracle/security/ucrypto \
+        modules/java.base/javax/net \
         modules/java.base/javax/security/cert \
         modules/java.base/com/sun/net/ssl \
         modules/java.base/com/sun/security/cert \

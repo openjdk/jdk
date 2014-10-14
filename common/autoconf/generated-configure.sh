@@ -633,6 +633,7 @@ CCACHE
 USE_PRECOMPILED_HEADER
 SJAVAC_SERVER_DIR
 ENABLE_SJAVAC
+SJAVAC_SERVER_JAVA_FLAGS
 SJAVAC_SERVER_JAVA
 JAVA_TOOL_FLAGS_SMALL
 JAVA_FLAGS_SMALL
@@ -4327,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1410791401
+DATE_WHEN_GENERATED=1412599039
 
 ###############################################################################
 #
@@ -50472,7 +50473,7 @@ fi
   FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
   FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -d64"
+    SJAVAC_SERVER_JAVA_FLAGS="$SJAVAC_SERVER_JAVA_FLAGS -d64"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5
@@ -50510,13 +50511,14 @@ fi
   FOUND_WARN=`$ECHO "$OUTPUT" | grep -i warn`
   FOUND_VERSION=`$ECHO $OUTPUT | grep " version \""`
   if test "x$FOUND_VERSION" != x && test "x$FOUND_WARN" = x; then
-    SJAVAC_SERVER_JAVA="$SJAVAC_SERVER_JAVA -Xms${MS_VALUE}M -Xmx${MX_VALUE}M"
+    SJAVAC_SERVER_JAVA_FLAGS="$SJAVAC_SERVER_JAVA_FLAGS -Xms${MS_VALUE}M -Xmx${MX_VALUE}M"
     JVM_ARG_OK=true
   else
     $ECHO "Arg failed:" >&5
     $ECHO "$OUTPUT" >&5
     JVM_ARG_OK=false
   fi
+
 
 
   # Check whether --enable-sjavac was given.
