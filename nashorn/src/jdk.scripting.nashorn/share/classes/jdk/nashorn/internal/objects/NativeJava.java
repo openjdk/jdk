@@ -27,7 +27,6 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.lang.invoke.MethodHandles;
 import java.lang.reflect.Array;
 import java.util.Collection;
@@ -36,7 +35,6 @@ import java.util.List;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.support.TypeUtilities;
 import jdk.nashorn.api.scripting.JSObject;
-import jdk.nashorn.api.scripting.ScriptUtils;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
