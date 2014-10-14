@@ -3739,6 +3739,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
 
+  ArgumentsExt::process_options(args);
+
   const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
