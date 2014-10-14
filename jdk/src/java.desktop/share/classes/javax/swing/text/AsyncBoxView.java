@@ -854,7 +854,7 @@ public class AsyncBoxView extends View {
                                          int direction,
                                          Position.Bias[] biasRet)
                                                   throws BadLocationException {
-        if (pos < -1) {
+        if (pos < -1 || pos > getDocument().getLength()) {
             throw new BadLocationException("invalid position", pos);
         }
         return Utilities.getNextVisualPositionFrom(
