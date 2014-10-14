@@ -1228,26 +1228,12 @@ public class JavaCompiler {
                 attr.postAttr(env.tree);
             }
             compileStates.put(env, CompileState.ATTR);
-            if (rootClasses != null && rootClasses.contains(env.enclClass)) {
-                // This was a class that was explicitly supplied for compilation.
-                // If we want to capture the public api of this class,
-                // then now is a good time to do it.
-                reportPublicApi(env.enclClass.sym);
-            }
         }
         finally {
             log.useSource(prev);
         }
 
         return env;
-    }
-
-    /** Report the public api of a class that was supplied explicitly for compilation,
-     *  for example on the command line to javac.
-     * @param sym The symbol of the class.
-     */
-    public void reportPublicApi(ClassSymbol sym) {
-       // Override to collect the reported public api.
     }
 
     /**

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2000, 2011, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2000, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -94,7 +94,7 @@ implements CertAttrSet<String> {
     public static final String NAME = "ExtendedKeyUsage";
     public static final String USAGES = "usages";
 
-    // OID defined in RFC 3280 Sections 4.2.1.13
+    // OID defined in RFC 5280 Sections 4.2.1.12
     // more from http://www.alvestrand.no/objectid/1.3.6.1.5.5.7.3.html
     private static final Map <ObjectIdentifier, String> map =
             new HashMap <ObjectIdentifier, String> ();

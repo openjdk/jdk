@@ -25,23 +25,19 @@
 
 package jdk.nashorn.internal.objects;
 
-import static jdk.nashorn.internal.codegen.CompilerConstants.staticCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ECMAErrors.referenceError;
 import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.io.IOException;
 import java.io.PrintWriter;
-import java.lang.invoke.CallSite;
-import java.lang.invoke.ConstantCallSite;
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
-import java.lang.invoke.MethodType;
 import java.lang.invoke.SwitchPoint;
 import java.lang.reflect.Field;
+import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 import java.util.concurrent.Callable;
 import java.util.concurrent.ConcurrentHashMap;
@@ -52,8 +48,6 @@ import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
 import jdk.nashorn.api.scripting.ClassFilter;
 import jdk.nashorn.api.scripting.ScriptObjectMirror;
-import jdk.nashorn.internal.codegen.ApplySpecialization;
-import jdk.nashorn.internal.codegen.CompilerConstants.Call;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.objects.annotations.Attribute;
 import jdk.nashorn.internal.objects.annotations.Property;
@@ -72,6 +66,7 @@ import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.ScriptingFunctions;
+import jdk.nashorn.internal.runtime.Specialization;
 import jdk.nashorn.internal.runtime.arrays.ArrayData;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.linker.InvokeByName;
@@ -107,10 +102,6 @@ public final class Global extends ScriptObject implements Scope {
      * it's when you start adding property checks for said builtins you have
      * problems with guard speed.
      */
-    public final Map<String, SwitchPoint> optimisticFunctionMap;
-
-    /** Name invalidator for things like call/apply */
-    public static final Call BOOTSTRAP = staticCall(MethodHandles.lookup(), Global.class, "invalidateNameBootstrap", CallSite.class, MethodHandles.Lookup.class, String.class, MethodType.class);
 
     /** Nashorn extension: arguments array */
     @Property(attributes = Attribute.NOT_ENUMERABLE | Attribute.NOT_CONFIGURABLE)
@@ -428,9 +419,6 @@ public final class Global extends ScriptObject implements Scope {
     private static final MethodHandle LOADWITHNEWGLOBAL = findOwnMH_S("loadWithNewGlobal",   Object.class, Object.class, Object[].class);
     private static final MethodHandle EXIT              = findOwnMH_S("exit",                Object.class, Object.class, Object.class);
 
-    /** Invalidate a reserved name, such as "apply" or "call" if assigned */
-    public MethodHandle INVALIDATE_RESERVED_NAME = MH.bindTo(findOwnMH_V("invalidateReservedName", void.class, String.class), this);
-
     // initialized by nasgen
     private static PropertyMap $nasgenmap$;
 
@@ -482,7 +470,6 @@ public final class Global extends ScriptObject implements Scope {
         super(checkAndGetMap(context));
         this.context = context;
         this.setIsScope();
-        this.optimisticFunctionMap = new HashMap<>();
         //we can only share one instance of Global constants between globals, or we consume way too much
         //memory - this is good enough for most programs
         while (gcsInstance.get() == null) {
@@ -574,6 +561,7 @@ public final class Global extends ScriptObject implements Scope {
      *
      * @param engine ScriptEngine to initialize
      */
+    @SuppressWarnings("hiding")
     public void initBuiltinObjects(final ScriptEngine engine) {
         if (this.builtinObject != null) {
             // already initialized, just return
@@ -918,10 +906,12 @@ public final class Global extends ScriptObject implements Scope {
         }
 
         switch (nameStr) {
-            case "context":
-                return sctxt;
-            case "engine":
-                return global.engine;
+        case "context":
+            return sctxt;
+        case "engine":
+            return global.engine;
+        default:
+            break;
         }
 
         if (self == UNDEFINED) {
@@ -1242,6 +1232,40 @@ public final class Global extends ScriptObject implements Scope {
     public static boolean isBuiltinFunction() {
         final Global instance = Global.instance();
         return instance.function == instance.getBuiltinFunction();
+    }
+
+    /**
+     * Get the switchpoint used to check property changes for Function.prototype.apply
+     * @return the switchpoint guarding apply (same as guarding call, and everything else in function)
+     */
+    public static SwitchPoint getBuiltinFunctionApplySwitchPoint() {
+        return ScriptFunction.getPrototype(Global.instance().getBuiltinFunction()).getProperty("apply").getBuiltinSwitchPoint();
+    }
+
+    private static boolean isBuiltinFunctionProperty(final String name) {
+        final Global instance = Global.instance();
+        final ScriptFunction builtinFunction = instance.getBuiltinFunction();
+        if (builtinFunction == null) {
+            return false; //conservative for compile-only mode
+        }
+        final boolean isBuiltinFunction = instance.function == builtinFunction;
+        return isBuiltinFunction && ScriptFunction.getPrototype(builtinFunction).getProperty(name).isBuiltin();
+    }
+
+    /**
+     * Check if the Function.prototype.apply has not been replaced
+     * @return true if Function.prototype.apply has been replaced
+     */
+    public static boolean isBuiltinFunctionPrototypeApply() {
+        return isBuiltinFunctionProperty("apply");
+    }
+
+    /**
+     * Check if the Function.prototype.apply has not been replaced
+     * @return true if Function.prototype.call has been replaced
+     */
+    public static boolean isBuiltinFunctionPrototypeCall() {
+        return isBuiltinFunctionProperty("call");
     }
 
     private ScriptFunction getBuiltinJSAdapter() {
@@ -1688,6 +1712,13 @@ public final class Global extends ScriptObject implements Scope {
         splitState = state;
     }
 
+    private <T extends ScriptObject> T initConstructorAndSwitchPoint(final String name, final Class<T> clazz) {
+        final T func = initConstructor(name, clazz);
+        tagBuiltinProperties(name, func);
+        return func;
+    }
+
+    @SuppressWarnings("hiding")
     private void init(final ScriptEngine engine) {
         assert Context.getGlobal() == this : "this global is not set as current";
 
@@ -1702,8 +1733,19 @@ public final class Global extends ScriptObject implements Scope {
         // initialize global function properties
         this.eval = this.builtinEval = ScriptFunctionImpl.makeFunction("eval", EVAL);
 
-        this.parseInt           = ScriptFunctionImpl.makeFunction("parseInt",   GlobalFunctions.PARSEINT,
-                new MethodHandle[] { GlobalFunctions.PARSEINT_OI, GlobalFunctions.PARSEINT_O });
+        this.parseInt = ScriptFunctionImpl.makeFunction("parseInt",   GlobalFunctions.PARSEINT,
+                    new Specialization[] {
+                    new Specialization(GlobalFunctions.PARSEINT_Z),
+                    new Specialization(GlobalFunctions.PARSEINT_I),
+                    new Specialization(GlobalFunctions.PARSEINT_J),
+                    new Specialization(GlobalFunctions.PARSEINT_OI),
+                    new Specialization(GlobalFunctions.PARSEINT_O) });
+        this.parseFloat = ScriptFunctionImpl.makeFunction("parseFloat", GlobalFunctions.PARSEFLOAT);
+        this.isNaN = ScriptFunctionImpl.makeFunction("isNaN",   GlobalFunctions.IS_NAN,
+                   new Specialization[] {
+                        new Specialization(GlobalFunctions.IS_NAN_I),
+                        new Specialization(GlobalFunctions.IS_NAN_J),
+                        new Specialization(GlobalFunctions.IS_NAN_D) });
         this.parseFloat         = ScriptFunctionImpl.makeFunction("parseFloat", GlobalFunctions.PARSEFLOAT);
         this.isNaN              = ScriptFunctionImpl.makeFunction("isNaN",      GlobalFunctions.IS_NAN);
         this.isFinite           = ScriptFunctionImpl.makeFunction("isFinite",   GlobalFunctions.IS_FINITE);
@@ -1720,15 +1762,15 @@ public final class Global extends ScriptObject implements Scope {
         this.quit               = ScriptFunctionImpl.makeFunction("quit",       EXIT);
 
         // built-in constructors
-        this.builtinArray     = initConstructor("Array", ScriptFunction.class);
-        this.builtinBoolean   = initConstructor("Boolean", ScriptFunction.class);
-        this.builtinDate      = initConstructor("Date", ScriptFunction.class);
-        this.builtinJSON      = initConstructor("JSON", ScriptObject.class);
-        this.builtinJSAdapter = initConstructor("JSAdapter", ScriptFunction.class);
-        this.builtinMath      = initConstructor("Math", ScriptObject.class);
-        this.builtinNumber    = initConstructor("Number", ScriptFunction.class);
-        this.builtinRegExp    = initConstructor("RegExp", ScriptFunction.class);
-        this.builtinString    = initConstructor("String", ScriptFunction.class);
+        this.builtinArray     = initConstructorAndSwitchPoint("Array", ScriptFunction.class);
+        this.builtinBoolean   = initConstructorAndSwitchPoint("Boolean", ScriptFunction.class);
+        this.builtinDate      = initConstructorAndSwitchPoint("Date", ScriptFunction.class);
+        this.builtinJSON      = initConstructorAndSwitchPoint("JSON", ScriptObject.class);
+        this.builtinJSAdapter = initConstructorAndSwitchPoint("JSAdapter", ScriptFunction.class);
+        this.builtinMath      = initConstructorAndSwitchPoint("Math", ScriptObject.class);
+        this.builtinNumber    = initConstructorAndSwitchPoint("Number", ScriptFunction.class);
+        this.builtinRegExp    = initConstructorAndSwitchPoint("RegExp", ScriptFunction.class);
+        this.builtinString    = initConstructorAndSwitchPoint("String", ScriptFunction.class);
 
         // initialize String.prototype.length to 0
         // add String.prototype.length
@@ -1825,10 +1867,12 @@ public final class Global extends ScriptObject implements Scope {
 
         // ECMA 15.11.4.2 Error.prototype.name
         // Error.prototype.name = "Error";
-        errorProto.set(NativeError.NAME, "Error", false);
+        errorProto.set(NativeError.NAME, "Error", 0);
         // ECMA 15.11.4.3 Error.prototype.message
         // Error.prototype.message = "";
-        errorProto.set(NativeError.MESSAGE, "", false);
+        errorProto.set(NativeError.MESSAGE, "", 0);
+
+        tagBuiltinProperties("Error", builtinError);
 
         this.builtinEvalError = initErrorSubtype("EvalError", errorProto);
         this.builtinRangeError = initErrorSubtype("RangeError", errorProto);
@@ -1841,9 +1885,10 @@ public final class Global extends ScriptObject implements Scope {
     private ScriptFunction initErrorSubtype(final String name, final ScriptObject errorProto) {
         final ScriptFunction cons = initConstructor(name, ScriptFunction.class);
         final ScriptObject prototype = ScriptFunction.getPrototype(cons);
-        prototype.set(NativeError.NAME, name, false);
-        prototype.set(NativeError.MESSAGE, "", false);
+        prototype.set(NativeError.NAME, name, 0);
+        prototype.set(NativeError.MESSAGE, "", 0);
         prototype.setInitialProto(errorProto);
+        tagBuiltinProperties(name, cons);
         return cons;
     }
 
@@ -1902,7 +1947,7 @@ public final class Global extends ScriptObject implements Scope {
     private static void copyOptions(final ScriptObject options, final ScriptEnvironment scriptEnv) {
         for (final Field f : scriptEnv.getClass().getFields()) {
             try {
-                options.set(f.getName(), f.get(scriptEnv), false);
+                options.set(f.getName(), f.get(scriptEnv), 0);
             } catch (final IllegalArgumentException | IllegalAccessException exp) {
                 throw new RuntimeException(exp);
             }
@@ -1910,17 +1955,18 @@ public final class Global extends ScriptObject implements Scope {
     }
 
     private void initTypedArray() {
-        this.builtinArrayBuffer       = initConstructor("ArrayBuffer", ScriptFunction.class);
-        this.builtinDataView          = initConstructor("DataView", ScriptFunction.class);
-        this.builtinInt8Array         = initConstructor("Int8Array", ScriptFunction.class);
-        this.builtinUint8Array        = initConstructor("Uint8Array", ScriptFunction.class);
-        this.builtinUint8ClampedArray = initConstructor("Uint8ClampedArray", ScriptFunction.class);
-        this.builtinInt16Array        = initConstructor("Int16Array", ScriptFunction.class);
-        this.builtinUint16Array       = initConstructor("Uint16Array", ScriptFunction.class);
-        this.builtinInt32Array        = initConstructor("Int32Array", ScriptFunction.class);
-        this.builtinUint32Array       = initConstructor("Uint32Array", ScriptFunction.class);
-        this.builtinFloat32Array      = initConstructor("Float32Array", ScriptFunction.class);
-        this.builtinFloat64Array      = initConstructor("Float64Array", ScriptFunction.class);
+        this.builtinArrayBuffer       = initConstructorAndSwitchPoint("ArrayBuffer", ScriptFunction.class);
+        this.builtinDataView          = initConstructorAndSwitchPoint("DataView", ScriptFunction.class);
+        this.builtinInt8Array         = initConstructorAndSwitchPoint("Int8Array", ScriptFunction.class);
+        this.builtinUint8Array        = initConstructorAndSwitchPoint("Uint8Array", ScriptFunction.class);
+        this.builtinUint8ClampedArray = initConstructorAndSwitchPoint("Uint8ClampedArray", ScriptFunction.class);
+        this.builtinInt16Array        = initConstructorAndSwitchPoint("Int16Array", ScriptFunction.class);
+        this.builtinUint16Array       = initConstructorAndSwitchPoint("Uint16Array", ScriptFunction.class);
+        this.builtinInt32Array        = initConstructorAndSwitchPoint("Int32Array", ScriptFunction.class);
+        this.builtinUint32Array       = initConstructorAndSwitchPoint("Uint32Array", ScriptFunction.class);
+        this.builtinFloat32Array      = initConstructorAndSwitchPoint("Float32Array", ScriptFunction.class);
+        this.builtinFloat64Array      = initConstructorAndSwitchPoint("Float64Array", ScriptFunction.class);
+
     }
 
     private void copyBuiltins() {
@@ -1993,10 +2039,6 @@ public final class Global extends ScriptObject implements Scope {
         return UNDEFINED;
     }
 
-    /**
-     * These classes are generated by nasgen tool and so we have to use
-     * reflection to load and create new instance of these classes.
-     */
     private <T extends ScriptObject> T initConstructor(final String name, final Class<T> clazz) {
         try {
             // Assuming class name pattern for built-in JS constructors.
@@ -2021,9 +2063,49 @@ public final class Global extends ScriptObject implements Scope {
             }
 
             res.setIsBuiltin();
+
             return res;
         } catch (final ClassNotFoundException | InstantiationException | IllegalAccessException e) {
             throw new RuntimeException(e);
+        }
+    }
+
+    private List<jdk.nashorn.internal.runtime.Property> extractBuiltinProperties(final String name, final ScriptObject func) {
+        final List<jdk.nashorn.internal.runtime.Property> list = new ArrayList<>();
+
+        list.addAll(Arrays.asList(func.getMap().getProperties()));
+
+        if (func instanceof ScriptFunction) {
+            final ScriptObject proto = ScriptFunction.getPrototype((ScriptFunction)func);
+            if (proto != null) {
+                list.addAll(Arrays.asList(proto.getMap().getProperties()));
+            }
+        }
+
+        final jdk.nashorn.internal.runtime.Property prop = getProperty(name);
+        if (prop != null) {
+            list.add(prop);
+        }
+
+        return list;
+    }
+
+    /**
+     * Given a builtin object, traverse its properties recursively and associate them with a name that
+     * will be a key to their invalidation switchpoint.
+     * @param name name for key
+     * @param func builtin script object
+     */
+    private void tagBuiltinProperties(final String name, final ScriptObject func) {
+        SwitchPoint sp = context.getBuiltinSwitchPoint(name);
+        if (sp == null) {
+            sp = context.newBuiltinSwitchPoint(name);
+        }
+
+        //get all builtin properties in this builtin object and register switchpoints keyed on the propery name,
+        //one overwrite destroys all for now, e.g. Function.prototype.apply = 17; also destroys Function.prototype.call etc
+        for (final jdk.nashorn.internal.runtime.Property prop : extractBuiltinProperties(name, func)) {
+            prop.setBuiltinSwitchPoint(sp);
         }
     }
 
@@ -2035,7 +2117,8 @@ public final class Global extends ScriptObject implements Scope {
     // to play with object references carefully!!
     private void initFunctionAndObject() {
         // First-n-foremost is Function
-        this.builtinFunction      = initConstructor("Function", ScriptFunction.class);
+
+        this.builtinFunction = initConstructor("Function", ScriptFunction.class);
 
         // create global anonymous function
         final ScriptFunction anon = ScriptFunctionImpl.newAnonymousFunction();
@@ -2046,7 +2129,7 @@ public final class Global extends ScriptObject implements Scope {
         // <anon-function>
         builtinFunction.setInitialProto(anon);
         builtinFunction.setPrototype(anon);
-        anon.set("constructor", builtinFunction, false);
+        anon.set("constructor", builtinFunction, 0);
         anon.deleteOwnProperty(anon.getMap().findProperty("prototype"));
 
         // use "getter" so that [[ThrowTypeError]] function's arity is 0 - as specified in step 10 of section 13.2.3
@@ -2101,13 +2184,6 @@ public final class Global extends ScriptObject implements Scope {
             }
         }
 
-        //make sure apply and call have the same invalidation switchpoint
-        final SwitchPoint sp = new SwitchPoint();
-        optimisticFunctionMap.put("apply", sp);
-        optimisticFunctionMap.put("call", sp);
-        getFunctionPrototype().getProperty("apply").setChangeCallback(sp);
-        getFunctionPrototype().getProperty("call").setChangeCallback(sp);
-
         properties = getObjectPrototype().getMap().getProperties();
 
         for (final jdk.nashorn.internal.runtime.Property property : properties) {
@@ -2125,10 +2201,10 @@ public final class Global extends ScriptObject implements Scope {
                 }
             }
         }
-    }
 
-    private static MethodHandle findOwnMH_V(final String name, final Class<?> rtype, final Class<?>... types) {
-        return MH.findVirtual(MethodHandles.lookup(), Global.class, name, MH.type(rtype, types));
+        tagBuiltinProperties("Object", builtinObject);
+        tagBuiltinProperties("Function", builtinFunction);
+        tagBuiltinProperties("Function", anon);
     }
 
     private static MethodHandle findOwnMH_S(final String name, final Class<?> rtype, final Class<?>... types) {
@@ -2147,62 +2223,4 @@ public final class Global extends ScriptObject implements Scope {
     protected boolean isGlobal() {
         return true;
     }
-
-    /**
-     * Check if there is a switchpoint for a reserved name. If there
-     * is, it must be invalidated upon properties with this name
-     * @param name property name
-     * @return switchpoint for invalidating this property, or null if not registered
-     */
-    public SwitchPoint getChangeCallback(final String name) {
-        return optimisticFunctionMap.get(name);
-    }
-
-    /**
-     * Is this a special name, that might be subject to invalidation
-     * on write, such as "apply" or "call"
-     * @param name name to check
-     * @return true if special name
-     */
-    public boolean isSpecialName(final String name) {
-        return getChangeCallback(name) != null;
-    }
-
-    /**
-     * Check if a reserved property name is invalidated
-     * @param name property name
-     * @return true if someone has written to it since Global was instantiated
-     */
-    public boolean isSpecialNameValid(final String name) {
-        final SwitchPoint sp = getChangeCallback(name);
-        return sp != null && !sp.hasBeenInvalidated();
-    }
-
-    /**
-     * Tag a reserved name as invalidated - used when someone writes
-     * to a property with this name - overly conservative, but link time
-     * is too late to apply e.g. apply-&gt;call specialization
-     * @param name property name
-     */
-    public void invalidateReservedName(final String name) {
-        final SwitchPoint sp = getChangeCallback(name);
-        if (sp != null) {
-            getContext().getLogger(ApplySpecialization.class).info("Overwrote special name '" + name +"' - invalidating switchpoint");
-            SwitchPoint.invalidateAll(new SwitchPoint[] { sp });
-        }
-    }
-
-    /**
-     * Bootstrapper for invalidating a builtin name
-     * @param lookup lookup
-     * @param name   name to invalidate
-     * @param type   methodhandle type
-     * @return callsite for invalidator
-     */
-    public static CallSite invalidateNameBootstrap(final MethodHandles.Lookup lookup, final String name, final MethodType type) {
-        final MethodHandle target = MH.insertArguments(Global.instance().INVALIDATE_RESERVED_NAME, 0, name);
-        return new ConstantCallSite(target);
-    }
-
-
 }

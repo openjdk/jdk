@@ -82,7 +82,7 @@ endif
 all: $(TraceGeneratedFiles)
 
 GENERATE_CODE= \
-  $(QUIETLY) echo Generating $@; \
+  $(QUIETLY) echo $(LOG_INFO) Generating $@; \
   $(XSLT) -IN $(word 1,$^) -XSL $(word 2,$^) -OUT $@; \
   test -f $@
 
@@ -118,4 +118,3 @@ endif
 
 clean cleanall:
 	rm $(TraceGeneratedFiles)
-

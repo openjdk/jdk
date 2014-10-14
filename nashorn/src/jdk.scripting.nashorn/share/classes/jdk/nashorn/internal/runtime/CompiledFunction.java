@@ -33,12 +33,13 @@ import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
 import java.lang.invoke.MutableCallSite;
 import java.lang.invoke.SwitchPoint;
+import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.TreeMap;
 import java.util.function.Supplier;
 import java.util.logging.Level;
-
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.nashorn.internal.codegen.Compiler;
 import jdk.nashorn.internal.codegen.Compiler.CompilationPhases;
@@ -46,6 +47,7 @@ import jdk.nashorn.internal.codegen.TypeMap;
 import jdk.nashorn.internal.codegen.types.ArrayType;
 import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.FunctionNode;
+import jdk.nashorn.internal.objects.annotations.SpecializedFunction.LinkLogic;
 import jdk.nashorn.internal.runtime.events.RecompilationEvent;
 import jdk.nashorn.internal.runtime.linker.Bootstrap;
 import jdk.nashorn.internal.runtime.logging.DebugLogger;
@@ -63,6 +65,8 @@ final class CompiledFunction {
 
     private final DebugLogger log;
 
+    static final Collection<CompiledFunction> NO_FUNCTIONS = Collections.emptySet();
+
     /**
      * The method type may be more specific than the invoker, if. e.g.
      * the invoker is guarded, and a guard with a generic object only
@@ -75,19 +79,38 @@ final class CompiledFunction {
     private final int flags; // from FunctionNode
     private final MethodType callSiteType;
 
+    private final Specialization specialization;
+
     CompiledFunction(final MethodHandle invoker) {
-        this(invoker, null);
+        this(invoker, null, null);
     }
 
-    static CompiledFunction createBuiltInConstructor(final MethodHandle invoker) {
-        return new CompiledFunction(MH.insertArguments(invoker, 0, false), createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)));
+    static CompiledFunction createBuiltInConstructor(final MethodHandle invoker, final Specialization specialization) {
+        return new CompiledFunction(MH.insertArguments(invoker, 0, false), createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)), specialization);
     }
 
-    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor) {
-        this(invoker, constructor, 0, null, DebugLogger.DISABLED_LOGGER);
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final Specialization specialization) {
+        this(invoker, constructor, 0, null, specialization, DebugLogger.DISABLED_LOGGER);
     }
 
-    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final int flags, final MethodType callSiteType, final DebugLogger log) {
+    CompiledFunction(final MethodHandle invoker, final MethodHandle constructor, final int flags, final MethodType callSiteType, final Specialization specialization, final DebugLogger log) {
+        this.specialization = specialization;
+        if (specialization != null && specialization.isOptimistic()) {
+            /*
+             * An optimistic builtin with isOptimistic=true works like any optimistic generated function, i.e. it
+             * can throw unwarranted optimism exceptions. As native functions trivially can't have parts of them
+             * regenerated as restof methods, this only works if the methods are atomic/functional in their behavior
+             * and doesn't modify state before an UOE can be thrown. If they aren't, we can reexecute a wider version
+             * of the same builtin in a recompilation handler for FinalScriptFunctionData. There are several
+             * candidate methods in Native* that would benefit from this, but I haven't had time to implement any
+             * of them currently. In order to fit in with the relinking framework, the current thinking is
+             * that the methods still take a program point to fit in with other optimistic functions, but
+             * it is set to "first", which is the beginning of the method. The relinker can tell the difference
+             * between builtin and JavaScript functions. This might change. TODO
+             */
+            this.invoker = MH.insertArguments(invoker, invoker.type().parameterCount() - 1, UnwarrantedOptimismException.FIRST_PROGRAM_POINT);
+            throw new AssertionError("Optimistic (UnwarrantedOptimismException throwing) builtin functions are currently not in use");
+        }
         this.invoker = invoker;
         this.constructor = constructor;
         this.flags = flags;
@@ -97,7 +120,7 @@ final class CompiledFunction {
 
     CompiledFunction(final MethodHandle invoker, final RecompilableScriptFunctionData functionData,
             final Map<Integer, Type> invalidatedProgramPoints, final MethodType callSiteType, final int flags) {
-        this(invoker, null, flags, callSiteType, functionData.getLogger());
+        this(invoker, null, flags, callSiteType, null, functionData.getLogger());
         if ((flags & FunctionNode.IS_DEOPTIMIZABLE) != 0) {
             optimismInfo = new OptimismInfo(functionData, invalidatedProgramPoints);
         } else {
@@ -105,8 +128,43 @@ final class CompiledFunction {
         }
     }
 
+    static CompiledFunction createBuiltInConstructor(final MethodHandle invoker) {
+        return new CompiledFunction(MH.insertArguments(invoker, 0, false), createConstructorFromInvoker(MH.insertArguments(invoker, 0, true)), null);
+    }
+
+    boolean isSpecialization() {
+        return specialization != null;
+    }
+
+    boolean hasLinkLogic() {
+        return getLinkLogicClass() != null;
+    }
+
+    Class<? extends LinkLogic> getLinkLogicClass() {
+        if (isSpecialization()) {
+            final Class<? extends LinkLogic> linkLogicClass = specialization.getLinkLogicClass();
+            assert !LinkLogic.isEmpty(linkLogicClass) : "empty link logic classes should have been removed by nasgen";
+            return linkLogicClass;
+        }
+        return null;
+    }
+
     int getFlags() {
         return flags;
+    }
+
+    /**
+     * An optimistic specialization is one that can throw UnwarrantedOptimismException.
+     * This is allowed for native methods, as long as they are functional, i.e. don't change
+     * any state between entering and throwing the UOE. Then we can re-execute a wider version
+     * of the method in the continuation. Rest-of method generation for optimistic builtins is
+     * of course not possible, but this approach works and fits into the same relinking
+     * framework
+     *
+     * @return true if optimistic builtin
+     */
+    boolean isOptimistic() {
+        return isSpecialization() ? specialization.isOptimistic() : false;
     }
 
     boolean isApplyToCall() {
@@ -119,7 +177,19 @@ final class CompiledFunction {
 
     @Override
     public String toString() {
-        return "[invokerType=" + invoker.type() + " ctor=" + constructor + " weight=" + weight() + " isApplyToCall=" + isApplyToCall() + "]";
+        final StringBuilder sb = new StringBuilder();
+        final Class<? extends LinkLogic> linkLogicClass = getLinkLogicClass();
+
+        sb.append("[invokerType=").
+            append(invoker.type()).
+            append(" ctor=").
+            append(constructor).
+            append(" weight=").
+            append(weight()).
+            append(" linkLogic=").
+            append(linkLogicClass != null ? linkLogicClass.getSimpleName() : "none");
+
+        return sb.toString();
     }
 
     boolean needsCallee() {
@@ -281,10 +351,12 @@ final class CompiledFunction {
         if (other == null) {
             return true;
         }
-        return betterThanFinal(type(), other.type(), callSiteMethodType);
+        return betterThanFinal(this, other, callSiteMethodType);
     }
 
-    static boolean betterThanFinal(final MethodType thisMethodType, final MethodType otherMethodType, final MethodType callSiteMethodType) {
+    private static boolean betterThanFinal(final CompiledFunction cf, final CompiledFunction other, final MethodType callSiteMethodType) {
+        final MethodType thisMethodType  = cf.type();
+        final MethodType otherMethodType = other.type();
         final int thisParamCount = getParamCount(thisMethodType);
         final int otherParamCount = getParamCount(otherMethodType);
         final int callSiteRawParamCount = getParamCount(callSiteMethodType);
@@ -406,7 +478,17 @@ final class CompiledFunction {
             return false;
         }
 
-        throw new AssertionError(thisMethodType + " identically applicable to " + otherMethodType + " for " + callSiteMethodType); // Signatures are identical
+        //if they are equal, pick the specialized one first
+        if (cf.isSpecialization() != other.isSpecialization()) {
+            return cf.isSpecialization(); //always pick the specialized version if we can
+        }
+
+        if (cf.isSpecialization() && other.isSpecialization()) {
+            return cf.getLinkLogicClass() != null; //pick link logic specialization above generic specializations
+        }
+
+        // Signatures are identical
+        throw new AssertionError(thisMethodType + " identically applicable to " + otherMethodType + " for " + callSiteMethodType);
     }
 
     private static Type[] toTypeWithoutCallee(final MethodType type, final int thisIndex) {
@@ -427,8 +509,8 @@ final class CompiledFunction {
         return ((ArrayType)paramTypes[paramTypes.length - 1]).getElementType();
     }
 
-    boolean matchesCallSite(final MethodType callSiteType, final boolean pickVarArg) {
-        if (callSiteType.equals(this.callSiteType)) {
+    boolean matchesCallSite(final MethodType other, final boolean pickVarArg) {
+        if (other.equals(this.callSiteType)) {
             return true;
         }
         final MethodType type  = type();
@@ -438,7 +520,7 @@ final class CompiledFunction {
             return pickVarArg;
         }
 
-        final int csParamCount = getParamCount(callSiteType);
+        final int csParamCount = getParamCount(other);
         final boolean csIsVarArg = csParamCount == Integer.MAX_VALUE;
         final int thisThisIndex = needsCallee() ? 1 : 0; // Index of "this" parameter in this function's type
 
@@ -447,7 +529,7 @@ final class CompiledFunction {
         // We must match all incoming parameters, except "this". Starting from 1 to skip "this".
         for(int i = 1; i < minParams; ++i) {
             final Type fnType = Type.typeFor(type.parameterType(i + thisThisIndex));
-            final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(callSiteType.parameterType(i + 1));
+            final Type csType = csIsVarArg ? Type.OBJECT : Type.typeFor(other.parameterType(i + 1));
             if(!fnType.isEquivalentTo(csType)) {
                 return false;
             }
@@ -669,9 +751,9 @@ final class CompiledFunction {
         return sb.toString();
     }
 
-    private void logRecompile(final String reason, final FunctionNode fn, final MethodType callSiteType, final Map<Integer, Type> ipp) {
+    private void logRecompile(final String reason, final FunctionNode fn, final MethodType type, final Map<Integer, Type> ipp) {
         if (log.isEnabled()) {
-            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", callSiteType, " ", toStringInvalidations(ipp));
+            log.info(reason, DebugLogger.quote(fn.getName()), " signature: ", type, " ", toStringInvalidations(ipp));
         }
     }
 
@@ -732,8 +814,6 @@ final class CompiledFunction {
             compiler.persistClassInfo(cacheKey, normalFn);
         }
 
-        FunctionNode fn2 = effectiveOptInfo.reparse();
-        fn2 = compiler.compile(fn2, CompilationPhases.COMPILE_UPTO_BYTECODE);
         log.info("Done.");
 
         final boolean canBeDeoptimized = normalFn.canBeDeoptimized();

@@ -34,6 +34,7 @@
 #include "ci/ciUtilities.hpp"
 #include "classfile/systemDictionary.hpp"
 #include "classfile/vmSymbols.hpp"
+#include "code/codeCache.hpp"
 #include "code/scopeDesc.hpp"
 #include "compiler/compileBroker.hpp"
 #include "compiler/compileLog.hpp"
@@ -579,7 +580,12 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
     oop obj = cpool->resolved_references()->obj_at(cache_index);
     if (obj != NULL) {
       ciObject* ciobj = get_object(obj);
-      return ciConstant(T_OBJECT, ciobj);
+      if (ciobj->is_array()) {
+        return ciConstant(T_ARRAY, ciobj);
+      } else {
+        assert(ciobj->is_instance(), "should be an instance");
+        return ciConstant(T_OBJECT, ciobj);
+      }
     }
     index = cpool->object_to_cp_index(cache_index);
   }
@@ -606,8 +612,12 @@ ciConstant ciEnv::get_constant_by_index_impl(constantPoolHandle cpool,
       }
     }
     ciObject* constant = get_object(string);
-    assert (constant->is_instance(), "must be an instance, or not? ");
-    return ciConstant(T_OBJECT, constant);
+    if (constant->is_array()) {
+      return ciConstant(T_ARRAY, constant);
+    } else {
+      assert (constant->is_instance(), "must be an instance, or not? ");
+      return ciConstant(T_OBJECT, constant);
+    }
   } else if (tag.is_klass() || tag.is_unresolved_klass()) {
     // 4881222: allow ldc to take a class type
     ciKlass* klass = get_klass_by_index_impl(cpool, index, ignore_will_link, accessor);
@@ -1085,7 +1095,7 @@ void ciEnv::register_method(ciMethod* target,
   } else {
     // The CodeCache is full. Print out warning and disable compilation.
     record_failure("code cache is full");
-    CompileBroker::handle_full_code_cache();
+    CompileBroker::handle_full_code_cache(CodeCache::get_code_blob_type(comp_level));
   }
 }
 

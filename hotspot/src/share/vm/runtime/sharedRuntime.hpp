@@ -50,8 +50,8 @@ class SharedRuntime: AllStatic {
 
  private:
   static methodHandle resolve_sub_helper(JavaThread *thread,
-                                     bool is_virtual,
-                                     bool is_optimized, TRAPS);
+                                         bool is_virtual,
+                                         bool is_optimized, TRAPS);
 
   // Shared stub locations
 
@@ -271,35 +271,33 @@ class SharedRuntime: AllStatic {
   // used by native wrappers to reenable yellow if overflow happened in native code
   static void reguard_yellow_pages();
 
-  /**
-   * Fill in the "X cannot be cast to a Y" message for ClassCastException
-   *
-   * @param thr the current thread
-   * @param name the name of the class of the object attempted to be cast
-   * @return the dynamically allocated exception message (must be freed
-   * by the caller using a resource mark)
-   *
-   * BCP must refer to the current 'checkcast' opcode for the frame
-   * on top of the stack.
-   * The caller (or one of it's callers) must use a ResourceMark
-   * in order to correctly free the result.
-   */
+  // Fill in the "X cannot be cast to a Y" message for ClassCastException
+  //
+  // @param thr the current thread
+  // @param name the name of the class of the object attempted to be cast
+  // @return the dynamically allocated exception message (must be freed
+  // by the caller using a resource mark)
+  //
+  // BCP must refer to the current 'checkcast' opcode for the frame
+  // on top of the stack.
+  // The caller (or one of it's callers) must use a ResourceMark
+  // in order to correctly free the result.
+  //
   static char* generate_class_cast_message(JavaThread* thr, const char* name);
 
-  /**
-   * Fill in the "X cannot be cast to a Y" message for ClassCastException
-   *
-   * @param name the name of the class of the object attempted to be cast
-   * @param klass the name of the target klass attempt
-   * @param gripe the specific kind of problem being reported
-   * @return the dynamically allocated exception message (must be freed
-   * by the caller using a resource mark)
-   *
-   * This version does not require access the frame, so it can be called
-   * from interpreted code
-   * The caller (or one of it's callers) must use a ResourceMark
-   * in order to correctly free the result.
-   */
+  // Fill in the "X cannot be cast to a Y" message for ClassCastException
+  //
+  // @param name the name of the class of the object attempted to be cast
+  // @param klass the name of the target klass attempt
+  // @param gripe the specific kind of problem being reported
+  // @return the dynamically allocated exception message (must be freed
+  // by the caller using a resource mark)
+  //
+  // This version does not require access the frame, so it can be called
+  // from interpreted code
+  // The caller (or one of it's callers) must use a ResourceMark
+  // in order to correctly free the result.
+  //
   static char* generate_class_cast_message(const char* name, const char* klass,
                                            const char* gripe = " cannot be cast to ");
 
@@ -309,11 +307,11 @@ class SharedRuntime: AllStatic {
                                      bool is_virtual,
                                      bool is_optimized, TRAPS);
 
-  private:
+ private:
   // deopt blob
   static void generate_deopt_blob(void);
 
-  public:
+ public:
   static DeoptimizationBlob* deopt_blob(void)      { return _deopt_blob; }
 
   // Resets a call-site in compiled code so it will get resolved again.
@@ -422,17 +420,17 @@ class SharedRuntime: AllStatic {
   // pointer to the C heap storage. This pointer is the return value from
   // OSR_migration_begin.
 
-  static intptr_t* OSR_migration_begin( JavaThread *thread);
+  static intptr_t* OSR_migration_begin(JavaThread *thread);
 
   // OSR_migration_end is a trivial routine. It is called after the compiled
   // method has extracted the jvm state from the C heap that OSR_migration_begin
   // created. It's entire job is to simply free this storage.
-  static void      OSR_migration_end  ( intptr_t* buf);
+  static void OSR_migration_end(intptr_t* buf);
 
   // Convert a sig into a calling convention register layout
   // and find interesting things about it.
   static VMRegPair* find_callee_arguments(Symbol* sig, bool has_receiver, bool has_appendix, int *arg_size);
-  static VMReg     name_for_receiver();
+  static VMReg name_for_receiver();
 
   // "Top of Stack" slots that may be unused by the calling convention but must
   // otherwise be preserved.
@@ -691,7 +689,7 @@ class AdapterHandlerLibrary: public AllStatic {
   static bool contains(CodeBlob* b);
 #ifndef PRODUCT
   static void print_statistics();
-#endif /* PRODUCT */
+#endif // PRODUCT
 
 };
 

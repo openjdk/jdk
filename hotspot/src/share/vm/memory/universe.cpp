@@ -127,6 +127,8 @@ oop Universe::_null_ptr_exception_instance            = NULL;
 oop Universe::_arithmetic_exception_instance          = NULL;
 oop Universe::_virtual_machine_error_instance         = NULL;
 oop Universe::_vm_exception                           = NULL;
+oop Universe::_allocation_context_notification_obj    = NULL;
+
 Method* Universe::_throw_illegal_access_error         = NULL;
 Array<int>* Universe::_the_empty_int_array            = NULL;
 Array<u2>* Universe::_the_empty_short_array           = NULL;
@@ -196,6 +198,7 @@ void Universe::oops_do(OopClosure* f, bool do_all) {
   f->do_oop((oop*)&_main_thread_group);
   f->do_oop((oop*)&_system_thread_group);
   f->do_oop((oop*)&_vm_exception);
+  f->do_oop((oop*)&_allocation_context_notification_obj);
   debug_only(f->do_oop((oop*)&_fullgc_alot_dummy_array);)
 }
 
@@ -838,12 +841,6 @@ jint Universe::initialize_heap() {
     // See needs_explicit_null_check.
     // Only set the heap base for compressed oops because it indicates
     // compressed oops for pstack code.
-    bool verbose = PrintCompressedOopsMode || (PrintMiscellaneous && Verbose);
-    if (verbose) {
-      tty->cr();
-      tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
-                 Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
-    }
     if (((uint64_t)Universe::heap()->reserved_region().end() > OopEncodingHeapMax)) {
       // Can't reserve heap below 32Gb.
       // keep the Universe::narrow_oop_base() set in Universe::reserve_heap()
@@ -853,16 +850,8 @@ jint Universe::initialize_heap() {
       // are decoded so that NULL is preserved, so this page will not be accessed.
       Universe::set_narrow_oop_use_implicit_null_checks(false);
 #endif
-      if (verbose) {
-        tty->print(", %s: "PTR_FORMAT,
-            narrow_oop_mode_to_string(HeapBasedNarrowOop),
-            Universe::narrow_oop_base());
-      }
     } else {
       Universe::set_narrow_oop_base(0);
-      if (verbose) {
-        tty->print(", %s", narrow_oop_mode_to_string(ZeroBasedNarrowOop));
-      }
 #ifdef _WIN64
       if (!Universe::narrow_oop_use_implicit_null_checks()) {
         // Don't need guard page for implicit checks in indexed addressing
@@ -875,17 +864,14 @@ jint Universe::initialize_heap() {
         Universe::set_narrow_oop_shift(LogMinObjAlignmentInBytes);
       } else {
         Universe::set_narrow_oop_shift(0);
-        if (verbose) {
-          tty->print(", %s", narrow_oop_mode_to_string(UnscaledNarrowOop));
-        }
       }
     }
 
-    if (verbose) {
-      tty->cr();
-      tty->cr();
-    }
     Universe::set_narrow_ptrs_base(Universe::narrow_oop_base());
+
+    if (PrintCompressedOopsMode || (PrintMiscellaneous && Verbose)) {
+      Universe::print_compressed_oops_mode();
+    }
   }
   // Universe::narrow_oop_base() is one page below the heap.
   assert((intptr_t)Universe::narrow_oop_base() <= (intptr_t)(Universe::heap()->base() -
@@ -906,6 +892,24 @@ jint Universe::initialize_heap() {
   return JNI_OK;
 }
 
+void Universe::print_compressed_oops_mode() {
+  tty->cr();
+  tty->print("heap address: " PTR_FORMAT ", size: " SIZE_FORMAT " MB",
+              Universe::heap()->base(), Universe::heap()->reserved_region().byte_size()/M);
+
+  tty->print(", Compressed Oops mode: %s", narrow_oop_mode_to_string(narrow_oop_mode()));
+
+  if (Universe::narrow_oop_base() != 0) {
+    tty->print(":" PTR_FORMAT, Universe::narrow_oop_base());
+  }
+
+  if (Universe::narrow_oop_shift() != 0) {
+    tty->print(", Oop shift amount: %d", Universe::narrow_oop_shift());
+  }
+
+  tty->cr();
+  tty->cr();
+}
 
 // Reserve the Java heap, which is now the same for all GCs.
 ReservedSpace Universe::reserve_heap(size_t heap_size, size_t alignment) {
@@ -975,11 +979,11 @@ void Universe::update_heap_info_at_gc() {
 const char* Universe::narrow_oop_mode_to_string(Universe::NARROW_OOP_MODE mode) {
   switch (mode) {
     case UnscaledNarrowOop:
-      return "32-bits Oops";
+      return "32-bit";
     case ZeroBasedNarrowOop:
-      return "zero based Compressed Oops";
+      return "Zero based";
     case HeapBasedNarrowOop:
-      return "Compressed Oops with base";
+      return "Non-zero based";
   }
 
   ShouldNotReachHere();

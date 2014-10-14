@@ -40,7 +40,7 @@ var tests = [
     {name:"gbemu",         files:["gbemu-part1.js", "gbemu-part2.js"], suite:"GameboyBenchmark"},
     {name:"mandreel",      files:["mandreel.js"],                      suite:"MandreelBenchmark"},
     {name:"navier-stokes", files:["navier-stokes.js"],                 suite:"NavierStokes"},
-    {name:"pdfjs",         files:["pdfjs.js"],                         suite:"PdfJS"},
+    {name:"pdfjs",         files:["pdfjs.js"],                         suite:"PdfJS",                cleanUpIteration: function() { canvas_logs = []; }},
     {name:"raytrace",      files:["raytrace.js"],                      suite:"RayTrace"},
     {name:"regexp",        files:["regexp.js"],                        suite:"RegExpSuite"},
     {name:"richards",      files:["richards.js"],                      suite:"Richards"},

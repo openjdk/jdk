@@ -30,6 +30,18 @@
 #include "runtime/frame.hpp"
 #include "runtime/handles.hpp"
 
+// CodeBlob Types
+// Used in the CodeCache to assign CodeBlobs to different CodeHeaps
+struct CodeBlobType {
+  enum {
+    MethodNonProfiled   = 0,    // Execution level 1 and 4 (non-profiled) nmethods (including native nmethods)
+    MethodProfiled      = 1,    // Execution level 2 and 3 (profiled) nmethods
+    NonNMethod          = 2,    // Non-nmethods like Buffers, Adapters and Runtime Stubs
+    All                 = 3,    // All types (No code cache segmentation)
+    NumTypes            = 4     // Number of CodeBlobTypes
+  };
+};
+
 // CodeBlob - superclass for all entries in the CodeCache.
 //
 // Suptypes are:
@@ -384,9 +396,6 @@ class DeoptimizationBlob: public SingletonBlob {
     address unpack_pc = unpack();
     return (pc == unpack_pc || (pc + frame::pc_return_offset) == unpack_pc);
   }
-
-
-
 
   // GC for args
   void preserve_callee_argument_oops(frame fr, const RegisterMap *reg_map, OopClosure* f) { /* Nothing to do */ }

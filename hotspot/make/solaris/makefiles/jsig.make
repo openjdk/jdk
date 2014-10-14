@@ -48,7 +48,7 @@ LFLAGS_JSIG += -mt -xnolib
 endif
 
 $(LIBJSIG): $(ADD_GNU_DEBUGLINK) $(FIX_EMPTY_SEC_HDR_FLAGS) $(JSIGSRCDIR)/jsig.c $(LIBJSIG_MAPFILE)
-	@echo Making signal interposition lib...
+	@echo $(LOG_INFO) Making signal interposition lib...
 	$(QUIETLY) $(CC) $(SYMFLAG) $(ARCHFLAG) $(SHARED_FLAG) $(PICFLAG) \
                          $(LFLAGS_JSIG) -o $@ $(JSIGSRCDIR)/jsig.c -ldl
 ifeq ($(ENABLE_FULL_DEBUG_SYMBOLS),1)

@@ -1,6 +1,6 @@
 /*
  * @test  /nodynamiccopyright/
- * @bug 4039843
+ * @bug 4039843 8057652
  * @summary The compiler should not allow labeled declarations.
  * @author turnidge
  *

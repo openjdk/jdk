@@ -124,8 +124,7 @@ public abstract class Attribute implements AnnotationValue {
                 : types.erasure(type);
             return new Type.ClassType(types.syms.classType.getEnclosingType(),
                                       List.of(arg),
-                                      types.syms.classType.tsym,
-                                      Type.noAnnotations);
+                                      types.syms.classType.tsym);
         }
         @DefinedBy(Api.LANGUAGE_MODEL)
         public String toString() {

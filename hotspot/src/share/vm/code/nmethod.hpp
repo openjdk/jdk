@@ -202,13 +202,6 @@ class nmethod : public CodeBlob {
   bool _oops_are_stale;  // indicates that it's no longer safe to access oops section
 #endif
 
-  enum { in_use       = 0,   // executable nmethod
-         not_entrant  = 1,   // marked for deoptimization but activations may still exist,
-                             // will be transformed to zombie when all activations are gone
-         zombie       = 2,   // no activations exist, nmethod is ready for purge
-         unloaded     = 3 }; // there should be no activations, should not be called,
-                             // will be transformed to zombie immediately
-
   jbyte _scavenge_root_state;
 
 #if INCLUDE_RTM_OPT
@@ -295,7 +288,7 @@ class nmethod : public CodeBlob {
           int comp_level);
 
   // helper methods
-  void* operator new(size_t size, int nmethod_size) throw();
+  void* operator new(size_t size, int nmethod_size, int comp_level) throw();
 
   const char* reloc_string_for(u_char* begin, u_char* end);
   // Returns true if this thread changed the state of the nmethod or
@@ -430,6 +423,13 @@ class nmethod : public CodeBlob {
   // entry points
   address entry_point() const                     { return _entry_point;             } // normal entry point
   address verified_entry_point() const            { return _verified_entry_point;    } // if klass is correct
+
+  enum { in_use       = 0,   // executable nmethod
+         not_entrant  = 1,   // marked for deoptimization but activations may still exist,
+                             // will be transformed to zombie when all activations are gone
+         zombie       = 2,   // no activations exist, nmethod is ready for purge
+         unloaded     = 3 }; // there should be no activations, should not be called,
+                             // will be transformed to zombie immediately
 
   // flag accessing and manipulation
   bool  is_in_use() const                         { return _state == in_use; }
@@ -577,6 +577,7 @@ public:
 
   // Inline cache support
   void clear_inline_caches();
+  void clear_ic_stubs();
   void cleanup_inline_caches();
   bool inlinecache_check_contains(address addr) const {
     return (addr >= code_begin() && addr < verified_entry_point());
@@ -759,7 +760,7 @@ public:
   // support for code generation
   static int verified_entry_point_offset()        { return offset_of(nmethod, _verified_entry_point); }
   static int osr_entry_point_offset()             { return offset_of(nmethod, _osr_entry_point); }
-  static int entry_bci_offset()                   { return offset_of(nmethod, _entry_bci); }
+  static int state_offset()                       { return offset_of(nmethod, _state); }
 
   // RedefineClasses support.   Mark metadata in nmethods as on_stack so that
   // redefine classes doesn't purge it.

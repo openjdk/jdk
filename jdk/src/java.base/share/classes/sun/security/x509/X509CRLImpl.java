@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2012, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -63,7 +63,7 @@ import sun.misc.HexDumpEncoder;
  *     signature            BIT STRING  }
  * </pre>
  * More information can be found in
- * <a href="http://www.ietf.org/rfc/rfc3280.txt">RFC 3280: Internet X.509
+ * <a href="http://tools.ietf.org/html/rfc5280">RFC 5280: Internet X.509
  * Public Key Infrastructure Certificate and CRL Profile</a>.
  * <p>
  * The ASN.1 definition of <code>tbsCertList</code> is:

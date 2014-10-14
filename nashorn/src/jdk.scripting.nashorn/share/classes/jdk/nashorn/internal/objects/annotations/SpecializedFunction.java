@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2010, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,18 +29,315 @@ import java.lang.annotation.ElementType;
 import java.lang.annotation.Retention;
 import java.lang.annotation.RetentionPolicy;
 import java.lang.annotation.Target;
+import java.lang.invoke.MethodHandle;
+import java.lang.invoke.SwitchPoint;
+import jdk.internal.dynalink.CallSiteDescriptor;
+import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.internal.runtime.ScriptFunction;
 
 /**
- * The SpecializedFunction annotation is used to flag more type specific functions than the standard one in
- * Native objects. For example {@link jdk.nashorn.internal.objects.NativeMath#max} takes an arbitrary number of
- * Object elements as an array. Call this function, including the varargs collector that allocates the array
- * upon each invocation, is much more expensive than calling a specialized function that takes two arguments
- * of, e.g. int type from the call site, such as {@link jdk.nashorn.internal.objects.NativeMath#max(Object, int, int)}.
- * {@link jdk.nashorn.internal.runtime.ScriptFunction} will try to look up the most specific function when
- * linking the callsite.
+ * The SpecializedFunction annotation is used to flag more type specific
+ * functions than the standard one in the native objects
  */
 @Retention(RetentionPolicy.RUNTIME)
 @Target(ElementType.METHOD)
 public @interface SpecializedFunction {
-    //empty
+
+    /**
+     * Functionality for testing if we are allowed to link a specialized
+     * function the first time we encounter it. Then the guard will handle the
+     * rest of the invocations
+     *
+     * This is the same for all callsites in Nashorn, the first time callsite is
+     * linked, we have to manually check that the linkage is OK. Even if we add
+     * a guard and it fails upon the first try, this is not good enough.
+     * (Symmetrical to how it works everywhere else in the Nashorn runtime).
+     *
+     * Here we abstract out a few of the most common link guard checks.
+     */
+    public static abstract class LinkLogic {
+        /**
+         * Empty link logic instance - this is the default
+         * "no special linking or runtime guard behavior"
+         */
+        public static final LinkLogic EMPTY_INSTANCE = new Empty();
+
+        private static final SwitchPoint[] INVALIDATED_SWITCHPOINTS = new SwitchPoint[0];
+
+        private SwitchPoint[] modificationSwitchPoints; //cache
+
+        /** Empty link logic class - allow all linking, no guards */
+        private static final class Empty extends LinkLogic {
+            @Override
+            public boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
+                return true;
+            }
+
+            @Override
+            public boolean isEmpty() {
+                return true;
+            }
+        }
+
+        /**
+         * Get the class representing the empty link logic
+         * @return class representing empty link logic
+         */
+        public static Class<? extends LinkLogic> getEmptyLinkLogicClass() {
+            return Empty.class;
+        }
+
+        /**
+         * Should this callsite relink when an exception is thrown
+         *
+         * @return the relink exception, or null if none
+         */
+        public Class<? extends Throwable> getRelinkException() {
+            return null;
+        }
+
+        /**
+         * Is this link logic class empty - i.e. no special linking logic
+         * supplied
+         *
+         * @param clazz class to check
+         *
+         * @return true if this link logic is empty
+         */
+        public static boolean isEmpty(final Class<? extends LinkLogic> clazz) {
+            return clazz == Empty.class;
+        }
+
+        /**
+         * Is this link logic instance empty - i.e. no special linking logic
+         * supplied
+         *
+         * @return true if this link logic instance is empty
+         */
+        public boolean isEmpty() {
+            return false;
+        }
+
+        /**
+         * Given a callsite, can we link this method based on the receiver and
+         * parameters?
+         *
+         * @param self    receiver
+         * @param desc    callsite descriptor
+         * @param request link request
+         *
+         * @return true if we can link this callsite at this time
+         */
+        public abstract boolean canLink(final Object self, final CallSiteDescriptor desc, final LinkRequest request);
+
+        /**
+         * Given a callsite, do we require an extra guard for specialization to
+         * go through?
+         *
+         * @param self receiver
+         *
+         * @return true if a guard is to be woven into the callsite
+         */
+        public boolean needsGuard(final Object self) {
+            return true;
+        }
+
+        /**
+         * Given a callsite, and optional arguments, do we need an extra guard
+         * for specialization to go through - this guard can be a function of
+         * the arguments too
+         *
+         * @param self receiver
+         * @param args arguments
+         *
+         * @return true if a guard is to be woven into the callsite
+         */
+        public boolean needsGuard(final Object self, final Object... args) {
+            return true;
+        }
+
+        /**
+         * Given a callsite, and optional arguments, return any extra guard we
+         * might need for specialization as a method handle.
+         *
+         * @return methodhandle for guard, or null if no guard is needed
+         */
+        public MethodHandle getGuard() {
+            return null;
+        }
+
+        /**
+         * Return the modification SwitchPoint of a particular index from this OptimisticBuiltins
+         * If none exists, one is created and that one is return.
+         *
+         * The implementor must map indexes to specific SwitchPoints for specific events and keep
+         * track of what they mean, for example NativeArray.LENGTH_NOT_WRITABLE_SWITCHPOINT
+         * might be a useful index mapping
+         *
+         * @param index index for SwitchPoint to get or create
+         * @return modification SwitchPoint of particular index for the receiver
+         */
+        public SwitchPoint getOrCreateModificationSwitchPoint(final int index) {
+            return null;
+        }
+
+        /**
+         * Return the modification SwitchPoint from this OptimisticBuiltins. If none
+         * exists, one is created and that one is return.
+         *
+         * @return modification SwitchPoint for the receiver
+         */
+        public SwitchPoint[] getOrCreateModificationSwitchPoints() {
+            return null;
+        }
+
+        /**
+         * Hook to invalidate a modification SwitchPoint by index.
+         *
+         * @param index index for SwitchPoint to invalidate
+         */
+        public void invalidateModificationSwitchPoint(final int index) {
+            //empty
+        }
+
+        /**
+         * Hook to invalidate all modification SwitchPoints for a receiver
+         */
+        public void invalidateModificationSwitchPoints() {
+            //empty
+        }
+
+        /**
+         * Check whether the receiver has an invalidated modification SwitchPoint.
+         *
+         * @param  index index for the modification SwitchPoint
+         * @return true if the particular SwitchPoint at the index is invalidated
+         */
+        public boolean hasInvalidatedModificationSwitchPoint(final int index) {
+            return false;
+        }
+
+        /**
+         * Check whether at least one of the modification SwitchPoints has been
+         * invalidated
+         * @return true if one of the SwitchPoints has been invalidated
+         */
+        public boolean hasInvalidatedModificationSwitchPoints() {
+            return false;
+        }
+
+        /**
+         * Check whether this OptimisticBuiltins has a SwitchPoints of particular
+         * index.
+         *
+         * As creation overhead for a SwitchPoint is non-zero, we have to create them lazily instead of,
+         * e.g. in the constructor of every subclass.
+         *
+         * @param index index for the modification SwitchPoint
+         * @return true if a modification SwitchPoint exists, no matter if it has been invalidated or not
+         */
+        public boolean hasModificationSwitchPoint(final int index) {
+            return false;
+        }
+
+        /**
+         * Check whether this OptimisticBuiltins has SwitchPoints.
+         *
+         * As creation overhead for a SwitchPoint is non-zero, we have to create them lazily instead of,
+         * e.g. in the constructor of every subclass.
+         *
+         * @return true if a modification SwitchPoint exists, no matter if it has been invalidated or not
+         */
+        public boolean hasModificationSwitchPoints() {
+            return false;
+        }
+
+        /**
+         * Check, given a link request and a receiver, if this specialization
+         * fits This is used by the linker in {@link ScriptFunction} to figure
+         * out if an optimistic builtin can be linked when first discovered
+         *
+         * @param self receiver
+         * @param desc callsite descriptor
+         * @param request link request
+
+         * @return true if we can link, false otherwise - that means we have to
+         *         pick a non specialized target
+         */
+        public boolean checkLinkable(final Object self, final CallSiteDescriptor desc, final LinkRequest request) {
+            // no matter what the modification switchpoints are, if any of them are invalidated,
+            // we can't link. Side effect is that if it's the first time we see this callsite,
+            // we have to create the SwitchPoint(s) so future modification switchpoint invalidations
+            // relink it
+            final SwitchPoint[] sps = getOrCreateModificationSwitchPoints(self);
+            if (sps == INVALIDATED_SWITCHPOINTS) {
+                // nope, can't do the fast link as this assumption
+                // has been invalidated already, e.g. length of an
+                // array set to not writable
+                return false;
+            }
+            modificationSwitchPoints = sps; //cache
+
+            // check the link guard, if it says we can link, go ahead
+            return canLink(self, desc, request);
+        }
+
+        private SwitchPoint[] getOrCreateModificationSwitchPoints(final Object self) {
+            final SwitchPoint[] sps = getOrCreateModificationSwitchPoints(); //ask for all my switchpoints
+            if (sps != null) { //switchpoint exists, but some may be invalidated
+                for (final SwitchPoint sp : sps) {
+                    if (sp.hasBeenInvalidated()) {
+                        return INVALIDATED_SWITCHPOINTS;
+                    }
+                }
+            }
+            return sps;
+        }
+
+        /**
+         * Get the cached modification switchpoints. Only possible to do after a link
+         * check call has been performed, one that has answered "true", or you will get the
+         * wrong information.
+         *
+         * Should be used only from {@link ScriptFunction#findCallMethod}
+         *
+         * @return cached modification switchpoints for this callsite, null if none
+         */
+        public SwitchPoint[] getModificationSwitchPoints() {
+            return modificationSwitchPoints == null ? null : modificationSwitchPoints.clone();
+        }
+    }
+
+    /**
+     * name override for return value polymorphism, for example we can't have
+     * pop(V)I and pop(V)D in the same Java class, so they need to be named,
+     * e.g. popInt(V)I and popDouble(V)D for disambiguation, however, their
+     * names still need to resolve to "pop" to JavaScript so we can still
+     * specialize on return values and so that the linker can find them
+     *
+     * @return name, "" means no override, use the Java function name, e.g.
+     *         "push"
+     */
+    String name() default "";
+
+    /**
+     * Return the guard for this specialized function. The default is no guard.
+     *
+     * @return guard
+     */
+    Class<?> linkLogic() default LinkLogic.Empty.class;
+
+    /**
+     * Is this a specialized constructor?
+     */
+    boolean isConstructor() default false;
+
+    /**
+     * Can this function throw UnwarrantedOptimismExceptions? This works just
+     * like the normal functions, but we need the function to be
+     * immutable/non-state modifying, as we can't generate continuations for
+     * native code. Luckily a lot of the methods we want to specialize have this
+     * property
+     */
+    boolean isOptimistic() default false;
 }

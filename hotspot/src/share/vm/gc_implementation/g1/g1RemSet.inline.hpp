@@ -44,7 +44,7 @@ inline void G1RemSet::write_ref(HeapRegion* from, T* p) {
 }
 
 template <class T>
-inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, int tid) {
+inline void G1RemSet::par_write_ref(HeapRegion* from, T* p, uint tid) {
   oop obj = oopDesc::load_decode_heap_oop(p);
   if (obj == NULL) {
     return;
@@ -77,15 +77,6 @@ template <class T>
 inline void UpdateRSOopClosure::do_oop_work(T* p) {
   assert(_from != NULL, "from region must be non-NULL");
   _rs->par_write_ref(_from, p, _worker_i);
-}
-
-template <class T>
-inline void UpdateRSetImmediate::do_oop_work(T* p) {
-  assert(_from->is_in_reserved(p), "paranoia");
-  T heap_oop = oopDesc::load_heap_oop(p);
-  if (!oopDesc::is_null(heap_oop) && !_from->is_survivor()) {
-    _g1_rem_set->par_write_ref(_from, p, 0);
-  }
 }
 
 #endif // SHARE_VM_GC_IMPLEMENTATION_G1_G1REMSET_INLINE_HPP

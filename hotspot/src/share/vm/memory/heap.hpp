@@ -25,6 +25,7 @@
 #ifndef SHARE_VM_MEMORY_HEAP_HPP
 #define SHARE_VM_MEMORY_HEAP_HPP
 
+#include "code/codeBlob.hpp"
 #include "memory/allocation.hpp"
 #include "runtime/virtualspace.hpp"
 
@@ -93,6 +94,11 @@ class CodeHeap : public CHeapObj<mtCode> {
   FreeBlock*   _freelist;
   size_t       _freelist_segments;               // No. of segments in freelist
   int          _freelist_length;
+  size_t       _max_allocated_capacity;          // Peak capacity that was allocated during lifetime of the heap
+
+  const char*  _name;                            // Name of the CodeHeap
+  const int    _code_blob_type;                  // CodeBlobType it contains
+  bool         _was_full;                        // True if the code heap was full
 
   enum { free_sentinel = 0xFF };
 
@@ -127,10 +133,10 @@ class CodeHeap : public CHeapObj<mtCode> {
   void clear();                                 // clears all heap contents
 
  public:
-  CodeHeap();
+  CodeHeap(const char* name, const int code_blob_type);
 
   // Heap extents
-  bool  reserve(size_t reserved_size, size_t committed_size, size_t segment_size);
+  bool  reserve(ReservedSpace rs, size_t committed_size, size_t segment_size);
   bool  expand_by(size_t size);                  // expands committed memory by size
 
   // Memory allocation
@@ -161,7 +167,18 @@ class CodeHeap : public CHeapObj<mtCode> {
   size_t max_capacity() const;
   int    allocated_segments() const;
   size_t allocated_capacity() const;
+  size_t max_allocated_capacity() const          { return _max_allocated_capacity; }
   size_t unallocated_capacity() const            { return max_capacity() - allocated_capacity(); }
+
+  // Returns true if the CodeHeap contains CodeBlobs of the given type
+  bool accepts(int code_blob_type) const         { return (_code_blob_type == CodeBlobType::All) ||
+                                                          (_code_blob_type == code_blob_type); }
+  int code_blob_type() const                     { return _code_blob_type; }
+
+  // Debugging / Profiling
+  const char* name() const                       { return _name; }
+  bool was_full()                                { return _was_full; }
+  void report_full()                             { _was_full = true; }
 
 private:
   size_t heap_unallocated_capacity() const;

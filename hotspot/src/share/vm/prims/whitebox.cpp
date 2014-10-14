@@ -257,7 +257,7 @@ WB_ENTRY(jboolean, WB_G1IsHumongous(JNIEnv* env, jobject o, jobject obj))
   G1CollectedHeap* g1 = G1CollectedHeap::heap();
   oop result = JNIHandles::resolve(obj);
   const HeapRegion* hr = g1->heap_region_containing(result);
-  return hr->isHumongous();
+  return hr->is_humongous();
 WB_END
 
 WB_ENTRY(jlong, WB_G1NumFreeRegions(JNIEnv* env, jobject o))
@@ -713,6 +713,12 @@ WB_END
 WB_ENTRY(void, WB_FullGC(JNIEnv* env, jobject o))
   Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(true);
   Universe::heap()->collect(GCCause::_last_ditch_collection);
+#if INCLUDE_ALL_GCS
+  if (UseG1GC) {
+    // Needs to be cleared explicitly for G1
+    Universe::heap()->collector_policy()->set_should_clear_all_soft_refs(false);
+  }
+#endif // INCLUDE_ALL_GCS
 WB_END
 
 WB_ENTRY(void, WB_YoungGC(JNIEnv* env, jobject o))
@@ -814,6 +820,33 @@ WB_ENTRY(void, WB_FreeMetaspace(JNIEnv* env, jobject wb, jobject class_loader, j
   MetadataFactory::free_array(cld, (Array<u1>*)(uintptr_t)addr);
 WB_END
 
+WB_ENTRY(jlong, WB_IncMetaspaceCapacityUntilGC(JNIEnv* env, jobject wb, jlong inc))
+  if (inc < 0) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_IncMetaspaceCapacityUntilGC: inc is negative: " JLONG_FORMAT, inc));
+  }
+
+  jlong max_size_t = (jlong) ((size_t) -1);
+  if (inc > max_size_t) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalArgumentException(),
+        err_msg("WB_IncMetaspaceCapacityUntilGC: inc does not fit in size_t: " JLONG_FORMAT, inc));
+  }
+
+  size_t new_cap_until_GC = 0;
+  size_t aligned_inc = align_size_down((size_t) inc, Metaspace::commit_alignment());
+  bool success = MetaspaceGC::inc_capacity_until_GC(aligned_inc, &new_cap_until_GC);
+  if (!success) {
+    THROW_MSG_0(vmSymbols::java_lang_IllegalStateException(),
+                "WB_IncMetaspaceCapacityUntilGC: could not increase capacity until GC "
+                "due to contention with another thread");
+  }
+  return (jlong) new_cap_until_GC;
+WB_END
+
+WB_ENTRY(jlong, WB_MetaspaceCapacityUntilGC(JNIEnv* env, jobject wb))
+  return (jlong) MetaspaceGC::capacity_until_GC();
+WB_END
+
 //Some convenience methods to deal with objects from java
 int WhiteBox::offset_for_field(const char* field_name, oop object,
     Symbol* signature_symbol) {
@@ -864,6 +897,36 @@ bool WhiteBox::lookup_bool(const char* field_name, oop object) {
   return ret;
 }
 
+void WhiteBox::register_methods(JNIEnv* env, jclass wbclass, JavaThread* thread, JNINativeMethod* method_array, int method_count) {
+  ResourceMark rm;
+  ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
+
+  //  one by one registration natives for exception catching
+  jclass no_such_method_error_klass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
+  CHECK_JNI_EXCEPTION(env);
+  for (int i = 0, n = method_count; i < n; ++i) {
+    // Skip dummy entries
+    if (method_array[i].fnPtr == NULL) continue;
+    if (env->RegisterNatives(wbclass, &method_array[i], 1) != 0) {
+      jthrowable throwable_obj = env->ExceptionOccurred();
+      if (throwable_obj != NULL) {
+        env->ExceptionClear();
+        if (env->IsInstanceOf(throwable_obj, no_such_method_error_klass)) {
+          // NoSuchMethodError is thrown when a method can't be found or a method is not native.
+          // Ignoring the exception since it is not preventing use of other WhiteBox methods.
+          tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s",
+              method_array[i].name, method_array[i].signature);
+        }
+      } else {
+        // Registration failed unexpectedly.
+        tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered",
+            method_array[i].name, method_array[i].signature);
+        env->UnregisterNatives(wbclass);
+        break;
+      }
+    }
+  }
+}
 
 #define CC (char*)
 
@@ -955,6 +1018,8 @@ static JNINativeMethod methods[] = {
      CC"(Ljava/lang/ClassLoader;J)J",                 (void*)&WB_AllocateMetaspace },
   {CC"freeMetaspace",
      CC"(Ljava/lang/ClassLoader;JJ)V",                (void*)&WB_FreeMetaspace },
+  {CC"incMetaspaceCapacityUntilGC", CC"(J)J",         (void*)&WB_IncMetaspaceCapacityUntilGC },
+  {CC"metaspaceCapacityUntilGC", CC"()J",             (void*)&WB_MetaspaceCapacityUntilGC },
   {CC"getCPUFeatures",     CC"()Ljava/lang/String;",  (void*)&WB_GetCPUFeatures     },
   {CC"getNMethod",         CC"(Ljava/lang/reflect/Executable;Z)[Ljava/lang/Object;",
                                                       (void*)&WB_GetNMethod         },
@@ -971,35 +1036,9 @@ JVM_ENTRY(void, JVM_RegisterWhiteBoxMethods(JNIEnv* env, jclass wbclass))
       instanceKlassHandle ikh = instanceKlassHandle(JNIHandles::resolve(wbclass)->klass());
       Handle loader(ikh->class_loader());
       if (loader.is_null()) {
-        ResourceMark rm;
-        ThreadToNativeFromVM ttnfv(thread); // can't be in VM when we call JNI
-        bool result = true;
-        //  one by one registration natives for exception catching
-        jclass exceptionKlass = env->FindClass(vmSymbols::java_lang_NoSuchMethodError()->as_C_string());
-        CHECK_JNI_EXCEPTION(env);
-        for (int i = 0, n = sizeof(methods) / sizeof(methods[0]); i < n; ++i) {
-          if (env->RegisterNatives(wbclass, methods + i, 1) != 0) {
-            result = false;
-            jthrowable throwable_obj = env->ExceptionOccurred();
-            if (throwable_obj != NULL) {
-              env->ExceptionClear();
-              if (env->IsInstanceOf(throwable_obj, exceptionKlass)) {
-                // j.l.NoSuchMethodError is thrown when a method can't be found or a method is not native
-                // ignoring the exception
-                tty->print_cr("Warning: 'NoSuchMethodError' on register of sun.hotspot.WhiteBox::%s%s", methods[i].name, methods[i].signature);
-              }
-            } else {
-              // register is failed w/o exception or w/ unexpected exception
-              tty->print_cr("Warning: unexpected error on register of sun.hotspot.WhiteBox::%s%s. All methods will be unregistered", methods[i].name, methods[i].signature);
-              env->UnregisterNatives(wbclass);
-              break;
-            }
-          }
-        }
-
-        if (result) {
-          WhiteBox::set_used();
-        }
+        WhiteBox::register_methods(env, wbclass, thread, methods, sizeof(methods) / sizeof(methods[0]));
+        WhiteBox::register_extended(env, wbclass, thread);
+        WhiteBox::set_used();
       }
     }
   }

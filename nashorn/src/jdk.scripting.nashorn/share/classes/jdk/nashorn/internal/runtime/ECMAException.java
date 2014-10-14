@@ -285,7 +285,7 @@ public final class ECMAException extends NashornException {
             if (!sobj.has(EXCEPTION_PROPERTY)) {
                 sobj.addOwnProperty(EXCEPTION_PROPERTY, Property.NOT_ENUMERABLE, this);
             } else {
-                sobj.set(EXCEPTION_PROPERTY, this, false);
+                sobj.set(EXCEPTION_PROPERTY, this, 0);
             }
         }
     }

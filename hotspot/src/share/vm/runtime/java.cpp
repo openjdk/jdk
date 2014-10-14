@@ -272,9 +272,6 @@ void print_statistics() {
 
   print_method_profiling_data();
 
-  if (TimeCompiler) {
-    COMPILER2_PRESENT(Compile::print_timers();)
-  }
   if (TimeCompilationPolicy) {
     CompilationPolicy::policy()->print_time();
   }
@@ -430,8 +427,6 @@ extern "C" {
   }
 }
 
-jint volatile vm_getting_terminated = 0;
-
 // Note: before_exit() can be executed only once, if more than one threads
 //       are trying to shutdown the VM at the same time, only one thread
 //       can run before_exit() and all other threads must wait.
@@ -461,8 +456,6 @@ void before_exit(JavaThread * thread) {
       return;
     }
   }
-
-  OrderAccess::release_store(&vm_getting_terminated, 1);
 
   // The only difference between this and Win32's _onexit procs is that
   // this version is invoked before any threads get killed.
@@ -587,7 +580,7 @@ void notify_vm_shutdown() {
 void vm_direct_exit(int code) {
   notify_vm_shutdown();
   os::wait_for_keypress_at_exit();
-  ::exit(code);
+  os::exit(code);
 }
 
 void vm_perform_shutdown_actions() {

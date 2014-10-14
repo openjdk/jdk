@@ -68,6 +68,7 @@
   template(G1CollectFull)                         \
   template(G1CollectForAllocation)                \
   template(G1IncCollectionPause)                  \
+  template(DestroyAllocationContext)              \
   template(EnableBiasedLocking)                   \
   template(RevokeBias)                            \
   template(BulkRevokeBias)                        \

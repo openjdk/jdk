@@ -500,7 +500,7 @@ nmethod* nmethod::new_native_nmethod(methodHandle method,
     CodeOffsets offsets;
     offsets.set_value(CodeOffsets::Verified_Entry, vep_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
-    nm = new (native_nmethod_size) nmethod(method(), native_nmethod_size,
+    nm = new (native_nmethod_size, CompLevel_none) nmethod(method(), native_nmethod_size,
                                             compile_id, &offsets,
                                             code_buffer, frame_size,
                                             basic_lock_owner_sp_offset,
@@ -538,7 +538,7 @@ nmethod* nmethod::new_dtrace_nmethod(methodHandle method,
     offsets.set_value(CodeOffsets::Dtrace_trap, trap_offset);
     offsets.set_value(CodeOffsets::Frame_Complete, frame_complete);
 
-    nm = new (nmethod_size) nmethod(method(), nmethod_size,
+    nm = new (nmethod_size, CompLevel_none) nmethod(method(), nmethod_size,
                                     &offsets, code_buffer, frame_size);
 
     NOT_PRODUCT(if (nm != NULL)  nmethod_stats.note_nmethod(nm));
@@ -586,7 +586,7 @@ nmethod* nmethod::new_nmethod(methodHandle method,
       + round_to(nul_chk_table->size_in_bytes(), oopSize)
       + round_to(debug_info->data_size()       , oopSize);
 
-    nm = new (nmethod_size)
+    nm = new (nmethod_size, comp_level)
     nmethod(method(), nmethod_size, compile_id, entry_bci, offsets,
             orig_pc_offset, debug_info, dependencies, code_buffer, frame_size,
             oop_maps,
@@ -803,9 +803,11 @@ nmethod::nmethod(
 }
 #endif // def HAVE_DTRACE_H
 
-void* nmethod::operator new(size_t size, int nmethod_size) throw() {
-  // Not critical, may return null if there is too little continuous memory
-  return CodeCache::allocate(nmethod_size);
+void* nmethod::operator new(size_t size, int nmethod_size, int comp_level) throw () {
+  // With a SegmentedCodeCache, nmethods are allocated on separate heaps and therefore do not share memory
+  // with critical CodeBlobs. We define the allocation as critical to make sure all code heap memory is used.
+  bool is_critical = SegmentedCodeCache;
+  return CodeCache::allocate(nmethod_size, CodeCache::get_code_blob_type(comp_level), is_critical);
 }
 
 nmethod::nmethod(
@@ -1128,6 +1130,18 @@ void nmethod::clear_inline_caches() {
   }
 }
 
+// Clear ICStubs of all compiled ICs
+void nmethod::clear_ic_stubs() {
+  assert_locked_or_safepoint(CompiledIC_lock);
+  RelocIterator iter(this);
+  while(iter.next()) {
+    if (iter.type() == relocInfo::virtual_call_type) {
+      CompiledIC* ic = CompiledIC_at(&iter);
+      ic->clear_ic_stub();
+    }
+  }
+}
+
 
 void nmethod::cleanup_inline_caches() {
 
@@ -1364,8 +1378,6 @@ void nmethod::invalidate_osr_method() {
   // Remove from list of active nmethods
   if (method() != NULL)
     method()->method_holder()->remove_osr_nmethod(this);
-  // Set entry as invalid
-  _entry_bci = InvalidOSREntryBci;
 }
 
 void nmethod::log_state_change() const {
@@ -1532,7 +1544,7 @@ void nmethod::flush() {
   Events::log(JavaThread::current(), "flushing nmethod " INTPTR_FORMAT, this);
   if (PrintMethodFlushing) {
     tty->print_cr("*flushing nmethod %3d/" INTPTR_FORMAT ". Live blobs:" UINT32_FORMAT "/Free CodeCache:" SIZE_FORMAT "Kb",
-        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity()/1024);
+        _compile_id, this, CodeCache::nof_blobs(), CodeCache::unallocated_capacity(CodeCache::get_code_blob_type(_comp_level))/1024);
   }
 
   // We need to deallocate any ExceptionCache data.
@@ -1558,7 +1570,6 @@ void nmethod::flush() {
 
   CodeCache::free(this);
 }
-
 
 //
 // Notify all classes this nmethod is dependent on that it is no
@@ -2420,15 +2431,18 @@ void nmethod::check_all_dependencies(DepChange& changes) {
   // Turn off dependency tracing while actually testing dependencies.
   NOT_PRODUCT( FlagSetting fs(TraceDependencies, false) );
 
- typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
-                           &DependencySignature::equals, 11027> DepTable;
+  typedef ResourceHashtable<DependencySignature, int, &DependencySignature::hash,
+                            &DependencySignature::equals, 11027> DepTable;
 
- DepTable* table = new DepTable();
+  DepTable* table = new DepTable();
 
   // Iterate over live nmethods and check dependencies of all nmethods that are not
   // marked for deoptimization. A particular dependency is only checked once.
-  for(nmethod* nm = CodeCache::alive_nmethod(CodeCache::first()); nm != NULL; nm = CodeCache::alive_nmethod(CodeCache::next(nm))) {
-    if (!nm->is_marked_for_deoptimization()) {
+  NMethodIterator iter;
+  while(iter.next()) {
+    nmethod* nm = iter.method();
+    // Only notify for live nmethods
+    if (nm->is_alive() && !nm->is_marked_for_deoptimization()) {
       for (Dependencies::DepStream deps(nm); deps.next(); ) {
         // Construct abstraction of a dependency.
         DependencySignature* current_sig = new DependencySignature(deps);

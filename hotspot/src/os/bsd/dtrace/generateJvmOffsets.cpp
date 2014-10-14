@@ -67,7 +67,7 @@
  * we link this program with -z nodefs .
  *
  * But for 'debug1' and 'fastdebug1' we still have to provide
- * a particular workaround for the following symbols bellow.
+ * a particular workaround for the following symbols below.
  * It will be good to find out a generic way in the future.
  */
 
@@ -87,20 +87,23 @@ StubQueue* AbstractInterpreter::_code = NULL;
 #endif /* ASSERT */
 #endif /* COMPILER1 */
 
-#define GEN_OFFS(Type,Name)                             \
+#define GEN_OFFS_NAME(Type,Name,OutputType)             \
   switch(gen_variant) {                                 \
   case GEN_OFFSET:                                      \
-    printf("#define OFFSET_%-33s %ld\n",                 \
-           #Type #Name, offset_of(Type, Name)); \
+    printf("#define OFFSET_%-33s %ld\n",                \
+            #OutputType #Name, offset_of(Type, Name));  \
     break;                                              \
   case GEN_INDEX:                                       \
     printf("#define IDX_OFFSET_%-33s %d\n",             \
-            #Type #Name, index++);                      \
+            #OutputType #Name, index++);                \
     break;                                              \
   case GEN_TABLE:                                       \
-    printf("\tOFFSET_%s,\n", #Type #Name);              \
+    printf("\tOFFSET_%s,\n", #OutputType #Name);        \
     break;                                              \
   }
+
+#define GEN_OFFS(Type,Name)                             \
+  GEN_OFFS_NAME(Type,Name,Type)
 
 #define GEN_SIZE(Type)                                  \
   switch(gen_variant) {                                 \
@@ -246,6 +249,11 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   GEN_OFFS(VirtualSpace, _high);
   printf("\n");
 
+  /* We need to use different names here because of the template parameter */
+  GEN_OFFS_NAME(GrowableArray<CodeHeap*>, _data, GrowableArray_CodeHeap);
+  GEN_OFFS_NAME(GrowableArray<CodeHeap*>, _len, GrowableArray_CodeHeap);
+  printf("\n");
+
   GEN_OFFS(CodeBlob, _name);
   GEN_OFFS(CodeBlob, _header_size);
   GEN_OFFS(CodeBlob, _content_offset);
@@ -255,6 +263,7 @@ int generateJvmOffsets(GEN_variant gen_variant) {
   printf("\n");
 
   GEN_OFFS(nmethod, _method);
+  GEN_OFFS(nmethod, _dependencies_offset);
   GEN_OFFS(nmethod, _oops_offset);
   GEN_OFFS(nmethod, _scopes_data_offset);
   GEN_OFFS(nmethod, _scopes_pcs_offset);
