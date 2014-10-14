@@ -91,7 +91,7 @@ void PSPromotionManager::pre_scavenge() {
 bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
   bool promotion_failure_occurred = false;
 
-  TASKQUEUE_STATS_ONLY(if (PrintGCDetails && ParallelGCVerbose) print_stats());
+  TASKQUEUE_STATS_ONLY(if (PrintTaskqueue) print_taskqueue_stats());
   for (uint i = 0; i < ParallelGCThreads + 1; i++) {
     PSPromotionManager* manager = manager_array(i);
     assert(manager->claimed_stack_depth()->is_empty(), "should be empty");
@@ -106,16 +106,9 @@ bool PSPromotionManager::post_scavenge(YoungGCTracer& gc_tracer) {
 
 #if TASKQUEUE_STATS
 void
-PSPromotionManager::print_taskqueue_stats(uint i) const {
-  tty->print("%3u ", i);
-  _claimed_stack_depth.stats.print();
-  tty->cr();
-}
-
-void
-PSPromotionManager::print_local_stats(uint i) const {
+PSPromotionManager::print_local_stats(outputStream* const out, uint i) const {
   #define FMT " " SIZE_FORMAT_W(10)
-  tty->print_cr("%3u" FMT FMT FMT FMT, i, _masked_pushes, _masked_steals,
+  out->print_cr("%3u" FMT FMT FMT FMT, i, _masked_pushes, _masked_steals,
                 _arrays_chunked, _array_chunks_processed);
   #undef FMT
 }
@@ -127,20 +120,24 @@ static const char* const pm_stats_hdr[] = {
 };
 
 void
-PSPromotionManager::print_stats() {
-  tty->print_cr("== GC Tasks Stats, GC %3d",
+PSPromotionManager::print_taskqueue_stats(outputStream* const out) {
+  out->print_cr("== GC Tasks Stats, GC %3d",
                 Universe::heap()->total_collections());
 
-  tty->print("thr "); TaskQueueStats::print_header(1); tty->cr();
-  tty->print("--- "); TaskQueueStats::print_header(2); tty->cr();
+  TaskQueueStats totals;
+  out->print("thr "); TaskQueueStats::print_header(1, out); out->cr();
+  out->print("--- "); TaskQueueStats::print_header(2, out); out->cr();
   for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
-    manager_array(i)->print_taskqueue_stats(i);
+    TaskQueueStats& next = manager_array(i)->_claimed_stack_depth.stats;
+    out->print("%3d ", i); next.print(out); out->cr();
+    totals += next;
   }
+  out->print("tot "); totals.print(out); out->cr();
 
   const uint hlines = sizeof(pm_stats_hdr) / sizeof(pm_stats_hdr[0]);
-  for (uint i = 0; i < hlines; ++i) tty->print_cr("%s", pm_stats_hdr[i]);
+  for (uint i = 0; i < hlines; ++i) out->print_cr("%s", pm_stats_hdr[i]);
   for (uint i = 0; i < ParallelGCThreads + 1; ++i) {
-    manager_array(i)->print_local_stats(i);
+    manager_array(i)->print_local_stats(out, i);
   }
 }
 
