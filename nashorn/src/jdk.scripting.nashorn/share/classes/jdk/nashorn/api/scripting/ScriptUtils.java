@@ -25,8 +25,6 @@
 
 package jdk.nashorn.api.scripting;
 
-import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
-
 import java.lang.invoke.MethodHandle;
 import jdk.internal.dynalink.beans.StaticClass;
 import jdk.internal.dynalink.linker.LinkerServices;
