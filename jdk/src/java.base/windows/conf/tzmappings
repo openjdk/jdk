@@ -193,5 +193,10 @@ Kaliningrad Standard Time:925,925:RU:Europe/Kaliningrad:
 Turkey Standard Time:926,926::Asia/Istanbul:
 Bahia Standard Time:927,927::America/Bahia:
 Libya Standard Time:928,928:LY:Africa/Tripoli:
-Western Brazilian Standard Time:929,929:BR:America/Rio_Branco:
-Armenian Standard Time:930,930:AM:Asia/Yerevan:
+Belarus Standard Time:929,929:BY:Europe/Minsk:
+Line Islands Standard Time:930,930::Pacific/Kiritimati:
+Russia Time Zone 10:931,931::Asia/Srednekolymsk:
+Russia Time Zone 11:932,932::Asia/Anadyr:
+Russia Time Zone 3:933,933::Europe/Samara:
+Western Brazilian Standard Time:934,934:BR:America/Rio_Branco:
+Armenian Standard Time:935,935:AM:Asia/Yerevan:
