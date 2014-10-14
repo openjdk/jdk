@@ -1045,8 +1045,9 @@ public final class String
             }
         }
         // Argument is a String
-        if (cs.equals(this))
-            return true;
+        if (cs instanceof String) {
+            return equals(cs);
+        }
         // Argument is a generic CharSequence
         char v1[] = value;
         int n = v1.length;
