@@ -805,6 +805,7 @@ JVM_ENTRY(jclass, JVM_FindClassFromBootLoader(JNIEnv* env,
   return (jclass) JNIHandles::make_local(env, k->java_mirror());
 JVM_END
 
+// Not used; JVM_FindClassFromCaller replaces this.
 JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
                                                jboolean init, jobject loader,
                                                jboolean throwError))
@@ -831,6 +832,42 @@ JVM_ENTRY(jclass, JVM_FindClassFromClassLoader(JNIEnv* env, const char* name,
   return result;
 JVM_END
 
+// Find a class with this name in this loader, using the caller's protection domain.
+JVM_ENTRY(jclass, JVM_FindClassFromCaller(JNIEnv* env, const char* name,
+                                          jboolean init, jobject loader,
+                                          jclass caller))
+  JVMWrapper2("JVM_FindClassFromCaller %s throws ClassNotFoundException", name);
+  // Java libraries should ensure that name is never null...
+  if (name == NULL || (int)strlen(name) > Symbol::max_length()) {
+    // It's impossible to create this class;  the name cannot fit
+    // into the constant pool.
+    THROW_MSG_0(vmSymbols::java_lang_ClassNotFoundException(), name);
+  }
+
+  TempNewSymbol h_name = SymbolTable::new_symbol(name, CHECK_NULL);
+
+  oop loader_oop = JNIHandles::resolve(loader);
+  oop from_class = JNIHandles::resolve(caller);
+  oop protection_domain = NULL;
+  // If loader is null, shouldn't call ClassLoader.checkPackageAccess; otherwise get
+  // NPE. Put it in another way, the bootstrap class loader has all permission and
+  // thus no checkPackageAccess equivalence in the VM class loader.
+  // The caller is also passed as NULL by the java code if there is no security
+  // manager to avoid the performance cost of getting the calling class.
+  if (from_class != NULL && loader_oop != NULL) {
+    protection_domain = java_lang_Class::as_Klass(from_class)->protection_domain();
+  }
+
+  Handle h_loader(THREAD, loader_oop);
+  Handle h_prot(THREAD, protection_domain);
+  jclass result = find_class_from_class_loader(env, h_name, init, h_loader,
+                                               h_prot, false, THREAD);
+
+  if (TraceClassResolution && result != NULL) {
+    trace_class_resolution(java_lang_Class::as_Klass(JNIHandles::resolve_non_null(result)));
+  }
+  return result;
+JVM_END
 
 JVM_ENTRY(jclass, JVM_FindClassFromClass(JNIEnv *env, const char *name,
                                          jboolean init, jclass from))
@@ -3921,10 +3958,15 @@ JNIEXPORT void JNICALL JVM_RawMonitorExit(void *mon) {
 
 // Shared JNI/JVM entry points //////////////////////////////////////////////////////////////
 
-jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init, Handle loader, Handle protection_domain, jboolean throwError, TRAPS) {
+jclass find_class_from_class_loader(JNIEnv* env, Symbol* name, jboolean init,
+                                    Handle loader, Handle protection_domain,
+                                    jboolean throwError, TRAPS) {
   // Security Note:
   //   The Java level wrapper will perform the necessary security check allowing
-  //   us to pass the NULL as the initiating class loader.
+  //   us to pass the NULL as the initiating class loader.  The VM is responsible for
+  //   the checkPackageAccess relative to the initiating class loader via the
+  //   protection_domain. The protection_domain is passed as NULL by the java code
+  //   if there is no security manager in 3-arg Class.forName().
   Klass* klass = SystemDictionary::resolve_or_fail(name, loader, protection_domain, throwError != 0, CHECK_NULL);
 
   KlassHandle klass_handle(THREAD, klass);
