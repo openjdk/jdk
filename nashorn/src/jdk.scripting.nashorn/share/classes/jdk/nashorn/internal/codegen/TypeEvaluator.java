@@ -35,6 +35,7 @@ import jdk.nashorn.internal.ir.Expression;
 import jdk.nashorn.internal.ir.IdentNode;
 import jdk.nashorn.internal.ir.IndexNode;
 import jdk.nashorn.internal.ir.Optimistic;
+import jdk.nashorn.internal.objects.ArrayBufferView;
 import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.FindProperty;
 import jdk.nashorn.internal.runtime.JSType;
@@ -204,16 +205,14 @@ final class TypeEvaluator {
         if (expr instanceof IndexNode) {
             final IndexNode indexNode = (IndexNode)expr;
             final Object    base = evaluateSafely(indexNode.getBase());
-            if(!(base instanceof NativeArray)) {
-                // We only know how to deal with NativeArray. TODO: maybe manage buffers too
-                return null;
+            if(base instanceof NativeArray || base instanceof ArrayBufferView) {
+                // NOTE: optimistic array getters throw UnwarrantedOptimismException based on the type of their underlying
+                // array storage, not based on values of individual elements. Thus, a LongArrayData will throw UOE for every
+                // optimistic int linkage attempt, even if the long value being returned in the first invocation would be
+                // representable as int. That way, we can presume that the array's optimistic type is the most optimistic
+                // type for which an element getter has a chance of executing successfully.
+                return ((ScriptObject)base).getArray().getOptimisticType();
             }
-            // NOTE: optimistic array getters throw UnwarrantedOptimismException based on the type of their underlying
-            // array storage, not based on values of individual elements. Thus, a LongArrayData will throw UOE for every
-            // optimistic int linkage attempt, even if the long value being returned in the first invocation would be
-            // representable as int. That way, we can presume that the array's optimistic type is the most optimistic
-            // type for which an element getter has a chance of executing successfully.
-            return ((NativeArray)base).getArray().getOptimisticType();
         }
 
         return null;

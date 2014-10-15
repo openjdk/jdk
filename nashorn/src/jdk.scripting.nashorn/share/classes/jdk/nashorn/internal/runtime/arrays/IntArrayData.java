@@ -26,10 +26,10 @@
 package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -254,11 +254,6 @@ final class IntArrayData extends ContinuousArrayData implements IntElements {
         }
 
         return convert(Double.class).set(index, value, strict);
-    }
-
-    @Override
-    public Type getOptimisticType() {
-        return Type.INT;
     }
 
     @Override
