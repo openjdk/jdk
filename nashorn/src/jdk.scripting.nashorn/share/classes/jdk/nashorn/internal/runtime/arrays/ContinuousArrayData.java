@@ -30,6 +30,7 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.JSType.getAccessorTypeIndex;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.MethodType;
@@ -37,6 +38,7 @@ import java.lang.invoke.SwitchPoint;
 import jdk.internal.dynalink.CallSiteDescriptor;
 import jdk.internal.dynalink.linker.GuardedInvocation;
 import jdk.internal.dynalink.linker.LinkRequest;
+import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.lookup.Lookup;
 import jdk.nashorn.internal.runtime.ScriptObject;
 import jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor;
@@ -119,6 +121,11 @@ public abstract class ContinuousArrayData extends ArrayData {
      * @return element type
      */
     public abstract Class<?> getElementType();
+
+    @Override
+    public Type getOptimisticType() {
+        return Type.typeFor(getElementType());
+    }
 
     /**
      * Look up a continuous array element getter
