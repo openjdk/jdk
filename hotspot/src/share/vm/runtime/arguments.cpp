@@ -3922,6 +3922,15 @@ jint Arguments::apply_ergo() {
         "Incompatible compilation policy selected", NULL);
     }
   }
+
+#ifdef COMPILER2
+#ifndef PRODUCT
+  if (PrintIdealGraphLevel > 0) {
+    FLAG_SET_ERGO(bool, PrintIdealGraph, true);
+  }
+#endif
+#endif
+
   // Set NmethodSweepFraction after the size of the code cache is adapted (in case of tiered)
   if (FLAG_IS_DEFAULT(NmethodSweepFraction)) {
     FLAG_SET_DEFAULT(NmethodSweepFraction, 1 + ReservedCodeCacheSize / (16 * M));
