@@ -3790,6 +3790,10 @@ class CommandLineFlags {
   product(bool, UseSharedSpaces, true,                                      \
           "Use shared spaces for metadata")                                 \
                                                                             \
+  product(bool, VerifySharedSpaces, false,                                  \
+          "Verify shared spaces (false for default archive, true for "      \
+          "archive specified by -XX:SharedArchiveFile)")                    \
+                                                                            \
   product(bool, RequireSharedSpaces, false,                                 \
           "Require shared spaces for metadata")                             \
                                                                             \
