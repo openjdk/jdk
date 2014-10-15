@@ -325,4 +325,29 @@ public class TrustedScriptEngineTest {
         );
         assertEquals(ret, 10, "Parsed and executed OK");
     }
+
+    @Test
+    public void evalDefaultFileNameTest() throws ScriptException {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final ScriptEngine engine = fac.getScriptEngine(new String[] { "--verify-code=true" });
+        // default FILENAME being "<eval>" make sure generated code bytecode verifies.
+        engine.eval("var a = 3;");
+    }
+
+    @Test
+    public void evalFileNameWithSpecialCharsTest() throws ScriptException {
+        final NashornScriptEngineFactory fac = new NashornScriptEngineFactory();
+        final ScriptEngine engine = fac.getScriptEngine(new String[] { "--verify-code=true" });
+        final ScriptContext ctxt = new SimpleScriptContext();
+        // use file name with "dangerous" chars.
+        ctxt.setAttribute(ScriptEngine.FILENAME, "<myscript>", ScriptContext.ENGINE_SCOPE);
+        engine.eval("var a = 3;");
+        ctxt.setAttribute(ScriptEngine.FILENAME, "[myscript]", ScriptContext.ENGINE_SCOPE);
+        engine.eval("var h = 'hello';");
+        ctxt.setAttribute(ScriptEngine.FILENAME, ";/\\$.", ScriptContext.ENGINE_SCOPE);
+        engine.eval("var foo = 'world';");
+        // name used by jjs shell tool for the interactive mode
+        ctxt.setAttribute(ScriptEngine.FILENAME, "<shell>", ScriptContext.ENGINE_SCOPE);
+        engine.eval("var foo = 'world';");
+    }
 }
