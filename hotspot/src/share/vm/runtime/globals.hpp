@@ -3578,6 +3578,10 @@ class CommandLineFlags {
   product_pd(intx, CompileThreshold,                                        \
           "number of interpreted method invocations before (re-)compiling") \
                                                                             \
+  product(double, CompileThresholdScaling, 1.0,                             \
+          "Factor to control when first compilation happens "               \
+          "(both with and without tiered compilation)")                     \
+                                                                            \
   product(intx, Tier0InvokeNotifyFreqLog, 7,                                \
           "Interpreter (tier 0) invocation notification frequency")         \
                                                                             \
