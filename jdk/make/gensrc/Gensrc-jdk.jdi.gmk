@@ -69,6 +69,17 @@ GENSRC_JDK_JDI += $(JDK_OUTPUTDIR)/gensrc/jdk.jdi/META-INF/services/com.sun.jdi.
 
 ################################################################################
 
+include GensrcProperties.gmk
+
+$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
+    $(filter %.properties, \
+        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.jdi/share/classes/com/sun/tools/jdi/resources)), \
+    ListResourceBundle))
+
+GENSRC_JDK_JDI += $(COMPILE_PROPERTIES)
+
+################################################################################
+
 jdk.jdi: $(GENSRC_JDK_JDI)
 
 all: jdk.jdi

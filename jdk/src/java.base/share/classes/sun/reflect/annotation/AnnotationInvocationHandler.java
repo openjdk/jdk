@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -29,7 +29,6 @@ import java.lang.annotation.*;
 import java.lang.reflect.*;
 import java.io.Serializable;
 import java.util.*;
-import java.lang.annotation.*;
 import java.security.AccessController;
 import java.security.PrivilegedAction;
 
@@ -45,6 +44,11 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
     private final Map<String, Object> memberValues;
 
     AnnotationInvocationHandler(Class<? extends Annotation> type, Map<String, Object> memberValues) {
+        Class<?>[] superInterfaces = type.getInterfaces();
+        if (!type.isAnnotation() ||
+            superInterfaces.length != 1 ||
+            superInterfaces[0] != java.lang.annotation.Annotation.class)
+            throw new AnnotationFormatError("Attempt to create proxy for a non-annotation type.");
         this.type = type;
         this.memberValues = memberValues;
     }
@@ -57,13 +61,17 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         if (member.equals("equals") && paramTypes.length == 1 &&
             paramTypes[0] == Object.class)
             return equalsImpl(args[0]);
-        assert paramTypes.length == 0;
-        if (member.equals("toString"))
+        if (paramTypes.length != 0)
+            throw new AssertionError("Too many parameters for an annotation method");
+
+        switch(member) {
+        case "toString":
             return toStringImpl();
-        if (member.equals("hashCode"))
+        case "hashCode":
             return hashCodeImpl();
-        if (member.equals("annotationType"))
+        case "annotationType":
             return type;
+        }
 
         // Handle annotation member accessors
         Object result = memberValues.get(member);
@@ -129,7 +137,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
      * Implementation of dynamicProxy.toString()
      */
     private String toStringImpl() {
-        StringBuffer result = new StringBuffer(128);
+        StringBuilder result = new StringBuilder(128);
         result.append('@');
         result.append(type.getName());
         result.append('(');
@@ -277,6 +285,7 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
                 new PrivilegedAction<Method[]>() {
                     public Method[] run() {
                         final Method[] mm = type.getDeclaredMethods();
+                        validateAnnotationMethods(mm);
                         AccessibleObject.setAccessible(mm, true);
                         return mm;
                     }
@@ -285,6 +294,94 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         return memberMethods;
     }
     private transient volatile Method[] memberMethods = null;
+
+    /**
+     * Validates that a method is structurally appropriate for an
+     * annotation type. As of Java SE 8, annotation types cannot
+     * contain static methods and the declared methods of an
+     * annotation type must take zero arguments and there are
+     * restrictions on the return type.
+     */
+    private void validateAnnotationMethods(Method[] memberMethods) {
+        /*
+         * Specification citations below are from JLS
+         * 9.6.1. Annotation Type Elements
+         */
+        boolean valid = true;
+        for(Method method : memberMethods) {
+            /*
+             * "By virtue of the AnnotationTypeElementDeclaration
+             * production, a method declaration in an annotation type
+             * declaration cannot have formal parameters, type
+             * parameters, or a throws clause.
+             *
+             * "By virtue of the AnnotationTypeElementModifier
+             * production, a method declaration in an annotation type
+             * declaration cannot be default or static."
+             */
+            if (method.getModifiers() != (Modifier.PUBLIC | Modifier.ABSTRACT) ||
+                method.isDefault() ||
+                method.getParameterCount() != 0 ||
+                method.getExceptionTypes().length != 0) {
+                valid = false;
+                break;
+            }
+
+            /*
+             * "It is a compile-time error if the return type of a
+             * method declared in an annotation type is not one of the
+             * following: a primitive type, String, Class, any
+             * parameterized invocation of Class, an enum type
+             * (section 8.9), an annotation type, or an array type
+             * (chapter 10) whose element type is one of the preceding
+             * types."
+             */
+            Class<?> returnType = method.getReturnType();
+            if (returnType.isArray()) {
+                returnType = returnType.getComponentType();
+                if (returnType.isArray()) { // Only single dimensional arrays
+                    valid = false;
+                    break;
+                }
+            }
+
+            if (!((returnType.isPrimitive() && returnType != void.class) ||
+                  returnType == java.lang.String.class ||
+                  returnType == java.lang.Class.class ||
+                  returnType.isEnum() ||
+                  returnType.isAnnotation())) {
+                valid = false;
+                break;
+            }
+
+            /*
+             * "It is a compile-time error if any method declared in an
+             * annotation type has a signature that is
+             * override-equivalent to that of any public or protected
+             * method declared in class Object or in the interface
+             * java.lang.annotation.Annotation."
+             *
+             * The methods in Object or Annotation meeting the other
+             * criteria (no arguments, contrained return type, etc.)
+             * above are:
+             *
+             * String toString()
+             * int hashCode()
+             * Class<? extends Annotation> annotationType()
+             */
+            String methodName = method.getName();
+            if ((methodName.equals("toString") && returnType == java.lang.String.class) ||
+                (methodName.equals("hashCode") && returnType == int.class) ||
+                (methodName.equals("annotationType") && returnType == java.lang.Class.class)) {
+                valid = false;
+                break;
+            }
+        }
+        if (valid)
+            return;
+        else
+            throw new AnnotationFormatError("Malformed method on an annotation type");
+    }
 
     /**
      * Implementation of dynamicProxy.hashCode()
@@ -330,7 +427,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         throws java.io.IOException, ClassNotFoundException {
         s.defaultReadObject();
 
-
         // Check to make sure that types have not evolved incompatibly
 
         AnnotationType annotationType = null;
@@ -342,7 +438,6 @@ class AnnotationInvocationHandler implements InvocationHandler, Serializable {
         }
 
         Map<String, Class<?>> memberTypes = annotationType.memberTypes();
-
 
         // If there are annotation members without values, that
         // situation is handled by the invoke method.

@@ -136,7 +136,7 @@ public class CUPSPrinter  {
     /**
      * Returns array of MediaSizeNames derived from PPD.
      */
-    public MediaSizeName[] getMediaSizeNames() {
+    MediaSizeName[] getMediaSizeNames() {
         initMedia();
         return cupsMediaSNames;
     }
@@ -145,7 +145,7 @@ public class CUPSPrinter  {
     /**
      * Returns array of Custom MediaSizeNames derived from PPD.
      */
-    public CustomMediaSizeName[] getCustomMediaSizeNames() {
+    CustomMediaSizeName[] getCustomMediaSizeNames() {
         initMedia();
         return cupsCustomMediaSNames;
     }
@@ -157,7 +157,7 @@ public class CUPSPrinter  {
     /**
      * Returns array of MediaPrintableArea derived from PPD.
      */
-    public MediaPrintableArea[] getMediaPrintableArea() {
+    MediaPrintableArea[] getMediaPrintableArea() {
         initMedia();
         return cupsMediaPrintables;
     }
@@ -165,7 +165,7 @@ public class CUPSPrinter  {
     /**
      * Returns array of MediaTrays derived from PPD.
      */
-    public MediaTray[] getMediaTrays() {
+    MediaTray[] getMediaTrays() {
         initMedia();
         return cupsMediaTrays;
     }

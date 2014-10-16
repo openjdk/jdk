@@ -174,11 +174,7 @@ Java_java_util_zip_ZipFile_getEntry(JNIEnv *env, jclass cls, jlong zfile,
     }
     (*env)->GetByteArrayRegion(env, name, 0, ulen, (jbyte *)path);
     path[ulen] = '\0';
-    if (addSlash == JNI_FALSE) {
-        ze = ZIP_GetEntry(zip, path, 0);
-    } else {
-        ze = ZIP_GetEntry(zip, path, (jint)ulen);
-    }
+    ze = ZIP_GetEntry2(zip, path, (jint)ulen, addSlash);
     if (path != buf) {
         free(path);
     }
@@ -271,7 +267,7 @@ Java_java_util_zip_ZipFile_getEntryBytes(JNIEnv *env,
     switch (type) {
     case java_util_zip_ZipFile_JZENTRY_NAME:
         if (ze->name != 0) {
-            len = (int)strlen(ze->name);
+            len = (int)ze->nlen;
             // Unlike for extra and comment, we never return null for
             // an (extremely rarely seen) empty name
             if ((jba = (*env)->NewByteArray(env, len)) == NULL)

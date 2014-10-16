@@ -66,6 +66,8 @@ AwtTextComponent::AwtTextComponent() {
     m_lLastPos  = -1;
     m_isLFonly        = FALSE;
     m_EOLchecked      = FALSE;
+    m_hEditCtrl       = NULL;
+    m_bIgnoreEnChange = FALSE;
 //    javaEventsMask = 0;    // accessibility support
 }
 
@@ -213,6 +215,16 @@ done:
     return c;
 }
 
+void AwtTextComponent::Dispose()
+{
+    if (m_hEditCtrl != NULL) {
+        VERIFY(::DestroyWindow(m_hEditCtrl));
+        m_hEditCtrl = NULL;
+    }
+    AwtComponent::Dispose();
+}
+
+
 LRESULT
 AwtTextComponent::WindowProc(UINT message, WPARAM wParam, LPARAM lParam) {
 
@@ -322,7 +334,16 @@ MsgRouting
 AwtTextComponent::WmNotify(UINT notifyCode)
 {
     if (notifyCode == EN_CHANGE) {
-      DoCallback("valueChanged", "()V");
+        /*
+         * Ignore notifications if the text hasn't been changed.
+         * EN_CHANGE sent on character formatting changes as well.
+         */
+        if (m_bIgnoreEnChange == FALSE) {
+            m_bCanUndo = TRUE;
+            DoCallback("valueChanged", "()V");
+        } else {
+            m_bCanUndo = FALSE;
+        }
     }
     return mrDoDefault;
 }
@@ -336,6 +357,28 @@ MsgRouting
 AwtTextComponent::HandleEvent(MSG *msg, BOOL synthetic)
 {
     MsgRouting returnVal;
+
+    if (msg->message == WM_RBUTTONUP ||
+               (msg->message == WM_SYSKEYDOWN && msg->wParam == VK_F10 &&
+                HIBYTE(::GetKeyState(VK_SHIFT)))) {
+        POINT p;
+        if (msg->message == WM_RBUTTONUP) {
+            VERIFY(::GetCursorPos(&p));
+        } else {
+            p.x = -1;
+            p.y = -1;
+        }
+
+        if (!::PostMessage(GetHWnd(), WM_CONTEXTMENU, (WPARAM)GetHWnd(),
+                           MAKELPARAM(p.x, p.y))) {
+            JNIEnv *env = (JNIEnv *)JNU_GetEnv(jvm, JNI_VERSION_1_2);
+            JNU_ThrowInternalError(env, "Message not posted, native event queue may be full.");
+            env->ExceptionDescribe();
+            env->ExceptionClear();
+        }
+        delete msg;
+        return mrConsume;
+    }
 
     /*
      * Store the 'synthetic' parameter so that the WM_PASTE security check
@@ -701,6 +744,10 @@ void AwtTextComponent::SetBackgroundColor(COLORREF c) {
     SendMessage(EM_SETBKGNDCOLOR, (WPARAM)FALSE, (LPARAM)GetBackgroundColor());
 }
 
+void AwtTextComponent::EditGetSel(CHARRANGE &cr) {
+    SendMessage(EM_EXGETSEL, 0, reinterpret_cast<LPARAM>(&cr));
+}
+
 
 /************************************************************************
  * WTextComponentPeer native methods
@@ -983,6 +1030,161 @@ AwtTextComponent::OleCallback::GetContextMenu(WORD seltype,
 }
 
 
+/*
+ * This routine is a window procedure for the subclass of the standard edit control
+ * used to generate context menu. RichEdit controls don't have built-in context menu.
+ * To implement this functionality we have to create an invisible edit control and
+ * forward WM_CONTEXTMENU messages from a RichEdit control to this helper edit control.
+ * While the edit control context menu is active we intercept the message generated in
+ * response to particular item selection and forward it back to the RichEdit control.
+ * (See AwtTextArea::WmContextMenu for more details).
+ */
+
+WNDPROC AwtTextComponent::sm_pDefWindowProc = NULL;
+
+LRESULT
+AwtTextComponent::EditProc(HWND hWnd, UINT message, WPARAM wParam, LPARAM lParam) {
+
+    static BOOL bContextMenuActive = FALSE;
+
+    LRESULT retValue = 0;
+    MsgRouting mr = mrDoDefault;
+
+    DASSERT(::IsWindow(::GetParent(hWnd)));
+
+    switch (message) {
+    case WM_UNDO:
+    case WM_CUT:
+    case WM_COPY:
+    case WM_PASTE:
+    case WM_CLEAR:
+    case EM_SETSEL:
+        if (bContextMenuActive) {
+            ::SendMessage(::GetParent(hWnd), message, wParam, lParam);
+            mr = mrConsume;
+        }
+        break;
+    case WM_CONTEXTMENU:
+        bContextMenuActive = TRUE;
+        break;
+    }
+
+    if (mr == mrDoDefault) {
+        DASSERT(sm_pDefWindowProc != NULL);
+        retValue = ::CallWindowProc(sm_pDefWindowProc,
+                                    hWnd, message, wParam, lParam);
+    }
+
+    if (message == WM_CONTEXTMENU) {
+        bContextMenuActive = FALSE;
+    }
+
+    return retValue;
+}
+
+MsgRouting
+AwtTextComponent::WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos) {
+    /* Use the system provided edit control class to generate context menu. */
+    if (m_hEditCtrl == NULL) {
+        DWORD dwStyle = WS_CHILD;
+        DWORD dwExStyle = 0;
+        m_hEditCtrl = ::CreateWindowEx(dwExStyle,
+                                        L"EDIT",
+                                        L"TEXT",
+                                        dwStyle,
+                                        0, 0, 0, 0,
+                                        GetHWnd(),
+                                        reinterpret_cast<HMENU>(
+                                         static_cast<INT_PTR>(
+                                             CreateControlID())),
+                                        AwtToolkit::GetInstance().GetModuleHandle(),
+                                        NULL);
+        DASSERT(m_hEditCtrl != NULL);
+        if (sm_pDefWindowProc == NULL) {
+            sm_pDefWindowProc = (WNDPROC)::GetWindowLongPtr(m_hEditCtrl,
+                                                         GWLP_WNDPROC);
+        }
+        ::SetLastError(0);
+        INT_PTR ret = ::SetWindowLongPtr(m_hEditCtrl, GWLP_WNDPROC,
+                                   (INT_PTR)AwtTextArea::EditProc);
+        DASSERT(ret != 0 || ::GetLastError() == 0);
+    }
+
+    /*
+     * Tricks on the edit control to ensure that its context menu has
+     * the correct set of enabled items according to the RichEdit state.
+     */
+    ::SetWindowText(m_hEditCtrl, TEXT("TEXT"));
+
+    if (m_bCanUndo == TRUE && SendMessage(EM_CANUNDO)) {
+        /* Enable 'Undo' item. */
+        ::SendMessage(m_hEditCtrl, WM_CHAR, 'A', 0);
+    }
+
+    {
+        /*
+         * Initial selection for the edit control - (0,1).
+         * This enables 'Cut', 'Copy' and 'Delete' and 'Select All'.
+         */
+        INT nStart = 0;
+        INT nEnd = 1;
+        if (SendMessage(EM_SELECTIONTYPE) == SEL_EMPTY) {
+            /*
+             * RichEdit selection is empty - clear selection of the edit control.
+             * This disables 'Cut', 'Copy' and 'Delete'.
+             */
+            nStart = -1;
+            nEnd = 0;
+        } else {
+
+            CHARRANGE cr;
+            EditGetSel(cr);
+            /* Check if all the text is selected. */
+            if (cr.cpMin == 0) {
+
+                int len = ::GetWindowTextLength(GetHWnd());
+                if (cr.cpMin == 0 && cr.cpMax >= len) {
+                    /*
+                     * All the text is selected in RichEdit - select all the
+                     * text in the edit control. This disables 'Select All'.
+                     */
+                    nStart = 0;
+                    nEnd = -1;
+                }
+            }
+        }
+        ::SendMessage(m_hEditCtrl, EM_SETSEL, (WPARAM)nStart, (LPARAM)nEnd);
+    }
+
+    /* Disable 'Paste' item if the RichEdit control is read-only. */
+    ::SendMessage(m_hEditCtrl, EM_SETREADONLY,
+                  GetStyle() & ES_READONLY ? TRUE : FALSE, 0);
+
+    POINT p;
+    p.x = xPos;
+    p.y = yPos;
+
+    /*
+     * If the context menu is requested with SHIFT+F10 or VK_APPS key,
+     * we position its top left corner to the center of the RichEdit
+     * client rect.
+     */
+    if (p.x == -1 && p.y == -1) {
+        RECT r;
+        VERIFY(::GetClientRect(GetHWnd(), &r));
+        p.x = (r.left + r.right) / 2;
+        p.y = (r.top + r.bottom) / 2;
+        VERIFY(::ClientToScreen(GetHWnd(), &p));
+    }
+
+    // The context menu steals focus from the proxy.
+    // So, set the focus-restore flag up.
+    SetRestoreFocus(TRUE);
+    ::SendMessage(m_hEditCtrl, WM_CONTEXTMENU, (WPARAM)m_hEditCtrl, MAKELPARAM(p.x, p.y));
+    SetRestoreFocus(FALSE);
+
+    return mrConsume;
+}
 
 //
 // Accessibility support
