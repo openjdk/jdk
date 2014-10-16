@@ -38,6 +38,48 @@ endif
 
 include GensrcSwing.gmk
 
+################################################################################
+
+include GensrcProperties.gmk
+
+PROP_SRC_DIRS := \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/awt/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/accessibility/internal/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/motif/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/windows/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/basic/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/metal/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/swing/internal/plaf/synth/resources \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/print/resources \
+    #
+
+ifeq ($(OPENJDK_TARGET_OS), macosx)
+  PROP_SRC_DIRS += \
+      $(JDK_TOPDIR)/src/java.desktop/macosx/classes/com/apple/laf/resources \
+      $(JDK_TOPDIR)/src/java.desktop/macosx/classes/sun/awt/resources \
+      #
+endif
+
+ifeq ($(OPENJDK_TARGET_OS), windows)
+  PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/windows/classes/sun/awt/windows
+else
+  PROP_SRC_DIRS += $(JDK_TOPDIR)/src/java.desktop/share/classes/com/sun/java/swing/plaf/gtk/resources
+endif
+
+$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
+    $(filter %.properties, $(call CacheFind, $(PROP_SRC_DIRS))), ListResourceBundle))
+
+GENSRC_JAVA_DESKTOP += $(COMPILE_PROPERTIES)
+
+# Some resources bundles are already present as java files but still need to be
+# copied to zh_HK locale.
+$(eval $(call SetupCopy-zh_HK,COPY_ZH_HK, \
+    $(JDK_TOPDIR)/src/java.desktop/share/classes/sun/applet/resources/MsgAppletViewer_zh_TW.java))
+
+GENSRC_JAVA_DESKTOP += $(COPY_ZH_HK)
+
+################################################################################
+
 java.desktop: $(GENSRC_JAVA_DESKTOP)
 
 all: java.desktop

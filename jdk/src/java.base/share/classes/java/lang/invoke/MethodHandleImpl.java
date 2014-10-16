@@ -594,6 +594,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
     static class Lazy {
         private static final Class<?> MHI = MethodHandleImpl.class;
 
+        private static final MethodHandle[] ARRAYS;
+        private static final MethodHandle[] FILL_ARRAYS;
+
         static final NamedFunction NF_checkSpreadArgument;
         static final NamedFunction NF_guardWithCatch;
         static final NamedFunction NF_throwException;
@@ -606,6 +609,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         static final MethodHandle MH_arrayIdentity;
 
         static {
+            ARRAYS      = makeArrays();
+            FILL_ARRAYS = makeFillArrays();
+
             try {
                 NF_checkSpreadArgument = new NamedFunction(MHI.getDeclaredMethod("checkSpreadArgument", Object.class, int.class));
                 NF_guardWithCatch      = new NamedFunction(MHI.getDeclaredMethod("guardWithCatch", MethodHandle.class, Class.class,
@@ -1268,7 +1274,6 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         assert(mhs.size() == 11);  // current number of methods
         return mhs.toArray(new MethodHandle[MAX_ARITY+1]);
     }
-    private static final MethodHandle[] ARRAYS = makeArrays();
 
     // filling versions of the above:
     // using Integer len instead of int len and no varargs to avoid bootstrapping problems
@@ -1315,6 +1320,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
                                   Object a4, Object a5, Object a6, Object a7,
                                   Object a8, Object a9)
                 { fillWithArguments(a, pos, a0, a1, a2, a3, a4, a5, a6, a7, a8, a9); return a; }
+
+    private static final int FILL_ARRAYS_COUNT = 11; // current number of fillArray methods
+
     private static MethodHandle[] makeFillArrays() {
         ArrayList<MethodHandle> mhs = new ArrayList<>();
         mhs.add(null);  // there is no empty fill; at least a0 is required
@@ -1323,10 +1331,9 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
             if (mh == null)  break;
             mhs.add(mh);
         }
-        assert(mhs.size() == 11);  // current number of methods
+        assert(mhs.size() == FILL_ARRAYS_COUNT);
         return mhs.toArray(new MethodHandle[0]);
     }
-    private static final MethodHandle[] FILL_ARRAYS = makeFillArrays();
 
     private static Object copyAsPrimitiveArray(Wrapper w, Object... boxes) {
         Object a = w.makeArray(boxes.length);
@@ -1338,15 +1345,15 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
      *  arguments and returns an Object array of them, as if for varargs.
      */
     static MethodHandle varargsArray(int nargs) {
-        MethodHandle mh = ARRAYS[nargs];
+        MethodHandle mh = Lazy.ARRAYS[nargs];
         if (mh != null)  return mh;
         mh = findCollector("array", nargs, Object[].class);
         if (mh != null)  mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-        if (mh != null)  return ARRAYS[nargs] = mh;
+        if (mh != null)  return Lazy.ARRAYS[nargs] = mh;
         mh = buildVarargsArray(Lazy.MH_fillNewArray, Lazy.MH_arrayIdentity, nargs);
         assert(assertCorrectArity(mh, nargs));
         mh = makeIntrinsic(mh, Intrinsic.NEW_ARRAY);
-        return ARRAYS[nargs] = mh;
+        return Lazy.ARRAYS[nargs] = mh;
     }
 
     private static boolean assertCorrectArity(MethodHandle mh, int arity) {
@@ -1382,7 +1389,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         return mh;
     }
 
-    private static final int LEFT_ARGS = (FILL_ARRAYS.length - 1);
+    private static final int LEFT_ARGS = FILL_ARRAYS_COUNT - 1;
     private static final MethodHandle[] FILL_ARRAY_TO_RIGHT = new MethodHandle[MAX_ARITY+1];
     /** fill_array_to_right(N).invoke(a, argL..arg[N-1])
      *  fills a[L]..a[N-1] with corresponding arguments,
@@ -1413,7 +1420,7 @@ import static java.lang.invoke.MethodHandles.Lookup.IMPL_LOOKUP;
         if (midLen < LEFT_ARGS) rightLen = nargs - (midLen = LEFT_ARGS);
         assert(rightLen > 0);
         MethodHandle midFill = fillToRight(midLen);  // recursive fill
-        MethodHandle rightFill = FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
+        MethodHandle rightFill = Lazy.FILL_ARRAYS[rightLen].bindTo(midLen);  // [midLen..nargs-1]
         assert(midFill.type().parameterCount()   == 1 + midLen - LEFT_ARGS);
         assert(rightFill.type().parameterCount() == 1 + rightLen);
 

@@ -25,9 +25,7 @@
 
 package javax.naming.spi;
 
-import java.util.Enumeration;
-import java.util.Hashtable;
-import java.util.StringTokenizer;
+import java.util.*;
 import java.net.MalformedURLException;
 
 import javax.naming.*;
@@ -625,15 +623,28 @@ public class NamingManager {
     /**
      * Creates an initial context using the specified environment
      * properties.
-     *<p>
-     * If an InitialContextFactoryBuilder has been installed,
-     * it is used to create the factory for creating the initial context.
-     * Otherwise, the class specified in the
-     * <tt>Context.INITIAL_CONTEXT_FACTORY</tt> environment property is used.
-     * Note that an initial context factory (an object that implements the
-     * InitialContextFactory interface) must be public and must have a
-     * public constructor that accepts no arguments.
-     *
+     * <p>
+     * This is done as follows:
+     * <ul>
+     * <li>If an InitialContextFactoryBuilder has been installed,
+     *     it is used to create the factory for creating the initial
+     *     context</li>
+     * <li>Otherwise, the class specified in the
+     *     <tt>Context.INITIAL_CONTEXT_FACTORY</tt> environment property
+     *     is used
+     *     <ul>
+     *     <li>First, the {@linkplain java.util.ServiceLoader ServiceLoader}
+     *         mechanism tries to locate an {@code InitialContextFactory}
+     *         provider using the current thread's context class loader</li>
+     *     <li>Failing that, this implementation tries to locate a suitable
+     *         {@code InitialContextFactory} using a built-in mechanism
+     *         <br>
+     *         (Note that an initial context factory (an object that implements
+     *         the InitialContextFactory interface) must be public and must have
+     *         a public constructor that accepts no arguments)</li>
+     *     </ul>
+     * </li>
+     * </ul>
      * @param env The possibly null environment properties used when
      *                  creating the context.
      * @return A non-null initial context.
@@ -649,11 +660,11 @@ public class NamingManager {
      */
     public static Context getInitialContext(Hashtable<?,?> env)
         throws NamingException {
-        InitialContextFactory factory;
+        InitialContextFactory factory = null;
 
         InitialContextFactoryBuilder builder = getInitialContextFactoryBuilder();
         if (builder == null) {
-            // No factory installed, use property
+            // No builder installed, use property
             // Get initial context factory class name
 
             String className = env != null ?
@@ -666,15 +677,38 @@ public class NamingManager {
                 throw ne;
             }
 
+            ServiceLoader<InitialContextFactory> loader =
+                    ServiceLoader.load(InitialContextFactory.class);
+
+            Iterator<InitialContextFactory> iterator = loader.iterator();
             try {
-                factory = (InitialContextFactory)
-                    helper.loadClass(className).newInstance();
-            } catch(Exception e) {
+                while (iterator.hasNext()) {
+                    InitialContextFactory f = iterator.next();
+                    if (f.getClass().getName().equals(className)) {
+                        factory = f;
+                        break;
+                    }
+                }
+            } catch (ServiceConfigurationError e) {
                 NoInitialContextException ne =
-                    new NoInitialContextException(
-                        "Cannot instantiate class: " + className);
+                        new NoInitialContextException(
+                                "Cannot load initial context factory "
+                                        + "'" + className + "'");
                 ne.setRootCause(e);
                 throw ne;
+            }
+
+            if (factory == null) {
+                try {
+                    factory = (InitialContextFactory)
+                            helper.loadClass(className).newInstance();
+                } catch (Exception e) {
+                    NoInitialContextException ne =
+                            new NoInitialContextException(
+                                    "Cannot instantiate class: " + className);
+                    ne.setRootCause(e);
+                    throw ne;
+                }
             }
         } else {
             factory = builder.createInitialContextFactory(env);

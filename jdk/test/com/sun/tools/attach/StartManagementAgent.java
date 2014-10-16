@@ -53,7 +53,9 @@ public class StartManagementAgent {
     public static void main(String[] args) throws Throwable {
         ProcessThread processThread = null;
         try {
+            System.out.println("Starting test application");
             processThread = RunnerUtil.startApplication();
+            System.out.println("Application started");
             runTests(processThread.getPid());
         } catch (Throwable t) {
             System.out.println("StartManagementAgent got unexpected exception: " + t);
@@ -70,6 +72,7 @@ public class StartManagementAgent {
         // Try calling with null argument
         boolean exception = false;
         try {
+            System.out.println("Starting management agent with null");
             vm.startManagementAgent(null);
         } catch (NullPointerException e) {
             exception = true;
@@ -86,6 +89,7 @@ public class StartManagementAgent {
         }
         p.put("com.sun.management.config.file", f.getAbsolutePath());
         try {
+            System.out.println("Starting management agent with bogus port");
             vm.startManagementAgent(p);
         } catch(AttachOperationFailedException ex) {
             // We expect parsing of "apa" above to fail, but if the file path
@@ -93,6 +97,9 @@ public class StartManagementAgent {
             if (!ex.getMessage().contains("Invalid com.sun.management.jmxremote.port number")) {
                 throw ex;
             }
+            ex.printStackTrace(System.err);
+        } catch (Throwable t) {
+            t.printStackTrace(System.err);
         }
     }
 
@@ -134,13 +141,18 @@ public class StartManagementAgent {
     }
 
     public static void testLocalAgent(VirtualMachine vm) throws Exception {
+        System.out.println("Getting VM properties");
         Properties agentProps = vm.getAgentProperties();
         String address = (String) agentProps.get(LOCAL_CONNECTOR_ADDRESS_PROP);
         if (address != null) {
             throw new Exception("Local management agent already started");
         }
 
+        System.out.println("Starting local agent");
+
         String result = vm.startLocalManagementAgent();
+
+        System.out.println("Agent started");
 
         // try to parse the return value as a JMXServiceURL
         new JMXServiceURL(result);
