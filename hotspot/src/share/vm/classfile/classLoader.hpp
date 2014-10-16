@@ -226,6 +226,7 @@ class ClassLoader: AllStatic {
   // to avoid confusing the zip library
   static bool get_canonical_path(const char* orig, char* out, int len);
  public:
+  static int crc32(int crc, const char* buf, int len);
   static bool update_class_path_entry_list(const char *path,
                                            bool check_for_duplicates,
                                            bool throw_exception=true);

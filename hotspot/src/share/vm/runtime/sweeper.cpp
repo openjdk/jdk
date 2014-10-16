@@ -540,17 +540,25 @@ int NMethodSweeper::process_nmethod(nmethod *nm) {
     // If there are no current activations of this method on the
     // stack we can safely convert it to a zombie method
     if (nm->can_not_entrant_be_converted()) {
-      if (PrintMethodFlushing && Verbose) {
-        tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (not entrant) being made zombie", nm->compile_id(), nm);
-      }
       // Clear ICStubs to prevent back patching stubs of zombie or unloaded
       // nmethods during the next safepoint (see ICStub::finalize).
-      MutexLocker cl(CompiledIC_lock);
-      nm->clear_ic_stubs();
-      // Code cache state change is tracked in make_zombie()
-      nm->make_zombie();
-      _zombified_count++;
-      SWEEP(nm);
+      {
+        MutexLocker cl(CompiledIC_lock);
+        nm->clear_ic_stubs();
+      }
+      // Acquiring the CompiledIC_lock may block for a safepoint and set the
+      // nmethod to zombie (see 'CodeCache::make_marked_nmethods_zombies').
+      // Check if nmethod is still non-entrant at this point.
+      if (nm->is_not_entrant()) {
+        if (PrintMethodFlushing && Verbose) {
+          tty->print_cr("### Nmethod %3d/" PTR_FORMAT " (not entrant) being made zombie", nm->compile_id(), nm);
+        }
+        // Code cache state change is tracked in make_zombie()
+        nm->make_zombie();
+        _zombified_count++;
+        SWEEP(nm);
+      }
+      assert(nm->is_zombie(), "nmethod must be zombie");
     } else {
       // Still alive, clean up its inline caches
       MutexLocker cl(CompiledIC_lock);
