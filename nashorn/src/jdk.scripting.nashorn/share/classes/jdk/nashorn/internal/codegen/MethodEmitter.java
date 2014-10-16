@@ -98,6 +98,7 @@ import jdk.nashorn.internal.ir.LocalVariableConversion;
 import jdk.nashorn.internal.ir.RuntimeNode;
 import jdk.nashorn.internal.ir.Symbol;
 import jdk.nashorn.internal.ir.TryNode;
+import jdk.nashorn.internal.objects.NativeArray;
 import jdk.nashorn.internal.runtime.ArgumentSetter;
 import jdk.nashorn.internal.runtime.Context;
 import jdk.nashorn.internal.runtime.Debug;
@@ -2125,7 +2126,14 @@ public class MethodEmitter implements Emitter {
 
         int pos = 0;
         for (int i = argCount - 1; i >= 0; i--) {
-            paramTypes[i] = stack.peek(pos++);
+            Type pt = stack.peek(pos++);
+            // "erase" specific ScriptObject subtype info - except for NativeArray.
+            // NativeArray is used for array/List/Deque conversion for Java calls.
+            if (ScriptObject.class.isAssignableFrom(pt.getTypeClass()) &&
+                !NativeArray.class.isAssignableFrom(pt.getTypeClass())) {
+                pt = Type.SCRIPT_OBJECT;
+            }
+            paramTypes[i] = pt;
         }
         final String descriptor = Type.getMethodDescriptor(returnType, paramTypes);
         for (int i = 0; i < argCount; i++) {

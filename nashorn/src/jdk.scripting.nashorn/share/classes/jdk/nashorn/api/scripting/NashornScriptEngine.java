@@ -229,6 +229,8 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
     }
 
     private <T> T getInterfaceInner(final Object thiz, final Class<T> clazz) {
+        assert !(thiz instanceof ScriptObject) : "raw ScriptObject not expected here";
+
         if (clazz == null || !clazz.isInterface()) {
             throw new IllegalArgumentException(getMessage("interface.class.expected"));
         }
@@ -251,17 +253,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
             final ScriptObjectMirror mirror = (ScriptObjectMirror)thiz;
             realSelf = mirror.getScriptObject();
             realGlobal = mirror.getHomeGlobal();
-            if (! isOfContext(realGlobal, nashornContext)) {
-                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
-            }
-        } else if (thiz instanceof ScriptObject) {
-            // called from script code.
-            realSelf = (ScriptObject)thiz;
-            realGlobal = Context.getGlobal();
-            if (realGlobal == null) {
-                throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
-            }
-
             if (! isOfContext(realGlobal, nashornContext)) {
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
@@ -368,6 +359,7 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
 
     private Object invokeImpl(final Object selfObject, final String name, final Object... args) throws ScriptException, NoSuchMethodException {
         name.getClass(); // null check
+        assert !(selfObject instanceof ScriptObject) : "raw ScriptObject not expected here";
 
         Global invokeGlobal = null;
         ScriptObjectMirror selfMirror = null;
@@ -377,20 +369,6 @@ public final class NashornScriptEngine extends AbstractScriptEngine implements C
                 throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
             }
             invokeGlobal = selfMirror.getHomeGlobal();
-        } else if (selfObject instanceof ScriptObject) {
-            // invokeMethod called from script code - in which case we may get 'naked' ScriptObject
-            // Wrap it with oldGlobal to make a ScriptObjectMirror for the same.
-            final Global oldGlobal = Context.getGlobal();
-            invokeGlobal = oldGlobal;
-            if (oldGlobal == null) {
-                throw new IllegalArgumentException(getMessage("no.current.nashorn.global"));
-            }
-
-            if (! isOfContext(oldGlobal, nashornContext)) {
-                throw new IllegalArgumentException(getMessage("script.object.from.another.engine"));
-            }
-
-            selfMirror = (ScriptObjectMirror)ScriptObjectMirror.wrap(selfObject, oldGlobal);
         } else if (selfObject == null) {
             // selfObject is null => global function call
             final Global ctxtGlobal = getNashornGlobalFrom(context);

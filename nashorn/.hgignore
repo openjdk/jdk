@@ -26,3 +26,5 @@ jcov2/*
 test/lib/testng.jar
 test/script/external/*
 .project
+.externalToolBuilders/*
+.settings/*
