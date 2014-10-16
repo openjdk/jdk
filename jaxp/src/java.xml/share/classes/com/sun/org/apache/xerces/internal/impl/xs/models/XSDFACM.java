@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 1999-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -31,8 +31,6 @@ import com.sun.org.apache.xerces.internal.impl.xs.XSModelGroupImpl;
 import com.sun.org.apache.xerces.internal.impl.xs.XSWildcardDecl;
 import com.sun.org.apache.xerces.internal.impl.xs.XMLSchemaException;
 import com.sun.org.apache.xerces.internal.impl.xs.XSConstraints;
-
-import java.util.Vector;
 import java.util.ArrayList;
 import java.util.HashMap;
 
@@ -165,6 +163,8 @@ public class XSDFACM
      * related tables such as fFinalStateFlags.
      */
     private int fTransTableSize = 0;
+
+    private boolean fIsCompactedForUPA;
 
     /**
      * Array of counters for all the for elements (or wildcards)
@@ -1165,10 +1165,10 @@ public class XSDFACM
      * have been seen.
      *
      * @param state  the current state
-     * @return       a Vector whose entries are instances of
+     * @return       a list whose entries are instances of
      *               either XSWildcardDecl or XSElementDecl.
      */
-    public Vector whatCanGoHere(int[] state) {
+    public ArrayList whatCanGoHere(int[] state) {
         int curState = state[0];
         if (curState < 0)
             curState = state[1];
@@ -1176,7 +1176,7 @@ public class XSDFACM
                 fCountingStates[curState] : null;
         int count = state[2];
 
-        Vector ret = new Vector();
+        ArrayList ret = new ArrayList();
         for (int elemIndex = 0; elemIndex < fElemMapSize; elemIndex++) {
             int nextState = fTransTable[curState][elemIndex];
             if (nextState != -1) {
@@ -1196,7 +1196,7 @@ public class XSDFACM
                         continue;
                     }
                 }
-                ret.addElement(fElemMap[elemIndex]);
+                ret.add(fElemMap[elemIndex]);
             }
         }
         return ret;
@@ -1231,11 +1231,38 @@ public class XSDFACM
             }
             if (maxOccurs != -1 && count > maxOccurs) {
                 if (result == null) result = new ArrayList();
-                result.add("cvc-complex-type.2.4.e");
+                result.add("cvc-complex-type.2.4.d.1");
                 result.add("{" + fElemMap[elemIndex] + "}");
             }
         }
         return result;
     }
 
+    public int [] occurenceInfo(int[] state) {
+        if (fCountingStates != null) {
+            int curState = state[0];
+            if (curState < 0) {
+                curState = state[1];
+            }
+            Occurence o = fCountingStates[curState];
+            if (o != null) {
+                int [] occurenceInfo = new int[4];
+                occurenceInfo[0] = o.minOccurs;
+                occurenceInfo[1] = o.maxOccurs;
+                occurenceInfo[2] = state[2];
+                occurenceInfo[3] = o.elemIndex;
+                return occurenceInfo;
+            }
+        }
+        return null;
+    }
+
+    public String getTermName(int termId) {
+        Object term = fElemMap[termId];
+        return (term != null) ? term.toString() : null;
+    }
+
+    public boolean isCompactedForUPA() {
+        return fIsCompactedForUPA;
+    }
 } // class DFAContentModel

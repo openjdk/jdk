@@ -1,9 +1,14 @@
 /*
- * Copyright 2006 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * reserved comment block
+ * DO NOT REMOVE OR ALTER!
+ */
+/*
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -15,6 +20,8 @@
  */
 
 package com.sun.org.apache.xerces.internal.impl.validation;
+
+import java.util.Iterator;
 
 /**
  * <p>An extension of ValidationState which can be configured to turn
@@ -49,7 +56,7 @@ public final class ConfigurableValidationState extends ValidationState {
 
     /**
      * Turns checking for ID/IDREF errors on and off.
-     * @param setting: true to turn on error checking
+     * @param setting true to turn on error checking,
      *                 false to turn off error checking
      */
     public void setIdIdrefChecking(boolean setting) {
@@ -58,7 +65,7 @@ public final class ConfigurableValidationState extends ValidationState {
 
     /**
      * Turns checking for unparsed entity errors on and off.
-     * @param setting: true to turn on error checking
+     * @param setting true to turn on error checking,
      *                 false to turn off error checking
      */
     public void setUnparsedEntityChecking(boolean setting) {
@@ -70,7 +77,7 @@ public final class ConfigurableValidationState extends ValidationState {
      * @return null, if ID/IDREF checking is turned off
      *         otherwise, returns the value of the super implementation
      */
-    public String checkIDRefID() {
+    public Iterator checkIDRefID() {
         return (fIdIdrefChecking) ? super.checkIDRefID() : null;
     }
 
@@ -103,7 +110,7 @@ public final class ConfigurableValidationState extends ValidationState {
 
     /**
      * Adds the ID, if ID/IDREF checking is enabled.
-     * @param the ID to add
+     * @param name the ID to add
      */
     public void addId(String name) {
         if (fIdIdrefChecking) {
@@ -113,7 +120,7 @@ public final class ConfigurableValidationState extends ValidationState {
 
     /**
      * Adds the IDREF, if ID/IDREF checking is enabled.
-     * @param the IDREF to add
+     * @param name the IDREF to add
      */
     public void addIdRef(String name) {
         if (fIdIdrefChecking) {
