@@ -34,7 +34,10 @@ public:
   static inline bool check_gc_consistency_user();
   static inline bool check_gc_consistency_ergo();
   static inline bool check_vm_args_consistency();
-  static        void process_options(const JavaVMInitArgs* args) {}
+  // The argument processing extension. Returns true if there is
+  // no additional parsing needed in Arguments::parse() for the option.
+  // Otherwise returns false.
+  static inline bool process_options(const JavaVMOption *option) { return false; }
 };
 
 void ArgumentsExt::select_gc_ergonomically() {

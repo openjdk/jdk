@@ -3739,27 +3739,33 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
 
-  ArgumentsExt::process_options(args);
-
   const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
     const JavaVMOption *option = args->options + index;
+    if (ArgumentsExt::process_options(option)) {
+      continue;
+    }
     if (match_option(option, "-XX:Flags=", &tail)) {
       flags_file = tail;
       settings_file_specified = true;
+      continue;
     }
     if (match_option(option, "-XX:+PrintVMOptions", &tail)) {
       PrintVMOptions = true;
+      continue;
     }
     if (match_option(option, "-XX:-PrintVMOptions", &tail)) {
       PrintVMOptions = false;
+      continue;
     }
     if (match_option(option, "-XX:+IgnoreUnrecognizedVMOptions", &tail)) {
       IgnoreUnrecognizedVMOptions = true;
+      continue;
     }
     if (match_option(option, "-XX:-IgnoreUnrecognizedVMOptions", &tail)) {
       IgnoreUnrecognizedVMOptions = false;
+      continue;
     }
     if (match_option(option, "-XX:+PrintFlagsInitial", &tail)) {
       CommandLineFlags::printFlags(tty, false);
@@ -3781,6 +3787,7 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
       } else {
         vm_exit_during_initialization("Syntax error, expecting -XX:NativeMemoryTracking=[off|summary|detail]", NULL);
       }
+      continue;
     }
 #endif
 
