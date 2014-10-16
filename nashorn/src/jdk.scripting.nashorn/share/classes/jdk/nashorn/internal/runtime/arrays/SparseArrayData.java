@@ -78,7 +78,7 @@ class SparseArrayData extends ArrayData {
 
         for (final Map.Entry<Long, Object> entry : sparseMap.entrySet()) {
             final long key = entry.getKey();
-            if (key <= Integer.MAX_VALUE) {
+            if (key < Integer.MAX_VALUE) {
                 objArray[(int)key] = entry.getValue();
             } else {
                 break; // ascending key order

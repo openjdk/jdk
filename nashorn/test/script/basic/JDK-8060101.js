@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -22,40 +22,33 @@
  */
 
 /**
- * Tests for convert method of ScriptUtils.
+ * JDK-8060101: AssertionError: __noSuchProperty__ placeholder called from NativeJavaImporter
  *
  * @test
  * @run
  */
 
-var ScriptUtils = Java.type("jdk.nashorn.api.scripting.ScriptUtils");
-obj = { valueOf: function() { print("hello"); return 43.3; } };
+var constant = 0.50;
+var ind = 0.0;
 
-// object to double
-print(ScriptUtils.convert(obj, java.lang.Number.class));
-
-// array to List
-var arr = [3, 44, 23, 33];
-var list = ScriptUtils.convert(arr, java.util.List.class);
-print(list instanceof java.util.List)
-print(list);
-
-// object to Map
-obj = { foo: 333, bar: 'hello'};
-var map = ScriptUtils.wrap(obj);
-print(map instanceof java.util.Map);
-for (m in map) {
-   print(m + " " + map[m]);
+// make sure callsites are exercised quite a few times
+// to induce megamorphic callsite for with/JavaImporter
+// combo - which triggered that AssertionError.
+for (var i = 0; i < 50; i++) {
+    var math = new JavaImporter(java.lang.StrictMath);
+    ind += 10.0;
+    with (math) {
+        StrictMath.exp(-constant*ind);
+    }
 }
 
-// object to String
-obj = { toString: function() { print("in toString"); return "foo" } };
-print(ScriptUtils.convert(obj, java.lang.String.class));
-
-// array to Java array
-var jarr = ScriptUtils.convert(arr, Java.type("int[]"));
-print(jarr instanceof Java.type("int[]"));
-for (i in jarr) {
-    print(jarr[i]);
+for (var i = 0; i < 50; i++) {
+    var math = new JavaImporter(java.lang.StrictMath);
+    try {
+        math.Foo();
+    } catch (e) {
+        if (! (e instanceof TypeError)) {
+            throw e;
+        }
+    }
 }
-
