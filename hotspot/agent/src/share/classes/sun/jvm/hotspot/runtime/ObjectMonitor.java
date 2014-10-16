@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2001, 2005, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2001, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -50,8 +50,8 @@ public class ObjectMonitor extends VMObject {
     ownerFieldOffset = f.getOffset();
     f = type.getField("FreeNext");
     FreeNextFieldOffset = f.getOffset();
-    countField  = type.getCIntegerField("_count");
-    waitersField = type.getCIntegerField("_waiters");
+    countField  = type.getJIntField("_count");
+    waitersField = type.getJIntField("_waiters");
     recursionsField = type.getCIntegerField("_recursions");
   }
 
@@ -81,15 +81,15 @@ public class ObjectMonitor extends VMObject {
   // FIXME
   //  void      set_owner(void* owner);
 
-  public long    waiters() { return waitersField.getValue(addr); }
+  public int    waiters() { return waitersField.getValue(addr); }
 
   public Address freeNext() { return addr.getAddressAt(FreeNextFieldOffset); }
   // FIXME
   //  void      set_queue(void* owner);
 
-  public long count() { return countField.getValue(addr); }
+  public int count() { return countField.getValue(addr); }
   // FIXME
-  //  void      set_count(intptr_t count);
+  //  void      set_count(int count);
 
   public long recursions() { return recursionsField.getValue(addr); }
 
@@ -97,18 +97,9 @@ public class ObjectMonitor extends VMObject {
     return addr.getOopHandleAt(objectFieldOffset);
   }
 
-  public long contentions() {
-      // refer to objectMonitor_xxx.inline.hpp - contentions definition.
-      // for Solaris and Linux, contentions is same as count. for Windows
-      // it is different (objectMonitor_win32.inline.hpp)
-      long count = count();
-      if (VM.getVM().getOS().equals("win32")) {
-          // don't count the owner of the monitor
-          return count > 0? count - 1 : 0;
-      } else {
-          // Solaris and Linux
-          return count;
-      }
+  // contentions is always equal to count
+  public int contentions() {
+      return count();
   }
 
   // FIXME
@@ -123,8 +114,8 @@ public class ObjectMonitor extends VMObject {
   private static long          objectFieldOffset;
   private static long          ownerFieldOffset;
   private static long          FreeNextFieldOffset;
-  private static CIntegerField countField;
-  private static CIntegerField waitersField;
+  private static JIntField     countField;
+  private static JIntField     waitersField;
   private static CIntegerField recursionsField;
   // FIXME: expose platform-dependent stuff
 }

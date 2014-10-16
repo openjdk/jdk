@@ -1031,7 +1031,7 @@ JvmtiEnvBase::get_object_monitor_usage(JavaThread* calling_thread, jobject objec
     // implied else: entry_count == 0
   }
 
-  int nWant,nWait;
+  jint nWant, nWait;
   if (mon != NULL) {
     // this object has a heavyweight monitor
     nWant = mon->contentions(); // # of threads contending for monitor

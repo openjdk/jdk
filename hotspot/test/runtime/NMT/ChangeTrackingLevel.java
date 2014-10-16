@@ -23,41 +23,29 @@
 
 /*
  * @test
- * @key nmt regression
- * @bug 8005936 8058606
- * @summary Verify PrintNMTStatistics on normal JVM exit for detail and summary tracking level
- * @library /testlibrary
+ * @bug 8059100
+ * @summary Test that you can decrease NMT tracking level but not increase it.
+ * @key nmt
+ * @library /testlibrary /testlibrary/whitebox
+ * @build ChangeTrackingLevel
+ * @run main ClassFileInstaller sun.hotspot.WhiteBox
+ *                              sun.hotspot.WhiteBox$WhiteBoxPermission
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ChangeTrackingLevel
  */
 
 import com.oracle.java.testlibrary.*;
+import sun.hotspot.WhiteBox;
 
-public class PrintNMTStatistics {
+public class ChangeTrackingLevel {
 
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
     public static void main(String args[]) throws Exception {
-
-    ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-      "-XX:+UnlockDiagnosticVMOptions",
-      "-XX:+PrintNMTStatistics",
-      "-XX:NativeMemoryTracking=detail",
-      "-version");
-
-    OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
-    output_detail.shouldContain("Virtual memory map:");
-    output_detail.shouldContain("Details:");
-    output_detail.shouldNotContain("error");
-    output_detail.shouldHaveExitValue(0);
-
-    ProcessBuilder pb1 = ProcessTools.createJavaProcessBuilder(
-      "-XX:+UnlockDiagnosticVMOptions",
-      "-XX:+PrintNMTStatistics",
-      "-XX:NativeMemoryTracking=summary",
-      "-version");
-
-    OutputAnalyzer output_summary = new OutputAnalyzer(pb1.start());
-    output_summary.shouldContain("Java Heap (reserved=");
-    output_summary.shouldNotContain("Virtual memory map:");
-    output_summary.shouldNotContain("Details:");
-    output_summary.shouldNotContain("error");
-    output_summary.shouldHaveExitValue(0);
+        boolean testChangeLevel = wb.NMTChangeTrackingLevel();
+        if (testChangeLevel) {
+            System.out.println("NMT level change test passed.");
+        } else {
+            // it also fails if the VM asserts.
+            throw new RuntimeException("NMT level change test failed");
+        }
     }
-}
+};
