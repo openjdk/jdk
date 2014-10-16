@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001-2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -23,6 +24,7 @@ package com.sun.org.apache.xerces.internal.impl.xs.identity;
 import com.sun.org.apache.xerces.internal.impl.xpath.XPathException;
 import com.sun.org.apache.xerces.internal.impl.xs.util.ShortListImpl;
 import com.sun.org.apache.xerces.internal.util.SymbolTable;
+import com.sun.org.apache.xerces.internal.util.XMLChar;
 import com.sun.org.apache.xerces.internal.xni.NamespaceContext;
 import com.sun.org.apache.xerces.internal.xs.ShortList;
 import com.sun.org.apache.xerces.internal.xs.XSComplexTypeDefinition;
@@ -43,11 +45,11 @@ public class Field {
     //
 
     /** Field XPath. */
-    protected Field.XPath fXPath;
+    protected final Field.XPath fXPath;
 
 
     /** Identity constraint. */
-    protected IdentityConstraint fIdentityConstraint;
+    protected final IdentityConstraint fIdentityConstraint;
 
     //
     // Constructors
@@ -67,7 +69,7 @@ public class Field {
     /** Returns the field XPath. */
     public com.sun.org.apache.xerces.internal.impl.xpath.XPath getXPath() {
         return fXPath;
-    } // getXPath():com.sun.org.apache.xerces.internal.impl.v1.schema.identity.XPath
+    } // getXPath():org.apache.xerces.impl.v1.schema.identity.XPath
 
     /** Returns the identity constraint. */
     public IdentityConstraint getIdentityConstraint() {
@@ -77,8 +79,8 @@ public class Field {
     // factory method
 
     /** Creates a field matcher. */
-    public XPathMatcher createMatcher(FieldActivator activator, ValueStore store) {
-        return new Field.Matcher(fXPath, activator, store);
+    public XPathMatcher createMatcher(ValueStore store) {
+        return new Field.Matcher(fXPath, store);
     } // createMatcher(ValueStore):XPathMatcher
 
     //
@@ -110,15 +112,7 @@ public class Field {
         public XPath(String xpath,
                      SymbolTable symbolTable,
                      NamespaceContext context) throws XPathException {
-            // NOTE: We have to prefix the field XPath with "./" in
-            //       order to handle selectors such as "@attr" that
-            //       select the attribute because the fields could be
-            //       relative to the selector element. -Ac
-            //       Unless xpath starts with a descendant node -Achille Fokoue
-            //      ... or a / or a . - NG
-            super(((xpath.trim().startsWith("/") ||xpath.trim().startsWith("."))?
-                    xpath:"./"+xpath),
-                  symbolTable, context);
+            super(fixupXPath(xpath), symbolTable, context);
 
             // verify that only one attribute is selected per branch
             for (int i=0;i<fLocationPaths.length;i++) {
@@ -132,6 +126,73 @@ public class Field {
                 }
             }
         } // <init>(String,SymbolTable,NamespacesContext)
+
+        /** Fixup XPath expression. Avoid creating a new String if possible. */
+        private static String fixupXPath(String xpath) {
+
+            final int end = xpath.length();
+            int offset = 0;
+            boolean whitespace = true;
+            char c;
+
+            // NOTE: We have to prefix the field XPath with "./" in
+            //       order to handle selectors such as "@attr" that
+            //       select the attribute because the fields could be
+            //       relative to the selector element. -Ac
+            //       Unless xpath starts with a descendant node -Achille Fokoue
+            //      ... or a / or a . - NG
+            for (; offset < end; ++offset) {
+                c = xpath.charAt(offset);
+                if (whitespace) {
+                    if (!XMLChar.isSpace(c)) {
+                        if (c == '.' || c == '/') {
+                            whitespace = false;
+                        }
+                        else if (c != '|') {
+                            return fixupXPath2(xpath, offset, end);
+                        }
+                    }
+                }
+                else if (c == '|') {
+                    whitespace = true;
+                }
+            }
+            return xpath;
+
+        } // fixupXPath(String):String
+
+        private static String fixupXPath2(String xpath, int offset, final int end) {
+
+            StringBuffer buffer = new StringBuffer(end + 2);
+            for (int i = 0; i < offset; ++i) {
+                buffer.append(xpath.charAt(i));
+            }
+            buffer.append("./");
+
+            boolean whitespace = false;
+            char c;
+
+            for (; offset < end; ++offset) {
+                c = xpath.charAt(offset);
+                if (whitespace) {
+                    if (!XMLChar.isSpace(c)) {
+                        if (c == '.' || c == '/') {
+                            whitespace = false;
+                        }
+                        else if (c != '|') {
+                            buffer.append("./");
+                            whitespace = false;
+                        }
+                    }
+                }
+                else if (c == '|') {
+                    whitespace = true;
+                }
+                buffer.append(c);
+            }
+            return buffer.toString();
+
+        } // fixupXPath2(String, int, int):String
 
     } // class XPath
 
@@ -147,20 +208,19 @@ public class Field {
         // Data
         //
 
-        /** Field activator. */
-        protected FieldActivator fFieldActivator;
-
         /** Value store for data values. */
-        protected ValueStore fStore;
+        protected final ValueStore fStore;
+
+        /** A flag indicating whether the field is allowed to match a value. */
+        protected boolean fMayMatch = true;
 
         //
         // Constructors
         //
 
         /** Constructs a field matcher. */
-        public Matcher(Field.XPath xpath, FieldActivator activator, ValueStore store) {
+        public Matcher(Field.XPath xpath, ValueStore store) {
             super(xpath);
-            fFieldActivator = activator;
             fStore = store;
         } // <init>(Field.XPath,ValueStore)
 
@@ -179,11 +239,11 @@ public class Field {
                 fStore.reportError(code,
                     new Object[]{fIdentityConstraint.getElementName(), fIdentityConstraint.getIdentityConstraintName()});
             }
-            fStore.addValue(Field.this, actualValue, convertToPrimitiveKind(valueType), convertToPrimitiveKind(itemValueType));
+            fStore.addValue(Field.this, fMayMatch, actualValue, convertToPrimitiveKind(valueType), convertToPrimitiveKind(itemValueType));
             // once we've stored the value for this field, we set the mayMatch
-            // member to false so that, in the same scope, we don't match any more
+            // member to false so that in the same scope, we don't match any more
             // values (and throw an error instead).
-            fFieldActivator.setMayMatch(Field.this, Boolean.FALSE);
+            fMayMatch = false;
         } // matched(String)
 
         private short convertToPrimitiveKind(short valueType) {
