@@ -1533,8 +1533,11 @@ class CommandLineFlags {
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
                                                                             \
-  product(bool, ParallelGCVerbose, false,                                   \
-          "Verbose output for parallel gc")                                 \
+  product(bool, PrintTaskqueue, false,                                      \
+          "Print taskqueue statistics for parallel collectors")             \
+                                                                            \
+  product(bool, PrintTerminationStats, false,                               \
+          "Print termination statistics for parallel collectors")           \
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
