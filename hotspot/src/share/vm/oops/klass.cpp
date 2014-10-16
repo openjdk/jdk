@@ -130,6 +130,15 @@ bool Klass::compute_is_subtype_of(Klass* k) {
   return is_subclass_of(k);
 }
 
+Klass* Klass::find_field(Symbol* name, Symbol* sig, fieldDescriptor* fd) const {
+#ifdef ASSERT
+  tty->print_cr("Error: find_field called on a klass oop."
+                " Likely error: reflection method does not correctly"
+                " wrap return value in a mirror object.");
+#endif
+  ShouldNotReachHere();
+  return NULL;
+}
 
 Method* Klass::uncached_lookup_method(Symbol* name, Symbol* signature, MethodLookupMode mode) const {
 #ifdef ASSERT

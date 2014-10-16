@@ -3836,6 +3836,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
     return JNI_ENOMEM;
   }
 
+  // Set up VerifySharedSpaces
+  if (FLAG_IS_DEFAULT(VerifySharedSpaces) && SharedArchiveFile != NULL) {
+    VerifySharedSpaces = true;
+  }
+
   // Delay warning until here so that we've had a chance to process
   // the -XX:-PrintWarnings flag
   if (needs_hotspotrc_warning) {
