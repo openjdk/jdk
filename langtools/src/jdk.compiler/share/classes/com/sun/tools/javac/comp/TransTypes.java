@@ -67,11 +67,15 @@ public class TransTypes extends TreeTranslator {
     private Symtab syms;
     private TreeMaker make;
     private Enter enter;
-    private boolean allowInterfaceBridges;
     private Types types;
     private final Resolve resolve;
-
     private final CompileStates compileStates;
+
+    /** Switch: is complex graph inference supported? */
+    private final boolean allowGraphInference;
+
+    /** Switch: are default methods supported? */
+    private final boolean allowInterfaceBridges;
 
     protected TransTypes(Context context) {
         context.put(transTypesKey, this);
@@ -81,11 +85,12 @@ public class TransTypes extends TreeTranslator {
         syms = Symtab.instance(context);
         enter = Enter.instance(context);
         overridden = new HashMap<>();
-        Source source = Source.instance(context);
-        allowInterfaceBridges = source.allowDefaultMethods();
         types = Types.instance(context);
         make = TreeMaker.instance(context);
         resolve = Resolve.instance(context);
+        Source source = Source.instance(context);
+        allowInterfaceBridges = source.allowDefaultMethods();
+        allowGraphInference = source.allowGraphInference();
     }
 
     /** A hashtable mapping bridge methods to the methods they override after
@@ -654,7 +659,11 @@ public class TransTypes extends TreeTranslator {
         tree.meth = translate(tree.meth, null);
         Symbol meth = TreeInfo.symbol(tree.meth);
         Type mt = meth.erasure(types);
-        List<Type> argtypes = mt.getParameterTypes();
+        boolean useInstantiatedPtArgs =
+                allowGraphInference && !types.isSignaturePolymorphic((MethodSymbol)meth.baseSymbol());
+        List<Type> argtypes = useInstantiatedPtArgs ?
+                tree.meth.type.getParameterTypes() :
+                mt.getParameterTypes();
         if (meth.name == names.init && meth.owner == syms.enumSym)
             argtypes = argtypes.tail.tail;
         if (tree.varargsElement != null)
@@ -675,14 +684,23 @@ public class TransTypes extends TreeTranslator {
     public void visitNewClass(JCNewClass tree) {
         if (tree.encl != null)
             tree.encl = translate(tree.encl, erasure(tree.encl.type));
+
+        Type erasedConstructorType = tree.constructorType != null ?
+                erasure(tree.constructorType) :
+                null;
+
+        List<Type> argtypes = erasedConstructorType != null && allowGraphInference ?
+                erasedConstructorType.getParameterTypes() :
+                tree.constructor.erasure(types).getParameterTypes();
+
         tree.clazz = translate(tree.clazz, null);
         if (tree.varargsElement != null)
             tree.varargsElement = types.erasure(tree.varargsElement);
         tree.args = translateArgs(
-            tree.args, tree.constructor.erasure(types).getParameterTypes(), tree.varargsElement);
+            tree.args, argtypes, tree.varargsElement);
         tree.def = translate(tree.def, null);
-        if (tree.constructorType != null)
-            tree.constructorType = erasure(tree.constructorType);
+        if (erasedConstructorType != null)
+            tree.constructorType = erasedConstructorType;
         tree.type = erasure(tree.type);
         result = tree;
     }
