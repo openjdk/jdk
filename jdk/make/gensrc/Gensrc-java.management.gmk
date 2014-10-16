@@ -1,5 +1,5 @@
 #
-# Copyright (c) 2014, Oracle and/or its affiliates. All rights reserved.
+# Copyright (c) 2011, 2013, Oracle and/or its affiliates. All rights reserved.
 # DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
 #
 # This code is free software; you can redistribute it and/or modify it
@@ -25,28 +25,19 @@
 
 include GensrcCommon.gmk
 
-# Hook to include the corresponding custom file, if present.
-$(eval $(call IncludeCustomExtension, jdk, gensrc/Gensrc-jdk.localedata.gmk))
-
-include GensrcLocaleData.gmk
-include GensrcCLDR.gmk
-
 ################################################################################
 
 include GensrcProperties.gmk
 
 $(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
     $(filter %.properties, \
-        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources)), \
-    sun.util.resources.LocaleNamesBundle))
+        $(call CacheFind, $(JDK_TOPDIR)/src/java.management/share/classes/sun/management/resources)), \
+    ListResourceBundle))
 
-# Skip generating zh_HK from zh_TW for this module.
-GENSRC_JDK_LOCALEDATA += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))
+TARGETS += $(COMPILE_PROPERTIES)
 
 ################################################################################
 
-jdk.localedata: $(GENSRC_JDK_LOCALEDATA)
+all: $(TARGETS)
 
-all: jdk.localedata
-
-.PHONY: all jdk.localedata
+.PHONY: all
