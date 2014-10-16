@@ -232,7 +232,14 @@ final class TypeEvaluator {
                 if (callExpr.getArgs().isEmpty()) {
                     final RecompilableScriptFunctionData data = compiler.getScriptFunctionData(fn.getId());
                     if (data != null) {
-                        return Type.typeFor(data.getReturnType(EMPTY_INVOCATION_TYPE, runtimeScope));
+                        final Type returnType = Type.typeFor(data.getReturnType(EMPTY_INVOCATION_TYPE, runtimeScope));
+                        if (returnType == Type.BOOLEAN) {
+                            // We don't have optimistic booleans. In fact, optimistic call sites getting back boolean
+                            // currently deoptimize all the way to Object.
+                            return Type.OBJECT;
+                        }
+                        assert returnType == Type.INT || returnType == Type.LONG || returnType == Type.NUMBER || returnType == Type.OBJECT;
+                        return returnType;
                     }
                 }
             }
