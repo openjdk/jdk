@@ -347,10 +347,10 @@ static int read_volatiles(jvm_agent_t* J) {
                  &J->Number_of_heaps, sizeof(J->Number_of_heaps));
 
   /* Allocate memory for heap configurations */
-  J->Heap_low = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
-  J->Heap_high = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
-  J->Heap_segmap_low = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
-  J->Heap_segmap_high = (jvm_agent_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_low         = (uint64_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_high        = (uint64_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_segmap_low  = (uint64_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
+  J->Heap_segmap_high = (uint64_t*)calloc(J->Number_of_heaps, sizeof(uint64_t));
 
   /* Read code heap configurations */
   for (i = 0; i < J->Number_of_heaps; ++i) {

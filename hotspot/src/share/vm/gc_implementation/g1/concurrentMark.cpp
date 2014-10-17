@@ -131,7 +131,10 @@ void CMBitMap::initialize(MemRegion heap, G1RegionToSpaceMapper* storage) {
   storage->set_mapping_changed_listener(&_listener);
 }
 
-void CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions) {
+void CMBitMapMappingChangedListener::on_commit(uint start_region, size_t num_regions, bool zero_filled) {
+  if (zero_filled) {
+    return;
+  }
   // We need to clear the bitmap on commit, removing any existing information.
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_region), num_regions * HeapRegion::GrainWords);
   _bm->clearRange(mr);
