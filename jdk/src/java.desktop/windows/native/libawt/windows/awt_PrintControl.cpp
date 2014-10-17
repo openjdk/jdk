@@ -771,6 +771,17 @@ BOOL AwtPrintControl::InitPrintDialog(JNIEnv *env,
     jint maxPage = env->CallIntMethod(printCtrl,
                                       AwtPrintControl::getMaxPageID);
     pd.nMaxPage = (maxPage <= (jint)((WORD)-1)) ? (WORD)maxPage : (WORD)-1;
+    // In the event that the application displays the dialog before
+    // installing a Printable, but sets a page range, then max page will be 1
+    // since the default state of a PrinterJob is an empty "Book" Pageable.
+    // Windows pops up an error dialog in such a case which isn't very
+    // forthcoming about the exact problem.
+    // So if we detect this fix up such a problem here.
+    if (pd.nMinPage > pd.nFromPage) pd.nMinPage = pd.nFromPage;
+    if (pd.nMaxPage < pd.nToPage) pd.nMaxPage = pd.nToPage;
+    if (pd.nFromPage > pd.nMinPage || pd.nToPage < pd.nMaxPage) {
+      pd.Flags |= PD_PAGENUMS;
+    }
 
     if (env->CallBooleanMethod(printCtrl,
                                AwtPrintControl::getDestID)) {
