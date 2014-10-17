@@ -101,8 +101,6 @@ LD_FLAGS=$(LD_FLAGS) $(STACK_SIZE) /subsystem:windows /dll /base:0x8000000 \
   /export:jio_vsnprintf                      \
   $(AGCT_EXPORT)                             \
   /export:JVM_GetVersionInfo                 \
-  /export:JVM_GetThreadStateNames            \
-  /export:JVM_GetThreadStateValues           \
   /export:JVM_InitAgentProperties
 
 CXX_INCLUDE_DIRS=/I "..\generated"

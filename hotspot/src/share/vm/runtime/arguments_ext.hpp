@@ -34,6 +34,7 @@ public:
   static inline bool check_gc_consistency_user();
   static inline bool check_gc_consistency_ergo();
   static inline bool check_vm_args_consistency();
+  static        void process_options(const JavaVMInitArgs* args) {}
 };
 
 void ArgumentsExt::select_gc_ergonomically() {

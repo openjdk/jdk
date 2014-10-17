@@ -22,42 +22,30 @@
  */
 
 /*
- * @test DeoptimizeMethodTest
- * @bug 8006683 8007288 8022832
+ * @test
+ * @bug 8059100
+ * @summary Test that you can decrease NMT tracking level but not increase it.
+ * @key nmt
  * @library /testlibrary /testlibrary/whitebox
- * @build DeoptimizeMethodTest
+ * @build ChangeTrackingLevel
  * @run main ClassFileInstaller sun.hotspot.WhiteBox
  *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:CompileCommand=compileonly,SimpleTestCase$Helper::* DeoptimizeMethodTest
- * @summary testing of WB::deoptimizeMethod()
- * @author igor.ignatyev@oracle.com
+ * @run main/othervm -Xbootclasspath/a:. -XX:+UnlockDiagnosticVMOptions -XX:+WhiteBoxAPI -XX:NativeMemoryTracking=detail ChangeTrackingLevel
  */
-public class DeoptimizeMethodTest extends CompilerWhiteBoxTest {
 
-    public static void main(String[] args) throws Exception {
-        CompilerWhiteBoxTest.main(DeoptimizeMethodTest::new, args);
-    }
+import com.oracle.java.testlibrary.*;
+import sun.hotspot.WhiteBox;
 
-    private DeoptimizeMethodTest(TestCase testCase) {
-        super(testCase);
-        // to prevent inlining of #method
-        WHITE_BOX.testSetDontInlineMethod(method, true);
-    }
+public class ChangeTrackingLevel {
 
-    /**
-     * Tests {@code WB::deoptimizeMethod()} by calling it after
-     * compilation and checking that method isn't compiled.
-     *
-     * @throws Exception if one of the checks fails.
-     */
-    @Override
-    protected void test() throws Exception {
-        if (skipXcompOSR()) {
-            return;
+    public static WhiteBox wb = WhiteBox.getWhiteBox();
+    public static void main(String args[]) throws Exception {
+        boolean testChangeLevel = wb.NMTChangeTrackingLevel();
+        if (testChangeLevel) {
+            System.out.println("NMT level change test passed.");
+        } else {
+            // it also fails if the VM asserts.
+            throw new RuntimeException("NMT level change test failed");
         }
-        compile();
-        checkCompiled();
-        deoptimize();
-        checkNotCompiled();
     }
-}
+};

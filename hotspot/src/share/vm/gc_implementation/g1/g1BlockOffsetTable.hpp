@@ -109,7 +109,7 @@ public:
 
 class G1BlockOffsetSharedArrayMappingChangedListener : public G1MappingChangedListener {
  public:
-  virtual void on_commit(uint start_idx, size_t num_regions) {
+  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
     // Nothing to do. The BOT is hard-wired to be part of the HeapRegion, and we cannot
     // retrieve it here since this would cause firing of several asserts. The code
     // executed after commit of a region already needs to do some re-initialization of

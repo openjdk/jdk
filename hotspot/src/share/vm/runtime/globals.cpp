@@ -256,6 +256,11 @@ bool Flag::is_unlocked() const {
   return is_unlocked_ext();
 }
 
+void Flag::unlock_diagnostic() {
+  assert(is_diagnostic(), "sanity");
+  _flags = Flags(_flags & ~KIND_DIAGNOSTIC);
+}
+
 // Get custom message for this locked flag, or return NULL if
 // none is available.
 void Flag::get_locked_message(char* buf, int buflen) const {
