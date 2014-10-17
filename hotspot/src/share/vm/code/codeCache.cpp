@@ -267,6 +267,22 @@ bool CodeCache::heap_available(int code_blob_type) {
   }
 }
 
+const char* CodeCache::get_code_heap_flag_name(int code_blob_type) {
+  switch(code_blob_type) {
+  case CodeBlobType::NonNMethod:
+    return "NonNMethodCodeHeapSize";
+    break;
+  case CodeBlobType::MethodNonProfiled:
+    return "NonProfiledCodeHeapSize";
+    break;
+  case CodeBlobType::MethodProfiled:
+    return "ProfiledCodeHeapSize";
+    break;
+  }
+  ShouldNotReachHere();
+  return NULL;
+}
+
 void CodeCache::add_heap(ReservedSpace rs, const char* name, size_t size_initial, int code_blob_type) {
   // Check if heap is needed
   if (!heap_available(code_blob_type)) {
@@ -1011,9 +1027,8 @@ void CodeCache::report_codemem_full(int code_blob_type, bool print) {
     // Not yet reported for this heap, report
     heap->report_full();
     if (SegmentedCodeCache) {
-      warning("%s is full. Compiler has been disabled.", CodeCache::get_code_heap_name(code_blob_type));
-      warning("Try increasing the code heap size using -XX:%s=",
-          (code_blob_type == CodeBlobType::MethodNonProfiled) ? "NonProfiledCodeHeapSize" : "ProfiledCodeHeapSize");
+      warning("%s is full. Compiler has been disabled.", get_code_heap_name(code_blob_type));
+      warning("Try increasing the code heap size using -XX:%s=", get_code_heap_flag_name(code_blob_type));
     } else {
       warning("CodeCache is full. Compiler has been disabled.");
       warning("Try increasing the code cache size using -XX:ReservedCodeCacheSize=");
