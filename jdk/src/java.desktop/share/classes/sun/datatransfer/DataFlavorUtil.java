@@ -581,6 +581,15 @@ public class DataFlavorUtil {
                     return comp;
                 }
 
+                // Next prefer text types
+                if (flavor1.isFlavorTextType()) {
+                    return 1;
+                }
+
+                if (flavor2.isFlavorTextType()) {
+                    return -1;
+                }
+
                 // Next, look for application/x-java-* types. Prefer unknown
                 // MIME types because if the user provides his own data flavor,
                 // it will likely be the most descriptive one.

@@ -26,7 +26,7 @@
   @bug       8048887
   @summary   Tests SortingFTP for an exception caused by the tim-sort algo.
   @author    anton.tarasov: area=awt.focus
-  @run       main JDK8040632
+  @run       main JDK8048887
 */
 
 import javax.swing.JFrame;

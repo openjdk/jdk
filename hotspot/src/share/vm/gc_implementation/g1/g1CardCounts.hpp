@@ -42,7 +42,7 @@ class G1CardCountsMappingChangedListener : public G1MappingChangedListener {
  public:
   void set_cardcounts(G1CardCounts* counts) { _counts = counts; }
 
-  virtual void on_commit(uint start_idx, size_t num_regions);
+  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
 // Table to track the number of times a card has been refined. Once

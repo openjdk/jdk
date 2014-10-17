@@ -90,10 +90,6 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
     _class_count(0) {
   }
 
-  ~MemBaseline() {
-    reset();
-  }
-
   bool baseline(bool summaryOnly = true);
 
   BaselineType baseline_type() const { return _baseline_type; }
@@ -169,8 +165,7 @@ class MemBaseline VALUE_OBJ_CLASS_SPEC {
   // reset the baseline for reuse
   void reset() {
     _baseline_type = Not_baselined;
-    _malloc_memory_snapshot.reset();
-    _virtual_memory_snapshot.reset();
+    // _malloc_memory_snapshot and _virtual_memory_snapshot are copied over.
     _class_count  = 0;
 
     _malloc_sites.clear();

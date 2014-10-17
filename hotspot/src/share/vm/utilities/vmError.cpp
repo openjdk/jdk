@@ -740,7 +740,7 @@ void VMError::report(outputStream* st) {
 
   STEP(228, "(Native Memory Tracking)" )
      if (_verbose) {
-       MemTracker::final_report(st);
+       MemTracker::error_report(st);
      }
 
   STEP(230, "" )

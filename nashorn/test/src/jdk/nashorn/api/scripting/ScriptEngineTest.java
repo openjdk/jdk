@@ -38,6 +38,7 @@ import java.lang.reflect.Proxy;
 import java.util.concurrent.Callable;
 import javax.script.Compilable;
 import javax.script.CompiledScript;
+import javax.script.Invocable;
 import javax.script.ScriptContext;
 import javax.script.ScriptEngine;
 import javax.script.ScriptEngineFactory;
@@ -627,6 +628,40 @@ public class ScriptEngineTest {
             "Object.getOwnPropertyDescriptor(this, " +
             " 'javax.script.filename').enumerable");
         assertEquals(enumerable, Boolean.FALSE);
+    }
+
+    public static class Context {
+        private Object myobj;
+
+        public void set(Object o) {
+            myobj = o;
+        }
+
+        public Object get() {
+            return myobj;
+        }
+    }
+
+    // @bug 8050977: Java8 Javascript Nashorn exception:
+    // no current Global instance for nashorn
+    @Test
+    public void currentGlobalMissingTest() throws Exception {
+        final ScriptEngineManager manager = new ScriptEngineManager();
+        final ScriptEngine e = manager.getEngineByName("nashorn");
+
+        final Context ctx = new Context();
+        e.put("ctx", ctx);
+        e.eval("var obj = { foo: function(str) { return str.toUpperCase() } }");
+        e.eval("ctx.set(obj)");
+        final Invocable inv = (Invocable)e;
+        assertEquals("HELLO", inv.invokeMethod(ctx.get(), "foo", "hello"));
+        // try object literal
+        e.eval("ctx.set({ bar: function(str) { return str.toLowerCase() } })");
+        assertEquals("hello", inv.invokeMethod(ctx.get(), "bar", "HELLO"));
+        // try array literal
+        e.eval("var arr = [ 'hello', 'world' ]");
+        e.eval("ctx.set(arr)");
+        assertEquals("helloworld", inv.invokeMethod(ctx.get(), "join", ""));
     }
 
     private static void checkProperty(final ScriptEngine e, final String name)

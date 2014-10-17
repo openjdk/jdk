@@ -1491,16 +1491,6 @@
     </export>
   </module>
   <module>
-    <name>jdk.compact3</name>
-    <depend re-exports="true">java.compact3</depend>
-    <depend re-exports="true">java.smartcardio</depend>
-    <depend re-exports="true">jdk.httpserver</depend>
-    <depend re-exports="true">jdk.naming.dns</depend>
-    <depend re-exports="true">jdk.naming.rmi</depend>
-    <depend re-exports="true">jdk.sctp</depend>
-    <depend re-exports="true">jdk.security.auth</depend>
-  </module>
-  <module>
     <name>jdk.compiler</name>
     <depend>java.base</depend>
     <depend re-exports="true">java.compiler</depend>
@@ -1735,7 +1725,6 @@
     <depend>java.base</depend>
     <depend>java.desktop</depend>
     <depend>java.se</depend>
-    <depend>jdk.compact3</depend>
   </module>
   <module>
     <name>jdk.scripting.nashorn</name>

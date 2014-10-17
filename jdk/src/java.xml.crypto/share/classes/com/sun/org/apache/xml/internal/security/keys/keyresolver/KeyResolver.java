@@ -42,6 +42,7 @@ import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SKIResolver;
 import com.sun.org.apache.xml.internal.security.keys.keyresolver.implementations.X509SubjectNameResolver;
 import com.sun.org.apache.xml.internal.security.keys.storage.StorageResolver;
+import com.sun.org.apache.xml.internal.security.utils.JavaUtils;
 import org.w3c.dom.Element;
 import org.w3c.dom.Node;
 
@@ -175,9 +176,12 @@ public class KeyResolver {
      * @throws InstantiationException
      * @throws IllegalAccessException
      * @throws ClassNotFoundException
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to register the key resolver
      */
     public static void register(String className, boolean globalResolver)
         throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        JavaUtils.checkRegisterPermission();
         KeyResolverSpi keyResolverSpi =
             (KeyResolverSpi) Class.forName(className).newInstance();
         keyResolverSpi.setGlobalResolver(globalResolver);
@@ -195,8 +199,11 @@ public class KeyResolver {
      *
      * @param className
      * @param globalResolver Whether the KeyResolverSpi is a global resolver or not
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to register the key resolver
      */
     public static void registerAtStart(String className, boolean globalResolver) {
+        JavaUtils.checkRegisterPermission();
         KeyResolverSpi keyResolverSpi = null;
         Exception ex = null;
         try {
@@ -228,11 +235,14 @@ public class KeyResolver {
      *
      * @param keyResolverSpi a KeyResolverSpi instance to register
      * @param start whether to register the KeyResolverSpi at the start of the list or not
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to register the key resolver
      */
     public static void register(
         KeyResolverSpi keyResolverSpi,
         boolean start
     ) {
+        JavaUtils.checkRegisterPermission();
         KeyResolver resolver = new KeyResolver(keyResolverSpi);
         if (start) {
             resolverVector.add(0, resolver);
@@ -254,9 +264,12 @@ public class KeyResolver {
      * @throws InstantiationException
      * @throws IllegalAccessException
      * @throws ClassNotFoundException
+     * @throws SecurityException if a security manager is installed and the
+     *    caller does not have permission to register the key resolver
      */
     public static void registerClassNames(List<String> classNames)
         throws ClassNotFoundException, IllegalAccessException, InstantiationException {
+        JavaUtils.checkRegisterPermission();
         List<KeyResolver> keyResolverList = new ArrayList<KeyResolver>(classNames.size());
         for (String className : classNames) {
             KeyResolverSpi keyResolverSpi =

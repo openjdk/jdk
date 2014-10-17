@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2003,2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -44,7 +45,9 @@ public interface XSModel {
 
     /**
      * Returns a list of top-level components, i.e. element declarations,
-     * attribute declarations, etc.
+     * attribute declarations, etc. Identity-constraint definitions are also
+     * considered top-level.
+     *
      * @param objectType The type of the declaration, i.e.
      *   <code>ELEMENT_DECLARATION</code>. Note that
      *   <code>XSTypeDefinition.SIMPLE_TYPE</code> and
@@ -60,7 +63,9 @@ public interface XSModel {
     /**
      * Convenience method. Returns a list of top-level component declarations
      * that are defined within the specified namespace, i.e. element
-     * declarations, attribute declarations, etc.
+     * declarations, attribute declarations, etc. Identity-constraint
+     * definitions are also considered top-level.
+     *
      * @param objectType The type of the declaration, i.e.
      *   <code>ELEMENT_DECLARATION</code>.
      * @param namespace The namespace to which the declaration belongs or
@@ -144,6 +149,17 @@ public interface XSModel {
      */
     public XSNotationDeclaration getNotationDeclaration(String name,
                                                         String namespace);
+
+    /**
+     * Convenience method. Returns an identity-constraint definition.
+     * @param name The name of the definition.
+     * @param namespace The namespace of the definition, otherwise
+     *   <code>null</code>.
+     * @return An identity-constraint definition or <code>null</code> if such
+     *   a declaration does not exist.
+     */
+    public XSIDCDefinition getIDCDefinition(String name,
+                                            String namespace);
 
     /**
      * Convenience method. Returns a list containing the members of the

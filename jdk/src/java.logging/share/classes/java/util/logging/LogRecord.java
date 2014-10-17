@@ -509,7 +509,13 @@ public class LogRecord implements java.io.Serializable {
         // If necessary, try to regenerate the resource bundle.
         if (resourceBundleName != null) {
             try {
-                resourceBundle = ResourceBundle.getBundle(resourceBundleName);
+                // use system class loader to ensure the ResourceBundle
+                // instance is a different instance than null loader uses
+                final ResourceBundle bundle =
+                        ResourceBundle.getBundle(resourceBundleName,
+                                Locale.getDefault(),
+                                ClassLoader.getSystemClassLoader());
+                resourceBundle = bundle;
             } catch (MissingResourceException ex) {
                 // This is not a good place to throw an exception,
                 // so we simply leave the resourceBundle null.

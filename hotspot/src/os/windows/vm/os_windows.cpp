@@ -745,8 +745,29 @@ int os::active_processor_count() {
 }
 
 void os::set_native_thread_name(const char *name) {
-  // Not yet implemented.
-  return;
+
+  // See: http://msdn.microsoft.com/en-us/library/xcb2z8hs.aspx
+  //
+  // Note that unfortunately this only works if the process
+  // is already attached to a debugger; debugger must observe
+  // the exception below to show the correct name.
+
+  const DWORD MS_VC_EXCEPTION = 0x406D1388;
+  struct {
+    DWORD dwType;     // must be 0x1000
+    LPCSTR szName;    // pointer to name (in user addr space)
+    DWORD dwThreadID; // thread ID (-1=caller thread)
+    DWORD dwFlags;    // reserved for future use, must be zero
+  } info;
+
+  info.dwType = 0x1000;
+  info.szName = name;
+  info.dwThreadID = -1;
+  info.dwFlags = 0;
+
+  __try {
+    RaiseException (MS_VC_EXCEPTION, 0, sizeof(info)/sizeof(DWORD), (const ULONG_PTR*)&info );
+  } __except(EXCEPTION_CONTINUE_EXECUTION) {}
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {

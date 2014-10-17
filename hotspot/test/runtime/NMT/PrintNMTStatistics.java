@@ -24,43 +24,40 @@
 /*
  * @test
  * @key nmt regression
- * @bug 8005936
- * @summary Make sure PrintNMTStatistics works on normal JVM exit
- * @library /testlibrary /testlibrary/whitebox
- * @build PrintNMTStatistics
- * @run main ClassFileInstaller sun.hotspot.WhiteBox
- *                              sun.hotspot.WhiteBox$WhiteBoxPermission
- * @run main PrintNMTStatistics
+ * @bug 8005936 8058606
+ * @summary Verify PrintNMTStatistics on normal JVM exit for detail and summary tracking level
+ * @library /testlibrary
  */
 
 import com.oracle.java.testlibrary.*;
 
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-import sun.hotspot.WhiteBox;
-
 public class PrintNMTStatistics {
 
-  public static void main(String args[]) throws Exception {
-
-    // We start a new java process running with an argument and use WB API to ensure
-    // we have data for NMT on VM exit
-    if (args.length > 0) {
-      return;
-    }
+    public static void main(String args[]) throws Exception {
 
     ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
-        "-XX:+UnlockDiagnosticVMOptions",
-        "-Xbootclasspath/a:.",
-        "-XX:+WhiteBoxAPI",
-        "-XX:NativeMemoryTracking=summary",
-        "-XX:+PrintNMTStatistics",
-        "PrintNMTStatistics",
-        "test");
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:+PrintNMTStatistics",
+      "-XX:NativeMemoryTracking=detail",
+      "-version");
 
-    OutputAnalyzer output = new OutputAnalyzer(pb.start());
-    output.shouldContain("Java Heap (reserved=");
-    output.shouldNotContain("error");
-    output.shouldHaveExitValue(0);
-  }
+    OutputAnalyzer output_detail = new OutputAnalyzer(pb.start());
+    output_detail.shouldContain("Virtual memory map:");
+    output_detail.shouldContain("Details:");
+    output_detail.shouldNotContain("error");
+    output_detail.shouldHaveExitValue(0);
+
+    ProcessBuilder pb1 = ProcessTools.createJavaProcessBuilder(
+      "-XX:+UnlockDiagnosticVMOptions",
+      "-XX:+PrintNMTStatistics",
+      "-XX:NativeMemoryTracking=summary",
+      "-version");
+
+    OutputAnalyzer output_summary = new OutputAnalyzer(pb1.start());
+    output_summary.shouldContain("Java Heap (reserved=");
+    output_summary.shouldNotContain("Virtual memory map:");
+    output_summary.shouldNotContain("Details:");
+    output_summary.shouldNotContain("error");
+    output_summary.shouldHaveExitValue(0);
+    }
 }

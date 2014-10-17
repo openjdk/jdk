@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.objects;
 
+import static jdk.nashorn.internal.runtime.ECMAErrors.typeError;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.isValid;
 
 import jdk.internal.dynalink.CallSiteDescriptor;
@@ -36,9 +37,11 @@ import jdk.nashorn.internal.objects.annotations.Constructor;
 import jdk.nashorn.internal.objects.annotations.Function;
 import jdk.nashorn.internal.objects.annotations.ScriptClass;
 import jdk.nashorn.internal.runtime.Context;
+import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.NativeJavaPackage;
 import jdk.nashorn.internal.runtime.PropertyMap;
 import jdk.nashorn.internal.runtime.ScriptObject;
+import jdk.nashorn.internal.runtime.ScriptRuntime;
 import jdk.nashorn.internal.runtime.UnwarrantedOptimismException;
 
 /**
@@ -94,33 +97,30 @@ public final class NativeJavaImporter extends ScriptObject {
     }
 
     /**
-     * "No such property" call placeholder.
-     *
-     * This can never be called as we override {@link ScriptObject#noSuchProperty}. We do declare it here as it's a signal
-     * to {@link jdk.nashorn.internal.runtime.WithObject} that it's worth trying doing a {@code noSuchProperty} on this object.
+     * "No such property" handler.
      *
      * @param self self reference
      * @param name property name
-     * @return never returns
+     * @return value of the missing property
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object __noSuchProperty__(final Object self, final Object name) {
-        throw new AssertionError("__noSuchProperty__ placeholder called");
+        if (! (self instanceof NativeJavaImporter)) {
+            throw typeError("not.a.java.importer", ScriptRuntime.safeToString(self));
+        }
+        return ((NativeJavaImporter)self).createProperty(JSType.toString(name));
     }
 
     /**
-     * "No such method call" placeholder
-     *
-     * This can never be called as we override {@link ScriptObject#noSuchMethod}. We do declare it here as it's a signal
-     * to {@link jdk.nashorn.internal.runtime.WithObject} that it's worth trying doing a noSuchProperty on this object.
+     * "No such method call" handler
      *
      * @param self self reference
      * @param args arguments to method
-     * @return never returns
+     * @return never returns always throw TypeError
      */
     @Function(attributes = Attribute.NOT_ENUMERABLE)
     public static Object __noSuchMethod__(final Object self, final Object... args) {
-        throw new AssertionError("__noSuchMethod__ placeholder called");
+       throw typeError("not.a.function", ScriptRuntime.safeToString(args[0]));
     }
 
     @Override

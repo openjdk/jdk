@@ -410,8 +410,27 @@ public final class Compiler implements Loggable {
             baseName = baseName + installer.getUniqueScriptId();
         }
 
-        final String mangled = NameCodec.encode(baseName);
+        // ASM's bytecode verifier does not allow JVM allowed safe escapes using '\' as escape char.
+        // While ASM accepts such escapes for method names, field names, it enforces Java identifier
+        // for class names. Workaround that ASM bug here by replacing JVM 'dangerous' chars with '_'
+        // rather than safe encoding using '\'.
+        final String mangled = env._verify_code? replaceDangerChars(baseName) : NameCodec.encode(baseName);
         return mangled != null ? mangled : baseName;
+    }
+
+    private static final String DANGEROUS_CHARS   = "\\/.;:$[]<>";
+    private static String replaceDangerChars(final String name) {
+        final int len = name.length();
+        final StringBuilder buf = new StringBuilder();
+        for (int i = 0; i < len; i++) {
+            final char ch = name.charAt(i);
+            if (DANGEROUS_CHARS.indexOf(ch) != -1) {
+                buf.append('_');
+            } else {
+                buf.append(ch);
+            }
+        }
+        return buf.toString();
     }
 
     private String firstCompileUnitName() {

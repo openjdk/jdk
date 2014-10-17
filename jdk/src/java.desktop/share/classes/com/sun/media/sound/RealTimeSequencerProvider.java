@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -26,7 +26,6 @@
 package com.sun.media.sound;
 
 import javax.sound.midi.MidiDevice;
-import javax.sound.midi.MidiUnavailableException;
 import javax.sound.midi.spi.MidiDeviceProvider;
 
 /**
@@ -36,23 +35,16 @@ import javax.sound.midi.spi.MidiDeviceProvider;
  */
 public final class RealTimeSequencerProvider extends MidiDeviceProvider {
 
-
+    @Override
     public MidiDevice.Info[] getDeviceInfo() {
-
-        MidiDevice.Info[] localArray = { RealTimeSequencer.info };
-        return localArray;
+        return new MidiDevice.Info[]{RealTimeSequencer.info};
     }
 
-
-    public MidiDevice getDevice(MidiDevice.Info info) {
-        if ((info != null) && (!info.equals(RealTimeSequencer.info))) {
-            return null;
-        }
-
-        try {
+    @Override
+    public MidiDevice getDevice(final MidiDevice.Info info) {
+        if (RealTimeSequencer.info.equals(info)) {
             return new RealTimeSequencer();
-        } catch (MidiUnavailableException e) {
-            return null;
         }
+        throw MidiUtils.unsupportedDevice(info);
     }
 }

@@ -320,6 +320,8 @@ struct Flag {
   bool is_writeable_ext() const;
   bool is_external_ext() const;
 
+  void unlock_diagnostic();
+
   void get_locked_message(char*, int) const;
   void get_locked_message_ext(char*, int) const;
 
@@ -1177,11 +1179,11 @@ class CommandLineFlags {
           "When true prevents OS-level spurious, or premature, wakeups "    \
           "from Object.wait (Ignored for Windows)")                         \
                                                                             \
-  product(intx, NativeMonitorTimeout, -1, "(Unstable)")                     \
+  experimental(intx, NativeMonitorTimeout, -1, "(Unstable)")                \
                                                                             \
-  product(intx, NativeMonitorFlags, 0, "(Unstable)")                        \
+  experimental(intx, NativeMonitorFlags, 0, "(Unstable)")                   \
                                                                             \
-  product(intx, NativeMonitorSpinLimit, 20, "(Unstable)")                   \
+  experimental(intx, NativeMonitorSpinLimit, 20, "(Unstable)")              \
                                                                             \
   develop(bool, UsePthreads, false,                                         \
           "Use pthread-based instead of libthread-based synchronization "   \
@@ -1533,8 +1535,11 @@ class CommandLineFlags {
   product(bool, UseParNewGC, false,                                         \
           "Use parallel threads in the new generation")                     \
                                                                             \
-  product(bool, ParallelGCVerbose, false,                                   \
-          "Verbose output for parallel gc")                                 \
+  product(bool, PrintTaskqueue, false,                                      \
+          "Print taskqueue statistics for parallel collectors")             \
+                                                                            \
+  product(bool, PrintTerminationStats, false,                               \
+          "Print termination statistics for parallel collectors")           \
                                                                             \
   product(uintx, ParallelGCBufferWastePct, 10,                              \
           "Wasted fraction of parallel allocation buffer")                  \
@@ -3793,6 +3798,10 @@ class CommandLineFlags {
                                                                             \
   product(bool, UseSharedSpaces, true,                                      \
           "Use shared spaces for metadata")                                 \
+                                                                            \
+  product(bool, VerifySharedSpaces, false,                                  \
+          "Verify shared spaces (false for default archive, true for "      \
+          "archive specified by -XX:SharedArchiveFile)")                    \
                                                                             \
   product(bool, RequireSharedSpaces, false,                                 \
           "Require shared spaces for metadata")                             \

@@ -31,6 +31,20 @@ $(eval $(call IncludeCustomExtension, jdk, gensrc/Gensrc-jdk.localedata.gmk))
 include GensrcLocaleData.gmk
 include GensrcCLDR.gmk
 
+################################################################################
+
+include GensrcProperties.gmk
+
+$(eval $(call SetupCompileProperties,COMPILE_PROPERTIES, \
+    $(filter %.properties, \
+        $(call CacheFind, $(JDK_TOPDIR)/src/jdk.localedata/share/classes/sun/util/resources)), \
+    sun.util.resources.LocaleNamesBundle))
+
+# Skip generating zh_HK from zh_TW for this module.
+GENSRC_JDK_LOCALEDATA += $(filter-out %_zh_HK.java, $(COMPILE_PROPERTIES))
+
+################################################################################
+
 jdk.localedata: $(GENSRC_JDK_LOCALEDATA)
 
 all: jdk.localedata

@@ -33,7 +33,9 @@ class G1MappingChangedListener VALUE_OBJ_CLASS_SPEC {
  public:
   // Fired after commit of the memory, i.e. the memory this listener is registered
   // for can be accessed.
-  virtual void on_commit(uint start_idx, size_t num_regions) = 0;
+  // Zero_filled indicates that the memory can be considered as filled with zero bytes
+  // when called.
+  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled) = 0;
 };
 
 // Maps region based commit/uncommit requests to the underlying page sized virtual
@@ -51,7 +53,7 @@ class G1RegionToSpaceMapper : public CHeapObj<mtGC> {
 
   G1RegionToSpaceMapper(ReservedSpace rs, size_t commit_granularity, size_t region_granularity, MemoryType type);
 
-  void fire_on_commit(uint start_idx, size_t num_regions);
+  void fire_on_commit(uint start_idx, size_t num_regions, bool zero_filled);
  public:
   MemRegion reserved() { return _storage.reserved(); }
 

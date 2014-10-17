@@ -64,7 +64,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
     /**
      * All RealTimeSequencers share this info object.
      */
-    static final RealTimeSequencerInfo info = new RealTimeSequencerInfo();
+    static final MidiDevice.Info info = new RealTimeSequencerInfo();
 
 
     private static final Sequencer.SyncMode[] masterSyncModes = { Sequencer.SyncMode.INTERNAL_CLOCK };
@@ -154,7 +154,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
 
     /* ****************************** CONSTRUCTOR ****************************** */
 
-    RealTimeSequencer() throws MidiUnavailableException {
+    RealTimeSequencer(){
         super(info);
 
         if (Printer.trace) Printer.trace(">> RealTimeSequencer CONSTRUCTOR");
@@ -1088,7 +1088,7 @@ final class RealTimeSequencer extends AbstractMidiDevice
         private static final String description = "Software sequencer";
         private static final String version = "Version 1.0";
 
-        private RealTimeSequencerInfo() {
+        RealTimeSequencerInfo() {
             super(name, vendor, description, version);
         }
     } // class Info

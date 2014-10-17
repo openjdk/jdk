@@ -33,7 +33,10 @@
 
 PRAGMA_FORMAT_MUTE_WARNINGS_FOR_GCC
 
-void G1CardCountsMappingChangedListener::on_commit(uint start_idx, size_t num_regions) {
+void G1CardCountsMappingChangedListener::on_commit(uint start_idx, size_t num_regions, bool zero_filled) {
+  if (zero_filled) {
+    return;
+  }
   MemRegion mr(G1CollectedHeap::heap()->bottom_addr_for_region(start_idx), num_regions * HeapRegion::GrainWords);
   _counts->clear_range(mr);
 }

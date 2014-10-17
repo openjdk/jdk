@@ -36,7 +36,6 @@ import java.io.*;
 import java.lang.management.*;
 import java.lang.reflect.*;
 import java.net.*;
-import java.security.CodeSource;
 import java.util.*;
 import java.util.jar.*;
 import javax.management.*;
@@ -83,27 +82,10 @@ public class NotificationInfoTest {
         System.out.println("Checking platform MBeans...");
         checkPlatformMBeans();
 
-        CodeSource cs =
-            javax.management.MBeanServer.class.getProtectionDomain()
-            .getCodeSource();
-        URL codeBase;
-        if (cs == null) {
-            String javaHome = System.getProperty("java.home");
-            String[] candidates = {"/lib/rt.jar", "/classes/"};
-            codeBase = null;
-            for (String candidate : candidates) {
-                File file = new File(javaHome + candidate);
-                if (file.exists()) {
-                    codeBase = file.toURI().toURL();
-                    break;
-                }
-            }
-            if (codeBase == null) {
-                throw new Exception(
-                        "Could not determine codeBase for java.home=" + javaHome);
-            }
-        } else
-            codeBase = cs.getLocation();
+        URL codeBase = ClassLoader.getSystemResource("javax/management/MBeanServer.class");
+        if (codeBase == null) {
+            throw new Exception("Could not determine codeBase for " + MBeanServer.class);
+        }
 
         System.out.println();
         System.out.println("Looking for standard MBeans...");

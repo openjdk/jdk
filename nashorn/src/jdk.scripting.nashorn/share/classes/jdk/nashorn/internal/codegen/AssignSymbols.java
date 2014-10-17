@@ -511,16 +511,6 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
 
         thisProperties.push(new HashSet<String>());
 
-        if (functionNode.isDeclared()) {
-            // Can't use lc.getCurrentBlock() as we can have an outermost function in our lexical context that
-            // is not a program - it is a function being compiled on-demand.
-            final Iterator<Block> blocks = lc.getBlocks();
-            if (blocks.hasNext()) {
-                final IdentNode ident = functionNode.getIdent();
-                defineSymbol(blocks.next(), ident.getName(), ident, IS_VAR | (functionNode.isAnonymous()? IS_INTERNAL : 0));
-            }
-        }
-
         // Every function has a body, even the ones skipped on reparse (they have an empty one). We're
         // asserting this as even for those, enterBlock() must be invoked to correctly process symbols that
         // are used in them.
@@ -532,14 +522,34 @@ final class AssignSymbols extends NodeVisitor<LexicalContext> implements Loggabl
     @Override
     public boolean enterVarNode(final VarNode varNode) {
         start(varNode);
+        // Normally, a symbol assigned in a var statement is not live for its RHS. Since we also represent function
+        // declarations as VarNodes, they are exception to the rule, as they need to have the symbol visible to the
+        // body of the declared function for self-reference.
+        if (varNode.isFunctionDeclaration()) {
+            defineVarIdent(varNode);
+        }
         return true;
     }
 
     @Override
     public Node leaveVarNode(final VarNode varNode) {
-        final IdentNode ident = varNode.getName();
-        defineSymbol(lc.getCurrentBlock(), ident.getName(), ident, varNode.getSymbolFlags() | (lc.getCurrentFunction().isProgram() ? IS_SCOPE : 0));
+        if (!varNode.isFunctionDeclaration()) {
+            defineVarIdent(varNode);
+        }
         return super.leaveVarNode(varNode);
+    }
+
+    private void defineVarIdent(final VarNode varNode) {
+        final IdentNode ident = varNode.getName();
+        final int flags;
+        if (varNode.isAnonymousFunctionDeclaration()) {
+            flags = IS_INTERNAL;
+        } else if (lc.getCurrentFunction().isProgram()) {
+            flags = IS_SCOPE;
+        } else {
+            flags = 0;
+        }
+        defineSymbol(lc.getCurrentBlock(), ident.getName(), ident, varNode.getSymbolFlags() | flags);
     }
 
     private Symbol exceptionSymbol() {

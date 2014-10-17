@@ -3,11 +3,12 @@
  * DO NOT REMOVE OR ALTER!
  */
 /*
- * Copyright 2001, 2002,2004,2005 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -54,9 +55,12 @@ public interface ValueStore {
      * @param field The field associated to the value. This reference
      *              is used to ensure that each field only adds a value
      *              once within a selection scope.
+     * @param mayMatch a flag indiciating whether the field may be matched.
      * @param actualValue The value to add.
+     * @param valueType Type of the value to add.
+     * @param itemValueType If the value is a list, a list of types for each of the values in the list.
      */
-    public void addValue(Field field, Object actualValue, short valueType, ShortList itemValueType);
+    public void addValue(Field field, boolean mayMatch, Object actualValue, short valueType, ShortList itemValueType);
 
     /**
      * Since the valueStore will have access to an error reporter, this

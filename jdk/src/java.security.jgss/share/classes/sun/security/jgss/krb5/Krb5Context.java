@@ -244,8 +244,11 @@ class Krb5Context implements GSSContextSpi {
      * establishment.
      */
     public final void requestCredDeleg(boolean value) throws GSSException {
-        if (state == STATE_NEW && isInitiator())
-            credDelegState  = value;
+        if (state == STATE_NEW && isInitiator()) {
+            if (myCred == null || !(myCred instanceof Krb5ProxyCredential)) {
+                credDelegState  = value;
+            }
+        }
     }
 
     /**

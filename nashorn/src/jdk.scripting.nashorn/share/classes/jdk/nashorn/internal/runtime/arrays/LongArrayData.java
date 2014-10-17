@@ -27,10 +27,10 @@ package jdk.nashorn.internal.runtime.arrays;
 
 import static jdk.nashorn.internal.codegen.CompilerConstants.specialCall;
 import static jdk.nashorn.internal.lookup.Lookup.MH;
+
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.util.Arrays;
-import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.runtime.JSType;
 import jdk.nashorn.internal.runtime.ScriptRuntime;
 
@@ -67,12 +67,12 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
 
     @Override
     public Object[] asObjectArray() {
-        return toObjectArray(array, (int)length);
+        return toObjectArray(true);
     }
 
-    private static Object[] toObjectArray(final long[] array, final int length) {
+    private Object[] toObjectArray(final boolean trim) {
         assert length <= array.length : "length exceeds internal array size";
-        final Object[] oarray = new Object[array.length];
+        final Object[] oarray = new Object[trim ? (int)length : array.length];
 
         for (int index = 0; index < length; index++) {
             oarray[index] = Long.valueOf(array[index]);
@@ -89,7 +89,7 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
         return super.asArrayOfType(componentType);
     }
 
-    private static double[] toDoubleArray(final long[] array, final int length) {
+    private double[] toDoubleArray() {
         assert length <= array.length : "length exceeds internal array size";
         final double[] darray = new double[array.length];
 
@@ -107,9 +107,9 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
         }
         final int len = (int)length;
         if (type == Double.class) {
-            return new NumberArrayData(LongArrayData.toDoubleArray(array, len), len);
+            return new NumberArrayData(toDoubleArray(), len);
         }
-        return new ObjectArrayData(LongArrayData.toObjectArray(array, len), len);
+        return new ObjectArrayData(toObjectArray(false), len);
     }
 
     @Override
@@ -184,11 +184,6 @@ final class LongArrayData extends ContinuousArrayData implements IntOrLongElemen
             return this;
         }
         return convert(Double.class).set(index, value, strict);
-    }
-
-    @Override
-    public Type getOptimisticType() {
-        return Type.LONG;
     }
 
     private static final MethodHandle HAS_GET_ELEM = specialCall(MethodHandles.lookup(), LongArrayData.class, "getElem", long.class, int.class).methodHandle();

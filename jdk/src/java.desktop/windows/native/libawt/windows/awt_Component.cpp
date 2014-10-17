@@ -3936,7 +3936,6 @@ void AwtComponent::SendInputMethodEvent(jint id, jstring text,
         DASSERT(stringCls);
         CHECK_NULL(stringCls);
         clauseReading = env->NewObjectArray(cClause, stringCls, NULL);
-        env->DeleteLocalRef(stringCls);
         DASSERT(clauseReading);
         CHECK_NULL(clauseReading);
         for (int i=0; i<cClause; i++)   env->SetObjectArrayElement(clauseReading, i, rgClauseReading[i]);

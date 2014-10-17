@@ -152,6 +152,7 @@ final class JavaAdapterBytecodeGenerator {
     static final String SET_GLOBAL_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE, OBJECT_TYPE);
     static final String VOID_NOARG_METHOD_DESCRIPTOR = Type.getMethodDescriptor(Type.VOID_TYPE);
 
+    private static final Type SCRIPT_OBJECT_TYPE = Type.getType(ScriptObject.class);
     private static final Type SCRIPT_FUNCTION_TYPE = Type.getType(ScriptFunction.class);
     private static final Type STRING_TYPE = Type.getType(String.class);
     private static final Type METHOD_TYPE_TYPE = Type.getType(MethodType.class);
@@ -536,8 +537,8 @@ final class JavaAdapterBytecodeGenerator {
         final int argLen = originalArgTypes.length;
         final Type[] newArgTypes = new Type[argLen + 1];
 
-        // Insert ScriptFunction|Object as the last argument to the constructor
-        final Type extraArgumentType = fromFunction ? SCRIPT_FUNCTION_TYPE : OBJECT_TYPE;
+        // Insert ScriptFunction|ScriptObject as the last argument to the constructor
+        final Type extraArgumentType = fromFunction ? SCRIPT_FUNCTION_TYPE : SCRIPT_OBJECT_TYPE;
         newArgTypes[argLen] = extraArgumentType;
         System.arraycopy(originalArgTypes, 0, newArgTypes, 0, argLen);
 
@@ -587,6 +588,34 @@ final class JavaAdapterBytecodeGenerator {
 
         // Initialize converters
         generateConverterInit(mv, fromFunction);
+        endInitMethod(mv);
+
+        if (! fromFunction) {
+            newArgTypes[argLen] = OBJECT_TYPE;
+            final InstructionAdapter mv2 = new InstructionAdapter(cw.visitMethod(ACC_PUBLIC, INIT,
+                Type.getMethodDescriptor(originalCtorType.getReturnType(), newArgTypes), null, null));
+            generateOverridingConstructorWithObjectParam(mv2, ctor, originalCtorType.getDescriptor());
+        }
+    }
+
+    // Object additional param accepting constructor - generated to handle null and undefined value
+    // for script adapters. This is effectively to throw TypeError on such script adapters. See
+    // JavaAdapterServices.getHandle as well.
+    private void generateOverridingConstructorWithObjectParam(final InstructionAdapter mv, final Constructor<?> ctor, final String ctorDescriptor) {
+        mv.visitCode();
+        mv.visitVarInsn(ALOAD, 0);
+        final Class<?>[] argTypes = ctor.getParameterTypes();
+        int offset = 1; // First arg is at position 1, after this.
+        for (int i = 0; i < argTypes.length; ++i) {
+            final Type argType = Type.getType(argTypes[i]);
+            mv.load(offset, argType);
+            offset += argType.getSize();
+        }
+        mv.invokespecial(superClassName, INIT, ctorDescriptor, false);
+        mv.visitVarInsn(ALOAD, offset);
+        mv.visitInsn(ACONST_NULL);
+        mv.visitInsn(ACONST_NULL);
+        mv.invokestatic(SERVICES_CLASS_TYPE_NAME, "getHandle", GET_HANDLE_OBJECT_DESCRIPTOR, false);
         endInitMethod(mv);
     }
 

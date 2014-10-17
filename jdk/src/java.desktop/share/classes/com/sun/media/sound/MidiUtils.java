@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2003, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2003, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -25,8 +25,14 @@
 
 package com.sun.media.sound;
 
-import javax.sound.midi.*;
 import java.util.ArrayList;
+
+import javax.sound.midi.MetaMessage;
+import javax.sound.midi.MidiDevice;
+import javax.sound.midi.MidiEvent;
+import javax.sound.midi.MidiMessage;
+import javax.sound.midi.Sequence;
+import javax.sound.midi.Track;
 
 // TODO:
 // - define and use a global symbolic constant for 60000000 (see convertTempo)
@@ -46,6 +52,17 @@ public final class MidiUtils {
      * Suppresses default constructor, ensuring non-instantiability.
      */
     private MidiUtils() {
+    }
+
+    /**
+     * Returns an exception which should be thrown if MidiDevice is unsupported.
+     *
+     * @param  info an info object that describes the desired device
+     * @return an exception instance
+     */
+    static RuntimeException unsupportedDevice(final MidiDevice.Info info) {
+        return new IllegalArgumentException(String.format(
+                "MidiDevice %s not supported by this provider", info));
     }
 
     /** return true if the passed message is Meta End Of Track */

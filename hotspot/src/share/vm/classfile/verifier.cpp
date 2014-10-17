@@ -98,6 +98,19 @@ bool Verifier::verify(instanceKlassHandle klass, Verifier::Mode mode, bool shoul
   HandleMark hm;
   ResourceMark rm(THREAD);
 
+  // Eagerly allocate the identity hash code for a klass. This is a fallout
+  // from 6320749 and 8059924: hash code generator is not supposed to be called
+  // during the safepoint, but it allows to sneak the hashcode in during
+  // verification. Without this eager hashcode generation, we may end up
+  // installing the hashcode during some other operation, which may be at
+  // safepoint -- blowing up the checks. It was previously done as the side
+  // effect (sic!) for external_name(), but instead of doing that, we opt to
+  // explicitly push the hashcode in here. This is signify the following block
+  // is IMPORTANT:
+  if (klass->java_mirror() != NULL) {
+    klass->java_mirror()->identity_hash();
+  }
+
   if (!is_eligible_for_verification(klass, should_verify_class)) {
     return true;
   }
@@ -1721,7 +1734,7 @@ void ClassVerifier::verify_exception_handler_table(u4 code_length, char* code_da
       VerificationType throwable =
         VerificationType::reference_type(vmSymbols::java_lang_Throwable());
       bool is_subclass = throwable.is_assignable_from(
-        catch_type, this, CHECK_VERIFY(this));
+        catch_type, this, false, CHECK_VERIFY(this));
       if (!is_subclass) {
         // 4286534: should throw VerifyError according to recent spec change
         verify_error(ErrorContext::bad_type(handler_pc,
@@ -2174,7 +2187,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         stack_object_type = current_type();
       }
       is_assignable = target_class_type.is_assignable_from(
-        stack_object_type, this, CHECK_VERIFY(this));
+        stack_object_type, this, false, CHECK_VERIFY(this));
       if (!is_assignable) {
         verify_error(ErrorContext::bad_type(bci,
             current_frame->stack_top_ctx(),
@@ -2201,7 +2214,7 @@ void ClassVerifier::verify_field_instructions(RawBytecodeStream* bcs,
         // It's protected access, check if stack object is assignable to
         // current class.
         is_assignable = current_type().is_assignable_from(
-          stack_object_type, this, CHECK_VERIFY(this));
+          stack_object_type, this, true, CHECK_VERIFY(this));
         if (!is_assignable) {
           verify_error(ErrorContext::bad_type(bci,
               current_frame->stack_top_ctx(),
@@ -2475,7 +2488,7 @@ void ClassVerifier::verify_invoke_init(
         instanceKlassHandle mh(THREAD, m->method_holder());
         if (m->is_protected() && !mh->is_same_class_package(_klass())) {
           bool assignable = current_type().is_assignable_from(
-            objectref_type, this, CHECK_VERIFY(this));
+            objectref_type, this, true, CHECK_VERIFY(this));
           if (!assignable) {
             verify_error(ErrorContext::bad_type(bci,
                 TypeOrigin::cp(new_class_index, objectref_type),
@@ -2646,11 +2659,11 @@ void ClassVerifier::verify_invoke_instructions(
     bool have_imr_indirect = cp->tag_at(index).value() == JVM_CONSTANT_InterfaceMethodref;
     if (!current_class()->is_anonymous()) {
       subtype = ref_class_type.is_assignable_from(
-                 current_type(), this, CHECK_VERIFY(this));
+                 current_type(), this, false, CHECK_VERIFY(this));
     } else {
       VerificationType host_klass_type =
                         VerificationType::reference_type(current_class()->host_klass()->name());
-      subtype = ref_class_type.is_assignable_from(host_klass_type, this, CHECK_VERIFY(this));
+      subtype = ref_class_type.is_assignable_from(host_klass_type, this, false, CHECK_VERIFY(this));
 
       // If invokespecial of IMR, need to recheck for same or
       // direct interface relative to the host class
@@ -2694,7 +2707,7 @@ void ClassVerifier::verify_invoke_instructions(
           VerificationType top = current_frame->pop_stack(CHECK_VERIFY(this));
           VerificationType hosttype =
             VerificationType::reference_type(current_class()->host_klass()->name());
-          bool subtype = hosttype.is_assignable_from(top, this, CHECK_VERIFY(this));
+          bool subtype = hosttype.is_assignable_from(top, this, false, CHECK_VERIFY(this));
           if (!subtype) {
             verify_error( ErrorContext::bad_type(current_frame->offset(),
               current_frame->stack_top_ctx(),
@@ -2719,7 +2732,7 @@ void ClassVerifier::verify_invoke_instructions(
               // It's protected access, check if stack object is
               // assignable to current class.
               bool is_assignable = current_type().is_assignable_from(
-                stack_object_type, this, CHECK_VERIFY(this));
+                stack_object_type, this, true, CHECK_VERIFY(this));
               if (!is_assignable) {
                 if (ref_class_type.name() == vmSymbols::java_lang_Object()
                     && stack_object_type.is_array()
@@ -2902,7 +2915,7 @@ void ClassVerifier::verify_return_value(
         "Method expects a return value");
     return;
   }
-  bool match = return_type.is_assignable_from(type, this, CHECK_VERIFY(this));
+  bool match = return_type.is_assignable_from(type, this, false, CHECK_VERIFY(this));
   if (!match) {
     verify_error(ErrorContext::bad_type(bci,
         current_frame->stack_top_ctx(), TypeOrigin::signature(return_type)),

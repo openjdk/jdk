@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1997, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1997, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -183,9 +183,6 @@ class JavaCallArguments : public StackObj {
 class JavaCalls: AllStatic {
   static void call_helper(JavaValue* result, methodHandle* method, JavaCallArguments* args, TRAPS);
  public:
-  // Optimized Constuctor call
-  static void call_default_constructor(JavaThread* thread, methodHandle method, Handle receiver, TRAPS);
-
   // call_special
   // ------------
   // The receiver must be first oop in argument list
