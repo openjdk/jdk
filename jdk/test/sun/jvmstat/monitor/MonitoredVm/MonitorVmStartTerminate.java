@@ -34,7 +34,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.Semaphore;
 
-import jdk.testlibrary.OutputBuffer;
+import jdk.testlibrary.OutputAnalyzer;
 import jdk.testlibrary.ProcessTools;
 import sun.jvmstat.monitor.MonitorException;
 import sun.jvmstat.monitor.MonitoredHost;
@@ -305,13 +305,13 @@ public final class MonitorVmStartTerminate {
             Runtime.getRuntime().removeShutdownHook(shutdownHook);
         }
 
-        private void executeJava() throws Exception, IOException {
+        private void executeJava() throws Throwable {
             String className = JavaProcess.class.getName();
             String classPath = System.getProperty("test.classes");
             ProcessBuilder pb = ProcessTools.createJavaProcessBuilder(
                 "-Dtest.timeout.factor=" + System.getProperty("test.timeout.factor", "1.0"),
                 "-cp", classPath, className, mainArgsIdentifier);
-            OutputBuffer ob = ProcessTools.getOutput(pb.start());
+            OutputAnalyzer ob = ProcessTools.executeProcess(pb);
             System.out.println("Java Process " + getMainArgsIdentifier() + " stderr:"
                     + ob.getStderr());
             System.err.println("Java Process " + getMainArgsIdentifier() + " stdout:"

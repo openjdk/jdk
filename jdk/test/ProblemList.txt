@@ -134,8 +134,6 @@ java/lang/instrument/NativeMethodPrefixAgent.java               generic-all
 # 8044591
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationContentTest.java   generic-all
 com/sun/management/GarbageCollectorMXBean/GarbageCollectionNotificationTest.java          generic-all
-# 8056143
-java/lang/management/MemoryMXBean/LowMemoryTest.java                                      generic-all
 
 # 8058492
 java/lang/management/ThreadMXBean/FindDeadlocks.java                                      generic-all
@@ -308,7 +306,7 @@ sun/tools/jstatd/TestJstatdServer.java                  generic-all
 sun/tools/jstatd/TestJstatdPort.java                    generic-all
 sun/tools/jstatd/TestJstatdPortAndServer.java                    generic-all
 
-# 8046285 8027668 
+# 8046285 8027668
 sun/tools/jstatd/TestJstatdExternalRegistry.java                generic-all
 
 # 6456333

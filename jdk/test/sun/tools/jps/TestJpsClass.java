@@ -55,7 +55,7 @@ public class TestJpsClass {
         cmd.add("monkey");
 
         ProcessBuilder processBuilder = ProcessTools.createJavaProcessBuilder(cmd.toArray(new String[cmd.size()]));
-        OutputAnalyzer output = new OutputAnalyzer(processBuilder.start());
+        OutputAnalyzer output = ProcessTools.executeProcess(processBuilder);
         System.out.println(output.getOutput());
         output.shouldHaveExitValue(0);
     }
