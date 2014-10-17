@@ -36,6 +36,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public final class TryNode extends Statement implements JoinPredecessor {
+    private static final long serialVersionUID = 1L;
+
     /** Try statements. */
     private final Block body;
 

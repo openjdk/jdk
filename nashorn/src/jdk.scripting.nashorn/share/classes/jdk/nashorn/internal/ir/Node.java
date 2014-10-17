@@ -25,6 +25,7 @@
 
 package jdk.nashorn.internal.ir;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
@@ -34,7 +35,9 @@ import jdk.nashorn.internal.parser.TokenType;
 /**
  * Nodes are used to compose Abstract Syntax Trees.
  */
-public abstract class Node implements Cloneable {
+public abstract class Node implements Cloneable, Serializable {
+    private static final long serialVersionUID = 1L;
+
     /** Start of source range. */
     protected final int start;
 

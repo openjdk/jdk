@@ -39,6 +39,7 @@ import jdk.nashorn.internal.ir.annotations.Immutable;
  */
 @Immutable
 public abstract class BaseNode extends Expression implements FunctionCall, Optimistic {
+    private static final long serialVersionUID = 1L;
 
     /** Base Node. */
     protected final Expression base;
