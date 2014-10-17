@@ -57,6 +57,8 @@ import jdk.nashorn.internal.runtime.linker.LinkerCallSite;
  */
 @Immutable
 public final class FunctionNode extends LexicalContextExpression implements Flags<FunctionNode>, CompileUnitHolder {
+    private static final long serialVersionUID = 1L;
+
     /** Type used for all FunctionNodes */
     public static final Type FUNCTION_TYPE = Type.typeFor(ScriptFunction.class);
 

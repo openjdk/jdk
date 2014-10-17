@@ -60,6 +60,7 @@ import jdk.nashorn.internal.codegen.CompilerConstants;
  * Type class: INT
  */
 class IntType extends BitwiseType {
+    private static final long serialVersionUID = 1L;
 
     private static final CompilerConstants.Call TO_STRING = staticCallNoLookup(Integer.class, "toString", String.class, int.class);
     private static final CompilerConstants.Call VALUE_OF  = staticCallNoLookup(Integer.class, "valueOf", Integer.class, int.class);

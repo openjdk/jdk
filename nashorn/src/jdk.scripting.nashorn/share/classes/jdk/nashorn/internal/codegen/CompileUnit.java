@@ -25,24 +25,29 @@
 
 package jdk.nashorn.internal.codegen;
 
+import java.io.Serializable;
 import java.util.Set;
 import java.util.TreeSet;
 
 /**
- * Used to track split class compilation.
- */
-public final class CompileUnit implements Comparable<CompileUnit> {
+  * Used to track split class compilation. Note that instances of the class are serializable, but all fields are
+  * transient, making the serialized version of the class only useful for tracking the referential topology of other
+  * AST nodes referencing the same or different compile units.
+  */
+public final class CompileUnit implements Comparable<CompileUnit>, Serializable {
+    private static final long serialVersionUID = 1L;
+
     /** Current class name */
-    private final String className;
+    private transient final String className;
 
     /** Current class generator */
-    private ClassEmitter classEmitter;
+    private transient ClassEmitter classEmitter;
 
-    private long weight;
+    private transient long weight;
 
-    private Class<?> clazz;
+    private transient Class<?> clazz;
 
-    private boolean isUsed;
+    private transient boolean isUsed;
 
     private static int emittedUnitCount;
 

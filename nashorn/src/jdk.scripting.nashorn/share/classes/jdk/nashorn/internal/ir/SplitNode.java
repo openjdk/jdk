@@ -40,6 +40,8 @@ import jdk.nashorn.internal.ir.visitor.NodeVisitor;
  */
 @Immutable
 public class SplitNode extends LexicalContextStatement implements Labels, CompileUnitHolder {
+    private static final long serialVersionUID = 1L;
+
     /** Split node method name. */
     private final String name;
 
