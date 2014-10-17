@@ -4328,7 +4328,7 @@ TOOLCHAIN_DESCRIPTION_xlc="IBM XL C/C++"
 #CUSTOM_AUTOCONF_INCLUDE
 
 # Do not change or remove the following line, it is needed for consistency checks:
-DATE_WHEN_GENERATED=1412599039
+DATE_WHEN_GENERATED=1413533532
 
 ###############################################################################
 #
@@ -20119,7 +20119,7 @@ fi
     if test "x$USER_RELEASE_SUFFIX" = x; then
       BUILD_DATE=`date '+%Y_%m_%d_%H_%M'`
       # Avoid [:alnum:] since it depends on the locale.
-      CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvqxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
+      CLEAN_USERNAME=`echo "$USER" | $TR -d -c 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'`
       USER_RELEASE_SUFFIX=`echo "${CLEAN_USERNAME}_${BUILD_DATE}" | $TR 'ABCDEFGHIJKLMNOPQRSTUVWXYZ' 'abcdefghijklmnopqrstuvwxyz'`
     fi
   fi
