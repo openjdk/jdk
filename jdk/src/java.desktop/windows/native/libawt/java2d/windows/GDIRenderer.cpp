@@ -670,7 +670,7 @@ Java_sun_java2d_windows_GDIRenderer_doFillPoly
         if (ypoints != NULL) {
             pPoints = TransformPoly(xpoints, ypoints, transx, transy,
                                 tmpPts, &npoints, FALSE, FALSE);
-            env->ReleasePrimitiveArrayCritical(ypointsarray, xpoints, JNI_ABORT);
+            env->ReleasePrimitiveArrayCritical(ypointsarray, ypoints, JNI_ABORT);
         }
         env->ReleasePrimitiveArrayCritical(xpointsarray, xpoints, JNI_ABORT);
     }

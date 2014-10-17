@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2008, 2014, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -282,6 +285,10 @@ public class XML11Configuration extends ParserConfigurationSettings
     protected static final String ROOT_TYPE_DEF =
         Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_TYPE_DEFINITION_PROPERTY;
 
+    /** Property identifier: root element declaration. */
+    protected static final String ROOT_ELEMENT_DECL =
+        Constants.XERCES_PROPERTY_PREFIX + Constants.ROOT_ELEMENT_DECLARATION_PROPERTY;
+
     /** Property identifier: locale. */
     protected static final String LOCALE =
         Constants.XERCES_PROPERTY_PREFIX + Constants.LOCALE_PROPERTY;
@@ -553,6 +560,7 @@ public class XML11Configuration extends ParserConfigurationSettings
             SCHEMA_LOCATION,
             SCHEMA_NONS_LOCATION,
             ROOT_TYPE_DEF,
+            ROOT_ELEMENT_DECL,
             LOCALE,
             SCHEMA_DV_FACTORY,
             SECURITY_MANAGER,

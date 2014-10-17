@@ -3688,17 +3688,17 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
 //
 
     /**
-     * Sets the data model for this table to <code>newModel</code> and registers
+     * Sets the data model for this table to {@code dataModel} and registers
      * with it for listener notifications from the new data model.
      *
-     * @param   dataModel        the new data source for this table
-     * @exception IllegalArgumentException      if <code>newModel</code> is <code>null</code>
-     * @see     #getModel
+     * @param  dataModel the new data source for this table
+     * @throws IllegalArgumentException if {@code dataModel} is {@code null}
+     * @see #getModel
      * @beaninfo
      *  bound: true
      *  description: The model that is the source of the data for this view.
      */
-    public void setModel(TableModel dataModel) {
+    public void setModel(final TableModel dataModel) {
         if (dataModel == null) {
             throw new IllegalArgumentException("Cannot set a null TableModel");
         }
@@ -3721,29 +3721,30 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     /**
-     * Returns the <code>TableModel</code> that provides the data displayed by this
-     * <code>JTable</code>.
+     * Returns the {@code TableModel} that provides the data displayed by this
+     * {@code JTable}.
      *
-     * @return  the <code>TableModel</code> that provides the data displayed by this <code>JTable</code>
-     * @see     #setModel
+     * @return the {@code TableModel} that provides the data displayed by this
+     *         {@code JTable}
+     * @see #setModel
      */
     public TableModel getModel() {
         return dataModel;
     }
 
     /**
-     * Sets the column model for this table to <code>newModel</code> and registers
-     * for listener notifications from the new column model. Also sets
-     * the column model of the <code>JTableHeader</code> to <code>columnModel</code>.
+     * Sets the column model for this table to {@code columnModel} and registers
+     * for listener notifications from the new column model. Also sets the
+     * column model of the {@code JTableHeader} to {@code columnModel}.
      *
-     * @param   columnModel        the new data source for this table
-     * @exception IllegalArgumentException      if <code>columnModel</code> is <code>null</code>
-     * @see     #getColumnModel
+     * @param  columnModel the new data source for this table
+     * @throws IllegalArgumentException if {@code columnModel} is {@code null}
+     * @see #getColumnModel
      * @beaninfo
      *  bound: true
      *  description: The object governing the way columns appear in the view.
      */
-    public void setColumnModel(TableColumnModel columnModel) {
+    public void setColumnModel(final TableColumnModel columnModel) {
         if (columnModel == null) {
             throw new IllegalArgumentException("Cannot set a null ColumnModel");
         }
@@ -3766,54 +3767,55 @@ public class JTable extends JComponent implements TableModelListener, Scrollable
     }
 
     /**
-     * Returns the <code>TableColumnModel</code> that contains all column information
+     * Returns the {@code TableColumnModel} that contains all column information
      * of this table.
      *
-     * @return  the object that provides the column state of the table
-     * @see     #setColumnModel
+     * @return the object that provides the column state of the table
+     * @see #setColumnModel
      */
     public TableColumnModel getColumnModel() {
         return columnModel;
     }
 
     /**
-     * Sets the row selection model for this table to <code>newModel</code>
+     * Sets the row selection model for this table to {@code selectionModel}
      * and registers for listener notifications from the new selection model.
      *
-     * @param   newModel        the new selection model
-     * @exception IllegalArgumentException      if <code>newModel</code> is <code>null</code>
-     * @see     #getSelectionModel
+     * @param  selectionModel the new selection model
+     * @throws IllegalArgumentException if {@code selectionModel} is
+     *         {@code null}
+     * @see #getSelectionModel
      * @beaninfo
      *      bound: true
      *      description: The selection model for rows.
      */
-    public void setSelectionModel(ListSelectionModel newModel) {
-        if (newModel == null) {
+    public void setSelectionModel(final ListSelectionModel selectionModel) {
+        if (selectionModel == null) {
             throw new IllegalArgumentException("Cannot set a null SelectionModel");
         }
 
-        ListSelectionModel oldModel = selectionModel;
+        ListSelectionModel oldModel = this.selectionModel;
 
-        if (newModel != oldModel) {
+        if (selectionModel != oldModel) {
             if (oldModel != null) {
                 oldModel.removeListSelectionListener(this);
             }
 
-            selectionModel = newModel;
-            newModel.addListSelectionListener(this);
+            this.selectionModel = selectionModel;
+            selectionModel.addListSelectionListener(this);
 
-            firePropertyChange("selectionModel", oldModel, newModel);
+            firePropertyChange("selectionModel", oldModel, selectionModel);
             repaint();
         }
     }
 
     /**
-     * Returns the <code>ListSelectionModel</code> that is used to maintain row
+     * Returns the {@code ListSelectionModel} that is used to maintain row
      * selection state.
      *
-     * @return  the object that provides row selection state, <code>null</code>
-     *          if row selection is not allowed
-     * @see     #setSelectionModel
+     * @return the object that provides row selection state, {@code null} if row
+     *         selection is not allowed
+     * @see #setSelectionModel
      */
     public ListSelectionModel getSelectionModel() {
         return selectionModel;

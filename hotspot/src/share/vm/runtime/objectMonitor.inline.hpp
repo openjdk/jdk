@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 1998, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 1998, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -40,15 +40,11 @@ inline void ObjectMonitor::set_header(markOop hdr) {
   _header = hdr;
 }
 
-inline intptr_t ObjectMonitor::count() const {
+inline jint ObjectMonitor::count() const {
   return _count;
 }
 
-inline void ObjectMonitor::set_count(intptr_t count) {
-  _count= count;
-}
-
-inline intptr_t ObjectMonitor::waiters() const {
+inline jint ObjectMonitor::waiters() const {
   return _waiters;
 }
 
@@ -61,7 +57,7 @@ inline void ObjectMonitor::clear() {
   assert(_count == 0, "Fatal logic error in ObjectMonitor count!");
   assert(_waiters == 0, "Fatal logic error in ObjectMonitor waiters!");
   assert(_recursions == 0, "Fatal logic error in ObjectMonitor recursions!");
-  assert(_object, "Fatal logic error in ObjectMonitor object!");
+  assert(_object != NULL, "Fatal logic error in ObjectMonitor object!");
   assert(_owner == 0, "Fatal logic error in ObjectMonitor owner!");
 
   _header = NULL;
@@ -85,7 +81,6 @@ inline bool ObjectMonitor::check(TRAPS) {
   if (THREAD != _owner) {
     if (THREAD->is_lock_owned((address) _owner)) {
       _owner = THREAD;  // regain ownership of inflated monitor
-      OwnerIsThread = 1 ;
       assert (_recursions == 0, "invariant") ;
     } else {
       check_slow(THREAD);
@@ -97,7 +92,7 @@ inline bool ObjectMonitor::check(TRAPS) {
 
 
 // return number of threads contending for this monitor
-inline intptr_t ObjectMonitor::contentions() const {
+inline jint ObjectMonitor::contentions() const {
   return _count;
 }
 

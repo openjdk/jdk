@@ -315,8 +315,10 @@ public class Annotate {
             isError = true;
         }
         List<JCExpression> args = a.args;
+        boolean elidedValue = false;
         if (args.length() == 1 && !args.head.hasTag(ASSIGN)) {
             // special case: elided "value=" assumed
+            elidedValue = true;
             args.head = make.at(args.head.pos).
                 Assign(make.Ident(names.value), args.head);
         }
@@ -336,7 +338,7 @@ public class Annotate {
                 continue;
             }
             JCIdent left = (JCIdent)assign.lhs;
-            Symbol method = rs.resolveQualifiedMethod(assign.rhs.pos(),
+            Symbol method = rs.resolveQualifiedMethod(elidedValue ? assign.rhs.pos() : left.pos(),
                                                           env,
                                                           a.type,
                                                           left.name,

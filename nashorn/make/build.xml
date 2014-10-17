@@ -408,7 +408,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <fileset id="test.nosecurity.classes" dir="${build.test.classes.dir}">
       <include name="**/framework/ScriptTest.class"/>
     </fileset>
-    <testng outputdir="${build.nosecurity.test.results.dir}" classfilesetref="test.nosecurity.classes"
+    <testng outputdir="${build.nosecurity.test.results.dir}/${testResultsSubDir}" classfilesetref="test.nosecurity.classes"
        verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} -Dbuild.dir=${build.dir}"/>
@@ -431,7 +431,7 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
   <target name="-test-security">
     <delete dir="${build.dir}/nashorn_code_cache"/>
     <property name="debug.test.jvmargs" value=""/>
-    <testng outputdir="${build.test.results.dir}" classfilesetref="test.classes"
+    <testng outputdir="${build.test.results.dir}/${testResultsSubDir}" classfilesetref="test.classes"
 	    verbose="${testng.verbose}" haltonfailure="true" useDefaultListeners="false" listeners="${testng.listeners}" workingDir="${basedir}">
       <jvmarg line="${ext.class.path}"/>
       <jvmarg line="${run.test.jvmargs} -Xmx${run.test.xmx} ${run.test.jvmsecurityargs} -Dbuild.dir=${build.dir}"/>
@@ -457,9 +457,11 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <echo message="Running test suite in OPTIMISTIC mode..."/>
     <antcall target="-test-nosecurity" inheritRefs="true">
       <param name="optimistic" value="true"/>
+      <param name="testResultsSubDir" value="optimistic"/>
     </antcall>    
     <antcall target="-test-security" inheritRefs="true">
       <param name="optimistic" value="true"/>
+      <param name="testResultsSubDir" value="optimistic"/>
     </antcall>
   </target>
 
@@ -467,9 +469,11 @@ grant codeBase "file:/${basedir}/test/script/markdown.js" {
     <echo message="Running test suite in PESSIMISTIC mode..."/>
     <antcall target="-test-nosecurity" inheritRefs="true">
       <param name="optimistic" value="false"/>
+      <param name="testResultsSubDir" value="pessimistic"/>
     </antcall>    
     <antcall target="-test-security" inheritRefs="true">
       <param name="optimistic" value="false"/>
+      <param name="testResultsSubDir" value="pessimistic"/>
     </antcall>
   </target>
 

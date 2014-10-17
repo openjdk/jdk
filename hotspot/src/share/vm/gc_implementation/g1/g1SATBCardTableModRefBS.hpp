@@ -136,7 +136,7 @@ class G1SATBCardTableLoggingModRefBSChangedListener : public G1MappingChangedLis
 
   void set_card_table(G1SATBCardTableLoggingModRefBS* card_table) { _card_table = card_table; }
 
-  virtual void on_commit(uint start_idx, size_t num_regions);
+  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
 // Adds card-table logging to the post-barrier.

@@ -129,6 +129,7 @@ uintptr_t os::Linux::_initial_thread_stack_size   = 0;
 
 int (*os::Linux::_clock_gettime)(clockid_t, struct timespec *) = NULL;
 int (*os::Linux::_pthread_getcpuclockid)(pthread_t, clockid_t *) = NULL;
+int (*os::Linux::_pthread_setname_np)(pthread_t, const char*) = NULL;
 Mutex* os::Linux::_createThread_lock = NULL;
 pthread_t os::Linux::_main_thread;
 int os::Linux::_page_size = -1;
@@ -4695,6 +4696,11 @@ void os::init(void) {
     StackRedPages = 1;
     StackShadowPages = round_to((StackShadowPages*Linux::vm_default_page_size()), vm_page_size()) / vm_page_size();
   }
+
+  // retrieve entry point for pthread_setname_np
+  Linux::_pthread_setname_np =
+    (int(*)(pthread_t, const char*))dlsym(RTLD_DEFAULT, "pthread_setname_np");
+
 }
 
 // To install functions for atexit system call
@@ -4894,8 +4900,14 @@ int os::active_processor_count() {
 }
 
 void os::set_native_thread_name(const char *name) {
-  // Not yet implemented.
-  return;
+  if (Linux::_pthread_setname_np) {
+    char buf [16]; // according to glibc manpage, 16 chars incl. '/0'
+    snprintf(buf, sizeof(buf), "%s", name);
+    buf[sizeof(buf) - 1] = '\0';
+    const int rc = Linux::_pthread_setname_np(pthread_self(), buf);
+    // ERANGE should not happen; all other errors should just be ignored.
+    assert(rc != ERANGE, "pthread_setname_np failed");
+  }
 }
 
 bool os::distribute_processes(uint length, uint* distribution) {
@@ -5086,22 +5098,12 @@ bool os::dir_is_empty(const char* path) {
 // This code originates from JDK's sysOpen and open64_w
 // from src/solaris/hpi/src/system_md.c
 
-#ifndef O_DELETE
-  #define O_DELETE 0x10000
-#endif
-
-// Open a file. Unlink the file immediately after open returns
-// if the specified oflag has the O_DELETE flag set.
-// O_DELETE is used only in j2se/src/share/native/java/util/zip/ZipFile.c
-
 int os::open(const char *path, int oflag, int mode) {
   if (strlen(path) > MAX_PATH - 1) {
     errno = ENAMETOOLONG;
     return -1;
   }
   int fd;
-  int o_delete = (oflag & O_DELETE);
-  oflag = oflag & ~O_DELETE;
 
   fd = ::open64(path, oflag, mode);
   if (fd == -1) return -1;
@@ -5154,9 +5156,6 @@ int os::open(const char *path, int oflag, int mode) {
   }
 #endif
 
-  if (o_delete != 0) {
-    ::unlink(path);
-  }
   return fd;
 }
 

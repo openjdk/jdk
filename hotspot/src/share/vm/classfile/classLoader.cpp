@@ -75,6 +75,7 @@ typedef jzentry* (JNICALL *FindEntry_t)(jzfile *zip, const char *name, jint *siz
 typedef jboolean (JNICALL *ReadEntry_t)(jzfile *zip, jzentry *entry, unsigned char *buf, char *namebuf);
 typedef jboolean (JNICALL *ReadMappedEntry_t)(jzfile *zip, jzentry *entry, unsigned char **buf, char *namebuf);
 typedef jzentry* (JNICALL *GetNextEntry_t)(jzfile *zip, jint n);
+typedef jint     (JNICALL *Crc32_t)(jint crc, const jbyte *buf, jint len);
 
 static ZipOpen_t         ZipOpen            = NULL;
 static ZipClose_t        ZipClose           = NULL;
@@ -83,6 +84,7 @@ static ReadEntry_t       ReadEntry          = NULL;
 static ReadMappedEntry_t ReadMappedEntry    = NULL;
 static GetNextEntry_t    GetNextEntry       = NULL;
 static canonicalize_fn_t CanonicalizeEntry  = NULL;
+static Crc32_t           Crc32              = NULL;
 
 // Globals
 
@@ -799,9 +801,11 @@ void ClassLoader::load_zip_library() {
   ReadEntry    = CAST_TO_FN_PTR(ReadEntry_t, os::dll_lookup(handle, "ZIP_ReadEntry"));
   ReadMappedEntry = CAST_TO_FN_PTR(ReadMappedEntry_t, os::dll_lookup(handle, "ZIP_ReadMappedEntry"));
   GetNextEntry = CAST_TO_FN_PTR(GetNextEntry_t, os::dll_lookup(handle, "ZIP_GetNextEntry"));
+  Crc32        = CAST_TO_FN_PTR(Crc32_t, os::dll_lookup(handle, "ZIP_CRC32"));
 
   // ZIP_Close is not exported on Windows in JDK5.0 so don't abort if ZIP_Close is NULL
-  if (ZipOpen == NULL || FindEntry == NULL || ReadEntry == NULL || GetNextEntry == NULL) {
+  if (ZipOpen == NULL || FindEntry == NULL || ReadEntry == NULL ||
+      GetNextEntry == NULL || Crc32 == NULL) {
     vm_exit_during_initialization("Corrupted ZIP library", path);
   }
 
@@ -809,6 +813,11 @@ void ClassLoader::load_zip_library() {
   void *javalib_handle = os::native_java_library();
   CanonicalizeEntry = CAST_TO_FN_PTR(canonicalize_fn_t, os::dll_lookup(javalib_handle, "Canonicalize"));
   // This lookup only works on 1.3. Do not check for non-null here
+}
+
+int ClassLoader::crc32(int crc, const char* buf, int len) {
+  assert(Crc32 != NULL, "ZIP_CRC32 is not found");
+  return (*Crc32)(crc, (const jbyte*)buf, len);
 }
 
 // PackageInfo data exists in order to support the java.lang.Package

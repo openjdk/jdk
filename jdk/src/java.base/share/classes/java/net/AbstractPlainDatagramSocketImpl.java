@@ -68,6 +68,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
                     return null;
                 }
             });
+        init();
     }
 
     /**
@@ -362,4 +363,7 @@ abstract class AbstractPlainDatagramSocketImpl extends DatagramSocketImpl
     protected boolean nativeConnectDisabled() {
         return connectDisabled;
     }
+
+    native int dataAvailable();
+    private static native void init();
 }

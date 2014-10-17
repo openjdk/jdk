@@ -54,7 +54,25 @@ final class CWrapper {
         static native void orderFront(long window);
         static native void orderFrontRegardless(long window);
         static native void orderWindow(long window, int ordered, long relativeTo);
+
+        /**
+         * Removes the window from the screen.
+         *
+         * @param window the pointer of the NSWindow
+         */
         static native void orderOut(long window);
+
+        /**
+         * Removes the window from the screen and releases it. According to
+         * documentation this method should be similar to {@link #orderOut},
+         * because we use ReleasedWhenClosed:NO, so the window shouldn't be
+         * released. But the close method works differently, for example it
+         * close the space if the window was in the full screen via
+         * {@link CPlatformWindow#toggleFullScreen()}.
+         *
+         * @param window the pointer of the NSWindow
+         */
+        static native void close(long window);
 
         static native void addChildWindow(long parent, long child, int ordered);
         static native void removeChildWindow(long parent, long child);

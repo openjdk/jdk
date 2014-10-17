@@ -47,6 +47,8 @@ public:
 
     static AwtTextComponent* Create(jobject self, jobject parent, BOOL isMultiline);
 
+    virtual void Dispose();
+
     virtual LPCTSTR GetClassName();
     LRESULT WindowProc(UINT message, WPARAM wParam, LPARAM lParam);
 
@@ -83,6 +85,8 @@ public:
     MsgRouting HandleEvent(MSG *msg, BOOL synthetic);
     MsgRouting WmPaste();
 
+    INLINE void SetIgnoreEnChange(BOOL b) { m_bIgnoreEnChange = b; }
+
     virtual BOOL IsFocusingMouseMessage(MSG *pMsg);
 
 /*  To be fully implemented in a future release
@@ -115,10 +119,23 @@ public:
     INLINE VOID SetEndSelectionPos(LONG lPos) { m_lEndPos = lPos; }
     INLINE VOID SetLastSelectionPos(LONG lPos) { m_lLastPos = lPos; }
 
+    void EditGetSel(CHARRANGE &cr);
+
     // Used to prevent untrusted code from synthesizing a WM_PASTE message
     // by posting a <CTRL>-V KeyEvent
     BOOL    m_synthetic;
     LONG EditGetCharFromPos(POINT& pt);
+
+    // RichEdit 1.0 control generates EN_CHANGE notifications not only
+    // on text changes, but also on any character formatting change.
+    // This flag is true when the latter case is detected.
+    BOOL    m_bIgnoreEnChange;
+
+    // RichEdit 1.0 control undoes a character formatting change
+    // if it is the latest. We don't create our own undo buffer,
+    // but just prohibit undo in case if the latest operation
+    // is a formatting change.
+    BOOL    m_bCanUndo;
 
     /*****************************************************************
      * Inner class OleCallback declaration.
@@ -165,6 +182,13 @@ private:
     //im --- end
 
     static OleCallback sm_oleCallback;
+
+    static WNDPROC sm_pDefWindowProc;
+    HWND    m_hEditCtrl;
+
+    static LRESULT CALLBACK EditProc(HWND hWnd, UINT message,
+                                     WPARAM wParam, LPARAM lParam);
+    MsgRouting WmContextMenu(HWND hCtrl, UINT xPos, UINT yPos);
 
     //
     // Accessibility support

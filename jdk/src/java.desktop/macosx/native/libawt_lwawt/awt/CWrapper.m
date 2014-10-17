@@ -175,6 +175,23 @@ JNF_COCOA_EXIT(env);
 
 /*
  * Class:     sun_lwawt_macosx_CWrapper$NSWindow
+ * Method:    close
+ * Signature: (J)V
+ */
+JNIEXPORT void JNICALL
+Java_sun_lwawt_macosx_CWrapper_00024NSWindow_close
+        (JNIEnv *env, jclass cls, jlong windowPtr)
+{
+JNF_COCOA_ENTER(env);
+    NSWindow *window = (NSWindow *)jlong_to_ptr(windowPtr);
+    [ThreadUtilities performOnMainThreadWaiting:NO block:^(){
+        [window close];
+    }];
+JNF_COCOA_EXIT(env);
+}
+
+/*
+ * Class:     sun_lwawt_macosx_CWrapper$NSWindow
  * Method:    orderFrontRegardless
  * Signature: (J)V
  */

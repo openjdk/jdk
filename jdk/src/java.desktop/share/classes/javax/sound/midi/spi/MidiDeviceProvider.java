@@ -25,6 +25,8 @@
 
 package javax.sound.midi.spi;
 
+import java.util.Arrays;
+
 import javax.sound.midi.MidiDevice;
 
 /**
@@ -45,16 +47,8 @@ public abstract class MidiDeviceProvider {
      * @return {@code true} if the specified device is supported, otherwise
      *         {@code false}
      */
-    public boolean isDeviceSupported(MidiDevice.Info info) {
-
-        MidiDevice.Info infos[] = getDeviceInfo();
-
-        for(int i=0; i<infos.length; i++) {
-            if( info.equals( infos[i] ) ) {
-                return true;
-            }
-        }
-        return false;
+    public boolean isDeviceSupported(final MidiDevice.Info info) {
+        return Arrays.asList(getDeviceInfo()).contains(info);
     }
 
     /**

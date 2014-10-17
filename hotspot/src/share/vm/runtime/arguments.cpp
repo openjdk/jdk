@@ -3782,6 +3782,8 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   bool settings_file_specified = false;
   bool needs_hotspotrc_warning = false;
 
+  ArgumentsExt::process_options(args);
+
   const char* flags_file;
   int index;
   for (index = 0; index < args->nOptions; index++) {
@@ -3877,6 +3879,11 @@ jint Arguments::parse(const JavaVMInitArgs* args) {
   SharedArchivePath = get_shared_archive_path();
   if (SharedArchivePath == NULL) {
     return JNI_ENOMEM;
+  }
+
+  // Set up VerifySharedSpaces
+  if (FLAG_IS_DEFAULT(VerifySharedSpaces) && SharedArchiveFile != NULL) {
+    VerifySharedSpaces = true;
   }
 
   // Delay warning until here so that we've had a chance to process

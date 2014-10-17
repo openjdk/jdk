@@ -540,7 +540,9 @@ inline address clamp_address_in_page(address addr, address page_address, intptr_
 
 
 // The expected size in bytes of a cache line, used to pad data structures.
-#define DEFAULT_CACHE_LINE_SIZE 64
+#ifndef DEFAULT_CACHE_LINE_SIZE
+  #define DEFAULT_CACHE_LINE_SIZE 64
+#endif
 
 
 //----------------------------------------------------------------------------------------------------

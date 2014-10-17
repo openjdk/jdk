@@ -27,7 +27,6 @@ package jdk.nashorn.internal.objects;
 
 import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.ScriptRuntime.UNDEFINED;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import jdk.nashorn.api.scripting.NashornException;
@@ -131,7 +130,6 @@ public final class NativeError extends ScriptObject {
 
     // This is called NativeError, NativeTypeError etc. to
     // associate a ECMAException with the ECMA Error object.
-    @SuppressWarnings("unused")
     static void initException(final ScriptObject self) {
         // ECMAException constructor has side effects
         new ECMAException(self, null);

@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2007, 2013, Oracle and/or its affiliates. All rights reserved.
+ * Copyright (c) 2007, 2014, Oracle and/or its affiliates. All rights reserved.
  * DO NOT ALTER OR REMOVE COPYRIGHT NOTICES OR THIS FILE HEADER.
  *
  * This code is free software; you can redistribute it and/or modify it
@@ -84,6 +84,8 @@ public class CertificateRevokedException extends CertificateException {
      * @throws NullPointerException if {@code revocationDate},
      *    {@code reason}, {@code authority}, or
      *    {@code extensions} is {@code null}
+     * @throws ClassCastException if {@code extensions} contains an incorrectly
+     *    typed key or value
      */
     public CertificateRevokedException(Date revocationDate, CRLReason reason,
         X500Principal authority, Map<String, Extension> extensions) {
@@ -94,7 +96,10 @@ public class CertificateRevokedException extends CertificateException {
         this.revocationDate = new Date(revocationDate.getTime());
         this.reason = reason;
         this.authority = authority;
-        this.extensions = new HashMap<String, Extension>(extensions);
+        // make sure Map only contains correct types
+        this.extensions = Collections.checkedMap(new HashMap<>(),
+                                                 String.class, Extension.class);
+        this.extensions.putAll(extensions);
     }
 
     /**
@@ -172,7 +177,8 @@ public class CertificateRevokedException extends CertificateException {
     public String getMessage() {
         return "Certificate has been revoked, reason: "
                + reason + ", revocation date: " + revocationDate
-               + ", authority: " + authority + ", extensions: " + extensions;
+               + ", authority: " + authority + ", extension OIDs: "
+               + extensions.keySet();
     }
 
     /**

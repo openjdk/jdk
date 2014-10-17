@@ -144,11 +144,9 @@ void Tracker::record(address addr, size_t size) {
 }
 
 
-// Shutdown can only be issued via JCmd, and NMT JCmd is serialized
-// by lock
+// Shutdown can only be issued via JCmd, and NMT JCmd is serialized by lock
 void MemTracker::shutdown() {
-  // We can only shutdown NMT to minimal tracking level if it is
-  // ever on.
+  // We can only shutdown NMT to minimal tracking level if it is ever on.
   if (tracking_level () > NMT_minimal) {
     transition_to(NMT_minimal);
   }
@@ -157,45 +155,36 @@ void MemTracker::shutdown() {
 bool MemTracker::transition_to(NMT_TrackingLevel level) {
   NMT_TrackingLevel current_level = tracking_level();
 
+  assert(level != NMT_off || current_level == NMT_off, "Cannot transition NMT to off");
+
   if (current_level == level) {
     return true;
   } else if (current_level > level) {
-    // Downgrade tracking level, we want to lower the tracking
-    // level first
+    // Downgrade tracking level, we want to lower the tracking level first
     _tracking_level = level;
     // Make _tracking_level visible immediately.
     OrderAccess::fence();
     VirtualMemoryTracker::transition(current_level, level);
     MallocTracker::transition(current_level, level);
-
-    if (level == NMT_minimal) _baseline.reset();
   } else {
-    VirtualMemoryTracker::transition(current_level, level);
-    MallocTracker::transition(current_level, level);
-
-    _tracking_level = level;
-    // Make _tracking_level visible immediately.
-    OrderAccess::fence();
+    // Upgrading tracking level is not supported and has never been supported.
+    // Allocating and deallocating malloc tracking structures is not thread safe and
+    // leads to inconsistencies unless a lot coarser locks are added.
   }
-
   return true;
 }
 
-void MemTracker::final_report(outputStream* output) {
-  assert(output != NULL, "No output stream");
-  if (tracking_level() >= NMT_summary) {
-    MallocMemorySnapshot* malloc_memory_snapshot =
-      MallocMemorySummary::as_snapshot();
-    malloc_memory_snapshot->make_adjustment();
-
-    VirtualMemorySnapshot* virtual_memory_snapshot =
-      VirtualMemorySummary::as_snapshot();
-
-    MemSummaryReporter rptr(malloc_memory_snapshot,
-      virtual_memory_snapshot, output);
-    rptr.report();
-    // shutdown NMT, the data no longer accurate
-    shutdown();
+void MemTracker::report(bool summary_only, outputStream* output) {
+ assert(output != NULL, "No output stream");
+  MemBaseline baseline;
+  if (baseline.baseline(summary_only)) {
+    if (summary_only) {
+      MemSummaryReporter rpt(baseline, output);
+      rpt.report();
+    } else {
+      MemDetailReporter rpt(baseline, output);
+      rpt.report();
+    }
   }
 }
 

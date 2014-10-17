@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALL
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_ENTEREXIT;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_MISSES;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.CALLSITE_TRACE_VALUES;
-
 import java.util.Collections;
 import java.util.EnumSet;
 import java.util.Iterator;
@@ -46,6 +45,7 @@ import jdk.nashorn.internal.codegen.types.Type;
 import jdk.nashorn.internal.ir.annotations.Ignore;
 import jdk.nashorn.internal.ir.annotations.Immutable;
 import jdk.nashorn.internal.ir.visitor.NodeVisitor;
+import jdk.nashorn.internal.parser.Token;
 import jdk.nashorn.internal.runtime.RecompilableScriptFunctionData;
 import jdk.nashorn.internal.runtime.ScriptFunction;
 import jdk.nashorn.internal.runtime.Source;
@@ -299,12 +299,16 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @param token      token
      * @param finish     finish
      * @param firstToken first token of the function node (including the function declaration)
+     * @param lastToken  lastToken
      * @param namespace  the namespace
      * @param ident      the identifier
      * @param name       the name of the function
      * @param parameters parameter list
      * @param kind       kind of function as in {@link FunctionNode.Kind}
      * @param flags      initial flags
+     * @param body       body of the function
+     * @param state      The initial state from the parser. Must be one of {@link CompilationState#PARSED} and {@link CompilationState#PARSE_ERROR}
+     * @param endParserState The parser state at the end of the parsing.
      */
     public FunctionNode(
         final Source source,
@@ -312,12 +316,16 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         final long token,
         final int finish,
         final long firstToken,
+        final long lastToken,
         final Namespace namespace,
         final IdentNode ident,
         final String name,
         final List<IdentNode> parameters,
         final FunctionNode.Kind kind,
-        final int flags) {
+        final int flags,
+        final Block body,
+        final CompilationState state,
+        final Object endParserState) {
         super(token, finish);
 
         this.source           = source;
@@ -327,15 +335,15 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
         this.kind             = kind;
         this.parameters       = parameters;
         this.firstToken       = firstToken;
-        this.lastToken        = token;
+        this.lastToken        = lastToken;
         this.namespace        = namespace;
-        this.compilationState = EnumSet.of(CompilationState.INITIALIZED);
+        this.compilationState = EnumSet.of(CompilationState.INITIALIZED, state);
         this.flags            = flags;
         this.compileUnit      = null;
-        this.body             = null;
+        this.body             = body;
         this.thisProperties   = 0;
         this.rootClass        = null;
-        this.endParserState    = null;
+        this.endParserState    = endParserState;
     }
 
     private FunctionNode(
@@ -439,7 +447,7 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
      * @return the id
      */
     public int getId() {
-        return position();
+        return isProgram() ? -1: Token.descPosition(firstToken);
     }
 
     /**
@@ -903,66 +911,11 @@ public final class FunctionNode extends LexicalContextExpression implements Flag
     }
 
     /**
-     * Set the last token for this function's code
-     * @param lc lexical context
-     * @param lastToken the last token
-     * @return function node or a new one if state was changed
-     */
-    public FunctionNode setLastToken(final LexicalContext lc, final long lastToken) {
-        if (this.lastToken == lastToken) {
-            return this;
-        }
-        return Node.replaceInLexicalContext(
-                lc,
-                this,
-                new FunctionNode(
-                        this,
-                        lastToken,
-                        endParserState,
-                        flags,
-                        name,
-                        returnType,
-                        compileUnit,
-                        compilationState,
-                        body,
-                        parameters,
-                        thisProperties,
-                        rootClass));
-    }
-
-    /**
      * Returns the end parser state for this function.
      * @return the end parser state for this function.
      */
     public Object getEndParserState() {
         return endParserState;
-    }
-
-    /**
-     * Set the end parser state for this function.
-     * @param lc lexical context
-     * @param endParserState the parser state to set
-     * @return function node or a new one if state was changed
-     */
-    public FunctionNode setEndParserState(final LexicalContext lc, final Object endParserState) {
-        if (this.endParserState == endParserState) {
-            return this;
-        }
-        return Node.replaceInLexicalContext(
-                lc,
-                this,
-                new FunctionNode(
-                        this,
-                        lastToken,
-                        endParserState,
-                        flags,
-                        name,
-                        returnType,
-                        compileUnit,
-                        compilationState,
-                        body,
-                        parameters,
-                        thisProperties, rootClass));
     }
 
     /**

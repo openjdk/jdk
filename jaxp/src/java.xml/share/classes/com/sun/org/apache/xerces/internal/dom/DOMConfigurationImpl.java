@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2013, 2014, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -51,8 +51,6 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.Locale;
-import java.util.Vector;
-import javax.xml.XMLConstants;
 import org.w3c.dom.DOMConfiguration;
 import org.w3c.dom.DOMErrorHandler;
 import org.w3c.dom.DOMException;
@@ -976,41 +974,40 @@ public class DOMConfigurationImpl extends ParserConfigurationSettings
      */
     public DOMStringList getParameterNames() {
         if (fRecognizedParameters == null){
-                        Vector parameters = new Vector();
+            ArrayList parameters = new ArrayList();
 
-                        //Add DOM recognized parameters
-                        //REVISIT: Would have been nice to have a list of
-                        //recognized paramters.
-                        parameters.add(Constants.DOM_COMMENTS);
-                        parameters.add(Constants.DOM_DATATYPE_NORMALIZATION);
-                        parameters.add(Constants.DOM_CDATA_SECTIONS);
-                        parameters.add(Constants.DOM_ENTITIES);
-                        parameters.add(Constants.DOM_SPLIT_CDATA);
-                        parameters.add(Constants.DOM_NAMESPACES);
-                        parameters.add(Constants.DOM_VALIDATE);
+            //Add DOM recognized parameters
+            //REVISIT: Would have been nice to have a list of
+            //recognized paramters.
+            parameters.add(Constants.DOM_COMMENTS);
+            parameters.add(Constants.DOM_DATATYPE_NORMALIZATION);
+            parameters.add(Constants.DOM_CDATA_SECTIONS);
+            parameters.add(Constants.DOM_ENTITIES);
+            parameters.add(Constants.DOM_SPLIT_CDATA);
+            parameters.add(Constants.DOM_NAMESPACES);
+            parameters.add(Constants.DOM_VALIDATE);
 
-                        parameters.add(Constants.DOM_INFOSET);
-                        parameters.add(Constants.DOM_NORMALIZE_CHARACTERS);
-                        parameters.add(Constants.DOM_CANONICAL_FORM);
-                        parameters.add(Constants.DOM_VALIDATE_IF_SCHEMA);
-                        parameters.add(Constants.DOM_CHECK_CHAR_NORMALIZATION);
-                        parameters.add(Constants.DOM_WELLFORMED);
+            parameters.add(Constants.DOM_INFOSET);
+            parameters.add(Constants.DOM_NORMALIZE_CHARACTERS);
+            parameters.add(Constants.DOM_CANONICAL_FORM);
+            parameters.add(Constants.DOM_VALIDATE_IF_SCHEMA);
+            parameters.add(Constants.DOM_CHECK_CHAR_NORMALIZATION);
+            parameters.add(Constants.DOM_WELLFORMED);
 
-                        parameters.add(Constants.DOM_NAMESPACE_DECLARATIONS);
-                        parameters.add(Constants.DOM_ELEMENT_CONTENT_WHITESPACE);
+            parameters.add(Constants.DOM_NAMESPACE_DECLARATIONS);
+            parameters.add(Constants.DOM_ELEMENT_CONTENT_WHITESPACE);
 
-                        parameters.add(Constants.DOM_ERROR_HANDLER);
-                        parameters.add(Constants.DOM_SCHEMA_TYPE);
-                        parameters.add(Constants.DOM_SCHEMA_LOCATION);
-                        parameters.add(Constants.DOM_RESOURCE_RESOLVER);
+            parameters.add(Constants.DOM_ERROR_HANDLER);
+            parameters.add(Constants.DOM_SCHEMA_TYPE);
+            parameters.add(Constants.DOM_SCHEMA_LOCATION);
+            parameters.add(Constants.DOM_RESOURCE_RESOLVER);
 
-                        //Add recognized xerces features and properties
-                        parameters.add(GRAMMAR_POOL);
-                        parameters.add(SYMBOL_TABLE);
-                        parameters.add(SEND_PSVI);
+            //Add recognized xerces features and properties
+            parameters.add(GRAMMAR_POOL);
+            parameters.add(SYMBOL_TABLE);
+            parameters.add(SEND_PSVI);
 
-                        fRecognizedParameters = new DOMStringListImpl(parameters);
-
+            fRecognizedParameters = new DOMStringListImpl(parameters);
         }
 
         return fRecognizedParameters;

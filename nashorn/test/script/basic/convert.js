@@ -42,7 +42,7 @@ print(list);
 
 // object to Map
 obj = { foo: 333, bar: 'hello'};
-var map = ScriptUtils.convert(obj, java.util.Map.class);
+var map = ScriptUtils.wrap(obj);
 print(map instanceof java.util.Map);
 for (m in map) {
    print(m + " " + map[m]);

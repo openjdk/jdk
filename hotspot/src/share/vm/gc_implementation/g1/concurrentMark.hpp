@@ -127,7 +127,7 @@ class CMBitMapMappingChangedListener : public G1MappingChangedListener {
 
   void set_bitmap(CMBitMap* bm) { _bm = bm; }
 
-  virtual void on_commit(uint start_idx, size_t num_regions);
+  virtual void on_commit(uint start_idx, size_t num_regions, bool zero_filled);
 };
 
 class CMBitMap : public CMBitMapRO {

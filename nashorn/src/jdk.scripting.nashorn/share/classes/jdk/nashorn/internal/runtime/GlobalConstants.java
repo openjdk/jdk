@@ -31,7 +31,6 @@ import static jdk.nashorn.internal.lookup.Lookup.MH;
 import static jdk.nashorn.internal.runtime.UnwarrantedOptimismException.INVALID_PROGRAM_POINT;
 import static jdk.nashorn.internal.runtime.linker.NashornCallSiteDescriptor.getProgramPoint;
 import static jdk.nashorn.internal.runtime.logging.DebugLogger.quote;
-
 import java.lang.invoke.MethodHandle;
 import java.lang.invoke.MethodHandles;
 import java.lang.invoke.SwitchPoint;
@@ -328,7 +327,9 @@ public final class GlobalConstants implements Loggable {
         }
 
         if (!acc.mayRetry()) {
-            log.info("*** SET: Giving up on " + quote(name) + " - retry count has exceeded " + DynamicLinker.getLinkedCallSiteLocation());
+            if (log.isEnabled()) {
+                log.fine("*** SET: Giving up on " + quote(name) + " - retry count has exceeded " + DynamicLinker.getLinkedCallSiteLocation());
+            }
             return null;
         }
 
@@ -404,7 +405,9 @@ public final class GlobalConstants implements Loggable {
         }
 
         if (acc.hasBeenInvalidated() || acc.guardFailed()) {
-            log.fine("*** GET: Giving up on " + quote(name) + " - retry count has exceeded");
+            if (log.isEnabled()) {
+                log.info("*** GET: Giving up on " + quote(name) + " - retry count has exceeded " + DynamicLinker.getLinkedCallSiteLocation());
+            }
             return null;
         }
 

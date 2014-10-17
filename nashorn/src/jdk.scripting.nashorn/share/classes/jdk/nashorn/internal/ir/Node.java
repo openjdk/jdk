@@ -39,7 +39,7 @@ public abstract class Node implements Cloneable {
     protected final int start;
 
     /** End of source range. */
-    protected int finish;
+    protected final int finish;
 
     /** Token descriptor. */
     private final long token;
@@ -78,6 +78,18 @@ public abstract class Node implements Cloneable {
         this.token  = node.token;
         this.start  = node.start;
         this.finish = node.finish;
+    }
+
+    /**
+     * Copy constructor that overrides finish
+     *
+     * @param node source node
+     * @param finish Last character
+     */
+    protected Node(final Node node, final int finish) {
+        this.token = node.token;
+        this.start = node.start;
+        this.finish = finish;
     }
 
     /**
@@ -149,14 +161,6 @@ public abstract class Node implements Cloneable {
      */
     public int getFinish() {
         return finish;
-    }
-
-    /**
-     * Set finish position for this node in the source string
-     * @param finish finish
-     */
-    public void setFinish(final int finish) {
-        this.finish = finish;
     }
 
     /**

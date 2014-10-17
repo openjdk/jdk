@@ -138,18 +138,6 @@ JVM_ArrayCopy(JNIEnv *env, jclass ignored, jobject src, jint src_pos,
 JNIEXPORT jobject JNICALL
 JVM_InitProperties(JNIEnv *env, jobject p);
 
-/*
- * java.io.File
- */
-JNIEXPORT void JNICALL
-JVM_OnExit(void (*func)(void));
-
-/*
- * java.lang.Runtime
- */
-JNIEXPORT void JNICALL
-JVM_Exit(jint code);
-
 JNIEXPORT void JNICALL
 JVM_Halt(jint code);
 
@@ -172,12 +160,6 @@ JVM_GC(void);
  */
 JNIEXPORT jlong JNICALL
 JVM_MaxObjectInspectionAge(void);
-
-JNIEXPORT void JNICALL
-JVM_TraceInstructions(jboolean on);
-
-JNIEXPORT void JNICALL
-JVM_TraceMethodCalls(jboolean on);
 
 JNIEXPORT jlong JNICALL
 JVM_TotalMemory(void);
@@ -204,12 +186,6 @@ JNIEXPORT jboolean JNICALL
 JVM_IsSupportedJNIVersion(jint version);
 
 /*
- * java.lang.Float and java.lang.Double
- */
-JNIEXPORT jboolean JNICALL
-JVM_IsNaN(jdouble d);
-
-/*
  * java.lang.Throwable
  */
 JNIEXPORT void JNICALL
@@ -220,30 +196,6 @@ JVM_GetStackTraceDepth(JNIEnv *env, jobject throwable);
 
 JNIEXPORT jobject JNICALL
 JVM_GetStackTraceElement(JNIEnv *env, jobject throwable, jint index);
-
-/*
- * java.lang.Compiler
- */
-JNIEXPORT void JNICALL
-JVM_InitializeCompiler (JNIEnv *env, jclass compCls);
-
-JNIEXPORT jboolean JNICALL
-JVM_IsSilentCompiler(JNIEnv *env, jclass compCls);
-
-JNIEXPORT jboolean JNICALL
-JVM_CompileClass(JNIEnv *env, jclass compCls, jclass cls);
-
-JNIEXPORT jboolean JNICALL
-JVM_CompileClasses(JNIEnv *env, jclass cls, jstring jname);
-
-JNIEXPORT jobject JNICALL
-JVM_CompilerCommand(JNIEnv *env, jclass compCls, jobject arg);
-
-JNIEXPORT void JNICALL
-JVM_EnableCompiler(JNIEnv *env, jclass compCls);
-
-JNIEXPORT void JNICALL
-JVM_DisableCompiler(JNIEnv *env, jclass compCls);
 
 /*
  * java.lang.Thread
@@ -331,23 +283,7 @@ JVM_GetSystemPackages(JNIEnv *env);
  * java.io.ObjectInputStream
  */
 JNIEXPORT jobject JNICALL
-JVM_AllocateNewObject(JNIEnv *env, jobject obj, jclass currClass,
-                      jclass initClass);
-
-JNIEXPORT jobject JNICALL
-JVM_AllocateNewArray(JNIEnv *env, jobject obj, jclass currClass,
-                     jint length);
-
-JNIEXPORT jobject JNICALL
 JVM_LatestUserDefinedLoader(JNIEnv *env);
-
-/*
- * This function has been deprecated and should not be considered
- * part of the specified JVM interface.
- */
-JNIEXPORT jclass JNICALL
-JVM_LoadClass0(JNIEnv *env, jobject obj, jclass currClass,
-               jstring currClassName);
 
 /*
  * java.lang.reflect.Array
@@ -399,12 +335,6 @@ JNIEXPORT jclass JNICALL
 JVM_FindPrimitiveClass(JNIEnv *env, const char *utf);
 
 /*
- * Link the class
- */
-JNIEXPORT void JNICALL
-JVM_ResolveClass(JNIEnv *env, jclass cls);
-
-/*
  * Find a class from a given class loader. Throw ClassNotFoundException
  * or NoClassDefFoundError depending on the value of the last
  * argument.
@@ -418,6 +348,19 @@ JVM_FindClassFromClassLoader(JNIEnv *env, const char *name, jboolean init,
  */
 JNIEXPORT jclass JNICALL
 JVM_FindClassFromBootLoader(JNIEnv *env, const char *name);
+
+/*
+ * Find a class from a given class loader.  Throws ClassNotFoundException.
+ *  name:   name of class
+ *  init:   whether initialization is done
+ *  loader: class loader to look up the class. This may not be the same as the caller's
+ *          class loader.
+ *  caller: initiating class. The initiating class may be null when a security
+ *          manager is not installed.
+ */
+JNIEXPORT jclass JNICALL
+JVM_FindClassFromCaller(JNIEnv *env, const char *name, jboolean init,
+                        jobject loader, jclass caller);
 
 /*
  * Find a class from a given class.
@@ -498,22 +441,6 @@ JNIEXPORT jbyteArray JNICALL
 JVM_GetClassAnnotations(JNIEnv *env, jclass cls);
 
 /* Annotations support (JDK 1.6) */
-
-// field is a handle to a java.lang.reflect.Field object
-JNIEXPORT jbyteArray JNICALL
-JVM_GetFieldAnnotations(JNIEnv *env, jobject field);
-
-// method is a handle to a java.lang.reflect.Method object
-JNIEXPORT jbyteArray JNICALL
-JVM_GetMethodAnnotations(JNIEnv *env, jobject method);
-
-// method is a handle to a java.lang.reflect.Method object
-JNIEXPORT jbyteArray JNICALL
-JVM_GetMethodDefaultAnnotationValue(JNIEnv *env, jobject method);
-
-// method is a handle to a java.lang.reflect.Method object
-JNIEXPORT jbyteArray JNICALL
-JVM_GetMethodParameterAnnotations(JNIEnv *env, jobject method);
 
 /* Type use annotations support (JDK 1.8) */
 
@@ -646,9 +573,6 @@ JVM_AssertionStatusDirectives(JNIEnv *env, jclass unused);
  */
 JNIEXPORT jboolean JNICALL
 JVM_SupportsCX8(void);
-
-JNIEXPORT jboolean JNICALL
-JVM_CX8Field(JNIEnv *env, jobject obj, jfieldID fldID, jlong oldVal, jlong newVal);
 
 /*
  * com.sun.dtrace.jsdt support
@@ -1230,43 +1154,6 @@ typedef int (*canonicalize_fn_t)(JNIEnv *env, char *orig, char *out, int len);
  PART 3: I/O and Network Support
  ************************************************************************/
 
-/* Note that the JVM IO functions are expected to return JVM_IO_ERR
- * when there is any kind of error. The caller can then use the
- * platform specific support (e.g., errno) to get the detailed
- * error info.  The JVM_GetLastErrorString procedure may also be used
- * to obtain a descriptive error string.
- */
-#define JVM_IO_ERR  (-1)
-
-/* For interruptible IO. Returning JVM_IO_INTR indicates that an IO
- * operation has been disrupted by Thread.interrupt. There are a
- * number of technical difficulties related to interruptible IO that
- * need to be solved. For example, most existing programs do not handle
- * InterruptedIOExceptions specially, they simply treat those as any
- * IOExceptions, which typically indicate fatal errors.
- *
- * There are also two modes of operation for interruptible IO. In the
- * resumption mode, an interrupted IO operation is guaranteed not to
- * have any side-effects, and can be restarted. In the termination mode,
- * an interrupted IO operation corrupts the underlying IO stream, so
- * that the only reasonable operation on an interrupted stream is to
- * close that stream. The resumption mode seems to be impossible to
- * implement on Win32 and Solaris. Implementing the termination mode is
- * easier, but it's not clear that's the right semantics.
- *
- * Interruptible IO is not supported on Win32.It can be enabled/disabled
- * using a compile-time flag on Solaris. Third-party JVM ports do not
- * need to implement interruptible IO.
- */
-#define JVM_IO_INTR (-2)
-
-/* Write a string into the given buffer, in the platform's local encoding,
- * that describes the most recent system-level error to occur in this thread.
- * Return the length of the string or zero if no error occurred.
- */
-JNIEXPORT jint JNICALL
-JVM_GetLastErrorString(char *buf, int len);
-
 /*
  * Convert a pathname into native format.  This function does syntactic
  * cleanup, such as removing redundant separator characters.  It modifies
@@ -1274,150 +1161,6 @@ JVM_GetLastErrorString(char *buf, int len);
  */
 JNIEXPORT char * JNICALL
 JVM_NativePath(char *);
-
-/*
- * JVM I/O error codes
- */
-#define JVM_EEXIST       -100
-
-/*
- * Open a file descriptor. This function returns a negative error code
- * on error, and a non-negative integer that is the file descriptor on
- * success.
- */
-JNIEXPORT jint JNICALL
-JVM_Open(const char *fname, jint flags, jint mode);
-
-/*
- * Close a file descriptor. This function returns -1 on error, and 0
- * on success.
- *
- * fd        the file descriptor to close.
- */
-JNIEXPORT jint JNICALL
-JVM_Close(jint fd);
-
-/*
- * Read data from a file decriptor into a char array.
- *
- * fd        the file descriptor to read from.
- * buf       the buffer where to put the read data.
- * nbytes    the number of bytes to read.
- *
- * This function returns -1 on error, and 0 on success.
- */
-JNIEXPORT jint JNICALL
-JVM_Read(jint fd, char *buf, jint nbytes);
-
-/*
- * Write data from a char array to a file decriptor.
- *
- * fd        the file descriptor to read from.
- * buf       the buffer from which to fetch the data.
- * nbytes    the number of bytes to write.
- *
- * This function returns -1 on error, and 0 on success.
- */
-JNIEXPORT jint JNICALL
-JVM_Write(jint fd, char *buf, jint nbytes);
-
-/*
- * Returns the number of bytes available for reading from a given file
- * descriptor
- */
-JNIEXPORT jint JNICALL
-JVM_Available(jint fd, jlong *pbytes);
-
-/*
- * Move the file descriptor pointer from whence by offset.
- *
- * fd        the file descriptor to move.
- * offset    the number of bytes to move it by.
- * whence    the start from where to move it.
- *
- * This function returns the resulting pointer location.
- */
-JNIEXPORT jlong JNICALL
-JVM_Lseek(jint fd, jlong offset, jint whence);
-
-/*
- * Set the length of the file associated with the given descriptor to the given
- * length.  If the new length is longer than the current length then the file
- * is extended; the contents of the extended portion are not defined.  The
- * value of the file pointer is undefined after this procedure returns.
- */
-JNIEXPORT jint JNICALL
-JVM_SetLength(jint fd, jlong length);
-
-/*
- * Synchronize the file descriptor's in memory state with that of the
- * physical device.  Return of -1 is an error, 0 is OK.
- */
-JNIEXPORT jint JNICALL
-JVM_Sync(jint fd);
-
-/*
- * Networking library support
- */
-
-JNIEXPORT jint JNICALL
-JVM_InitializeSocketLibrary(void);
-
-struct sockaddr;
-
-JNIEXPORT jint JNICALL
-JVM_Socket(jint domain, jint type, jint protocol);
-
-JNIEXPORT jint JNICALL
-JVM_SocketClose(jint fd);
-
-JNIEXPORT jint JNICALL
-JVM_SocketShutdown(jint fd, jint howto);
-
-JNIEXPORT jint JNICALL
-JVM_Recv(jint fd, char *buf, jint nBytes, jint flags);
-
-JNIEXPORT jint JNICALL
-JVM_Send(jint fd, char *buf, jint nBytes, jint flags);
-
-JNIEXPORT jint JNICALL
-JVM_Timeout(int fd, long timeout);
-
-JNIEXPORT jint JNICALL
-JVM_Listen(jint fd, jint count);
-
-JNIEXPORT jint JNICALL
-JVM_Connect(jint fd, struct sockaddr *him, jint len);
-
-JNIEXPORT jint JNICALL
-JVM_Bind(jint fd, struct sockaddr *him, jint len);
-
-JNIEXPORT jint JNICALL
-JVM_Accept(jint fd, struct sockaddr *him, jint *len);
-
-JNIEXPORT jint JNICALL
-JVM_RecvFrom(jint fd, char *buf, int nBytes,
-                  int flags, struct sockaddr *from, int *fromlen);
-
-JNIEXPORT jint JNICALL
-JVM_SendTo(jint fd, char *buf, int len,
-                int flags, struct sockaddr *to, int tolen);
-
-JNIEXPORT jint JNICALL
-JVM_SocketAvailable(jint fd, jint *result);
-
-
-JNIEXPORT jint JNICALL
-JVM_GetSockName(jint fd, struct sockaddr *him, int *len);
-
-JNIEXPORT jint JNICALL
-JVM_GetSockOpt(jint fd, int level, int optname, char *optval, int *optlen);
-
-JNIEXPORT jint JNICALL
-JVM_SetSockOpt(jint fd, int level, int optname, const char *optval, int optlen);
-
-JNIEXPORT int JNICALL
-JVM_GetHostName(char* name, int namelen);
 
 /*
  * The standard printing functions supported by the Java VM. (Should they
@@ -1495,39 +1238,6 @@ JVM_GetTemporaryDirectory(JNIEnv *env);
  */
 JNIEXPORT jobjectArray JNICALL
 JVM_GetEnclosingMethodInfo(JNIEnv* env, jclass ofClass);
-
-/*
- * Java thread state support
- */
-enum {
-    JAVA_THREAD_STATE_NEW           = 0,
-    JAVA_THREAD_STATE_RUNNABLE      = 1,
-    JAVA_THREAD_STATE_BLOCKED       = 2,
-    JAVA_THREAD_STATE_WAITING       = 3,
-    JAVA_THREAD_STATE_TIMED_WAITING = 4,
-    JAVA_THREAD_STATE_TERMINATED    = 5,
-    JAVA_THREAD_STATE_COUNT         = 6
-};
-
-/*
- * Returns an array of the threadStatus values representing the
- * given Java thread state.  Returns NULL if the VM version is
- * incompatible with the JDK or doesn't support the given
- * Java thread state.
- */
-JNIEXPORT jintArray JNICALL
-JVM_GetThreadStateValues(JNIEnv* env, jint javaThreadState);
-
-/*
- * Returns an array of the substate names representing the
- * given Java thread state.  Returns NULL if the VM version is
- * incompatible with the JDK or the VM doesn't support
- * the given Java thread state.
- * values must be the jintArray returned from JVM_GetThreadStateValues
- * and javaThreadState.
- */
-JNIEXPORT jobjectArray JNICALL
-JVM_GetThreadStateNames(JNIEnv* env, jint javaThreadState, jintArray values);
 
 /* =========================================================================
  * The following defines a private JVM interface that the JDK can query

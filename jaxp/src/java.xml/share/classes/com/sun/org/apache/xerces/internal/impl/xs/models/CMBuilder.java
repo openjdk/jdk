@@ -1,13 +1,13 @@
 /*
- * reserved comment block
- * DO NOT REMOVE OR ALTER!
+ * Copyright (c) 2006, 2009, Oracle and/or its affiliates. All rights reserved.
  */
 /*
- * Copyright 2001-2004 The Apache Software Foundation.
- *
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
+ * Licensed to the Apache Software Foundation (ASF) under one or more
+ * contributor license agreements.  See the NOTICE file distributed with
+ * this work for additional information regarding copyright ownership.
+ * The ASF licenses this file to You under the Apache License, Version 2.0
+ * (the "License"); you may not use this file except in compliance with
+ * the License.  You may obtain a copy of the License at
  *
  *      http://www.apache.org/licenses/LICENSE-2.0
  *
@@ -65,9 +65,10 @@ public class CMBuilder {
      * Get content model for the a given type
      *
      * @param typeDecl  get content model for which complex type
+     * @param forUPA    a flag indicating whether it is for UPA
      * @return          a content model validator
      */
-    public XSCMValidator getContentModel(XSComplexTypeDecl typeDecl) {
+    public XSCMValidator getContentModel(XSComplexTypeDecl typeDecl, boolean forUPA) {
 
         // for complex type with empty or simple content,
         // there is no content model validator
@@ -92,7 +93,7 @@ public class CMBuilder {
             cmValidator = createAllCM(particle);
         }
         else {
-            cmValidator = createDFACM(particle);
+            cmValidator = createDFACM(particle, forUPA);
         }
 
         //now we are throught building content model and have passed sucessfully of the nodecount check
@@ -124,11 +125,11 @@ public class CMBuilder {
         return allContent;
     }
 
-    XSCMValidator createDFACM(XSParticleDecl particle) {
+    XSCMValidator createDFACM(XSParticleDecl particle, boolean forUPA) {
         fLeafCount = 0;
         fParticleCount = 0;
         // convert particle tree to CM tree
-        CMNode node = useRepeatingLeafNodes(particle) ? buildCompactSyntaxTree(particle) : buildSyntaxTree(particle, true);
+        CMNode node = useRepeatingLeafNodes(particle) ? buildCompactSyntaxTree(particle) : buildSyntaxTree(particle, forUPA, true);
         if (node == null)
             return null;
         // build DFA content model from the CM tree
@@ -141,10 +142,31 @@ public class CMBuilder {
     // 3. convert model groups (a, b, c, ...) or (a | b | c | ...) to
     //    binary tree: (((a,b),c),...) or (((a|b)|c)|...)
     // 4. make sure each leaf node (XSCMLeaf) has a distinct position
-    private CMNode buildSyntaxTree(XSParticleDecl particle, boolean optimize) {
+    private CMNode buildSyntaxTree(XSParticleDecl particle, boolean forUPA, boolean optimize) {
 
         int maxOccurs = particle.fMaxOccurs;
         int minOccurs = particle.fMinOccurs;
+
+        boolean compactedForUPA = false;
+        if (forUPA) {
+            // When doing UPA, we reduce the size of the minOccurs/maxOccurs values to make
+            // processing the DFA faster.  For UPA the exact values don't matter.
+            if (minOccurs > 1) {
+                if (maxOccurs > minOccurs || particle.getMaxOccursUnbounded()) {
+                    minOccurs = 1;
+                    compactedForUPA = true;
+                }
+                else { // maxOccurs == minOccurs
+                    minOccurs = 2;
+                    compactedForUPA = true;
+                }
+            }
+            if (maxOccurs > 1) {
+                maxOccurs = 2;
+                compactedForUPA = true;
+            }
+        }
+
         short type = particle.fType;
         CMNode nodeRet = null;
 
@@ -159,6 +181,9 @@ public class CMBuilder {
             nodeRet = fNodeFactory.getCMLeafNode(particle.fType, particle.fValue, fParticleCount++, fLeafCount++);
             // (task 2) expand occurrence values
             nodeRet = expandContentModel(nodeRet, minOccurs, maxOccurs, optimize);
+            if (nodeRet != null) {
+                nodeRet.setIsCompactUPAModel(compactedForUPA);
+            }
         }
         else if (type == XSParticleDecl.PARTICLE_MODELGROUP) {
             // (task 1,3) convert model groups to binary trees
@@ -178,12 +203,14 @@ public class CMBuilder {
             for (int i = 0; i < group.fParticleCount; i++) {
                 // first convert each child to a CM tree
                 temp = buildSyntaxTree(group.fParticles[i],
+                        forUPA,
                         optimize &&
                         minOccurs == 1 && maxOccurs == 1 &&
                         (group.fCompositor == XSModelGroupImpl.MODELGROUP_SEQUENCE ||
                          group.fParticleCount == 1));
                 // then combine them using binary operation
                 if (temp != null) {
+                    compactedForUPA |= temp.isCompactedForUPA();
                     if (nodeRet == null) {
                         nodeRet = temp;
                     }
@@ -205,6 +232,7 @@ public class CMBuilder {
                     nodeRet = fNodeFactory.getCMUniOpNode(XSParticleDecl.PARTICLE_ZERO_OR_ONE, nodeRet);
                 }
                 nodeRet = expandContentModel(nodeRet, minOccurs, maxOccurs, false);
+                nodeRet.setIsCompactUPAModel(compactedForUPA);
             }
         }
 

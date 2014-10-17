@@ -1,4 +1,7 @@
 /*
+ * Copyright (c) 2009, 2014, Oracle and/or its affiliates. All rights reserved.
+ */
+/*
  * Licensed to the Apache Software Foundation (ASF) under one or more
  * contributor license agreements.  See the NOTICE file distributed with
  * this work for additional information regarding copyright ownership.
@@ -632,8 +635,11 @@ public final class Constants {
     /** Validation manager property ("internal/validation-manager"). */
     public static final String VALIDATION_MANAGER_PROPERTY = "internal/validation-manager";
 
-    /** Schema type of the root element in a document ("validation/schema/root-type-definition"). */
+    /** Schema type for the root element in a document ("validation/schema/root-type-definition"). */
     public static final String ROOT_TYPE_DEFINITION_PROPERTY = "validation/schema/root-type-definition";
+
+    /** Schema element declaration for the root element in a document ("validation/schema/root-element-declaration"). */
+    public static final String ROOT_ELEMENT_DECLARATION_PROPERTY = "validation/schema/root-element-declaration";
 
     /** XPointer Schema property ("xpointer-schema"). */
     public static final String XPOINTER_SCHEMA_PROPERTY = "xpointer-schema";
@@ -803,6 +809,7 @@ public final class Constants {
             BUFFER_SIZE_PROPERTY,
             SECURITY_MANAGER_PROPERTY,
             ROOT_TYPE_DEFINITION_PROPERTY,
+            ROOT_ELEMENT_DECLARATION_PROPERTY,
             LOCALE_PROPERTY,
             SCHEMA_DV_FACTORY_PROPERTY,
     };

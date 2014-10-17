@@ -604,9 +604,13 @@ public abstract class Signature extends SignatureSpi {
      * @return the number of bytes placed into {@code outbuf}.
      *
      * @exception SignatureException if this signature object is not
-     * initialized properly, if this signature algorithm is unable to
-     * process the input data provided, or if {@code len} is less
-     * than the actual signature length.
+     *     initialized properly, if this signature algorithm is unable to
+     *     process the input data provided, or if {@code len} is less
+     *     than the actual signature length.
+     * @exception IllegalArgumentException if {@code outbuf} is {@code null},
+     *     or {@code offset} or {@code len} is less than 0, or the sum of
+     *     {@code offset} and {@code len} is greater than the length of
+     *     {@code outbuf}.
      *
      * @since 1.2
      */
@@ -614,6 +618,9 @@ public abstract class Signature extends SignatureSpi {
         throws SignatureException {
         if (outbuf == null) {
             throw new IllegalArgumentException("No output buffer given");
+        }
+        if (offset < 0 || len < 0) {
+            throw new IllegalArgumentException("offset or len is less than 0");
         }
         if (outbuf.length - offset < len) {
             throw new IllegalArgumentException
@@ -683,9 +690,16 @@ public abstract class Signature extends SignatureSpi {
     public final boolean verify(byte[] signature, int offset, int length)
         throws SignatureException {
         if (state == VERIFY) {
-            if ((signature == null) || (offset < 0) || (length < 0) ||
-                (length > signature.length - offset)) {
-                throw new IllegalArgumentException("Bad arguments");
+            if (signature == null) {
+                throw new IllegalArgumentException("signature is null");
+            }
+            if (offset < 0 || length < 0) {
+                throw new IllegalArgumentException
+                    ("offset or length is less than 0");
+            }
+            if (signature.length - offset < length) {
+                throw new IllegalArgumentException
+                    ("signature too small for specified offset and length");
             }
 
             return engineVerify(signature, offset, length);
@@ -733,11 +747,25 @@ public abstract class Signature extends SignatureSpi {
      * @param len the number of bytes to use, starting at offset.
      *
      * @exception SignatureException if this signature object is not
-     * initialized properly.
+     *     initialized properly.
+     * @exception IllegalArgumentException if {@code data} is {@code null},
+     *     or {@code off} or {@code len} is less than 0, or the sum of
+     *     {@code off} and {@code len} is greater than the length of
+     *     {@code data}.
      */
     public final void update(byte[] data, int off, int len)
             throws SignatureException {
         if (state == SIGN || state == VERIFY) {
+            if (data == null) {
+                throw new IllegalArgumentException("data is null");
+            }
+            if (off < 0 || len < 0) {
+                throw new IllegalArgumentException("off or len is less than 0");
+            }
+            if (data.length - off < len) {
+                throw new IllegalArgumentException
+                    ("data too small for specified offset and length");
+            }
             engineUpdate(data, off, len);
         } else {
             throw new SignatureException("object not initialized for "
